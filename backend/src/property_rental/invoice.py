@@ -137,7 +137,10 @@ class AdjustInvoiceCommand:
         _identity(self.invoice_line_id, "invoice_line_id")
         if not isinstance(self.adjustment_type, AdjustmentType):
             raise ValueError("adjustment_type is invalid")
-        if self.amount_usd_cents <= 0 or self.amount_usd_cents > 9_000_000_000_000_000:
+        if (
+            type(self.amount_usd_cents) is not int
+            or not 1 <= self.amount_usd_cents <= 9_000_000_000_000_000
+        ):
             raise ValueError("amount_usd_cents must be a bounded positive integer")
         _normalized(self.source_reference, "source_reference")
         _normalized(self.reason, "reason")

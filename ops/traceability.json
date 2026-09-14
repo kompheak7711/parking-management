@@ -31268,6 +31268,96 @@
       "test_path": "backend/tests/test_termination_invoice_migration.py",
       "status": "implemented",
       "notes": "IR-1/2/3 correction: genuine Invoice ownership, issued original component evidence and line-provable financial status; no posting or whole-version completion claim."
+    },
+    {
+      "test_id": "test_adjustment_commands_reject_non_integer_cents_without_coercion",
+      "upstream_ids": [
+        "BR-RENT-024",
+        "BR-RENT-026",
+        "PR-INV-044",
+        "PR-INV-047",
+        "PR-INV-048",
+        "TEST-077"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_invoice.py",
+      "status": "implemented",
+      "notes": "Strict exact integer-cent Adjustment boundary and controlled termination correction/VOID source, history, dependency and replay regressions; verification and independent review pending."
+    },
+    {
+      "test_id": "test_adjustment_commands_preserve_valid_integer_cents",
+      "upstream_ids": [
+        "BR-RENT-024",
+        "BR-RENT-026",
+        "PR-INV-044",
+        "PR-INV-047",
+        "PR-INV-048",
+        "TEST-077"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_invoice.py",
+      "status": "implemented",
+      "notes": "Strict exact integer-cent Adjustment boundary and controlled termination correction/VOID source, history, dependency and replay regressions; verification and independent review pending."
+    },
+    {
+      "test_id": "test_termination_initial_credit_adjustment_preserves_sources_and_concurrent_replay",
+      "upstream_ids": [
+        "BR-RENT-024",
+        "BR-RENT-026",
+        "PR-INV-044",
+        "PR-INV-047",
+        "PR-INV-048",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_termination_invoice_migration.py",
+      "status": "implemented",
+      "notes": "Strict exact integer-cent Adjustment boundary and controlled termination correction/VOID source, history, dependency and replay regressions; verification and independent review pending."
+    },
+    {
+      "test_id": "test_termination_future_void_requires_separate_payment_and_credit_reversals",
+      "upstream_ids": [
+        "BR-RENT-024",
+        "BR-RENT-026",
+        "PR-INV-044",
+        "PR-INV-047",
+        "PR-INV-048",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_termination_invoice_migration.py",
+      "status": "implemented",
+      "notes": "Strict exact integer-cent Adjustment boundary and controlled termination correction/VOID source, history, dependency and replay regressions; verification and independent review pending."
+    },
+    {
+      "test_id": "test_termination_credit_adjustment_does_not_create_void_or_financial_closure",
+      "upstream_ids": [
+        "BR-RENT-024",
+        "BR-RENT-026",
+        "PR-INV-044",
+        "PR-INV-047",
+        "PR-INV-048",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_termination_invoice_migration.py",
+      "status": "implemented",
+      "notes": "Strict exact integer-cent Adjustment boundary and controlled termination correction/VOID source, history, dependency and replay regressions; verification and independent review pending."
+    },
+    {
+      "test_id": "test_termination_invoice_corrections_enforce_property_and_capability_before_effects",
+      "upstream_ids": [
+        "BR-RENT-024",
+        "BR-RENT-026",
+        "PR-INV-044",
+        "PR-INV-047",
+        "PR-INV-048",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_termination_invoice_migration.py",
+      "status": "implemented",
+      "notes": "Strict exact integer-cent Adjustment boundary and controlled termination correction/VOID source, history, dependency and replay regressions; verification and independent review pending."
     }
   ]
 }

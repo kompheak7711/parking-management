@@ -1,3 +1,15 @@
+# Current queue — Invoice correction boundary exact gates and review
+
+Run remaining exact gates for this eight-path Invoice command boundary stage, reusing completed affected static/unit/full1416PostgreSQL proof and unchanged frontend inputs. Require fresh independent complete-stage review from accepted72ff967 with Astra/max/Standard/read-only/never and absolute Python/Git. Debit governing due-date handling, physical/HTTP and final integrated V1-055 acceptance remain pending; no publication or56 activation.
+
+All prior entries follow unchanged.
+
+# Current queue — Invoice correction boundary
+
+Implement strict integer-cent Adjustment command validation and real termination credit-Adjustment/VOID integration regressions. Run affected and applicable mandatory gates, freeze a normal local candidate and obtain fresh independent complete-stage review. Debit Adjustment governing due-date handling, physical move-out/inspection/readings, HTTP/staff and final integrated V1-055 acceptance remain pending. No publication or V1-056 activation.
+
+Every earlier queue entry follows unchanged.
+
 # Current queue — Invoice semantic1 exact gates and required reviews
 
 Run remaining exact gates for this corrected Invoice stage, reusing identical81unit/1412fullPG/static and unchanged frontend inputs. Obtain fresh expanded focused IR-1/2/3 correction review vs a244b79, then fresh final complete25path/twocommit stage review from accepted5ad5d97. Astra/max/Standard/read-only/never, absolute Python/Git and login:false. Each semantic finding1of2, all prior limits preserved. Zero unresolved findings required before stage acceptance; whole55 remains unpublished and no V1-056 activation.

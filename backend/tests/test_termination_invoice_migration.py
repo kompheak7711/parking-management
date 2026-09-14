@@ -1,7 +1,10 @@
 """Real original coverage, financial changes, authorization and additive migration."""
 
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import replace
 from datetime import date
 from pathlib import Path
+from threading import Barrier
 from types import TracebackType
 from uuid import UUID, uuid4
 
@@ -20,6 +23,10 @@ from property_rental.invoice import (
     AdjustInvoiceCommand,
     AdjustmentType,
     CreateInvoiceDraftCommand,
+    InvoiceAuthorizationError,
+    InvoiceIdempotencyKeyReused,
+    InvoiceInvalidError,
+    InvoiceVersionConflict,
     IssueInvoiceCommand,
     PostgresInvoiceService,
     VoidInvoiceCommand,
@@ -622,3 +629,338 @@ def test_partial_mixed_invoice_pages_accept_fully_applied_rent_and_unpaid_servic
     assert paid_rent.outstanding_usd_cents == 0
     services = [row for row in rows if row.category == "SERVICE_CHARGES"]
     assert services and all(row.outstanding_usd_cents > 0 for row in services)
+
+
+def original_correction_source(
+    connection: Connection[tuple[object, ...]], invoice: UUID, lease: UUID
+) -> tuple[object, ...]:
+    """Original financial sources, including every component and signed Lease field."""
+    header = connection.execute(
+        "SELECT to_jsonb(i)-ARRAY['status','version','updated_at','updated_by'] "
+        "FROM app.invoices i WHERE id=%s",
+        (invoice,),
+    ).fetchone()
+    lines = connection.execute(
+        "SELECT to_jsonb(l) FROM app.invoice_lines l WHERE invoice_id=%s ORDER BY id",
+        (invoice,),
+    ).fetchall()
+    components = connection.execute(
+        "SELECT to_jsonb(c) FROM app.invoice_line_calculation_components c "
+        "JOIN app.invoice_lines l ON l.id=c.invoice_line_id WHERE l.invoice_id=%s ORDER BY c.id",
+        (invoice,),
+    ).fetchall()
+    signed = connection.execute(
+        "SELECT to_jsonb(l) FROM app.leases l WHERE id=%s", (lease,)
+    ).fetchone()
+    return header, lines, components, signed
+
+
+def test_termination_initial_credit_adjustment_preserves_sources_and_concurrent_replay(
+    migrated_database_url: str,
+) -> None:
+    with psycopg.connect(migrated_database_url) as connection:
+        human, prop, _, lease, occupancy = setup_billing_source(connection)
+    billing = PostgresRentBillingService(financial_database_url(), prop, human)
+    initial = initial_command(lease, occupancy)
+    generated = billing.generate(initial, actor=authenticated(human, prop))
+    event = terminate(migrated_database_url, human, prop, lease, date(2026, 7, 28))
+    read = PostgresTerminationInvoiceReadService(runtime_database_url(), prop)
+    page = read.page(lease, actor=reader(human, prop))
+    rent = next(row for row in page.items if row.category == "RENT")
+    assert page.termination_event_id == event
+    assert rent.original_usd_cents == 92903 and page.full_final_month_rent_usd_cents == 80000
+    assert rent.original_rent_coverage is OriginalRentCoverage.FINAL_AND_LATER_MONTHS
+    services = [row for row in page.items if row.category == "SERVICE_CHARGES"]
+    with psycopg.connect(migrated_database_url) as connection:
+        original = original_correction_source(connection, rent.invoice_id, lease)
+    request = AdjustInvoiceCommand(
+        uuid4(),
+        rent.invoice_line_id,
+        AdjustmentType.CREDIT,
+        12903,
+        f"approved-termination/{event}",
+        "Approved final July Rent; remove net excess from initial advance billing",
+        rent.invoice_version,
+    )
+    staff = invoice_api_actor(human, prop)
+    flow = PostgresInvoiceService(runtime_database_url(), financial_database_url())
+    barrier = Barrier(2)
+
+    def apply_once() -> dict[str, object]:
+        barrier.wait(timeout=10)
+        return PostgresInvoiceService(runtime_database_url(), financial_database_url()).adjust(
+            prop,
+            rent.invoice_id,
+            request,
+            actor=staff,
+        )
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        first, second = [
+            future.result(timeout=20)
+            for future in (pool.submit(apply_once), pool.submit(apply_once))
+        ]
+    assert first == second == flow.adjust(prop, rent.invoice_id, request, actor=staff)
+    changed = read.page(lease, actor=reader(human, prop))
+    current = next(row for row in changed.items if row.category == "RENT")
+    assert (
+        current.original_usd_cents,
+        current.adjusted_usd_cents,
+        current.outstanding_usd_cents,
+    ) == (92903, 80000, 80000)
+    assert [
+        (x.invoice_line_id, x.original_usd_cents, x.adjusted_usd_cents, x.components)
+        for x in changed.items
+        if x.category == "SERVICE_CHARGES"
+    ] == [
+        (x.invoice_line_id, x.original_usd_cents, x.adjusted_usd_cents, x.components)
+        for x in services
+    ]
+    assert changed.financial_completion_assessed is False
+    assert billing.generate(initial, actor=authenticated(human, prop)) == generated
+    with psycopg.connect(migrated_database_url) as connection:
+        assert original_correction_source(connection, rent.invoice_id, lease) == original
+        assert connection.execute(
+            "SELECT a.amount_usd_cents,a.source_reference,a.actor_id,count(e.id) "
+            "FROM app.invoice_adjustments a JOIN app.audit_events e "
+            "ON e.linked_source_event_id=a.id "
+            "AND e.action='invoice.adjusted' AND e.entity_id=a.invoice_id "
+            "AND e.actor_id=a.actor_id "
+            "WHERE a.invoice_id=%s GROUP BY a.id",
+            (rent.invoice_id,),
+        ).fetchall() == [(12903, request.source_reference, human, 1)]
+        assert connection.execute(
+            "SELECT count(*) FROM app.invoice_commands WHERE invoice_id=%s AND action='adjust'",
+            (rent.invoice_id,),
+        ).fetchone() == (1,)
+        unchanged = history(connection)
+    with pytest.raises(InvoiceIdempotencyKeyReused):
+        flow.adjust(
+            prop, rent.invoice_id, replace(request, reason="Changed approved reason"), actor=staff
+        )
+    with pytest.raises(InvoiceInvalidError):
+        flow.void(
+            prop,
+            rent.invoice_id,
+            VoidInvoiceCommand(uuid4(), "Must retain active Adjustment", current.invoice_version),
+            actor=staff,
+        )
+    with psycopg.connect(migrated_database_url) as connection:
+        assert history(connection) == unchanged
+
+
+def test_termination_future_void_requires_separate_payment_and_credit_reversals(
+    migrated_database_url: str,
+) -> None:
+    human, prop, credit, invoice, line, _ = source_with_prior_credit(
+        migrated_database_url, amount=20000, period_start=date(2026, 8, 1)
+    )
+    with psycopg.connect(migrated_database_url) as connection:
+        identity = connection.execute(
+            "SELECT customer_id,lease_id FROM app.invoices WHERE id=%s", (invoice,)
+        ).fetchone()
+        assert identity is not None
+        customer, lease = identity
+        assert isinstance(customer, UUID) and isinstance(lease, UUID)
+        paid = seed_payment(
+            connection, actor_id=human, property_id=prop, customer_id=customer, amount=20000
+        )
+    terminate(migrated_database_url, human, prop, lease, date(2026, 7, 10))
+    read = PostgresTerminationInvoiceReadService(runtime_database_url(), prop)
+    old = read.page(lease, actor=reader(human, prop)).items[0]
+    assert old.original_rent_coverage is OriginalRentCoverage.LATER_MONTHS
+    posted = payments().post(
+        prop, paid, payment_designated(invoice, line, 10000), actor=payment_actor(human, prop)
+    )
+    applied = credits().apply(
+        prop,
+        credit,
+        credit_designated(invoice, line, 10000),
+        actor=credit_actor(human, prop, "credits.apply"),
+    )
+    flow = PostgresInvoiceService(runtime_database_url(), financial_database_url())
+    staff = invoice_api_actor(human, prop)
+    current = read.page(lease, actor=reader(human, prop)).items[0]
+    assert current.invoice_version != old.invoice_version
+    with psycopg.connect(migrated_database_url) as connection:
+        original = original_correction_source(connection, invoice, lease)
+        unchanged = history(connection)
+    with pytest.raises(InvoiceVersionConflict):
+        flow.void(
+            prop,
+            invoice,
+            VoidInvoiceCommand(
+                uuid4(), "Approved invalid August advance Rent", old.invoice_version
+            ),
+            actor=staff,
+        )
+    with pytest.raises(InvoiceInvalidError):
+        flow.void(
+            prop,
+            invoice,
+            VoidInvoiceCommand(
+                uuid4(), "Approved invalid August advance Rent", current.invoice_version
+            ),
+            actor=staff,
+        )
+    with pytest.raises(InvoiceInvalidError):
+        flow.adjust(
+            prop,
+            invoice,
+            AdjustInvoiceCommand(
+                uuid4(),
+                line,
+                AdjustmentType.CREDIT,
+                80000,
+                "approved/termination",
+                "Applications require explicit resolution",
+                current.invoice_version,
+            ),
+            actor=staff,
+        )
+    with psycopg.connect(migrated_database_url) as connection:
+        assert history(connection) == unchanged
+    ids = posted["allocation_ids"]
+    assert isinstance(ids, list) and len(ids) == 1
+    allocation = UUID(str(ids[0]))
+    payments().reverse_allocation(
+        prop,
+        allocation,
+        ReverseAllocationCommand(uuid4(), "Approved invalid future-month attribution"),
+        actor=payment_actor(human, prop),
+    )
+    current = read.page(lease, actor=reader(human, prop)).items[0]
+    with psycopg.connect(migrated_database_url) as connection:
+        unchanged = history(connection)
+    with pytest.raises(InvoiceInvalidError):
+        flow.void(
+            prop,
+            invoice,
+            VoidInvoiceCommand(
+                uuid4(), "Credit still requires explicit reversal", current.invoice_version
+            ),
+            actor=staff,
+        )
+    with psycopg.connect(migrated_database_url) as connection:
+        assert history(connection) == unchanged
+    credits().reverse_application(
+        prop,
+        application_id(applied),
+        ReverseCreditApplicationCommand(uuid4(), "Approved invalid future-month attribution"),
+        actor=credit_actor(human, prop, "credits.applications.reverse"),
+    )
+    current = read.page(lease, actor=reader(human, prop)).items[0]
+    request = VoidInvoiceCommand(
+        uuid4(), "Approved Invoice wholly beyond July termination", current.invoice_version
+    )
+    with psycopg.connect(migrated_database_url) as connection:
+        before_void = history(connection)
+        position = connection.execute(
+            "SELECT app.payment_available_value(%s),app.credit_available_value(%s)", (paid, credit)
+        ).fetchone()
+    voided = flow.void(prop, invoice, request, actor=staff)
+    assert flow.void(prop, invoice, request, actor=staff) == voided
+    with psycopg.connect(migrated_database_url) as connection:
+        assert original_correction_source(connection, invoice, lease) == original
+        after_void = history(connection)
+        for table in (
+            "payments",
+            "payment_allocations",
+            "payment_allocation_reversals",
+            "customer_credits",
+            "customer_credit_applications",
+            "customer_credit_application_reversals",
+            "refunds",
+        ):
+            assert after_void[table] == before_void[table]
+        assert (
+            connection.execute(
+                "SELECT app.payment_available_value(%s),app.credit_available_value(%s)",
+                (paid, credit),
+            ).fetchone()
+            == position
+            == (20000, 20000)
+        )
+        assert connection.execute(
+            "SELECT count(*) FROM app.invoice_void_events WHERE invoice_id=%s", (invoice,)
+        ).fetchone() == (1,)
+    final = read.page(lease, actor=reader(human, prop)).items[0]
+    assert (
+        final.invoice_status == "VOID"
+        and final.original_usd_cents == 80000
+        and final.outstanding_usd_cents == 0
+    )
+
+
+def test_termination_credit_adjustment_does_not_create_void_or_financial_closure(
+    migrated_database_url: str,
+) -> None:
+    human, prop, _, lease, invoices = source(migrated_database_url, months=(8,))
+    invoice, line = invoices[0]
+    read = PostgresTerminationInvoiceReadService(runtime_database_url(), prop)
+    current = read.page(lease, actor=reader(human, prop)).items[0]
+    flow = PostgresInvoiceService(runtime_database_url(), financial_database_url())
+    request = AdjustInvoiceCommand(
+        uuid4(),
+        line,
+        AdjustmentType.CREDIT,
+        80000,
+        "approved/future-period-correction",
+        "Approved linked correction of invalid August obligation",
+        current.invoice_version,
+    )
+    with psycopg.connect(migrated_database_url) as connection:
+        original = original_correction_source(connection, invoice, lease)
+    result = flow.adjust(prop, invoice, request, actor=invoice_api_actor(human, prop))
+    assert flow.adjust(prop, invoice, request, actor=invoice_api_actor(human, prop)) == result
+    page = read.page(lease, actor=reader(human, prop))
+    current = page.items[0]
+    assert (
+        current.invoice_status,
+        current.original_usd_cents,
+        current.adjusted_usd_cents,
+        current.outstanding_usd_cents,
+    ) == ("PAID", 80000, 0, 0)
+    assert current.active_adjustment_count == 1 and page.financial_completion_assessed is False
+    with psycopg.connect(migrated_database_url) as connection:
+        assert original_correction_source(connection, invoice, lease) == original
+        assert connection.execute(
+            "SELECT count(*) FROM app.invoice_void_events WHERE invoice_id=%s", (invoice,)
+        ).fetchone() == (0,)
+
+
+def test_termination_invoice_corrections_enforce_property_and_capability_before_effects(
+    migrated_database_url: str,
+) -> None:
+    human, prop, _, lease, invoices = source(migrated_database_url, months=(8,))
+    invoice, line = invoices[0]
+    current = (
+        PostgresTerminationInvoiceReadService(runtime_database_url(), prop)
+        .page(lease, actor=reader(human, prop))
+        .items[0]
+    )
+    flow = PostgresInvoiceService(runtime_database_url(), financial_database_url())
+    request = AdjustInvoiceCommand(
+        uuid4(),
+        line,
+        AdjustmentType.CREDIT,
+        100,
+        "approved/termination",
+        "Authorized adjustment only",
+        current.invoice_version,
+    )
+    void = VoidInvoiceCommand(
+        uuid4(), "Authorized invalid advance Invoice only", current.invoice_version
+    )
+    with psycopg.connect(migrated_database_url) as connection:
+        unchanged = history(connection)
+    with pytest.raises(InvoiceAuthorizationError):
+        flow.adjust(prop, invoice, request, actor=reader(human, prop))
+    with pytest.raises(InvoiceAuthorizationError):
+        flow.void(prop, invoice, void, actor=reader(human, prop))
+    with pytest.raises(InvoiceAuthorizationError):
+        flow.adjust(uuid4(), invoice, request, actor=invoice_api_actor(human, prop))
+    with pytest.raises(InvoiceAuthorizationError):
+        flow.void(uuid4(), invoice, void, actor=invoice_api_actor(human, prop))
+    with psycopg.connect(migrated_database_url) as connection:
+        assert history(connection) == unchanged

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import date
+from decimal import Decimal
+from fractions import Fraction
 from typing import cast
 from uuid import UUID, uuid4
 
@@ -1210,3 +1212,45 @@ def test_void_is_explicit_versioned_terminal_command_with_separate_capability() 
     assert voided.json()["data"]["status"] == "VOID"
     assert stale.status_code == 412
     assert stale.json()["error"]["current_version"] == 3
+
+
+@pytest.mark.parametrize("kind", list(AdjustmentType))
+@pytest.mark.parametrize(
+    "amount",
+    [
+        True,
+        False,
+        1.0,
+        1.5,
+        float("nan"),
+        float("inf"),
+        Decimal("1"),
+        Fraction(1, 1),
+        "1",
+        None,
+        [],
+        {},
+        0,
+        -1,
+        9_000_000_000_000_001,
+    ],
+)
+def test_adjustment_commands_reject_non_integer_cents_without_coercion(
+    kind: AdjustmentType, amount: object
+) -> None:
+    with pytest.raises(ValueError, match="bounded positive integer"):
+        AdjustInvoiceCommand(
+            uuid4(), uuid4(), kind, cast(int, amount), "approved/source", "Approved correction", 1
+        )
+
+
+@pytest.mark.parametrize("kind", list(AdjustmentType))
+@pytest.mark.parametrize("amount", [1, 12903, 9_000_000_000_000_000])
+def test_adjustment_commands_preserve_valid_integer_cents(
+    kind: AdjustmentType, amount: int
+) -> None:
+    request = AdjustInvoiceCommand(
+        uuid4(), uuid4(), kind, amount, "approved/source", "Approved correction", 1
+    )
+    assert request.amount_usd_cents == amount
+    assert type(request.amount_usd_cents) is int

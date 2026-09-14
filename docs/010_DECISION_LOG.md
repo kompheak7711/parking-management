@@ -862,3 +862,29 @@ Rent Due Date question in `DL-042` and do not authorize new business policy.
 8. Updates to 001 or 002 that materially change a logged decision require corresponding updates here and in affected downstream specifications.
 
 ---
+
+
+### V1-055 Invoice correction command boundary checkpoint
+
++BR-RENT-023–026 and PR-INV-044–048 continue to use explicit existing linked
++Adjustments and exceptional VOID. Original Invoice values, calculation components,
++Service obligations and signed Lease evidence remain unchanged. Direct Adjustment
++commands now require actual integer USD cents, matching the strict HTTP money
++boundary; no floating-point, boolean or other coercion enters a command digest.
++Valid integer limits, SQL writers, authorization, replay and schema are unchanged.
++
++Connected integration coverage includes a genuine initial Invoice spanning the
++processed final month and a later month, an approved linked credit correction,
++concurrent exact retries, active Payment/Credit reversal prerequisites, source funds
++remaining available, and rejected commands preserving all application-table history.
++An Invoice with zero outstanding after an Adjustment is not thereby VOID or a
++financially closed tenancy. These are tests of explicit approved processes, not
++automatic proposed amounts or new permission/termination rules.
++
++This bounded checkpoint does not accept debit Adjustment due-date behavior.
++PR-INV-049 requires a governing-source due date; the current generic Adjustment
++input has no explicit due-date field. Its connected persistence and consumers
++remain a required separate verification/remediation before V1-055 acceptance.
++Physical move-out, inspection/readings, HTTP/staff and final integrated acceptance
++also remain incomplete; no V1-055 publication or V1-056 activation is permitted.
++
