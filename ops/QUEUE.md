@@ -1,3 +1,7 @@
+# Current queue — command-guard review identity correction
+
+Run applicable exact records gates while reusing unchanged a25a008 product/static/build/graph evidence. Obtain an independent focused CG-RECORD-1 correction review against a25a008, then a fresh independent final COMPLETE24path/threecommit stage review against accepted8c8d923, Astra/max/Standard/read-only/never with absolute Python/Git. Zero unresolved findings required before acceptance. Preserve review-label1of2, prior message1of2/test1of2 families and all inherited limits; no55publication/closure or next slice before acceptance.
+
 # Current queue — corrected V1-055 command-guard acceptance
 
 Run remaining exact gates for the corrected command-guard candidate, reusing verified unchanged code evidence. Fresh complete-stage independent review must cover all24paths/two commits from accepted8c8d923 with Astra/max/Standard/read-only/never and absolute Python/Git. Preserve downgrade-message correction1of2, two test-only corrections1of2 and every inherited limit. No55publication or next slice before acceptance; full version remains incomplete.

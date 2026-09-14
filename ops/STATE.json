@@ -2081,20 +2081,20 @@
     "workboard_block_reason": "Tracking-only blocks OpenClaw admission; sole direct Codex implementation authorized.",
     "worker_kind": "direct_root_codex",
     "worker_task_id": "01a07991-38a6-7f33-b84d-0ad0620e2997",
-    "worker_status": "no_worker_pending_corrected_exact_gates",
+    "worker_status": "no_worker_records_gates_pending",
     "branch": "implementation/foundation",
     "worktree": "/Users/sokompheak/Development/property-rental-management",
     "scope_path": "ops/V1_055_SCOPE.md",
     "scope_sha256": "8da3b58eab28350341e3faa29ba8947e59f3f019d931724957be5425023652ac",
     "cumulative_review_base": "bda66062697feef17c8df621b64bf5f607c1c691",
     "candidate_sha": null,
-    "candidate_resolution": "Resolve this immutable corrected command-guard candidate through external v1055-lease-deposit-command-guards-corrected-candidate.json; retain fa6d068 and its failed full gate. Subsequent gates and review evidence remain external.",
-    "candidate_status": "normal_local_command_guard_candidate_prepared",
+    "candidate_resolution": "Resolve the immutable records-corrected command-guard candidate through external v1055-lease-deposit-command-guards-records1-candidate.json. Preserve the initial a25a008 APPROVE0 report, separate parent CG-RECORD-1, fa6d068 failure and all previous evidence; later exact gates/reviews remain external.",
+    "candidate_status": "records_correction1_prepared",
     "owner_action_required": false,
-    "next_action": "Run remaining exact gates for the corrected command-guard candidate, reusing verified unchanged code evidence. Fresh complete-stage independent review must cover all24paths/two commits from accepted8c8d923 with Astra/max/Standard/read-only/never and absolute Python/Git. Preserve downgrade-message correction1of2, two test-only corrections1of2 and every inherited limit. No55publication or next slice before acceptance; full version remains incomplete.",
+    "next_action": "Run applicable exact records gates while reusing unchanged a25a008 product/static/build/graph evidence. Obtain an independent focused CG-RECORD-1 correction review against a25a008, then a fresh independent final COMPLETE24path/threecommit stage review against accepted8c8d923, Astra/max/Standard/read-only/never with absolute Python/Git. Zero unresolved findings required before acceptance. Preserve review-label1of2, prior message1of2/test1of2 families and all inherited limits; no55publication/closure or next slice before acceptance.",
     "active_slice": {
       "id": "V1-055-lease-deposit-command-guards",
-      "status": "bounded_message_correction_verified_exact_gates_review_pending",
+      "status": "review_stage_identity_corrected_exact_gates_focused_final_pending",
       "stage": "Bounded financial-command admission prerequisite to termination disposition orchestration",
       "base": "8c8d92396bb0138bf385212163b86cfe8c122e12",
       "complete_version_base": "bda66062697feef17c8df621b64bf5f607c1c691",
@@ -2305,6 +2305,23 @@
           "failed_candidate": "fa6d068824af09312f316105b6d3ed6cd5391018",
           "upgrade_sql_unchanged": true,
           "inherited_limits_reset": false
+        },
+        {
+          "family": "lease_deposit_command_guard_review_stage_identity",
+          "finding_id": "CG-RECORD-1",
+          "attempt": 1,
+          "maximum": 2,
+          "status": "locally_corrected_gates_focused_and_final_complete_review_pending",
+          "before": "review.stage=V1-055-termination-deposit-readiness",
+          "after": "review.stage=V1-055-lease-deposit-command-guards",
+          "evidence": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-review-label1-attempt.json",
+            "sha256": "f170fae1a49ea9154a85db0d69d393dd4f569404b7217df2ad15395fc60b65d5"
+          },
+          "original_assessment": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-a25a008-full-root-assessment.json",
+            "sha256": "fe3884de62b4fb54ef948b01b305d5beef2e260cc9b4322b463ae8b1dc4e3692"
+          }
         }
       ],
       "inherited_limits_reset": false,
@@ -2322,12 +2339,37 @@
         "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-layout1-affected.json",
         "sha256": "e2c115fe31b20d8d2b101d0ae4e24f169c7fcb5e85835807907376d06317a4f7"
       },
-      "frozen_candidate_receipt": "v1055-lease-deposit-command-guards-corrected-candidate.json",
+      "frozen_candidate_receipt": "v1055-lease-deposit-command-guards-records1-candidate.json",
       "rejected_candidate": "fa6d068824af09312f316105b6d3ed6cd5391018",
       "correction_evidence": {
         "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-downgrade-message1.json",
         "sha256": "f629190a2c72324bdb538fe21b51f348f67dfefddd4bf0a1a02f4e404ed6a767"
-      }
+      },
+      "initial_complete_stage_review": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-a25a008-full.md",
+        "sha256": "103497f5131dd1c677927c120a5b7419d9bc498353c2016c0e15212d7ce2bdda"
+      },
+      "initial_review_parent_assessment": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-a25a008-full-root-assessment.json",
+        "sha256": "fe3884de62b4fb54ef948b01b305d5beef2e260cc9b4322b463ae8b1dc4e3692"
+      },
+      "parent_findings": [
+        {
+          "id": "CG-RECORD-1",
+          "severity": "LOW",
+          "family": "lease_deposit_command_guard_review_stage_identity",
+          "file": "ops/STATE.json",
+          "line": 5766,
+          "field": "review.stage",
+          "observed": "V1-055-termination-deposit-readiness",
+          "required": "V1-055-lease-deposit-command-guards",
+          "impact": "Current review metadata retains the accepted predecessor stage label despite the new status/base and active command-guard scope; keep exact stage/evidence binding unambiguous in durable records.",
+          "scope": "Records only; no product/source/test/migration change. Preserve all archived predecessor stage labels and accepted evidence.",
+          "automatic_corrections_used": 1,
+          "maximum": 2,
+          "status": "corrected_pending_independent_verification"
+        }
+      ]
     },
     "prior_version_history": "historical_v1_054_closed_current_fields",
     "latest_continuation": {
@@ -3110,7 +3152,7 @@
   "branch": "implementation/foundation",
   "commit": "8a3c0e362f4994b4cad0bff90f746a4d0235eff9",
   "idle_reason": "",
-  "next_action": "Run remaining exact gates for the corrected command-guard candidate, reusing verified unchanged code evidence. Fresh complete-stage independent review must cover all24paths/two commits from accepted8c8d923 with Astra/max/Standard/read-only/never and absolute Python/Git. Preserve downgrade-message correction1of2, two test-only corrections1of2 and every inherited limit. No55publication or next slice before acceptance; full version remains incomplete.",
+  "next_action": "Run applicable exact records gates while reusing unchanged a25a008 product/static/build/graph evidence. Obtain an independent focused CG-RECORD-1 correction review against a25a008, then a fresh independent final COMPLETE24path/threecommit stage review against accepted8c8d923, Astra/max/Standard/read-only/never with absolute Python/Git. Zero unresolved findings required before acceptance. Preserve review-label1of2, prior message1of2/test1of2 families and all inherited limits; no55publication/closure or next slice before acceptance.",
   "active_worker": null,
   "active_card": "0fbb0d8a-2b0e-4097-bfc4-0b48181ad7a2",
   "active_claim": null,
@@ -3118,7 +3160,7 @@
   "active_branch": "implementation/foundation",
   "active_worktree": "/Users/sokompheak/Development/property-rental-management",
   "candidate_sha": null,
-  "candidate_resolution": "Resolve this immutable corrected command-guard candidate through external v1055-lease-deposit-command-guards-corrected-candidate.json; retain fa6d068 and its failed full gate. Subsequent gates and review evidence remain external.",
+  "candidate_resolution": "Resolve the immutable records-corrected command-guard candidate through external v1055-lease-deposit-command-guards-records1-candidate.json. Preserve the initial a25a008 APPROVE0 report, separate parent CG-RECORD-1, fa6d068 failure and all previous evidence; later exact gates/reviews remain external.",
   "candidate_parent": "8a3c0e362f4994b4cad0bff90f746a4d0235eff9",
   "next_candidate": {
     "id": "V1-055",
@@ -3179,7 +3221,7 @@
       "partial_returns": "Re-evaluate against USD-only refunds, not obsolete KHR-refund blocker."
     }
   },
-  "phase": "V1-055 command-guard downgrade message corrected; exact gates and initial complete-stage review pending",
+  "phase": "V1-055 command-guard review-stage identity corrected; records gates and focused/final reviews pending",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -4275,6 +4317,7 @@
     "PASS: V1-041 closure commit d6c05690d06ea06a9ce904c2ed7d976bf816fb6c exact-SHA GitHub Actions run 33173041349; all four jobs"
   ],
   "tests": [
+    "a25a008 full24path/twocommit independent review APPROVE0 and all22gates preserved. Parent CG-RECORD-1 records-only correction1of2 fixes the current review.stage label. Source/tests/migrations/docs unchanged; applicable exact records gates, independent focused correction and fresh final complete-stage review pending.",
     "Preserved fa6d068 full PostgreSQL gate:1349PASS/8FAIL, all8 due solely to uppercase forward-only refusal text. One-character downgrade-message correction1of2 passes all8 affected PostgreSQL cases and fresh format/lint; upgrade SQL, source/tests and previous64affectedPG/15unit/215-file typing remain unchanged. Fresh mandatory full corrected-candidate gate and initial stage review pending.",
     "Command guards:64affected real PostgreSQL cases,15unit cases,215-file typing and216-file formatting/lint PASS. Different-key balance serialization is covered by the existing connected Deposit suite; same-key replay/conflicts, disabled actor, audit rollback and55to56 history/function/ACL/owner preservation are newly exercised.",
     "Both new test corrections remain1of2: established audit-conflict error expectation and test signature line layout, locally verified. Intended baseline11unit/6PG failures plus1PGpass, original lint failure and all inherited evidence/limits preserved. Remaining mandatory exact gates and fresh initial stage review pending.",
@@ -4323,7 +4366,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-055",
-  "timestamp": "2026-09-14T10:24:30.197386+00:00",
+  "timestamp": "2026-09-14T10:53:41.666126+00:00",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -4562,7 +4605,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-14T10:24:30.197386+00:00",
+  "updated_at": "2026-09-14T10:53:41.666126+00:00",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -5762,8 +5805,8 @@
       "sha256": "4e74c8aa1ec979c795b8c62a7854d17e1d6ebeb042e0561785c026620c18d7a6"
     },
     "sequence": "Initial full stage; regression and focused/connected correction verification; final complete corrected stage0; final integrated version0 before publication.",
-    "status": "initial_complete_corrected_command_guard_stage_review_pending",
-    "stage": "V1-055-termination-deposit-readiness",
+    "status": "focused_record_identity_then_final_complete_stage_review_pending",
+    "stage": "V1-055-lease-deposit-command-guards",
     "base_sha": "8c8d92396bb0138bf385212163b86cfe8c122e12",
     "exact_sha": null,
     "findings": null,
@@ -5771,7 +5814,15 @@
       "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-termination-stage-accepted-8a3c0e3.json",
       "sha256": "3886083c79c2b709ed14bd5de436ebd7b18161c7bfdc7cc25f9717d5e4925dd7"
     },
-    "resolution": "Initial complete24path/twocommit review from8c8d923 after corrected exact gates; fa6d068 never independently reviewed and remains preserved with its failed full gate."
+    "resolution": "Run applicable exact records gates while reusing unchanged a25a008 product/static/build/graph evidence. Obtain an independent focused CG-RECORD-1 correction review against a25a008, then a fresh independent final COMPLETE24path/threecommit stage review against accepted8c8d923, Astra/max/Standard/read-only/never with absolute Python/Git. Zero unresolved findings required before acceptance. Preserve review-label1of2, prior message1of2/test1of2 families and all inherited limits; no55publication/closure or next slice before acceptance.",
+    "prior_complete_stage_review": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-a25a008-full.md",
+      "sha256": "103497f5131dd1c677927c120a5b7419d9bc498353c2016c0e15212d7ce2bdda"
+    },
+    "parent_record_finding": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-a25a008-full-root-assessment.json",
+      "sha256": "fe3884de62b4fb54ef948b01b305d5beef2e260cc9b4322b463ae8b1dc4e3692"
+    }
   },
   "historical_v1_047_review": {
     "status": "PASS",
@@ -38419,7 +38470,7 @@
   },
   "v1_055_lease_deposit_command_guards": {
     "id": "V1-055-lease-deposit-command-guards",
-    "status": "bounded_message_correction_verified_exact_gates_review_pending",
+    "status": "review_stage_identity_corrected_exact_gates_focused_final_pending",
     "stage": "Bounded financial-command admission prerequisite to termination disposition orchestration",
     "base": "8c8d92396bb0138bf385212163b86cfe8c122e12",
     "complete_version_base": "bda66062697feef17c8df621b64bf5f607c1c691",
@@ -38630,6 +38681,23 @@
         "failed_candidate": "fa6d068824af09312f316105b6d3ed6cd5391018",
         "upgrade_sql_unchanged": true,
         "inherited_limits_reset": false
+      },
+      {
+        "family": "lease_deposit_command_guard_review_stage_identity",
+        "finding_id": "CG-RECORD-1",
+        "attempt": 1,
+        "maximum": 2,
+        "status": "locally_corrected_gates_focused_and_final_complete_review_pending",
+        "before": "review.stage=V1-055-termination-deposit-readiness",
+        "after": "review.stage=V1-055-lease-deposit-command-guards",
+        "evidence": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-review-label1-attempt.json",
+          "sha256": "f170fae1a49ea9154a85db0d69d393dd4f569404b7217df2ad15395fc60b65d5"
+        },
+        "original_assessment": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-a25a008-full-root-assessment.json",
+          "sha256": "fe3884de62b4fb54ef948b01b305d5beef2e260cc9b4322b463ae8b1dc4e3692"
+        }
       }
     ],
     "inherited_limits_reset": false,
@@ -38647,12 +38715,37 @@
       "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-layout1-affected.json",
       "sha256": "e2c115fe31b20d8d2b101d0ae4e24f169c7fcb5e85835807907376d06317a4f7"
     },
-    "frozen_candidate_receipt": "v1055-lease-deposit-command-guards-corrected-candidate.json",
+    "frozen_candidate_receipt": "v1055-lease-deposit-command-guards-records1-candidate.json",
     "rejected_candidate": "fa6d068824af09312f316105b6d3ed6cd5391018",
     "correction_evidence": {
       "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-downgrade-message1.json",
       "sha256": "f629190a2c72324bdb538fe21b51f348f67dfefddd4bf0a1a02f4e404ed6a767"
-    }
+    },
+    "initial_complete_stage_review": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-a25a008-full.md",
+      "sha256": "103497f5131dd1c677927c120a5b7419d9bc498353c2016c0e15212d7ce2bdda"
+    },
+    "initial_review_parent_assessment": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-a25a008-full-root-assessment.json",
+      "sha256": "fe3884de62b4fb54ef948b01b305d5beef2e260cc9b4322b463ae8b1dc4e3692"
+    },
+    "parent_findings": [
+      {
+        "id": "CG-RECORD-1",
+        "severity": "LOW",
+        "family": "lease_deposit_command_guard_review_stage_identity",
+        "file": "ops/STATE.json",
+        "line": 5766,
+        "field": "review.stage",
+        "observed": "V1-055-termination-deposit-readiness",
+        "required": "V1-055-lease-deposit-command-guards",
+        "impact": "Current review metadata retains the accepted predecessor stage label despite the new status/base and active command-guard scope; keep exact stage/evidence binding unambiguous in durable records.",
+        "scope": "Records only; no product/source/test/migration change. Preserve all archived predecessor stage labels and accepted evidence.",
+        "automatic_corrections_used": 1,
+        "maximum": 2,
+        "status": "corrected_pending_independent_verification"
+      }
+    ]
   },
   "historical_v1_055_deposit_8c8d923_fields": {
     "direct_codex_takeover": {
