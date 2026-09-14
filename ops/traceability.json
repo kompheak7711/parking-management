@@ -31630,6 +31630,76 @@
       "test_path": "backend/tests/test_move_out_inspection_migration.py",
       "status": "implemented",
       "notes": "Operational inspection/finding evidence, preserved corrections, scoped atomic replay and unchanged physical/financial sources; verification pending."
+    },
+    {
+      "test_id": "test_inspection_audit_property_lease_customer_consumers_preserve_full_source",
+      "upstream_ids": [
+        "DB-MOVEOUT-001",
+        "DB-MOVEOUT-002",
+        "BR-MOVEOUT-006",
+        "BR-MOVEOUT-011",
+        "BR-MOVEOUT-012"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_move_out_inspection_consumers_migration.py",
+      "status": "implemented",
+      "notes": "MI-1/MI-2 correction1 regression; actual typed audit readers, complete source preservation, or atomic completion and restricted projection access."
+    },
+    {
+      "test_id": "test_inspection_complete_commands_and_replay_in_both_constraint_modes",
+      "upstream_ids": [
+        "DB-MOVEOUT-001",
+        "DB-MOVEOUT-002",
+        "BR-MOVEOUT-006",
+        "BR-MOVEOUT-011",
+        "BR-MOVEOUT-012"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_move_out_inspection_consumers_migration.py",
+      "status": "implemented",
+      "notes": "MI-1/MI-2 correction1 regression; actual typed audit readers, complete source preservation, or atomic completion and restricted projection access."
+    },
+    {
+      "test_id": "test_inspection_incomplete_or_late_finding_evidence_rejected_in_both_modes",
+      "upstream_ids": [
+        "DB-MOVEOUT-001",
+        "DB-MOVEOUT-002",
+        "BR-MOVEOUT-006",
+        "BR-MOVEOUT-011",
+        "BR-MOVEOUT-012"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_move_out_inspection_consumers_migration.py",
+      "status": "implemented",
+      "notes": "MI-1/MI-2 correction1 regression; actual typed audit readers, complete source preservation, or atomic completion and restricted projection access."
+    },
+    {
+      "test_id": "test_inspection_completion_binds_typed_audit_projection",
+      "upstream_ids": [
+        "DB-MOVEOUT-001",
+        "DB-MOVEOUT-002",
+        "BR-MOVEOUT-006",
+        "BR-MOVEOUT-011",
+        "BR-MOVEOUT-012"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_move_out_inspection_consumers_migration.py",
+      "status": "implemented",
+      "notes": "MI-1/MI-2 correction1 regression; actual typed audit readers, complete source preservation, or atomic completion and restricted projection access."
+    },
+    {
+      "test_id": "test_inspection_audit_projection_remains_internal",
+      "upstream_ids": [
+        "DB-MOVEOUT-001",
+        "DB-MOVEOUT-002",
+        "BR-MOVEOUT-006",
+        "BR-MOVEOUT-011",
+        "BR-MOVEOUT-012"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_move_out_inspection_consumers_migration.py",
+      "status": "implemented",
+      "notes": "MI-1/MI-2 correction1 regression; actual typed audit readers, complete source preservation, or atomic completion and restricted projection access."
     }
   ]
 }

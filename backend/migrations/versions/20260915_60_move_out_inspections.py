@@ -62,6 +62,21 @@ def upgrade() -> None:
             FROM app.move_out_inspections i WHERE i.id=p_inspection
         $$;
 
+        CREATE FUNCTION app.move_out_inspection_audit_snapshot(p_snapshot jsonb)
+        RETURNS jsonb LANGUAGE sql IMMUTABLE STRICT SET search_path=pg_catalog AS $$
+            SELECT jsonb_build_object(
+                'inspection_id',p_snapshot->'id','property_id',p_snapshot->'property_id',
+                'lease_id',p_snapshot->'lease_id','expected_lease_version',p_snapshot->'expected_lease_version',
+                'inspection_date',p_snapshot->'inspection_date','completed_at',p_snapshot->'completed_at',
+                'actor_id',p_snapshot->'completed_by','supersedes_inspection_id',p_snapshot->'supersedes_inspection_id',
+                'inspection_status',p_snapshot->'current_effect','findings_count',jsonb_array_length(p_snapshot->'findings'),
+                'findings',COALESCE((SELECT jsonb_agg(jsonb_build_object(
+                    'finding_id',f->'id','inspection_id',f->'inspection_id','sequence',f->'ordinal',
+                    'pet_related',f->'pet_related','created_at',f->'created_at','actor_id',f->'created_by'
+                ) ORDER BY n) FROM jsonb_array_elements(p_snapshot->'findings') WITH ORDINALITY AS items(f,n)),'[]'::jsonb),
+                'records_physical_departure',false,'financial_completion_assessed',false,'creates_charge',false)
+        $$;
+
         CREATE FUNCTION app.validate_move_out_inspection_source()
         RETURNS trigger LANGUAGE plpgsql SET search_path=pg_catalog AS $$
         DECLARE v_lease app.leases%ROWTYPE; v_prior app.move_out_inspections%ROWTYPE; v_timezone text;
@@ -123,7 +138,11 @@ def upgrade() -> None:
                 OR v_a.actor_id IS DISTINCT FROM v_i.completed_by OR v_a.occurred_at IS DISTINCT FROM v_i.completed_at
                 OR v_a.action IS DISTINCT FROM 'lease.inspection.record' OR v_a.entity_type IS DISTINCT FROM 'move_out_inspection'
                 OR v_a.entity_id IS DISTINCT FROM v_id OR v_a.linked_source_event_id IS DISTINCT FROM v_id
-                OR v_a.correlation_id IS DISTINCT FROM v_c.idempotency_key OR v_a.resulting_state IS DISTINCT FROM v_snapshot
+                OR v_a.correlation_id IS DISTINCT FROM v_c.idempotency_key
+                OR v_a.resulting_state IS DISTINCT FROM app.move_out_inspection_audit_snapshot(v_snapshot)
+                OR v_a.previous_state IS DISTINCT FROM app.move_out_inspection_audit_snapshot(
+                    app.move_out_inspection_snapshot(v_i.supersedes_inspection_id)||jsonb_build_object('current_effect','INSPECTION_ONLY'))
+                OR v_a.authorization_evidence IS DISTINCT FROM jsonb_build_object('capability','leases.inspect','inspection_id',v_id)
                 OR v_a.reason IS DISTINCT FROM v_i.reason OR v_a.authorization_reference IS DISTINCT FROM v_i.authorization_reference
             THEN RAISE EXCEPTION 'Inspection source, command and audit evidence must agree' USING ERRCODE='23514'; END IF;
             RETURN NEW;
@@ -219,6 +238,10 @@ def upgrade() -> None:
                 IF EXISTS(SELECT 1 FROM app.move_out_inspections WHERE supersedes_inspection_id=v_supersedes)
                 THEN RAISE EXCEPTION 'Inspection correction source changed' USING ERRCODE='P5M03'; END IF;
             END IF;
+            -- Build only these new linked sources with deferred completion, even when
+            -- the caller requested immediate constraints. Validate before returning.
+            SET CONSTRAINTS app.move_out_inspections_complete,app.inspection_damage_findings_complete,
+                app.move_out_inspection_commands_complete DEFERRED;
             INSERT INTO app.move_out_inspections VALUES(v_i,p_property,p_lease,v_version,v_date,p_intent->>'result_text',v_now,p_actor,
                 p_intent->>'authorization_reference',p_intent->>'evidence_reference',p_intent->>'reason',v_supersedes);
             v_ordinal:=0;
@@ -232,11 +255,14 @@ def upgrade() -> None:
                 authorization_reference,property_id,previous_state,resulting_state,correlation_id,source,outcome,
                 authorization_evidence,linked_source_event_id,customer_id,lease_id)
             VALUES(v_audit,v_now,timezone(v_timezone,v_now)::date,p_actor,'lease.inspection.record','move_out_inspection',v_i,
-                p_intent->>'reason',p_intent->>'authorization_reference',p_property,v_previous,v_result,p_key,'API','SUCCEEDED',
-                jsonb_build_object('capability','leases.inspect','evidence_reference',p_intent->>'evidence_reference'),
+                p_intent->>'reason',p_intent->>'authorization_reference',p_property,app.move_out_inspection_audit_snapshot(v_previous),
+                app.move_out_inspection_audit_snapshot(v_result),p_key,'API','SUCCEEDED',
+                jsonb_build_object('capability','leases.inspect','inspection_id',v_i),
                 v_i,v_lease.primary_tenant_id,p_lease);
             v_response:=jsonb_build_object('data',v_result,'meta',jsonb_build_object('request_id',p_request_id));
             INSERT INTO app.move_out_inspection_commands VALUES(p_property,p_actor,p_key,p_lease,v_i,v_audit,p_digest,p_intent,v_response,v_now);
+            SET CONSTRAINTS app.move_out_inspections_complete,app.inspection_damage_findings_complete,
+                app.move_out_inspection_commands_complete IMMEDIATE;
             RETURN jsonb_build_object('status_code',201,'body',v_response);
         END $$;
     """)
@@ -256,6 +282,7 @@ def upgrade() -> None:
         """)
     for signature in (
         "app.move_out_inspection_snapshot(uuid)",
+        "app.move_out_inspection_audit_snapshot(jsonb)",
         "app.validate_move_out_inspection_source()",
         "app.validate_inspection_finding_source()",
         "app.validate_move_out_inspection_complete()",

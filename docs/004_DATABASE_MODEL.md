@@ -1328,7 +1328,21 @@ does not update the Lease version or invoke physical/financial writer triggers.
 `move_out_inspection_commands` retains the Property/actor/key, exact intent/digest,
 Lease and inspection identities, original response, completion time, and typed
 audit-event identity. Deferred completion checks require the full finding set,
-inspection, command and audit to agree atomically. All three new tables reject
+inspection, command and audit to agree atomically. The command defers only the
+three new completion constraints while assembling those rows and makes them
+immediate before returning. This supports either caller mode and same-transaction
+corrections; unrelated constraint modes are unchanged. The three named constraints
+remain immediate after a successful new command; replay does not change their mode.
+
+Audit snapshots use a private immutable projection of inspection/finding identities,
+dates, actor, status, ordered sequences, counts and explicit false effect flags.
+The shared audit classifier and Property/Lease/Customer readers remain unchanged.
+Full narratives, authorization/evidence references and original response data stay
+in immutable inspection/finding/command source records without truncation. Audit
+authorization evidence links the scoped capability to the inspection identity.
+Completion checks bind both typed audit states and authorization linkage to the
+original source, while command responses retain the full snapshot. A later
+correction does not rewrite the original response or its recorded audit status. All three new tables reject
 updates, deletion and truncation. Corrections append a new inspection/finding set
 and explicitly supersede one current same-Lease inspection; original commands
 continue to return their original response. Old findings are never repurposed.

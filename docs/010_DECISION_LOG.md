@@ -912,3 +912,26 @@ Inspection data alone does not remove the deferred DAMAGE_CHARGES source restric
 Current migration60, regression and mandatory gates and fresh independent full-stage
 review remain pending at this implementation checkpoint. Whole V1-055 remains
 incomplete and unpublished; no V1-056 activation or Settlement closure is authorized.
+
+
+### V1-055 inspection MI-1/MI-2 correction checkpoint
+
+The initial complete-stage review of retained8f8f496 rejected two MEDIUM findings:
+raw inspection snapshots were incompatible with the existing typed audit reader,
+and immediate completion constraints ran before linked command evidence existed.
+All original22 passing gates and the rejected report remain preserved.
+
+The bounded correction keeps full inspection narratives and original responses in
+their immutable source records and writes a private typed projection to audit
+states. It changes no shared audit policy or read authorization. Completion binds
+that projection, prior source and typed authorization linkage to the source rows.
+Only the three new completeness constraints are deferred during construction and
+checked before return; unrelated constraints retain their mode. Successful new
+commands leave those three constraints immediate, and exact replay does not alter
+the caller's mode. Original and correcting commands remain atomic.
+
+MI-1 and MI-2 each consume correction1of2; prior layout2of2, audit fixture1of2 and
+every older correction limit remain unchanged. New actual audit-consumer and
+transaction-mode regressions, mandatory gates, expanded focused exact-SHA review
+and fresh complete-stage review are pending. No inspection-stage acceptance,
+whole V1-055 publication or financial-policy decision is implied by this change.

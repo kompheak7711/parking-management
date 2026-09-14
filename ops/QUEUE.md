@@ -1,3 +1,15 @@
+# Current — Inspection correction exact gates and independent reviews
+
+Verify remaining exact correction gates, reusing matching1462-case PostgreSQL/static and unchanged frontend evidence. Then fresh expanded focused MI-1/MI-2 review from8f8f496 and fresh full corrected27-path stage review from79314cc. Preserve all attempts and failed checkpoints. Whole55 incomplete/unpublished; no56.
+
+Earlier queue follows unchanged.
+
+# Current — Inspection MI-1/MI-2 correction1
+
+Implement bounded MI-1/MI-2 correction1of2 each under recorded scope; verify audit-query consumers and immediate/deferred command modes, required gates, expanded focused exact-SHA review and fresh complete-stage review. Preserve rejected8f8f496, prior layout2of2/audit fixture1of2 and all evidence. No whole55 publication or56.
+
+Earlier queue follows unchanged.
+
 # Current queue — Inspection exact gates and independent review
 
 Run remaining exact inspection-stage gates using the completed1442-case PostgreSQL gate and unchanged43unit/static/frontend evidence by identity. Require a fresh independent complete26-path/one-commit review from79314cc with Astra/max/Standard/read-only/never and absolute Python/Git. Preserve test-layout2of2 and audit-fixture1of2. Financial attribution policy remains pending; whole V1-055 incomplete/unpublished and no56 activation.

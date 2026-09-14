@@ -2068,7 +2068,7 @@
     "followup_prompt_sha256": "6f9ff29a0be7bde095026c825e03708ff91fbff25c7c734afb0b7e68246f74ee",
     "live_handoff_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-v1054-v1060-live.md",
     "current_version": "V1-055",
-    "phase": "move_out_inspection_candidate_pending",
+    "phase": "inspection_correction1_candidate_pending",
     "activated_at": "2026-09-11T02:56:22.881391+00:00",
     "predecessor_closed": true,
     "predecessor_sha": "bda66062697feef17c8df621b64bf5f607c1c691",
@@ -2088,13 +2088,13 @@
     "scope_sha256": "8da3b58eab28350341e3faa29ba8947e59f3f019d931724957be5425023652ac",
     "cumulative_review_base": "bda66062697feef17c8df621b64bf5f607c1c691",
     "candidate_sha": null,
-    "candidate_resolution": "Resolve this immutable operational inspection candidate through external v1055-move-out-inspection-candidate.json. Subsequent exact gates and independent review evidence remain external.",
-    "candidate_status": "normal_local_inspection_candidate_prepared",
+    "candidate_resolution": "Resolve this immutable inspection correction through external v1055-move-out-inspection-correction1-candidate.json; subsequent evidence remains external.",
+    "candidate_status": "normal_local_inspection_correction1_prepared",
     "owner_action_required": false,
-    "next_action": "Run remaining exact inspection-stage gates using the completed1442-case PostgreSQL gate and unchanged43unit/static/frontend evidence by identity. Require a fresh independent complete26-path/one-commit review from79314cc with Astra/max/Standard/read-only/never and absolute Python/Git. Preserve test-layout2of2 and audit-fixture1of2. Financial attribution policy remains pending; whole V1-055 incomplete/unpublished and no56 activation.",
+    "next_action": "Verify remaining exact correction gates, reusing matching1462-case PostgreSQL/static and unchanged frontend evidence. Then fresh expanded focused MI-1/MI-2 review from8f8f496 and fresh full corrected27-path stage review from79314cc. Preserve all attempts and failed checkpoints. Whole55 incomplete/unpublished; no56.",
     "active_slice": {
       "id": "V1-055-move-out-inspection",
-      "status": "implemented_affected_verified_exact_gates_review_pending",
+      "status": "correction1_locally_verified_exact_gates_and_reviews_pending",
       "base": "79314cc43da4f208bfaccb1fbd5571aa14f5de86",
       "complete_version_base": "bda66062697feef17c8df621b64bf5f607c1c691",
       "paths": [
@@ -2321,14 +2321,75 @@
       },
       "product_accepted": false,
       "preliminary_evidence": {
-        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-move-out-inspection-audit-fixture1-checks.json",
-        "sha256": "17a6321e42c64d6b54c3bec27caa216e2c42567743899b2c8af6ce6f27a454f1"
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-move-out-inspection-correction1-pg-recovery1-checks.json",
+        "sha256": "74172c5c470a4d26d240d4a1dd50fd52f18291513f058bf380fd1a8ced9fefbc"
       },
-      "frozen_candidate_receipt": "v1055-move-out-inspection-candidate.json",
+      "frozen_candidate_receipt": "v1055-move-out-inspection-correction1-candidate.json",
       "scope_receipt": {
         "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-move-out-inspection-audit-fixture1-scope.json",
         "sha256": "95b6fe8285a2fa4356ba671c3714798489a34417c08ae57443068931395b1d06"
-      }
+      },
+      "scope_correction": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-move-out-inspection-correction1-scope.json",
+        "sha256": "f6cc01ffb89a96abba48f253f0f9377049f6028640b04202c639a4329402470b"
+      },
+      "original_rejection": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-move-out-inspection-8f8f496-full-root-assessment.json",
+        "sha256": "518e5f12deca5f43df946791bf37fe5de96f73bbee675a83b1b412fced998902"
+      },
+      "new_finding_corrections": [
+        {
+          "id": "MI-1",
+          "severity": "MEDIUM",
+          "family": "inspection_audit_reader_compatibility",
+          "attempt": 1,
+          "maximum": 2,
+          "file": "backend/migrations/versions/20260915_60_move_out_inspections.py",
+          "line": 230,
+          "finding": "Full inspection snapshots use fields rejected by the existing audit classifier, so existing Property/Lease/Customer audit reads can raise ValueError.",
+          "parent_basis": "Inspected the new audit insertion plus audit_api._event/_freeze_loaded and audit._validate_classified_audit_text. Bare id and unclassified result_text are incompatible even for ordinary successful inspections. Existing tests inspect raw rows and do not cover this consumer.",
+          "bounded_correction": "Provide a compatible typed audit representation or a narrow reader integration while retaining immutable inspection/finding evidence, original responses and existing secret protections. Do not weaken the general audit classifier.",
+          "required_regressions": "Actual authorized Property/Lease/Customer audit-query round trips for original and correcting inspections, empty findings, maximum supported evidence and preserved originals.",
+          "status": "locally_verified_expanded_focused_and_full_stage_review_pending",
+          "verification": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-move-out-inspection-correction1-pg-recovery1-checks.json",
+            "sha256": "74172c5c470a4d26d240d4a1dd50fd52f18291513f058bf380fd1a8ced9fefbc"
+          }
+        },
+        {
+          "id": "MI-2",
+          "severity": "MEDIUM",
+          "family": "inspection_immediate_completion_constraints",
+          "attempt": 1,
+          "maximum": 2,
+          "file": "backend/migrations/versions/20260915_60_move_out_inspections.py",
+          "line": 222,
+          "finding": "The first inspection insert runs completeness checking before command evidence exists when a legitimate caller uses immediate constraint checking.",
+          "parent_basis": "The function inserts inspection, findings, audit and command sequentially without managing its new constraint modes; the completion trigger rejects a missing command at line109. Existing direct command success tests use default deferred mode.",
+          "bounded_correction": "Manage only the new completeness constraints inside the atomic command, preserving completion checks and rejection of partial history.",
+          "required_regressions": "Creation, correction, replay and same-transaction sequences under immediate/deferred modes; retain incomplete-record and late-finding rejection and concurrent behavior.",
+          "status": "locally_verified_expanded_focused_and_full_stage_review_pending",
+          "verification": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-move-out-inspection-correction1-pg-recovery1-checks.json",
+            "sha256": "74172c5c470a4d26d240d4a1dd50fd52f18291513f058bf380fd1a8ced9fefbc"
+          }
+        }
+      ],
+      "correction_implementation": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-move-out-inspection-correction1-implementation.json",
+        "sha256": "d014179028d3b3bbe5ab4fa1198ccf4881c8c04bf223067dfaa6b584c11e41e3"
+      },
+      "correction_checks": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-move-out-inspection-correction1-checks.json",
+        "sha256": "5584e4a0ec645a32de202dd9e36d614714af22f938117aa7c8bb675a78de2e70"
+      },
+      "correction_checks_status": "affected_passed",
+      "source_correction_applied": true,
+      "runtime_recovery": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-move-out-inspection-correction1-pg-recovery1-checks.json",
+        "sha256": "74172c5c470a4d26d240d4a1dd50fd52f18291513f058bf380fd1a8ced9fefbc"
+      },
+      "runtime_recovery_status": "affected_passed"
     },
     "prior_version_history": "historical_v1_054_closed_current_fields",
     "latest_continuation": {
@@ -3065,7 +3126,7 @@
     "implementation_started": true,
     "implementation_completed": false,
     "publication_completed": false,
-    "product_implementation_gate": "Inspection affected gates pass; remaining exact/full-stage review and whole-version work pending."
+    "product_implementation_gate": "Inspection correction affected gates pass; exact/full-stage and integrated version acceptance remain required."
   },
   "historical_v1_047_approval": {
     "status": "active",
@@ -3115,7 +3176,7 @@
   "branch": "implementation/foundation",
   "commit": "8a3c0e362f4994b4cad0bff90f746a4d0235eff9",
   "idle_reason": "",
-  "next_action": "Run remaining exact inspection-stage gates using the completed1442-case PostgreSQL gate and unchanged43unit/static/frontend evidence by identity. Require a fresh independent complete26-path/one-commit review from79314cc with Astra/max/Standard/read-only/never and absolute Python/Git. Preserve test-layout2of2 and audit-fixture1of2. Financial attribution policy remains pending; whole V1-055 incomplete/unpublished and no56 activation.",
+  "next_action": "Verify remaining exact correction gates, reusing matching1462-case PostgreSQL/static and unchanged frontend evidence. Then fresh expanded focused MI-1/MI-2 review from8f8f496 and fresh full corrected27-path stage review from79314cc. Preserve all attempts and failed checkpoints. Whole55 incomplete/unpublished; no56.",
   "active_worker": null,
   "active_card": "0fbb0d8a-2b0e-4097-bfc4-0b48181ad7a2",
   "active_claim": null,
@@ -3123,7 +3184,7 @@
   "active_branch": "implementation/foundation",
   "active_worktree": "/Users/sokompheak/Development/property-rental-management",
   "candidate_sha": null,
-  "candidate_resolution": "Resolve this immutable operational inspection candidate through external v1055-move-out-inspection-candidate.json. Subsequent exact gates and independent review evidence remain external.",
+  "candidate_resolution": "Resolve this immutable inspection correction through external v1055-move-out-inspection-correction1-candidate.json; subsequent evidence remains external.",
   "candidate_parent": "8a3c0e362f4994b4cad0bff90f746a4d0235eff9",
   "next_candidate": {
     "id": "V1-055",
@@ -3184,7 +3245,7 @@
       "partial_returns": "Re-evaluate against USD-only refunds, not obsolete KHR-refund blocker."
     }
   },
-  "phase": "V1-055 operational inspection implemented; exact gates and independent review pending",
+  "phase": "V1-055 inspection correction1 locally verified; exact gates and independent reviews pending",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -4280,6 +4341,7 @@
     "PASS: V1-041 closure commit d6c05690d06ea06a9ce904c2ed7d976bf816fb6c exact-SHA GitHub Actions run 33173041349; all four jobs"
   ],
   "tests": [
+    "Inspection correction1:1462fullPostgreSQL/no skips including20new consumer/constraint cases;228formatted/linted and227typed pass. Prior43unit and all22original gates preserved. MI-1/MI-2 each1of2; independent reviews pending.",
     "Inspection43unit and1442fullPostgreSQL/no skips pass;227files formatted/linted and226typed. Corrected audit rejection fixture1of2; test-layout2of2. Original1441PASS/1FAIL and both style checkpoints preserved.",
     "Accepted79314cc all22 gates and focused/final full-stage APPROVE0 preserved; new inspection checks not run.",
     "Unchanged413f4c7 all22 gates preserved; documentation-only ICB-1 correction requires fresh records checks, no product-suite rerun.",
@@ -4345,7 +4407,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-055",
-  "timestamp": "2026-09-14T20:38:38.694870+00:00",
+  "timestamp": "2026-09-14T22:02:48.318154+00:00",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -4584,7 +4646,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-14T20:38:38.694870+00:00",
+  "updated_at": "2026-09-14T22:02:48.318154+00:00",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -5784,16 +5846,43 @@
       "sha256": "4e74c8aa1ec979c795b8c62a7854d17e1d6ebeb042e0561785c026620c18d7a6"
     },
     "sequence": "Initial full stage; regression and focused/connected correction verification; final complete corrected stage0; final integrated version0 before publication.",
-    "status": "initial_complete_move_out_inspection_review_pending",
+    "status": "inspection_correction1_expanded_focused_then_full_pending",
     "stage": "V1-055-move-out-inspection",
     "base_sha": "79314cc43da4f208bfaccb1fbd5571aa14f5de86",
     "exact_sha": null,
-    "findings": null,
+    "findings": [
+      {
+        "id": "MI-1",
+        "severity": "MEDIUM",
+        "family": "inspection_audit_reader_compatibility",
+        "attempt": 0,
+        "maximum": 2,
+        "file": "backend/migrations/versions/20260915_60_move_out_inspections.py",
+        "line": 230,
+        "finding": "Full inspection snapshots use fields rejected by the existing audit classifier, so existing Property/Lease/Customer audit reads can raise ValueError.",
+        "parent_basis": "Inspected the new audit insertion plus audit_api._event/_freeze_loaded and audit._validate_classified_audit_text. Bare id and unclassified result_text are incompatible even for ordinary successful inspections. Existing tests inspect raw rows and do not cover this consumer.",
+        "bounded_correction": "Provide a compatible typed audit representation or a narrow reader integration while retaining immutable inspection/finding evidence, original responses and existing secret protections. Do not weaken the general audit classifier.",
+        "required_regressions": "Actual authorized Property/Lease/Customer audit-query round trips for original and correcting inspections, empty findings, maximum supported evidence and preserved originals."
+      },
+      {
+        "id": "MI-2",
+        "severity": "MEDIUM",
+        "family": "inspection_immediate_completion_constraints",
+        "attempt": 0,
+        "maximum": 2,
+        "file": "backend/migrations/versions/20260915_60_move_out_inspections.py",
+        "line": 222,
+        "finding": "The first inspection insert runs completeness checking before command evidence exists when a legitimate caller uses immediate constraint checking.",
+        "parent_basis": "The function inserts inspection, findings, audit and command sequentially without managing its new constraint modes; the completion trigger rejects a missing command at line109. Existing direct command success tests use default deferred mode.",
+        "bounded_correction": "Manage only the new completeness constraints inside the atomic command, preserving completion checks and rejection of partial history.",
+        "required_regressions": "Creation, correction, replay and same-transaction sequences under immediate/deferred modes; retain incomplete-record and late-finding rejection and concurrent behavior."
+      }
+    ],
     "prior_termination_acceptance": {
       "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-termination-stage-accepted-8a3c0e3.json",
       "sha256": "3886083c79c2b709ed14bd5de436ebd7b18161c7bfdc7cc25f9717d5e4925dd7"
     },
-    "resolution": "Fresh complete26-path/one-commit review follows exact gates. Earlier completed reviews remain preserved.",
+    "resolution": "MI-1/MI-2 locally verified; fresh expanded focused then complete corrected stage reviews required before acceptance.",
     "prior_complete_stage_review": {
       "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-a25a008-full.md",
       "sha256": "103497f5131dd1c677927c120a5b7419d9bc498353c2016c0e15212d7ce2bdda"
@@ -5817,7 +5906,12 @@
     "prior_invoice_boundary_acceptance": {
       "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-invoice-correction-boundary-stage-accepted-79314cc.json",
       "sha256": "27c9e26f56da7b668f547adbd20ef8b21d7d72e2fd2559138db145e962de20ea"
-    }
+    },
+    "original_inspection_rejection": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-move-out-inspection-8f8f496-full-root-assessment.json",
+      "sha256": "518e5f12deca5f43df946791bf37fe5de96f73bbee675a83b1b412fced998902"
+    },
+    "correction_base": "8f8f49631c44db4c81d3b37095ce58c61926f9ba"
   },
   "historical_v1_047_review": {
     "status": "PASS",
@@ -44474,7 +44568,7 @@
   },
   "v1_055_move_out_inspection": {
     "id": "V1-055-move-out-inspection",
-    "status": "implemented_affected_verified_exact_gates_review_pending",
+    "status": "correction1_locally_verified_exact_gates_and_reviews_pending",
     "base": "79314cc43da4f208bfaccb1fbd5571aa14f5de86",
     "complete_version_base": "bda66062697feef17c8df621b64bf5f607c1c691",
     "paths": [
@@ -44701,14 +44795,75 @@
     },
     "product_accepted": false,
     "preliminary_evidence": {
-      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-move-out-inspection-audit-fixture1-checks.json",
-      "sha256": "17a6321e42c64d6b54c3bec27caa216e2c42567743899b2c8af6ce6f27a454f1"
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-move-out-inspection-correction1-pg-recovery1-checks.json",
+      "sha256": "74172c5c470a4d26d240d4a1dd50fd52f18291513f058bf380fd1a8ced9fefbc"
     },
-    "frozen_candidate_receipt": "v1055-move-out-inspection-candidate.json",
+    "frozen_candidate_receipt": "v1055-move-out-inspection-correction1-candidate.json",
     "scope_receipt": {
       "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-move-out-inspection-audit-fixture1-scope.json",
       "sha256": "95b6fe8285a2fa4356ba671c3714798489a34417c08ae57443068931395b1d06"
-    }
+    },
+    "scope_correction": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-move-out-inspection-correction1-scope.json",
+      "sha256": "f6cc01ffb89a96abba48f253f0f9377049f6028640b04202c639a4329402470b"
+    },
+    "original_rejection": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-move-out-inspection-8f8f496-full-root-assessment.json",
+      "sha256": "518e5f12deca5f43df946791bf37fe5de96f73bbee675a83b1b412fced998902"
+    },
+    "new_finding_corrections": [
+      {
+        "id": "MI-1",
+        "severity": "MEDIUM",
+        "family": "inspection_audit_reader_compatibility",
+        "attempt": 1,
+        "maximum": 2,
+        "file": "backend/migrations/versions/20260915_60_move_out_inspections.py",
+        "line": 230,
+        "finding": "Full inspection snapshots use fields rejected by the existing audit classifier, so existing Property/Lease/Customer audit reads can raise ValueError.",
+        "parent_basis": "Inspected the new audit insertion plus audit_api._event/_freeze_loaded and audit._validate_classified_audit_text. Bare id and unclassified result_text are incompatible even for ordinary successful inspections. Existing tests inspect raw rows and do not cover this consumer.",
+        "bounded_correction": "Provide a compatible typed audit representation or a narrow reader integration while retaining immutable inspection/finding evidence, original responses and existing secret protections. Do not weaken the general audit classifier.",
+        "required_regressions": "Actual authorized Property/Lease/Customer audit-query round trips for original and correcting inspections, empty findings, maximum supported evidence and preserved originals.",
+        "status": "locally_verified_expanded_focused_and_full_stage_review_pending",
+        "verification": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-move-out-inspection-correction1-pg-recovery1-checks.json",
+          "sha256": "74172c5c470a4d26d240d4a1dd50fd52f18291513f058bf380fd1a8ced9fefbc"
+        }
+      },
+      {
+        "id": "MI-2",
+        "severity": "MEDIUM",
+        "family": "inspection_immediate_completion_constraints",
+        "attempt": 1,
+        "maximum": 2,
+        "file": "backend/migrations/versions/20260915_60_move_out_inspections.py",
+        "line": 222,
+        "finding": "The first inspection insert runs completeness checking before command evidence exists when a legitimate caller uses immediate constraint checking.",
+        "parent_basis": "The function inserts inspection, findings, audit and command sequentially without managing its new constraint modes; the completion trigger rejects a missing command at line109. Existing direct command success tests use default deferred mode.",
+        "bounded_correction": "Manage only the new completeness constraints inside the atomic command, preserving completion checks and rejection of partial history.",
+        "required_regressions": "Creation, correction, replay and same-transaction sequences under immediate/deferred modes; retain incomplete-record and late-finding rejection and concurrent behavior.",
+        "status": "locally_verified_expanded_focused_and_full_stage_review_pending",
+        "verification": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-move-out-inspection-correction1-pg-recovery1-checks.json",
+          "sha256": "74172c5c470a4d26d240d4a1dd50fd52f18291513f058bf380fd1a8ced9fefbc"
+        }
+      }
+    ],
+    "correction_implementation": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-move-out-inspection-correction1-implementation.json",
+      "sha256": "d014179028d3b3bbe5ab4fa1198ccf4881c8c04bf223067dfaa6b584c11e41e3"
+    },
+    "correction_checks": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-move-out-inspection-correction1-checks.json",
+      "sha256": "5584e4a0ec645a32de202dd9e36d614714af22f938117aa7c8bb675a78de2e70"
+    },
+    "correction_checks_status": "affected_passed",
+    "source_correction_applied": true,
+    "runtime_recovery": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-move-out-inspection-correction1-pg-recovery1-checks.json",
+      "sha256": "74172c5c470a4d26d240d4a1dd50fd52f18291513f058bf380fd1a8ced9fefbc"
+    },
+    "runtime_recovery_status": "affected_passed"
   },
   "historical_v1_055_invoice_boundary_79314cc_fields": {
     "direct_codex_takeover": {
@@ -45305,5 +45460,703 @@
       }
     },
     "commit_role": "Strict direct integer cents and controlled termination credit-Adjustment/VOID integration; no debit due-date or version acceptance."
+  },
+  "historical_v1_055_inspection_8f8f496_fields": {
+    "direct_codex_takeover": {
+      "execution_owner": "direct_codex",
+      "authorization_from": "V1-054",
+      "authorization_through": "V1-060",
+      "policy_path": "ops/CODEX_TAKEOVER_V1_054_060.md",
+      "policy_sha256": "e91f8e59e422cac95134cdec07f3ff9feac53491e7cedd374f8b16119ea07ff0",
+      "coordinator": {
+        "model": "gpt-6-astra",
+        "reasoning": "xhigh",
+        "mode": "Fast",
+        "service_tier": "priority"
+      },
+      "implementation": {
+        "model": "gpt-6-astra",
+        "reasoning": "xhigh",
+        "mode": "Fast",
+        "service_tier": "priority"
+      },
+      "reviewer": {
+        "model": "gpt-6-astra",
+        "reasoning": "max",
+        "mode": "Standard",
+        "service_tier": "default",
+        "read_only": true,
+        "sandbox": "read-only",
+        "approval_policy": "never"
+      },
+      "publication_remote": "git@github.com:kompheak7711/property-rental-management.git",
+      "publication_branch": "implementation/foundation",
+      "openclaw_enabled": false,
+      "openclaw_dispatch_allowed": false,
+      "openclaw_supervisor_job_id": "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
+      "openclaw_legacy_heartbeat_id": "7c7b5418-7440-480d-87d9-fcb71097d4cc",
+      "coordinator_transfer": {
+        "status": "released",
+        "current_task_id": "01a07991-38a6-7f33-b84d-0ad0620e2997",
+        "historical_transfer_evidence": "historical_v1_053_closed_current_fields.direct_codex_takeover.coordinator_transfer",
+        "transfer_time_checkout_not_current_checkout": true
+      },
+      "standing_independent_review_authorization": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-v1054-v1060-owner-authorization.json",
+        "sha256": "9d3773b792aedfd2219df8365ec566ac2000edfb4660f6291589fd7b3946b4aa"
+      },
+      "standing_github_publication_authorization": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-v1054-v1060-owner-authorization.json",
+        "sha256": "9d3773b792aedfd2219df8365ec566ac2000edfb4660f6291589fd7b3946b4aa"
+      },
+      "standing_workboard_authorization": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-v1054-v1060-owner-authorization.json",
+        "sha256": "9d3773b792aedfd2219df8365ec566ac2000edfb4660f6291589fd7b3946b4aa"
+      },
+      "followup_id": "property-rental-v1-047-closure-follow-up",
+      "followup_status": "ACTIVE",
+      "followup_prompt_characters": 15560,
+      "followup_prompt_sha256": "6f9ff29a0be7bde095026c825e03708ff91fbff25c7c734afb0b7e68246f74ee",
+      "live_handoff_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-v1054-v1060-live.md",
+      "current_version": "V1-055",
+      "phase": "move_out_inspection_candidate_pending",
+      "activated_at": "2026-09-11T02:56:22.881391+00:00",
+      "predecessor_closed": true,
+      "predecessor_sha": "bda66062697feef17c8df621b64bf5f607c1c691",
+      "predecessor_closure_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1054-closure-verification.json",
+      "predecessor_closure_receipt_sha256": "d6687cf2d4ef1e5ddbeff176f44f9b45b3917d9a8a88400f3a08ac57837805b9",
+      "predecessor_ci_run": 34555185267,
+      "predecessor_ci_attempt": 1,
+      "card_id": "0fbb0d8a-2b0e-4097-bfc4-0b48181ad7a2",
+      "workboard_status": "blocked",
+      "workboard_block_reason": "Tracking-only blocks OpenClaw admission; sole direct Codex implementation authorized.",
+      "worker_kind": "direct_root_codex",
+      "worker_task_id": "01a07991-38a6-7f33-b84d-0ad0620e2997",
+      "worker_status": "no_worker_pending_exact_gates",
+      "branch": "implementation/foundation",
+      "worktree": "/Users/sokompheak/Development/property-rental-management",
+      "scope_path": "ops/V1_055_SCOPE.md",
+      "scope_sha256": "8da3b58eab28350341e3faa29ba8947e59f3f019d931724957be5425023652ac",
+      "cumulative_review_base": "bda66062697feef17c8df621b64bf5f607c1c691",
+      "candidate_sha": null,
+      "candidate_resolution": "Resolve this immutable operational inspection candidate through external v1055-move-out-inspection-candidate.json. Subsequent exact gates and independent review evidence remain external.",
+      "candidate_status": "normal_local_inspection_candidate_prepared",
+      "owner_action_required": false,
+      "next_action": "Run remaining exact inspection-stage gates using the completed1442-case PostgreSQL gate and unchanged43unit/static/frontend evidence by identity. Require a fresh independent complete26-path/one-commit review from79314cc with Astra/max/Standard/read-only/never and absolute Python/Git. Preserve test-layout2of2 and audit-fixture1of2. Financial attribution policy remains pending; whole V1-055 incomplete/unpublished and no56 activation.",
+      "active_slice": {
+        "id": "V1-055-move-out-inspection",
+        "status": "implemented_affected_verified_exact_gates_review_pending",
+        "base": "79314cc43da4f208bfaccb1fbd5571aa14f5de86",
+        "complete_version_base": "bda66062697feef17c8df621b64bf5f607c1c691",
+        "paths": [
+          "backend/migrations/versions/20260915_60_move_out_inspections.py",
+          "backend/src/property_rental/move_out_inspection.py",
+          "backend/tests/test_audit_migration.py",
+          "backend/tests/test_billing_service_migration.py",
+          "backend/tests/test_credit_refund_read_migration.py",
+          "backend/tests/test_customer_ledger_migration.py",
+          "backend/tests/test_customer_ledger_read_migration.py",
+          "backend/tests/test_financial_action_context_migration.py",
+          "backend/tests/test_invoice_migration.py",
+          "backend/tests/test_late_payment_migration.py",
+          "backend/tests/test_lease_api_migration.py",
+          "backend/tests/test_lease_enforcement_api_migration.py",
+          "backend/tests/test_migrations.py",
+          "backend/tests/test_move_out_inspection.py",
+          "backend/tests/test_move_out_inspection_migration.py",
+          "backend/tests/test_payment_reversal_context_migration.py",
+          "backend/tests/test_utility_api_migration.py",
+          "backend/tests/test_utility_consumption_migration.py",
+          "backend/tests/test_utility_meter_migration.py",
+          "docs/004_DATABASE_MODEL.md",
+          "docs/010_DECISION_LOG.md",
+          "ops/NOW.md",
+          "ops/QUEUE.md",
+          "ops/STATE.json",
+          "ops/traceability.json",
+          "scripts/database-test.sh"
+        ],
+        "current_head_fixture_paths": [
+          "backend/tests/test_billing_service_migration.py",
+          "backend/tests/test_credit_refund_read_migration.py",
+          "backend/tests/test_customer_ledger_migration.py",
+          "backend/tests/test_customer_ledger_read_migration.py",
+          "backend/tests/test_financial_action_context_migration.py",
+          "backend/tests/test_invoice_migration.py",
+          "backend/tests/test_late_payment_migration.py",
+          "backend/tests/test_lease_api_migration.py",
+          "backend/tests/test_lease_enforcement_api_migration.py",
+          "backend/tests/test_migrations.py",
+          "backend/tests/test_payment_reversal_context_migration.py",
+          "backend/tests/test_utility_api_migration.py",
+          "backend/tests/test_utility_consumption_migration.py",
+          "backend/tests/test_utility_meter_migration.py"
+        ],
+        "migration_revision": "20260915_60",
+        "stage": "Operational inspection evidence and typed findings, independent of financial attribution",
+        "included": [
+          "Add canonical move_out_inspections and inspection_damage_findings with permanent typed identities, exact Lease linkage, authorized actor/date/result evidence, strict boolean pet-related classification and bounded text/findings.",
+          "Append original or correcting inspection and finding sets through an atomic command. A correction explicitly references one prior unsuperseded inspection on the same Lease; retain all prior evidence and exact original command results.",
+          "Require exact leases.inspect capability and Property scope before persistence, leases.read for bounded observations; freshly validate active HUMAN, exact Lease Property, signed/terminated Lease and expected Lease version at storage. Do not add grants or change existing permissions.",
+          "Use the existing protected notice text and Lease scope helpers without altering them. Serialize the command key and Lease, use bounded transaction timeouts, compare complete intent and source identity for exact replay, and bind immutable command/audit evidence.",
+          "Add bounded inspection reads, with current/superseded status and findings; physical departure and financial completion remain unassessed. No mutation of Lease, Occupancy, Unit, Meter, Invoice, Deposit, Payment or Credit.",
+          "Prove supported59-to60 migration preserves existing rows, function definitions and permissions; add required full-database suite and update only current-head fixture pins, preserving historical58-to59 proof.",
+          "Materialize accepted79314cc and resolvedICB-1 through immutable receipts while archiving every changed prior STATE root and preserving all queue/review/failure/correction history."
+        ],
+        "excluded": [
+          "No physical occupancy-date or Unit status mutation in this bounded stage; the utility responsibility guard and lifecycle lock interaction require their own connected stage.",
+          "No damage amounts, charge authorization, Invoice issuance, deposit deduction/refund, implicit financial completion or removal of the current DAMAGE_CHARGES prohibition. Typed charge-source integration remains separately required.",
+          "No debit due-date policy or Payment/Credit attribution implementation pending the existing owner question; no reopening already approved governing-date/FIFO policy.",
+          "No new HTTP/frontend workflow, dependency, role grant, production/customer data, destructive migration, history rewrite, publication, later-version activation, process census or new coordinator."
+        ],
+        "specifications": [
+          "ops/V1_055_SCOPE.md",
+          "ops/CODEX_TAKEOVER_V1_054_060.md",
+          "docs/002_BUSINESS_RULES.md",
+          "docs/003_PRODUCT_REQUIREMENTS.md",
+          "docs/004_DATABASE_MODEL.md",
+          "docs/005_API_SPECIFICATION.md",
+          "docs/006_UI_SPECIFICATION.md",
+          "docs/007_TESTING_STRATEGY.md",
+          "docs/008_SECURITY_MODEL.md",
+          "docs/010_DECISION_LOG.md"
+        ],
+        "requirements": [
+          "BR-MOVEOUT-006",
+          "BR-MOVEOUT-011",
+          "BR-MOVEOUT-012",
+          "PR-MOVEOUT-006",
+          "PR-MOVEOUT-011",
+          "PR-MOVEOUT-012",
+          "DB-MOVEOUT-001",
+          "DB-MOVEOUT-002",
+          "API-069",
+          "UI-078",
+          "TEST-078",
+          "SEC-019",
+          "SEC-020",
+          "DL-017"
+        ],
+        "risk": "New protected operational persistence and correction/replay semantics connected to future typed charge sources. Full-stage review must inspect storage/direct callers, authorization, original-source preservation and concurrency. No financial amount or physical-event writer changes.",
+        "plan": [
+          "Record active bounded scope before source edits.",
+          "Prepare and install additive migration, strict domain/service commands, genuine database and unit tests, and matching docs/traceability.",
+          "Run fresh affected and mandatory gates; reuse only evidence whose inputs are unchanged.",
+          "Freeze an immutable normal local candidate, complete independent full-stage review, and preserve acceptance externally."
+        ],
+        "acceptance": [
+          "strict date/identity/integer/boolean/text bounds",
+          "Property/active HUMAN/capability separation",
+          "signed Lease and expected-version evidence",
+          "zero or multiple typed findings",
+          "explicit append-only correction with unchanged original replay",
+          "duplicate/concurrent key and correction behavior",
+          "immutable audit/command/finding linkage and conservative uncertain-outcome recovery",
+          "all old physical and financial tables/functions/permissions preserved",
+          "DAMAGE_CHARGES still prohibited until its real charging stage",
+          "real PostgreSQL fresh/upgrade coverage",
+          "full required applicable gates and fresh independent complete-stage zero findings"
+        ],
+        "authority": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-v1054-v1060-owner-authorization.json",
+          "sha256": "9d3773b792aedfd2219df8365ec566ac2000edfb4660f6291589fd7b3946b4aa"
+        },
+        "accepted_predecessor": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-invoice-correction-boundary-stage-accepted-79314cc.json",
+          "sha256": "27c9e26f56da7b668f547adbd20ef8b21d7d72e2fd2559138db145e962de20ea"
+        },
+        "entry_reconciliation": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-invoice-correction-boundary-cycle-20260914t1956-reconciliation.json",
+          "sha256": "1f8355f58126e761e20ef99287b5cfe143e1559a4bea93407fbdf933cfc7609c"
+        },
+        "financial_policy_hold": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-policy-physical-assessment-79314cc.json",
+          "sha256": "fbbcb06c2f65b2e4aed65e85ecc4f406700e02a921838a7331c971e09167046a"
+        },
+        "owner_policy_answer_received": false,
+        "main_settings": "Astra/xhigh/Fast(priority) config and current saved task verified",
+        "provider_tier_attestation": "unavailable",
+        "review_settings": "GPT-6 Astra/max/Standard(default)/enforced-read-only/approval-never; absolute Python/Git and login:false",
+        "preserved_correction_history": {
+          "termination_deposit_repository_import_classification": "resolved1of2",
+          "termination_deposit_immutable_fixture_typing": "resolved1of2",
+          "termination_fixture_typing": "resolved1of2",
+          "termination_notice_fixture_chronology": "resolved2of2; final automatic attempt, both approaches and original dbc0b85 candidate/gates preserved",
+          "termination_physical_snapshot_fixture": "resolved1of2",
+          "termination_context_immediate_fk": "resolved1of2 by connected regression and complete-stage independent review",
+          "termination_generated_void_fixture_isolation": "resolved1of2; original aggregate115PASS3FAIL retained",
+          "external_contract_attempt_schema": "resolved1of2; frozen candidate unchanged",
+          "billing_fixture_chronology": "resolved1of2 unchanged",
+          "billing_fixture_service_calendar_isolation": "resolved2of2 unchanged",
+          "mixed_final_month_service_header_provenance": "resolved1of2 unchanged",
+          "notice_R2": "automatic2of2 exhausted; separate explicit owner exception1of1 succeeded; no reset",
+          "notice_R1_R3": "resolved1of2 unchanged",
+          "V1_054_R3": "resolved2of2 unchanged",
+          "lease_deposit_command_guard_audit_conflict_expectation": "resolved1of2",
+          "lease_deposit_command_guard_test_signature_layout": "resolved1of2",
+          "lease_deposit_command_guard_downgrade_message_contract": "resolved1of2; fa6d0681349PASS/8FAIL and correction/8affected regressions preserved",
+          "lease_deposit_command_guard_review_stage_identity": "resolved1of2; initial review, separate parent finding, focused and final complete-stage zero reviews preserved",
+          "deposit_financial_revision_external_gate_inventory": "resolved1of2; completed evidence and full initial independent stage review preserved",
+          "deposit_financial_revision_test_sql_layout": "resolved1of2; completed evidence and full initial independent stage review preserved",
+          "deposit_financial_revision_fixture_type_narrowing": "resolved1of2; completed evidence and full initial independent stage review preserved",
+          "deposit_financial_revision_external_backend_count_expectation": "resolved1of2; completed evidence and full initial independent stage review preserved",
+          "disposition_context_negative_source_fixture": "resolved1of2; failed checkpoints/before-source, regressions and initial complete-stage independent review preserved",
+          "disposition_context_test_literal_layout": "resolved2of2; failed checkpoints/before-source, regressions and initial complete-stage independent review preserved",
+          "disposition_context_unit_fixture_mapping_type": "resolved2of2; failed checkpoints/before-source, regressions and initial complete-stage independent review preserved",
+          "disposition_context_receipt_capacity_fixture": "resolved2of2; failed checkpoints/before-source, regressions and initial complete-stage independent review preserved",
+          "invoice_readiness_static_pairwise_and_frozen_assertion": "resolved2of2; original candidates/findings/failures/regressions preserved",
+          "invoice_readiness_pagination_fixture_type": "resolved1of2; original candidates/findings/failures/regressions preserved",
+          "invoice_readiness_credit_fixture_chronology": "resolved1of2; original candidates/findings/failures/regressions preserved",
+          "invoice_readiness_signer_customer_scope": "resolved1of2; original candidates/findings/failures/regressions preserved",
+          "invoice_readiness_issued_component_contract": "resolved1of2; original candidates/findings/failures/regressions preserved",
+          "invoice_readiness_line_status_consistency": "resolved1of2; original candidates/findings/failures/regressions preserved",
+          "invoice_readiness_semantic1_prepared_patch_placement": "resolved1of2 before application; original failed source and AST-preservation evidence retained",
+          "invoice_semantic1_review_packet_input_contract": "resolved2of2 before review; original path-order assertion and verdict-field KeyError retained; no candidate mutation or test rerun",
+          "invoice_correction_boundary_new_sql_literal_layout": "resolved1of2",
+          "invoice_correction_boundary_document_patch_prefixes": "resolved2of2; original413f4c7 report and attempt1 EOF failure/before-source preserved; no limit reset"
+        },
+        "corrections": [
+          {
+            "family": "move_out_inspection_test_layout",
+            "attempt": 2,
+            "maximum": 2,
+            "history": [
+              {
+                "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-move-out-inspection-test-layout1.json",
+                "sha256": "b594917705f837ae33f7121ee6b84f4c18773bfe6fa1e5743a716da980c94073"
+              },
+              {
+                "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-move-out-inspection-test-layout2.json",
+                "sha256": "71fe67eab14b4c0266156683fae665e5196b61e6147131624fab4ae22c07189e"
+              }
+            ],
+            "status": "locally_verified_initial_complete_stage_review_pending",
+            "verification": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-move-out-inspection-audit-fixture1-checks.json",
+              "sha256": "17a6321e42c64d6b54c3bec27caa216e2c42567743899b2c8af6ce6f27a454f1"
+            }
+          },
+          {
+            "family": "inspection_audit_truncate_expectation",
+            "attempt": 1,
+            "maximum": 2,
+            "history": [
+              {
+                "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-move-out-inspection-audit-fixture1.json",
+                "sha256": "d5bb2a33ccd732da3251a0d6cf39dc58c960bf429a6200014c978a807c249e38"
+              }
+            ],
+            "status": "locally_verified_initial_complete_stage_review_pending",
+            "verification": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-move-out-inspection-audit-fixture1-checks.json",
+              "sha256": "17a6321e42c64d6b54c3bec27caa216e2c42567743899b2c8af6ce6f27a454f1"
+            }
+          }
+        ],
+        "inherited_limits_reset": false,
+        "stage_implementation_completed": true,
+        "stage_accepted": false,
+        "publication_permitted": false,
+        "timestamp": "2026-09-14T20:02:59.778083+00:00",
+        "implementation_paths": [
+          "backend/migrations/versions/20260915_60_move_out_inspections.py",
+          "backend/src/property_rental/move_out_inspection.py",
+          "backend/tests/test_move_out_inspection.py",
+          "backend/tests/test_move_out_inspection_migration.py"
+        ],
+        "implemented_at": "2026-09-14T20:15:36.649785+00:00",
+        "new_tests_run": true,
+        "scope_amendment": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-move-out-inspection-audit-fixture1-scope.json",
+          "sha256": "95b6fe8285a2fa4356ba671c3714798489a34417c08ae57443068931395b1d06"
+        },
+        "product_accepted": false,
+        "preliminary_evidence": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-move-out-inspection-audit-fixture1-checks.json",
+          "sha256": "17a6321e42c64d6b54c3bec27caa216e2c42567743899b2c8af6ce6f27a454f1"
+        },
+        "frozen_candidate_receipt": "v1055-move-out-inspection-candidate.json",
+        "scope_receipt": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-move-out-inspection-audit-fixture1-scope.json",
+          "sha256": "95b6fe8285a2fa4356ba671c3714798489a34417c08ae57443068931395b1d06"
+        }
+      },
+      "prior_version_history": "historical_v1_054_closed_current_fields",
+      "latest_continuation": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-usage-reset-continuation-20260911.json",
+        "sha256": "4e74c8aa1ec979c795b8c62a7854d17e1d6ebeb042e0561785c026620c18d7a6"
+      },
+      "defensive_guidance": "No broader access or false-positive confirmation; normal enforcement, truthful defensive scope and stop affected action on restriction.",
+      "last_model_configuration_check": {
+        "model": "gpt-6-astra",
+        "reasoning_effort": "xhigh",
+        "mode": "Fast",
+        "service_tier": "priority",
+        "provider_attestation": "unavailable; selected/requested configuration verified",
+        "admission": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-admission.json",
+          "sha256": "9ad4617bb7cd06ad9d5458f0ae6500bb8f8bbd929404ddd948977d587d598bd6"
+        }
+      },
+      "owner_authorized_correction": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-notice-handoff-owner-authorized-owner-authorization.json",
+        "sha256": "ebdf5cc0f6f4c4501a7a8d332fd4f928a2523d027b72c616d0542c5bd2aaa4c9"
+      },
+      "financial_attribution_policy_hold": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-policy-physical-assessment-79314cc.json",
+        "sha256": "fbbcb06c2f65b2e4aed65e85ecc4f406700e02a921838a7331c971e09167046a"
+      }
+    },
+    "approval": {
+      "status": "approved",
+      "basis": "Standing owner lifecycle54-through60 and latest usage-reset continuation; verified54closure and55model/dependency admission.",
+      "implementation_started": true,
+      "implementation_completed": false,
+      "publication_completed": false,
+      "product_implementation_gate": "Inspection affected gates pass; remaining exact/full-stage review and whole-version work pending."
+    },
+    "next_action": "Run remaining exact inspection-stage gates using the completed1442-case PostgreSQL gate and unchanged43unit/static/frontend evidence by identity. Require a fresh independent complete26-path/one-commit review from79314cc with Astra/max/Standard/read-only/never and absolute Python/Git. Preserve test-layout2of2 and audit-fixture1of2. Financial attribution policy remains pending; whole V1-055 incomplete/unpublished and no56 activation.",
+    "phase": "V1-055 operational inspection implemented; exact gates and independent review pending",
+    "status": "complete_uncommitted",
+    "timestamp": "2026-09-14T20:38:38.694870+00:00",
+    "updated_at": "2026-09-14T20:38:38.694870+00:00",
+    "review": {
+      "tranche_id": "V1-055",
+      "model": "gpt-6-astra",
+      "reasoning_effort": "max",
+      "mode": "Standard",
+      "service_tier": "default",
+      "sandbox": "read-only",
+      "approval_policy": "never",
+      "read_only": true,
+      "standing_authorization": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-v1054-v1060-owner-authorization.json",
+        "sha256": "9d3773b792aedfd2219df8365ec566ac2000edfb4660f6291589fd7b3946b4aa"
+      },
+      "latest_continuation": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-usage-reset-continuation-20260911.json",
+        "sha256": "4e74c8aa1ec979c795b8c62a7854d17e1d6ebeb042e0561785c026620c18d7a6"
+      },
+      "sequence": "Initial full stage; regression and focused/connected correction verification; final complete corrected stage0; final integrated version0 before publication.",
+      "status": "initial_complete_move_out_inspection_review_pending",
+      "stage": "V1-055-move-out-inspection",
+      "base_sha": "79314cc43da4f208bfaccb1fbd5571aa14f5de86",
+      "exact_sha": null,
+      "findings": null,
+      "prior_termination_acceptance": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-termination-stage-accepted-8a3c0e3.json",
+        "sha256": "3886083c79c2b709ed14bd5de436ebd7b18161c7bfdc7cc25f9717d5e4925dd7"
+      },
+      "resolution": "Fresh complete26-path/one-commit review follows exact gates. Earlier completed reviews remain preserved.",
+      "prior_complete_stage_review": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-a25a008-full.md",
+        "sha256": "103497f5131dd1c677927c120a5b7419d9bc498353c2016c0e15212d7ce2bdda"
+      },
+      "parent_record_finding": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-a25a008-full-root-assessment.json",
+        "sha256": "fe3884de62b4fb54ef948b01b305d5beef2e260cc9b4322b463ae8b1dc4e3692"
+      },
+      "initial_complete_stage_rejection": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-invoice-termination-readiness-a244b79-full-root-assessment.json",
+        "sha256": "cec95b76f21dad67d7421f6351a3a95a105292142c2101855bf3a7bcfd07aec0"
+      },
+      "prior_invoice_read_acceptance": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-invoice-termination-readiness-stage-accepted-72ff967.json",
+        "sha256": "1a0499e5001b7e114ea84ef36e56cc4605c6a32407e42e264f0bc1e55b77b5d8"
+      },
+      "initial_boundary_rejection": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-invoice-correction-boundary-413f4c7-full-root-assessment.json",
+        "sha256": "b389b52ddbd0b38f7674eecf5865554cb8290c1646860b7aa43078221d320cc6"
+      },
+      "prior_invoice_boundary_acceptance": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-invoice-correction-boundary-stage-accepted-79314cc.json",
+        "sha256": "27c9e26f56da7b668f547adbd20ef8b21d7d72e2fd2559138db145e962de20ea"
+      }
+    },
+    "v1_055_move_out_inspection": {
+      "id": "V1-055-move-out-inspection",
+      "status": "implemented_affected_verified_exact_gates_review_pending",
+      "base": "79314cc43da4f208bfaccb1fbd5571aa14f5de86",
+      "complete_version_base": "bda66062697feef17c8df621b64bf5f607c1c691",
+      "paths": [
+        "backend/migrations/versions/20260915_60_move_out_inspections.py",
+        "backend/src/property_rental/move_out_inspection.py",
+        "backend/tests/test_audit_migration.py",
+        "backend/tests/test_billing_service_migration.py",
+        "backend/tests/test_credit_refund_read_migration.py",
+        "backend/tests/test_customer_ledger_migration.py",
+        "backend/tests/test_customer_ledger_read_migration.py",
+        "backend/tests/test_financial_action_context_migration.py",
+        "backend/tests/test_invoice_migration.py",
+        "backend/tests/test_late_payment_migration.py",
+        "backend/tests/test_lease_api_migration.py",
+        "backend/tests/test_lease_enforcement_api_migration.py",
+        "backend/tests/test_migrations.py",
+        "backend/tests/test_move_out_inspection.py",
+        "backend/tests/test_move_out_inspection_migration.py",
+        "backend/tests/test_payment_reversal_context_migration.py",
+        "backend/tests/test_utility_api_migration.py",
+        "backend/tests/test_utility_consumption_migration.py",
+        "backend/tests/test_utility_meter_migration.py",
+        "docs/004_DATABASE_MODEL.md",
+        "docs/010_DECISION_LOG.md",
+        "ops/NOW.md",
+        "ops/QUEUE.md",
+        "ops/STATE.json",
+        "ops/traceability.json",
+        "scripts/database-test.sh"
+      ],
+      "current_head_fixture_paths": [
+        "backend/tests/test_billing_service_migration.py",
+        "backend/tests/test_credit_refund_read_migration.py",
+        "backend/tests/test_customer_ledger_migration.py",
+        "backend/tests/test_customer_ledger_read_migration.py",
+        "backend/tests/test_financial_action_context_migration.py",
+        "backend/tests/test_invoice_migration.py",
+        "backend/tests/test_late_payment_migration.py",
+        "backend/tests/test_lease_api_migration.py",
+        "backend/tests/test_lease_enforcement_api_migration.py",
+        "backend/tests/test_migrations.py",
+        "backend/tests/test_payment_reversal_context_migration.py",
+        "backend/tests/test_utility_api_migration.py",
+        "backend/tests/test_utility_consumption_migration.py",
+        "backend/tests/test_utility_meter_migration.py"
+      ],
+      "migration_revision": "20260915_60",
+      "stage": "Operational inspection evidence and typed findings, independent of financial attribution",
+      "included": [
+        "Add canonical move_out_inspections and inspection_damage_findings with permanent typed identities, exact Lease linkage, authorized actor/date/result evidence, strict boolean pet-related classification and bounded text/findings.",
+        "Append original or correcting inspection and finding sets through an atomic command. A correction explicitly references one prior unsuperseded inspection on the same Lease; retain all prior evidence and exact original command results.",
+        "Require exact leases.inspect capability and Property scope before persistence, leases.read for bounded observations; freshly validate active HUMAN, exact Lease Property, signed/terminated Lease and expected Lease version at storage. Do not add grants or change existing permissions.",
+        "Use the existing protected notice text and Lease scope helpers without altering them. Serialize the command key and Lease, use bounded transaction timeouts, compare complete intent and source identity for exact replay, and bind immutable command/audit evidence.",
+        "Add bounded inspection reads, with current/superseded status and findings; physical departure and financial completion remain unassessed. No mutation of Lease, Occupancy, Unit, Meter, Invoice, Deposit, Payment or Credit.",
+        "Prove supported59-to60 migration preserves existing rows, function definitions and permissions; add required full-database suite and update only current-head fixture pins, preserving historical58-to59 proof.",
+        "Materialize accepted79314cc and resolvedICB-1 through immutable receipts while archiving every changed prior STATE root and preserving all queue/review/failure/correction history."
+      ],
+      "excluded": [
+        "No physical occupancy-date or Unit status mutation in this bounded stage; the utility responsibility guard and lifecycle lock interaction require their own connected stage.",
+        "No damage amounts, charge authorization, Invoice issuance, deposit deduction/refund, implicit financial completion or removal of the current DAMAGE_CHARGES prohibition. Typed charge-source integration remains separately required.",
+        "No debit due-date policy or Payment/Credit attribution implementation pending the existing owner question; no reopening already approved governing-date/FIFO policy.",
+        "No new HTTP/frontend workflow, dependency, role grant, production/customer data, destructive migration, history rewrite, publication, later-version activation, process census or new coordinator."
+      ],
+      "specifications": [
+        "ops/V1_055_SCOPE.md",
+        "ops/CODEX_TAKEOVER_V1_054_060.md",
+        "docs/002_BUSINESS_RULES.md",
+        "docs/003_PRODUCT_REQUIREMENTS.md",
+        "docs/004_DATABASE_MODEL.md",
+        "docs/005_API_SPECIFICATION.md",
+        "docs/006_UI_SPECIFICATION.md",
+        "docs/007_TESTING_STRATEGY.md",
+        "docs/008_SECURITY_MODEL.md",
+        "docs/010_DECISION_LOG.md"
+      ],
+      "requirements": [
+        "BR-MOVEOUT-006",
+        "BR-MOVEOUT-011",
+        "BR-MOVEOUT-012",
+        "PR-MOVEOUT-006",
+        "PR-MOVEOUT-011",
+        "PR-MOVEOUT-012",
+        "DB-MOVEOUT-001",
+        "DB-MOVEOUT-002",
+        "API-069",
+        "UI-078",
+        "TEST-078",
+        "SEC-019",
+        "SEC-020",
+        "DL-017"
+      ],
+      "risk": "New protected operational persistence and correction/replay semantics connected to future typed charge sources. Full-stage review must inspect storage/direct callers, authorization, original-source preservation and concurrency. No financial amount or physical-event writer changes.",
+      "plan": [
+        "Record active bounded scope before source edits.",
+        "Prepare and install additive migration, strict domain/service commands, genuine database and unit tests, and matching docs/traceability.",
+        "Run fresh affected and mandatory gates; reuse only evidence whose inputs are unchanged.",
+        "Freeze an immutable normal local candidate, complete independent full-stage review, and preserve acceptance externally."
+      ],
+      "acceptance": [
+        "strict date/identity/integer/boolean/text bounds",
+        "Property/active HUMAN/capability separation",
+        "signed Lease and expected-version evidence",
+        "zero or multiple typed findings",
+        "explicit append-only correction with unchanged original replay",
+        "duplicate/concurrent key and correction behavior",
+        "immutable audit/command/finding linkage and conservative uncertain-outcome recovery",
+        "all old physical and financial tables/functions/permissions preserved",
+        "DAMAGE_CHARGES still prohibited until its real charging stage",
+        "real PostgreSQL fresh/upgrade coverage",
+        "full required applicable gates and fresh independent complete-stage zero findings"
+      ],
+      "authority": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-v1054-v1060-owner-authorization.json",
+        "sha256": "9d3773b792aedfd2219df8365ec566ac2000edfb4660f6291589fd7b3946b4aa"
+      },
+      "accepted_predecessor": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-invoice-correction-boundary-stage-accepted-79314cc.json",
+        "sha256": "27c9e26f56da7b668f547adbd20ef8b21d7d72e2fd2559138db145e962de20ea"
+      },
+      "entry_reconciliation": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-invoice-correction-boundary-cycle-20260914t1956-reconciliation.json",
+        "sha256": "1f8355f58126e761e20ef99287b5cfe143e1559a4bea93407fbdf933cfc7609c"
+      },
+      "financial_policy_hold": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-policy-physical-assessment-79314cc.json",
+        "sha256": "fbbcb06c2f65b2e4aed65e85ecc4f406700e02a921838a7331c971e09167046a"
+      },
+      "owner_policy_answer_received": false,
+      "main_settings": "Astra/xhigh/Fast(priority) config and current saved task verified",
+      "provider_tier_attestation": "unavailable",
+      "review_settings": "GPT-6 Astra/max/Standard(default)/enforced-read-only/approval-never; absolute Python/Git and login:false",
+      "preserved_correction_history": {
+        "termination_deposit_repository_import_classification": "resolved1of2",
+        "termination_deposit_immutable_fixture_typing": "resolved1of2",
+        "termination_fixture_typing": "resolved1of2",
+        "termination_notice_fixture_chronology": "resolved2of2; final automatic attempt, both approaches and original dbc0b85 candidate/gates preserved",
+        "termination_physical_snapshot_fixture": "resolved1of2",
+        "termination_context_immediate_fk": "resolved1of2 by connected regression and complete-stage independent review",
+        "termination_generated_void_fixture_isolation": "resolved1of2; original aggregate115PASS3FAIL retained",
+        "external_contract_attempt_schema": "resolved1of2; frozen candidate unchanged",
+        "billing_fixture_chronology": "resolved1of2 unchanged",
+        "billing_fixture_service_calendar_isolation": "resolved2of2 unchanged",
+        "mixed_final_month_service_header_provenance": "resolved1of2 unchanged",
+        "notice_R2": "automatic2of2 exhausted; separate explicit owner exception1of1 succeeded; no reset",
+        "notice_R1_R3": "resolved1of2 unchanged",
+        "V1_054_R3": "resolved2of2 unchanged",
+        "lease_deposit_command_guard_audit_conflict_expectation": "resolved1of2",
+        "lease_deposit_command_guard_test_signature_layout": "resolved1of2",
+        "lease_deposit_command_guard_downgrade_message_contract": "resolved1of2; fa6d0681349PASS/8FAIL and correction/8affected regressions preserved",
+        "lease_deposit_command_guard_review_stage_identity": "resolved1of2; initial review, separate parent finding, focused and final complete-stage zero reviews preserved",
+        "deposit_financial_revision_external_gate_inventory": "resolved1of2; completed evidence and full initial independent stage review preserved",
+        "deposit_financial_revision_test_sql_layout": "resolved1of2; completed evidence and full initial independent stage review preserved",
+        "deposit_financial_revision_fixture_type_narrowing": "resolved1of2; completed evidence and full initial independent stage review preserved",
+        "deposit_financial_revision_external_backend_count_expectation": "resolved1of2; completed evidence and full initial independent stage review preserved",
+        "disposition_context_negative_source_fixture": "resolved1of2; failed checkpoints/before-source, regressions and initial complete-stage independent review preserved",
+        "disposition_context_test_literal_layout": "resolved2of2; failed checkpoints/before-source, regressions and initial complete-stage independent review preserved",
+        "disposition_context_unit_fixture_mapping_type": "resolved2of2; failed checkpoints/before-source, regressions and initial complete-stage independent review preserved",
+        "disposition_context_receipt_capacity_fixture": "resolved2of2; failed checkpoints/before-source, regressions and initial complete-stage independent review preserved",
+        "invoice_readiness_static_pairwise_and_frozen_assertion": "resolved2of2; original candidates/findings/failures/regressions preserved",
+        "invoice_readiness_pagination_fixture_type": "resolved1of2; original candidates/findings/failures/regressions preserved",
+        "invoice_readiness_credit_fixture_chronology": "resolved1of2; original candidates/findings/failures/regressions preserved",
+        "invoice_readiness_signer_customer_scope": "resolved1of2; original candidates/findings/failures/regressions preserved",
+        "invoice_readiness_issued_component_contract": "resolved1of2; original candidates/findings/failures/regressions preserved",
+        "invoice_readiness_line_status_consistency": "resolved1of2; original candidates/findings/failures/regressions preserved",
+        "invoice_readiness_semantic1_prepared_patch_placement": "resolved1of2 before application; original failed source and AST-preservation evidence retained",
+        "invoice_semantic1_review_packet_input_contract": "resolved2of2 before review; original path-order assertion and verdict-field KeyError retained; no candidate mutation or test rerun",
+        "invoice_correction_boundary_new_sql_literal_layout": "resolved1of2",
+        "invoice_correction_boundary_document_patch_prefixes": "resolved2of2; original413f4c7 report and attempt1 EOF failure/before-source preserved; no limit reset"
+      },
+      "corrections": [
+        {
+          "family": "move_out_inspection_test_layout",
+          "attempt": 2,
+          "maximum": 2,
+          "history": [
+            {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-move-out-inspection-test-layout1.json",
+              "sha256": "b594917705f837ae33f7121ee6b84f4c18773bfe6fa1e5743a716da980c94073"
+            },
+            {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-move-out-inspection-test-layout2.json",
+              "sha256": "71fe67eab14b4c0266156683fae665e5196b61e6147131624fab4ae22c07189e"
+            }
+          ],
+          "status": "locally_verified_initial_complete_stage_review_pending",
+          "verification": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-move-out-inspection-audit-fixture1-checks.json",
+            "sha256": "17a6321e42c64d6b54c3bec27caa216e2c42567743899b2c8af6ce6f27a454f1"
+          }
+        },
+        {
+          "family": "inspection_audit_truncate_expectation",
+          "attempt": 1,
+          "maximum": 2,
+          "history": [
+            {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-move-out-inspection-audit-fixture1.json",
+              "sha256": "d5bb2a33ccd732da3251a0d6cf39dc58c960bf429a6200014c978a807c249e38"
+            }
+          ],
+          "status": "locally_verified_initial_complete_stage_review_pending",
+          "verification": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-move-out-inspection-audit-fixture1-checks.json",
+            "sha256": "17a6321e42c64d6b54c3bec27caa216e2c42567743899b2c8af6ce6f27a454f1"
+          }
+        }
+      ],
+      "inherited_limits_reset": false,
+      "stage_implementation_completed": true,
+      "stage_accepted": false,
+      "publication_permitted": false,
+      "timestamp": "2026-09-14T20:02:59.778083+00:00",
+      "implementation_paths": [
+        "backend/migrations/versions/20260915_60_move_out_inspections.py",
+        "backend/src/property_rental/move_out_inspection.py",
+        "backend/tests/test_move_out_inspection.py",
+        "backend/tests/test_move_out_inspection_migration.py"
+      ],
+      "implemented_at": "2026-09-14T20:15:36.649785+00:00",
+      "new_tests_run": true,
+      "scope_amendment": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-move-out-inspection-audit-fixture1-scope.json",
+        "sha256": "95b6fe8285a2fa4356ba671c3714798489a34417c08ae57443068931395b1d06"
+      },
+      "product_accepted": false,
+      "preliminary_evidence": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-move-out-inspection-audit-fixture1-checks.json",
+        "sha256": "17a6321e42c64d6b54c3bec27caa216e2c42567743899b2c8af6ce6f27a454f1"
+      },
+      "frozen_candidate_receipt": "v1055-move-out-inspection-candidate.json",
+      "scope_receipt": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-move-out-inspection-audit-fixture1-scope.json",
+        "sha256": "95b6fe8285a2fa4356ba671c3714798489a34417c08ae57443068931395b1d06"
+      }
+    },
+    "candidate_resolution": "Resolve this immutable operational inspection candidate through external v1055-move-out-inspection-candidate.json. Subsequent exact gates and independent review evidence remain external.",
+    "tests": [
+      "Inspection43unit and1442fullPostgreSQL/no skips pass;227files formatted/linted and226typed. Corrected audit rejection fixture1of2; test-layout2of2. Original1441PASS/1FAIL and both style checkpoints preserved.",
+      "Accepted79314cc all22 gates and focused/final full-stage APPROVE0 preserved; new inspection checks not run.",
+      "Unchanged413f4c7 all22 gates preserved; documentation-only ICB-1 correction requires fresh records checks, no product-suite rerun.",
+      "Invoice correction boundary: affected unit and1416full PostgreSQL/no skips pass;223files typed/formatted/linted. New literal-layout correction1of2 locally verified, initial lint failure preserved.",
+      "Accepted72ff967 all22 gates and separate focused/final complete-stage APPROVE0 preserved. New correction-boundary checks not run.",
+      "IR-1/2/3 correction1:81unit and1412full PostgreSQL/no skips passed;223files typed/formatted/linted. Real multiple-signer ownership/invalid relationship, mixed-line partial positions, zero obligation and original history verified. Exact remaining gates and independent focused/final reviews pending; no acceptance.",
+      "Invoice a244b79 all22gates preserved but initial full review REJECT3MEDIUM. IR-1/2/3 correction1of2 now active; new81unit/1412PG counts are predictions pending real execution, not passes. All prior limits and preparation-placement1of2 evidence retained.",
+      "Invoice read context:59new unit cases,1409full PostgreSQL/no skips,223files typed and formatted/linted. Source/coverage/financial-position/isolation and58-to59 preservation verified.",
+      "Style2of2, pagination typing1of2 and Credit fixture chronology1of2 locally verified; original1408PASS/1FAIL and all inherited limits preserved. Exact gates and independent acceptance remain pending.",
+      "Accepted5ad5d97 all22 gates and complete-stage APPROVE0 preserved. No new Invoice read-stage checks run.",
+      "Disposition context: full1400 PostgreSQL cases/no skips,42 unit cases,220-file typing and221-file formatting/lint passed. Exact source/rule, net-zero history, MVCC, replay/atomicity and57-to58 preservation covered.",
+      "All current and inherited correction limits/failures preserved. Remaining full exact and independent complete-stage gates pending; no whole-version completion or publication.",
+      "Historical checkpoint: Accepted dc23034 all22 gates and complete-stage APPROVE0 preserved. No new disposition-context checks have run.",
+      "Historical checkpoint: Financial revision:63 unit cases and affected real PostgreSQL suites pass, including10 new revision cases;216-file typing and217-file formatting/lint pass. All committed financial event kinds, net-zero correction histories, exact replay/rollback, metadata link, private helper and snapshot consistency are covered.",
+      "Historical checkpoint: Preserve external gate-inventory1of2, new-test SQL layout1of2 and redundant fixture cast1of2 checkpoints. No production behavior correction; all inherited limits unchanged. Full applicable gates and fresh independent complete-stage review pending.",
+      "Historical checkpoint: Historical checkpoint: Accepted8e3c7ca: all22 gates and final complete-stage zero review preserved. New financial revision checks have not run.",
+      "Historical checkpoint: Historical checkpoint: a25a008 full24path/twocommit independent review APPROVE0 and all22gates preserved. Parent CG-RECORD-1 records-only correction1of2 fixes the current review.stage label. Source/tests/migrations/docs unchanged; applicable exact records gates, independent focused correction and fresh final complete-stage review pending.",
+      "Historical checkpoint: Historical checkpoint: Preserved fa6d068 full PostgreSQL gate:1349PASS/8FAIL, all8 due solely to uppercase forward-only refusal text. One-character downgrade-message correction1of2 passes all8 affected PostgreSQL cases and fresh format/lint; upgrade SQL, source/tests and previous64affectedPG/15unit/215-file typing remain unchanged. Fresh mandatory full corrected-candidate gate and initial stage review pending.",
+      "Historical checkpoint: Historical checkpoint: Command guards:64affected real PostgreSQL cases,15unit cases,215-file typing and216-file formatting/lint PASS. Different-key balance serialization is covered by the existing connected Deposit suite; same-key replay/conflicts, disabled actor, audit rollback and55to56 history/function/ACL/owner preservation are newly exercised.",
+      "Historical checkpoint: Historical checkpoint: Both new test corrections remain1of2: established audit-conflict error expectation and test signature line layout, locally verified. Intended baseline11unit/6PG failures plus1PGpass, original lint failure and all inherited evidence/limits preserved. Remaining mandatory exact gates and fresh initial stage review pending.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Command guards initial format PASS, lint E501 on one test signature preserved. Signature layout correction1of2 applied; fresh lint/type/unit/PostgreSQL checks pending; no source behavior changed.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: New command guards: intended baseline 11 unit failures,6 PostgreSQL failures,1 pass preserved. Narrow implementation applied; fresh affected and full gates pending. Audit-conflict fixture correction1of2 pending.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Accepted8c8d923: all22gates preserved and fresh initial complete25path/onecommit review APPROVE zero. No unchanged tests or review repeated. New command-guard tests/gates have not run.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Current Deposit readiness:74affectedPG PASS/no skips (new projection plus termination, Deposit and Credit/Refund read suites),52unit PASS, full214-file typing and repository formatting/lint PASS. New read does not mutate any app table; separate54to55 all-history/functions/privileges and real legacy command proof. Remaining mandatory exact gates and initial independent stage review pending.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Two pre-review corrections remain1of2 each: repository-local import grouping and runtime frozen-dataclass test typing; both locally verified. Original failed lint/type checkpoints and every old evidence/correction retained.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Termination8a3c0e3:22gates PASS (1342PG,2954backend/1207DB-only skips covered,1519frontend,189automation); complete27-path/two-commit independent0H0M0L; every operation/actual setting parent-audited.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Current Deposit readiness stage active; affected and mandatory gates not yet run.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Current successor:7affected noticePGPASS/32deselected and fulltyping211PASS; only three synthetic source calls and helper changed.1371calendar geometries checked2020through2040. Notice-fixture2of2 final automatic correction locally verified; mandatory successor gates and initial full-stage review pending.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Parentdbc0b85 exact22gatesPASS,15fresh/7reused:1342PGnoskips,2954backend/1207DB-onlyskipscovered,1519FE,189automation. Preserved as predecessor evidence, not asserted as fresh successor execution. Product/other test source unchanged.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Current termination substage:120affected realPG PASS including39termination,6Lease lifecycle,40billing and35invoice cases. Explicit53-to54 all-prior-functions/OIDs/ACLs/history and old exact replay;52-to53 billing proof retained. Original source guards, default/immediateFK modes, no physical/financial side effects, warning/notice/actor/Property/replay/concurrency checks pass. Typing211sourcefiles PASS;25context units and4unchangedLease units previouslyPASS. Remaining mandatory exact gates and independent stage review pending.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Corrections preserved: initialtyping1of2 andnotice chronology/physicalsnapshotidentity1of2 locally resolved; context-command immediateFK1of2 andconnectedgeneratedVOIDfixtureisolation1of2 locally verified. Previous118case run3FAIL/115PASS andtwo-mode1FAIL/1PASS RED remain retained; no reset of old notice ownerexception orV54limits.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Billing1f52fd1:22gates PASS;40affected/1303fullPG,2929backend/1168DBonly skips covered,1519FE,189automation; independent complete20path/1commit0H0M0L and actual operations/settings audited.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Termination core:25context units/4prior unchanged Lease units PASS; types210files PASS; initialPG29PASS7fixturefailures preserved, corrected8affectedPGPASS/28deselected. All stage/full gates and independent acceptance remain pending; no full-suite completion claim.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Current billing substage:40affected PostgreSQL cases PASS including26existing and14new cases, forward52-to53 preservation, fresh schema, exact money, Services, replay/concurrency and actor scope. Affected format/lint and full backend typing PASS. Remaining mandatory exact stage gates and independent review pending.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Fixture chronology resolved1of2; Service-calendar isolation resolved2of2 using existing disposable databases. Mixed-header Service product correction1of2 locally verified; independent stage acceptance pending. Every prior checkpoint retained.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Notice96f67bc:22applicable gates PASS; focused/full-stage independent0H0M0L and qualified operations audit accepted externally. No unchanged tests or reviews repeated.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Recurring final-month billing stage active; new affected regression and mandatory exact acceptance gates pending.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Current verified parent b7fb053:22PASS gates, 7fresh records/15unchanged product checks. This owner-authorized records-only successor requires its own7 affected records gates and15unchanged product identity checks; all earlier tests/reviews/failures remain preserved.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Current product evidence at ac97a90:22PASS gates (15fresh/7reused),1289PostgreSQL PASS/no skips,2929backend PASS/1154database-only skips covered byPG,189automation,1519frontend by full source/config identity,148affected regressions and successful types. This three-record successor requires7fresh record gates and15unchanged product-evidence identity checks; no product test repeat.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Notice candidate d8c3f3c:1165realPG PASS,2821backend PASS/1138database-only skips covered byPG,189automation PASS; frontend1519unchanged tests and static/build evidence reused by full input identity. Backend static/types/migration/build/import/config/trace/guard/whitespace PASS.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Initial0d92c3a fullPG136FAILED/1029PASS retained; bounded gate correction1 repaired installed Alembic PATH and17stale head literals. Preliminary68unit/trace+24PG and original lint evidence retained. V54R3resolved2of2 unchanged.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: No-isolation package variant failed missing declared Hatchling; normal isolated build succeeded via public build dependencies, same candidate/runtime preserved. No passing tests repeated.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Semantic preflight was not acceptable despite exit0: whole-version completion incorrectly true. Record correction1 now separates notice completion from unfinished V1-055. Fresh exact record/automation/routing gates and full independent review pending; no product source changed or publication permitted.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: New targeted RED evidence preserved for direct database whitespace acceptance and calendar-invalid fixture; correction1 installed. Fresh affected GREEN, exact gates and independent expanded focused/full-stage review remain pending. Prior22gate results preserved with only affected evidence requiring replacement."
+    ]
   }
 }
