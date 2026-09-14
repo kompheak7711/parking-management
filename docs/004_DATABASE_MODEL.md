@@ -1308,6 +1308,45 @@ Append-preserved operational source: `id uuid PK`, `lease_id uuid NOT NULL FK`, 
 
 `id uuid PK`, `inspection_id uuid NOT NULL FK`, `description text NOT NULL`, `pet_related boolean NOT NULL`, `created_at timestamptz NOT NULL`, `created_by uuid NOT NULL`. If billed, an `authorized_nonrecurring_obligations` row and its Invoice line identify this finding relationally. No standard fee or damage amount is implied.
 
+### Operational inspection evidence boundary (V1-055)
+
+Forward migration60 implements DB-MOVEOUT-001/002 without changing physical
+occupancy or financial obligations. Inspections additionally retain Property,
+expected Lease version, evidence reference, reason and optional unique same-Lease
+`supersedes_inspection_id`. Findings have immutable ordered identities, at most50
+per inspection, with their parent inspection's actor and completion timestamp.
+Empty findings are valid and do not imply financial completion.
+
+The source service requires exact Property-scoped `leases.inspect` for recording
+and `leases.read` for observations. No existing grant is enlarged. The database
+freshly checks the active HUMAN and exact Lease Property, signed or terminated
+Lease, expected Lease version, and an actual inspection date between Lease signing
+and the current Property business date. Actor, Property, command-key and Lease
+locks serialize validation and original/correction recording. Inspection alone
+does not update the Lease version or invoke physical/financial writer triggers.
+
+`move_out_inspection_commands` retains the Property/actor/key, exact intent/digest,
+Lease and inspection identities, original response, completion time, and typed
+audit-event identity. Deferred completion checks require the full finding set,
+inspection, command and audit to agree atomically. All three new tables reject
+updates, deletion and truncation. Corrections append a new inspection/finding set
+and explicitly supersede one current same-Lease inspection; original commands
+continue to return their original response. Old findings are never repurposed.
+
+Reads return at most20 inspections per page with current/superseded evidence,
+up to50 findings each, and explicit false physical-departure, charge-creation and
+financial-completion flags. Reads use repeatable-read read-only transactions;
+recording uses read-committed transactions. Connection, lock and statement timeouts
+are bounded and timestamps use UTC. Unknown database outcomes preserve the exact
+original command for recovery; no automatic new command is inferred.
+
+The existing DAMAGE_CHARGES prohibition remains until a separate stage installs
+the complete typed authorized-charge/source relationship and bill-once semantics.
+This inspection stage neither establishes amounts nor issues an Invoice, disposes
+of a Deposit, records physical departure or completes Final Settlement. Physical
+move-out/Utility responsibility, due-date attribution, staff transport and final
+integrated V1-055 acceptance remain required.
+
 ## DB-SETTLE-001 — `final_settlements`
 
 | Column | Type | Null | Rule |

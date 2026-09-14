@@ -31358,6 +31358,278 @@
       "test_path": "backend/tests/test_termination_invoice_migration.py",
       "status": "implemented",
       "notes": "Strict exact integer-cent Adjustment boundary and controlled termination correction/VOID source, history, dependency and replay regressions; verification and independent review pending."
+    },
+    {
+      "test_id": "test_inspection_rejects_invalid_or_mutable_command_fields",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "BR-MOVEOUT-011",
+        "BR-MOVEOUT-012",
+        "DB-MOVEOUT-001",
+        "DB-MOVEOUT-002",
+        "SEC-019",
+        "SEC-020",
+        "TEST-078"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_move_out_inspection.py",
+      "status": "implemented",
+      "notes": "Operational inspection/finding evidence, preserved corrections, scoped atomic replay and unchanged physical/financial sources; verification pending."
+    },
+    {
+      "test_id": "test_findings_require_typed_identity_text_and_boolean",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "BR-MOVEOUT-011",
+        "BR-MOVEOUT-012",
+        "DB-MOVEOUT-001",
+        "DB-MOVEOUT-002",
+        "SEC-019",
+        "SEC-020",
+        "TEST-078"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_move_out_inspection.py",
+      "status": "implemented",
+      "notes": "Operational inspection/finding evidence, preserved corrections, scoped atomic replay and unchanged physical/financial sources; verification pending."
+    },
+    {
+      "test_id": "test_inspection_preserves_empty_findings_order_and_full_correction_intent",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "BR-MOVEOUT-011",
+        "BR-MOVEOUT-012",
+        "DB-MOVEOUT-001",
+        "DB-MOVEOUT-002",
+        "SEC-019",
+        "SEC-020",
+        "TEST-078"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_move_out_inspection.py",
+      "status": "implemented",
+      "notes": "Operational inspection/finding evidence, preserved corrections, scoped atomic replay and unchanged physical/financial sources; verification pending."
+    },
+    {
+      "test_id": "test_record_requires_exact_inspection_capability_before_connecting",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "BR-MOVEOUT-011",
+        "BR-MOVEOUT-012",
+        "DB-MOVEOUT-001",
+        "DB-MOVEOUT-002",
+        "SEC-019",
+        "SEC-020",
+        "TEST-078"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_move_out_inspection.py",
+      "status": "implemented",
+      "notes": "Operational inspection/finding evidence, preserved corrections, scoped atomic replay and unchanged physical/financial sources; verification pending."
+    },
+    {
+      "test_id": "test_inspection_scope_and_missing_write_database_fail_before_connection",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "BR-MOVEOUT-011",
+        "BR-MOVEOUT-012",
+        "DB-MOVEOUT-001",
+        "DB-MOVEOUT-002",
+        "SEC-019",
+        "SEC-020",
+        "TEST-078"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_move_out_inspection.py",
+      "status": "implemented",
+      "notes": "Operational inspection/finding evidence, preserved corrections, scoped atomic replay and unchanged physical/financial sources; verification pending."
+    },
+    {
+      "test_id": "test_inspection_read_pages_are_bounded",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "BR-MOVEOUT-011",
+        "BR-MOVEOUT-012",
+        "DB-MOVEOUT-001",
+        "DB-MOVEOUT-002",
+        "SEC-019",
+        "SEC-020",
+        "TEST-078"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_move_out_inspection.py",
+      "status": "implemented",
+      "notes": "Operational inspection/finding evidence, preserved corrections, scoped atomic replay and unchanged physical/financial sources; verification pending."
+    },
+    {
+      "test_id": "test_inspection_unknown_database_outcomes_keep_exact_recovery_required",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "BR-MOVEOUT-011",
+        "BR-MOVEOUT-012",
+        "DB-MOVEOUT-001",
+        "DB-MOVEOUT-002",
+        "SEC-019",
+        "SEC-020",
+        "TEST-078"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_move_out_inspection.py",
+      "status": "implemented",
+      "notes": "Operational inspection/finding evidence, preserved corrections, scoped atomic replay and unchanged physical/financial sources; verification pending."
+    },
+    {
+      "test_id": "test_inspection_correction_preserves_original_history_without_physical_or_financial_effects",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "BR-MOVEOUT-011",
+        "BR-MOVEOUT-012",
+        "DB-MOVEOUT-001",
+        "DB-MOVEOUT-002",
+        "SEC-019",
+        "SEC-020",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_move_out_inspection_migration.py",
+      "status": "implemented",
+      "notes": "Operational inspection/finding evidence, preserved corrections, scoped atomic replay and unchanged physical/financial sources; verification pending."
+    },
+    {
+      "test_id": "test_inspection_empty_findings_and_two_commands_in_one_transaction_preserve_exact_responses",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "BR-MOVEOUT-011",
+        "BR-MOVEOUT-012",
+        "DB-MOVEOUT-001",
+        "DB-MOVEOUT-002",
+        "SEC-019",
+        "SEC-020",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_move_out_inspection_migration.py",
+      "status": "implemented",
+      "notes": "Operational inspection/finding evidence, preserved corrections, scoped atomic replay and unchanged physical/financial sources; verification pending."
+    },
+    {
+      "test_id": "test_concurrent_inspection_retry_and_competing_correction_are_serialized",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "BR-MOVEOUT-011",
+        "BR-MOVEOUT-012",
+        "DB-MOVEOUT-001",
+        "DB-MOVEOUT-002",
+        "SEC-019",
+        "SEC-020",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_move_out_inspection_migration.py",
+      "status": "implemented",
+      "notes": "Operational inspection/finding evidence, preserved corrections, scoped atomic replay and unchanged physical/financial sources; verification pending."
+    },
+    {
+      "test_id": "test_inspection_fresh_actor_property_and_version_checks_preserve_state",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "BR-MOVEOUT-011",
+        "BR-MOVEOUT-012",
+        "DB-MOVEOUT-001",
+        "DB-MOVEOUT-002",
+        "SEC-019",
+        "SEC-020",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_move_out_inspection_migration.py",
+      "status": "implemented",
+      "notes": "Operational inspection/finding evidence, preserved corrections, scoped atomic replay and unchanged physical/financial sources; verification pending."
+    },
+    {
+      "test_id": "test_inspection_direct_storage_rejects_invalid_intent_without_side_effects",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "BR-MOVEOUT-011",
+        "BR-MOVEOUT-012",
+        "DB-MOVEOUT-001",
+        "DB-MOVEOUT-002",
+        "SEC-019",
+        "SEC-020",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_move_out_inspection_migration.py",
+      "status": "implemented",
+      "notes": "Operational inspection/finding evidence, preserved corrections, scoped atomic replay and unchanged physical/financial sources; verification pending."
+    },
+    {
+      "test_id": "test_inspection_history_and_roles_prohibit_destructive_mutation",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "BR-MOVEOUT-011",
+        "BR-MOVEOUT-012",
+        "DB-MOVEOUT-001",
+        "DB-MOVEOUT-002",
+        "SEC-019",
+        "SEC-020",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_move_out_inspection_migration.py",
+      "status": "implemented",
+      "notes": "Operational inspection/finding evidence, preserved corrections, scoped atomic replay and unchanged physical/financial sources; verification pending."
+    },
+    {
+      "test_id": "test_inspection_completed_finding_set_cannot_gain_unrecorded_evidence",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "BR-MOVEOUT-011",
+        "BR-MOVEOUT-012",
+        "DB-MOVEOUT-001",
+        "DB-MOVEOUT-002",
+        "SEC-019",
+        "SEC-020",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_move_out_inspection_migration.py",
+      "status": "implemented",
+      "notes": "Operational inspection/finding evidence, preserved corrections, scoped atomic replay and unchanged physical/financial sources; verification pending."
+    },
+    {
+      "test_id": "test_inspection_function_permissions_and_damage_admission_remain_narrow",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "BR-MOVEOUT-011",
+        "BR-MOVEOUT-012",
+        "DB-MOVEOUT-001",
+        "DB-MOVEOUT-002",
+        "SEC-019",
+        "SEC-020",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_move_out_inspection_migration.py",
+      "status": "implemented",
+      "notes": "Operational inspection/finding evidence, preserved corrections, scoped atomic replay and unchanged physical/financial sources; verification pending."
+    },
+    {
+      "test_id": "test_forward60_preserves_all59_rows_functions_constraints_and_permissions",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "BR-MOVEOUT-011",
+        "BR-MOVEOUT-012",
+        "DB-MOVEOUT-001",
+        "DB-MOVEOUT-002",
+        "SEC-019",
+        "SEC-020",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_move_out_inspection_migration.py",
+      "status": "implemented",
+      "notes": "Operational inspection/finding evidence, preserved corrections, scoped atomic replay and unchanged physical/financial sources; verification pending."
     }
   ]
 }

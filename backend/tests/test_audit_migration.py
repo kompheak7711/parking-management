@@ -218,6 +218,9 @@ def test_database_controls_prohibit_audit_event_mutation() -> None:
 
     with psycopg.connect(database_url, autocommit=True) as connection:
         event_id = _insert_audit_event(connection)
+        audit_before = connection.execute(
+            "SELECT to_jsonb(event) FROM app.audit_events event ORDER BY id"
+        ).fetchall()
 
         with pytest.raises(psycopg.errors.ObjectNotInPrerequisiteState):
             connection.execute(
@@ -226,8 +229,18 @@ def test_database_controls_prohibit_audit_event_mutation() -> None:
             )
         with pytest.raises(psycopg.errors.ObjectNotInPrerequisiteState):
             connection.execute("DELETE FROM app.audit_events WHERE id = %s", (event_id,))
-        with pytest.raises(psycopg.errors.ObjectNotInPrerequisiteState):
+        # The typed inspection-command source now rejects this before the trigger.
+        with pytest.raises(
+            psycopg.errors.FeatureNotSupported,
+            match="cannot truncate a table referenced in a foreign key constraint",
+        ):
             connection.execute("TRUNCATE TABLE app.audit_events")
+        assert (
+            connection.execute(
+                "SELECT to_jsonb(event) FROM app.audit_events event ORDER BY id"
+            ).fetchall()
+            == audit_before
+        )
 
         privileges = connection.execute(
             """

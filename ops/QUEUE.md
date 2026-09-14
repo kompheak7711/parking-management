@@ -1,3 +1,15 @@
+# Current queue — Inspection exact gates and independent review
+
+Run remaining exact inspection-stage gates using the completed1442-case PostgreSQL gate and unchanged43unit/static/frontend evidence by identity. Require a fresh independent complete26-path/one-commit review from79314cc with Astra/max/Standard/read-only/never and absolute Python/Git. Preserve test-layout2of2 and audit-fixture1of2. Financial attribution policy remains pending; whole V1-055 incomplete/unpublished and no56 activation.
+
+Every earlier queue and evidence entry follows unchanged.
+
+# Current queue — Operational Move-out inspection evidence
+
+Implement the bounded operational Move-out inspection/finding stage from accepted79314cc. Verify affected behavior and mandatory gates, freeze a normal candidate and obtain a fresh independent full-stage zero-finding review. Debit due-date allocation policy remains pending separately; physical departure, source charging, HTTP/staff and integrated V1-055 acceptance remain incomplete. No publication or V1-056 activation.
+
+Every previous queue and all evidence follow unchanged.
+
 # Current queue — Invoice boundary ICB-1 documentation correction
 
 Verify changed document/records and reused unchanged product evidence, freeze a normal successor, then obtain focused ICB-1 review vs413f4c7 and fresh complete eight-path/two-commit stage review from72ff967. Whole V1-055 remains unpublished; no V1-056 activation.

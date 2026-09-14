@@ -887,3 +887,28 @@ input has no explicit due-date field. Its connected persistence and consumers
 remain a required separate verification/remediation before V1-055 acceptance.
 Physical move-out, inspection/readings, HTTP/staff and final integrated acceptance
 also remain incomplete; no V1-055 publication or V1-056 activation is permitted.
+
+
+### V1-055 operational inspection evidence checkpoint
+
+DB-MOVEOUT-001/002, BR-MOVEOUT-006/011/012 and DL-017 are implemented as
+append-preserved operational inspection and typed finding evidence. Recording
+requires the exact scoped inspection capability and current signed-Lease source
+evidence. An inspection correction keeps the original rows and audit history;
+original idempotent command responses remain stable. It creates no charge, changes
+no actual occupancy date and makes no financial-completion claim.
+
+The accepted Invoice correction boundary at79314cc remains preserved through its
+focused and fresh complete-stage zero-finding reviews and22 recorded gates. ICB-1
+resolved at the retained final2of2 documentation correction; no attempt limit resets.
+
+The separate owner question about applications between original and debit amounts
+on one Invoice line with different approved due dates remains pending. The approved
+governing-date and between-Invoice/within-Invoice ordering rules are unchanged;
+this operational stage does not implement or infer the missing attribution policy.
+
+Physical departure must later reconcile existing Unit, Lease and Utility boundaries.
+Inspection data alone does not remove the deferred DAMAGE_CHARGES source restriction.
+Current migration60, regression and mandatory gates and fresh independent full-stage
+review remain pending at this implementation checkpoint. Whole V1-055 remains
+incomplete and unpublished; no V1-056 activation or Settlement closure is authorized.
