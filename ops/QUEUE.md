@@ -1,3 +1,15 @@
+# Current queue — disposition context exact gates and review
+
+Run remaining exact command-stage gates, reusing the full1400-case PostgreSQL and unchanged static/frontend evidence by input identity. Require fresh independent complete31-path/one-commit review from accepted dc23034 with Astra/max/Standard/read-only/never and absolute Python/Git. Preserve all correction limits. No next slice or publication before stage acceptance; remaining V1-055 financial/physical/HTTP and integrated acceptance precede closure and V1-056.
+
+Every prior queue and evidence entry follows unchanged.
+
+# Current queue — V1-055 exact-source Deposit disposition context
+
+Implement and verify the frozen exact-source/rule/expected-financial-version disposition boundary from accepted dc23034, preserve original successful replays and all financial history, then freeze and obtain independent complete-stage exact-SHA review. Remaining V1-055 stages and final integrated acceptance precede publication and closure; no V1-056 activation.
+
+Accepted financial revision evidence is external; all previous queue text and correction history follow unchanged.
+
 # Current queue — financial revision exact gates and review
 
 Run remaining exact financial revision gates, reusing verified unchanged frontend/dependency and exact backend static evidence. Obtain fresh independent complete26-path/one-commit review from accepted8e3c7ca with Astra/max/Standard/read-only/never and absolute Python/Git. No next slice or publication before stage acceptance. Explicit governing-rule/source and expected-version command enforcement remain pending, as do financial reconciliation, physical/HTTP workflows and final integrated V1-055 acceptance. No V1-056 before full V1-055 closure.

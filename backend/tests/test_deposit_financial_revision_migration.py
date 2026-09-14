@@ -12,6 +12,7 @@ from alembic.config import Config
 from psycopg import Connection
 from psycopg.conninfo import conninfo_to_dict, make_conninfo
 
+from deposit_disposition_test_support import disposition_context
 from property_rental.deposit import (
     AdjustDepositRequiredAmountCommand,
     DepositAdjustmentType,
@@ -118,7 +119,14 @@ def test_disposition_reversal_and_exact_replay_keep_separate_observation_and_sav
     authority = deposit_actor(human, prop)
     before = observe(human, prop, lease, security)
     command = RecordDepositDispositionCommand(
-        uuid4(), uuid4(), security, lease, 12000, day, "Approved BR-DEP-023 synthetic disposition"
+        uuid4(),
+        uuid4(),
+        security,
+        lease,
+        12000,
+        day,
+        "Approved BR-DEP-023 synthetic disposition",
+        context=disposition_context(migrated_database_url, security),
     )
     original = deposits.record_disposition(command, actor=authority)
     posted = observe(human, prop, lease, security)

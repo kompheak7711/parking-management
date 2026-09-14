@@ -13,6 +13,7 @@ from alembic import command as alembic_command
 from alembic.config import Config
 from psycopg.conninfo import conninfo_to_dict, make_conninfo
 
+from deposit_disposition_test_support import disposition_context
 from property_rental.deposit import (
     DepositAuthorizationError,
     DepositConflictError,
@@ -32,13 +33,22 @@ from test_termination_deposit_migration import history, setup_deposits, terminat
 
 def ready_command(
     database_url: str,
+    *,
+    legacy: bool = False,
 ) -> tuple[PostgresDepositService, RecordDepositDispositionCommand]:
     human, prop, lease, security, _, day = setup_deposits(database_url)
     terminate(database_url, human, prop, lease, day)
     return (
         PostgresDepositService(financial_database_url(), prop, human),
         RecordDepositDispositionCommand(
-            uuid4(), uuid4(), security, lease, 12_000, day, "Approved BR-DEP-023 disposition"
+            uuid4(),
+            uuid4(),
+            security,
+            lease,
+            12_000,
+            day,
+            "Approved BR-DEP-023 disposition",
+            context=None if legacy else disposition_context(database_url, security),
         ),
     )
 
@@ -213,7 +223,7 @@ def test_forward56_preserves_all55_history_and_original_successful_replay(
         )
         config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
         alembic_command.upgrade(config, "20260914_55")
-        service, command = ready_command(temporary)
+        service, command = ready_command(temporary, legacy=True)
         actor = deposit_actor(service.actor_id, service.property_id)
         original = service.record_disposition(command, actor=actor)
         with psycopg.connect(temporary) as connection:

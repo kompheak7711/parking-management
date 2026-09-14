@@ -13,6 +13,7 @@ from alembic.config import Config
 from psycopg import Connection, Cursor, sql
 from psycopg.conninfo import conninfo_to_dict, make_conninfo
 
+from deposit_disposition_test_support import disposition_context
 from property_rental.deposit import (
     PostgresDepositService,
     RecordDepositDispositionCommand,
@@ -156,7 +157,14 @@ def test_disposition_and_reversal_change_current_readiness_without_completing_fi
     deposits = PostgresDepositService(financial_database_url(), prop, human)
     authority = deposit_actor(human, prop)
     command = RecordDepositDispositionCommand(
-        uuid4(), uuid4(), security, lease, 50_000, day, "Approved BR-DEP-023 Security disposition"
+        uuid4(),
+        uuid4(),
+        security,
+        lease,
+        50_000,
+        day,
+        "Approved BR-DEP-023 Security disposition",
+        context=disposition_context(migrated_database_url, security),
     )
     deposits.record_disposition(command, actor=authority)
     zero = read.get(lease, actor=actor)

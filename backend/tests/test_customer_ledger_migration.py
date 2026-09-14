@@ -12,6 +12,7 @@ from alembic import command
 from alembic.config import Config
 from alembic.script import ScriptDirectory
 
+from deposit_disposition_test_support import disposition_context, terminate_for_disposition
 from payment_test_support import database_instant, seed_payment
 from property_rental.billing import PostgresRentBillingService
 from property_rental.credit import ReverseCreditApplicationCommand, ReverseCreditCommand
@@ -646,20 +647,18 @@ def test_ledger_pet_receipt_requirement_disposition_and_reversals_remain_separat
         assert row is not None
         customer = UUID(str(row[0]))
         assert assert_reconciled(connection, customer) == LedgerPosition(pet_deposit=20000)
-        connection.execute(
-            (
-                "UPDATE app.leases SET "
-                "status='TERMINATED',terminated_at=clock_timestamp(),act"
-                "ual_termination_date=%s,termination_reason='Approved policy "
-                "termination',version=version+1,updated_at=clock_timesta"
-                "mp(),updated_by=%s WHERE id=%s"
-            ),
-            (date.today(), service.actor_id, lease),
-        )
+    terminate_for_disposition(migrated_database_url, service, lease, date.today())
     disposition = uuid4()
     service.record_disposition(
         RecordDepositDispositionCommand(
-            uuid4(), disposition, deposit, lease, 12000, date.today(), "Authorized disposition"
+            uuid4(),
+            disposition,
+            deposit,
+            lease,
+            12000,
+            date.today(),
+            "Authorized disposition",
+            context=disposition_context(migrated_database_url, deposit),
         ),
         actor=staff,
     )
@@ -781,7 +780,7 @@ def test_ledger_forward_projection_upgrade_preserves_populated_predecessor(
 ) -> None:
     config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
     scripts = ScriptDirectory.from_config(config)
-    assert scripts.get_heads() == ["20260914_57"]
+    assert scripts.get_heads() == ["20260914_58"]
     revision = scripts.get_revision("20260909_48")
     assert revision is not None
     assert revision.down_revision == "20260908_47"

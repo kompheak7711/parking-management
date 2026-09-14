@@ -1176,6 +1176,41 @@ rule before posting. Deposit applications and reversals are not implemented yet;
 their acceptance must extend the authoritative balance stream and revision
 invalidation. No future feature is covered merely by this read.
 
+### Exact approved disposition context (V1-055; DL-062)
+
+Every fresh Lease Deposit disposition requires the exact original termination event,
+an explicit supported governing rule and the expected financial observation revision.
+`lease_deposit_disposition_contexts` preserves these alongside the original Property,
+actor, idempotency key/digest, Deposit, Lease, amount, effective date, reason and
+authorization. Its append-only rows link both the disposition and original command.
+The narrow financial-role wrapper commits context, source, audit and command together;
+only the two circular foreign keys are deferred and validated before return.
+
+BR-DEP-023 permits Security disposition from a matching approved original voluntary
+BR-LEASE-021 termination before the contractual End Date. Pet remains separate.
+BR-DEP-022 requires an original termination explicitly governed by that rule, with
+matching signed Customer-violation authority and at least three genuine general
+warning sources. A generic violation, text reason or current pet presence does not
+establish that cause. Original source, Property, Lease, Customer and date must agree.
+
+The command serializes identity and locks the active HUMAN, scoped Lease/source,
+Deposit and existing MVCC guard before revalidating financial state. Required-amount
+adjustment inserts also participate in that guard; the existing balance-event guard
+and history-budget validation remain intact. Both net-zero histories and concurrent
+changes under repeatable-read invalidate stale posting. This creates no new policy.
+
+The existing entry point and Lease-disposition insert trigger require matching context
+for fresh effects. Historical successful absent-context requests preserve their digest,
+saved response and exact replay, including after reversal. Supplied context and every
+original field remain exact retry intent. No historical backfill or source rewrite is
+performed; runtime/bootstrap/public receive no new mutation or context-table access.
+Expected-version conflicts require a fresh observation; they do not authorize retrying
+with fabricated source or changed intent under an existing successful key.
+
+This command stage does not complete Invoice reconciliation, physical Move-out,
+Settlement applications, HTTP/staff workflows or whole-version acceptance. Future
+applications/reversals must extend balance and financial revision invalidation.
+
 ## DB-DEP-005 — `deposit_applications`
 
 Append-only Final Settlement financial event: `id uuid PK`, `deposit_id uuid NOT NULL FK`, `final_settlement_id uuid NOT NULL FK`, `invoice_id uuid NOT NULL FK`, `invoice_line_id uuid NOT NULL FK`, `application_stage text NOT NULL CHECK IN ('PET_RELATED_FIRST','SECURITY_EXPLICIT','PET_REMAINDER_EXPLICIT')`, `amount_usd_cents bigint NOT NULL CHECK (>0)`, `application_order integer NOT NULL CHECK (>0)`, `reason text NOT NULL`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`, `authorization_reference text NOT NULL`, `UNIQUE (final_settlement_id, application_order)`.

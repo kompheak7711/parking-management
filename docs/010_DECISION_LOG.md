@@ -811,12 +811,26 @@ Rent Due Date question in `DL-042` and do not authorize new business policy.
 ## DL-061 — Deposit financial observation revision
 
 - **Type:** `TECHNICAL DESIGN DECISION`
-- **Status:** `IMPLEMENTED; INDEPENDENT ACCEPTANCE PENDING`
+- **Status:** `ACCEPTED at dc230345e79e82dd5b56fcf5ffed1027d2a01d37; exact gates and independent zero-finding review preserved externally`
 - **Decision:** Preserve existing Deposit metadata versions and original command results. Derive a separate `disposition_state_version` from that metadata version plus immutable required-adjustment and balance-event counts. Count originals and corrections separately, so a net-zero financial history still changes the observation. Keep the existing mutable serialization guard separate.
 - **Authority:** Routine implementation authority for V1-055 under the owner's standing V1-054 through V1-060 authorization. This technical entry creates no business or security policy and does not activate version V1-061.
 - **Derived from:** DB-DEP-001 through DB-DEP-004, DB-DEP-007/008, DB-TXN-003/004, API-042 and SEC-028/029: preserve history and revalidate financial state in the posting transaction.
 - **Boundary:** The protected read returns the revision from the same snapshot as balances. Expected-version command enforcement and exact governing-rule/source validation remain separate pending work. Future Deposit applications/reversals must participate before acceptance. No Refund, forfeiture or termination right is added.
 - **Rationale:** Metadata version alone does not follow financial events. A net-balance token misses events followed by reversals. The MVCC guard can change for coordination without a new financial event; it remains the concurrency mechanism, not financial truth.
+- **Decision date:** 2026-09-14.
+
+---
+
+## DL-062 — Exact-source Deposit disposition command context
+
+- **Type:** `TECHNICAL DESIGN DECISION`
+- **Status:** `IMPLEMENTED; VERIFICATION AND INDEPENDENT ACCEPTANCE PENDING`
+- **Decision:** Bind a fresh disposition to an exact approved original termination event, existing supported rule and expected financial revision. Preserve immutable context and command intent, require it at the shared fresh boundary/storage, and keep absent-context historical replay unchanged.
+- **Authority:** Existing V1-055 implementation authorization; BR-DEP-022/023/024, BR-LEASE-021/024/025, DB-TXN-003/004, API-042 and SEC-028/029. No new forfeiture circumstance, termination right or Pet consequence is introduced.
+- **Source:** BR-DEP-023 uses original voluntary-early Security authority. BR-DEP-022 requires the original explicit rule and signed Customer-violation decision with real general warning sources; generic violation or free text is insufficient.
+- **Concurrency:** Reuse the accepted financial revision and existing Deposit MVCC guard. Required-amount adjustments also participate; a root row lock alone cannot validate an observation retained by a repeatable-read transaction.
+- **History:** Forward58 adds append-only context with atomic command/source/audit linkage. Original snapshot shape, digests, successful results and all historic rows remain. Exact replay precedes current financial observation checks; new contextual retries also compare every original field.
+- **Boundary:** No HTTP/frontend, Invoice reconciliation, physical workflow or Settlement completion. Future applications/reversals must extend financial observation and balance invalidation before acceptance. This technical ID does not activate V1-062 or expand the V1-060 authorization boundary.
 - **Decision date:** 2026-09-14.
 
 ---

@@ -16,6 +16,7 @@ import pytest
 from alembic import command as alembic_command
 from alembic.config import Config
 
+from deposit_disposition_test_support import disposition_context, terminate_for_disposition
 from payment_test_support import seed_deposit_payment
 from property_rental.deposit import (
     DEPOSIT_CORRECT_CAPABILITY,
@@ -431,16 +432,16 @@ def test_same_key_replays_are_concurrency_safe_for_exposed_deposit_commands(
         actor_id=service2.actor_id,
         amount_usd_cents=20_000,
     )
-    with psycopg.connect(migrated_database_url) as owner:
-        owner.execute(
-            "UPDATE app.leases SET status='TERMINATED',terminated_at=clock_timestamp(),"
-            "actual_termination_date=%s,termination_reason='Approved policy termination',"
-            "version=version+1,updated_at=clock_timestamp(),updated_by=%s WHERE id=%s",
-            (date.today(), service2.actor_id, lease2),
-        )
-        owner.commit()
+    terminate_for_disposition(migrated_database_url, service2, lease2, date.today())
     disposition = RecordDepositDispositionCommand(
-        uuid4(), uuid4(), deposit2, lease2, 5_000, date.today(), "Approved Lease outcome"
+        uuid4(),
+        uuid4(),
+        deposit2,
+        lease2,
+        5_000,
+        date.today(),
+        "Approved Lease outcome",
+        context=disposition_context(migrated_database_url, deposit2),
     )
     service2.record_disposition(disposition, actor=actor2)
     disposition_reversal = ReverseDepositDispositionCommand(
@@ -541,14 +542,7 @@ def test_lease_disposition_and_reversal_are_bounded_idempotent_and_auditable(
         actor_id=service.actor_id,
         amount_usd_cents=20_000,
     )
-    with psycopg.connect(migrated_database_url) as owner:
-        owner.execute(
-            "UPDATE app.leases SET status='TERMINATED',terminated_at=clock_timestamp(),"
-            "actual_termination_date=%s,termination_reason='Approved policy termination',"
-            "version=version+1,updated_at=clock_timestamp(),updated_by=%s WHERE id=%s",
-            (date.today(), service.actor_id, lease_id),
-        )
-        owner.commit()
+    terminate_for_disposition(migrated_database_url, service, lease_id, date.today())
     command = RecordDepositDispositionCommand(
         uuid4(),
         uuid4(),
@@ -557,6 +551,7 @@ def test_lease_disposition_and_reversal_are_bounded_idempotent_and_auditable(
         12_000,
         date.today(),
         "Approved non-refundable Lease outcome",
+        context=disposition_context(migrated_database_url, deposit_id),
     )
     disposed = service.record_disposition(command, actor=actor)
     assert disposed.deposit_disposition_id == command.disposition_id
@@ -593,14 +588,7 @@ def test_concurrent_lease_dispositions_cannot_exceed_one_held_balance(
         actor_id=service.actor_id,
         amount_usd_cents=20_000,
     )
-    with psycopg.connect(migrated_database_url) as owner:
-        owner.execute(
-            "UPDATE app.leases SET status='TERMINATED',terminated_at=clock_timestamp(),"
-            "actual_termination_date=%s,termination_reason='Approved policy termination',"
-            "version=version+1,updated_at=clock_timestamp(),updated_by=%s WHERE id=%s",
-            (date.today(), service.actor_id, lease_id),
-        )
-        owner.commit()
+    terminate_for_disposition(migrated_database_url, service, lease_id, date.today())
     barrier = Barrier(2)
 
     def attempt() -> str:
@@ -615,10 +603,11 @@ def test_concurrent_lease_dispositions_cannot_exceed_one_held_balance(
                     15_000,
                     date.today(),
                     "Concurrent approved disposition",
+                    context=disposition_context(migrated_database_url, deposit_id),
                 ),
                 actor=actor,
             )
-        except DepositInvalidError:
+        except (DepositInvalidError, DepositConflictError):
             return "invalid"
         return "disposed"
 
@@ -654,17 +643,17 @@ def test_storage_triggers_reject_negative_required_amount_and_dependent_receipt_
         actor_id=service.actor_id,
         amount_usd_cents=20_000,
     )
-    with psycopg.connect(migrated_database_url) as owner:
-        owner.execute(
-            "UPDATE app.leases SET status='TERMINATED',terminated_at=clock_timestamp(),"
-            "actual_termination_date=%s,termination_reason='Approved policy termination',"
-            "version=version+1,updated_at=clock_timestamp(),updated_by=%s WHERE id=%s",
-            (date.today(), service.actor_id, lease_id),
-        )
-        owner.commit()
+    terminate_for_disposition(migrated_database_url, service, lease_id, date.today())
     service.record_disposition(
         RecordDepositDispositionCommand(
-            uuid4(), uuid4(), deposit_id, lease_id, 1_000, date.today(), "Approved disposition"
+            uuid4(),
+            uuid4(),
+            deposit_id,
+            lease_id,
+            1_000,
+            date.today(),
+            "Approved disposition",
+            context=disposition_context(migrated_database_url, deposit_id),
         ),
         actor=actor,
     )

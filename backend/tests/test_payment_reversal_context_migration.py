@@ -14,6 +14,7 @@ from alembic.config import Config
 from alembic.script import ScriptDirectory
 from psycopg import sql
 
+from deposit_disposition_test_support import disposition_context, terminate_for_disposition
 from payment_test_support import seed_deposit_payment, seed_payment
 from property_rental.credit import ReverseCreditApplicationCommand, ReverseCreditCommand
 from property_rental.deposit import (
@@ -371,7 +372,7 @@ def test_payment_reversal_context_database_migration_privileges_and_readonly_tra
     migrated_database_url: str,  # noqa: F811
 ) -> None:
     scripts = ScriptDirectory.from_config(Config("alembic.ini"))
-    assert scripts.get_heads() == ["20260914_57"]
+    assert scripts.get_heads() == ["20260914_58"]
     revision = scripts.get_revision("20260908_46")
     assert revision is not None and revision.down_revision == "20260907_45"
     with pytest.raises(RuntimeError, match="forward-only"):
@@ -442,17 +443,16 @@ def test_payment_reversal_context_database_shared_deposit_descendants_deduplicat
     human, prop = service.actor_id, service.property_id
     initial = get(human, prop, payment, limit=1)
     initial_cursor = f"{data(initial)['revision']}:6:{receipts[0]}"
-    with psycopg.connect(migrated_database_url) as connection:
-        connection.execute(
-            "UPDATE app.leases SET status='TERMINATED',terminated_at"
-            "=clock_timestamp(),actual_termination_date=%s,terminati"
-            "on_reason='Approved policy termination',version=version"
-            "+1,updated_at=clock_timestamp(),updated_by=%s WHERE id="
-            "%s",
-            (date.today(), human, lease),
-        )
+    terminate_for_disposition(migrated_database_url, service, lease, date.today())
     disposition = RecordDepositDispositionCommand(
-        uuid4(), uuid4(), deposit, lease, 5000, date.today(), "Approved Lease outcome"
+        uuid4(),
+        uuid4(),
+        deposit,
+        lease,
+        5000,
+        date.today(),
+        "Approved Lease outcome",
+        context=disposition_context(migrated_database_url, deposit),
     )
     service.record_disposition(disposition, actor=staff)
     with pytest.raises(PaymentReversalContextChanged):

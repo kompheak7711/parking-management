@@ -12,6 +12,7 @@ from uuid import UUID
 
 import psycopg
 
+from property_rental.deposit_disposition import LeaseDepositDispositionContext
 from property_rental.identity import AuthenticatedActor, AuthorizationRequirement, is_authorized
 
 NIL_UUID: Final = UUID(int=0)
@@ -187,6 +188,7 @@ class RecordDepositDispositionCommand:
     effective_date: date
     reason: str
     authorization_reference: str = DEPOSIT_DISPOSE_CAPABILITY
+    context: LeaseDepositDispositionContext | None = None
 
     def __post_init__(self) -> None:
         for field in ("idempotency_key", "disposition_id", "deposit_id", "governing_lease_id"):
@@ -200,6 +202,21 @@ class RecordDepositDispositionCommand:
         if type(self.effective_date) is not date:
             raise ValueError("effective_date must be a date")
         _text(self.reason, "reason")
+        if self.context is not None:
+            if not isinstance(self.context, LeaseDepositDispositionContext):
+                raise ValueError("Deposit disposition context must be typed")
+            if len(self.reason) > 1000 or "\x00" in self.reason:
+                raise ValueError("Disposition reason must be bounded")
+            if any(
+                not isinstance(getattr(self, field), UUID)
+                for field in (
+                    "idempotency_key",
+                    "disposition_id",
+                    "deposit_id",
+                    "governing_lease_id",
+                )
+            ):
+                raise ValueError("Disposition identities must be nonzero UUIDs")
 
 
 @dataclass(frozen=True, slots=True)
@@ -230,8 +247,11 @@ DepositCommand: TypeAlias = (
 
 
 def deposit_request_digest(action: str, command: DepositCommand) -> str:
+    fields = asdict(command)
+    if isinstance(command, RecordDepositDispositionCommand) and command.context is None:
+        fields.pop("context")
     payload = json.dumps(
-        {"action": action, "command": asdict(command)},
+        {"action": action, "command": fields},
         default=str,
         sort_keys=True,
         separators=(",", ":"),
@@ -343,7 +363,7 @@ class PostgresDepositService:
                 "Deposit idempotency key conflicts with another request" in str(exc)
             ):
                 raise DepositIdempotencyKeyReused("Deposit idempotency key was reused") from exc
-            if exc.sqlstate in {"23505", "23P01"}:
+            if exc.sqlstate in {"23505", "23P01", "P5801", "40001"}:
                 raise DepositConflictError("Deposit command conflicted") from exc
             if exc.sqlstate in {"22023", "23514", "55000"}:
                 raise DepositInvalidError("Deposit command is invalid") from exc
@@ -458,20 +478,32 @@ class PostgresDepositService:
         self, command: RecordDepositDispositionCommand, *, actor: AuthenticatedActor
     ) -> DepositSnapshot:
         self._authorize(actor, DEPOSIT_DISPOSE_CAPABILITY, command.authorization_reference)
+        parameters: tuple[object, ...] = (
+            self.property_id,
+            self.actor_id,
+            command.idempotency_key,
+            deposit_request_digest("deposit.disposition.record", command),
+            command.disposition_id,
+            command.deposit_id,
+            command.governing_lease_id,
+            command.amount_usd_cents,
+            command.effective_date,
+            command.reason,
+            command.authorization_reference,
+        )
+        if command.context is None:
+            return self._execute(
+                "SELECT app.record_lease_deposit_disposition(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                parameters,
+            )
         return self._execute(
-            "SELECT app.record_lease_deposit_disposition(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            "SELECT app.record_lease_deposit_disposition_with_context("
+            "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
             (
-                self.property_id,
-                self.actor_id,
-                command.idempotency_key,
-                deposit_request_digest("deposit.disposition.record", command),
-                command.disposition_id,
-                command.deposit_id,
-                command.governing_lease_id,
-                command.amount_usd_cents,
-                command.effective_date,
-                command.reason,
-                command.authorization_reference,
+                *parameters,
+                command.context.termination_event_id,
+                command.context.governing_rule,
+                command.context.expected_state_version,
             ),
         )
 

@@ -30470,6 +30470,342 @@
       "test_path": "backend/tests/test_termination_deposit.py",
       "status": "implemented",
       "notes": "V1-055 financial revision read prerequisite: immutable event history, replay/rollback, transaction consistency and migration preservation. No expected-version posting or new financial policy."
+    },
+    {
+      "test_id": "test_context_requires_actual_nonzero_termination_uuid",
+      "upstream_ids": [
+        "BR-DEP-022",
+        "BR-DEP-023",
+        "BR-DEP-024",
+        "DB-TXN-003",
+        "SEC-028",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_deposit_disposition.py",
+      "status": "implemented",
+      "notes": "Exact approved termination source/rule and financial observation; historical replay, atomicity, scoping, MVCC and forward preservation. No new financial policy or whole-version closure."
+    },
+    {
+      "test_id": "test_context_rule_is_typed_and_explicit",
+      "upstream_ids": [
+        "BR-DEP-022",
+        "BR-DEP-023",
+        "BR-DEP-024",
+        "DB-TXN-003",
+        "SEC-028",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_deposit_disposition.py",
+      "status": "implemented",
+      "notes": "Exact approved termination source/rule and financial observation; historical replay, atomicity, scoping, MVCC and forward preservation. No new financial policy or whole-version closure."
+    },
+    {
+      "test_id": "test_financial_revision_is_a_positive_exact_bigint",
+      "upstream_ids": [
+        "BR-DEP-022",
+        "BR-DEP-023",
+        "BR-DEP-024",
+        "DB-TXN-003",
+        "SEC-028",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_deposit_disposition.py",
+      "status": "implemented",
+      "notes": "Exact approved termination source/rule and financial observation; historical replay, atomicity, scoping, MVCC and forward preservation. No new financial policy or whole-version closure."
+    },
+    {
+      "test_id": "test_financial_revision_accepts_both_valid_boundaries",
+      "upstream_ids": [
+        "BR-DEP-022",
+        "BR-DEP-023",
+        "BR-DEP-024",
+        "DB-TXN-003",
+        "SEC-028",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_deposit_disposition.py",
+      "status": "implemented",
+      "notes": "Exact approved termination source/rule and financial observation; historical replay, atomicity, scoping, MVCC and forward preservation. No new financial policy or whole-version closure."
+    },
+    {
+      "test_id": "test_absent_context_digest_matches_original_wire_shape_byte_for_byte",
+      "upstream_ids": [
+        "BR-DEP-022",
+        "BR-DEP-023",
+        "BR-DEP-024",
+        "DB-TXN-003",
+        "SEC-028",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_deposit_disposition.py",
+      "status": "implemented",
+      "notes": "Exact approved termination source/rule and financial observation; historical replay, atomicity, scoping, MVCC and forward preservation. No new financial policy or whole-version closure."
+    },
+    {
+      "test_id": "test_digest_binds_context_and_each_original_request_field",
+      "upstream_ids": [
+        "BR-DEP-022",
+        "BR-DEP-023",
+        "BR-DEP-024",
+        "DB-TXN-003",
+        "SEC-028",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_deposit_disposition.py",
+      "status": "implemented",
+      "notes": "Exact approved termination source/rule and financial observation; historical replay, atomicity, scoping, MVCC and forward preservation. No new financial policy or whole-version closure."
+    },
+    {
+      "test_id": "test_context_bearing_command_rejects_untyped_context_and_unbounded_reason",
+      "upstream_ids": [
+        "BR-DEP-022",
+        "BR-DEP-023",
+        "BR-DEP-024",
+        "DB-TXN-003",
+        "SEC-028",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_deposit_disposition.py",
+      "status": "implemented",
+      "notes": "Exact approved termination source/rule and financial observation; historical replay, atomicity, scoping, MVCC and forward preservation. No new financial policy or whole-version closure."
+    },
+    {
+      "test_id": "test_service_preserves_legacy_route_and_sends_complete_explicit_context",
+      "upstream_ids": [
+        "BR-DEP-022",
+        "BR-DEP-023",
+        "BR-DEP-024",
+        "DB-TXN-003",
+        "SEC-028",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_deposit_disposition.py",
+      "status": "implemented",
+      "notes": "Exact approved termination source/rule and financial observation; historical replay, atomicity, scoping, MVCC and forward preservation. No new financial policy or whole-version closure."
+    },
+    {
+      "test_id": "test_stale_observation_and_serialization_failure_are_conflicts",
+      "upstream_ids": [
+        "BR-DEP-022",
+        "BR-DEP-023",
+        "BR-DEP-024",
+        "DB-TXN-003",
+        "SEC-028",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_deposit_disposition.py",
+      "status": "implemented",
+      "notes": "Exact approved termination source/rule and financial observation; historical replay, atomicity, scoping, MVCC and forward preservation. No new financial policy or whole-version closure."
+    },
+    {
+      "test_id": "test_voluntary_security_context_links_exact_original_event_command_and_audit",
+      "upstream_ids": [
+        "BR-DEP-022",
+        "BR-DEP-023",
+        "BR-DEP-024",
+        "DB-TXN-003",
+        "SEC-028",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_disposition_migration.py",
+      "status": "implemented",
+      "notes": "Exact approved termination source/rule and financial observation; historical replay, atomicity, scoping, MVCC and forward preservation. No new financial policy or whole-version closure."
+    },
+    {
+      "test_id": "test_explicit_pet_noncompliance_source_supports_each_applicable_deposit",
+      "upstream_ids": [
+        "BR-DEP-022",
+        "BR-DEP-023",
+        "BR-DEP-024",
+        "DB-TXN-003",
+        "SEC-028",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_disposition_migration.py",
+      "status": "implemented",
+      "notes": "Exact approved termination source/rule and financial observation; historical replay, atomicity, scoping, MVCC and forward preservation. No new financial policy or whole-version closure."
+    },
+    {
+      "test_id": "test_unsupported_source_rule_or_relationship_rejects_without_financial_effects",
+      "upstream_ids": [
+        "BR-DEP-022",
+        "BR-DEP-023",
+        "BR-DEP-024",
+        "DB-TXN-003",
+        "SEC-028",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_disposition_migration.py",
+      "status": "implemented",
+      "notes": "Exact approved termination source/rule and financial observation; historical replay, atomicity, scoping, MVCC and forward preservation. No new financial policy or whole-version closure."
+    },
+    {
+      "test_id": "test_old_fresh_entry_and_direct_storage_require_context_without_changing_history",
+      "upstream_ids": [
+        "BR-DEP-022",
+        "BR-DEP-023",
+        "BR-DEP-024",
+        "DB-TXN-003",
+        "SEC-028",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_disposition_migration.py",
+      "status": "implemented",
+      "notes": "Exact approved termination source/rule and financial observation; historical replay, atomicity, scoping, MVCC and forward preservation. No new financial policy or whole-version closure."
+    },
+    {
+      "test_id": "test_net_zero_history_invalidates_fresh_posting_even_when_balance_is_restored",
+      "upstream_ids": [
+        "BR-DEP-022",
+        "BR-DEP-023",
+        "BR-DEP-024",
+        "DB-TXN-003",
+        "SEC-028",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_disposition_migration.py",
+      "status": "implemented",
+      "notes": "Exact approved termination source/rule and financial observation; historical replay, atomicity, scoping, MVCC and forward preservation. No new financial policy or whole-version closure."
+    },
+    {
+      "test_id": "test_refund_history_participates_in_posting_observation",
+      "upstream_ids": [
+        "BR-DEP-022",
+        "BR-DEP-023",
+        "BR-DEP-024",
+        "DB-TXN-003",
+        "SEC-028",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_disposition_migration.py",
+      "status": "implemented",
+      "notes": "Exact approved termination source/rule and financial observation; historical replay, atomicity, scoping, MVCC and forward preservation. No new financial policy or whole-version closure."
+    },
+    {
+      "test_id": "test_repeatable_read_cannot_post_against_an_observation_before_concurrent_commit",
+      "upstream_ids": [
+        "BR-DEP-022",
+        "BR-DEP-023",
+        "BR-DEP-024",
+        "DB-TXN-003",
+        "SEC-028",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_disposition_migration.py",
+      "status": "implemented",
+      "notes": "Exact approved termination source/rule and financial observation; historical replay, atomicity, scoping, MVCC and forward preservation. No new financial policy or whole-version closure."
+    },
+    {
+      "test_id": "test_two_fresh_commands_cannot_both_consume_one_financial_observation",
+      "upstream_ids": [
+        "BR-DEP-022",
+        "BR-DEP-023",
+        "BR-DEP-024",
+        "DB-TXN-003",
+        "SEC-028",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_disposition_migration.py",
+      "status": "implemented",
+      "notes": "Exact approved termination source/rule and financial observation; historical replay, atomicity, scoping, MVCC and forward preservation. No new financial policy or whole-version closure."
+    },
+    {
+      "test_id": "test_raw_replay_rejects_changed_fields_even_with_the_old_digest",
+      "upstream_ids": [
+        "BR-DEP-022",
+        "BR-DEP-023",
+        "BR-DEP-024",
+        "DB-TXN-003",
+        "SEC-028",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_disposition_migration.py",
+      "status": "implemented",
+      "notes": "Exact approved termination source/rule and financial observation; historical replay, atomicity, scoping, MVCC and forward preservation. No new financial policy or whole-version closure."
+    },
+    {
+      "test_id": "test_immediate_constraints_and_transaction_rollback_preserve_atomic_history",
+      "upstream_ids": [
+        "BR-DEP-022",
+        "BR-DEP-023",
+        "BR-DEP-024",
+        "DB-TXN-003",
+        "SEC-028",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_disposition_migration.py",
+      "status": "implemented",
+      "notes": "Exact approved termination source/rule and financial observation; historical replay, atomicity, scoping, MVCC and forward preservation. No new financial policy or whole-version closure."
+    },
+    {
+      "test_id": "test_context_is_append_only_and_only_financial_role_has_the_narrow_wrapper",
+      "upstream_ids": [
+        "BR-DEP-022",
+        "BR-DEP-023",
+        "BR-DEP-024",
+        "DB-TXN-003",
+        "SEC-028",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_disposition_migration.py",
+      "status": "implemented",
+      "notes": "Exact approved termination source/rule and financial observation; historical replay, atomicity, scoping, MVCC and forward preservation. No new financial policy or whole-version closure."
+    },
+    {
+      "test_id": "test_forward58_preserves_all57_history_function_identity_and_legacy_replay",
+      "upstream_ids": [
+        "BR-DEP-022",
+        "BR-DEP-023",
+        "BR-DEP-024",
+        "DB-TXN-003",
+        "SEC-028",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_disposition_migration.py",
+      "status": "implemented",
+      "notes": "Exact approved termination source/rule and financial observation; historical replay, atomicity, scoping, MVCC and forward preservation. No new financial policy or whole-version closure."
     }
   ]
 }
