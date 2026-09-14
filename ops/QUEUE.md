@@ -1,3 +1,7 @@
+# Current queue — corrected V1-055 command-guard acceptance
+
+Run remaining exact gates for the corrected command-guard candidate, reusing verified unchanged code evidence. Fresh complete-stage independent review must cover all24paths/two commits from accepted8c8d923 with Astra/max/Standard/read-only/never and absolute Python/Git. Preserve downgrade-message correction1of2, two test-only corrections1of2 and every inherited limit. No55publication or next slice before acceptance; full version remains incomplete.
+
 # Current queue — V1-055 command guards exact gates/review
 
 Run the remaining mandatory exact command-guard gates, reusing verified unchanged frontend and exact backend format/lint/type evidence. Obtain a fresh independent complete24path/onecommit review from accepted8c8d923 with Astra/max/Standard(default)/enforced-read-only/approval-never and the verified absolute Python/Git executables. Preserve both new test corrections1of2 and all prior limits. No next slice or publication before stage acceptance; governing-rule/source/expected-version orchestration, physical/HTTP and final integrated V1-055 gates remain pending. No56before55fullyclosed; through60only.

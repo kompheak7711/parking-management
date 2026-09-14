@@ -73,4 +73,4 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    raise RuntimeError("Forward-only financial command migration; preserve recorded history")
+    raise RuntimeError("forward-only financial command migration; preserve recorded history")
