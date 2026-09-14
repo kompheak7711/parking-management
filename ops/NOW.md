@@ -1,13 +1,13 @@
-# Property Rental — V1-055 Invoice correction boundary candidate
+# Property Rental — V1-055 ICB-1 documentation correction
 
-- Current: eight-path stage implemented from accepted72ff967d448cb10b0f8d345af55353264bfb7244; affected unit and1416full PostgreSQL/no skips pass,223static files pass. Exact gates and independent complete-stage review pending. Whole55 incomplete/unpublished.
-- Candidate: external v1055-invoice-correction-boundary-candidate.json identifies immutable normal local commit; subsequent gates/reviews remain external.
-- Behavior: direct Adjustment requires integer cents; existing credit Adjustment/VOID preserves original Invoice/components, Lease/Service sources, explicit application reversals and exact replay/concurrent duplicate behavior. No financial writer/migration/API changed.
-- Evidence: /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-invoice-correction-boundary-layout1-checks.json SHA2560c74b2d34793ba7e3e24fb3cfcfa90c2080d8c8ad46b0edd2c2223041082eb03. New SQL literal-layout correction1of2 locally verified with module AST unchanged; original lint failure and all inherited histories/limits preserved.
-- Accepted:72ff967 all22 gates and independent focused/final APPROVE0; IR-1/2/3 resolved1of2, prior STATE roots and QUEUE preserved.
-- Remaining: debit Adjustment governing due-date handling; physical move-out/inspection/readings; HTTP/staff; final integrated V1-055 acceptance, publication/exactCI/ref/card/durable closure. No56 activation.
-- Coordination: sole Codex; no running affected test or reviewer at freeze. Astra/xhigh/Fast, reviewers Astra/max/Standard/read-only/never with absolute Python/Git. SamefollowupACTIVE/OpenClawdisabled;127worktrees retained.
-- Refs/card: local reviewed-stage successor pending review; upstream/FETCH/live closed54bda6606;55card tracking-only/incomplete/unclaimed. No publication.
-- Restrictions: normal enforcement and truthful defensive scope; all source/data/production/paid/destructive/history exclusions remain.
-- Next: Run remaining exact gates for this eight-path Invoice command boundary stage, reusing completed affected static/unit/full1416PostgreSQL proof and unchanged frontend inputs. Require fresh independent complete-stage review from accepted72ff967 with Astra/max/Standard/read-only/never and absolute Python/Git. Debit governing due-date handling, physical/HTTP and final integrated V1-055 acceptance remain pending; no publication or56 activation.
-- Updated: 2026-09-14T18:05:20.500316+00:00
+- Current: Invoice correction boundary remains unaccepted. Rejected413f4c7 preserved with one LOW ICB-1 documentation finding; wording and financial behavior unchanged by correction2of2.
+- Candidate: normal successor pending, resolved through external v1055-invoice-correction-boundary-document2-candidate.json. All subsequent review evidence stays external.
+- Evidence: original413f4c7 all22 gates preserved:149affectedunit,1416PostgreSQL/no skips,3172backend/1281DB skips covered,1519frontend,189automation,223static. Attempt1 EOF whitespace failure preserved; fresh changed-records gates pending.
+- Review: /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-invoice-correction-boundary-413f4c7-full-root-assessment.json SHA256b389b52ddbd0b38f7674eecf5865554cb8290c1646860b7aa43078221d320cc6. Fresh focused correction and complete corrected-stage reviews required, Astra/max/Standard/read-only/never with absolute Python/Git and login:false.
+- History: ICB-1 documentation prefixes2of2; SQL literal layout1of2 and all inherited attempts/rejected candidates/reports preserved. Prior STATE roots archived and prior QUEUE retained.
+- Remaining: debit Adjustment governing due dates, physical move-out/inspection/readings, HTTP/staff and final integrated V1-055 acceptance before publication/exactCI/refs/card/durable closure. No56 activation.
+- Coordination: sole Codex Astra/xhigh/Fast; existing reviews completed, samefollowupACTIVE/OpenClawdisabled,127retained worktrees. No project claims or active attempts at reconciliation.
+- Refs/card: upstream/FETCH/live closed54bda6606; existing55card tracking-only/incomplete/unclaimed. No publication or version closure.
+- Restrictions: standing through60 authority and truthful defensive scope; no new safety restriction, permission relaxation, customer/production data or destructive operations.
+- Next: Verify changed document/records and reused unchanged product evidence, freeze a normal successor, then obtain focused ICB-1 review vs413f4c7 and fresh complete eight-path/two-commit stage review from72ff967. Whole V1-055 remains unpublished; no V1-056 activation.
+- Updated: 2026-09-14T18:43:33.403182+00:00

@@ -1,3 +1,9 @@
+# Current queue — Invoice boundary ICB-1 documentation correction
+
+Verify changed document/records and reused unchanged product evidence, freeze a normal successor, then obtain focused ICB-1 review vs413f4c7 and fresh complete eight-path/two-commit stage review from72ff967. Whole V1-055 remains unpublished; no V1-056 activation.
+
+All prior entries remain unchanged below.
+
 # Current queue — Invoice correction boundary exact gates and review
 
 Run remaining exact gates for this eight-path Invoice command boundary stage, reusing completed affected static/unit/full1416PostgreSQL proof and unchanged frontend inputs. Require fresh independent complete-stage review from accepted72ff967 with Astra/max/Standard/read-only/never and absolute Python/Git. Debit governing due-date handling, physical/HTTP and final integrated V1-055 acceptance remain pending; no publication or56 activation.
