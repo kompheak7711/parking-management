@@ -191,8 +191,14 @@ class RecordDepositDispositionCommand:
     def __post_init__(self) -> None:
         for field in ("idempotency_key", "disposition_id", "deposit_id", "governing_lease_id"):
             _identity(getattr(self, field), field)
-        if self.amount_usd_cents <= 0:
-            raise ValueError("amount_usd_cents must be positive")
+        if type(self.amount_usd_cents) is not int or not (
+            0 < self.amount_usd_cents <= 9_223_372_036_854_775_807
+        ):
+            raise ValueError(
+                "amount_usd_cents must be positive integer USD cents within bigint range"
+            )
+        if type(self.effective_date) is not date:
+            raise ValueError("effective_date must be a date")
         _text(self.reason, "reason")
 
 
@@ -329,6 +335,8 @@ class PostgresDepositService:
                 )
                 row = connection.execute(query, parameters).fetchone()
         except psycopg.Error as exc:
+            if exc.sqlstate == "42501":
+                raise DepositAuthorizationError("Deposit actor is not authorized") from exc
             if exc.sqlstate == "P0002":
                 raise DepositNotFoundError("Deposit resource was not found") from exc
             if exc.sqlstate == "23505" and (

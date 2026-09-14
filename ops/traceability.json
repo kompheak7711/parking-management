@@ -30215,6 +30215,111 @@
       "test_path": "backend/tests/test_termination_deposit_migration.py",
       "status": "implemented",
       "notes": "V1-055 bounded termination Deposit read projection: real source evidence, separate Security/Pet consequences, changing exact balances and actor/Property scope. Monetary commands and full-version acceptance remain separate."
+    },
+    {
+      "test_id": "test_lease_disposition_rejects_non_integer_or_out_of_range_cents",
+      "upstream_ids": [
+        "DB-DEP-004",
+        "DB-AUDIT-002",
+        "SEC-002",
+        "SEC-014",
+        "TEST-077",
+        "TEST-111"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_deposit.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded Lease Deposit command admission: exact integer/date input, fresh actor, serialized replay and financial/audit/command atomicity; forward-only preservation. Governing-rule/source orchestration and whole-version acceptance remain separate."
+    },
+    {
+      "test_id": "test_lease_disposition_rejects_non_date_effective_values",
+      "upstream_ids": [
+        "DB-DEP-004",
+        "DB-AUDIT-002",
+        "SEC-002",
+        "SEC-014",
+        "TEST-077",
+        "TEST-111"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_deposit.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded Lease Deposit command admission: exact integer/date input, fresh actor, serialized replay and financial/audit/command atomicity; forward-only preservation. Governing-rule/source orchestration and whole-version acceptance remain separate."
+    },
+    {
+      "test_id": "test_concurrent_lease_disposition_identity_is_serialized_and_atomic",
+      "upstream_ids": [
+        "DB-DEP-004",
+        "DB-AUDIT-002",
+        "SEC-002",
+        "SEC-014",
+        "TEST-077",
+        "TEST-111"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_deposit_command_guards_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded Lease Deposit command admission: exact integer/date input, fresh actor, serialized replay and financial/audit/command atomicity; forward-only preservation. Governing-rule/source orchestration and whole-version acceptance remain separate."
+    },
+    {
+      "test_id": "test_disabled_lease_disposition_actor_is_rechecked_before_write_and_replay",
+      "upstream_ids": [
+        "DB-DEP-004",
+        "DB-AUDIT-002",
+        "SEC-002",
+        "SEC-014",
+        "TEST-077",
+        "TEST-111"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_deposit_command_guards_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded Lease Deposit command admission: exact integer/date input, fresh actor, serialized replay and financial/audit/command atomicity; forward-only preservation. Governing-rule/source orchestration and whole-version acceptance remain separate."
+    },
+    {
+      "test_id": "test_lease_disposition_property_and_balance_failures_leave_no_effects",
+      "upstream_ids": [
+        "DB-DEP-004",
+        "DB-AUDIT-002",
+        "SEC-002",
+        "SEC-014",
+        "TEST-077",
+        "TEST-111"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_deposit_command_guards_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded Lease Deposit command admission: exact integer/date input, fresh actor, serialized replay and financial/audit/command atomicity; forward-only preservation. Governing-rule/source orchestration and whole-version acceptance remain separate."
+    },
+    {
+      "test_id": "test_lease_disposition_audit_conflict_rolls_back_financial_and_command_rows",
+      "upstream_ids": [
+        "DB-DEP-004",
+        "DB-AUDIT-002",
+        "SEC-002",
+        "SEC-014",
+        "TEST-077",
+        "TEST-111"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_deposit_command_guards_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded Lease Deposit command admission: exact integer/date input, fresh actor, serialized replay and financial/audit/command atomicity; forward-only preservation. Governing-rule/source orchestration and whole-version acceptance remain separate."
+    },
+    {
+      "test_id": "test_forward56_preserves_all55_history_and_original_successful_replay",
+      "upstream_ids": [
+        "DB-DEP-004",
+        "DB-AUDIT-002",
+        "SEC-002",
+        "SEC-014",
+        "TEST-077",
+        "TEST-111"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_deposit_command_guards_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded Lease Deposit command admission: exact integer/date input, fresh actor, serialized replay and financial/audit/command atomicity; forward-only preservation. Governing-rule/source orchestration and whole-version acceptance remain separate."
     }
   ]
 }

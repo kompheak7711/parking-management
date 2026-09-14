@@ -1132,6 +1132,27 @@ Append-only: `id uuid PK`, `deposit_id uuid NOT NULL FK`, `adjustment_type text 
 
 Append-only non-refundable event: `id uuid PK`, `deposit_id uuid NOT NULL FK`, `amount_usd_cents bigint NOT NULL CHECK (>0)`, `governing_reservation_id uuid NULL FK`, `governing_lease_id uuid NULL FK`, `effective_date date NOT NULL`, `reason text NOT NULL`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`, `authorization_reference text NOT NULL`. Exactly one governing Reservation/Lease is required and must match the Deposit. It cannot exceed refundable held balance and is not an Invoice allocation.
 
+### Lease Deposit command admission (V1-055)
+
+The existing Lease Deposit disposition command serializes its Property, actor,
+action and idempotency key before replay lookup. It freshly requires an active
+human account before returning an original result and again after waiting for the
+Deposit row lock before a new disposition. Python command inputs require a
+positive exact integer USD-cent amount within PostgreSQL `bigint` and an exact
+calendar date. Existing Property/Lease/date and held-balance checks remain in force.
+
+A successful new disposition writes its source row, generic Deposit audit event
+and command/result record atomically. A conflicting audit identity rolls back all
+three. Exact successful retries return the original result, including after a
+reversal; they do not create additional source, audit or command rows. The forward
+56 migration replaces only the existing function body, preserving its signature,
+owner and permissions and all historical rows. It does not backfill generic audit
+events for dispositions already recorded by older versions.
+
+This command-admission prerequisite creates no forfeiture right or new financial
+policy. Explicit governing-rule/source and expected-version orchestration remains
+a separate V1-055 acceptance requirement before the workflow is exposed.
+
 ## DB-DEP-005 — `deposit_applications`
 
 Append-only Final Settlement financial event: `id uuid PK`, `deposit_id uuid NOT NULL FK`, `final_settlement_id uuid NOT NULL FK`, `invoice_id uuid NOT NULL FK`, `invoice_line_id uuid NOT NULL FK`, `application_stage text NOT NULL CHECK IN ('PET_RELATED_FIRST','SECURITY_EXPLICIT','PET_REMAINDER_EXPLICIT')`, `amount_usd_cents bigint NOT NULL CHECK (>0)`, `application_order integer NOT NULL CHECK (>0)`, `reason text NOT NULL`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`, `authorization_reference text NOT NULL`, `UNIQUE (final_settlement_id, application_order)`.

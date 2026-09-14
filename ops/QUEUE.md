@@ -1,3 +1,15 @@
+# Current queue — V1-055 command guards exact gates/review
+
+Run the remaining mandatory exact command-guard gates, reusing verified unchanged frontend and exact backend format/lint/type evidence. Obtain a fresh independent complete24path/onecommit review from accepted8c8d923 with Astra/max/Standard(default)/enforced-read-only/approval-never and the verified absolute Python/Git executables. Preserve both new test corrections1of2 and all prior limits. No next slice or publication before stage acceptance; governing-rule/source/expected-version orchestration, physical/HTTP and final integrated V1-055 gates remain pending. No56before55fullyclosed; through60only.
+
+All previous queues and failed/accepted evidence remain preserved below.
+
+# Current queue — V1-055 Lease Deposit command guards
+
+Implement the frozen Lease Deposit command-admission prerequisite: fresh active HUMAN check, transactionally serialized exact replay, strict integer/date input and preserved current financial behavior. Run affected/full gates and a fresh complete-stage exact-SHA review. Explicit governing-rule/source orchestration and all other55stages remain pending; no55publication/closure or56activation.
+
+Accepted8c8d923evidence is external; all older queues and correction evidence remain preserved below.
+
 # Current queue — V1-055 Deposit readiness exact gates/review
 
 Run remaining mandatory exact Deposit readiness stage gates, reusing only verified unchanged frontend and exact backend static/type evidence. Obtain fresh independent complete25path stage review from8a3c0e3 with Astra/max/Standard/enforced-read-only/never; include source evidence, changing balances, actor/Property scope and legacy upgrade/history preservation. Preserve both correction1of2 histories and all inherited limits. No later stage or publication before acceptance; all remaining55implementation and integrated gates precede closure and56; continue only through60.

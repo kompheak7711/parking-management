@@ -1,6 +1,7 @@
 """Deterministic unit coverage for the V1-037 Deposit domain boundary."""
 
-from datetime import date
+from datetime import date, datetime
+from typing import cast
 from uuid import UUID, uuid4
 
 import pytest
@@ -88,3 +89,19 @@ def test_service_rejects_actor_or_property_capability_mismatch_before_database()
     )
     with pytest.raises(DepositAuthorizationError):
         service.create_pet_deposit(command, actor=wrong_actor)
+
+
+@pytest.mark.parametrize("amount", [True, False, 1.0, 1.25, "100", None, 2**63])
+def test_lease_disposition_rejects_non_integer_or_out_of_range_cents(amount: object) -> None:
+    with pytest.raises(ValueError, match="integer"):
+        RecordDepositDispositionCommand(
+            uuid4(), uuid4(), uuid4(), uuid4(), cast(int, amount), date(2027, 1, 1), "Approved"
+        )
+
+
+@pytest.mark.parametrize("effective", [None, "2027-01-01", 1, datetime(2027, 1, 1)])
+def test_lease_disposition_rejects_non_date_effective_values(effective: object) -> None:
+    with pytest.raises(ValueError, match="date"):
+        RecordDepositDispositionCommand(
+            uuid4(), uuid4(), uuid4(), uuid4(), 100, cast(date, effective), "Approved"
+        )
