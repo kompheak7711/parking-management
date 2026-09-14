@@ -1,3 +1,15 @@
+# Current queue — Invoice read context exact gates and review
+
+Run remaining exact Invoice read-stage gates, reusing the full1409-case PostgreSQL and unchanged static/frontend evidence by input identity. Require fresh independent complete25-path/one-commit review from accepted5ad5d97 with Astra/max/Standard/read-only/never and absolute Python/Git. Preserve every correction limit. Controlled Invoice corrections, physical/HTTP workflows and final integrated V1-055 acceptance remain pending. No publication or V1-056 activation.
+
+Every prior queue/evidence entry follows unchanged.
+
+# Current queue — V1-055 Invoice termination read context
+
+Implement the admitted bounded Invoice termination read context from accepted5ad5d97, then verify affected behavior and mandatory gates and freeze a normal exact-SHA candidate for fresh full-stage independent review. Controlled Invoice correction commands remain a following V1-055 stage, as do physical/HTTP workflows and final integrated acceptance; no publication or V1-056 activation.
+
+Accepted5ad5d97 evidence is external; every previous queue entry follows unchanged.
+
 # Current queue — disposition context exact gates and review
 
 Run remaining exact command-stage gates, reusing the full1400-case PostgreSQL and unchanged static/frontend evidence by input identity. Require fresh independent complete31-path/one-commit review from accepted dc23034 with Astra/max/Standard/read-only/never and absolute Python/Git. Preserve all correction limits. No next slice or publication before stage acceptance; remaining V1-055 financial/physical/HTTP and integrated acceptance precede closure and V1-056.

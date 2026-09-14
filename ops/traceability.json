@@ -30806,6 +30806,348 @@
       "test_path": "backend/tests/test_deposit_disposition_migration.py",
       "status": "implemented",
       "notes": "Exact approved termination source/rule and financial observation; historical replay, atomicity, scoping, MVCC and forward preservation. No new financial policy or whole-version closure."
+    },
+    {
+      "test_id": "test_original_contractual_and_current_amounts_never_imply_a_posting",
+      "upstream_ids": [
+        "BR-RENT-023",
+        "BR-RENT-024",
+        "BR-RENT-025",
+        "BR-RENT-026",
+        "BR-INV-024",
+        "DB-INV-006",
+        "DB-TXN-003",
+        "SEC-028",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_termination_invoice.py",
+      "status": "implemented",
+      "notes": "Original termination Invoice coverage and separate current financial observation; no correction, VOID eligibility or financial-completion claim."
+    },
+    {
+      "test_id": "test_original_period_classification_preserves_initial_overlap_and_future_coverage",
+      "upstream_ids": [
+        "BR-RENT-023",
+        "BR-RENT-024",
+        "BR-RENT-025",
+        "BR-RENT-026",
+        "BR-INV-024",
+        "DB-INV-006",
+        "DB-TXN-003",
+        "SEC-028",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_termination_invoice.py",
+      "status": "implemented",
+      "notes": "Original termination Invoice coverage and separate current financial observation; no correction, VOID eligibility or financial-completion claim."
+    },
+    {
+      "test_id": "test_separate_service_source_and_void_history_never_become_invalid_rent",
+      "upstream_ids": [
+        "BR-RENT-023",
+        "BR-RENT-024",
+        "BR-RENT-025",
+        "BR-RENT-026",
+        "BR-INV-024",
+        "DB-INV-006",
+        "DB-TXN-003",
+        "SEC-028",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_termination_invoice.py",
+      "status": "implemented",
+      "notes": "Original termination Invoice coverage and separate current financial observation; no correction, VOID eligibility or financial-completion claim."
+    },
+    {
+      "test_id": "test_original_components_are_detail_not_separate_adjusted_obligations",
+      "upstream_ids": [
+        "BR-RENT-023",
+        "BR-RENT-024",
+        "BR-RENT-025",
+        "BR-RENT-026",
+        "BR-INV-024",
+        "DB-INV-006",
+        "DB-TXN-003",
+        "SEC-028",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_termination_invoice.py",
+      "status": "implemented",
+      "notes": "Original termination Invoice coverage and separate current financial observation; no correction, VOID eligibility or financial-completion claim."
+    },
+    {
+      "test_id": "test_malformed_or_overclaiming_observation_is_rejected",
+      "upstream_ids": [
+        "BR-RENT-023",
+        "BR-RENT-024",
+        "BR-RENT-025",
+        "BR-RENT-026",
+        "BR-INV-024",
+        "DB-INV-006",
+        "DB-TXN-003",
+        "SEC-028",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_termination_invoice.py",
+      "status": "implemented",
+      "notes": "Original termination Invoice coverage and separate current financial observation; no correction, VOID eligibility or financial-completion claim."
+    },
+    {
+      "test_id": "test_invalid_financial_source_response_is_rejected",
+      "upstream_ids": [
+        "BR-RENT-023",
+        "BR-RENT-024",
+        "BR-RENT-025",
+        "BR-RENT-026",
+        "BR-INV-024",
+        "DB-INV-006",
+        "DB-TXN-003",
+        "SEC-028",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_termination_invoice.py",
+      "status": "implemented",
+      "notes": "Original termination Invoice coverage and separate current financial observation; no correction, VOID eligibility or financial-completion claim."
+    },
+    {
+      "test_id": "test_bounded_cursor_is_last_returned_line_and_strictly_advances",
+      "upstream_ids": [
+        "BR-RENT-023",
+        "BR-RENT-024",
+        "BR-RENT-025",
+        "BR-RENT-026",
+        "BR-INV-024",
+        "DB-INV-006",
+        "DB-TXN-003",
+        "SEC-028",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_termination_invoice.py",
+      "status": "implemented",
+      "notes": "Original termination Invoice coverage and separate current financial observation; no correction, VOID eligibility or financial-completion claim."
+    },
+    {
+      "test_id": "test_both_read_capabilities_are_required_before_connection",
+      "upstream_ids": [
+        "BR-RENT-023",
+        "BR-RENT-024",
+        "BR-RENT-025",
+        "BR-RENT-026",
+        "BR-INV-024",
+        "DB-INV-006",
+        "DB-TXN-003",
+        "SEC-028",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_termination_invoice.py",
+      "status": "implemented",
+      "notes": "Original termination Invoice coverage and separate current financial observation; no correction, VOID eligibility or financial-completion claim."
+    },
+    {
+      "test_id": "test_invalid_page_limit_never_connects",
+      "upstream_ids": [
+        "BR-RENT-023",
+        "BR-RENT-024",
+        "BR-RENT-025",
+        "BR-RENT-026",
+        "BR-INV-024",
+        "DB-INV-006",
+        "DB-TXN-003",
+        "SEC-028",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_termination_invoice.py",
+      "status": "implemented",
+      "notes": "Original termination Invoice coverage and separate current financial observation; no correction, VOID eligibility or financial-completion claim."
+    },
+    {
+      "test_id": "test_unverified_and_unterminated_sources_have_no_full_month_claim",
+      "upstream_ids": [
+        "BR-RENT-023",
+        "BR-RENT-024",
+        "BR-RENT-025",
+        "BR-RENT-026",
+        "BR-INV-024",
+        "DB-INV-006",
+        "DB-TXN-003",
+        "SEC-028",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_termination_invoice.py",
+      "status": "implemented",
+      "notes": "Original termination Invoice coverage and separate current financial observation; no correction, VOID eligibility or financial-completion claim."
+    },
+    {
+      "test_id": "test_initial_coverage_components_and_services_survive_termination_and_exact_replay",
+      "upstream_ids": [
+        "BR-RENT-023",
+        "BR-RENT-024",
+        "BR-RENT-025",
+        "BR-RENT-026",
+        "BR-INV-024",
+        "DB-INV-006",
+        "DB-TXN-003",
+        "SEC-028",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_termination_invoice_migration.py",
+      "status": "implemented",
+      "notes": "Original termination Invoice coverage and separate current financial observation; no correction, VOID eligibility or financial-completion claim."
+    },
+    {
+      "test_id": "test_final_and_future_original_lines_paginate_without_hiding_void_history",
+      "upstream_ids": [
+        "BR-RENT-023",
+        "BR-RENT-024",
+        "BR-RENT-025",
+        "BR-RENT-026",
+        "BR-INV-024",
+        "DB-INV-006",
+        "DB-TXN-003",
+        "SEC-028",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_termination_invoice_migration.py",
+      "status": "implemented",
+      "notes": "Original termination Invoice coverage and separate current financial observation; no correction, VOID eligibility or financial-completion claim."
+    },
+    {
+      "test_id": "test_payment_credit_adjustment_and_reversals_are_distinct_current_positions",
+      "upstream_ids": [
+        "BR-RENT-023",
+        "BR-RENT-024",
+        "BR-RENT-025",
+        "BR-RENT-026",
+        "BR-INV-024",
+        "DB-INV-006",
+        "DB-TXN-003",
+        "SEC-028",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_termination_invoice_migration.py",
+      "status": "implemented",
+      "notes": "Original termination Invoice coverage and separate current financial observation; no correction, VOID eligibility or financial-completion claim."
+    },
+    {
+      "test_id": "test_open_read_snapshot_stays_coherent_when_a_payment_is_posted_elsewhere",
+      "upstream_ids": [
+        "BR-RENT-023",
+        "BR-RENT-024",
+        "BR-RENT-025",
+        "BR-RENT-026",
+        "BR-INV-024",
+        "DB-INV-006",
+        "DB-TXN-003",
+        "SEC-028",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_termination_invoice_migration.py",
+      "status": "implemented",
+      "notes": "Original termination Invoice coverage and separate current financial observation; no correction, VOID eligibility or financial-completion claim."
+    },
+    {
+      "test_id": "test_signed_other_and_unterminated_sources_do_not_establish_voluntary_rent",
+      "upstream_ids": [
+        "BR-RENT-023",
+        "BR-RENT-024",
+        "BR-RENT-025",
+        "BR-RENT-026",
+        "BR-INV-024",
+        "DB-INV-006",
+        "DB-TXN-003",
+        "SEC-028",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_termination_invoice_migration.py",
+      "status": "implemented",
+      "notes": "Original termination Invoice coverage and separate current financial observation; no correction, VOID eligibility or financial-completion claim."
+    },
+    {
+      "test_id": "test_generated_final_month_source_and_original_replay_are_preserved",
+      "upstream_ids": [
+        "BR-RENT-023",
+        "BR-RENT-024",
+        "BR-RENT-025",
+        "BR-RENT-026",
+        "BR-INV-024",
+        "DB-INV-006",
+        "DB-TXN-003",
+        "SEC-028",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_termination_invoice_migration.py",
+      "status": "implemented",
+      "notes": "Original termination Invoice coverage and separate current financial observation; no correction, VOID eligibility or financial-completion claim."
+    },
+    {
+      "test_id": "test_actual_transaction_permissions_and_fresh_actor_and_property_checks",
+      "upstream_ids": [
+        "BR-RENT-023",
+        "BR-RENT-024",
+        "BR-RENT-025",
+        "BR-RENT-026",
+        "BR-INV-024",
+        "DB-INV-006",
+        "DB-TXN-003",
+        "SEC-028",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_termination_invoice_migration.py",
+      "status": "implemented",
+      "notes": "Original termination Invoice coverage and separate current financial observation; no correction, VOID eligibility or financial-completion claim."
+    },
+    {
+      "test_id": "test_forward59_preserves_every58_table_function_and_genuine_legacy_source",
+      "upstream_ids": [
+        "BR-RENT-023",
+        "BR-RENT-024",
+        "BR-RENT-025",
+        "BR-RENT-026",
+        "BR-INV-024",
+        "DB-INV-006",
+        "DB-TXN-003",
+        "SEC-028",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_termination_invoice_migration.py",
+      "status": "implemented",
+      "notes": "Original termination Invoice coverage and separate current financial observation; no correction, VOID eligibility or financial-completion claim."
     }
   ]
 }

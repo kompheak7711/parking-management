@@ -824,13 +824,27 @@ Rent Due Date question in `DL-042` and do not authorize new business policy.
 ## DL-062 — Exact-source Deposit disposition command context
 
 - **Type:** `TECHNICAL DESIGN DECISION`
-- **Status:** `IMPLEMENTED; VERIFICATION AND INDEPENDENT ACCEPTANCE PENDING`
+- **Status:** `ACCEPTED at 5ad5d9744f4e301773e387bb065ae10d9ac403b6; all22 gates and independent zero-finding full-stage review preserved externally`
 - **Decision:** Bind a fresh disposition to an exact approved original termination event, existing supported rule and expected financial revision. Preserve immutable context and command intent, require it at the shared fresh boundary/storage, and keep absent-context historical replay unchanged.
 - **Authority:** Existing V1-055 implementation authorization; BR-DEP-022/023/024, BR-LEASE-021/024/025, DB-TXN-003/004, API-042 and SEC-028/029. No new forfeiture circumstance, termination right or Pet consequence is introduced.
 - **Source:** BR-DEP-023 uses original voluntary-early Security authority. BR-DEP-022 requires the original explicit rule and signed Customer-violation decision with real general warning sources; generic violation or free text is insufficient.
 - **Concurrency:** Reuse the accepted financial revision and existing Deposit MVCC guard. Required-amount adjustments also participate; a root row lock alone cannot validate an observation retained by a repeatable-read transaction.
 - **History:** Forward58 adds append-only context with atomic command/source/audit linkage. Original snapshot shape, digests, successful results and all historic rows remain. Exact replay precedes current financial observation checks; new contextual retries also compare every original field.
 - **Boundary:** No HTTP/frontend, Invoice reconciliation, physical workflow or Settlement completion. Future applications/reversals must extend financial observation and balance invalidation before acceptance. This technical ID does not activate V1-062 or expand the V1-060 authorization boundary.
+- **Decision date:** 2026-09-14.
+
+---
+
+## DL-063 — Original Invoice coverage and current termination observation
+
+- **Type:** `TECHNICAL DESIGN DECISION`
+- **Status:** `IMPLEMENTED; VERIFICATION AND INDEPENDENT ACCEPTANCE PENDING`
+- **Decision:** Show original Invoice/component coverage alongside separately derived current Adjustment, Payment and Credit positions in a bounded scoped read-only observation. Classify original Rent coverage relative to a verified final calendar month without proposing a financial amount or authorizing a correction.
+- **Authority:** Standing V1-055 implementation authority; BR-RENT-023 through BR-RENT-026, BR-INV-024/025, DB-INV-006, DB-TXN-003/004 and UI-076. This changes no financial or security policy and does not activate version V1-063.
+- **Source:** Bind to the original approved termination command and any present signed context; preserve genuine legacy evidence. Non-Rent obligations and VOID history remain separate. An original period can remain visible after a valid financial correction.
+- **Financial boundary:** Current balances reuse the established append-only financial functions. Invoice metadata versions are not a complete financial observation token. Controlled correction commands must revalidate current source, amounts and every connected financial dependency; this read grants no posting authority.
+- **Pagination:** Each bounded UUID-keyset page is a separate repeatable-read observation; no aggregate completion or cross-page snapshot guarantee. Nested component overflow is explicit. Full financial-dependency assessment and financial completion remain false.
+- **Acceptance boundary:** Forward59 is additive. Required regression, full applicable gates and independent exact-SHA complete-stage review precede local acceptance. Controlled Invoice correction, physical/staff workflows and full V1-055 integrated acceptance remain pending; no publication or V1-056 activation.
 - **Decision date:** 2026-09-14.
 
 ---

@@ -814,6 +814,44 @@ Service period, the applicable Lease Service term, and its component rate's effe
 period. This preserves the 27 July–31 August example without inventing a second Invoice
 or business split.
 
+### Termination Invoice reconciliation observation (V1-055)
+
+`app.lease_termination_invoice_readiness(Property, Lease, actor, limit, after_line_id)`
+is an additive STABLE, SECURITY DEFINER read with fixed `pg_catalog` search path.
+The service requires both `leases.read` and `invoices.read` for the same Property
+before connecting; the database freshly checks the active HUMAN and exact Lease
+Property. A repeatable-read read-only transaction uses bounded connection, lock
+and statement timeouts and UTC.
+
+The observation identifies the original termination command, approved actual date,
+signed monthly Rent and verified voluntary-early evidence. The command must match
+the Lease occurrence, reason, Property, status and actual date. Any present signed
+context must match all original command identity/digest fields and valid context
+shape. Status or free text alone cannot establish the BR-RENT-024 full-month rule;
+genuine pre-context historical commands remain readable.
+
+UUID-keyset pages contain existing Lease Invoice lines from every category,
+including DRAFT and VOID history. Original amounts, component periods/rates/amounts,
+Invoice versions and relational source identities remain distinct from current
+adjusted obligation, active Payment and Customer Credit application values,
+outstanding balance and active Adjustment count. Reuse the existing protected
+financial functions; never rewrite or recalculate the original charge. Components
+remain detail of a line, not additional financial obligations.
+
+Original Rent coverage is classified before, within, after, or spanning the final
+and later months only for verified voluntary early termination. Other sources and
+VOID history remain explicit. Coverage does not calculate an Adjustment amount,
+declare services invalid, or authorize VOID. Invoice metadata versions alone are
+not complete financial concurrency preconditions. Existing controlled commands
+must still revalidate every applicable dependency under BR-INV-024.
+
+Each page has at most100 lines and each line at most100 original components;
+component overflow fails explicitly rather than omitting evidence. Each page is a
+separate observation, with no whole-Lease total or cross-page snapshot guarantee.
+`financial_completion_assessed` and `financial_dependencies_fully_assessed` are
+always false. Controlled financial corrections, physical workflows, staff transport
+and integrated V1-055 acceptance remain separate gates.
+
 ## DB-INV-007 — `late_payment_decisions`
 
 One immutable final decision per applicable overdue Invoice: `id uuid PK`,
