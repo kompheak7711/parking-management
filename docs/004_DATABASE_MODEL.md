@@ -838,6 +838,16 @@ outstanding balance and active Adjustment count. Reuse the existing protected
 financial functions; never rewrite or recalculate the original charge. Components
 remain detail of a line, not additional financial obligations.
 
+The root `primary_tenant_id` identifies the Lease Primary Tenant; each Invoice
+line retains its own actual `customer_id`, including another financially
+responsible signed Lease Customer. Invoice Property and signed ownership follow
+the existing source/issuance chronology checks, including legitimate never-issued
+VOID history. Issued Rent/Service responses require original components with
+compatible category/rate evidence; unissued history is not treated as completed
+calculation evidence. PAID requires zero outstanding on every returned line;
+UNPAID forbids active applications on that line. PARTIALLY_PAID or zero-adjusted
+lines cannot establish whole-Invoice totals from a page.
+
 Original Rent coverage is classified before, within, after, or spanning the final
 and later months only for verified voluntary early termination. Other sources and
 VOID history remain explicit. Coverage does not calculate an Adjustment amount,

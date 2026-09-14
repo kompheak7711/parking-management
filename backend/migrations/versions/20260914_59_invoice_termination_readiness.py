@@ -85,7 +85,14 @@ def upgrade() -> None:
                     v_next:=(v_items->(p_limit-1)->>'invoice_line_id')::uuid;
                     EXIT;
                 END IF;
-                IF v_line.customer_id IS DISTINCT FROM v_lease.primary_tenant_id
+                IF app.invoice_property_id(v_line.invoice_id) IS DISTINCT FROM p_property
+                    OR (NOT (v_line.invoice_status='VOID' AND NOT v_line.issued) AND NOT EXISTS (
+                        SELECT 1 FROM app.invoices invoice JOIN app.lease_signers signer
+                            ON signer.lease_id=invoice.lease_id
+                        WHERE invoice.id=v_line.invoice_id AND signer.customer_id=v_line.customer_id
+                            AND signer.signed_at IS NOT NULL
+                            AND (invoice.issued_at IS NULL OR signer.signed_at<=invoice.issued_at)
+                    ))
                     OR (v_line.category='RENT' AND v_line.source_id IS DISTINCT FROM p_lease)
                 THEN RAISE EXCEPTION 'Invoice termination source scope is inconsistent' USING ERRCODE='P5901'; END IF;
                 SELECT COALESCE(jsonb_agg(to_jsonb(component) ORDER BY component.sequence,component.id),'[]'::jsonb)
@@ -101,7 +108,7 @@ def upgrade() -> None:
                 v_items:=v_items || jsonb_build_array(to_jsonb(v_line) || jsonb_build_object('components',v_components));
             END LOOP;
             RETURN jsonb_build_object('lease_id',p_lease,'property_id',p_property,
-                'customer_id',v_lease.primary_tenant_id,'lease_status',v_lease.status,
+                'primary_tenant_id',v_lease.primary_tenant_id,'lease_status',v_lease.status,
                 'lease_start_date',v_lease.start_date,'lease_end_date',v_lease.end_date,
                 'actual_termination_date',v_lease.actual_termination_date,'termination_event_id',v_event.event_id,
                 'evidence_status',v_evidence,'observed_at',statement_timestamp(),

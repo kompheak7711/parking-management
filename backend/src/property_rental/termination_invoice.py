@@ -83,7 +83,7 @@ class TerminationInvoiceLine:
 class TerminationInvoiceReadiness:
     lease_id: UUID
     property_id: UUID
-    customer_id: UUID
+    primary_tenant_id: UUID
     lease_status: str
     lease_start_date: date
     lease_end_date: date
@@ -153,6 +153,7 @@ def _components(
     period_end: date | None,
     original: int,
     issued: bool,
+    category: str,
 ) -> tuple[InvoiceCalculationComponent, ...]:
     if not isinstance(value, list) or len(value) > 100:
         raise ValueError("Invalid component bound")
@@ -188,6 +189,20 @@ def _components(
         components.append(component)
     if len({c.id for c in components}) != len(components):
         raise ValueError("Duplicate component identity")
+    if issued:
+        if bool(components) != (category in {"RENT", "SERVICE_CHARGES"}):
+            raise ValueError("Issued component evidence contradicts line category")
+        for component in components:
+            if category == "RENT" and (
+                component.contractual_monthly_usd_cents is None
+                or component.service_monthly_rate_usd_cents is not None
+            ):
+                raise ValueError("Rent component rate evidence is incompatible")
+            if category == "SERVICE_CHARGES" and (
+                component.contractual_monthly_usd_cents is not None
+                or component.service_monthly_rate_usd_cents is None
+            ):
+                raise ValueError("Service component rate evidence is incompatible")
     if components and issued:
         ordered = sorted(components, key=lambda c: c.period_start)
         if (
@@ -246,7 +261,7 @@ def parse_termination_invoice_readiness(
             _identity(after_line_id)
         root = _shape(
             value,
-            "lease_id property_id customer_id lease_status lease_start_date "
+            "lease_id property_id primary_tenant_id lease_status lease_start_date "
             "lease_end_date actual_termination_date termination_event_id evide"
             "nce_status observed_at "
             "contractual_monthly_usd_cents full_final_month_rent_usd_cents currency "
@@ -254,7 +269,7 @@ def parse_termination_invoice_readiness(
         )
         if _uuid(root["lease_id"]) != lease_id or _uuid(root["property_id"]) != property_id:
             raise ValueError("Invalid response scope")
-        customer = _uuid(root["customer_id"])
+        primary_tenant = _uuid(root["primary_tenant_id"])
         status = _choice(root["lease_status"], {item.value for item in LeaseStatus})
         evidence = _choice(
             root["evidence_status"],
@@ -325,10 +340,9 @@ def parse_termination_invoice_readiness(
                 "active_adjustment_count components",
             )
             line_id, invoice_id = _uuid(row["invoice_line_id"]), _uuid(row["invoice_id"])
-            if (previous is not None and line_id <= previous) or _uuid(
-                row["customer_id"]
-            ) != customer:
-                raise ValueError("Invalid page order or Customer")
+            customer = _uuid(row["customer_id"])
+            if previous is not None and line_id <= previous:
+                raise ValueError("Invalid page order")
             previous = line_id
             invoice_status = _choice(
                 row["invoice_status"], {"DRAFT", "UNPAID", "PARTIALLY_PAID", "PAID", "VOID"}
@@ -372,12 +386,17 @@ def parse_termination_invoice_readiness(
                 raise ValueError("Inconsistent current financial position")
             if invoice_status in {"DRAFT", "VOID"} and payment + credit:
                 raise ValueError("Invalid active applications on inactive Invoice")
+            if (invoice_status == "PAID" and outstanding != 0) or (
+                invoice_status == "UNPAID" and payment + credit != 0
+            ):
+                raise ValueError("Invoice status contradicts this line's financial position")
             components = _components(
                 row["components"],
                 period_start=begin,
                 period_end=finish,
                 original=original,
                 issued=issued,
+                category=category,
             )
             items.append(
                 TerminationInvoiceLine(
@@ -411,7 +430,7 @@ def parse_termination_invoice_readiness(
         return TerminationInvoiceReadiness(
             lease_id,
             property_id,
-            customer,
+            primary_tenant,
             status,
             start,
             end,

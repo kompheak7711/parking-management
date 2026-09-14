@@ -1,3 +1,15 @@
+# Current queue — Invoice semantic1 exact gates and required reviews
+
+Run remaining exact gates for this corrected Invoice stage, reusing identical81unit/1412fullPG/static and unchanged frontend inputs. Obtain fresh expanded focused IR-1/2/3 correction review vs a244b79, then fresh final complete25path/twocommit stage review from accepted5ad5d97. Astra/max/Standard/read-only/never, absolute Python/Git and login:false. Each semantic finding1of2, all prior limits preserved. Zero unresolved findings required before stage acceptance; whole55 remains unpublished and no V1-056 activation.
+
+Every prior queue and finding follows unchanged.
+
+# Current queue — Invoice read IR-1/2/3 correction1
+
+Run affected and mandatory changed-input gates for Invoice read correction1 (IR-1/2/3), preserving all earlier evidence. Freeze a normal successor, obtain independent expanded focused review vs a244b79, then a fresh final complete stage review from5ad5d97. Each semantic finding is1of2; existing style2of2 and all other limits remain. No acceptance/publication or next stage with unresolved findings; no V1-056 before V1-055 closure.
+
+All prior queue and rejection evidence follows unchanged.
+
 # Current queue — Invoice read context exact gates and review
 
 Run remaining exact Invoice read-stage gates, reusing the full1409-case PostgreSQL and unchanged static/frontend evidence by input identity. Require fresh independent complete25-path/one-commit review from accepted5ad5d97 with Astra/max/Standard/read-only/never and absolute Python/Git. Preserve every correction limit. Controlled Invoice corrections, physical/HTTP workflows and final integrated V1-055 acceptance remain pending. No publication or V1-056 activation.

@@ -19,6 +19,8 @@ from property_rental.identity import AuthenticatedActor, CapabilityGrant
 from property_rental.invoice import (
     AdjustInvoiceCommand,
     AdjustmentType,
+    CreateInvoiceDraftCommand,
+    IssueInvoiceCommand,
     PostgresInvoiceService,
     VoidInvoiceCommand,
 )
@@ -51,6 +53,7 @@ from test_invoice_migration import (
     runtime_database_url,
 )
 from test_invoice_migration import migrated_database_url as migrated_database_url
+from test_lease_migration import create_draft, setup_sources, sign_lease
 from test_migrations import _temporary_migration_database
 from test_payment_allocation_migration import actor as payment_actor
 from test_payment_allocation_migration import designated as payment_designated
@@ -247,6 +250,29 @@ def test_payment_credit_adjustment_and_reversals_are_distinct_current_positions(
         final.credit_applied_usd_cents,
         final.outstanding_usd_cents,
     ) == (80000, 75000, 0, 0, 75000)
+    assert final.invoice_status == "UNPAID"
+    PostgresInvoiceService(runtime_database_url(), financial_database_url()).adjust(
+        prop,
+        invoice,
+        AdjustInvoiceCommand(
+            uuid4(),
+            line,
+            AdjustmentType.CREDIT,
+            75000,
+            "approved/zero-obligation",
+            "Approved correction removes the remaining obligation",
+            final.invoice_version,
+        ),
+        actor=invoice_api_actor(human, prop),
+    )
+    zero = read.page(lease, actor=reader(human, prop)).items[0]
+    assert zero.invoice_status == "PAID" and zero.original_usd_cents == 80000
+    assert (
+        zero.adjusted_usd_cents,
+        zero.payment_applied_usd_cents,
+        zero.credit_applied_usd_cents,
+        zero.outstanding_usd_cents,
+    ) == (0, 0, 0, 0)
 
 
 def test_open_read_snapshot_stays_coherent_when_a_payment_is_posted_elsewhere(
@@ -445,3 +471,154 @@ def test_forward59_preserves_every58_table_function_and_genuine_legacy_source(
         assert result.full_final_month_rent_usd_cents == 80000
         with psycopg.connect(temporary) as connection:
             assert history(connection) == before
+
+
+@pytest.mark.parametrize("issued", [False, True])
+def test_distinct_signed_invoice_customers_preserve_identity_and_invalid_scope_rejection(
+    migrated_database_url: str, issued: bool
+) -> None:
+    with psycopg.connect(migrated_database_url) as connection:
+        human, prop, unit, primary, other = setup_sources(connection)
+        lease = create_draft(
+            connection,
+            actor_id=human,
+            unit_id=unit,
+            primary_tenant_id=primary,
+            start_date=date(2026, 1, 1),
+            end_date=date(2026, 12, 31),
+        )
+        connection.execute(
+            "INSERT INTO app.lease_signers(id,lease_id,customer_id,signed_at,added_by) "
+            "VALUES (%s,%s,%s,statement_timestamp(),%s)",
+            (uuid4(), lease, other, human),
+        )
+        sign_lease(connection, lease, human)
+        connection.execute(
+            "INSERT INTO app.occupancies(id,lease_id,customer_id,move_in_date,created_by,"
+            "updated_by) VALUES (%s,%s,%s,'2026-01-01',%s,%s)",
+            (uuid4(), lease, primary, human, human),
+        )
+        rent_invoice, _ = create_recurring_rent_invoice(
+            connection,
+            actor_id=human,
+            customer_id=primary,
+            lease_id=lease,
+            period_start=date(2026, 7, 1),
+        )
+        outsider = uuid4()
+        connection.execute(
+            "INSERT INTO app.customers(id,legal_name,created_by,updated_by) VALUES "
+            "(%s,'Unrelated synthetic Customer',%s,%s)",
+            (outsider, human, human),
+        )
+        before_invalid = history(connection)
+        with pytest.raises(psycopg.Error) as invalid:
+            with connection.transaction():
+                create_recurring_rent_invoice(
+                    connection,
+                    actor_id=human,
+                    customer_id=outsider,
+                    lease_id=lease,
+                    period_start=date(2026, 8, 1),
+                )
+        assert invalid.value.sqlstate == "23514"
+        assert history(connection) == before_invalid
+        obligation = uuid4()
+        connection.execute(
+            "INSERT INTO app.authorized_nonrecurring_obligations(id,customer_id,lease_id,"
+            "category,description,authorized_amount_usd_cents,governing_due_date,"
+            "due_date_source,source_reference,authorized_at,authorized_by,authorization_reference) "
+            "VALUES (%s,%s,%s,'MISCELLANEOUS_CHARGES','Approved synthetic signer obligation',"
+            "7500,current_date+1,'approved-signer-source','approved-signer-source',"
+            "statement_timestamp(),%s,'invoice.nonrecurring.authorize')",
+            (obligation, other, lease, human),
+        )
+    writer = PostgresInvoiceService(runtime_database_url(), financial_database_url())
+    actor = invoice_api_actor(human, prop)
+    command = CreateInvoiceDraftCommand(uuid4(), obligation)
+    created = writer.create_draft(prop, command, actor=actor)
+    invoice = UUID(str(created["id"]))
+    current = created
+    if issued:
+        current = writer.issue(
+            prop, invoice, IssueInvoiceCommand(uuid4(), int(str(created["version"]))), actor=actor
+        )
+    terminate(migrated_database_url, human, prop, lease, date(2026, 7, 10))
+    read = PostgresTerminationInvoiceReadService(runtime_database_url(), prop)
+    with psycopg.connect(migrated_database_url) as connection:
+        before_read = history(connection)
+    first = read.page(lease, actor=reader(human, prop), limit=1)
+    assert first.next_cursor is not None and first.primary_tenant_id == primary
+    second = read.page(lease, actor=reader(human, prop), limit=1, after_line_id=first.next_cursor)
+    assert second.next_cursor is None and second.primary_tenant_id == primary
+    assert {row.invoice_id: row.customer_id for row in first.items + second.items} == {
+        rent_invoice: primary,
+        invoice: other,
+    }
+    with psycopg.connect(migrated_database_url) as connection:
+        assert history(connection) == before_read
+    wrong = uuid4()
+    with pytest.raises(TerminationInvoiceNotFoundError):
+        PostgresTerminationInvoiceReadService(runtime_database_url(), wrong).page(
+            lease, actor=reader(human, wrong)
+        )
+    assert writer.create_draft(prop, command, actor=actor) == created
+    writer.void(
+        prop,
+        invoice,
+        VoidInvoiceCommand(
+            uuid4(), "Approved original-source correction", int(str(current["version"]))
+        ),
+        actor=actor,
+    )
+    history_row = next(
+        row
+        for row in read.page(lease, actor=reader(human, prop)).items
+        if row.invoice_id == invoice
+    )
+    assert history_row.customer_id == other and history_row.invoice_status == "VOID"
+    assert history_row.issued is issued and history_row.components == ()
+
+
+def test_partial_mixed_invoice_pages_accept_fully_applied_rent_and_unpaid_service(
+    migrated_database_url: str,
+) -> None:
+    with psycopg.connect(migrated_database_url) as connection:
+        human, prop, customer, lease, occupancy = setup_billing_source(connection)
+    generated = PostgresRentBillingService(financial_database_url(), prop, human).generate(
+        initial_command(lease, occupancy), actor=authenticated(human, prop)
+    )
+    assert generated.invoice_id is not None
+    terminate(migrated_database_url, human, prop, lease, date(2026, 8, 10))
+    read = PostgresTerminationInvoiceReadService(runtime_database_url(), prop)
+    original = read.page(lease, actor=reader(human, prop))
+    rent = next(row for row in original.items if row.category == "RENT")
+    with psycopg.connect(migrated_database_url) as connection:
+        paid = seed_payment(
+            connection,
+            actor_id=human,
+            property_id=prop,
+            customer_id=customer,
+            amount=rent.outstanding_usd_cents,
+        )
+    payments().post(
+        prop,
+        paid,
+        payment_designated(generated.invoice_id, rent.invoice_line_id, rent.outstanding_usd_cents),
+        actor=payment_actor(human, prop),
+    )
+    rows: list[TerminationInvoiceLine] = []
+    cursor = None
+    while True:
+        page = read.page(lease, actor=reader(human, prop), limit=1, after_line_id=cursor)
+        rows.extend(page.items)
+        cursor = page.next_cursor
+        if cursor is None:
+            break
+        assert len(rows) < len(original.items)
+    assert len(rows) == len(original.items) and len(rows) > 1
+    assert all(row.invoice_status == "PARTIALLY_PAID" for row in rows)
+    paid_rent = next(row for row in rows if row.category == "RENT")
+    assert paid_rent.outstanding_usd_cents == 0
+    services = [row for row in rows if row.category == "SERVICE_CHARGES"]
+    assert services and all(row.outstanding_usd_cents > 0 for row in services)
