@@ -30320,6 +30320,156 @@
       "test_path": "backend/tests/test_lease_deposit_command_guards_migration.py",
       "status": "implemented",
       "notes": "V1-055 bounded Lease Deposit command admission: exact integer/date input, fresh actor, serialized replay and financial/audit/command atomicity; forward-only preservation. Governing-rule/source orchestration and whole-version acceptance remain separate."
+    },
+    {
+      "test_id": "test_required_corrections_and_receipt_reversal_advance_even_at_original_net_value",
+      "upstream_ids": [
+        "DB-DEP-001",
+        "DB-DEP-003",
+        "DB-DEP-004",
+        "DB-TXN-003",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_financial_revision_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 financial revision read prerequisite: immutable event history, replay/rollback, transaction consistency and migration preservation. No expected-version posting or new financial policy."
+    },
+    {
+      "test_id": "test_disposition_reversal_and_exact_replay_keep_separate_observation_and_saved_result",
+      "upstream_ids": [
+        "DB-DEP-001",
+        "DB-DEP-003",
+        "DB-DEP-004",
+        "DB-TXN-003",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_financial_revision_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 financial revision read prerequisite: immutable event history, replay/rollback, transaction consistency and migration preservation. No expected-version posting or new financial policy."
+    },
+    {
+      "test_id": "test_refund_return_and_correction_reversal_advance_without_changing_old_replay",
+      "upstream_ids": [
+        "DB-DEP-001",
+        "DB-DEP-003",
+        "DB-DEP-004",
+        "DB-TXN-003",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_financial_revision_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 financial revision read prerequisite: immutable event history, replay/rollback, transaction consistency and migration preservation. No expected-version posting or new financial policy."
+    },
+    {
+      "test_id": "test_metadata_link_and_coordination_guard_are_distinct_from_financial_events",
+      "upstream_ids": [
+        "DB-DEP-001",
+        "DB-DEP-003",
+        "DB-DEP-004",
+        "DB-TXN-003",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_financial_revision_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 financial revision read prerequisite: immutable event history, replay/rollback, transaction consistency and migration preservation. No expected-version posting or new financial policy."
+    },
+    {
+      "test_id": "test_repeatable_read_keeps_revision_and_balance_in_one_committed_observation",
+      "upstream_ids": [
+        "DB-DEP-001",
+        "DB-DEP-003",
+        "DB-DEP-004",
+        "DB-TXN-003",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_financial_revision_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 financial revision read prerequisite: immutable event history, replay/rollback, transaction consistency and migration preservation. No expected-version posting or new financial policy."
+    },
+    {
+      "test_id": "test_rolled_back_financial_event_does_not_advance_revision_or_history",
+      "upstream_ids": [
+        "DB-DEP-001",
+        "DB-DEP-003",
+        "DB-DEP-004",
+        "DB-TXN-003",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_financial_revision_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 financial revision read prerequisite: immutable event history, replay/rollback, transaction consistency and migration preservation. No expected-version posting or new financial policy."
+    },
+    {
+      "test_id": "test_revision_helper_is_private_and_observation_has_no_financial_effect",
+      "upstream_ids": [
+        "DB-DEP-001",
+        "DB-DEP-003",
+        "DB-DEP-004",
+        "DB-TXN-003",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_financial_revision_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 financial revision read prerequisite: immutable event history, replay/rollback, transaction consistency and migration preservation. No expected-version posting or new financial policy."
+    },
+    {
+      "test_id": "test_forward57_preserves_all56_rows_other_functions_and_historical_command_replay",
+      "upstream_ids": [
+        "DB-DEP-001",
+        "DB-DEP-003",
+        "DB-DEP-004",
+        "DB-TXN-003",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_financial_revision_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 financial revision read prerequisite: immutable event history, replay/rollback, transaction consistency and migration preservation. No expected-version posting or new financial policy."
+    },
+    {
+      "test_id": "test_financial_revision_is_exact_and_separate_from_metadata",
+      "upstream_ids": [
+        "DB-DEP-001",
+        "DB-DEP-003",
+        "DB-DEP-004",
+        "DB-TXN-003",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_termination_deposit.py",
+      "status": "implemented",
+      "notes": "V1-055 financial revision read prerequisite: immutable event history, replay/rollback, transaction consistency and migration preservation. No expected-version posting or new financial policy."
+    },
+    {
+      "test_id": "test_current_reader_requires_the_financial_revision_field",
+      "upstream_ids": [
+        "DB-DEP-001",
+        "DB-DEP-003",
+        "DB-DEP-004",
+        "DB-TXN-003",
+        "SEC-029",
+        "TEST-077"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_termination_deposit.py",
+      "status": "implemented",
+      "notes": "V1-055 financial revision read prerequisite: immutable event history, replay/rollback, transaction consistency and migration preservation. No expected-version posting or new financial policy."
     }
   ]
 }

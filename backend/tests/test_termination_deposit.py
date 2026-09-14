@@ -38,6 +38,7 @@ def payload() -> dict[str, object]:
                 "deposit_type": "SECURITY",
                 "customer_id": str(UUID(int=6)),
                 "version": 2,
+                "disposition_state_version": 3,
                 "required_usd_cents": 50_000,
                 "received_usd_cents": 10_000,
                 "held_refundable_usd_cents": 10_000,
@@ -73,7 +74,11 @@ def test_current_read_separates_required_cash_and_disposition_and_is_immutable()
     assert item.explicit_disposition_pending and not result.financial_completion_assessed
     assert item.consequence is TerminationDepositConsequence.NON_REFUNDABLE_SECURITY
     assert result.observed_at.utcoffset() is not None
-    for attribute, value in (("received_usd_cents", 50_000), ("version", 3)):
+    for attribute, value in (
+        ("received_usd_cents", 50_000),
+        ("version", 3),
+        ("disposition_state_version", 4),
+    ):
         with pytest.raises(FrozenInstanceError):
             setattr(item, attribute, value)
 
@@ -163,6 +168,14 @@ def test_malformed_or_cross_scope_response_is_unavailable(key: str, bad: object)
         ("customer_id", "invalid"),
         ("version", 0),
         ("version", True),
+        ("disposition_state_version", 0),
+        ("disposition_state_version", -1),
+        ("disposition_state_version", 1),
+        ("disposition_state_version", True),
+        ("disposition_state_version", 3.0),
+        ("disposition_state_version", "3"),
+        ("disposition_state_version", None),
+        ("disposition_state_version", 2**63),
         ("deposit_type", "CREDIT"),
         ("required_usd_cents", -1),
         ("received_usd_cents", 10_000.0),
@@ -253,3 +266,20 @@ def test_read_database_failures_are_mapped_without_returning_source_data(
             LEASE, actor=read_actor("leases.read", "deposits.read")
         )
     assert "synthetic internal detail" not in str(failure.value)
+
+
+@pytest.mark.parametrize("revision", [3, 2**63 - 1])
+def test_financial_revision_is_exact_and_separate_from_metadata(revision: int) -> None:
+    value = payload()
+    balance(value)["disposition_state_version"] = revision
+    item = parse_termination_deposit_readiness(
+        value, lease_id=LEASE, property_id=PROPERTY
+    ).deposits[0]
+    assert item.version == 2 and item.disposition_state_version == revision
+
+
+def test_current_reader_requires_the_financial_revision_field() -> None:
+    value = payload()
+    del balance(value)["disposition_state_version"]
+    with pytest.raises(TerminationDepositUnavailableError):
+        parse_termination_deposit_readiness(value, lease_id=LEASE, property_id=PROPERTY)

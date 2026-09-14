@@ -377,11 +377,15 @@ def test_forward55_preserves_all54_history_functions_and_legacy_evidence(
             assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
                 "20260914_55",
             )
-        result = PostgresTerminationDepositReadService(runtime_database_url(), prop).get(
-            lease, actor=reader_actor(human, prop)
-        )
-        assert (
-            result.evidence_status == "VOLUNTARY_EARLY_VERIFIED"
-            and result.termination_event_id == command.event_id
-        )
-        assert not result.financial_completion_assessed
+        # Preserve the revision55 wire contract; the current typed reader requires57.
+        with psycopg.connect(runtime_database_url()) as connection:
+            connection.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
+            row = connection.execute(
+                "SELECT app.lease_termination_deposit_readiness(%s,%s,%s)", (prop, lease, human)
+            ).fetchone()
+            assert row is not None and isinstance(row[0], dict)
+            result = row[0]
+        assert result["evidence_status"] == "VOLUNTARY_EARLY_VERIFIED"
+        assert result["termination_event_id"] == str(command.event_id)
+        assert result["financial_completion_assessed"] is False
+        assert all("disposition_state_version" not in item for item in result["deposits"])

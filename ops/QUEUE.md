@@ -1,3 +1,15 @@
+# Current queue — financial revision exact gates and review
+
+Run remaining exact financial revision gates, reusing verified unchanged frontend/dependency and exact backend static evidence. Obtain fresh independent complete26-path/one-commit review from accepted8e3c7ca with Astra/max/Standard/read-only/never and absolute Python/Git. No next slice or publication before stage acceptance. Explicit governing-rule/source and expected-version command enforcement remain pending, as do financial reconciliation, physical/HTTP workflows and final integrated V1-055 acceptance. No V1-056 before full V1-055 closure.
+
+All previous queues and evidence remain unchanged below.
+
+# Current queue — V1-055 Deposit financial revision
+
+Implement and verify the frozen Deposit financial-state revision read prerequisite. Preserve historical snapshot versions, command digests/results and all financial history. Then obtain fresh complete-stage exact-SHA review. Governing-rule/source/expected-version command enforcement and remaining V1-055 workflows are still pending; no publication or V1-056 activation.
+
+Accepted command-guard evidence is external. All older queue text and correction history follow unchanged.
+
 # Current queue — command-guard review identity correction
 
 Run applicable exact records gates while reusing unchanged a25a008 product/static/build/graph evidence. Obtain an independent focused CG-RECORD-1 correction review against a25a008, then a fresh independent final COMPLETE24path/threecommit stage review against accepted8c8d923, Astra/max/Standard/read-only/never with absolute Python/Git. Zero unresolved findings required before acceptance. Preserve review-label1of2, prior message1of2/test1of2 families and all inherited limits; no55publication/closure or next slice before acceptance.

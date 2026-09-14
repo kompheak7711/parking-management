@@ -2068,7 +2068,7 @@
     "followup_prompt_sha256": "6f9ff29a0be7bde095026c825e03708ff91fbff25c7c734afb0b7e68246f74ee",
     "live_handoff_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-v1054-v1060-live.md",
     "current_version": "V1-055",
-    "phase": "lease_deposit_command_guard_candidate_pending",
+    "phase": "deposit_financial_revision_candidate_pending",
     "activated_at": "2026-09-11T02:56:22.881391+00:00",
     "predecessor_closed": true,
     "predecessor_sha": "bda66062697feef17c8df621b64bf5f607c1c691",
@@ -2081,43 +2081,45 @@
     "workboard_block_reason": "Tracking-only blocks OpenClaw admission; sole direct Codex implementation authorized.",
     "worker_kind": "direct_root_codex",
     "worker_task_id": "01a07991-38a6-7f33-b84d-0ad0620e2997",
-    "worker_status": "no_worker_records_gates_pending",
+    "worker_status": "no_worker_pending_exact_gates",
     "branch": "implementation/foundation",
     "worktree": "/Users/sokompheak/Development/property-rental-management",
     "scope_path": "ops/V1_055_SCOPE.md",
     "scope_sha256": "8da3b58eab28350341e3faa29ba8947e59f3f019d931724957be5425023652ac",
     "cumulative_review_base": "bda66062697feef17c8df621b64bf5f607c1c691",
     "candidate_sha": null,
-    "candidate_resolution": "Resolve the immutable records-corrected command-guard candidate through external v1055-lease-deposit-command-guards-records1-candidate.json. Preserve the initial a25a008 APPROVE0 report, separate parent CG-RECORD-1, fa6d068 failure and all previous evidence; later exact gates/reviews remain external.",
-    "candidate_status": "records_correction1_prepared",
+    "candidate_resolution": "Resolve the immutable financial revision candidate through external v1055-deposit-financial-revision-candidate.json. Subsequent exact gates and independent review evidence remain outside the candidate.",
+    "candidate_status": "normal_local_revision_candidate_prepared",
     "owner_action_required": false,
-    "next_action": "Run applicable exact records gates while reusing unchanged a25a008 product/static/build/graph evidence. Obtain an independent focused CG-RECORD-1 correction review against a25a008, then a fresh independent final COMPLETE24path/threecommit stage review against accepted8c8d923, Astra/max/Standard/read-only/never with absolute Python/Git. Zero unresolved findings required before acceptance. Preserve review-label1of2, prior message1of2/test1of2 families and all inherited limits; no55publication/closure or next slice before acceptance.",
+    "next_action": "Run remaining exact financial revision gates, reusing verified unchanged frontend/dependency and exact backend static evidence. Obtain fresh independent complete26-path/one-commit review from accepted8e3c7ca with Astra/max/Standard/read-only/never and absolute Python/Git. No next slice or publication before stage acceptance. Explicit governing-rule/source and expected-version command enforcement remain pending, as do financial reconciliation, physical/HTTP workflows and final integrated V1-055 acceptance. No V1-056 before full V1-055 closure.",
     "active_slice": {
-      "id": "V1-055-lease-deposit-command-guards",
-      "status": "review_stage_identity_corrected_exact_gates_focused_final_pending",
-      "stage": "Bounded financial-command admission prerequisite to termination disposition orchestration",
-      "base": "8c8d92396bb0138bf385212163b86cfe8c122e12",
+      "id": "V1-055-deposit-financial-revision",
+      "status": "implemented_affected_verified_exact_gates_review_pending",
+      "stage": "Financial-state observation prerequisite for explicit Lease Deposit disposition commands",
+      "base": "8e3c7cad93f53c6eb5224fb9ffeec9dde8232831",
       "complete_version_base": "bda66062697feef17c8df621b64bf5f607c1c691",
       "paths": [
-        "backend/migrations/versions/20260914_56_lease_deposit_command_guards.py",
-        "backend/src/property_rental/deposit.py",
+        "backend/migrations/versions/20260914_57_deposit_financial_revision.py",
+        "backend/src/property_rental/termination_deposit.py",
         "backend/tests/test_billing_service_migration.py",
         "backend/tests/test_credit_refund_read_migration.py",
         "backend/tests/test_customer_ledger_migration.py",
         "backend/tests/test_customer_ledger_read_migration.py",
-        "backend/tests/test_deposit.py",
+        "backend/tests/test_deposit_financial_revision_migration.py",
         "backend/tests/test_financial_action_context_migration.py",
         "backend/tests/test_invoice_migration.py",
         "backend/tests/test_late_payment_migration.py",
         "backend/tests/test_lease_api_migration.py",
-        "backend/tests/test_lease_deposit_command_guards_migration.py",
         "backend/tests/test_lease_enforcement_api_migration.py",
         "backend/tests/test_migrations.py",
         "backend/tests/test_payment_reversal_context_migration.py",
+        "backend/tests/test_termination_deposit.py",
+        "backend/tests/test_termination_deposit_migration.py",
         "backend/tests/test_utility_api_migration.py",
         "backend/tests/test_utility_consumption_migration.py",
         "backend/tests/test_utility_meter_migration.py",
         "docs/004_DATABASE_MODEL.md",
+        "docs/010_DECISION_LOG.md",
         "ops/NOW.md",
         "ops/QUEUE.md",
         "ops/STATE.json",
@@ -2143,233 +2145,156 @@
       "authoritative_specs": [
         "ops/V1_055_SCOPE.md",
         "ops/CODEX_TAKEOVER_V1_054_060.md",
-        "docs/002_BUSINESS_RULES.md",
         "docs/004_DATABASE_MODEL.md",
+        "docs/005_API_SPECIFICATION.md",
         "docs/007_TESTING_STRATEGY.md",
-        "docs/008_SECURITY_MODEL.md"
+        "docs/008_SECURITY_MODEL.md",
+        "docs/010_DECISION_LOG.md"
       ],
       "included": [
-        "The existing Lease Deposit disposition command freshly verifies the active HUMAN actor under its existing financial-role boundary before returning a replay or performing a new write.",
-        "Serialize the existing actor/Property/action/idempotency-key command identity transactionally before replay evaluation; preserve existing request digests and result snapshots. Concurrent identical retries return the one original result; conflicting payloads cannot create a second financial effect, including when targeting different Deposits.",
-        "Preserve existing Deposit row locks, same-Property/Lease/effective-date checks, held-balance bounds, original receipt/disposition/reversal history, command/audit atomicity, and authorization names. Validate new command money as exact integer cents and effective date as a date at the Python boundary.",
-        "Map the explicit database fresh-actor denial to the established domain authorization error. Do not change unknown-outcome command identity or recovery behavior.",
-        "One forward56 migration replaces only the existing disposition command function; no old migration rewrite, tables, backfill, old row update or financial recalculation. Preserve its signature/owner/ACL/security attributes; unchanged runtime/bootstrap/public denial.",
-        "Real isolated PostgreSQL concurrency, replay-after-reversal, stale actor/wrong Property, invalid input, atomic rollback and55to56 all-table/function preservation evidence. Keep the old54to55 proof pinned55; advance only26current-head literals in14fixture files.",
-        "Reconcile the accepted8c8d923read-stage evidence into tracked records, preserving every changed old STATE root and all prior QUEUE/trace entries; keep whole55 incomplete and unpublished."
+        "A private stable SQL helper derives a positive financial revision from Deposit metadata version, required-adjustment count and all existing append-only Deposit balance events. Original and reversal/return events count separately even when net value is unchanged.",
+        "Forward57 replaces only the existing protected termination Deposit readiness function to expose disposition_state_version. Existing snapshot shape/version, command digests, original saved results and replay behavior remain unchanged.",
+        "Read contract requires an exact positive bigint revision at least as large as its metadata version. A read creates no history, takes no financial write lock and leaves all authorization, consequence and completion semantics unchanged.",
+        "Real isolated PostgreSQL tests cover required adjustments, receipts/reversals, dispositions/reversals, Refunds/returns/correction reversals, exact replay, rollback, unrelated Deposits, repeatable-read consistency, helper privacy and 56-to-57 preservation of every existing row and all other functions/ACLs/owners.",
+        "Preserve historical 54-to-55 and 55-to-56 proof targets. Adapt only the former raw55 read assertion to the historical wire shape; current typed read requires57. Advance only26 current-head literals across14 files.",
+        "Reconcile accepted8e command guards and all previous record values in an appropriate checkpoint; retain the complete broader disposition-context preparation unchanged."
       ],
       "excluded": [
-        "No new or inferred forfeiture circumstance, amount, fee, Pet forfeiture, termination right or signed-contract policy.",
-        "Explicit governing-rule/event linkage, expected-version HTTP command orchestration and source-backed BR-DEP-022/023 decision workflows remain later V1-055 slices; this prerequisite does not claim those gates complete or expose a new disposition API.",
-        "No changes to readiness projection semantics, Refund/Invoice allocation algorithms, physical move-out, settlement, frontend/HTTP, dependencies, database configuration, role expansion or unrelated financial commands.",
-        "No publication, V1-055 closure, V1-056 activation, repeated accepted8c8d923review/tests, model or permission relaxation, process census or retained-worktree deletion."
+        "This slice does not validate expected_state_version on any money command, invent a forfeiture policy, add governing-rule/source context or claim command orchestration complete.",
+        "No new HTTP/frontend endpoint, financial mutation, shared snapshot change, serialization-guard change, database backfill, dependency, role grant or signed-contract policy.",
+        "No publication, whole-version closure, successor version activation, new coordinator, process census, permission relaxation or retained-worktree deletion."
       ],
-      "observed_existing_behavior": "record_lease_deposit_disposition evaluates replay before its Deposit lock and has no fresh active-HUMAN query. Concurrent identical requests can both miss the initial replay and the second reach a duplicate source insert. Existing positive-value Python comparison admits bool/float values rather than enforcing integer cents. This is a bounded defensive command-admission change, not an independent-review finding on accepted8c8d923.",
-      "risk": "Financial concurrency and authorization; use Astra/xhigh/Fast implementation and complete-stage Astra/max/Standard/read-only/never review, with expanded correction review when needed. Existing source/signed-rule behavior is preserved and separately tracked as unfinished V1-055 scope.",
+      "technical_decision": "Use append-only event cardinality, not deposit_serialization_guards.revision, as the observed financial revision. The existing guard is mutable coordination state and can advance multiple times for one command. Preserve that guard for concurrency. A future fresh financial command must serialize its Deposit under the existing MVCC guard before comparing the observation; this read alone is no posting authorization.",
+      "future_dependency": "Deposit applications/reversals are specified but not implemented. Before their acceptance, incorporate them into the authoritative balance-event stream and revision invalidation. Never treat this revision as covering unimplemented event types.",
+      "broader_plan_preserved": {
+        "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/v1055-disposition-context-implementation-plan.md",
+        "sha256": "4cbf6bc0b5890733ee3a92f4db8d2c1c42866fb80f135b0b2cf649a2b2c4563e"
+      },
+      "risk": "Financial read consistency and additive strict response contract; complete-stage independent review required. No financial write behavior changes.",
       "implementation_plan": [
-        "Record this active scope and accepted predecessor before product edits.",
-        "Add targeted tests that reproduce duplicate-request admission and fresh actor/input failures, preserving any expected initial red checkpoint.",
-        "Implement the narrow forward function replacement and Python guards/error mapping; maintain signature/digest compatibility.",
-        "Run affected real PostgreSQL and unit checks, then applicable full backend/PostgreSQL/static/build/import/automation/trace/config/history gates. Reuse only exact unchanged frontend/dependency evidence.",
-        "Freeze a normal local successor and obtain fresh independent complete-stage exact-SHA zero-finding review before accepting this slice. Apply inherited two materially different corrections per finding without resetting earlier families.",
-        "Record subsequent evidence externally; later financial-policy orchestration and remaining V1-055 stages still precede integrated final acceptance/publication/closure."
+        "Admit active scope before product edits.",
+        "Implement forward helper/projection and strict reader with meaningful behavior and migration regressions.",
+        "Run affected and mandatory final gates with unchanged frontend/dependency evidence reused.",
+        "Freeze normal local candidate and obtain fresh independent complete-stage review before accepting this prerequisite."
       ],
       "acceptance": [
-        "same-key concurrent identical result and one financial/audit/command effect",
-        "same-key conflicting payload including different Deposit target is atomic and rejected",
-        "different-key overdraw still bounded",
-        "fresh actor and Property rules before effects and replay",
-        "exact old successful digest/result replay after current balance/version changes",
-        "all old rows and all but the one targeted function preserved on upgrade, including ACL/owner",
-        "all mandatory applicable gates and fresh independent zero review"
+        "all implemented financial events invalidate the revision",
+        "net-zero history still advances",
+        "exact replay and rollback do not advance",
+        "read transaction and authorization remain intact",
+        "all old history and other function bodies/ACLs/owners preserved",
+        "current and historical migration evidence remains truthful",
+        "all applicable gates and fresh zero-finding independent review"
       ],
       "authority": {
         "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-v1054-v1060-owner-authorization.json",
         "sha256": "9d3773b792aedfd2219df8365ec566ac2000edfb4660f6291589fd7b3946b4aa"
       },
       "accepted_predecessor": {
-        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-termination-deposit-stage-accepted-8c8d923.json",
-        "sha256": "b6e4f1ba285cd148c4e9eef0f601df256b9c1966dbd1f57bb90400179fd0d8bd"
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-stage-accepted-8e3c7ca.json",
+        "sha256": "da6e8246c4c94b49a08e894463e0c8a830faccdca6c3e99dcff4d57883f6deea"
       },
       "entry_reconciliation": {
-        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-deposit-accepted-cycle-20260914t0938-reconciliation.json",
-        "sha256": "2bb8ae00240f68ba791ad6f84a94f0437cfb1847a3b28b925467b8da65bbccdf"
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-disposition-revision-cycle-20260914t1212-reconciliation.json",
+        "sha256": "6ad75550d63b6c3ba2c4ea50275cf73ebed0acf973089cf351c7a0b057ba3e56"
       },
-      "main_settings": "Astra/xhigh/Fast(priority) selected config and saved task verified; provider attestation unavailable",
-      "review_settings": "Astra/max/Standard(default)/enforced-read-only/approval-never; future reviewer instructions pin both absolute Python3.12 and /opt/homebrew/bin/git",
+      "main_settings": "Astra/xhigh/Fast(priority), selected config and saved coordinator task verified; provider-tier attestation unavailable",
+      "review_settings": "GPT-6 Astra/max/Standard(default)/enforced read-only/approval-never; absolute Python and Git; no tests, writes, databases, network tools or agents.",
+      "preserved_correction_history": {
+        "termination_deposit_repository_import_classification": "resolved1of2",
+        "termination_deposit_immutable_fixture_typing": "resolved1of2",
+        "termination_fixture_typing": "resolved1of2",
+        "termination_notice_fixture_chronology": "resolved2of2; final automatic attempt, both approaches and original dbc0b85 candidate/gates preserved",
+        "termination_physical_snapshot_fixture": "resolved1of2",
+        "termination_context_immediate_fk": "resolved1of2 by connected regression and complete-stage independent review",
+        "termination_generated_void_fixture_isolation": "resolved1of2; original aggregate115PASS3FAIL retained",
+        "external_contract_attempt_schema": "resolved1of2; frozen candidate unchanged",
+        "billing_fixture_chronology": "resolved1of2 unchanged",
+        "billing_fixture_service_calendar_isolation": "resolved2of2 unchanged",
+        "mixed_final_month_service_header_provenance": "resolved1of2 unchanged",
+        "notice_R2": "automatic2of2 exhausted; separate explicit owner exception1of1 succeeded; no reset",
+        "notice_R1_R3": "resolved1of2 unchanged",
+        "V1_054_R3": "resolved2of2 unchanged",
+        "lease_deposit_command_guard_audit_conflict_expectation": "resolved1of2",
+        "lease_deposit_command_guard_test_signature_layout": "resolved1of2",
+        "lease_deposit_command_guard_downgrade_message_contract": "resolved1of2; fa6d0681349PASS/8FAIL and correction/8affected regressions preserved",
+        "lease_deposit_command_guard_review_stage_identity": "resolved1of2; initial review, separate parent finding, focused and final complete-stage zero reviews preserved"
+      },
       "stage_implementation_completed": true,
       "stage_accepted": false,
       "product_accepted": false,
       "corrections": [
         {
-          "family": "lease_deposit_command_guard_audit_conflict_expectation",
+          "finding": "External formatter inventory included all historical migrations, unlike unchanged Makefile canonical src/tests gates. Eleven old migrations reported formatting drift; no historical migration was edited.",
+          "family": "deposit_financial_revision_external_gate_inventory",
           "attempt": 1,
           "maximum": 2,
-          "status": "locally_verified_initial_complete_stage_review_pending",
-          "original": "New audit-collision test expected DepositInvalidError; no error was raised in baseline because old disposition command omitted generic audit.",
-          "evidence": "Existing app.record_deposit_audit emits23505; PostgresDepositService maps this to DepositConflictError. Preserve that existing contract rather than changing shared error semantics. The all-table unchanged rollback assertion remains identical.",
+          "approach": "Use unchanged Makefile src/tests scope and explicitly add the one new migration, matching accepted previous-stage gates. Preserve broader failure. This changes no product code or acceptance standard.",
+          "prior_checkpoint": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-deposit-financial-revision-affected.json",
+            "sha256": "6c9d54deb37dc573f0728b3a5d50c06ca219df51a947dfc7b7d08e40a461a4e9"
+          },
+          "automatic_permission_restriction": false,
+          "product_changes": false,
+          "status": "locally_verified_initial_review_pending",
           "verification": {
-            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-layout1-affected.json",
-            "sha256": "e2c115fe31b20d8d2b101d0ae4e24f169c7fcb5e85835807907376d06317a4f7"
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-deposit-financial-revision-typing1-affected.json",
+            "sha256": "c5038239129ef8031d5272d382131772e57c3517f28f2dd5e13a32c029b1c31c"
           }
         },
         {
-          "at": "2026-09-14T10:11:49.108720+00:00",
-          "family": "lease_deposit_command_guard_test_signature_layout",
+          "family": "deposit_financial_revision_test_sql_layout",
           "attempt": 1,
           "maximum": 2,
-          "status": "locally_verified_initial_complete_stage_review_pending",
-          "finding": "E501: one PostgreSQL signature literal112characters exceeds100character repository limit after formatter normalization.",
-          "approach": "Split the literal into two adjacent strings; exact resulting function signature unchanged.",
-          "before": {
-            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-signature-layout1-before.py",
-            "sha256": "3d3f645992b6422cfc688eb85caa4c703cb88dfbb46504c6e71ea3707867aaba"
+          "finding": "Two new test SQL string literals exceeded the unchanged 100-column limit.",
+          "approach": "Split the two literals at existing SQL token boundaries; queries and assertions unchanged.",
+          "prior_checkpoint": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-deposit-financial-revision-configuration1-affected.json",
+            "sha256": "e9d431e692108d4683cda0f02072076e94ae22d5e7bc25983ab6eabf5938a6e5"
           },
-          "after": {
-            "path": "/Users/sokompheak/Development/property-rental-management/backend/tests/test_lease_deposit_command_guards_migration.py",
-            "sha256": "5bc669fa452167f8583f1183e23141f90b21d76bbadb8b46a8d7d800e4614a3c"
+          "preserved_source": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-deposit-financial-revision-before-sql-layout1.py",
+            "sha256": "e585a8f4118e02a067d115f1d634afc41c33e484b5f6ae991dd2ed1cdcd16525"
           },
-          "failed": {
-            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-affected.json",
-            "sha256": "3b18da9dadef66d3fae3be528346966a83aea4beb1e8a4942c404f86537926ac"
-          },
-          "source_changes": false,
-          "prior_limits_reset": false,
+          "automatic_permission_restriction": false,
+          "product_behavior_changes": false,
+          "status": "locally_verified_initial_review_pending",
           "verification": {
-            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-layout1-affected.json",
-            "sha256": "e2c115fe31b20d8d2b101d0ae4e24f169c7fcb5e85835807907376d06317a4f7"
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-deposit-financial-revision-typing1-affected.json",
+            "sha256": "c5038239129ef8031d5272d382131772e57c3517f28f2dd5e13a32c029b1c31c"
           }
         },
         {
-          "at": "2026-09-14T10:24:30.182495+00:00",
-          "family": "lease_deposit_command_guard_downgrade_message_contract",
+          "family": "deposit_financial_revision_fixture_type_narrowing",
           "attempt": 1,
           "maximum": 2,
-          "status": "locally_verified_initial_complete_stage_review_pending",
-          "cause": "Eight existing current-head downgrade tests expect lowercase forward-only; migration56 correctly refuses but its message starts uppercase.",
-          "approach": "Change only the initial F to f in the refusal message. Preserve exception type, unconditional refusal, all SQL, upgrade behavior and old migrations.",
-          "evidence": {
-            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-downgrade-message1-attempt.json",
-            "sha256": "3108dd4ee77a183e1e6e73a5ce0377f10a4442deb5deac66cb1b125f716cf3b3"
+          "finding": "The explicit exact-int assertion already narrows the fixture return value; mypy rejects the redundant cast.",
+          "approach": "Return the proven integer directly, retaining the exact-type assertion and all SQL/behavior checks.",
+          "prior_checkpoint": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-deposit-financial-revision-sql-layout1-affected.json",
+            "sha256": "bd2b6252c1b03ebba2d38cc1afeba6ca80d195006ac53326110a89841d2e6c26"
           },
-          "checks": [
-            {
-              "name": "format",
-              "command": [
-                "/Users/sokompheak/Development/property-rental-management-v1-052/backend/.venv/bin/python3.12",
-                "-B",
-                "-m",
-                "ruff",
-                "format",
-                "--check",
-                "src",
-                "tests",
-                "migrations/versions/20260914_56_lease_deposit_command_guards.py"
-              ],
-              "cwd": "/Users/sokompheak/Development/property-rental-management/backend",
-              "exit_code": 0,
-              "seconds": 0.065,
-              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-downgrade-message1-format.log",
-              "sha256": "28616f479dcc341db5ca0e9b2e4e2cf2bb23f4ebb35f5645b22473a745a92f14"
-            },
-            {
-              "name": "lint",
-              "command": [
-                "/Users/sokompheak/Development/property-rental-management-v1-052/backend/.venv/bin/python3.12",
-                "-B",
-                "-m",
-                "ruff",
-                "check",
-                "src",
-                "tests",
-                "migrations/versions/20260914_56_lease_deposit_command_guards.py"
-              ],
-              "cwd": "/Users/sokompheak/Development/property-rental-management/backend",
-              "exit_code": 0,
-              "seconds": 0.032,
-              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-downgrade-message1-lint.log",
-              "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
-            },
-            {
-              "name": "postgresql",
-              "command": [
-                "/bin/sh",
-                "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/v1055-lease-deposit-command-guards-downgrade-message1-database-test.sh"
-              ],
-              "cwd": "/Users/sokompheak/Development/property-rental-management",
-              "exit_code": 0,
-              "seconds": 15.354,
-              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-downgrade-message1-postgresql.log",
-              "sha256": "6ce54dfefedfa47147c290cd01216cf1436156c707c72c4ca3b55bf965b4bb82"
-            }
-          ],
-          "failed_candidate": "fa6d068824af09312f316105b6d3ed6cd5391018",
-          "upgrade_sql_unchanged": true,
-          "inherited_limits_reset": false
-        },
-        {
-          "family": "lease_deposit_command_guard_review_stage_identity",
-          "finding_id": "CG-RECORD-1",
-          "attempt": 1,
-          "maximum": 2,
-          "status": "locally_corrected_gates_focused_and_final_complete_review_pending",
-          "before": "review.stage=V1-055-termination-deposit-readiness",
-          "after": "review.stage=V1-055-lease-deposit-command-guards",
-          "evidence": {
-            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-review-label1-attempt.json",
-            "sha256": "f170fae1a49ea9154a85db0d69d393dd4f569404b7217df2ad15395fc60b65d5"
+          "preserved_source": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-deposit-financial-revision-before-typing1.py",
+            "sha256": "447924cf66246c9e75912127a32c273fb2a3d139e48d8e3a2ee4a4bc8b5c1156"
           },
-          "original_assessment": {
-            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-a25a008-full-root-assessment.json",
-            "sha256": "fe3884de62b4fb54ef948b01b305d5beef2e260cc9b4322b463ae8b1dc4e3692"
+          "automatic_permission_restriction": false,
+          "product_behavior_changes": false,
+          "status": "locally_verified_initial_review_pending",
+          "verification": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-deposit-financial-revision-typing1-affected.json",
+            "sha256": "c5038239129ef8031d5272d382131772e57c3517f28f2dd5e13a32c029b1c31c"
           }
         }
       ],
       "inherited_limits_reset": false,
-      "timestamp": "2026-09-14T09:48:40.175396+00:00",
-      "implementation": {
-        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-implementation.json",
-        "sha256": "5b6a21dbb0f9bede653fc6b05ece626d7547b2821c2aea74901e9a8abcc99a80"
-      },
-      "baseline": {
-        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-baseline-red.json",
-        "sha256": "0dfd206f4409f2c599d833ef037a9c59f58fb48eacec57d7fe441d7996232854"
-      },
+      "timestamp": "2026-09-14T12:17:14.009519+00:00",
       "publication_permitted": false,
       "preliminary_evidence": {
-        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-layout1-affected.json",
-        "sha256": "e2c115fe31b20d8d2b101d0ae4e24f169c7fcb5e85835807907376d06317a4f7"
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-deposit-financial-revision-typing1-affected.json",
+        "sha256": "c5038239129ef8031d5272d382131772e57c3517f28f2dd5e13a32c029b1c31c"
       },
-      "frozen_candidate_receipt": "v1055-lease-deposit-command-guards-records1-candidate.json",
-      "rejected_candidate": "fa6d068824af09312f316105b6d3ed6cd5391018",
-      "correction_evidence": {
-        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-downgrade-message1.json",
-        "sha256": "f629190a2c72324bdb538fe21b51f348f67dfefddd4bf0a1a02f4e404ed6a767"
-      },
-      "initial_complete_stage_review": {
-        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-a25a008-full.md",
-        "sha256": "103497f5131dd1c677927c120a5b7419d9bc498353c2016c0e15212d7ce2bdda"
-      },
-      "initial_review_parent_assessment": {
-        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-a25a008-full-root-assessment.json",
-        "sha256": "fe3884de62b4fb54ef948b01b305d5beef2e260cc9b4322b463ae8b1dc4e3692"
-      },
-      "parent_findings": [
-        {
-          "id": "CG-RECORD-1",
-          "severity": "LOW",
-          "family": "lease_deposit_command_guard_review_stage_identity",
-          "file": "ops/STATE.json",
-          "line": 5766,
-          "field": "review.stage",
-          "observed": "V1-055-termination-deposit-readiness",
-          "required": "V1-055-lease-deposit-command-guards",
-          "impact": "Current review metadata retains the accepted predecessor stage label despite the new status/base and active command-guard scope; keep exact stage/evidence binding unambiguous in durable records.",
-          "scope": "Records only; no product/source/test/migration change. Preserve all archived predecessor stage labels and accepted evidence.",
-          "automatic_corrections_used": 1,
-          "maximum": 2,
-          "status": "corrected_pending_independent_verification"
-        }
-      ]
+      "frozen_candidate_receipt": "v1055-deposit-financial-revision-candidate.json"
     },
     "prior_version_history": "historical_v1_054_closed_current_fields",
     "latest_continuation": {
@@ -3102,7 +3027,7 @@
     "implementation_started": true,
     "implementation_completed": false,
     "publication_completed": false,
-    "product_implementation_gate": "Notice, final-month billing, termination and Deposit readiness accepted locally. Command guards affected checks pass; exact gates/review, explicit financial orchestration, physical/HTTP and integrated V1-055 acceptance pending."
+    "product_implementation_gate": "Prior V1-055 stages through command guards accepted. Financial revision affected checks pass; exact gates and review, command context, financial/physical/HTTP and integrated acceptance remain pending."
   },
   "historical_v1_047_approval": {
     "status": "active",
@@ -3152,7 +3077,7 @@
   "branch": "implementation/foundation",
   "commit": "8a3c0e362f4994b4cad0bff90f746a4d0235eff9",
   "idle_reason": "",
-  "next_action": "Run applicable exact records gates while reusing unchanged a25a008 product/static/build/graph evidence. Obtain an independent focused CG-RECORD-1 correction review against a25a008, then a fresh independent final COMPLETE24path/threecommit stage review against accepted8c8d923, Astra/max/Standard/read-only/never with absolute Python/Git. Zero unresolved findings required before acceptance. Preserve review-label1of2, prior message1of2/test1of2 families and all inherited limits; no55publication/closure or next slice before acceptance.",
+  "next_action": "Run remaining exact financial revision gates, reusing verified unchanged frontend/dependency and exact backend static evidence. Obtain fresh independent complete26-path/one-commit review from accepted8e3c7ca with Astra/max/Standard/read-only/never and absolute Python/Git. No next slice or publication before stage acceptance. Explicit governing-rule/source and expected-version command enforcement remain pending, as do financial reconciliation, physical/HTTP workflows and final integrated V1-055 acceptance. No V1-056 before full V1-055 closure.",
   "active_worker": null,
   "active_card": "0fbb0d8a-2b0e-4097-bfc4-0b48181ad7a2",
   "active_claim": null,
@@ -3160,7 +3085,7 @@
   "active_branch": "implementation/foundation",
   "active_worktree": "/Users/sokompheak/Development/property-rental-management",
   "candidate_sha": null,
-  "candidate_resolution": "Resolve the immutable records-corrected command-guard candidate through external v1055-lease-deposit-command-guards-records1-candidate.json. Preserve the initial a25a008 APPROVE0 report, separate parent CG-RECORD-1, fa6d068 failure and all previous evidence; later exact gates/reviews remain external.",
+  "candidate_resolution": "Resolve the immutable financial revision candidate through external v1055-deposit-financial-revision-candidate.json. Subsequent exact gates and independent review evidence remain outside the candidate.",
   "candidate_parent": "8a3c0e362f4994b4cad0bff90f746a4d0235eff9",
   "next_candidate": {
     "id": "V1-055",
@@ -3221,7 +3146,7 @@
       "partial_returns": "Re-evaluate against USD-only refunds, not obsolete KHR-refund blocker."
     }
   },
-  "phase": "V1-055 command-guard review-stage identity corrected; records gates and focused/final reviews pending",
+  "phase": "V1-055 financial revision implemented; exact gates and initial independent stage review pending",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -4317,34 +4242,37 @@
     "PASS: V1-041 closure commit d6c05690d06ea06a9ce904c2ed7d976bf816fb6c exact-SHA GitHub Actions run 33173041349; all four jobs"
   ],
   "tests": [
-    "a25a008 full24path/twocommit independent review APPROVE0 and all22gates preserved. Parent CG-RECORD-1 records-only correction1of2 fixes the current review.stage label. Source/tests/migrations/docs unchanged; applicable exact records gates, independent focused correction and fresh final complete-stage review pending.",
-    "Preserved fa6d068 full PostgreSQL gate:1349PASS/8FAIL, all8 due solely to uppercase forward-only refusal text. One-character downgrade-message correction1of2 passes all8 affected PostgreSQL cases and fresh format/lint; upgrade SQL, source/tests and previous64affectedPG/15unit/215-file typing remain unchanged. Fresh mandatory full corrected-candidate gate and initial stage review pending.",
-    "Command guards:64affected real PostgreSQL cases,15unit cases,215-file typing and216-file formatting/lint PASS. Different-key balance serialization is covered by the existing connected Deposit suite; same-key replay/conflicts, disabled actor, audit rollback and55to56 history/function/ACL/owner preservation are newly exercised.",
-    "Both new test corrections remain1of2: established audit-conflict error expectation and test signature line layout, locally verified. Intended baseline11unit/6PG failures plus1PGpass, original lint failure and all inherited evidence/limits preserved. Remaining mandatory exact gates and fresh initial stage review pending.",
-    "Historical checkpoint: Command guards initial format PASS, lint E501 on one test signature preserved. Signature layout correction1of2 applied; fresh lint/type/unit/PostgreSQL checks pending; no source behavior changed.",
-    "Historical checkpoint: New command guards: intended baseline 11 unit failures,6 PostgreSQL failures,1 pass preserved. Narrow implementation applied; fresh affected and full gates pending. Audit-conflict fixture correction1of2 pending.",
-    "Historical checkpoint: Accepted8c8d923: all22gates preserved and fresh initial complete25path/onecommit review APPROVE zero. No unchanged tests or review repeated. New command-guard tests/gates have not run.",
-    "Historical checkpoint: Current Deposit readiness:74affectedPG PASS/no skips (new projection plus termination, Deposit and Credit/Refund read suites),52unit PASS, full214-file typing and repository formatting/lint PASS. New read does not mutate any app table; separate54to55 all-history/functions/privileges and real legacy command proof. Remaining mandatory exact gates and initial independent stage review pending.",
-    "Historical checkpoint: Two pre-review corrections remain1of2 each: repository-local import grouping and runtime frozen-dataclass test typing; both locally verified. Original failed lint/type checkpoints and every old evidence/correction retained.",
-    "Historical checkpoint: Historical checkpoint: Termination8a3c0e3:22gates PASS (1342PG,2954backend/1207DB-only skips covered,1519frontend,189automation); complete27-path/two-commit independent0H0M0L; every operation/actual setting parent-audited.",
-    "Historical checkpoint: Historical checkpoint: Current Deposit readiness stage active; affected and mandatory gates not yet run.",
-    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Current successor:7affected noticePGPASS/32deselected and fulltyping211PASS; only three synthetic source calls and helper changed.1371calendar geometries checked2020through2040. Notice-fixture2of2 final automatic correction locally verified; mandatory successor gates and initial full-stage review pending.",
-    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Parentdbc0b85 exact22gatesPASS,15fresh/7reused:1342PGnoskips,2954backend/1207DB-onlyskipscovered,1519FE,189automation. Preserved as predecessor evidence, not asserted as fresh successor execution. Product/other test source unchanged.",
-    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Current termination substage:120affected realPG PASS including39termination,6Lease lifecycle,40billing and35invoice cases. Explicit53-to54 all-prior-functions/OIDs/ACLs/history and old exact replay;52-to53 billing proof retained. Original source guards, default/immediateFK modes, no physical/financial side effects, warning/notice/actor/Property/replay/concurrency checks pass. Typing211sourcefiles PASS;25context units and4unchangedLease units previouslyPASS. Remaining mandatory exact gates and independent stage review pending.",
-    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Corrections preserved: initialtyping1of2 andnotice chronology/physicalsnapshotidentity1of2 locally resolved; context-command immediateFK1of2 andconnectedgeneratedVOIDfixtureisolation1of2 locally verified. Previous118case run3FAIL/115PASS andtwo-mode1FAIL/1PASS RED remain retained; no reset of old notice ownerexception orV54limits.",
-    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Billing1f52fd1:22gates PASS;40affected/1303fullPG,2929backend/1168DBonly skips covered,1519FE,189automation; independent complete20path/1commit0H0M0L and actual operations/settings audited.",
-    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Termination core:25context units/4prior unchanged Lease units PASS; types210files PASS; initialPG29PASS7fixturefailures preserved, corrected8affectedPGPASS/28deselected. All stage/full gates and independent acceptance remain pending; no full-suite completion claim.",
-    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Current billing substage:40affected PostgreSQL cases PASS including26existing and14new cases, forward52-to53 preservation, fresh schema, exact money, Services, replay/concurrency and actor scope. Affected format/lint and full backend typing PASS. Remaining mandatory exact stage gates and independent review pending.",
-    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Fixture chronology resolved1of2; Service-calendar isolation resolved2of2 using existing disposable databases. Mixed-header Service product correction1of2 locally verified; independent stage acceptance pending. Every prior checkpoint retained.",
-    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Notice96f67bc:22applicable gates PASS; focused/full-stage independent0H0M0L and qualified operations audit accepted externally. No unchanged tests or reviews repeated.",
-    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Recurring final-month billing stage active; new affected regression and mandatory exact acceptance gates pending.",
-    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Current verified parent b7fb053:22PASS gates, 7fresh records/15unchanged product checks. This owner-authorized records-only successor requires its own7 affected records gates and15unchanged product identity checks; all earlier tests/reviews/failures remain preserved.",
-    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Current product evidence at ac97a90:22PASS gates (15fresh/7reused),1289PostgreSQL PASS/no skips,2929backend PASS/1154database-only skips covered byPG,189automation,1519frontend by full source/config identity,148affected regressions and successful types. This three-record successor requires7fresh record gates and15unchanged product-evidence identity checks; no product test repeat.",
-    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Notice candidate d8c3f3c:1165realPG PASS,2821backend PASS/1138database-only skips covered byPG,189automation PASS; frontend1519unchanged tests and static/build evidence reused by full input identity. Backend static/types/migration/build/import/config/trace/guard/whitespace PASS.",
-    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Initial0d92c3a fullPG136FAILED/1029PASS retained; bounded gate correction1 repaired installed Alembic PATH and17stale head literals. Preliminary68unit/trace+24PG and original lint evidence retained. V54R3resolved2of2 unchanged.",
-    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: No-isolation package variant failed missing declared Hatchling; normal isolated build succeeded via public build dependencies, same candidate/runtime preserved. No passing tests repeated.",
-    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Semantic preflight was not acceptable despite exit0: whole-version completion incorrectly true. Record correction1 now separates notice completion from unfinished V1-055. Fresh exact record/automation/routing gates and full independent review pending; no product source changed or publication permitted.",
-    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: New targeted RED evidence preserved for direct database whitespace acceptance and calendar-invalid fixture; correction1 installed. Fresh affected GREEN, exact gates and independent expanded focused/full-stage review remain pending. Prior22gate results preserved with only affected evidence requiring replacement."
+    "Financial revision:63 unit cases and affected real PostgreSQL suites pass, including10 new revision cases;216-file typing and217-file formatting/lint pass. All committed financial event kinds, net-zero correction histories, exact replay/rollback, metadata link, private helper and snapshot consistency are covered.",
+    "Preserve external gate-inventory1of2, new-test SQL layout1of2 and redundant fixture cast1of2 checkpoints. No production behavior correction; all inherited limits unchanged. Full applicable gates and fresh independent complete-stage review pending.",
+    "Historical checkpoint: Accepted8e3c7ca: all22 gates and final complete-stage zero review preserved. New financial revision checks have not run.",
+    "Historical checkpoint: a25a008 full24path/twocommit independent review APPROVE0 and all22gates preserved. Parent CG-RECORD-1 records-only correction1of2 fixes the current review.stage label. Source/tests/migrations/docs unchanged; applicable exact records gates, independent focused correction and fresh final complete-stage review pending.",
+    "Historical checkpoint: Preserved fa6d068 full PostgreSQL gate:1349PASS/8FAIL, all8 due solely to uppercase forward-only refusal text. One-character downgrade-message correction1of2 passes all8 affected PostgreSQL cases and fresh format/lint; upgrade SQL, source/tests and previous64affectedPG/15unit/215-file typing remain unchanged. Fresh mandatory full corrected-candidate gate and initial stage review pending.",
+    "Historical checkpoint: Command guards:64affected real PostgreSQL cases,15unit cases,215-file typing and216-file formatting/lint PASS. Different-key balance serialization is covered by the existing connected Deposit suite; same-key replay/conflicts, disabled actor, audit rollback and55to56 history/function/ACL/owner preservation are newly exercised.",
+    "Historical checkpoint: Both new test corrections remain1of2: established audit-conflict error expectation and test signature line layout, locally verified. Intended baseline11unit/6PG failures plus1PGpass, original lint failure and all inherited evidence/limits preserved. Remaining mandatory exact gates and fresh initial stage review pending.",
+    "Historical checkpoint: Historical checkpoint: Command guards initial format PASS, lint E501 on one test signature preserved. Signature layout correction1of2 applied; fresh lint/type/unit/PostgreSQL checks pending; no source behavior changed.",
+    "Historical checkpoint: Historical checkpoint: New command guards: intended baseline 11 unit failures,6 PostgreSQL failures,1 pass preserved. Narrow implementation applied; fresh affected and full gates pending. Audit-conflict fixture correction1of2 pending.",
+    "Historical checkpoint: Historical checkpoint: Accepted8c8d923: all22gates preserved and fresh initial complete25path/onecommit review APPROVE zero. No unchanged tests or review repeated. New command-guard tests/gates have not run.",
+    "Historical checkpoint: Historical checkpoint: Current Deposit readiness:74affectedPG PASS/no skips (new projection plus termination, Deposit and Credit/Refund read suites),52unit PASS, full214-file typing and repository formatting/lint PASS. New read does not mutate any app table; separate54to55 all-history/functions/privileges and real legacy command proof. Remaining mandatory exact gates and initial independent stage review pending.",
+    "Historical checkpoint: Historical checkpoint: Two pre-review corrections remain1of2 each: repository-local import grouping and runtime frozen-dataclass test typing; both locally verified. Original failed lint/type checkpoints and every old evidence/correction retained.",
+    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Termination8a3c0e3:22gates PASS (1342PG,2954backend/1207DB-only skips covered,1519frontend,189automation); complete27-path/two-commit independent0H0M0L; every operation/actual setting parent-audited.",
+    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Current Deposit readiness stage active; affected and mandatory gates not yet run.",
+    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Current successor:7affected noticePGPASS/32deselected and fulltyping211PASS; only three synthetic source calls and helper changed.1371calendar geometries checked2020through2040. Notice-fixture2of2 final automatic correction locally verified; mandatory successor gates and initial full-stage review pending.",
+    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Parentdbc0b85 exact22gatesPASS,15fresh/7reused:1342PGnoskips,2954backend/1207DB-onlyskipscovered,1519FE,189automation. Preserved as predecessor evidence, not asserted as fresh successor execution. Product/other test source unchanged.",
+    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Current termination substage:120affected realPG PASS including39termination,6Lease lifecycle,40billing and35invoice cases. Explicit53-to54 all-prior-functions/OIDs/ACLs/history and old exact replay;52-to53 billing proof retained. Original source guards, default/immediateFK modes, no physical/financial side effects, warning/notice/actor/Property/replay/concurrency checks pass. Typing211sourcefiles PASS;25context units and4unchangedLease units previouslyPASS. Remaining mandatory exact gates and independent stage review pending.",
+    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Corrections preserved: initialtyping1of2 andnotice chronology/physicalsnapshotidentity1of2 locally resolved; context-command immediateFK1of2 andconnectedgeneratedVOIDfixtureisolation1of2 locally verified. Previous118case run3FAIL/115PASS andtwo-mode1FAIL/1PASS RED remain retained; no reset of old notice ownerexception orV54limits.",
+    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Billing1f52fd1:22gates PASS;40affected/1303fullPG,2929backend/1168DBonly skips covered,1519FE,189automation; independent complete20path/1commit0H0M0L and actual operations/settings audited.",
+    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Termination core:25context units/4prior unchanged Lease units PASS; types210files PASS; initialPG29PASS7fixturefailures preserved, corrected8affectedPGPASS/28deselected. All stage/full gates and independent acceptance remain pending; no full-suite completion claim.",
+    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Current billing substage:40affected PostgreSQL cases PASS including26existing and14new cases, forward52-to53 preservation, fresh schema, exact money, Services, replay/concurrency and actor scope. Affected format/lint and full backend typing PASS. Remaining mandatory exact stage gates and independent review pending.",
+    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Fixture chronology resolved1of2; Service-calendar isolation resolved2of2 using existing disposable databases. Mixed-header Service product correction1of2 locally verified; independent stage acceptance pending. Every prior checkpoint retained.",
+    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Notice96f67bc:22applicable gates PASS; focused/full-stage independent0H0M0L and qualified operations audit accepted externally. No unchanged tests or reviews repeated.",
+    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Recurring final-month billing stage active; new affected regression and mandatory exact acceptance gates pending.",
+    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Current verified parent b7fb053:22PASS gates, 7fresh records/15unchanged product checks. This owner-authorized records-only successor requires its own7 affected records gates and15unchanged product identity checks; all earlier tests/reviews/failures remain preserved.",
+    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Current product evidence at ac97a90:22PASS gates (15fresh/7reused),1289PostgreSQL PASS/no skips,2929backend PASS/1154database-only skips covered byPG,189automation,1519frontend by full source/config identity,148affected regressions and successful types. This three-record successor requires7fresh record gates and15unchanged product-evidence identity checks; no product test repeat.",
+    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Notice candidate d8c3f3c:1165realPG PASS,2821backend PASS/1138database-only skips covered byPG,189automation PASS; frontend1519unchanged tests and static/build evidence reused by full input identity. Backend static/types/migration/build/import/config/trace/guard/whitespace PASS.",
+    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Initial0d92c3a fullPG136FAILED/1029PASS retained; bounded gate correction1 repaired installed Alembic PATH and17stale head literals. Preliminary68unit/trace+24PG and original lint evidence retained. V54R3resolved2of2 unchanged.",
+    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: No-isolation package variant failed missing declared Hatchling; normal isolated build succeeded via public build dependencies, same candidate/runtime preserved. No passing tests repeated.",
+    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Semantic preflight was not acceptable despite exit0: whole-version completion incorrectly true. Record correction1 now separates notice completion from unfinished V1-055. Fresh exact record/automation/routing gates and full independent review pending; no product source changed or publication permitted.",
+    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: New targeted RED evidence preserved for direct database whitespace acceptance and calendar-invalid fixture; correction1 installed. Fresh affected GREEN, exact gates and independent expanded focused/full-stage review remain pending. Prior22gate results preserved with only affected evidence requiring replacement."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -4366,7 +4294,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-055",
-  "timestamp": "2026-09-14T10:53:41.666126+00:00",
+  "timestamp": "2026-09-14T12:32:18.978911+00:00",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -4605,7 +4533,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-14T10:53:41.666126+00:00",
+  "updated_at": "2026-09-14T12:32:18.978911+00:00",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -5728,7 +5656,7 @@
     },
     "disposition": "Historical prior-version and rejected automation evidence retained verbatim; not active execution instructions. Original branch histories preserved by normal merge; live native owner authorization supersedes prior repair-stop restrictions."
   },
-  "commit_role": "Bounded24-path financial-command admission: forward56, exact money/date inputs, fresh actor, serialized replay, atomic audit and preservation tests/docs/records. WholeV1-055 incomplete/unpublished.",
+  "commit_role": "Bounded financial observation prerequisite: forward57, strict read contract, history/transaction/replay regression evidence and preserved records. No money command enforcement or whole-version acceptance.",
   "historical_v1_047_commit_role": "terminal Workboard-accepted V1-047 closure record; V1-048 not activated",
   "candidate_parents": [
     "8a3c0e362f4994b4cad0bff90f746a4d0235eff9"
@@ -5805,16 +5733,16 @@
       "sha256": "4e74c8aa1ec979c795b8c62a7854d17e1d6ebeb042e0561785c026620c18d7a6"
     },
     "sequence": "Initial full stage; regression and focused/connected correction verification; final complete corrected stage0; final integrated version0 before publication.",
-    "status": "focused_record_identity_then_final_complete_stage_review_pending",
-    "stage": "V1-055-lease-deposit-command-guards",
-    "base_sha": "8c8d92396bb0138bf385212163b86cfe8c122e12",
+    "status": "initial_complete_financial_revision_review_pending",
+    "stage": "V1-055-deposit-financial-revision",
+    "base_sha": "8e3c7cad93f53c6eb5224fb9ffeec9dde8232831",
     "exact_sha": null,
     "findings": null,
     "prior_termination_acceptance": {
       "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-termination-stage-accepted-8a3c0e3.json",
       "sha256": "3886083c79c2b709ed14bd5de436ebd7b18161c7bfdc7cc25f9717d5e4925dd7"
     },
-    "resolution": "Run applicable exact records gates while reusing unchanged a25a008 product/static/build/graph evidence. Obtain an independent focused CG-RECORD-1 correction review against a25a008, then a fresh independent final COMPLETE24path/threecommit stage review against accepted8c8d923, Astra/max/Standard/read-only/never with absolute Python/Git. Zero unresolved findings required before acceptance. Preserve review-label1of2, prior message1of2/test1of2 families and all inherited limits; no55publication/closure or next slice before acceptance.",
+    "resolution": "Fresh complete26-path stage review after applicable gates. All predecessor reviews are completed and preserved; do not repeat them.",
     "prior_complete_stage_review": {
       "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-a25a008-full.md",
       "sha256": "103497f5131dd1c677927c120a5b7419d9bc498353c2016c0e15212d7ce2bdda"
@@ -5973,7 +5901,7 @@
     }
   },
   "current_product_acceptance": {
-    "status": "V54 closed; four bounded V55 stages accepted locally. Lease Deposit command guards implemented with affected evidence; exact gates and fresh complete-stage review pending. Whole55 incomplete/unpublished.",
+    "status": "V1-054 closed. V1-055 through command guards accepted locally; financial revision affected-verified pending exact gates and independent review. Whole V1-055 incomplete/unpublished.",
     "predecessor_closure": {
       "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1054-closure-verification.json",
       "sha256": "d6687cf2d4ef1e5ddbeff176f44f9b45b3917d9a8a88400f3a08ac57837805b9"
@@ -38470,7 +38398,7 @@
   },
   "v1_055_lease_deposit_command_guards": {
     "id": "V1-055-lease-deposit-command-guards",
-    "status": "review_stage_identity_corrected_exact_gates_focused_final_pending",
+    "status": "accepted_locally",
     "stage": "Bounded financial-command admission prerequisite to termination disposition orchestration",
     "base": "8c8d92396bb0138bf385212163b86cfe8c122e12",
     "complete_version_base": "bda66062697feef17c8df621b64bf5f607c1c691",
@@ -38549,15 +38477,10 @@
       "Freeze a normal local successor and obtain fresh independent complete-stage exact-SHA zero-finding review before accepting this slice. Apply inherited two materially different corrections per finding without resetting earlier families.",
       "Record subsequent evidence externally; later financial-policy orchestration and remaining V1-055 stages still precede integrated final acceptance/publication/closure."
     ],
-    "acceptance": [
-      "same-key concurrent identical result and one financial/audit/command effect",
-      "same-key conflicting payload including different Deposit target is atomic and rejected",
-      "different-key overdraw still bounded",
-      "fresh actor and Property rules before effects and replay",
-      "exact old successful digest/result replay after current balance/version changes",
-      "all old rows and all but the one targeted function preserved on upgrade, including ACL/owner",
-      "all mandatory applicable gates and fresh independent zero review"
-    ],
+    "acceptance": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-stage-accepted-8e3c7ca.json",
+      "sha256": "da6e8246c4c94b49a08e894463e0c8a830faccdca6c3e99dcff4d57883f6deea"
+    },
     "authority": {
       "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-v1054-v1060-owner-authorization.json",
       "sha256": "9d3773b792aedfd2219df8365ec566ac2000edfb4660f6291589fd7b3946b4aa"
@@ -38573,7 +38496,7 @@
     "main_settings": "Astra/xhigh/Fast(priority) selected config and saved task verified; provider attestation unavailable",
     "review_settings": "Astra/max/Standard(default)/enforced-read-only/approval-never; future reviewer instructions pin both absolute Python3.12 and /opt/homebrew/bin/git",
     "stage_implementation_completed": true,
-    "stage_accepted": false,
+    "stage_accepted": true,
     "product_accepted": false,
     "corrections": [
       {
@@ -39184,5 +39107,974 @@
       "frozen_candidate_receipt": "v1055-termination-deposit-candidate.json"
     },
     "commit_role": "Bounded25-path Deposit read projection, forward55, affected tests/docs/trace/handoff.74affectedPG and52unit cases plus full214-file typing pass; remaining mandatory exact gates and first complete-stage independent review pending. WholeV1-055 incomplete/unpublished/open."
+  },
+  "v1_055_deposit_financial_revision": {
+    "id": "V1-055-deposit-financial-revision",
+    "status": "implemented_affected_verified_exact_gates_review_pending",
+    "stage": "Financial-state observation prerequisite for explicit Lease Deposit disposition commands",
+    "base": "8e3c7cad93f53c6eb5224fb9ffeec9dde8232831",
+    "complete_version_base": "bda66062697feef17c8df621b64bf5f607c1c691",
+    "paths": [
+      "backend/migrations/versions/20260914_57_deposit_financial_revision.py",
+      "backend/src/property_rental/termination_deposit.py",
+      "backend/tests/test_billing_service_migration.py",
+      "backend/tests/test_credit_refund_read_migration.py",
+      "backend/tests/test_customer_ledger_migration.py",
+      "backend/tests/test_customer_ledger_read_migration.py",
+      "backend/tests/test_deposit_financial_revision_migration.py",
+      "backend/tests/test_financial_action_context_migration.py",
+      "backend/tests/test_invoice_migration.py",
+      "backend/tests/test_late_payment_migration.py",
+      "backend/tests/test_lease_api_migration.py",
+      "backend/tests/test_lease_enforcement_api_migration.py",
+      "backend/tests/test_migrations.py",
+      "backend/tests/test_payment_reversal_context_migration.py",
+      "backend/tests/test_termination_deposit.py",
+      "backend/tests/test_termination_deposit_migration.py",
+      "backend/tests/test_utility_api_migration.py",
+      "backend/tests/test_utility_consumption_migration.py",
+      "backend/tests/test_utility_meter_migration.py",
+      "docs/004_DATABASE_MODEL.md",
+      "docs/010_DECISION_LOG.md",
+      "ops/NOW.md",
+      "ops/QUEUE.md",
+      "ops/STATE.json",
+      "ops/traceability.json",
+      "scripts/database-test.sh"
+    ],
+    "current_head_fixture_paths": [
+      "backend/tests/test_billing_service_migration.py",
+      "backend/tests/test_credit_refund_read_migration.py",
+      "backend/tests/test_customer_ledger_migration.py",
+      "backend/tests/test_customer_ledger_read_migration.py",
+      "backend/tests/test_financial_action_context_migration.py",
+      "backend/tests/test_invoice_migration.py",
+      "backend/tests/test_late_payment_migration.py",
+      "backend/tests/test_lease_api_migration.py",
+      "backend/tests/test_lease_enforcement_api_migration.py",
+      "backend/tests/test_migrations.py",
+      "backend/tests/test_payment_reversal_context_migration.py",
+      "backend/tests/test_utility_api_migration.py",
+      "backend/tests/test_utility_consumption_migration.py",
+      "backend/tests/test_utility_meter_migration.py"
+    ],
+    "authoritative_specs": [
+      "ops/V1_055_SCOPE.md",
+      "ops/CODEX_TAKEOVER_V1_054_060.md",
+      "docs/004_DATABASE_MODEL.md",
+      "docs/005_API_SPECIFICATION.md",
+      "docs/007_TESTING_STRATEGY.md",
+      "docs/008_SECURITY_MODEL.md",
+      "docs/010_DECISION_LOG.md"
+    ],
+    "included": [
+      "A private stable SQL helper derives a positive financial revision from Deposit metadata version, required-adjustment count and all existing append-only Deposit balance events. Original and reversal/return events count separately even when net value is unchanged.",
+      "Forward57 replaces only the existing protected termination Deposit readiness function to expose disposition_state_version. Existing snapshot shape/version, command digests, original saved results and replay behavior remain unchanged.",
+      "Read contract requires an exact positive bigint revision at least as large as its metadata version. A read creates no history, takes no financial write lock and leaves all authorization, consequence and completion semantics unchanged.",
+      "Real isolated PostgreSQL tests cover required adjustments, receipts/reversals, dispositions/reversals, Refunds/returns/correction reversals, exact replay, rollback, unrelated Deposits, repeatable-read consistency, helper privacy and 56-to-57 preservation of every existing row and all other functions/ACLs/owners.",
+      "Preserve historical 54-to-55 and 55-to-56 proof targets. Adapt only the former raw55 read assertion to the historical wire shape; current typed read requires57. Advance only26 current-head literals across14 files.",
+      "Reconcile accepted8e command guards and all previous record values in an appropriate checkpoint; retain the complete broader disposition-context preparation unchanged."
+    ],
+    "excluded": [
+      "This slice does not validate expected_state_version on any money command, invent a forfeiture policy, add governing-rule/source context or claim command orchestration complete.",
+      "No new HTTP/frontend endpoint, financial mutation, shared snapshot change, serialization-guard change, database backfill, dependency, role grant or signed-contract policy.",
+      "No publication, whole-version closure, successor version activation, new coordinator, process census, permission relaxation or retained-worktree deletion."
+    ],
+    "technical_decision": "Use append-only event cardinality, not deposit_serialization_guards.revision, as the observed financial revision. The existing guard is mutable coordination state and can advance multiple times for one command. Preserve that guard for concurrency. A future fresh financial command must serialize its Deposit under the existing MVCC guard before comparing the observation; this read alone is no posting authorization.",
+    "future_dependency": "Deposit applications/reversals are specified but not implemented. Before their acceptance, incorporate them into the authoritative balance-event stream and revision invalidation. Never treat this revision as covering unimplemented event types.",
+    "broader_plan_preserved": {
+      "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/v1055-disposition-context-implementation-plan.md",
+      "sha256": "4cbf6bc0b5890733ee3a92f4db8d2c1c42866fb80f135b0b2cf649a2b2c4563e"
+    },
+    "risk": "Financial read consistency and additive strict response contract; complete-stage independent review required. No financial write behavior changes.",
+    "implementation_plan": [
+      "Admit active scope before product edits.",
+      "Implement forward helper/projection and strict reader with meaningful behavior and migration regressions.",
+      "Run affected and mandatory final gates with unchanged frontend/dependency evidence reused.",
+      "Freeze normal local candidate and obtain fresh independent complete-stage review before accepting this prerequisite."
+    ],
+    "acceptance": [
+      "all implemented financial events invalidate the revision",
+      "net-zero history still advances",
+      "exact replay and rollback do not advance",
+      "read transaction and authorization remain intact",
+      "all old history and other function bodies/ACLs/owners preserved",
+      "current and historical migration evidence remains truthful",
+      "all applicable gates and fresh zero-finding independent review"
+    ],
+    "authority": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-v1054-v1060-owner-authorization.json",
+      "sha256": "9d3773b792aedfd2219df8365ec566ac2000edfb4660f6291589fd7b3946b4aa"
+    },
+    "accepted_predecessor": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-stage-accepted-8e3c7ca.json",
+      "sha256": "da6e8246c4c94b49a08e894463e0c8a830faccdca6c3e99dcff4d57883f6deea"
+    },
+    "entry_reconciliation": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-disposition-revision-cycle-20260914t1212-reconciliation.json",
+      "sha256": "6ad75550d63b6c3ba2c4ea50275cf73ebed0acf973089cf351c7a0b057ba3e56"
+    },
+    "main_settings": "Astra/xhigh/Fast(priority), selected config and saved coordinator task verified; provider-tier attestation unavailable",
+    "review_settings": "GPT-6 Astra/max/Standard(default)/enforced read-only/approval-never; absolute Python and Git; no tests, writes, databases, network tools or agents.",
+    "preserved_correction_history": {
+      "termination_deposit_repository_import_classification": "resolved1of2",
+      "termination_deposit_immutable_fixture_typing": "resolved1of2",
+      "termination_fixture_typing": "resolved1of2",
+      "termination_notice_fixture_chronology": "resolved2of2; final automatic attempt, both approaches and original dbc0b85 candidate/gates preserved",
+      "termination_physical_snapshot_fixture": "resolved1of2",
+      "termination_context_immediate_fk": "resolved1of2 by connected regression and complete-stage independent review",
+      "termination_generated_void_fixture_isolation": "resolved1of2; original aggregate115PASS3FAIL retained",
+      "external_contract_attempt_schema": "resolved1of2; frozen candidate unchanged",
+      "billing_fixture_chronology": "resolved1of2 unchanged",
+      "billing_fixture_service_calendar_isolation": "resolved2of2 unchanged",
+      "mixed_final_month_service_header_provenance": "resolved1of2 unchanged",
+      "notice_R2": "automatic2of2 exhausted; separate explicit owner exception1of1 succeeded; no reset",
+      "notice_R1_R3": "resolved1of2 unchanged",
+      "V1_054_R3": "resolved2of2 unchanged",
+      "lease_deposit_command_guard_audit_conflict_expectation": "resolved1of2",
+      "lease_deposit_command_guard_test_signature_layout": "resolved1of2",
+      "lease_deposit_command_guard_downgrade_message_contract": "resolved1of2; fa6d0681349PASS/8FAIL and correction/8affected regressions preserved",
+      "lease_deposit_command_guard_review_stage_identity": "resolved1of2; initial review, separate parent finding, focused and final complete-stage zero reviews preserved"
+    },
+    "stage_implementation_completed": true,
+    "stage_accepted": false,
+    "product_accepted": false,
+    "corrections": [
+      {
+        "finding": "External formatter inventory included all historical migrations, unlike unchanged Makefile canonical src/tests gates. Eleven old migrations reported formatting drift; no historical migration was edited.",
+        "family": "deposit_financial_revision_external_gate_inventory",
+        "attempt": 1,
+        "maximum": 2,
+        "approach": "Use unchanged Makefile src/tests scope and explicitly add the one new migration, matching accepted previous-stage gates. Preserve broader failure. This changes no product code or acceptance standard.",
+        "prior_checkpoint": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-deposit-financial-revision-affected.json",
+          "sha256": "6c9d54deb37dc573f0728b3a5d50c06ca219df51a947dfc7b7d08e40a461a4e9"
+        },
+        "automatic_permission_restriction": false,
+        "product_changes": false,
+        "status": "locally_verified_initial_review_pending",
+        "verification": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-deposit-financial-revision-typing1-affected.json",
+          "sha256": "c5038239129ef8031d5272d382131772e57c3517f28f2dd5e13a32c029b1c31c"
+        }
+      },
+      {
+        "family": "deposit_financial_revision_test_sql_layout",
+        "attempt": 1,
+        "maximum": 2,
+        "finding": "Two new test SQL string literals exceeded the unchanged 100-column limit.",
+        "approach": "Split the two literals at existing SQL token boundaries; queries and assertions unchanged.",
+        "prior_checkpoint": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-deposit-financial-revision-configuration1-affected.json",
+          "sha256": "e9d431e692108d4683cda0f02072076e94ae22d5e7bc25983ab6eabf5938a6e5"
+        },
+        "preserved_source": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-deposit-financial-revision-before-sql-layout1.py",
+          "sha256": "e585a8f4118e02a067d115f1d634afc41c33e484b5f6ae991dd2ed1cdcd16525"
+        },
+        "automatic_permission_restriction": false,
+        "product_behavior_changes": false,
+        "status": "locally_verified_initial_review_pending",
+        "verification": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-deposit-financial-revision-typing1-affected.json",
+          "sha256": "c5038239129ef8031d5272d382131772e57c3517f28f2dd5e13a32c029b1c31c"
+        }
+      },
+      {
+        "family": "deposit_financial_revision_fixture_type_narrowing",
+        "attempt": 1,
+        "maximum": 2,
+        "finding": "The explicit exact-int assertion already narrows the fixture return value; mypy rejects the redundant cast.",
+        "approach": "Return the proven integer directly, retaining the exact-type assertion and all SQL/behavior checks.",
+        "prior_checkpoint": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-deposit-financial-revision-sql-layout1-affected.json",
+          "sha256": "bd2b6252c1b03ebba2d38cc1afeba6ca80d195006ac53326110a89841d2e6c26"
+        },
+        "preserved_source": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-deposit-financial-revision-before-typing1.py",
+          "sha256": "447924cf66246c9e75912127a32c273fb2a3d139e48d8e3a2ee4a4bc8b5c1156"
+        },
+        "automatic_permission_restriction": false,
+        "product_behavior_changes": false,
+        "status": "locally_verified_initial_review_pending",
+        "verification": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-deposit-financial-revision-typing1-affected.json",
+          "sha256": "c5038239129ef8031d5272d382131772e57c3517f28f2dd5e13a32c029b1c31c"
+        }
+      }
+    ],
+    "inherited_limits_reset": false,
+    "timestamp": "2026-09-14T12:17:14.009519+00:00",
+    "publication_permitted": false,
+    "preliminary_evidence": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-deposit-financial-revision-typing1-affected.json",
+      "sha256": "c5038239129ef8031d5272d382131772e57c3517f28f2dd5e13a32c029b1c31c"
+    },
+    "frozen_candidate_receipt": "v1055-deposit-financial-revision-candidate.json"
+  },
+  "historical_v1_055_command_guards_8e3c7ca_fields": {
+    "direct_codex_takeover": {
+      "execution_owner": "direct_codex",
+      "authorization_from": "V1-054",
+      "authorization_through": "V1-060",
+      "policy_path": "ops/CODEX_TAKEOVER_V1_054_060.md",
+      "policy_sha256": "e91f8e59e422cac95134cdec07f3ff9feac53491e7cedd374f8b16119ea07ff0",
+      "coordinator": {
+        "model": "gpt-6-astra",
+        "reasoning": "xhigh",
+        "mode": "Fast",
+        "service_tier": "priority"
+      },
+      "implementation": {
+        "model": "gpt-6-astra",
+        "reasoning": "xhigh",
+        "mode": "Fast",
+        "service_tier": "priority"
+      },
+      "reviewer": {
+        "model": "gpt-6-astra",
+        "reasoning": "max",
+        "mode": "Standard",
+        "service_tier": "default",
+        "read_only": true,
+        "sandbox": "read-only",
+        "approval_policy": "never"
+      },
+      "publication_remote": "git@github.com:kompheak7711/property-rental-management.git",
+      "publication_branch": "implementation/foundation",
+      "openclaw_enabled": false,
+      "openclaw_dispatch_allowed": false,
+      "openclaw_supervisor_job_id": "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
+      "openclaw_legacy_heartbeat_id": "7c7b5418-7440-480d-87d9-fcb71097d4cc",
+      "coordinator_transfer": {
+        "status": "released",
+        "current_task_id": "01a07991-38a6-7f33-b84d-0ad0620e2997",
+        "historical_transfer_evidence": "historical_v1_053_closed_current_fields.direct_codex_takeover.coordinator_transfer",
+        "transfer_time_checkout_not_current_checkout": true
+      },
+      "standing_independent_review_authorization": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-v1054-v1060-owner-authorization.json",
+        "sha256": "9d3773b792aedfd2219df8365ec566ac2000edfb4660f6291589fd7b3946b4aa"
+      },
+      "standing_github_publication_authorization": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-v1054-v1060-owner-authorization.json",
+        "sha256": "9d3773b792aedfd2219df8365ec566ac2000edfb4660f6291589fd7b3946b4aa"
+      },
+      "standing_workboard_authorization": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-v1054-v1060-owner-authorization.json",
+        "sha256": "9d3773b792aedfd2219df8365ec566ac2000edfb4660f6291589fd7b3946b4aa"
+      },
+      "followup_id": "property-rental-v1-047-closure-follow-up",
+      "followup_status": "ACTIVE",
+      "followup_prompt_characters": 15560,
+      "followup_prompt_sha256": "6f9ff29a0be7bde095026c825e03708ff91fbff25c7c734afb0b7e68246f74ee",
+      "live_handoff_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-v1054-v1060-live.md",
+      "current_version": "V1-055",
+      "phase": "lease_deposit_command_guard_candidate_pending",
+      "activated_at": "2026-09-11T02:56:22.881391+00:00",
+      "predecessor_closed": true,
+      "predecessor_sha": "bda66062697feef17c8df621b64bf5f607c1c691",
+      "predecessor_closure_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1054-closure-verification.json",
+      "predecessor_closure_receipt_sha256": "d6687cf2d4ef1e5ddbeff176f44f9b45b3917d9a8a88400f3a08ac57837805b9",
+      "predecessor_ci_run": 34555185267,
+      "predecessor_ci_attempt": 1,
+      "card_id": "0fbb0d8a-2b0e-4097-bfc4-0b48181ad7a2",
+      "workboard_status": "blocked",
+      "workboard_block_reason": "Tracking-only blocks OpenClaw admission; sole direct Codex implementation authorized.",
+      "worker_kind": "direct_root_codex",
+      "worker_task_id": "01a07991-38a6-7f33-b84d-0ad0620e2997",
+      "worker_status": "no_worker_records_gates_pending",
+      "branch": "implementation/foundation",
+      "worktree": "/Users/sokompheak/Development/property-rental-management",
+      "scope_path": "ops/V1_055_SCOPE.md",
+      "scope_sha256": "8da3b58eab28350341e3faa29ba8947e59f3f019d931724957be5425023652ac",
+      "cumulative_review_base": "bda66062697feef17c8df621b64bf5f607c1c691",
+      "candidate_sha": null,
+      "candidate_resolution": "Resolve the immutable records-corrected command-guard candidate through external v1055-lease-deposit-command-guards-records1-candidate.json. Preserve the initial a25a008 APPROVE0 report, separate parent CG-RECORD-1, fa6d068 failure and all previous evidence; later exact gates/reviews remain external.",
+      "candidate_status": "records_correction1_prepared",
+      "owner_action_required": false,
+      "next_action": "Run applicable exact records gates while reusing unchanged a25a008 product/static/build/graph evidence. Obtain an independent focused CG-RECORD-1 correction review against a25a008, then a fresh independent final COMPLETE24path/threecommit stage review against accepted8c8d923, Astra/max/Standard/read-only/never with absolute Python/Git. Zero unresolved findings required before acceptance. Preserve review-label1of2, prior message1of2/test1of2 families and all inherited limits; no55publication/closure or next slice before acceptance.",
+      "active_slice": {
+        "id": "V1-055-lease-deposit-command-guards",
+        "status": "review_stage_identity_corrected_exact_gates_focused_final_pending",
+        "stage": "Bounded financial-command admission prerequisite to termination disposition orchestration",
+        "base": "8c8d92396bb0138bf385212163b86cfe8c122e12",
+        "complete_version_base": "bda66062697feef17c8df621b64bf5f607c1c691",
+        "paths": [
+          "backend/migrations/versions/20260914_56_lease_deposit_command_guards.py",
+          "backend/src/property_rental/deposit.py",
+          "backend/tests/test_billing_service_migration.py",
+          "backend/tests/test_credit_refund_read_migration.py",
+          "backend/tests/test_customer_ledger_migration.py",
+          "backend/tests/test_customer_ledger_read_migration.py",
+          "backend/tests/test_deposit.py",
+          "backend/tests/test_financial_action_context_migration.py",
+          "backend/tests/test_invoice_migration.py",
+          "backend/tests/test_late_payment_migration.py",
+          "backend/tests/test_lease_api_migration.py",
+          "backend/tests/test_lease_deposit_command_guards_migration.py",
+          "backend/tests/test_lease_enforcement_api_migration.py",
+          "backend/tests/test_migrations.py",
+          "backend/tests/test_payment_reversal_context_migration.py",
+          "backend/tests/test_utility_api_migration.py",
+          "backend/tests/test_utility_consumption_migration.py",
+          "backend/tests/test_utility_meter_migration.py",
+          "docs/004_DATABASE_MODEL.md",
+          "ops/NOW.md",
+          "ops/QUEUE.md",
+          "ops/STATE.json",
+          "ops/traceability.json",
+          "scripts/database-test.sh"
+        ],
+        "current_head_fixture_paths": [
+          "backend/tests/test_billing_service_migration.py",
+          "backend/tests/test_credit_refund_read_migration.py",
+          "backend/tests/test_customer_ledger_migration.py",
+          "backend/tests/test_customer_ledger_read_migration.py",
+          "backend/tests/test_financial_action_context_migration.py",
+          "backend/tests/test_invoice_migration.py",
+          "backend/tests/test_late_payment_migration.py",
+          "backend/tests/test_lease_api_migration.py",
+          "backend/tests/test_lease_enforcement_api_migration.py",
+          "backend/tests/test_migrations.py",
+          "backend/tests/test_payment_reversal_context_migration.py",
+          "backend/tests/test_utility_api_migration.py",
+          "backend/tests/test_utility_consumption_migration.py",
+          "backend/tests/test_utility_meter_migration.py"
+        ],
+        "authoritative_specs": [
+          "ops/V1_055_SCOPE.md",
+          "ops/CODEX_TAKEOVER_V1_054_060.md",
+          "docs/002_BUSINESS_RULES.md",
+          "docs/004_DATABASE_MODEL.md",
+          "docs/007_TESTING_STRATEGY.md",
+          "docs/008_SECURITY_MODEL.md"
+        ],
+        "included": [
+          "The existing Lease Deposit disposition command freshly verifies the active HUMAN actor under its existing financial-role boundary before returning a replay or performing a new write.",
+          "Serialize the existing actor/Property/action/idempotency-key command identity transactionally before replay evaluation; preserve existing request digests and result snapshots. Concurrent identical retries return the one original result; conflicting payloads cannot create a second financial effect, including when targeting different Deposits.",
+          "Preserve existing Deposit row locks, same-Property/Lease/effective-date checks, held-balance bounds, original receipt/disposition/reversal history, command/audit atomicity, and authorization names. Validate new command money as exact integer cents and effective date as a date at the Python boundary.",
+          "Map the explicit database fresh-actor denial to the established domain authorization error. Do not change unknown-outcome command identity or recovery behavior.",
+          "One forward56 migration replaces only the existing disposition command function; no old migration rewrite, tables, backfill, old row update or financial recalculation. Preserve its signature/owner/ACL/security attributes; unchanged runtime/bootstrap/public denial.",
+          "Real isolated PostgreSQL concurrency, replay-after-reversal, stale actor/wrong Property, invalid input, atomic rollback and55to56 all-table/function preservation evidence. Keep the old54to55 proof pinned55; advance only26current-head literals in14fixture files.",
+          "Reconcile the accepted8c8d923read-stage evidence into tracked records, preserving every changed old STATE root and all prior QUEUE/trace entries; keep whole55 incomplete and unpublished."
+        ],
+        "excluded": [
+          "No new or inferred forfeiture circumstance, amount, fee, Pet forfeiture, termination right or signed-contract policy.",
+          "Explicit governing-rule/event linkage, expected-version HTTP command orchestration and source-backed BR-DEP-022/023 decision workflows remain later V1-055 slices; this prerequisite does not claim those gates complete or expose a new disposition API.",
+          "No changes to readiness projection semantics, Refund/Invoice allocation algorithms, physical move-out, settlement, frontend/HTTP, dependencies, database configuration, role expansion or unrelated financial commands.",
+          "No publication, V1-055 closure, V1-056 activation, repeated accepted8c8d923review/tests, model or permission relaxation, process census or retained-worktree deletion."
+        ],
+        "observed_existing_behavior": "record_lease_deposit_disposition evaluates replay before its Deposit lock and has no fresh active-HUMAN query. Concurrent identical requests can both miss the initial replay and the second reach a duplicate source insert. Existing positive-value Python comparison admits bool/float values rather than enforcing integer cents. This is a bounded defensive command-admission change, not an independent-review finding on accepted8c8d923.",
+        "risk": "Financial concurrency and authorization; use Astra/xhigh/Fast implementation and complete-stage Astra/max/Standard/read-only/never review, with expanded correction review when needed. Existing source/signed-rule behavior is preserved and separately tracked as unfinished V1-055 scope.",
+        "implementation_plan": [
+          "Record this active scope and accepted predecessor before product edits.",
+          "Add targeted tests that reproduce duplicate-request admission and fresh actor/input failures, preserving any expected initial red checkpoint.",
+          "Implement the narrow forward function replacement and Python guards/error mapping; maintain signature/digest compatibility.",
+          "Run affected real PostgreSQL and unit checks, then applicable full backend/PostgreSQL/static/build/import/automation/trace/config/history gates. Reuse only exact unchanged frontend/dependency evidence.",
+          "Freeze a normal local successor and obtain fresh independent complete-stage exact-SHA zero-finding review before accepting this slice. Apply inherited two materially different corrections per finding without resetting earlier families.",
+          "Record subsequent evidence externally; later financial-policy orchestration and remaining V1-055 stages still precede integrated final acceptance/publication/closure."
+        ],
+        "acceptance": [
+          "same-key concurrent identical result and one financial/audit/command effect",
+          "same-key conflicting payload including different Deposit target is atomic and rejected",
+          "different-key overdraw still bounded",
+          "fresh actor and Property rules before effects and replay",
+          "exact old successful digest/result replay after current balance/version changes",
+          "all old rows and all but the one targeted function preserved on upgrade, including ACL/owner",
+          "all mandatory applicable gates and fresh independent zero review"
+        ],
+        "authority": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-v1054-v1060-owner-authorization.json",
+          "sha256": "9d3773b792aedfd2219df8365ec566ac2000edfb4660f6291589fd7b3946b4aa"
+        },
+        "accepted_predecessor": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-termination-deposit-stage-accepted-8c8d923.json",
+          "sha256": "b6e4f1ba285cd148c4e9eef0f601df256b9c1966dbd1f57bb90400179fd0d8bd"
+        },
+        "entry_reconciliation": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-deposit-accepted-cycle-20260914t0938-reconciliation.json",
+          "sha256": "2bb8ae00240f68ba791ad6f84a94f0437cfb1847a3b28b925467b8da65bbccdf"
+        },
+        "main_settings": "Astra/xhigh/Fast(priority) selected config and saved task verified; provider attestation unavailable",
+        "review_settings": "Astra/max/Standard(default)/enforced-read-only/approval-never; future reviewer instructions pin both absolute Python3.12 and /opt/homebrew/bin/git",
+        "stage_implementation_completed": true,
+        "stage_accepted": false,
+        "product_accepted": false,
+        "corrections": [
+          {
+            "family": "lease_deposit_command_guard_audit_conflict_expectation",
+            "attempt": 1,
+            "maximum": 2,
+            "status": "locally_verified_initial_complete_stage_review_pending",
+            "original": "New audit-collision test expected DepositInvalidError; no error was raised in baseline because old disposition command omitted generic audit.",
+            "evidence": "Existing app.record_deposit_audit emits23505; PostgresDepositService maps this to DepositConflictError. Preserve that existing contract rather than changing shared error semantics. The all-table unchanged rollback assertion remains identical.",
+            "verification": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-layout1-affected.json",
+              "sha256": "e2c115fe31b20d8d2b101d0ae4e24f169c7fcb5e85835807907376d06317a4f7"
+            }
+          },
+          {
+            "at": "2026-09-14T10:11:49.108720+00:00",
+            "family": "lease_deposit_command_guard_test_signature_layout",
+            "attempt": 1,
+            "maximum": 2,
+            "status": "locally_verified_initial_complete_stage_review_pending",
+            "finding": "E501: one PostgreSQL signature literal112characters exceeds100character repository limit after formatter normalization.",
+            "approach": "Split the literal into two adjacent strings; exact resulting function signature unchanged.",
+            "before": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-signature-layout1-before.py",
+              "sha256": "3d3f645992b6422cfc688eb85caa4c703cb88dfbb46504c6e71ea3707867aaba"
+            },
+            "after": {
+              "path": "/Users/sokompheak/Development/property-rental-management/backend/tests/test_lease_deposit_command_guards_migration.py",
+              "sha256": "5bc669fa452167f8583f1183e23141f90b21d76bbadb8b46a8d7d800e4614a3c"
+            },
+            "failed": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-affected.json",
+              "sha256": "3b18da9dadef66d3fae3be528346966a83aea4beb1e8a4942c404f86537926ac"
+            },
+            "source_changes": false,
+            "prior_limits_reset": false,
+            "verification": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-layout1-affected.json",
+              "sha256": "e2c115fe31b20d8d2b101d0ae4e24f169c7fcb5e85835807907376d06317a4f7"
+            }
+          },
+          {
+            "at": "2026-09-14T10:24:30.182495+00:00",
+            "family": "lease_deposit_command_guard_downgrade_message_contract",
+            "attempt": 1,
+            "maximum": 2,
+            "status": "locally_verified_initial_complete_stage_review_pending",
+            "cause": "Eight existing current-head downgrade tests expect lowercase forward-only; migration56 correctly refuses but its message starts uppercase.",
+            "approach": "Change only the initial F to f in the refusal message. Preserve exception type, unconditional refusal, all SQL, upgrade behavior and old migrations.",
+            "evidence": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-downgrade-message1-attempt.json",
+              "sha256": "3108dd4ee77a183e1e6e73a5ce0377f10a4442deb5deac66cb1b125f716cf3b3"
+            },
+            "checks": [
+              {
+                "name": "format",
+                "command": [
+                  "/Users/sokompheak/Development/property-rental-management-v1-052/backend/.venv/bin/python3.12",
+                  "-B",
+                  "-m",
+                  "ruff",
+                  "format",
+                  "--check",
+                  "src",
+                  "tests",
+                  "migrations/versions/20260914_56_lease_deposit_command_guards.py"
+                ],
+                "cwd": "/Users/sokompheak/Development/property-rental-management/backend",
+                "exit_code": 0,
+                "seconds": 0.065,
+                "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-downgrade-message1-format.log",
+                "sha256": "28616f479dcc341db5ca0e9b2e4e2cf2bb23f4ebb35f5645b22473a745a92f14"
+              },
+              {
+                "name": "lint",
+                "command": [
+                  "/Users/sokompheak/Development/property-rental-management-v1-052/backend/.venv/bin/python3.12",
+                  "-B",
+                  "-m",
+                  "ruff",
+                  "check",
+                  "src",
+                  "tests",
+                  "migrations/versions/20260914_56_lease_deposit_command_guards.py"
+                ],
+                "cwd": "/Users/sokompheak/Development/property-rental-management/backend",
+                "exit_code": 0,
+                "seconds": 0.032,
+                "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-downgrade-message1-lint.log",
+                "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+              },
+              {
+                "name": "postgresql",
+                "command": [
+                  "/bin/sh",
+                  "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/v1055-lease-deposit-command-guards-downgrade-message1-database-test.sh"
+                ],
+                "cwd": "/Users/sokompheak/Development/property-rental-management",
+                "exit_code": 0,
+                "seconds": 15.354,
+                "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-downgrade-message1-postgresql.log",
+                "sha256": "6ce54dfefedfa47147c290cd01216cf1436156c707c72c4ca3b55bf965b4bb82"
+              }
+            ],
+            "failed_candidate": "fa6d068824af09312f316105b6d3ed6cd5391018",
+            "upgrade_sql_unchanged": true,
+            "inherited_limits_reset": false
+          },
+          {
+            "family": "lease_deposit_command_guard_review_stage_identity",
+            "finding_id": "CG-RECORD-1",
+            "attempt": 1,
+            "maximum": 2,
+            "status": "locally_corrected_gates_focused_and_final_complete_review_pending",
+            "before": "review.stage=V1-055-termination-deposit-readiness",
+            "after": "review.stage=V1-055-lease-deposit-command-guards",
+            "evidence": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-review-label1-attempt.json",
+              "sha256": "f170fae1a49ea9154a85db0d69d393dd4f569404b7217df2ad15395fc60b65d5"
+            },
+            "original_assessment": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-a25a008-full-root-assessment.json",
+              "sha256": "fe3884de62b4fb54ef948b01b305d5beef2e260cc9b4322b463ae8b1dc4e3692"
+            }
+          }
+        ],
+        "inherited_limits_reset": false,
+        "timestamp": "2026-09-14T09:48:40.175396+00:00",
+        "implementation": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-implementation.json",
+          "sha256": "5b6a21dbb0f9bede653fc6b05ece626d7547b2821c2aea74901e9a8abcc99a80"
+        },
+        "baseline": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-baseline-red.json",
+          "sha256": "0dfd206f4409f2c599d833ef037a9c59f58fb48eacec57d7fe441d7996232854"
+        },
+        "publication_permitted": false,
+        "preliminary_evidence": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-layout1-affected.json",
+          "sha256": "e2c115fe31b20d8d2b101d0ae4e24f169c7fcb5e85835807907376d06317a4f7"
+        },
+        "frozen_candidate_receipt": "v1055-lease-deposit-command-guards-records1-candidate.json",
+        "rejected_candidate": "fa6d068824af09312f316105b6d3ed6cd5391018",
+        "correction_evidence": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-downgrade-message1.json",
+          "sha256": "f629190a2c72324bdb538fe21b51f348f67dfefddd4bf0a1a02f4e404ed6a767"
+        },
+        "initial_complete_stage_review": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-a25a008-full.md",
+          "sha256": "103497f5131dd1c677927c120a5b7419d9bc498353c2016c0e15212d7ce2bdda"
+        },
+        "initial_review_parent_assessment": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-a25a008-full-root-assessment.json",
+          "sha256": "fe3884de62b4fb54ef948b01b305d5beef2e260cc9b4322b463ae8b1dc4e3692"
+        },
+        "parent_findings": [
+          {
+            "id": "CG-RECORD-1",
+            "severity": "LOW",
+            "family": "lease_deposit_command_guard_review_stage_identity",
+            "file": "ops/STATE.json",
+            "line": 5766,
+            "field": "review.stage",
+            "observed": "V1-055-termination-deposit-readiness",
+            "required": "V1-055-lease-deposit-command-guards",
+            "impact": "Current review metadata retains the accepted predecessor stage label despite the new status/base and active command-guard scope; keep exact stage/evidence binding unambiguous in durable records.",
+            "scope": "Records only; no product/source/test/migration change. Preserve all archived predecessor stage labels and accepted evidence.",
+            "automatic_corrections_used": 1,
+            "maximum": 2,
+            "status": "corrected_pending_independent_verification"
+          }
+        ]
+      },
+      "prior_version_history": "historical_v1_054_closed_current_fields",
+      "latest_continuation": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-usage-reset-continuation-20260911.json",
+        "sha256": "4e74c8aa1ec979c795b8c62a7854d17e1d6ebeb042e0561785c026620c18d7a6"
+      },
+      "defensive_guidance": "No broader access or false-positive confirmation; normal enforcement, truthful defensive scope and stop affected action on restriction.",
+      "last_model_configuration_check": {
+        "model": "gpt-6-astra",
+        "reasoning_effort": "xhigh",
+        "mode": "Fast",
+        "service_tier": "priority",
+        "provider_attestation": "unavailable; selected/requested configuration verified",
+        "admission": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-admission.json",
+          "sha256": "9ad4617bb7cd06ad9d5458f0ae6500bb8f8bbd929404ddd948977d587d598bd6"
+        }
+      },
+      "owner_authorized_correction": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-notice-handoff-owner-authorized-owner-authorization.json",
+        "sha256": "ebdf5cc0f6f4c4501a7a8d332fd4f928a2523d027b72c616d0542c5bd2aaa4c9"
+      }
+    },
+    "approval": {
+      "status": "approved",
+      "basis": "Standing owner lifecycle54-through60 and latest usage-reset continuation; verified54closure and55model/dependency admission.",
+      "implementation_started": true,
+      "implementation_completed": false,
+      "publication_completed": false,
+      "product_implementation_gate": "Notice, final-month billing, termination and Deposit readiness accepted locally. Command guards affected checks pass; exact gates/review, explicit financial orchestration, physical/HTTP and integrated V1-055 acceptance pending."
+    },
+    "next_action": "Run applicable exact records gates while reusing unchanged a25a008 product/static/build/graph evidence. Obtain an independent focused CG-RECORD-1 correction review against a25a008, then a fresh independent final COMPLETE24path/threecommit stage review against accepted8c8d923, Astra/max/Standard/read-only/never with absolute Python/Git. Zero unresolved findings required before acceptance. Preserve review-label1of2, prior message1of2/test1of2 families and all inherited limits; no55publication/closure or next slice before acceptance.",
+    "candidate_resolution": "Resolve the immutable records-corrected command-guard candidate through external v1055-lease-deposit-command-guards-records1-candidate.json. Preserve the initial a25a008 APPROVE0 report, separate parent CG-RECORD-1, fa6d068 failure and all previous evidence; later exact gates/reviews remain external.",
+    "phase": "V1-055 command-guard review-stage identity corrected; records gates and focused/final reviews pending",
+    "status": "complete_uncommitted",
+    "tests": [
+      "a25a008 full24path/twocommit independent review APPROVE0 and all22gates preserved. Parent CG-RECORD-1 records-only correction1of2 fixes the current review.stage label. Source/tests/migrations/docs unchanged; applicable exact records gates, independent focused correction and fresh final complete-stage review pending.",
+      "Preserved fa6d068 full PostgreSQL gate:1349PASS/8FAIL, all8 due solely to uppercase forward-only refusal text. One-character downgrade-message correction1of2 passes all8 affected PostgreSQL cases and fresh format/lint; upgrade SQL, source/tests and previous64affectedPG/15unit/215-file typing remain unchanged. Fresh mandatory full corrected-candidate gate and initial stage review pending.",
+      "Command guards:64affected real PostgreSQL cases,15unit cases,215-file typing and216-file formatting/lint PASS. Different-key balance serialization is covered by the existing connected Deposit suite; same-key replay/conflicts, disabled actor, audit rollback and55to56 history/function/ACL/owner preservation are newly exercised.",
+      "Both new test corrections remain1of2: established audit-conflict error expectation and test signature line layout, locally verified. Intended baseline11unit/6PG failures plus1PGpass, original lint failure and all inherited evidence/limits preserved. Remaining mandatory exact gates and fresh initial stage review pending.",
+      "Historical checkpoint: Command guards initial format PASS, lint E501 on one test signature preserved. Signature layout correction1of2 applied; fresh lint/type/unit/PostgreSQL checks pending; no source behavior changed.",
+      "Historical checkpoint: New command guards: intended baseline 11 unit failures,6 PostgreSQL failures,1 pass preserved. Narrow implementation applied; fresh affected and full gates pending. Audit-conflict fixture correction1of2 pending.",
+      "Historical checkpoint: Accepted8c8d923: all22gates preserved and fresh initial complete25path/onecommit review APPROVE zero. No unchanged tests or review repeated. New command-guard tests/gates have not run.",
+      "Historical checkpoint: Current Deposit readiness:74affectedPG PASS/no skips (new projection plus termination, Deposit and Credit/Refund read suites),52unit PASS, full214-file typing and repository formatting/lint PASS. New read does not mutate any app table; separate54to55 all-history/functions/privileges and real legacy command proof. Remaining mandatory exact gates and initial independent stage review pending.",
+      "Historical checkpoint: Two pre-review corrections remain1of2 each: repository-local import grouping and runtime frozen-dataclass test typing; both locally verified. Original failed lint/type checkpoints and every old evidence/correction retained.",
+      "Historical checkpoint: Historical checkpoint: Termination8a3c0e3:22gates PASS (1342PG,2954backend/1207DB-only skips covered,1519frontend,189automation); complete27-path/two-commit independent0H0M0L; every operation/actual setting parent-audited.",
+      "Historical checkpoint: Historical checkpoint: Current Deposit readiness stage active; affected and mandatory gates not yet run.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Current successor:7affected noticePGPASS/32deselected and fulltyping211PASS; only three synthetic source calls and helper changed.1371calendar geometries checked2020through2040. Notice-fixture2of2 final automatic correction locally verified; mandatory successor gates and initial full-stage review pending.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Parentdbc0b85 exact22gatesPASS,15fresh/7reused:1342PGnoskips,2954backend/1207DB-onlyskipscovered,1519FE,189automation. Preserved as predecessor evidence, not asserted as fresh successor execution. Product/other test source unchanged.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Current termination substage:120affected realPG PASS including39termination,6Lease lifecycle,40billing and35invoice cases. Explicit53-to54 all-prior-functions/OIDs/ACLs/history and old exact replay;52-to53 billing proof retained. Original source guards, default/immediateFK modes, no physical/financial side effects, warning/notice/actor/Property/replay/concurrency checks pass. Typing211sourcefiles PASS;25context units and4unchangedLease units previouslyPASS. Remaining mandatory exact gates and independent stage review pending.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Corrections preserved: initialtyping1of2 andnotice chronology/physicalsnapshotidentity1of2 locally resolved; context-command immediateFK1of2 andconnectedgeneratedVOIDfixtureisolation1of2 locally verified. Previous118case run3FAIL/115PASS andtwo-mode1FAIL/1PASS RED remain retained; no reset of old notice ownerexception orV54limits.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Billing1f52fd1:22gates PASS;40affected/1303fullPG,2929backend/1168DBonly skips covered,1519FE,189automation; independent complete20path/1commit0H0M0L and actual operations/settings audited.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Termination core:25context units/4prior unchanged Lease units PASS; types210files PASS; initialPG29PASS7fixturefailures preserved, corrected8affectedPGPASS/28deselected. All stage/full gates and independent acceptance remain pending; no full-suite completion claim.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Current billing substage:40affected PostgreSQL cases PASS including26existing and14new cases, forward52-to53 preservation, fresh schema, exact money, Services, replay/concurrency and actor scope. Affected format/lint and full backend typing PASS. Remaining mandatory exact stage gates and independent review pending.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Fixture chronology resolved1of2; Service-calendar isolation resolved2of2 using existing disposable databases. Mixed-header Service product correction1of2 locally verified; independent stage acceptance pending. Every prior checkpoint retained.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Notice96f67bc:22applicable gates PASS; focused/full-stage independent0H0M0L and qualified operations audit accepted externally. No unchanged tests or reviews repeated.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Recurring final-month billing stage active; new affected regression and mandatory exact acceptance gates pending.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Current verified parent b7fb053:22PASS gates, 7fresh records/15unchanged product checks. This owner-authorized records-only successor requires its own7 affected records gates and15unchanged product identity checks; all earlier tests/reviews/failures remain preserved.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Current product evidence at ac97a90:22PASS gates (15fresh/7reused),1289PostgreSQL PASS/no skips,2929backend PASS/1154database-only skips covered byPG,189automation,1519frontend by full source/config identity,148affected regressions and successful types. This three-record successor requires7fresh record gates and15unchanged product-evidence identity checks; no product test repeat.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Notice candidate d8c3f3c:1165realPG PASS,2821backend PASS/1138database-only skips covered byPG,189automation PASS; frontend1519unchanged tests and static/build evidence reused by full input identity. Backend static/types/migration/build/import/config/trace/guard/whitespace PASS.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Initial0d92c3a fullPG136FAILED/1029PASS retained; bounded gate correction1 repaired installed Alembic PATH and17stale head literals. Preliminary68unit/trace+24PG and original lint evidence retained. V54R3resolved2of2 unchanged.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: No-isolation package variant failed missing declared Hatchling; normal isolated build succeeded via public build dependencies, same candidate/runtime preserved. No passing tests repeated.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Semantic preflight was not acceptable despite exit0: whole-version completion incorrectly true. Record correction1 now separates notice completion from unfinished V1-055. Fresh exact record/automation/routing gates and full independent review pending; no product source changed or publication permitted.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: New targeted RED evidence preserved for direct database whitespace acceptance and calendar-invalid fixture; correction1 installed. Fresh affected GREEN, exact gates and independent expanded focused/full-stage review remain pending. Prior22gate results preserved with only affected evidence requiring replacement."
+    ],
+    "timestamp": "2026-09-14T10:53:41.666126+00:00",
+    "updated_at": "2026-09-14T10:53:41.666126+00:00",
+    "review": {
+      "tranche_id": "V1-055",
+      "model": "gpt-6-astra",
+      "reasoning_effort": "max",
+      "mode": "Standard",
+      "service_tier": "default",
+      "sandbox": "read-only",
+      "approval_policy": "never",
+      "read_only": true,
+      "standing_authorization": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-v1054-v1060-owner-authorization.json",
+        "sha256": "9d3773b792aedfd2219df8365ec566ac2000edfb4660f6291589fd7b3946b4aa"
+      },
+      "latest_continuation": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-usage-reset-continuation-20260911.json",
+        "sha256": "4e74c8aa1ec979c795b8c62a7854d17e1d6ebeb042e0561785c026620c18d7a6"
+      },
+      "sequence": "Initial full stage; regression and focused/connected correction verification; final complete corrected stage0; final integrated version0 before publication.",
+      "status": "focused_record_identity_then_final_complete_stage_review_pending",
+      "stage": "V1-055-lease-deposit-command-guards",
+      "base_sha": "8c8d92396bb0138bf385212163b86cfe8c122e12",
+      "exact_sha": null,
+      "findings": null,
+      "prior_termination_acceptance": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-termination-stage-accepted-8a3c0e3.json",
+        "sha256": "3886083c79c2b709ed14bd5de436ebd7b18161c7bfdc7cc25f9717d5e4925dd7"
+      },
+      "resolution": "Run applicable exact records gates while reusing unchanged a25a008 product/static/build/graph evidence. Obtain an independent focused CG-RECORD-1 correction review against a25a008, then a fresh independent final COMPLETE24path/threecommit stage review against accepted8c8d923, Astra/max/Standard/read-only/never with absolute Python/Git. Zero unresolved findings required before acceptance. Preserve review-label1of2, prior message1of2/test1of2 families and all inherited limits; no55publication/closure or next slice before acceptance.",
+      "prior_complete_stage_review": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-a25a008-full.md",
+        "sha256": "103497f5131dd1c677927c120a5b7419d9bc498353c2016c0e15212d7ce2bdda"
+      },
+      "parent_record_finding": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-a25a008-full-root-assessment.json",
+        "sha256": "fe3884de62b4fb54ef948b01b305d5beef2e260cc9b4322b463ae8b1dc4e3692"
+      }
+    },
+    "current_product_acceptance": {
+      "status": "V54 closed; four bounded V55 stages accepted locally. Lease Deposit command guards implemented with affected evidence; exact gates and fresh complete-stage review pending. Whole55 incomplete/unpublished.",
+      "predecessor_closure": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1054-closure-verification.json",
+        "sha256": "d6687cf2d4ef1e5ddbeff176f44f9b45b3917d9a8a88400f3a08ac57837805b9"
+      },
+      "historical_values": "historical_v1_054_closed_current_fields",
+      "notice_stage_acceptance": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-notice-stage-accepted-96f67bc.json",
+        "sha256": "8688ffde35461a591915d42f2d617c27cdf2378401a06cf9362dff812ef0bca8"
+      },
+      "billing_stage_acceptance": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-final-month-stage-accepted-1f52fd1.json",
+        "sha256": "e619e1bf332ef3f9e2e0c0aa5e935b5d71df6c66cdb89a1dcb4ba4e8893394f5"
+      },
+      "termination_stage_acceptance": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-termination-stage-accepted-8a3c0e3.json",
+        "sha256": "3886083c79c2b709ed14bd5de436ebd7b18161c7bfdc7cc25f9717d5e4925dd7"
+      }
+    },
+    "v1_055_lease_deposit_command_guards": {
+      "id": "V1-055-lease-deposit-command-guards",
+      "status": "review_stage_identity_corrected_exact_gates_focused_final_pending",
+      "stage": "Bounded financial-command admission prerequisite to termination disposition orchestration",
+      "base": "8c8d92396bb0138bf385212163b86cfe8c122e12",
+      "complete_version_base": "bda66062697feef17c8df621b64bf5f607c1c691",
+      "paths": [
+        "backend/migrations/versions/20260914_56_lease_deposit_command_guards.py",
+        "backend/src/property_rental/deposit.py",
+        "backend/tests/test_billing_service_migration.py",
+        "backend/tests/test_credit_refund_read_migration.py",
+        "backend/tests/test_customer_ledger_migration.py",
+        "backend/tests/test_customer_ledger_read_migration.py",
+        "backend/tests/test_deposit.py",
+        "backend/tests/test_financial_action_context_migration.py",
+        "backend/tests/test_invoice_migration.py",
+        "backend/tests/test_late_payment_migration.py",
+        "backend/tests/test_lease_api_migration.py",
+        "backend/tests/test_lease_deposit_command_guards_migration.py",
+        "backend/tests/test_lease_enforcement_api_migration.py",
+        "backend/tests/test_migrations.py",
+        "backend/tests/test_payment_reversal_context_migration.py",
+        "backend/tests/test_utility_api_migration.py",
+        "backend/tests/test_utility_consumption_migration.py",
+        "backend/tests/test_utility_meter_migration.py",
+        "docs/004_DATABASE_MODEL.md",
+        "ops/NOW.md",
+        "ops/QUEUE.md",
+        "ops/STATE.json",
+        "ops/traceability.json",
+        "scripts/database-test.sh"
+      ],
+      "current_head_fixture_paths": [
+        "backend/tests/test_billing_service_migration.py",
+        "backend/tests/test_credit_refund_read_migration.py",
+        "backend/tests/test_customer_ledger_migration.py",
+        "backend/tests/test_customer_ledger_read_migration.py",
+        "backend/tests/test_financial_action_context_migration.py",
+        "backend/tests/test_invoice_migration.py",
+        "backend/tests/test_late_payment_migration.py",
+        "backend/tests/test_lease_api_migration.py",
+        "backend/tests/test_lease_enforcement_api_migration.py",
+        "backend/tests/test_migrations.py",
+        "backend/tests/test_payment_reversal_context_migration.py",
+        "backend/tests/test_utility_api_migration.py",
+        "backend/tests/test_utility_consumption_migration.py",
+        "backend/tests/test_utility_meter_migration.py"
+      ],
+      "authoritative_specs": [
+        "ops/V1_055_SCOPE.md",
+        "ops/CODEX_TAKEOVER_V1_054_060.md",
+        "docs/002_BUSINESS_RULES.md",
+        "docs/004_DATABASE_MODEL.md",
+        "docs/007_TESTING_STRATEGY.md",
+        "docs/008_SECURITY_MODEL.md"
+      ],
+      "included": [
+        "The existing Lease Deposit disposition command freshly verifies the active HUMAN actor under its existing financial-role boundary before returning a replay or performing a new write.",
+        "Serialize the existing actor/Property/action/idempotency-key command identity transactionally before replay evaluation; preserve existing request digests and result snapshots. Concurrent identical retries return the one original result; conflicting payloads cannot create a second financial effect, including when targeting different Deposits.",
+        "Preserve existing Deposit row locks, same-Property/Lease/effective-date checks, held-balance bounds, original receipt/disposition/reversal history, command/audit atomicity, and authorization names. Validate new command money as exact integer cents and effective date as a date at the Python boundary.",
+        "Map the explicit database fresh-actor denial to the established domain authorization error. Do not change unknown-outcome command identity or recovery behavior.",
+        "One forward56 migration replaces only the existing disposition command function; no old migration rewrite, tables, backfill, old row update or financial recalculation. Preserve its signature/owner/ACL/security attributes; unchanged runtime/bootstrap/public denial.",
+        "Real isolated PostgreSQL concurrency, replay-after-reversal, stale actor/wrong Property, invalid input, atomic rollback and55to56 all-table/function preservation evidence. Keep the old54to55 proof pinned55; advance only26current-head literals in14fixture files.",
+        "Reconcile the accepted8c8d923read-stage evidence into tracked records, preserving every changed old STATE root and all prior QUEUE/trace entries; keep whole55 incomplete and unpublished."
+      ],
+      "excluded": [
+        "No new or inferred forfeiture circumstance, amount, fee, Pet forfeiture, termination right or signed-contract policy.",
+        "Explicit governing-rule/event linkage, expected-version HTTP command orchestration and source-backed BR-DEP-022/023 decision workflows remain later V1-055 slices; this prerequisite does not claim those gates complete or expose a new disposition API.",
+        "No changes to readiness projection semantics, Refund/Invoice allocation algorithms, physical move-out, settlement, frontend/HTTP, dependencies, database configuration, role expansion or unrelated financial commands.",
+        "No publication, V1-055 closure, V1-056 activation, repeated accepted8c8d923review/tests, model or permission relaxation, process census or retained-worktree deletion."
+      ],
+      "observed_existing_behavior": "record_lease_deposit_disposition evaluates replay before its Deposit lock and has no fresh active-HUMAN query. Concurrent identical requests can both miss the initial replay and the second reach a duplicate source insert. Existing positive-value Python comparison admits bool/float values rather than enforcing integer cents. This is a bounded defensive command-admission change, not an independent-review finding on accepted8c8d923.",
+      "risk": "Financial concurrency and authorization; use Astra/xhigh/Fast implementation and complete-stage Astra/max/Standard/read-only/never review, with expanded correction review when needed. Existing source/signed-rule behavior is preserved and separately tracked as unfinished V1-055 scope.",
+      "implementation_plan": [
+        "Record this active scope and accepted predecessor before product edits.",
+        "Add targeted tests that reproduce duplicate-request admission and fresh actor/input failures, preserving any expected initial red checkpoint.",
+        "Implement the narrow forward function replacement and Python guards/error mapping; maintain signature/digest compatibility.",
+        "Run affected real PostgreSQL and unit checks, then applicable full backend/PostgreSQL/static/build/import/automation/trace/config/history gates. Reuse only exact unchanged frontend/dependency evidence.",
+        "Freeze a normal local successor and obtain fresh independent complete-stage exact-SHA zero-finding review before accepting this slice. Apply inherited two materially different corrections per finding without resetting earlier families.",
+        "Record subsequent evidence externally; later financial-policy orchestration and remaining V1-055 stages still precede integrated final acceptance/publication/closure."
+      ],
+      "acceptance": [
+        "same-key concurrent identical result and one financial/audit/command effect",
+        "same-key conflicting payload including different Deposit target is atomic and rejected",
+        "different-key overdraw still bounded",
+        "fresh actor and Property rules before effects and replay",
+        "exact old successful digest/result replay after current balance/version changes",
+        "all old rows and all but the one targeted function preserved on upgrade, including ACL/owner",
+        "all mandatory applicable gates and fresh independent zero review"
+      ],
+      "authority": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-v1054-v1060-owner-authorization.json",
+        "sha256": "9d3773b792aedfd2219df8365ec566ac2000edfb4660f6291589fd7b3946b4aa"
+      },
+      "accepted_predecessor": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-termination-deposit-stage-accepted-8c8d923.json",
+        "sha256": "b6e4f1ba285cd148c4e9eef0f601df256b9c1966dbd1f57bb90400179fd0d8bd"
+      },
+      "entry_reconciliation": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-deposit-accepted-cycle-20260914t0938-reconciliation.json",
+        "sha256": "2bb8ae00240f68ba791ad6f84a94f0437cfb1847a3b28b925467b8da65bbccdf"
+      },
+      "main_settings": "Astra/xhigh/Fast(priority) selected config and saved task verified; provider attestation unavailable",
+      "review_settings": "Astra/max/Standard(default)/enforced-read-only/approval-never; future reviewer instructions pin both absolute Python3.12 and /opt/homebrew/bin/git",
+      "stage_implementation_completed": true,
+      "stage_accepted": false,
+      "product_accepted": false,
+      "corrections": [
+        {
+          "family": "lease_deposit_command_guard_audit_conflict_expectation",
+          "attempt": 1,
+          "maximum": 2,
+          "status": "locally_verified_initial_complete_stage_review_pending",
+          "original": "New audit-collision test expected DepositInvalidError; no error was raised in baseline because old disposition command omitted generic audit.",
+          "evidence": "Existing app.record_deposit_audit emits23505; PostgresDepositService maps this to DepositConflictError. Preserve that existing contract rather than changing shared error semantics. The all-table unchanged rollback assertion remains identical.",
+          "verification": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-layout1-affected.json",
+            "sha256": "e2c115fe31b20d8d2b101d0ae4e24f169c7fcb5e85835807907376d06317a4f7"
+          }
+        },
+        {
+          "at": "2026-09-14T10:11:49.108720+00:00",
+          "family": "lease_deposit_command_guard_test_signature_layout",
+          "attempt": 1,
+          "maximum": 2,
+          "status": "locally_verified_initial_complete_stage_review_pending",
+          "finding": "E501: one PostgreSQL signature literal112characters exceeds100character repository limit after formatter normalization.",
+          "approach": "Split the literal into two adjacent strings; exact resulting function signature unchanged.",
+          "before": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-signature-layout1-before.py",
+            "sha256": "3d3f645992b6422cfc688eb85caa4c703cb88dfbb46504c6e71ea3707867aaba"
+          },
+          "after": {
+            "path": "/Users/sokompheak/Development/property-rental-management/backend/tests/test_lease_deposit_command_guards_migration.py",
+            "sha256": "5bc669fa452167f8583f1183e23141f90b21d76bbadb8b46a8d7d800e4614a3c"
+          },
+          "failed": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-affected.json",
+            "sha256": "3b18da9dadef66d3fae3be528346966a83aea4beb1e8a4942c404f86537926ac"
+          },
+          "source_changes": false,
+          "prior_limits_reset": false,
+          "verification": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-layout1-affected.json",
+            "sha256": "e2c115fe31b20d8d2b101d0ae4e24f169c7fcb5e85835807907376d06317a4f7"
+          }
+        },
+        {
+          "at": "2026-09-14T10:24:30.182495+00:00",
+          "family": "lease_deposit_command_guard_downgrade_message_contract",
+          "attempt": 1,
+          "maximum": 2,
+          "status": "locally_verified_initial_complete_stage_review_pending",
+          "cause": "Eight existing current-head downgrade tests expect lowercase forward-only; migration56 correctly refuses but its message starts uppercase.",
+          "approach": "Change only the initial F to f in the refusal message. Preserve exception type, unconditional refusal, all SQL, upgrade behavior and old migrations.",
+          "evidence": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-downgrade-message1-attempt.json",
+            "sha256": "3108dd4ee77a183e1e6e73a5ce0377f10a4442deb5deac66cb1b125f716cf3b3"
+          },
+          "checks": [
+            {
+              "name": "format",
+              "command": [
+                "/Users/sokompheak/Development/property-rental-management-v1-052/backend/.venv/bin/python3.12",
+                "-B",
+                "-m",
+                "ruff",
+                "format",
+                "--check",
+                "src",
+                "tests",
+                "migrations/versions/20260914_56_lease_deposit_command_guards.py"
+              ],
+              "cwd": "/Users/sokompheak/Development/property-rental-management/backend",
+              "exit_code": 0,
+              "seconds": 0.065,
+              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-downgrade-message1-format.log",
+              "sha256": "28616f479dcc341db5ca0e9b2e4e2cf2bb23f4ebb35f5645b22473a745a92f14"
+            },
+            {
+              "name": "lint",
+              "command": [
+                "/Users/sokompheak/Development/property-rental-management-v1-052/backend/.venv/bin/python3.12",
+                "-B",
+                "-m",
+                "ruff",
+                "check",
+                "src",
+                "tests",
+                "migrations/versions/20260914_56_lease_deposit_command_guards.py"
+              ],
+              "cwd": "/Users/sokompheak/Development/property-rental-management/backend",
+              "exit_code": 0,
+              "seconds": 0.032,
+              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-downgrade-message1-lint.log",
+              "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+            },
+            {
+              "name": "postgresql",
+              "command": [
+                "/bin/sh",
+                "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/v1055-lease-deposit-command-guards-downgrade-message1-database-test.sh"
+              ],
+              "cwd": "/Users/sokompheak/Development/property-rental-management",
+              "exit_code": 0,
+              "seconds": 15.354,
+              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-downgrade-message1-postgresql.log",
+              "sha256": "6ce54dfefedfa47147c290cd01216cf1436156c707c72c4ca3b55bf965b4bb82"
+            }
+          ],
+          "failed_candidate": "fa6d068824af09312f316105b6d3ed6cd5391018",
+          "upgrade_sql_unchanged": true,
+          "inherited_limits_reset": false
+        },
+        {
+          "family": "lease_deposit_command_guard_review_stage_identity",
+          "finding_id": "CG-RECORD-1",
+          "attempt": 1,
+          "maximum": 2,
+          "status": "locally_corrected_gates_focused_and_final_complete_review_pending",
+          "before": "review.stage=V1-055-termination-deposit-readiness",
+          "after": "review.stage=V1-055-lease-deposit-command-guards",
+          "evidence": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-review-label1-attempt.json",
+            "sha256": "f170fae1a49ea9154a85db0d69d393dd4f569404b7217df2ad15395fc60b65d5"
+          },
+          "original_assessment": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-a25a008-full-root-assessment.json",
+            "sha256": "fe3884de62b4fb54ef948b01b305d5beef2e260cc9b4322b463ae8b1dc4e3692"
+          }
+        }
+      ],
+      "inherited_limits_reset": false,
+      "timestamp": "2026-09-14T09:48:40.175396+00:00",
+      "implementation": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-implementation.json",
+        "sha256": "5b6a21dbb0f9bede653fc6b05ece626d7547b2821c2aea74901e9a8abcc99a80"
+      },
+      "baseline": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-baseline-red.json",
+        "sha256": "0dfd206f4409f2c599d833ef037a9c59f58fb48eacec57d7fe441d7996232854"
+      },
+      "publication_permitted": false,
+      "preliminary_evidence": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-layout1-affected.json",
+        "sha256": "e2c115fe31b20d8d2b101d0ae4e24f169c7fcb5e85835807907376d06317a4f7"
+      },
+      "frozen_candidate_receipt": "v1055-lease-deposit-command-guards-records1-candidate.json",
+      "rejected_candidate": "fa6d068824af09312f316105b6d3ed6cd5391018",
+      "correction_evidence": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-downgrade-message1.json",
+        "sha256": "f629190a2c72324bdb538fe21b51f348f67dfefddd4bf0a1a02f4e404ed6a767"
+      },
+      "initial_complete_stage_review": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-a25a008-full.md",
+        "sha256": "103497f5131dd1c677927c120a5b7419d9bc498353c2016c0e15212d7ce2bdda"
+      },
+      "initial_review_parent_assessment": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-lease-deposit-command-guards-a25a008-full-root-assessment.json",
+        "sha256": "fe3884de62b4fb54ef948b01b305d5beef2e260cc9b4322b463ae8b1dc4e3692"
+      },
+      "parent_findings": [
+        {
+          "id": "CG-RECORD-1",
+          "severity": "LOW",
+          "family": "lease_deposit_command_guard_review_stage_identity",
+          "file": "ops/STATE.json",
+          "line": 5766,
+          "field": "review.stage",
+          "observed": "V1-055-termination-deposit-readiness",
+          "required": "V1-055-lease-deposit-command-guards",
+          "impact": "Current review metadata retains the accepted predecessor stage label despite the new status/base and active command-guard scope; keep exact stage/evidence binding unambiguous in durable records.",
+          "scope": "Records only; no product/source/test/migration change. Preserve all archived predecessor stage labels and accepted evidence.",
+          "automatic_corrections_used": 1,
+          "maximum": 2,
+          "status": "corrected_pending_independent_verification"
+        }
+      ]
+    },
+    "commit_role": "Bounded24-path financial-command admission: forward56, exact money/date inputs, fresh actor, serialized replay, atomic audit and preservation tests/docs/records. WholeV1-055 incomplete/unpublished."
   }
 }

@@ -60,6 +60,7 @@ class TerminationDepositBalance:
     deposit_type: str
     customer_id: UUID
     version: int
+    disposition_state_version: int
     required_usd_cents: int
     received_usd_cents: int
     held_refundable_usd_cents: int
@@ -148,6 +149,7 @@ def parse_termination_deposit_readiness(
                 "deposit_type",
                 "customer_id",
                 "version",
+                "disposition_state_version",
                 "required_usd_cents",
                 "received_usd_cents",
                 "held_refundable_usd_cents",
@@ -199,12 +201,17 @@ def parse_termination_deposit_readiness(
                 or row["explicit_disposition_pending"] is not pending
             ):
                 raise ValueError("Deposit consequence is inconsistent")
+            version = _integer(row["version"], minimum=1)
+            financial_version = _integer(row["disposition_state_version"], minimum=version)
+            if financial_version > 2**63 - 1:
+                raise ValueError("Financial revision exceeds bigint")
             deposits.append(
                 TerminationDepositBalance(
                     deposit_id=_uuid(row["deposit_id"]),
                     deposit_type=kind,
                     customer_id=_uuid(row["customer_id"]),
-                    version=_integer(row["version"], minimum=1),
+                    version=version,
+                    disposition_state_version=financial_version,
                     required_usd_cents=amounts["required_usd_cents"],
                     received_usd_cents=amounts["received_usd_cents"],
                     held_refundable_usd_cents=amounts["held_refundable_usd_cents"],

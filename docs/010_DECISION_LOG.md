@@ -808,6 +808,19 @@ Rent Due Date question in `DL-042` and do not authorize new business policy.
 
 ---
 
+## DL-061 — Deposit financial observation revision
+
+- **Type:** `TECHNICAL DESIGN DECISION`
+- **Status:** `IMPLEMENTED; INDEPENDENT ACCEPTANCE PENDING`
+- **Decision:** Preserve existing Deposit metadata versions and original command results. Derive a separate `disposition_state_version` from that metadata version plus immutable required-adjustment and balance-event counts. Count originals and corrections separately, so a net-zero financial history still changes the observation. Keep the existing mutable serialization guard separate.
+- **Authority:** Routine implementation authority for V1-055 under the owner's standing V1-054 through V1-060 authorization. This technical entry creates no business or security policy and does not activate version V1-061.
+- **Derived from:** DB-DEP-001 through DB-DEP-004, DB-DEP-007/008, DB-TXN-003/004, API-042 and SEC-028/029: preserve history and revalidate financial state in the posting transaction.
+- **Boundary:** The protected read returns the revision from the same snapshot as balances. Expected-version command enforcement and exact governing-rule/source validation remain separate pending work. Future Deposit applications/reversals must participate before acceptance. No Refund, forfeiture or termination right is added.
+- **Rationale:** Metadata version alone does not follow financial events. A net-balance token misses events followed by reversals. The MVCC guard can change for coordination without a new financial event; it remains the concurrency mechanism, not financial truth.
+- **Decision date:** 2026-09-14.
+
+---
+
 # 13. Governance
 
 1. Decision IDs are stable and must not be reused.

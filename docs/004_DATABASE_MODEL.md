@@ -1153,6 +1153,29 @@ This command-admission prerequisite creates no forfeiture right or new financial
 policy. Explicit governing-rule/source and expected-version orchestration remains
 a separate V1-055 acceptance requirement before the workflow is exposed.
 
+### Financial observation revision (V1-055; DL-061)
+
+The protected termination Deposit readiness read exposes `disposition_state_version`
+as a positive PostgreSQL `bigint`. It is the existing Deposit metadata `version`
+plus the number of required-amount adjustments and all immutable events in the
+implemented Deposit balance stream: receipts, receipt reversals, dispositions,
+disposition reversals, Refunds, verified returns and return-correction reversals.
+An event and its reversal count separately even when net amounts return to their
+previous values. Exact command replay and a rolled-back event do not advance it.
+
+The revision and balances use the same read transaction snapshot. The helper is
+private and the read takes no financial write lock or new permission. Existing
+`deposit_snapshot` versions, command digests and original saved results remain
+unchanged. The mutable `deposit_serialization_guards` counter is coordination
+state, not this financial observation.
+
+This is a read prerequisite, not expected-version posting enforcement. A later
+fresh disposition command must acquire the existing Deposit/MVCC serialization
+boundary and revalidate the observation together with the governing source and
+rule before posting. Deposit applications and reversals are not implemented yet;
+their acceptance must extend the authoritative balance stream and revision
+invalidation. No future feature is covered merely by this read.
+
 ## DB-DEP-005 — `deposit_applications`
 
 Append-only Final Settlement financial event: `id uuid PK`, `deposit_id uuid NOT NULL FK`, `final_settlement_id uuid NOT NULL FK`, `invoice_id uuid NOT NULL FK`, `invoice_line_id uuid NOT NULL FK`, `application_stage text NOT NULL CHECK IN ('PET_RELATED_FIRST','SECURITY_EXPLICIT','PET_REMAINDER_EXPLICIT')`, `amount_usd_cents bigint NOT NULL CHECK (>0)`, `application_order integer NOT NULL CHECK (>0)`, `reason text NOT NULL`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`, `authorization_reference text NOT NULL`, `UNIQUE (final_settlement_id, application_order)`.
