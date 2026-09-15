@@ -1361,6 +1361,47 @@ of a Deposit, records physical departure or completes Final Settlement. Physical
 move-out/Utility responsibility, due-date attribution, staff transport and final
 integrated V1-055 acceptance remain required.
 
+### Physical departure foundation (V1-055)
+
+Forward migration61 adds immutable `physical_move_out_events`,
+`physical_move_out_occupancies` and `physical_move_out_commands`. An explicit
+event records the actual physical date, a genuine same-Lease termination command,
+expected Lease/Unit versions, confirmed condition, reason, authorization and
+evidence reference. It names one to20 ended Occupancies and their exact previous
+and resulting immutable revisions. Only named open Occupancies close; others stay
+open. The Lease lifecycle, financial sources and Reservations remain unchanged.
+
+The command requires Property-scoped `leases.move_out`; observations require
+`leases.read`. Database functions freshly check active HUMAN identity and exact
+Property. The existing role grants are unchanged. Writes use read committed;
+observations use read-only repeatable read, with bounded timeouts and UTC.
+Existing source advisory keys are acquired without waiting before deterministic
+Lease/Unit/member row locks. Conflicting old lifecycle/source writers return a
+bounded conflict; the command does not automatically retry.
+
+Protected UNDER_MAINTENANCE/OUT_OF_SERVICE states remain. Other actual Occupancies
+keep the Unit OCCUPIED; otherwise the explicitly confirmed CLEANING,
+UNDER_MAINTENANCE or OUT_OF_SERVICE condition applies. Physical departure never
+sets VACANT or overrides authoritative Reservation/Lease availability.
+
+Corrections append one same-member successor to a current event with the same
+termination source. Previous actual dates, revisions and original responses remain
+permanent. Evidence-only successors do not create date/version changes. Exact
+Property/actor/key replay compares the complete intent and returns the original
+response after a fresh identity check. Deferred completeness constraints validate
+the full event/member/command/audit assembly before return in either caller mode.
+Existing audit consumers receive classified typed state; full narratives and
+original evidence remain on the immutable event.
+
+All existing Invoice/Utility guards remain unchanged. Crossing an existing Utility
+period or estimation case returns an explicit responsibility-boundary conflict and
+rolls back every command effect. That conflict is not a completed reconciliation:
+the connected Utility reconciliation and final reading/approved-estimate/charge
+source relationships remain separate mandatory V1-055 work. Missing final inputs
+remain `PENDING_RECONCILIATION`; `utility_completion_assessed` and
+`financial_completion_assessed` are false and no charge is created. This foundation
+does not complete Final Settlement, HTTP/staff integration or version acceptance.
+
 ## DB-SETTLE-001 — `final_settlements`
 
 | Column | Type | Null | Rule |

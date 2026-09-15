@@ -1,3 +1,21 @@
+# Current queue — Physical departure exact gates and independent review
+
+Run remaining exact physical-departure gates using completed1498-case PostgreSQL,3263backend and unchanged48unit/static/frontend evidence by identity. Require fresh independent complete25-path/one-commit review from acceptedc701a85 with Astra/max/Standard/read-only/never and absolute Python/Git. Preserve trigger-record-shape2of2, all other corrections1of2, sole migration diagnostic1of1 and every prior limit. Historical Utility boundary reconciliation, final source linking, accepted financial attribution implementation, HTTP/staff and integrated55 remain incomplete; no publication or56.
+
+Every earlier queue and evidence entry follows unchanged.
+
+# Current queue — Physical foundation database gate held
+
+Await the owner response to the concrete one-additional-credit-lock-diagnostic proposal before another PostgreSQL run. If approved, bind exact prepared files/product inputs, record the new one-run allowance outside the candidate and submit through normal enforcement. Do not repeat completed48unit,36focusedPG,3263backend,189automation,build/import/static checks. Full1498-case PostgreSQL acceptance, freeze, remaining exact gates and fresh full-stage review are still required. Financial attribution question remains pending; Utility reconciliation/final sources/HTTP/integrated55 and all publication/closure gates remain incomplete. No56.
+
+All prior queue entries remain below unchanged.
+
+# Current — Physical-departure foundation
+
+Implement the admitted25-path physical-departure foundation from acceptedc701a85. Preserve explicit Occupancy/date/event history and Unit protections, exact recovery and existing Utility/Invoice guards. Verify fresh affected behavior and mandatory gates, freeze a normal candidate and obtain its fresh independent full-stage review. Historical Utility boundary reconciliation, final source linking, pending financial attribution, HTTP/staff and integrated V1-055 acceptance remain required; no publication or56.
+
+All previous queue entries follow unchanged.
+
 # Current — Inspection correction exact gates and independent reviews
 
 Verify remaining exact correction gates, reusing matching1462-case PostgreSQL/static and unchanged frontend evidence. Then fresh expanded focused MI-1/MI-2 review from8f8f496 and fresh full corrected27-path stage review from79314cc. Preserve all attempts and failed checkpoints. Whole55 incomplete/unpublished; no56.

@@ -935,3 +935,37 @@ every older correction limit remain unchanged. New actual audit-consumer and
 transaction-mode regressions, mandatory gates, expanded focused exact-SHA review
 and fresh complete-stage review are pending. No inspection-stage acceptance,
 whole V1-055 publication or financial-policy decision is implied by this change.
+
+
+### V1-055 physical departure foundation checkpoint
+
+BR-MOVEOUT-001/002/003/004/011/012, BR-OCC-005/007/009 and BR-UNIT-011/012/013
+are implemented as explicit actual ended-member evidence coordinated with an
+existing authorized termination. Additive migration61 preserves old storage and
+functions; the new command alone applies bounded Occupancy date and Unit condition
+changes. Historical corrections and original command recovery remain permanent.
+
+The existing Utility boundary guard remains authoritative. A crossing historical
+period or estimation case prevents this command atomically; it is an unresolved
+connected reconciliation requirement, not a successful final Utility handling
+result. Missing readings and pending approved estimates remain visible as pending.
+No financial completion, charge, availability restoration or holdover policy is
+inferred. Final Utility source linking, Damage admission, HTTP/staff integration,
+final integrated review and every version acceptance gate remain required.
+
+Accepted inspection c701a85 retains its focused and fresh complete-stage zero
+reviews and22 gates; MI-1 and MI-2 are resolved1of2 each. All earlier correction
+limits, original failed checkpoints, rejected candidates and regression evidence
+remain preserved. The same-line original/debit due-date attribution question is
+still pending; this physical foundation does not supply a policy answer.
+
+At this initial implementation checkpoint, fresh physical regression and mandatory
+gates and independent full-stage review remain pending. Whole V1-055 is incomplete
+and unpublished; V1-056 is not activated.
+
+
+### V1-055 owner-approved within-line due-date allocation — 2026-09-15
+
+The owner approved earliest-due-first allocation for undesignated Payments and Customer Credits across amounts on the same Invoice line with different approved due dates. Existing between-Invoice ordering, Rent-before-Service ordering, customer designations and staff confirmation requirements remain authoritative. This decision supersedes the earlier pending same-line attribution question; the earlier checkpoint text remains historical.
+
+The approval and exact owner text are preserved outside this candidate in v1055-earliest-due-first-owner-policy-20260915.json and v1055-owner-decisions-and-task-settings-20260915.json. The physical-departure stage records this decision only. Its financial persistence, calculations, connected consumers, regressions and independent acceptance remain a separate required bounded stage before V1-055 publication. No historical transaction rewrite, automatic confirmation or completed financial implementation is implied.

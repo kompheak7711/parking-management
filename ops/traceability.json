@@ -31700,6 +31700,397 @@
       "test_path": "backend/tests/test_move_out_inspection_consumers_migration.py",
       "status": "implemented",
       "notes": "MI-1/MI-2 correction1 regression; actual typed audit readers, complete source preservation, or atomic completion and restricted projection access."
+    },
+    {
+      "test_id": "test_physical_departure_rejects_invalid_or_mutable_intent",
+      "upstream_ids": [
+        "BR-MOVEOUT-001",
+        "BR-MOVEOUT-003",
+        "BR-MOVEOUT-004",
+        "BR-MOVEOUT-011",
+        "BR-OCC-009",
+        "SEC-019",
+        "SEC-020",
+        "TEST-078"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_physical_move_out.py",
+      "status": "implemented",
+      "notes": "Explicit physical event/member/condition history, scoped atomic recovery, existing source guards and migration preservation; verification pending."
+    },
+    {
+      "test_id": "test_ended_occupancy_requires_real_identity_and_exact_version",
+      "upstream_ids": [
+        "BR-MOVEOUT-001",
+        "BR-MOVEOUT-003",
+        "BR-MOVEOUT-004",
+        "BR-MOVEOUT-011",
+        "BR-OCC-009",
+        "SEC-019",
+        "SEC-020",
+        "TEST-078"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_physical_move_out.py",
+      "status": "implemented",
+      "notes": "Explicit physical event/member/condition history, scoped atomic recovery, existing source guards and migration preservation; verification pending."
+    },
+    {
+      "test_id": "test_physical_member_bounds_order_and_complete_correction_intent",
+      "upstream_ids": [
+        "BR-MOVEOUT-001",
+        "BR-MOVEOUT-003",
+        "BR-MOVEOUT-004",
+        "BR-MOVEOUT-011",
+        "BR-OCC-009",
+        "SEC-019",
+        "SEC-020",
+        "TEST-078"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_physical_move_out.py",
+      "status": "implemented",
+      "notes": "Explicit physical event/member/condition history, scoped atomic recovery, existing source guards and migration preservation; verification pending."
+    },
+    {
+      "test_id": "test_physical_record_requires_exact_capability_before_connection",
+      "upstream_ids": [
+        "BR-MOVEOUT-001",
+        "BR-MOVEOUT-003",
+        "BR-MOVEOUT-004",
+        "BR-MOVEOUT-011",
+        "BR-OCC-009",
+        "SEC-019",
+        "SEC-020",
+        "TEST-078"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_physical_move_out.py",
+      "status": "implemented",
+      "notes": "Explicit physical event/member/condition history, scoped atomic recovery, existing source guards and migration preservation; verification pending."
+    },
+    {
+      "test_id": "test_physical_property_read_scope_and_missing_writer_are_fail_closed",
+      "upstream_ids": [
+        "BR-MOVEOUT-001",
+        "BR-MOVEOUT-003",
+        "BR-MOVEOUT-004",
+        "BR-MOVEOUT-011",
+        "BR-OCC-009",
+        "SEC-019",
+        "SEC-020",
+        "TEST-078"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_physical_move_out.py",
+      "status": "implemented",
+      "notes": "Explicit physical event/member/condition history, scoped atomic recovery, existing source guards and migration preservation; verification pending."
+    },
+    {
+      "test_id": "test_physical_reads_enforce_bounded_pages",
+      "upstream_ids": [
+        "BR-MOVEOUT-001",
+        "BR-MOVEOUT-003",
+        "BR-MOVEOUT-004",
+        "BR-MOVEOUT-011",
+        "BR-OCC-009",
+        "SEC-019",
+        "SEC-020",
+        "TEST-078"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_physical_move_out.py",
+      "status": "implemented",
+      "notes": "Explicit physical event/member/condition history, scoped atomic recovery, existing source guards and migration preservation; verification pending."
+    },
+    {
+      "test_id": "test_physical_request_identity_is_bounded",
+      "upstream_ids": [
+        "BR-MOVEOUT-001",
+        "BR-MOVEOUT-003",
+        "BR-MOVEOUT-004",
+        "BR-MOVEOUT-011",
+        "BR-OCC-009",
+        "SEC-019",
+        "SEC-020",
+        "TEST-078"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_physical_move_out.py",
+      "status": "implemented",
+      "notes": "Explicit physical event/member/condition history, scoped atomic recovery, existing source guards and migration preservation; verification pending."
+    },
+    {
+      "test_id": "test_uncertain_physical_outcomes_require_original_command_recovery",
+      "upstream_ids": [
+        "BR-MOVEOUT-001",
+        "BR-MOVEOUT-003",
+        "BR-MOVEOUT-004",
+        "BR-MOVEOUT-011",
+        "BR-OCC-009",
+        "SEC-019",
+        "SEC-020",
+        "TEST-078"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_physical_move_out.py",
+      "status": "implemented",
+      "notes": "Explicit physical event/member/condition history, scoped atomic recovery, existing source guards and migration preservation; verification pending."
+    },
+    {
+      "test_id": "test_physical_source_contention_is_explicit_without_automatic_retry",
+      "upstream_ids": [
+        "BR-MOVEOUT-001",
+        "BR-MOVEOUT-003",
+        "BR-MOVEOUT-004",
+        "BR-MOVEOUT-011",
+        "BR-OCC-009",
+        "SEC-019",
+        "SEC-020",
+        "TEST-078"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_physical_move_out.py",
+      "status": "implemented",
+      "notes": "Explicit physical event/member/condition history, scoped atomic recovery, existing source guards and migration preservation; verification pending."
+    },
+    {
+      "test_id": "test_physical_departure_changes_only_explicit_occupancies_and_condition",
+      "upstream_ids": [
+        "BR-MOVEOUT-001",
+        "BR-MOVEOUT-003",
+        "BR-MOVEOUT-004",
+        "BR-MOVEOUT-011",
+        "BR-OCC-009",
+        "SEC-019",
+        "SEC-020",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_physical_move_out_migration.py",
+      "status": "implemented",
+      "notes": "Explicit physical event/member/condition history, scoped atomic recovery, existing source guards and migration preservation; verification pending."
+    },
+    {
+      "test_id": "test_physical_departure_uses_confirmed_nonavailable_condition",
+      "upstream_ids": [
+        "BR-MOVEOUT-001",
+        "BR-MOVEOUT-003",
+        "BR-MOVEOUT-004",
+        "BR-MOVEOUT-011",
+        "BR-OCC-009",
+        "SEC-019",
+        "SEC-020",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_physical_move_out_migration.py",
+      "status": "implemented",
+      "notes": "Explicit physical event/member/condition history, scoped atomic recovery, existing source guards and migration preservation; verification pending."
+    },
+    {
+      "test_id": "test_physical_departure_preserves_blocking_unit_condition",
+      "upstream_ids": [
+        "BR-MOVEOUT-001",
+        "BR-MOVEOUT-003",
+        "BR-MOVEOUT-004",
+        "BR-MOVEOUT-011",
+        "BR-OCC-009",
+        "SEC-019",
+        "SEC-020",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_physical_move_out_migration.py",
+      "status": "implemented",
+      "notes": "Explicit physical event/member/condition history, scoped atomic recovery, existing source guards and migration preservation; verification pending."
+    },
+    {
+      "test_id": "test_physical_date_and_evidence_corrections_preserve_original_commands_and_revisions",
+      "upstream_ids": [
+        "BR-MOVEOUT-001",
+        "BR-MOVEOUT-003",
+        "BR-MOVEOUT-004",
+        "BR-MOVEOUT-011",
+        "BR-OCC-009",
+        "SEC-019",
+        "SEC-020",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_physical_move_out_migration.py",
+      "status": "implemented",
+      "notes": "Explicit physical event/member/condition history, scoped atomic recovery, existing source guards and migration preservation; verification pending."
+    },
+    {
+      "test_id": "test_physical_fresh_identity_scope_versions_and_termination_evidence",
+      "upstream_ids": [
+        "BR-MOVEOUT-001",
+        "BR-MOVEOUT-003",
+        "BR-MOVEOUT-004",
+        "BR-MOVEOUT-011",
+        "BR-OCC-009",
+        "SEC-019",
+        "SEC-020",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_physical_move_out_migration.py",
+      "status": "implemented",
+      "notes": "Explicit physical event/member/condition history, scoped atomic recovery, existing source guards and migration preservation; verification pending."
+    },
+    {
+      "test_id": "test_physical_direct_intent_validation_rolls_back_every_effect",
+      "upstream_ids": [
+        "BR-MOVEOUT-001",
+        "BR-MOVEOUT-003",
+        "BR-MOVEOUT-004",
+        "BR-MOVEOUT-011",
+        "BR-OCC-009",
+        "SEC-019",
+        "SEC-020",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_physical_move_out_migration.py",
+      "status": "implemented",
+      "notes": "Explicit physical event/member/condition history, scoped atomic recovery, existing source guards and migration preservation; verification pending."
+    },
+    {
+      "test_id": "test_physical_complete_commands_and_exact_replays_work_in_both_constraint_modes",
+      "upstream_ids": [
+        "BR-MOVEOUT-001",
+        "BR-MOVEOUT-003",
+        "BR-MOVEOUT-004",
+        "BR-MOVEOUT-011",
+        "BR-OCC-009",
+        "SEC-019",
+        "SEC-020",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_physical_move_out_migration.py",
+      "status": "implemented",
+      "notes": "Explicit physical event/member/condition history, scoped atomic recovery, existing source guards and migration preservation; verification pending."
+    },
+    {
+      "test_id": "test_physical_conflicts_with_held_legacy_source_locks_without_partial_writes",
+      "upstream_ids": [
+        "BR-MOVEOUT-001",
+        "BR-MOVEOUT-003",
+        "BR-MOVEOUT-004",
+        "BR-MOVEOUT-011",
+        "BR-OCC-009",
+        "SEC-019",
+        "SEC-020",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_physical_move_out_migration.py",
+      "status": "implemented",
+      "notes": "Explicit physical event/member/condition history, scoped atomic recovery, existing source guards and migration preservation; verification pending."
+    },
+    {
+      "test_id": "test_competing_physical_commands_commit_one_event_and_preserve_exact_recovery",
+      "upstream_ids": [
+        "BR-MOVEOUT-001",
+        "BR-MOVEOUT-003",
+        "BR-MOVEOUT-004",
+        "BR-MOVEOUT-011",
+        "BR-OCC-009",
+        "SEC-019",
+        "SEC-020",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_physical_move_out_migration.py",
+      "status": "implemented",
+      "notes": "Explicit physical event/member/condition history, scoped atomic recovery, existing source guards and migration preservation; verification pending."
+    },
+    {
+      "test_id": "test_signer_departure_rolls_back_when_existing_actual_utility_period_crosses_boundary",
+      "upstream_ids": [
+        "BR-MOVEOUT-001",
+        "BR-MOVEOUT-003",
+        "BR-MOVEOUT-004",
+        "BR-MOVEOUT-011",
+        "BR-OCC-009",
+        "SEC-019",
+        "SEC-020",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_physical_move_out_migration.py",
+      "status": "implemented",
+      "notes": "Explicit physical event/member/condition history, scoped atomic recovery, existing source guards and migration preservation; verification pending."
+    },
+    {
+      "test_id": "test_physical_audit_round_trips_through_property_lease_and_customer_consumers",
+      "upstream_ids": [
+        "BR-MOVEOUT-001",
+        "BR-MOVEOUT-003",
+        "BR-MOVEOUT-004",
+        "BR-MOVEOUT-011",
+        "BR-OCC-009",
+        "SEC-019",
+        "SEC-020",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_physical_move_out_migration.py",
+      "status": "implemented",
+      "notes": "Explicit physical event/member/condition history, scoped atomic recovery, existing source guards and migration preservation; verification pending."
+    },
+    {
+      "test_id": "test_physical_event_history_and_runtime_permissions_are_append_preserved",
+      "upstream_ids": [
+        "BR-MOVEOUT-001",
+        "BR-MOVEOUT-003",
+        "BR-MOVEOUT-004",
+        "BR-MOVEOUT-011",
+        "BR-OCC-009",
+        "SEC-019",
+        "SEC-020",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_physical_move_out_migration.py",
+      "status": "implemented",
+      "notes": "Explicit physical event/member/condition history, scoped atomic recovery, existing source guards and migration preservation; verification pending."
+    },
+    {
+      "test_id": "test_physical_incomplete_event_rejected_without_changing_completed_evidence",
+      "upstream_ids": [
+        "BR-MOVEOUT-001",
+        "BR-MOVEOUT-003",
+        "BR-MOVEOUT-004",
+        "BR-MOVEOUT-011",
+        "BR-OCC-009",
+        "SEC-019",
+        "SEC-020",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_physical_move_out_migration.py",
+      "status": "implemented",
+      "notes": "Explicit physical event/member/condition history, scoped atomic recovery, existing source guards and migration preservation; verification pending."
+    },
+    {
+      "test_id": "test_forward61_preserves_all60_rows_functions_constraints_and_permissions",
+      "upstream_ids": [
+        "BR-MOVEOUT-001",
+        "BR-MOVEOUT-003",
+        "BR-MOVEOUT-004",
+        "BR-MOVEOUT-011",
+        "BR-OCC-009",
+        "SEC-019",
+        "SEC-020",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_physical_move_out_migration.py",
+      "status": "implemented",
+      "notes": "Explicit physical event/member/condition history, scoped atomic recovery, existing source guards and migration preservation; verification pending."
     }
   ]
 }
