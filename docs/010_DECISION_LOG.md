@@ -1045,3 +1045,23 @@ stage review remain mandatory. All prior limits, candidates, findings, failed
 checkpoints and regression evidence remain preserved. Whole V1-055 is incomplete
 and unpublished, with financial allocation, Utility/final sources, Damage,
 HTTP/staff workflows and final integrated acceptance still required.
+
+
+### V1-055 REC-1 current coordination-record correction — 2026-09-16
+
+The expanded independent review of82c620f reported no remaining product defect
+in PD-1/PD-2/PD-3 or the isolated Refund fixture, but rejected one LOW finding:
+current takeover records still required owner action, and a never-authorized
+old connected diagnostic request still said its owner question was pending.
+These contradicted the separately approved and completed recovery and preflight.
+
+REC-1 correction1of2 clears only the current owner-action flag and marks that
+obsolete proposal historical/superseded. Its authorization_received=false and
+executed=false remain accurate; no retroactive approval or extra run is implied.
+Original proposal contents and previous state roots remain archived unchanged.
+No application, fixture, test, migration, runner or traceability mapping changes.
+Completed database evidence and every consumed allowance remain preserved.
+
+Fresh affected records verification, exact-SHA REC-1 correction review and a
+fresh complete-stage review with zero unresolved findings remain mandatory.
+This does not accept the stage/version or authorize publication or V1-056.

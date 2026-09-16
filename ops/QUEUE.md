@@ -1,3 +1,9 @@
+# Current — REC-1 coordination records correction
+
+Verify only affected records gates, then fresh exact-SHA focused REC-1 correction review including identity of previously reviewed product/fixture evidence; require fresh complete29path/threecommit stage review fromc701a85 with zero unresolved findings. No DB rerun or fixture correction. Whole55 remains incomplete/unpublished; continue remaining scope only after stage acceptance.
+
+Earlier queue is preserved historical state, not a current owner-action hold.
+
 # Current — Verified physical and fixture correction, independent acceptance pending
 
 Complete remaining affected exact gates, then fresh expanded independent PD-1/PD-2/PD-3 and fixture correction review, followed by fresh complete29path/twocommit stage review fromc701a85. Reuse verified1522PostgreSQL and unchanged evidence. No retry or reset of exhausted allowances. Whole55 remains incomplete/unpublished; no56.
