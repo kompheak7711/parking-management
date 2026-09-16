@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
 from typing import cast
+from urllib.parse import urlsplit
 from uuid import UUID, uuid4
 
 import psycopg
 import pytest
+from alembic import command
+from alembic.config import Config
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
 
@@ -18,6 +23,7 @@ from test_credit_migration import actor, credit_id, recognize, source
 from test_credit_refund_read_migration import snapshot as read_snapshot
 from test_invoice import mutation_headers
 from test_invoice_migration import runtime_database_url
+from test_migrations import _required_url, _temporary_migration_database, _url_with_database
 from test_payment_api_migration import api
 from test_refund_service_migration import returned
 from test_reservation_migration import migrated_database_url  # noqa: F401
@@ -392,12 +398,57 @@ def test_credit_refund_http_real_runtime_reads_need_no_writer_and_never_fall_bac
     assert snapshot(migrated_database_url, payment) == before
 
 
-def test_credit_refund_http_real_competing_refunds_cannot_double_consume_credit(
+@contextmanager
+def _refund_competition_database(
     migrated_database_url: str,  # noqa: F811
+    monkeypatch: pytest.MonkeyPatch,
+) -> Iterator[str]:
+    """Isolate success-path setup while retaining real competing Refund transactions."""
+    names = ("MIGRATION_DATABASE_URL", "APP_DATABASE_URL", "FINANCIAL_DATABASE_URL")
+    before = {name: _required_url(name) for name in names}
+    original_database = urlsplit(migrated_database_url).path
+    try:
+        with _temporary_migration_database("prm_refund_competition") as migration_url:
+            database = urlsplit(migration_url).path.removeprefix("/")
+            assert "/" + database != original_database
+            with monkeypatch.context() as environment:
+                for name in ("APP_DATABASE_URL", "FINANCIAL_DATABASE_URL"):
+                    environment.setenv(name, _url_with_database(before[name], database))
+                command.upgrade(Config("alembic.ini"), "head")
+                for name in names:
+                    connection_url = _required_url(name).replace(
+                        "postgresql+psycopg://", "postgresql://", 1
+                    )
+                    with psycopg.connect(
+                        connection_url,
+                        connect_timeout=3,
+                        autocommit=True,
+                        options="-c default_transaction_read_only=on -c statement_timeout=1000",
+                    ) as probe:
+                        assert probe.execute(
+                            "SELECT current_database()=%s, to_regclass('app.invoices') IS NOT NULL",
+                            (database,),
+                        ).fetchone() == (True, True)
+                yield migration_url.replace("postgresql+psycopg://", "postgresql://", 1)
+    finally:
+        assert all(_required_url(name) == before[name] for name in names)
+
+
+@pytest.fixture
+def refund_competition_database_url(
+    migrated_database_url: str,  # noqa: F811
+    monkeypatch: pytest.MonkeyPatch,
+) -> Iterator[str]:
+    with _refund_competition_database(migrated_database_url, monkeypatch) as database_url:
+        yield database_url
+
+
+def test_credit_refund_http_real_competing_refunds_cannot_double_consume_credit(
+    refund_competition_database_url: str,
 ) -> None:
     from threading import Barrier
 
-    human, prop, _, payment = source(migrated_database_url, 2000)
+    human, prop, _, payment = source(refund_competition_database_url, 2000)
     credit = credit_id(recognize(prop, payment, human, 1000))
     clients = [api(actor(human, prop, *CAPABILITIES)) for _ in range(2)]
     request_headers = [headers(human), headers(human)]
@@ -431,12 +482,33 @@ def test_credit_refund_http_real_competing_refunds_cannot_double_consume_credit(
         == original
     )
     assert value(clients[0].get(f"/api/v1/customer-credits/{credit}"))["available_usd_cents"] == 200
-    with psycopg.connect(migrated_database_url) as connection:
+    with psycopg.connect(refund_competition_database_url) as connection:
         assert connection.execute(
             "SELECT count(*),sum(usd_accounting_value_cents) FROM app.refunds "
             "WHERE source_customer_credit_id=%s",
             (credit,),
         ).fetchone() == (1, 800)
+
+
+def test_credit_refund_competition_fixture_isolates_unrelated_shared_writer(
+    migrated_database_url: str,  # noqa: F811
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    names = ("MIGRATION_DATABASE_URL", "APP_DATABASE_URL", "FINANCIAL_DATABASE_URL")
+    before = {name: _required_url(name) for name in names}
+    with psycopg.connect(migrated_database_url) as writer:
+        writer.execute("LOCK TABLE app.invoices IN ROW EXCLUSIVE MODE")
+        with _refund_competition_database(migrated_database_url, monkeypatch) as isolated_url:
+            assert urlsplit(isolated_url).path != urlsplit(migrated_database_url).path
+            test_credit_refund_http_real_competing_refunds_cannot_double_consume_credit(
+                isolated_url
+            )
+        assert writer.execute(
+            "SELECT EXISTS(SELECT 1 FROM pg_locks WHERE pid=pg_backend_pid() "
+            "AND database=(SELECT oid FROM pg_database WHERE datname=current_database()) "
+            "AND relation='app.invoices'::regclass AND mode='RowExclusiveLock' AND granted)"
+        ).fetchone() == (True,)
+        assert all(_required_url(name) == before[name] for name in names)
 
 
 def test_credit_refund_http_real_correction_identity_cannot_cross_refunds(

@@ -969,3 +969,79 @@ and unpublished; V1-056 is not activated.
 The owner approved earliest-due-first allocation for undesignated Payments and Customer Credits across amounts on the same Invoice line with different approved due dates. Existing between-Invoice ordering, Rent-before-Service ordering, customer designations and staff confirmation requirements remain authoritative. This decision supersedes the earlier pending same-line attribution question; the earlier checkpoint text remains historical.
 
 The approval and exact owner text are preserved outside this candidate in v1055-earliest-due-first-owner-policy-20260915.json and v1055-owner-decisions-and-task-settings-20260915.json. The physical-departure stage records this decision only. Its financial persistence, calculations, connected consumers, regressions and independent acceptance remain a separate required bounded stage before V1-055 publication. No historical transaction rewrite, automatic confirmation or completed financial implementation is implied.
+
+
+### V1-055 physical PD-1/PD-2 correction checkpoint
+
+The initial full-stage review of retained7c86322 rejected two MEDIUM findings:
+evidence-only successors could overwrite later Unit readiness, and physical audits
+omitted their Unit relationship. The original22 passed gates,1498-case successful
+database diagnostic, prior failed runs and immutable candidate/report remain evidence.
+
+The correction preserves live Unit status/version when date, members and confirmed
+condition are unchanged. Such an event may observe current VACANT or RESERVED
+without making an availability transition; substantive corrections keep existing
+transition rules. Completeness binds these distinctions and the explicit audit
+Unit relationship. Actual Unit readers, readiness, Reservation and Lease callers
+are covered by connected regressions without changing shared policies or locks.
+
+PD-1 and PD-2 each consume correction1of2. The earlier trigger record-shape2of2
+and both exhausted diagnostic/recovery allowances remain unchanged. Fresh affected
+checks, expanded focused review and fresh full-stage review are required; this is
+not stage or version acceptance. Approved earliest-due-first financial implementation,
+Utility reconciliation/final sources, Damage, HTTP/staff and integrated V1-055
+acceptance remain pending before publication or V1-056 activation.
+
+
+### V1-055 connected Unit audit PD-3 and fixture chronology checkpoint
+
+The first correction gate passed1516 cases and failed5. Four new synthetic
+Lease fixtures overlapped the prior inclusive termination period; the existing
+exclusion constraint correctly rejected them before the physical correction.
+Fixture chronology correction1of2 uses an existing historical move-in source,
+yesterday's termination and a later Lease beginning today. No source constraint,
+clock rule or assertion is relaxed.
+
+The fifth failure exposed PD-3: an existing Unit update stores its public floor
+label under `floor`, which the general audit reader cannot classify. A narrow
+Unit-event read adapter validates that canonical top-level text through existing
+public-label and secret checks at both decoding and serialization. It retains
+the original key/value and immutable rows. Other fields, nested data, other entity
+types, the shared write classifier and role/Property permissions are unchanged.
+
+PD-3 correction1of2 expands connected review across the shared read boundary.
+PD-1/PD-2 each remain1of2, import layout1of2, trigger shape2of2 and all exhausted
+diagnostic/recovery allowances remain preserved. Full fresh affected gates,
+expanded focused and complete-stage independent reviews remain mandatory.
+Nothing here accepts or publishes V1-055 or activates V1-056.
+
+
+### V1-055 approved refund fixture isolation recovery — 2026-09-16
+
+The owner approved one bounded fixture correction after the preserved intermittent
+shared Credit setup lock failure. The real competing-Refund test now uses a fresh
+owned database through existing disposable helpers; all original application
+locks, timeouts, service behavior, outcome assertions and replay checks remain.
+An added regression retains an unrelated shared-database invoices writer while
+the unchanged workflow succeeds in the distinct database, then checks fixture
+restoration and writer retention. The old module10functions/13cases becomes
+11functions/14cases; full collection1521 becomes1522 in the preserved order.
+
+The original focused12 run passed ten lock-contract cases and the Refund body,
+but failed required teardown observation because its external observer emitted
+recognize_* while requiring recognition_*. That failed run and observer remain
+unchanged evidence. The owner separately approved phase mapping only and one
+two-case verification90s+30s cleanup, reusing the ten unchanged passes. Both
+cases and all required observations passed, enabling the previously approved
+full1522 gate once480s+30s. All1522cases and required observations passed.
+Total execution and cleanup including the failed observer run was356.967621s
+within660s. Every owned cleanup passed. No automatic retry, further fixture
+correction, allowance reset or application behavior change occurred.
+
+Historical lock-holder identity remains unknown. This evidence supports the
+isolated fixture remedy but does not independently accept it. Expanded fresh
+PD-1/PD-2/PD-3, chronology and fixture correction review and then fresh complete
+stage review remain mandatory. All prior limits, candidates, findings, failed
+checkpoints and regression evidence remain preserved. Whole V1-055 is incomplete
+and unpublished, with financial allocation, Utility/final sources, Damage,
+HTTP/staff workflows and final integrated acceptance still required.

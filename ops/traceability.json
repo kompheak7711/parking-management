@@ -32091,6 +32091,153 @@
       "test_path": "backend/tests/test_physical_move_out_migration.py",
       "status": "implemented",
       "notes": "Explicit physical event/member/condition history, scoped atomic recovery, existing source guards and migration preservation; verification pending."
+    },
+    {
+      "test_id": "test_physical_evidence_successor_preserves_later_unit_reservation_and_lease",
+      "upstream_ids": [
+        "BR-MOVEOUT-001",
+        "BR-MOVEOUT-003",
+        "BR-MOVEOUT-011",
+        "BR-MOVEOUT-012",
+        "BR-UNIT-011",
+        "BR-UNIT-012",
+        "BR-UNIT-013"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_physical_move_out_consumers_migration.py",
+      "status": "implemented",
+      "notes": "PD-1/PD-2 correction1: preserve later Unit/Reservation/Lease decisions, original replay, actual Unit audit readers and complete relationship/state validation."
+    },
+    {
+      "test_id": "test_physical_substantive_correction_retains_existing_transition_rules",
+      "upstream_ids": [
+        "BR-MOVEOUT-001",
+        "BR-MOVEOUT-003",
+        "BR-MOVEOUT-011",
+        "BR-MOVEOUT-012",
+        "BR-UNIT-011",
+        "BR-UNIT-012",
+        "BR-UNIT-013"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_physical_move_out_consumers_migration.py",
+      "status": "implemented",
+      "notes": "PD-1/PD-2 correction1: preserve later Unit/Reservation/Lease decisions, original replay, actual Unit audit readers and complete relationship/state validation."
+    },
+    {
+      "test_id": "test_physical_original_and_corrected_audits_reach_unit_readers",
+      "upstream_ids": [
+        "BR-MOVEOUT-001",
+        "BR-MOVEOUT-003",
+        "BR-MOVEOUT-011",
+        "BR-MOVEOUT-012",
+        "BR-UNIT-011",
+        "BR-UNIT-012",
+        "BR-UNIT-013"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_physical_move_out_consumers_migration.py",
+      "status": "implemented",
+      "notes": "PD-1/PD-2 correction1: preserve later Unit/Reservation/Lease decisions, original replay, actual Unit audit readers and complete relationship/state validation."
+    },
+    {
+      "test_id": "test_physical_completion_requires_unit_relation_and_preserved_evidence_state",
+      "upstream_ids": [
+        "BR-MOVEOUT-001",
+        "BR-MOVEOUT-003",
+        "BR-MOVEOUT-011",
+        "BR-MOVEOUT-012",
+        "BR-UNIT-011",
+        "BR-UNIT-012",
+        "BR-UNIT-013"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_physical_move_out_consumers_migration.py",
+      "status": "implemented",
+      "notes": "PD-1/PD-2 correction1: preserve later Unit/Reservation/Lease decisions, original replay, actual Unit audit readers and complete relationship/state validation."
+    },
+    {
+      "test_id": "test_historical_unit_floor_round_trips_without_rewriting_state",
+      "upstream_ids": [
+        "BR-MOVEOUT-011",
+        "BR-MOVEOUT-012",
+        "BR-UNIT-011",
+        "SEC-019",
+        "SEC-020"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_audit_api.py",
+      "status": "implemented",
+      "notes": "PD-3: historical canonical Unit floor decoding/serialization with immutable values and unchanged other-field/privacy classification."
+    },
+    {
+      "test_id": "test_unit_floor_compatibility_retains_value_rejections",
+      "upstream_ids": [
+        "BR-MOVEOUT-011",
+        "BR-MOVEOUT-012",
+        "BR-UNIT-011",
+        "SEC-019",
+        "SEC-020"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_audit_api.py",
+      "status": "implemented",
+      "notes": "PD-3: historical canonical Unit floor decoding/serialization with immutable values and unchanged other-field/privacy classification."
+    },
+    {
+      "test_id": "test_floor_label_compatibility_is_limited_to_unit_events",
+      "upstream_ids": [
+        "BR-MOVEOUT-011",
+        "BR-MOVEOUT-012",
+        "BR-UNIT-011",
+        "SEC-019",
+        "SEC-020"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_audit_api.py",
+      "status": "implemented",
+      "notes": "PD-3: historical canonical Unit floor decoding/serialization with immutable values and unchanged other-field/privacy classification."
+    },
+    {
+      "test_id": "test_unit_floor_compatibility_does_not_reclassify_nested_fields",
+      "upstream_ids": [
+        "BR-MOVEOUT-011",
+        "BR-MOVEOUT-012",
+        "BR-UNIT-011",
+        "SEC-019",
+        "SEC-020"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_audit_api.py",
+      "status": "implemented",
+      "notes": "PD-3: historical canonical Unit floor decoding/serialization with immutable values and unchanged other-field/privacy classification."
+    },
+    {
+      "test_id": "test_unit_floor_compatibility_preserves_other_field_validation",
+      "upstream_ids": [
+        "BR-MOVEOUT-011",
+        "BR-MOVEOUT-012",
+        "BR-UNIT-011",
+        "SEC-019",
+        "SEC-020"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_audit_api.py",
+      "status": "implemented",
+      "notes": "PD-3: historical canonical Unit floor decoding/serialization with immutable values and unchanged other-field/privacy classification."
+    },
+    {
+      "test_id": "test_credit_refund_competition_fixture_isolates_unrelated_shared_writer",
+      "upstream_ids": [
+        "SEC-029",
+        "BR-REFUND-003",
+        "TEST-112",
+        "TEST-115"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_credit_refund_api_migration.py",
+      "status": "implemented",
+      "notes": "Hold an unrelated shared-database invoices writer while the unchanged real competing-Refund workflow runs in its owned isolated database; verify distinct identity, original outcomes, environment restoration and writer retention through fixture cleanup. Independent fixture acceptance pending."
     }
   ]
 }

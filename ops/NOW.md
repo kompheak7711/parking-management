@@ -1,12 +1,12 @@
-# Property Rental — V1-055 physical departure candidate
+# Property Rental — V1-055 physical correction review preparation
 
-- Current:25-path physical foundation from acceptedc701a859619b90349f4ba54b2a277cd49a31a625;48unit,1498fullPostgreSQL/no skips and3263backend/1363DB-only skips pass. Remaining exact gates and fresh full-stage review pending.
-- Candidate: normal local successor resolves throughv1055-physical-departure-candidate.json; complete-version basebda66062697feef17c8df621b64bf5f607c1c691. Subsequent evidence stays external.
-- Behavior: explicit ended Occupancies, actual date/condition, preserved corrections and original recovery. Existing Unit protections and Invoice/Utility guards unchanged; no financial completion.
-- Evidence:/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-physical-departure-preliminary.json SHA256a0e04fd6f0c8b29ef357739161d8f22d02d755e1d03c2c0d574a945cacee9377. Trigger record-shape2of2, other physical corrections1of2 and migration diagnostic1of1 preserved; no inherited limit reset.
-- Accepted:c701a85 and earlier55stages accepted locally;54closed. Prior STATE roots, queues, failed checkpoints and127retainedworktrees preserved.
-- Remaining: historical Utility boundary reconciliation, final reading/estimate/charge sources, pending accepted financial attribution implementation, HTTP/staff and final integrated55 acceptance/publication/exactCI/refs/card/closure. No56.
-- Coordination: sole Astra/xhigh/Fast; no tests/review running at freeze. Reviewers Astra/max/Standard/read-only/never, absolute Python/Git. SamefollowupACTIVE/OpenClawdisabled. Provider-tier attestation unavailable.
-- Refs/card: local implementation/foundation candidate; upstream/FETCH/live closed54bda6606.55card incomplete/unclaimed,52/53/54DONE. No publication.
-- Next:Run remaining exact physical-departure gates using completed1498-case PostgreSQL,3263backend and unchanged48unit/static/frontend evidence by identity. Require fresh independent complete25-path/one-commit review from acceptedc701a85 with Astra/max/Standard/read-only/never and absolute Python/Git. Preserve trigger-record-shape2of2, all other corrections1of2, sole migration diagnostic1of1 and every prior limit. Historical Utility boundary reconciliation, final source linking, accepted financial attribution implementation, HTTP/staff and integrated55 remain incomplete; no publication or56.
-- Updated:2026-09-15T10:00:23.649795+00:00
+- Current:12-path correction on retained rejected7c86322bde19b332555b621add62b71ef57a0c48; complete29path/twocommit stage fromc701a859619b90349f4ba54b2a277cd49a31a625. Whole55 incomplete/unpublished.
+- Candidate:Normal local successor resolves throughv1055-physical-recovery-correction1-candidate.json. Subsequent evidence remains external.
+- Behavior:PD-1 preserves later Unit readiness;PD-2 records Unit audit relation;PD-3 reads canonical historical Unit floor labels. Approved refund fixture isolation preserves original workflow, application locks/timeouts/assertions/replay.
+- Tests:10lock-contract passes reused;2focused and1522fullPG pass all required observations/cleanup. Cumulative356.967621s of660s. Unchanged3280backend/1386DB-only skips,61audit,static/build/import/frontend evidence retained by identity; new DB case covered in1522full.
+- Evidence:/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-physical-recovery-correction1-preliminary.json SHA2569501f074f4b4593c669c6cf54a814f76a0914eec88ee8d9dd7abd9b8d815f68e. Original observer failure and all earlier failures retained; historical holder unknown.
+- Limits:PD-1/PD-2/PD-3 andchronology1of2;import/triggerFINAL2of2;fixture1of1 and all current recovery invocations consumed. No reset/retry/additional fixture correction.
+- Coordination:Sole Astra/xhigh/Fast; reviewers Astra/max/Standard/read-only/never. SAMEfollowupACTIVE;OpenClawdisabled. No tests/reviewer running at checkpoint.
+- Remaining:Exact remaining gates, expanded focused correction/fresh full stage reviews, approved financial allocation, Utility/final sources, Damage, HTTP/staff and integrated55 gates/publication/CI/refs/Workboard/closure. No56 until55closes;stop/pause60/no61.
+- Next:Complete remaining affected exact gates, then fresh expanded independent PD-1/PD-2/PD-3 and fixture correction review, followed by fresh complete29path/twocommit stage review fromc701a85. Reuse verified1522PostgreSQL and unchanged evidence. No retry or reset of exhausted allowances. Whole55 remains incomplete/unpublished; no56.
+- Updated:2026-09-16T03:00:27.836221+00:00

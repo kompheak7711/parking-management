@@ -1,3 +1,27 @@
+# Current — Verified physical and fixture correction, independent acceptance pending
+
+Complete remaining affected exact gates, then fresh expanded independent PD-1/PD-2/PD-3 and fixture correction review, followed by fresh complete29path/twocommit stage review fromc701a85. Reuse verified1522PostgreSQL and unchanged evidence. No retry or reset of exhausted allowances. Whole55 remains incomplete/unpublished; no56.
+
+Earlier queue follows unchanged as history.
+
+# Current — Connected physical database diagnostic authority hold
+
+Await explicit owner decision for one additional connected-stage credit-lock diagnostic. Prior recovery/diagnostic allowances remain consumed. Finish existing unaffected session39325 and preserve its result; never start another database run, freeze/review/publish or close55 without the new grant and all required acceptance gates.
+
+All prior queues follow unchanged.
+
+# Current — Connected Unit audit and new fixture correction
+
+Correct new later-Lease fixture chronology1of2 and connected canonical Unit floor audit compatibility PD-3 1of2 under expanded11path scope; preserve PD-1/PD-2 each1of2 and all failures/limits. Run fresh affected/mandatory checks, expanded focused and fresh full28path stage reviews; no publication or56.
+
+Earlier queue remains unchanged.
+
+# Current — Physical PD-1/PD-2 correction1
+
+Implement PD-1/PD-2 correction1of2 each: preserve later Unit state for evidence-only successors and restore Unit audit relationship. Run affected/mandatory gates, expanded focused and fresh full-stage reviews. Preserve rejected7c86322, trigger shape2of2, consumed diagnostics and all evidence. Whole55 unpublished; no56.
+
+Every prior queue follows unchanged.
+
 # Current queue — Physical departure exact gates and independent review
 
 Run remaining exact physical-departure gates using completed1498-case PostgreSQL,3263backend and unchanged48unit/static/frontend evidence by identity. Require fresh independent complete25-path/one-commit review from acceptedc701a85 with Astra/max/Standard/read-only/never and absolute Python/Git. Preserve trigger-record-shape2of2, all other corrections1of2, sole migration diagnostic1of1 and every prior limit. Historical Utility boundary reconciliation, final source linking, accepted financial attribution implementation, HTTP/staff and integrated55 remain incomplete; no publication or56.

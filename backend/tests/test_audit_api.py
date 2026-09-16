@@ -25,6 +25,7 @@ from property_rental.audit_api import (
     PropertyAuditQuery,
     ResolvedAuditResource,
     ResourceAuditQuery,
+    _event_view,
     _freeze_loaded,
 )
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
@@ -675,3 +676,76 @@ def test_stored_unclassified_numeric_authentication_secret_is_not_exposed(
 def test_stored_unclassified_text_authentication_secret_is_not_exposed() -> None:
     with pytest.raises(ValueError, match="not an approved public audit value"):
         _freeze_loaded({"account": {"one_time_code": "A1B2C3D4"}})
+
+
+def unit_floor_audit_row(state: object, entity_type: str = "unit") -> tuple[object, ...]:
+    return (
+        EVENT_ID,
+        ACTOR_ID,
+        "unit.updated",
+        entity_type,
+        RESOURCE_ID,
+        datetime(2026, 8, 23, 9, 30, tzinfo=UTC),
+        date(2026, 8, 23),
+        "Unit readiness confirmed",
+        None,
+        state,
+        state,
+        CORRELATION_ID,
+        "API",
+        PROPERTY_ID,
+        "SUCCEEDED",
+        None,
+        None,
+        None,
+        RESOURCE_ID,
+        None,
+    )
+
+
+@pytest.mark.parametrize("floor", ["1", "G", "Basement", "2B"])
+def test_historical_unit_floor_round_trips_without_rewriting_state(floor: str) -> None:
+    state = {
+        "unit_id": str(RESOURCE_ID),
+        "property_id": str(PROPERTY_ID),
+        "unit_number": "101",
+        "floor": floor,
+        "unit_type": "ONE_BEDROOM",
+        "status": "VACANT",
+        "version": 2,
+    }
+    row = unit_floor_audit_row(state)
+    event = PostgresAuditEventQueryRepository._event(row)
+    view = _event_view(event)
+    assert event.previous_state == event.resulting_state == state
+    assert view.previous_state == view.resulting_state == state
+    assert state["floor"] == floor and row[9] is state
+    with pytest.raises(ValueError):
+        _freeze_loaded({"floor": floor})
+
+
+@pytest.mark.parametrize(
+    "floor",
+    [None, 1, True, "", " 1", "1\n", "x" * 101, {"label": "1"}, "password=synthetic-fixture"],
+)
+def test_unit_floor_compatibility_retains_value_rejections(floor: object) -> None:
+    with pytest.raises(ValueError):
+        PostgresAuditEventQueryRepository._event(unit_floor_audit_row({"floor": floor}))
+
+
+@pytest.mark.parametrize("entity_type", ["property", "physical_move_out"])
+def test_floor_label_compatibility_is_limited_to_unit_events(entity_type: str) -> None:
+    with pytest.raises(ValueError):
+        PostgresAuditEventQueryRepository._event(unit_floor_audit_row({"floor": "1"}, entity_type))
+
+
+def test_unit_floor_compatibility_does_not_reclassify_nested_fields() -> None:
+    with pytest.raises(ValueError):
+        PostgresAuditEventQueryRepository._event(unit_floor_audit_row({"details": {"floor": "1"}}))
+
+
+def test_unit_floor_compatibility_preserves_other_field_validation() -> None:
+    with pytest.raises(ValueError):
+        PostgresAuditEventQueryRepository._event(
+            unit_floor_audit_row({"floor": "1", "one_time_code": 123456})
+        )

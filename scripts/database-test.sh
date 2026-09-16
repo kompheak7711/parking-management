@@ -131,6 +131,7 @@ database_test_suites='
   tests/test_move_out_inspection_migration.py
   tests/test_move_out_inspection_consumers_migration.py
   tests/test_physical_move_out_migration.py
+  tests/test_physical_move_out_consumers_migration.py
   tests/test_deposit_financial_revision_migration.py
   tests/test_deposit_disposition_migration.py
   tests/test_lease_deposit_command_guards_migration.py

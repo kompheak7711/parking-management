@@ -399,8 +399,8 @@ class PostgresAuditEventQueryRepository:
             authorization_reference=(
                 None if row[8] is None else _safe_loaded_text(row[8], "authorization_reference")
             ),
-            previous_state=_freeze_loaded(row[9]),
-            resulting_state=_freeze_loaded(row[10]),
+            previous_state=_freeze_event_state(row[9], str(row[3])),
+            resulting_state=_freeze_event_state(row[10], str(row[3])),
             correlation_id=UUID(str(row[11])),
             source=cast(AuditSource, source),
             property_id=UUID(str(row[13])),
@@ -699,8 +699,10 @@ def _event_view(event: AuditEvent) -> AuditEventView:
         occurred_at=event.occurred_at,
         business_date=event.business_date,
         reason=_safe_loaded_text(event.reason, "reason"),
-        previous_state=_json_content(_freeze_loaded(event.previous_state)),
-        resulting_state=_json_content(_freeze_loaded(event.resulting_state)),
+        previous_state=_json_content(_freeze_event_state(event.previous_state, event.target_type)),
+        resulting_state=_json_content(
+            _freeze_event_state(event.resulting_state, event.target_type)
+        ),
         correlation_id=event.correlation_id,
         outcome=_safe_loaded_text(event.outcome, "outcome"),
         source=_safe_loaded_text(event.source, "source"),
@@ -715,6 +717,23 @@ def _json_content(value: AuditValue) -> object:
     if isinstance(value, tuple):
         return [_json_content(item) for item in value]
     return value
+
+
+def _freeze_event_state(value: object, entity_type: str) -> AuditValue:
+    """Preserve historical Unit floor labels with the existing public-label checks."""
+    if entity_type != "unit" or not isinstance(value, Mapping) or "floor" not in value:
+        return _freeze_loaded(value)
+    floor = value["floor"]
+    if not isinstance(floor, str) or not 1 <= len(floor) <= 100 or floor != floor.strip():
+        raise ValueError("stored Unit floor is not a canonical text label")
+    # Only this canonical top-level Unit attribute uses label classification.
+    # All other fields and every nested value retain the existing validation.
+    ordinary = _freeze_loaded({key: item for key, item in value.items() if key != "floor"})
+    assert isinstance(ordinary, Mapping)
+    floor_value = _freeze_loaded(floor, "floor_label")
+    return MappingProxyType(
+        {key: floor_value if key == "floor" else ordinary[key] for key in value}
+    )
 
 
 def _freeze_loaded(value: object, field_key: str | None = None) -> AuditValue:

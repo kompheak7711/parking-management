@@ -22,7 +22,7 @@ def upgrade() -> None:
             actual_move_out_date date NOT NULL CHECK(isfinite(actual_move_out_date)),
             unit_condition text NOT NULL CHECK(unit_condition IN ('CLEANING','UNDER_MAINTENANCE','OUT_OF_SERVICE')),
             previous_unit_status text NOT NULL CHECK(previous_unit_status IN ('VACANT','RESERVED','OCCUPIED','CLEANING','UNDER_MAINTENANCE','OUT_OF_SERVICE')),
-            resulting_unit_status text NOT NULL CHECK(resulting_unit_status IN ('OCCUPIED','CLEANING','UNDER_MAINTENANCE','OUT_OF_SERVICE')),
+            resulting_unit_status text NOT NULL CHECK(resulting_unit_status IN ('VACANT','RESERVED','OCCUPIED','CLEANING','UNDER_MAINTENANCE','OUT_OF_SERVICE')),
             resulting_unit_version integer NOT NULL CHECK(resulting_unit_version>=expected_unit_version),
             reason text NOT NULL CHECK(app.lease_notice_text_valid(reason,500)),
             authorization_reference text NOT NULL CHECK(app.lease_notice_text_valid(authorization_reference,500)),
@@ -156,7 +156,22 @@ def upgrade() -> None:
                         WHERE link.event_id=v_id AND prior_revision.move_out_date IS DISTINCT FROM v_old.actual_move_out_date)
                 THEN RAISE EXCEPTION 'Physical departure correction source disagrees' USING ERRCODE='23514'; END IF;
             END IF;
+            -- Evidence-only successors observe the current Unit; they cannot undo
+            -- a later readiness, Reservation or Lease decision. Availability may be
+            -- recorded unchanged only for that evidence-only case.
+            IF (v_e.supersedes_event_id IS NOT NULL AND v_old.actual_move_out_date=v_e.actual_move_out_date
+                    AND v_old.unit_condition=v_e.unit_condition
+                    AND (v_e.previous_unit_status IS DISTINCT FROM v_e.resulting_unit_status
+                        OR v_e.expected_unit_version IS DISTINCT FROM v_e.resulting_unit_version))
+                OR (v_e.resulting_unit_status IN ('VACANT','RESERVED')
+                    AND (v_e.supersedes_event_id IS NULL
+                        OR v_old.actual_move_out_date IS DISTINCT FROM v_e.actual_move_out_date
+                        OR v_old.unit_condition IS DISTINCT FROM v_e.unit_condition
+                        OR v_e.previous_unit_status IS DISTINCT FROM v_e.resulting_unit_status
+                        OR v_e.expected_unit_version IS DISTINCT FROM v_e.resulting_unit_version))
+            THEN RAISE EXCEPTION 'Physical departure Unit transition disagrees' USING ERRCODE='23514'; END IF;
             IF v_a.actor_id IS DISTINCT FROM v_e.actor_id OR v_a.property_id IS DISTINCT FROM v_e.property_id
+                OR v_a.unit_id IS DISTINCT FROM v_e.unit_id
                 OR v_a.lease_id IS DISTINCT FROM v_e.lease_id OR v_a.customer_id IS DISTINCT FROM v_l.primary_tenant_id
                 OR v_a.action IS DISTINCT FROM 'lease.move_out.record' OR v_a.entity_type IS DISTINCT FROM 'physical_move_out'
                 OR v_a.entity_id IS DISTINCT FROM v_e.id OR v_a.linked_source_event_id IS DISTINCT FROM v_e.id
@@ -203,7 +218,7 @@ def upgrade() -> None:
             v_event uuid; v_termination uuid; v_supersedes uuid; v_date date;
             v_lease_version integer; v_unit_version integer; v_id uuid; v_version integer;
             v_timezone text; v_now timestamptz; v_key text; v_status text; v_audit uuid;
-            v_response jsonb; v_message text; v_index integer; v_new_unit_version integer;
+            v_response jsonb; v_message text; v_index integer; v_new_unit_version integer; v_evidence_only boolean:=false;
         BEGIN
             PERFORM 1 FROM app.properties WHERE id=p_property FOR SHARE NOWAIT;
             PERFORM 1 FROM app.user_accounts WHERE actor_id=p_actor FOR SHARE NOWAIT;
@@ -302,6 +317,7 @@ def upgrade() -> None:
                     OR (SELECT array_agg(occupancy_id ORDER BY occupancy_id) FROM app.physical_move_out_occupancies WHERE event_id=v_supersedes)
                         IS DISTINCT FROM (SELECT array_agg(id ORDER BY id) FROM unnest(v_ids) ids(id))
                 THEN RAISE EXCEPTION 'Physical departure correction source changed' USING ERRCODE='P5N03'; END IF;
+                v_evidence_only:=v_prior.actual_move_out_date=v_date AND v_prior.unit_condition=p_intent->>'unit_condition';
             END IF;
             FOR v_index IN 1..array_length(v_ids,1) LOOP
                 SELECT * INTO v_o FROM app.occupancies WHERE id=v_ids[v_index] AND lease_id=p_lease FOR UPDATE NOWAIT;
@@ -322,7 +338,8 @@ def upgrade() -> None:
                 ELSE v_version:=v_o.version; END IF;
                 v_results:=array_append(v_results,v_version);
             END LOOP;
-            v_status:=CASE WHEN v_u.status IN ('UNDER_MAINTENANCE','OUT_OF_SERVICE') THEN v_u.status
+            v_status:=CASE WHEN v_evidence_only THEN v_u.status
+                WHEN v_u.status IN ('UNDER_MAINTENANCE','OUT_OF_SERVICE') THEN v_u.status
                 WHEN EXISTS(SELECT 1 FROM app.occupancies o JOIN app.leases l ON l.id=o.lease_id WHERE l.unit_id=v_u.id AND o.move_out_date IS NULL)
                 THEN 'OCCUPIED' ELSE p_intent->>'unit_condition' END;
             v_new_unit_version:=v_u.version;
@@ -339,12 +356,12 @@ def upgrade() -> None:
             v_audit:=gen_random_uuid();
             INSERT INTO app.audit_events(id,occurred_at,business_date,actor_id,action,entity_type,entity_id,reason,
                 authorization_reference,property_id,previous_state,resulting_state,correlation_id,source,outcome,
-                authorization_evidence,linked_source_event_id,customer_id,lease_id)
+                authorization_evidence,linked_source_event_id,customer_id,lease_id,unit_id)
             VALUES(v_audit,v_now,timezone(v_timezone,v_now)::date,p_actor,'lease.move_out.record','physical_move_out',v_event,
                 p_intent->>'reason',p_intent->>'authorization_reference',p_property,
                 app.physical_move_out_audit_snapshot(v_event,true),app.physical_move_out_audit_snapshot(v_event,false),
                 p_key,'API','SUCCEEDED',jsonb_build_object('capability','leases.move_out','move_out_event_id',v_event),
-                v_event,v_l.primary_tenant_id,p_lease);
+                v_event,v_l.primary_tenant_id,p_lease,v_u.id);
             v_response:=jsonb_build_object('data',app.physical_move_out_snapshot(v_event),'meta',jsonb_build_object('request_id',p_request_id));
             INSERT INTO app.physical_move_out_commands VALUES(p_property,p_actor,p_key,p_lease,v_event,v_audit,p_digest,p_intent,v_response,v_now);
             SET CONSTRAINTS app.physical_move_out_events_complete,app.physical_move_out_occupancies_complete,

@@ -1386,7 +1386,26 @@ sets VACANT or overrides authoritative Reservation/Lease availability.
 
 Corrections append one same-member successor to a current event with the same
 termination source. Previous actual dates, revisions and original responses remain
-permanent. Evidence-only successors do not create date/version changes. Exact
+permanent. An evidence-only successor has the same actual date, ended members and
+confirmed condition as its predecessor. It preserves the current Unit status and
+version, including readiness, Reservation or Lease changes made after the original
+departure; it also preserves Occupancy dates and versions. Its event may therefore
+record an unchanged current VACANT or RESERVED state without performing an
+availability transition. Completion rejects availability results for initial or
+substantive date/condition corrections and rejects any Unit transition for an
+evidence-only successor. Genuine date/condition corrections retain the existing
+protected-state and remaining-Occupancy rules. The command still checks current
+actor, Property and all expected versions and uses the same bounded locks.
+
+Each physical audit has an explicit Unit relationship equal to the source event's
+Unit, checked by completeness. Existing Unit timelines and Unit-filtered Property
+audit searches include original and correcting events without changing reader
+authorization or the shared classifier. Historical Unit audit states retain the
+canonical top-level `floor` key and original text value. Only Unit event decoding
+and serialization classify that field as a bounded Unit label; existing secret
+checks still apply. Other event types, nested fields and all other values keep
+the existing classification rules. No stored audit row or source snapshot is
+rewritten, and the common audit write policy is unchanged. Exact
 Property/actor/key replay compares the complete intent and returns the original
 response after a fresh identity check. Deferred completeness constraints validate
 the full event/member/command/audit assembly before return in either caller mode.
