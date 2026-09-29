@@ -1262,8 +1262,12 @@ Recurring Rent Invoices have a Due Date of the **5th day of the billed month**. 
 Due Date is established by the application/business rule; the Lease Agreement does
 not define an alternative recurring Invoice Due Date.
 
-The Initial Rent Invoice is due seven calendar days after the actual Move-in Date,
-including when that Due Date falls in the following month.
+The Initial Rent Invoice is due five calendar days after the later of its issue date
+and the actual Move-in Date, including when that Due Date falls in the following month.
+Both dates are `Asia/Phnom_Penh` business dates. The Initial Rent Invoice may be issued
+before the actual Move-in Date when the Customer asks to pay early. The Due Date is set
+at issuance and never changes afterwards. BR-RENT-005 periods and BR-RENT-007 proration
+are unchanged.
 
 Example:
 
@@ -1272,8 +1276,9 @@ Example:
 | August       | 25 July           | 5 August    |
 | September    | 25 August         | 5 September |
 
-Examples: a 10 July move-in is due 17 July; a 20 July move-in is due 27 July; a
-21 July move-in is due 28 July; and a 27 July move-in is due 3 August.
+Examples: issued 10 July for a 10 July move-in, due 15 July; issued 1 July for a 10 July
+move-in, due 15 July; issued 27 July for a 27 July move-in (period 27 July to 31 August),
+due 1 August; and issued 29 July for a 25 July move-in, due 3 August.
 
 ---
 
@@ -2075,7 +2080,7 @@ month component without collapsing or obscuring either period.
 ### BR-SVC-011 — Advance Billing Schedule
 
 Initial recurring-Service lines follow BR-SVC-012 and are issued on the Initial Rent
-Invoice with its seven-calendar-day Due Date. After that initial coverage, fixed
+Invoice and share its Due Date under BR-RENT-009. After that initial coverage, fixed
 recurring Services use the normal Rent billing cycle: generation on the 25th in the
 Property's authoritative `Asia/Phnom_Penh` timezone for the upcoming uncovered month
 and the same applicable Due Date as the recurring Rent Invoice.
@@ -2102,8 +2107,8 @@ For an actual Move-in Date on day 21 or later, its Initial Service period combin
 Each component uses the applicable approved configured Service rate for its period.
 The prorated component uses the inclusive actual-calendar-day formula and final
 half-up USD-cent rounding under BR-MONEY-012. The Service appears as a separate line
-on the Initial Rent Invoice and therefore shares its Due Date of seven calendar days
-after the actual Move-in Date.
+on the Initial Rent Invoice and therefore shares its Due Date under BR-RENT-009, five calendar days
+after the later of its issue date and the actual Move-in Date.
 
 Example:
 
@@ -2721,6 +2726,17 @@ the record.
 Issued amount corrections use explicit linked debit or credit Adjustments.
 Original Invoice values and contractual terms remain unchanged.
 
+An Adjustment is recorded against one line of an issued Invoice and uses that Invoice's
+single Due Date. Invoice lines have no Due Dates of their own.
+
+A debit Adjustment is allowed only while its line has a positive remaining balance. It
+is rejected once the line is fully paid; a missed amount on a fully paid line is billed
+as a normal one-time Miscellaneous or Damage Charge. A Payment or Credit reversal that
+restores a positive balance on the line allows debit Adjustments again.
+
+A credit Adjustment is allowed on any issued, non-VOID Invoice line. Any credit beyond
+that line's remaining balance becomes Customer Credit for the Invoice Customer.
+
 ---
 
 ### BR-INV-045 — Adjustment Source and Linkage
@@ -2757,9 +2773,10 @@ the source and correction.
 
 ### BR-INV-049 — Non-recurring Due Date Source
 
-The Due Date for a Damage Charge, Miscellaneous Charge, debit Adjustment, or
-other non-recurring obligation comes from the signed Lease or approved governing
-business event or document. It must not be arbitrary, automatically set to the
+The Due Date for a Damage Charge, Miscellaneous Charge, or other non-recurring
+obligation comes from the signed Lease or approved governing business event or
+document. A debit Adjustment has no Due Date of its own and uses its Invoice's Due
+Date under BR-INV-044. It must not be arbitrary, automatically set to the
 monthly 5th, or automatically made immediate unless its governing source requires
 that result.
 
@@ -2868,6 +2885,12 @@ recursive penalty. Continued nonpayment of the source principal does not reopen 
 decision. A reduced charge must not later be supplemented with the difference, and a
 waiver must not later be replaced by a charge. Payment received after the final
 decision does not recalculate or replace that decision.
+
+The Invoice is locked while an Adjustment or the final late-payment decision is
+recorded, so the two are strictly ordered. An Adjustment recorded before the final
+decision is included in that decision's balance. A debit Adjustment recorded after the
+final decision is allowed but is not counted in that decision, and a credit Adjustment
+never changes a final decision.
 
 Example: if the default is $31 and management approves $15, the remaining $16 must
 never be imposed as a second late-payment charge for that source Invoice.
@@ -3864,35 +3887,52 @@ termination right.
 
 ## BR-LEASE-026 — Rent Nonpayment Day Count
 
-For an applicable Rent obligation, calendar days overdue are counted after its Due
-Date in `Asia/Phnom_Penh`. The Due Date itself is day zero and remains timely under
-BR-INV-051; the following calendar day is day one overdue.
+Rent nonpayment days are counted in `Asia/Phnom_Penh` calendar days from a fixed day
+one, independent of the Invoice Due Date.
 
-When one Invoice contains both Rent and recurring-Service lines, the day count and
-nonpayment process use the remaining Rent line or obligation balance after valid
-confirmed Payment Allocations and Customer Credit applications under BR-PAY-036 through
-BR-PAY-039. The whole mixed-Invoice balance is not a substitute for the remaining Rent
-balance.
+For a recurring Rent Invoice, day one is the first calendar day of the billed month.
+For the Initial Rent Invoice, day one is the later of its issue date and the actual
+Move-in Date. A day-21-or-later Initial Rent Invoice that combines the prorated
+move-in month and the following month has one day one and one count. An Initial Rent
+Invoice issued after the next recurring first day still uses this rule.
+
+Day N is day one plus N − 1 calendar days. Day 20 is therefore the 20th and day 30 is
+the 1st plus 29 days; in a normal-year February, day 30 is 2 March.
+
+The Invoice Due Date under BR-RENT-009 and the overdue boundary under BR-INV-051
+continue to govern the late-payment decision. They do not change the nonpayment day
+count.
+
+When one Invoice contains both Rent and recurring-Service lines, the nonpayment
+process uses the remaining Rent line balance after valid confirmed Payment
+Allocations, Customer Credit applications and Adjustments. The whole mixed-Invoice
+balance is not a substitute for the remaining Rent balance.
+
+A case recorded under an earlier count keeps its recorded values; the count applies to
+cases opened after this rule took effect.
 
 Example:
 
 ```text
-Rent Due Date:    5 August
-Day 1 overdue:    6 August
-Day 20 overdue:   25 August
-Day 30 overdue:   4 September
+Recurring Rent for August:                 day 1 = 1 August,   day 20 = 20 August,   day 30 = 30 August
+Recurring Rent for February:               day 1 = 1 February, day 20 = 20 February, day 30 = 2 March (normal year)
+Initial Rent issued 10 July, move-in 10 July: day 1 = 10 July,  day 20 = 29 July,     day 30 = 8 August
+Initial Rent issued 1 July, move-in 10 July:  day 1 = 10 July,  day 20 = 29 July,     day 30 = 8 August
 ```
 
 ---
 
 ## BR-LEASE-027 — Twenty-day Rent Nonpayment Warning Notice
 
-If a positive balance of the applicable Rent obligation remains unpaid at 20 calendar
-days after its Due Date, the system must alert authorized staff or management and
+If a positive balance of the applicable Rent obligation remains unpaid on day 20 under
+BR-LEASE-026, the system must alert authorized staff or management and
 require or support issuance and recording of a formal Nonpayment Warning Notice to the
 Customer. The Notice states that continued nonpayment through 30 days overdue may
 result in authorized management initiating the approved Lease termination or
 surrender process.
+
+When a case is opened after day 20 has passed, the system alerts authorized staff at
+once.
 
 The Notice is a permanent auditable business record, not an ephemeral UI warning. It
 preserves at minimum, where applicable:
@@ -3913,10 +3953,11 @@ preserves at minimum, where applicable:
 
 ## BR-LEASE-028 — Thirty-day Serious Nonpayment Default
 
-If a positive balance of the applicable Rent obligation remains unpaid at 30 calendar
-days after its Due Date, the system records a Serious Nonpayment Default condition.
+If a positive balance of the applicable Rent obligation remains unpaid on day 30 under
+BR-LEASE-026, the system records a Serious Nonpayment Default condition.
 Authorized management may then initiate the approved Lease termination or surrender
-process.
+process. When a case is opened after day 30 has passed, the system alerts authorized
+staff at once.
 
 The condition must not automatically:
 
@@ -3942,7 +3983,7 @@ for this rule.
 ## BR-LEASE-029 — Cure After Warning and Before Thirty Days
 
 If the Customer fully cures the applicable Rent nonpayment after its 20-day Warning
-Notice but before the 30-day threshold, the current 30-day trigger for that cured
+Notice but before day 30 under BR-LEASE-026, the current 30-day trigger for that cured
 obligation stops. The system must not initiate termination at day 30 merely because
 the obligation was previously late.
 
@@ -4668,8 +4709,8 @@ require authorization and complete audit history.
 
 ## Resolved: OOD-BR-001 — Initial Rent Invoice Due Date
 
-The Owner resolved this item: the Initial Rent Invoice is due seven calendar days
-after the actual Move-in Date under BR-RENT-009. The recurring Due Date remains the
+The Owner resolved this item: the Initial Rent Invoice is due five calendar days
+after the later of its issue date and the actual Move-in Date under BR-RENT-009. The recurring Due Date remains the
 5th of the billed month and is not overridden by the Lease.
 
 ## Resolved: OOD-BR-002 — Late-payment Calculation Base

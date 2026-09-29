@@ -401,6 +401,10 @@ The action selects debit or Credit Adjustment, exact amount/currency, reason, an
 supporting source context. It previews resulting balance/status but records a new
 Adjustment rather than editing the issued Invoice.
 
+The debit option is unavailable for a fully paid line and explains that the amount must
+be billed as a one-time charge. A credit preview shows any amount that will become
+Customer Credit.
+
 ## UI-052 — Void Invoice
 
 Exceptional voiding requires capability, reason, consequence preview, and explicit
@@ -694,6 +698,10 @@ follow-up preserve prior history.
 No event control may imply automatic Lease termination, Occupancy closure, Move-out,
 Unit status change, Final Settlement, fee, or separate penalty. Any termination
 continues through the explicit Lease termination workflow.
+
+Show day one, the current day number and the day 20 and day 30 dates. A case already
+past day 20 or day 30 shows a prominent staff alert. The Invoice Due Date is shown
+separately and labelled as the late-payment boundary.
 
 ## UI-076 — Termination Workflow
 

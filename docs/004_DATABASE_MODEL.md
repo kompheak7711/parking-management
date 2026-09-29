@@ -418,6 +418,12 @@ issued, non-VOID Rent line for the same Lease, Invoice, and financially responsi
 Customer. The case is separate from `lease_violation_warnings`; it is not opened from
 total mixed-Invoice balance.
 
+`nonpayment_day_one date` is required for cases opened under the current count: the
+first day of the billed month for recurring Rent, or the later of the Initial Rent
+Invoice issue date and the actual Move-in Date. It is null for cases recorded before the
+change. `due_date_snapshot` keeps its recorded meaning. Existing cases and events are
+never rewritten.
+
 ## DB-LEASE-009 — `rent_nonpayment_events`
 
 Append-only case history: `id uuid PK`, `rent_nonpayment_case_id uuid NOT NULL FK`,
@@ -436,6 +442,8 @@ positive amount at 30 calendar days. TWENTY_DAY_WARNING requires a Notice/docume
 reference; AUTHORIZED_FOLLOW_UP requires an authorization reference. CURE stores zero
 after a warning or default; later authorized follow-up remains explicit. No event
 changes Lease, Occupancy, Unit, Move-out, or Final Settlement state automatically.
+
+Milestone eligibility uses `nonpayment_day_one` when present.
 
 ## DB-LEASE-010 — `lease_pet_departures`
 
@@ -668,12 +676,12 @@ and every billed Service line must fall within one approval period.
 | `primary_category` | `text` | no | `RENT`, `UTILITIES`, `SERVICE_CHARGES`, `DAMAGE_CHARGES`, `MISCELLANEOUS_CHARGES` |
 | `status` | `text` | no | `DRAFT`, `UNPAID`, `PARTIALLY_PAID`, `PAID`, `VOID` |
 | `invoice_date` | `date` | no | permanent on issuance |
-| `due_date` | `date` | no | source recorded below |
+| `due_date` | `date` | yes | null only while `status='DRAFT'` (CHECK); set at issuance and immutable afterwards |
 | `billing_period_start` | `date` | yes | both or neither with end |
 | `billing_period_end` | `date` | yes | inclusive, >= start |
 | `rent_billing_kind` | `text` | yes | `INITIAL` or `RECURRING`; required exactly when the Invoice contains Rent |
 | `original_total_usd_cents` | `bigint` | no | `CHECK (>= 0)`; immutable after issuance |
-| `due_date_rule` | `text` | no | `INITIAL_RENT_SEVEN_DAYS`, `RECURRING_RENT_FIFTH`, or `GOVERNING_SOURCE` |
+| `due_date_rule` | `text` | no | `INITIAL_RENT_ISSUE_PLUS_FIVE`, `RECURRING_RENT_FIFTH`, or `GOVERNING_SOURCE`; existing rows keep `INITIAL_RENT_SEVEN_DAYS` as historical evidence and new Initial Rent Invoices use only `INITIAL_RENT_ISSUE_PLUS_FIVE` |
 | `due_date_source` | `text` | no | approved rule/event/document trace; never a Lease override |
 | `issued_at` | `timestamptz` | yes | required unless DRAFT |
 | `issued_by` | `uuid` | yes | required unless DRAFT |
@@ -683,8 +691,10 @@ Constraints and indexes:
 
 - `UNIQUE (invoice_number)` and `UNIQUE (id, lease_id)` to support consistency references.
 - Rent requires non-null `lease_id`, period dates, and applicable SIGNED Lease.
-- INITIAL Rent requires Due Date exactly seven calendar days after the applicable
-  Occupancy Move-in Date. Its period begins on Move-in Date and ends at that month-end
+- INITIAL Rent issued under the current rule requires Due Date exactly five calendar
+  days after the later of the `Asia/Phnom_Penh` business date of `issued_at` and the
+  source Occupancy Move-in Date. The Due Date is set at issuance and immutable
+  afterwards. Its period begins on Move-in Date and ends at that month-end
   for days 1–20, or at the following month-end for days 21 or later.
 - RECURRING Rent covers one complete calendar month and is due on that month's fifth
   day. The standard is policy, not an optional Lease term. Other obligations use only
@@ -770,6 +780,12 @@ An Adjustment changes current obligation by signed effect (`DEBIT` positive, `CR
 Utility corrections link relationally through DB-UTIL-009; non-recurring obligation
 identity remains on the source Invoice line. Any later modeled authoritative source must
 use a typed FK/junction rather than relying on this narrative reference or JSON.
+
+A new debit Adjustment requires its line's remaining balance to be positive at insertion,
+checked under the Invoice lock. A new credit Adjustment's amount beyond the line's
+remaining balance is recorded as Customer Credit in the same transaction. The final
+late-payment decision acquires the same Invoice lock, so an Adjustment and the decision
+are strictly ordered.
 
 ## DB-INV-004 — `invoice_void_events`
 
@@ -2142,7 +2158,7 @@ backdoor.
 
 No genuine Owner business-policy decision remains open in this Database Model. The
 previous first-partial-month Due Date question is resolved upstream: Initial Rent is due
-seven calendar days after actual Move-in Date. The following implementation/configuration
+five calendar days after the later of its issue date and the actual Move-in Date. The following implementation/configuration
 choices must preserve
 the normative model but do not reopen business policy:
 

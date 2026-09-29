@@ -848,6 +848,17 @@ Rent Due Date question in `DL-042` and do not authorize new business policy.
 - **Review correction IR-1/2/3:** Initial `a244b79` full review rejected three read-contract findings. Preserve each actual signed Invoice Customer separately from `primary_tenant_id`; require compatible original issued components; reject line-provable PAID/UNPAID contradictions while retaining valid mixed/zero obligations. The unpublished revision59 successor changes no accepted migration or financial writer. Original candidate, report, failed checks and all correction limits remain preserved; correction regressions, expanded focused review and fresh complete-stage review remain required.
 - **Decision date:** 2026-09-14.
 
+## DL-064 — Rent nonpayment count, Initial Rent Due Date and line-level Adjustments
+
+- **Type:** `OWNER BUSINESS DECISION`
+- **Status:** `APPROVED; CANONICAL AMENDMENT APPLIED; IMPLEMENTATION PENDING`
+- **Decision:** Rent nonpayment days are counted from day one: the 1st of the billed month for recurring Rent, or the later of the issue date and the actual Move-in Date for the Initial Rent Invoice, with one count for a combined day-21-or-later Invoice. The Initial Rent Invoice may be issued before move-in when the Customer asks to pay early; it is due five calendar days after that same later date in `Asia/Phnom_Penh`, set at issuance and immutable afterwards. Example: issued 1 July for a 10 July move-in, day one 10 July, due 15 July. `invoices.due_date` may be null only while the Invoice is DRAFT. An Invoice has one Due Date and its lines have none. A debit Adjustment is blocked on a fully paid line and allowed again after a reversal reopens it. A credit Adjustment is allowed on any issued line, and its excess becomes Customer Credit. The Invoice lock orders Adjustments against the final late-payment decision; a debit Adjustment after the final decision is allowed but not counted in it, and a credit Adjustment never changes it.
+- **Supersedes:** DL-042's seven-day resolution for new Initial Rent Invoices; the 2026-09-15 within-line due-date allocation decision.
+- **Unchanged:** BR-RENT-005, BR-RENT-007, BR-LEASE-030, BR-INV-052–055, BR-LATE-001–003, the Lease Start Date, and BR-INV-049 for Damage and Miscellaneous charges.
+- **Affected:** BR-LEASE-026–029, BR-RENT-009, BR-SVC-011/012, BR-INV-044/049/054, OOD-BR-001; matching PR, DB-INV-001/003, DB-LEASE-008/009, API-052/095, UI-051/108, TEST-043/057/123/127.
+- **Transition:** Recorded Invoices, cases and events are never rewritten; new rules apply to new records.
+- **Decision date:** 2026-09-30.
+
 ---
 
 # 13. Governance

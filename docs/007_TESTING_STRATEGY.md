@@ -311,13 +311,16 @@ rounding behavior, and preserved calculation inputs.
 
 ## TEST-043 — Rent Due Date
 
-Verify the Initial Rent Invoice Due Date is exactly seven calendar days after the
-actual Move-in Date, including cross-month results. Required examples include:
+Verify the Initial Rent Invoice Due Date is exactly five calendar days after the later
+of its issue date and the actual Move-in Date, set at issuance and immutable afterwards,
+including cross-month results:
 
-- 10 July move-in → 17 July;
-- 20 July move-in → 27 July;
-- 21 July move-in → 28 July; and
-- 27 July move-in → 3 August.
+- issued 10 July for a 10 July move-in → 15 July;
+- issued 1 July for a 10 July move-in → 15 July;
+- issued 27 July for a 27 July move-in → 1 August; and
+- issued 29 July for a 25 July move-in → 3 August.
+
+Verify historical Invoices under the seven-day rule are unchanged.
 
 Verify recurring Rent Invoices are due on the fifth day of the billed calendar month.
 The Lease must not override the application's recurring Rent Due Date. No fallback,
@@ -426,6 +429,12 @@ Test debit and Credit Adjustments as append-only linked events with reason,
 authorization, exact amount, source Invoice, recalculated balance/status, and
 preserved original.
 
+Verify debit rejection on a fully paid line, including a mixed Invoice whose Rent line is
+paid and whose Service line is unpaid. Verify debit re-allowed after a Payment reversal.
+Verify credit on any issued line and excess credit becoming Customer Credit. Verify an
+Adjustment concurrent with a final late-payment decision is strictly ordered by the
+Invoice lock.
+
 ## TEST-058 — Exceptional Void
 
 Verify voiding follows authorized preconditions, preserves the issued record, and
@@ -455,6 +464,9 @@ Verify the complete BR/PR-INV-051..055 and API-091 lifecycle:
 
 Verify concurrent/replayed final-decision commands cannot create duplicate decisions
 or Charges.
+
+Verify an Adjustment recorded before the final decision is in its balance, and that a
+debit Adjustment recorded after the final decision is allowed but does not change it.
 
 ## TEST-124 — Late-payment Charge Corrections and Applications
 
@@ -668,6 +680,13 @@ Verify `CURE` preserves prior warning/default history and records zero remaining
 when applicable. Verify no Rent-nonpayment event automatically terminates the Lease,
 closes Occupancy, moves out the Customer, changes Unit status, creates Final Settlement,
 or creates a new fee/penalty.
+
+Verify day one on the 1st of the billed month for recurring Rent and on the later of the
+issue date and actual Move-in Date for Initial Rent, with one count for a
+day-21-or-later combined Invoice; for example, an Initial Rent Invoice issued 1 July for
+a 10 July move-in has day one 10 July. Verify day 30 in February is 2 March in a normal
+year and 1 March in a leap year. Verify immediate alerts for late-opened cases, and that
+cases recorded earlier are unchanged.
 
 ## TEST-076 — Termination Notice
 

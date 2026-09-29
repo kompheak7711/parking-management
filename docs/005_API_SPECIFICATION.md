@@ -583,6 +583,10 @@ direction, exact amount/currency, reason, and authorization. Void is exceptional
 preserves history, and rejects unresolved active applications when rules require
 reversal first.
 
+A debit Adjustment on a fully paid line returns 409 with the current line balance. A
+credit Adjustment reports any amount recorded as Customer Credit. Neither accepts a Due
+Date field; both use the Invoice Due Date.
+
 ## API-053 — Invoice Lines
 
 Lines are created only through approved draft/generation services and include type,
@@ -834,6 +838,10 @@ history.
 No Rent-nonpayment event automatically terminates the Lease, ends Occupancy, moves out
 the Customer, changes Unit status, or creates Final Settlement. Any termination remains
 a separate authorized Lease action.
+
+The case snapshot exposes `nonpayment_day_one`, the current day number and each
+milestone date. A case opened after day 20 or day 30 is flagged for immediate staff
+alert. Posting uses the day count under BR-LEASE-026.
 
 # 22. Move-out and Final Settlement Endpoints
 
