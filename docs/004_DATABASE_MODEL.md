@@ -1465,6 +1465,53 @@ remain `PENDING_RECONCILIATION`; `utility_completion_assessed` and
 `financial_completion_assessed` are false and no charge is created. This foundation
 does not complete Final Settlement, HTTP/staff integration or version acceptance.
 
+### Final Utility input evidence (V1-055)
+
+Forward migration63 adds immutable `move_out_final_input_events`,
+`move_out_final_input_items` and `move_out_final_input_commands`. One event binds to
+one current physical departure event of the Lease. For every Utility Meter of the
+Lease's Unit that applies at the actual Move-out Date, the event records exactly one
+item. A Meter applies when it was installed on or before that date and was not
+deactivated before it. An item is one of:
+
+- `READING`: an existing validated Utility Reading of that Meter dated on the actual
+  Move-out Date. Its identity, date, value, version and validation time are copied
+  as an immutable snapshot. The command never creates, changes or validates a Reading.
+- `ESTIMATE`: an existing approved broken-Meter estimate whose case names the Unit,
+  Utility type and Meter and whose estimated consumption period contains the actual
+  Move-out Date.
+- `UNRESOLVED` with an explicit reason: `MISSING_READING` (no Reading exists on that
+  date), `READING_NOT_VALIDATED` (only an unvalidated Reading exists) or
+  `BROKEN_METER_ESTIMATE_PENDING` (the Meter has a recorded failure date and no
+  approved estimate covers that date). Each reason is checked against current Utility
+  evidence and cannot be asserted against it.
+
+Recording a complete correction appends a successor that names the current event of
+the same Lease. A Lease has one root event. Earlier events, items, responses and
+audit records are permanent, and later Reading corrections never rewrite a stored
+snapshot; the read projection lists the Meters whose Reading has changed since it was
+recorded. The physical departure event must still be current: after a physical
+correction, evidence is recorded against the new event.
+
+The command requires Property-scoped `leases.move_out`; observations require
+`leases.read`. Database functions freshly check the active HUMAN identity and exact
+Property. Only the financial role executes the command function and only the runtime
+role executes the observation function; neither role has direct table privileges.
+Writes use read committed with bounded timeouts, UTC, non-waiting advisory keys for the
+Lease and its Unit's Utility types, and share locks on every referenced Meter and
+Reading. Exact Property/actor/key replay compares the complete intent and returns the
+original response. Deferred completeness constraints validate the event, item, command
+and audit assembly, the applicable Meter set and every referenced source before return.
+Update, delete and truncate are rejected.
+
+The command creates no Reading, consumption period, Invoice, charge or Deposit
+application. While any item is `UNRESOLVED` the status is `PENDING_RECONCILIATION`;
+otherwise it is `INPUTS_RECORDED`. `utility_completion_assessed` and
+`financial_completion_assessed` remain false, and the original physical event snapshot
+is unchanged. The requirement that a boundary Reading be dated on the actual Move-out
+Date and the inclusive Meter applicability window are implementation choices; the
+canonical Utility and Move-out rules do not fix them and they await owner confirmation.
+
 ## DB-SETTLE-001 — `final_settlements`
 
 | Column | Type | Null | Rule |

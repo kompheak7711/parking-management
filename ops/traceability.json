@@ -36577,6 +36577,119 @@
       "test_path": "frontend/src/InvoiceManagement.test.tsx",
       "status": "implemented",
       "notes": "Proved dated amounts and the attribution summary display for an eligible late-payment review and the separate final-decision review remains available; synthetic fixtures only."
+    },
+    {
+      "test_id": "test_final_reading_is_referenced_and_missing_reading_stays_explicit",
+      "upstream_ids": [
+        "BR-MOVEOUT-005",
+        "BR-MOVEOUT-011",
+        "BR-MOVEOUT-012",
+        "PR-MOVEOUT-005",
+        "API-069",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_move_out_final_inputs_migration.py",
+      "status": "implemented",
+      "notes": "A validated Reading is referenced with an immutable snapshot, a missing Reading stays an explicit unresolved item, no Reading or charge is created and only the new evidence and audit rows change; one PostgreSQL invocation passed."
+    },
+    {
+      "test_id": "test_successor_completes_inputs_and_preserves_the_original_evidence",
+      "upstream_ids": [
+        "BR-MOVEOUT-005",
+        "BR-MOVEOUT-011",
+        "API-069",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_move_out_final_inputs_migration.py",
+      "status": "implemented",
+      "notes": "A successor completes unresolved inputs while the original event, items and response remain permanent; a superseded or second root event is rejected."
+    },
+    {
+      "test_id": "test_replay_returns_the_saved_response_and_key_reuse_is_rejected",
+      "upstream_ids": [
+        "BR-MOVEOUT-011",
+        "API-069",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_move_out_final_inputs_migration.py",
+      "status": "implemented",
+      "notes": "Exact Property/actor/key replay returns the saved response without writes and a changed intent under the same key is rejected."
+    },
+    {
+      "test_id": "test_unsupported_final_inputs_are_rejected_without_partial_writes",
+      "upstream_ids": [
+        "BR-MOVEOUT-005",
+        "BR-UTIL-010",
+        "BR-UTIL-018",
+        "BR-UTIL-023",
+        "BR-UTIL-024",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_move_out_final_inputs_migration.py",
+      "status": "implemented",
+      "notes": "Unvalidated, misdated or foreign Readings, incomplete Meter coverage, contradicted unresolved reasons and unknown estimate, departure or correction sources are rejected without partial writes."
+    },
+    {
+      "test_id": "test_recording_requires_the_current_physical_departure",
+      "upstream_ids": [
+        "BR-MOVEOUT-011",
+        "BR-MOVEOUT-012",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_move_out_final_inputs_migration.py",
+      "status": "implemented",
+      "notes": "Evidence bound to a superseded physical departure conflicts; the corrected current departure is accepted."
+    },
+    {
+      "test_id": "test_capabilities_and_property_scope_are_required",
+      "upstream_ids": [
+        "BR-MOVEOUT-011",
+        "API-069",
+        "TEST-078"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_move_out_final_inputs_migration.py",
+      "status": "implemented",
+      "notes": "Recording requires Property-scoped move-out authority and observation requires Lease read authority; other Property scopes are not found."
+    },
+    {
+      "test_id": "test_final_input_storage_is_append_only_and_role_bounded",
+      "upstream_ids": [
+        "BR-MOVEOUT-011",
+        "TEST-078"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_move_out_final_inputs_migration.py",
+      "status": "implemented",
+      "notes": "Final input storage rejects update, delete and truncate; runtime and financial roles have no direct table access and each executes only its own function."
+    },
+    {
+      "test_id": "test_concurrent_first_records_allow_exactly_one",
+      "upstream_ids": [
+        "BR-MOVEOUT-011",
+        "BR-MOVEOUT-012",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_move_out_final_inputs_migration.py",
+      "status": "implemented",
+      "notes": "Concurrent first records for one Lease allow exactly one event and return a bounded conflict for the other."
+    },
+    {
+      "test_id": "test_final_input_migration_is_forward_only",
+      "upstream_ids": [
+        "BR-MOVEOUT-011",
+        "TEST-078"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_move_out_final_inputs_migration.py",
+      "status": "implemented",
+      "notes": "Migration63 follows migration62 and refuses downgrade."
     }
   ]
 }

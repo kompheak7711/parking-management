@@ -149,6 +149,7 @@ database_test_suites='
   tests/test_invoice_due_overdue_migration.py
   tests/test_invoice_due_late_assessment_migration.py
   tests/test_financial_due_sources_migration.py
+  tests/test_move_out_final_inputs_migration.py
   tests/test_late_payment_migration.py
   tests/test_payment_migration.py
   tests/test_payment_read_migration.py
