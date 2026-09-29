@@ -764,6 +764,124 @@ function creditSample(
         : true),
   );
 }
+// Synthetic UI-only current source/preview responses; historical fixtures remain unchanged.
+const dueAdjustmentId = "00000000-0000-4000-8000-000000090001";
+interface DueHarnessOptions {
+  wait?: Promise<void>;
+  status?: number;
+  malformed?: boolean;
+}
+function syntheticDuePage(sample: FinancialActionFixture, url: string) {
+  const query = new URL(url, "https://synthetic.invalid").searchParams;
+  return {
+    property_id: sample.propertyId,
+    purpose: query.get("purpose"),
+    source_id: query.get("source_id"),
+    invoice_id: query.get("invoice_id"),
+    invoice_line_id: query.get("invoice_line_id"),
+    invoice_version: 7,
+    revision: "a".repeat(64),
+    as_of: "2026-09-17T00:00:00Z",
+    aggregate_outstanding_usd_cents: 200,
+    item_count: 2,
+    items: [
+      {
+        source_kind: "DEBIT_ADJUSTMENT",
+        source_id: dueAdjustmentId,
+        approved_due_date: "2026-10-01",
+        source_occurred_at: "2026-09-01T00:00:00.123456Z",
+        remaining_usd_cents: 100,
+      },
+      {
+        source_kind: "ORIGINAL_LINE",
+        source_id: query.get("invoice_line_id"),
+        approved_due_date: "2026-11-01",
+        source_occurred_at: "2026-08-01T00:00:00Z",
+        remaining_usd_cents: 100,
+      },
+    ],
+  };
+}
+function syntheticDuePreview(
+  sample: FinancialActionFixture,
+  body: BodyInit | null | undefined,
+) {
+  if (typeof body !== "string")
+    throw new Error("Missing synthetic preview request");
+  const request = financialObject(parseFinancialJson(body)),
+    intent = financialObject(request.intent),
+    credit = sample.request.purpose === "credit_application";
+  const targets = credit
+    ? [intent]
+    : Array.isArray(intent.targets)
+      ? intent.targets.map(financialObject)
+      : [];
+  let partCount = 0,
+    total = 0n;
+  const confirmed = targets.map((target) => {
+    if (!Array.isArray(target.details))
+      throw new Error("Missing synthetic preview details");
+    total += BigInt(financialInteger(target.amount_usd_cents));
+    const details = target.details.map((value) => {
+      const detail = financialObject(value),
+        explicit = Array.isArray(detail.source_parts);
+      const chosen =
+        explicit && Array.isArray(detail.source_parts)
+          ? detail.source_parts.map(financialObject)
+          : [
+              {
+                source_kind: "ORIGINAL_LINE",
+                source_id: financialId(detail.invoice_line_id),
+                amount_usd_cents: financialInteger(detail.amount_usd_cents),
+              },
+            ];
+      const parts = chosen
+        .map((part) => ({
+          source_kind: creditFixtureText(part.source_kind),
+          source_id: financialId(part.source_id),
+          approved_due_date:
+            part.source_kind === "DEBIT_ADJUSTMENT"
+              ? "2026-10-01"
+              : "2026-11-01",
+          source_occurred_at:
+            part.source_kind === "DEBIT_ADJUSTMENT"
+              ? "2026-09-01T00:00:00.123456Z"
+              : "2026-08-01T00:00:00Z",
+          outstanding_usd_cents: 10000,
+          amount_usd_cents: financialInteger(part.amount_usd_cents),
+        }))
+        .sort((left, right) =>
+          left.approved_due_date.localeCompare(right.approved_due_date),
+        );
+      partCount += parts.length;
+      return {
+        invoice_line_id: financialId(detail.invoice_line_id),
+        amount_usd_cents: financialInteger(detail.amount_usd_cents),
+        due_attribution: {
+          basis: explicit ? "CUSTOMER_DESIGNATED" : "EARLIEST_DUE",
+          parts,
+        },
+      };
+    });
+    return { ...target, invoice_version: 7, details };
+  });
+  const current = credit
+    ? financialObject(
+        financialObject(financialObject(sample.data.context).credit).position,
+      )
+    : financialObject(financialObject(sample.data.payment_resource).position);
+  return {
+    property_id: sample.propertyId,
+    [credit ? "credit_id" : "payment_id"]: sample.request.source_id,
+    available_usd_cents: financialInteger(current.available_usd_cents),
+    amount_usd_cents: total,
+    part_count: partCount,
+    intent: credit
+      ? financialObject(confirmed[0])
+      : { ...intent, targets: confirmed },
+  };
+}
+
 function creditHarness(
   sample: FinancialActionFixture,
   grant: keyof FinancialCapabilities,
@@ -777,6 +895,8 @@ function creditHarness(
   let pause: Promise<void> | null = null;
   let override: ((url: string) => FinancialObject | FinancialObject[]) | null =
     null;
+  let previewOptions: DueHarnessOptions = {};
+  let lastPreviewIntent: string | null = null;
   const fetcher: typeof fetch = async (url, init) => {
     if (typeof url !== "string")
       throw new Error("Expected synthetic Credit URL");
@@ -786,10 +906,27 @@ function creditHarness(
     const context = url.includes("-context");
     let data = context
       ? sample.data
-      : override
-        ? override(url)
-        : financialObject(financialObject(sample.data.context).credit);
+      : url.includes("/allocation-preview") ||
+          url.includes("/application-preview") ||
+          url.includes("/financial-due-sources")
+        ? {}
+        : override
+          ? override(url)
+          : financialObject(financialObject(sample.data.context).credit);
     let page;
+    const preview =
+      url.includes("/allocation-preview") ||
+      url.includes("/application-preview");
+    if (preview) {
+      if (previewOptions.wait) await previewOptions.wait;
+      const result = syntheticDuePreview(sample, init?.body);
+      lastPreviewIntent = stringifyFinancialJson(result.intent);
+      data = previewOptions.malformed ? { ...result, part_count: -1 } : result;
+    }
+    if (url.includes("/financial-due-sources")) {
+      data = syntheticDuePage(sample, url);
+      page = { limit: 50, next_cursor: null };
+    }
     if (context) {
       const u = new URL(url, "https://synthetic.invalid"),
         cursor = u.searchParams.get("cursor");
@@ -817,6 +954,7 @@ function creditHarness(
         },
       }),
       {
+        status: preview ? (previewOptions.status ?? 200) : 200,
         headers: {
           "Content-Type": "application/json",
           "X-Request-ID": requestId ?? "",
@@ -825,10 +963,17 @@ function creditHarness(
     );
   };
   base.props.services.references = createFinancialReferenceClient(fetcher);
-  base.props.services.transport = createFinancialTransport(fetcher);
+  base.props.services.transport = createFinancialTransport(
+    fetcher,
+    () => "synthetic-preview-csrf",
+  );
   return {
     ...base,
     calls,
+    preview: (options: DueHarnessOptions) => {
+      previewOptions = options;
+    },
+    lastPreviewIntent: () => lastPreviewIntent,
     pause: (value: Promise<void>) => {
       pause = value;
     },
@@ -1075,18 +1220,18 @@ describe("Credit staff forms using actual scoped clients", () => {
     await waitFor(() => {
       expect(h.review).toHaveBeenCalledOnce();
     });
-    expect(h.calls).toHaveLength(2);
+    expect(h.calls).toHaveLength(3);
     const request = reviewedCredit(h);
     expect(financialObject(financialObject(request.body).intent)).toMatchObject(
       {
         mode: "DESIGNATED",
-        amount_usd_cents: 123n,
+        amount_usd_cents: 123,
         details: [
           {
             invoice_line_id: financialObject(
               (sample.data.items as FinancialObject[])[0],
             ).id,
-            amount_usd_cents: 123n,
+            amount_usd_cents: 123,
           },
         ],
       },
@@ -1330,14 +1475,14 @@ describe("complete Credit batches and original application reads", () => {
     await waitFor(() => {
       expect(h.review).toHaveBeenCalledOnce();
     });
-    expect(h.calls).toHaveLength(6);
+    expect(h.calls).toHaveLength(7);
     expect(
       financialObject(financialObject(reviewedCredit(h).body).intent),
     ).toMatchObject({
-      amount_usd_cents: 2n,
+      amount_usd_cents: 2,
       details: [
-        { invoice_line_id: firstId, amount_usd_cents: 1n },
-        { invoice_line_id: nextId, amount_usd_cents: 1n },
+        { invoice_line_id: firstId, amount_usd_cents: 1 },
+        { invoice_line_id: nextId, amount_usd_cents: 1 },
       ],
     });
   });
@@ -1923,11 +2068,11 @@ describe("Allocation and original Receipt staff forms", () => {
         mode: "DESIGNATED",
         designation_reference: "Synthetic explicit Invoice instruction",
         targets: [
-          { invoice_id: sample.request.target_id, amount_usd_cents: 123n },
+          { invoice_id: sample.request.target_id, amount_usd_cents: 123 },
         ],
       },
     );
-    expect(h.calls).toHaveLength(2);
+    expect(h.calls).toHaveLength(3);
     expect(captureFinancialRequest(request).wireBody).toContain(
       '"amount_usd_cents":123',
     );
@@ -3638,6 +3783,374 @@ describe("immutable command results and separately current positions", () => {
       view.rerender(<Component resource={data} showPosition={false} />);
       expect(screen.queryByRole("region", { name: title })).toBeNull();
       expect(stringifyFinancialJson(data)).toBe(before);
+    },
+  );
+});
+
+const dueWorkspaceKinds = ["PAYMENT", "CREDIT"] as const;
+type DueWorkspaceKind = (typeof dueWorkspaceKinds)[number];
+async function openDueWorkspace(kind: DueWorkspaceKind) {
+  const credit = kind === "CREDIT",
+    sample = credit
+      ? creditSample("credit_application", "INVOICE")
+      : allocationSample("INVOICE"),
+    h = creditHarness(sample, credit ? "credits.apply" : "payments.allocate");
+  const element = () =>
+    credit ? (
+      <FinancialCreditWorkspace {...h.props} />
+    ) : (
+      <FinancialAllocationReceiptWorkspace {...h.props} />
+    );
+  const view = render(element());
+  if (credit) {
+    creditInput(sample, "apply");
+    fill("Credit attribution", "DESIGNATED");
+    fill("Customer designation reference", "Synthetic source instruction");
+  } else {
+    allocationInput(sample);
+    fill("Allocation attribution", "DESIGNATED");
+    fill("Allocation target reference", financialId(sample.request.target_id));
+    fill("Allocation designation reference", "Synthetic source instruction");
+  }
+  const loadName = credit
+      ? "Load current Credit context"
+      : "Load complete original and current context",
+    reviewName = credit
+      ? "Review Credit action"
+      : "Review selected financial action";
+  fireEvent.click(screen.getByRole("button", { name: loadName }));
+  const total = await screen.findByLabelText(
+    credit ? /Designated USD for line/ : /Allocation USD for line/,
+  );
+  if (!Array.isArray(sample.data.items))
+    throw new Error("Missing synthetic line");
+  const lineId = financialId(financialObject(sample.data.items[0]).id);
+  return {
+    ...h,
+    sample,
+    total,
+    lineId,
+    loadName,
+    reviewName,
+    rerender: () => {
+      view.rerender(element());
+    },
+    targetLabel: credit ? "Target reference" : "Allocation target reference",
+  };
+}
+async function editDueLine(line: string) {
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: `Choose dated sources for line ${line}`,
+    }),
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: "Load approved dated amounts" }),
+  );
+  await screen.findByRole("table", { name: /Available dated sources/ });
+}
+function chooseDueAmount(
+  kind: "DEBIT_ADJUSTMENT" | "ORIGINAL_LINE",
+  source: string,
+  amount: string,
+) {
+  fill(`Selected USD for dated source ${kind}:${source}`, amount);
+}
+function applyDueAmounts() {
+  fireEvent.click(
+    screen.getByRole("button", { name: "Use selected dated amounts" }),
+  );
+}
+function dueReviewedIntent(
+  h: ReturnType<typeof creditHarness>,
+  kind: DueWorkspaceKind,
+) {
+  const intent = financialObject(
+    financialObject(reviewedCredit(h).body).intent,
+  );
+  if (kind === "CREDIT") return intent;
+  if (!Array.isArray(intent.targets))
+    throw new Error("Missing synthetic target");
+  return financialObject(intent.targets[0]);
+}
+describe("dated designation parent workflows", () => {
+  it.each(dueWorkspaceKinds)(
+    "TEST-FE-1055-DUE-WORKSPACE-1 preserves explicit %s parts through server preview and separate confirmation",
+    async (kind) => {
+      const h = await openDueWorkspace(kind);
+      await editDueLine(h.lineId);
+      chooseDueAmount("DEBIT_ADJUSTMENT", dueAdjustmentId, "0.40");
+      chooseDueAmount("ORIGINAL_LINE", h.lineId, "0.60");
+      applyDueAmounts();
+      expect(h.total).toHaveValue("1.00");
+      expect(h.total).toHaveAttribute("readonly");
+      fireEvent.change(h.total, { target: { value: "9.99" } });
+      expect(h.total).toHaveValue("1.00");
+      fireEvent.click(screen.getByRole("button", { name: h.reviewName }));
+      await waitFor(() => {
+        expect(h.review).toHaveBeenCalledOnce();
+      });
+      const selected = dueReviewedIntent(h, kind);
+      expect(selected).toMatchObject({
+        invoice_version: 7,
+        amount_usd_cents: 100,
+        details: [
+          {
+            invoice_line_id: h.lineId,
+            amount_usd_cents: 100,
+            due_attribution: {
+              basis: "CUSTOMER_DESIGNATED",
+              parts: [
+                {
+                  source_kind: "DEBIT_ADJUSTMENT",
+                  source_id: dueAdjustmentId,
+                  approved_due_date: "2026-10-01",
+                  source_occurred_at: "2026-09-01T00:00:00.123456Z",
+                  amount_usd_cents: 40,
+                },
+                {
+                  source_kind: "ORIGINAL_LINE",
+                  source_id: h.lineId,
+                  amount_usd_cents: 60,
+                },
+              ],
+            },
+          },
+        ],
+      });
+      expect(
+        stringifyFinancialJson(
+          financialObject(financialObject(reviewedCredit(h).body).intent),
+        ),
+      ).toBe(h.lastPreviewIntent());
+      expect(h.calls.filter((call) => call.method === "POST")).toHaveLength(1);
+      expect(h.calls.find((call) => call.method === "POST")?.url).toContain(
+        "-preview",
+      );
+      expect(h.recovery.submit).not.toHaveBeenCalled();
+    },
+  );
+  it.each(dueWorkspaceKinds)(
+    "TEST-FE-1055-DUE-WORKSPACE-2 blocks %s parent reads and review until the only editor closes",
+    async (kind) => {
+      const h = await openDueWorkspace(kind),
+        before = h.calls.length;
+      fireEvent.click(
+        screen.getByRole("button", {
+          name: `Choose dated sources for line ${h.lineId}`,
+        }),
+      );
+      expect(screen.getByRole("button", { name: h.reviewName })).toBeDisabled();
+      expect(screen.getByRole("button", { name: h.loadName })).toBeDisabled();
+      expect(
+        screen.getByRole("button", {
+          name: `Choose dated sources for line ${h.lineId}`,
+        }),
+      ).toBeDisabled();
+      fireEvent.click(screen.getByRole("button", { name: h.reviewName }));
+      fireEvent.click(screen.getByRole("button", { name: h.loadName }));
+      expect(h.calls).toHaveLength(before);
+      expect(h.review).not.toHaveBeenCalled();
+      fireEvent.click(
+        screen.getByRole("button", { name: "Discard source edits" }),
+      );
+      expect(screen.getByRole("button", { name: h.reviewName })).toBeEnabled();
+      expect(screen.getByRole("button", { name: h.loadName })).toBeEnabled();
+    },
+  );
+  it.each(dueWorkspaceKinds)(
+    "TEST-FE-1055-DUE-WORKSPACE-3 preserves %s applied choices when later source edits are discarded",
+    async (kind) => {
+      const h = await openDueWorkspace(kind);
+      await editDueLine(h.lineId);
+      chooseDueAmount("DEBIT_ADJUSTMENT", dueAdjustmentId, "0.01");
+      applyDueAmounts();
+      await editDueLine(h.lineId);
+      expect(
+        screen.getByLabelText(
+          `Selected USD for dated source DEBIT_ADJUSTMENT:${dueAdjustmentId}`,
+        ),
+      ).toHaveValue("0.01");
+      chooseDueAmount("DEBIT_ADJUSTMENT", dueAdjustmentId, "0.99");
+      fireEvent.click(
+        screen.getByRole("button", { name: "Discard source edits" }),
+      );
+      expect(h.total).toHaveValue("0.01");
+      expect(h.total).toHaveAttribute("readonly");
+      fireEvent.click(screen.getByRole("button", { name: h.reviewName }));
+      await waitFor(() => {
+        expect(h.review).toHaveBeenCalledOnce();
+      });
+      expect(dueReviewedIntent(h, kind)).toMatchObject({
+        amount_usd_cents: 1,
+        details: [
+          {
+            due_attribution: {
+              basis: "CUSTOMER_DESIGNATED",
+              parts: [{ amount_usd_cents: 1 }],
+            },
+          },
+        ],
+      });
+    },
+  );
+  it.each(dueWorkspaceKinds)(
+    "TEST-FE-1055-DUE-WORKSPACE-4 uses %s earliest due only after explicit return while retaining total",
+    async (kind) => {
+      const h = await openDueWorkspace(kind);
+      await editDueLine(h.lineId);
+      chooseDueAmount("DEBIT_ADJUSTMENT", dueAdjustmentId, "0.23");
+      applyDueAmounts();
+      fireEvent.click(
+        screen.getByRole("button", {
+          name: `Use earliest due order for line ${h.lineId}`,
+        }),
+      );
+      expect(h.total).toHaveValue("0.23");
+      expect(h.total).not.toHaveAttribute("readonly");
+      fireEvent.click(screen.getByRole("button", { name: h.reviewName }));
+      await waitFor(() => {
+        expect(h.review).toHaveBeenCalledOnce();
+      });
+      expect(dueReviewedIntent(h, kind)).toMatchObject({
+        amount_usd_cents: 23,
+        details: [{ due_attribution: { basis: "EARLIEST_DUE" } }],
+      });
+    },
+  );
+  it.each(dueWorkspaceKinds)(
+    "TEST-FE-1055-DUE-WORKSPACE-5 honors %s discard refusal and clears choices only after target-change confirmation",
+    async (kind) => {
+      const h = await openDueWorkspace(kind);
+      await editDueLine(h.lineId);
+      chooseDueAmount("DEBIT_ADJUSTMENT", dueAdjustmentId, "0.01");
+      applyDueAmounts();
+      const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+      try {
+        fill(h.targetLabel, ids.other);
+        expect(confirm).toHaveBeenCalledOnce();
+        expect(screen.getByLabelText(h.targetLabel)).toHaveValue(
+          h.sample.request.target_id,
+        );
+        expect(h.total).toHaveValue("0.01");
+        expect(h.total).toHaveAttribute("readonly");
+        confirm.mockReturnValue(true);
+        fill(h.targetLabel, ids.other);
+        expect(screen.getByLabelText(h.targetLabel)).toHaveValue(ids.other);
+        expect(
+          screen.queryByRole("button", {
+            name: `Use earliest due order for line ${h.lineId}`,
+          }),
+        ).not.toBeInTheDocument();
+        expect(h.review).not.toHaveBeenCalled();
+      } finally {
+        confirm.mockRestore();
+      }
+    },
+  );
+  it.each(dueWorkspaceKinds)(
+    "TEST-FE-1055-DUE-WORKSPACE-6 retains %s applied draft across revision and requires a fresh preview",
+    async (kind) => {
+      const h = await openDueWorkspace(kind);
+      await editDueLine(h.lineId);
+      chooseDueAmount("DEBIT_ADJUSTMENT", dueAdjustmentId, "0.01");
+      applyDueAmounts();
+      h.props.commands.revision++;
+      h.rerender();
+      expect(
+        screen.queryByRole("button", {
+          name: `Choose dated sources for line ${h.lineId}`,
+        }),
+      ).not.toBeInTheDocument();
+      fireEvent.click(screen.getByRole("button", { name: h.loadName }));
+      const total = await screen.findByLabelText(
+        kind === "CREDIT"
+          ? /Designated USD for line/
+          : /Allocation USD for line/,
+      );
+      expect(total).toHaveValue("0.01");
+      expect(total).toHaveAttribute("readonly");
+      fireEvent.click(screen.getByRole("button", { name: h.reviewName }));
+      await waitFor(() => {
+        expect(h.review).toHaveBeenCalledOnce();
+      });
+      expect(
+        h.calls.filter((call) => call.url.includes("-preview")),
+      ).toHaveLength(1);
+    },
+  );
+  it.each(
+    dueWorkspaceKinds.flatMap((kind) =>
+      ["503", "invalid"].map((failure) => ({ kind, failure })),
+    ),
+  )(
+    "TEST-FE-1055-DUE-WORKSPACE-7 stops $kind on $failure preview without posting or retry",
+    async ({ kind, failure }) => {
+      const h = await openDueWorkspace(kind);
+      fireEvent.change(h.total, { target: { value: "0.01" } });
+      h.preview(failure === "503" ? { status: 503 } : { malformed: true });
+      fireEvent.click(screen.getByRole("button", { name: h.reviewName }));
+      await screen.findByRole("alert");
+      expect(
+        h.calls.filter((call) => call.url.includes("-preview")),
+      ).toHaveLength(1);
+      expect(h.review).not.toHaveBeenCalled();
+      expect(h.recovery.submit).not.toHaveBeenCalled();
+    },
+  );
+  it.each(dueWorkspaceKinds)(
+    "TEST-FE-1055-DUE-WORKSPACE-8 discards a late %s preview after a user edit",
+    async (kind) => {
+      const h = await openDueWorkspace(kind);
+      fireEvent.change(h.total, { target: { value: "0.01" } });
+      let release: (() => void) | undefined;
+      h.preview({
+        wait: new Promise<void>((resolve) => {
+          release = resolve;
+        }),
+      });
+      fireEvent.click(screen.getByRole("button", { name: h.reviewName }));
+      await waitFor(() => {
+        expect(h.calls.some((call) => call.url.includes("-preview"))).toBe(
+          true,
+        );
+      });
+      fill(
+        kind === "CREDIT"
+          ? "Customer designation reference"
+          : "Allocation designation reference",
+        "Later synthetic instruction",
+      );
+      await act(async () => {
+        release?.();
+        await Promise.resolve();
+      });
+      expect(h.review).not.toHaveBeenCalled();
+      expect(h.recovery.submit).not.toHaveBeenCalled();
+      expect(
+        h.calls.find((call) => call.url.includes("-preview"))?.signal?.aborted,
+      ).toBe(true);
+    },
+  );
+  it.each(dueWorkspaceKinds)(
+    "TEST-FE-1055-DUE-WORKSPACE-9 preserves %s applied selection when a new invalid choice is rejected",
+    async (kind) => {
+      const h = await openDueWorkspace(kind);
+      await editDueLine(h.lineId);
+      chooseDueAmount("DEBIT_ADJUSTMENT", dueAdjustmentId, "0.01");
+      applyDueAmounts();
+      await editDueLine(h.lineId);
+      chooseDueAmount("DEBIT_ADJUSTMENT", dueAdjustmentId, "1.01");
+      applyDueAmounts();
+      await screen.findByRole("alert");
+      expect(screen.getByRole("button", { name: h.reviewName })).toBeDisabled();
+      expect(h.total).toHaveValue("0.01");
+      expect(h.review).not.toHaveBeenCalled();
+      fireEvent.click(
+        screen.getByRole("button", { name: "Discard source edits" }),
+      );
+      expect(h.total).toHaveValue("0.01");
+      expect(h.total).toHaveAttribute("readonly");
     },
   );
 });

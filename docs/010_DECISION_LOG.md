@@ -1065,3 +1065,179 @@ Completed database evidence and every consumed allowance remain preserved.
 Fresh affected records verification, exact-SHA REC-1 correction review and a
 fresh complete-stage review with zero unresolved findings remain mandatory.
 This does not accept the stage/version or authorize publication or V1-056.
+
+
+### V1-055 physical acceptance and financial implementation boundary — 2026-09-16
+
+The complete corrected physical stage atcdf1492 is independently approved with zero findings. The fixture isolation remedy is accepted based on preserved source, controlled writer observations and completed gates; the historical lock holder remains unknown. All rejected candidates, original failures and consumed allowances remain preserved.
+
+The next bounded financial stage implements the already-approved governing debit due-date evidence and same-line earliest-due policy. It preserves existing Invoice ordering, Rent-before-Service, designations and explicit staff confirmation. Its first pure calculation substep does not change a financial ledger or approve missing historical dates. Persistence, historical/reversal semantics, overdue consumers, transport/UI, mandatory gates and independent acceptance remain required; no financial completion or whole-version acceptance is claimed.
+
+
+### V1-055 dated financial history design — 2026-09-16
+
+The financial stage uses separate original/debit amount identities and append-only typed source parts for new Payment, Customer Credit and credit-Adjustment effects. Reversals remove their exact recorded parts; they never rerun allocation or reassign another financial event. The original Invoice and all prior events remain unchanged.
+
+The frozen design at `/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-invoice-due-attribution-storage-design.md` covers new debit governing evidence, compatible exact replay, staff-confirmed dated proposals, explicit correction sources and connected late-payment/Rent-case semantics. Its pure history projection is a preparatory contract, not posting integration or acceptance. All inherited limits remain consumed. Fresh connected gates, independent full-stage review and final integrated V1-055 acceptance remain required.
+
+
+### V1-055 forward dated-attribution storage core — 2026-09-16
+
+Forward migration62 adds separate immutable debit due evidence and typed source parts, source/reversal integrity and an as-of history projection without changing issued financial records. Its synthetic PostgreSQL core checks pass11cases:10fresh and1unchanged Payment case reused after executed-branch/helper/assertion AST and product-hash verification. Actual database/migration/table observations and all owned cleanup passed. Static checks pass.
+
+The first gate stopped at the new test helper's unqualified constraint name. Correction1of2 qualified that exact app constraint without relaxing it. The next gate passed Payment but correctly rejected a new Credit setup that sought excess recognition after an unpaid Invoice existed. A distinct new-test correction1of2 recognizes true excess before creating the future Invoice, following established Credit-source ordering. Application eligibility, locks, timeouts, assertions and the accepted Refund recovery fixture are unchanged. All failed runs, passing evidence and old consumed recovery limits remain preserved.
+
+This is local storage verification, not financial-stage acceptance. New-command source/date enforcement, exact legacy replay, actual dated proposals/posting, overdue consumers, transport/UI, expanded mandatory gates and fresh independent complete-stage review remain required. WholeV1-055 is incomplete and unpublished.
+
+
+### V1-055 dated Invoice command checkpoint — 2026-09-16
+
+The admitted forward62command extends the existing Invoice Adjustment body at asserted integration points, preserving actor/scope/version/aggregate/chronology/audit/replay guards. It records new debit due evidence and selected credit-correction parts atomically. The old signature delegates to the typed command, resolving saved replay before new-post validation. Original-only automatic credit correction is permitted only with a proven no-debit history; mixed sources remain explicit. This implements the frozen design without a new business-policy decision.
+
+Transport73cases and Invoice SQL16cases pass locally. The original and two corrected test checkpoints remain preserved: issued version baseline correction2of2 and distinct synthetic source-reference correction1of2. Storage-test layout2of2 and transport tuple/None static corrections1of2 are retained. No product guard, lock, timeout, accepted Refund fixture, old recovery allowance or source history was changed by these test corrections. No independent financial-stage or version acceptance is claimed.
+
+
+### V1-055 genuine populated-history verification — 2026-09-16
+
+Legacy storage cases now populate the actual61schema, commit their synthetic history and upgrade forward to62 using the existing uniquely owned disposable-database helper. They never disable constraints or backfill dated evidence. An explicit61debit reversal removes that debit balance while later unpartitioned Payment, Credit and credit-correction effects retain ambiguity. Prior original-only facts remain provable as of their posting time. Source rows and saved exact command responses survive unchanged. Current storage cases use atomic Invoice commands and preserve direct-writer conservation, reversal and immutability checks.
+
+13fresh cases pass with all target and cleanup observations;16unchanged command cases are reused by AST and product hashes. A nullable-port static typing finding was resolved1of2 by requiring the port before comparison. No application code, accepted Refund fixture, historical recovery allowance or prior correction limit changed. This is a local verification checkpoint; independent financial and whole-version acceptance remain pending.
+
+
+### V1-055 dated Payment/Credit confirmation design — 2026-09-16
+
+Use an internal invoker SQL helper to return exact dated-source parts from proved history, with source balances and immutable timestamps. Default selection is earliest due only within the selected line; explicit customer parts retain their exact order/amounts. A default preview can stop at a part budget and requires a separately confirmed continuation; explicit designations must fit completely. Unknown legacy evidence blocks new dated use without changing old rows. The helper performs no writes and grants no direct runtime/financial access.26fresh cases locally verify this component; stage acceptance is still pending.
+
+The connected contract extends existing generated proposals and introduces read-only POST previews for designated choices. These must be explicitly classified as reads in the shared client rather than command recovery, retain action authorization and CSRF, and display the authoritative dated split before staff confirmation. New postings verify the prepared evidence under existing locks; old exact replay precedes new requirements. No lock, timeout, retry, old recovery allowance or between-Invoice/category ordering change is permitted.
+
+
+### V1-055 generated dated proposals — 2026-09-16
+
+Extend the installed accepted producer definitions using exactly-once asserted replacements, preserving signatures,grants,existing guards and ordering. Each line carries the verified helper evidence and selected amount. A shared500-part batch cap supplements the existing target/detail/byte caps; an incomplete line stops traversal and requires the established fresh proposal/confirmation continuation. Helper unresolved/stale evidence maps to Payment/Credit conflict codes without swallowing unrelated failures.14fresh cases locally verify this change. No posting or reversal behavior changed at this checkpoint; atomic due-part persistence and connected staff acceptance remain required.
+
+
+### V1-055 atomic dated posting checkpoint — 2026-09-16
+
+Retain the existing5second statement deadline and all row-level attribution guards. The500part regression exposed repeated identical full projections in the new source-part constraint trigger. Evaluate that same complete projection for the guaranteed unique sequence1event while keeping every per-row source,chronology,conservation and sequence check plus independent parent guards. An appended positive part cannot satisfy an already complete immutable parent sum; deferred insertion order cannot remove the sequence1event. Four direct shared-trigger regressions force part checks before parent completeness and prove the relevant valid/invalid orders.35fresh connected cases pass,including both500part deadlines. This correction requires expanded complete financial review before acceptance; the earlier historical lock holder remains unknown.
+
+
+### V1-055 read-only designation preparation — 2026-09-16
+
+Prepare the exact complete Customer designation privately before authorized preview exposure. Do not reuse a default producer that can truncate a batch or reorder the Customer selection. Reuse the verified within-line source helper,require exact whole-line/Invoice sums and shared part budget,then return current Invoice version and dated evidence. Keep the helper invoker-only and ungranted. Authorized outer wrappers must perform existing source/target/Property/Customer/third-party checks before calling it and use read-only active-human checks; existing command FOR SHARE behavior remains untouched.22fresh cases locally verify the helper; remaining transport/staff and full acceptance are open.
+
+
+### V1-055 scoped read-only preview verification — 2026-09-16
+
+Preserve the established true-excess recognition rule. A negative preview Customer-context test must create an unrelated Customer without accidentally issuing that Customer an Invoice in the shared Property. Change only that new test setup, retain P4901/P5101 and exact no-financial-write assertions, and charge the correction to the existing family as2of2 rather than resetting its allowance. Reuse22unchanged passing cases and execute only the two changed plus19unreached cases.43cases now locally verify scoped read-only preview wrappers; no financial stage or version acceptance is implied.
+
+
+### V1-055 Python preview boundary — 2026-09-16
+
+Keep Customer preview selection and confirmed dated evidence as separate typed boundaries. Preview accepts only three-field optional source_parts and rejects computed version/due_attribution. Posting accepts computed dated evidence only with a complete positive Invoice version,typed six-field sources and exact whole totals/counts; historical encoded payloads remain unchanged for replay. New preview services use dedicated runtime/read transactions and preserve command methods and financial recovery behavior.215affected Python regressions verify this boundary; no financial or version acceptance is implied.
+
+
+### V1-055 actual preview service integration — 2026-09-16
+
+Verify the Python-to-database boundary with actual runtime and financial roles before exposing HTTP preview reads. Legacy fixture changes only the migrator URL,so test-only service URLs must explicitly target that same owned temporary database;record actual host/port/database/role and read-only transaction settings without credentials. Preserve historicservice payload replay across61to62and immutable history.18cases and cleanup pass without any application/shared-fixture correction.
+
+
+### V1-055 non-mutating HTTP previews — 2026-09-16
+
+Expose designation previews as explicit POST reads because selected bounded structured inputs belong in the body. Keep browser CSRF/Origin and current resource/action checks despite non-mutating semantics. Never assign a command key or command recovery to these two operations. HTTP coverage584cases passes with26unchanged cases reused. Test-only corrections retain their original2of2annotation and1of2actor-family limits; external generated-label preparation incident changes no application behavior or allowance.
+
+
+### V1-055 client preview contract — 2026-09-16
+
+Centralize client preview selection/confirmation validation before changing transport or staff screens. Reuse exact JSON and existing scalar validators; do not calculate server allocation policy in the client. A body-carrying POST read remains distinct from a command. The144case contract gate passes;strict lint correction1of2uses explicit missing-value throws and a meaningful runtime kind guard. Preserve all historical failures,limits and required independent financial review.
+
+
+### V1-055 explicit preview transport — 2026-09-16
+
+Use explicit operation identity to distinguish the two structured POST reads from financial commands. Presence of a body is insufficient for request types,CSRF transmission or command-recovery eligibility. Preserve existing command validation and immutable recovery payloads. Connect the already verified preview contract through finite capture and response validation.343affected cases and production build pass;only new test static declarations changed in the second/exhausted client static correction. Required financial/integrated reviews remain pending.
+
+
+### V1-055 dated Credit confirmation client — 2026-09-16
+
+Admit versioned Credit DESIGNATED confirmations with strict dated evidence while retaining the exact prior legacy path and all separate Charge behavior. Validate captured facts without allocation recalculation or normalization.143cases and production build pass without correction. Staff currently lacks an authorized bounded dated-source selection view;design that contract against the existing action context boundary before adding controls,then display authoritative preview facts for explicit confirmation. No direct helper grants or fabricated history.
+
+
+### V1-055 paginated dated-source read — 2026-09-16
+
+Use a separate bounded dated-source read through existing financial_action_context_page instead of granting access to private history functions. Bind continuation to current context/whole line projection and page limit;require full reload when facts change. A missing legacy attribution is a conflict,never an empty balance.49cases and required observations/cleanup pass. Source selection remains non-command work;staff must preview exact dated allocation facts and explicitly confirm. Preserve all prior correction budgets;wrapper permission layout remains2of2and locally resolved. External indentation preparation incident is fully preserved.
+
+
+### V1-055 dated-source Python/API read — 2026-09-16
+
+Expose dated-source choices through a finite read-only Python/API boundary that reuses existing action authorization and coherent database reads. Validate exact dated facts without recalculating allocation or changing financial history. Add the new exact URL to private financial cache handling. Reject duplicated actor context at this new route before dispatch;leave shared legacy behavior unchanged. Correct nondeterministic test collection by using fixed hashseed0in both prepared collection and execution,never by weakening exact-order assertions. Preserve136unchanged service passes and verify all affected HTTPbehavior after the correction. All410cases pass;real database integration and full independent review remain open.
+
+
+### V1-055 dated-source real service integration — 2026-09-16
+
+Verify the dated-source read at real service/HTTP boundaries before admitting client choices.12cases and all required observations pass with no correction. The observer delegates real queries and outcomes;no source data or authorization is mocked. Register the suite in the disposable database driver. Preserve unchanged49SQL and410Python/API evidence. Staff must still preview exact dated allocation facts and explicitly confirm;this component does not accept or publish V1-055.
+
+
+### V1-055 dated-source client static hold — 2026-09-16
+
+Prepared,not applied:retain the already validated sourceKind:id pair in a typed string and compare the next cursor to revision:pair. Treat this related client static correction conservatively within the exhausted DUE-PREVIEW-CLIENT-STATIC-1 family2of2;one additional explicit allowance is pending. No family rename/reset,no test weakening,no behavior change or automatic retry. Same follow-up pauses pending the single decision;Telegram remains notification-only.
+
+
+### V1-055 dated-source client contract verified — 2026-09-16
+
+Owner approved one exact additional cursor-typing correction after the related static2of2was exhausted. Store the existing validated kind:UUIDpair as string|null and compare the server continuation to revision:pair. All approved gates including123client and28traceability cases pass. Additional1of1is consumed without resetting the prior family. Resume the same follow-up and proceed to finite reference transport under standing lifecycle authority;no further correction or database allowance follows from this exception.
+
+
+### V1-055 transport test static hold — 2026-09-16T17:02:54.929163+00:00
+
+The owner-approved exact cursor correction passed all conditional checks,consuming additional1of1without resetting prior2of2. Continued initial transport work then stopped on two test-only generic URL stringifications under strict lint. Prepare explicit string guards,do not apply without a new allowance. No application behavior or fixture change is proposed. Samefollowup pauses for one consolidated decision;Telegram remains notification-only.
+
+
+### Owner authority:V1-055 closure and separate routine corrections — 2026-09-16T18:49:21.206433+00:00
+
+I authorize autonomous continuation through full V1-055 closure while I am away, including the currently prepared two-expression test correction and its checks.
+I grant a separate allowance for routine formatting, lint, typing, test-code and external-helper corrections that preserve application behavior, assertions, scope and acceptance requirements. For these corrections only, this supersedes previous “no further correction” and “stop on any failure” instructions. Allow at most two materially different corrections per distinct cause, verify affected behavior, and preserve every failure and correction. Do not repeatedly retry an unchanged approach or rename the same cause to obtain another allowance.
+Preserve all previously consumed allowances. This does not grant additional historical database diagnostics, fixture corrections, changes to financial or authorization policy, or relaxation of locks, timeouts, assertions or acceptance gates.
+Continue already-authorized implementation, required tests, independent reviews, normal publication and closure when their requirements pass. Reuse valid evidence for unchanged code. Resume the existing follow-up when a permitted path is verified.
+For an actual permission/safety restriction, exhausted applicable recovery allowance or unresolved business decision, stop the affected action, preserve a concrete question in the main task and send one redacted Telegram alert. Continue unaffected authorized work; do not repeatedly poll an unchanged hold or treat silence as approval.
+Once V1-055 is fully closed, pause the existing follow-up and report verified results. Do not activate V1-056 under this instruction. All other restrictions and model requirements remain unchanged.
+
+Durable exact authority: /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-v1055-routine-correction-authority-20260917.json. Previous authority snapshots and all consumed limits remain preserved.
+
+
+### V1-055 dated-source reference transport verified — 2026-09-16T18:51:32.564006+00:00
+
+Bind dated-source replies to immutable provenance through the existing private reference client before staff pagination.425cases plus production build pass. Reuse123unchanged validator cases. Separate routine-cause fetch_input_union_stringification consumes1of2;no earlier allowance reset. The owner now directs fullV55closure thenpause,no56. A complete paginated source sequence must compare stable facts while allowing statement as_of to advance between requests.
+
+
+### V1-055 complete dated-source sequence — 2026-09-16T19:02:20.476681+00:00
+
+Complete dated-source snapshots through genuine transport receipts before staff selection.48cases passed. Preserve callback cause2of2:attempt1mistakenly changed cleanup callback;attempt2corrected actual exception callback. Preserve distinct indexed-JSON/conditional-object/UUID-mock typing causes1of2each. No allowance reset or DB run. Sequence is locally verified only;fullfinancial/staff and integrated independent review remains mandatory.
+
+
+### V1-055 bounded dated-source loading — 2026-09-16T19:07:19.697469+00:00
+
+Use the existing context-loader pattern for dated sources,including explicit cancellation assertions before/after each response. Strict typing incorrectly narrows mutable AbortSignal across await;extracting the identical assertion resolves this without removing a check.12newcases pass, including exact1000page bound;all unchanged evidence reused. Fullstaff/financial/integrated independent acceptance remains mandatory.
+
+
+### V1-055 exact dated confirmation display — 2026-09-16T19:15:24.987041+00:00
+
+Render the exact server-returned dated source facts before staff confirmation.230new/affected cases verified(25fresh+205reused). New component-test cleanup omission corrected1of2,with failure preserved and no shared/database fixture change. This local display milestone does not accept the full financial stage;source-picker/preview integration and required independent full reviews remain.
+
+
+### V1-055 explicit dated-source picker — 2026-09-16T19:30:27.243098+00:00
+
+Use one complete bounded source picker and exact-cent selection adapter.50newcases pass;existing source/confirmation code and all shared fixtures remain unchanged. Preserve three separate typing/style corrections1of2 and two consumed external preparation guard corrections;the initially missing checker launch ran no tests. Source-picker application chooses parts only,not posting. Independent fullfinancial/integrated review and parent integration remain mandatory.
+
+
+### V1-055 dated source workspace integration — 2026-09-16T20:14:36.320304+00:00
+
+Connect the verified source picker through the existing lineAmounts draft lifecycle and scope generation. The pure adapter rejects orphan/inconsistent explicit choices and enforces500parts across lines. Preserve exact returned preview intent for staff confirmation;never calculate allocation order in the UI.200cases verified with88unchanged passes reused. Preserve initial lint failure,Payment-preview test-adapter failure and external filtered-status observation failure;all are locally resolved under separate routine allowance,not acceptance or historical cause resolution. No database/shared-fixture change;independent financial/integrated acceptance pending.
+
+
+### V1-055 proved overdue projection — 2026-09-16T20:53:46.359579+00:00
+
+Separate proved overdue projection from late-payment eligibility and final decisions. Preserve original Invoice due date,Invoice-wide rounding and one-decision policy in later consumers. Nineteen fresh feature cases and all mandatory observations/cleanup pass;old functions and protected/shared fixtures are hash-preserved. Feature invocation20 consumed;no historical diagnostic or correction allowance reset. Independent stage/release acceptance remains pending.
+
+
+### V1-055 dated late-payment integration — 2026-09-16T21:17:21.807777+00:00
+
+The new direct-SQL test helper originally retained IMMEDIATE decision constraints after adjustment setup,causing Positive late-payment decision requires its Charge on first insertion. The production service starts a fresh initially-deferred transaction. Routine test-code correction1of2 restores only that named test connection constraint phase and explicitly forces it immediate after command/replay;all existing assertions,application/fixture code and locks/timeouts are unchanged.17cases now pass. A separate unexecuted CREDIT setup repeats exhausted true-excess ordering cause2of2;exact unapplied patch/one-case90+30second proposal is pending in the main task,Telegram accepted1469. Do not rename/reset the cause. Protected Refund exception1463also pending;continue unaffected client work.

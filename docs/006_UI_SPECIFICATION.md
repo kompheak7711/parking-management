@@ -1022,3 +1022,23 @@ This UI Specification is complete for Owner Review when:
 - accessibility, tables, search, filters, sorting, and reports are specified; and
 - the remaining nonblocking brand/design-token and browser/device certification
   questions are explicit and no fallback business policy is implied.
+
+
+### V1-055 exact dated confirmation display — 2026-09-16T19:15:24.987041+00:00
+
+Payment/Credit designated confirmation and current/recorded proposals now display each returned dated source:original Invoice line or debit Adjustment,source reference,approved due date,exact timestamp,outstanding at preview/proposal and selected USD. The returned earliest-due/customer-designated basis is shown;no allocation is recalculated,no dates are inferred and all500permitted parts remain visible. Legacy line evidence without due_attribution retains its existing display. Staff source selection and server-preview integration remain pending.
+
+
+### V1-055 explicit dated-source picker — 2026-09-16T19:30:27.243098+00:00
+
+The reusable dated-source editor now loads complete current facts before enabling explicit source amounts. It shows approved dates,source timestamps and balances,retains edits across50row display pages,and requires explicit use/clear/discard. Stale actor/Property/source/signal facts are hidden and cannot apply. Missing or excessive source selections fail without fallback. Applying returns exact selected parts/total only;parent Payment/Credit integration and server-preview-before-posting remain pending.
+
+
+### V1-055 dated source workspace integration — 2026-09-16T20:14:36.320304+00:00
+
+Payment Allocation and Customer Credit designated Invoice workflows now support one explicit dated-source editor at a time. Applied source amounts determine the read-only line total. Staff may explicitly return a line to earliest-due allocation while retaining its amount. Existing discard confirmation applies to source/target/mode changes. Review reloads current facts and requests a validated server preview;the returned versioned dated intent proceeds unchanged to separate staff confirmation. An open editor blocks review;late/invalid/error previews cannot post. Proposal,Charge,legacy and reversal behavior remain preserved.
+
+
+### V1-055 late-payment review with dated attribution — 2026-09-29
+
+The Late-payment review displays the server's due-date attribution: business date and timezone, outstanding, overdue and not-yet-overdue amounts, and the count of unresolved lines. When the server cannot prove attribution it withholds the overdue balance and default amount. The review then states, in a status message, that the overdue amount is unavailable, lists the server's blocking conditions (for example DUE_ATTRIBUTION_UNRESOLVED), and offers no final-decision action. The client does not compute, infer or estimate eligibility, the overdue balance, the default amount or rounding; those remain server-owned. The one-decision rule, original Invoice due-date eligibility and the separate authorized final decision are unchanged.

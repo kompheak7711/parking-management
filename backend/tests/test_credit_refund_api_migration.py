@@ -565,7 +565,11 @@ def test_credit_refund_http_real_correction_identity_cannot_cross_refunds(
 def test_credit_refund_http_ledger_pages_preserve_all_seven_event_families(
     migrated_database_url: str,  # noqa: F811
 ) -> None:
-    from property_rental.credit import ReverseCreditApplicationCommand, ReverseCreditCommand
+    from property_rental.credit import (
+        ApplyCreditCommand,
+        ReverseCreditApplicationCommand,
+        ReverseCreditCommand,
+    )
     from property_rental.refund import ReverseRefundCorrectionCommand
     from test_credit_application_migration import application_id, designated
     from test_credit_migration import service as credits
@@ -574,7 +578,13 @@ def test_credit_refund_http_ledger_pages_preserve_all_seven_event_families(
 
     human, prop, credit, invoice, line, payment = application_source(migrated_database_url)
     who = actor(human, prop, *CAPABILITIES)
-    applied = credits().apply(prop, credit, designated(invoice, line, 30000), actor=who)
+    command = designated(invoice, line, 30000)
+    preview = credits().application_preview(prop, credit, command.intent, actor=who)
+    confirmed = preview["intent"]
+    assert isinstance(confirmed, dict)
+    applied = credits().apply(
+        prop, credit, ApplyCreditCommand(command.idempotency_key, confirmed), actor=who
+    )
     paid = refunds().create_usd(prop, create(credit, 20000, "CREDIT"), actor=who)
     refund = refund_id(paid)
     partial = refunds().verify_usd_return(prop, refund, returned(5000), actor=who)

@@ -18,6 +18,7 @@ from starlette.types import Message, Receive, Scope, Send
 
 from property_rental.allocation_read import AllocationHistoryPage, AllocationReadService
 from property_rental.browser_security import require_browser_mutation
+from property_rental.due_preview import DesignationPreviewInput, PreviewInputError
 from property_rental.financial_context import bind_financial_property, financial_metadata
 from property_rental.identity import ActorResolver, AuthenticatedActor
 from property_rental.payment_allocation import (
@@ -96,6 +97,9 @@ class AllocationReceiptFlow(Protocol):
     ) -> UUID: ...
     def proposal(
         self, prop: UUID, payment: UUID, *, actor: AuthenticatedActor
+    ) -> dict[str, object]: ...
+    def designation_preview(
+        self, prop: UUID, payment: UUID, intent: dict[str, object], *, actor: AuthenticatedActor
     ) -> dict[str, object]: ...
     def history(
         self,
@@ -236,6 +240,13 @@ class PostgresAllocationReceiptFlow:
         self, prop: UUID, payment: UUID, *, actor: AuthenticatedActor
     ) -> dict[str, object]:
         return AllocationReadService(self._runtime()).proposal(prop, payment, actor=actor)
+
+    def designation_preview(
+        self, prop: UUID, payment: UUID, intent: dict[str, object], *, actor: AuthenticatedActor
+    ) -> dict[str, object]:
+        return AllocationReadService(self._runtime()).designation_preview(
+            prop, payment, intent, actor=actor
+        )
 
     def history(
         self,
@@ -465,6 +476,28 @@ def create_allocation_receipt_router(
 
     def envelope(request: Request, result: object) -> dict[str, object]:
         return {"data": result, "meta": financial_metadata(request)}
+
+    @router.post("/payments/{payment_id}/allocation-preview", dependencies=[Depends(_strict_json)])
+    def designation_preview(
+        payment_id: Identity, body: AllocationInput, request: Request
+    ) -> dict[str, object]:
+        _queries(request, set())
+        actor, prop = context(request, "payment", payment_id, "payments.allocate")
+        if "Idempotency-Key" in request.headers:
+            raise HTTPException(400)
+        try:
+            selected = DesignationPreviewInput("PAYMENT", body.intent)
+        except PreviewInputError as exc:
+            raise HTTPException(422) from exc
+        result = _invoke(
+            lambda: flow.designation_preview(prop, payment_id, selected.intent, actor=actor),
+            query=True,
+        )
+        if not isinstance(result, dict):
+            raise HTTPException(503)
+        if result.get("property_id") != str(prop) or result.get("payment_id") != str(payment_id):
+            raise HTTPException(404)
+        return envelope(request, result)
 
     @router.get("/payments/{payment_id}/allocation-proposal")
     def proposal(payment_id: Identity, request: Request) -> dict[str, object]:

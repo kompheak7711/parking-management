@@ -6,6 +6,16 @@ import {
   type FinancialObject,
 } from "./financialContracts";
 import type { FinancialReply } from "./financialResponse";
+import { FinancialDueSourcePicker } from "./FinancialDueSourcePicker";
+import {
+  dueAmountText,
+  type FinancialDueSelection,
+} from "./financialDueSelection";
+import {
+  replaceDueLineSelection,
+  selectedDueLineIntent,
+  type FinancialDueLineSelections,
+} from "./financialDueWorkspace";
 import {
   ActionContextEvidence,
   CreditApplicationRecordEvidence,
@@ -25,7 +35,6 @@ import {
   financialLabel,
   financialMoney,
   parseFinancialAmount,
-  selectedFinancialLineIntent,
   type FinancialCommandRequest,
   type FinancialWorkspaceProps,
 } from "./financialUi";
@@ -97,6 +106,9 @@ export function FinancialCreditWorkspace({
   const [fields, setFields] = useState(initial);
   const [lineAmounts, setLineAmounts] = useState<Record<string, string>>({});
   const [linePage, setLinePage] = useState(0);
+  const [dueSelections, setDueSelections] =
+    useState<FinancialDueLineSelections>({});
+  const [dueEditor, setDueEditor] = useState<string | null>(null);
   const [context, setContext] = useState<FinancialObject | null>(null);
   const [proposal, setProposal] = useState<FinancialObject | null>(null);
   const [list, setList, listCurrent] = useFinancialSnapshot<FinancialReply>(
@@ -111,6 +123,7 @@ export function FinancialCreditWorkspace({
     cancel();
     setContext(null);
     setProposal(null);
+    setDueEditor(null);
   }, [revision, cancel]);
   function edit(
     values: Partial<typeof initial>,
@@ -140,9 +153,27 @@ export function FinancialCreditWorkspace({
       setDetail(null);
       setList(null);
       setLineAmounts({});
+      setDueSelections({});
+      setDueEditor(null);
       setLinePage(0);
     }
     return true;
+  }
+  function dirtyDueSelection() {
+    cancel();
+    invalidate();
+    setProposal(null);
+    draft.edited("lineAmounts");
+  }
+  function applyDueSelection(line: string, selection: FinancialDueSelection) {
+    const next = replaceDueLineSelection(dueSelections, line, selection);
+    dirtyDueSelection();
+    setDueSelections(next);
+    setLineAmounts((old) => ({
+      ...old,
+      [line]: dueAmountText(selection.amount),
+    }));
+    setDueEditor(null);
   }
   function choose(value: Mode) {
     if (!edit({}, true)) return;
@@ -211,6 +242,7 @@ export function FinancialCreditWorkspace({
   function load(confirmation: boolean, withProposal = false) {
     const grant = modes.find(([value]) => value === mode)?.[2];
     if (
+      dueEditor !== null ||
       !grant ||
       !capabilities[grant] ||
       mode === "read" ||
@@ -263,7 +295,11 @@ export function FinancialCreditWorkspace({
           let amount: bigint;
           let intent: FinancialObject;
           if (targetKind === "INVOICE" && basis === "DESIGNATED") {
-            const selected = selectedFinancialLineIntent(data, lineAmounts);
+            const selected = selectedDueLineIntent(
+              data,
+              lineAmounts,
+              dueSelections,
+            );
             amount = selected.total;
             intent = {
               mode: "DESIGNATED",
@@ -311,6 +347,18 @@ export function FinancialCreditWorkspace({
             selectedProposal = financialObject(reply.data);
             // The original requested amount can exceed this returned bounded batch.
             intent = { mode: "PROPOSAL", proposal: selectedProposal };
+          }
+          if (targetKind === "INVOICE" && basis === "DESIGNATED") {
+            const preview = await readFinancialRecord(
+              s,
+              {
+                operation: "creditPreview",
+                target: { id },
+                body: { currency: "USD", intent },
+              },
+              services.transport,
+            );
+            intent = financialObject(financialObject(preview.data).intent);
           }
           if (confirmation)
             request = {
@@ -621,7 +669,7 @@ export function FinancialCreditWorkspace({
           {mode !== "read" && (
             <button
               type="button"
-              disabled={task.busy}
+              disabled={task.busy || dueEditor !== null}
               onClick={() => {
                 load(false);
               }}
@@ -682,8 +730,12 @@ export function FinancialCreditWorkspace({
                                       Designated USD for line {id}
                                       <input
                                         inputMode="decimal"
+                                        readOnly={
+                                          dueSelections[id] !== undefined
+                                        }
                                         value={lineAmounts[id] ?? ""}
                                         onChange={(e) => {
+                                          if (dueSelections[id]) return;
                                           cancel();
                                           invalidate();
                                           setProposal(null);
@@ -697,6 +749,44 @@ export function FinancialCreditWorkspace({
                                         }}
                                       />
                                     </label>
+                                    <button
+                                      type="button"
+                                      disabled={task.busy || dueEditor !== null}
+                                      onClick={() => {
+                                        cancel();
+                                        invalidate();
+                                        setProposal(null);
+                                        setDueEditor(id);
+                                      }}
+                                    >
+                                      Choose dated sources for line {id}
+                                    </button>
+                                    {dueSelections[id] && (
+                                      <>
+                                        <p>
+                                          {dueSelections[id].parts.length}{" "}
+                                          explicitly selected dated sources
+                                        </p>
+                                        <button
+                                          type="button"
+                                          disabled={
+                                            task.busy || dueEditor !== null
+                                          }
+                                          onClick={() => {
+                                            dirtyDueSelection();
+                                            setDueSelections((old) => {
+                                              return Object.fromEntries(
+                                                Object.entries(old).filter(
+                                                  ([line]) => line !== id,
+                                                ),
+                                              );
+                                            });
+                                          }}
+                                        >
+                                          Use earliest due order for line {id}
+                                        </button>
+                                      </>
+                                    )}
                                   </td>
                                 </tr>
                               );
@@ -726,6 +816,29 @@ export function FinancialCreditWorkspace({
                         </button>
                       </div>
                     )}
+                    {dueEditor !== null && (
+                      <FinancialDueSourcePicker
+                        key={`${scope.actorId}:${scope.propertyId}:${fields.source}:${fields.target}:${dueEditor}:${revision.toString()}`}
+                        scope={scope}
+                        input={{
+                          operation: "financialDueSources",
+                          purpose: "credit_application",
+                          source_id: fields.source,
+                          invoice_id: fields.target,
+                          invoice_line_id: dueEditor,
+                          limit: 50,
+                        }}
+                        initial={dueSelections[dueEditor]}
+                        references={services.references}
+                        onDirty={dirtyDueSelection}
+                        onApply={(selection) => {
+                          applyDueSelection(dueEditor, selection);
+                        }}
+                        onDiscard={() => {
+                          setDueEditor(null);
+                        }}
+                      />
+                    )}
                   </>
                 ) : (
                   <p>
@@ -750,7 +863,11 @@ export function FinancialCreditWorkspace({
           )}
           <button
             type="submit"
-            disabled={task.busy || (mode !== "read" && !commands.ready)}
+            disabled={
+              task.busy ||
+              dueEditor !== null ||
+              (mode !== "read" && !commands.ready)
+            }
           >
             {mode === "read" ? "Load Credit record" : "Review Credit action"}
           </button>

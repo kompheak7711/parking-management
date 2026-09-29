@@ -137,11 +137,11 @@ export function createFinancialTransport(
           "X-Request-ID": requestId,
           "X-Billing-Actor-ID": scope.actorId,
         });
-        if (command) {
+        if (request.wireBody !== null) {
           headers.set("Content-Type", "application/json");
-          headers.set("Idempotency-Key", key ?? "");
           headers.set("X-CSRF-Token", csrf());
         }
+        if (command) headers.set("Idempotency-Key", key ?? "");
         const interrupted = new Promise<never>((_resolve, reject) => {
           const stop = () => {
             controller.abort();
@@ -177,7 +177,7 @@ export function createFinancialTransport(
             cache: "no-store",
             redirect: "error",
             signal: controller.signal,
-            ...(command ? { body: request.wireBody ?? "" } : {}),
+            ...(request.wireBody !== null ? { body: request.wireBody } : {}),
           }).then((received) => {
             responseBody.current = received.body;
             // A noncooperating fetch may resolve after the raced request has

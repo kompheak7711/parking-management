@@ -4349,6 +4349,27 @@ there and leaves $69 for another valid confirmed Allocation or disposition. The 
 Invoice remains $310 outstanding until value is separately allocated to it. A Receipt
 may show both the $100 Payment and the confirmed $31 application.
 
+### PR-PAY-041 — Within-Line Earliest-Due Allocation
+
+**Business-rule traceability:** `BR-PAY-041`
+
+**Normative product behavior**
+
+For an undesignated Payment or Customer Credit allocated within one Invoice line,
+satisfy amounts in ascending order of their approved due dates. A debit Adjustment's
+approved due date is its governing-source Due Date under BR-INV-049.
+
+This rule applies only within one Invoice line. It does not change between-Invoice
+ordering under BR-PAY-038, Rent-before-Service ordering under BR-PAY-036, Customer
+designations under BR-PAY-037, or the requirement for authorized staff confirmation
+under BR-PAY-020. It does not confirm an allocation automatically, override a Customer
+designation, or rewrite any historic transaction.
+
+Example (amounts in minor units): an original amount of 80000 has approved due date
+2026-08-05 and a debit Adjustment of 20000 has approved due date 2026-09-10. An
+undesignated Payment of 50000 satisfies 50000 of the original amount, leaving 30000 of
+the original amount and 20000 of the Adjustment.
+
 ## 8.15 Receipt Requirements
 
 ### PR-RECEIPT-001 — Receipt Acknowledges Payment

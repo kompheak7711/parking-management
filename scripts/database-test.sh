@@ -138,6 +138,17 @@ database_test_suites='
   tests/test_deposit_migration.py
   tests/test_deposit_api_migration.py
   tests/test_invoice_migration.py
+  tests/test_invoice_due_migration.py
+  tests/test_invoice_due_application_migration.py
+  tests/test_invoice_due_proposal_migration.py
+  tests/test_invoice_due_posting_migration.py
+  tests/test_invoice_due_preview_migration.py
+  tests/test_invoice_due_preview_wrappers_migration.py
+  tests/test_invoice_due_preview_service_migration.py
+  tests/test_invoice_due_sources_migration.py
+  tests/test_invoice_due_overdue_migration.py
+  tests/test_invoice_due_late_assessment_migration.py
+  tests/test_financial_due_sources_migration.py
   tests/test_late_payment_migration.py
   tests/test_payment_migration.py
   tests/test_payment_read_migration.py

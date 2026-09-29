@@ -927,6 +927,50 @@ Adjustment's derived effect without changing the original Adjustment, Invoice, o
 The transaction locks and recomputes the line/Invoice and rejects any resulting negative
 balance or inconsistent application; status regression is derived under DB-DER-001.
 
+## DB-INV-011 — `invoice_debit_due_sources`
+
+Append-only governing due evidence for one debit Adjustment: unique typed
+`invoice_adjustment_id` FK, finite `approved_due_date`, bounded
+`governing_source_reference`, and the exact Adjustment's `occurred_at`, `actor_id`
+and `authorization_reference`. Preserve existing typed governing-source links,
+including Utility correction impacts. This evidence never changes the original
+Invoice Due Date. Existing undated debit rows remain explicitly unresolved; the
+forward migration does not invent or backfill their dates.
+
+## DB-INV-012 — `invoice_due_source_parts`
+
+Append-only source attribution inside an existing Invoice-line detail or credit
+Adjustment. Each row has exactly one typed parent FK: `payment_detail_id`,
+`credit_application_detail_id`, or `credit_adjustment_id`. The required
+`invoice_line_id` identifies the original source amount when
+`debit_adjustment_id` is NULL; otherwise that typed debit FK identifies the amount.
+Positive integer cents and a unique contiguous `part_sequence` preserve the whole
+parent amount, same-line source identity, posting chronology and reversal
+dependencies. A parent may identify each source once. Existing parent Customer,
+Invoice, optional Lease, authorization and audit remain authoritative.
+
+Source reversals cannot retain an active application to that source. Application
+reversals restore their exact recorded parts, without reallocating another event.
+Original and Adjustment history keep the existing positive BIGINT range; Payment
+and Credit details retain their existing smaller posting bounds.
+
+The dated history projection reports aggregate outstanding separately from complete
+dated amounts.
+As-of results use original posting and reversal timestamps. They do not establish
+source approval, infer Customer intent, or silently rewrite legacy history.
+
+New Invoice Adjustment commands atomically preserve debit governing evidence or
+explicit credit-correction parts. Existing command replay is resolved before new-post
+requirements; the original signature cannot post an undated debit. An original-only
+credit correction may identify the original line automatically only when no debit
+has occurred in its history.
+Deferred constraints cover direct Adjustment writers as well as command callers.
+
+Implementation checkpoint: Invoice transport and16synthetic database command cases
+are verified locally. Populated-history migration, Payment/Credit application
+attribution, runtime read surfaces and connected overdue/UI integration remain
+required before financial-stage and independent acceptance.
+
 ---
 
 # 10. Payment, Exchange, Allocation, and Credit Tables
@@ -2164,3 +2208,33 @@ This Database Model is ready for Owner review when:
 8. the completed `003_PRODUCT_REQUIREMENTS.md` conformance audit remains conflict-free, or any later change is reported rather than guessed.
 
 ---
+
+
+### V1-055 atomic dated posting checkpoint — 2026-09-16
+
+New Payment/Credit Invoice details require complete immutable dated-source parts in the same transaction. Deferred detail guards enforce nonempty contiguous exact sums,source projection and500-part batch bounds; direct writers cannot omit attribution. Existing part guards retain per-row parent/source/chronology/reversal/conservation checks. The unchanged full history projection executes on the unique sequence1part event; positive unique contiguous parts guarantee that event exists. Immutable parent totals and positive parts reject additions after a prior complete validation. Independent parent completeness checks remain. New regressions verify reverse insertion order,source overdraw,premature constraint flush and late extra parts. No historical row backfill,lock/timeout/retry or grant change is made.
+
+
+### V1-055 read-only designation preparation — 2026-09-16
+
+Private invoker invoice_due_designated_details prepares exact selected Invoice-line amounts into current versioned dated-source details. It preserves Customer line/source choices,requires complete exact totals and counts parts across lines; it never truncates a designation. It performs no writes,locks or identity generation and has no runtime/financial grants.22fresh cases verify its read-only behavior and evidence requirements. Existing command/storage/projection functions remain unchanged.
+
+
+### V1-055 scoped read-only preview verification — 2026-09-16
+
+The STABLE Payment and Credit designation preview wrappers validate fresh active-human, source, Property, Customer and target context before invoking the private dated Invoice builder. Payment retains third-party Lease/identified Invoice/Charge restrictions; Credit retains its own Customer/source Property rules. Both preserve current availability, chronology and Charge separation, strict whole-command bounds and complete Customer choices. Only existing runtime/financial read roles receive execute grants. Real read-only transactions prepare versioned dated intent without writes or locks; explicit posting revalidates under its existing locks.43local cases now pass through21fresh cases plus22proven unchanged passes.
+
+
+### V1-055 paginated dated-source read — 2026-09-16
+
+financial_invoice_due_sources_page adds a STABLE SECURITY DEFINER runtime-only read wrapper over the existing scoped action context and private line projection. It exposes at most100positive dated sources per page,ordered by approved due date,occurrence,kind under C collation andUUID. The revision binds actor,Property,purpose,source,Invoice,line,page limit,action guard facts and complete line position. Stale or unresolved legacy attribution fails closed;zero is only returned for complete zero balance. No existing SQL bodies,private helper grants,locks,writes or financial history change.49cases pass under actual runtime read-only transactions and real legacy migration fixtures.
+
+
+### V1-055 proved overdue projection — 2026-09-16T20:53:46.359579+00:00
+
+Private app.invoice_due_overdue_position_at(invoice,as_of) projects each line once and sums proved dated balances. Approved source dates are compared against the exact Asia/Phnom_Penh business date;due-day amounts are not overdue. Aggregate balance remains separately available. Incomplete legacy attribution yields null overdue/not-overdue/source-count fields and an explicit unknown count,never a fabricated zero. Stable invoker semantics and no PUBLIC/runtime/financial/bootstrap execute grants. No history write,lock,fee or eligibility change;connected consumers remain pending.
+
+
+### V1-055 dated late-payment integration — 2026-09-16T21:17:21.807777+00:00
+
+Migration62 now replaces exact balance-projection fragments in late_payment_review_snapshot,finalize_late_payment_decision and validate_late_payment_decision. Every connected function uses the same proved overdue projection at its assessment instant. Original due-date/Lease/status eligibility,one decision including waiver,Invoice-wide rounding,actor authority,source serialization and all chronology checks remain. Unknown attribution blocks new decisions. New calculation traces contain due_attribution;old decisions and idempotent receipts are untouched. Private helper grants remain absent.

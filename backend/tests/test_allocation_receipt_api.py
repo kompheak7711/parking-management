@@ -83,6 +83,12 @@ class Flow:
             "available_usd_cents": 9_000_000_000_000_000,
         }
 
+    def designation_preview(
+        self, prop: UUID, payment: UUID, intent: dict[str, object], *, actor: AuthenticatedActor
+    ) -> dict[str, object]:
+        self.result("designation_preview", (prop, payment, intent, actor))
+        return {"property_id": str(prop), "payment_id": str(payment), "intent": intent}
+
     def history(
         self,
         prop: UUID,

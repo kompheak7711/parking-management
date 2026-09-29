@@ -11,6 +11,11 @@ from uuid import UUID
 import psycopg
 from psycopg.types.json import Jsonb, set_json_loads
 
+from property_rental.due_preview import (
+    DesignationPreviewInput,
+    PreviewInputError,
+    validate_due_confirmation,
+)
 from property_rental.identity import AuthenticatedActor, AuthorizationRequirement, is_authorized
 
 
@@ -136,6 +141,9 @@ def _credit_intent_json(intent: dict[str, object]) -> str:
         elif mode in {"DESIGNATED", "DIRECT_CHARGE"}:
             target = "invoice_id" if "invoice_id" in intent else "late_payment_charge_id"
             required = {"mode", target, "amount_usd_cents"}
+            versioned = target == "invoice_id" and "invoice_version" in intent
+            if versioned:
+                required.add("invoice_version")
             if mode == "DESIGNATED":
                 required.add("designation_reference")
                 _text(cast(str, intent.get("designation_reference")), 500)
@@ -152,13 +160,17 @@ def _credit_intent_json(intent: dict[str, object]) -> str:
                 if not isinstance(details, list) or not 1 <= len(details) <= 500:
                     raise CreditInvalidError("Credit Invoice details are required and bounded")
                 for detail in details:
-                    if not isinstance(detail, dict) or set(detail) != {
-                        "invoice_line_id",
-                        "amount_usd_cents",
-                    }:
+                    required_detail = {"invoice_line_id", "amount_usd_cents"}
+                    if versioned:
+                        required_detail.add("due_attribution")
+                    if not isinstance(detail, dict) or set(detail) != required_detail:
                         raise CreditInvalidError("Credit Invoice detail has unexpected fields")
                     _target_uuid(detail["invoice_line_id"])
                     _amount(detail["amount_usd_cents"])
+                if versioned:
+                    validate_due_confirmation(
+                        details, intent["amount_usd_cents"], intent["invoice_version"]
+                    )
         else:
             raise CreditInvalidError("Credit application mode is invalid")
     except (RecursionError, UnicodeError, TypeError, ValueError) as exc:
@@ -398,6 +410,46 @@ class CustomerCreditService:
             (property_id, credit_id, actor_id, request.idempotency_key, request.reason),
             mutation=True,
         )
+
+    def application_preview(
+        self,
+        property_id: UUID,
+        credit_id: UUID,
+        intent: dict[str, object],
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        """Read a dated Customer designation without entering command recovery."""
+        actor_id = self._authorize(actor, property_id, "credits.apply")
+        _uuid(credit_id)
+        try:
+            request = DesignationPreviewInput("CREDIT", intent)
+        except PreviewInputError as exc:
+            raise CreditInvalidError("Credit designation preview is invalid") from exc
+        try:
+            with psycopg.connect(self.database_url, connect_timeout=3) as connection:
+                connection.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
+                connection.execute("SET LOCAL lock_timeout='3000ms'")
+                connection.execute("SET LOCAL statement_timeout='5000ms'")
+                connection.execute("SET LOCAL TIME ZONE 'UTC'")
+                set_json_loads(_exact_credit_json, connection)
+                row = connection.execute(
+                    "SELECT app.credit_application_designation_preview(%s,%s,%s,%s)",
+                    (property_id, credit_id, actor_id, Jsonb(request.intent)),
+                ).fetchone()
+        except psycopg.Error as exc:
+            if exc.sqlstate in {"P5101", "P4501"}:
+                raise CreditNotFoundError("Credit source or resource was not found") from exc
+            if exc.sqlstate in {"P4506", "42501"}:
+                raise CreditAuthorizationError("Credit actor is not authorized") from exc
+            if exc.sqlstate == "P5104":
+                raise CreditConflictError("Credit state changed; refresh the preview") from exc
+            if exc.sqlstate == "P5102":
+                raise CreditInvalidError("Credit designation preview is invalid") from exc
+            raise CreditUnavailableError("Credit preview is temporarily unavailable") from exc
+        if row is None or len(row) != 1 or not isinstance(row[0], dict):
+            raise CreditUnavailableError("Credit preview is temporarily unavailable")
+        return cast(dict[str, object], row[0])
 
     def application_proposal(
         self,

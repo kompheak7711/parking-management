@@ -1145,6 +1145,76 @@ interface DisplayCommand {
   target: Readonly<Record<string, string>>;
   body: FinancialObject;
 }
+function DuePartsEvidence({
+  lineId,
+  value,
+  atProposal,
+}: {
+  lineId: string;
+  value: unknown;
+  atProposal: boolean;
+}) {
+  const due = record(value),
+    parts = Array.isArray(due.parts) ? due.parts.map(record) : [];
+  return (
+    <section aria-label={`Dated amounts for Invoice line ${lineId}`}>
+      <h5>Dated amounts for Invoice line {lineId}</h5>
+      <p>
+        {due.basis === "EARLIEST_DUE"
+          ? "Earliest approved due date within this line"
+          : due.basis === "CUSTOMER_DESIGNATED"
+            ? "Customer-designated dated amounts"
+            : "Dated allocation basis unavailable"}
+      </p>
+      {parts.length ? (
+        <table>
+          <caption>Exact approved dated amounts</caption>
+          <thead>
+            <tr>
+              <th>Source</th>
+              <th>Approved due date</th>
+              <th>Source recorded at</th>
+              <th className="financial-money">
+                {atProposal
+                  ? "Outstanding at proposal"
+                  : "Outstanding at confirmation preview"}
+              </th>
+              <th className="financial-money">Selected USD</th>
+            </tr>
+          </thead>
+          <tbody>
+            {parts.map((part, index) => (
+              <tr
+                key={`${financialLabel(part.source_kind)}:${financialLabel(part.source_id)}:${index.toString()}`}
+              >
+                <td>
+                  {part.source_kind === "ORIGINAL_LINE"
+                    ? "Original Invoice line"
+                    : part.source_kind === "DEBIT_ADJUSTMENT"
+                      ? "Debit Adjustment"
+                      : "Source kind unavailable"}
+                  <br />
+                  {financialLabel(part.source_id)}
+                </td>
+                <td>{financialLabel(part.approved_due_date)}</td>
+                <td>{financialTimestamp(part.source_occurred_at)}</td>
+                <td className="financial-money">
+                  {money(part.outstanding_usd_cents)}
+                </td>
+                <td className="financial-money">
+                  {money(part.amount_usd_cents)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        <p>Dated source evidence unavailable.</p>
+      )}
+    </section>
+  );
+}
+
 function IntentLines({
   value,
   atProposal = false,
@@ -1193,6 +1263,16 @@ function IntentLines({
           ))}
         </tbody>
       </table>
+      {rows
+        .filter((line) => line.due_attribution !== undefined)
+        .map((line, index) => (
+          <DuePartsEvidence
+            key={`${financialLabel(line.invoice_line_id)}:${index.toString()}`}
+            lineId={financialLabel(line.invoice_line_id)}
+            value={line.due_attribution}
+            atProposal={atProposal}
+          />
+        ))}
     </div>
   ) : null;
 }

@@ -1,3 +1,97 @@
+# Current — V1-055 late-payment17cases verified;client work permitted,two exceptions pending
+
+Connected late-payment SQL:17of18mandatory cases pass;34actual target/schema/function observations,three61to62legacy upgrades/removals,one runtime read-only/private-grant check,51phases and cleanup pass in17.316016seconds(session46364COMPLETED0). New test-only constraint-phase cause1of2locally resolved;failed session56838retained(13.671064seconds,cleanup passed). Credit case remains mandatory/held for exhausted setup-order family2of2.22featureDBinvocations consumed;no historical diagnostic repeated. Continue unaffected client/UI handling of late-payment due_attribution and explicitly unavailable review amounts;admit exact invoiceClient.ts/InvoiceManagement.tsx and affected test paths first. Preserve separate staff confirmation,prior decisions/replays and original Invoice eligibility. Then source-specific Rent consumers and remaining Utility/final-reading/Damage/staff scope. Two pending exceptions:protected Refund preview setup and late CREDIT true-excess setup(DUE-STORAGE-CREDIT-SOURCE-1 exhausted2of2);do not apply either or bypass through helpers. Reuse17verified cases and19private projection cases unchanged. Complete held case,all mandatory final gates and fresh exact-SHA complete-stage/integrated reviews before publication/exactCI/refs/Workboard/durable55closure. Pause samefollowup at55;do not activate56.
+
+Earlier queue/evidence preserved below.
+
+# Current — V1-055 overdue projection verified;connected readers next
+
+Private Invoice-wide overdue projection locally verified:19 cases/6 functions,38 actual database/schema observations,two legacy upgrades/removals,57 phases and owned cleanup pass in16.212220seconds;session20607COMPLETEDexit0. Static/types/exact collection and affected traceability pass(1fresh+27unchanged retained).20feature DB invocations consumed;no historical recovery repeated. Unknown attribution stays unknown;approved source dates use exact Asia/Phnom_Penh midnight. Admit a bounded late-payment integration of the verified overdue projection into review,finalizer and deferred integrity guard,with affected transport/client contracts and tests. Preserve original Invoice due-date eligibility,one final decision,Invoice-wide10%rounding,existing locks/chronology/authorization/idempotency and all old records. Then source-specific Rent consumers and remaining financial/Utility/final-reading/Damage/staff gates. Protected Refund test exception remains pending;do not edit its file or imported helpers to bypass it. Complete independent fullstage/integrated reviews and every publication/CI/ref/Workboard/durable gate before55closure. Pause samefollowup at55;no56.
+
+Earlier queue/evidence preserved below.
+
+# Continuation — connected financial readers;protected setup exception pending
+
+Read /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-connected-readers-assessment.md;admit a bounded proved Invoice-wide overdue projection and its affected acceptance before edits/runs,then connect late-payment review/finalizer/deferred guard and source-specific Rent consumers per frozen design. Continue other55scope independently. Protected Refund setup exception v1055-protected-refund-preview-compatibility-20260917 is pending:do not edit its file or bypass through imported helpers;no historical diagnostic or allowance reset. Keep samefollowupACTIVE while unaffected work exists;pause if only this decision remains or at full55closure. No56/publication before allgates.
+
+# Current — V1-055 workspace integration verified;connected financial gates next
+
+Payment/Credit dated-source workspace integration locally verified:200cases(112fresh+88unchanged prior passes reused),including40new. Static/types/productionbuild pass;28traceability verified(1fresh+27AST-unchanged reused). Explicit choices/global500part bound,draft/discard/read-only totals,server preview and unchanged confirmation intent verified;no automatic posting. Lint2causes/test-adapter1/external status-mapping1 and preparation-config1 each1of2 resolved;all failures preserved. No DB;19feature invocations retained. Inspect and bound the remaining connected overdue/nonpayment calculations and affected existing Invoice/Credit callers using authoritative specs and preserved source evidence. Admit exact paths before edits. Preserve accepted Refund/shared fixtures,all historical diagnostic limits and all prior component evidence. Complete remaining financial/Utility/final-reading/source-link/Damage/staff scope,mandatory gates,fresh exact-SHA fullstage and integrated independent reviews,normalpublication/exactCI/refs/Workboard/durableclosure. Pause samefollowup at V1-055;do not activateV1-056.
+
+Historical queue states/evidence preserved below.
+
+# Current — V1-055 source picker verified;parent preview integration next
+
+50new source-selection/picker cases pass(31pure+19UI). Static/types/build and28traceability verified(1fresh+27unchanged reused);session43920COMPLETED0. Explicit source amounts,500part bound,scope/abort/stale behavior,apply/discard/clear and paging verified without posting. Three typing/style causes1of2 and external preparation guard2of2 locally resolved;all failures preserved. No DB run;19featureDBinvocations retained. Admit parent Payment Allocation and Customer Credit workspace integration of the verified picker. Keep one active editor;block review until apply/discard;preserve explicit source choices and line-total read-only state,with explicit return to earliest-due. Bind choices to source/Invoice/line and existing draft/discard/capture rules. Attach source_parts to selected lines,check500globalparts,request server allocationPreview/creditPreview for DESIGNATED Invoice intents,then confirm returned intent unchanged through the existing controller and dated evidence display. Preserve proposal/Charge/replay/reversal behavior. Add focused integration cases and affected workspace checks without changing shared/historical fixtures. Complete remainingfinancial/callers/overdue/Rent/Invoice,Utility/final sources,Damage and all55gates/reviews/publication/exactCI/refs/Workboard/closure;pause at55,no56.
+
+Historical queue states/evidence preserved below.
+
+# Current — V1-055 dated confirmation display verified;source picker next
+
+230dated-evidence/affected financialUI cases verified:25fresh(14new+11confirmation),205unchanged management/workspace passes reused. Static/types/build and28traceability verified(1fresh+27unchanged passes reused);session71350COMPLETED0. New-test DOMcleanup1of2resolved;application/assertions/sharedfixtures unchanged by correction. Prior48sequence/12loader/425transport/123validator evidence retained. No DB run;19featureDBinvocations retained. Admit bounded staff dated-source selection and Payment/Credit DESIGNATED preview-before-confirmation. Use verified complete loader with one active source picker; bind actor/Property/source/Invoice/line and scope cancellation. Retain explicit source choices,require apply/discard and block confirmation while editing;never silently replace a customer source designation. Apply selected source parts and total to the line,make its total read-only while explicit parts are selected,provide an explicit return-to-earliest-due action. Validate at most500totalparts and current outstanding amounts,then use server preview as authoritative before the separate posting confirmation. Existing dated evidence renderer now displays returned facts. Preserve proposal/Charge/legacy replay. Finish remainingfinancial/callers/overdue/Rent/Invoice,Utility/final sources,Damage and all full55review/test/publication/exactCI/refs/Workboard/closure gates. Pause at55,no56.
+
+Historical queue states/evidence preserved below.
+
+# Current — V1-055 complete source loading verified;staff selection next
+
+12new bounded dated-source loader cases pass;48sequence/425transport/123validator cases reused unchanged. Static/types/build and28traceability pass;session96016COMPLETED0. Abort control-flow typing1of2locally resolved with both cancellation checks preserved. Prior callback2of2/three typing1of2/URL1of2and every historical allowance retained. No DB run;19featureDBinvocations retained. Admit bounded staff dated-source selection and Payment/Credit DESIGNATED preview-before-confirmation. Use verified complete loader, current actor/Property/source/Invoice/line binding and one active bounded source picker. Preserve exact customer selections across line edits; require explicit apply/discard, no silent fallback. Validate source part amounts against loaded facts,500totalpart limit and selected line total;server preview remains authoritative. Display exact approved dates,source facts and amounts before separate staff posting confirmation. Preserve proposal/Charge/legacy replay. Complete remainingfinancial/callers/overdue/Rent/Invoice,Utility/final sources,Damage and full55gates/reviews/publication/exactCI/refs/Workboard/closure. Pause at55,no56.
+
+Historical queue states/evidence preserved below.
+
+# Current — V1-055 dated-source sequence verified;staff selection next
+
+48new complete dated-source sequence cases pass using real reference-client replies;425transport and123validator cases reused unchanged. Static/types/build and28traceability pass;session20963COMPLETED0. Routine callback2of2locally resolved;three distinct typing causes1of2each resolved. All failed gates preserved;no DB run,19featureDBinvocations retained. Admit bounded dated-source loader and staff source selection for Payment/Credit DESIGNATED Invoice lines. Use genuine complete sequence facts,current scope cancellation,bounded pages,explicit per-source choices or unchanged default earliest-due intent. Call server preview before explicit staff confirmation and display exact approved dates,source facts and selected amounts. Preserve proposal/Charge/legacy replay and500part limits. Complete affected caller/overdue/Rent/Invoice,Utility/final sources,Damage and mandatory fullfinancial/integrated independent acceptance,publication/exactCI/refs/Workboard/durableclosure. Pause at full55closure;no56.
+
+Historical queue states/evidence preserved below.
+
+# Current — V1-055 source transport verified;complete paginated selection next
+
+425reference transport cases pass:47new dated-source and378affected existing;123unchanged validator cases reused. Static/types/production build and28traceability pass;session95555COMPLETED0. Routine URLtyping1of2locally resolved;all prior consumed allowances preserved. No DB run;19featureDBinvocations retained. Admit a bounded FinancialDueSourcesSequence that accepts only genuine validated client receipts,binds actor/Property/purpose/source/Invoice/line/limit,checks cursor continuity,stable revision/version/count/aggregate and complete cross-page order/uniqueness/sums with bounded memory. Allow advancing as_of between unchanged revisions;no financial allocation recalculation. Verify focused sequence cases using real client receipts,then source selection and explicit dated Payment/Credit staff confirmation. Finish remaining financial/caller/overdue/Rent/Invoice,Utility/final sources,Damage and all independent/final55gates. Publish/close only after everygate;pause at55,no56.
+
+Historical queue states/evidence preserved below.
+
+# Current — V1-055 autonomous closure;new routine correction allowance
+
+Apply the preserved two-expression URL test guard under the separate routine allowance,cause fetch_input_union_stringification attempt1of2. Run affected static/types and initial47new+existingreference tests/build;reuse123validator cases. On a routine failure preserve and diagnose before a materially different correction within the same cause maximum2. No unchanged retry,DBdiagnostic,fixture correction or relaxed gate. Continue V55only;pause at fullclosure,no56.
+
+Prior budgets remain consumed;stop after fullV55closure,do not activate56. Historical queue entries follow.
+
+# Current — V1-055 transport test typing hold
+
+Approved cursor correction fully passed123cases/static/types/build and28traceability. Next transport format passed,but two test-only String(url)expressions fail lint;session45468COMPLETED1before types/tests/build.47new transport cases unrun;no DB run or fixture change. Await one explicit additional test-only URL-guard correction allowance in /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-invoice-due-sources-transport-url-guard-proposal.md. Do not apply the prepared diff or rerun the stopped gate.47new transport cases and affected reference tests remain unrun. Keep samefollowupPAUSED,no routine unchanged checks. Prior2of2plus cursor1of1consumed;no DB,fixture change,retry,publication or56. Continue lifecycle only after a permitted path and required gates pass.
+
+All earlier queue states and evidence follow as preserved history.
+
+# Current — V1-055 client contract verified;transport integration next
+
+123dated-source client cases and all approved static/type/production-build checks pass;session90024COMPLETED0.12trace IDs registered and28changed traceability cases pass. Exact cursor typing additional1of1consumed;prior2of2unchanged. No database run or fixture/test assertion change;19featureDBinvocations retained. Admit the finite dated-source operation into FinancialReferenceClient with captured request/actor/Property binding,bounded GET transport,strict verified page validation and immutable provenance receipts. Add focused transport tests and affected existing reference regressions;reuse123unchanged validator cases. Then implement source choices and explicit dated Payment/Credit staff confirmation;complete remaining financial/caller/overdue/Rent/Invoice,Utility/final sources,Damage and full55independent acceptance/publication/exactCI/refs/Workboard closure. No56before55. No repeat or reset of consumed diagnostics/corrections.
+
+All earlier queue states and evidence follow as preserved history.
+
+# Current — V1-055 client typing hold;one bounded allowance decision
+
+New client cursor typing fails strict lint;related client static family exhausted2of2. One precise additional correction allowance needed;no automatic permission restriction. Await the single additional cursor-typing correction allowance in /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-invoice-due-sources-client-cursor-typing-proposal.md. Do not apply the prepared diff or rerun the failed gate before an explicit answer.123client tests remain unrun. Keep samefollowupPAUSED;no routine hold polling. No database invocation,fixture change,allowance reset,publication or56. After approval/pass,continue existing transport/staff/full financial/integrated gates under standing authority.
+
+All earlier queue states and evidence follow as preserved history.
+
+# Current — V1-055 dated-source real integration verified; client/staff next
+
+12 real dated-source service/HTTP cases pass:24 database/schema observations,16 runtime read-only reads/connections,two capability denials before connection,two legacy removals and36 phases.17.599697seconds includes verified cleanup;session13874COMPLETED0. Strict static/collection and28 traceability checks pass.19 featureDBinvocations consumed;no new correction or historical recovery rerun. Admit and implement the bounded client dated-source read contract and source selection,then wire Payment/Credit DESIGNATED previews to explicit dated staff confirmation. Preserve current actor/Property/source binding,stale pagination handling,legacy replay,proposal/Charge flows and500part limits. Reuse unchanged49 SQL,410 Python/API and12 real integration cases;run fresh affected client/staff gates. Complete remaining financial/caller/overdue/Rent/Invoice,Utility/final sources,Damage and full55 independent acceptance/publication/CI/refs/Workboard closure. No56before55;all allowances preserved.
+
+All earlier queue states and evidence follow as preserved history.
+
+# Current — V1-055 dated-source API locally verified; real integration next
+
+Dated-source Python/API:410cases verified,274fresh+136unchanged service passes,including195new cases/16functions. Strict static and28traceability checks pass;fresh822phases in21.995819seconds,session40172COMPLETED0. No database run;18featureDBinvocations remain consumed. Freeze and verify real database-backed dated-source service/HTTP integration against the unchanged49caseSQLwrapper evidence. Use required owned disposable fixtures and actual runtime read-only/target observations;include Payment/Credit paging,current scopes,stale revisions and legacy blockers with approved bounds before execution. Then admit the finite client read contract/source choices and wire Payment/Credit DESIGNATED previews to explicit dated staff confirmation. Preserve legacy replay,proposal/Charge flows,500part limits and all correction history. Complete remaining financial/caller/overdue/Rent/Invoice,Utility/final sources,Damage and integrated55gates/reviews. No publication or56.
+
+All earlier queue states and evidence follow as preserved history.
+
+# Current — V1-055 dated-source wrapper locally verified; API integration next
+
+49dated-source read cases/8functions pass;98actual database observations,six runtime read-only checks,two legacy upgrades/removals and147phases pass.18.275841seconds including verified cleanup;session18041COMPLETEDexit0. Strict static/collection and28traceability checks pass.18featureDBinvocations now consumed;no historical recovery rerun. Freeze the bounded Python/API dated-source read contract against the verified SQL wrapper:exact Property/purpose/source/Invoice/line/limit/cursor validation,current payments.allocate or credits.apply before connecting,existing runtime read-only3s/5sboundary,strict bounded source response and revision:kind:UUIDcontinuation;409for stale/unresolved facts. Register the read route without touching command/recovery semantics. Then connect client/source selection and Payment/Credit DESIGNATED previews to exact dated staff confirmation. Preserve legacy replay,existing proposal/Charge flows and500part limits. Complete remaining financial/caller/overdue/Rent/Invoice,Utility/final sources,Damage and integrated55gates/reviews. No publication or56;all allowances preserved.
+
+All earlier queue states and evidence follow as preserved history.
+
 # Current — REC-1 coordination records correction
 
 Verify only affected records gates, then fresh exact-SHA focused REC-1 correction review including identity of previously reviewed product/fixture evidence; require fresh complete29path/threecommit stage review fromc701a85 with zero unresolved findings. No DB rerun or fixture correction. Whole55 remains incomplete/unpublished; continue remaining scope only after stage acceptance.
@@ -904,3 +998,97 @@ gateway with all history and failed checkpoints preserved. V1-047 is fully relea
 published, verified, reconciled and closed. End this native closure turn without
 activating or dispatching V1-048. OpenClaw remains disabled. On a later authorized
 cycle, reconcile first and activate only exact V1-048 under standing V1-060 policy.
+
+
+### V1-055 physical acceptance and financial due attribution — 2026-09-16T04:44:55.316239+00:00
+
+Physical stagecdf1492e0d920bc70ef690ab34183d1bbc578d2f accepted locally through fresh full-stage zero-finding review and preserved23gates; fixture remedy accepted without claiming historical cause. Activate only the governed financial stage in ops/V1_055_DUE_ATTRIBUTION_SCOPE.md. Prior queue entries remain historical. Whole55 and publication remain incomplete; no56 before full closure.
+
+
+## Current financial design/history checkpoint — 2026-09-16T05:30:32.264326+00:00
+
+The frozen dated-attribution design and47-case pure history projection are verified locally. Reuse unchanged42-case proposal evidence. Next implement forward persistence, compatible exact command replay, actual dated posting/readers and staff confirmation under the same scope. No database run or fixture edit occurred. New static type/layout failures are preserved and locally resolved1of2 each; independent full-stage review remains required. All inherited recovery limits remain consumed. No stage acceptance, publication or56activation.
+
+
+## Current financial history range checkpoint — 2026-09-16T05:34:28.420449+00:00
+
+History projection now51cases/27functions after bounded storage-range correction1of2; prior47case success retained. The correction respects existing positive BIGINT original/Adjustment records and unchanged9e15 Payment/Credit/proposal limits. All static checks and fresh changed traceability28cases passed. No database run, fixture change, independent stage acceptance or publication. Continue the existing frozen forward design under standing authority.
+
+
+## Current forward storage core checkpoint — 2026-09-16T06:06:54.653262+00:00
+
+Prepare and submit one fresh11-case disposable PostgreSQL storage-core gate under standing stage authority, using the collected order, actual database/table verification,180s execution and30s owned cleanup. No automatic retry; stop/preserve failures. Then complete new-command source/date enforcement, compatible exact replay, dated proposals and overdue/UI integration. Reuse unchanged42proposal/51history cases; never repeat consumed recovery diagnostics.
+
+Storage core and11new cases are statically verified/collected only. No PostgreSQL execution, runtime entry point, mandatory new-post attribution, stage acceptance or publication is claimed. All previous checks, failures and consumed limits remain preserved.
+
+
+## Current storage-core verification checkpoint — 2026-09-16T06:25:31.809206+00:00
+
+Forward62core11cases verified10fresh/1unchanged reuse; all owned cleanup and actual DB checks pass. Three new-feature invocations are consumed; the first two failures and bounded new-test corrections remain preserved. No old recovery or fixture allowance was reset. Integrate new debit governing evidence and explicit credit-correction parts into Invoice commands, preserving old exact replay before new-post validation; then source-aware Payment/Credit proposal confirmation and posting, dated Invoice/late-payment/nonpayment readers and staff UI. Admit exact additional connected paths before edits. New forward62core remains unaccepted pending that integration and all required gates/reviews; reuse unchanged42/51unit and11core case evidence where applicable.
+
+
+## Current Invoice command checkpoint — 2026-09-16T07:20:32.303342+00:00
+
+Prepare genuine populated61-to62 histories and adapt only the new storage legacy setups without disabling constraints or touching the accepted Refund fixture; inspect existing disposable migration patterns and admit any additional exact paths before edits. Then finish source-aware Payment/Credit proposals/posting, dated Invoice/overdue/Rent-case readers and staff UI. Reuse unchanged73transport/42proposal/51history evidence;16Invoice command passes are partial, not stage acceptance. No completed gate launcher may be restarted.
+
+Transport73cases and command16cases pass; no source changes beyond admitted scope. All failures/limits retained. No V1-055publication or56activation.
+
+
+## Current populated-history/storage checkpoint — 2026-09-16T07:56:40.068600+00:00
+
+13fresh+16unchanged reused cases verified; real61to62financial rows/replay and unresolved evidence preserved, all required target/cleanup observations passed. No new product change or old recovery rerun. Inspect the current designated Payment/Credit review-confirmation flow at the bounded paths in the discovery receipt, then freeze exact source-part proposal/confirmation contracts and admit only necessary connected SQL/API/UI/test paths before edits. Implement earliest-due defaults only within each selected Invoice line, explicit Customer source choices, immutable parts, old exact replay and stale/size/continuation guards. Preserve all current evidence and limits; no stage acceptance/publication until connected workflows, final gates and fresh independent reviews pass.
+
+
+## V1-055 due-part helper verified — 2026-09-16T08:30:37.083782+00:00
+
+26fresh cases and all required observations/cleanup passed. Integrate the verified helper into generated Payment and Customer Credit proposals in migration62, preserving Invoice/line ordering, existing authorization/freshness checks and bounded continuation. Count source parts across each batch and stop inside a partially covered line. Add exact affected proposal tests before atomic posting/explicit preview/API/staff integration; admit connected paths before edits. Reuse unchanged evidence with identity proof; no completed launcher or old recovery diagnostic may be restarted. Full financial and integrated acceptance remain pending.
+
+
+## V1-055 generated dated proposals verified — 2026-09-16T08:56:51.433363+00:00
+
+14fresh cases and all required observations/cleanup passed. Implement atomic Payment/Credit due-part posting and deferred completeness guards in migration62, preserving exact old replay before new requirements and existing authorization/locks/timeouts. Inspect affected posting/validation functions and freeze the bounded additions/tests first; admit exact new paths before edits. Validate confirmed default parts against current proved sources, preserve explicit Customer choices and require fresh preview when dated evidence is absent or stale. Add connected reversal/direct-writer/stale/concurrency/history coverage. Explicit preview/API/staff,overdue/Rent/Invoice integration,final mandatory gates and full independent acceptance remain pending; never restart completed launchers or old recovery diagnostics.
+
+
+## V1-055 atomic dated posting locally verified — 2026-09-16T09:44:38.115342+00:00
+
+35fresh connected cases and every required observation/cleanup passed. Inspect and admit exact connected readonly designation-preview SQL/Python/HTTP/client/staff paths under the saved due-part contract before edits. Implement source choice and versioned dated confirmation, preserve historical exact replay and strict Credit intent parsing, then adapt only admitted shared caller helpers to obtain fresh evidence while preserving the accepted Refund fixture. Complete dated Invoice/overdue/Rent integration and all required affected/final gates,then fresh complete financial and integrated exact-SHA independent reviews. No financial acceptance/publication or56; never restart completed launchers or old recovery diagnostics.
+
+
+## V1-055 read-only designation builder verified — 2026-09-16T10:09:12.916321+00:00
+
+22fresh cases and required observations/cleanup passed. Freeze and implement authorized read-only Payment/Credit designation-preview SQL wrappers using the verified private Invoice builder. Preserve current source/target/customer/Property/third-party/Charge restrictions,active-human checks without FOR SHARE,whole-command totals/500parts/target/detail/byte bounds and fresh capability enforcement. Inspect exact existing guards and admit a dedicated wrapper test path before edits. Then connected Python/POST-read/client/staff integration and strict historical replay-compatible Credit parsing/shared caller adaptation,dated overdue/Rent/Invoice and all final gates/reviews remain required. No publication or56;never restart completed launchers or old recovery diagnostics.
+
+
+## V1-055 read-only preview wrappers verified — 2026-09-16T10:51:24.594658+00:00
+
+43cases/13functions locally verified,21fresh+22reused. Failed initial Credit setup preserved; existing true-excess family2of2. Freeze exact Python preview/service and Credit intent-parser paths before edits. Add immutable bounded preview inputs and dedicated repeatable-read/read-only service methods using verified SQL wrappers and fresh action capability; preserve existing timeouts and historical replay. Extend strict Credit confirmation parsing for exact versioned due_attribution without admitting source_parts to posting. Then non-mutating POST routes,client read classification,staff source/date confirmation,shared callers,dated overdue/Rent/Invoice and all required financial/integrated gates and independent reviews. No publication or56; never restart completed launchers or historical recovery diagnostics.
+
+
+## V1-055 Python preview boundary verified — 2026-09-16T11:15:47.554736+00:00
+
+215affected cases,126new/12functions plus89connected regressions; static checks pass. No new DB invocation or correction. Freeze exact real-service preview integration tests and mandatory suite registration. Verify both new service methods through actual runtime/read connections and CustomerCreditService.apply with dated confirmation,source/date choices,fresh active-human/capability and safe failure behavior,using synthetic disposable fixtures and bounded gate. Preserve every existing SQL/helper/accepted fixture; do not repeat completed unchanged215Python/43SQL gates. Then freeze non-mutating POST routes and client read classification/staff confirmation,shared caller adaptation,dated overdue/Rent/Invoice and remaining financial/integrated gates and independent reviews. No publication or56;no historical recovery rerun.
+
+
+## V1-055 real-service preview gate verified — 2026-09-16T11:39:54.008533+00:00
+
+18cases and all runtime/fixture/cleanup observations passed. No new correction. Freeze exact HTTP Payment allocation-preview and Customer Credit application-preview route/flow/test paths. Reuse existing bounded strict JSON input,POST Origin/CSRF and fresh resource/Property action context. Forward only to verified read services,without Key/command/Location/recovery behavior;verify source/Property response binding and safe query errors. Then exact client POST-read classification/body/CSRF,response contracts and staff source/date confirmation,shared caller adaptation,dated overdue/Rent/Invoice and remaining financial/integrated gates and fresh independent reviews. Do not repeat unchanged18service/215Python/43SQL gates. No publication or56;all historical limits preserved.
+
+
+## V1-055 HTTP previews locally verified — 2026-09-16T12:15:07.712862+00:00
+
+HTTP584 cases verified:558 fresh/26 reused,87 new cases across8functions,all1674fresh phases pass in75.850991seconds. Runtime session2061COMPLETEDexit0;no database run.17featureDBinvocations remain consumed. Freeze exact frontend preview transport/contract/test paths. Add the two explicit body-carrying POST reads with CSRF but no Idempotency-Key or command recovery; validate dated preview/confirmation responses and preserve historical payload handling. Then staff source/date confirmation,shared caller adaptation,dated overdue/Rent/Invoice,remaining financial/integrated gates and fresh independent reviews. Reuse unchanged HTTP584/service18/Python215/SQL43 evidence. No publication or56;all prior limits preserved.
+
+
+## V1-055 client preview contract locally verified — 2026-09-16T12:28:02.553626+00:00
+
+144new client preview contract cases/8IDs pass;format/lint/whole frontend types pass. Session77284COMPLETEDexit0. Existing source/transport/commands/screens unchanged;no database run. HTTP584passes retained;17featureDBinvocations remain consumed. Connect the verified financialDuePreview contract to exact allocationPreview and creditPreview operations: POST body/Content-Type/CSRF with no key or command recovery,strict request/response capture and current source/Property binding. Admit exact existing frontend contract/client/response/fixture/test files first. Preserve historical commands and completed144client/584HTTP/18service/215Python/43SQL evidence. Then staff source/date confirmation,shared caller adaptation,dated overdue/Rent/Invoice,remaining financial/integrated gates and fresh independent reviews. No publication or56;all prior limits preserved.
+
+
+## V1-055 explicit preview transport locally verified — 2026-09-16T12:53:18.872054+00:00
+
+343client transport/affected cases pass,including65new cases/9IDs;144unchanged validator cases reused. Format/lint/whole frontend types and production build pass. Session44391COMPLETEDexit0;no database run.17featureDBinvocations remain consumed. Freeze the next bounded posting/staff contract integration. Existing Credit DESIGNATED command validation rejects new invoice_version/due_attribution fields; add exact dated-confirmation validation while preserving historical legacy payload bytes and separate Charge semantics. Check affected Payment/PROPOSAL callers and response evidence. Then staff read-only source/date preview and explicit confirmation,shared database caller adaptation,dated overdue/Rent/Invoice,remaining financial/integrated gates and fresh independent reviews. Reuse completed343transport/144validator/584HTTP/18service/215Python/43SQL evidence for unchanged behavior. No publication or56;all prior limits preserved.
+
+
+## V1-055 dated Credit confirmation client locally verified — 2026-09-16T13:15:01.473747+00:00
+
+143client confirmation/affected cases pass,including52new cases/8IDs;144unchanged preview validator cases reused. Format/lint/whole frontend types and production build pass. Session84173COMPLETEDexit0;no new correction or database run.17featureDBinvocations remain consumed. Design and freeze the bounded authorized dated-source read/selection path before staff edits. Current financial_action_context_page INVOICE_LINE rows expose line balances but no dated sources;private invoice_line_due_position_at already returns exact source dates/balances and legacy blockers. Inspect the existing capability/context/pagination boundary and choose a bounded complete read contract without new direct grants or unbounded nested history. Then connect Payment/Credit DESIGNATED screens to the verified POST preview and display exact dated parts before explicit confirmation. Preserve existing proposal/Charge flows,legacy replay and500part limits;validate any newly affected generated response evidence. Complete remaining caller/overdue/Rent/Invoice/Utility/Damage/integrated gates and fresh independent reviews. No publication or56;all prior limits preserved.

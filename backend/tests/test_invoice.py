@@ -2,16 +2,17 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from datetime import date
+from dataclasses import FrozenInstanceError, dataclass, field
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from fractions import Fraction
-from typing import cast
+from typing import Any, cast
 from uuid import UUID, uuid4
 
 import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
+from psycopg.types.json import Jsonb
 
 from property_rental.app import create_app
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
@@ -23,6 +24,7 @@ from property_rental.invoice import (
     CorrectInvoiceDraftCommand,
     CreateInvoiceDraftCommand,
     InvoiceConflictError,
+    InvoiceCorrectionPart,
     InvoiceIdempotencyKeyReused,
     InvoiceInvalidError,
     InvoiceNotFoundError,
@@ -36,6 +38,7 @@ from property_rental.invoice import (
     invoice_request_digest,
 )
 from property_rental.invoice_api import _version
+from property_rental.invoice_due import DueSourceKind
 
 
 def actor(property_id: UUID, *capabilities: str) -> AuthenticatedActor:
@@ -1254,3 +1257,274 @@ def test_adjustment_commands_preserve_valid_integer_cents(
     )
     assert request.amount_usd_cents == amount
     assert type(request.amount_usd_cents) is int
+
+
+@pytest.mark.parametrize("kind", list(AdjustmentType))
+def test_adjustment_absent_due_fields_preserve_legacy_digest_and_sql(
+    kind: AdjustmentType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    property_id, invoice_id, line_id, key = (UUID(int=n) for n in (101, 102, 103, 104))
+    calls: list[tuple[str, tuple[object, ...]]] = []
+    stored = {"id": str(invoice_id), "version": 2, "legacy_response": True}
+
+    def execute(
+        self: PostgresInvoiceService, query: str, parameters: tuple[object, ...]
+    ) -> dict[str, object]:
+        del self
+        calls.append((query, parameters))
+        return stored
+
+    monkeypatch.setattr(PostgresInvoiceService, "_execute", execute)
+    command = AdjustInvoiceCommand(key, line_id, kind, 500, "source/1", "Correction", 1)
+    actual = PostgresInvoiceService("unused").adjust(
+        property_id, invoice_id, command, actor=actor(property_id, "invoices.adjust")
+    )
+    old_payload: dict[str, object] = {
+        "adjustment_type": kind.value,
+        "amount": {"currency": "USD", "minor_units": 500},
+        "expected_version": 1,
+        "invoice_line_id": str(line_id),
+        "reason": "Correction",
+        "source_reference": "source/1",
+    }
+    assert len(calls) == 1
+    assert len(calls[0][1]) == calls[0][0].count("%s") == 13
+    assert calls[0][1][5] == invoice_request_digest(
+        action="adjust", property_id=property_id, invoice_id=invoice_id, payload=old_payload
+    )
+    assert actual is stored
+    assert command.approved_due_date is None
+    assert command.governing_source_reference is None
+    assert command.correction_parts is None
+
+
+def test_adjustment_new_evidence_binds_digest_and_typed_sql(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    property_id, invoice_id, line_id, debit_id, key = (uuid4() for _ in range(5))
+    calls: list[tuple[str, tuple[object, ...]]] = []
+
+    def execute(
+        self: PostgresInvoiceService, query: str, parameters: tuple[object, ...]
+    ) -> dict[str, object]:
+        del self
+        calls.append((query, parameters))
+        return {"version": 3}
+
+    monkeypatch.setattr(PostgresInvoiceService, "_execute", execute)
+    service = PostgresInvoiceService("unused")
+    owner = actor(property_id, "invoices.adjust")
+    for due, governing in (
+        (date(2027, 3, 9), "approved/1"),
+        (date(2027, 3, 10), "approved/1"),
+        (date(2027, 3, 9), "approved/2"),
+    ):
+        service.adjust(
+            property_id,
+            invoice_id,
+            AdjustInvoiceCommand(
+                key, line_id, AdjustmentType.DEBIT, 500, "source/1", "Correction", 2, due, governing
+            ),
+            actor=owner,
+        )
+    assert all(len(params) == query.count("%s") == 16 for query, params in calls)
+    assert calls[0][1][-3:] == (date(2027, 3, 9), "approved/1", None)
+    assert len({params[5] for _, params in calls}) == 3
+    first = InvoiceCorrectionPart(DueSourceKind.ORIGINAL_LINE, line_id, 200)
+    second = InvoiceCorrectionPart(DueSourceKind.DEBIT_ADJUSTMENT, debit_id, 300)
+    for parts in (
+        (first, second),
+        (second, first),
+        (InvoiceCorrectionPart(DueSourceKind.ORIGINAL_LINE, line_id, 500),),
+    ):
+        service.adjust(
+            property_id,
+            invoice_id,
+            AdjustInvoiceCommand(
+                key,
+                line_id,
+                AdjustmentType.CREDIT,
+                500,
+                "source/1",
+                "Correction",
+                2,
+                correction_parts=parts,
+            ),
+            actor=owner,
+        )
+    assert len({params[5] for _, params in calls}) == 6
+    assert calls[3][1][-3:-1] == (None, None)
+    encoded = calls[3][1][-1]
+    assert isinstance(encoded, Jsonb)
+    assert encoded.obj == [first.payload(), second.payload()]
+
+
+@pytest.mark.parametrize("amount", [True, 0, -1, 1.5, "5", 9_000_000_000_000_001])
+def test_correction_part_rejects_non_exact_or_out_of_range_money(amount: object) -> None:
+    with pytest.raises(ValueError, match="positive integer cents"):
+        InvoiceCorrectionPart(DueSourceKind.ORIGINAL_LINE, uuid4(), cast(int, amount))
+
+
+@pytest.mark.parametrize("case", ["kind", "nil", "identity_type", "frozen"])
+def test_correction_part_requires_typed_immutable_identity(case: str) -> None:
+    if case == "kind":
+        with pytest.raises(ValueError, match="source kind"):
+            InvoiceCorrectionPart(cast(DueSourceKind, "ORIGINAL_LINE"), uuid4(), 1)
+    elif case in {"nil", "identity_type"}:
+        value = UUID(int=0) if case == "nil" else cast(UUID, "wrong")
+        with pytest.raises(ValueError, match="source_id"):
+            InvoiceCorrectionPart(DueSourceKind.ORIGINAL_LINE, value, 1)
+    else:
+        part = InvoiceCorrectionPart(DueSourceKind.ORIGINAL_LINE, uuid4(), 1)
+        mutable: Any = part
+        with pytest.raises(FrozenInstanceError):
+            mutable.amount_usd_cents = 2
+
+
+@pytest.mark.parametrize(
+    "case",
+    [
+        "date_only",
+        "reference_only",
+        "timestamp",
+        "credit_date",
+        "empty_reference",
+        "untrimmed_reference",
+        "long_reference",
+        "debit_parts",
+        "empty_parts",
+        "mutable_parts",
+        "duplicate",
+        "wrong_original",
+        "incorrect_total",
+        "invalid_part",
+    ],
+)
+def test_adjustment_rejects_inconsistent_new_evidence(case: str) -> None:
+    line_id = uuid4()
+    original = InvoiceCorrectionPart(DueSourceKind.ORIGINAL_LINE, line_id, 100)
+    fields: dict[str, Any] = {}
+    kind = AdjustmentType.DEBIT
+    if case in {
+        "date_only",
+        "reference_only",
+        "timestamp",
+        "credit_date",
+        "empty_reference",
+        "untrimmed_reference",
+        "long_reference",
+    }:
+        fields = {"approved_due_date": date(2027, 3, 9), "governing_source_reference": "source/1"}
+        if case == "date_only":
+            fields["governing_source_reference"] = None
+        elif case == "reference_only":
+            fields["approved_due_date"] = None
+        elif case == "timestamp":
+            fields["approved_due_date"] = datetime(2027, 3, 9, tzinfo=UTC)
+        elif case == "credit_date":
+            kind = AdjustmentType.CREDIT
+        else:
+            fields["governing_source_reference"] = {
+                "empty_reference": "",
+                "untrimmed_reference": " source/1",
+                "long_reference": "x" * 501,
+            }[case]
+    else:
+        kind = AdjustmentType.DEBIT if case == "debit_parts" else AdjustmentType.CREDIT
+        choices: dict[str, Any] = {
+            "debit_parts": (original,),
+            "empty_parts": (),
+            "mutable_parts": [original],
+            "duplicate": (original, original),
+            "wrong_original": (InvoiceCorrectionPart(DueSourceKind.ORIGINAL_LINE, uuid4(), 100),),
+            "incorrect_total": (InvoiceCorrectionPart(DueSourceKind.ORIGINAL_LINE, line_id, 99),),
+            "invalid_part": ("invalid",),
+        }
+        fields["correction_parts"] = choices[case]
+    with pytest.raises(ValueError):
+        AdjustInvoiceCommand(uuid4(), line_id, kind, 100, "source/1", "Correction", 1, **fields)
+
+
+@pytest.mark.parametrize(
+    "raw", [0, True, "20270309", "2027-W10-2", "2027-03-09T00:00:00Z", "2027-02-30", "infinity"]
+)
+def test_adjustment_http_rejects_non_calendar_due_date_without_posting(raw: object) -> None:
+    property_id = uuid4()
+    value = invoice_resource(property_id, status="UNPAID", version=2)
+    flow = InMemoryInvoiceFlow(property_id, value)
+    result = api(flow, actor(property_id, "invoices.adjust")).post(
+        f"/api/v1/invoices/{value['id']}/adjustments",
+        json={
+            "invoice_line_id": str(uuid4()),
+            "adjustment_type": "DEBIT",
+            "amount": {"currency": "USD", "minor_units": 100},
+            "source_reference": "source/1",
+            "reason": "Correction",
+            "approved_due_date": raw,
+            "governing_source_reference": "approved/1",
+        },
+        headers=mutation_headers(version=2),
+    )
+    assert result.status_code == 422
+    assert not flow.commands
+
+
+@pytest.mark.parametrize("kind", list(AdjustmentType))
+def test_adjustment_http_preserves_new_evidence_and_existing_authorization(
+    kind: AdjustmentType,
+) -> None:
+    property_id, line_id, debit_id = uuid4(), uuid4(), uuid4()
+    value = invoice_resource(property_id, status="UNPAID", version=2)
+    flow = InMemoryInvoiceFlow(property_id, value)
+    extra: dict[str, object] = (
+        {"approved_due_date": "2027-03-09", "governing_source_reference": "approved/1"}
+        if kind is AdjustmentType.DEBIT
+        else {
+            "correction_parts": [
+                {
+                    "source_kind": "ORIGINAL_LINE",
+                    "source_id": str(line_id),
+                    "amount": {"currency": "USD", "minor_units": 40},
+                },
+                {
+                    "source_kind": "DEBIT_ADJUSTMENT",
+                    "source_id": str(debit_id),
+                    "amount": {"currency": "USD", "minor_units": 60},
+                },
+            ]
+        }
+    )
+    payload = {
+        "invoice_line_id": str(line_id),
+        "adjustment_type": kind.value,
+        "amount": {"currency": "USD", "minor_units": 100},
+        "source_reference": "source/1",
+        "reason": "Correction",
+        **extra,
+    }
+    forbidden = api(flow, actor(property_id, "invoices.issue")).post(
+        f"/api/v1/invoices/{value['id']}/adjustments",
+        json=payload,
+        headers=mutation_headers(version=2),
+    )
+    assert forbidden.status_code == 404
+    assert not flow.commands
+    result = api(flow, actor(property_id, "invoices.adjust")).post(
+        f"/api/v1/invoices/{value['id']}/adjustments",
+        json=payload,
+        headers=mutation_headers(version=2),
+    )
+    assert result.status_code == 200
+    command = flow.commands[-1]
+    assert isinstance(command, AdjustInvoiceCommand)
+    if kind is AdjustmentType.DEBIT:
+        assert command.approved_due_date == date(2027, 3, 9)
+        assert command.governing_source_reference == "approved/1"
+        assert command.correction_parts is None
+    else:
+        assert command.approved_due_date is None
+        assert command.governing_source_reference is None
+        assert command.correction_parts == (
+            InvoiceCorrectionPart(DueSourceKind.ORIGINAL_LINE, line_id, 40),
+            InvoiceCorrectionPart(DueSourceKind.DEBIT_ADJUSTMENT, debit_id, 60),
+        )
