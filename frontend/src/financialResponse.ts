@@ -1,4 +1,3 @@
-import { validateDuePreviewReply } from "./financialDuePreview";
 import { validateEnforcementCommandReply } from "./leaseEnforcementContract";
 import type { FinancialJson } from "./financialJson";
 import {
@@ -307,16 +306,6 @@ export function validateFinancialReply(
         }
         break;
       }
-      case "allocationPreview":
-      case "creditPreview":
-        validateDuePreviewReply(
-          op === "allocationPreview" ? "PAYMENT" : "CREDIT",
-          request.wireBody ?? invalidFinancial(),
-          row,
-          prop,
-          id ?? invalidFinancial(),
-        );
-        break;
       case "allocationProposal":
         same(row.payment_id, id);
         same(row.property_id, prop);

@@ -45,7 +45,6 @@ from property_rental.credit_refund_read import (
     FinancialReadUnavailableError,
     Resource,
 )
-from property_rental.due_preview import DesignationPreviewInput, PreviewInputError
 from property_rental.financial_context import bind_financial_property, financial_metadata
 from property_rental.identity import ActorResolver, AuthenticatedActor
 from property_rental.payment_api import (
@@ -458,33 +457,6 @@ def create_credit_refund_router(
                 lambda: flow.credits(mutation=True).reverse(prop, credit_id, command, actor=actor)
             ),
         )
-
-    @router.post(
-        "/customer-credits/{credit_id}/application-preview",
-        dependencies=[Depends(_financial_json)],
-    )
-    def application_preview(
-        credit_id: Identity, body: ApplyInput, request: Request
-    ) -> dict[str, object]:
-        queries(request, set())
-        actor, prop = context(request, "credit", credit_id, "credits.apply")
-        if "Idempotency-Key" in request.headers:
-            raise HTTPException(400)
-        try:
-            selected = DesignationPreviewInput("CREDIT", body.intent)
-        except PreviewInputError as exc:
-            raise HTTPException(422) from exc
-        result = _invoke(
-            lambda: flow.credits().application_preview(
-                prop, credit_id, selected.intent, actor=actor
-            ),
-            query=True,
-        )
-        if not isinstance(result, dict):
-            raise HTTPException(503)
-        if result.get("property_id") != str(prop) or result.get("credit_id") != str(credit_id):
-            raise HTTPException(404)
-        return envelope(request, result)
 
     @router.get("/customer-credits/{credit_id}/application-proposal")
     def proposal(

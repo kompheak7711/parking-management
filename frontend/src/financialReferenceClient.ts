@@ -32,14 +32,6 @@ import {
   type FinancialActionPurpose,
 } from "./financialActionContext";
 
-import {
-  captureDueSources,
-  dueSourcesQuery,
-  validateDueSourcesPage,
-  type DueSourcesPurpose,
-  type FinancialDueSourcesInput,
-} from "./financialDueSources";
-
 export const FINANCIAL_REFERENCE_REPLY_BYTES = 1_048_576;
 export const FINANCIAL_CAPABILITIES = [
   "payments.read",
@@ -70,7 +62,6 @@ export interface FinancialReferenceScope {
   signal: AbortSignal;
 }
 export type FinancialReferenceRequest =
-  | FinancialDueSourcesInput
   | FinancialActionContextInput
   | { operation: "workspaces" | "methods"; limit?: number; cursor?: string }
   | { operation: "capabilities" }
@@ -138,28 +129,6 @@ export function financialActionContextReplyProvenance(
   reply: object,
 ): Readonly<FinancialActionContextReplyProvenance> | undefined {
   return financialActionContextReceipts.get(reply);
-}
-interface FinancialDueSourcesReplyProvenance {
-  readonly actorId: string;
-  readonly propertyId: string;
-  readonly requestId: string;
-  readonly purpose: DueSourcesPurpose;
-  readonly sourceId: string;
-  readonly invoiceId: string;
-  readonly invoiceLineId: string;
-  readonly cursor: string | null;
-  readonly limit: number;
-  readonly nextCursor: string | null;
-  readonly data: string;
-}
-const financialDueSourcesReceipts = new WeakMap<
-  object,
-  Readonly<FinancialDueSourcesReplyProvenance>
->();
-export function financialDueSourcesReplyProvenance(
-  reply: object,
-): Readonly<FinancialDueSourcesReplyProvenance> | undefined {
-  return financialDueSourcesReceipts.get(reply);
 }
 export class FinancialReferenceError extends Error {
   constructor(
@@ -254,8 +223,6 @@ function capture(input: FinancialReferenceRequest): FinancialObject {
     captureReversalContext(row);
   else if (row.operation === "financialActionContext")
     captureFinancialActionContext(row);
-  else if (row.operation === "financialDueSources")
-    return captureDueSources(row);
   else if (row.operation === "capabilities") exactKeys(row, ["operation"]);
   else if (row.operation === "khrPreview") {
     exactKeys(row, ["operation", "usd_amount_cents"], ["manual_reference"]);
@@ -273,9 +240,7 @@ function validate(
 ): FinancialReferenceReply {
   const context = input.operation === "paymentReversalContext";
   const actionContext = input.operation === "financialActionContext";
-  const dueSources = input.operation === "financialDueSources";
   const paged =
-    dueSources ||
     context ||
     actionContext ||
     input.operation === "workspaces" ||
@@ -308,15 +273,6 @@ function validate(
       financialId(propertyId),
       requestId,
     );
-  } else if (dueSources) {
-    const checked = validateDueSourcesPage(
-      envelope.data,
-      envelope.page,
-      input,
-      financialId(propertyId),
-    );
-    envelope.data = checked.data;
-    page = checked.page;
   } else if (paged) {
     const pagination = financialObject(envelope.page);
     exactKeys(pagination, ["limit", "next_cursor"]);
@@ -493,25 +449,6 @@ function validate(
       }),
     );
   }
-  if (dueSources) {
-    if (!page || !propertyId) invalidFinancial();
-    financialDueSourcesReceipts.set(
-      reply,
-      Object.freeze({
-        actorId,
-        propertyId,
-        requestId,
-        purpose: input.purpose as DueSourcesPurpose,
-        sourceId: financialId(input.source_id),
-        invoiceId: financialId(input.invoice_id),
-        invoiceLineId: financialId(input.invoice_line_id),
-        cursor: input.cursor === undefined ? null : (input.cursor as string),
-        limit: page.limit,
-        nextCursor: page.nextCursor,
-        data: stringifyFinancialJson(reply.data, 100_000),
-      }),
-    );
-  }
   return reply;
 }
 export function createFinancialReferenceClient(
@@ -556,17 +493,12 @@ export function createFinancialReferenceClient(
         const path =
           input.operation === "workspaces"
             ? "/api/v1/financial-workspaces"
-            : input.operation === "financialDueSources"
-              ? `/api/v1/properties/${financialId(propertyId)}/financial-due-sources`
-              : input.operation === "financialActionContext"
-                ? financialActionContextPath(financialId(propertyId), input)
-                : input.operation === "paymentReversalContext"
-                  ? `/api/v1/properties/${financialId(propertyId)}/payments/${financialId(input.payment_id)}/reversal-context`
-                  : `/api/v1/properties/${financialId(propertyId)}/${input.operation === "capabilities" ? "financial-capabilities" : input.operation === "methods" ? "payment-methods" : "payments/khr-preview"}`;
-        const query =
-          input.operation === "financialDueSources"
-            ? dueSourcesQuery(input)
-            : new URLSearchParams();
+            : input.operation === "financialActionContext"
+              ? financialActionContextPath(financialId(propertyId), input)
+              : input.operation === "paymentReversalContext"
+                ? `/api/v1/properties/${financialId(propertyId)}/payments/${financialId(input.payment_id)}/reversal-context`
+                : `/api/v1/properties/${financialId(propertyId)}/${input.operation === "capabilities" ? "financial-capabilities" : input.operation === "methods" ? "payment-methods" : "payments/khr-preview"}`;
+        const query = new URLSearchParams();
         if (
           [
             "workspaces",

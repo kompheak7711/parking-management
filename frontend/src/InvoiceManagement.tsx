@@ -22,7 +22,6 @@ import {
   LatePaymentCharge,
   LatePaymentDecision,
   LatePaymentReview,
-  Money,
   PendingBillingCommand,
   billingJournal,
   billingRunRetry,
@@ -33,10 +32,6 @@ import {
   parseUsd,
   terminalChargeConflict,
 } from "./invoiceClient";
-
-function usdCents(minorUnits: number | bigint): Money {
-  return { currency: "USD", minor_units: minorUnits };
-}
 
 export interface InvoiceManagementProps {
   api: InvoiceApi;
@@ -765,15 +760,6 @@ function BillingWorkspace({
       );
     });
   }
-  // The server may withhold both amounts when due-date attribution is
-  // unresolved; the client displays that state and never derives the amounts.
-  const reviewedOverdue = assessment?.overdue_balance ?? null;
-  const reviewedDefault = assessment?.calculated_default_amount ?? null;
-  const assessmentAmounts =
-    reviewedOverdue !== null && reviewedDefault !== null
-      ? { overdue: reviewedOverdue, calculatedDefault: reviewedDefault }
-      : null;
-  const attribution = assessment?.due_attribution ?? null;
   return (
     <div className="billing-workspace">
       {capabilityLoading && (
@@ -1174,43 +1160,11 @@ function BillingWorkspace({
         {assessment && (
           <section aria-label="Late-payment assessment">
             <h3>Late-payment review</h3>
-            {assessmentAmounts ? (
-              <p>
-                Overdue {formatUsd(assessmentAmounts.overdue)} · Default 10% ·
-                Calculated default{" "}
-                {formatUsd(assessmentAmounts.calculatedDefault)}
-              </p>
-            ) : (
-              <p role="status">
-                Overdue amount unavailable: due-date attribution is incomplete
-                for this invoice, so no default amount is shown.
-              </p>
-            )}
-            {attribution && (
-              <section aria-label="Due-date attribution">
-                <p>
-                  Due-date attribution as of {attribution.business_date} (
-                  {attribution.timezone}): outstanding{" "}
-                  {formatUsd(
-                    usdCents(attribution.aggregate_outstanding_usd_cents),
-                  )}
-                  {" · overdue "}
-                  {attribution.overdue_balance_usd_cents === null
-                    ? "unresolved"
-                    : formatUsd(
-                        usdCents(attribution.overdue_balance_usd_cents),
-                      )}
-                  {" · not yet overdue "}
-                  {attribution.not_overdue_balance_usd_cents === null
-                    ? "unresolved"
-                    : formatUsd(
-                        usdCents(attribution.not_overdue_balance_usd_cents),
-                      )}
-                  {" · unresolved lines "}
-                  {attribution.unknown_line_count}
-                </p>
-              </section>
-            )}
+            <p>
+              Overdue {formatUsd(assessment.overdue_balance)} · Default 10% ·
+              Calculated default{" "}
+              {formatUsd(assessment.calculated_default_amount)}
+            </p>
             <p>
               {assessment.eligible
                 ? "Eligible for one final decision."
@@ -1218,7 +1172,6 @@ function BillingWorkspace({
             </p>
             <EvidenceView value={assessment.prior_decision} />
             {assessment.eligible &&
-              assessmentAmounts !== null &&
               assessment.prior_decision === null &&
               can("late_payment.final_decision") && (
                 <form
@@ -1234,12 +1187,12 @@ function BillingWorkspace({
                           outcome === "WAIVED"
                             ? parseUsd("0")
                             : outcome === "CONFIRMED_DEFAULT"
-                              ? assessmentAmounts.calculatedDefault
+                              ? assessment.calculated_default_amount
                               : positive(data);
                         if (
                           outcome === "REDUCED" &&
                           amount.minor_units >=
-                            assessmentAmounts.calculatedDefault.minor_units
+                            assessment.calculated_default_amount.minor_units
                         )
                           throw new Error("Reduction must be below default.");
                         return {
@@ -1253,9 +1206,9 @@ function BillingWorkspace({
                       },
                       {
                         overdue:
-                          assessmentAmounts.overdue as unknown as JsonValue,
+                          assessment.overdue_balance as unknown as JsonValue,
                         default_amount:
-                          assessmentAmounts.calculatedDefault as unknown as JsonValue,
+                          assessment.calculated_default_amount as unknown as JsonValue,
                       },
                     );
                   }}

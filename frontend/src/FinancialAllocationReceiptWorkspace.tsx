@@ -6,16 +6,6 @@ import {
   type FinancialObject,
 } from "./financialContracts";
 import type { FinancialReply } from "./financialResponse";
-import { FinancialDueSourcePicker } from "./FinancialDueSourcePicker";
-import {
-  dueAmountText,
-  type FinancialDueSelection,
-} from "./financialDueSelection";
-import {
-  replaceDueLineSelection,
-  selectedDueLineIntent,
-  type FinancialDueLineSelections,
-} from "./financialDueWorkspace";
 import {
   ActionContextEvidence,
   AllocationRecordEvidence,
@@ -37,6 +27,7 @@ import {
   financialLabel,
   financialMoney,
   parseFinancialAmount,
+  selectedFinancialLineIntent,
   type FinancialCommandRequest,
   type FinancialWorkspaceProps,
   type FinancialReceiptHandoff,
@@ -95,9 +86,6 @@ export function FinancialAllocationReceiptWorkspace({
   const [fields, setFields] = useState(initial),
     [lineAmounts, setLineAmounts] = useState<Record<string, string>>({}),
     [linePage, setLinePage] = useState(0);
-  const [dueSelections, setDueSelections] =
-    useState<FinancialDueLineSelections>({});
-  const [dueEditor, setDueEditor] = useState<string | null>(null);
   const [context, setContext] = useState<FinancialObject | null>(null),
     [proposal, setProposal] = useState<FinancialObject | null>(null),
     [record, setRecord, recordCurrent] = useFinancialSnapshot<FinancialReply>(
@@ -110,7 +98,6 @@ export function FinancialAllocationReceiptWorkspace({
     cancel();
     setContext(null);
     setProposal(null);
-    setDueEditor(null);
   }, [revision, cancel]);
   const receiptRegion = useRef<HTMLElement>(null);
   const consumedHandoff = useRef<FinancialReceiptHandoff | null>(null);
@@ -137,8 +124,6 @@ export function FinancialAllocationReceiptWorkspace({
     setProposal(null);
     setRecord(null);
     setLineAmounts({});
-    setDueSelections({});
-    setDueEditor(null);
     setLinePage(0);
     setReceiptByPayment(false);
     setMode(readReceipt ? "receiptRead" : "reprint");
@@ -213,27 +198,9 @@ export function FinancialAllocationReceiptWorkspace({
       setContext(null);
       setRecord(null);
       setLineAmounts({});
-      setDueSelections({});
-      setDueEditor(null);
       setLinePage(0);
     }
     return true;
-  }
-  function dirtyDueSelection() {
-    cancel();
-    invalidate();
-    setProposal(null);
-    draft.edited("lineAmounts");
-  }
-  function applyDueSelection(line: string, selection: FinancialDueSelection) {
-    const next = replaceDueLineSelection(dueSelections, line, selection);
-    dirtyDueSelection();
-    setDueSelections(next);
-    setLineAmounts((old) => ({
-      ...old,
-      [line]: dueAmountText(selection.amount),
-    }));
-    setDueEditor(null);
   }
   function choose(value: Mode) {
     if (!edit({}, true)) return;
@@ -281,7 +248,6 @@ export function FinancialAllocationReceiptWorkspace({
   function load(confirmation: boolean, withProposal = false, result = false) {
     const grant = modes.find(([value]) => value === mode)?.[2];
     if (
-      dueEditor !== null ||
       !grant ||
       !capabilities[grant] ||
       readMode ||
@@ -376,11 +342,7 @@ export function FinancialAllocationReceiptWorkspace({
             const target = financialObject(data.target);
             let amount: bigint, selected: FinancialObject;
             if (targetKind === "INVOICE") {
-              const chosen = selectedDueLineIntent(
-                data,
-                lineAmounts,
-                dueSelections,
-              );
+              const chosen = selectedFinancialLineIntent(data, lineAmounts);
               amount = chosen.total;
               if (
                 !["UNPAID", "PARTIALLY_PAID"].includes(
@@ -422,18 +384,6 @@ export function FinancialAllocationReceiptWorkspace({
                     targets: [selected],
                     designation_reference: fields.designation,
                   };
-          }
-          if (targetKind === "INVOICE" && basis === "DESIGNATED") {
-            const preview = await readFinancialRecord(
-              s,
-              {
-                operation: "allocationPreview",
-                target: { id },
-                body: { intent },
-              },
-              services.transport,
-            );
-            intent = financialObject(financialObject(preview.data).intent);
           }
           if (confirmation)
             request = {
@@ -748,7 +698,7 @@ export function FinancialAllocationReceiptWorkspace({
           {!readMode && (
             <button
               type="button"
-              disabled={task.busy || dueEditor !== null}
+              disabled={task.busy}
               onClick={() => {
                 load(false);
               }}
@@ -793,10 +743,8 @@ export function FinancialAllocationReceiptWorkspace({
                                 Allocation USD for line {id}
                                 <input
                                   inputMode="decimal"
-                                  readOnly={dueSelections[id] !== undefined}
                                   value={lineAmounts[id] ?? ""}
                                   onChange={(e) => {
-                                    if (dueSelections[id]) return;
                                     cancel();
                                     invalidate();
                                     const value = e.target.value;
@@ -809,42 +757,6 @@ export function FinancialAllocationReceiptWorkspace({
                                   }}
                                 />
                               </label>
-                              <button
-                                type="button"
-                                disabled={task.busy || dueEditor !== null}
-                                onClick={() => {
-                                  cancel();
-                                  invalidate();
-                                  setProposal(null);
-                                  setDueEditor(id);
-                                }}
-                              >
-                                Choose dated sources for line {id}
-                              </button>
-                              {dueSelections[id] && (
-                                <>
-                                  <p>
-                                    {dueSelections[id].parts.length} explicitly
-                                    selected dated sources
-                                  </p>
-                                  <button
-                                    type="button"
-                                    disabled={task.busy || dueEditor !== null}
-                                    onClick={() => {
-                                      dirtyDueSelection();
-                                      setDueSelections((old) => {
-                                        return Object.fromEntries(
-                                          Object.entries(old).filter(
-                                            ([line]) => line !== id,
-                                          ),
-                                        );
-                                      });
-                                    }}
-                                  >
-                                    Use earliest due order for line {id}
-                                  </button>
-                                </>
-                              )}
                             </td>
                           </tr>
                         );
@@ -873,29 +785,6 @@ export function FinancialAllocationReceiptWorkspace({
                       Next Allocation lines
                     </button>
                   </div>
-                )}
-                {dueEditor !== null && (
-                  <FinancialDueSourcePicker
-                    key={`${scope.actorId}:${scope.propertyId}:${fields.source}:${fields.target}:${dueEditor}:${revision.toString()}`}
-                    scope={scope}
-                    input={{
-                      operation: "financialDueSources",
-                      purpose: "allocation",
-                      source_id: fields.source,
-                      invoice_id: fields.target,
-                      invoice_line_id: dueEditor,
-                      limit: 50,
-                    }}
-                    initial={dueSelections[dueEditor]}
-                    references={services.references}
-                    onDirty={dirtyDueSelection}
-                    onApply={(selection) => {
-                      applyDueSelection(dueEditor, selection);
-                    }}
-                    onDiscard={() => {
-                      setDueEditor(null);
-                    }}
-                  />
                 )}
               </>
             ) : (
@@ -931,9 +820,7 @@ export function FinancialAllocationReceiptWorkspace({
           )}
           <button
             type="submit"
-            disabled={
-              task.busy || dueEditor !== null || (!readMode && !commands.ready)
-            }
+            disabled={task.busy || (!readMode && !commands.ready)}
           >
             {readMode
               ? "Load original history page"

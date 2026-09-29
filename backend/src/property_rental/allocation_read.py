@@ -10,9 +10,8 @@ from typing import cast
 from uuid import UUID, uuid4
 
 import psycopg
-from psycopg.types.json import Jsonb, set_json_loads
+from psycopg.types.json import set_json_loads
 
-from property_rental.due_preview import DesignationPreviewInput, PreviewInputError
 from property_rental.identity import AuthenticatedActor
 from property_rental.payment_allocation import (
     AllocationAuthorizationError,
@@ -76,48 +75,6 @@ class AllocationReadService:
             raise AllocationUnavailableError("Payment proposal is temporarily unavailable") from exc
         if row is None or len(row) != 1 or not isinstance(row[0], dict):
             raise AllocationUnavailableError("Payment proposal is temporarily unavailable")
-        return cast(dict[str, object], row[0])
-
-    def designation_preview(
-        self,
-        property_id: UUID,
-        payment_id: UUID,
-        intent: dict[str, object],
-        *,
-        actor: AuthenticatedActor,
-    ) -> dict[str, object]:
-        """Prepare a Customer designation without a command key or financial write."""
-        actor_id = PaymentAllocationService._authorize(actor, property_id, "payments.allocate")
-        _uuid(payment_id)
-        try:
-            request = DesignationPreviewInput("PAYMENT", intent)
-        except PreviewInputError as exc:
-            raise AllocationInvalidError("Payment designation preview is invalid") from exc
-        try:
-            with psycopg.connect(self.database_url, connect_timeout=3) as connection:
-                connection.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
-                connection.execute("SET LOCAL lock_timeout='3000ms'")
-                connection.execute("SET LOCAL statement_timeout='5000ms'")
-                connection.execute("SET LOCAL TIME ZONE 'UTC'")
-                set_json_loads(lambda value: json.loads(value, parse_float=str), connection)
-                # The wrapper rechecks the active human and source/target context
-                # inside this coherent read snapshot before returning any evidence.
-                row = connection.execute(
-                    "SELECT app.payment_allocation_designation_preview(%s,%s,%s,%s)",
-                    (property_id, payment_id, actor_id, Jsonb(request.intent)),
-                ).fetchone()
-        except psycopg.Error as exc:
-            if exc.sqlstate in {"P4901", "P0002"}:
-                raise AllocationNotFoundError("Payment resource was not found") from exc
-            if exc.sqlstate in {"P4506", "42501"}:
-                raise AllocationAuthorizationError("Payment actor is not authorized") from exc
-            if exc.sqlstate == "P4904":
-                raise AllocationConflictError("Payment state changed; refresh the preview") from exc
-            if exc.sqlstate == "P4902":
-                raise AllocationInvalidError("Payment designation preview is invalid") from exc
-            raise AllocationUnavailableError("Payment preview is temporarily unavailable") from exc
-        if row is None or len(row) != 1 or not isinstance(row[0], dict):
-            raise AllocationUnavailableError("Payment preview is temporarily unavailable")
         return cast(dict[str, object], row[0])
 
     def history(

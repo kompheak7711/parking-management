@@ -270,6 +270,7 @@ def test_replay_returns_the_saved_response_and_key_reuse_is_rejected(
         ("reading_of_another_meter", MoveOutFinalInputsNotFoundError),
         ("missing_meter_coverage", MoveOutFinalInputsInvalidError),
         ("missing_reason_contradicted", MoveOutFinalInputsInvalidError),
+        ("missing_reason_with_validated_reading", MoveOutFinalInputsInvalidError),
         ("not_validated_reason_contradicted", MoveOutFinalInputsInvalidError),
         ("pending_estimate_for_working_meter", MoveOutFinalInputsInvalidError),
         ("unknown_estimate", MoveOutFinalInputsNotFoundError),
@@ -301,12 +302,16 @@ def test_unsupported_final_inputs_are_rejected_without_partial_writes(
         items = (used(source.electricity, early), other)
     elif case == "reading_of_another_meter":
         water_reading = reading(migrated_database_url, source, source.water)
-        items = (used(source.electricity, water_reading), missing(source.water))
+        items = (used(source.electricity, water_reading), used(source.water, water_reading))
     elif case == "missing_meter_coverage":
         items = (missing(source.electricity),)
     elif case == "missing_reason_contradicted":
         reading(migrated_database_url, source, source.electricity)
         items = (missing(source.electricity), other)
+    elif case == "missing_reason_with_validated_reading":
+        reading(migrated_database_url, source, source.electricity)
+        water_reading = reading(migrated_database_url, source, source.water)
+        items = (missing(source.electricity), used(source.water, water_reading))
     elif case == "not_validated_reason_contradicted":
         items = (
             FinalInputItem(
@@ -332,8 +337,12 @@ def test_unsupported_final_inputs_are_rejected_without_partial_writes(
         else:
             supersedes = uuid4()
     before = snapshot(migrated_database_url)
-    with pytest.raises(error):
+    with pytest.raises(error) as rejected:
         record(source, command(source, items, physical_event=physical, supersedes=supersedes))
+    if case == "missing_reason_with_validated_reading":
+        assert "Unresolved reason is not supported by current Utility evidence" in str(
+            rejected.value.__cause__
+        )
     assert snapshot(migrated_database_url) == before
 
 
@@ -456,7 +465,7 @@ def test_concurrent_first_records_allow_exactly_one(migrated_database_url: str) 
 def test_final_input_migration_is_forward_only() -> None:
     config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
     revision = ScriptDirectory.from_config(config).get_revision("20260917_63")
-    assert revision is not None and revision.down_revision == "20260916_62"
+    assert revision is not None and revision.down_revision == "20260915_61"
     module = cast(Any, revision.module)
     with pytest.raises(RuntimeError, match="forward-only"):
         module.downgrade()

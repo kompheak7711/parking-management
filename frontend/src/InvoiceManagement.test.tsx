@@ -1049,7 +1049,6 @@ describe("V1-047 staff billing workflows", () => {
       eligible: false,
       blocking_conditions: ["NO_OVERDUE_BALANCE"],
       prior_decision: null,
-      due_attribution: null,
     });
     render(
       <InvoiceManagement
@@ -1067,109 +1066,6 @@ describe("V1-047 staff billing workflows", () => {
     expect(
       screen.queryByRole("button", { name: "Review final decision" }),
     ).not.toBeInTheDocument();
-  });
-  it("TEST-FE-1055-LATE-1 shows unavailable overdue amounts and the server blocker without a decision action", async () => {
-    const { api, journal } = setup("UNPAID");
-    vi.mocked(api.lateReview).mockResolvedValue({
-      invoice_id: "invoice-one",
-      property_id: propertyId,
-      overdue_balance: null,
-      default_rate_basis_points: 1000,
-      calculated_default_amount: null,
-      eligible: false,
-      blocking_conditions: ["DUE_ATTRIBUTION_UNRESOLVED"],
-      prior_decision: null,
-      due_attribution: {
-        as_of: "2026-09-16T00:00:00+00:00",
-        business_date: "2026-09-16",
-        timezone: "Asia/Phnom_Penh",
-        line_count: 1,
-        unknown_line_count: 1,
-        attribution_complete: false,
-        aggregate_outstanding_usd_cents: 80050,
-        overdue_balance_usd_cents: null,
-        not_overdue_balance_usd_cents: null,
-      },
-    });
-    render(
-      <InvoiceManagement
-        api={api}
-        journal={journal}
-        actorId="actor"
-        propertyId={propertyId}
-      />,
-    );
-    await loadInvoice();
-    fireEvent.click(
-      screen.getByRole("button", { name: "Review late payment" }),
-    );
-    await screen.findByText("Not eligible: DUE_ATTRIBUTION_UNRESOLVED");
-    const unavailable = screen.getByText(/Overdue amount unavailable/);
-    expect(unavailable).toHaveAttribute("role", "status");
-    const summary = screen.getByRole("region", {
-      name: "Due-date attribution",
-    });
-    expect(summary).toHaveTextContent("outstanding USD 800.50");
-    expect(summary).toHaveTextContent("overdue unresolved");
-    expect(summary).toHaveTextContent("not yet overdue unresolved");
-    expect(summary).toHaveTextContent("unresolved lines 1");
-    expect(screen.queryByText(/Calculated default/)).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: "Review final decision" }),
-    ).not.toBeInTheDocument();
-    expect(api.decide).not.toHaveBeenCalled();
-  });
-  it("TEST-FE-1055-LATE-2 displays proved dated amounts and keeps the separate final decision review", async () => {
-    const { api, journal } = setup("UNPAID");
-    vi.mocked(api.lateReview).mockResolvedValue({
-      invoice_id: "invoice-one",
-      property_id: propertyId,
-      overdue_balance: parseUsd("800"),
-      default_rate_basis_points: 1000,
-      calculated_default_amount: parseUsd("80"),
-      eligible: true,
-      blocking_conditions: [],
-      prior_decision: null,
-      due_attribution: {
-        as_of: "2026-09-16T00:00:00+00:00",
-        business_date: "2026-09-16",
-        timezone: "Asia/Phnom_Penh",
-        line_count: 1,
-        unknown_line_count: 0,
-        attribution_complete: true,
-        aggregate_outstanding_usd_cents: 80050,
-        overdue_balance_usd_cents: 80000,
-        not_overdue_balance_usd_cents: 50,
-      },
-    });
-    render(
-      <InvoiceManagement
-        api={api}
-        journal={journal}
-        actorId="actor"
-        propertyId={propertyId}
-      />,
-    );
-    await loadInvoice();
-    fireEvent.click(
-      screen.getByRole("button", { name: "Review late payment" }),
-    );
-    await screen.findByText("Eligible for one final decision.");
-    expect(screen.queryByText(/Overdue amount unavailable/)).toBeNull();
-    expect(screen.getByText(/Calculated default/)).toHaveTextContent(
-      "Overdue USD 800.00 · Default 10% · Calculated default USD 80.00",
-    );
-    const summary = screen.getByRole("region", {
-      name: "Due-date attribution",
-    });
-    expect(summary).toHaveTextContent("outstanding USD 800.50");
-    expect(summary).toHaveTextContent("overdue USD 800.00");
-    expect(summary).toHaveTextContent("not yet overdue USD 0.50");
-    expect(summary).toHaveTextContent("unresolved lines 0");
-    expect(
-      screen.getByRole("button", { name: "Review final decision" }),
-    ).toBeInTheDocument();
-    expect(api.decide).not.toHaveBeenCalled();
   });
   it("TEST-FE-247 preserves billing run identity for an explicit retry", async () => {
     const { api, journal } = setup();

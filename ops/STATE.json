@@ -59760,5 +59760,20 @@
       "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-v1055-routine-correction-authority-20260917.json",
       "sha256": "a7b228cdf4930cbe5cf4ce358dc8b0c845056c951e0d8ade5e34210f58b3522f"
     }
+  },
+  "v1_055_due_attribution_withdrawal": {
+    "status": "withdrawn_by_owner",
+    "at": "2026-09-30",
+    "withdrawn_decision": "docs/010 V1-055 owner-approved within-line due-date allocation — 2026-09-15",
+    "superseding_decision": "docs/010 V1-055 owner rule changes and withdrawal of within-line due-date attribution — 2026-09-30",
+    "withdrawn_checkpoint": "7b858e1cc2e213eccdf3cc4c1d7cff678f85cc0c",
+    "retained_checkpoint": "a6c5c1b3c879e15ff36166e3db98e51016f19038",
+    "removed_migration": "20260916_62",
+    "migration_chain": "20260915_61 -> 20260917_63",
+    "persistent_database_applied_62": false,
+    "historical_records": "Earlier v1_055_invoice_due_attribution fields are historical and superseded; not rewritten.",
+    "next": "Owner review of canonical amendment drafts; implementation stopped",
+    "publication_permitted": false,
+    "v1_056_activation_permitted": false
   }
 }

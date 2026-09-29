@@ -4,7 +4,7 @@
 from alembic import op
 
 revision = "20260917_63"
-down_revision = "20260916_62"
+down_revision = "20260915_61"
 branch_labels = None
 depends_on = None
 

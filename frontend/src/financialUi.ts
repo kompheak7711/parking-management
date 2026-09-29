@@ -158,7 +158,7 @@ export function financialUiError(error: unknown): string {
 
 export type FinancialCommandRequest = Extract<
   FinancialRequest,
-  { operation: FinancialCommandOperation }
+  { body: FinancialObject }
 >;
 export type FinancialReadRequest = Exclude<
   FinancialRequest,

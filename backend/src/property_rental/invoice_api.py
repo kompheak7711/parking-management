@@ -3,13 +3,12 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from datetime import date
 from typing import Annotated, Literal, Protocol
 from uuid import UUID
 
 from fastapi import APIRouter, Header, HTTPException, Query, Request, Response, status
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field
 
 from property_rental.api import require_billing_actor
 from property_rental.browser_security import require_browser_mutation
@@ -33,7 +32,6 @@ from property_rental.invoice import (
     CreateInvoiceDraftCommand,
     InvoiceAuthorizationError,
     InvoiceConflictError,
-    InvoiceCorrectionPart,
     InvoiceIdempotencyKeyReused,
     InvoiceInvalidError,
     InvoiceNotFoundError,
@@ -44,7 +42,6 @@ from property_rental.invoice import (
     VoidInvoiceCommand,
     validate_invoice_cursor,
 )
-from property_rental.invoice_due import DueSourceKind
 from property_rental.settings import Settings
 
 InvoiceStatus = Literal["DRAFT", "UNPAID", "PARTIALLY_PAID", "PAID", "VOID"]
@@ -143,14 +140,6 @@ class MoneyInput(BaseModel):
     minor_units: int = Field(strict=True, gt=0, le=9_000_000_000_000_000)
 
 
-class CorrectionPartInput(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    source_kind: DueSourceKind
-    source_id: UUID
-    amount: MoneyInput
-
-
 class AdjustmentInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -159,25 +148,6 @@ class AdjustmentInput(BaseModel):
     amount: MoneyInput
     source_reference: str = Field(min_length=1, max_length=500, pattern=r"^\S(?:.*\S)?$")
     reason: str = Field(min_length=1, max_length=500, pattern=r"^\S(?:.*\S)?$")
-    approved_due_date: date | None = None
-    governing_source_reference: str | None = Field(
-        default=None, min_length=1, max_length=500, pattern=r"^\S(?:.*\S)?$"
-    )
-    correction_parts: list[CorrectionPartInput] | None = Field(
-        default=None, min_length=1, max_length=32767
-    )
-
-    @field_validator("approved_due_date", mode="before")
-    @classmethod
-    def calendar_date(cls, value: object) -> date | None:
-        if value is None:
-            return None
-        if not isinstance(value, str):
-            raise ValueError("Approved due date must use YYYY-MM-DD")
-        parsed = date.fromisoformat(value)
-        if parsed.isoformat() != value:
-            raise ValueError("Approved due date must use YYYY-MM-DD")
-        return parsed
 
 
 class VoidInput(BaseModel):
@@ -493,18 +463,6 @@ def create_invoice_router(
                     body.source_reference,
                     body.reason,
                     expected_version,
-                    approved_due_date=body.approved_due_date,
-                    governing_source_reference=body.governing_source_reference,
-                    correction_parts=(
-                        tuple(
-                            InvoiceCorrectionPart(
-                                part.source_kind, part.source_id, part.amount.minor_units
-                            )
-                            for part in body.correction_parts
-                        )
-                        if body.correction_parts is not None
-                        else None
-                    ),
                 ),
                 actor=actor,
             )

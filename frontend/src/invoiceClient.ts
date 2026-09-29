@@ -75,30 +75,15 @@ export interface InvoiceFilters {
   cursor?: string;
   sort?: "invoice_date" | "-invoice_date";
 }
-/** Server-proved dated position; the client only displays these exact integers. */
-export interface DueAttribution {
-  as_of: string;
-  business_date: string;
-  timezone: string;
-  line_count: number;
-  unknown_line_count: number;
-  attribution_complete: boolean;
-  aggregate_outstanding_usd_cents: number | bigint;
-  overdue_balance_usd_cents: number | bigint | null;
-  not_overdue_balance_usd_cents: number | bigint | null;
-}
 export interface LatePaymentReview {
   invoice_id: string;
   property_id: string;
-  /** Null when the server cannot prove due-date attribution for this invoice. */
-  overdue_balance: Money | null;
+  overdue_balance: Money;
   default_rate_basis_points: number;
-  /** Null when the server provides no overdue balance. */
-  calculated_default_amount: Money | null;
+  calculated_default_amount: Money;
   eligible: boolean;
   blocking_conditions: string[];
   prior_decision: JsonValue;
-  due_attribution: DueAttribution | null;
 }
 export type DecisionOutcome = "CONFIRMED_DEFAULT" | "REDUCED" | "WAIVED";
 export interface LatePaymentDecision {
@@ -379,36 +364,6 @@ function invoice(value: unknown): InvoiceResource {
     evidence: evidence(row),
   };
 }
-function nullableMoney(value: unknown): Money | null {
-  return value === null ? null : money(value);
-}
-function nonNegativeCents(value: unknown): number | bigint {
-  if (typeof value === "bigint" && value >= 0n) return value;
-  return integer(value, 0);
-}
-function nullableCents(value: unknown): number | bigint | null {
-  return value === null ? null : nonNegativeCents(value);
-}
-function dueAttribution(value: unknown): DueAttribution | null {
-  if (value === undefined || value === null) return null;
-  const row = object(value);
-  if (typeof row.attribution_complete !== "boolean") return invalid();
-  return {
-    as_of: text(row.as_of),
-    business_date: text(row.business_date),
-    timezone: text(row.timezone),
-    line_count: integer(row.line_count),
-    unknown_line_count: integer(row.unknown_line_count),
-    attribution_complete: row.attribution_complete,
-    aggregate_outstanding_usd_cents: nonNegativeCents(
-      row.aggregate_outstanding_usd_cents,
-    ),
-    overdue_balance_usd_cents: nullableCents(row.overdue_balance_usd_cents),
-    not_overdue_balance_usd_cents: nullableCents(
-      row.not_overdue_balance_usd_cents,
-    ),
-  };
-}
 function lateReview(value: unknown): LatePaymentReview {
   const row = object(value);
   if (
@@ -416,21 +371,15 @@ function lateReview(value: unknown): LatePaymentReview {
     row.default_rate_basis_points !== 1000
   )
     return invalid();
-  const overdue = nullableMoney(row.overdue_balance);
-  const calculated = nullableMoney(row.calculated_default_amount);
-  // An eligible review without the amounts it is eligible for is malformed.
-  if (row.eligible && (overdue === null || calculated === null))
-    return invalid();
   return {
     invoice_id: text(row.invoice_id),
     property_id: text(row.property_id),
-    overdue_balance: overdue,
+    overdue_balance: money(row.overdue_balance),
     default_rate_basis_points: 1000,
-    calculated_default_amount: calculated,
+    calculated_default_amount: money(row.calculated_default_amount),
     eligible: row.eligible,
     blocking_conditions: array(row.blocking_conditions).map(text),
     prior_decision: json(row.prior_decision),
-    due_attribution: dueAttribution(row.due_attribution),
   };
 }
 function decision(value: unknown): LatePaymentDecision {

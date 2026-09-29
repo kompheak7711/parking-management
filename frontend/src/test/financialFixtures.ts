@@ -230,20 +230,6 @@ export function fixture(
       evidence_reference: "Synthetic receipt",
       property_timezone: "Asia/Phnom_Penh",
     },
-    allocationPreview: {
-      property_id: ids.property,
-      payment_id: ids.payment,
-      available_usd_cents: 100,
-      amount_usd_cents: 100,
-      part_count: 0,
-      intent: {
-        mode: "DESIGNATED",
-        designation_reference: "Synthetic customer choice",
-        targets: [
-          { late_payment_charge_id: ids.invoice, amount_usd_cents: 100 },
-        ],
-      },
-    },
     allocationProposal: {
       property_id: ids.property,
       payment_id: ids.payment,
@@ -283,19 +269,6 @@ export function fixture(
     creditReverse: {
       ...credit,
       recognition_reversal: { id: ids.event, customer_credit_id: ids.credit },
-    },
-    creditPreview: {
-      property_id: ids.property,
-      credit_id: ids.credit,
-      available_usd_cents: 100,
-      amount_usd_cents: 100,
-      part_count: 0,
-      intent: {
-        mode: "DESIGNATED",
-        designation_reference: "Synthetic customer choice",
-        late_payment_charge_id: ids.invoice,
-        amount_usd_cents: 100,
-      },
     },
     creditProposal: {
       property_id: ids.property,

@@ -1,3 +1,5 @@
+> **SUPERSEDED 2026-09-30.** The owner withdrew the within-line due-date attribution policy. This scope is historical only and authorizes no work; see `docs/010_DECISION_LOG.md`, entry "V1-055 owner rule changes and withdrawal of within-line due-date attribution — 2026-09-30".
+
 # V1-055 — governing due dates and within-line attribution
 
 Accepted base: `cdf1492e0d920bc70ef690ab34183d1bbc578d2f`. Standing owner authority and accepted earliest-due-first policy apply. Full scope and preservation receipt: `/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-invoice-due-attribution-scope.json`.

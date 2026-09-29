@@ -14,10 +14,8 @@ from uuid import UUID, uuid4
 
 import psycopg
 from psycopg import IsolationLevel
-from psycopg.types.json import Jsonb
 
 from property_rental.identity import AuthenticatedActor, AuthorizationRequirement, is_authorized
-from property_rental.invoice_due import DueSourceKind
 
 INVOICE_READ_CAPABILITY: Final = "invoices.read"
 INVOICE_CREATE_CAPABILITY: Final = "invoices.create"
@@ -125,31 +123,6 @@ class IssueInvoiceCommand:
 
 
 @dataclass(frozen=True, slots=True)
-class InvoiceCorrectionPart:
-    source_kind: DueSourceKind
-    source_id: UUID
-    amount_usd_cents: int
-
-    def __post_init__(self) -> None:
-        if not isinstance(self.source_kind, DueSourceKind):
-            raise ValueError("Correction source kind is invalid")
-        if not isinstance(self.source_id, UUID):
-            raise ValueError("source_id must be a UUID")
-        _identity(self.source_id, "source_id")
-        if type(self.amount_usd_cents) is not int or not (
-            1 <= self.amount_usd_cents <= 9_000_000_000_000_000
-        ):
-            raise ValueError("Correction part must be bounded positive integer cents")
-
-    def payload(self) -> dict[str, object]:
-        return {
-            "source_kind": self.source_kind.value,
-            "source_id": str(self.source_id),
-            "amount_usd_cents": self.amount_usd_cents,
-        }
-
-
-@dataclass(frozen=True, slots=True)
 class AdjustInvoiceCommand:
     idempotency_key: UUID
     invoice_line_id: UUID
@@ -158,9 +131,6 @@ class AdjustInvoiceCommand:
     source_reference: str
     reason: str
     expected_version: int
-    approved_due_date: date | None = None
-    governing_source_reference: str | None = None
-    correction_parts: tuple[InvoiceCorrectionPart, ...] | None = None
 
     def __post_init__(self) -> None:
         _identity(self.idempotency_key, "idempotency_key")
@@ -175,43 +145,6 @@ class AdjustInvoiceCommand:
         _normalized(self.source_reference, "source_reference")
         _normalized(self.reason, "reason")
         _expected_version(self.expected_version)
-        # Absence remains valid client intent for exact pre-migration replay.
-        # The database applies mandatory new-post requirements after replay lookup.
-        if (self.approved_due_date is None) != (self.governing_source_reference is None):
-            raise ValueError("Approved due date and governing reference must be supplied together")
-        if self.approved_due_date is not None:
-            if type(self.approved_due_date) is not date:
-                raise ValueError("Approved due date must be a calendar date")
-            if self.adjustment_type is not AdjustmentType.DEBIT:
-                raise ValueError("Only debit Adjustments introduce approved due dates")
-        if self.governing_source_reference is not None:
-            _normalized(self.governing_source_reference, "governing_source_reference")
-        if self.correction_parts is not None:
-            if self.adjustment_type is not AdjustmentType.CREDIT:
-                raise ValueError("Only credit Adjustments identify corrected source parts")
-            if (
-                type(self.correction_parts) is not tuple
-                or not 1 <= len(self.correction_parts) <= 32767
-            ):
-                raise ValueError("Correction parts must be a bounded nonempty immutable sequence")
-            identities: set[tuple[DueSourceKind, UUID]] = set()
-            for part in self.correction_parts:
-                if not isinstance(part, InvoiceCorrectionPart):
-                    raise ValueError("Correction part is invalid")
-                identity = (part.source_kind, part.source_id)
-                if identity in identities:
-                    raise ValueError("Correction source must not be repeated")
-                identities.add(identity)
-                if (
-                    part.source_kind is DueSourceKind.ORIGINAL_LINE
-                    and part.source_id != self.invoice_line_id
-                ):
-                    raise ValueError("Original correction source must identify this Invoice line")
-            if (
-                sum(part.amount_usd_cents for part in self.correction_parts)
-                != self.amount_usd_cents
-            ):
-                raise ValueError("Correction parts must preserve the exact Adjustment amount")
 
 
 @dataclass(frozen=True, slots=True)
@@ -575,51 +508,35 @@ class PostgresInvoiceService:
         actor: AuthenticatedActor,
     ) -> dict[str, object]:
         self._authorize(actor, property_id, INVOICE_ADJUST_CAPABILITY)
-        payload: dict[str, object] = {
-            "adjustment_type": command.adjustment_type.value,
-            "amount": {"currency": "USD", "minor_units": command.amount_usd_cents},
-            "expected_version": command.expected_version,
-            "invoice_line_id": str(command.invoice_line_id),
-            "reason": command.reason,
-            "source_reference": command.source_reference,
-        }
-        if command.approved_due_date is not None:
-            payload["approved_due_date"] = command.approved_due_date.isoformat()
-            payload["governing_source_reference"] = command.governing_source_reference
-        parts = None
-        if command.correction_parts is not None:
-            parts = [part.payload() for part in command.correction_parts]
-            payload["correction_parts"] = parts
         digest = invoice_request_digest(
-            action="adjust", property_id=property_id, invoice_id=invoice_id, payload=payload
+            action="adjust",
+            property_id=property_id,
+            invoice_id=invoice_id,
+            payload={
+                "adjustment_type": command.adjustment_type.value,
+                "amount": {"currency": "USD", "minor_units": command.amount_usd_cents},
+                "expected_version": command.expected_version,
+                "invoice_line_id": str(command.invoice_line_id),
+                "reason": command.reason,
+                "source_reference": command.source_reference,
+            },
         )
-        parameters: tuple[object, ...] = (
-            property_id,
-            invoice_id,
-            command.invoice_line_id,
-            self._actor_id(actor),
-            command.idempotency_key,
-            digest,
-            command.expected_version,
-            command.adjustment_type.value,
-            command.amount_usd_cents,
-            command.source_reference,
-            command.reason,
-            uuid4(),
-            uuid4(),
-        )
-        if command.approved_due_date is None and parts is None:
-            return self._execute(
-                "SELECT app.adjust_invoice(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-                parameters,
-            )
         return self._execute(
-            "SELECT app.adjust_invoice(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            "SELECT app.adjust_invoice(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
             (
-                *parameters,
-                command.approved_due_date,
-                command.governing_source_reference,
-                Jsonb(parts) if parts is not None else None,
+                property_id,
+                invoice_id,
+                command.invoice_line_id,
+                self._actor_id(actor),
+                command.idempotency_key,
+                digest,
+                command.expected_version,
+                command.adjustment_type.value,
+                command.amount_usd_cents,
+                command.source_reference,
+                command.reason,
+                uuid4(),
+                uuid4(),
             ),
         )
 

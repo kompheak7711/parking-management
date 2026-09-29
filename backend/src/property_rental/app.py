@@ -92,11 +92,6 @@ from property_rental.financial_action_context_api import (
     FinancialActionContextFlow,
     create_financial_action_context_router,
 )
-from property_rental.financial_due_sources import FinancialDueSourcesService
-from property_rental.financial_due_sources_api import (
-    FinancialDueSourcesFlow,
-    create_financial_due_sources_router,
-)
 from property_rental.financial_reference import FinancialReferenceService
 from property_rental.financial_reference_api import (
     FinancialReferenceFlow,
@@ -222,7 +217,7 @@ LATE_PAYMENT_API_PATH_PATTERN: Final = re.compile(
     r"late-payment-charges(?:/|$))"
 )
 PAYMENT_API_PATH_PATTERN: Final = re.compile(
-    r"^/api/v1/(?:financial-workspaces$|properties/[^/]+/(?:financial-capabilities|financial-due-sources|payment-methods)$|"
+    r"^/api/v1/(?:financial-workspaces$|properties/[^/]+/(?:financial-capabilities|payment-methods)$|"
     r"properties/[^/]+/(?:payments|refunds|payment-allocations|receipts|customer-credits|credit-applications)(?:/|$)|"
     r"customer-ledger/customers(?:/|$)|customers/[^/]+/(?:credits|account-ledger)(?:/|$)|"
     r"(?:payments|payment-allocations|receipts|customer-credits|credit-applications|refunds|refund-sources)(?:/|$))"
@@ -356,7 +351,6 @@ def create_app(
     financial_reference_flow: FinancialReferenceFlow | None = None,
     payment_reversal_context_flow: PaymentReversalContextFlow | None = None,
     financial_action_context_flow: FinancialActionContextFlow | None = None,
-    financial_due_sources_flow: FinancialDueSourcesFlow | None = None,
     allocation_receipt_flow: AllocationReceiptFlow | None = None,
     credit_refund_flow: CreditRefundFlow | None = None,
     customer_ledger_flow: CustomerLedgerFlow | None = None,
@@ -920,17 +914,6 @@ def create_app(
             actor_resolver,
             financial_action_context_flow
             or FinancialActionContextService(
-                resolved_settings.database_url.get_secret_value()
-                if resolved_settings.database_url is not None
-                else None
-            ),
-        )
-    )
-    app.include_router(
-        create_financial_due_sources_router(
-            actor_resolver,
-            financial_due_sources_flow
-            or FinancialDueSourcesService(
                 resolved_settings.database_url.get_secret_value()
                 if resolved_settings.database_url is not None
                 else None

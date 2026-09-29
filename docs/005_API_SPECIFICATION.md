@@ -583,22 +583,6 @@ direction, exact amount/currency, reason, and authorization. Void is exceptional
 preserves history, and rejects unresolved active applications when rules require
 reversal first.
 
-New debit Adjustments carry `approved_due_date` (YYYY-MM-DD) and a normalized
-`governing_source_reference` together. The date comes from the approved governing
-source; the command does not approve that source or change the original Invoice
-due date. Credit Adjustments may carry `correction_parts`: a nonempty ordered list
-of `source_kind` (`ORIGINAL_LINE` or `DEBIT_ADJUSTMENT`), `source_id`, and exact USD
-`amount`. Each source appears once and the parts sum exactly to the Adjustment.
-Original-source identity is the Invoice line; debit-source identity is its linked
-debit Adjustment. Mixed-source corrections require explicit selection, without a
-Payment allocation default. Database validation retains source scope, chronology,
-approved evidence, remaining balance and reversal dependencies.
-
-Older requests omit these optional transport fields, preserving their original
-digest and stored exact response. New-post validation occurs after exact replay
-lookup; omission cannot authorize a new undated debit. Transport support alone is
-not evidence that the forward command and integrity acceptance gates have passed.
-
 ## API-053 — Invoice Lines
 
 Lines are created only through approved draft/generation services and include type,
@@ -1147,101 +1131,6 @@ This API Specification is complete for Owner Review when:
   termination behavior are exposed; and
 - the resolved local-authentication policy is implemented without coupling business
   authorization to credential-library details.
-
-
-### V1-055 dated Payment/Credit confirmation contract
-
-The dated Payment/Credit confirmation contract is delivered by the non-mutating preview reads and the dated-source read described in the following checkpoints. Preview reads are classified apart from posting commands, retain authentication, action capability, CSRF and response bounds, and reject an Idempotency-Key. Posting still requires explicit staff confirmation of exact immutable dated parts, current-state validation and preserved historical replay. Client and staff integration for late-payment attribution and independent acceptance of the complete version remain pending.
-
-
-### V1-055 generated dated-source proposal checkpoint
-
-The existing SQL Payment and Credit proposal producers now include `due_attribution` on each selected line, containing `basis: EARLIEST_DUE` and immutable-source date/time/balance/amount parts. The existing Invoice/line policy labels, capability boundaries, response budgets and continuation instruction remain unchanged. A500-part batch cap can leave a line partially selected; later lines wait for a fresh explicitly confirmed batch. Incomplete dated evidence maps to the existing financial conflict family. This component is locally verified; posting validation/parts,HTTP/client response contracts and staff display are still pending, so the financial stage is not accepted.
-
-
-### V1-055 atomic dated posting checkpoint — 2026-09-16
-
-The SQL Payment and Credit posting commands now validate each confirmed due_attribution snapshot and insert canonical immutable parts atomically. Generated proposals retain their original freshness checks; Customer designations require a current positive integer invoice_version and exact source facts. Default confirmation recomputes earliest due order; explicit choices retain their selected sources. Historical exact replay returns before new fields are required; a new old-shaped request requires fresh evidence. Missing or invalid evidence uses existing invalid/conflict families. Connected Python/HTTP/client preview and staff display remain pending,so this SQL component is not financial-stage acceptance.
-
-
-### V1-055 read-only designation preparation — 2026-09-16
-
-The internal designated Invoice builder now supplies versioned due_attribution for exact selected lines and optional source_parts. source_parts is preview input only; prepared details contain exact dated confirmation. Required authorized outer Payment/Credit wrappers,non-mutating POST routes and client/staff integration are still pending. Existing command actor checks use locking reads; the new previews must instead use fresh active-human read checks and action capability authorization inside a read-only coherent transaction,without modifying command checks.
-
-
-### V1-055 scoped read-only preview verification — 2026-09-16
-
-The SQL designation-preview envelopes are locally verified for both sources. Prepared Invoice intents contain current version and exact due_attribution; Charge intent remains unchanged. Python immutable input/service methods, strict historical-replay-compatible Credit confirmation parsing, authorized non-mutating POST routes and client/staff integration are still pending. SQL wrappers do not replace fresh application capability or POST Origin/CSRF enforcement. Preview must remain a read without a command key or command recovery.
-
-
-### V1-055 Python preview boundary — 2026-09-16
-
-The Python DesignationPreviewInput now seals a detached exact Customer selection for Payment or Credit,without a command key. AllocationReadService.designation_preview and CustomerCreditService.application_preview require the existing exact Property action capability,then use runtime/read connections with repeatable-read/read-only transactions,UTC,3second connection/lock and5second statement limits. SQL wrappers recheck active HUMAN and all current financial context. Their safe errors do not direct command replay. Credit posting input now accepts either unchanged historical Invoice designation or complete versioned due_attribution; every new detail must provide exact dated parts and whole sums/counts. Captured JSON is preserved without normalization; source_parts remains preview-only. Real-service database verification and HTTP/client/staff exposure remain pending.
-
-
-### V1-055 actual preview service integration — 2026-09-16
-
-Real runtime preview and financial posting service integration now passes18cases:default/Customer-designated source choices prepare exact dated evidence;Payment/Credit services post and replay without duplication. Fresh inactive/missing HUMAN,wrong Property capability,missing source and stale confirmation map safely. Actual preview transactions are READ ONLY,REPEATABLE READ,UTC with unchanged3s/5sdeadlines. Historical61service commands replay after62without rewritten evidence. Non-mutating POST routes,client read classification and staff confirmation remain pending.
-
-
-### V1-055 non-mutating HTTP previews — 2026-09-16
-
-Payment POST /api/v1/payments/{payment_id}/allocation-preview and Customer Credit POST /api/v1/customer-credits/{credit_id}/application-preview are non-mutating reads. They retain strict bounded JSON,Origin/CSRF,fresh current actor and exact Property action checks; reject command identity headers and verify response source/Property binding. Responses use200 without Location. Existing safe read error mapping applies. Frontend body-carrying read transport and staff confirmation remain pending.
-
-
-### V1-055 client preview contract — 2026-09-16
-
-A dedicated client preview contract now validates the Payment/Credit body and binds returned confirmation to the captured selection. The confirmation preserves exact target/line/source identity,order,amount and reference,with valid Invoice version,approved date,aware source timestamp and exact outstanding/application totals. Charge targets remain separate. Explicit source choices require CUSTOMER_DESIGNATED; default source allocation requires EARLIEST_DUE. Existing request and response integrations are unchanged until the next bounded step.
-
-
-### V1-055 explicit preview transport — 2026-09-16
-
-The finite client registry now exposes allocationPreview and creditPreview as POST reads. Capture validates and preserves the exact JSON body;transport sends current CSRF/actor/Property/request context without Idempotency-Key. Existing read helpers accept these operations;command recovery and command-only UI types exclude them by operation identity. Successful responses bind the complete dated selection to source/Property. Existing financial command-body validators and recovery modules remain unchanged;new Credit dated DESIGNATED posting adaptation and staff screens are next.
-
-
-### V1-055 dated Credit confirmation client — 2026-09-16
-
-Credit DESIGNATED Invoice client commands now accept invoice_version only with exact dated due_attribution details. All source identities,approved dates,aware timestamps,positive amounts,bounded balances,unique lines/sources,whole totals and500parts are checked. Legacy no-version captured commands preserve their old shape and original wire bytes for exact replay;the server still rejects new line-only postings without a fresh preview. Payment/proposal/Charge transport branches remain unchanged and connected valid evidence is covered. Staff source read/selection and display remain pending.
-
-
-### V1-055 paginated dated-source read — 2026-09-16
-
-The dated-source SQL read now supports paginated staff choices through existing source/Property/Customer/fresh-HUMAN context. Its response includes exact invoice version,revision,as_of,aggregate,item_count,has_more and bounded source rows. This is a verified internal boundary;the Python/HTTP route and client remain pending and must not be claimed available. Subsequent preview and explicit posting still revalidate current financial facts.
-
-
-### V1-055 dated-source Python/API read — 2026-09-16
-
-GET /api/v1/properties/{property_id}/financial-due-sources now accepts only purpose(allocation/credit_application),source_id,invoice_id,invoice_line_id,limit1..100and optional revision:source-kind:UUIDcursor. It checks the current action capability and selected Property,uses the existing read-only runtime transaction,and returns data/page/meta. The bounded data contains exact source/Invoice/line binding,Invoice version,revision,as_of,aggregate,item_count and positive dated source rows. Cursor continuation requires current facts. Unknown/duplicate query values,duplicate actor/Property headers and command keys reject before dispatch;the existing actor binding remains authoritative. Error statuses400/401/403/404/409/503 use safe envelopes and all responses have private,no-store cache policy. The new service/API is verified with mocks;real database-backed endpoint integration remains required.
-
-
-### V1-055 dated-source real service integration — 2026-09-16
-
-GET financial-due-sources is now locally verified through the real service/runtime role and HTTP router for Payment and Credit. Limit-one pages preserve authoritative dated facts and unchanged financial history; changed revisions require reload. Current capability and active actor, scoped missing sources and unresolved legacy attribution remain enforced. Client/source-selection and staff preview/confirmation are still pending.
-
-
-### V1-055 dated-source client contract verified — 2026-09-16
-
-The dated-source client helper locally verifies detached finite allocation/credit_application requests and exact source pages. It preserves authoritative date/instant/identity/balance facts and enforces version/revision/pagination/count/sum/byte bounds.123cases pass. This pure helper does not issue requests,confer authorization or permit posting;reference transport and staff choices remain pending.
-
-
-### V1-055 dated-source reference transport verified — 2026-09-16T18:51:32.564006+00:00
-
-The existing financial reference client now registers only the finite financialDueSources GET operation. It uses verified detached requests/pages,unchanged private bounded transport and exact metadata binding. A separate frozen WeakMap receipt binds the actor,Property,request,purpose,source,Invoice,line,cursor/limit and serialized facts. Reply copies have no provenance and mutation cannot alter the receipt. This read never posts or supplies command keys;staff sequencing/selection remains pending.
-
-
-### V1-055 complete dated-source sequence — 2026-09-16T19:02:20.476681+00:00
-
-The complete dated-source client sequence now verifies genuine receipt actor/Property/source/Invoice/line/limit and cursor continuity, stable revision/version/count/aggregate, global source order/uniqueness and complete exact totals. Statement as_of may advance without invalidating stable facts. Only detached complete data is exposed. Source reads are bounded to8MiB/32767rows without truncation; malformed sequences fail closed and require a new instance. No posting authorization or client allocation calculation.
-
-
-### V1-055 bounded dated-source loading — 2026-09-16T19:07:19.697469+00:00
-
-The dated-source loader captures scope/request and reads through the genuine complete sequence with1000page ceiling and current-signal checks before and after every asynchronous response. It exposes complete detached facts only, propagates stale/unavailable without retry and never posts or calculates allocation.
-
-
-### V1-055 dated late-payment integration — 2026-09-16T21:17:21.807777+00:00
-
-The late-payment review now adds due_attribution. With incomplete attribution,overdue_balance and calculated_default_amount are null,eligible is false and blocking_conditions includes DUE_ATTRIBUTION_UNRESOLVED. Complete amounts retain the USD money shape;future sources are excluded from the proposed charge. Python passes the server evidence through unchanged. The existing client currently requires non-null Money;typed validation and UI unavailable-state support remain the next required integration and must complete before release.
 
 
 ### V1-055 move-out final Utility inputs — service boundary — 2026-09-29

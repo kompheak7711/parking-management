@@ -1,5 +1,3 @@
-import { validateDueConfirmation } from "./financialDueConfirmation";
-import { duePreviewBody } from "./financialDuePreview";
 import {
   ExactJsonNumber,
   parseFinancialJson,
@@ -286,7 +284,6 @@ function intent(value: unknown, credit: boolean): void {
       invalidFinancial();
   } else {
     const invoice = Object.hasOwn(row, "invoice_id");
-    const versioned = invoice && Object.hasOwn(row, "invoice_version");
     const target = invoice ? "invoice_id" : "late_payment_charge_id";
     exactKeys(row, [
       "mode",
@@ -294,20 +291,11 @@ function intent(value: unknown, credit: boolean): void {
       "amount_usd_cents",
       "designation_reference",
       ...(invoice ? ["details"] : []),
-      ...(versioned ? ["invoice_version"] : []),
     ]);
     financialId(row[target]);
     positive(row.amount_usd_cents);
     text(row.designation_reference, 500, true);
     if (invoice) {
-      if (versioned) {
-        validateDueConfirmation(
-          row.details,
-          row.amount_usd_cents,
-          row.invoice_version,
-        );
-        return;
-      }
       if (
         !Array.isArray(row.details) ||
         row.details.length < 1 ||
@@ -343,7 +331,6 @@ export const FINANCIAL_OPERATIONS = {
   paymentGet: ["GET", "/payments/:id", 200],
   paymentRecord: ["POST", "/properties/:propertyId/payments", 201],
   allocationProposal: ["GET", "/payments/:id/allocation-proposal", 200],
-  allocationPreview: ["POST", "/payments/:id/allocation-preview", 200],
   allocationList: ["GET", "/payments/:id/allocations", 200],
   allocationPost: ["POST", "/payments/:id/allocations", 201],
   allocationReverse: ["POST", "/payment-allocations/:id/reverse", 200],
@@ -357,7 +344,6 @@ export const FINANCIAL_OPERATIONS = {
   creditRecognize: ["POST", "/payments/:id/credit-recognitions", 201],
   creditReverse: ["POST", "/customer-credits/:id/reverse", 200],
   creditProposal: ["GET", "/customer-credits/:id/application-proposal", 200],
-  creditPreview: ["POST", "/customer-credits/:id/application-preview", 200],
   creditApply: ["POST", "/customer-credits/:id/applications", 201],
   creditApplication: ["GET", "/credit-applications/:id", 200],
   creditApplicationReverse: ["POST", "/credit-applications/:id/reverse", 200],
@@ -373,13 +359,10 @@ export const FINANCIAL_OPERATIONS = {
   ],
 } as const;
 export type FinancialOperation = keyof typeof FINANCIAL_OPERATIONS;
-export type FinancialPreviewOperation = "allocationPreview" | "creditPreview";
 export type FinancialCommandOperation = {
-  [K in FinancialOperation]: K extends FinancialPreviewOperation
-    ? never
-    : (typeof FINANCIAL_OPERATIONS)[K][0] extends "POST"
-      ? K
-      : never;
+  [K in FinancialOperation]: (typeof FINANCIAL_OPERATIONS)[K][0] extends "POST"
+    ? K
+    : never;
 }[FinancialOperation];
 export type EnforcementCommandOperation =
   | "leaseWarningRecord"
@@ -407,7 +390,7 @@ export type FinancialRequest = {
       Exclude<Parameters<(typeof FINANCIAL_OPERATIONS)[K][1]>, "propertyId">,
       string
     >;
-  } & (K extends FinancialCommandOperation | FinancialPreviewOperation
+  } & (K extends FinancialCommandOperation
     ? { body: FinancialObject }
     : { query?: FinancialObject });
 }[FinancialOperation];
@@ -589,18 +572,10 @@ export function commandBody(
   }
   return row;
 }
-export function isFinancialPreview(
-  operation: FinancialOperation,
-): operation is FinancialPreviewOperation {
-  return operation === "allocationPreview" || operation === "creditPreview";
-}
 export function isFinancialCommand(
   operation: FinancialOperation,
 ): operation is FinancialCommandOperation {
-  return (
-    FINANCIAL_OPERATIONS[operation][0] === "POST" &&
-    !isFinancialPreview(operation)
-  );
+  return FINANCIAL_OPERATIONS[operation][0] === "POST";
 }
 function queryFor(
   operation: FinancialOperation,
@@ -695,17 +670,16 @@ export function captureWireRequest(input: unknown): CapturedFinancialRequest {
     return invalidFinancial();
   const operation = row.operation as FinancialOperation;
   const command = isFinancialCommand(operation);
-  const carriesBody = command || isFinancialPreview(operation);
   exactKeys(
     row,
     [
       "operation",
       "target",
-      ...(carriesBody
+      ...(command
         ? [Object.hasOwn(row, "wireBody") ? "wireBody" : "body"]
         : []),
     ],
-    carriesBody ? [] : ["query"],
+    command ? [] : ["query"],
   );
   const targetRow = financialObject(row.target);
   const parameters = [
@@ -721,21 +695,16 @@ export function captureWireRequest(input: unknown): CapturedFinancialRequest {
       target[key] = targetRow[key] as string;
     } else target[key] = financialId(targetRow[key]);
   }
-  const query = carriesBody ? {} : financialObject(row.query ?? {});
+  const query = command ? {} : financialObject(row.query ?? {});
   queryFor(operation, query, target);
-  const wireBody = carriesBody
+  const wireBody = command
     ? Object.hasOwn(row, "wireBody")
       ? row.wireBody
       : stringifyFinancialJson(row.body)
     : null;
-  if (carriesBody) {
+  if (command) {
     if (typeof wireBody !== "string") return invalidFinancial();
-    if (isFinancialCommand(operation)) commandBody(operation, wireBody);
-    else
-      duePreviewBody(
-        operation === "allocationPreview" ? "PAYMENT" : "CREDIT",
-        wireBody,
-      );
+    commandBody(operation, wireBody);
   }
   return Object.freeze({
     operation,
