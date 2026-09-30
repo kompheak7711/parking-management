@@ -716,6 +716,11 @@ standard early-termination fee, and no later-month Rent after termination. For
 violation termination, show and validate at least three documented warning letters
 and the signed-Lease authority.
 
+For an unpaid Initial Rent Invoice, show the signed-Lease clause reference and the path
+that applies: never moved in (Reservation cancellation, deposit forfeiture, Invoice VOID
+with reason, Unit release) or moved in (Invoice kept, prorated credit Adjustment for the
+days after termination, move-out). Every step requires explicit authorized confirmation.
+
 ## UI-077 — Continued Occupancy
 
 When occupancy continues after contractual End Date, show the mismatch and require
@@ -728,6 +733,10 @@ Capture actual Move-out Date, Occupancy closure, final Meter Readings, inspectio
 findings, approved final charge sources, keys/evidence where upstream requirements
 support them, and unresolved items. Completing Move-out does not imply Settlement
 closure.
+
+Show the final Utility Invoice created from the final Readings and its proposed Due Date.
+A Damage charge is entered per finding with amount, reason and evidence reference by an
+authorized user.
 
 # 19. Final Settlement UI
 

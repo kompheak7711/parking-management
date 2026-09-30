@@ -247,6 +247,11 @@ expiration, that Reservation releases the Unit.
 If no other Lease, maintenance, cleaning, or out-of-service condition blocks
 availability, the Unit becomes VACANT.
 
+When a Lease is terminated before any move-in under BR-LEASE-005, the Unit is released
+without an Occupancy or physical move-out. It becomes VACANT, or CLEANING when the
+Property's readiness process requires it, unless another Reservation, Lease, maintenance
+or out-of-service condition blocks availability.
+
 ---
 
 ## BR-UNIT-011 — Unit Status After Move-out
@@ -712,6 +717,18 @@ Termination must record the approved actual termination date and its governing
 signed-Lease or business event. A Termination Notice alone does not change Lease
 status.
 
+When a Lease is terminated because the Initial Rent Invoice is unpaid:
+
+- If the tenant never moved in, the Reservation is cancelled as customer-caused and its
+  Security Deposit is forfeited under BR-RES-021. The unpaid Initial Rent Invoice is
+  VOIDed with a mandatory reason under BR-INV-046, so no Rent is charged. The Unit is
+  released under BR-UNIT-010 without an Occupancy or physical move-out.
+- If the tenant moved in, the Initial Rent Invoice is kept and is never VOIDed. Rent is
+  owed only through the termination date; the remaining days are removed by a linked
+  credit Adjustment calculated with BR-RENT-007 proration. Utility through the actual
+  Move-out Date and any Damage charges are charged, and the move-out process applies.
+  Final Settlement remains governed by its own rules.
+
 ---
 
 ## BR-LEASE-006 — Primary Tenant Required
@@ -1166,34 +1183,19 @@ Example:
 
 ### BR-RENT-005 — Initial Rent Invoice Period
 
-For an actual Move-in Date on day 1 through day 20 inclusive, the Initial Rent
-Invoice covers the Move-in Date through the last calendar day of the move-in month.
-Only the portion after a move-in later than day 1 is prorated.
+The Initial Rent Invoice is calculated from the Lease Start Date in the signed Lease,
+not the actual Move-in Date. For a Lease Start Date on day 1 through day 20 inclusive,
+it covers the Lease Start Date through the last calendar day of that month. Only the
+portion after a Lease Start Date later than day 1 is prorated. For a Lease Start Date on
+day 21 or later, it combines the prorated remainder of the start month and the entire
+following calendar month. BR-RENT-007 proration applies.
 
-For an actual Move-in Date on day 21 or later, the Initial Rent Invoice combines:
-
-1. the prorated remainder of the move-in month; and
-2. the entire following calendar month.
-
-Example:
-
-Move-in Date:
-
-- 10 July
-
-Initial Rent Period:
-
-- 10 July
-- through
-- 31 July
-
-The next recurring Rent Invoice begins on:
-
-- 1 August
-
-For a 27 July move-in, the Initial Rent period is 27 July through 31 August. Normal
-billing resumes on 25 August for the 1–30 September period. Initial and recurring
-Rent periods must not duplicate or overlap.
+Examples: a 10 July Lease Start Date covers 10–31 July; a 27 July Lease Start Date
+covers 27 July–31 August, and recurring billing resumes on 25 August for the 1–30
+September period. A Lease Start Date of 20 September with a $300 monthly Rent is
+charged from 20 September even if the tenant arrives on 25 September:
+$300 × 11/30 = $110.00. The actual Move-in Date does not change Initial Rent coverage.
+Initial and recurring Rent periods must not duplicate or overlap.
 
 ---
 
@@ -1262,12 +1264,12 @@ Recurring Rent Invoices have a Due Date of the **5th day of the billed month**. 
 Due Date is established by the application/business rule; the Lease Agreement does
 not define an alternative recurring Invoice Due Date.
 
-The Initial Rent Invoice is due five calendar days after the later of its issue date
-and the actual Move-in Date, including when that Due Date falls in the following month.
-Both dates are `Asia/Phnom_Penh` business dates. The Initial Rent Invoice may be issued
-before the actual Move-in Date when the Customer asks to pay early. The Due Date is set
-at issuance and never changes afterwards. BR-RENT-005 periods and BR-RENT-007 proration
-are unchanged.
+The system proposes an Initial Rent Invoice Due Date of the Lease Start Date plus five
+calendar days, including when that date falls in the following month. An authorized user
+may set a different Due Date before issuance with a mandatory reason; the actor and
+timestamp are recorded. The Due Date is fixed once the Invoice is issued. The Initial
+Rent Invoice references the signed Lease, not a recorded Occupancy, and may be issued
+before the Lease Start Date.
 
 Example:
 
@@ -1276,9 +1278,15 @@ Example:
 | August       | 25 July           | 5 August    |
 | September    | 25 August         | 5 September |
 
-Examples: issued 10 July for a 10 July move-in, due 15 July; issued 1 July for a 10 July
-move-in, due 15 July; issued 27 July for a 27 July move-in (period 27 July to 31 August),
-due 1 August; and issued 29 July for a 25 July move-in, due 3 August.
+Examples: issued 1 July or 10 July for a 10 July Lease Start Date, proposed Due Date
+15 July; a 27 July Lease Start Date, proposed Due Date 1 August.
+
+The Initial Rent Invoice never opens a Rent nonpayment case and has no late-payment
+charge. If it remains unpaid after its Due Date, the system alerts authorized management
+on the following calendar day in `Asia/Phnom_Penh`. Any response, including termination
+under BR-LEASE-005 and BR-LEASE-025, is a separate manual authorized action; nothing is
+automatic. The actual Move-in Date is recorded when move-in occurs, whether or not the
+Invoice is paid.
 
 ---
 
@@ -1506,6 +1514,8 @@ BR-INV-051 through BR-INV-055 govern the Invoice-wide calculation and one final
 management decision. BR-LEASE-026 through BR-LEASE-030 govern the separate 20-day
 Rent nonpayment warning, 30-day Serious Nonpayment Default, cure history, and explicit
 termination boundary.
+
+The Initial Rent Invoice is not an applicable source Invoice for a late-payment charge.
 
 ---
 
@@ -1751,6 +1761,11 @@ financially responsible Customers. A move-in, move-out, or responsibility change
 requires a validated Reading boundary or an approved broken-Meter estimation
 boundary so each Customer is billed only for the applicable period.
 
+Before the Lease Start Date, after cleaning and repair, staff record a validated Reading
+for each Utility Meter of the Unit with an evidence reference and turn Electricity and
+Water off. That Reading is the Customer's starting responsibility boundary, whether the
+tenant arrives on the Lease Start Date or later.
+
 ---
 
 ### BR-UTIL-019 — Historical Utility Integrity
@@ -1784,6 +1799,11 @@ period's ending Reading date.
 A Utility Invoice may be generated only after its ending Meter Reading has been
 entered and validated, or after an authorized broken-Meter estimate is complete.
 
+At move-out, the final Utility Invoice is created off-cycle immediately from the final
+validated Readings or approved estimate. Its Due Date follows BR-INV-018. It must not
+duplicate a consumption period billed by the monthly run under BR-UTIL-018 and
+BR-INV-027.
+
 ---
 
 ### BR-UTIL-022 — Utility Due Date
@@ -1791,6 +1811,8 @@ entered and validated, or after an authorized broken-Meter estimate is complete.
 A monthly Utility Invoice is due on the 5th day of the following month in the
 Property's configured local timezone, where “following month” is relative to the
 billing month defined in BR-UTIL-020.
+
+The final Utility Invoice created at move-out follows BR-INV-018 instead.
 
 ---
 
@@ -2096,27 +2118,26 @@ period already covered by that Initial Service period.
 Each explicitly approved, configured, active, and applicable recurring Service
 follows the same Initial Invoice period structure as Rent.
 
-For an actual Move-in Date on day 1 through day 20 inclusive, its Initial Service
-period covers the Move-in Date through the last calendar day of the move-in month.
+For a Lease Start Date on day 1 through day 20 inclusive, its Initial Service
+period covers the Lease Start Date through the last calendar day of the start month.
 
-For an actual Move-in Date on day 21 or later, its Initial Service period combines:
+For a Lease Start Date on day 21 or later, its Initial Service period combines:
 
-1. the prorated remainder of the move-in month; and
+1. the prorated remainder of the start month; and
 2. the entire following calendar month.
 
 Each component uses the applicable approved configured Service rate for its period.
 The prorated component uses the inclusive actual-calendar-day formula and final
 half-up USD-cent rounding under BR-MONEY-012. The Service appears as a separate line
-on the Initial Rent Invoice and therefore shares its Due Date under BR-RENT-009, five calendar days
-after the later of its issue date and the actual Move-in Date.
+on the Initial Rent Invoice and therefore shares the Initial Rent Invoice Due Date under BR-RENT-009.
 
 Example:
 
 ```text
-Move-in:                    27 July
+Lease Start Date:           27 July
 Initial Service coverage:  27–31 July, prorated
                            plus 1–31 August, full month
-Initial Invoice Due Date:  3 August
+Initial Invoice Due Date:  1 August (proposed)
 Normal generation resumes: 25 August for 1–30 September
 Normal Due Date:            5 September
 ```
@@ -2432,15 +2453,14 @@ Once issued, the original Invoice Amount forms part of the permanent financial h
 
 ### BR-INV-018 — Due Date
 
-Every Invoice shall include a Due Date.
-
-Recurring Due Dates follow their approved billing rules. For Damage Charges,
-Miscellaneous Charges, debit Adjustments, and other non-recurring obligations,
-the Due Date must come from the signed Lease or the approved business event or
-document creating the obligation.
-
-Authorized staff may record that applicable Due Date, but must not choose an
-arbitrary date. Its source and reason must be auditable.
+Every issued Invoice has exactly one Due Date; a DRAFT may have none. Recurring Due
+Dates follow their approved billing rules, and the Initial Rent Invoice follows
+BR-RENT-009. For a one-time Damage or Miscellaneous charge created manually by
+authorized staff, and for the final Utility Invoice under BR-UTIL-021, the system
+proposes a Due Date of the issue date plus the Property's configured number of calendar
+days, seven by default. An authorized user may set a different Due Date with a mandatory
+reason; the actor and timestamp are recorded. The Due Date is fixed once issued. Debit
+Adjustments use their Invoice's Due Date under BR-INV-044.
 
 ---
 
@@ -2753,6 +2773,9 @@ association for a non-Lease Invoice.
 VOID is available only when an Invoice fundamentally should not exist. It is not
 the ordinary amount-correction method, and it never removes the original record.
 
+An unpaid Initial Rent Invoice is VOIDed, with a mandatory reason, when its Lease is
+terminated and the tenant never moved in under BR-LEASE-005.
+
 ---
 
 ### BR-INV-047 — Financial Dependency Preservation
@@ -2773,12 +2796,9 @@ the source and correction.
 
 ### BR-INV-049 — Non-recurring Due Date Source
 
-The Due Date for a Damage Charge, Miscellaneous Charge, or other non-recurring
-obligation comes from the signed Lease or approved governing business event or
-document. A debit Adjustment has no Due Date of its own and uses its Invoice's Due
-Date under BR-INV-044. It must not be arbitrary, automatically set to the
-monthly 5th, or automatically made immediate unless its governing source requires
-that result.
+The Due Date of a one-time Damage or Miscellaneous charge follows BR-INV-018. It no
+longer has to come from a governing Lease provision, event or document. A debit
+Adjustment has no Due Date of its own and uses its Invoice's Due Date under BR-INV-044.
 
 ---
 
@@ -2809,6 +2829,8 @@ Remaining balance 6 August:  Overdue and eligible for proposal
 ```
 
 Eligibility does not automatically post a charge.
+
+The Initial Rent Invoice is not an applicable source Invoice for a late-payment charge.
 
 ---
 
@@ -3883,6 +3905,12 @@ A violation and the authority to terminate for it must come from the signed
 Lease. The system must not invent a violation, penalty, fee, forfeiture, or
 termination right.
 
+When the signed Lease contains the approved clause giving a termination right if the
+Security Deposit and the Initial Rent Invoice are not paid within five calendar days
+after the Lease Start Date, that clause is the governing signed-Lease ground for
+termination. BR-LEASE-024's three warning letters do not apply to this ground. The
+termination records the Lease clause reference.
+
 ---
 
 ## BR-LEASE-026 — Rent Nonpayment Day Count
@@ -3890,11 +3918,10 @@ termination right.
 Rent nonpayment days are counted in `Asia/Phnom_Penh` calendar days from a fixed day
 one, independent of the Invoice Due Date.
 
-For a recurring Rent Invoice, day one is the first calendar day of the billed month.
-For the Initial Rent Invoice, day one is the later of its issue date and the actual
-Move-in Date. A day-21-or-later Initial Rent Invoice that combines the prorated
-move-in month and the following month has one day one and one count. An Initial Rent
-Invoice issued after the next recurring first day still uses this rule.
+The Rent nonpayment process under BR-LEASE-026 through BR-LEASE-030 applies only to
+recurring monthly Rent Invoices. Day one is the first calendar day of the billed month.
+The Initial Rent Invoice never opens a Rent nonpayment case; BR-RENT-009 governs its
+follow-up.
 
 Day N is day one plus N − 1 calendar days. Day 20 is therefore the 20th and day 30 is
 the 1st plus 29 days; in a normal-year February, day 30 is 2 March.
@@ -3916,8 +3943,6 @@ Example:
 ```text
 Recurring Rent for August:                 day 1 = 1 August,   day 20 = 20 August,   day 30 = 30 August
 Recurring Rent for February:               day 1 = 1 February, day 20 = 20 February, day 30 = 2 March (normal year)
-Initial Rent issued 10 July, move-in 10 July: day 1 = 10 July,  day 20 = 29 July,     day 30 = 8 August
-Initial Rent issued 1 July, move-in 10 July:  day 1 = 10 July,  day 20 = 29 July,     day 30 = 8 August
 ```
 
 ---
@@ -4045,6 +4070,10 @@ An ordinary missing reading delays the charge. A zero-history broken-Meter estim
 remains pending until the approved complete future-period basis exists. One or two
 complete historical actual periods are usable immediately under BR-UTIL-027.
 
+When final validated Readings or an approved estimate are recorded at move-out, the
+system creates the final Utility Invoice off-cycle under BR-UTIL-021. When the tenant
+never moved in, no final Readings, Utility charges or Damage charges apply.
+
 ---
 
 ## BR-MOVEOUT-006 — Inspection and Final Charges
@@ -4054,6 +4083,13 @@ Miscellaneous, and Adjustment obligations that properly belong in Final
 Settlement must be finalized from their approved sources.
 
 This rule does not create a new charge, fee, or damage policy.
+
+A Damage charge is created only from a recorded inspection damage finding, by an
+authorized manager or staff member holding the Damage-charge capability, who enters the
+amount with a mandatory reason and evidence reference (a note or document reference).
+Each finding is billed at most once. The charge must match the finding's Customer,
+Lease and Unit. Inspection alone creates no charge; there is no standard damage fee and
+no automatic Pet Deposit forfeiture. Its Due Date follows BR-INV-018.
 
 ---
 
@@ -4709,8 +4745,8 @@ require authorization and complete audit history.
 
 ## Resolved: OOD-BR-001 — Initial Rent Invoice Due Date
 
-The Owner resolved this item: the Initial Rent Invoice is due five calendar days
-after the later of its issue date and the actual Move-in Date under BR-RENT-009. The recurring Due Date remains the
+The Owner resolved this item: the Initial Rent Invoice Due Date is proposed as the
+Lease Start Date plus five calendar days under BR-RENT-009, with an authorized override. The recurring Due Date remains the
 5th of the billed month and is not overridden by the Lease.
 
 ## Resolved: OOD-BR-002 — Late-payment Calculation Base

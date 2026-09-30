@@ -311,16 +311,16 @@ rounding behavior, and preserved calculation inputs.
 
 ## TEST-043 — Rent Due Date
 
-Verify the Initial Rent Invoice Due Date is exactly five calendar days after the later
-of its issue date and the actual Move-in Date, set at issuance and immutable afterwards,
-including cross-month results:
+Verify the proposed Initial Rent Invoice Due Date is the Lease Start Date plus five
+calendar days, including cross-month results:
 
-- issued 10 July for a 10 July move-in → 15 July;
-- issued 1 July for a 10 July move-in → 15 July;
-- issued 27 July for a 27 July move-in → 1 August; and
-- issued 29 July for a 25 July move-in → 3 August.
+- issued 1 July or 10 July for a 10 July Lease Start Date → 15 July; and
+- a 27 July Lease Start Date → 1 August.
 
-Verify historical Invoices under the seven-day rule are unchanged.
+Verify an authorized override requires a reason and records the actor and timestamp,
+the Due Date is fixed after issuance, and coverage uses the Lease Start Date (a 20
+September start with a 25 September arrival → $110.00 for $300 Rent). Verify historical
+seven-day Invoices are unchanged.
 
 Verify recurring Rent Invoices are due on the fifth day of the billed calendar month.
 The Lease must not override the application's recurring Rent Due Date. No fallback,
@@ -681,10 +681,9 @@ when applicable. Verify no Rent-nonpayment event automatically terminates the Le
 closes Occupancy, moves out the Customer, changes Unit status, creates Final Settlement,
 or creates a new fee/penalty.
 
-Verify day one on the 1st of the billed month for recurring Rent and on the later of the
-issue date and actual Move-in Date for Initial Rent, with one count for a
-day-21-or-later combined Invoice; for example, an Initial Rent Invoice issued 1 July for
-a 10 July move-in has day one 10 July. Verify day 30 in February is 2 March in a normal
+Verify day one on the 1st of the billed month for recurring Rent. Verify a case cannot be
+opened for an Initial Rent Invoice, the unpaid-Initial management alert appears the day
+after its Due Date, and no late-payment charge is proposed for it. Verify day 30 in February is 2 March in a normal
 year and 1 March in a leap year. Verify immediate alerts for late-opened cases, and that
 cases recorded earlier are unchanged.
 
@@ -710,6 +709,14 @@ violation termination.
 
 Verify actual occupancy end, readings, inspection evidence, and final-charge inputs
 are recorded without falsely marking financial closure complete.
+
+Verify an unpaid-Initial termination: never moved in (Reservation cancelled as
+customer-caused, deposit forfeited, Invoice VOIDed with reason, Unit released without an
+Occupancy) and moved in (Invoice kept, prorated credit Adjustment for the remaining days,
+move-out applies). Verify the final Utility Invoice is created off-cycle from the final
+Readings without duplicating a monthly-run period, the pre-Lease baseline Reading is the
+starting boundary, and a Damage charge requires the capability, reason and evidence, is
+billed once and matches its finding.
 
 ## TEST-079 — Final Settlement Cardinality
 

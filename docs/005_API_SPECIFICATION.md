@@ -583,6 +583,10 @@ direction, exact amount/currency, reason, and authorization. Void is exceptional
 preserves history, and rejects unresolved active applications when rules require
 reversal first.
 
+Issue accepts an optional Due Date override with a mandatory reason; without it, the
+server applies the proposed Due Date (Lease Start Date plus five for Initial Rent, issue
+date plus the configured days for one-time and final Utility Invoices).
+
 A debit Adjustment on a fully paid line returns 409 with the current line balance. A
 credit Adjustment reports any amount recorded as Customer Credit. Neither accepts a Due
 Date field; both use the Invoice Due Date.
@@ -839,7 +843,7 @@ No Rent-nonpayment event automatically terminates the Lease, ends Occupancy, mov
 the Customer, changes Unit status, or creates Final Settlement. Any termination remains
 a separate authorized Lease action.
 
-The case snapshot exposes `nonpayment_day_one`, the current day number and each
+Cases open only for recurring Rent Invoices. The case snapshot exposes `nonpayment_day_one`, the current day number and each
 milestone date. A case opened after day 20 or day 30 is flagged for immediate staff
 alert. Posting uses the day count under BR-LEASE-026.
 
@@ -852,7 +856,8 @@ alert. Posting uses the day count under BR-LEASE-026.
 
 The command records actual Move-out Date, Occupancy closure, final Readings,
 inspection/final-charge source references, reason/evidence, and audit event. It does
-not assert financial closure.
+not assert financial closure. Final validated Readings create the final Utility Invoice
+off-cycle without duplicating a monthly-run period.
 
 ## API-070 — Final Settlement Resource
 

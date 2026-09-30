@@ -419,9 +419,8 @@ Customer. The case is separate from `lease_violation_warnings`; it is not opened
 total mixed-Invoice balance.
 
 `nonpayment_day_one date` is required for cases opened under the current count: the
-first day of the billed month for recurring Rent, or the later of the Initial Rent
-Invoice issue date and the actual Move-in Date. It is null for cases recorded before the
-change. `due_date_snapshot` keeps its recorded meaning. Existing cases and events are
+first day of the billed month. New cases require a RECURRING Rent Invoice; an Initial
+Rent Invoice never opens a case. It is null for cases recorded before the change. `due_date_snapshot` keeps its recorded meaning. Existing cases and events are
 never rewritten.
 
 ## DB-LEASE-009 — `rent_nonpayment_events`
@@ -681,7 +680,10 @@ and every billed Service line must fall within one approval period.
 | `billing_period_end` | `date` | yes | inclusive, >= start |
 | `rent_billing_kind` | `text` | yes | `INITIAL` or `RECURRING`; required exactly when the Invoice contains Rent |
 | `original_total_usd_cents` | `bigint` | no | `CHECK (>= 0)`; immutable after issuance |
-| `due_date_rule` | `text` | no | `INITIAL_RENT_ISSUE_PLUS_FIVE`, `RECURRING_RENT_FIFTH`, or `GOVERNING_SOURCE`; existing rows keep `INITIAL_RENT_SEVEN_DAYS` as historical evidence and new Initial Rent Invoices use only `INITIAL_RENT_ISSUE_PLUS_FIVE` |
+| `due_date_rule` | `text` | no | `INITIAL_RENT_LEASE_START_PLUS_FIVE`, `RECURRING_RENT_FIFTH`, `ONE_TIME_ISSUE_PLUS_CONFIGURED_DAYS`, or `GOVERNING_SOURCE`; historical rows keep `INITIAL_RENT_SEVEN_DAYS` or `GOVERNING_SOURCE` as evidence |
+| `due_date_override_reason` | `text` | yes | required with `due_date_set_by` and `due_date_set_at` when an authorized user replaces the proposed Due Date; all three present or all absent |
+| `due_date_set_by` | `uuid` | yes | actor who set the override |
+| `due_date_set_at` | `timestamptz` | yes | time of the override |
 | `due_date_source` | `text` | no | approved rule/event/document trace; never a Lease override |
 | `issued_at` | `timestamptz` | yes | required unless DRAFT |
 | `issued_by` | `uuid` | yes | required unless DRAFT |
@@ -691,10 +693,12 @@ Constraints and indexes:
 
 - `UNIQUE (invoice_number)` and `UNIQUE (id, lease_id)` to support consistency references.
 - Rent requires non-null `lease_id`, period dates, and applicable SIGNED Lease.
-- INITIAL Rent issued under the current rule requires Due Date exactly five calendar
-  days after the later of the `Asia/Phnom_Penh` business date of `issued_at` and the
-  source Occupancy Move-in Date. The Due Date is set at issuance and immutable
-  afterwards. Its period begins on Move-in Date and ends at that month-end
+- INITIAL Rent under the current rule references the signed Lease through `lease_id`;
+  `source_occupancy_id` is null for new Initial Rent Invoices and retained on historical
+  rows. Its proposed Due Date is the Lease Start Date plus five calendar days; a
+  different Due Date requires the override columns. The Due Date is fixed once issued.
+  One-time Damage, Miscellaneous and final Utility Invoices propose the issue date plus
+  the Property's configured `one_time_charge_due_days`, seven by default. Its period begins on the Lease Start Date and ends at that month-end
   for days 1–20, or at the following month-end for days 21 or later.
 - RECURRING Rent covers one complete calendar month and is due on that month's fifth
   day. The standard is policy, not an optional Lease term. Other obligations use only
@@ -1323,6 +1327,13 @@ Append-preserved operational source: `id uuid PK`, `lease_id uuid NOT NULL FK`, 
 ## DB-MOVEOUT-002 — `inspection_damage_findings`
 
 `id uuid PK`, `inspection_id uuid NOT NULL FK`, `description text NOT NULL`, `pet_related boolean NOT NULL`, `created_at timestamptz NOT NULL`, `created_by uuid NOT NULL`. If billed, an `authorized_nonrecurring_obligations` row and its Invoice line identify this finding relationally. No standard fee or damage amount is implied.
+
+`authorized_nonrecurring_obligations.inspection_damage_finding_id` is a foreign key to
+this table and is unique, so a finding is billed at most once. Completion checks that
+the finding's inspection, Lease, Customer and Unit match the obligation and Invoice.
+The amount is entered only by an actor holding the Damage-charge capability, with a
+mandatory reason and evidence reference. Evidence is a bounded text reference; the
+system stores no photo or file.
 
 ### Operational inspection evidence boundary (V1-055)
 
@@ -2158,7 +2169,7 @@ backdoor.
 
 No genuine Owner business-policy decision remains open in this Database Model. The
 previous first-partial-month Due Date question is resolved upstream: Initial Rent is due
-five calendar days after the later of its issue date and the actual Move-in Date. The following implementation/configuration
+proposed as the Lease Start Date plus five calendar days, with an authorized override. The following implementation/configuration
 choices must preserve
 the normative model but do not reopen business policy:
 
