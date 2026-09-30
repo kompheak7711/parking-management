@@ -343,11 +343,15 @@ def test_inspection_function_permissions_and_damage_admission_remain_narrow(
     migrated_database_url: str,
 ) -> None:
     with psycopg.connect(migrated_database_url) as connection:
-        assert connection.execute(
+        # Migration 65 admits Damage only as a one-time charge bound to a Lease.
+        admission = connection.execute(
             "SELECT pg_get_constraintdef(oid) FROM pg_constraint WHERE conreli"
             "d='app.authorized_nonrecurring_obligations'::regclass AND conname"
-            "='authorized_nonrecurring_damage_source_deferred'"
-        ).fetchone() == ("CHECK ((category <> 'DAMAGE_CHARGES'::text))",)
+            "='authorized_nonrecurring_damage_one_time'"
+        ).fetchone()
+        assert admission is not None
+        assert "DAMAGE_CHARGES" in admission[0]
+        assert "ONE_TIME_ISSUE_PLUS_CONFIGURED_DAYS" in admission[0]
         for role, expected in [
             ("prm_runtime", (True, False, False)),
             ("prm_financial", (False, True, False)),

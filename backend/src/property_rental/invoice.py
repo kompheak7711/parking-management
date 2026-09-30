@@ -22,6 +22,12 @@ INVOICE_CREATE_CAPABILITY: Final = "invoices.create"
 INVOICE_ISSUE_CAPABILITY: Final = "invoices.issue"
 INVOICE_ADJUST_CAPABILITY: Final = "invoices.adjust"
 INVOICE_VOID_CAPABILITY: Final = "invoices.void"
+DAMAGE_CHARGE_BILL_CAPABILITY: Final = "damage_charges.bill"
+PROPERTY_MANAGE_CAPABILITY: Final = "property.manage"
+ONE_TIME_CHARGE_CAPABILITIES: Final = {
+    "DAMAGE_CHARGES": DAMAGE_CHARGE_BILL_CAPABILITY,
+    "MISCELLANEOUS_CHARGES": INVOICE_CREATE_CAPABILITY,
+}
 INVOICE_CONNECT_TIMEOUT_SECONDS: Final = 3
 INVOICE_LOCK_TIMEOUT_MS: Final = 3_000
 INVOICE_QUERY_TIMEOUT_MS: Final = 5_000
@@ -116,9 +122,70 @@ class CorrectInvoiceDraftCommand:
 class IssueInvoiceCommand:
     idempotency_key: UUID
     expected_version: int
+    due_date: date | None = None
+    due_date_reason: str | None = None
 
     def __post_init__(self) -> None:
         _identity(self.idempotency_key, "idempotency_key")
+        _expected_version(self.expected_version)
+        if (self.due_date is None) != (self.due_date_reason is None):
+            raise ValueError("due_date and due_date_reason must be provided together")
+        if self.due_date is not None and type(self.due_date) is not date:
+            raise ValueError("due_date must be a calendar date")
+        if self.due_date_reason is not None:
+            _normalized(self.due_date_reason, "due_date_reason")
+
+
+@dataclass(frozen=True, slots=True)
+class RecordOneTimeChargeCommand:
+    """A manual Damage or Miscellaneous charge; Damage bills one inspection finding."""
+
+    charge_id: UUID
+    category: str
+    customer_id: UUID
+    lease_id: UUID | None
+    inspection_damage_finding_id: UUID | None
+    description: str
+    amount_usd_cents: int
+    reason: str
+    evidence_reference: str
+
+    def __post_init__(self) -> None:
+        _identity(self.charge_id, "charge_id")
+        _identity(self.customer_id, "customer_id")
+        if self.category not in ONE_TIME_CHARGE_CAPABILITIES:
+            raise ValueError("category must be DAMAGE_CHARGES or MISCELLANEOUS_CHARGES")
+        damage = self.category == "DAMAGE_CHARGES"
+        if damage and (self.inspection_damage_finding_id is None or self.lease_id is None):
+            raise ValueError("a Damage charge requires its Lease and inspection damage finding")
+        if not damage and self.inspection_damage_finding_id is not None:
+            raise ValueError("a Miscellaneous charge must not reference a damage finding")
+        for value, field in (
+            (self.lease_id, "lease_id"),
+            (self.inspection_damage_finding_id, "inspection_damage_finding_id"),
+        ):
+            if value is not None:
+                _identity(value, field)
+        if (
+            type(self.amount_usd_cents) is not int
+            or not 1 <= self.amount_usd_cents <= 9_000_000_000_000_000
+        ):
+            raise ValueError("amount_usd_cents must be a bounded positive integer")
+        _normalized(self.description, "description", maximum=1000)
+        _normalized(self.reason, "reason")
+        _normalized(self.evidence_reference, "evidence_reference")
+
+
+@dataclass(frozen=True, slots=True)
+class SetOneTimeChargeDueDaysCommand:
+    days: int
+    reason: str
+    expected_version: int
+
+    def __post_init__(self) -> None:
+        if type(self.days) is not int or not 1 <= self.days <= 90:
+            raise ValueError("days must be an integer from 1 to 90")
+        _normalized(self.reason, "reason")
         _expected_version(self.expected_version)
 
 
@@ -479,14 +546,18 @@ class PostgresInvoiceService:
         actor: AuthenticatedActor,
     ) -> dict[str, object]:
         self._authorize(actor, property_id, INVOICE_ISSUE_CAPABILITY)
+        payload: dict[str, object] = {"expected_version": command.expected_version}
+        if command.due_date is not None:
+            payload["due_date"] = command.due_date.isoformat()
+            payload["due_date_reason"] = command.due_date_reason
         digest = invoice_request_digest(
             action="issue",
             property_id=property_id,
             invoice_id=invoice_id,
-            payload={"expected_version": command.expected_version},
+            payload=payload,
         )
         return self._execute(
-            "SELECT app.issue_invoice(%s,%s,%s,%s,%s,%s,%s,%s)",
+            "SELECT app.issue_invoice(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
             (
                 property_id,
                 invoice_id,
@@ -496,8 +567,75 @@ class PostgresInvoiceService:
                 command.expected_version,
                 uuid4(),
                 uuid4(),
+                command.due_date,
+                command.due_date_reason,
             ),
         )
+
+    def record_one_time_charge(
+        self,
+        property_id: UUID,
+        command: RecordOneTimeChargeCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        """Record the authorized source; an Invoice DRAFT is then created from it."""
+        self._authorize(actor, property_id, ONE_TIME_CHARGE_CAPABILITIES[command.category])
+        return self._execute(
+            "SELECT app.record_one_time_charge(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            (
+                property_id,
+                self._actor_id(actor),
+                command.charge_id,
+                command.category,
+                command.customer_id,
+                command.lease_id,
+                command.inspection_damage_finding_id,
+                command.description,
+                command.amount_usd_cents,
+                command.reason,
+                command.evidence_reference,
+            ),
+        )
+
+    def set_one_time_charge_due_days(
+        self,
+        property_id: UUID,
+        command: SetOneTimeChargeDueDaysCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        """Change the Property setting; issued Invoices keep their fixed Due Dates."""
+        self._authorize(actor, property_id, PROPERTY_MANAGE_CAPABILITY)
+        try:
+            with self._read_connection() as connection:
+                self._bound_query(connection)
+                row = connection.execute(
+                    "SELECT property_id,one_time_charge_due_days,version "
+                    "FROM app.set_one_time_charge_due_days(%s,%s,%s,%s,%s,%s)",
+                    (
+                        property_id,
+                        self._actor_id(actor),
+                        command.expected_version,
+                        command.days,
+                        command.reason,
+                        uuid4(),
+                    ),
+                ).fetchone()
+                current = connection.execute(
+                    "SELECT version FROM app.properties WHERE id=%s", (property_id,)
+                ).fetchone()
+        except psycopg.Error as exc:
+            raise self._map_error(exc) from exc
+        if row is None:
+            if current is None:
+                raise InvoiceNotFoundError("Property was not found")
+            raise InvoiceVersionConflict(int(cast(int, current[0])))
+        return {
+            "property_id": str(row[0]),
+            "one_time_charge_due_days": row[1],
+            "version": row[2],
+        }
 
     def adjust(
         self,

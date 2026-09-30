@@ -168,6 +168,7 @@ database_test_suites='
   tests/test_utility_api_migration.py
   tests/test_move_out_final_inputs_migration.py
   tests/test_initial_rent_lease_start_migration.py
+  tests/test_one_time_charges_migration.py
   tests/test_billing_run_migration.py
 '
 

@@ -587,6 +587,21 @@ Issue accepts an optional Due Date override with a mandatory reason; without it,
 server applies the proposed Due Date (Lease Start Date plus five for Initial Rent, issue
 date plus the configured days for one-time and final Utility Invoices).
 
+Implementation status (migration `20261002_65`): the service boundary is delivered
+without a new HTTP route. `PostgresInvoiceService.record_one_time_charge` records a
+manual Damage charge (capability `damage_charges.bill`, one current inspection finding,
+matching Lease and Customer) or Miscellaneous charge (capability `invoices.create`)
+with an integer-cent amount, mandatory reason and text evidence reference; the existing
+draft command then creates the DRAFT without a Due Date. `issue` accepts the optional
+`due_date` and `due_date_reason` pair only for one-time charge Invoices; the pair is
+part of the request digest only when present, so earlier issue replays are unchanged.
+`set_one_time_charge_due_days` changes the Property setting (capability
+`property.manage`, expected Property version, mandatory reason, audited). A route for
+creating a one-time charge may be added to API-052 in the HTTP and UI slice. Missing
+capability is an authorization failure; a reused charge identity with different intent,
+or a finding already billed, is a conflict; a mismatched or superseded finding, a
+backdated or misplaced Due Date, or an invalid shape is invalid.
+
 A debit Adjustment on a fully paid line returns 409 with the current line balance. A
 credit Adjustment reports any amount recorded as Customer Credit. Neither accepts a Due
 Date field; both use the Invoice Due Date.

@@ -140,9 +140,16 @@ Exactly one row exists per deployed database.
 | `address_text` | `text` | yes | Property address |
 | `timezone_name` | `text` | no | `CHECK (timezone_name = 'Asia/Phnom_Penh')` |
 | `base_currency` | `text` | no | `CHECK (base_currency = 'USD')` |
+| `one_time_charge_due_days` | `smallint` | no | default 7, `CHECK (BETWEEN 1 AND 90)`; calendar days added to the issue date of a one-time charge Invoice |
 | provenance columns | as DB-TYPE-007 | no | mutable aggregate provenance |
 
 A database constraint trigger rejects insertion when a Property row already exists. Property deletion is prohibited.
+
+`one_time_charge_due_days` changes only through `app.set_one_time_charge_due_days`, which
+follows the versioned Property update pattern (expected version, `updated_by`,
+`updated_at`), requires the `property.manage` capability and writes an
+`audit_events` row with the previous and resulting value and a mandatory reason. A
+change applies to Invoices issued afterwards; issued Due Dates never change.
 
 ## DB-UNIT-001 — `units`
 
@@ -806,7 +813,18 @@ CHECK IN ('DAMAGE_CHARGES','MISCELLANEOUS_CHARGES')`,
 NULL`, `authorized_at timestamptz NOT NULL`, `authorized_by uuid NOT NULL`, and
 `authorization_reference text NOT NULL`. Damage requires one inspection finding;
 Miscellaneous prohibits it and requires another approved governing source in
-`source_reference`. Invoice Customer/Lease/category/amount must equal the obligation,
+`source_reference`.
+
+`due_date_rule text NOT NULL DEFAULT 'GOVERNING_SOURCE'` distinguishes historical rows,
+which keep their `governing_due_date` unchanged, from manual one-time charges
+(`ONE_TIME_ISSUE_PLUS_CONFIGURED_DAYS`), recorded by `app.record_one_time_charge` with
+`governing_due_date` null, `due_date_source='BR-INV-018'`, mandatory `reason` and text
+`evidence_reference`, and a linked `audit_event_id`. Their Invoice DRAFT has no Due
+Date; issue sets it to the Property-local issue date plus
+`properties.one_time_charge_due_days`, or to an authorized date with a mandatory reason
+recorded in the Invoice override columns (never before the issue date). Damage rows
+must use the one-time rule and a Lease; a finding of a superseded inspection is not
+billable. Invoice Customer/Lease/category/amount must equal the obligation,
 and an obligation may be billed once. Pet-related use is derived only through the
 linked finding's `pet_related` flag. This relation creates no new fee, penalty,
 category, or charging right.

@@ -863,6 +863,7 @@ Rent Due Date question in `DL-042` and do not authorize new business policy.
 - **Unchanged:** BR-RENT-007, BR-LEASE-030, BR-INV-052–055, BR-LATE-001–003, the Lease Start Date.
 - **Affected:** BR-RENT-005/009/029, BR-LEASE-005/025/026–029, BR-SVC-011/012, BR-INV-018/044/046/049/051/054, BR-UNIT-010, BR-UTIL-018/021/022, BR-MOVEOUT-005/006, OOD-BR-001; matching PR, DB-INV-001/003, DB-LEASE-008/009, DB-MOVEOUT-002, API-052/069/095, UI-051/076/078/108, TEST-043/057/078/123/127.
 - **Transition:** Recorded Invoices, cases and events are never rewritten; new rules apply to new records.
+- **Implementation (one-time charges, migration `20261002_65`):** Owner answers of 2026-10-01: service only, no new HTTP route (a creation route may join API-052 in the HTTP and UI slice); Damage requires the new capability `damage_charges.bill`, Miscellaneous reuses `invoices.create`; an authorized Due Date is recorded at issue with a mandatory reason, actor and timestamp and is fixed once issued. `properties.one_time_charge_due_days` (default 7, 1 to 90) follows the versioned Property update pattern with `property.manage`; the existing pattern had no audit event, so this setter adds one. Historical governing-source obligations keep their recorded Due Dates. A finding of a superseded inspection is not billable. Inspection never creates a charge and Pet Deposit is never forfeited automatically.
 - **Decision date:** 2026-09-30.
 
 ## DL-065 — Voluntary leaving and cleaning charge — pending V1-056

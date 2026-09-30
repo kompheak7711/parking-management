@@ -32436,6 +32436,92 @@
       "test_path": "backend/tests/test_initial_rent_lease_start_migration.py",
       "status": "implemented",
       "notes": "Migration64 follows migration63 and refuses downgrade."
+    },
+    {
+      "test_id": "test_damage_charge_bills_one_current_finding_and_is_due_issue_plus_seven",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "BR-INV-018",
+        "PR-MOVEOUT-006",
+        "PR-INV-018",
+        "TEST-056",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_one_time_charges_migration.py",
+      "status": "implemented",
+      "notes": "A Damage charge bills one recorded inspection finding once, with reason and text evidence, and is due on the Phnom Penh issue date plus the configured seven days; the issued Due Date is fixed."
+    },
+    {
+      "test_id": "test_damage_requires_capability_and_a_matching_current_finding",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "PR-MOVEOUT-006",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_one_time_charges_migration.py",
+      "status": "implemented",
+      "notes": "Damage requires damage_charges.bill and a current finding matching the Lease and Customer; findings of a superseded inspection are not billable."
+    },
+    {
+      "test_id": "test_miscellaneous_charge_accepts_an_authorized_due_date_with_reason",
+      "upstream_ids": [
+        "BR-INV-018",
+        "PR-INV-018",
+        "TEST-056"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_one_time_charges_migration.py",
+      "status": "implemented",
+      "notes": "A Miscellaneous charge uses invoices.create; an authorized issue-time Due Date requires a reason, records actor and time, and cannot precede the issue date."
+    },
+    {
+      "test_id": "test_due_days_setting_is_authorized_audited_and_never_changes_issued_invoices",
+      "upstream_ids": [
+        "BR-INV-018",
+        "PR-INV-018",
+        "TEST-056"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_one_time_charges_migration.py",
+      "status": "implemented",
+      "notes": "The Property one_time_charge_due_days setting needs property.manage, is versioned and audited, and never changes issued Invoice Due Dates."
+    },
+    {
+      "test_id": "test_governing_source_obligation_keeps_its_recorded_due_date",
+      "upstream_ids": [
+        "BR-INV-018",
+        "PR-INV-018",
+        "TEST-056"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_one_time_charges_migration.py",
+      "status": "implemented",
+      "notes": "Historical governing-source obligations keep their recorded Due Date and reject an issue-time override."
+    },
+    {
+      "test_id": "test_one_time_charge_storage_constraints_and_command_shapes",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "BR-INV-018",
+        "TEST-056"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_one_time_charges_migration.py",
+      "status": "implemented",
+      "notes": "Storage admits Damage only as a one-time charge bound to a finding once; command shapes reject missing sources and non-positive amounts."
+    },
+    {
+      "test_id": "test_one_time_charges_migration_is_forward_only",
+      "upstream_ids": [
+        "BR-INV-018",
+        "TEST-056"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_one_time_charges_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20261002_65 is additive and forward-only."
     }
   ]
 }
