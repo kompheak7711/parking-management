@@ -477,8 +477,9 @@ def test_forward_upgrade_preserves_existing_warning_and_refuses_downgrade(
             assert (
                 connection.execute(
                     (
-                        "SELECT to_jsonb(w),to_jsonb(i) FROM app.lease_violation_warnings w C"
-                        "ROSS JOIN app.invoices i WHERE w.id=%s AND i.id=%s"
+                        "SELECT to_jsonb(w),to_jsonb(i)-ARRAY['due_date_override_reason',"
+                        "'due_date_set_by','due_date_set_at'] FROM app.lease_violation_warnings w "
+                        "CROSS JOIN app.invoices i WHERE w.id=%s AND i.id=%s"
                     ),
                     (warning_id, invoice),
                 ).fetchone()
@@ -838,7 +839,7 @@ def test_cure_after_day_twenty_warning_stops_day_thirty_trigger_and_preserves_no
             "SELECT timezone('Asia/Phnom_Penh',clock_timestamp())::date"
         ).fetchone()
         assert row is not None and isinstance(row[0], date)
-        move_in = row[0] - timedelta(days=27)
+        move_in = row[0] - timedelta(days=25)
         human, prop, customer, lease, occupancy = setup_billing_source(
             connection,
             configure_trash=False,

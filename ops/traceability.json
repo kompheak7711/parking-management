@@ -32351,6 +32351,91 @@
       "test_path": "backend/tests/test_move_out_final_inputs_migration.py",
       "status": "implemented",
       "notes": "Migration63 follows migration61 and refuses downgrade."
+    },
+    {
+      "test_id": "test_initial_rent_uses_lease_start_not_arrival_and_proposes_start_plus_five",
+      "upstream_ids": [
+        "BR-RENT-005",
+        "BR-RENT-007",
+        "BR-RENT-009",
+        "PR-RENT-005",
+        "PR-RENT-009",
+        "TEST-043"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_initial_rent_lease_start_migration.py",
+      "status": "implemented",
+      "notes": "Initial Rent covers the Lease Start Date period without an Occupancy, may be issued before the start, and proposes the Lease Start Date plus five days."
+    },
+    {
+      "test_id": "test_authorized_due_date_is_recorded_before_issue_and_fixed_afterwards",
+      "upstream_ids": [
+        "BR-RENT-009",
+        "BR-INV-018",
+        "TEST-043"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_initial_rent_lease_start_migration.py",
+      "status": "implemented",
+      "notes": "An authorized Due Date with reason, actor and time is audited, replays exactly, is copied to the Invoice and cannot change or be replaced after issuance."
+    },
+    {
+      "test_id": "test_proposed_due_date_before_issue_requires_an_authorized_due_date",
+      "upstream_ids": [
+        "BR-RENT-009",
+        "BR-INV-018",
+        "TEST-043"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_initial_rent_lease_start_migration.py",
+      "status": "implemented",
+      "notes": "A proposed Due Date before the issue date is rejected until an authorized Due Date is recorded."
+    },
+    {
+      "test_id": "test_initial_rent_rejects_an_occupancy_source",
+      "upstream_ids": [
+        "BR-RENT-005",
+        "BR-RENT-009",
+        "TEST-043"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_initial_rent_lease_start_migration.py",
+      "status": "implemented",
+      "notes": "New Initial Rent Invoices reference the signed Lease and reject an Occupancy source in Python and SQL."
+    },
+    {
+      "test_id": "test_recurring_rent_follows_lease_start_coverage_without_an_occupancy",
+      "upstream_ids": [
+        "BR-RENT-005",
+        "BR-RENT-010",
+        "TEST-043"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_initial_rent_lease_start_migration.py",
+      "status": "implemented",
+      "notes": "Recurring Rent starts after the Lease-start Initial coverage and needs no Occupancy."
+    },
+    {
+      "test_id": "test_issued_due_date_and_override_shape_constraints",
+      "upstream_ids": [
+        "BR-INV-018",
+        "TEST-043"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_initial_rent_lease_start_migration.py",
+      "status": "implemented",
+      "notes": "invoices.due_date may be null only while DRAFT and override fields are all present or all absent."
+    },
+    {
+      "test_id": "test_initial_rent_lease_start_migration_is_forward_only",
+      "upstream_ids": [
+        "BR-RENT-009",
+        "TEST-043"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_initial_rent_lease_start_migration.py",
+      "status": "implemented",
+      "notes": "Migration64 follows migration63 and refuses downgrade."
     }
   ]
 }

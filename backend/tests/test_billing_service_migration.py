@@ -238,7 +238,7 @@ def initial_command(
         "billing_kind": RentBillingKind.INITIAL,
         "period_start": date(2026, 7, 27),
         "issued_at": datetime(2026, 7, 26, 17, 0, 1, tzinfo=UTC),
-        "source_occupancy_id": occupancy_id,
+        "source_occupancy_id": None,
     }
     values.update(changes)
     return GenerateRentInvoiceCommand(**values)  # type: ignore[arg-type]
@@ -269,7 +269,7 @@ def test_initial_invoice_preserves_rent_service_components_and_excludes_unapprov
     assert result.rent_usd_cents == 92_903
     assert result.service_usd_cents == 1_361
     assert result.total_usd_cents == 94_264
-    assert result.due_date == date(2026, 8, 3)
+    assert result.due_date == date(2026, 8, 1)
     assert result.period_end == date(2026, 8, 31)
     assert result.service_line_count == 2
     assert result.status == "UNPAID"
@@ -480,7 +480,7 @@ def test_direct_financial_replay_requires_digest_and_every_request_field(
                     command_value.invoice_id,
                     f"{command_value.invoice_number}-tampered",
                     lease_id,
-                    occupancy_id,
+                    None,
                     command_value.billing_kind,
                     command_value.period_start,
                     command_value.issued_at,
@@ -501,7 +501,7 @@ def test_direct_financial_replay_requires_digest_and_every_request_field(
                     command_value.invoice_id,
                     command_value.invoice_number,
                     lease_id,
-                    occupancy_id,
+                    None,
                     command_value.billing_kind,
                     command_value.period_start,
                     command_value.issued_at,
@@ -521,7 +521,7 @@ def test_direct_financial_replay_requires_digest_and_every_request_field(
                     command_value.invoice_id,
                     command_value.invoice_number,
                     lease_id,
-                    occupancy_id,
+                    None,
                     None,
                     command_value.period_start,
                     command_value.issued_at,
@@ -1420,7 +1420,7 @@ def test_v1_040_is_forward_only_and_is_the_migration_head(
     connection: Connection[tuple[object, ...]],
 ) -> None:
     assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-        "20260915_61",
+        "20261001_64",
     )
     with pytest.raises(RuntimeError, match="forward-only"):
         command.downgrade(Config(str(Path(__file__).parents[1] / "alembic.ini")), "-1")

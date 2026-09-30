@@ -596,7 +596,7 @@ def test_invoice_tables_are_current_forward_only_and_read_only_to_runtime(
     obligation_id = uuid4()
     with psycopg.connect(migrated_database_url) as owner:
         assert owner.execute("SELECT version_num FROM alembic_version").fetchone() == (
-            "20260915_61",
+            "20261001_64",
         )
         expected = {
             "actor_identities",
@@ -730,7 +730,7 @@ def test_invoice_tables_are_current_forward_only_and_read_only_to_runtime(
         command.downgrade(Config(str(Path(__file__).parents[1] / "alembic.ini")), "20260826_28")
     with psycopg.connect(migrated_database_url) as owner:
         assert owner.execute("SELECT version_num FROM alembic_version").fetchone() == (
-            "20260915_61",
+            "20261001_64",
         )
         assert owner.execute(
             "SELECT description FROM app.authorized_nonrecurring_obligations WHERE id=%s",
@@ -6820,7 +6820,7 @@ def test_recurring_rent_and_billing_snapshot_follow_initial_and_termination_boun
 ) -> None:
     actor_id, property_id, tenant_id, lease_id = setup_signed_lease(
         connection,
-        start_date=date(2198, 1, 1),
+        start_date=date(2198, 1, 21),
         end_date=date(2200, 12, 31),
         with_occupancy=False,
     )

@@ -34,10 +34,10 @@ def test_proration_uses_actual_calendar_days_and_one_half_up_rounding() -> None:
 @pytest.mark.parametrize(
     ("move_in", "expected_end", "expected_due"),
     (
-        (date(2027, 7, 10), date(2027, 7, 31), date(2027, 7, 17)),
-        (date(2027, 7, 20), date(2027, 7, 31), date(2027, 7, 27)),
-        (date(2027, 7, 21), date(2027, 8, 31), date(2027, 7, 28)),
-        (date(2027, 7, 27), date(2027, 8, 31), date(2027, 8, 3)),
+        (date(2027, 7, 10), date(2027, 7, 31), date(2027, 7, 15)),
+        (date(2027, 7, 20), date(2027, 7, 31), date(2027, 7, 25)),
+        (date(2027, 7, 21), date(2027, 8, 31), date(2027, 7, 26)),
+        (date(2027, 7, 27), date(2027, 8, 31), date(2027, 8, 1)),
     ),
 )
 def test_initial_period_and_due_date_boundaries(
@@ -129,7 +129,7 @@ def command(**changes: object) -> GenerateRentInvoiceCommand:
         "billing_kind": RentBillingKind.INITIAL,
         "period_start": date(2027, 7, 27),
         "issued_at": datetime(2027, 7, 27, 1, tzinfo=UTC),
-        "source_occupancy_id": uuid4(),
+        "source_occupancy_id": None,
     }
     values.update(changes)
     return GenerateRentInvoiceCommand(**values)  # type: ignore[arg-type]
@@ -150,7 +150,7 @@ def test_command_validates_shape_and_digest_binds_every_input() -> None:
     with pytest.raises(ValueError, match="nil UUID"):
         command(invoice_id=UUID(int=0))
     with pytest.raises(ValueError, match="source_occupancy_id"):
-        command(source_occupancy_id=None)
+        command(source_occupancy_id=uuid4())
     with pytest.raises(ValueError, match="timezone-aware"):
         command(issued_at=datetime(2027, 7, 27, 1))
     with pytest.raises(ValueError, match="RentBillingKind"):

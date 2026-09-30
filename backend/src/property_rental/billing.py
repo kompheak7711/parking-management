@@ -87,13 +87,13 @@ def prorated_monthly_usd_cents(monthly_usd_cents: int, period_start: date, perio
     return int(amount.quantize(Decimal("1"), rounding=ROUND_HALF_UP))
 
 
-def initial_billing_period(move_in_date: date) -> tuple[date, date, date]:
-    """Return Initial Invoice coverage and its seven-calendar-day Due Date."""
+def initial_billing_period(lease_start_date: date) -> tuple[date, date, date]:
+    """Return Initial Invoice coverage and its proposed Due Date (BR-RENT-005/009)."""
 
-    end = month_end(move_in_date)
-    if move_in_date.day >= 21:
+    end = month_end(lease_start_date)
+    if lease_start_date.day >= 21:
         end = month_end(end + timedelta(days=1))
-    return move_in_date, end, move_in_date + timedelta(days=7)
+    return lease_start_date, end, lease_start_date + timedelta(days=5)
 
 
 def recurring_billing_period(period_start: date) -> tuple[date, date, date, date]:
@@ -173,11 +173,8 @@ class GenerateRentInvoiceCommand:
             raise ValueError("issued_at must be timezone-aware")
         if not isinstance(self.billing_kind, RentBillingKind):
             raise ValueError("billing_kind must be a RentBillingKind")
-        if self.billing_kind is RentBillingKind.INITIAL:
-            if self.source_occupancy_id is None:
-                raise ValueError("initial billing requires source_occupancy_id")
-        elif self.source_occupancy_id is not None:
-            raise ValueError("recurring billing must not provide source_occupancy_id")
+        if self.source_occupancy_id is not None:
+            raise ValueError("rent billing references the signed Lease, not source_occupancy_id")
         if self.billing_kind is RentBillingKind.RECURRING and self.period_start.day != 1:
             raise ValueError("recurring period_start must be the first calendar day")
 
@@ -324,3 +321,74 @@ class PostgresRentBillingService:
         if row is None:
             raise BillingServiceUnavailableError("Billing command returned no result")
         return _snapshot(row)
+
+
+@dataclass(frozen=True, slots=True)
+class SetInitialRentDueDateCommand:
+    """An authorized Initial Rent Due Date that replaces the proposed Lease Start + 5 days."""
+
+    override_id: UUID
+    lease_id: UUID
+    due_date: date
+    reason: str
+
+    def __post_init__(self) -> None:
+        _identity(self.override_id, "override_id")
+        _identity(self.lease_id, "lease_id")
+        if type(self.due_date) is not date:
+            raise ValueError("due_date must be a calendar date")
+        _normalized(self.reason, "reason")
+        if len(self.reason) > 500:
+            raise ValueError("reason must not exceed 500 characters")
+
+
+def set_initial_rent_due_date(
+    service: PostgresRentBillingService,
+    command: SetInitialRentDueDateCommand,
+    *,
+    actor: AuthenticatedActor,
+) -> dict[str, object]:
+    """Record the authorized Due Date before the Initial Rent Invoice is issued."""
+
+    try:
+        authenticated_actor_id = UUID(actor.actor_id)
+    except ValueError as exc:
+        raise BillingAuthorizationError("Billing actor is invalid") from exc
+    if authenticated_actor_id != service.actor_id or not is_authorized(
+        actor,
+        AuthorizationRequirement(
+            capability=BILLING_GENERATE_CAPABILITY, property_id=str(service.property_id)
+        ),
+    ):
+        raise BillingAuthorizationError("Billing capability is not authorized")
+    try:
+        with psycopg.connect(
+            service.financial_database_url, connect_timeout=BILLING_CONNECT_TIMEOUT_SECONDS
+        ) as connection:
+            connection.isolation_level = IsolationLevel.READ_COMMITTED
+            connection.execute(
+                "SELECT pg_catalog.set_config('lock_timeout',%s,true)",
+                (str(BILLING_LOCK_TIMEOUT_MS),),
+            )
+            row = connection.execute(
+                "SELECT app.set_initial_rent_due_date(%s,%s,%s,%s,%s,%s)",
+                (
+                    service.property_id,
+                    command.lease_id,
+                    service.actor_id,
+                    command.override_id,
+                    command.due_date,
+                    command.reason,
+                ),
+            ).fetchone()
+    except psycopg.Error as exc:
+        if exc.sqlstate == "P0002":
+            raise BillingNotFoundError("Lease was not found") from exc
+        if exc.sqlstate == "23505":
+            raise BillingIdempotencyKeyReused("Due Date override identity was reused") from exc
+        if exc.sqlstate in {"22023", "55000"}:
+            raise BillingInvalidError("Due Date override is invalid") from exc
+        raise BillingServiceUnavailableError("Billing persistence is unavailable") from exc
+    if row is None or not isinstance(row[0], dict):
+        raise BillingServiceUnavailableError("Due Date override returned no result")
+    return cast(dict[str, object], row[0])
