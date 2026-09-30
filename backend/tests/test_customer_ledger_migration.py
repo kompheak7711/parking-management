@@ -1053,6 +1053,10 @@ def test_ledger_qualified_pet_refund_and_return_are_distinct_from_credit(
         assert assert_reconciled(connection, customer) == LedgerPosition(pet_deposit=7000)
 
 
+# The canonical fixture owns only these two rates; other suites share its Property.
+FIXTURE_TRASH_RATE_DATES = (date(2026, 7, 1), date(2026, 8, 1))
+
+
 def test_ledger_canonical_fixture_preserves_shared_billing_service_rates(
     migrated_database_url: str,  # noqa: F811
 ) -> None:
@@ -1062,8 +1066,8 @@ def test_ledger_canonical_fixture_preserves_shared_billing_service_rates(
             "SELECT r.id,r.effective_date,r.monthly_rate_usd_cents FROM app.service_rates r "
             "JOIN app.property_services s ON s.id=r.property_service_id "
             "WHERE s.property_id=%s AND s.service_code='TRASH_COLLECTION' "
-            "ORDER BY r.effective_date",
-            (prop,),
+            "AND r.effective_date IN (%s,%s) ORDER BY r.effective_date",
+            (prop, *FIXTURE_TRASH_RATE_DATES),
         ).fetchall()
         assert [(row[1], row[2]) for row in before] == [
             (date(2026, 7, 1), 1000),
@@ -1074,7 +1078,7 @@ def test_ledger_canonical_fixture_preserves_shared_billing_service_rates(
             "SELECT r.id,r.effective_date,r.monthly_rate_usd_cents FROM app.service_rates r "
             "JOIN app.property_services s ON s.id=r.property_service_id "
             "WHERE s.property_id=%s AND s.service_code='TRASH_COLLECTION' "
-            "ORDER BY r.effective_date",
-            (prop,),
+            "AND r.effective_date IN (%s,%s) ORDER BY r.effective_date",
+            (prop, *FIXTURE_TRASH_RATE_DATES),
         ).fetchall()
         assert after == before
