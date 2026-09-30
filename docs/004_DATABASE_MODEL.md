@@ -207,7 +207,8 @@ Checks and indexes:
 - `effective_expiration_date >= original_expiration_date`.
 - `agreed_monthly_rent_usd_cents > 0`; activation verifies active Deposit Receipts
   total exactly equals the explicitly accepted amount in DB-RES-003. Later receipts
-  may satisfy the remaining full Deposit before move-in. No comparison to a
+  may satisfy the remaining full Deposit within five calendar days after the Lease
+  Start Date. No comparison to a
   hard 20% minimum is permitted.
 - initial expiration is no more than 21 calendar days after `reservation_date`.
 - cancellation fields are all absent unless CANCELLED and required when CANCELLED.
@@ -219,12 +220,12 @@ Checks and indexes:
 - Index `(customer_id, reservation_date DESC)` and `(status, effective_expiration_date)`.
 - Lifecycle transitions are enforced by a trigger: ACTIVE to CANCELLED or COMPLETED
   only; both terminal states reject later transition. The COMPLETED transaction
-  requires the resulting Lease to be SIGNED, match the Reservation Unit and Customer
-  relationship, have the successful actual move-in represented by Occupancy, and have
-  the full current required Security Deposit received. Any applicable move-in Pet
-  Deposit must likewise be fully received. At transition the Reservation must remain
-  unexpired on `effective_expiration_date`; Occupancy creation, Unit transition to
-  `OCCUPIED`, and Reservation completion occur atomically under DB-TXN-002. It never
+  occurs when the resulting Lease becomes SIGNED and requires it to match the
+  Reservation Unit and Customer relationship. It requires no Occupancy and no fully
+  received Deposit. At transition the Reservation must remain unexpired on
+  `effective_expiration_date`; Lease signing, Unit transition to `OCCUPIED`, and
+  Reservation completion occur atomically under DB-TXN-002. A walk-in Lease has no
+  Reservation. Historical Reservations completed at move-in remain valid. It never
   uses COMPLETED as a Lease or Occupancy status.
 
 ## DB-RES-002 — `reservation_extension_notices`

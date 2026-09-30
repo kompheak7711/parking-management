@@ -327,10 +327,12 @@ Changing current Customer contact information must not alter the historical mean
 
 ## BR-RES-001 — Reservation Is Mandatory
 
-A Unit must be reserved before move-in.
+A Customer may reserve a Unit before signing its Lease. A Lease may also be signed
+without a Reservation for a walk-in Customer; then no Reservation is completed and the
+Unit still becomes OCCUPIED at signing under BR-UNIT-007.
 
-The system must not allow direct move-in to a Unit without an existing valid
-ACTIVE Reservation.
+A walk-in Lease is subject to the same Unit exclusivity as any other Lease under
+BR-UNIT-005 and BR-UNIT-006.
 
 ---
 
@@ -643,11 +645,13 @@ The system must not:
 
 ## BR-DEP-006 — Remaining Deposit No Later Than Move-in Completion
 
-The remaining required Security Deposit may be paid before move-in or at
-move-in. It must be fully paid no later than completion of move-in.
+The Security Deposit balance remaining after the holding deposit is due within five
+calendar days after the Lease Start Date, together with the Initial Rent Invoice.
 
-Move-in must not be completed while any required Security Deposit remains
-outstanding.
+Move-in is always recorded when it happens and is never blocked by an unpaid Security
+Deposit or Initial Rent. If the Security Deposit balance or the Initial Rent is unpaid
+after that period, the owner may terminate under the standard Lease clause in
+BR-LEASE-025.
 
 ---
 
@@ -912,14 +916,14 @@ Move-in may occur only when all required conditions are satisfied.
 
 At minimum:
 
-- Reservation is COMPLETED with this Lease as its resulting Lease
 - Lease is SIGNED
+- any Reservation for this Lease is COMPLETED with this Lease as its resulting Lease
 - Unit is not UNDER_MAINTENANCE
 - Unit is not OUT_OF_SERVICE
-- required Security Deposit is fully paid before or at move-in
-- required Pet Deposit is fully paid before or at move-in when a pet will be kept
-  from the beginning of occupancy
 - move-in date is valid
+
+An unpaid Security Deposit, Pet Deposit or Initial Rent never blocks move-in under
+BR-DEP-006 and BR-DEP-010.
 
 ---
 
@@ -927,7 +931,7 @@ At minimum:
 
 When the Lease becomes SIGNED:
 
-- Reservation becomes COMPLETED
+- any Reservation for this Lease becomes COMPLETED; a walk-in Lease has none
 - Unit becomes OCCUPIED
 - Security Deposit remains associated with the Lease
 
@@ -993,8 +997,8 @@ Pet Deposit Remains Held:       unchanged
 ## BR-DEP-010 — Pet Deposit Timing
 
 When a Customer will keep an approved pet from the beginning of occupancy, the
-Pet Deposit required by the applicable signed Lease terms must be fully paid
-before or at move-in.
+Pet Deposit required by the applicable signed Lease terms is due within five calendar
+days after the Lease Start Date. An unpaid Pet Deposit never blocks move-in.
 
 When a Customer introduces or acquires a pet later, the Customer must notify
 Property Management. If the pet is approved and the applicable signed Lease terms

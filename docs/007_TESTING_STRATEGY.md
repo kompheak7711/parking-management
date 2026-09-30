@@ -250,8 +250,10 @@ dates, and do not independently grant signer responsibility.
 
 ## TEST-034 — Move-in Preconditions
 
-Verify all approved move-in prerequisites, including SIGNED Lease and required
-Deposit state, are enforced atomically. Failure leaves Reservation, Lease,
+Verify all approved move-in prerequisites, including a SIGNED Lease and a valid
+move-in date, are enforced atomically, and that an unpaid Security Deposit, Pet Deposit
+or Initial Rent never blocks move-in. Verify a walk-in Lease signed without a
+Reservation makes the Unit OCCUPIED. Failure leaves Reservation, Lease,
 Occupancy, and Deposit state unchanged.
 
 ## TEST-035 — Deposit Continuity

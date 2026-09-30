@@ -873,6 +873,16 @@ Rent Due Date question in `DL-042` and do not authorize new business policy.
 - **Boundary:** BR-LEASE-021 (voluntary early termination) is unchanged in V1-055. Termination for an unpaid Initial Rent Invoice after move-in is not voluntary and uses proration through the termination date under DL-064.
 - **Decision date:** 2026-10-01.
 
+## DL-066 — Walk-in Leases and deposit timing without a move-in payment gate
+
+- **Type:** `OWNER BUSINESS DECISION`
+- **Status:** `APPROVED; CANONICAL AMENDMENT APPLIED; IMPLEMENTATION PENDING`
+- **Walk-in Lease:** A Lease may be signed with no Reservation. If a Reservation exists, it becomes COMPLETED at signing; if none exists, nothing is completed and the Unit still becomes OCCUPIED.
+- **Deposit timing:** The Security Deposit balance after the holding deposit and the Initial Rent are due within five calendar days after the Lease Start Date. A Pet Deposit for a pet kept from the beginning of occupancy has the same five-day timing. Move-in is always recorded and has no payment gate. If the Security Deposit balance or the Initial Rent is unpaid after that period, the owner may terminate under the standard Lease clause (BR-LEASE-025).
+- **Affected:** BR-RES-001, BR-DEP-006, BR-DEP-010, BR-LEASE-015, BR-LEASE-016; matching PR, DB-RES-001, TEST-034.
+- **Implementation:** The Reservation, Unit and move-in code changes remain in their later slice; historical records are unchanged.
+- **Decision date:** 2026-10-01.
+
 ---
 
 # 13. Governance
