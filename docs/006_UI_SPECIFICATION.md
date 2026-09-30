@@ -717,8 +717,8 @@ violation termination, show and validate at least three documented warning lette
 and the signed-Lease authority.
 
 For an unpaid Initial Rent Invoice, show the signed-Lease clause reference and the path
-that applies: never moved in (Reservation cancellation, deposit forfeiture, Invoice VOID
-with reason, Unit release) or moved in (Invoice kept, prorated credit Adjustment for the
+that applies: never moved in (deposit forfeiture, Invoice VOID or credit Adjustment of
+the unpaid remainder with reason, Unit returned to VACANT) or moved in (Invoice kept, prorated credit Adjustment for the
 days after termination, move-out). Every step requires explicit authorized confirmation.
 
 ## UI-077 — Continued Occupancy

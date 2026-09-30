@@ -209,9 +209,11 @@ second or excessive extension.
 
 ## TEST-028 — Reservation Move-in
 
-Verify successful move-in changes `ACTIVE → COMPLETED`, preserves Reservation
-history, and atomically coordinates the resulting Lease, Occupancy, Unit
-`OCCUPIED`, and Security Deposit continuity. Verify `MOVED_IN` and `EXPIRED` are
+Verify signing the resulting Lease changes the Reservation `ACTIVE → COMPLETED` and
+the Unit to `OCCUPIED` in one transition with Security Deposit continuity, and that a
+COMPLETED Reservation cannot expire. Verify a later physical move-in only begins the
+Occupancy and changes neither status. Historical Reservations completed at move-in
+remain valid. Verify `MOVED_IN` and `EXPIRED` are
 rejected as Reservation statuses.
 
 ## TEST-029 — Reservation Cancellation Deposit Outcomes
@@ -710,9 +712,9 @@ violation termination.
 Verify actual occupancy end, readings, inspection evidence, and final-charge inputs
 are recorded without falsely marking financial closure complete.
 
-Verify an unpaid-Initial termination: never moved in (Reservation cancelled as
-customer-caused, deposit forfeited, Invoice VOIDed with reason, Unit released without an
-Occupancy) and moved in (Invoice kept, prorated credit Adjustment for the remaining days,
+Verify an unpaid-Initial termination: never moved in (deposit forfeited, Invoice VOIDed
+with reason when nothing was paid or its unpaid remainder credited when partly paid, Unit
+returned to VACANT) and moved in (Invoice kept, prorated credit Adjustment for the remaining days,
 move-out applies). Verify the final Utility Invoice is created off-cycle from the final
 Readings without duplicating a monthly-run period, the pre-Lease baseline Reading is the
 starting boundary, and a Damage charge requires the capability, reason and evidence, is

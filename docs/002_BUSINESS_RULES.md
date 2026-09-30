@@ -194,11 +194,13 @@ Reservation holds it.
 
 ## BR-UNIT-007 — Occupied Status
 
-When move-in is completed, the Unit status becomes:
+When the Lease becomes SIGNED, the Unit status becomes:
 
 ```text
 OCCUPIED
 ```
+
+The Unit is OCCUPIED from signing, even before physical move-in.
 
 ---
 
@@ -248,9 +250,7 @@ If no other Lease, maintenance, cleaning, or out-of-service condition blocks
 availability, the Unit becomes VACANT.
 
 When a Lease is terminated before any move-in under BR-LEASE-005, the Unit is released
-without an Occupancy or physical move-out. It becomes VACANT, or CLEANING when the
-Property's readiness process requires it, unless another Reservation, Lease, maintenance
-or out-of-service condition blocks availability.
+without an Occupancy or physical move-out. It returns to VACANT.
 
 ---
 
@@ -356,7 +356,7 @@ The system must not introduce an EXPIRED Reservation status.
 
 ACTIVE means the Reservation currently holds the Unit. CANCELLED means it ended
 without successfully proceeding to tenancy. COMPLETED means it successfully
-proceeded through move-in into its resulting Lease and Occupancy. CANCELLED and
+proceeded to its resulting signed Lease; physical move-in may follow later. CANCELLED and
 COMPLETED are terminal.
 
 ---
@@ -455,19 +455,14 @@ A CANCELLED Reservation cannot later become ACTIVE or COMPLETED.
 
 ## BR-RES-013 — Reservation Move-in Completion
 
-A Reservation may become COMPLETED only when:
-
-- the Reservation is ACTIVE and has not expired;
-- the Lease is SIGNED;
-- the Unit is ready for occupancy;
-- the required Security Deposit is fully paid no later than completion of
-  move-in;
-- the applicable Pet Deposit is fully paid when a pet will be kept from the
-  beginning of occupancy; and
-- move-in has actually occurred.
+A Reservation becomes COMPLETED when its resulting Lease becomes SIGNED, in the same
+coordinated transition. At that moment the Reservation must be ACTIVE and not expired.
+A COMPLETED Reservation cannot expire.
 
 The COMPLETED Reservation must reference exactly one resulting Lease. COMPLETED is
-terminal.
+terminal. The holding deposit received during the Reservation continues as the Security
+Deposit under BR-DEP-005. Physical move-in, when it occurs, is recorded separately under
+BR-LEASE-016.
 
 ---
 
@@ -631,7 +626,7 @@ Received
 
 ## BR-DEP-005 — Security Deposit Continues Into Lease
 
-Any Security Deposit received during Reservation remains the same Security Deposit when the resulting Lease is signed and move-in occurs.
+Any Security Deposit received during Reservation remains the same Security Deposit when the resulting Lease is signed.
 
 Money received for a Deposit must be linked explicitly from the Payment to the
 applicable Deposit liability and Deposit balance. This Payment-to-Deposit link is
@@ -719,10 +714,13 @@ status.
 
 When a Lease is terminated because the Initial Rent Invoice is unpaid:
 
-- If the tenant never moved in, the Reservation is cancelled as customer-caused and its
-  Security Deposit is forfeited under BR-RES-021. The unpaid Initial Rent Invoice is
-  VOIDed with a mandatory reason under BR-INV-046, so no Rent is charged. The Unit is
-  released under BR-UNIT-010 without an Occupancy or physical move-out.
+- If the tenant never moved in, any Security Deposit paid is forfeited. If nothing was
+  paid on the Initial Rent Invoice, it is VOIDed with a mandatory reason under
+  BR-INV-046. If it was partly paid, the Property keeps the paid amount without Refund
+  and the unpaid remainder is removed by a linked credit Adjustment with a mandatory
+  reason, so the Customer owes nothing more. No Utility charge applies to the Customer.
+  The Unit returns to VACANT under BR-UNIT-010 without an Occupancy or physical
+  move-out.
 - If the tenant moved in, the Initial Rent Invoice is kept and is never VOIDed. Rent is
   owed only through the termination date; the remaining days are removed by a linked
   credit Adjustment calculated with BR-RENT-007 proration. Utility through the actual
@@ -914,7 +912,7 @@ Move-in may occur only when all required conditions are satisfied.
 
 At minimum:
 
-- Reservation is ACTIVE
+- Reservation is COMPLETED with this Lease as its resulting Lease
 - Lease is SIGNED
 - Unit is not UNDER_MAINTENANCE
 - Unit is not OUT_OF_SERVICE
@@ -927,16 +925,17 @@ At minimum:
 
 ## BR-LEASE-016 — Move-in Completion
 
-When move-in is completed:
+When the Lease becomes SIGNED:
 
 - Reservation becomes COMPLETED
 - Unit becomes OCCUPIED
-- Occupancy begins
 - Security Deposit remains associated with the Lease
 
 These actions represent one coordinated business transition.
 
-The transition must not complete until all conditions in BR-LEASE-015 are true.
+When physical move-in is completed later, the Occupancy begins with the actual Move-in
+Date under BR-OCC-004. Move-in does not change the Reservation or Unit status. The
+move-in transition must not complete until all conditions in BR-LEASE-015 are true.
 
 ---
 
@@ -1764,7 +1763,10 @@ boundary so each Customer is billed only for the applicable period.
 Before the Lease Start Date, after cleaning and repair, staff record a validated Reading
 for each Utility Meter of the Unit with an evidence reference and turn Electricity and
 Water off. That Reading is the Customer's starting responsibility boundary, whether the
-tenant arrives on the Lease Start Date or later.
+tenant arrives on the Lease Start Date or later. If staff switch the Utilities on again
+before handover, they record a new baseline Reading. The Property bears all consumption
+between the previous tenant's final Reading and the new Customer's baseline Reading,
+including cleaning and repair, and any consumption when the tenant never moved in.
 
 ---
 
@@ -1791,6 +1793,9 @@ Electricity and Water are billed monthly.
 Each monthly period preserves its starting and ending Reading dates. For due-date
 purposes, the billing month is the Property-local calendar month containing the
 period's ending Reading date.
+
+Staff record every Utility Meter every month, including Meters of VACANT Units with
+Electricity and Water off.
 
 ---
 
@@ -2773,8 +2778,9 @@ association for a non-Lease Invoice.
 VOID is available only when an Invoice fundamentally should not exist. It is not
 the ordinary amount-correction method, and it never removes the original record.
 
-An unpaid Initial Rent Invoice is VOIDed, with a mandatory reason, when its Lease is
-terminated and the tenant never moved in under BR-LEASE-005.
+When a Lease is terminated and the tenant never moved in under BR-LEASE-005, an Initial
+Rent Invoice with nothing paid is VOIDed with a mandatory reason. A partly paid one is
+not VOIDed; its unpaid remainder is removed by a linked credit Adjustment.
 
 ---
 
@@ -3905,9 +3911,9 @@ A violation and the authority to terminate for it must come from the signed
 Lease. The system must not invent a violation, penalty, fee, forfeiture, or
 termination right.
 
-When the signed Lease contains the approved clause giving a termination right if the
-Security Deposit and the Initial Rent Invoice are not paid within five calendar days
-after the Lease Start Date, that clause is the governing signed-Lease ground for
+The standard Lease used for all Customers contains a clause giving a termination right
+if either the Security Deposit or the Initial Rent Invoice is not fully paid within five
+calendar days after the Lease Start Date. That clause is the governing signed-Lease ground for
 termination. BR-LEASE-024's three warning letters do not apply to this ground. The
 termination records the Lease clause reference.
 
@@ -4072,7 +4078,8 @@ complete historical actual periods are usable immediately under BR-UTIL-027.
 
 When final validated Readings or an approved estimate are recorded at move-out, the
 system creates the final Utility Invoice off-cycle under BR-UTIL-021. When the tenant
-never moved in, no final Readings, Utility charges or Damage charges apply.
+never moved in, no Utility or Damage charge applies to the Customer; the Property bears
+any Utility consumption.
 
 ---
 
