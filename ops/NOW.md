@@ -9,6 +9,7 @@
 - HTTP/UI slice (2026-10-03): frontend/src/invoiceClient.ts reads `due_date` with text(); a DRAFT one-time charge (migration 65) has a null Due Date and must be accepted as null.
 - HTTP/UI slice (2026-10-04): Initial Rent unpaid alert route and screen (service read `initial_rent_alerts` exists).
 - Follow-up (2026-10-04): test_invoice_migration.py::test_v1_045_typed_sources_keep_category_and_controlling_id_together commits an ELECTRICITY rate effective 2027-04-01 to the shared test database; from that date test_json_snapshots_preserve_maximum_consumption_and_rate_precision will pick it and fail like the 2026-10-01 case. Needs an owner-approved fix before April 2027.
+- Follow-up (2026-10-05): retire the old app.sign_lease runtime grant in a later hardening step; the service now always signs through app.sign_lease_with_reservation.
 - Physical accepted: Fresh complete review0findings,23gates retained. Original lock recovery ten reused cases+two focused+1522full passed in356.967621of660seconds; fixture remedy accepted, historical holder unknown.
 - Limits: New separate routine allowance:at most2materiallydifferent corrections per distinct cause;all prior consumed2of2/cursor1of1and diagnostics remain preserved. No DBdiagnostic/fixture/policy/lock/timeout/assertion relaxation.
 - External: Cycle20260917-overdue-projection passed:Git/CI/cards/claims/workers,127worktrees,disabled OpenClaw and samefollowupACTIVE verified. Remote closed54;55card incomplete/unclaimed. Usage1%remaining at check,ordinaryUsageAllowedtrue;no purchase.

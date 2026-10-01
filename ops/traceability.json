@@ -32854,6 +32854,94 @@
       "test_path": "backend/tests/test_rent_nonpayment_recurring_only_migration.py",
       "status": "implemented",
       "notes": "Migration 20261004_68 replaces functions only and is forward-only."
+    },
+    {
+      "test_id": "test_signing_with_reservation_completes_it_links_the_holding_deposit_and_occupies_the_unit",
+      "upstream_ids": [
+        "BR-RES-003",
+        "BR-RES-013",
+        "BR-UNIT-007",
+        "BR-DEP-005",
+        "TEST-028",
+        "PR-RES-013",
+        "PR-DEP-005"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_signing_reservation_migration.py",
+      "status": "implemented",
+      "notes": "Signing with its Reservation completes the Reservation, links the holding deposit to the Lease as Security Deposit, makes the Unit OCCUPIED, records one audited outcome, replays exactly, and a COMPLETED Reservation cannot be cancelled or expired."
+    },
+    {
+      "test_id": "test_walk_in_signing_occupies_a_vacant_unit_without_a_reservation",
+      "upstream_ids": [
+        "BR-RES-001",
+        "BR-UNIT-007",
+        "BR-LEASE-015",
+        "TEST-028"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_signing_reservation_migration.py",
+      "status": "implemented",
+      "notes": "A walk-in signing with no Reservation makes a VACANT Unit OCCUPIED."
+    },
+    {
+      "test_id": "test_reserved_unit_cannot_be_signed_without_its_own_reservation",
+      "upstream_ids": [
+        "BR-RES-013",
+        "BR-UNIT-007",
+        "TEST-028"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_signing_reservation_migration.py",
+      "status": "implemented",
+      "notes": "A RESERVED Unit cannot be signed without its own Reservation, and nothing changes on rejection."
+    },
+    {
+      "test_id": "test_move_in_after_signing_starts_occupancy_without_a_payment_gate",
+      "upstream_ids": [
+        "BR-LEASE-016",
+        "BR-DEP-006",
+        "BR-DEP-010",
+        "TEST-028",
+        "TEST-034"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_signing_reservation_migration.py",
+      "status": "implemented",
+      "notes": "Move-in after signing only begins Occupancy, has no payment gate, replays exactly and happens once."
+    },
+    {
+      "test_id": "test_lease_signed_before_the_new_path_keeps_the_reservation_move_in",
+      "upstream_ids": [
+        "BR-RES-013",
+        "TEST-028"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_signing_reservation_migration.py",
+      "status": "implemented",
+      "notes": "A Lease signed before migration 69 cannot use the new move-in and keeps its ACTIVE Reservation for the earlier path."
+    },
+    {
+      "test_id": "test_forward_upgrade_keeps_earlier_leases_reservations_deposits_and_invoices",
+      "upstream_ids": [
+        "BR-RES-013",
+        "TEST-028"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_signing_reservation_migration.py",
+      "status": "implemented",
+      "notes": "Leases, Reservations, deposits, Invoices and Units are byte-identical across the upgrade to migration 69."
+    },
+    {
+      "test_id": "test_lease_signing_reservation_migration_is_forward_only",
+      "upstream_ids": [
+        "BR-RES-013",
+        "TEST-028"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_signing_reservation_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20261005_69 is additive and forward-only."
     }
   ]
 }

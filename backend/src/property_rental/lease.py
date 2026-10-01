@@ -298,10 +298,13 @@ class LeaseSignCommand:
     signed_at: datetime
     reason: str
     authorization_reference: str
+    reservation_id: UUID | None = None
 
     def __post_init__(self) -> None:
         for field in ("idempotency_key", "event_id", "lease_id"):
             _require_identity(getattr(self, field), field)
+        if self.reservation_id is not None:
+            _require_identity(self.reservation_id, "reservation_id")
         if self.expected_version < 1:
             raise ValueError("expected_version must be positive")
         if self.signed_at.tzinfo is None or self.signed_at.utcoffset() is None:
@@ -385,6 +388,9 @@ def lease_request_digest(action: str, command: LeaseCommand) -> str:
     if isinstance(command, LeaseTerminateCommand) and command.context is None:
         # Preserve the exact legacy request identity for historical retries.
         payload.pop("context")
+    if isinstance(command, LeaseSignCommand) and command.reservation_id is None:
+        # A walk-in signing keeps the request identity of earlier signings.
+        payload.pop("reservation_id")
     serialized = json.dumps(
         {"action": action, "command": _json_value(payload)},
         sort_keys=True,
@@ -672,8 +678,9 @@ class PostgresLeaseService:
             actor, LEASE_SIGN_CAPABILITY, command.authorization_reference
         )
         digest = lease_request_digest("lease.sign", command)
+        # DL-064/DL-066: signing completes the Reservation (if any) and occupies the Unit.
         return self._execute(
-            "SELECT app.sign_lease(%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            "SELECT app.sign_lease_with_reservation(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
             (
                 self.property_id,
                 command.idempotency_key,
@@ -684,6 +691,7 @@ class PostgresLeaseService:
                 command.signed_at,
                 command.reason,
                 self.actor_id,
+                command.reservation_id,
             ),
         )
 

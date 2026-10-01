@@ -269,6 +269,20 @@ from the suggestion; the accepted amount may be below or above the suggestion. T
 does not change the full required Security Deposit in `deposits`. Update/delete is
 prohibited so activation history cannot be rewritten.
 
+### Signing outcome and signed-Lease move-in (migration `20261005_69`)
+
+`lease_signing_outcomes` (one append-only row per Lease signed through
+`app.sign_lease_with_reservation`) records the optional Reservation and holding deposit,
+the Unit status before signing and `OCCUPIED` after it, the actor and the audit event.
+Signing with a Reservation requires it ACTIVE, unexpired on the Asia/Phnom_Penh business
+date, for the same Unit and Primary Tenant, and the Unit RESERVED; it completes the
+Reservation and links its holding deposit to the Lease as the Security Deposit. A walk-in
+signing occupies a VACANT, CLEANING or UNDER_MAINTENANCE Unit; a renewal of a predecessor on
+an OCCUPIED Unit keeps it OCCUPIED; a RESERVED or OUT_OF_SERVICE Unit is rejected.
+`lease_move_ins` and `lease_move_in_occupancy_links` record physical move-in for such
+Leases through `app.record_signed_lease_move_in`, which only begins Occupancy and has no
+payment gate. Leases signed before this migration keep `complete_reservation_move_in`.
+
 ## DB-LEASE-001 — `leases`
 
 | Column | Type | Null | Rule |

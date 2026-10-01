@@ -110,7 +110,35 @@ class CompleteMoveInCommand:
         _require_nonblank(self.authorization_reference, "authorization_reference")
 
 
-def move_in_request_digest(command: CompleteMoveInCommand) -> str:
+@dataclass(frozen=True, slots=True)
+class RecordLeaseMoveInCommand:
+    """Begin Occupancy for a Lease whose signing already completed the Reservation (DL-066)."""
+
+    idempotency_key: UUID
+    event_id: UUID
+    lease_id: UUID
+    expected_lease_version: int
+    actual_move_in_date: date
+    occupants: tuple[MoveInOccupant, ...]
+    reason: str
+    authorization_reference: str
+
+    def __post_init__(self) -> None:
+        for field in ("idempotency_key", "event_id", "lease_id"):
+            _require_identity(getattr(self, field), field)
+        if self.expected_lease_version < 1:
+            raise ValueError("expected versions must be positive")
+        if not self.occupants or len(self.occupants) > 20:
+            raise ValueError("between 1 and 20 Occupants must begin in one move-in")
+        if len({occupant.occupancy_id for occupant in self.occupants}) != len(self.occupants):
+            raise ValueError("occupancy identities must be unique")
+        if len({occupant.customer_id for occupant in self.occupants}) != len(self.occupants):
+            raise ValueError("an Occupant may appear only once")
+        _require_nonblank(self.reason, "reason")
+        _require_nonblank(self.authorization_reference, "authorization_reference")
+
+
+def move_in_request_digest(command: CompleteMoveInCommand | RecordLeaseMoveInCommand) -> str:
     """Bind stable replay identity to every move-in input."""
 
     payload = asdict(command)
@@ -227,3 +255,58 @@ class PostgresMoveInService:
         if row is None:
             raise MoveInServiceUnavailableError("Move-in command returned no result")
         return _snapshot(row)
+
+    def record_lease_move_in(
+        self, command: RecordLeaseMoveInCommand, *, actor: AuthenticatedActor
+    ) -> dict[str, object]:
+        """Record physical move-in for a Lease signed with its Reservation outcome."""
+        try:
+            authenticated_actor_id = UUID(actor.actor_id)
+        except ValueError as exc:
+            raise MoveInAuthorizationError("Move-in actor is invalid") from exc
+        if authenticated_actor_id != self.actor_id:
+            raise MoveInAuthorizationError("Move-in actor does not match the command")
+        if command.authorization_reference != MOVE_IN_CAPABILITY or not is_authorized(
+            actor,
+            AuthorizationRequirement(
+                capability=MOVE_IN_CAPABILITY, property_id=str(self.property_id)
+            ),
+        ):
+            raise MoveInAuthorizationError("Move-in capability is not authorized")
+        occupants = [
+            {"occupancy_id": str(value.occupancy_id), "customer_id": str(value.customer_id)}
+            for value in command.occupants
+        ]
+        try:
+            with psycopg.connect(self.database_url) as connection:
+                row = connection.execute(
+                    "SELECT app.record_signed_lease_move_in(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                    (
+                        self.property_id,
+                        command.idempotency_key,
+                        move_in_request_digest(command),
+                        command.event_id,
+                        command.lease_id,
+                        command.expected_lease_version,
+                        command.actual_move_in_date,
+                        Jsonb(occupants),
+                        command.reason,
+                        command.authorization_reference,
+                        self.actor_id,
+                    ),
+                ).fetchone()
+        except psycopg.Error as exc:
+            if exc.sqlstate == "P0002":
+                raise MoveInNotFoundError("Move-in source was not found") from exc
+            if exc.sqlstate == "40001":
+                raise MoveInVersionConflictError(
+                    "Move-in version precondition was not met"
+                ) from exc
+            if exc.sqlstate in {"23505", "23P01"}:
+                raise MoveInConflictError("Move-in command conflicted") from exc
+            if exc.sqlstate in {"22023", "22P02", "23514", "55000"}:
+                raise MoveInInvalidError("Move-in command is invalid") from exc
+            raise MoveInServiceUnavailableError("Move-in persistence is unavailable") from exc
+        if row is None or not isinstance(row[0], dict):
+            raise MoveInServiceUnavailableError("Move-in command returned no result")
+        return cast(dict[str, object], row[0])

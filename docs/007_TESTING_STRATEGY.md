@@ -216,6 +216,11 @@ Occupancy and changes neither status. Historical Reservations completed at move-
 remain valid. Verify `MOVED_IN` and `EXPIRED` are
 rejected as Reservation statuses.
 
+Covered for migration `20261005_69` by
+`backend/tests/test_lease_signing_reservation_migration.py` (Reservation and walk-in
+signing, rejected signings, move-in without a payment gate, the legacy move-in path and a
+byte-identical upgrade of earlier Leases, Reservations, deposits, Invoices and Units).
+
 ## TEST-029 — Reservation Cancellation Deposit Outcomes
 
 Verify approved Property-caused cancellation creates the required Security Deposit

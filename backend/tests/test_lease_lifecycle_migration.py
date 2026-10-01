@@ -374,7 +374,9 @@ def test_commands_are_idempotent_versioned_audited_and_preserve_signer_rules(
         termination.governing_event_reference,
     )
     assert all(row[4]["lease_id"] == str(draft.lease_id) for row in command_rows)
-    assert persisted == ("TERMINATED", 6, "VACANT", None)
+    # DL-066: signing occupies the Unit, and termination alone does not release an open
+    # Occupancy, so the Unit stays OCCUPIED until physical move-out.
+    assert persisted == ("TERMINATED", 6, "OCCUPIED", None)
     assert revisions == [
         (1, "DRAFTED"),
         (2, "DRAFTED"),

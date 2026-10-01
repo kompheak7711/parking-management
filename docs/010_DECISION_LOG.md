@@ -888,6 +888,8 @@ Rent Due Date question in `DL-042` and do not authorize new business policy.
 - **Deposit timing:** The Security Deposit balance after the holding deposit and the Initial Rent are due within five calendar days after the Lease Start Date. A Pet Deposit for a pet kept from the beginning of occupancy has the same five-day timing. Move-in is always recorded and has no payment gate. If the Security Deposit balance or the Initial Rent is unpaid after that period, the owner may terminate under the standard Lease clause (BR-LEASE-025).
 - **Affected:** BR-RES-001, BR-DEP-006, BR-DEP-010, BR-LEASE-015, BR-LEASE-016; matching PR, DB-RES-001, TEST-034.
 - **Implementation:** The Reservation, Unit and move-in code changes remain in their later slice; historical records are unchanged.
+- **Implementation (migration `20261005_69`):** Signing through `app.sign_lease_with_reservation` completes an ACTIVE Reservation for the same Unit and Primary Tenant, links its holding deposit as the Security Deposit and makes the Unit OCCUPIED; a walk-in signing occupies a VACANT, CLEANING or UNDER_MAINTENANCE Unit, and a renewal keeps an OCCUPIED Unit. Physical move-in for such Leases only begins Occupancy and has no payment gate. Leases signed before this migration keep the Reservation move-in path. The older `app.sign_lease` stays granted for compatibility; the service always uses the new function.
+- **Superseded test expectation (DL-066):** `test_commands_are_idempotent_versioned_audited_and_preserve_signer_rules` now expects the Unit to stay OCCUPIED after terminating a moved-in Lease, because signing occupies the Unit and termination alone does not release an open Occupancy. Its frozen manifest entry is unchanged.
 - **Decision date:** 2026-10-01.
 
 ---

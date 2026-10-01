@@ -638,6 +638,12 @@ Rent management alert (`app.unpaid_initial_rent_alert_page`, capability
 (`PostgresEnforcementContext.initial_rent_alerts`); its route belongs to the HTTP and UI
 slice.
 
+Lease signing and move-in service status (migration `20261005_69`): `PostgresLeaseService.sign`
+accepts an optional `reservation_id` (part of the request digest only when present) and
+completes that Reservation and occupies the Unit at signing; `PostgresMoveInService.record_lease_move_in`
+begins Occupancy for such a Lease. Exposing `reservation_id` on the signing route and the new
+move-in route belongs to the HTTP and UI slice.
+
 The final-decision command is authorized and idempotent and accepts only
 `CONFIRMED_DEFAULT`, `REDUCED`, or `WAIVED`. A REDUCED decision records the exact
 approved USD amount below the calculated default amount. The approved monetary amount
