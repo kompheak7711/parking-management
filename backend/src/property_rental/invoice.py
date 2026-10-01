@@ -60,6 +60,14 @@ class InvoiceIdempotencyKeyReused(InvoiceConflictError):
     pass
 
 
+class InvoiceLineFullyPaid(InvoiceConflictError):
+    """A debit Adjustment needs a positive line balance; bill a one-time charge instead."""
+
+    def __init__(self, line_balance_usd_cents: int | None = None) -> None:
+        super().__init__("Invoice line is fully paid")
+        self.line_balance_usd_cents = line_balance_usd_cents
+
+
 class InvoiceInvalidError(ValueError):
     pass
 
@@ -340,6 +348,9 @@ class PostgresInvoiceService:
             if match is not None:
                 current = int(match.group(1))
             return InvoiceVersionConflict(current)
+        if exc.sqlstate == "P4509":
+            balance = re.search(r"balance:(-?\d+)", str(exc))
+            return InvoiceLineFullyPaid(int(balance.group(1)) if balance else None)
         if exc.sqlstate in {"P4503", "P4507", "23505", "23P01", "40001", "55P03"}:
             return InvoiceConflictError("Invoice command conflicted")
         if exc.sqlstate in {"P4502", "P4508", "22023", "23503", "23514", "55000"}:

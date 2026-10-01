@@ -602,7 +602,11 @@ capability is an authorization failure; a reused charge identity with different 
 or a finding already billed, is a conflict; a mismatched or superseded finding, a
 backdated or misplaced Due Date, or an invalid shape is invalid.
 
-A debit Adjustment on a fully paid line returns 409 with the current line balance. A
+A debit Adjustment on a fully paid line returns 409 with the current line balance.
+Service status (migration `20261003_66`): `PostgresInvoiceService.adjust` raises
+`InvoiceLineFullyPaid` (a conflict) carrying `line_balance_usd_cents`; the existing route
+already answers 409 for a conflict, and adding the balance to the response body belongs to
+the HTTP and UI slice. A
 credit Adjustment reports any amount recorded as Customer Credit. Neither accepts a Due
 Date field; both use the Invoice Due Date.
 

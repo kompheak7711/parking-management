@@ -32522,6 +32522,102 @@
       "test_path": "backend/tests/test_one_time_charges_migration.py",
       "status": "implemented",
       "notes": "Migration 20261002_65 is additive and forward-only."
+    },
+    {
+      "test_id": "test_debit_needs_a_positive_line_balance_and_reopens_after_payment_reversal",
+      "upstream_ids": [
+        "BR-INV-044",
+        "PR-INV-044",
+        "TEST-057",
+        "TEST-063"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_debit_adjustment_line_block_migration.py",
+      "status": "implemented",
+      "notes": "A debit Adjustment is accepted on unpaid and partly paid lines, rejected with the line balance once the line is fully paid, and accepted again after the Payment allocation is reversed."
+    },
+    {
+      "test_id": "test_mixed_invoice_blocks_the_paid_rent_line_but_not_the_unpaid_service_line",
+      "upstream_ids": [
+        "BR-INV-044",
+        "PR-INV-044",
+        "TEST-057"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_debit_adjustment_line_block_migration.py",
+      "status": "implemented",
+      "notes": "On a mixed Invoice the paid Rent line rejects a debit while the unpaid Service line accepts it."
+    },
+    {
+      "test_id": "test_debit_is_rejected_on_a_line_paid_by_customer_credit",
+      "upstream_ids": [
+        "BR-INV-044",
+        "PR-INV-044",
+        "TEST-057",
+        "TEST-065"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_debit_adjustment_line_block_migration.py",
+      "status": "implemented",
+      "notes": "A line fully paid by an applied Customer Credit also rejects a debit Adjustment."
+    },
+    {
+      "test_id": "test_direct_debit_on_a_fully_paid_line_is_rejected_by_storage",
+      "upstream_ids": [
+        "BR-INV-044",
+        "TEST-057"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_debit_adjustment_line_block_migration.py",
+      "status": "implemented",
+      "notes": "Storage rejects a direct debit Adjustment row on a fully paid line."
+    },
+    {
+      "test_id": "test_debit_before_decision_counts_and_after_decision_is_not_counted",
+      "upstream_ids": [
+        "BR-INV-044",
+        "BR-LATE-001",
+        "PR-INV-044",
+        "TEST-057"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_debit_adjustment_line_block_migration.py",
+      "status": "implemented",
+      "notes": "A debit before the final late-fee decision is in its balance; a debit afterwards is accepted and leaves the decision and Charge unchanged."
+    },
+    {
+      "test_id": "test_concurrent_debit_and_decision_are_ordered_by_the_invoice_lock",
+      "upstream_ids": [
+        "BR-INV-044",
+        "BR-LATE-001",
+        "TEST-057"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_debit_adjustment_line_block_migration.py",
+      "status": "implemented",
+      "notes": "Concurrent debit and late-fee decision are ordered by the Invoice lock; the decision counts the debit only when it came first."
+    },
+    {
+      "test_id": "test_fully_paid_conflict_maps_to_its_line_balance",
+      "upstream_ids": [
+        "BR-INV-044",
+        "TEST-057"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_debit_adjustment_line_block_migration.py",
+      "status": "implemented",
+      "notes": "The fully paid line conflict carries the current line balance."
+    },
+    {
+      "test_id": "test_debit_adjustment_line_block_migration_is_forward_only",
+      "upstream_ids": [
+        "BR-INV-044",
+        "TEST-057"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_debit_adjustment_line_block_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20261003_66 patches functions only and is forward-only."
     }
   ]
 }

@@ -439,6 +439,11 @@ Verify credit on any issued line and excess credit becoming Customer Credit. Ver
 Adjustment concurrent with a final late-payment decision is strictly ordered by the
 Invoice lock.
 
+The debit rules are covered by `backend/tests/test_debit_adjustment_line_block_migration.py`
+(Payment and Customer Credit paid lines, mixed Rent and Service Invoice, reversal reopening
+the line, direct storage rejection, and debit before, after and concurrent with the final
+late-payment decision).
+
 ## TEST-058 — Exceptional Void
 
 Verify voiding follows authorized preconditions, preserves the issued record, and

@@ -799,6 +799,13 @@ remaining balance is recorded as Customer Credit in the same transaction. The fi
 late-payment decision acquires the same Invoice lock, so an Adjustment and the decision
 are strictly ordered.
 
+Implementation (migration `20261003_66`): `app.adjust_invoice` rejects a debit while
+`app.invoice_line_outstanding(line)` is zero (`P4509`, message carries the line balance),
+and `app.validate_invoice_adjustment_effect()` rejects a direct debit row whose line
+balance before the debit is not positive at its `occurred_at`. Applied Payments and
+applied Customer Credit both count as paid; a reversal of either restores the balance and
+so reopens the line. No schema changes.
+
 ## DB-INV-004 — `invoice_void_events`
 
 Append-only: `id uuid PK`, `invoice_id uuid NOT NULL UNIQUE FK`, `reason text NOT NULL`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`, `authorization_reference text NOT NULL`. The posting transaction verifies all active financial dependencies have been explicitly resolved and sets Invoice status VOID without deleting source records.
