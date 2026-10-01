@@ -736,7 +736,9 @@ are recorded without falsely marking financial closure complete.
 Verify an unpaid-Initial termination: never moved in (deposit forfeited, Invoice VOIDed
 with reason when nothing was paid or its unpaid remainder credited when partly paid, Unit
 returned to VACANT) and moved in (Invoice kept, prorated credit Adjustment for the remaining days,
-move-out applies). Verify the final Utility Invoice is created off-cycle from the final
+move-out applies). Covered for migration `20261005_70` by
+`backend/tests/test_unpaid_initial_termination_migration.py`, including the ground check at
+termination time and CLEANING with a reason and the Unit management capability. Verify the final Utility Invoice is created off-cycle from the final
 Readings without duplicating a monthly-run period, the pre-Lease baseline Reading is the
 starting boundary, and a Damage charge requires the capability, reason and evidence, is
 billed once and matches its finding.

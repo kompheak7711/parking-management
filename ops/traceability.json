@@ -32942,6 +32942,84 @@
       "test_path": "backend/tests/test_lease_signing_reservation_migration.py",
       "status": "implemented",
       "notes": "Migration 20261005_69 is additive and forward-only."
+    },
+    {
+      "test_id": "test_never_moved_in_with_nothing_paid_forfeits_voids_and_releases_the_unit",
+      "upstream_ids": [
+        "BR-LEASE-005",
+        "PR-LEASE-005",
+        "TEST-078",
+        "BR-INV-046",
+        "BR-UNIT-010",
+        "BR-DEP-005"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_unpaid_initial_termination_migration.py",
+      "status": "implemented",
+      "notes": "Never moved in and nothing paid: the Security Deposit is forfeited under BR-LEASE-005, the Initial Invoice is VOID, the Unit is VACANT, the Reservation stays COMPLETED, and the resolution records the customer cause, reason and actor; exact replay."
+    },
+    {
+      "test_id": "test_never_moved_in_partly_paid_keeps_the_payment_and_credits_the_remainder",
+      "upstream_ids": [
+        "BR-LEASE-005",
+        "PR-LEASE-005",
+        "TEST-078",
+        "BR-INV-046",
+        "BR-UNIT-010"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_unpaid_initial_termination_migration.py",
+      "status": "implemented",
+      "notes": "Never moved in and partly paid: the payment is kept, the unpaid remainder is credited, and CLEANING needs a reason and the Unit management capability."
+    },
+    {
+      "test_id": "test_ground_is_verified_at_termination_time",
+      "upstream_ids": [
+        "BR-LEASE-005",
+        "PR-LEASE-005",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_unpaid_initial_termination_migration.py",
+      "status": "implemented",
+      "notes": "Termination for an unpaid Initial obligation is rejected before Lease Start plus five days and when nothing is unpaid."
+    },
+    {
+      "test_id": "test_moved_in_termination_credits_rent_after_the_termination_date",
+      "upstream_ids": [
+        "BR-LEASE-005",
+        "PR-LEASE-005",
+        "TEST-078",
+        "BR-RENT-007"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_unpaid_initial_termination_migration.py",
+      "status": "implemented",
+      "notes": "Moved in: the Initial Invoice is kept and Rent after the termination date is credited with BR-RENT-007 proration; the never-moved-in path is refused."
+    },
+    {
+      "test_id": "test_upgrade_to_unpaid_initial_termination_keeps_earlier_records",
+      "upstream_ids": [
+        "BR-LEASE-005",
+        "PR-LEASE-005",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_unpaid_initial_termination_migration.py",
+      "status": "implemented",
+      "notes": "Leases, Reservations, deposits, Invoices and Units are byte-identical across the upgrade to migration 70."
+    },
+    {
+      "test_id": "test_unpaid_initial_termination_migration_is_forward_only",
+      "upstream_ids": [
+        "BR-LEASE-005",
+        "PR-LEASE-005",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_unpaid_initial_termination_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20261005_70 is additive and forward-only."
     }
   ]
 }

@@ -173,6 +173,7 @@ database_test_suites='
   tests/test_credit_adjustment_excess_migration.py
   tests/test_rent_nonpayment_recurring_only_migration.py
   tests/test_lease_signing_reservation_migration.py
+  tests/test_unpaid_initial_termination_migration.py
   tests/test_billing_run_migration.py
 '
 

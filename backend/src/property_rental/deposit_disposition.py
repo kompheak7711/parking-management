@@ -8,6 +8,7 @@ from uuid import UUID
 class DepositDispositionRule(StrEnum):
     PET_NONCOMPLIANCE = "BR-DEP-022"
     VOLUNTARY_SECURITY = "BR-DEP-023"
+    UNPAID_INITIAL_SECURITY = "BR-LEASE-005"
 
 
 @dataclass(frozen=True, slots=True)

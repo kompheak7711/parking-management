@@ -644,6 +644,13 @@ completes that Reservation and occupies the Unit at signing; `PostgresMoveInServ
 begins Occupancy for such a Lease. Exposing `reservation_id` on the signing route and the new
 move-in route belongs to the HTTP and UI slice.
 
+Unpaid Initial obligation termination (migration `20261005_70`): the termination context
+accepts basis `UNPAID_INITIAL_OBLIGATION` with governing reference `BR-LEASE-005`.
+`PostgresUnpaidInitialTerminationService.resolve_never_moved_in` (capabilities
+`leases.terminate`, `deposits.dispose`, `invoices.void`, `invoices.adjust`, plus
+`property.manage` for CLEANING) and `credit_moved_in_initial_rent` (`leases.terminate`,
+`invoices.adjust`) are service level; their routes belong to the HTTP and UI slice.
+
 The final-decision command is authorized and idempotent and accepts only
 `CONFIRMED_DEFAULT`, `REDUCED`, or `WAIVED`. A REDUCED decision records the exact
 approved USD amount below the calculated default amount. The approved monetary amount

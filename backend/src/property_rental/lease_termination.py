@@ -12,6 +12,7 @@ class TerminationBasis(StrEnum):
     VOLUNTARY_EARLY = "VOLUNTARY_EARLY"
     CUSTOMER_VIOLATION = "CUSTOMER_VIOLATION"
     SIGNED_LEASE_OTHER = "SIGNED_LEASE_OTHER"
+    UNPAID_INITIAL_OBLIGATION = "UNPAID_INITIAL_OBLIGATION"
 
 
 def _text(value: object, field: str, maximum: int) -> None:
@@ -81,6 +82,11 @@ class TerminationContext:
             raise ValueError("Actual termination date must be a calendar date")
         voluntary = self.basis is TerminationBasis.VOLUNTARY_EARLY
         if voluntary != (governing_reference == "BR-LEASE-021"):
+            raise ValueError("Governing event must match the approved termination basis")
+        if (
+            self.basis is TerminationBasis.UNPAID_INITIAL_OBLIGATION
+            and governing_reference != "BR-LEASE-005"
+        ):
             raise ValueError("Governing event must match the approved termination basis")
         if self.notice_period_ends_on is not None and actual_date < self.notice_period_ends_on:
             raise ValueError("Actual termination cannot precede the documented notice period end")

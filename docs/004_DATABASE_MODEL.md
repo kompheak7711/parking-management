@@ -283,6 +283,20 @@ an OCCUPIED Unit keeps it OCCUPIED; a RESERVED or OUT_OF_SERVICE Unit is rejecte
 Leases through `app.record_signed_lease_move_in`, which only begins Occupancy and has no
 payment gate. Leases signed before this migration keep `complete_reservation_move_in`.
 
+### Unpaid Initial obligation termination (migration `20261005_70`)
+
+Termination basis `UNPAID_INITIAL_OBLIGATION` requires governing reference `BR-LEASE-005`,
+the signed clause reference, no warning letters, and, at termination time in
+Asia/Phnom_Penh, a date after Lease Start plus five days with the Initial Rent or the
+Security Deposit still unpaid. `unpaid_initial_termination_resolutions` (append-only, one per
+termination event) records the cause `CUSTOMER_UNPAID_INITIAL_OBLIGATION`, the reason, the
+actor and what was done. Never moved in: the Security Deposit held value is forfeited
+under rule `BR-LEASE-005` (`lease_deposit_disposition_contexts.governing_rule` now also
+accepts it), the Initial Rent Invoice is VOIDed when nothing was applied or its unpaid lines
+are credited, and the Unit becomes VACANT or CLEANING with a reason; the Pet Deposit and
+the COMPLETED Reservation are untouched. Moved in: the Initial Invoice is kept and its Rent
+is credited for the days after the termination date with BR-RENT-007 proration.
+
 ## DB-LEASE-001 — `leases`
 
 | Column | Type | Null | Rule |

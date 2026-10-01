@@ -250,7 +250,8 @@ If no other Lease, maintenance, cleaning, or out-of-service condition blocks
 availability, the Unit becomes VACANT.
 
 When a Lease is terminated before any move-in under BR-LEASE-005, the Unit is released
-without an Occupancy or physical move-out. It returns to VACANT.
+without an Occupancy or physical move-out. It returns to VACANT, or to CLEANING when a
+user holding the Unit management capability records a reason.
 
 ---
 
