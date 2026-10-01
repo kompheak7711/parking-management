@@ -606,7 +606,11 @@ A debit Adjustment on a fully paid line returns 409 with the current line balanc
 Service status (migration `20261003_66`): `PostgresInvoiceService.adjust` raises
 `InvoiceLineFullyPaid` (a conflict) carrying `line_balance_usd_cents`; the existing route
 already answers 409 for a conflict, and adding the balance to the response body belongs to
-the HTTP and UI slice. A
+the HTTP and UI slice. Since migration `20261003_67` a credit beyond the remaining line
+balance succeeds and its result carries `adjustment_effect` with
+`customer_credit_usd_cents`, the new Credit ids, `returned_to_customer_credit_usd_cents`
+and the released sources; an exact replay returns the same body. A credit beyond the
+line's adjusted obligation remains invalid. A
 credit Adjustment reports any amount recorded as Customer Credit. Neither accepts a Due
 Date field; both use the Invoice Due Date.
 

@@ -537,6 +537,14 @@ def test_credit_application_invoice_adjustment_void_and_temporal_guards(
                 "%s,%s,'invoices.adjust')",
                 (uuid4(), invoice, line, at[0] - timedelta(microseconds=1), human),
             )
+    with psycopg.connect(migrated_database_url) as connection:
+        obligation = connection.execute(
+            "SELECT app.invoice_adjusted_line_obligation(%s)", (line,)
+        ).fetchone()
+        assert obligation is not None
+    # BR-INV-044 replaced the older rule: a credit beyond the unpaid amount is accepted and
+    # its excess becomes Customer Credit (see test_credit_adjustment_excess_migration.py).
+    # Still rejected: a credit beyond the line's adjusted obligation.
     with pytest.raises(InvoiceInvalidError):
         invoices.adjust(
             prop,
@@ -545,7 +553,7 @@ def test_credit_application_invoice_adjustment_void_and_temporal_guards(
                 uuid4(),
                 line,
                 AdjustmentType.CREDIT,
-                60001,
+                int(str(obligation[0])) + 1,
                 "excess-adjustment",
                 "Cannot reduce applied value",
                 int(version[0]),

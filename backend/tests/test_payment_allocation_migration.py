@@ -316,6 +316,10 @@ def test_allocation_competing_payments_cannot_overpay_one_line(migrated_database
 def test_allocation_adjustments_cannot_credit_already_applied_value(
     migrated_database_url: str,  # noqa: F811
 ) -> None:
+    # BR-INV-044 replaced the older rule: a credit larger than the unpaid amount is now
+    # accepted and its excess becomes Customer Credit (tested in
+    # test_credit_adjustment_excess_migration.py). Still true: a credit larger than the
+    # line's total adjusted obligation is rejected.
     human, prop, payment, invoices = source(migrated_database_url)
     with psycopg.connect(migrated_database_url) as connection:
         row = connection.execute(
@@ -340,30 +344,17 @@ def test_allocation_adjustments_cannot_credit_already_applied_value(
                 uuid4(),
                 line_id,
                 AdjustmentType.CREDIT,
-                60_001,
+                80_001,
                 "approved-adjustment/over",
-                "Cannot credit applied value",
+                "Cannot credit beyond the line obligation",
                 int(str(version[0])),
             ),
             actor=invoice_api_actor(human, prop),
         )
-    result = invoices_service.adjust(
-        prop,
-        invoices[0],
-        AdjustInvoiceCommand(
-            uuid4(),
-            line_id,
-            AdjustmentType.CREDIT,
-            60_000,
-            "approved-adjustment/exact",
-            "Reduce remaining obligation",
-            int(str(version[0])),
-        ),
-        actor=invoice_api_actor(human, prop),
-    )
-    assert result["status"] == "PAID"
-    assert result["outstanding_balance"] == {"currency": "USD", "minor_units": 0}
-    assert result["adjusted_total"] == {"currency": "USD", "minor_units": 20_000}
+    with psycopg.connect(migrated_database_url) as connection:
+        assert connection.execute(
+            "SELECT count(*) FROM app.invoice_adjustments WHERE invoice_line_id=%s", (line_id,)
+        ).fetchone() == (0,)
 
 
 @pytest.mark.parametrize("direct", [False, True])

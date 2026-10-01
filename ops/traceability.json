@@ -32618,6 +32618,134 @@
       "test_path": "backend/tests/test_debit_adjustment_line_block_migration.py",
       "status": "implemented",
       "notes": "Migration 20261003_66 patches functions only and is forward-only."
+    },
+    {
+      "test_id": "test_credit_within_unpaid_value_records_no_customer_credit",
+      "upstream_ids": [
+        "BR-INV-044",
+        "PR-INV-044",
+        "TEST-057"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_credit_adjustment_excess_migration.py",
+      "status": "implemented",
+      "notes": "A credit within the line's unpaid value releases nothing and creates no Customer Credit."
+    },
+    {
+      "test_id": "test_credit_beyond_unpaid_value_reverses_and_reposts_with_reason",
+      "upstream_ids": [
+        "BR-INV-044",
+        "PR-INV-044",
+        "TEST-057",
+        "TEST-063",
+        "TEST-065"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_credit_adjustment_excess_migration.py",
+      "status": "implemented",
+      "notes": "A credit beyond the unpaid value reverses the newest allocation and re-posts the remainder with the reason 'Invoice adjustment credit excess'; the excess becomes the Invoice Customer's Credit; exact replay returns the same effect. Supersedes the older rejection recorded for test_allocation_adjustments_cannot_credit_already_applied_value (BR-INV-044)."
+    },
+    {
+      "test_id": "test_credit_on_fully_paid_line_becomes_customer_credit_whole",
+      "upstream_ids": [
+        "BR-INV-044",
+        "PR-INV-044",
+        "TEST-057",
+        "TEST-065"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_credit_adjustment_excess_migration.py",
+      "status": "implemented",
+      "notes": "A credit on a fully paid line becomes Customer Credit in full."
+    },
+    {
+      "test_id": "test_newest_payment_allocation_is_released_first",
+      "upstream_ids": [
+        "BR-INV-044",
+        "PR-INV-044",
+        "TEST-057",
+        "TEST-063"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_credit_adjustment_excess_migration.py",
+      "status": "implemented",
+      "notes": "The newest Payment allocation on the line is released first; older allocations stay untouched."
+    },
+    {
+      "test_id": "test_multi_line_allocation_keeps_other_line_value_after_repost",
+      "upstream_ids": [
+        "BR-INV-044",
+        "PR-INV-044",
+        "TEST-057",
+        "TEST-063"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_credit_adjustment_excess_migration.py",
+      "status": "implemented",
+      "notes": "Re-posting an allocation that covered two lines keeps the other line's value unchanged."
+    },
+    {
+      "test_id": "test_credit_application_excess_returns_to_that_credit",
+      "upstream_ids": [
+        "BR-INV-044",
+        "PR-INV-044",
+        "TEST-057",
+        "TEST-065"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_credit_adjustment_excess_migration.py",
+      "status": "implemented",
+      "notes": "Excess released from a Customer Credit application returns to that Credit's balance without a new Credit."
+    },
+    {
+      "test_id": "test_credit_beyond_obligation_or_on_a_void_invoice_is_rejected",
+      "upstream_ids": [
+        "BR-INV-044",
+        "PR-INV-044",
+        "TEST-057"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_credit_adjustment_excess_migration.py",
+      "status": "implemented",
+      "notes": "A credit beyond the line obligation, or on a VOID Invoice, is rejected."
+    },
+    {
+      "test_id": "test_third_party_paid_excess_belongs_to_the_invoice_customer",
+      "upstream_ids": [
+        "BR-INV-044",
+        "PR-INV-044",
+        "TEST-057",
+        "TEST-065"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_credit_adjustment_excess_migration.py",
+      "status": "implemented",
+      "notes": "Excess from a third-party Payment becomes Customer Credit of the Invoice Customer, not the payer."
+    },
+    {
+      "test_id": "test_excess_release_rewrites_no_late_fee_nonpayment_payment_or_receipt_history",
+      "upstream_ids": [
+        "BR-INV-044",
+        "PR-INV-044",
+        "TEST-057",
+        "BR-LATE-001"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_credit_adjustment_excess_migration.py",
+      "status": "implemented",
+      "notes": "Reversal and re-post leave late-fee decisions and Charges, Rent nonpayment cases and events, the Payment, its receipts and original allocations unchanged."
+    },
+    {
+      "test_id": "test_credit_adjustment_excess_migration_is_forward_only",
+      "upstream_ids": [
+        "BR-INV-044",
+        "PR-INV-044",
+        "TEST-057"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_credit_adjustment_excess_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20261003_67 is additive and forward-only."
     }
   ]
 }

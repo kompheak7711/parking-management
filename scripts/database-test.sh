@@ -170,6 +170,7 @@ database_test_suites='
   tests/test_initial_rent_lease_start_migration.py
   tests/test_one_time_charges_migration.py
   tests/test_debit_adjustment_line_block_migration.py
+  tests/test_credit_adjustment_excess_migration.py
   tests/test_billing_run_migration.py
 '
 

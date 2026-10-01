@@ -806,6 +806,20 @@ balance before the debit is not positive at its `occurred_at`. Applied Payments 
 applied Customer Credit both count as paid; a reversal of either restores the balance and
 so reopens the line. No schema changes.
 
+Implementation (migration `20261003_67`): a credit larger than the line's adjusted
+obligation is rejected. For a credit beyond the line's remaining balance,
+`app.adjust_invoice` reverses whole Payment allocations and Customer Credit applications
+on that line, newest first, until the excess is covered, then records the Adjustment,
+re-posts each reversed source minus the released part (same basis, designation and
+other lines), and recognizes released Payment value as `customer_credits` of the
+Invoice Customer. Value released from a Credit application returns to that Credit.
+Reversals, replacements and recognized Credit all carry the reason "Invoice adjustment
+credit excess". The append-only `invoice_credit_excess_releases` table links the
+Adjustment, the reversed source, its replacement, the released cents and the Credit;
+recognition skips the open-Invoice excess eligibility check only for such a linked row.
+Original allocations, Payments, receipts, late-payment decisions and Charges and Rent
+nonpayment records are never edited.
+
 ## DB-INV-004 — `invoice_void_events`
 
 Append-only: `id uuid PK`, `invoice_id uuid NOT NULL UNIQUE FK`, `reason text NOT NULL`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`, `authorization_reference text NOT NULL`. The posting transaction verifies all active financial dependencies have been explicitly resolved and sets Invoice status VOID without deleting source records.

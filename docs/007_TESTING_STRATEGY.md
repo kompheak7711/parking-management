@@ -443,6 +443,11 @@ The debit rules are covered by `backend/tests/test_debit_adjustment_line_block_m
 (Payment and Customer Credit paid lines, mixed Rent and Service Invoice, reversal reopening
 the line, direct storage rejection, and debit before, after and concurrent with the final
 late-payment decision).
+Credit excess is covered by `backend/tests/test_credit_adjustment_excess_migration.py`
+(within and beyond the unpaid value, fully paid line, newest-first release, multi-line
+re-post, Credit application release, third-party payer, VOID and over-obligation
+rejection, and proof that late-fee, Rent nonpayment, Payment, receipt and original
+allocation history are unchanged).
 
 ## TEST-058 — Exceptional Void
 

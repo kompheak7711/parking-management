@@ -803,6 +803,14 @@ def test_termination_future_void_requires_separate_payment_and_credit_reversals(
             ),
             actor=staff,
         )
+    with psycopg.connect(migrated_database_url) as connection:
+        obligation = connection.execute(
+            "SELECT app.invoice_adjusted_line_obligation(%s)", (line,)
+        ).fetchone()
+        assert obligation is not None
+    # BR-INV-044 replaced the older rule: a credit beyond the unpaid amount is accepted and
+    # its excess becomes Customer Credit (see test_credit_adjustment_excess_migration.py).
+    # Still rejected: a credit beyond the line's adjusted obligation.
     with pytest.raises(InvoiceInvalidError):
         flow.adjust(
             prop,
@@ -811,7 +819,7 @@ def test_termination_future_void_requires_separate_payment_and_credit_reversals(
                 uuid4(),
                 line,
                 AdjustmentType.CREDIT,
-                80000,
+                int(str(obligation[0])) + 1,
                 "approved/termination",
                 "Applications require explicit resolution",
                 current.invoice_version,
