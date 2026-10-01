@@ -633,8 +633,10 @@ def test_runtime_utility_and_exchange_commands_preserve_effective_evidence(
                 "ELECTRICITY",
                 "KWH",
                 Decimal("0.25000000"),
-                "2026-10-01",
-                "2026-09-01T09:00:00+07:00",
+                # This rate is committed to the shared test database; a far-future date keeps
+                # it from becoming the current ELECTRICITY rate for later tests.
+                "2099-10-01",
+                "2099-09-01T09:00:00+07:00",
                 "Notice ELEC-2026-09",
                 "Approved rate",
                 actor_id,
@@ -645,7 +647,7 @@ def test_runtime_utility_and_exchange_commands_preserve_effective_evidence(
             "ELECTRICITY",
             "KWH",
             Decimal("0.25000000"),
-            datetime(2026, 10, 1).date(),
+            datetime(2099, 10, 1).date(),
         )
         trace = {
             "usd_amount_cents": 10001,
