@@ -521,57 +521,18 @@ def test_mixed_service_balance_cannot_trigger_rent_default_after_rent_cure(
             actor=actor,
             request_id="service",
         )
-    created = flow.open_case(
-        prop,
-        lease,
-        OpenRentNonpaymentCase(uuid4(), lines["RENT"], "Rent only"),
-        actor=actor,
-        request_id="rent",
-    )
-    case = UUID(str(cast(dict[str, object], created.body["data"])["id"]))
-    event(prop, lease, case, human, NonpaymentEventKind.TWENTY_DAY_WARNING)
-    allocation_service().post(
-        prop,
-        payment,
-        PostAllocationsCommand(
-            uuid4(),
-            {
-                "mode": "DESIGNATED",
-                "designation_reference": "Rent instruction",
-                "targets": [
-                    {
-                        "invoice_id": str(issued.invoice_id),
-                        "amount_usd_cents": issued.rent_usd_cents,
-                        "details": [
-                            {
-                                "invoice_line_id": str(lines["RENT"]),
-                                "amount_usd_cents": issued.rent_usd_cents,
-                            }
-                        ],
-                    }
-                ],
-            },
-        ),
-        actor=allocation_actor(human, prop),
-    )
-    assessment = cast(
-        dict[str, object], flow.read(prop, lease, "CASE", case_id=case, actor=actor)["assessment"]
-    )
-    assert assessment["remaining_rent"] == {"currency": "USD", "minor_units": 0}
-    assert (
-        assessment["cure_eligible"] is True and assessment["thirty_day_default_eligible"] is False
-    )
-    event(prop, lease, case, human, NonpaymentEventKind.CURE)
+    # DL-064 (BR-LEASE-026): the Initial Rent Invoice never opens a Rent nonpayment case;
+    # the mixed Rent and Service cure path is covered on recurring Rent in
+    # test_rent_nonpayment_recurring_only_migration.py.
     with pytest.raises(LeaseEnforcementConflictError):
-        event(prop, lease, case, human, NonpaymentEventKind.THIRTY_DAY_SERIOUS_DEFAULT)
-    with psycopg.connect(migrated_database_url) as connection:
-        assert connection.execute(
-            "SELECT status FROM app.invoices WHERE id=%s", (issued.invoice_id,)
-        ).fetchone() == ("PARTIALLY_PAID",)
-        position = connection.execute(
-            "SELECT app.invoice_line_outstanding(%s)", (lines["SERVICE_CHARGES"],)
-        ).fetchone()
-        assert position is not None and position[0] > 0
+        flow.open_case(
+            prop,
+            lease,
+            OpenRentNonpaymentCase(uuid4(), lines["RENT"], "Rent only"),
+            actor=actor,
+            request_id="rent",
+        )
+    del payment
 
 
 def test_event_waits_for_financial_lock_and_rechecks_committed_zero_rent(
@@ -868,72 +829,19 @@ def test_cure_after_day_twenty_warning_stops_day_thirty_trigger_and_preserves_no
             customer_id=customer,
             amount=issued.rent_usd_cents,
         )
+    # DL-064 (BR-LEASE-026): the Initial Rent Invoice never opens a Rent nonpayment case;
+    # cure before day 30 is covered on recurring Rent in
+    # test_rent_nonpayment_recurring_only_migration.py.
     flow, actor = service(), staff(human, prop)
-    created = flow.open_case(
-        prop,
-        lease,
-        OpenRentNonpaymentCase(uuid4(), line, "Day20 case"),
-        actor=actor,
-        request_id="day20",
-    )
-    data = cast(dict[str, object], created.body["data"])
-    assessment = cast(dict[str, object], data["assessment"])
-    case = UUID(str(data["id"]))
-    assert assessment["days_overdue"] == 20
-    assert assessment["twenty_day_warning_eligible"] is True
-    assert assessment["thirty_day_default_eligible"] is False
-    notice = event(prop, lease, case, human, NonpaymentEventKind.TWENTY_DAY_WARNING)
     with pytest.raises(LeaseEnforcementConflictError):
-        event(prop, lease, case, human, NonpaymentEventKind.CURE)
-    allocation_service().post(
-        prop,
-        payment,
-        PostAllocationsCommand(
-            uuid4(),
-            {
-                "mode": "DESIGNATED",
-                "designation_reference": "Cure before day30",
-                "targets": [
-                    {
-                        "invoice_id": str(issued.invoice_id),
-                        "amount_usd_cents": issued.rent_usd_cents,
-                        "details": [
-                            {
-                                "invoice_line_id": str(line),
-                                "amount_usd_cents": issued.rent_usd_cents,
-                            }
-                        ],
-                    }
-                ],
-            },
-        ),
-        actor=allocation_actor(human, prop),
-    )
-    event(prop, lease, case, human, NonpaymentEventKind.CURE)
-    with psycopg.connect(migrated_database_url) as connection:
-        future = connection.execute(
-            "SELECT app.rent_nonpayment_case_snapshot(id,(due_date_snapshot+30)"
-            "::timestamp AT TIME ZONE 'Asia/Phnom_Penh') "
-            "FROM app.rent_nonpayment_cases WHERE id=%s",
-            (case,),
-        ).fetchone()
-        assert future is not None
-        assert future[0]["assessment"]["days_overdue"] == 30
-        assert future[0]["assessment"]["remaining_rent"] == {"currency": "USD", "minor_units": 0}
-        assert future[0]["assessment"]["thirty_day_default_eligible"] is False
-        assert future[0]["assessment"]["warning_recorded"] is True
-        assert future[0]["assessment"]["serious_default_recorded"] is False
-    history = cast(
-        list[dict[str, object]],
-        flow.read(prop, lease, "EVENTS", case_id=case, actor=actor)["items"],
-    )
-    assert len(history) == 2
-    assert (
-        history[0]["remaining_rent_usd_cents"]
-        == notice["remaining_rent_usd_cents"]
-        == issued.rent_usd_cents
-    )
-    assert history[1]["remaining_rent_usd_cents"] == 0
+        flow.open_case(
+            prop,
+            lease,
+            OpenRentNonpaymentCase(uuid4(), line, "Day20 case"),
+            actor=actor,
+            request_id="day20",
+        )
+    del payment
 
 
 def test_event_commands_reject_forged_client_balance_and_milestone_date(

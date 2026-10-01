@@ -141,6 +141,25 @@ class PostgresEnforcementContext:
             else None,
         }
 
+    def initial_rent_alerts(
+        self,
+        property_id: UUID,
+        *,
+        actor: AuthenticatedActor,
+        page: EnforcementPage | None = None,
+    ) -> dict[str, object]:
+        """BR-RENT-009: unpaid Initial Rent listed from the day after its Due Date; read only."""
+        selected = page if page is not None else EnforcementPage()
+        checked = EnforcementPage(selected.limit, selected.after_id)
+        _identity(property_id, "property_id")
+        if not is_authorized(actor, AuthorizationRequirement(NONPAYMENT_READ, str(property_id))):
+            raise LeaseEnforcementAuthorizationError("Enforcement context is not authorized")
+        return self._service()._query(
+            "SELECT app.unpaid_initial_rent_alert_page(%s,%s,%s,%s)",
+            (self._actor(actor), property_id, checked.limit, checked.after_id),
+            write=False,
+        )
+
     def read(
         self,
         property_id: UUID,

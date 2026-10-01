@@ -630,7 +630,13 @@ sequence. A generic API cannot attach an unsupported fee, penalty, or category.
 
 The review endpoint returns the authoritative overdue balance at assessment, exact
 default 10% proposal, calculated default amount, prior-decision state, and blocking
-conditions without posting a Charge.
+conditions without posting a Charge. Since migration `20261004_68` an Initial Rent Invoice
+reports the blocking condition `INITIAL_RENT_NO_LATE_PAYMENT` and its final decision is
+rejected as a conflict; existing decisions and Charges are unchanged. The unpaid Initial
+Rent management alert (`app.unpaid_initial_rent_alert_page`, capability
+`rent_nonpayment.read`) is delivered at service level only
+(`PostgresEnforcementContext.initial_rent_alerts`); its route belongs to the HTTP and UI
+slice.
 
 The final-decision command is authorized and idempotent and accepts only
 `CONFIRMED_DEFAULT`, `REDUCED`, or `WAIVED`. A REDUCED decision records the exact

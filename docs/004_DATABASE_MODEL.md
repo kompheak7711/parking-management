@@ -444,8 +444,13 @@ Partial unique indexes permit at most one TWENTY_DAY_WARNING and one
 THIRTY_DAY_SERIOUS_DEFAULT per case. Posting locks and recomputes the current Rent-line
 balance from active line-aware Payment Allocations, Customer Credit applications,
 Adjustments, and permitted Final Settlement Deposit applications. A warning requires a
-positive amount at 20 calendar days after Due Date; a serious default requires a
-positive amount at 30 calendar days. TWENTY_DAY_WARNING requires a Notice/document
+positive amount on day 20 and a serious default on day 30, counted in Asia/Phnom_Penh
+calendar days from day one, the 1st of the billed month (BR-LEASE-026). Implementation
+(migration `20261004_68`): `app.rent_nonpayment_day_zero(invoice)` returns the day before
+the 1st for recurring Rent and null for Initial Rent, so an Initial Rent case can never
+reach day 20 or 30; cases accept only recurring Rent lines, and an earlier Initial Rent
+case accepts only CURE and AUTHORIZED_FOLLOW_UP. `due_date_snapshot` and `days_overdue`
+keep their Due Date meaning. Recorded cases and events are unchanged. TWENTY_DAY_WARNING requires a Notice/document
 reference; AUTHORIZED_FOLLOW_UP requires an authorization reference. CURE stores zero
 after a warning or default; later authorized follow-up remains explicit. No event
 changes Lease, Occupancy, Unit, Move-out, or Final Settlement state automatically.

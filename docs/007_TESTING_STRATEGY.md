@@ -701,6 +701,10 @@ after its Due Date, and no late-payment charge is proposed for it. Verify day 30
 year and 1 March in a leap year. Verify immediate alerts for late-opened cases, and that
 cases recorded earlier are unchanged.
 
+Covered by `backend/tests/test_rent_nonpayment_recurring_only_migration.py`, including a
+byte-identical comparison of cases, events, late-payment decisions and Charges across the
+upgrade and the limits on a case opened earlier on Initial Rent.
+
 ## TEST-076 — Termination Notice
 
 Verify only approved grounds/actions, notice evidence, authorization, and status

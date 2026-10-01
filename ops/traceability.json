@@ -32746,6 +32746,114 @@
       "test_path": "backend/tests/test_credit_adjustment_excess_migration.py",
       "status": "implemented",
       "notes": "Migration 20261003_67 is additive and forward-only."
+    },
+    {
+      "test_id": "test_day_twenty_and_thirty_count_from_the_first_at_phnom_penh_midnight",
+      "upstream_ids": [
+        "BR-LEASE-026",
+        "BR-LEASE-027",
+        "BR-LEASE-028",
+        "PR-LEASE-026",
+        "TEST-127"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_rent_nonpayment_recurring_only_migration.py",
+      "status": "implemented",
+      "notes": "Day 20 is the 20th and day 30 is the 1st plus 29 days of the billed month at Asia/Phnom_Penh midnight; February day 30 is 2 March in a normal year and 1 March in a leap year."
+    },
+    {
+      "test_id": "test_initial_rent_cannot_open_a_case_by_command_or_storage",
+      "upstream_ids": [
+        "BR-LEASE-026",
+        "BR-RENT-009",
+        "TEST-127"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_rent_nonpayment_recurring_only_migration.py",
+      "status": "implemented",
+      "notes": "An Initial Rent Invoice cannot open a Rent nonpayment case through the command or by direct storage."
+    },
+    {
+      "test_id": "test_mixed_recurring_invoice_cures_rent_and_rejects_day_thirty",
+      "upstream_ids": [
+        "BR-LEASE-026",
+        "BR-LEASE-029",
+        "TEST-127"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_rent_nonpayment_recurring_only_migration.py",
+      "status": "implemented",
+      "notes": "On a recurring Rent and Service Invoice only the Rent line opens a case; day 20 is eligible on the 20th and day 30 is not; paying Rent cures and blocks day 30 while Service stays unpaid."
+    },
+    {
+      "test_id": "test_day_thirty_default_changes_no_lease_unit_or_occupancy",
+      "upstream_ids": [
+        "BR-LEASE-028",
+        "TEST-127"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_rent_nonpayment_recurring_only_migration.py",
+      "status": "implemented",
+      "notes": "Recording the day-30 Serious Nonpayment Default leaves the Lease, Unit and Occupancy unchanged."
+    },
+    {
+      "test_id": "test_initial_rent_alert_starts_the_day_after_the_due_date_and_ends_when_paid",
+      "upstream_ids": [
+        "BR-RENT-009",
+        "TEST-127"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_rent_nonpayment_recurring_only_migration.py",
+      "status": "implemented",
+      "notes": "Unpaid Initial Rent appears in the management alert from the day after its Due Date, needs rent_nonpayment.read, and leaves the alert once paid."
+    },
+    {
+      "test_id": "test_nonpayment_alerts_and_sources_list_only_recurring_rent",
+      "upstream_ids": [
+        "BR-LEASE-026",
+        "BR-LEASE-027",
+        "TEST-127"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_rent_nonpayment_recurring_only_migration.py",
+      "status": "implemented",
+      "notes": "Nonpayment alerts and case sources list recurring Rent lines only, never Initial Rent."
+    },
+    {
+      "test_id": "test_initial_rent_review_blocks_late_fee_and_recurring_does_not",
+      "upstream_ids": [
+        "BR-RENT-009",
+        "BR-INV-054",
+        "TEST-123"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_rent_nonpayment_recurring_only_migration.py",
+      "status": "implemented",
+      "notes": "The late-fee review reports INITIAL_RENT_NO_LATE_PAYMENT and finalization is rejected for Initial Rent; recurring Rent is unaffected."
+    },
+    {
+      "test_id": "test_forward_upgrade_keeps_recorded_history_and_limits_initial_cases",
+      "upstream_ids": [
+        "BR-LEASE-026",
+        "BR-RENT-009",
+        "TEST-127",
+        "TEST-123"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_rent_nonpayment_recurring_only_migration.py",
+      "status": "implemented",
+      "notes": "Recorded cases, events, late-fee decisions and Charges are byte-identical across the upgrade; an earlier Initial Rent case accepts only cure and follow-up events."
+    },
+    {
+      "test_id": "test_recurring_only_rent_nonpayment_migration_is_forward_only",
+      "upstream_ids": [
+        "BR-LEASE-026",
+        "TEST-127"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_rent_nonpayment_recurring_only_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20261004_68 replaces functions only and is forward-only."
     }
   ]
 }

@@ -35,6 +35,7 @@ from property_rental.late_payment import (
     CorrectLatePaymentChargeCommand,
     DecisionOutcome,
     FinalizeLatePaymentDecisionCommand,
+    LatePaymentConflictError,
 )
 from property_rental.payment_allocation import (
     PostAllocationsCommand,
@@ -255,23 +256,24 @@ def test_ledger_canonical_rent_service_charge_example_and_original_source_preser
             ),
             (invoice,),
         ).fetchall() == [(rent, 20000), (trash, 1000)]
-    late_service().finalize_decision(
-        prop,
-        invoice,
-        FinalizeLatePaymentDecisionCommand(
-            uuid4(), DecisionOutcome.CONFIRMED_DEFAULT, 2100, "Confirm canonical late charge"
-        ),
-        actor=late_payment_actor(human, prop),
-    )
+    # DL-064 (BR-RENT-009): the Initial Rent Invoice has no late-payment charge, so the
+    # canonical late charge is now rejected; ledger late charges are covered on recurring Rent.
+    with pytest.raises(LatePaymentConflictError):
+        late_service().finalize_decision(
+            prop,
+            invoice,
+            FinalizeLatePaymentDecisionCommand(
+                uuid4(), DecisionOutcome.CONFIRMED_DEFAULT, 2100, "Confirm canonical late charge"
+            ),
+            actor=late_payment_actor(human, prop),
+        )
     with psycopg.connect(migrated_database_url) as connection:
-        assert assert_reconciled(connection, customer) == LedgerPosition(invoice=21000, charge=2100)
-        charge_row = connection.execute(
-            "SELECT id FROM app.late_payment_charges WHERE source_invoice_id=%s", (invoice,)
-        ).fetchone()
-        assert charge_row is not None
-        charge = UUID(str(charge_row[0]))
+        assert assert_reconciled(connection, customer) == LedgerPosition(invoice=21000)
+        assert connection.execute(
+            "SELECT count(*) FROM app.late_payment_charges WHERE source_invoice_id=%s", (invoice,)
+        ).fetchone() == (0,)
         second = seed_payment(
-            connection, actor_id=human, property_id=prop, customer_id=customer, amount=23100
+            connection, actor_id=human, property_id=prop, customer_id=customer, amount=21000
         )
     allocations().post(
         prop,
@@ -280,7 +282,7 @@ def test_ledger_canonical_rent_service_charge_example_and_original_source_preser
             uuid4(),
             {
                 "mode": "DESIGNATED",
-                "designation_reference": "Pay Rent, Trash and separate charge",
+                "designation_reference": "Pay Rent and Trash",
                 "targets": [
                     {
                         "invoice_id": str(invoice),
@@ -290,7 +292,6 @@ def test_ledger_canonical_rent_service_charge_example_and_original_source_preser
                             {"invoice_line_id": str(trash), "amount_usd_cents": 1000},
                         ],
                     },
-                    {"late_payment_charge_id": str(charge), "amount_usd_cents": 2100},
                 ],
             },
         ),
@@ -305,15 +306,12 @@ def test_ledger_canonical_rent_service_charge_example_and_original_source_preser
             ).fetchall()
             == original
         )
-        assert connection.execute(
-            "SELECT original_amount_usd_cents FROM app.late_payment_charges WHERE id=%s", (charge,)
-        ).fetchone() == (2100,)
         events = history(connection, customer)
         assert sum(exact_cents(e["invoice_effect_usd_cents"], signed=True) for e in events) == 0
         assert [
             e["recorded_amount_usd_cents"] for e in events if e["event_kind"] == "INVOICE_ISSUED"
         ] == [51000]
-        assert len([e for e in events if e["event_kind"] == "PAYMENT_ALLOCATED"]) == 3
+        assert len([e for e in events if e["event_kind"] == "PAYMENT_ALLOCATED"]) == 2
 
 
 def test_ledger_allocation_and_payment_reversals_restore_separate_positions(
@@ -780,7 +778,7 @@ def test_ledger_forward_projection_upgrade_preserves_populated_predecessor(
 ) -> None:
     config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
     scripts = ScriptDirectory.from_config(config)
-    assert scripts.get_heads() == ["20261003_67"]
+    assert scripts.get_heads() == ["20261004_68"]
     revision = scripts.get_revision("20260909_48")
     assert revision is not None
     assert revision.down_revision == "20260908_47"
