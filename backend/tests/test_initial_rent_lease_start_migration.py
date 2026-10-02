@@ -18,6 +18,12 @@ from property_rental.billing import (
     prorated_monthly_usd_cents,
     set_initial_rent_due_date,
 )
+from property_rental.identity import AuthenticatedActor, CapabilityGrant
+from property_rental.invoice import (
+    InvoiceAuthorizationError,
+    InvoiceConflictError,
+    PostgresInvoiceService,
+)
 from test_billing_service_migration import (
     authenticated,
     financial_database_url,
@@ -25,6 +31,7 @@ from test_billing_service_migration import (
     recurring_command,
 )
 from test_billing_service_migration import migrated_database_url as migrated_database_url
+from test_invoice_migration import runtime_database_url
 from test_lease_migration import create_draft, setup_sources, sign_lease
 
 
@@ -249,3 +256,34 @@ def test_initial_rent_lease_start_migration_is_forward_only() -> None:
     module = cast(Any, revision.module)
     with pytest.raises(RuntimeError, match="forward-only"):
         module.downgrade()
+
+
+def test_initial_rent_override_through_the_invoice_service_needs_invoices_issue(
+    migrated_database_url: str,
+) -> None:
+    start = date(2026, 7, 11)
+    actor, prop, lease = signed_lease(migrated_database_url, start)
+    service = PostgresInvoiceService(runtime_database_url(), financial_database_url())
+
+    def holder(capability: str) -> AuthenticatedActor:
+        return AuthenticatedActor(
+            str(actor), frozenset({CapabilityGrant(capability, frozenset({str(prop)}))})
+        )
+
+    override = SetInitialRentDueDateCommand(uuid4(), lease, date(2026, 7, 21), "Customer payroll")
+    with pytest.raises(InvoiceAuthorizationError):
+        service.set_initial_rent_due_date(prop, override, actor=holder("invoices.create"))
+    recorded = service.set_initial_rent_due_date(prop, override, actor=holder("invoices.issue"))
+    assert recorded["due_date"] == "2026-07-21" and recorded["proposed_due_date"] == "2026-07-16"
+    assert (
+        service.set_initial_rent_due_date(prop, override, actor=holder("invoices.issue"))
+        == recorded
+    )
+    with pytest.raises(InvoiceConflictError):
+        service.set_initial_rent_due_date(
+            prop,
+            SetInitialRentDueDateCommand(
+                override.override_id, lease, date(2026, 7, 22), "Customer payroll"
+            ),
+            actor=holder("invoices.issue"),
+        )

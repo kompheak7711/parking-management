@@ -19,6 +19,7 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md.
 - Remaining: Approved amendments and their implementation, Slice D, the positive Slice B estimate case, all independent and final gates, normal publication, exact CI, refs, Workboard and durable closure. Do not activate V1-056.
 - Fact (2026-10-02): the launchd service ai.openclaw.gateway is running; this project does not touch it and the owner decides about it.
 - Slice 8 (2026-10-02, migration 20261006_71): Utility baseline Reading per Lease as a service (no HTTP route yet; baseline route belongs to Slice 9); monthly Utility run skips NOT_MOVED_IN and PROPERTY_BORNE_CONSUMPTION periods. DL-067.
-- STATUS (2026-10-02): Slices 7, 8, 7b, 9a and 9b backend (388705e) committed. Owner answer: Initial Rent Due Date override uses invoices.issue. Next: finish 9b (Initial Rent override route, frontend clients and forms for the four routes), then 9c, 9d, 9e, final gates. Nothing pushed.
+- STATUS (2026-10-02): Slices 7, 8, 7b, 9a, 9b backend (388705e) committed; Initial Rent Due Date override route (invoices.issue) committed. Next: 9b frontend clients and forms for the four routes, then 9c, 9d, 9e, final gates. Nothing pushed.
+- Follow-up (2026-10-02): app.set_initial_rent_due_date stores audit evidence 'billing.generate' even when a person with invoices.issue sets the override; fix with an additive migration that patches the text and updates the matching test expectations.
 - Billing-correctness item (slice 7b): DONE 2026-10-02, migration 20261008_73 (Utility run overlap limited to RENT; unbilled-period read; late periods billed only by the explicit catch-up). DL-067.
 - Updated: 2026-10-02.

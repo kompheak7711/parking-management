@@ -33555,6 +33555,30 @@
       "test_path": "backend/tests/test_invoice_api.py",
       "status": "implemented",
       "notes": "The Property one-time charge due-days route needs property.manage, the exact version and a bounded value."
+    },
+    {
+      "test_id": "test_initial_rent_due_date_route_uses_invoices_issue_with_a_mandatory_reason",
+      "upstream_ids": [
+        "API-052",
+        "BR-RENT-009",
+        "TEST-043"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_invoice_api.py",
+      "status": "implemented",
+      "notes": "The Initial Rent Due Date override route needs invoices.issue and a mandatory reason."
+    },
+    {
+      "test_id": "test_initial_rent_override_through_the_invoice_service_needs_invoices_issue",
+      "upstream_ids": [
+        "API-052",
+        "BR-RENT-009",
+        "TEST-043"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_initial_rent_lease_start_migration.py",
+      "status": "implemented",
+      "notes": "The Invoice service records the Initial Rent Due Date override under invoices.issue, replays exactly and rejects a reused identity."
     }
   ]
 }

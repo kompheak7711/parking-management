@@ -14,6 +14,7 @@ from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from property_rental.app import create_app
+from property_rental.billing import SetInitialRentDueDateCommand
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
 from property_rental.invoice import (
     MAX_INVOICE_CURSOR_LENGTH,
@@ -278,6 +279,18 @@ class InMemoryInvoiceFlow:
         assert property_id == self.property_id
         self.commands.append(command)
         return {"one_time_charge_due_days": command.days, "version": command.expected_version + 1}
+
+    def set_initial_rent_due_date(
+        self,
+        property_id: UUID,
+        command: SetInitialRentDueDateCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        del actor
+        assert property_id == self.property_id
+        self.commands.append(command)
+        return {"lease_id": str(command.lease_id), "due_date": command.due_date.isoformat()}
 
     def adjust(
         self,

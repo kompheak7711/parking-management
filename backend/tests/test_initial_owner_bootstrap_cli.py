@@ -637,6 +637,7 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         # V1-055 slice 9b adds the one-time charge and its due-days setting (docs/010 DL-067).
         "/api/v1/properties/{property_id}/one-time-charges": {"post"},
         "/api/v1/properties/{property_id}/one-time-charge-due-days": {"post"},
+        "/api/v1/properties/{property_id}/leases/{lease_id}/initial-rent-due-date": {"post"},
         "/api/v1/financial-workspaces": {"get"},
         "/api/v1/properties/{property_id}/financial-capabilities": {"get"},
         "/api/v1/properties/{property_id}/payment-methods": {"get"},

@@ -3,6 +3,7 @@
 from typing import cast
 from uuid import uuid4
 
+from property_rental.billing import SetInitialRentDueDateCommand
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
 from property_rental.invoice import (
     IssueInvoiceCommand,
@@ -233,3 +234,29 @@ def test_one_time_charge_due_days_route_needs_property_manage_and_the_exact_vers
     assert ok.status_code == 200
     assert cast(SetOneTimeChargeDueDaysCommand, flow.commands[-1]).days == 10
     assert cast(SetOneTimeChargeDueDaysCommand, flow.commands[-1]).expected_version == 3
+
+
+def test_initial_rent_due_date_route_uses_invoices_issue_with_a_mandatory_reason() -> None:
+    from test_invoice import mutation_headers
+
+    property_id = uuid4()
+    flow = InMemoryInvoiceFlow(property_id, invoice_resource(property_id))
+    lease = uuid4()
+    path = f"/api/v1/properties/{property_id}/leases/{lease}/initial-rent-due-date"
+    body = {"override_id": str(uuid4()), "due_date": "2026-10-20", "reason": "Owner agreed"}
+    denied = api(flow, actor(property_id, "invoices.create")).post(
+        path, headers=mutation_headers(), json=body
+    )
+    assert denied.status_code == 403 and flow.commands == []
+    client = api(flow, actor(property_id, "invoices.issue"))
+    assert (
+        client.post(path, headers=mutation_headers(), json={**body, "reason": ""}).status_code
+        == 422
+    )
+    assert (
+        client.post(path, headers=mutation_headers(), json={**body, "due_date": "soon"}).status_code
+        == 422
+    )
+    assert client.post(path, headers=mutation_headers(), json=body).status_code == 200
+    command = cast(SetInitialRentDueDateCommand, flow.commands[-1])
+    assert (command.lease_id, command.due_date.isoformat()) == (lease, "2026-10-20")

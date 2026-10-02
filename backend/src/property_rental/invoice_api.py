@@ -12,6 +12,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 
 from property_rental.api import require_billing_actor
+from property_rental.billing import SetInitialRentDueDateCommand
 from property_rental.browser_security import require_browser_mutation
 from property_rental.identity import (
     ActorResolver,
@@ -134,6 +135,14 @@ class InvoiceFlow(Protocol):
         actor: AuthenticatedActor,
     ) -> dict[str, object]: ...
 
+    def set_initial_rent_due_date(
+        self,
+        property_id: UUID,
+        command: SetInitialRentDueDateCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]: ...
+
 
 class UnavailableInvoiceFlow:
     def __getattr__(self, _: str) -> object:
@@ -171,6 +180,14 @@ class OneTimeChargeInput(BaseModel):
     amount_usd_cents: int = Field(ge=1, le=9_000_000_000_000_000)
     reason: str = Field(min_length=1, max_length=500, pattern=r"^\S(?:.*\S)?$")
     evidence_reference: str = Field(min_length=1, max_length=500, pattern=r"^\S(?:.*\S)?$")
+
+
+class InitialRentDueDateInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    override_id: UUID
+    due_date: date
+    reason: str = Field(min_length=1, max_length=500, pattern=r"^\S(?:.*\S)?$")
 
 
 class OneTimeChargeDueDaysInput(BaseModel):
@@ -535,6 +552,29 @@ def create_invoice_router(
             lambda: flow.set_one_time_charge_due_days(
                 property_id,
                 SetOneTimeChargeDueDaysCommand(body.days, body.reason, expected_version),
+                actor=actor,
+            )
+        )
+        return _envelope(resource, request)
+
+    @router.post("/properties/{property_id}/leases/{lease_id}/initial-rent-due-date")
+    def set_initial_rent_due_date(
+        property_id: UUID,
+        lease_id: UUID,
+        body: InitialRentDueDateInput,
+        request: Request,
+    ) -> dict[str, object]:
+        if request.query_params:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+        actor = _actor(request, resolver)
+        _authorize(actor, property_id, INVOICE_ISSUE_CAPABILITY)
+        require_browser_mutation(request, settings)
+        resource = _invoke(
+            lambda: flow.set_initial_rent_due_date(
+                property_id,
+                SetInitialRentDueDateCommand(
+                    body.override_id, lease_id, body.due_date, body.reason
+                ),
                 actor=actor,
             )
         )

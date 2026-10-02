@@ -15,6 +15,7 @@ from uuid import UUID, uuid4
 import psycopg
 from psycopg import IsolationLevel
 
+from property_rental.billing import SetInitialRentDueDateCommand
 from property_rental.identity import AuthenticatedActor, AuthorizationRequirement, is_authorized
 
 INVOICE_READ_CAPABILITY: Final = "invoices.read"
@@ -606,6 +607,27 @@ class PostgresInvoiceService:
                 command.amount_usd_cents,
                 command.reason,
                 command.evidence_reference,
+            ),
+        )
+
+    def set_initial_rent_due_date(
+        self,
+        property_id: UUID,
+        command: SetInitialRentDueDateCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        """Record the authorized Initial Rent Due Date before the Invoice is issued."""
+        self._authorize(actor, property_id, INVOICE_ISSUE_CAPABILITY)
+        return self._execute(
+            "SELECT app.set_initial_rent_due_date(%s,%s,%s,%s,%s,%s)",
+            (
+                property_id,
+                command.lease_id,
+                self._actor_id(actor),
+                command.override_id,
+                command.due_date,
+                command.reason,
             ),
         )
 
