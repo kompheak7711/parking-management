@@ -33020,6 +33020,242 @@
       "test_path": "backend/tests/test_unpaid_initial_termination_migration.py",
       "status": "implemented",
       "notes": "Migration 20261005_70 is additive and forward-only."
+    },
+    {
+      "test_id": "test_baseline_uses_the_existing_utility_reading_capabilities",
+      "upstream_ids": [
+        "BR-UTIL-018",
+        "PR-UTIL-003",
+        "TEST-078"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_utility_baseline.py",
+      "status": "implemented",
+      "notes": "The Utility baseline reuses the existing utility_readings.record and utility.read capabilities."
+    },
+    {
+      "test_id": "test_baseline_command_requires_nonzero_identities_and_a_real_date",
+      "upstream_ids": [
+        "BR-UTIL-018",
+        "PR-UTIL-003",
+        "TEST-078"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_utility_baseline.py",
+      "status": "implemented",
+      "notes": "A baseline command needs nonzero identities, a date and typed items."
+    },
+    {
+      "test_id": "test_baseline_command_requires_bounded_unique_items_and_normalized_text",
+      "upstream_ids": [
+        "BR-UTIL-018",
+        "PR-UTIL-003",
+        "TEST-078"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_utility_baseline.py",
+      "status": "implemented",
+      "notes": "A baseline command has one to twenty unique Meters and normalized bounded reason and evidence text."
+    },
+    {
+      "test_id": "test_successor_must_reference_a_different_event",
+      "upstream_ids": [
+        "BR-UTIL-018",
+        "PR-UTIL-003",
+        "TEST-078"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_utility_baseline.py",
+      "status": "implemented",
+      "notes": "A corrected baseline names a different prior event."
+    },
+    {
+      "test_id": "test_intent_orders_items_and_digest_binds_the_scope",
+      "upstream_ids": [
+        "BR-UTIL-018",
+        "PR-UTIL-003",
+        "TEST-078"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_utility_baseline.py",
+      "status": "implemented",
+      "notes": "The baseline intent is canonical and its digest binds Property, Lease and intent."
+    },
+    {
+      "test_id": "test_baseline_is_recorded_once_replayed_audited_and_creates_nothing_else",
+      "upstream_ids": [
+        "BR-UTIL-018",
+        "PR-UTIL-003",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_baseline_migration.py",
+      "status": "implemented",
+      "notes": "A baseline is recorded once, replays exactly, is audited and creates no Reading, period or charge."
+    },
+    {
+      "test_id": "test_baseline_may_be_dated_on_the_lease_start_date_but_never_after_it",
+      "upstream_ids": [
+        "BR-UTIL-018",
+        "PR-UTIL-003",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_baseline_migration.py",
+      "status": "implemented",
+      "notes": "A baseline dated on or before the Lease Start Date is accepted and one after it is rejected."
+    },
+    {
+      "test_id": "test_baseline_requires_every_applicable_validated_reading_on_the_baseline_date",
+      "upstream_ids": [
+        "BR-UTIL-018",
+        "PR-UTIL-003",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_baseline_migration.py",
+      "status": "implemented",
+      "notes": "Every applicable Meter needs a validated Reading dated on the baseline date; partial or wrong evidence is rejected."
+    },
+    {
+      "test_id": "test_baseline_follows_the_active_meters_when_a_meter_was_replaced_before_it",
+      "upstream_ids": [
+        "BR-UTIL-018",
+        "PR-UTIL-003",
+        "TEST-078",
+        "PR-UTIL-006"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_baseline_migration.py",
+      "status": "implemented",
+      "notes": "A baseline covers the Meters active on its date, so a Meter replaced before it is excluded."
+    },
+    {
+      "test_id": "test_baseline_is_rejected_for_unsigned_occupied_unknown_or_unauthorized_leases",
+      "upstream_ids": [
+        "BR-UTIL-018",
+        "PR-UTIL-003",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_baseline_migration.py",
+      "status": "implemented",
+      "notes": "A baseline needs a SIGNED Lease with no Occupancy, a known Lease and the Reading capability."
+    },
+    {
+      "test_id": "test_new_baseline_supersedes_only_when_dated_later_and_only_once",
+      "upstream_ids": [
+        "BR-UTIL-018",
+        "PR-UTIL-003",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_baseline_migration.py",
+      "status": "implemented",
+      "notes": "A new baseline after switching on again supersedes the earlier one only when dated later and only once."
+    },
+    {
+      "test_id": "test_baseline_that_would_split_an_existing_period_is_rejected",
+      "upstream_ids": [
+        "BR-UTIL-018",
+        "PR-UTIL-003",
+        "TEST-078",
+        "BR-UTIL-019"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_baseline_migration.py",
+      "status": "implemented",
+      "notes": "A baseline whose boundary would split a finalized Utility period is rejected."
+    },
+    {
+      "test_id": "test_baseline_moves_the_responsibility_boundary_for_new_leases_only",
+      "upstream_ids": [
+        "BR-UTIL-018",
+        "PR-UTIL-003",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_baseline_migration.py",
+      "status": "implemented",
+      "notes": "A baseline replaces the Lease Start Date and move-in date as the responsibility boundary; a Lease without one keeps them."
+    },
+    {
+      "test_id": "test_first_partial_period_is_billed_once_for_a_lease_that_stays_several_months",
+      "upstream_ids": [
+        "BR-UTIL-018",
+        "PR-UTIL-003",
+        "TEST-078",
+        "BR-UTIL-021",
+        "BR-INV-027"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_baseline_migration.py",
+      "status": "implemented",
+      "notes": "The first partial period after a baseline is billed once by a run with its exact dates, then later months follow."
+    },
+    {
+      "test_id": "test_first_partial_period_of_a_lease_that_never_moves_in_is_skipped_not_failed",
+      "upstream_ids": [
+        "BR-UTIL-018",
+        "PR-UTIL-003",
+        "TEST-078",
+        "BR-UTIL-021",
+        "BR-MOVEOUT-005"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_baseline_migration.py",
+      "status": "implemented",
+      "notes": "The monthly run skips a baseline period of a Lease with no Occupancy as NOT_MOVED_IN and still succeeds."
+    },
+    {
+      "test_id": "test_period_between_tenants_is_property_borne_and_skipped",
+      "upstream_ids": [
+        "BR-UTIL-018",
+        "PR-UTIL-003",
+        "TEST-078",
+        "BR-UTIL-021"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_baseline_migration.py",
+      "status": "implemented",
+      "notes": "A period between tenants is skipped as PROPERTY_BORNE_CONSUMPTION and the Property bears it."
+    },
+    {
+      "test_id": "test_lease_without_baseline_keeps_its_exact_monthly_run_results",
+      "upstream_ids": [
+        "BR-UTIL-018",
+        "PR-UTIL-003",
+        "TEST-078",
+        "BR-UTIL-021"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_baseline_migration.py",
+      "status": "implemented",
+      "notes": "A Lease without a baseline keeps its exact monthly run results, failure and boundary guard."
+    },
+    {
+      "test_id": "test_baseline_history_is_append_only_and_unreachable_by_runtime_roles",
+      "upstream_ids": [
+        "BR-UTIL-018",
+        "PR-UTIL-003",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_baseline_migration.py",
+      "status": "implemented",
+      "notes": "Baseline history rejects update, delete and truncate and runtime roles cannot reach it directly."
+    },
+    {
+      "test_id": "test_utility_baseline_migration_is_forward_only",
+      "upstream_ids": [
+        "BR-UTIL-018",
+        "PR-UTIL-003",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_baseline_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20261006_71 is additive and forward-only."
     }
   ]
 }

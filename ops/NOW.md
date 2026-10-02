@@ -13,7 +13,11 @@
 - HTTP/UI slice (2026-10-05): routes and screens for the unpaid-Initial termination basis and its never-moved-in and moved-in resolutions; termination context readers must accept basis UNPAID_INITIAL_OBLIGATION.
 - Physical accepted: Fresh complete review0findings,23gates retained. Original lock recovery ten reused cases+two focused+1522full passed in356.967621of660seconds; fixture remedy accepted, historical holder unknown.
 - Limits: New separate routine allowance:at most2materiallydifferent corrections per distinct cause;all prior consumed2of2/cursor1of1and diagnostics remain preserved. No DBdiagnostic/fixture/policy/lock/timeout/assertion relaxation.
-- External: Cycle20260917-overdue-projection passed:Git/CI/cards/claims/workers,127worktrees,disabled OpenClaw and samefollowupACTIVE verified. Remote closed54;55card incomplete/unclaimed. Usage1%remaining at check,ordinaryUsageAllowedtrue;no purchase.
+- External: Cycle20260917-overdue-projection passed:Git/CI/cards/claims/workers,127worktrees and samefollowupACTIVE verified (2026-09-17). Remote closed54;55card incomplete/unclaimed. Usage1%remaining at check,ordinaryUsageAllowedtrue;no purchase.
 - Next: Owner reviews the drafted canonical amendments for docs 002, 003, 004, 005, 006, 007 and 010. No implementation until approved. Slice A (Rent nonpayment counting), Slice C (Damage, held) and Slice D (API-068/069 HTTP and UI-076 to UI-078) remain stopped.
 - Remaining: Approved amendments and their implementation, Slice D, the positive Slice B estimate case, all independent and final gates, normal publication, exact CI, refs, Workboard and durable closure. Do not activate V1-056.
-- Updated: 2026-09-30.
+- Fact (2026-10-02): the launchd service ai.openclaw.gateway is running; this project does not touch it and the owner decides about it.
+- Billing-correctness item (slice 7b, 2026-10-02): the Utility worker creates one run per distinct period dates; a period finalized after a SUCCEEDED run for the same dates is never billed. Not fixed in Slices 7 or 8; fix before Slice 9 and certainly before V1-060 (docs/010 DL-067).
+- Slice 8 (2026-10-02, migration 20261006_71): Utility baseline Reading per Lease as a service (no HTTP route yet; baseline route belongs to Slice 9); monthly Utility run skips NOT_MOVED_IN and PROPERTY_BORNE_CONSUMPTION periods. DL-067.
+- IN PROGRESS (2026-10-02): Slice 8 verified and committed next; then Slice 7 (final Utility Invoice + NOT_MOVED_IN catch-up command), plan for slice 7b, plan for Slice 9. Nothing pushed.
+- Updated: 2026-10-02.

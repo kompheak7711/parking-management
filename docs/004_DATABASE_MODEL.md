@@ -669,6 +669,40 @@ complete future ACTUAL period exists. Finalization then atomically creates DB-UT
 the one DB-UTIL-008 future-basis row, and the estimated Consumption Period. One/two and
 three-or-more historical branches may finalize immediately using their exact bases.
 
+## DB-UTIL-011 — `utility_baseline_events`, `utility_baseline_items`, `utility_baseline_commands`
+
+Append-only evidence of the Utility baseline Reading that starts a Customer's Utility
+responsibility (BR-UTIL-018, DL-067). An event is `id uuid PK`, `property_id`, `lease_id`
+and `unit_id uuid NOT NULL FK`, `baseline_date date NOT NULL`, `reason` and
+`evidence_reference text NOT NULL` (a note or document reference of at most 500
+characters; no photo or file storage), `supersedes_event_id uuid NULL UNIQUE FK`,
+`occurred_at timestamptz NOT NULL` and `actor_id uuid NOT NULL`. A partial unique index
+allows one root event per Lease. Each item is one Meter applicable on `baseline_date`
+(installed on or before it and not deactivated before it), with its validated Reading
+dated `baseline_date`, copied with its value, version and validation time; the item
+list must cover every applicable Meter exactly once. The commands table stores the
+idempotency key, request digest, intent, response and audit event of each command.
+
+- The Lease must be SIGNED with no Occupancy yet, and `baseline_date` must be on or before the Lease Start Date, never after it.
+- A new baseline after switching on again supersedes the current one and must be dated later; a superseded event cannot be superseded again.
+- A baseline is rejected when its boundary (`baseline_date + 1`) would split a finalized Utility Consumption Period or an open broken-Meter case of the Unit.
+- Update, delete and truncate are rejected; runtime database roles have no table privilege and reach the history only through `app.utility_baseline_record` and `app.utility_baseline_read`.
+- The command writes one audit event `utility.baseline.record` under the existing capability `utility_readings.record`. It creates no Reading, period or charge.
+
+**Responsibility boundary.** For a Lease with a current baseline, the Customer's
+responsibility starts on `baseline_date + 1`; the Lease Start Date and the move-in date are
+no longer boundaries. The Property bears all consumption before that date, including between
+tenants, cleaning and repair, and for a tenant who never moves in. A Lease without a
+baseline keeps its Lease Start Date and move-in boundaries and every earlier result.
+
+**Monthly Utility run.** The Utility run bills one run per distinct set of period dates, so the
+first partial period after a baseline (`baseline_date + 1` to the first month-end Reading) is
+billed by its own run with those exact dates. For a period of a baseline Lease with no
+Occupancy, the run records a SKIPPED item with the diagnostic `NOT_MOVED_IN`; for a period no
+Lease covers, `PROPERTY_BORNE_CONSUMPTION`. Both are accepted outcomes of a successful run.
+A Lease without a baseline and without a qualifying Occupancy still records the earlier
+`UTILITY_PERSISTENCE_P0002` error.
+
 ---
 
 # 8. Configured Service Tables

@@ -742,6 +742,15 @@ termination time and CLEANING with a reason and the Unit management capability. 
 Readings without duplicating a monthly-run period, the pre-Lease baseline Reading is the
 starting boundary, and a Damage charge requires the capability, reason and evidence, is
 billed once and matches its finding.
+Verify the Utility baseline Reading (migration `20261006_71`, covered by
+`backend/tests/test_utility_baseline.py` and `backend/tests/test_utility_baseline_migration.py`): it
+may be dated on or before the Lease Start Date and never after it, needs a validated Reading
+for every applicable Meter on that date, is rejected for an unsigned, occupied or unknown Lease,
+supersedes only when dated later and only once, never splits a finalized period, and moves the
+Customer's responsibility boundary for that Lease only. Verify the first partial period after a
+baseline is billed once by a run with its exact dates, a Lease with no Occupancy yet is skipped
+as NOT_MOVED_IN without failing the run, a period no Lease covers is skipped as
+PROPERTY_BORNE_CONSUMPTION, and a Lease without a baseline keeps its exact earlier results.
 
 ## TEST-079 — Final Settlement Cardinality
 
