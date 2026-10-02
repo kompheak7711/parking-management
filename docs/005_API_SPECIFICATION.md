@@ -589,6 +589,7 @@ Slice 9b routes (capabilities reuse existing ones; no new capability):
 - `POST /properties/{id}/one-time-charge-due-days` (`property.manage`, `If-Match` Property version) with `days` (1 to 90) and `reason`.
 - `POST /invoices/{id}/issue` accepts the optional `due_date` and `due_date_reason` pair (both or neither).
 - `POST /properties/{id}/leases/{lease_id}/initial-rent-due-date` (`invoices.issue`, owner decision 2026-10-02) records an authorized Initial Rent Due Date before the Initial Rent Invoice is issued: `override_id`, `due_date`, `reason`; actor and timestamp are recorded and it is fixed once issued; an exact replay returns the saved result and a reused identity is a conflict. The stored audit evidence still names `billing.generate` as the capability (follow-up in `ops/NOW.md`).
+- `GET /properties/{id}/billing-capabilities` visibility now also lists `damage_charges.bill` and `property.manage` so the staff screen can show the one-time charge and due-days forms. Visibility only; each route still authorizes.
 
 Issue accepts an optional Due Date override with a mandatory reason; without it, the
 server applies the proposed Due Date (Lease Start Date plus five for Initial Rent, issue

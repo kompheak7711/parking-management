@@ -21,6 +21,7 @@ from property_rental.identity import (
     is_authorized,
 )
 from property_rental.invoice import (
+    DAMAGE_CHARGE_BILL_CAPABILITY,
     INVOICE_ADJUST_CAPABILITY,
     INVOICE_CREATE_CAPABILITY,
     INVOICE_ISSUE_CAPABILITY,
@@ -317,6 +318,8 @@ def billing_capabilities(actor: AuthenticatedActor, property_id: UUID) -> list[s
             INVOICE_ADJUST_CAPABILITY,
             INVOICE_VOID_CAPABILITY,
             "billing.generate",
+            DAMAGE_CHARGE_BILL_CAPABILITY,
+            PROPERTY_MANAGE_CAPABILITY,
             "late_payment.review",
             "late_payment.final_decision",
             "late_payment.charge_correction",

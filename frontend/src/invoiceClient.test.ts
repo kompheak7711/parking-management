@@ -751,3 +751,97 @@ describe("inspected billing-run retry identity", () => {
     ).toBeNull();
   });
 });
+
+describe("V1-055 one-time charge transport", () => {
+  const input = {
+    charge_id: "11111111-1111-4111-8111-111111111111",
+    category: "DAMAGE_CHARGES" as const,
+    customer_id: "customer",
+    lease_id: null,
+    inspection_damage_finding_id: null,
+    description: "Broken window",
+    amount: { currency: "USD" as const, minor_units: 4550 },
+    reason: "Tenant damage",
+    evidence_reference: "INSPECTION-9",
+  };
+  const snapshot = {
+    obligation_id: input.charge_id,
+    category: "DAMAGE_CHARGES",
+    customer_id: "customer",
+    lease_id: null,
+    inspection_damage_finding_id: null,
+    description: "Broken window",
+    amount_usd_cents: 4550,
+    reason: "Tenant damage",
+    evidence_reference: "INSPECTION-9",
+  };
+  it("posts integer cents with the sealed identity and replays the exact request", async () => {
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockImplementation(() => Promise.resolve(response(snapshot)));
+    vi.stubGlobal("fetch", fetcher);
+    const pending = {
+      key: "same-key",
+      command: { action: "oneTimeCharge" as const, propertyId: "p/1", input },
+    };
+    const result = await executeBilling(invoiceApi, pending);
+    await executeBilling(invoiceApi, pending);
+    expect(fetcher.mock.calls[0]).toEqual(fetcher.mock.calls[1]);
+    const [path, init] = fetcher.mock.calls[0] ?? [];
+    expect(path).toBe("/api/v1/properties/p%2F1/one-time-charges");
+    expect(init?.method).toBe("POST");
+    expect(new Headers(init?.headers).get("Idempotency-Key")).toBe("same-key");
+    expect(bodyOf(init)).toEqual({
+      charge_id: input.charge_id,
+      category: "DAMAGE_CHARGES",
+      customer_id: "customer",
+      lease_id: null,
+      inspection_damage_finding_id: null,
+      description: "Broken window",
+      amount_usd_cents: 4550,
+      reason: "Tenant damage",
+      evidence_reference: "INSPECTION-9",
+    });
+    expect("obligation_id" in result && result.obligation_id).toBe(
+      input.charge_id,
+    );
+    expect(formatUsd(money(input.amount))).toBe("USD 45.50");
+  });
+  it("rejects a malformed one-time charge response and keeps the outcome unknown", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn<typeof fetch>()
+        .mockResolvedValue(response({ ...snapshot, amount_usd_cents: "45.5" })),
+    );
+    await expect(
+      invoiceApi.recordOneTimeCharge("p", input, "k"),
+    ).rejects.toMatchObject({ code: "INVALID_RESPONSE", outcomeUnknown: true });
+  });
+  it("reports only known invalid one-time charge fields", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            error: {
+              code: "VALIDATION_ERROR",
+              fields: [
+                "body.amount_usd_cents",
+                "body.evidence_reference",
+                "body.secret",
+              ],
+            },
+          }),
+          { status: 422 },
+        ),
+      ),
+    );
+    await expect(
+      invoiceApi.recordOneTimeCharge("p", input, "k"),
+    ).rejects.toMatchObject({
+      status: 422,
+      fields: ["amount_usd_cents", "evidence_reference"],
+    });
+  });
+});

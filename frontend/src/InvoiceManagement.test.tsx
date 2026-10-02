@@ -15,6 +15,7 @@ import {
   InvoiceClientError,
   InvoiceResource,
   LatePaymentDecision,
+  OneTimeChargeInput,
   PendingBillingCommand,
   parseUsd,
   invoiceApi,
@@ -169,6 +170,20 @@ function setup(
       evidence: {},
     }),
     getRun: vi.fn(),
+    recordOneTimeCharge: vi.fn((_property: string, input: OneTimeChargeInput) =>
+      Promise.resolve({
+        obligation_id: input.charge_id,
+        category: input.category,
+        customer_id: input.customer_id,
+        lease_id: input.lease_id,
+        inspection_damage_finding_id: input.inspection_damage_finding_id,
+        description: input.description,
+        amount: input.amount,
+        reason: input.reason,
+        evidence_reference: input.evidence_reference,
+        evidence: { evidence_reference: input.evidence_reference },
+      }),
+    ),
   };
   const journal = memoryJournal();
   return { api, invoice, journal };
@@ -2135,4 +2150,105 @@ describe("billing-run recovery after reload", () => {
         ).not.toBeInTheDocument();
     },
   );
+});
+
+describe("V1-055 one-time charge", () => {
+  const renderCharges = (grants: string[]) => {
+    const made = setup("DRAFT", grants);
+    render(
+      <InvoiceManagement
+        api={made.api}
+        journal={made.journal}
+        actorId="actor"
+        propertyId={propertyId}
+      />,
+    );
+    return made;
+  };
+  it("TEST-FE-629 records a Damage charge in exact cents only after confirmation and then offers the draft", async () => {
+    const { api, journal } = renderCharges([
+      "damage_charges.bill",
+      "invoices.create",
+    ]);
+    await screen.findByText("Load authorized invoices to begin.");
+    fireEvent.click(screen.getByRole("button", { name: "Load invoices" }));
+    await screen.findByText("Authorized invoices loaded.");
+    fill("One-time charge category", "DAMAGE_CHARGES");
+    fill("One-time charge Customer ID", "customer-one");
+    fill("One-time charge description", "Broken window");
+    fill("One-time charge amount (USD)", "45.50");
+    fill("One-time charge reason", "Tenant damage");
+    fill("One-time charge evidence reference", "INSPECTION-9");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Review one-time charge" }),
+    );
+    expect(api.recordOneTimeCharge).not.toHaveBeenCalled();
+    await confirm();
+    await waitFor(() => {
+      expect(api.recordOneTimeCharge).toHaveBeenCalledTimes(1);
+    });
+    const [sentProperty, input, key] =
+      vi.mocked(api.recordOneTimeCharge).mock.calls[0] ?? [];
+    expect(sentProperty).toBe(propertyId);
+    expect(input).toMatchObject({
+      category: "DAMAGE_CHARGES",
+      customer_id: "customer-one",
+      lease_id: null,
+      inspection_damage_finding_id: null,
+      amount: { currency: "USD", minor_units: 4550 },
+      evidence_reference: "INSPECTION-9",
+    });
+    expect(input?.charge_id).toMatch(/^[0-9a-f-]{36}$/);
+    expect(key).toBe(journal.begin.mock.calls[0]?.[1].key);
+    await screen.findByRole("heading", { name: "Recorded one-time charge" });
+    expect(journal.clear).toHaveBeenCalledTimes(1);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Review draft from this charge" }),
+    );
+    await confirm();
+    await waitFor(() => {
+      expect(api.create).toHaveBeenCalledWith(
+        propertyId,
+        input?.charge_id,
+        expect.any(String),
+      );
+    });
+  });
+  it("TEST-FE-630 offers only the categories the server granted and hides the form without them", async () => {
+    renderCharges(["invoices.create"]);
+    await screen.findByText("Load authorized invoices to begin.");
+    fireEvent.click(screen.getByRole("button", { name: "Load invoices" }));
+    await screen.findByText("Authorized invoices loaded.");
+    const category = screen.getByLabelText("One-time charge category");
+    expect(
+      within(category).queryByRole("option", { name: "DAMAGE_CHARGES" }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(category).getByRole("option", { name: "MISCELLANEOUS_CHARGES" }),
+    ).toBeInTheDocument();
+    cleanup();
+    renderCharges(["invoices.issue"]);
+    await screen.findByText("Load authorized invoices to begin.");
+    fireEvent.click(screen.getByRole("button", { name: "Load invoices" }));
+    await screen.findByText("Authorized invoices loaded.");
+    expect(
+      screen.queryByRole("button", { name: "Review one-time charge" }),
+    ).not.toBeInTheDocument();
+  });
+  it("TEST-FE-631 refuses an invalid amount before any review or request", async () => {
+    const { api } = renderCharges(["invoices.create"]);
+    await screen.findByText("Load authorized invoices to begin.");
+    fireEvent.click(screen.getByRole("button", { name: "Load invoices" }));
+    await screen.findByText("Authorized invoices loaded.");
+    fill("One-time charge Customer ID", "customer-one");
+    fill("One-time charge description", "Cleaning");
+    fill("One-time charge amount (USD)", "0");
+    fill("One-time charge reason", "Extra cleaning");
+    fill("One-time charge evidence reference", "TICKET-1");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Review one-time charge" }),
+    );
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(api.recordOneTimeCharge).not.toHaveBeenCalled();
+  });
 });

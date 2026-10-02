@@ -22,6 +22,8 @@ import {
   LatePaymentCharge,
   LatePaymentDecision,
   LatePaymentReview,
+  OneTimeChargeCategory,
+  OneTimeChargeRecord,
   PendingBillingCommand,
   billingJournal,
   billingRunRetry,
@@ -153,6 +155,13 @@ const fieldAliases: Record<string, string> = {
   business_date: "business",
   period_start: "start",
   period_end: "end",
+  category: "category",
+  customer_id: "customer",
+  lease_id: "lease",
+  inspection_damage_finding_id: "finding",
+  description: "description",
+  amount_usd_cents: "amount",
+  evidence_reference: "evidence",
 };
 function Field({
   name,
@@ -276,6 +285,7 @@ function BillingWorkspace({
   const [decision, setDecision] = useState<LatePaymentDecision | null>(null);
   const [charge, setCharge] = useState<LatePaymentCharge | null>(null);
   const [run, setRun] = useState<BillingRun | null>(null);
+  const [recorded, setRecorded] = useState<OneTimeChargeRecord | null>(null);
   const [lastRun, setLastRun] = useState<PendingBillingCommand | null>(null);
   const [preview, setPreview] = useState<{
     pending: PendingBillingCommand;
@@ -614,7 +624,19 @@ function BillingWorkspace({
       ) {
         throw new InvoiceClientError(null, "RESOURCE_MISMATCH", true);
       }
-      if (
+      if (intent.command.action === "oneTimeCharge") {
+        const sent = intent.command.input;
+        if (
+          !("obligation_id" in result) ||
+          result.obligation_id !== sent.charge_id ||
+          result.category !== sent.category ||
+          result.customer_id !== sent.customer_id ||
+          result.lease_id !== sent.lease_id ||
+          BigInt(result.amount.minor_units) !== BigInt(sent.amount.minor_units)
+        )
+          throw new InvoiceClientError(null, "RESOURCE_MISMATCH", true);
+      } else if (
+        !("property_id" in result) ||
         result.property_id !== propertyId ||
         ("id" in intent.command &&
           intent.command.action !== "decide" &&
@@ -625,7 +647,9 @@ function BillingWorkspace({
       await journal.clear(actorId, intent.key);
       if (!stillMounted()) return;
       setPending(null);
-      if ("invoice_number" in result) {
+      if ("obligation_id" in result) {
+        setRecorded(result);
+      } else if ("invoice_number" in result) {
         setInvoice(result);
         setAssessment(null);
         setDecision(null);
@@ -968,6 +992,111 @@ function BillingWorkspace({
             <Field name="obligation" label="Authorized obligation ID" />
             <button type="submit">Review draft creation</button>
           </form>
+        )}
+        {(can("damage_charges.bill") || can("invoices.create")) && (
+          <form
+            onSubmit={(event) => {
+              formReview(event, (data) => {
+                const category = value(
+                  data,
+                  "category",
+                ) as OneTimeChargeCategory;
+                if (
+                  !can(
+                    category === "DAMAGE_CHARGES"
+                      ? "damage_charges.bill"
+                      : "invoices.create",
+                  )
+                )
+                  throw new Error("Category not authorized");
+                return {
+                  action: "oneTimeCharge",
+                  propertyId,
+                  input: {
+                    charge_id: crypto.randomUUID(),
+                    category,
+                    customer_id: value(data, "customer"),
+                    lease_id: value(data, "lease") || null,
+                    inspection_damage_finding_id:
+                      value(data, "finding") || null,
+                    description: value(data, "description"),
+                    amount: positive(data),
+                    reason: value(data, "reason"),
+                    evidence_reference: value(data, "evidence"),
+                  },
+                };
+              });
+            }}
+          >
+            <h3>Record a one-time charge</h3>
+            <p>
+              A manual Damage or Miscellaneous charge needs a reason and an
+              evidence reference. No photo is stored here. Recording the source
+              does not bill the Customer; create a draft Invoice from it next.
+            </p>
+            <label>
+              One-time charge category
+              <select name="category">
+                {can("damage_charges.bill") && (
+                  <option value="DAMAGE_CHARGES">DAMAGE_CHARGES</option>
+                )}
+                {can("invoices.create") && (
+                  <option value="MISCELLANEOUS_CHARGES">
+                    MISCELLANEOUS_CHARGES
+                  </option>
+                )}
+              </select>
+            </label>
+            <Field name="customer" label="One-time charge Customer ID" />
+            <Field
+              name="lease"
+              label="One-time charge Lease ID (optional)"
+              required={false}
+            />
+            <Field
+              name="finding"
+              label="Damage inspection finding ID (optional)"
+              required={false}
+            />
+            <Field
+              name="description"
+              label="One-time charge description"
+              maxLength={1000}
+            />
+            <Field
+              name="amount"
+              label="One-time charge amount (USD)"
+              pattern="(0|[1-9][0-9]*)(\.[0-9]{1,2})?"
+            />
+            <Field name="reason" label="One-time charge reason" />
+            <Field name="evidence" label="One-time charge evidence reference" />
+            <button type="submit">Review one-time charge</button>
+          </form>
+        )}
+        {recorded && (
+          <section aria-label="Recorded one-time charge">
+            <h3>Recorded one-time charge</h3>
+            <p>
+              {recorded.category} for Customer {recorded.customer_id}:{" "}
+              {formatUsd(recorded.amount)}. Authorized obligation ID{" "}
+              {recorded.obligation_id}.
+            </p>
+            <EvidenceView value={recorded.evidence} />
+            {can("invoices.create") && (
+              <button
+                type="button"
+                onClick={() => {
+                  review({
+                    action: "create",
+                    propertyId,
+                    obligationId: recorded.obligation_id,
+                  });
+                }}
+              >
+                Review draft from this charge
+              </button>
+            )}
+          </section>
         )}
         {invoice && (
           <section aria-label="Invoice detail">

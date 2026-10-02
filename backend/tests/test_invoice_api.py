@@ -46,6 +46,18 @@ def test_billing_action_metadata_denies_by_default_and_uses_exact_property() -> 
     )
 
 
+def test_billing_visibility_lists_damage_billing_and_property_management() -> None:
+    property_id = uuid4()
+    flow = InMemoryInvoiceFlow(property_id, invoice_resource(property_id))
+    visibility = api(flow, actor(property_id, "damage_charges.bill", "property.manage")).get(
+        f"/api/v1/properties/{property_id}/billing-capabilities"
+    )
+    assert visibility.json()["data"]["billing_capabilities"] == [
+        "damage_charges.bill",
+        "property.manage",
+    ]
+
+
 def test_independent_billing_visibility_does_not_require_invoice_read() -> None:
     property_id, other = uuid4(), uuid4()
     flow = InMemoryInvoiceFlow(property_id, invoice_resource(property_id))

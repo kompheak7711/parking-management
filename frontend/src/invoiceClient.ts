@@ -139,6 +139,31 @@ export type ChargeCorrectionInput =
       reverses_correction_id: string;
       reason: string;
     };
+export type OneTimeChargeCategory = "DAMAGE_CHARGES" | "MISCELLANEOUS_CHARGES";
+export interface OneTimeChargeInput {
+  charge_id: string;
+  category: OneTimeChargeCategory;
+  customer_id: string;
+  lease_id: string | null;
+  inspection_damage_finding_id: string | null;
+  description: string;
+  amount: Money;
+  reason: string;
+  evidence_reference: string;
+}
+/** The authorized source recorded for a one-time charge; a DRAFT Invoice is created from it. */
+export interface OneTimeChargeRecord {
+  obligation_id: string;
+  category: OneTimeChargeCategory;
+  customer_id: string;
+  lease_id: string | null;
+  inspection_damage_finding_id: string | null;
+  description: string;
+  amount: Money;
+  reason: string;
+  evidence_reference: string;
+  evidence: Evidence;
+}
 export interface BillingTransmission {
   actorId: string;
   signal: AbortSignal;
@@ -195,6 +220,11 @@ export interface InvoiceApi {
     key: string,
   ) => Promise<BillingRun>;
   getRun: (id: string) => Promise<BillingRun>;
+  recordOneTimeCharge: (
+    propertyId: string,
+    input: OneTimeChargeInput,
+    key: string,
+  ) => Promise<OneTimeChargeRecord>;
 }
 export class InvoiceClientError extends Error {
   constructor(
@@ -456,6 +486,29 @@ export function terminalChargeConflict(
     return false;
   }
 }
+function oneTimeCharge(value: unknown): OneTimeChargeRecord {
+  const row = object(value);
+  return {
+    obligation_id: text(row.obligation_id),
+    category: choice(row.category, [
+      "DAMAGE_CHARGES",
+      "MISCELLANEOUS_CHARGES",
+    ] as const),
+    customer_id: text(row.customer_id),
+    lease_id: nullableText(row.lease_id),
+    inspection_damage_finding_id: nullableText(
+      row.inspection_damage_finding_id,
+    ),
+    description: text(row.description),
+    amount: {
+      currency: "USD",
+      minor_units: integer(row.amount_usd_cents, 1),
+    },
+    reason: text(row.reason),
+    evidence_reference: text(row.evidence_reference),
+    evidence: evidence(row),
+  };
+}
 function run(value: unknown): BillingRun {
   const row = object(value),
     period = object(row.period);
@@ -541,6 +594,14 @@ const fieldNames = new Set([
   "business_date",
   "period_start",
   "period_end",
+  "charge_id",
+  "category",
+  "customer_id",
+  "lease_id",
+  "inspection_damage_finding_id",
+  "description",
+  "amount_usd_cents",
+  "evidence_reference",
 ]);
 function safeFields(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
@@ -840,6 +901,25 @@ function createInvoiceApi(transmission?: BillingTransmission): InvoiceApi {
       ),
     getRun: (id) =>
       request("/api/v1/billing-runs/" + encoded(id), resource(run)),
+    recordOneTimeCharge: (id, input, key) =>
+      request(
+        "/api/v1/properties/" + encoded(id) + "/one-time-charges",
+        resource(oneTimeCharge),
+        {
+          key,
+          body: {
+            charge_id: input.charge_id,
+            category: input.category,
+            customer_id: input.customer_id,
+            lease_id: input.lease_id,
+            inspection_damage_finding_id: input.inspection_damage_finding_id,
+            description: input.description,
+            amount_usd_cents: requestMoney(input.amount).minor_units,
+            reason: input.reason,
+            evidence_reference: input.evidence_reference,
+          },
+        },
+      ),
   };
 }
 export const invoiceApi = createInvoiceApi();
@@ -889,7 +969,8 @@ export type BillingCommand =
       propertyId: string;
       kind: "rent" | "utilities";
       input: BillingRunInput;
-    };
+    }
+  | { action: "oneTimeCharge"; propertyId: string; input: OneTimeChargeInput };
 export interface PendingBillingCommand {
   key: string;
   command: BillingCommand;
@@ -979,6 +1060,8 @@ export function executeBilling(
       return api.correctCharge(c.id, c.input, key);
     case "run":
       return api.run(c.propertyId, c.kind, c.input, key);
+    case "oneTimeCharge":
+      return api.recordOneTimeCharge(c.propertyId, c.input, key);
   }
 }
 export const billingJournal: BillingJournal = {
@@ -1003,6 +1086,7 @@ export const billingJournal: BillingJournal = {
         "decide",
         "correctCharge",
         "run",
+        "oneTimeCharge",
       ].includes(text(command.action))
     ) {
       throw new Error(

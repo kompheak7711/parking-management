@@ -33579,6 +33579,66 @@
       "test_path": "backend/tests/test_initial_rent_lease_start_migration.py",
       "status": "implemented",
       "notes": "The Invoice service records the Initial Rent Due Date override under invoices.issue, replays exactly and rejects a reused identity."
+    },
+    {
+      "test_id": "TEST-FE-629",
+      "upstream_ids": [
+        "UI-053",
+        "API-052",
+        "BR-INV-018"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Records a Damage one-time charge in exact cents only after confirmation, with a sealed charge identity, then offers the draft Invoice; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-630",
+      "upstream_ids": [
+        "UI-053",
+        "API-052",
+        "BR-INV-018"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Offers only the one-time charge categories the server granted and hides the form without them; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-631",
+      "upstream_ids": [
+        "UI-053",
+        "API-052",
+        "BR-INV-018"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Refuses an invalid one-time charge amount before any review or request; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-632",
+      "upstream_ids": [
+        "UI-053",
+        "API-052",
+        "BR-INV-018"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/billingJournal.test.ts",
+      "status": "implemented",
+      "notes": "Recovers a sealed one-time charge with its exact charge identity."
+    },
+    {
+      "test_id": "test_billing_visibility_lists_damage_billing_and_property_management",
+      "upstream_ids": [
+        "API-052",
+        "BR-INV-018",
+        "TEST-052"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_invoice_api.py",
+      "status": "implemented",
+      "notes": "Billing capability visibility lists damage_charges.bill and property.manage so the one-time charge and due-days forms can appear."
     }
   ]
 }

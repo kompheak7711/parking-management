@@ -121,4 +121,30 @@ describe("legacy billing over the shared encrypted store", () => {
     finish?.();
     await saved;
   });
+  it("TEST-FE-632 recovers a sealed one-time charge with its exact charge identity", async () => {
+    const saved: PendingBillingCommand = {
+      key: "charge-key",
+      command: {
+        action: "oneTimeCharge",
+        propertyId: "property",
+        input: {
+          charge_id: "11111111-1111-4111-8111-111111111111",
+          category: "MISCELLANEOUS_CHARGES",
+          customer_id: "customer",
+          lease_id: null,
+          inspection_damage_finding_id: null,
+          description: "Key replacement",
+          amount: { currency: "USD", minor_units: 2500 },
+          reason: "Lost key",
+          evidence_reference: "RECEIPT-4",
+        },
+      },
+    };
+    const begin = vi.spyOn(sealedIntentStore, "begin").mockResolvedValue();
+    await billingJournal.begin("actor", saved);
+    vi.spyOn(sealedIntentStore, "read").mockResolvedValue(
+      begin.mock.calls[0]?.[1] ?? null,
+    );
+    expect(await billingJournal.load("actor")).toEqual(saved);
+  });
 });
