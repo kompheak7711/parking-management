@@ -11,6 +11,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { InvoiceManagement } from "./InvoiceManagement";
 import {
   BillingJournal,
+  InitialRentDueDateInput,
   InvoiceApi,
   InvoiceClientError,
   InvoiceResource,
@@ -170,6 +171,18 @@ function setup(
       evidence: {},
     }),
     getRun: vi.fn(),
+    setInitialRentDueDate: vi.fn(
+      (_property: string, leaseId: string, input: InitialRentDueDateInput) =>
+        Promise.resolve({
+          override_id: input.override_id,
+          property_id: propertyId,
+          lease_id: leaseId,
+          due_date: input.due_date,
+          proposed_due_date: "2026-09-06",
+          reason: input.reason,
+          evidence: { proposed_due_date: "2026-09-06" },
+        }),
+    ),
     setDueDays: vi.fn(
       (
         _property: string,
@@ -2443,6 +2456,100 @@ describe("V1-055 issue Due Date override", () => {
       screen.queryByRole("button", {
         name: "Review invoice issuance with Due Date",
       }),
+    ).not.toBeInTheDocument();
+  });
+});
+
+describe("V1-055 Initial Rent Due Date override", () => {
+  const renderInitial = (grants: string[]) => {
+    const made = setup("DRAFT", grants);
+    render(
+      <InvoiceManagement
+        api={made.api}
+        journal={made.journal}
+        actorId="actor"
+        propertyId={propertyId}
+      />,
+    );
+    return made;
+  };
+  const open = async () => {
+    await screen.findByText("Load authorized invoices to begin.");
+    fireEvent.click(screen.getByRole("button", { name: "Load invoices" }));
+    await screen.findByText("Authorized invoices loaded.");
+  };
+  it("TEST-FE-642 records an authorized Initial Rent Due Date with a sealed identity and shows the standard date", async () => {
+    const { api, journal } = renderInitial(["invoices.issue"]);
+    await open();
+    fill("Initial Rent Lease ID", "lease-one");
+    fill("Initial Rent authorized Due Date", "2026-09-10");
+    fill("Initial Rent Due Date reason", "Customer is paid on the 10th");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Review Initial Rent Due Date" }),
+    );
+    expect(api.setInitialRentDueDate).not.toHaveBeenCalled();
+    await confirm();
+    await waitFor(() => {
+      expect(api.setInitialRentDueDate).toHaveBeenCalledTimes(1);
+    });
+    const [property, lease, input, key] =
+      vi.mocked(api.setInitialRentDueDate).mock.calls[0] ?? [];
+    expect(property).toBe(propertyId);
+    expect(lease).toBe("lease-one");
+    expect(input).toMatchObject({
+      due_date: "2026-09-10",
+      reason: "Customer is paid on the 10th",
+    });
+    expect(input?.override_id).toMatch(/^[0-9a-f-]{36}$/);
+    expect(key).toBe(journal.begin.mock.calls[0]?.[1].key);
+    await screen.findByRole("heading", {
+      name: "Recorded Initial Rent Due Date",
+    });
+    expect(screen.getByText(/standard date 2026-09-06/)).toBeInTheDocument();
+    expect(journal.clear).toHaveBeenCalledTimes(1);
+  });
+  it("TEST-FE-643 hides the Initial Rent Due Date form without invoices.issue", async () => {
+    renderInitial(["invoices.create"]);
+    await open();
+    expect(
+      screen.queryByRole("button", { name: "Review Initial Rent Due Date" }),
+    ).not.toBeInTheDocument();
+  });
+  it("TEST-FE-644 refuses a missing reason before any review or request", async () => {
+    const { api } = renderInitial(["invoices.issue"]);
+    await open();
+    fill("Initial Rent Lease ID", "lease-one");
+    fill("Initial Rent authorized Due Date", "2026-09-10");
+    fill("Initial Rent Due Date reason", "   ");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Review Initial Rent Due Date" }),
+    );
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(api.setInitialRentDueDate).not.toHaveBeenCalled();
+  });
+  it("TEST-FE-645 keeps the saved request when the response does not match what was sent", async () => {
+    const { api, journal } = renderInitial(["invoices.issue"]);
+    vi.mocked(api.setInitialRentDueDate).mockResolvedValue({
+      override_id: "another-override",
+      property_id: propertyId,
+      lease_id: "lease-one",
+      due_date: "2026-09-10",
+      proposed_due_date: "2026-09-06",
+      reason: "r",
+      evidence: {},
+    });
+    await open();
+    fill("Initial Rent Lease ID", "lease-one");
+    fill("Initial Rent authorized Due Date", "2026-09-10");
+    fill("Initial Rent Due Date reason", "Customer is paid on the 10th");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Review Initial Rent Due Date" }),
+    );
+    await confirm();
+    await screen.findByRole("button", { name: "Retry exact saved request" });
+    expect(journal.clear).not.toHaveBeenCalled();
+    expect(
+      screen.queryByRole("heading", { name: "Recorded Initial Rent Due Date" }),
     ).not.toBeInTheDocument();
   });
 });

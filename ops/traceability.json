@@ -33747,6 +33747,66 @@
       "test_path": "frontend/src/billingJournal.test.ts",
       "status": "implemented",
       "notes": "Recovers a sealed issue command with its exact Due Date and reason."
+    },
+    {
+      "test_id": "TEST-FE-642",
+      "upstream_ids": [
+        "UI-053",
+        "API-052",
+        "BR-RENT-009"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Records an authorized Initial Rent Due Date with a sealed override identity and shows the standard date; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-643",
+      "upstream_ids": [
+        "UI-053",
+        "API-052",
+        "BR-RENT-009"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Hides the Initial Rent Due Date form without invoices.issue; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-644",
+      "upstream_ids": [
+        "UI-053",
+        "API-052",
+        "BR-RENT-009"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Refuses a missing Initial Rent Due Date reason before any review or request; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-645",
+      "upstream_ids": [
+        "UI-053",
+        "API-052",
+        "BR-RENT-009"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Keeps the saved Initial Rent Due Date request when the response does not match what was sent; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-646",
+      "upstream_ids": [
+        "UI-053",
+        "API-052",
+        "BR-RENT-009"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/billingJournal.test.ts",
+      "status": "implemented",
+      "notes": "Recovers a sealed Initial Rent Due Date command with its exact override identity."
     }
   ]
 }

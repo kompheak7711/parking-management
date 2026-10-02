@@ -186,4 +186,25 @@ describe("legacy billing over the shared encrypted store", () => {
     );
     expect(await billingJournal.load("actor")).toEqual(saved);
   });
+  it("TEST-FE-646 recovers a sealed Initial Rent Due Date command with its exact override identity", async () => {
+    const saved: PendingBillingCommand = {
+      key: "initial-key",
+      command: {
+        action: "initialRentDueDate",
+        propertyId: "property",
+        leaseId: "lease",
+        input: {
+          override_id: "22222222-2222-4222-8222-222222222222",
+          due_date: "2026-09-10",
+          reason: "Customer is paid on the 10th",
+        },
+      },
+    };
+    const begin = vi.spyOn(sealedIntentStore, "begin").mockResolvedValue();
+    await billingJournal.begin("actor", saved);
+    vi.spyOn(sealedIntentStore, "read").mockResolvedValue(
+      begin.mock.calls[0]?.[1] ?? null,
+    );
+    expect(await billingJournal.load("actor")).toEqual(saved);
+  });
 });

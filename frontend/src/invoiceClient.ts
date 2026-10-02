@@ -175,6 +175,21 @@ export interface IssueDueDateOverride {
   due_date: string;
   due_date_reason: string;
 }
+export interface InitialRentDueDateInput {
+  override_id: string;
+  due_date: string;
+  reason: string;
+}
+/** The recorded override; the proposed date is the standard rule's date for comparison. */
+export interface InitialRentDueDateOverride {
+  override_id: string;
+  property_id: string;
+  lease_id: string;
+  due_date: string;
+  proposed_due_date: string;
+  reason: string;
+  evidence: Evidence;
+}
 export interface BillingTransmission {
   actorId: string;
   signal: AbortSignal;
@@ -241,6 +256,12 @@ export interface InvoiceApi {
     input: OneTimeChargeInput,
     key: string,
   ) => Promise<OneTimeChargeRecord>;
+  setInitialRentDueDate: (
+    propertyId: string,
+    leaseId: string,
+    input: InitialRentDueDateInput,
+    key: string,
+  ) => Promise<InitialRentDueDateOverride>;
   setDueDays: (
     propertyId: string,
     days: number,
@@ -540,6 +561,18 @@ function dueDaysSetting(value: unknown): DueDaysSetting {
     property_id: text(row.property_id),
     one_time_charge_due_days: days,
     version: integer(row.version, 1),
+  };
+}
+function initialRentOverride(value: unknown): InitialRentDueDateOverride {
+  const row = object(value);
+  return {
+    override_id: text(row.override_id),
+    property_id: text(row.property_id),
+    lease_id: text(row.lease_id),
+    due_date: text(row.due_date),
+    proposed_due_date: text(row.proposed_due_date),
+    reason: text(row.reason),
+    evidence: evidence(row),
   };
 }
 function run(value: unknown): BillingRun {
@@ -961,6 +994,23 @@ function createInvoiceApi(transmission?: BillingTransmission): InvoiceApi {
           },
         },
       ),
+    setInitialRentDueDate: (id, leaseId, input, key) =>
+      request(
+        "/api/v1/properties/" +
+          encoded(id) +
+          "/leases/" +
+          encoded(leaseId) +
+          "/initial-rent-due-date",
+        resource(initialRentOverride),
+        {
+          key,
+          body: {
+            override_id: input.override_id,
+            due_date: input.due_date,
+            reason: input.reason,
+          },
+        },
+      ),
     setDueDays: (id, days, reason, propertyVersion, key) =>
       request(
         "/api/v1/properties/" + encoded(id) + "/one-time-charge-due-days",
@@ -1024,6 +1074,12 @@ export type BillingCommand =
       input: BillingRunInput;
     }
   | { action: "oneTimeCharge"; propertyId: string; input: OneTimeChargeInput }
+  | {
+      action: "initialRentDueDate";
+      propertyId: string;
+      leaseId: string;
+      input: InitialRentDueDateInput;
+    }
   | {
       action: "dueDays";
       propertyId: string;
@@ -1124,6 +1180,8 @@ export function executeBilling(
       return api.run(c.propertyId, c.kind, c.input, key);
     case "oneTimeCharge":
       return api.recordOneTimeCharge(c.propertyId, c.input, key);
+    case "initialRentDueDate":
+      return api.setInitialRentDueDate(c.propertyId, c.leaseId, c.input, key);
     case "dueDays":
       return api.setDueDays(
         c.propertyId,
@@ -1158,6 +1216,7 @@ export const billingJournal: BillingJournal = {
         "run",
         "oneTimeCharge",
         "dueDays",
+        "initialRentDueDate",
       ].includes(text(command.action))
     ) {
       throw new Error(

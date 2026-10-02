@@ -976,3 +976,65 @@ describe("V1-055 issue Due Date override transport", () => {
     ).rejects.toMatchObject({ fields: ["due_date", "due_date_reason"] });
   });
 });
+
+describe("V1-055 Initial Rent Due Date transport", () => {
+  const input = {
+    override_id: "22222222-2222-4222-8222-222222222222",
+    due_date: "2026-09-10",
+    reason: "Customer is paid on the 10th",
+  };
+  const snapshot = {
+    override_id: input.override_id,
+    property_id: "p/1",
+    lease_id: "l/1",
+    due_date: "2026-09-10",
+    proposed_due_date: "2026-09-06",
+    reason: input.reason,
+    actor_id: "actor",
+    occurred_at: "2026-09-01T00:00:00Z",
+  };
+  it("posts the sealed identity, date and reason to the Lease route and replays exactly", async () => {
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockImplementation(() => Promise.resolve(response(snapshot)));
+    vi.stubGlobal("fetch", fetcher);
+    const pending = {
+      key: "initial-key",
+      command: {
+        action: "initialRentDueDate" as const,
+        propertyId: "p/1",
+        leaseId: "l/1",
+        input,
+      },
+    };
+    const result = await executeBilling(invoiceApi, pending);
+    await executeBilling(invoiceApi, pending);
+    expect(fetcher.mock.calls[0]).toEqual(fetcher.mock.calls[1]);
+    const [path, init] = fetcher.mock.calls[0] ?? [];
+    expect(path).toBe(
+      "/api/v1/properties/p%2F1/leases/l%2F1/initial-rent-due-date",
+    );
+    expect(init?.method).toBe("POST");
+    expect(bodyOf(init)).toEqual(input);
+    expect(new Headers(init?.headers).get("Idempotency-Key")).toBe(
+      "initial-key",
+    );
+    expect(result).toMatchObject({
+      override_id: input.override_id,
+      lease_id: "l/1",
+      due_date: "2026-09-10",
+      proposed_due_date: "2026-09-06",
+    });
+  });
+  it("rejects a response without the standard date and keeps the outcome unknown", async () => {
+    const { proposed_due_date: omitted, ...incomplete } = snapshot;
+    void omitted;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>().mockResolvedValue(response(incomplete)),
+    );
+    await expect(
+      invoiceApi.setInitialRentDueDate("p/1", "l/1", input, "k"),
+    ).rejects.toMatchObject({ code: "INVALID_RESPONSE", outcomeUnknown: true });
+  });
+});

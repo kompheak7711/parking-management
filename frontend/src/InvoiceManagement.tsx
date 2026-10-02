@@ -16,6 +16,7 @@ import {
   InvoiceApi,
   InvoiceCategory,
   InvoiceClientError,
+  InitialRentDueDateOverride,
   InvoiceFilters,
   InvoiceResource,
   InvoiceStatus,
@@ -290,6 +291,8 @@ function BillingWorkspace({
   const [charge, setCharge] = useState<LatePaymentCharge | null>(null);
   const [run, setRun] = useState<BillingRun | null>(null);
   const [recorded, setRecorded] = useState<OneTimeChargeRecord | null>(null);
+  const [initialOverride, setInitialOverride] =
+    useState<InitialRentDueDateOverride | null>(null);
   const [dueDays, setDueDays] = useState<DueDaysSetting | null>(null);
   const [lastRun, setLastRun] = useState<PendingBillingCommand | null>(null);
   const [preview, setPreview] = useState<{
@@ -640,6 +643,16 @@ function BillingWorkspace({
           BigInt(result.amount.minor_units) !== BigInt(sent.amount.minor_units)
         )
           throw new InvoiceClientError(null, "RESOURCE_MISMATCH", true);
+      } else if (intent.command.action === "initialRentDueDate") {
+        const sent = intent.command.input;
+        if (
+          !("override_id" in result) ||
+          result.property_id !== propertyId ||
+          result.override_id !== sent.override_id ||
+          result.lease_id !== intent.command.leaseId ||
+          result.due_date !== sent.due_date
+        )
+          throw new InvoiceClientError(null, "RESOURCE_MISMATCH", true);
       } else if (intent.command.action === "dueDays") {
         if (
           !("one_time_charge_due_days" in result) ||
@@ -662,6 +675,8 @@ function BillingWorkspace({
       setPending(null);
       if ("obligation_id" in result) {
         setRecorded(result);
+      } else if ("override_id" in result) {
+        setInitialOverride(result);
       } else if ("one_time_charge_due_days" in result) {
         setDueDays(result);
       } else if ("invoice_number" in result) {
@@ -1111,6 +1126,61 @@ function BillingWorkspace({
               >
                 Review draft from this charge
               </button>
+            )}
+          </section>
+        )}
+        {can("invoices.issue") && (
+          <section aria-label="Initial Rent Due Date">
+            <h3>Initial Rent Due Date</h3>
+            <p>
+              Set an authorized Due Date for a Lease&apos;s Initial Rent Invoice
+              before that Invoice is issued. The reason is mandatory and the
+              standard date stays in the history. The server checks the Lease
+              and the date.
+            </p>
+            <form
+              onSubmit={(event) => {
+                formReview(event, (data) => {
+                  const dueDate = value(data, "dueDate");
+                  if (
+                    !/^\d{4}-\d{2}-\d{2}$/.test(dueDate) ||
+                    Number.isNaN(Date.parse(dueDate)) ||
+                    !value(data, "lease") ||
+                    !value(data, "reason")
+                  )
+                    throw new Error("Lease, Due Date and reason required");
+                  return {
+                    action: "initialRentDueDate",
+                    propertyId,
+                    leaseId: value(data, "lease"),
+                    input: {
+                      override_id: crypto.randomUUID(),
+                      due_date: dueDate,
+                      reason: value(data, "reason"),
+                    },
+                  };
+                });
+              }}
+            >
+              <Field name="lease" label="Initial Rent Lease ID" />
+              <Field
+                name="dueDate"
+                label="Initial Rent authorized Due Date"
+                type="date"
+              />
+              <Field name="reason" label="Initial Rent Due Date reason" />
+              <button type="submit">Review Initial Rent Due Date</button>
+            </form>
+            {initialOverride && (
+              <article aria-label="Recorded Initial Rent Due Date">
+                <h4>Recorded Initial Rent Due Date</h4>
+                <p>
+                  Lease {initialOverride.lease_id}: due{" "}
+                  {initialOverride.due_date} (standard date{" "}
+                  {initialOverride.proposed_due_date}).
+                </p>
+                <EvidenceView value={initialOverride.evidence} />
+              </article>
             )}
           </section>
         )}
