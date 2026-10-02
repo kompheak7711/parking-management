@@ -769,4 +769,45 @@ describe("Lease staff workflow", () => {
       expect(api.creditMovedInInitialRent).not.toHaveBeenCalled();
     });
   });
+
+  it("TEST-FE-660 labels the unpaid Initial follow-up events in the permanent timeline with their source", async () => {
+    const api = client({
+      get: vi.fn().mockResolvedValue({
+        ...drafted,
+        status: "TERMINATED",
+        timeline: [
+          {
+            event_id: "resolution-1",
+            event_kind: "lease.unpaid_initial_never_moved_in",
+            occurred_at: "2026-09-10T03:00:00Z",
+            reason: "Customer never moved in",
+            actor_id: "actor-1",
+            source_reference: "termination-event-1",
+            source_href: "/api/v1/leases/lease-1#timeline-resolution-1",
+          },
+          {
+            event_id: "resolution-2",
+            event_kind: "lease.unpaid_initial_moved_in_credit",
+            occurred_at: "2026-09-10T04:00:00Z",
+            reason: "Rent after termination",
+            actor_id: "actor-1",
+            source_reference: "termination-event-1",
+            source_href: "/api/v1/leases/lease-1#timeline-resolution-2",
+          },
+        ],
+      }),
+    });
+    await loadAndOpen(api);
+    expect(
+      screen.getByText(/Unpaid Initial obligation resolved: never moved in/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /Unpaid Initial obligation resolved: Rent credited after termination/,
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getAllByRole("link", { name: "termination-event-1" }),
+    ).toHaveLength(2);
+  });
 });

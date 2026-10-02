@@ -385,6 +385,13 @@ class PostgresLeaseResourceFlow:
                    'Successor Lease drafted',successor.created_by,successor.id::text,
                    '/api/v1/leases/'||successor.id::text
             FROM app.leases AS successor WHERE successor.predecessor_lease_id=%s
+            UNION ALL
+            SELECT id,
+                   CASE path WHEN 'NEVER_MOVED_IN' THEN 'lease.unpaid_initial_never_moved_in'
+                             ELSE 'lease.unpaid_initial_moved_in_credit' END,
+                   occurred_at,reason,actor_id,termination_event_id::text,
+                   '/api/v1/leases/'||lease_id::text||'#timeline-'||id::text
+            FROM app.unpaid_initial_termination_resolutions WHERE lease_id=%s
         ) AS event
         WHERE (%s::timestamptz IS NULL OR (occurred_at,event_id) > (%s,%s::uuid))
         ORDER BY occurred_at,event_id LIMIT %s
@@ -521,6 +528,7 @@ class PostgresLeaseResourceFlow:
         rows = connection.execute(
             self._timeline_select,
             (
+                lease_id,
                 lease_id,
                 lease_id,
                 lease_id,

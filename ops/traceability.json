@@ -34071,6 +34071,42 @@
       "test_path": "frontend/src/leaseClient.test.tsx",
       "status": "implemented",
       "notes": "Posts the moved-in credit and sends the termination context with the Lease termination."
+    },
+    {
+      "test_id": "TEST-FE-660",
+      "upstream_ids": [
+        "UI-042",
+        "BR-LEASE-005",
+        "API-038"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/LeaseManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Labels the unpaid Initial follow-up events in the permanent timeline with their termination source; synthetic fixtures only."
+    },
+    {
+      "test_id": "test_lease_timeline_lists_the_termination_and_the_explicit_follow_up_in_order",
+      "upstream_ids": [
+        "UI-042",
+        "BR-LEASE-005",
+        "API-038"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_unpaid_initial_termination_migration.py",
+      "status": "implemented",
+      "notes": "The Lease timeline lists the termination and then the explicit follow-up with its termination source, link and bounded paging."
+    },
+    {
+      "test_id": "test_lease_timeline_labels_the_moved_in_credit_separately",
+      "upstream_ids": [
+        "UI-042",
+        "BR-LEASE-005",
+        "API-038"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_unpaid_initial_termination_migration.py",
+      "status": "implemented",
+      "notes": "The Lease timeline labels the moved-in credit separately from the never-moved-in resolution."
     }
   ]
 }

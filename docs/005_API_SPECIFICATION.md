@@ -665,7 +665,7 @@ accepts basis `UNPAID_INITIAL_OBLIGATION` with governing reference `BR-LEASE-005
 same termination is refused as invalid. `POST /leases/{id}/terminate` now accepts the optional `context` object
 (`basis`, `signed_lease_provision`, `approved_grounds`, `management_authorization_reference`, `evidence_reference`,
 `notice_required` with `notice_id` and `notice_period_ends_on` or `notice_exception_reason`, and `warning_ids`); the
-database refuses a fresh termination without it. The `termination_event_id` is the `event_id` sent with the termination.
+database refuses a fresh termination without it. The `termination_event_id` is the `event_id` sent with the termination. `GET /leases/{id}/timeline` also lists each follow-up as `lease.unpaid_initial_never_moved_in` or `lease.unpaid_initial_moved_in_credit` with the termination event as its source reference.
 
 The final-decision command is authorized and idempotent and accepts only
 `CONFIRMED_DEFAULT`, `REDUCED`, or `WAIVED`. A REDUCED decision records the exact

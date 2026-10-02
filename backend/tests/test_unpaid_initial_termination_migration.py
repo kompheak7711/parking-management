@@ -620,3 +620,70 @@ def test_moved_in_credit_route_credits_once_and_refuses_the_wrong_path(
     assert data["credit_usd_cents"] == expected_credit(monthly, source["start"], source["today"])
     replay = api(full).post(path, json=body, headers=mutation_headers(key=key))
     assert replay.status_code == 201 and replay.json()["data"] == data
+
+
+def test_lease_timeline_lists_the_termination_and_the_explicit_follow_up_in_order(
+    migrated_database_url: str,
+) -> None:
+    source = signed_with_initial(migrated_database_url, 10)
+    event = terminate(migrated_database_url, source)
+    full = actor(source["actor"], source["property"], *ALL, "leases.read")
+    resolution = uuid4()
+    reply = api(full).post(
+        resolution_path(source, event, "never-moved-in"),
+        json={
+            "resolution_id": str(resolution),
+            "unit_status": "VACANT",
+            "reason": "Customer never moved in and did not pay",
+        },
+        headers=mutation_headers(),
+    )
+    assert reply.status_code == 201, reply.text
+    timeline = api(full).get(f"/api/v1/leases/{source['lease']}/timeline")
+    assert timeline.status_code == 200, timeline.text
+    items = timeline.json()["data"]
+    kinds = [item["event_kind"] for item in items]
+    assert kinds.index("lease.terminate") < kinds.index("lease.unpaid_initial_never_moved_in")
+    follow_up = next(item for item in items if item["event_kind"].startswith("lease.unpaid_"))
+    assert follow_up["event_id"] == str(resolution)
+    assert follow_up["source_reference"] == str(event)
+    assert follow_up["reason"] == "Customer never moved in and did not pay"
+    assert follow_up["source_href"].endswith(f"#timeline-{resolution}")
+    paged = api(full).get(f"/api/v1/leases/{source['lease']}/timeline", params={"limit": "1"})
+    assert len(paged.json()["data"]) == 1 and paged.json()["page"]["next_cursor"] is not None
+
+
+def test_lease_timeline_labels_the_moved_in_credit_separately(
+    migrated_database_url: str,
+) -> None:
+    source = signed_with_initial(migrated_database_url, 10)
+    version = int(
+        row(migrated_database_url, "SELECT version FROM app.leases WHERE id=%s", source["lease"])[0]
+    )
+    PostgresMoveInService(
+        runtime_database_url(), source["property"], source["actor"]
+    ).record_lease_move_in(
+        RecordLeaseMoveInCommand(
+            idempotency_key=uuid4(),
+            event_id=uuid4(),
+            lease_id=source["lease"],
+            expected_lease_version=version,
+            actual_move_in_date=source["today"],
+            occupants=(MoveInOccupant(uuid4(), source["customer"]),),
+            reason="Customer moved in",
+            authorization_reference=MOVE_IN_CAPABILITY,
+        ),
+        actor=actor(source["actor"], source["property"], MOVE_IN_CAPABILITY),
+    )
+    event = terminate(migrated_database_url, source)
+    full = actor(source["actor"], source["property"], *ALL, "leases.read")
+    credit = api(full).post(
+        resolution_path(source, event, "moved-in-credit"),
+        json={"resolution_id": str(uuid4()), "reason": "Rent after termination"},
+        headers=mutation_headers(),
+    )
+    assert credit.status_code == 201, credit.text
+    timeline = api(full).get(f"/api/v1/leases/{source['lease']}/timeline")
+    kinds = [item["event_kind"] for item in timeline.json()["data"]]
+    assert "lease.unpaid_initial_moved_in_credit" in kinds
+    assert "lease.unpaid_initial_never_moved_in" not in kinds

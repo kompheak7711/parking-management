@@ -57,6 +57,17 @@ function money(value: number | null): string {
   }).format(value / 100);
 }
 
+const timelineLabels: Record<string, string> = {
+  "lease.unpaid_initial_never_moved_in":
+    "Unpaid Initial obligation resolved: never moved in",
+  "lease.unpaid_initial_moved_in_credit":
+    "Unpaid Initial obligation resolved: Rent credited after termination",
+};
+
+function timelineLabel(kind: string): string {
+  return timelineLabels[kind] ?? kind;
+}
+
 function message(error: unknown): string {
   if (
     error instanceof LeaseUnavailableError ||
@@ -1566,7 +1577,8 @@ export function LeaseManagement({ api = leaseApi }: LeaseManagementProps) {
             <ol>
               {selected.timeline.map((event) => (
                 <li id={`timeline-${event.event_id}`} key={event.event_id}>
-                  {event.occurred_at}: {event.event_kind} — {event.reason}
+                  {event.occurred_at}: {timelineLabel(event.event_kind)} —{" "}
+                  {event.reason}
                   {event.source_reference !== null && (
                     <>
                       ; source{" "}

@@ -343,7 +343,7 @@ grounds, authorization and evidence references, and either an applicable notice 
 TERMINATED Lease offers the explicit follow-up forms "Customer never moved in" (forfeit the Security Deposit, VOID or
 credit the Initial Rent Invoice, release the Unit to VACANT or CLEANING with a reason) and "Customer moved in" (credit
 the Rent after the termination date). Each follow-up asks for confirmation, is recorded once, and a retry of an
-unchanged form reuses its identities. The Rent nonpayment workflow also lists unpaid Initial Rent alerts read only.
+unchanged form reuses its identities. The Rent nonpayment workflow also lists unpaid Initial Rent alerts read only. The permanent Lease timeline names each follow-up and links it to its termination event.
 
 # 11. Move-in Workflow
 
