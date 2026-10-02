@@ -1,5 +1,7 @@
 # Property Rental — V1-055 paused for owner rule amendments
 
+New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md.
+
 - Current: Local checkpoints over accepted physical cdf1492e0d920bc70ef690ab34183d1bbc578d2f: 7b858e1 (due attribution, now withdrawn), a6c5c1b (Slice B final Utility inputs) and the 2026-09-30 forward removal commit. Whole V1-055 remains incomplete and unpublished. Nothing is pushed.
 - Latest (2026-09-30): Owner withdrew the 2026-09-15 within-line due-date attribution policy and set new rules for Rent nonpayment counting, the Initial Rent Invoice Due Date and line-level Adjustments (docs/010 entry of 2026-09-30). Migration 20260916_62 and all due-attribution code, tests, docs sections, BR-PAY-041/PR-PAY-041 and traceability were removed by a forward commit; migration 20260917_63 now follows 20260915_61. Migration 62 was never applied to a persistent database. The protected Refund and late CREDIT test patches are reverted with it.
 - Held wording: Three held docs/004 and docs/010 passages are stored at ~/Documents/prm-held-wording-2026-09-29.txt; they belonged to the withdrawn design. docs/007 due notes are stored at ~/Documents/prm-docs007-due-notes-2026-09-30.diff.
@@ -17,6 +19,6 @@
 - Remaining: Approved amendments and their implementation, Slice D, the positive Slice B estimate case, all independent and final gates, normal publication, exact CI, refs, Workboard and durable closure. Do not activate V1-056.
 - Fact (2026-10-02): the launchd service ai.openclaw.gateway is running; this project does not touch it and the owner decides about it.
 - Slice 8 (2026-10-02, migration 20261006_71): Utility baseline Reading per Lease as a service (no HTTP route yet; baseline route belongs to Slice 9); monthly Utility run skips NOT_MOVED_IN and PROPERTY_BORNE_CONSUMPTION periods. DL-067.
-- STATUS (2026-10-02): Slices 7, 8, 7b, 9a committed. 9b backend routes committed (one-time charge, due-days setting, issue Due Date override; no DB). LEFT in 9b: Initial Rent Due Date override route (service needs billing.generate, a service-principal capability: owner question), frontend client + forms for the three routes. Then 9c, 9d, 9e, final gates. Start a fresh session. Nothing pushed.
+- STATUS (2026-10-02): Slices 7, 8, 7b, 9a and 9b backend (388705e) committed. Owner answer: Initial Rent Due Date override uses invoices.issue. Next: finish 9b (Initial Rent override route, frontend clients and forms for the four routes), then 9c, 9d, 9e, final gates. Nothing pushed.
 - Billing-correctness item (slice 7b): DONE 2026-10-02, migration 20261008_73 (Utility run overlap limited to RENT; unbilled-period read; late periods billed only by the explicit catch-up). DL-067.
 - Updated: 2026-10-02.
