@@ -37,6 +37,8 @@ import {
   terminalChargeConflict,
 } from "./invoiceClient";
 
+import { RunDiagnostics } from "./BillingRunDiagnostics";
+
 export interface InvoiceManagementProps {
   api: InvoiceApi;
   actorId: string;
@@ -395,7 +397,14 @@ function BillingWorkspace({
       });
     };
   }, [validation]);
-  function message(error: unknown) {
+  function message(error: unknown, action?: BillingCommand["action"]) {
+    if (
+      action === "adjust" &&
+      error instanceof InvoiceClientError &&
+      !error.outcomeUnknown &&
+      error.status === 422
+    )
+      return "The Adjustment was refused. A debit needs a remaining balance on the line, and a credit cannot exceed the line's adjusted obligation. Check the amount and direction.";
     return error instanceof InvoiceClientError
       ? error.message
       : "The billing request could not be verified. Reload or reconcile before continuing.";
@@ -781,7 +790,7 @@ function BillingWorkspace({
       if (stillMounted()) {
         setFailed(true);
         setValidation(error instanceof InvoiceClientError ? error : null);
-        setNotice(message(error));
+        setNotice(message(error, intent.command.action));
       }
     } finally {
       lock.current = false;
@@ -1748,6 +1757,7 @@ function BillingWorkspace({
                   {run.period.start} to {run.period.end}; business date{" "}
                   {run.business_date}
                 </p>
+                <RunDiagnostics run={run} />
                 <EvidenceView value={run.evidence} />
                 {run.attempts
                   .flatMap((attempt) =>

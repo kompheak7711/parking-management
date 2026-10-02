@@ -100,6 +100,7 @@ from property_rental.financial_reference_api import (
 from property_rental.identity import ActorResolver, deny_unauthenticated_actor
 from property_rental.invoice import (
     InvoiceIdempotencyKeyReused,
+    InvoiceLineFullyPaid,
     InvoiceVersionConflict,
     PostgresInvoiceService,
 )
@@ -108,6 +109,7 @@ from property_rental.invoice_api import (
     UnavailableInvoiceFlow,
     create_invoice_router,
     invoice_idempotency_key_reused_response,
+    invoice_line_fully_paid_response,
 )
 from property_rental.late_payment import (
     LatePaymentApplicationReversalRequired,
@@ -589,6 +591,13 @@ def create_app(
         _: LatePaymentApplicationReversalRequired,
     ) -> JSONResponse:
         return application_reversal_required_response(request)
+
+    @app.exception_handler(InvoiceLineFullyPaid)
+    async def invoice_line_fully_paid(
+        request: Request,
+        _: InvoiceLineFullyPaid,
+    ) -> JSONResponse:
+        return invoice_line_fully_paid_response(request)
 
     @app.exception_handler(InvoiceVersionConflict)
     async def invoice_version_conflict(

@@ -284,13 +284,15 @@ export class InvoiceClientError extends Error {
     super(
       outcomeUnknown
         ? "Outcome not confirmed. Keep the same request and retry or reconcile before starting another command."
-        : status === 401
-          ? "Sign in again to use billing."
-          : status === 403 || status === 404
-            ? "Billing resource unavailable or access denied."
-            : status === 409 || status === 412
-              ? "The resource changed or this action conflicts. Reload and review the current state."
-              : "The billing request could not be completed.",
+        : code === "INVOICE_LINE_FULLY_PAID"
+          ? "This Invoice line is fully paid, so a debit Adjustment is not allowed. Bill the missed amount as a one-time charge instead."
+          : status === 401
+            ? "Sign in again to use billing."
+            : status === 403 || status === 404
+              ? "Billing resource unavailable or access denied."
+              : status === 409 || status === 412
+                ? "The resource changed or this action conflicts. Reload and review the current state."
+                : "The billing request could not be completed.",
     );
     this.name = "InvoiceClientError";
   }

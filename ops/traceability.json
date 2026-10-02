@@ -34299,6 +34299,54 @@
       "test_path": "frontend/src/UtilityLeaseWorkflows.test.tsx",
       "status": "implemented",
       "notes": "Loads the baseline and final input histories read only and prompts for a Property; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-667",
+      "upstream_ids": [
+        "UI-053",
+        "BR-INV-044",
+        "API-052"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Explains that a debit on a fully paid line is refused and points to a one-time charge; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-668",
+      "upstream_ids": [
+        "UI-053",
+        "BR-INV-044",
+        "API-052"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Explains the two Adjustment balance rules when the server refuses the amount; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-669",
+      "upstream_ids": [
+        "UI-053",
+        "BR-INV-044",
+        "API-052"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Shows plain run diagnostics with item counts and the reason each item was skipped; synthetic fixtures only."
+    },
+    {
+      "test_id": "test_debit_adjustment_on_a_fully_paid_line_answers_a_stable_conflict_code",
+      "upstream_ids": [
+        "API-052",
+        "BR-INV-044",
+        "TEST-052"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_invoice_api.py",
+      "status": "implemented",
+      "notes": "A debit Adjustment on a fully paid line answers 409 with the stable code INVOICE_LINE_FULLY_PAID and rule BR-INV-044."
     }
   ]
 }

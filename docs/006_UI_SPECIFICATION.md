@@ -352,6 +352,11 @@ authorized Due Date that needs its reason. A list of unbilled Utility periods sh
 staff select an eligible period for the explicit catch-up. Commands ask for confirmation, create no Reading, and a retry of
 an unchanged form is replayed. Refusals show a plain-language text for the server's stable reason code.
 
+Billing run diagnostics and Adjustment refusals (V1-055 slice 9d): an inspected billing run shows its item counts by outcome, each
+attempt, and a table of every item with the reason in plain language (already invoiced, no longer eligible, not moved in,
+Property-borne consumption, failed). A refused debit Adjustment on a fully paid line says so and points to a one-time
+charge; a refused Adjustment amount states both balance rules.
+
 # 11. Move-in Workflow
 
 ## UI-043 — Move-in Checklist

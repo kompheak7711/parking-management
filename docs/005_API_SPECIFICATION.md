@@ -610,7 +610,7 @@ capability is an authorization failure; a reused charge identity with different 
 or a finding already billed, is a conflict; a mismatched or superseded finding, a
 backdated or misplaced Due Date, or an invalid shape is invalid.
 
-A debit Adjustment on a fully paid line returns 409 with the current line balance.
+A debit Adjustment on a fully paid line returns 409 with the stable error code `INVOICE_LINE_FULLY_PAID` and rule `BR-INV-044` (since slice 9d), so a client can tell staff to bill the missed amount as a one-time charge.
 Service status (migration `20261003_66`): `PostgresInvoiceService.adjust` raises
 `InvoiceLineFullyPaid` (a conflict) carrying `line_balance_usd_cents`; the existing route
 already answers 409 for a conflict, and adding the balance to the response body belongs to

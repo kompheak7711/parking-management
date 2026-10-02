@@ -39,6 +39,7 @@ from property_rental.invoice import (
     InvoiceConflictError,
     InvoiceIdempotencyKeyReused,
     InvoiceInvalidError,
+    InvoiceLineFullyPaid,
     InvoiceNotFoundError,
     InvoicePage,
     InvoiceServiceUnavailableError,
@@ -239,6 +240,24 @@ def invoice_idempotency_key_reused_response(request: Request) -> JSONResponse:
     )
 
 
+def invoice_line_fully_paid_response(request: Request) -> JSONResponse:
+    request_id = request.state.request_id
+    return JSONResponse(
+        status_code=status.HTTP_409_CONFLICT,
+        content={
+            "error": {
+                "code": "INVOICE_LINE_FULLY_PAID",
+                "message": "A debit Adjustment needs a positive line balance.",
+                "fields": [],
+                "rule_ids": ["BR-INV-044"],
+                "current_version": None,
+            },
+            "meta": {"request_id": request_id},
+        },
+        headers={"X-Request-ID": request_id},
+    )
+
+
 def _actor(request: Request, resolver: ActorResolver) -> AuthenticatedActor:
     actor = resolver(request)
     if actor is None:
@@ -289,6 +308,8 @@ def _invoke(command: Callable[[], dict[str, object]]) -> dict[str, object]:
     except InvoiceVersionConflict:
         raise
     except InvoiceIdempotencyKeyReused:
+        raise
+    except InvoiceLineFullyPaid:
         raise
     except InvoiceConflictError as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT) from exc

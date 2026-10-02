@@ -2553,3 +2553,127 @@ describe("V1-055 Initial Rent Due Date override", () => {
     ).not.toBeInTheDocument();
   });
 });
+
+describe("V1-055 Adjustment and run diagnostics text", () => {
+  async function adjustWithRefusal(error: InvoiceClientError) {
+    const { api, journal } = setup("UNPAID");
+    vi.mocked(api.adjust).mockRejectedValue(error);
+    render(
+      <InvoiceManagement
+        api={api}
+        journal={journal}
+        actorId="actor"
+        propertyId={propertyId}
+      />,
+    );
+    await loadInvoice();
+    fill("Adjustment direction", "DEBIT");
+    fill("Adjustment amount (USD)", "15.00");
+    fill("Adjustment source reference", "approved-source");
+    fill("Adjustment reason", "missed amount");
+    fireEvent.click(screen.getByRole("button", { name: "Review adjustment" }));
+    await confirm();
+    return screen.findByRole("alert");
+  }
+
+  it("TEST-FE-667 explains that a debit on a fully paid line is refused and points to a one-time charge", async () => {
+    const alert = await adjustWithRefusal(
+      new InvoiceClientError(409, "INVOICE_LINE_FULLY_PAID", false),
+    );
+    expect(alert).toHaveTextContent("fully paid");
+    expect(alert).toHaveTextContent("one-time charge");
+  });
+
+  it("TEST-FE-668 explains the two Adjustment balance rules when the server refuses the amount", async () => {
+    const alert = await adjustWithRefusal(
+      new InvoiceClientError(422, "VALIDATION_ERROR", false, null, ["amount"]),
+    );
+    expect(alert).toHaveTextContent("A debit needs a remaining balance");
+    expect(alert).toHaveTextContent("a credit cannot exceed");
+  });
+
+  it("TEST-FE-669 shows plain run diagnostics with item counts and the reason each item was skipped", async () => {
+    const { api, journal } = setup();
+    vi.mocked(api.getRun).mockResolvedValue({
+      id: "run-1",
+      property_id: propertyId,
+      run_kind: "UTILITIES",
+      logical_run_key: "utilities-october",
+      business_date: "2026-10-31",
+      status: "SUCCEEDED",
+      period: { start: "2026-10-01", end: "2026-10-31" },
+      attempts: [
+        {
+          attempt_number: 1,
+          outcome: "SUCCEEDED",
+          diagnostic_code: null,
+          items: [
+            {
+              source_kind: "UTILITY_CONSUMPTION_PERIOD",
+              source_id: "period-1",
+              period_start: "2026-10-01",
+              period_end: "2026-10-31",
+              outcome: "GENERATED",
+              diagnostic_code: null,
+              invoice_id: "invoice-1",
+            },
+            {
+              source_kind: "UTILITY_CONSUMPTION_PERIOD",
+              source_id: "period-2",
+              period_start: "2026-10-01",
+              period_end: "2026-10-31",
+              outcome: "SKIPPED",
+              diagnostic_code: "NOT_MOVED_IN",
+              invoice_id: null,
+            },
+            {
+              source_kind: "UTILITY_CONSUMPTION_PERIOD",
+              source_id: "period-3",
+              period_start: "2026-10-01",
+              period_end: "2026-10-31",
+              outcome: "SKIPPED",
+              diagnostic_code: "PROPERTY_BORNE_CONSUMPTION",
+              invoice_id: null,
+            },
+            {
+              source_kind: "UTILITY_CONSUMPTION_PERIOD",
+              source_id: "period-4",
+              period_start: "2026-10-01",
+              period_end: "2026-10-31",
+              outcome: "SKIPPED",
+              diagnostic_code: "A_NEW_CODE",
+              invoice_id: null,
+            },
+          ],
+        },
+      ],
+      evidence: {},
+    });
+    render(
+      <InvoiceManagement
+        api={api}
+        journal={journal}
+        actorId="actor"
+        propertyId={propertyId}
+      />,
+    );
+    await loadInvoice();
+    fill("Billing run ID", "run-1");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Inspect billing run" }),
+    );
+    const region = await screen.findByRole("region", {
+      name: "Run diagnostics",
+    });
+    expect(region).toHaveTextContent("Items: Generated 1, Skipped 3.");
+    const table = within(region).getByRole("table", {
+      name: "Run item outcomes",
+    });
+    expect(table).toHaveTextContent("had not moved in yet");
+    expect(table).toHaveTextContent("the Property bears it");
+    expect(table).toHaveTextContent("Diagnostic code A_NEW_CODE.");
+    expect(
+      within(region).getByText(/Attempt 1: Succeeded/),
+    ).toBeInTheDocument();
+  });
+});

@@ -6,11 +6,12 @@ from uuid import uuid4
 from property_rental.billing import SetInitialRentDueDateCommand
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
 from property_rental.invoice import (
+    InvoiceLineFullyPaid,
     IssueInvoiceCommand,
     RecordOneTimeChargeCommand,
     SetOneTimeChargeDueDaysCommand,
 )
-from test_invoice import InMemoryInvoiceFlow, actor, api, invoice_resource
+from test_invoice import InMemoryInvoiceFlow, actor, api, invoice_resource, mutation_headers
 
 
 def test_billing_action_metadata_denies_by_default_and_uses_exact_property() -> None:
@@ -273,3 +274,28 @@ def test_initial_rent_due_date_route_uses_invoices_issue_with_a_mandatory_reason
     assert client.post(path, headers=mutation_headers(), json=body).status_code == 200
     command = cast(SetInitialRentDueDateCommand, flow.commands[-1])
     assert (command.lease_id, command.due_date.isoformat()) == (lease, "2026-10-20")
+
+
+def test_debit_adjustment_on_a_fully_paid_line_answers_a_stable_conflict_code() -> None:
+    property_id, invoice_id, line_id = uuid4(), uuid4(), uuid4()
+
+    class FullyPaid(InMemoryInvoiceFlow):
+        def adjust(self, *args: object, **kwargs: object) -> dict[str, object]:
+            raise InvoiceLineFullyPaid(0)
+
+    flow = FullyPaid(property_id, invoice_resource(property_id, invoice_id=invoice_id))
+    reply = api(flow, actor(property_id, "invoices.adjust")).post(
+        f"/api/v1/invoices/{invoice_id}/adjustments",
+        headers=mutation_headers(version=2),
+        json={
+            "invoice_line_id": str(line_id),
+            "adjustment_type": "DEBIT",
+            "amount": {"currency": "USD", "minor_units": 100},
+            "source_reference": "approved-correction/missed-amount",
+            "reason": "Missed amount",
+        },
+    )
+    assert reply.status_code == 409
+    error = reply.json()["error"]
+    assert error["code"] == "INVOICE_LINE_FULLY_PAID" and error["rule_ids"] == ["BR-INV-044"]
+    assert "balance" in error["message"]
