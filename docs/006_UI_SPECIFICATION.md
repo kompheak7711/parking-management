@@ -337,6 +337,14 @@ Termination Notices, occupancy changes, renewal, termination, move-out, and Sett
 events in chronological order with links to their distinct source records. The UI must
 not merge Lease-violation warnings with Rent-nonpayment milestones.
 
+Unpaid Initial obligation (V1-055 slice 9c): a signed Lease the viewer may terminate offers the form
+"Terminate for an unpaid Initial obligation" with the governing reference BR-LEASE-005, the signed clause, approved
+grounds, authorization and evidence references, and either an applicable notice or the reason none applies. A
+TERMINATED Lease offers the explicit follow-up forms "Customer never moved in" (forfeit the Security Deposit, VOID or
+credit the Initial Rent Invoice, release the Unit to VACANT or CLEANING with a reason) and "Customer moved in" (credit
+the Rent after the termination date). Each follow-up asks for confirmation, is recorded once, and a retry of an
+unchanged form reuses its identities. The Rent nonpayment workflow also lists unpaid Initial Rent alerts read only.
+
 # 11. Move-in Workflow
 
 ## UI-043 — Move-in Checklist

@@ -7,6 +7,8 @@ import {
   LeaseResource,
   LeaseStatus,
   LeaseUnavailableError,
+  TerminationContextSource,
+  UnpaidInitialResolution,
   leaseApi,
 } from "./leaseClient";
 
@@ -79,7 +81,31 @@ export function LeaseManagement({ api = leaseApi }: LeaseManagementProps) {
   const [petApproved, setPetApproved] = useState(false);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [noticeApplies, setNoticeApplies] = useState(false);
+  const [followUp, setFollowUp] = useState<UnpaidInitialResolution | null>(
+    null,
+  );
   const sequence = useRef(0);
+  // A retry of an unchanged form reuses its identities so a lost reply is replayed, not repeated.
+  const attempts = useRef(
+    new Map<
+      string,
+      { signature: string; key: string; id: string; at: string }
+    >(),
+  );
+
+  function attempt(name: string, signature: string) {
+    const known = attempts.current.get(name);
+    if (known?.signature === signature) return known;
+    const fresh = {
+      signature,
+      key: crypto.randomUUID(),
+      id: crypto.randomUUID(),
+      at: new Date().toISOString(),
+    };
+    attempts.current.set(name, fresh);
+    return fresh;
+  }
 
   function update(value: LeaseResource) {
     setSelected(value);
@@ -184,6 +210,11 @@ export function LeaseManagement({ api = leaseApi }: LeaseManagementProps) {
         if (operation === sequence.current) setBusy(false);
       });
   }
+
+  const terminationEvents =
+    selected?.timeline.filter(
+      (item) => item.event_kind === "lease.terminate",
+    ) ?? [];
 
   function open(leaseId: string) {
     const operation = ++sequence.current;
@@ -467,6 +498,159 @@ export function LeaseManagement({ api = leaseApi }: LeaseManagementProps) {
         ),
       "Lease terminated with permanent governing evidence; move-out remains separate.",
     );
+  }
+
+  function terminateUnpaidInitial(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (selected === null) return;
+    const data = new FormData(event.currentTarget);
+    const applies = formString(data, "unpaid-notice") === "applies";
+    const context: TerminationContextSource = {
+      basis: "UNPAID_INITIAL_OBLIGATION",
+      signed_lease_provision: formString(data, "unpaid-clause"),
+      approved_grounds: formString(data, "unpaid-grounds"),
+      management_authorization_reference: formString(data, "unpaid-authority"),
+      evidence_reference: formString(data, "unpaid-evidence"),
+      notice_required: applies,
+      ...(applies
+        ? {
+            notice_id: formString(data, "unpaid-notice-id"),
+            notice_period_ends_on: formString(data, "unpaid-notice-end"),
+          }
+        : {
+            notice_exception_reason: formString(data, "unpaid-notice-reason"),
+          }),
+    };
+    const actualDate = formString(data, "unpaid-date");
+    const reason = formString(data, "unpaid-reason");
+    if (
+      !actualDate ||
+      !reason ||
+      !context.signed_lease_provision ||
+      !context.approved_grounds ||
+      !context.management_authorization_reference ||
+      !context.evidence_reference ||
+      (applies
+        ? !context.notice_id || !context.notice_period_ends_on
+        : !context.notice_exception_reason)
+    ) {
+      setNotice("Complete every required termination field.");
+      return;
+    }
+    if (
+      !window.confirm(
+        "Terminate this Lease for an unpaid Initial obligation? The server verifies the unpaid Initial Rent or Security Deposit at termination time.",
+      )
+    )
+      return;
+    const retry = attempt(
+      "terminate-unpaid-initial",
+      JSON.stringify([
+        selected.lease_id,
+        selected.version,
+        actualDate,
+        reason,
+        context,
+      ]),
+    );
+    command(
+      "Terminating the Lease for an unpaid Initial obligation…",
+      () =>
+        api.terminate(
+          selected,
+          {
+            event_id: retry.id,
+            actual_termination_date: actualDate,
+            occurred_at: retry.at,
+            governing_event_reference: "BR-LEASE-005",
+            reason,
+            context,
+          },
+          retry.key,
+        ),
+      "Lease terminated for an unpaid Initial obligation. Resolve the Security Deposit, Invoice and Unit explicitly below; nothing was changed automatically.",
+      () => {
+        attempts.current.delete("terminate-unpaid-initial");
+        setFollowUp(null);
+      },
+    );
+  }
+
+  function resolveFollowUp(
+    name: "never-moved-in" | "moved-in-credit",
+    event: FormEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault();
+    if (selected === null) return;
+    const data = new FormData(event.currentTarget);
+    const terminationEvent = formString(data, "follow-up-event");
+    const reason = formString(data, "follow-up-reason");
+    const cleaning =
+      name === "never-moved-in" &&
+      formString(data, "follow-up-unit") === "CLEANING";
+    const unitReason = formString(data, "follow-up-unit-reason");
+    if (!terminationEvent || !reason || (cleaning && !unitReason)) {
+      setNotice(
+        "Enter the termination event, the reason and, for CLEANING, the Unit reason.",
+      );
+      return;
+    }
+    if (
+      !window.confirm(
+        name === "never-moved-in"
+          ? "Forfeit the Security Deposit, VOID or credit the Initial Rent Invoice and release the Unit? This cannot be edited afterwards."
+          : "Credit the Initial Rent for the days after the termination date? This cannot be edited afterwards.",
+      )
+    )
+      return;
+    const retry = attempt(
+      name,
+      JSON.stringify([
+        selected.property_id,
+        terminationEvent,
+        reason,
+        cleaning,
+        formString(data, "follow-up-unit"),
+        unitReason,
+      ]),
+    );
+    const operation = ++sequence.current;
+    setBusy(true);
+    setNotice("Recording the explicit follow-up…");
+    const run =
+      name === "never-moved-in"
+        ? api.resolveNeverMovedIn(
+            selected.property_id,
+            terminationEvent,
+            {
+              resolution_id: retry.id,
+              unit_status: cleaning ? "CLEANING" : "VACANT",
+              ...(cleaning ? { unit_status_reason: unitReason } : {}),
+              reason,
+            },
+            retry.key,
+          )
+        : api.creditMovedInInitialRent(
+            selected.property_id,
+            terminationEvent,
+            { resolution_id: retry.id, reason },
+            retry.key,
+          );
+    void run
+      .then((value) => {
+        if (operation !== sequence.current) return;
+        attempts.current.delete(name);
+        setFollowUp(value);
+        setNotice(
+          "Follow-up recorded. The Pet Deposit and the completed Reservation were not touched.",
+        );
+      })
+      .catch((error: unknown) => {
+        if (operation === sequence.current) setNotice(message(error));
+      })
+      .finally(() => {
+        if (operation === sequence.current) setBusy(false);
+      });
   }
 
   function completeMoveIn(event: FormEvent<HTMLFormElement>) {
@@ -1198,6 +1382,181 @@ export function LeaseManagement({ api = leaseApi }: LeaseManagementProps) {
                 Move-out and final financial handling remain separate workflows.
               </p>
             </form>
+          )}
+
+          {selected.can_terminate && (
+            <form
+              className="form-stack confirmation-panel"
+              onSubmit={terminateUnpaidInitial}
+            >
+              <h4>Terminate for an unpaid Initial obligation</h4>
+              <p>
+                Governing reference BR-LEASE-005. Allowed from the sixth day
+                after the Lease Start Date while the Initial Rent or the
+                Security Deposit is still unpaid. No warning letters are needed.
+                Nothing else changes until you resolve the follow-up.
+              </p>
+              <label>
+                Unpaid Initial: actual termination date
+                <input name="unpaid-date" required type="date" />
+              </label>
+              <label>
+                Signed Lease clause that allows this termination
+                <input maxLength={2000} name="unpaid-clause" required />
+              </label>
+              <label>
+                Approved grounds
+                <input maxLength={2000} name="unpaid-grounds" required />
+              </label>
+              <label>
+                Management authorization reference
+                <input maxLength={500} name="unpaid-authority" required />
+              </label>
+              <label>
+                Evidence reference
+                <input maxLength={500} name="unpaid-evidence" required />
+              </label>
+              <label>
+                Termination notice
+                <select
+                  name="unpaid-notice"
+                  onChange={(event) => {
+                    setNoticeApplies(event.target.value === "applies");
+                  }}
+                  value={noticeApplies ? "applies" : "none"}
+                >
+                  <option value="none">No notice period applies</option>
+                  <option value="applies">A termination notice applies</option>
+                </select>
+              </label>
+              {noticeApplies ? (
+                <>
+                  <label>
+                    Termination notice identifier
+                    <input name="unpaid-notice-id" required />
+                  </label>
+                  <label>
+                    Notice period end date
+                    <input name="unpaid-notice-end" required type="date" />
+                  </label>
+                </>
+              ) : (
+                <label>
+                  Reason no notice period applies
+                  <input
+                    maxLength={2000}
+                    name="unpaid-notice-reason"
+                    required
+                  />
+                </label>
+              )}
+              <label>
+                Unpaid Initial: termination reason
+                <input maxLength={500} name="unpaid-reason" required />
+              </label>
+              <button disabled={busy} type="submit">
+                Terminate for unpaid Initial obligation
+              </button>
+            </form>
+          )}
+
+          {selected.status === "TERMINATED" && (
+            <section aria-label="Unpaid Initial obligation follow-up">
+              <h4>Unpaid Initial obligation follow-up</h4>
+              <p>
+                Use only after a termination for an unpaid Initial obligation.
+                Each resolution is explicit, recorded once and cannot be edited.
+                Final Settlement stays a separate workflow.
+              </p>
+              <form
+                className="form-stack confirmation-panel"
+                key={`never-${selected.lease_id}-${terminationEvents[0]?.event_id ?? ""}`}
+                onSubmit={(event) => {
+                  resolveFollowUp("never-moved-in", event);
+                }}
+              >
+                <h5>Customer never moved in</h5>
+                <p>
+                  Forfeits the Security Deposit under BR-LEASE-005, VOIDs the
+                  Initial Rent Invoice when nothing was applied or credits its
+                  unpaid lines, and releases the Unit.
+                </p>
+                <label>
+                  Termination event identifier
+                  <input
+                    defaultValue={terminationEvents[0]?.event_id ?? ""}
+                    name="follow-up-event"
+                    required
+                  />
+                </label>
+                <label>
+                  Unit after release
+                  <select name="follow-up-unit">
+                    <option value="VACANT">VACANT</option>
+                    <option value="CLEANING">CLEANING</option>
+                  </select>
+                </label>
+                <label>
+                  Unit status reason (required for CLEANING)
+                  <input maxLength={500} name="follow-up-unit-reason" />
+                </label>
+                <label>
+                  Never moved in: resolution reason
+                  <input maxLength={500} name="follow-up-reason" required />
+                </label>
+                <button disabled={busy} type="submit">
+                  Resolve never moved in
+                </button>
+              </form>
+              <form
+                className="form-stack confirmation-panel"
+                key={`credit-${selected.lease_id}-${terminationEvents[0]?.event_id ?? ""}`}
+                onSubmit={(event) => {
+                  resolveFollowUp("moved-in-credit", event);
+                }}
+              >
+                <h5>Customer moved in</h5>
+                <p>
+                  Keeps the Initial Rent Invoice and credits its Rent for the
+                  days after the termination date, using the BR-RENT-007
+                  proration.
+                </p>
+                <label>
+                  Moved in: termination event identifier
+                  <input
+                    defaultValue={terminationEvents[0]?.event_id ?? ""}
+                    name="follow-up-event"
+                    required
+                  />
+                </label>
+                <label>
+                  Moved in: credit reason
+                  <input maxLength={500} name="follow-up-reason" required />
+                </label>
+                <button disabled={busy} type="submit">
+                  Credit Initial Rent after termination
+                </button>
+              </form>
+              {followUp !== null && (
+                <article aria-label="Recorded unpaid Initial follow-up">
+                  <h5>Recorded follow-up</h5>
+                  <p>
+                    {followUp.path === "NEVER_MOVED_IN"
+                      ? "Never moved in"
+                      : "Moved in"}
+                    : credit {money(followUp.credit_usd_cents)}
+                    {followUp.resulting_unit_status !== null &&
+                      `; Unit ${followUp.resulting_unit_status}`}
+                    {followUp.invoice_void_event_id !== null &&
+                      "; Initial Rent Invoice VOIDED"}
+                    {followUp.deposit_disposition_id !== null &&
+                      "; Security Deposit forfeited"}
+                    .
+                  </p>
+                  <p>Resolution {followUp.resolution_id}</p>
+                </article>
+              )}
+            </section>
           )}
 
           <h4>Permanent Lease timeline</h4>

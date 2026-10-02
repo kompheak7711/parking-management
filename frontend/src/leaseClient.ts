@@ -161,12 +161,59 @@ export interface LeaseRenewSource {
   reason: string;
 }
 
+export type TerminationBasis =
+  | "VOLUNTARY_EARLY"
+  | "CUSTOMER_VIOLATION"
+  | "SIGNED_LEASE_OTHER"
+  | "UNPAID_INITIAL_OBLIGATION";
+
+/** Explicit signed-Lease authority; the server and database verify every basis rule. */
+export interface TerminationContextSource {
+  basis: TerminationBasis;
+  signed_lease_provision: string;
+  approved_grounds: string;
+  management_authorization_reference: string;
+  evidence_reference: string;
+  notice_required: boolean;
+  notice_id?: string;
+  notice_period_ends_on?: string;
+  notice_exception_reason?: string;
+  warning_ids?: string[];
+}
+
 export interface LeaseTerminateSource {
   event_id: string;
   actual_termination_date: string;
   occurred_at: string;
   governing_event_reference: string;
   reason: string;
+  context?: TerminationContextSource;
+}
+
+export interface NeverMovedInSource {
+  resolution_id: string;
+  unit_status: "VACANT" | "CLEANING";
+  unit_status_reason?: string;
+  reason: string;
+}
+
+export interface MovedInCreditSource {
+  resolution_id: string;
+  reason: string;
+}
+
+/** The recorded follow-up to a termination for an unpaid Initial obligation. */
+export interface UnpaidInitialResolution {
+  resolution_id: string;
+  termination_event_id: string;
+  lease_id: string;
+  path: "NEVER_MOVED_IN" | "MOVED_IN";
+  cause: string;
+  resulting_unit_status: "VACANT" | "CLEANING" | null;
+  deposit_disposition_id: string | null;
+  invoice_void_event_id: string | null;
+  adjustment_ids: string[];
+  credit_usd_cents: number;
 }
 
 export interface MoveInSource {
@@ -240,6 +287,18 @@ export interface LeaseApi {
     source: MoveInSource,
     idempotencyKey: string,
   ) => Promise<MoveInResult>;
+  resolveNeverMovedIn: (
+    propertyId: string,
+    terminationEventId: string,
+    source: NeverMovedInSource,
+    idempotencyKey: string,
+  ) => Promise<UnpaidInitialResolution>;
+  creditMovedInInitialRent: (
+    propertyId: string,
+    terminationEventId: string,
+    source: MovedInCreditSource,
+    idempotencyKey: string,
+  ) => Promise<UnpaidInitialResolution>;
 }
 
 export class LeaseUnavailableError extends Error {
@@ -305,6 +364,55 @@ function lease(value: unknown): LeaseResource {
   if (typeof value !== "object" || value === null)
     throw new LeaseRequestError();
   return value as LeaseResource;
+}
+
+function nullableId(value: unknown): string | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value !== "string") throw new LeaseRequestError();
+  return value;
+}
+
+/** Accept only the follow-up record that answers this exact termination and resolution. */
+function resolution(
+  value: Record<string, unknown>,
+  expected: { termination: string; resolution: string; path: string },
+): UnpaidInitialResolution {
+  const adjustments = value.adjustment_ids;
+  const status = value.resulting_unit_status ?? null;
+  if (
+    value.termination_event_id !== expected.termination ||
+    value.resolution_id !== expected.resolution ||
+    value.path !== expected.path ||
+    typeof value.lease_id !== "string" ||
+    typeof value.cause !== "string" ||
+    !Array.isArray(adjustments) ||
+    adjustments.some((item) => typeof item !== "string") ||
+    typeof value.credit_usd_cents !== "number" ||
+    !Number.isSafeInteger(value.credit_usd_cents) ||
+    value.credit_usd_cents < 0 ||
+    (status !== null && status !== "VACANT" && status !== "CLEANING")
+  )
+    throw new LeaseRequestError();
+  return {
+    resolution_id: expected.resolution,
+    termination_event_id: expected.termination,
+    lease_id: value.lease_id,
+    path: expected.path as UnpaidInitialResolution["path"],
+    cause: value.cause,
+    resulting_unit_status: status,
+    deposit_disposition_id: nullableId(value.deposit_disposition_id),
+    invoice_void_event_id: nullableId(value.invoice_void_event_id),
+    adjustment_ids: adjustments as string[],
+    credit_usd_cents: value.credit_usd_cents,
+  };
+}
+
+function resolutionPath(
+  propertyId: string,
+  terminationEventId: string,
+  kind: "never-moved-in" | "moved-in-credit",
+): string {
+  return `/api/v1/properties/${encodeURIComponent(propertyId)}/lease-terminations/${encodeURIComponent(terminationEventId)}/unpaid-initial-${kind}`;
 }
 
 function commandHeaders(idempotencyKey: string, version?: number): HeadersInit {
@@ -458,4 +566,45 @@ export const leaseApi: LeaseApi = {
         },
       ),
     ) as unknown as MoveInResult,
+  resolveNeverMovedIn: async (propertyId, terminationEventId, source, key) =>
+    resolution(
+      data(
+        await request(
+          resolutionPath(propertyId, terminationEventId, "never-moved-in"),
+          {
+            method: "POST",
+            headers: commandHeaders(key),
+            body: JSON.stringify(source),
+          },
+        ),
+      ),
+      {
+        termination: terminationEventId,
+        resolution: source.resolution_id,
+        path: "NEVER_MOVED_IN",
+      },
+    ),
+  creditMovedInInitialRent: async (
+    propertyId,
+    terminationEventId,
+    source,
+    key,
+  ) =>
+    resolution(
+      data(
+        await request(
+          resolutionPath(propertyId, terminationEventId, "moved-in-credit"),
+          {
+            method: "POST",
+            headers: commandHeaders(key),
+            body: JSON.stringify(source),
+          },
+        ),
+      ),
+      {
+        termination: terminationEventId,
+        resolution: source.resolution_id,
+        path: "MOVED_IN",
+      },
+    ),
 };

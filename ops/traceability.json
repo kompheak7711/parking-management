@@ -33963,6 +33963,114 @@
       "test_path": "backend/tests/test_unpaid_initial_termination_api.py",
       "status": "implemented",
       "notes": "Not found and conflict service failures map to 404 and 409."
+    },
+    {
+      "test_id": "TEST-FE-651",
+      "upstream_ids": [
+        "UI-042",
+        "BR-LEASE-005",
+        "API-038"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/LeaseManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Terminates with the explicit unpaid Initial context and replays the same identities after a failure; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-652",
+      "upstream_ids": [
+        "UI-042",
+        "BR-LEASE-005",
+        "API-038"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/LeaseManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Sends the notice identity and period end when a termination notice applies; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-653",
+      "upstream_ids": [
+        "UI-042",
+        "BR-LEASE-005",
+        "API-038"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/LeaseManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Hides the unpaid Initial termination and follow-up unless the Lease state and capability allow them; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-654",
+      "upstream_ids": [
+        "UI-042",
+        "BR-LEASE-005",
+        "API-038"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/LeaseManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Resolves never moved in with the timeline termination event, requires the CLEANING reason and replays after a failure; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-655",
+      "upstream_ids": [
+        "UI-042",
+        "BR-LEASE-005",
+        "API-038"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/LeaseManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Credits the Rent after the termination date for a Customer who moved in; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-656",
+      "upstream_ids": [
+        "UI-042",
+        "BR-LEASE-005",
+        "API-038"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/LeaseManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Sends nothing when the follow-up confirmation is declined; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-657",
+      "upstream_ids": [
+        "UI-042",
+        "BR-LEASE-005",
+        "API-038"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/leaseClient.test.tsx",
+      "status": "implemented",
+      "notes": "Posts the unpaid Initial resolution to the Property route with CSRF and an idempotency key but no If-Match."
+    },
+    {
+      "test_id": "TEST-FE-658",
+      "upstream_ids": [
+        "UI-042",
+        "BR-LEASE-005",
+        "API-038"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/leaseClient.test.tsx",
+      "status": "implemented",
+      "notes": "Rejects an unpaid Initial resolution reply that does not match the request."
+    },
+    {
+      "test_id": "TEST-FE-659",
+      "upstream_ids": [
+        "UI-042",
+        "BR-LEASE-005",
+        "API-038"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/leaseClient.test.tsx",
+      "status": "implemented",
+      "notes": "Posts the moved-in credit and sends the termination context with the Lease termination."
     }
   ]
 }
