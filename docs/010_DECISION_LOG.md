@@ -1179,4 +1179,5 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Owner answer 1 (DL-067, 2026-10-02):** apply the `npm audit` fix now, only if it changes `package-lock.json` alone.
 - **Owner answer 2 (DL-067, 2026-10-02):** fix the intermittent test lock failures now, before the Lease timeline work and before V1-056.
 - **Owner answer 3 (DL-067, 2026-10-02):** Initial Rent Due Date overrides in the Lease timeline need `invoices.read`; Rent-nonpayment events need `rent_nonpayment.read`.
+- **Frontend test timing (DL-067, slice 9f-2, owner decision 2026-10-03):** `TEST-FE-128` ("retains an authoritatively absent command identity for its explicit retry", `frontend/src/CustomerManagement.test.tsx`) failed once in a full frontend run at the `#customer-legal-name` lookup near line 2755 and passed on the next full run (1585 of 1585). It is recorded as a third intermittent timing failure next to `TEST-FE-087` and `TEST-FE-488`. The cause is not yet known; the failing output was not saved, and the test is unmodified.
 - **Decision date:** 2026-10-02.
