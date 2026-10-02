@@ -6,7 +6,6 @@
 - Follow-up (2026-09-29): make frontend-typecheck checks no files (root tsconfig files: []); real checks run in tsc -b / tsconfig.app.json; fix with the quiet-test-target Makefile change after V1-055 is committed.
 - Follow-up (2026-09-29): TEST-FE-488 in FinancialWorkspaces.test.tsx failed once in a full frontend run (51 rows where 2 expected after Next reversal records); it passed alone and on an immediate full re-run, so it is recorded as an intermittent timing flake, undiagnosed and unmodified.
 - Follow-up (2026-09-30): Slice B (migration63 move-out final Utility inputs) verified 18 cases in one PostgreSQL invocation, but the positive approved broken-Meter estimate path (ESTIMATE item) is untested and must be covered before final review; owner confirmed the Reading-date and Meter-window rules. Slice A/C/D and further V1-055 implementation are stopped pending owner rule amendments.
-- HTTP/UI slice (2026-10-03): frontend/src/invoiceClient.ts reads `due_date` with text(); a DRAFT one-time charge (migration 65) has a null Due Date and must be accepted as null.
 - HTTP/UI slice (2026-10-04): Initial Rent unpaid alert route and screen (service read `initial_rent_alerts` exists).
 - Follow-up (2026-10-04): test_invoice_migration.py::test_v1_045_typed_sources_keep_category_and_controlling_id_together commits an ELECTRICITY rate effective 2027-04-01 to the shared test database; from that date test_json_snapshots_preserve_maximum_consumption_and_rate_precision will pick it and fail like the 2026-10-01 case. Needs an owner-approved fix before April 2027.
 - Follow-up (2026-10-05): retire the old app.sign_lease runtime grant in a later hardening step; the service now always signs through app.sign_lease_with_reservation.
@@ -18,6 +17,6 @@
 - Remaining: Approved amendments and their implementation, Slice D, the positive Slice B estimate case, all independent and final gates, normal publication, exact CI, refs, Workboard and durable closure. Do not activate V1-056.
 - Fact (2026-10-02): the launchd service ai.openclaw.gateway is running; this project does not touch it and the owner decides about it.
 - Slice 8 (2026-10-02, migration 20261006_71): Utility baseline Reading per Lease as a service (no HTTP route yet; baseline route belongs to Slice 9); monthly Utility run skips NOT_MOVED_IN and PROPERTY_BORNE_CONSUMPTION periods. DL-067.
-- STATUS (2026-10-02): Slices 7 (798f9f4) and 8 (fe6015b) committed, accepted. Slice 7b (migration 20261008_73) verified and being committed. Next: Slice 9a to 9e. Nothing pushed.
+- STATUS (2026-10-02): Slices 7, 8, 7b committed (798f9f4, fe6015b, ca87dbd); 9a (client accepts a null due_date for a DRAFT one-time charge) committed. Next: 9b Invoice routes, then 9c, 9d, 9e, final gates. ECC formatter hook disabled only via untracked .claude/settings.local.json (needs a new session). Nothing pushed.
 - Billing-correctness item (slice 7b): DONE 2026-10-02, migration 20261008_73 (Utility run overlap limited to RENT; unbilled-period read; late periods billed only by the explicit catch-up). DL-067.
 - Updated: 2026-10-02.

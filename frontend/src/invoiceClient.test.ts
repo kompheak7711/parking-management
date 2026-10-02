@@ -190,6 +190,19 @@ describe("V1-047 invoice client", () => {
     });
     expect(result.items[0]?.lines[0]?.source).toEqual({ id: "lease" });
   });
+  it("TEST-052 accepts a DRAFT one-time charge whose Due Date is not set until issue", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn<typeof fetch>()
+        .mockResolvedValue(
+          response([{ ...invoice(), status: "DRAFT", due_date: null }]),
+        ),
+    );
+    const result = await invoiceApi.list("property/one", {});
+    expect(result.items[0]?.status).toBe("DRAFT");
+    expect(result.items[0]?.due_date).toBeNull();
+  });
   it("sends version, CSRF and unchanged idempotency identity with allowlisted body only", async () => {
     const fetcher = vi
       .fn<typeof fetch>()

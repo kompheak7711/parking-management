@@ -925,7 +925,7 @@ function BillingWorkspace({
                     <td>{item.lease_id ?? "None"}</td>
                     <td>{item.category}</td>
                     <td>{item.invoice_date}</td>
-                    <td>{item.due_date}</td>
+                    <td>{item.due_date ?? "Set when issued"}</td>
                     <td>{formatUsd(item.original_total)}</td>
                     <td>{formatUsd(item.adjusted_total)}</td>
                     <td>{formatUsd(item.outstanding_balance)}</td>
@@ -984,7 +984,8 @@ function BillingWorkspace({
               {formatUsd(invoice.outstanding_balance)}
             </p>
             <p>
-              Invoice date {invoice.invoice_date}; due {invoice.due_date}.
+              Invoice date {invoice.invoice_date}; due{" "}
+              {invoice.due_date ?? "set when issued"}.
             </p>
             <h4>Immutable lines and source evidence</h4>
             {invoice.lines.map((line) => (

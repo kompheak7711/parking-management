@@ -50,7 +50,7 @@ export interface InvoiceResource {
   category: InvoiceCategory;
   status: InvoiceStatus;
   invoice_date: string;
-  due_date: string;
+  due_date: string | null;
   billing_period: JsonValue;
   version: number;
   original_total: Money;
@@ -337,7 +337,7 @@ function invoice(value: unknown): InvoiceResource {
       "VOID",
     ] as const),
     invoice_date: text(row.invoice_date),
-    due_date: text(row.due_date),
+    due_date: nullableText(row.due_date),
     version: integer(row.version, 1),
     billing_period: json(row.billing_period),
     original_total: money(row.original_total),
