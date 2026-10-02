@@ -643,8 +643,9 @@ reports the blocking condition `INITIAL_RENT_NO_LATE_PAYMENT` and its final deci
 rejected as a conflict; existing decisions and Charges are unchanged. The unpaid Initial
 Rent management alert (`app.unpaid_initial_rent_alert_page`, capability
 `rent_nonpayment.read`) is delivered at service level only
-(`PostgresEnforcementContext.initial_rent_alerts`); its route belongs to the HTTP and UI
-slice.
+(`PostgresEnforcementContext.initial_rent_alerts`) and, since V1-055 slice 9c, through
+`GET /properties/{id}/initial-rent-unpaid-alerts` (keyset `limit` and `cursor`, read only; it opens no case
+and records no Notice).
 
 Lease signing and move-in service status (migration `20261005_69`): `PostgresLeaseService.sign`
 accepts an optional `reservation_id` (part of the request digest only when present) and

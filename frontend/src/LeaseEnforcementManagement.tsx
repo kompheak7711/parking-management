@@ -28,6 +28,7 @@ import {
 } from "./financialResponse";
 import {
   confirmedFinancialRequest,
+  financialMoney,
   financialUiError,
   prepareFinancialCommand,
   type FinancialCommandRequest,
@@ -637,6 +638,20 @@ function EnforcementWorkspace({
           }}
         />
       )}
+      {purpose === "NONPAYMENT" && capabilities["rent_nonpayment.read"] && (
+        <InitialRentAlerts
+          scope={scope}
+          services={services}
+          revision={revision}
+          busy={busy}
+          onSelect={(leaseId) => {
+            if (confirmDiscard()) {
+              setLease(leaseId);
+              setConfirmation(null);
+            }
+          }}
+        />
+      )}
       <EnforcementReadStatus {...leases} />
       <label htmlFor={`${id}-lease`}>
         Lease for{" "}
@@ -883,6 +898,93 @@ function RentAlerts({
             }}
           >
             Next Rent alert page
+          </button>
+        </>
+      )}
+    </section>
+  );
+}
+function InitialRentAlerts({
+  scope,
+  services,
+  revision,
+  busy,
+  onSelect,
+}: {
+  scope: FinancialScope;
+  services: EnforcementServices;
+  revision: number;
+  busy: boolean;
+  onSelect: (leaseId: string) => void;
+}) {
+  const [cursor, setCursor] = useState<string | undefined>();
+  const read = useEnforcementRead(
+    scope,
+    { kind: "initialRentAlerts", limit: 25, ...(cursor ? { cursor } : {}) },
+    revision,
+    services,
+  );
+  return (
+    <section aria-label="Unpaid Initial Rent alerts">
+      <h4>Unpaid Initial Rent alerts</h4>
+      <p>
+        Issued Initial Rent Invoices with an unpaid balance, listed from the day
+        after their Due Date. This is a management alert only. It does not open
+        a case, record a Notice, add a late fee or end the Lease.
+      </p>
+      <EnforcementReadStatus {...read} />
+      {read.data && (
+        <>
+          {enforcementRows(read.data).length === 0 && (
+            <p>No unpaid Initial Rent alerts on this page.</p>
+          )}
+          {enforcementRows(read.data).map((row) => {
+            const remaining = row.remaining as { minor_units: unknown };
+            return (
+              <article
+                className="information-card"
+                key={financialId(row.invoice_id)}
+              >
+                <FinancialFacts
+                  rows={[
+                    ["Invoice number", enforcementValue(row.invoice_number)],
+                    ["Invoice status", enforcementValue(row.invoice_status)],
+                    ["Initial Rent Due Date", enforcementValue(row.due_date)],
+                    ["Alert from", enforcementValue(row.alert_date)],
+                    ["Unpaid balance", financialMoney(remaining.minor_units)],
+                    ["Lease reference", enforcementValue(row.lease_id)],
+                    ["Customer reference", enforcementValue(row.customer_id)],
+                  ]}
+                />
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => {
+                    onSelect(financialId(row.lease_id));
+                  }}
+                >
+                  Review this Lease
+                </button>
+              </article>
+            );
+          })}
+          <button
+            type="button"
+            disabled={busy || read.busy || cursor === undefined}
+            onClick={() => {
+              setCursor(undefined);
+            }}
+          >
+            First Initial Rent alert page
+          </button>
+          <button
+            type="button"
+            disabled={busy || read.busy || read.data.next_cursor === null}
+            onClick={() => {
+              setCursor(financialId(read.data?.next_cursor));
+            }}
+          >
+            Next Initial Rent alert page
           </button>
         </>
       )}

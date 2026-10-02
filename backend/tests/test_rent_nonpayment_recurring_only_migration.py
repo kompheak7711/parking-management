@@ -49,6 +49,7 @@ from test_lease_enforcement_migration import staff
 from test_migrations import _temporary_migration_database
 from test_payment_allocation_migration import actor as allocation_actor
 from test_payment_allocation_migration import service as allocation_service
+from test_payment_api_migration import api
 
 PHNOM_PENH = ZoneInfo("Asia/Phnom_Penh")
 RECORDED = "SELECT COALESCE(jsonb_agg(to_jsonb(t) ORDER BY t.id),'[]'::jsonb) FROM app.{} t"
@@ -472,3 +473,30 @@ def test_recurring_only_rent_nonpayment_migration_is_forward_only() -> None:
     module = cast(Any, revision.module)
     with pytest.raises(RuntimeError, match="forward-only"):
         module.downgrade()
+
+
+def test_initial_rent_alert_route_lists_the_unpaid_invoice_read_only_under_rent_nonpayment_read(
+    migrated_database_url: str,
+) -> None:
+    current = today(migrated_database_url)
+    human, prop, _, invoice, _ = initial_invoice(migrated_database_url, current - timedelta(days=6))
+    path = f"/api/v1/properties/{prop}/initial-rent-unpaid-alerts"
+    with psycopg.connect(migrated_database_url) as connection:
+        before = connection.execute(RECORDED.format("rent_nonpayment_cases")).fetchone()
+    reply = api(staff(human, prop, NONPAYMENT_READ)).get(path, params={"limit": "100"})
+    assert reply.status_code == 200, reply.text
+    body = reply.json()
+    items = cast(list[dict[str, object]], body["data"]["items"])
+    row = next(item for item in items if item["invoice_id"] == str(invoice))
+    remaining = cast(dict[str, object], row["remaining"])
+    assert remaining["currency"] == "USD" and cast(int, remaining["minor_units"]) > 0
+    assert (
+        row["alert_date"]
+        == (date.fromisoformat(str(row["due_date"])) + timedelta(days=1)).isoformat()
+    )
+    assert body["data"]["timezone"] == "Asia/Phnom_Penh"
+    assert body["meta"]["property_id"] == str(prop)
+    assert api(staff(human, prop, NONPAYMENT_OPEN)).get(path).status_code == 403
+    assert api(staff(human, prop, NONPAYMENT_READ)).get(path + "?limit=0").status_code == 400
+    with psycopg.connect(migrated_database_url) as connection:
+        assert connection.execute(RECORDED.format("rent_nonpayment_cases")).fetchone() == before

@@ -165,6 +165,8 @@ function harness(allow: string[] = [...ENFORCEMENT_CAPABILITIES]) {
       };
     else if (url.pathname.endsWith("/rent-nonpayment-alerts"))
       input = { kind: "alerts", limit };
+    else if (url.pathname.endsWith("/initial-rent-unpaid-alerts"))
+      input = { kind: "initialRentAlerts", limit };
     else if (url.pathname.endsWith("/violation-warning-context"))
       input = { kind: "warningContext", leaseId: ids.lease };
     else if (url.pathname.endsWith("/violation-warnings"))
@@ -1041,5 +1043,44 @@ describe("Lease enforcement preserved draft recovery", () => {
     expect(posts[1]?.body).toBe(posts[0]?.body);
     expect(h.state.warnings).toHaveLength(1);
     expect(h.records.size).toBe(0);
+  });
+  it("TEST-FE-649 lists unpaid Initial Rent alerts read-only and selects the Lease without opening a case", async () => {
+    const h = harness(["rent_nonpayment.read"]);
+    render(
+      <LeaseEnforcementManagement actorId={ids.actor} services={h.services} />,
+    );
+    await selectProperty();
+    const alerts = await screen.findByRole("region", {
+      name: "Unpaid Initial Rent alerts",
+    });
+    await within(alerts).findByText("INV-INITIAL-1");
+    expect(within(alerts).getByText("USD 310.00")).toBeInTheDocument();
+    expect(within(alerts).getByText("2026-09-06")).toBeInTheDocument();
+    expect(alerts).toHaveTextContent("does not open a case");
+    fireEvent.click(
+      within(alerts).getByRole("button", { name: "Review this Lease" }),
+    );
+    await waitFor(() => {
+      expect(screen.getByLabelText("Lease for Rent nonpayment")).toHaveValue(
+        ids.lease,
+      );
+    });
+    expect(h.calls.some((call) => call.method === "POST")).toBe(false);
+    expect(
+      h.calls.some((call) => call.url.includes("/initial-rent-unpaid-alerts")),
+    ).toBe(true);
+  });
+  it("TEST-FE-650 hides the Initial Rent alerts without Rent nonpayment read authority", async () => {
+    const h = harness(["rent_nonpayment.event_post"]);
+    render(
+      <LeaseEnforcementManagement actorId={ids.actor} services={h.services} />,
+    );
+    await selectProperty();
+    expect(
+      screen.queryByRole("region", { name: "Unpaid Initial Rent alerts" }),
+    ).not.toBeInTheDocument();
+    expect(
+      h.calls.some((call) => call.url.includes("/initial-rent-unpaid-alerts")),
+    ).toBe(false);
   });
 });

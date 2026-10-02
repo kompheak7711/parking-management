@@ -33807,6 +33807,66 @@
       "test_path": "frontend/src/billingJournal.test.ts",
       "status": "implemented",
       "notes": "Recovers a sealed Initial Rent Due Date command with its exact override identity."
+    },
+    {
+      "test_id": "TEST-FE-647",
+      "upstream_ids": [
+        "UI-102",
+        "BR-RENT-009",
+        "SEC-028"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/leaseEnforcementClient.test.ts",
+      "status": "implemented",
+      "notes": "Rejects incorrect unpaid Initial Rent alert evidence: foreign Property, paid status, extra field, zero balance, impossible date and invalid identity."
+    },
+    {
+      "test_id": "TEST-FE-648",
+      "upstream_ids": [
+        "UI-102",
+        "BR-RENT-009",
+        "SEC-028"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/leaseEnforcementClient.test.ts",
+      "status": "implemented",
+      "notes": "Reads the Initial Rent alert route with a bounded keyset and refuses a Lease selector."
+    },
+    {
+      "test_id": "TEST-FE-649",
+      "upstream_ids": [
+        "UI-102",
+        "BR-RENT-009",
+        "SEC-028"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/LeaseEnforcementManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Lists unpaid Initial Rent alerts read-only and selects the Lease without opening a case; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-650",
+      "upstream_ids": [
+        "UI-102",
+        "BR-RENT-009",
+        "SEC-028"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/LeaseEnforcementManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Hides the Initial Rent alerts without Rent nonpayment read authority; synthetic fixtures only."
+    },
+    {
+      "test_id": "test_initial_rent_alert_route_lists_the_unpaid_invoice_read_only_under_rent_nonpayment_read",
+      "upstream_ids": [
+        "UI-102",
+        "BR-RENT-009",
+        "SEC-028"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_rent_nonpayment_recurring_only_migration.py",
+      "status": "implemented",
+      "notes": "The Initial Rent alert route lists the unpaid Invoice read only under rent_nonpayment.read, rejects other capabilities and bad limits, and records no case."
     }
   ]
 }

@@ -117,6 +117,13 @@ class EnforcementContextFlow(Protocol):
         page: EnforcementPage | None = None,
         purpose: Purpose | None = None,
     ) -> dict[str, object]: ...
+    def initial_rent_alerts(
+        self,
+        property_id: UUID,
+        *,
+        actor: AuthenticatedActor,
+        page: EnforcementPage | None = None,
+    ) -> dict[str, object]: ...
 
 
 def _calendar(value: object) -> date:
@@ -437,6 +444,14 @@ def create_enforcement_router(
         actor = actor_for(request)
         page = _page(request)
         result = _invoke(lambda: context.read(property_id, "ALERTS", actor=actor, page=page))
+        bind_financial_property(request, property_id)
+        return envelope(request, result)
+
+    @router.get("/properties/{property_id}/initial-rent-unpaid-alerts")
+    def initial_rent_alerts(property_id: Identity, request: Request) -> dict[str, object]:
+        actor = actor_for(request)
+        page = _page(request)
+        result = _invoke(lambda: context.initial_rent_alerts(property_id, actor=actor, page=page))
         bind_financial_property(request, property_id)
         return envelope(request, result)
 

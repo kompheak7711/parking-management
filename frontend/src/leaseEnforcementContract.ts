@@ -51,7 +51,7 @@ interface HistoryPage {
   offset?: number;
 }
 export type EnforcementRead =
-  | ({ kind: "workspaces" | "alerts" } & Keyset)
+  | ({ kind: "workspaces" | "alerts" | "initialRentAlerts" } & Keyset)
   | ({ kind: "leases"; purpose: "WARNINGS" | "NONPAYMENT" } & Keyset)
   | ({ kind: "sources" | "actionCases"; leaseId: string } & Keyset)
   | ({ kind: "warnings" | "cases"; leaseId: string } & HistoryPage)
@@ -62,6 +62,7 @@ export const ENFORCEMENT_HISTORY_KINDS = ["warnings", "cases", "events"];
 export const ENFORCEMENT_KEYSET_KINDS = [
   "workspaces",
   "alerts",
+  "initialRentAlerts",
   "leases",
   "sources",
   "actionCases",
@@ -134,23 +135,25 @@ export function enforcementPath(
         ? `${prop()}/lease-enforcement-leases`
         : row.kind === "alerts"
           ? `${prop()}/rent-nonpayment-alerts`
-          : row.kind === "sources"
-            ? `${lease()}/rent-nonpayment-sources`
-            : row.kind === "actionCases"
-              ? `${lease()}/rent-nonpayment-action-cases`
-              : row.kind === "warningContext"
-                ? `${lease()}/violation-warning-context`
-                : row.kind === "warnings"
-                  ? `${lease()}/violation-warnings`
-                  : row.kind === "cases"
-                    ? `${lease()}/rent-nonpayment-cases`
-                    : row.kind === "events"
-                      ? `${casePath()}/events`
-                      : row.kind === "eventContext"
-                        ? `${casePath()}/action-context`
-                        : row.kind === "case"
-                          ? casePath()
-                          : invalidFinancial();
+          : row.kind === "initialRentAlerts"
+            ? `${prop()}/initial-rent-unpaid-alerts`
+            : row.kind === "sources"
+              ? `${lease()}/rent-nonpayment-sources`
+              : row.kind === "actionCases"
+                ? `${lease()}/rent-nonpayment-action-cases`
+                : row.kind === "warningContext"
+                  ? `${lease()}/violation-warning-context`
+                  : row.kind === "warnings"
+                    ? `${lease()}/violation-warnings`
+                    : row.kind === "cases"
+                      ? `${lease()}/rent-nonpayment-cases`
+                      : row.kind === "events"
+                        ? `${casePath()}/events`
+                        : row.kind === "eventContext"
+                          ? `${casePath()}/action-context`
+                          : row.kind === "case"
+                            ? casePath()
+                            : invalidFinancial();
   const query = new URLSearchParams();
   for (const key of ["limit", "offset", "cursor", "purpose"])
     if (row[key] !== undefined) query.set(key, enforcementValue(row[key]));
@@ -448,7 +451,9 @@ export function validateEnforcementRead(
       : [
           "items",
           "next_cursor",
-          ...(kind === "alerts" ? ["as_of", "business_date", "timezone"] : []),
+          ...(kind === "alerts" || kind === "initialRentAlerts"
+            ? ["as_of", "business_date", "timezone"]
+            : []),
         ],
   );
   const items = rows(data.items);
@@ -458,7 +463,7 @@ export function validateEnforcementRead(
       invalidFinancial();
     financialInteger(data.total, BigInt(items.length));
   } else if (data.next_cursor !== null) financialId(data.next_cursor);
-  if (kind === "alerts") {
+  if (kind === "alerts" || kind === "initialRentAlerts") {
     financialInstant(data.as_of);
     financialCalendarDate(data.business_date);
     if (data.timezone !== "Asia/Phnom_Penh") invalidFinancial();
@@ -471,7 +476,9 @@ export function validateEnforcementRead(
         ? "property_id"
         : kind === "sources" || kind === "alerts"
           ? "rent_invoice_line_id"
-          : "id";
+          : kind === "initialRentAlerts"
+            ? "invoice_id"
+            : "id";
     const identity = financialId(row[idKey]);
     if (seen.has(identity) || (!history && last !== null && identity <= last))
       invalidFinancial();
@@ -496,6 +503,33 @@ export function validateEnforcementRead(
       financialCalendarDate(row.end_date);
       financialText(row.status, 50);
       financialText(row.unit_number, 100);
+    } else if (kind === "initialRentAlerts") {
+      exactKeys(row, [
+        "invoice_id",
+        "invoice_number",
+        "property_id",
+        "lease_id",
+        "customer_id",
+        "invoice_status",
+        "due_date",
+        "alert_date",
+        "remaining",
+      ]);
+      same(row.property_id, prop);
+      financialId(row.lease_id);
+      financialId(row.customer_id);
+      financialText(row.invoice_number, 100);
+      if (
+        typeof row.invoice_status !== "string" ||
+        !["UNPAID", "PARTIALLY_PAID"].includes(row.invoice_status)
+      )
+        invalidFinancial();
+      financialCalendarDate(row.due_date);
+      financialCalendarDate(row.alert_date);
+      const remaining = financialObject(row.remaining);
+      exactKeys(remaining, ["currency", "minor_units"]);
+      if (remaining.currency !== "USD") invalidFinancial();
+      financialInteger(remaining.minor_units, 1n);
     } else if (kind === "warnings")
       enforcementWarning(row, financialId(input.leaseId));
     else if (kind === "events")

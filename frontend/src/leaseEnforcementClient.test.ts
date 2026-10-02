@@ -214,6 +214,48 @@ describe("Lease enforcement transport contracts", () => {
       createEnforcementClient(fetcher).read(scope(), input),
     ).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
   });
+  it.each(["property", "status", "extra", "money", "alert", "key"])(
+    "TEST-FE-647 rejects incorrect unpaid Initial Rent alert evidence %s",
+    async (mode) => {
+      const input: EnforcementRead = { kind: "initialRentAlerts" };
+      const data = readData(input);
+      const row = financialObject((data.items as FinancialObject[])[0]);
+      if (mode === "property") row.property_id = ids.other;
+      if (mode === "status") row.invoice_status = "PAID";
+      if (mode === "extra") row.customer_email = "synthetic@example.invalid";
+      if (mode === "money") financialObject(row.remaining).minor_units = 0;
+      if (mode === "alert") row.alert_date = "2026-02-30";
+      if (mode === "key") row.invoice_id = "invalid";
+      const fetcher = vi.fn<typeof fetch>((_url, init) =>
+        Promise.resolve(readResponse(input, init, data)),
+      );
+      await expect(
+        createEnforcementClient(fetcher).read(scope(), input),
+      ).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
+    },
+  );
+  it("TEST-FE-648 reads the Initial Rent alert route with a bounded keyset and refuses a Lease selector", async () => {
+    const input: EnforcementRead = { kind: "initialRentAlerts", limit: 25 };
+    const fetcher = vi.fn<typeof fetch>((_url, init) =>
+      Promise.resolve(readResponse(input, init)),
+    );
+    const { data } = await createEnforcementClient(fetcher).read(
+      scope(),
+      input,
+    );
+    expect(fetcher.mock.calls[0]?.[0]).toBe(
+      `/api/v1/properties/${ids.property}/initial-rent-unpaid-alerts?limit=25`,
+    );
+    expect((data.items as FinancialObject[])[0]?.invoice_number).toBe(
+      "INV-INITIAL-1",
+    );
+    expect(() =>
+      captureEnforcementRead({
+        kind: "initialRentAlerts",
+        leaseId: ids.lease,
+      } as unknown as EnforcementRead),
+    ).toThrow();
+  });
   it.each(["utf8", "media", "request-id", "oversize", "declared", "status"])(
     "TEST-FE-595 rejects invalid or oversized read transport %s",
     async (mode) => {

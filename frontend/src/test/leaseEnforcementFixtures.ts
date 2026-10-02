@@ -177,6 +177,7 @@ export const readInputs: EnforcementRead[] = [
   { kind: "eventContext", caseId: ids.case },
   { kind: "warningContext", leaseId: ids.lease },
   { kind: "alerts" },
+  { kind: "initialRentAlerts" },
 ];
 export function readData(
   input: EnforcementRead,
@@ -231,6 +232,29 @@ export function readData(
         lease_id: ids.lease,
         suggested_sequence: 1,
         business_date: "2026-09-10",
+      };
+    case "initialRentAlerts":
+      return {
+        ...page(
+          voided
+            ? []
+            : [
+                {
+                  invoice_id: ids.invoice,
+                  invoice_number: "INV-INITIAL-1",
+                  property_id: ids.property,
+                  lease_id: ids.lease,
+                  customer_id: ids.customer,
+                  invoice_status: "UNPAID",
+                  due_date: "2026-09-05",
+                  alert_date: "2026-09-06",
+                  remaining: { currency: "USD", minor_units: 31000 },
+                },
+              ],
+        ),
+        as_of: instant,
+        business_date: "2026-09-10",
+        timezone: "Asia/Phnom_Penh",
       };
     case "alerts":
       return {

@@ -701,6 +701,7 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/lease-enforcement-workspaces": {"get"},
         "/api/v1/properties/{property_id}/lease-enforcement-leases": {"get"},
         "/api/v1/properties/{property_id}/rent-nonpayment-alerts": {"get"},
+        "/api/v1/properties/{property_id}/initial-rent-unpaid-alerts": {"get"},
         "/api/v1/leases/{lease_id}/violation-warning-context": {"get"},
         "/api/v1/leases/{lease_id}/rent-nonpayment-sources": {"get"},
         "/api/v1/leases/{lease_id}/rent-nonpayment-action-cases": {"get"},
