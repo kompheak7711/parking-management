@@ -17,6 +17,6 @@
 - Remaining: Approved amendments and their implementation, Slice D, the positive Slice B estimate case, all independent and final gates, normal publication, exact CI, refs, Workboard and durable closure. Do not activate V1-056.
 - Fact (2026-10-02): the launchd service ai.openclaw.gateway is running; this project does not touch it and the owner decides about it.
 - Slice 8 (2026-10-02, migration 20261006_71): Utility baseline Reading per Lease as a service (no HTTP route yet; baseline route belongs to Slice 9); monthly Utility run skips NOT_MOVED_IN and PROPERTY_BORNE_CONSUMPTION periods. DL-067.
-- STATUS (2026-10-02): Slices 7, 8, 7b committed (798f9f4, fe6015b, ca87dbd); 9a (client accepts a null due_date for a DRAFT one-time charge) committed. Next: 9b Invoice routes, then 9c, 9d, 9e, final gates. ECC formatter hook disabled only via untracked .claude/settings.local.json (needs a new session). Nothing pushed.
+- STATUS (2026-10-02): Slices 7, 8, 7b, 9a committed. 9b backend routes committed (one-time charge, due-days setting, issue Due Date override; no DB). LEFT in 9b: Initial Rent Due Date override route (service needs billing.generate, a service-principal capability: owner question), frontend client + forms for the three routes. Then 9c, 9d, 9e, final gates. Start a fresh session. Nothing pushed.
 - Billing-correctness item (slice 7b): DONE 2026-10-02, migration 20261008_73 (Utility run overlap limited to RENT; unbilled-period read; late periods billed only by the explicit catch-up). DL-067.
 - Updated: 2026-10-02.

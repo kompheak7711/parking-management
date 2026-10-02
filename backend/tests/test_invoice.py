@@ -30,6 +30,8 @@ from property_rental.invoice import (
     InvoiceVersionConflict,
     IssueInvoiceCommand,
     PostgresInvoiceService,
+    RecordOneTimeChargeCommand,
+    SetOneTimeChargeDueDaysCommand,
     VoidInvoiceCommand,
     _decode_cursor,
     _encode_cursor,
@@ -252,6 +254,30 @@ class InMemoryInvoiceFlow:
                 "version": command.expected_version + 1,
             }
         return self.value
+
+    def record_one_time_charge(
+        self,
+        property_id: UUID,
+        command: RecordOneTimeChargeCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        del actor
+        assert property_id == self.property_id
+        self.commands.append(command)
+        return {"charge_id": str(command.charge_id), "category": command.category}
+
+    def set_one_time_charge_due_days(
+        self,
+        property_id: UUID,
+        command: SetOneTimeChargeDueDaysCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        del actor
+        assert property_id == self.property_id
+        self.commands.append(command)
+        return {"one_time_charge_due_days": command.days, "version": command.expected_version + 1}
 
     def adjust(
         self,

@@ -583,6 +583,12 @@ direction, exact amount/currency, reason, and authorization. Void is exceptional
 preserves history, and rejects unresolved active applications when rules require
 reversal first.
 
+Slice 9b routes (capabilities reuse existing ones; no new capability):
+
+- `POST /properties/{id}/one-time-charges` (201) records a manual Damage (`damage_charges.bill`) or Miscellaneous (`invoices.create`) charge: `charge_id`, `category`, `customer_id`, `lease_id`, `inspection_damage_finding_id`, `description`, `amount_usd_cents` (integer), `reason`, `evidence_reference`. The existing `POST /properties/{id}/invoices` then creates the DRAFT from the charge.
+- `POST /properties/{id}/one-time-charge-due-days` (`property.manage`, `If-Match` Property version) with `days` (1 to 90) and `reason`.
+- `POST /invoices/{id}/issue` accepts the optional `due_date` and `due_date_reason` pair (both or neither).
+
 Issue accepts an optional Due Date override with a mandatory reason; without it, the
 server applies the proposed Due Date (Lease Start Date plus five for Initial Rent, issue
 date plus the configured days for one-time and final Utility Invoices).

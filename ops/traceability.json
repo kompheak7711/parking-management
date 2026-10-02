@@ -33519,6 +33519,42 @@
       "test_path": "backend/tests/test_utility_unbilled_periods_migration.py",
       "status": "implemented",
       "notes": "Migration 20261008_73 is relaxing and forward-only and the unbilled read is runtime-only."
+    },
+    {
+      "test_id": "test_issue_route_passes_an_authorized_due_date_override_with_its_reason",
+      "upstream_ids": [
+        "API-052",
+        "BR-INV-018",
+        "TEST-052"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_invoice_api.py",
+      "status": "implemented",
+      "notes": "The issue route passes an authorized Due Date override with its mandatory reason and rejects a date without a reason."
+    },
+    {
+      "test_id": "test_one_time_charge_route_needs_the_category_capability_and_validates_the_body",
+      "upstream_ids": [
+        "API-052",
+        "BR-INV-018",
+        "TEST-052"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_invoice_api.py",
+      "status": "implemented",
+      "notes": "The one-time charge route needs the category capability and validates integer cents, reason and evidence."
+    },
+    {
+      "test_id": "test_one_time_charge_due_days_route_needs_property_manage_and_the_exact_version",
+      "upstream_ids": [
+        "API-052",
+        "BR-INV-018",
+        "TEST-052"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_invoice_api.py",
+      "status": "implemented",
+      "notes": "The Property one-time charge due-days route needs property.manage, the exact version and a bounded value."
     }
   ]
 }

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from datetime import date
 from typing import Annotated, Literal, Protocol
 from uuid import UUID
 
@@ -26,6 +27,8 @@ from property_rental.invoice import (
     INVOICE_VOID_CAPABILITY,
     MAX_INVOICE_EXPECTED_VERSION,
     MAX_INVOICE_PAGE_SIZE,
+    ONE_TIME_CHARGE_CAPABILITIES,
+    PROPERTY_MANAGE_CAPABILITY,
     AdjustInvoiceCommand,
     AdjustmentType,
     CorrectInvoiceDraftCommand,
@@ -39,6 +42,8 @@ from property_rental.invoice import (
     InvoiceServiceUnavailableError,
     InvoiceVersionConflict,
     IssueInvoiceCommand,
+    RecordOneTimeChargeCommand,
+    SetOneTimeChargeDueDaysCommand,
     VoidInvoiceCommand,
     validate_invoice_cursor,
 )
@@ -113,6 +118,22 @@ class InvoiceFlow(Protocol):
         actor: AuthenticatedActor,
     ) -> dict[str, object]: ...
 
+    def record_one_time_charge(
+        self,
+        property_id: UUID,
+        command: RecordOneTimeChargeCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]: ...
+
+    def set_one_time_charge_due_days(
+        self,
+        property_id: UUID,
+        command: SetOneTimeChargeDueDaysCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]: ...
+
 
 class UnavailableInvoiceFlow:
     def __getattr__(self, _: str) -> object:
@@ -131,6 +152,32 @@ class DraftCorrectionInput(AuthorizedObligationInput):
 
 class IssueInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
+
+    due_date: date | None = None
+    due_date_reason: str | None = Field(
+        default=None, min_length=1, max_length=500, pattern=r"^\S(?:.*\S)?$"
+    )
+
+
+class OneTimeChargeInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    charge_id: UUID
+    category: Literal["DAMAGE_CHARGES", "MISCELLANEOUS_CHARGES"]
+    customer_id: UUID
+    lease_id: UUID | None = None
+    inspection_damage_finding_id: UUID | None = None
+    description: str = Field(min_length=1, max_length=1000, pattern=r"^\S(?:.*\S)?$")
+    amount_usd_cents: int = Field(ge=1, le=9_000_000_000_000_000)
+    reason: str = Field(min_length=1, max_length=500, pattern=r"^\S(?:.*\S)?$")
+    evidence_reference: str = Field(min_length=1, max_length=500, pattern=r"^\S(?:.*\S)?$")
+
+
+class OneTimeChargeDueDaysInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    days: int = Field(ge=1, le=90)
+    reason: str = Field(min_length=1, max_length=500, pattern=r"^\S(?:.*\S)?$")
 
 
 class MoneyInput(BaseModel):
@@ -426,18 +473,71 @@ def create_invoice_router(
         body: IssueInput | None = None,
         if_match: Annotated[str | None, Header(alias="If-Match")] = None,
     ) -> dict[str, object]:
-        del body
         actor, property_id = command_context(invoice_id, request, INVOICE_ISSUE_CAPABILITY)
         expected_version = _version(if_match)
+        due_date = body.due_date if body is not None else None
+        due_reason = body.due_date_reason if body is not None else None
         resource = _invoke(
             lambda: flow.issue(
                 property_id,
                 invoice_id,
-                IssueInvoiceCommand(idempotency_key, expected_version),
+                IssueInvoiceCommand(idempotency_key, expected_version, due_date, due_reason),
                 actor=actor,
             )
         )
         _etag(response, resource)
+        return _envelope(resource, request)
+
+    @router.post("/properties/{property_id}/one-time-charges", status_code=status.HTTP_201_CREATED)
+    def create_one_time_charge(
+        property_id: UUID,
+        body: OneTimeChargeInput,
+        request: Request,
+    ) -> dict[str, object]:
+        if request.query_params:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+        actor = _actor(request, resolver)
+        _authorize(actor, property_id, ONE_TIME_CHARGE_CAPABILITIES[body.category])
+        require_browser_mutation(request, settings)
+        resource = _invoke(
+            lambda: flow.record_one_time_charge(
+                property_id,
+                RecordOneTimeChargeCommand(
+                    body.charge_id,
+                    body.category,
+                    body.customer_id,
+                    body.lease_id,
+                    body.inspection_damage_finding_id,
+                    body.description,
+                    body.amount_usd_cents,
+                    body.reason,
+                    body.evidence_reference,
+                ),
+                actor=actor,
+            )
+        )
+        return _envelope(resource, request)
+
+    @router.post("/properties/{property_id}/one-time-charge-due-days")
+    def set_one_time_charge_due_days(
+        property_id: UUID,
+        body: OneTimeChargeDueDaysInput,
+        request: Request,
+        if_match: Annotated[str | None, Header(alias="If-Match")] = None,
+    ) -> dict[str, object]:
+        if request.query_params:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+        actor = _actor(request, resolver)
+        _authorize(actor, property_id, PROPERTY_MANAGE_CAPABILITY)
+        require_browser_mutation(request, settings)
+        expected_version = _version(if_match)
+        resource = _invoke(
+            lambda: flow.set_one_time_charge_due_days(
+                property_id,
+                SetOneTimeChargeDueDaysCommand(body.days, body.reason, expected_version),
+                actor=actor,
+            )
+        )
         return _envelope(resource, request)
 
     @router.post("/invoices/{invoice_id}/adjustments")
