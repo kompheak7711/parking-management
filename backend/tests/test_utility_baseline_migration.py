@@ -8,7 +8,7 @@ date from the run's business date, and cannot bill a future period. These tests 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any, cast
 from uuid import UUID, uuid4
@@ -65,17 +65,18 @@ class Source:
     worker: UUID
     electricity: UUID
     month: int
+    year: int = YEAR
 
     @property
     def start(self) -> date:
-        return date(YEAR, self.month, 3)
+        return date(self.year, self.month, 3)
 
     @property
     def baseline_day(self) -> date:
-        return date(YEAR, self.month, 2)
+        return date(self.year, self.month, 2)
 
 
-def source(url: str, slot: int, month: int, *, sign: bool = True) -> Source:
+def source(url: str, slot: int, month: int, *, sign: bool = True, year: int = YEAR) -> Source:
     """One Unit, Lease starting on the 3rd of the month, Meter and a rate dated by slot."""
     with psycopg.connect(url) as connection:
         human, prop, unit, customer, _ = setup_sources(connection)
@@ -84,24 +85,24 @@ def source(url: str, slot: int, month: int, *, sign: bool = True) -> Source:
             actor_id=human,
             unit_id=unit,
             primary_tenant_id=customer,
-            start_date=date(YEAR, month, 3),
-            end_date=date(YEAR + 1, 6, 30),
+            start_date=date(year, month, 3),
+            end_date=date(year + 1, 6, 30),
         )
         if sign:
             sign_lease(connection, lease, human)
         electricity = add_meter(
-            connection, actor_id=human, unit_id=unit, installed_date=date(YEAR, 1, 1)
+            connection, actor_id=human, unit_id=unit, installed_date=date(year, 1, 1)
         )
         connection.execute(
             "INSERT INTO app.utility_rates(id,property_id,utility_type,measurement_unit_code,"
             "rate_usd_per_unit,effective_date,notice_at,notice_evidence,actor_id) "
-            "VALUES (%s,%s,'ELECTRICITY','KWH',0.25,%s,TIMESTAMPTZ '2018-12-01 00:00:00+07',"
+            "VALUES (%s,%s,'ELECTRICITY','KWH',0.25,%s,%s,"
             "'OWNER-NOTICE',%s)",
-            (uuid4(), prop, date(YEAR, 1, slot + 1), human),
+            (uuid4(), prop, date(year, 1, slot + 1), datetime(year - 1, 12, 1, tzinfo=UTC), human),
         )
         worker = register_billing_service_principal(connection, property_id=prop, created_by=human)
         connection.commit()
-    return Source(human, prop, unit, customer, lease, worker, electricity, month)
+    return Source(human, prop, unit, customer, lease, worker, electricity, month, year)
 
 
 def add_water(url: str, s: Source) -> UUID:

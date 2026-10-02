@@ -33441,6 +33441,84 @@
       "test_path": "backend/tests/test_final_utility_invoice_migration.py",
       "status": "implemented",
       "notes": "Migration 20261007_72 is additive and forward-only."
+    },
+    {
+      "test_id": "test_partial_and_monthly_utility_runs_coexist_in_either_order_and_bill_each_period_once",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "BR-UTIL-018",
+        "BR-INV-027",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_unbilled_periods_migration.py",
+      "status": "implemented",
+      "notes": "A partial-period Utility run and a monthly run with overlapping dates coexist in either order and each period is billed once; Rent runs keep the no-overlap rule."
+    },
+    {
+      "test_id": "test_late_period_is_listed_billed_only_by_explicit_catch_up_and_never_twice",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "BR-UTIL-018",
+        "BR-INV-027",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_unbilled_periods_migration.py",
+      "status": "implemented",
+      "notes": "A period finalized after a successful run for its dates is listed, billed only by the explicit catch-up command and never twice; the unique line and the per-Meter no-overlap rule hold."
+    },
+    {
+      "test_id": "test_unbilled_list_shows_not_moved_in_periods_and_hides_periods_awaiting_their_run",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "BR-UTIL-018",
+        "BR-INV-027",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_unbilled_periods_migration.py",
+      "status": "implemented",
+      "notes": "The unbilled list shows NOT_MOVED_IN periods, hides periods still awaiting their run and is read-only with the Utility read capability."
+    },
+    {
+      "test_id": "test_final_invoice_after_a_meter_replaced_after_the_baseline_starts_at_its_installation",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "BR-UTIL-018",
+        "BR-INV-027",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_unbilled_periods_migration.py",
+      "status": "implemented",
+      "notes": "After a Meter is replaced after the baseline the final Invoice starts from the replacement Meter's installation Reading."
+    },
+    {
+      "test_id": "test_final_invoice_drops_a_period_the_monthly_run_already_billed",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "BR-UTIL-018",
+        "BR-INV-027",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_unbilled_periods_migration.py",
+      "status": "implemented",
+      "notes": "The final Invoice does not bill a period the monthly run already billed."
+    },
+    {
+      "test_id": "test_utility_unbilled_migration_is_forward_only_and_read_is_runtime_only",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "BR-UTIL-018",
+        "BR-INV-027",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_unbilled_periods_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20261008_73 is relaxing and forward-only and the unbilled read is runtime-only."
     }
   ]
 }

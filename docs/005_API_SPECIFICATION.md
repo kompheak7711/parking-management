@@ -1188,6 +1188,10 @@ This API Specification is complete for Owner Review when:
   authorization to credential-library details.
 
 
+### V1-055 unbilled Utility periods — service boundary — 2026-10-02
+
+No new HTTP route is delivered. `PostgresUnbilledUtilityPeriodsService.read` (capability `utility.read`, read-only, at most 50 per page) lists finalized Utility periods that have no Invoice line and that no run will pick up: `period_id`, `unit_id`, `utility_type`, `start_date`, `end_date`, `consumption_quantity`, `lease_id`, `can_catch_up` and `gap_reason` (`LATE_AFTER_SUCCEEDED_RUN` or `NOT_MOVED_IN`). The catch-up command below accepts these periods; a late period is billed only by that explicit action.
+
 ### V1-055 final Utility Invoice and catch-up Invoice — service boundary — 2026-10-02
 
 No new HTTP route is delivered. `PostgresFinalUtilityInvoiceService` creates the final Utility Invoice of a departed Lease (command: Invoice identity, current final-input event, optional Due Date override with reason; capabilities `invoices.issue` and `utility.calculate`) and the catch-up Invoice for a period skipped as NOT_MOVED_IN (capability `invoices.issue`). Their routes belong to the HTTP and UI slice and must reuse API-052 Invoice commands and API-069. Reasons are stable codes: `UTILITY_NOTHING_TO_BILL`, `UTILITY_UNRESOLVED_FINAL_INPUT`, `UTILITY_NOT_MOVED_IN`, `UTILITY_START_READING_MISSING`, `UTILITY_EARLIER_READING_NOT_FINALIZED`, `UTILITY_PERIOD_ALREADY_INVOICED`, `UTILITY_NOT_RESPONSIBLE`, `UTILITY_PERIOD_NOT_SKIPPED`. A second final Invoice for the same event, a superseded event or a period that already has a line is a conflict; exact replay returns the saved response.

@@ -17,7 +17,7 @@
 - Next: Owner reviews the drafted canonical amendments for docs 002, 003, 004, 005, 006, 007 and 010. No implementation until approved. Slice A (Rent nonpayment counting), Slice C (Damage, held) and Slice D (API-068/069 HTTP and UI-076 to UI-078) remain stopped.
 - Remaining: Approved amendments and their implementation, Slice D, the positive Slice B estimate case, all independent and final gates, normal publication, exact CI, refs, Workboard and durable closure. Do not activate V1-056.
 - Fact (2026-10-02): the launchd service ai.openclaw.gateway is running; this project does not touch it and the owner decides about it.
-- Billing-correctness item (slice 7b, 2026-10-02): the Utility worker creates one run per distinct period dates; a period finalized after a SUCCEEDED run for the same dates is never billed. Not fixed in Slices 7 or 8; fix before Slice 9 and certainly before V1-060 (docs/010 DL-067).
 - Slice 8 (2026-10-02, migration 20261006_71): Utility baseline Reading per Lease as a service (no HTTP route yet; baseline route belongs to Slice 9); monthly Utility run skips NOT_MOVED_IN and PROPERTY_BORNE_CONSUMPTION periods. DL-067.
-- STATUS (2026-10-02): Slices 7 and 8 committed locally (Slice 7 = final Utility Invoice + NOT_MOVED_IN catch-up, migration 20261007_72). Next: slice 7b plan and Slice 9 plan (no editing). Nothing pushed.
+- STATUS (2026-10-02): Slices 7 (798f9f4) and 8 (fe6015b) committed, accepted. Slice 7b (migration 20261008_73) verified and being committed. Next: Slice 9a to 9e. Nothing pushed.
+- Billing-correctness item (slice 7b): DONE 2026-10-02, migration 20261008_73 (Utility run overlap limited to RENT; unbilled-period read; late periods billed only by the explicit catch-up). DL-067.
 - Updated: 2026-10-02.

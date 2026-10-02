@@ -759,6 +759,11 @@ be billed; a NOT_MOVED_IN period is billed once by the catch-up command and the 
 bills the next month; a Lease that never moved in stays unbilled; the Due Date is the issue date plus
 the Property's configured days or an authorized override with reason; and replay, key reuse,
 authorization and append-only history hold.
+Verify slice 7b (migration `20261008_73`, `backend/tests/test_utility_unbilled_periods_migration.py`): a partial-period run and a
+monthly run with overlapping dates coexist in either order and bill each period once; Rent runs keep the
+no-overlap rule; a late period is listed and billed only by the explicit catch-up command and never twice
+(unique line per period, no-overlap rule per Meter); a Meter replaced after the baseline starts at its
+installation Reading; and the final Invoice never bills a period the monthly run already billed.
 
 ## TEST-079 — Final Settlement Cardinality
 

@@ -176,6 +176,7 @@ database_test_suites='
   tests/test_unpaid_initial_termination_migration.py
   tests/test_utility_baseline_migration.py
   tests/test_final_utility_invoice_migration.py
+  tests/test_utility_unbilled_periods_migration.py
   tests/test_billing_run_migration.py
 '
 

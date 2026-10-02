@@ -241,7 +241,7 @@ class Leaver:
     customer: UUID
 
 
-def departed(url: str, slot: int) -> Leaver:
+def departed(url: str, slot: int, month: int = 2) -> Leaver:
     """A signed Lease with an electricity baseline that then moved in, left and was terminated."""
     move_flow, staff, move = setup_historical_move_in(
         url, signed_day_offset=-1, receipt_day_offset=-1
@@ -261,7 +261,7 @@ def departed(url: str, slot: int) -> Leaver:
             "rate_usd_per_unit,effective_date,notice_at,notice_evidence,actor_id) "
             "VALUES (%s,%s,'ELECTRICITY','KWH',0.25,%s,TIMESTAMPTZ '2015-01-01 00:00:00+07',"
             "'OWNER-NOTICE',%s)",
-            (uuid4(), prop, date(2015, 2, slot), human),
+            (uuid4(), prop, date(2015, month, slot), human),
         )
         base_e = add_reading(
             connection,

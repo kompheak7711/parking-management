@@ -717,6 +717,16 @@ table privilege and call only `app.utility_final_invoice_create` and
 - **Catch-up Invoice:** bills one period the monthly run skipped as `NOT_MOVED_IN`, only once the Lease has an Occupancy.
 - Both set Due Date rule `ONE_TIME_ISSUE_PLUS_CONFIGURED_DAYS` and source `BR-UTIL-021`, issue the Invoice through `app.issue_invoice` (issue date plus the Property's configured days in the Property time zone, or an authorized override with a mandatory reason, actor and timestamp, fixed once issued) and never touch a period that already has an Invoice line. A Lease that never moved in stays unbilled.
 
+## DB-UTIL-013 — Utility run overlap and unbilled periods
+
+`billing_runs_period_no_overlap` now applies to Rent runs only. A Utility run bills only periods whose
+exact dates equal the run's dates and an Invoice line is `UNIQUE` per consumption period, so Utility runs
+with overlapping dates (a partial period after a baseline and a calendar month) coexist and cannot double
+bill. A period finalized after a successful run for the same dates, or skipped as `NOT_MOVED_IN`, is never
+picked up again; `app.utility_unbilled_periods` lists it (reason `LATE_AFTER_SUCCEEDED_RUN` or
+`NOT_MOVED_IN`, and whether it can be caught up) and staff bill it only with the explicit catch-up command
+(`invoices.issue`, DB-UTIL-012). No run is created automatically.
+
 ---
 
 # 8. Configured Service Tables

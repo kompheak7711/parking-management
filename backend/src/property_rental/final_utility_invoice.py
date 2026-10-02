@@ -21,6 +21,7 @@ from property_rental.identity import (
 )
 from property_rental.invoice import INVOICE_ISSUE_CAPABILITY
 from property_rental.utility import UTILITY_CALCULATE_CAPABILITY
+from property_rental.utility_api import UTILITY_READ_CAPABILITY
 
 FINAL_CAPABILITIES: Final = (INVOICE_ISSUE_CAPABILITY, UTILITY_CALCULATE_CAPABILITY)
 CATCH_UP_CAPABILITIES: Final = (INVOICE_ISSUE_CAPABILITY,)
@@ -310,3 +311,50 @@ class PostgresFinalUtilityInvoiceService:
             request_id,
         )
         return self._checked(result, "CATCH_UP", command.invoice_id, lease_id, property_id)
+
+
+@dataclass(frozen=True, slots=True)
+class PostgresUnbilledUtilityPeriodsService:
+    """Read finalized Utility periods that no run will pick up and that have no Invoice line."""
+
+    database_url: str
+
+    def read(
+        self,
+        property_id: UUID,
+        *,
+        actor: AuthenticatedActor,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> dict[str, object]:
+        _identity(property_id, "property_id")
+        if (
+            type(limit) is not int
+            or not 1 <= limit <= 50
+            or type(offset) is not int
+            or not 0 <= offset <= 1_000_000
+        ):
+            raise FinalUtilityInvoiceInvalidError("Unbilled period page is invalid")
+        try:
+            actor_id = UUID(actor.actor_id)
+        except (ValueError, TypeError, AttributeError) as exc:
+            raise FinalUtilityInvoiceAuthorizationError("Invoice actor is invalid") from exc
+        _identity(actor_id, "actor_id")
+        if not is_authorized(
+            actor, AuthorizationRequirement(UTILITY_READ_CAPABILITY, str(property_id))
+        ):
+            raise FinalUtilityInvoiceNotFoundError("Utility periods were not found")
+        try:
+            with psycopg.connect(self.database_url, connect_timeout=3) as connection:
+                connection.isolation_level = IsolationLevel.REPEATABLE_READ
+                connection.read_only = True
+                connection.execute("SELECT set_config('statement_timeout','10000',true)")
+                row = connection.execute(
+                    "SELECT app.utility_unbilled_periods(%s,%s,%s,%s)",
+                    (property_id, actor_id, limit, offset),
+                ).fetchone()
+        except psycopg.Error as exc:
+            raise PostgresFinalUtilityInvoiceService._error(exc) from exc
+        if row is None or not isinstance(row[0], dict):
+            raise FinalUtilityInvoiceUnavailableError("Unbilled period result is unavailable")
+        return cast(dict[str, object], row[0])
