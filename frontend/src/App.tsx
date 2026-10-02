@@ -47,6 +47,7 @@ import { LeaseApi, leaseApi as leaseClient } from "./leaseClient";
 import { DepositManagement } from "./DepositManagement";
 import { DepositApi, depositApi as depositClient } from "./depositClient";
 import { UtilityManagement } from "./UtilityManagement";
+import { UtilityLeaseWorkflows } from "./UtilityLeaseWorkflows";
 import { UtilityApi, utilityApi as utilityClient } from "./utilityClient";
 import { InvoiceManagement } from "./InvoiceManagement";
 import { InvoiceApi, invoiceApi as invoiceClient } from "./invoiceClient";
@@ -1752,6 +1753,9 @@ export function App({
             />
             <UtilityManagement
               api={utilityApi}
+              propertyId={propertyConfiguration?.property_id ?? ""}
+            />
+            <UtilityLeaseWorkflows
               propertyId={propertyConfiguration?.property_id ?? ""}
             />
             <UnitManagement api={unitApi} />

@@ -345,6 +345,13 @@ credit the Initial Rent Invoice, release the Unit to VACANT or CLEANING with a r
 the Rent after the termination date). Each follow-up asks for confirmation, is recorded once, and a retry of an
 unchanged form reuses its identities. The Rent nonpayment workflow also lists unpaid Initial Rent alerts read only. The permanent Lease timeline names each follow-up and links it to its termination event.
 
+Lease Utility records (V1-055 slice 9d): the Utility workspace offers, for one Lease, the Utility baseline (one validated
+Reading per Meter dated on the baseline date), the final Utility inputs for a departure (a Reading, an approved estimate
+or an explicit unresolved reason per Meter), the final Utility Invoice and the catch-up Invoice, each with an optional
+authorized Due Date that needs its reason. A list of unbilled Utility periods shows why a period is unbilled and lets
+staff select an eligible period for the explicit catch-up. Commands ask for confirmation, create no Reading, and a retry of
+an unchanged form is replayed. Refusals show a plain-language text for the server's stable reason code.
+
 # 11. Move-in Workflow
 
 ## UI-043 — Move-in Checklist

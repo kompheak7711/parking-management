@@ -34227,6 +34227,78 @@
       "test_path": "backend/tests/test_utility_lease_api.py",
       "status": "implemented",
       "notes": "Service failures map to status codes and stable reason codes without leaking internals."
+    },
+    {
+      "test_id": "TEST-FE-661",
+      "upstream_ids": [
+        "UI-043",
+        "BR-UTIL-021",
+        "API-069"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/UtilityLeaseWorkflows.test.tsx",
+      "status": "implemented",
+      "notes": "Records a Utility baseline with parsed items after confirmation and replays the same identities after a failure; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-662",
+      "upstream_ids": [
+        "UI-043",
+        "BR-UTIL-021",
+        "API-069"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/UtilityLeaseWorkflows.test.tsx",
+      "status": "implemented",
+      "notes": "Parses reading, estimate and unresolved final inputs and refuses a malformed line; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-663",
+      "upstream_ids": [
+        "UI-043",
+        "BR-UTIL-021",
+        "API-069"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/UtilityLeaseWorkflows.test.tsx",
+      "status": "implemented",
+      "notes": "Needs both parts of a Due Date and shows the plain reason when the final Utility Invoice is refused; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-664",
+      "upstream_ids": [
+        "UI-043",
+        "BR-UTIL-021",
+        "API-069"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/UtilityLeaseWorkflows.test.tsx",
+      "status": "implemented",
+      "notes": "Lists unbilled Utility periods and selects an eligible one for the catch-up Invoice; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-665",
+      "upstream_ids": [
+        "UI-043",
+        "BR-UTIL-021",
+        "API-069"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/UtilityLeaseWorkflows.test.tsx",
+      "status": "implemented",
+      "notes": "Sends nothing when the confirmation is declined or the Lease is missing; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-666",
+      "upstream_ids": [
+        "UI-043",
+        "BR-UTIL-021",
+        "API-069"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/UtilityLeaseWorkflows.test.tsx",
+      "status": "implemented",
+      "notes": "Loads the baseline and final input histories read only and prompts for a Property; synthetic fixtures only."
     }
   ]
 }
