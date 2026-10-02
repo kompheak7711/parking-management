@@ -751,6 +751,14 @@ Customer's responsibility boundary for that Lease only. Verify the first partial
 baseline is billed once by a run with its exact dates, a Lease with no Occupancy yet is skipped
 as NOT_MOVED_IN without failing the run, a period no Lease covers is skipped as
 PROPERTY_BORNE_CONSUMPTION, and a Lease without a baseline keeps its exact earlier results.
+Verify the final Utility Invoice and the catch-up Invoice (migration `20261007_72`, covered by
+`backend/tests/test_final_utility_invoice.py` and `backend/tests/test_final_utility_invoice_migration.py`):
+a Lease leaving in its first month is billed once from the baseline to the final Readings; an earlier
+finalized unbilled period is included; the Invoice waits for every Meter and a superseded event cannot
+be billed; a NOT_MOVED_IN period is billed once by the catch-up command and the next monthly run still
+bills the next month; a Lease that never moved in stays unbilled; the Due Date is the issue date plus
+the Property's configured days or an authorized override with reason; and replay, key reuse,
+authorization and append-only history hold.
 
 ## TEST-079 — Final Settlement Cardinality
 

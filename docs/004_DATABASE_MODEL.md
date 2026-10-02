@@ -703,6 +703,20 @@ Lease covers, `PROPERTY_BORNE_CONSUMPTION`. Both are accepted outcomes of a succ
 A Lease without a baseline and without a qualifying Occupancy still records the earlier
 `UTILITY_PERSISTENCE_P0002` error.
 
+## DB-UTIL-012 — `utility_invoice_commands`
+
+Append-only command history for the final Utility Invoice and the catch-up Utility Invoice
+(BR-UTIL-021, DL-067): `property_id`, `actor_id`, `idempotency_key` (PK), `action` (`FINAL` or
+`CATCH_UP`), `lease_id`, `invoice_id UNIQUE`, `audit_event_id UNIQUE`, `final_input_event_id`
+(required exactly for `FINAL`, unique among `FINAL` rows so one final Invoice exists per final-input
+event), `request_digest`, `request_intent`, `response_body` and `occurred_at`. Runtime roles have no
+table privilege and call only `app.utility_final_invoice_create` and
+`app.utility_catch_up_invoice_create` as `prm_financial`.
+
+- **Final Invoice:** for a TERMINATED Lease that moved in, with a current Slice B final-input event whose every Meter is resolved, it creates the missing ACTUAL period for each READING item (start Reading: the Meter's latest period end Reading, else the Lease's current baseline Reading, else the first Reading of a Meter installed during the Customer's responsibility), then bills every period the Customer is responsible for that has no Invoice line, in one Utility Invoice with one line per period.
+- **Catch-up Invoice:** bills one period the monthly run skipped as `NOT_MOVED_IN`, only once the Lease has an Occupancy.
+- Both set Due Date rule `ONE_TIME_ISSUE_PLUS_CONFIGURED_DAYS` and source `BR-UTIL-021`, issue the Invoice through `app.issue_invoice` (issue date plus the Property's configured days in the Property time zone, or an authorized override with a mandatory reason, actor and timestamp, fixed once issued) and never touch a period that already has an Invoice line. A Lease that never moved in stays unbilled.
+
 ---
 
 # 8. Configured Service Tables

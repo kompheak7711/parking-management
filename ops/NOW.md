@@ -19,5 +19,5 @@
 - Fact (2026-10-02): the launchd service ai.openclaw.gateway is running; this project does not touch it and the owner decides about it.
 - Billing-correctness item (slice 7b, 2026-10-02): the Utility worker creates one run per distinct period dates; a period finalized after a SUCCEEDED run for the same dates is never billed. Not fixed in Slices 7 or 8; fix before Slice 9 and certainly before V1-060 (docs/010 DL-067).
 - Slice 8 (2026-10-02, migration 20261006_71): Utility baseline Reading per Lease as a service (no HTTP route yet; baseline route belongs to Slice 9); monthly Utility run skips NOT_MOVED_IN and PROPERTY_BORNE_CONSUMPTION periods. DL-067.
-- IN PROGRESS (2026-10-02): Slice 8 verified and committed next; then Slice 7 (final Utility Invoice + NOT_MOVED_IN catch-up command), plan for slice 7b, plan for Slice 9. Nothing pushed.
+- STATUS (2026-10-02): Slices 7 and 8 committed locally (Slice 7 = final Utility Invoice + NOT_MOVED_IN catch-up, migration 20261007_72). Next: slice 7b plan and Slice 9 plan (no editing). Nothing pushed.
 - Updated: 2026-10-02.

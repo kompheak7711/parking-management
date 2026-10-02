@@ -33256,6 +33256,191 @@
       "test_path": "backend/tests/test_utility_baseline_migration.py",
       "status": "implemented",
       "notes": "Migration 20261006_71 is additive and forward-only."
+    },
+    {
+      "test_id": "test_final_invoice_needs_the_issue_and_calculate_capabilities_and_catch_up_only_issue",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "BR-UTIL-022",
+        "BR-INV-018",
+        "BR-MOVEOUT-005",
+        "TEST-078"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_final_utility_invoice.py",
+      "status": "implemented",
+      "notes": "The final Invoice needs invoices.issue and utility.calculate; the catch-up needs invoices.issue."
+    },
+    {
+      "test_id": "test_commands_require_nonzero_identities",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "BR-UTIL-022",
+        "BR-INV-018",
+        "BR-MOVEOUT-005",
+        "TEST-078"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_final_utility_invoice.py",
+      "status": "implemented",
+      "notes": "Final and catch-up commands need nonzero identities."
+    },
+    {
+      "test_id": "test_due_date_override_needs_a_date_and_a_normalized_reason_together",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "BR-UTIL-022",
+        "BR-INV-018",
+        "BR-MOVEOUT-005",
+        "TEST-078",
+        "BR-INV-018"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_final_utility_invoice.py",
+      "status": "implemented",
+      "notes": "A Due Date override needs a date and a normalized bounded reason together."
+    },
+    {
+      "test_id": "test_digest_binds_the_action_scope_and_intent",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "BR-UTIL-022",
+        "BR-INV-018",
+        "BR-MOVEOUT-005",
+        "TEST-078"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_final_utility_invoice.py",
+      "status": "implemented",
+      "notes": "The command digest binds action, Property, Lease and intent."
+    },
+    {
+      "test_id": "test_service_checks_capabilities_before_touching_the_database",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "BR-UTIL-022",
+        "BR-INV-018",
+        "BR-MOVEOUT-005",
+        "TEST-078"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_final_utility_invoice.py",
+      "status": "implemented",
+      "notes": "A missing capability is refused before any database access."
+    },
+    {
+      "test_id": "test_catch_up_bills_a_not_moved_in_period_once_then_the_monthly_run_continues",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "BR-UTIL-022",
+        "BR-INV-018",
+        "BR-MOVEOUT-005",
+        "TEST-078",
+        "BR-INV-027"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_final_utility_invoice_migration.py",
+      "status": "implemented",
+      "notes": "A NOT_MOVED_IN period is billed once by the catch-up command with the issue-plus-configured-days Due Date, replays exactly, cannot be billed twice, and the monthly run still bills the next month."
+    },
+    {
+      "test_id": "test_catch_up_refuses_a_lease_that_never_moved_in_and_honors_an_authorized_due_date",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "BR-UTIL-022",
+        "BR-INV-018",
+        "BR-MOVEOUT-005",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_final_utility_invoice_migration.py",
+      "status": "implemented",
+      "notes": "A Lease with no Occupancy stays unbilled; a back-dated Due Date is rejected; an authorized override records reason and actor; key reuse and unknown Lease are refused."
+    },
+    {
+      "test_id": "test_final_invoice_bills_a_lease_that_leaves_in_its_first_month_once",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "BR-UTIL-022",
+        "BR-INV-018",
+        "BR-MOVEOUT-005",
+        "TEST-078",
+        "BR-INV-027"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_final_utility_invoice_migration.py",
+      "status": "implemented",
+      "notes": "A Lease leaving in its first month gets one final Invoice for the period from the baseline to the final Readings, replayed exactly, audited and never billed twice."
+    },
+    {
+      "test_id": "test_final_invoice_also_bills_an_earlier_finalized_period_nobody_billed",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "BR-UTIL-022",
+        "BR-INV-018",
+        "BR-MOVEOUT-005",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_final_utility_invoice_migration.py",
+      "status": "implemented",
+      "notes": "The final Invoice also bills an earlier finalized period of the Lease that has no Invoice line."
+    },
+    {
+      "test_id": "test_final_invoice_waits_for_every_meter_and_a_superseded_event_cannot_be_billed",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "BR-UTIL-022",
+        "BR-INV-018",
+        "BR-MOVEOUT-005",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_final_utility_invoice_migration.py",
+      "status": "implemented",
+      "notes": "The final Invoice waits until every Meter is resolved by the Slice B superseding event and a superseded event cannot be billed."
+    },
+    {
+      "test_id": "test_final_invoice_honors_an_authorized_due_date_and_needs_both_capabilities",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "BR-UTIL-022",
+        "BR-INV-018",
+        "BR-MOVEOUT-005",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_final_utility_invoice_migration.py",
+      "status": "implemented",
+      "notes": "The final Invoice needs both capabilities and honors an authorized Due Date override."
+    },
+    {
+      "test_id": "test_utility_invoice_history_is_append_only_and_unreachable_by_runtime_roles",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "BR-UTIL-022",
+        "BR-INV-018",
+        "BR-MOVEOUT-005",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_final_utility_invoice_migration.py",
+      "status": "implemented",
+      "notes": "Utility Invoice command history is append-only and unreachable by runtime roles and the build function is internal."
+    },
+    {
+      "test_id": "test_final_utility_invoice_migration_is_forward_only",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "BR-UTIL-022",
+        "BR-INV-018",
+        "BR-MOVEOUT-005",
+        "TEST-078"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_final_utility_invoice_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20261007_72 is additive and forward-only."
     }
   ]
 }
