@@ -170,6 +170,19 @@ function setup(
       evidence: {},
     }),
     getRun: vi.fn(),
+    setDueDays: vi.fn(
+      (
+        _property: string,
+        days: number,
+        _reason: string,
+        propertyVersion: number,
+      ) =>
+        Promise.resolve({
+          property_id: propertyId,
+          one_time_charge_due_days: days,
+          version: propertyVersion + 1,
+        }),
+    ),
     recordOneTimeCharge: vi.fn((_property: string, input: OneTimeChargeInput) =>
       Promise.resolve({
         obligation_id: input.charge_id,
@@ -2250,5 +2263,110 @@ describe("V1-055 one-time charge", () => {
     );
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(api.recordOneTimeCharge).not.toHaveBeenCalled();
+  });
+});
+
+describe("V1-055 one-time charge due days", () => {
+  const renderDueDays = (grants: string[]) => {
+    const made = setup("DRAFT", grants);
+    render(
+      <InvoiceManagement
+        api={made.api}
+        journal={made.journal}
+        actorId="actor"
+        propertyId={propertyId}
+      />,
+    );
+    return made;
+  };
+  const open = async () => {
+    await screen.findByText("Load authorized invoices to begin.");
+    fireEvent.click(screen.getByRole("button", { name: "Load invoices" }));
+    await screen.findByText("Authorized invoices loaded.");
+  };
+  it("TEST-FE-633 changes the due days with the exact Property version only after confirmation and shows the new version", async () => {
+    const { api, journal } = renderDueDays(["property.manage"]);
+    await open();
+    fill("Due days for one-time charges (1 to 90)", "14");
+    fill("Current Property version", "7");
+    fill("Due days change reason", "Owner policy");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Review due days change" }),
+    );
+    expect(api.setDueDays).not.toHaveBeenCalled();
+    await confirm();
+    await waitFor(() => {
+      expect(api.setDueDays).toHaveBeenCalledWith(
+        propertyId,
+        14,
+        "Owner policy",
+        7,
+        journal.begin.mock.calls[0]?.[1].key,
+      );
+    });
+    await screen.findByText(/Current setting: 14 days, Property version 8\./);
+    expect(screen.getByLabelText("Current Property version")).toHaveValue(8);
+    expect(journal.clear).toHaveBeenCalledTimes(1);
+  });
+  it("TEST-FE-634 hides the due days form without property.manage", async () => {
+    renderDueDays(["invoices.issue"]);
+    await open();
+    expect(
+      screen.queryByRole("button", { name: "Review due days change" }),
+    ).not.toBeInTheDocument();
+  });
+  it("TEST-FE-635 refuses days outside 1 to 90 and a malformed version before any review", async () => {
+    const { api } = renderDueDays(["property.manage"]);
+    await open();
+    fill("Due days change reason", "Owner policy");
+    for (const [days, version] of [
+      ["0", "1"],
+      ["91", "1"],
+      ["14", "0"],
+      ["14", "2147483648"],
+    ] as const) {
+      fill("Due days for one-time charges (1 to 90)", days);
+      fill("Current Property version", version);
+      fireEvent.click(
+        screen.getByRole("button", { name: "Review due days change" }),
+      );
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    }
+    expect(api.setDueDays).not.toHaveBeenCalled();
+  });
+  it("TEST-FE-636 clears a retried due days command rejected for a stale Property version so the gate cannot stick", async () => {
+    const { api } = setup("DRAFT", ["property.manage"]);
+    const journal = memoryJournal({
+      key: "due-key",
+      command: {
+        action: "dueDays",
+        propertyId,
+        days: 20,
+        reason: "Owner policy",
+        propertyVersion: 7,
+      },
+    });
+    vi.mocked(api.setDueDays).mockRejectedValue(
+      new InvoiceClientError(412, "PRECONDITION_FAILED", false, 9),
+    );
+    render(
+      <InvoiceManagement
+        api={api}
+        journal={journal}
+        actorId="actor"
+        propertyId={propertyId}
+      />,
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Retry exact saved request" }),
+    );
+    await waitFor(() => {
+      expect(journal.clear).toHaveBeenCalledWith("actor", "due-key");
+    });
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("button", { name: "Retry exact saved request" }),
+      ).not.toBeInTheDocument();
+    });
   });
 });

@@ -147,4 +147,22 @@ describe("legacy billing over the shared encrypted store", () => {
     );
     expect(await billingJournal.load("actor")).toEqual(saved);
   });
+  it("TEST-FE-637 recovers a sealed due days command with its exact Property version", async () => {
+    const saved: PendingBillingCommand = {
+      key: "due-key",
+      command: {
+        action: "dueDays",
+        propertyId: "property",
+        days: 14,
+        reason: "Owner policy",
+        propertyVersion: 7,
+      },
+    };
+    const begin = vi.spyOn(sealedIntentStore, "begin").mockResolvedValue();
+    await billingJournal.begin("actor", saved);
+    vi.spyOn(sealedIntentStore, "read").mockResolvedValue(
+      begin.mock.calls[0]?.[1] ?? null,
+    );
+    expect(await billingJournal.load("actor")).toEqual(saved);
+  });
 });

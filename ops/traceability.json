@@ -33639,6 +33639,66 @@
       "test_path": "backend/tests/test_invoice_api.py",
       "status": "implemented",
       "notes": "Billing capability visibility lists damage_charges.bill and property.manage so the one-time charge and due-days forms can appear."
+    },
+    {
+      "test_id": "TEST-FE-633",
+      "upstream_ids": [
+        "UI-053",
+        "API-052",
+        "BR-INV-018"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Changes the one-time charge due days with the exact Property version only after confirmation and shows the new version; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-634",
+      "upstream_ids": [
+        "UI-053",
+        "API-052",
+        "BR-INV-018"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Hides the due days form without property.manage; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-635",
+      "upstream_ids": [
+        "UI-053",
+        "API-052",
+        "BR-INV-018"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Refuses due days outside 1 to 90 and a malformed Property version before any review; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-636",
+      "upstream_ids": [
+        "UI-053",
+        "API-052",
+        "BR-INV-018"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Clears a retried due days command rejected for a stale Property version so the recovery gate cannot stick; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-637",
+      "upstream_ids": [
+        "UI-053",
+        "API-052",
+        "BR-INV-018"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/billingJournal.test.ts",
+      "status": "implemented",
+      "notes": "Recovers a sealed due days command with its exact Property version."
     }
   ]
 }

@@ -164,6 +164,12 @@ export interface OneTimeChargeRecord {
   evidence_reference: string;
   evidence: Evidence;
 }
+/** The Property setting for the Due Date of one-time charges, with its new version. */
+export interface DueDaysSetting {
+  property_id: string;
+  one_time_charge_due_days: number;
+  version: number;
+}
 export interface BillingTransmission {
   actorId: string;
   signal: AbortSignal;
@@ -225,6 +231,13 @@ export interface InvoiceApi {
     input: OneTimeChargeInput,
     key: string,
   ) => Promise<OneTimeChargeRecord>;
+  setDueDays: (
+    propertyId: string,
+    days: number,
+    reason: string,
+    propertyVersion: number,
+    key: string,
+  ) => Promise<DueDaysSetting>;
 }
 export class InvoiceClientError extends Error {
   constructor(
@@ -509,6 +522,16 @@ function oneTimeCharge(value: unknown): OneTimeChargeRecord {
     evidence: evidence(row),
   };
 }
+function dueDaysSetting(value: unknown): DueDaysSetting {
+  const row = object(value);
+  const days = integer(row.one_time_charge_due_days, 1);
+  if (days > 90) return invalid();
+  return {
+    property_id: text(row.property_id),
+    one_time_charge_due_days: days,
+    version: integer(row.version, 1),
+  };
+}
 function run(value: unknown): BillingRun {
   const row = object(value),
     period = object(row.period);
@@ -602,6 +625,7 @@ const fieldNames = new Set([
   "description",
   "amount_usd_cents",
   "evidence_reference",
+  "days",
 ]);
 function safeFields(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
@@ -920,6 +944,12 @@ function createInvoiceApi(transmission?: BillingTransmission): InvoiceApi {
           },
         },
       ),
+    setDueDays: (id, days, reason, propertyVersion, key) =>
+      request(
+        "/api/v1/properties/" + encoded(id) + "/one-time-charge-due-days",
+        resource(dueDaysSetting),
+        { key, version: propertyVersion, body: { days, reason } },
+      ),
   };
 }
 export const invoiceApi = createInvoiceApi();
@@ -970,7 +1000,14 @@ export type BillingCommand =
       kind: "rent" | "utilities";
       input: BillingRunInput;
     }
-  | { action: "oneTimeCharge"; propertyId: string; input: OneTimeChargeInput };
+  | { action: "oneTimeCharge"; propertyId: string; input: OneTimeChargeInput }
+  | {
+      action: "dueDays";
+      propertyId: string;
+      days: number;
+      reason: string;
+      propertyVersion: number;
+    };
 export interface PendingBillingCommand {
   key: string;
   command: BillingCommand;
@@ -1062,6 +1099,14 @@ export function executeBilling(
       return api.run(c.propertyId, c.kind, c.input, key);
     case "oneTimeCharge":
       return api.recordOneTimeCharge(c.propertyId, c.input, key);
+    case "dueDays":
+      return api.setDueDays(
+        c.propertyId,
+        c.days,
+        c.reason,
+        c.propertyVersion,
+        key,
+      );
   }
 }
 export const billingJournal: BillingJournal = {
@@ -1087,6 +1132,7 @@ export const billingJournal: BillingJournal = {
         "correctCharge",
         "run",
         "oneTimeCharge",
+        "dueDays",
       ].includes(text(command.action))
     ) {
       throw new Error(

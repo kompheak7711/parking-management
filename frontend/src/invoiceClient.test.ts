@@ -845,3 +845,69 @@ describe("V1-055 one-time charge transport", () => {
     });
   });
 });
+
+describe("V1-055 due days transport", () => {
+  it("sends the Property version as If-Match with days and reason and replays exactly", async () => {
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(() =>
+      Promise.resolve(
+        response({
+          property_id: "p/1",
+          one_time_charge_due_days: 14,
+          version: 8,
+        }),
+      ),
+    );
+    vi.stubGlobal("fetch", fetcher);
+    const pending = {
+      key: "due-key",
+      command: {
+        action: "dueDays" as const,
+        propertyId: "p/1",
+        days: 14,
+        reason: "Owner policy",
+        propertyVersion: 7,
+      },
+    };
+    const result = await executeBilling(invoiceApi, pending);
+    await executeBilling(invoiceApi, pending);
+    expect(fetcher.mock.calls[0]).toEqual(fetcher.mock.calls[1]);
+    const [path, init] = fetcher.mock.calls[0] ?? [];
+    expect(path).toBe("/api/v1/properties/p%2F1/one-time-charge-due-days");
+    expect(init?.method).toBe("POST");
+    const headers = new Headers(init?.headers);
+    expect(headers.get("If-Match")).toBe('"7"');
+    expect(headers.get("Idempotency-Key")).toBe("due-key");
+    expect(bodyOf(init)).toEqual({ days: 14, reason: "Owner policy" });
+    expect(result).toEqual({
+      property_id: "p/1",
+      one_time_charge_due_days: 14,
+      version: 8,
+    });
+  });
+  it.each([0, 91, 1.5, "14"])(
+    "rejects a due days response with the value %s",
+    async (days) => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn<typeof fetch>().mockResolvedValue(
+          response({
+            property_id: "p",
+            one_time_charge_due_days: days,
+            version: 2,
+          }),
+        ),
+      );
+      await expect(
+        invoiceApi.setDueDays("p", 14, "r", 1, "k"),
+      ).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
+    },
+  );
+  it("refuses a Property version beyond the server bound before sending", async () => {
+    const fetcher = vi.fn<typeof fetch>();
+    vi.stubGlobal("fetch", fetcher);
+    await expect(
+      invoiceApi.setDueDays("p", 14, "r", 2_147_483_648, "k"),
+    ).rejects.toMatchObject({ code: "INVALID_VERSION" });
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+});

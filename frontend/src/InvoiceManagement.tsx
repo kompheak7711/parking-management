@@ -12,6 +12,7 @@ import {
   BillingRun,
   ChargeCorrectionInput,
   DecisionOutcome,
+  DueDaysSetting,
   InvoiceApi,
   InvoiceCategory,
   InvoiceClientError,
@@ -162,6 +163,7 @@ const fieldAliases: Record<string, string> = {
   description: "description",
   amount_usd_cents: "amount",
   evidence_reference: "evidence",
+  days: "days",
 };
 function Field({
   name,
@@ -286,6 +288,7 @@ function BillingWorkspace({
   const [charge, setCharge] = useState<LatePaymentCharge | null>(null);
   const [run, setRun] = useState<BillingRun | null>(null);
   const [recorded, setRecorded] = useState<OneTimeChargeRecord | null>(null);
+  const [dueDays, setDueDays] = useState<DueDaysSetting | null>(null);
   const [lastRun, setLastRun] = useState<PendingBillingCommand | null>(null);
   const [preview, setPreview] = useState<{
     pending: PendingBillingCommand;
@@ -635,12 +638,20 @@ function BillingWorkspace({
           BigInt(result.amount.minor_units) !== BigInt(sent.amount.minor_units)
         )
           throw new InvoiceClientError(null, "RESOURCE_MISMATCH", true);
+      } else if (intent.command.action === "dueDays") {
+        if (
+          !("one_time_charge_due_days" in result) ||
+          result.property_id !== propertyId ||
+          result.one_time_charge_due_days !== intent.command.days ||
+          result.version < intent.command.propertyVersion
+        )
+          throw new InvoiceClientError(null, "RESOURCE_MISMATCH", true);
       } else if (
         !("property_id" in result) ||
         result.property_id !== propertyId ||
         ("id" in intent.command &&
           intent.command.action !== "decide" &&
-          result.id !== intent.command.id)
+          (!("id" in result) || result.id !== intent.command.id))
       ) {
         throw new InvoiceClientError(null, "RESOURCE_MISMATCH", true);
       }
@@ -649,6 +660,8 @@ function BillingWorkspace({
       setPending(null);
       if ("obligation_id" in result) {
         setRecorded(result);
+      } else if ("one_time_charge_due_days" in result) {
+        setDueDays(result);
       } else if ("invoice_number" in result) {
         setInvoice(result);
         setAssessment(null);
@@ -724,7 +737,8 @@ function BillingWorkspace({
           (error.status === 412 &&
             error.code === "PRECONDITION_FAILED" &&
             error.currentVersion !== null &&
-            "version" in intent.command))
+            ("version" in intent.command ||
+              "propertyVersion" in intent.command)))
       ) {
         try {
           await journal.clear(actorId, intent.key);
@@ -1096,6 +1110,70 @@ function BillingWorkspace({
                 Review draft from this charge
               </button>
             )}
+          </section>
+        )}
+        {can("property.manage") && (
+          <section aria-label="One-time charge due days">
+            <h3>One-time charge due days</h3>
+            <p>
+              Days from issue to the Due Date of a one-time charge Invoice.
+              Invoices already issued keep their fixed Due Dates.
+              {dueDays &&
+                " Current setting: " +
+                  String(dueDays.one_time_charge_due_days) +
+                  " days, Property version " +
+                  String(dueDays.version) +
+                  "."}
+            </p>
+            <form
+              key={dueDays?.version ?? 0}
+              onSubmit={(event) => {
+                formReview(event, (data) => {
+                  const days = Number(value(data, "days"));
+                  const propertyVersion = Number(value(data, "version"));
+                  if (
+                    !/^[1-9][0-9]?$/.test(value(data, "days")) ||
+                    days > 90 ||
+                    !/^[1-9][0-9]{0,9}$/.test(value(data, "version")) ||
+                    propertyVersion > 2_147_483_647
+                  )
+                    throw new Error("Invalid due days or Property version");
+                  return {
+                    action: "dueDays",
+                    propertyId,
+                    days,
+                    reason: value(data, "reason"),
+                    propertyVersion,
+                  };
+                });
+              }}
+            >
+              <label>
+                Due days for one-time charges (1 to 90)
+                <input
+                  name="days"
+                  type="number"
+                  min={1}
+                  max={90}
+                  step={1}
+                  required
+                  defaultValue={dueDays?.one_time_charge_due_days}
+                />
+              </label>
+              <label>
+                Current Property version
+                <input
+                  name="version"
+                  type="number"
+                  min={1}
+                  step={1}
+                  required
+                  defaultValue={dueDays?.version}
+                />
+              </label>
+              <Field name="reason" label="Due days change reason" />
+              <button type="submit">Review due days change</button>
+            </form>
           </section>
         )}
         {invoice && (
