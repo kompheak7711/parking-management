@@ -2413,10 +2413,17 @@ describe("explicit Payment reversal with complete related evidence", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Next reversal records" }),
     );
+    // Wait for the second page to commit before paging again: under load the next click can
+    // otherwise reach the button before React has finished the first page change.
+    await waitFor(() => {
+      expect(region).toHaveTextContent("60000000-0000-4000-8000-000000000051");
+    });
     fireEvent.click(
       screen.getByRole("button", { name: "Next reversal records" }),
     );
-    expect(within(region).getAllByRole("row")).toHaveLength(2);
+    await waitFor(() => {
+      expect(within(region).getAllByRole("row")).toHaveLength(2);
+    });
     expect(region).toHaveTextContent("60000000-0000-4000-8000-000000000101");
     fireEvent.click(
       screen.getByRole("button", { name: "Review selected financial action" }),

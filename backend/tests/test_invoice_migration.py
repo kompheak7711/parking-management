@@ -596,7 +596,7 @@ def test_invoice_tables_are_current_forward_only_and_read_only_to_runtime(
     obligation_id = uuid4()
     with psycopg.connect(migrated_database_url) as owner:
         assert owner.execute("SELECT version_num FROM alembic_version").fetchone() == (
-            "20261008_73",
+            "20261009_74",
         )
         expected = {
             "actor_identities",
@@ -730,7 +730,7 @@ def test_invoice_tables_are_current_forward_only_and_read_only_to_runtime(
         command.downgrade(Config(str(Path(__file__).parents[1] / "alembic.ini")), "20260826_28")
     with psycopg.connect(migrated_database_url) as owner:
         assert owner.execute("SELECT version_num FROM alembic_version").fetchone() == (
-            "20261008_73",
+            "20261009_74",
         )
         assert owner.execute(
             "SELECT description FROM app.authorized_nonrecurring_obligations WHERE id=%s",
@@ -7755,7 +7755,15 @@ def test_v1_045_typed_sources_keep_category_and_controlling_id_together(
             issue=False,
         )
 
-        meter_id = add_meter(setup, actor_id=actor_id, unit_id=unit_id)
+        # WATER, not ELECTRICITY: this rate is committed to the shared test database with a 2027
+        # date, and later suites that price electricity at the real clock must never pick it up.
+        meter_id = add_meter(
+            setup,
+            actor_id=actor_id,
+            unit_id=unit_id,
+            utility_type="WATER",
+            measurement_unit_code="M3",
+        )
         start_reading_id = add_reading(
             setup,
             actor_id=actor_id,
@@ -7774,8 +7782,8 @@ def test_v1_045_typed_sources_keep_category_and_controlling_id_together(
             setup,
             actor_id=actor_id,
             property_id=property_id,
-            utility_type="ELECTRICITY",
-            measurement_unit_code="KWH",
+            utility_type="WATER",
+            measurement_unit_code="M3",
             effective_date=date(2027, 4, 1),
         )
         utility_period_id = uuid4()
@@ -7783,7 +7791,7 @@ def test_v1_045_typed_sources_keep_category_and_controlling_id_together(
             "INSERT INTO app.utility_consumption_periods("
             "id,unit_id,utility_type,start_date,end_date,start_reading_id,end_reading_id,"
             "calculation_kind,consumption_quantity,calculation_trace,finalized_at,finalized_by) "
-            "VALUES (%s,%s,'ELECTRICITY','2027-04-01','2027-04-30',%s,%s,'ACTUAL',100,"
+            "VALUES (%s,%s,'WATER','2027-04-01','2027-04-30',%s,%s,'ACTUAL',100,"
             "%s,statement_timestamp(),%s)",
             (
                 utility_period_id,

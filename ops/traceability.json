@@ -34347,6 +34347,66 @@
       "test_path": "backend/tests/test_invoice_api.py",
       "status": "implemented",
       "notes": "A debit Adjustment on a fully paid line answers 409 with the stable code INVOICE_LINE_FULLY_PAID and rule BR-INV-044."
+    },
+    {
+      "test_id": "test_each_path_records_the_capability_it_was_authorized_under",
+      "upstream_ids": [
+        "BR-RENT-009",
+        "SEC-028",
+        "TEST-043"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_initial_rent_override_capability_migration.py",
+      "status": "implemented",
+      "notes": "Each Initial Rent Due Date override path records the capability it was authorized under in the audit event."
+    },
+    {
+      "test_id": "test_an_unknown_capability_is_refused_and_leaves_nothing_behind",
+      "upstream_ids": [
+        "BR-RENT-009",
+        "SEC-028",
+        "TEST-043"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_initial_rent_override_capability_migration.py",
+      "status": "implemented",
+      "notes": "An unknown capability is refused with no audit event or override left behind."
+    },
+    {
+      "test_id": "test_runtime_role_cannot_call_the_old_sign_function_directly",
+      "upstream_ids": [
+        "BR-RENT-009",
+        "SEC-028",
+        "TEST-043"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_initial_rent_override_capability_migration.py",
+      "status": "implemented",
+      "notes": "The runtime role cannot call the old app.sign_lease directly and keeps the reservation signing function."
+    },
+    {
+      "test_id": "test_upgrade_keeps_every_earlier_record",
+      "upstream_ids": [
+        "BR-RENT-009",
+        "SEC-028",
+        "TEST-043"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_initial_rent_override_capability_migration.py",
+      "status": "implemented",
+      "notes": "Upgrading to migration 20261009_74 keeps every earlier audit, Reservation, deposit, Lease and Unit record."
+    },
+    {
+      "test_id": "test_override_capability_migration_is_forward_only",
+      "upstream_ids": [
+        "BR-RENT-009",
+        "SEC-028",
+        "TEST-043"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_initial_rent_override_capability_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20261009_74 is forward-only."
     }
   ]
 }

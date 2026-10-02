@@ -730,7 +730,9 @@ def test_runtime_role_uses_only_bounded_functions_and_command_history_is_permane
                    AND procedure.proname='validate_lease_relationships')
             """
         ).fetchone()
-    assert privileges == (True, False, True, False, False, False, True)
+    # Since migration 20261009_74 the runtime role signs only through
+    # app.sign_lease_with_reservation, so direct EXECUTE on app.sign_lease is gone.
+    assert privileges == (True, False, False, False, False, False, True)
 
 
 def test_lease_lifecycle_migration_is_forward_only() -> None:

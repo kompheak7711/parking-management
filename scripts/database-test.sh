@@ -174,6 +174,7 @@ database_test_suites='
   tests/test_rent_nonpayment_recurring_only_migration.py
   tests/test_lease_signing_reservation_migration.py
   tests/test_unpaid_initial_termination_migration.py
+  tests/test_initial_rent_override_capability_migration.py
   tests/test_utility_baseline_migration.py
   tests/test_final_utility_invoice_migration.py
   tests/test_utility_unbilled_periods_migration.py

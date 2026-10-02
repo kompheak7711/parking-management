@@ -275,6 +275,13 @@ def test_initial_rent_override_through_the_invoice_service_needs_invoices_issue(
         service.set_initial_rent_due_date(prop, override, actor=holder("invoices.create"))
     recorded = service.set_initial_rent_due_date(prop, override, actor=holder("invoices.issue"))
     assert recorded["due_date"] == "2026-07-21" and recorded["proposed_due_date"] == "2026-07-16"
+    with psycopg.connect(migrated_database_url) as connection:
+        assert connection.execute(
+            "SELECT authorization_reference,authorization_evidence->>'capability' "
+            "FROM app.audit_events WHERE action='invoice.initial_rent_due_date.set' "
+            "AND entity_id=%s",
+            (override.override_id,),
+        ).fetchone() == ("invoices.issue", "invoices.issue")
     assert (
         service.set_initial_rent_due_date(prop, override, actor=holder("invoices.issue"))
         == recorded

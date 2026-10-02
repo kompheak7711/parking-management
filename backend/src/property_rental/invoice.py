@@ -620,7 +620,7 @@ class PostgresInvoiceService:
         """Record the authorized Initial Rent Due Date before the Invoice is issued."""
         self._authorize(actor, property_id, INVOICE_ISSUE_CAPABILITY)
         return self._execute(
-            "SELECT app.set_initial_rent_due_date(%s,%s,%s,%s,%s,%s)",
+            "SELECT app.set_initial_rent_due_date(%s,%s,%s,%s,%s,%s,%s)",
             (
                 property_id,
                 command.lease_id,
@@ -628,6 +628,7 @@ class PostgresInvoiceService:
                 command.override_id,
                 command.due_date,
                 command.reason,
+                INVOICE_ISSUE_CAPABILITY,
             ),
         )
 

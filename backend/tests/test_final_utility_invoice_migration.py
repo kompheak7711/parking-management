@@ -586,12 +586,14 @@ def test_final_invoice_route_waits_for_inputs_replays_and_reports_the_stable_rea
 def test_catch_up_route_bills_a_skipped_period_once_with_a_stable_conflict_reason(
     migrated_database_url: str,
 ) -> None:
-    s = source(migrated_database_url, 24, 9)
+    # A run bills every finalized period of the shared Property in its range, so this test uses
+    # 2020, a year no other Utility suite runs.
+    s = source(migrated_database_url, 24, 4, year=2020)
     _, base = baseline(migrated_database_url, s)
-    september_end = reading(migrated_database_url, s, s.electricity, date(YEAR, 9, 30), "140")
-    period = finalize(s, base, september_end)
-    assert run(s, date(YEAR, 9, 3), date(YEAR, 9, 30)).status == "SUCCEEDED"
-    occupy(migrated_database_url, s, date(YEAR, 10, 5))
+    april_end = reading(migrated_database_url, s, s.electricity, date(2020, 4, 30), "140")
+    period = finalize(s, base, april_end)
+    assert run(s, date(2020, 4, 3), date(2020, 4, 30)).status == "SUCCEEDED"
+    occupy(migrated_database_url, s, date(2020, 5, 5))
     path = f"/api/v1/properties/{s.prop}/leases/{s.lease}/utility-catch-up-invoice"
     client = api(issuer(s.human, s.prop, INVOICE_ISSUE_CAPABILITY))
     body = {"invoice_id": str(uuid4()), "consumption_period_id": str(period)}
