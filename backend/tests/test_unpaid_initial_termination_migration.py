@@ -41,6 +41,7 @@ from property_rental.unpaid_initial_termination import (
     UnpaidInitialTerminationInvalidError,
 )
 from test_billing_service_migration import authenticated, financial_database_url, initial_command
+from test_invoice import mutation_headers
 from test_lease_lifecycle_migration import actor, draft_command, signature_command
 from test_migrations import _temporary_migration_database
 from test_move_in_migration import migrated_database_url as migrated_database_url
@@ -48,6 +49,7 @@ from test_move_in_migration import runtime_database_url
 from test_payment_allocation_migration import actor as allocation_actor
 from test_payment_allocation_migration import designated as allocation_designated
 from test_payment_allocation_migration import service as allocation_service
+from test_payment_api_migration import api
 from test_reservation_migration import (
     create_reservation,
     reservation_business_date,
@@ -432,3 +434,189 @@ def test_unpaid_initial_termination_migration_is_forward_only() -> None:
     module = cast(Any, revision.module)
     with pytest.raises(RuntimeError, match="forward-only"):
         module.downgrade()
+
+
+CONTEXT_BODY = {
+    "basis": "UNPAID_INITIAL_OBLIGATION",
+    "signed_lease_provision": "Standard Lease clause 7.3: unpaid deposit or Initial Rent",
+    "approved_grounds": "Initial Rent unpaid five days after the Lease Start Date",
+    "management_authorization_reference": "Management decision UNPAID-002",
+    "evidence_reference": "Invoice and deposit ledger review UNPAID-002",
+    "notice_required": False,
+    "notice_exception_reason": "The signed clause allows termination without a notice period",
+}
+
+
+def db_now(url: str) -> object:
+    return row(url, "SELECT clock_timestamp()")[0]
+
+
+def terminate_body(url: str, source: dict[str, Any], **changes: object) -> dict[str, object]:
+    body: dict[str, object] = {
+        "event_id": str(uuid4()),
+        "actual_termination_date": source["today"].isoformat(),
+        "occurred_at": cast(datetime, db_now(url)).isoformat(),
+        "governing_event_reference": "BR-LEASE-005",
+        "reason": "Customer did not pay the Initial obligation",
+        "context": CONTEXT_BODY,
+    }
+    body.update(changes)
+    return body
+
+
+def test_terminate_route_accepts_the_unpaid_initial_basis_and_rejects_a_mismatched_reference(
+    migrated_database_url: str,
+) -> None:
+    source = signed_with_initial(migrated_database_url, 10)
+    who = actor(source["actor"], source["property"], *ALL)
+    path = f"/api/v1/leases/{source['lease']}/terminate"
+    version = int(
+        row(migrated_database_url, "SELECT version FROM app.leases WHERE id=%s", source["lease"])[0]
+    )
+    mismatch = api(who).post(
+        path,
+        json=terminate_body(
+            migrated_database_url, source, governing_event_reference="BR-LEASE-021"
+        ),
+        headers=mutation_headers(version=version),
+    )
+    assert mismatch.status_code == 422, mismatch.text
+    assert row(
+        migrated_database_url, "SELECT status FROM app.leases WHERE id=%s", source["lease"]
+    ) == ("SIGNED",)
+    unknown = api(who).post(
+        path,
+        json=terminate_body(
+            migrated_database_url, source, context={**CONTEXT_BODY, "invented": "field"}
+        ),
+        headers=mutation_headers(version=version),
+    )
+    assert unknown.status_code == 422
+    key = uuid4()
+    body = terminate_body(migrated_database_url, source)
+    reply = api(who).post(path, json=body, headers=mutation_headers(key=key, version=version))
+    assert reply.status_code == 200, reply.text
+    assert reply.json()["data"]["status"] == "TERMINATED"
+    context = row(
+        migrated_database_url,
+        "SELECT context_data->>'basis' FROM app.lease_termination_contexts "
+        "WHERE command_event_id=%s",
+        UUID(str(body["event_id"])),
+    )
+    assert context == ("UNPAID_INITIAL_OBLIGATION",)
+    replay = api(who).post(path, json=body, headers=mutation_headers(key=key, version=version))
+    assert replay.status_code == 200 and replay.json()["data"] == reply.json()["data"]
+
+
+def resolution_path(source: dict[str, Any], event: UUID, kind: str) -> str:
+    return (
+        f"/api/v1/properties/{source['property']}/lease-terminations/{event}/unpaid-initial-{kind}"
+    )
+
+
+def test_never_moved_in_route_resolves_replays_and_needs_every_capability(
+    migrated_database_url: str,
+) -> None:
+    source = signed_with_initial(migrated_database_url, 10)
+    event = terminate(migrated_database_url, source)
+    path = resolution_path(source, event, "never-moved-in")
+    body = {
+        "resolution_id": str(uuid4()),
+        "unit_status": "CLEANING",
+        "unit_status_reason": "Unit needs cleaning",
+        "reason": "Customer never moved in and did not pay",
+    }
+    weak = actor(source["actor"], source["property"], *ALL[:-1])
+    assert api(weak).post(path, json=body, headers=mutation_headers()).status_code == 403
+    missing_reason = {key: value for key, value in body.items() if key != "unit_status_reason"}
+    full = actor(source["actor"], source["property"], *ALL)
+    assert api(full).post(path, json=missing_reason, headers=mutation_headers()).status_code == 422
+    assert row(
+        migrated_database_url, "SELECT status FROM app.units WHERE id=%s", source["unit"]
+    ) != ("CLEANING",)
+    key = uuid4()
+    reply = api(full).post(path, json=body, headers=mutation_headers(key=key))
+    assert reply.status_code == 201, reply.text
+    assert reply.headers["cache-control"] == "private, no-store"
+    data = reply.json()["data"]
+    assert (
+        data["path"] == "NEVER_MOVED_IN" and data["cause"] == "CUSTOMER_UNPAID_INITIAL_OBLIGATION"
+    )
+    replay = api(full).post(path, json=body, headers=mutation_headers(key=key))
+    assert replay.status_code == 201 and replay.json()["data"] == data
+    assert row(
+        migrated_database_url, "SELECT status FROM app.units WHERE id=%s", source["unit"]
+    ) == ("CLEANING",)
+    other = api(full).post(
+        path, json={**body, "resolution_id": str(uuid4())}, headers=mutation_headers()
+    )
+    # A second resolution of the same termination is refused as invalid state, not replayed.
+    assert other.status_code == 422
+    unknown = api(full).post(
+        resolution_path(source, uuid4(), "never-moved-in"),
+        json={**body, "resolution_id": str(uuid4())},
+        headers=mutation_headers(),
+    )
+    assert unknown.status_code == 404
+    no_csrf = mutation_headers()
+    no_csrf.pop("X-CSRF-Token")
+    assert api(full).post(path, json=body, headers=no_csrf).status_code == 403
+
+
+def test_moved_in_credit_route_credits_once_and_refuses_the_wrong_path(
+    migrated_database_url: str,
+) -> None:
+    source = signed_with_initial(migrated_database_url, 10)
+    version = int(
+        row(migrated_database_url, "SELECT version FROM app.leases WHERE id=%s", source["lease"])[0]
+    )
+    PostgresMoveInService(
+        runtime_database_url(), source["property"], source["actor"]
+    ).record_lease_move_in(
+        RecordLeaseMoveInCommand(
+            idempotency_key=uuid4(),
+            event_id=uuid4(),
+            lease_id=source["lease"],
+            expected_lease_version=version,
+            actual_move_in_date=source["today"],
+            occupants=(MoveInOccupant(uuid4(), source["customer"]),),
+            reason="Customer moved in",
+            authorization_reference=MOVE_IN_CAPABILITY,
+        ),
+        actor=actor(source["actor"], source["property"], MOVE_IN_CAPABILITY),
+    )
+    event = terminate(migrated_database_url, source)
+    full = actor(source["actor"], source["property"], *ALL)
+    wrong = api(full).post(
+        resolution_path(source, event, "never-moved-in"),
+        json={
+            "resolution_id": str(uuid4()),
+            "unit_status": "VACANT",
+            "reason": "Wrong path",
+        },
+        headers=mutation_headers(),
+    )
+    assert wrong.status_code == 422
+    path = resolution_path(source, event, "moved-in-credit")
+    body = {"resolution_id": str(uuid4()), "reason": "Rent after termination"}
+    assert (
+        api(actor(source["actor"], source["property"], "leases.terminate"))
+        .post(path, json=body, headers=mutation_headers())
+        .status_code
+        == 403
+    )
+    key = uuid4()
+    reply = api(full).post(path, json=body, headers=mutation_headers(key=key))
+    assert reply.status_code == 201, reply.text
+    data = reply.json()["data"]
+    monthly = int(
+        row(
+            migrated_database_url,
+            "SELECT monthly_rent_usd_cents FROM app.leases WHERE id=%s",
+            source["lease"],
+        )[0]
+    )
+    assert data["path"] == "MOVED_IN"
+    assert data["credit_usd_cents"] == expected_credit(monthly, source["start"], source["today"])
+    replay = api(full).post(path, json=body, headers=mutation_headers(key=key))
+    assert replay.status_code == 201 and replay.json()["data"] == data

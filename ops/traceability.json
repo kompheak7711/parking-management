@@ -33867,6 +33867,102 @@
       "test_path": "backend/tests/test_rent_nonpayment_recurring_only_migration.py",
       "status": "implemented",
       "notes": "The Initial Rent alert route lists the unpaid Invoice read only under rent_nonpayment.read, rejects other capabilities and bad limits, and records no case."
+    },
+    {
+      "test_id": "test_terminate_route_accepts_the_unpaid_initial_basis_and_rejects_a_mismatched_reference",
+      "upstream_ids": [
+        "BR-LEASE-005",
+        "BR-RENT-007",
+        "TEST-043"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_unpaid_initial_termination_migration.py",
+      "status": "implemented",
+      "notes": "The terminate route accepts the explicit unpaid Initial context, rejects a mismatched governing reference and an invented field, and replays exactly."
+    },
+    {
+      "test_id": "test_never_moved_in_route_resolves_replays_and_needs_every_capability",
+      "upstream_ids": [
+        "BR-LEASE-005",
+        "BR-RENT-007",
+        "TEST-043"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_unpaid_initial_termination_migration.py",
+      "status": "implemented",
+      "notes": "The never-moved-in route needs every capability, validates the Unit status reason, replays exactly and refuses a second resolution."
+    },
+    {
+      "test_id": "test_moved_in_credit_route_credits_once_and_refuses_the_wrong_path",
+      "upstream_ids": [
+        "BR-LEASE-005",
+        "BR-RENT-007",
+        "TEST-043"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_unpaid_initial_termination_migration.py",
+      "status": "implemented",
+      "notes": "The moved-in credit route credits the days after the termination date once, replays exactly and refuses the never-moved-in path."
+    },
+    {
+      "test_id": "test_never_moved_in_route_builds_the_exact_command_and_hides_nothing_in_the_reply",
+      "upstream_ids": [
+        "BR-LEASE-005",
+        "BR-RENT-007",
+        "TEST-043"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_unpaid_initial_termination_api.py",
+      "status": "implemented",
+      "notes": "The never-moved-in route builds the exact command from the path, key and body."
+    },
+    {
+      "test_id": "test_credit_route_builds_the_exact_command",
+      "upstream_ids": [
+        "BR-LEASE-005",
+        "BR-RENT-007",
+        "TEST-043"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_unpaid_initial_termination_api.py",
+      "status": "implemented",
+      "notes": "The moved-in credit route builds the exact command from the path, key and body."
+    },
+    {
+      "test_id": "test_routes_refuse_invalid_input_without_calling_the_flow",
+      "upstream_ids": [
+        "BR-LEASE-005",
+        "BR-RENT-007",
+        "TEST-043"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_unpaid_initial_termination_api.py",
+      "status": "implemented",
+      "notes": "Invalid status, padded reason, unknown field, bad identity, missing reason and query parameters never reach the service."
+    },
+    {
+      "test_id": "test_routes_need_a_session_browser_origin_and_csrf_token",
+      "upstream_ids": [
+        "BR-LEASE-005",
+        "BR-RENT-007",
+        "TEST-043"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_unpaid_initial_termination_api.py",
+      "status": "implemented",
+      "notes": "The follow-up routes need a session, the browser Origin, the CSRF token and an idempotency key."
+    },
+    {
+      "test_id": "test_service_failures_map_to_not_found_and_conflict",
+      "upstream_ids": [
+        "BR-LEASE-005",
+        "BR-RENT-007",
+        "TEST-043"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_unpaid_initial_termination_api.py",
+      "status": "implemented",
+      "notes": "Not found and conflict service failures map to 404 and 409."
     }
   ]
 }

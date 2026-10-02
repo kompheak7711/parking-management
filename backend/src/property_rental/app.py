@@ -171,6 +171,12 @@ from property_rental.unit_api import (
     UnitVersionConflict,
     create_unit_router,
 )
+from property_rental.unpaid_initial_termination_api import (
+    PostgresUnpaidInitialFlow,
+    UnavailableUnpaidInitialFlow,
+    UnpaidInitialFlow,
+    create_unpaid_initial_termination_router,
+)
 from property_rental.utility_api import (
     PostgresUtilityResourceFlow,
     UnavailableUtilityResourceFlow,
@@ -210,7 +216,12 @@ BILLING_RUN_API_PATH_PATTERN: Final = re.compile(
     r"^/api/v1/(?:properties/[^/]+/billing-runs/(?:rent|utilities)$|billing-runs/[^/]+$)"
 )
 INVOICE_API_PATH_PATTERN: Final = re.compile(
-    r"^/api/v1/(?:properties/[^/]+/(?:invoices(?:/|$)|billing-capabilities$)|invoices(?:/|$))"
+    r"^/api/v1/(?:properties/[^/]+/(?:invoices(?:/|$)|billing-capabilities$|"
+    r"one-time-charges$|one-time-charge-due-days$)|invoices(?:/|$))"
+)
+UNPAID_INITIAL_API_PATH_PATTERN: Final = re.compile(
+    r"^/api/v1/properties/[^/]+/lease-terminations/[^/]+/"
+    r"unpaid-initial-(?:never-moved-in|moved-in-credit)$"
 )
 LATE_PAYMENT_API_PATH_PATTERN: Final = re.compile(
     r"^/api/v1/(?:invoices/[^/]+/late-payment-(?:review|decision)$|"
@@ -345,6 +356,7 @@ def create_app(
     billing_run_flow: BillingRunFlow | None = None,
     invoice_flow: InvoiceFlow | None = None,
     late_payment_flow: LatePaymentFlow | None = None,
+    unpaid_initial_flow: UnpaidInitialFlow | None = None,
     enforcement_flow: EnforcementFlow | None = None,
     enforcement_context_flow: EnforcementContextFlow | None = None,
     payment_flow: PaymentFlow | None = None,
@@ -625,11 +637,12 @@ def create_app(
             or BILLING_RUN_API_PATH_PATTERN.match(request.url.path)
             or INVOICE_API_PATH_PATTERN.match(request.url.path)
             or LATE_PAYMENT_API_PATH_PATTERN.match(request.url.path)
+            or UNPAID_INITIAL_API_PATH_PATTERN.match(request.url.path)
             or PAYMENT_API_PATH_PATTERN.match(request.url.path)
             or request.url.path.startswith("/api/v1/lease-enforcement-workspaces")
             or request.url.path.startswith("/api/v1/rent-nonpayment-cases")
             or re.fullmatch(
-                r"/api/v1/properties/[^/]+/(?:lease-enforcement-leases|rent-nonpayment-alerts)",
+                r"/api/v1/properties/[^/]+/(?:lease-enforcement-leases|rent-nonpayment-alerts|initial-rent-unpaid-alerts)",
                 request.url.path,
             )
         ):
@@ -837,6 +850,23 @@ def create_app(
                     )
                     if resolved_settings.database_url is not None
                     else UnavailableInvoiceFlow()
+                ),
+            ),
+            resolved_settings,
+        )
+    )
+    app.include_router(
+        create_unpaid_initial_termination_router(
+            actor_resolver,
+            unpaid_initial_flow
+            or cast(
+                UnpaidInitialFlow,
+                (
+                    PostgresUnpaidInitialFlow(
+                        resolved_settings.financial_database_url.get_secret_value()
+                    )
+                    if resolved_settings.financial_database_url is not None
+                    else UnavailableUnpaidInitialFlow()
                 ),
             ),
             resolved_settings,

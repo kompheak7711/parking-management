@@ -658,7 +658,14 @@ accepts basis `UNPAID_INITIAL_OBLIGATION` with governing reference `BR-LEASE-005
 `PostgresUnpaidInitialTerminationService.resolve_never_moved_in` (capabilities
 `leases.terminate`, `deposits.dispose`, `invoices.void`, `invoices.adjust`, plus
 `property.manage` for CLEANING) and `credit_moved_in_initial_rent` (`leases.terminate`,
-`invoices.adjust`) are service level; their routes belong to the HTTP and UI slice.
+`invoices.adjust`) are exposed since V1-055 slice 9c as `POST /properties/{id}/lease-terminations/{termination_event_id}/unpaid-initial-never-moved-in`
+(`resolution_id`, `unit_status` `VACANT` or `CLEANING`, `unit_status_reason` only for CLEANING, `reason`) and
+`POST /properties/{id}/lease-terminations/{termination_event_id}/unpaid-initial-moved-in-credit`
+(`resolution_id`, `reason`). Both need an `Idempotency-Key`, answer 201 and replay exactly; a second resolution of the
+same termination is refused as invalid. `POST /leases/{id}/terminate` now accepts the optional `context` object
+(`basis`, `signed_lease_provision`, `approved_grounds`, `management_authorization_reference`, `evidence_reference`,
+`notice_required` with `notice_id` and `notice_period_ends_on` or `notice_exception_reason`, and `warning_ids`); the
+database refuses a fresh termination without it. The `termination_event_id` is the `event_id` sent with the termination.
 
 The final-decision command is authorized and idempotent and accepts only
 `CONFIRMED_DEFAULT`, `REDUCED`, or `WAIVED`. A REDUCED decision records the exact

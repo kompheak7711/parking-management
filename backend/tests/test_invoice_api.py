@@ -219,6 +219,7 @@ def test_one_time_charge_route_needs_the_category_capability_and_validates_the_b
     created = client.post(path, headers=mutation_headers(), json=body)
     assert created.status_code == 201
     assert cast(RecordOneTimeChargeCommand, flow.commands[-1]).amount_usd_cents == 1500
+    assert created.headers["cache-control"] == "private, no-store"
     damage = {**body, "category": "DAMAGE_CHARGES"}
     assert client.post(path, headers=mutation_headers(), json=damage).status_code == 403
 

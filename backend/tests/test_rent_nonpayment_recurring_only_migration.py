@@ -485,6 +485,7 @@ def test_initial_rent_alert_route_lists_the_unpaid_invoice_read_only_under_rent_
         before = connection.execute(RECORDED.format("rent_nonpayment_cases")).fetchone()
     reply = api(staff(human, prop, NONPAYMENT_READ)).get(path, params={"limit": "100"})
     assert reply.status_code == 200, reply.text
+    assert reply.headers["cache-control"] == "private, no-store"
     body = reply.json()
     items = cast(list[dict[str, object]], body["data"]["items"])
     row = next(item for item in items if item["invoice_id"] == str(invoice))

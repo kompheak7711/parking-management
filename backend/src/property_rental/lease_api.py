@@ -42,6 +42,7 @@ from property_rental.lease import (
     LeaseVersionConflictError,
     PostgresLeaseService,
 )
+from property_rental.lease_termination import TerminationBasis, TerminationContext
 from property_rental.move_in import (
     CompleteMoveInCommand,
     MoveInAuthorizationError,
@@ -817,6 +818,37 @@ class LeaseRenewSource(BaseModel):
     reason: Annotated[str, Field(min_length=1, max_length=500)]
 
 
+class TerminationContextSource(BaseModel):
+    """Explicit signed-Lease authority; the database verifies every basis rule."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    basis: TerminationBasis
+    signed_lease_provision: Annotated[str, Field(min_length=1, max_length=2000)]
+    approved_grounds: Annotated[str, Field(min_length=1, max_length=2000)]
+    management_authorization_reference: Annotated[str, Field(min_length=1, max_length=500)]
+    evidence_reference: Annotated[str, Field(min_length=1, max_length=500)]
+    notice_required: bool
+    notice_id: UUID | None = None
+    notice_period_ends_on: date | None = None
+    notice_exception_reason: Annotated[str, Field(min_length=1, max_length=2000)] | None = None
+    warning_ids: Annotated[list[UUID], Field(max_length=100)] = Field(default_factory=list)
+
+    def to_context(self) -> TerminationContext:
+        return TerminationContext(
+            basis=self.basis,
+            signed_lease_provision=self.signed_lease_provision,
+            approved_grounds=self.approved_grounds,
+            management_authorization_reference=self.management_authorization_reference,
+            evidence_reference=self.evidence_reference,
+            notice_required=self.notice_required,
+            notice_id=self.notice_id,
+            notice_period_ends_on=self.notice_period_ends_on,
+            notice_exception_reason=self.notice_exception_reason,
+            warning_ids=tuple(self.warning_ids),
+        )
+
+
 class LeaseTerminateSource(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -825,6 +857,7 @@ class LeaseTerminateSource(BaseModel):
     occurred_at: datetime
     governing_event_reference: Annotated[str, Field(min_length=1, max_length=255)]
     reason: Annotated[str, Field(min_length=1, max_length=500)]
+    context: TerminationContextSource | None = None
 
 
 class MoveInOccupantSource(BaseModel):
@@ -1391,6 +1424,7 @@ def create_lease_router(
                     governing_event_reference=source.governing_event_reference,
                     reason=source.reason,
                     authorization_reference=LEASE_TERMINATE_CAPABILITY,
+                    context=source.context.to_context() if source.context is not None else None,
                 ),
                 actor=actor,
             )
