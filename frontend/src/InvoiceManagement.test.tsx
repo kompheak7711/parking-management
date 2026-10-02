@@ -2370,3 +2370,79 @@ describe("V1-055 one-time charge due days", () => {
     });
   });
 });
+
+describe("V1-055 issue Due Date override", () => {
+  it("TEST-FE-638 issues with an authorized Due Date and mandatory reason bound to the displayed version", async () => {
+    const { api, journal } = setup();
+    render(
+      <InvoiceManagement
+        api={api}
+        journal={journal}
+        actorId="actor"
+        propertyId={propertyId}
+      />,
+    );
+    await loadInvoice();
+    fill("Authorized Due Date", "2026-09-20");
+    fill("Due Date reason", "Customer pays on the 20th");
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Review invoice issuance with Due Date",
+      }),
+    );
+    expect(api.issue).not.toHaveBeenCalled();
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByText("2026-09-20")).toBeInTheDocument();
+    await confirm();
+    await waitFor(() => {
+      expect(api.issue).toHaveBeenCalledWith(
+        "invoice-one",
+        2,
+        journal.begin.mock.calls[0]?.[1].key,
+        {
+          due_date: "2026-09-20",
+          due_date_reason: "Customer pays on the 20th",
+        },
+      );
+    });
+    expect(journal.clear).toHaveBeenCalledTimes(1);
+  });
+  it("TEST-FE-639 refuses a Due Date without a reason before any review", async () => {
+    const { api, journal } = setup();
+    render(
+      <InvoiceManagement
+        api={api}
+        journal={journal}
+        actorId="actor"
+        propertyId={propertyId}
+      />,
+    );
+    await loadInvoice();
+    fill("Authorized Due Date", "2026-09-20");
+    fill("Due Date reason", "   ");
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Review invoice issuance with Due Date",
+      }),
+    );
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(api.issue).not.toHaveBeenCalled();
+  });
+  it("TEST-FE-640 hides the Due Date issue form without invoices.issue", async () => {
+    const { api, journal } = setup("DRAFT", ["invoices.create"]);
+    render(
+      <InvoiceManagement
+        api={api}
+        journal={journal}
+        actorId="actor"
+        propertyId={propertyId}
+      />,
+    );
+    await loadInvoice();
+    expect(
+      screen.queryByRole("button", {
+        name: "Review invoice issuance with Due Date",
+      }),
+    ).not.toBeInTheDocument();
+  });
+});

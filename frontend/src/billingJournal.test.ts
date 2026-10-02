@@ -165,4 +165,25 @@ describe("legacy billing over the shared encrypted store", () => {
     );
     expect(await billingJournal.load("actor")).toEqual(saved);
   });
+  it("TEST-FE-641 recovers a sealed issue command with its exact Due Date and reason", async () => {
+    const saved: PendingBillingCommand = {
+      key: "issue-key",
+      command: {
+        action: "issue",
+        propertyId: "property",
+        id: "invoice",
+        version: 3,
+        dueDate: {
+          due_date: "2026-09-20",
+          due_date_reason: "Pays on the 20th",
+        },
+      },
+    };
+    const begin = vi.spyOn(sealedIntentStore, "begin").mockResolvedValue();
+    await billingJournal.begin("actor", saved);
+    vi.spyOn(sealedIntentStore, "read").mockResolvedValue(
+      begin.mock.calls[0]?.[1] ?? null,
+    );
+    expect(await billingJournal.load("actor")).toEqual(saved);
+  });
 });

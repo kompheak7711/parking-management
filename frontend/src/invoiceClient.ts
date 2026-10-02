@@ -170,6 +170,11 @@ export interface DueDaysSetting {
   one_time_charge_due_days: number;
   version: number;
 }
+/** An authorized Due Date chosen at issue; the reason is mandatory and recorded by the server. */
+export interface IssueDueDateOverride {
+  due_date: string;
+  due_date_reason: string;
+}
 export interface BillingTransmission {
   actorId: string;
   signal: AbortSignal;
@@ -191,7 +196,12 @@ export interface InvoiceApi {
     version: number,
     key: string,
   ) => Promise<InvoiceResource>;
-  issue: (id: string, version: number, key: string) => Promise<InvoiceResource>;
+  issue: (
+    id: string,
+    version: number,
+    key: string,
+    dueDate?: IssueDueDateOverride,
+  ) => Promise<InvoiceResource>;
   adjust: (
     id: string,
     input: AdjustmentInput,
@@ -626,6 +636,8 @@ const fieldNames = new Set([
   "amount_usd_cents",
   "evidence_reference",
   "days",
+  "due_date",
+  "due_date_reason",
 ]);
 function safeFields(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
@@ -832,11 +844,16 @@ function createInvoiceApi(transmission?: BillingTransmission): InvoiceApi {
         version,
         body: { authorized_nonrecurring_obligation_id: obligation, reason },
       }),
-    issue: (id, version, key) =>
+    issue: (id, version, key, dueDate) =>
       request("/api/v1/invoices/" + encoded(id) + "/issue", resource(invoice), {
         key,
         version,
-        body: {},
+        body: dueDate
+          ? {
+              due_date: dueDate.due_date,
+              due_date_reason: dueDate.due_date_reason,
+            }
+          : {},
       }),
     adjust: (id, input, version, key) =>
       request(
@@ -965,7 +982,13 @@ export type BillingCommand =
       reason: string;
       version: number;
     }
-  | { action: "issue"; propertyId: string; id: string; version: number }
+  | {
+      action: "issue";
+      propertyId: string;
+      id: string;
+      version: number;
+      dueDate?: IssueDueDateOverride;
+    }
   | {
       action: "adjust";
       propertyId: string;
@@ -1086,7 +1109,9 @@ export function executeBilling(
     case "correct":
       return api.correctDraft(c.id, c.obligationId, c.reason, c.version, key);
     case "issue":
-      return api.issue(c.id, c.version, key);
+      return c.dueDate
+        ? api.issue(c.id, c.version, key, c.dueDate)
+        : api.issue(c.id, c.version, key);
     case "adjust":
       return api.adjust(c.id, c.input, c.version, key);
     case "void":

@@ -33699,6 +33699,54 @@
       "test_path": "frontend/src/billingJournal.test.ts",
       "status": "implemented",
       "notes": "Recovers a sealed due days command with its exact Property version."
+    },
+    {
+      "test_id": "TEST-FE-638",
+      "upstream_ids": [
+        "UI-053",
+        "API-052",
+        "BR-INV-018"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Issues with an authorized Due Date and mandatory reason bound to the displayed version; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-639",
+      "upstream_ids": [
+        "UI-053",
+        "API-052",
+        "BR-INV-018"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Refuses a Due Date without a reason before any review; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-640",
+      "upstream_ids": [
+        "UI-053",
+        "API-052",
+        "BR-INV-018"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Hides the Due Date issue form without invoices.issue; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-641",
+      "upstream_ids": [
+        "UI-053",
+        "API-052",
+        "BR-INV-018"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/billingJournal.test.ts",
+      "status": "implemented",
+      "notes": "Recovers a sealed issue command with its exact Due Date and reason."
     }
   ]
 }

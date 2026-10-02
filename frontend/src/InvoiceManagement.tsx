@@ -164,6 +164,8 @@ const fieldAliases: Record<string, string> = {
   amount_usd_cents: "amount",
   evidence_reference: "evidence",
   days: "days",
+  due_date: "dueDate",
+  due_date_reason: "dueDateReason",
 };
 function Field({
   name,
@@ -1263,6 +1265,53 @@ function BillingWorkspace({
                   >
                     Review invoice issuance
                   </button>
+                )}
+                {can("invoices.issue") && (
+                  <form
+                    onSubmit={(event) => {
+                      formReview(
+                        event,
+                        (data) => {
+                          const dueDate = value(data, "dueDate");
+                          if (!value(data, "dueDateReason"))
+                            throw new Error("Due Date reason required");
+                          if (
+                            !/^\d{4}-\d{2}-\d{2}$/.test(dueDate) ||
+                            Number.isNaN(Date.parse(dueDate))
+                          )
+                            throw new Error("Due Date required");
+                          return {
+                            action: "issue",
+                            propertyId,
+                            id: invoice.id,
+                            version: invoice.version,
+                            dueDate: {
+                              due_date: dueDate,
+                              due_date_reason: value(data, "dueDateReason"),
+                            },
+                          };
+                        },
+                        invoice.evidence,
+                      );
+                    }}
+                  >
+                    <h4>Issue with an authorized Due Date</h4>
+                    <p>
+                      Use this only when the Due Date must differ from the
+                      standard rule. The reason is mandatory and is recorded
+                      with the issue. The server decides whether the date is
+                      allowed.
+                    </p>
+                    <Field
+                      name="dueDate"
+                      label="Authorized Due Date"
+                      type="date"
+                    />
+                    <Field name="dueDateReason" label="Due Date reason" />
+                    <button type="submit">
+                      Review invoice issuance with Due Date
+                    </button>
+                  </form>
                 )}
               </>
             )}

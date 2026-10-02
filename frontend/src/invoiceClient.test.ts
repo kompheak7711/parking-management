@@ -911,3 +911,68 @@ describe("V1-055 due days transport", () => {
     expect(fetcher).not.toHaveBeenCalled();
   });
 });
+
+describe("V1-055 issue Due Date override transport", () => {
+  it("sends the optional Due Date pair only when chosen and keeps the plain issue body empty", async () => {
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockImplementation(() => Promise.resolve(response(invoice())));
+    vi.stubGlobal("fetch", fetcher);
+    const plain = {
+      key: "plain",
+      command: {
+        action: "issue" as const,
+        propertyId: "property/one",
+        id: "invoice/one",
+        version: 2,
+      },
+    };
+    const chosen = {
+      key: "chosen",
+      command: {
+        ...plain.command,
+        dueDate: {
+          due_date: "2026-09-20",
+          due_date_reason: "Pays on the 20th",
+        },
+      },
+    };
+    await executeBilling(invoiceApi, plain);
+    await executeBilling(invoiceApi, chosen);
+    await executeBilling(invoiceApi, chosen);
+    expect(bodyOf(fetcher.mock.calls[0]?.[1])).toEqual({});
+    expect(bodyOf(fetcher.mock.calls[1]?.[1])).toEqual({
+      due_date: "2026-09-20",
+      due_date_reason: "Pays on the 20th",
+    });
+    expect(fetcher.mock.calls[1]).toEqual(fetcher.mock.calls[2]);
+    expect(fetcher.mock.calls[1]?.[0]).toBe(
+      "/api/v1/invoices/invoice%2Fone/issue",
+    );
+    expect(
+      new Headers(fetcher.mock.calls[1]?.[1]?.headers).get("If-Match"),
+    ).toBe('"2"');
+  });
+  it("reports only the known Due Date fields of a rejected override", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            error: {
+              code: "VALIDATION_ERROR",
+              fields: ["body.due_date", "body.due_date_reason", "body.other"],
+            },
+          }),
+          { status: 422 },
+        ),
+      ),
+    );
+    await expect(
+      invoiceApi.issue("i", 1, "k", {
+        due_date: "2026-09-20",
+        due_date_reason: "r",
+      }),
+    ).rejects.toMatchObject({ fields: ["due_date", "due_date_reason"] });
+  });
+});
