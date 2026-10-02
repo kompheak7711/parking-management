@@ -28,8 +28,10 @@ from property_rental.move_out_final_inputs import (
     RecordMoveOutFinalInputs,
 )
 from property_rental.physical_move_out import RecordPhysicalMoveOut
+from test_invoice import mutation_headers
 from test_invoice_migration import financial_database_url, runtime_database_url
 from test_invoice_migration import migrated_database_url as migrated_database_url
+from test_payment_api_migration import api
 from test_physical_move_out_migration import record as record_departure
 from test_physical_move_out_migration import snapshot
 from test_physical_move_out_migration import source as departure_source
@@ -469,3 +471,58 @@ def test_final_input_migration_is_forward_only() -> None:
     module = cast(Any, revision.module)
     with pytest.raises(RuntimeError, match="forward-only"):
         module.downgrade()
+
+
+def test_final_input_routes_record_replay_read_and_need_the_move_out_capability(
+    migrated_database_url: str,
+) -> None:
+    source = departure(migrated_database_url)
+    reading_id = reading(migrated_database_url, source, source.electricity)
+    path = f"/api/v1/properties/{source.prop}/leases/{source.lease}/move-out-final-utility-inputs"
+    body = {
+        "event_id": str(uuid4()),
+        "move_out_event_id": str(source.physical_event),
+        "reason": "Final Utility inputs reviewed",
+        "authorization_reference": "Authorized move-out",
+        "evidence_reference": "Synthetic final input evidence",
+        "items": [
+            {
+                "meter_id": str(source.electricity),
+                "resolution": "READING",
+                "reading_id": str(reading_id),
+            },
+            {
+                "meter_id": str(source.water),
+                "resolution": "UNRESOLVED",
+                "unresolved_reason": "MISSING_READING",
+            },
+        ],
+    }
+    key = uuid4()
+    client = api(actor(source.human, source.prop))
+    reply = client.post(path, json=body, headers=mutation_headers(key=key))
+    assert reply.status_code == 201, reply.text
+    assert reply.headers["cache-control"] == "private, no-store"
+    data = reply.json()["data"]
+    assert data["final_inputs_status"] == "PENDING_RECONCILIATION"
+    assert data["creates_reading"] is False and data["creates_charge"] is False
+    replay = client.post(path, json=body, headers=mutation_headers(key=key))
+    assert replay.status_code == 201 and replay.json() == reply.json()
+    reused = client.post(
+        path, json={**body, "reason": "Another reason"}, headers=mutation_headers(key=key)
+    )
+    assert reused.status_code == 409
+    assert reused.json()["error"]["code"] == "IDEMPOTENCY_KEY_REUSED"
+    listed = client.get(path)
+    assert listed.status_code == 200 and body["event_id"] in listed.text
+    reader = api(actor(source.human, source.prop, FINAL_INPUTS_READ))
+    assert reader.post(path, json=body, headers=mutation_headers()).status_code == 403
+    assert api(actor(source.human, source.prop, "invoices.read")).get(path).status_code == 404
+    invalid = {
+        **body,
+        "event_id": str(uuid4()),
+        "items": [
+            {"meter_id": str(source.water), "resolution": "READING", "unresolved_reason": "X"}
+        ],
+    }
+    assert client.post(path, json=invalid, headers=mutation_headers()).status_code == 422

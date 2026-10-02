@@ -638,6 +638,14 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/properties/{property_id}/one-time-charges": {"post"},
         "/api/v1/properties/{property_id}/one-time-charge-due-days": {"post"},
         "/api/v1/properties/{property_id}/leases/{lease_id}/initial-rent-due-date": {"post"},
+        "/api/v1/properties/{property_id}/leases/{lease_id}/utility-baseline": {"get", "post"},
+        "/api/v1/properties/{property_id}/leases/{lease_id}/move-out-final-utility-inputs": {
+            "get",
+            "post",
+        },
+        "/api/v1/properties/{property_id}/leases/{lease_id}/final-utility-invoice": {"post"},
+        "/api/v1/properties/{property_id}/leases/{lease_id}/utility-catch-up-invoice": {"post"},
+        "/api/v1/properties/{property_id}/unbilled-utility-periods": {"get"},
         "/api/v1/properties/{property_id}/lease-terminations/{termination_event_id}"
         "/unpaid-initial-never-moved-in": {"post"},
         "/api/v1/properties/{property_id}/lease-terminations/{termination_event_id}"

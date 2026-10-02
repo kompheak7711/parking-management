@@ -34107,6 +34107,126 @@
       "test_path": "backend/tests/test_unpaid_initial_termination_migration.py",
       "status": "implemented",
       "notes": "The Lease timeline labels the moved-in credit separately from the never-moved-in resolution."
+    },
+    {
+      "test_id": "test_baseline_routes_record_replay_read_and_refuse_without_the_capability",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "API-069",
+        "TEST-043"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_baseline_migration.py",
+      "status": "implemented",
+      "notes": "The Utility baseline routes record, replay exactly, reject key reuse, read, and refuse without the record or read capability."
+    },
+    {
+      "test_id": "test_final_input_routes_record_replay_read_and_need_the_move_out_capability",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "API-069",
+        "TEST-043"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_move_out_final_inputs_migration.py",
+      "status": "implemented",
+      "notes": "The final Utility input routes record, replay exactly, reject key reuse, read, and need the move-out capabilities."
+    },
+    {
+      "test_id": "test_final_invoice_route_waits_for_inputs_replays_and_reports_the_stable_reason",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "API-069",
+        "TEST-043"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_final_utility_invoice_migration.py",
+      "status": "implemented",
+      "notes": "The final Utility Invoice route reports the stable unresolved-input reason, refuses a superseded event, needs both capabilities and replays exactly."
+    },
+    {
+      "test_id": "test_catch_up_route_bills_a_skipped_period_once_with_a_stable_conflict_reason",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "API-069",
+        "TEST-043"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_final_utility_invoice_migration.py",
+      "status": "implemented",
+      "notes": "The catch-up route bills a skipped period once, replays exactly and reports the already-invoiced reason."
+    },
+    {
+      "test_id": "test_unbilled_periods_route_lists_a_late_period_read_only_with_bounded_paging",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "API-069",
+        "TEST-043"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_unbilled_periods_migration.py",
+      "status": "implemented",
+      "notes": "The unbilled period route lists a late period read only with bounded paging and creates no Invoice."
+    },
+    {
+      "test_id": "test_every_command_route_builds_its_exact_command_and_answers_201",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "API-069",
+        "TEST-043"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_utility_lease_api.py",
+      "status": "implemented",
+      "notes": "Each Utility command route builds its exact command from the path, key and body."
+    },
+    {
+      "test_id": "test_routes_refuse_invalid_bodies_and_queries_without_calling_the_flow",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "API-069",
+        "TEST-043"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_utility_lease_api.py",
+      "status": "implemented",
+      "notes": "Invalid bodies and queries never reach the Utility services."
+    },
+    {
+      "test_id": "test_reads_pass_the_bounded_page_through",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "API-069",
+        "TEST-043"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_utility_lease_api.py",
+      "status": "implemented",
+      "notes": "The Utility reads pass a bounded page through."
+    },
+    {
+      "test_id": "test_routes_need_a_session_origin_csrf_and_idempotency_key",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "API-069",
+        "TEST-043"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_utility_lease_api.py",
+      "status": "implemented",
+      "notes": "The Utility command routes need a session, Origin, CSRF token and idempotency key."
+    },
+    {
+      "test_id": "test_service_failures_map_to_status_and_stable_reason_codes",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "API-069",
+        "TEST-043"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_utility_lease_api.py",
+      "status": "implemented",
+      "notes": "Service failures map to status codes and stable reason codes without leaking internals."
     }
   ]
 }

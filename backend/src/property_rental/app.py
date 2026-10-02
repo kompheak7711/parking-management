@@ -184,6 +184,12 @@ from property_rental.utility_api import (
     UtilityResourceVersionConflict,
     create_utility_router,
 )
+from property_rental.utility_lease_api import (
+    PostgresUtilityLeaseFlow,
+    UnavailableUtilityLeaseFlow,
+    UtilityLeaseFlow,
+    create_utility_lease_router,
+)
 
 REQUEST_ID_HEADER: Final = "X-Request-ID"
 REQUEST_ID_PATTERN: Final = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
@@ -210,6 +216,7 @@ DEPOSIT_API_PATH_PATTERN: Final = re.compile(
 UTILITY_API_PATH_PATTERN: Final = re.compile(
     r"^/api/v1/(?:units/[^/]+/meters(?:/|$)|meters(?:/|$)|"
     r"utility-readings(?:/|$)|properties/[^/]+/utility-readings:batch$|"
+    r"properties/[^/]+/unbilled-utility-periods$|"
     r"utility-billing/preview$)"
 )
 BILLING_RUN_API_PATH_PATTERN: Final = re.compile(
@@ -357,6 +364,7 @@ def create_app(
     invoice_flow: InvoiceFlow | None = None,
     late_payment_flow: LatePaymentFlow | None = None,
     unpaid_initial_flow: UnpaidInitialFlow | None = None,
+    utility_lease_flow: UtilityLeaseFlow | None = None,
     enforcement_flow: EnforcementFlow | None = None,
     enforcement_context_flow: EnforcementContextFlow | None = None,
     payment_flow: PaymentFlow | None = None,
@@ -850,6 +858,28 @@ def create_app(
                     )
                     if resolved_settings.database_url is not None
                     else UnavailableInvoiceFlow()
+                ),
+            ),
+            resolved_settings,
+        )
+    )
+    app.include_router(
+        create_utility_lease_router(
+            actor_resolver,
+            utility_lease_flow
+            or cast(
+                UtilityLeaseFlow,
+                (
+                    PostgresUtilityLeaseFlow(
+                        resolved_settings.database_url.get_secret_value(),
+                        (
+                            resolved_settings.financial_database_url.get_secret_value()
+                            if resolved_settings.financial_database_url is not None
+                            else None
+                        ),
+                    )
+                    if resolved_settings.database_url is not None
+                    else UnavailableUtilityLeaseFlow()
                 ),
             ),
             resolved_settings,

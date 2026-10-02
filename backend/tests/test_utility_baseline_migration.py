@@ -41,6 +41,7 @@ from property_rental.utility_baseline import (
     UtilityBaselineKeyReused,
     UtilityBaselineNotFoundError,
 )
+from test_invoice import mutation_headers
 from test_invoice_migration import (
     financial_database_url,
     register_billing_service_principal,
@@ -48,6 +49,7 @@ from test_invoice_migration import (
 )
 from test_invoice_migration import migrated_database_url as migrated_database_url
 from test_lease_migration import create_draft, setup_sources, sign_lease
+from test_payment_api_migration import api
 from test_utility_consumption_migration import replace_failed_meter
 from test_utility_meter_migration import add_meter, add_reading
 
@@ -645,3 +647,43 @@ def test_utility_baseline_migration_is_forward_only() -> None:
     module = cast(Any, revision.module)
     with pytest.raises(RuntimeError, match="forward-only"):
         module.downgrade()
+
+
+def test_baseline_routes_record_replay_read_and_refuse_without_the_capability(
+    migrated_database_url: str,
+) -> None:
+    s = source(migrated_database_url, 29, 2)
+    reading_id = reading(migrated_database_url, s, s.electricity, s.baseline_day)
+    path = f"/api/v1/properties/{s.prop}/leases/{s.lease}/utility-baseline"
+    item = {"meter_id": str(s.electricity), "reading_id": str(reading_id)}
+    body: dict[str, Any] = {
+        "event_id": str(uuid4()),
+        "baseline_date": s.baseline_day.isoformat(),
+        "reason": "Baseline recorded after cleaning and repair",
+        "evidence_reference": "Handover sheet 17",
+        "items": [item],
+    }
+    key = uuid4()
+    client = api(actor(s))
+    reply = client.post(path, json=body, headers=mutation_headers(key=key))
+    assert reply.status_code == 201, reply.text
+    assert reply.headers["cache-control"] == "private, no-store"
+    data = reply.json()["data"]
+    assert data["event_id"] == body["event_id"] and data["creates_reading"] is False
+    replay = client.post(path, json=body, headers=mutation_headers(key=key))
+    assert replay.status_code == 201 and replay.json() == reply.json()
+    reused = client.post(
+        path, json={**body, "reason": "A different reason"}, headers=mutation_headers(key=key)
+    )
+    assert reused.status_code == 409
+    assert reused.json()["error"]["code"] == "IDEMPOTENCY_KEY_REUSED"
+    listed = client.get(path)
+    assert listed.status_code == 200 and body["event_id"] in listed.text
+    reader = api(actor(s, BASELINE_READ))
+    assert reader.post(path, json=body, headers=mutation_headers()).status_code == 403
+    assert reader.get(path).status_code == 200
+    assert api(actor(s, "invoices.read")).get(path).status_code == 404
+    duplicate = {**body, "event_id": str(uuid4()), "items": [item, item]}
+    assert client.post(path, json=duplicate, headers=mutation_headers()).status_code == 422
+    assert client.get(path + "?limit=21").status_code == 422
+    assert client.get(path + "?force=1").status_code == 400

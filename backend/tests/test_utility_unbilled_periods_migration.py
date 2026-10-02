@@ -50,6 +50,7 @@ from test_invoice_migration import (
 )
 from test_invoice_migration import migrated_database_url as migrated_database_url
 from test_move_out_final_inputs_migration import used
+from test_payment_api_migration import api
 from test_utility_baseline_migration import (
     Source,
     baseline,
@@ -298,3 +299,26 @@ def test_utility_unbilled_migration_is_forward_only_and_read_is_runtime_only() -
     with psycopg.connect(financial_database_url()) as financial:
         with pytest.raises(psycopg.errors.InsufficientPrivilege):
             financial.execute("SELECT app.utility_unbilled_periods(%s,%s,1,0)", (uuid4(), uuid4()))
+
+
+def test_unbilled_periods_route_lists_a_late_period_read_only_with_bounded_paging(
+    migrated_database_url: str,
+) -> None:
+    on_time, _ = pair(migrated_database_url, 9, 8, 31)
+    assert run(on_time, date(Y, 8, 3), date(Y, 8, 31)).status == "SUCCEEDED"
+    late, late_period = pair(migrated_database_url, 10, 8, 31, "150")
+    path = f"/api/v1/properties/{late.prop}/unbilled-utility-periods"
+    client = api(issuer(late.human, late.prop, UTILITY_READ_CAPABILITY))
+    before = one(migrated_database_url, "SELECT count(*) FROM app.invoices")
+    listed = client.get(path, params={"limit": "50"})
+    assert listed.status_code == 200, listed.text
+    assert listed.headers["cache-control"] == "private, no-store"
+    data = listed.json()["data"]
+    entry = next(item for item in data["items"] if item["period_id"] == str(late_period))
+    assert entry["gap_reason"] == "LATE_AFTER_SUCCEEDED_RUN" and entry["can_catch_up"] is True
+    assert entry["lease_id"] == str(late.lease) and data["creates_invoice"] is False
+    assert client.get(path, params={"limit": "1"}).json()["data"]["limit"] == 1
+    assert client.get(path + "?limit=51").status_code == 422
+    assert client.get(path + "?force=1").status_code == 400
+    assert api(issuer(late.human, late.prop, INVOICE_ISSUE_CAPABILITY)).get(path).status_code == 404
+    assert one(migrated_database_url, "SELECT count(*) FROM app.invoices") == before

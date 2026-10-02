@@ -37,18 +37,21 @@ from property_rental.utility import (
     FinalizeActualConsumptionCommand,
     PostgresUtilityService,
 )
+from property_rental.utility_api import UTILITY_READ_CAPABILITY
 from property_rental.utility_baseline import (
     BASELINE_RECORD,
     BaselineItem,
     PostgresUtilityBaselineService,
     RecordUtilityBaseline,
 )
+from test_invoice import mutation_headers
 from test_invoice_migration import financial_database_url, runtime_database_url
 from test_invoice_migration import migrated_database_url as migrated_database_url
 from test_move_in_migration import setup_historical_move_in
 from test_move_out_final_inputs_migration import Departure, missing, used
 from test_move_out_final_inputs_migration import command as final_input_command
 from test_move_out_final_inputs_migration import record as record_final_inputs
+from test_payment_api_migration import api
 from test_physical_move_out_migration import record as record_departure
 from test_termination_deposit_migration import terminate
 from test_utility_baseline_migration import (
@@ -532,3 +535,79 @@ def test_final_utility_invoice_migration_is_forward_only() -> None:
     module = cast(Any, revision.module)
     with pytest.raises(RuntimeError, match="forward-only"):
         module.downgrade()
+
+
+def test_final_invoice_route_waits_for_inputs_replays_and_reports_the_stable_reason(
+    migrated_database_url: str,
+) -> None:
+    leaver = departed(migrated_database_url, 28)
+    dep = leaver.dep
+    path = f"/api/v1/properties/{dep.prop}/leases/{dep.lease}/final-utility-invoice"
+    client = api(issuer(dep.human, dep.prop))
+    pending = record_final(leaver, (missing(dep.electricity),))
+    waiting = client.post(
+        path,
+        json={"invoice_id": str(uuid4()), "final_input_event_id": str(pending)},
+        headers=mutation_headers(),
+    )
+    assert waiting.status_code == 422
+    assert waiting.json()["error"]["code"] == "UTILITY_UNRESOLVED_FINAL_INPUT"
+    electricity = final_reading(migrated_database_url, leaver, dep.electricity, "150")
+    resolved = record_final(leaver, (used(dep.electricity, electricity),), supersedes=pending)
+    stale = client.post(
+        path,
+        json={"invoice_id": str(uuid4()), "final_input_event_id": str(pending)},
+        headers=mutation_headers(),
+    )
+    assert stale.status_code == 409
+    body = {"invoice_id": str(uuid4()), "final_input_event_id": str(resolved)}
+    half = client.post(path, json={**body, "due_date": "2030-01-01"}, headers=mutation_headers())
+    assert half.status_code == 422
+    weak = api(issuer(dep.human, dep.prop, INVOICE_ISSUE_CAPABILITY))
+    assert weak.post(path, json=body, headers=mutation_headers()).status_code == 403
+    key = uuid4()
+    created = client.post(path, json=body, headers=mutation_headers(key=key))
+    assert created.status_code == 201, created.text
+    assert created.headers["cache-control"] == "private, no-store"
+    data = created.json()["data"]
+    assert data["kind"] == "FINAL" and data["invoice_id"] == body["invoice_id"]
+    assert data["creates_reading"] is False
+    replay = client.post(path, json=body, headers=mutation_headers(key=key))
+    assert replay.status_code == 201 and replay.json() == created.json()
+    reused = client.post(
+        path,
+        json={**body, "invoice_id": str(uuid4())},
+        headers=mutation_headers(key=key),
+    )
+    assert reused.status_code == 409
+    assert reused.json()["error"]["code"] == "IDEMPOTENCY_KEY_REUSED"
+
+
+def test_catch_up_route_bills_a_skipped_period_once_with_a_stable_conflict_reason(
+    migrated_database_url: str,
+) -> None:
+    s = source(migrated_database_url, 24, 9)
+    _, base = baseline(migrated_database_url, s)
+    september_end = reading(migrated_database_url, s, s.electricity, date(YEAR, 9, 30), "140")
+    period = finalize(s, base, september_end)
+    assert run(s, date(YEAR, 9, 3), date(YEAR, 9, 30)).status == "SUCCEEDED"
+    occupy(migrated_database_url, s, date(YEAR, 10, 5))
+    path = f"/api/v1/properties/{s.prop}/leases/{s.lease}/utility-catch-up-invoice"
+    client = api(issuer(s.human, s.prop, INVOICE_ISSUE_CAPABILITY))
+    body = {"invoice_id": str(uuid4()), "consumption_period_id": str(period)}
+    key = uuid4()
+    created = client.post(path, json=body, headers=mutation_headers(key=key))
+    assert created.status_code == 201, created.text
+    data = created.json()["data"]
+    assert data["kind"] == "CATCH_UP" and data["invoice_id"] == body["invoice_id"]
+    replay = client.post(path, json=body, headers=mutation_headers(key=key))
+    assert replay.status_code == 201 and replay.json() == created.json()
+    again = client.post(
+        path,
+        json={**body, "invoice_id": str(uuid4())},
+        headers=mutation_headers(),
+    )
+    assert again.status_code == 409
+    assert again.json()["error"]["code"] == "UTILITY_PERIOD_ALREADY_INVOICED"
+    read_only = api(issuer(s.human, s.prop, UTILITY_READ_CAPABILITY))
+    assert read_only.post(path, json=body, headers=mutation_headers()).status_code == 403
