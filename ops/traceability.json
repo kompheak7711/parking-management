@@ -34407,6 +34407,16 @@
       "test_path": "backend/tests/test_initial_rent_override_capability_migration.py",
       "status": "implemented",
       "notes": "Migration 20261009_74 is forward-only."
+    },
+    {
+      "test_id": "test_credit_obligation_set_lock_rejects_autovacuum_lock_without_waiting",
+      "upstream_ids": [
+        "BR-PAY-030"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_migration.py",
+      "status": "implemented",
+      "notes": "A SHARE UPDATE EXCLUSIVE lock on app.invoices, the lock autovacuum and ANALYZE take, refuses Credit recognition through the NOWAIT obligation-set lock with no row written; the same command succeeds once released."
     }
   ]
 }

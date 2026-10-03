@@ -527,6 +527,34 @@ def test_credit_obligation_set_lock_rejects_competing_writer_without_waiting(
         ).fetchone() == (1,)
 
 
+def test_credit_obligation_set_lock_rejects_autovacuum_lock_without_waiting(
+    migrated_database_url: str,  # noqa: F811
+) -> None:
+    # Autovacuum and ANALYZE hold SHARE UPDATE EXCLUSIVE on a table while they
+    # work on it. That lock conflicts with the SHARE NOWAIT obligation-set lock,
+    # so a background autovacuum alone can refuse the command (DL-067, 9f-3).
+    human, prop, _, payment = source(migrated_database_url)
+    key = uuid4()
+    request = RecognizeCreditCommand(key, 8000, "Consent", "Retain excess")
+    staff = actor(human, prop, "credits.recognize")
+    with psycopg.connect(migrated_database_url) as vacuum_like:
+        vacuum_like.execute("LOCK TABLE app.invoices IN SHARE UPDATE EXCLUSIVE MODE")
+        with pytest.raises(CreditUnavailableError) as failure:
+            service().recognize(prop, payment, request, actor=staff)
+        assert isinstance(failure.value.__cause__, psycopg.errors.LockNotAvailable)
+        assert "could not obtain lock on relation" in str(failure.value.__cause__)
+    with psycopg.connect(migrated_database_url) as connection:
+        assert connection.execute(
+            "SELECT count(*) FROM app.credit_commands WHERE idempotency_key=%s", (key,)
+        ).fetchone() == (0,)
+    result = service().recognize(prop, payment, request, actor=staff)
+    assert result["available_usd_cents"] == 8000
+    with psycopg.connect(migrated_database_url) as connection:
+        assert connection.execute(
+            "SELECT count(*) FROM app.credit_commands WHERE idempotency_key=%s", (key,)
+        ).fetchone() == (1,)
+
+
 def test_credit_true_excess_after_full_allocation_preserves_both_consumers(
     migrated_database_url: str,  # noqa: F811
 ) -> None:
