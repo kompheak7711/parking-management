@@ -1189,3 +1189,28 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Development database migration deferred (DL-067, owner decision 2026-10-03):** no local development database existed on 2026-10-03, so no `pg_dump` backup was taken and `make migrate` was not run. The full PostgreSQL suite (1648 passed) applies every migration through `20261010_75` on fresh databases. The first `make migrate` against a real database, with a backup taken first, moves to V1-059.
 - **Browser check deferred; login slice planned (DL-067, owner decision 2026-10-03):** the application has no working login yet. `property_rental.app:app` is built with `deny_unauthenticated_actor` and `UnavailableAuthenticationFlow`, so `/api/v1/auth/login` answers 503 and no business screen can be reached in a browser. The owner declined a temporary launcher that would bypass authentication. The V1-055 screens were therefore not checked in a browser. A new slice builds the real login: the runtime authentication adapter with sessions and MFA, plus tests. It is planned after V1-056 and before V1-057, and the first browser check waits for it.
 - **Decision date:** 2026-10-02.
+
+
+## DL-068 — Leaving early, deposits, refunds, approval and correction history for V1-056
+
+- **Type:** `OWNER BUSINESS DECISION`
+- **Status:** `APPROVED; CANONICAL AMENDMENT PENDING; IMPLEMENTATION PENDING V1-056`
+- **Clarifies:** DL-065. DL-015's "the final calendar month of Rent is charged in full" means the calendar month of the actual hand-back (move-out) date, with the before-the-5th exception below. The text of DL-015 and DL-065 is unchanged.
+- **Leaving early, hand-back on or after the 5th:** the Customer pays that month's Rent in full, every issued Invoice (paid or unpaid) and the move-out charges (final Utility, Damage, cleaning and other services).
+- **Leaving early, hand-back before the 5th, that month's Rent unpaid:** the same, except that month's Rent Invoice, which an authorized user VOIDs with a reason. This also covers the next month's Rent Invoice generated on the 25th when the Customer leaves between the 25th and the end of the month.
+- **That month's Rent fully paid:** the Property keeps it; no Refund and no credit Adjustment. Because the Customer paid, the Customer may stay until the last day of that month.
+- **That month's Rent partly paid:** the Property keeps the paid part, and a linked credit Adjustment with a reason removes the unpaid rest (the DL-064 pattern for a Lease that never moved in).
+- **Date that counts:** the actual hand-back (move-out) date, not the notice date. The one-month notice is not a system rule.
+- **Kept Security Deposit:** a kept (forfeited) Security Deposit does not reduce what the Customer owes. Authorized staff may still apply the deposit to charges with a reason, as DL-032 allows.
+- **Cleaning charge:** a Unit cleaning charge, from the Unit's configured rate, is charged at every move-out, for any reason of leaving, on the move-out Invoice. An authorized user may reduce it with a reason.
+- **Unpaid balance after Final Settlement:** stays open as debt on the Customer Ledger. No write-off in V1.
+- **Pet Deposit at termination for unpaid Initial Rent and at violation termination:** it pays pet damage first and the rest is refunded, as in DL-013.
+- **Security Deposit when the Customer moved in and is then terminated for unpaid Initial Rent:** kept, as for a Customer who never moved in.
+- **Remaining Pet Deposit at move-out:** the Customer may choose to use it to pay any remaining balance. DL-032 step 5 also lets authorized staff do this with a reason when the Customer will not pay.
+- **Credit from a credit Adjustment:** belongs to the Customer named on the Lease and Invoice, even when a third party paid. Any Refund of it goes to that Customer.
+- **Payment allocated to the wrong Unit's Invoice by mistake** (example: meant for Unit 201, paid on Unit 203): not refunded to the payer. The wrong Payment Allocation on the Unit 203 Invoice is reversed and the same Payment is allocated to the Unit 201 Invoice. No Customer Credit moves between Customers (DL-031 stays true). Before this, staff record as text that both Customers confirmed: who, the date and how they confirmed. An authorized user approves.
+- **Refund method:** cash or bank transfer (ABA or another bank), with a reference note. All Refunds are in USD (DL-060). No Refund deadline in the system.
+- **Approval:** Final Settlement, deposit use, kept deposits, Refunds, wrong-Invoice Payment moves and post-settlement corrections are approved by the Owner, a Manager or another user given the approval capability. Staff can prepare but cannot approve. A new capability needs a proposed name and an owner answer before it is used.
+- **Correction history:** a finalized Final Settlement is never reopened. A later fix is a new linked post-settlement correction (extra charge or Refund) with a reason; the original Settlement stays unchanged. No time limit for post-settlement corrections.
+- **Canonical amendment pending:** 001 and 002 are not changed by this entry. The rules it changes or adds (among them BR-LEASE-021, BR-RENT-024, BR-MOVEOUT-010, BR-DEP-022, BR-DEP-019, BR-PAY-033, BR-CREDIT-002/003, BR-SETTLE-003/005/014, BR-AUTH-008/009 and the Trash-only Service rule) need owner-approved amendments before or with V1-056.
+- **Decision date:** 2026-10-03.

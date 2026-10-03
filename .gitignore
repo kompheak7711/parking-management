@@ -68,3 +68,7 @@ tmp/
 *.swp
 *.swo
 *~
+
+# Local agent and tool output
+.codex/
+graphify-out/

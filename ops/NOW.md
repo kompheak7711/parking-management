@@ -35,6 +35,7 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md.
 - No development database existed on 2026-10-03: no pg_dump backup and no make migrate. The full PostgreSQL suite applies every migration on fresh databases. First make migrate against a real database, with a backup first, moves to V1-059 (docs/010).
 - V1-055 CLOSE-OUT (2026-10-03): final commits d4d372c, 6d6cbe8, f052b33, 79d0152, 99e4a55, 9d04a1c, 9112454 and this close-out commit. Tests: backend 3329 passed, PostgreSQL 1648 passed, frontend 1586 passed. Open: braces advisory GHSA-vfj7-8cjw-p6xm (make frontend-audit fails) until V1-059; intermittent frontend tests TEST-FE-087, TEST-FE-488 and TEST-FE-128 for V1-060; Lease command responses still embed the timeline without the restricted events. Nothing pushed. Do not start V1-056 without the owner.
 - Browser check (2026-10-03): the app has no working login yet (the runtime authentication adapter is missing), so the V1-055 screens could not be checked in a browser. The first browser check waits for the login slice, planned after V1-056 and before V1-057 (docs/010). No launcher was built; nothing was started.
+- V1-056 rules (2026-10-03): owner answers recorded as DL-068 (clarifies DL-065; DL-015 final month means the hand-back month with the before-the-5th exception). Canonical 001/002 amendments, the approval capability name and the open gaps await the owner. No V1-056 code. Nothing pushed.
 - Next step: slices 9f-1 to 9f-5 are done (see close-out above). Do not start V1-056.
 
 - Updated: 2026-10-02.
