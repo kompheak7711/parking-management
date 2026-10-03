@@ -32715,7 +32715,8 @@
         "BR-INV-044",
         "PR-INV-044",
         "TEST-057",
-        "TEST-065"
+        "TEST-065",
+        "BR-CREDIT-014"
       ],
       "test_level": "integration",
       "test_path": "backend/tests/test_credit_adjustment_excess_migration.py",

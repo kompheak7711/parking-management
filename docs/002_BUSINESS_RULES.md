@@ -286,6 +286,12 @@ value alone must never authorize a conflicting Reservation, Lease, or move-in.
 
 ---
 
+## BR-UNIT-014 — Unit Cleaning Rate
+
+Each Unit has a configured cleaning rate in USD cents. It is the source of the Unit cleaning charge at move-out (BR-MOVEOUT-013). Changing the rate never changes an issued charge (DL-065, DL-068).
+
+---
+
 # 5. Customer Rules
 
 ## BR-CUST-001 — Single Customer Entity
@@ -814,6 +820,8 @@ The Lease End Date must be later than the Lease Start Date.
 The End Date is a contractual boundary, not an automatic month-to-month renewal
 and not an automatic TERMINATED transition while occupancy continues.
 
+Amended by DL-068 and DL-069 (2026-10-03): the End Date must also be the last day of a calendar month (BR-LEASE-031).
+
 ---
 
 ## BR-LEASE-014 — Non-overlapping Signed Lease Coverage
@@ -823,6 +831,12 @@ has overlapping contractual coverage for the same Unit.
 
 An approved signed renewal must not create overlapping contractual coverage that
 violates this invariant.
+
+---
+
+## BR-LEASE-031 — Lease End Date Is a Month End
+
+A Lease End Date must be the last day of a calendar month. Example: Start Date 10 April 2026, End Date 31 May 2027. Any other End Date is rejected. A Lease ends mid-month only through early termination. No Rent Invoice is generated for a month after the End Date (DL-069).
 
 ---
 
@@ -1471,6 +1485,8 @@ When a Customer voluntarily leaves before the Lease End Date and Property
 Management processes the early termination, Rent for the calendar month
 containing the approved actual termination/move-out date is charged in full.
 
+Amended by DL-068 and DL-069 (2026-10-03): the calendar month is the month of the actual hand-back date. The exception for a hand-back before the 5th is BR-RENT-030.
+
 ---
 
 ### BR-RENT-025 — No Future Rent After Processed Early Termination
@@ -1487,6 +1503,8 @@ If advance billing created a Rent Invoice for a period that is no longer valid
 after an approved termination, the original Invoice must not be silently edited
 or deleted. It must follow the controlled VOID or linked Adjustment process,
 including resolution of active financial dependencies.
+
+Amended by DL-068 and DL-069 (2026-10-03): when the hand-back month's Rent Invoice is VOIDed under BR-RENT-030, the whole Invoice is VOIDed, including Trash Collection and other fixed Service lines, because they are billed in advance on the same Invoice.
 
 ---
 
@@ -1520,6 +1538,18 @@ Rent nonpayment warning, 30-day Serious Nonpayment Default, cure history, and ex
 termination boundary.
 
 The Initial Rent Invoice is not an applicable source Invoice for a late-payment charge.
+
+---
+
+### BR-RENT-030 — Hand-back Before the 5th
+
+When a Customer leaving before the Lease End Date hands back the Unit before the 5th of a month (the date that counts is the actual hand-back date, not the notice date):
+
+- that month's Rent Invoice unpaid: an authorized user VOIDs the whole Invoice with a reason, including its fixed Service lines; this also covers the next month's Rent Invoice generated on the 25th when the hand-back is between the 25th and the end of the month;
+- that month's Rent fully paid: the Property keeps it, with no Refund and no credit Adjustment, and the Customer may stay until the last day of that month;
+- that month's Rent partly paid: the Property keeps the paid part and a linked credit Adjustment with a reason removes the unpaid rest.
+
+A hand-back on or after the 5th follows BR-RENT-024: that month's Rent is charged in full (DL-068, DL-069).
 
 ---
 
@@ -1990,6 +2020,8 @@ charges. They are examples of Services the Property could approve and configure 
 the future. This document approves no other Service type. Any different Service
 requires a separate Owner-approved rule and explicit configuration before billing;
 staff must not create an arbitrary Service through a generic or miscellaneous field.
+
+Amended by DL-068 and DL-069 (2026-10-03): the one-time Unit cleaning charge at move-out (BR-MOVEOUT-013) is not a recurring Service and does not approve a Monthly Cleaning Service.
 
 ---
 
@@ -3437,6 +3469,8 @@ to the recorded payer Customer.
 Recognition of the Credit consumes that excess from the Payment's allocatable
 available value without reducing or rewriting the original Payment amount.
 
+Amended by DL-068 and DL-069 (2026-10-03): Customer Credit created from value released by a credit Adjustment belongs to the Customer named on the Lease and Invoice, even when a third party paid (BR-CREDIT-014).
+
 ---
 
 ## BR-PAY-034 — Refund Choice
@@ -3527,6 +3561,14 @@ may show both the $100 Payment and the confirmed $31 application.
 
 ---
 
+## BR-PAY-042 — Payment Allocated to the Wrong Unit's Invoice
+
+When a Payment was allocated by mistake to another Unit's Invoice (example: meant for Unit 201, paid on Unit 203), the Payment is not refunded to the payer. Staff record a draft that states as text that both Customers confirmed, who confirmed, the date and how. After a `financial.approve` holder confirms it, the wrong Payment Allocation is reversed and the same Payment is allocated to the correct Invoice.
+
+The first Invoice becomes unpaid again, and the normal late-payment and Rent nonpayment rules apply to it from then on; earlier records are not changed. If the wrong allocation already became Customer Credit or a Refund, those must be reversed first; otherwise the move is blocked. The Payment record (amount, date, Receipt) never changes, and no Customer Credit moves between Customers (DL-031, DL-068, DL-069). BR-PAY-041 is withdrawn and is not reused.
+
+---
+
 # 21. Customer Credit Rules
 
 ## BR-CREDIT-001 — USD Accounting Balance
@@ -3542,12 +3584,16 @@ Unallocated excess becomes Customer Credit only after the payer authorizes
 Property Management to retain the identified amount. Recognition must not be
 automatic.
 
+Amended by DL-068 and DL-069 (2026-10-03): value released by a credit Adjustment becomes Customer Credit at once without payer authorization (DL-064 option (a); BR-CREDIT-014).
+
 ---
 
 ## BR-CREDIT-003 — Payment Source Linkage
 
 Every Customer Credit created from overpayment identifies the original Payment,
 the retained excess amount, the payer Customer, and the authorization event.
+
+Amended by DL-068 and DL-069 (2026-10-03): Customer Credit created from a credit Adjustment identifies the Adjustment, the released Payment Allocation or Credit application and the Invoice Customer (BR-CREDIT-014).
 
 ---
 
@@ -3631,6 +3677,12 @@ Customer Credit must remain permanently reconstructable and auditable.
 Customer Credit retained for a Customer remains a distinct customer-related liability
 concept. It must not be called or modeled as ordinary vendor Accounts Payable. General
 supplier and vendor Accounts Payable is outside this application's scope.
+
+---
+
+## BR-CREDIT-014 — Credit From a Credit Adjustment
+
+Customer Credit created from value released by a credit Adjustment belongs to the Customer named on the Lease and Invoice, even when a third party paid. It is recognized at once, without payer authorization, and any Refund of it goes to that Customer (DL-064, DL-068).
 
 ---
 
@@ -3825,6 +3877,18 @@ actor, and date/time. The Lease need not terminate, and full history is preserve
 
 ---
 
+## BR-REFUND-014 — Refund Methods
+
+Refund methods are a configured list, like Payment Methods, starting with Cash and Bank transfer (ABA or another bank). Every Refund records its method and a reference note. All Refunds are in USD (DL-060). The system sets no Refund deadline (DL-068, DL-069).
+
+---
+
+## BR-REFUND-015 — Deposit Refund Recipient for Joint Signers
+
+A Deposit Refund goes to the Primary Tenant unless all Lease Signers agree in writing that another Signer receives it. The agreement is recorded as text (DL-069).
+
+---
+
 # 23. Lease Termination Rules
 
 ## BR-LEASE-017 — No Automatic Month-to-month Tenancy
@@ -3874,6 +3938,8 @@ Management processes the early termination:
 - no separate standard early-termination fee is created; and
 - Rent is not generated for later months through the original End Date.
 
+Amended by DL-068 and DL-069 (2026-10-03): "that calendar month" is the month of the actual hand-back (move-out) date, not a notice date. A hand-back before the 5th follows BR-RENT-030 for that month's Rent. The leaving Customer also owes every issued Invoice (paid or unpaid), outstanding Late-payment Charges and the move-out charges, including the Unit cleaning charge (BR-MOVEOUT-013). The whole Security Deposit is forfeited and is never applied to what the Customer owes (BR-DEP-026).
+
 ---
 
 ## BR-LEASE-022 — Termination Notice
@@ -3921,6 +3987,8 @@ if either the Security Deposit or the Initial Rent Invoice is not fully paid wit
 calendar days after the Lease Start Date. That clause is the governing signed-Lease ground for
 termination. BR-LEASE-024's three warning letters do not apply to this ground. The
 termination records the Lease clause reference.
+
+Amended by DL-068 and DL-069 (2026-10-03): DL-064, DL-068 and DL-069 approve the Security Deposit forfeiture for this termination ground, whether or not the Customer moved in (BR-DEP-026), and the Pet Deposit outcome in BR-DEP-027.
 
 ---
 
@@ -4103,6 +4171,8 @@ Each finding is billed at most once. The charge must match the finding's Custome
 Lease and Unit. Inspection alone creates no charge; there is no standard damage fee and
 no automatic Pet Deposit forfeiture. Its Due Date follows BR-INV-018.
 
+Amended by DL-068 and DL-069 (2026-10-03): the Unit cleaning charge in BR-MOVEOUT-013 is an approved move-out charge and is not an invented fee.
+
 ---
 
 ## BR-MOVEOUT-007 — Normal Lease End
@@ -4134,6 +4204,8 @@ Voluntary early move-out follows BR-LEASE-021, including the full final calendar
 month of Rent, applicable final obligations, Security Deposit disposition, and no
 future Rent after the processed termination.
 
+Amended by DL-068 and DL-069 (2026-10-03): the full final month follows BR-RENT-024 and BR-RENT-030, and the Security Deposit follows BR-DEP-026.
+
 ---
 
 ## BR-MOVEOUT-011 — Move-out History
@@ -4149,6 +4221,12 @@ auditable.
 Move-out and Lease termination provide inputs to Final Settlement. Final
 Settlement must not close until all required valid charges are final, including
 any approved pending broken-Meter estimate.
+
+---
+
+## BR-MOVEOUT-013 — Unit Cleaning Charge
+
+At every move-out, for any reason of leaving, the Customer is charged the Unit's configured cleaning rate (BR-UNIT-014) as a one-time charge on the move-out Invoice. Its Due Date is the issue date plus the Property's configured days (7 by default), with the existing authorized override (BR-INV-018). An authorized user may reduce it with a linked credit Adjustment and a reason. There is no cleaning charge when the Customer never moved in (DL-065, DL-068, DL-069).
 
 ---
 
@@ -4186,6 +4264,8 @@ Every approved non-refundable Deposit outcome uses an explicit linked Deposit
 forfeiture or disposition event. The event reduces the refundable Deposit balance
 without deleting, rewriting, or silently reclassifying the original receipt.
 
+Amended by DL-068 and DL-069 (2026-10-03): a forfeited Security Deposit is forfeited in full and is never applied to what the Customer owes (BR-DEP-026).
+
 ---
 
 ## BR-DEP-019 — Disposition Audit
@@ -4202,6 +4282,8 @@ Each Deposit disposition records:
 
 It must not be allocated to an ordinary monthly Invoice merely to make an
 accounting balance work. This rule authorizes no new forfeiture circumstance.
+
+Amended by DL-068 and DL-069 (2026-10-03): DL-064, DL-068 and DL-069 approve the forfeiture circumstances listed in BR-DEP-026 and the Pet Deposit outcome in BR-DEP-027. BR-DEP-022 stays as written.
 
 ---
 
@@ -4241,6 +4323,8 @@ resolved through explicit disposition events.
 When voluntary early termination is processed under BR-LEASE-021, the Security
 Deposit is non-refundable and is resolved through an explicit disposition event.
 
+Amended by DL-068 and DL-069 (2026-10-03): the whole Security Deposit is forfeited and is never applied to what the Customer owes; unpaid charges stay as debt (BR-DEP-026).
+
 ---
 
 ## BR-DEP-024 — Pet Deposit During Voluntary Early Termination
@@ -4257,6 +4341,18 @@ validly applied or otherwise validly forfeited under an explicitly approved rule
 Every remaining refundable Security Deposit or Pet Deposit balance after Final
 Settlement must be returned through an explicit Refund event. Each Deposit type
 and Refund remains separately traceable.
+
+---
+
+## BR-DEP-026 — Forfeited Security Deposit Is Never Applied
+
+When the Security Deposit is kept, the whole deposit is forfeited through an explicit disposition event and is never used to pay what the Customer owes. Unpaid charges stay as debt on the Customer Ledger. This applies to voluntary early leaving, termination for unpaid Initial Rent or Security Deposit (whether or not the Customer moved in), termination for a violation (pet or non-pet) and termination after the 30-day Rent nonpayment default. At a normal Lease end DL-032 is unchanged (DL-064, DL-068, DL-069).
+
+---
+
+## BR-DEP-027 — Pet Deposit at Other Terminations
+
+At termination for unpaid Initial Rent or Security Deposit, for a non-pet violation, or after the 30-day Rent nonpayment default, the Pet Deposit pays valid pet damage first and the rest is refunded, as in DL-013. Termination for pet noncompliance follows BR-DEP-022: both deposits are kept (DL-068, DL-069).
 
 ---
 
@@ -4301,6 +4397,8 @@ Before applying Credit or Deposits, finalize every valid outstanding obligation
 that properly belongs in the Settlement from its approved source. No new fee,
 penalty, category, or obligation may be invented for Settlement.
 
+Amended by DL-068 and DL-069 (2026-10-03): the Unit cleaning charge (BR-MOVEOUT-013) and outstanding Late-payment Charges are valid Settlement obligations.
+
 ---
 
 ## BR-SETTLE-004 — Apply Authorized Customer Credit First
@@ -4322,6 +4420,8 @@ pay it, authorized management may explicitly select remaining Pet Deposit for th
 valid Settlement balance. This later application is not limited to pet-related
 obligations.
 
+Amended by DL-068 and DL-069 (2026-10-03): the Customer may also choose to use the remaining Pet Deposit for any remaining balance (BR-SETTLE-017).
+
 ---
 
 ## BR-SETTLE-006 — Explicit Deposit Selection
@@ -4336,12 +4436,16 @@ The system must not infer an additional FIFO ordering between Deposit types beyo
 BR-SETTLE-005 and must not apply either Deposit automatically merely because a
 Settlement balance exists.
 
+Amended by DL-068 and DL-069 (2026-10-03): a Security Deposit forfeited under BR-DEP-026 is not available for application. At a normal Lease end DL-032 is unchanged: the Security Deposit may pay remaining charges and the rest is refunded.
+
 ---
 
 ## BR-SETTLE-007 — Remaining Customer Balance
 
 After all authorized applications, any unpaid amount remains a Customer balance.
 Settlement must record it without changing the original obligations.
+
+Amended by DL-068 and DL-069 (2026-10-03): an unpaid balance after Final Settlement stays open as debt on the Primary Tenant's Customer Ledger (BR-SETTLE-016). There is no write-off in V1.
 
 ---
 
@@ -4401,6 +4505,8 @@ application reversal, disposition correction, or other applicable authorized
 linked financial correction. The closed Settlement and original financial events
 are not reopened or rewritten.
 
+Amended by DL-068 and DL-069 (2026-10-03): a finalized Final Settlement is never reopened. A later fix is a new linked post-settlement correction (extra charge or Refund) with a reason. There is no time limit for post-settlement corrections.
+
 ---
 
 ## BR-SETTLE-014 — Forfeiture Is Separate
@@ -4409,6 +4515,8 @@ A Deposit already resolved through an approved forfeiture/disposition event is
 shown as such and is not fabricated as an ordinary Invoice Payment or pooled with
 an available Deposit balance.
 
+Amended by DL-068 and DL-069 (2026-10-03): a forfeited Security Deposit is never used to pay what the Customer owes (BR-DEP-026).
+
 ---
 
 ## BR-SETTLE-015 — Settlement Audit
@@ -4416,6 +4524,18 @@ an available Deposit balance.
 Settlement must preserve every input, ordering decision, calculation, application,
 disposition, Refund, authorization, actor, date and time, source link, and final
 result necessary to reconstruct it.
+
+---
+
+## BR-SETTLE-016 — Settlement Debt and Joint Signers
+
+A balance the Customer does not pay after Final Settlement stays open as debt on the Primary Tenant's Customer Ledger. There is no write-off in V1 (DL-068, DL-069).
+
+---
+
+## BR-SETTLE-017 — Customer-chosen Pet Deposit Use
+
+At move-out the Customer may choose to use the remaining Pet Deposit to pay any remaining balance. Authorized staff may also do this with a reason when the Customer will not pay (DL-032 step 5). The application is confirmed by a `financial.approve` holder (DL-068).
 
 ---
 
@@ -4744,12 +4864,22 @@ preserved.
 An override of the suggested Reservation Security Deposit amount requires authorized
 management and preservation of the accepted amount, actor, timestamp, and reason.
 
+Amended by DL-068 and DL-069 (2026-10-03): Refunds, deposit use, deposit forfeiture and wrong-Invoice Payment moves are confirmed only by a holder of `financial.approve` (BR-AUTH-010).
+
 ---
 
 ## BR-AUTH-009 — Final Settlement Authorization
 
 Final Settlement application, finalization, closure, and post-closure correction
 require authorization and complete audit history.
+
+Amended by DL-068 and DL-069 (2026-10-03): Final Settlement and post-settlement corrections are confirmed only by a holder of `financial.approve` (BR-AUTH-010).
+
+---
+
+## BR-AUTH-010 — Financial Approval Drafts
+
+Final Settlement, deposit use, deposit forfeiture, Refunds, wrong-Invoice Payment moves and post-settlement corrections are recorded first as drafts. Staff may record a draft; only a holder of the capability `financial.approve` (the Owner, a Manager or another user given it) confirms it. A draft has no financial effect until it is confirmed (DL-068, DL-069).
 
 ---
 

@@ -732,6 +732,8 @@ It controls occupancy, billing, deposits, and the tenancy lifecycle.
 - A terminated Lease never becomes signed again.
 - A cancelled Lease was never activated.
 
+- A Lease End Date is the last day of a calendar month; a Lease ends mid-month only through early termination (DL-069, BR-LEASE-031).
+
 ---
 
 ## 9.6 Utility Meter Aggregate
@@ -2356,6 +2358,8 @@ Allocations, Adjustments, or any open-ended event to create Customer Credit.
 
 Customer Credit is distinct from a Deposit.
 
+Customer Credit created from value released by a credit Adjustment belongs to the Customer named on the Lease and Invoice, even when a third party paid (DL-064, DL-068, BR-CREDIT-014).
+
 ```text
 Customer Credit
     =
@@ -2433,6 +2437,8 @@ Refunds may arise from:
 A Refund is itself a financial event and must remain permanently recorded.
 
 The refund must identify the financial balance from which the refunded amount originated.
+
+Refund methods are a configured list starting with Cash and Bank transfer, and every Refund records a reference note. A Deposit Refund goes to the Primary Tenant unless all Lease Signers agree in writing to another Signer (DL-069, BR-REFUND-014, BR-REFUND-015).
 
 ---
 
@@ -2557,6 +2563,8 @@ A Security Deposit may then be:
 
 The exact refund and forfeiture conditions belong to `002_BUSINESS_RULES.md`.
 
+A forfeited Security Deposit is forfeited in full and is never applied to what the Customer owes; at a normal Lease end it may pay remaining charges and the rest is refunded (DL-068, DL-069, BR-DEP-026).
+
 ---
 
 # 34. Pet Deposit
@@ -2663,6 +2671,8 @@ Final Settlement may include:
 - Security Deposit
 - Pet Deposit
 - Payments received during settlement
+
+- Outstanding Late-payment Charges and the Unit cleaning charge at move-out are included; a Security Deposit forfeited under BR-DEP-026 is not available for application (DL-068, DL-069).
 
 ---
 
@@ -3293,6 +3303,8 @@ The following rules apply:
 - Any remaining amount due from the Customer must remain identifiable.
 - Final Settlement history must remain permanent.
 - Closing settlement must not erase any underlying Invoice, Payment, Deposit, Credit, or Adjustment history.
+
+- Final Settlement, deposit use, deposit forfeiture, Refunds, wrong-Invoice Payment moves and post-settlement corrections start as drafts and take effect only when a `financial.approve` holder confirms them; a finalized Settlement is never reopened, and an unpaid balance stays as debt on the Primary Tenant's Customer Ledger with no write-off (DL-068, DL-069, BR-AUTH-010, BR-SETTLE-016).
 
 ---
 

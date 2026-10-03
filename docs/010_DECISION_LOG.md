@@ -1214,3 +1214,24 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Correction history:** a finalized Final Settlement is never reopened. A later fix is a new linked post-settlement correction (extra charge or Refund) with a reason; the original Settlement stays unchanged. No time limit for post-settlement corrections.
 - **Canonical amendment pending:** 001 and 002 are not changed by this entry. The rules it changes or adds (among them BR-LEASE-021, BR-RENT-024, BR-MOVEOUT-010, BR-DEP-022, BR-DEP-019, BR-PAY-033, BR-CREDIT-002/003, BR-SETTLE-003/005/014, BR-AUTH-008/009 and the Trash-only Service rule) need owner-approved amendments before or with V1-056.
 - **Decision date:** 2026-10-03.
+
+## DL-069 — Answers to the DL-068 conflicts and gaps for V1-056
+
+- **Type:** `OWNER BUSINESS DECISION`
+- **Status:** `APPROVED; IMPLEMENTATION PENDING V1-056`
+- **Supersedes:** the DL-068 clause "Authorized staff may still apply the deposit to charges with a reason, as DL-032 allows." DL-068 text is unchanged; the link is only in this entry.
+- **Canonical amendment:** 001 and 002 are amended to match DL-068 and this entry for every conflict in the DL-068 review.
+- **Kept Security Deposit:** a kept (forfeited) Security Deposit is never used to pay what the Customer owes. The whole deposit is forfeited and unpaid charges stay as debt on the Customer Ledger. This applies to every case where the Security Deposit is kept: voluntary early leaving, termination for unpaid Initial Rent or Security Deposit, and violation termination.
+- **Normal Lease end:** DL-032 is unchanged. The Security Deposit may pay remaining charges and the rest is refunded.
+- **Pet noncompliance termination:** both deposits are kept; BR-DEP-022 stays as written. **Non-pet violation termination, or termination after the 30-day Rent nonpayment default:** the Security Deposit is kept; the Pet Deposit pays pet damage first and the rest is refunded.
+- **Approval capability:** new capability `financial.approve`. It approves Final Settlement, deposit use, deposit forfeiture, Refunds, wrong-Invoice Payment moves and post-settlement corrections.
+- **Drafts:** Staff record a draft of each of these actions; only a `financial.approve` holder confirms it. A draft has no financial effect until it is confirmed.
+- **Late-payment Charges:** they are part of what a leaving Customer owes.
+- **VOID of the hand-back month:** when the hand-back month's Rent Invoice is VOIDed (unpaid, hand-back before the 5th), the whole Invoice is VOIDed, including Trash Collection and other fixed Service lines, because they are billed in advance on the same Invoice. A read-only check on 2026-10-03 confirmed that the monthly Rent Invoice generated on the 25th and the Initial Rent Invoice both carry the Trash Collection line, prorated by days on the first part-month like the Initial Rent.
+- **Lease End Date:** a Lease End Date must always be the last day of a calendar month (example: Start Date 10 April 2026, End Date 31 May 2027). Any other End Date is rejected. A Lease ends mid-month only through early termination. V1-056 adds the validation and a test, and a test that no Rent Invoice is generated for a month after the End Date.
+- **Cleaning charge:** no cleaning charge when the Customer never moved in. The Unit cleaning charge is a one-time charge on the move-out Invoice; its Due Date is the issue date plus the Property's configured days (7 by default), with the existing authorized override. A reduction is a linked credit Adjustment with a reason.
+- **Wrong-Unit Payment move:** reverse the wrong allocation and allocate the same Payment to the correct Invoice. The first Invoice becomes unpaid again and the normal late-payment and Rent nonpayment rules apply from then on; earlier records are not changed. If the wrong allocation already became Customer Credit or a Refund, those must be reversed first; otherwise the move is blocked. The Payment record (amount, date, Receipt) never changes.
+- **Joint Signers:** settlement debt shows on the Primary Tenant's Customer Ledger. Deposit Refunds go to the Primary Tenant unless all Signers agree in writing to another Signer, recorded as text.
+- **Refund methods:** a configured list, like Payment Methods, starting with Cash and Bank transfer.
+- **Rules changed or added:** BR-LEASE-013, BR-LEASE-021, BR-LEASE-025, BR-RENT-024, BR-RENT-026, BR-MOVEOUT-006, BR-MOVEOUT-010, BR-SVC-001, BR-PAY-033, BR-CREDIT-002, BR-CREDIT-003, BR-DEP-018, BR-DEP-019, BR-DEP-023, BR-SETTLE-003, BR-SETTLE-005, BR-SETTLE-006, BR-SETTLE-007, BR-SETTLE-013, BR-SETTLE-014, BR-AUTH-008, BR-AUTH-009; new BR-UNIT-014, BR-LEASE-031, BR-RENT-030, BR-PAY-042 (BR-PAY-041 stays withdrawn), BR-CREDIT-014, BR-REFUND-014, BR-REFUND-015, BR-MOVEOUT-013, BR-DEP-026, BR-DEP-027, BR-SETTLE-016, BR-SETTLE-017, BR-AUTH-010.
+- **Decision date:** 2026-10-03.

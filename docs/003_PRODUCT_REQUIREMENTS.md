@@ -1216,6 +1216,8 @@ resolved through explicit disposition events.
 When voluntary early termination is processed under BR-LEASE-021, the Security
 Deposit is non-refundable and is resolved through an explicit disposition event.
 
+Amended by DL-068 and DL-069 (2026-10-03): the whole Security Deposit is forfeited and never applied to what the Customer owes (BR-DEP-026).
+
 ### PR-DEP-024 — Pet Deposit During Voluntary Early Termination
 
 **Business-rule traceability:** `BR-DEP-024`
@@ -1423,6 +1425,8 @@ The Lease End Date must be later than the Lease Start Date.
 The End Date is a contractual boundary, not an automatic month-to-month renewal
 and not an automatic TERMINATED transition while occupancy continues.
 
+Amended by DL-068 and DL-069 (2026-10-03): the End Date must also be the last day of a calendar month (BR-LEASE-031).
+
 ### PR-LEASE-014 — Non-overlapping Signed Lease Coverage
 
 **Business-rule traceability:** `BR-LEASE-014`
@@ -1531,6 +1535,8 @@ Management processes the early termination:
 - the Security Deposit is non-refundable;
 - no separate standard early-termination fee is created; and
 - Rent is not generated for later months through the original End Date.
+
+Amended by DL-068 and DL-069 (2026-10-03): the month is the month of the actual hand-back date; a hand-back before the 5th follows BR-RENT-030; Late-payment Charges and the Unit cleaning charge are owed; the whole Security Deposit is forfeited and never applied (BR-DEP-026).
 
 ### PR-LEASE-022 — Termination Notice
 
@@ -2057,6 +2063,8 @@ actual termination date.
 Voluntary early termination processed under BR-LEASE-021 is not prorated. Its
 final month is charged in full.
 
+Amended by DL-068 and DL-069 (2026-10-03): the final month is the month of the actual hand-back date, with the before-the-5th exception in BR-RENT-030.
+
 ### PR-RENT-013 — Applicable Final Month Proration
 
 **Business-rule traceability:** `BR-RENT-013`
@@ -2204,6 +2212,8 @@ When a Customer voluntarily leaves before the Lease End Date and Property
 Management processes the early termination, Rent for the calendar month
 containing the approved actual termination/move-out date is charged in full.
 
+Amended by DL-068 and DL-069 (2026-10-03): the month is the month of the actual hand-back date; the exception for a hand-back before the 5th is BR-RENT-030.
+
 ### PR-RENT-025 — No Future Rent After Processed Early Termination
 
 **Business-rule traceability:** `BR-RENT-025`
@@ -2224,6 +2234,8 @@ If advance billing created a Rent Invoice for a period that is no longer valid
 after an approved termination, the original Invoice must not be silently edited
 or deleted. It must follow the controlled VOID or linked Adjustment process,
 including resolution of active financial dependencies.
+
+Amended by DL-068 and DL-069 (2026-10-03): a VOID under BR-RENT-030 VOIDs the whole Invoice, including its fixed Service lines.
 
 ### PR-RENT-027 — Scheduled Billing Idempotency
 
@@ -4332,6 +4344,8 @@ to the recorded payer Customer.
 Recognition of the Credit consumes that excess from the Payment's allocatable
 available value without reducing or rewriting the original Payment amount.
 
+Amended by DL-068 and DL-069 (2026-10-03): Credit released by a credit Adjustment belongs to the Invoice Customer (BR-CREDIT-014).
+
 ### PR-PAY-034 — Refund Choice
 
 **Business-rule traceability:** `BR-PAY-034`
@@ -4984,6 +4998,8 @@ Voluntary early move-out follows BR-LEASE-021, including the full final calendar
 month of Rent, applicable final obligations, Security Deposit disposition, and no
 future Rent after the processed termination.
 
+Amended by DL-068 and DL-069 (2026-10-03): the final month follows BR-RENT-024 and BR-RENT-030; the Security Deposit follows BR-DEP-026.
+
 ### PR-MOVEOUT-011 — Move-out History
 
 **Business-rule traceability:** `BR-MOVEOUT-011`
@@ -5036,6 +5052,8 @@ handling, Adjustments, and other valid linked financial events applicable to tha
 Before applying Credit or Deposits, finalize every valid outstanding obligation
 that properly belongs in the Settlement from its approved source. No new fee,
 penalty, category, or obligation may be invented for Settlement.
+
+Amended by DL-068 and DL-069 (2026-10-03): the Unit cleaning charge (BR-MOVEOUT-013) and outstanding Late-payment Charges are valid Settlement obligations.
 
 ### PR-SETTLE-004 — Apply Authorized Customer Credit First
 
