@@ -810,4 +810,38 @@ describe("Lease staff workflow", () => {
       screen.getAllByRole("link", { name: "termination-event-1" }),
     ).toHaveLength(2);
   });
+
+  it("TEST-FE-670 labels the Initial Rent Due Date override and Rent-nonpayment events the server returns", async () => {
+    const api = client({
+      get: vi.fn().mockResolvedValue({
+        ...drafted,
+        status: "SIGNED",
+        timeline: [
+          {
+            event_id: "override-1",
+            event_kind: "lease.initial_rent_due_date_override",
+            occurred_at: "2026-09-10T03:00:00Z",
+            reason: "Customer payroll",
+            actor_id: "actor-1",
+            source_reference: "2026-09-20",
+            source_href: "/api/v1/leases/lease-1#timeline-override-1",
+          },
+          {
+            event_id: "warning-1",
+            event_kind: "lease.rent_nonpayment_twenty_day_warning",
+            occurred_at: "2026-09-10T04:00:00Z",
+            reason: "Authorized documented action",
+            actor_id: "actor-1",
+            source_reference: "case-1",
+            source_href: "/api/v1/leases/lease-1#timeline-warning-1",
+          },
+        ],
+      }),
+    });
+    await loadAndOpen(api);
+    expect(screen.getByText(/Initial Rent Due Date set/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Rent nonpayment: 20-day warning recorded/),
+    ).toBeInTheDocument();
+  });
 });

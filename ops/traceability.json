@@ -34467,6 +34467,102 @@
       "test_path": "backend/tests/test_lock_retry.py",
       "status": "implemented",
       "notes": "Credit and Refund services replay the identical command in a new connection after 55P03."
+    },
+    {
+      "test_id": "test_lease_timeline_restricted_function_with_empty_lists_returns_no_events",
+      "upstream_ids": [
+        "UI-042",
+        "BR-LEASE-005",
+        "API-038"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_timeline_restricted_migration.py",
+      "status": "implemented",
+      "notes": "Empty, NULL or other-Property lists return no restricted events; each list releases only its own kind for the Lease's Property."
+    },
+    {
+      "test_id": "test_lease_timeline_leases_read_only_user_sees_todays_timeline_pages_and_cursor",
+      "upstream_ids": [
+        "UI-042",
+        "BR-LEASE-005",
+        "API-038"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_timeline_restricted_migration.py",
+      "status": "implemented",
+      "notes": "On a Lease with three ordinary warnings, a Rent-nonpayment warning and an Initial Rent Due Date override, a leases.read user (also one holding the read grants only for another Property) sees neither hidden event and gets the same items, three pages and cursors as the pre-9f-5 timeline and Lease detail."
+    },
+    {
+      "test_id": "test_lease_timeline_shows_each_restricted_kind_only_to_its_read_capability",
+      "upstream_ids": [
+        "UI-042",
+        "BR-LEASE-005",
+        "API-038"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_timeline_restricted_migration.py",
+      "status": "implemented",
+      "notes": "invoices.read shows Initial Rent Due Date overrides and rent_nonpayment.read shows Rent-nonpayment events; neither shows the other."
+    },
+    {
+      "test_id": "test_lease_timeline_mixed_kind_cursor_pages_match_the_full_ordered_timeline",
+      "upstream_ids": [
+        "UI-042",
+        "BR-LEASE-005",
+        "API-038"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_timeline_restricted_migration.py",
+      "status": "implemented",
+      "notes": "Cursor pages over ordinary and restricted events equal the full ordered timeline with no duplicates."
+    },
+    {
+      "test_id": "test_lease_timeline_restricted_function_is_bounded_and_runtime_has_no_table_access",
+      "upstream_ids": [
+        "UI-042",
+        "BR-LEASE-005",
+        "API-038"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_timeline_restricted_migration.py",
+      "status": "implemented",
+      "notes": "STABLE SECURITY DEFINER function, EXECUTE for the runtime role only, no PUBLIC EXECUTE, no runtime table privilege; inactive actor and invalid pages are refused."
+    },
+    {
+      "test_id": "test_lease_timeline_restricted_migration_is_additive_and_forward_only",
+      "upstream_ids": [
+        "UI-042",
+        "BR-LEASE-005",
+        "API-038"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_lease_timeline_restricted_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20261010_75 adds only the read function, leaves every earlier function and table privilege unchanged and is forward-only."
+    },
+    {
+      "test_id": "test_timeline_restricted_visibility_follows_only_the_actor_read_grants",
+      "upstream_ids": [
+        "UI-042",
+        "BR-LEASE-005",
+        "API-038"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_lease_api.py",
+      "status": "implemented",
+      "notes": "The Lease detail and timeline routes pass Property lists built only from the actor's invoices.read and rent_nonpayment.read grants; leases.read alone passes none."
+    },
+    {
+      "test_id": "TEST-FE-670",
+      "upstream_ids": [
+        "UI-042",
+        "BR-LEASE-005",
+        "API-038"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/LeaseManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Labels the Initial Rent Due Date override and Rent-nonpayment events the server returns; synthetic fixtures only."
     }
   ]
 }

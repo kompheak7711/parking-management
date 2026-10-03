@@ -18,12 +18,14 @@ from property_rental.lease import (
     LeaseUpdateDraftCommand,
 )
 from property_rental.lease_api import (
+    NO_RESTRICTED_EVENTS,
     LeasePage,
     LeaseResource,
     LeaseResourceNotFound,
     LeaseSignerResource,
     LeaseTimelineEvent,
     LeaseTimelinePage,
+    LeaseTimelineVisibility,
 )
 from property_rental.move_in import CompleteMoveInCommand, MoveInSnapshot
 
@@ -71,6 +73,7 @@ class InMemoryLeaseFlow:
     sign_command: LeaseSignCommand | None = None
     terminate_command: LeaseTerminateCommand | None = None
     move_in_command: CompleteMoveInCommand | None = None
+    visibilities: list[LeaseTimelineVisibility] = field(default_factory=list)
 
     def list(
         self,
@@ -98,14 +101,24 @@ class InMemoryLeaseFlow:
         )
         return LeasePage(values[:limit], None)
 
-    def get(self, lease_id: UUID) -> LeaseResource:
+    def get(
+        self, lease_id: UUID, *, visibility: LeaseTimelineVisibility = NO_RESTRICTED_EVENTS
+    ) -> LeaseResource:
+        self.visibilities.append(visibility)
         try:
             return self.resources[lease_id]
         except KeyError as exc:
             raise LeaseResourceNotFound from exc
 
-    def timeline(self, lease_id: UUID, *, limit: int, cursor: str | None) -> LeaseTimelinePage:
-        values = self.get(lease_id).timeline
+    def timeline(
+        self,
+        lease_id: UUID,
+        *,
+        limit: int,
+        cursor: str | None,
+        visibility: LeaseTimelineVisibility = NO_RESTRICTED_EVENTS,
+    ) -> LeaseTimelinePage:
+        values = self.get(lease_id, visibility=visibility).timeline
         start = 0 if cursor is None else 1
         items = values[start : start + limit]
         next_cursor = "next" if start + limit < len(values) else None
@@ -543,3 +556,37 @@ def test_timeline_is_bounded_paginated_and_rejects_unknown_queries() -> None:
     assert second.json()["data"][0]["event_id"] == str(second_id)
     assert second.json()["page"]["next_cursor"] is None
     assert unknown.status_code == 400
+
+
+def test_timeline_restricted_visibility_follows_only_the_actor_read_grants() -> None:
+    property_id = uuid4()
+    other_property = uuid4()
+    current = resource(property_id)
+    lease_only = actor(property_id, "leases.read")
+    flow = InMemoryLeaseFlow({current.lease_id: current})
+    api = client(flow, lease_only)
+    assert api.get(f"/api/v1/leases/{current.lease_id}").status_code == 200
+    assert api.get(f"/api/v1/leases/{current.lease_id}/timeline").status_code == 200
+    assert flow.visibilities and all(
+        value == NO_RESTRICTED_EVENTS and not value.restricted for value in flow.visibilities
+    )
+
+    reader = AuthenticatedActor(
+        actor_id=str(uuid4()),
+        capability_grants=frozenset(
+            {
+                CapabilityGrant("leases.read", frozenset({str(property_id)})),
+                CapabilityGrant("invoices.read", frozenset({str(property_id)})),
+                CapabilityGrant(
+                    "rent_nonpayment.read", frozenset({str(other_property), "not-a-uuid"})
+                ),
+            }
+        ),
+    )
+    flow = InMemoryLeaseFlow({current.lease_id: current})
+    api = client(flow, reader)
+    assert api.get(f"/api/v1/leases/{current.lease_id}").status_code == 200
+    assert api.get(f"/api/v1/leases/{current.lease_id}/timeline").status_code == 200
+    expected = LeaseTimelineVisibility(UUID(reader.actor_id), (property_id,), (other_property,))
+    assert flow.visibilities[0] == expected
+    assert flow.visibilities[-1] == expected

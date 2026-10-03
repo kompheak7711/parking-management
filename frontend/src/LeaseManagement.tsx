@@ -62,6 +62,14 @@ const timelineLabels: Record<string, string> = {
     "Unpaid Initial obligation resolved: never moved in",
   "lease.unpaid_initial_moved_in_credit":
     "Unpaid Initial obligation resolved: Rent credited after termination",
+  "lease.initial_rent_due_date_override": "Initial Rent Due Date set",
+  "lease.rent_nonpayment_twenty_day_warning":
+    "Rent nonpayment: 20-day warning recorded",
+  "lease.rent_nonpayment_thirty_day_serious_default":
+    "Rent nonpayment: 30-day serious default recorded",
+  "lease.rent_nonpayment_cure": "Rent nonpayment: cure recorded",
+  "lease.rent_nonpayment_authorized_follow_up":
+    "Rent nonpayment: authorized follow-up recorded",
 };
 
 function timelineLabel(kind: string): string {

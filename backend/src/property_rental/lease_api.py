@@ -20,6 +20,7 @@ from property_rental.identity import (
     AuthorizationRequirement,
     is_authorized,
 )
+from property_rental.invoice import INVOICE_READ_CAPABILITY
 from property_rental.lease import (
     LEASE_DRAFT_CAPABILITY,
     LEASE_SIGN_CAPABILITY,
@@ -42,6 +43,7 @@ from property_rental.lease import (
     LeaseVersionConflictError,
     PostgresLeaseService,
 )
+from property_rental.lease_enforcement import NONPAYMENT_READ
 from property_rental.lease_termination import TerminationBasis, TerminationContext
 from property_rental.move_in import (
     CompleteMoveInCommand,
@@ -104,6 +106,56 @@ class LeaseTimelineEvent:
     actor_id: UUID
     source_reference: str | None
     source_href: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class LeaseTimelineVisibility:
+    """Properties where the actor may already see restricted Lease timeline events.
+
+    Initial Rent Due Date overrides need ``invoices.read`` and Rent-nonpayment events need
+    ``rent_nonpayment.read``. The application decides the capabilities; the database checks
+    the active actor and keeps only the Lease's own Property from each list.
+    """
+
+    actor_id: UUID | None = None
+    invoice_property_ids: tuple[UUID, ...] = ()
+    nonpayment_property_ids: tuple[UUID, ...] = ()
+
+    @property
+    def restricted(self) -> bool:
+        return self.actor_id is not None and bool(
+            self.invoice_property_ids or self.nonpayment_property_ids
+        )
+
+
+NO_RESTRICTED_EVENTS: Final = LeaseTimelineVisibility()
+
+
+def _granted_properties(actor: AuthenticatedActor, capability: str) -> tuple[UUID, ...]:
+    properties: set[UUID] = set()
+    for grant in actor.capability_grants:
+        if grant.capability != capability:
+            continue
+        for value in grant.property_ids:
+            try:
+                parsed = UUID(value)
+            except (ValueError, TypeError, AttributeError):
+                continue
+            if parsed.int and str(parsed) == value:
+                properties.add(parsed)
+    return tuple(sorted(properties))
+
+
+def timeline_visibility(actor: AuthenticatedActor) -> LeaseTimelineVisibility:
+    invoice_properties = _granted_properties(actor, INVOICE_READ_CAPABILITY)
+    nonpayment_properties = _granted_properties(actor, NONPAYMENT_READ)
+    if not invoice_properties and not nonpayment_properties:
+        return NO_RESTRICTED_EVENTS
+    try:
+        actor_id = UUID(actor.actor_id)
+    except (ValueError, TypeError, AttributeError):
+        return NO_RESTRICTED_EVENTS
+    return LeaseTimelineVisibility(actor_id, invoice_properties, nonpayment_properties)
 
 
 @dataclass(frozen=True, slots=True)
@@ -175,9 +227,18 @@ class LeaseResourceFlow(Protocol):
         cursor: str | None,
     ) -> LeasePage: ...
 
-    def get(self, lease_id: UUID) -> LeaseResource: ...
+    def get(
+        self, lease_id: UUID, *, visibility: LeaseTimelineVisibility = NO_RESTRICTED_EVENTS
+    ) -> LeaseResource: ...
 
-    def timeline(self, lease_id: UUID, *, limit: int, cursor: str | None) -> LeaseTimelinePage: ...
+    def timeline(
+        self,
+        lease_id: UUID,
+        *,
+        limit: int,
+        cursor: str | None,
+        visibility: LeaseTimelineVisibility = NO_RESTRICTED_EVENTS,
+    ) -> LeaseTimelinePage: ...
 
     def draft(
         self,
@@ -249,13 +310,22 @@ class UnavailableLeaseResourceFlow:
         self._raise()
         raise AssertionError
 
-    def get(self, lease_id: UUID) -> LeaseResource:
-        del lease_id
+    def get(
+        self, lease_id: UUID, *, visibility: LeaseTimelineVisibility = NO_RESTRICTED_EVENTS
+    ) -> LeaseResource:
+        del lease_id, visibility
         self._raise()
         raise AssertionError
 
-    def timeline(self, lease_id: UUID, *, limit: int, cursor: str | None) -> LeaseTimelinePage:
-        del lease_id, limit, cursor
+    def timeline(
+        self,
+        lease_id: UUID,
+        *,
+        limit: int,
+        cursor: str | None,
+        visibility: LeaseTimelineVisibility = NO_RESTRICTED_EVENTS,
+    ) -> LeaseTimelinePage:
+        del lease_id, limit, cursor, visibility
         self._raise()
         raise AssertionError
 
@@ -521,6 +591,7 @@ class PostgresLeaseResourceFlow:
         *,
         limit: int,
         cursor: str | None,
+        visibility: LeaseTimelineVisibility = NO_RESTRICTED_EVENTS,
     ) -> LeaseTimelinePage:
         decoded = _decode_cursor(cursor)
         cursor_time = None if decoded is None else decoded[0]
@@ -540,6 +611,26 @@ class PostgresLeaseResourceFlow:
                 limit + 1,
             ),
         ).fetchall()
+        if visibility.restricted:
+            # Merge the bounded restricted read into the same (occurred_at, event_id)
+            # order, so pages and cursors keep their meaning.
+            restricted = connection.execute(
+                "SELECT * FROM app.lease_timeline_restricted("
+                "%s,%s,%s::uuid[],%s::uuid[],%s::timestamptz,%s::uuid,%s)",
+                (
+                    visibility.actor_id,
+                    lease_id,
+                    list(visibility.invoice_property_ids),
+                    list(visibility.nonpayment_property_ids),
+                    cursor_time,
+                    cursor_id,
+                    limit + 1,
+                ),
+            ).fetchall()
+            rows = sorted(
+                [*rows, *restricted],
+                key=lambda row: (cast(datetime, row[2]), UUID(str(row[0]))),
+            )[: limit + 1]
         items = tuple(self._timeline_resource(row) for row in rows[:limit])
         next_cursor = None
         if len(rows) > limit and items:
@@ -547,15 +638,26 @@ class PostgresLeaseResourceFlow:
             next_cursor = _encode_cursor(last.occurred_at, last.event_id)
         return LeaseTimelinePage(items, next_cursor)
 
-    def timeline(self, lease_id: UUID, *, limit: int, cursor: str | None) -> LeaseTimelinePage:
+    def timeline(
+        self,
+        lease_id: UUID,
+        *,
+        limit: int,
+        cursor: str | None,
+        visibility: LeaseTimelineVisibility = NO_RESTRICTED_EVENTS,
+    ) -> LeaseTimelinePage:
         try:
             with psycopg.connect(self._database_url) as connection:
                 connection.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY")
-                return self._timeline_page(connection, lease_id, limit=limit, cursor=cursor)
+                return self._timeline_page(
+                    connection, lease_id, limit=limit, cursor=cursor, visibility=visibility
+                )
         except psycopg.Error as exc:
             raise LeaseResourceUnavailable from exc
 
-    def get(self, lease_id: UUID) -> LeaseResource:
+    def get(
+        self, lease_id: UUID, *, visibility: LeaseTimelineVisibility = NO_RESTRICTED_EVENTS
+    ) -> LeaseResource:
         try:
             with psycopg.connect(self._database_url) as connection:
                 connection.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY")
@@ -639,7 +741,7 @@ class PostgresLeaseResourceFlow:
                     else UUID(str(draft_source[1]))
                 )
                 timeline_page = self._timeline_page(
-                    connection, lease_id, limit=MAX_PAGE_SIZE, cursor=None
+                    connection, lease_id, limit=MAX_PAGE_SIZE, cursor=None, visibility=visibility
                 )
         except psycopg.Error as exc:
             raise LeaseResourceUnavailable from exc
@@ -1121,7 +1223,7 @@ def create_lease_router(
     def get_lease(lease_id: UUID, request: Request, response: Response) -> dict[str, object]:
         actor = _require_actor(request, resolver)
         try:
-            resource = flow.get(lease_id)
+            resource = flow.get(lease_id, visibility=timeline_visibility(actor))
             _require(actor, resource.property_id, LEASE_READ_CAPABILITY)
         except Exception as exc:
             raise _translate(exc) from exc
@@ -1284,7 +1386,9 @@ def create_lease_router(
         try:
             resource = flow.get(lease_id)
             _require(actor, resource.property_id, LEASE_READ_CAPABILITY)
-            page = flow.timeline(lease_id, limit=limit, cursor=cursor)
+            page = flow.timeline(
+                lease_id, limit=limit, cursor=cursor, visibility=timeline_visibility(actor)
+            )
         except Exception as exc:
             raise _translate(exc) from exc
         return {

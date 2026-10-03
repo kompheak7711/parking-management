@@ -667,6 +667,8 @@ same termination is refused as invalid. `POST /leases/{id}/terminate` now accept
 `notice_required` with `notice_id` and `notice_period_ends_on` or `notice_exception_reason`, and `warning_ids`); the
 database refuses a fresh termination without it. The `termination_event_id` is the `event_id` sent with the termination. `GET /leases/{id}/timeline` also lists each follow-up as `lease.unpaid_initial_never_moved_in` or `lease.unpaid_initial_moved_in_credit` with the termination event as its source reference.
 
+`GET /leases/{id}` (its first timeline page) and `GET /leases/{id}/timeline` also list Initial Rent Due Date overrides as `lease.initial_rent_due_date_override` (source reference: the Due Date) to an actor with `invoices.read` for the Lease's Property, and Rent-nonpayment events as `lease.rent_nonpayment_twenty_day_warning`, `lease.rent_nonpayment_thirty_day_serious_default`, `lease.rent_nonpayment_cure` or `lease.rent_nonpayment_authorized_follow_up` (source reference: the Rent-nonpayment case) to an actor with `rent_nonpayment.read` for that Property. They are merged into the same `occurred_at`, `event_id` order and cursor. An actor with only `leases.read` gets exactly the same items, pages and cursors as before, with no hint that other events exist.
+
 The final-decision command is authorized and idempotent and accepts only
 `CONFIRMED_DEFAULT`, `REDUCED`, or `WAIVED`. A REDUCED decision records the exact
 approved USD amount below the calculated default amount. The approved monetary amount
