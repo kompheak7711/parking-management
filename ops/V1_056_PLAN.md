@@ -1,6 +1,6 @@
 # V1-056 plan
 
-Written 2026-10-03 by Claude Code under ops/V1_056_TAKEOVER.md section 1. Status: DRAFT, waiting for owner approval. No slice starts before the owner approves this plan and answers the blocking questions.
+Written 2026-10-03 by Claude Code under ops/V1_056_TAKEOVER.md section 1. Status: APPROVED by the owner on 2026-10-03 with the changed order; owner answers are in section 6.
 
 Scope: Final Settlement, deposits, refunds and permanent correction history. Rules: DL-068, DL-069 and the docs 001, 002 and 003 amendments in commit 6732b8e. Read with AGENTS.md, ops/V1_055_RUN_RULES.md and ops/V1_056_TAKEOVER.md. The owner asked for this plan file in the repo; that request overrides the run-rules line that forbids tools from saving plan files.
 
@@ -132,3 +132,14 @@ Blocking questions are marked (B). I will not start a slice whose question is op
 - Fixture narrowing for slice 1 and Q6 may touch many tests; each is listed in the slice commit and docs/010.
 - Frontend intermittent tests TEST-FE-087, TEST-FE-128 and TEST-FE-488 are recorded if they fail once, not retried.
 - TEST-118 fails until slice 12; nothing is pushed before that.
+
+## 6. Owner answers (2026-10-03)
+
+- Q1: Yes. DL-069 is the approval for the month-end End Date rule. Check it in the database functions only, no table constraint, existing Leases untouched.
+- Q3: Add the new capability `final_settlements.prepare` for Staff to prepare drafts. Do not reuse `deposits.dispose`.
+- Q4: The same person may prepare and confirm a draft only if they hold `financial.approve`. Record both the preparer and the confirmer. A person without `financial.approve` can never confirm.
+- Q6: Every Refund and every deposit forfeiture, Reservation ones included, becomes a draft. The old direct routes return a clear error. Narrow the affected old tests one expectation at a time, with a docs/010 note.
+- Q10: Take the forfeiture reason from the termination record. Refuse when it cannot be worked out.
+- Q13: Staff issue the cleaning charge themselves. The Settlement preview shows it as missing until it is issued.
+- Q15: Post-settlement corrections are only "extra charge" and "Refund".
+- Q2, Q5, Q7, Q8, Q9, Q11, Q12, Q14, Q16, Q17, Q18: use the recommendation written in section 4.

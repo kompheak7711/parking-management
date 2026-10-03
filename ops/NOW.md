@@ -37,6 +37,6 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md.
 - Browser check (2026-10-03): the app has no working login yet (the runtime authentication adapter is missing), so the V1-055 screens could not be checked in a browser. The first browser check waits for the login slice, planned after V1-056 and before V1-057 (docs/010). No launcher was built; nothing was started.
 - V1-056 rules (2026-10-03): owner answers recorded as DL-068 (clarifies DL-065; DL-015 final month means the hand-back month with the before-the-5th exception). Canonical 001/002 amendments, the approval capability name and the open gaps await the owner. No V1-056 code. Nothing pushed.
 - V1-056 rules (2026-10-03): DL-069 records the owner answers to the DL-068 conflicts and gaps (supersedes the DL-068 forfeited-deposit application clause); 001, 002 and 003 amended; 13 new rule IDs; only BR-CREDIT-014 maps to an existing test, the other 12 need V1-056 tests before the CI TEST-118 audit passes; new capability financial.approve with drafts. No V1-056 code. Nothing pushed.
-- Next step: slices 9f-1 to 9f-5 are done (see close-out above). Do not start V1-056.
+- V1-056 plan (2026-10-03, 14e2a4d): takeover rules and slice plan committed (ops/V1_056_TAKEOVER.md, ops/V1_056_PLAN.md). Owner approved the plan and answered all questions (section 6 of the plan). NEXT: slice 1 (Lease End Date month end). Nothing pushed.
 
-- Updated: 2026-10-02.
+- Updated: 2026-10-03.
