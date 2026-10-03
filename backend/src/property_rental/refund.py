@@ -18,6 +18,7 @@ import psycopg
 from psycopg.types.json import set_json_loads
 
 from property_rental.identity import AuthenticatedActor, AuthorizationRequirement, is_authorized
+from property_rental.lock_retry import retry_lock_not_available
 
 
 class RefundNotFoundError(LookupError):
@@ -183,19 +184,26 @@ class RefundService:
             raise RefundAuthorizationError("Refund actor identity is invalid") from exc
         return identity
 
+    def _attempt(
+        self, sql: str, parameters: tuple[object, ...], mutation: bool
+    ) -> tuple[object, ...] | None:
+        # Leaving the block rolls back and closes the transaction on any error.
+        with psycopg.connect(
+            self.financial_database_url if mutation else self.database_url,
+            connect_timeout=3,
+        ) as connection:
+            # Local adapter only: do not change decoding for other services.
+            set_json_loads(_exact_refund_json, connection)
+            connection.execute("SET LOCAL lock_timeout='3000ms'")
+            connection.execute("SET LOCAL statement_timeout='5000ms'")
+            return connection.execute(sql, parameters).fetchone()
+
     def _query(
         self, sql: str, parameters: tuple[object, ...], *, mutation: bool = False
     ) -> dict[str, object]:
         try:
-            with psycopg.connect(
-                self.financial_database_url if mutation else self.database_url,
-                connect_timeout=3,
-            ) as connection:
-                # Local adapter only: do not change decoding for other services.
-                set_json_loads(_exact_refund_json, connection)
-                connection.execute("SET LOCAL lock_timeout='3000ms'")
-                connection.execute("SET LOCAL statement_timeout='5000ms'")
-                row = connection.execute(sql, parameters).fetchone()
+            # The same idempotent command is replayed after a NOWAIT refusal.
+            row = retry_lock_not_available(lambda: self._attempt(sql, parameters, mutation))
         except psycopg.Error as exc:
             if exc.sqlstate in {"P5201", "P4501"}:
                 raise RefundNotFoundError("Refund source or resource was not found") from exc

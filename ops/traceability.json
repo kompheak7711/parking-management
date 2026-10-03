@@ -34416,7 +34416,57 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_credit_migration.py",
       "status": "implemented",
-      "notes": "A SHARE UPDATE EXCLUSIVE lock on app.invoices, the lock autovacuum and ANALYZE take, refuses Credit recognition through the NOWAIT obligation-set lock with no row written; the same command succeeds once released."
+      "notes": "A SHARE UPDATE EXCLUSIVE lock on app.invoices, the lock autovacuum and ANALYZE take, refuses each NOWAIT attempt with no row written; released during the bounded retry the same command succeeds once, held through all four attempts it fails with CreditUnavailableError; exactly one command and one Credit afterwards."
+    },
+    {
+      "test_id": "test_lock_retry_returns_first_success_without_pausing",
+      "upstream_ids": [
+        "BR-PAY-030"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_lock_retry.py",
+      "status": "implemented",
+      "notes": "A command that succeeds first runs once with no pause."
+    },
+    {
+      "test_id": "test_lock_retry_replays_after_lock_refusal_until_success",
+      "upstream_ids": [
+        "BR-PAY-030"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_lock_retry.py",
+      "status": "implemented",
+      "notes": "After SQLSTATE 55P03 the same command is replayed after pauses of 0.25 and 0.5 seconds."
+    },
+    {
+      "test_id": "test_lock_retry_stops_after_three_replays_with_the_last_error",
+      "upstream_ids": [
+        "BR-PAY-030"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_lock_retry.py",
+      "status": "implemented",
+      "notes": "At most three replays (four attempts) with pauses 0.25, 0.5 and 1 second; the last 55P03 propagates unchanged."
+    },
+    {
+      "test_id": "test_lock_retry_never_replays_other_errors",
+      "upstream_ids": [
+        "BR-PAY-030"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_lock_retry.py",
+      "status": "implemented",
+      "notes": "Errors other than 55P03 are never replayed."
+    },
+    {
+      "test_id": "test_lock_retry_replays_the_same_service_command_in_a_new_connection",
+      "upstream_ids": [
+        "BR-PAY-030"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_lock_retry.py",
+      "status": "implemented",
+      "notes": "Credit and Refund services replay the identical command in a new connection after 55P03."
     }
   ]
 }

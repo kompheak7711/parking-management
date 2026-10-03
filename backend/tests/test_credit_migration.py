@@ -527,32 +527,61 @@ def test_credit_obligation_set_lock_rejects_competing_writer_without_waiting(
         ).fetchone() == (1,)
 
 
+@pytest.mark.parametrize("released_during_retry", [False, True])
 def test_credit_obligation_set_lock_rejects_autovacuum_lock_without_waiting(
     migrated_database_url: str,  # noqa: F811
+    monkeypatch: pytest.MonkeyPatch,
+    released_during_retry: bool,
 ) -> None:
     # Autovacuum and ANALYZE hold SHARE UPDATE EXCLUSIVE on a table while they
     # work on it. That lock conflicts with the SHARE NOWAIT obligation-set lock,
     # so a background autovacuum alone can refuse the command (DL-067, 9f-3).
+    # The service replays the same command at most three times (9f-4).
+    from property_rental import lock_retry
+
     human, prop, _, payment = source(migrated_database_url)
     key = uuid4()
     request = RecognizeCreditCommand(key, 8000, "Consent", "Retain excess")
     staff = actor(human, prop, "credits.recognize")
+
+    def rows() -> tuple[object, ...] | None:
+        with psycopg.connect(migrated_database_url) as connection:
+            return connection.execute(
+                "SELECT (SELECT count(*) FROM app.credit_commands WHERE idempotency_key=%s),"
+                "(SELECT count(*) FROM app.customer_credits WHERE source_payment_id=%s)",
+                (key, payment),
+            ).fetchone()
+
     with psycopg.connect(migrated_database_url) as vacuum_like:
         vacuum_like.execute("LOCK TABLE app.invoices IN SHARE UPDATE EXCLUSIVE MODE")
-        with pytest.raises(CreditUnavailableError) as failure:
-            service().recognize(prop, payment, request, actor=staff)
-        assert isinstance(failure.value.__cause__, psycopg.errors.LockNotAvailable)
-        assert "could not obtain lock on relation" in str(failure.value.__cause__)
-    with psycopg.connect(migrated_database_url) as connection:
-        assert connection.execute(
-            "SELECT count(*) FROM app.credit_commands WHERE idempotency_key=%s", (key,)
-        ).fetchone() == (0,)
-    result = service().recognize(prop, payment, request, actor=staff)
-    assert result["available_usd_cents"] == 8000
-    with psycopg.connect(migrated_database_url) as connection:
-        assert connection.execute(
-            "SELECT count(*) FROM app.credit_commands WHERE idempotency_key=%s", (key,)
-        ).fetchone() == (1,)
+        pauses: list[float] = []
+
+        def pause(seconds: float) -> None:
+            # The refused attempt is already rolled back: the command holds no
+            # row while it waits.
+            assert rows() == (0, 0)
+            pauses.append(seconds)
+            if released_during_retry and len(pauses) == 2:
+                vacuum_like.rollback()
+
+        monkeypatch.setattr(lock_retry, "_pause", pause)
+        if released_during_retry:
+            result = service().recognize(prop, payment, request, actor=staff)
+            assert result["available_usd_cents"] == 8000
+            assert pauses == [0.25, 0.5]
+        else:
+            with pytest.raises(CreditUnavailableError) as failure:
+                service().recognize(prop, payment, request, actor=staff)
+            assert isinstance(failure.value.__cause__, psycopg.errors.LockNotAvailable)
+            assert "could not obtain lock on relation" in str(failure.value.__cause__)
+            assert pauses == [0.25, 0.5, 1.0]
+            assert rows() == (0, 0)
+    monkeypatch.undo()
+    if not released_during_retry:
+        result = service().recognize(prop, payment, request, actor=staff)
+        assert result["available_usd_cents"] == 8000
+    assert service().recognize(prop, payment, request, actor=staff) == result
+    assert rows() == (1, 1)
 
 
 def test_credit_true_excess_after_full_allocation_preserves_both_consumers(
