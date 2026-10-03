@@ -15,6 +15,7 @@ import pytest
 from alembic import command
 from alembic.config import Config
 
+from property_rental.billing import month_end
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
 from property_rental.lease import (
     LEASE_DRAFT_CAPABILITY,
@@ -178,7 +179,7 @@ def test_commands_are_idempotent_versioned_audited_and_preserve_signer_rules(
         unit_id,
         tenant_id,
         start_date=business_date - timedelta(days=30),
-        end_date=business_date + timedelta(days=365),
+        end_date=month_end(business_date + timedelta(days=365)),
     )
 
     created = service.draft(draft, actor=authenticated)
@@ -589,7 +590,7 @@ def test_open_occupancy_blocks_unrelated_signing_but_allows_exact_renewal(
         unit_id,
         tenant_id,
         start_date=business_date - timedelta(days=30),
-        end_date=business_date,
+        end_date=month_end(business_date),
     )
     service.draft(occupied_lease, actor=authenticated)
     service.record_signature(
@@ -631,8 +632,8 @@ def test_open_occupancy_blocks_unrelated_signing_but_allows_exact_renewal(
     successor = draft_command(
         unit_id,
         tenant_id,
-        start_date=business_date + timedelta(days=1),
-        end_date=business_date + timedelta(days=365),
+        start_date=month_end(business_date) + timedelta(days=1),
+        end_date=month_end(business_date + timedelta(days=365)),
     )
     service.draft(successor, actor=authenticated)
     service.record_signature(
@@ -672,8 +673,8 @@ def test_open_occupancy_blocks_unrelated_signing_but_allows_exact_renewal(
         draft_command(
             unit_id,
             tenant_id,
-            start_date=business_date + timedelta(days=1),
-            end_date=business_date + timedelta(days=365),
+            start_date=month_end(business_date) + timedelta(days=1),
+            end_date=month_end(business_date + timedelta(days=365)),
         ),
         predecessor_lease_id=occupied_lease.lease_id,
         reason="Authorized non-overlapping renewal draft",

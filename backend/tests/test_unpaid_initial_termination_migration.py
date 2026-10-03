@@ -88,7 +88,9 @@ def signed_with_initial(url: str, start_offset: int) -> dict[str, Any]:
     start = today - timedelta(days=start_offset)
     leases = PostgresLeaseService(runtime_database_url(), prop, actor_id)
     who = actor(actor_id, prop, LEASE_DRAFT_CAPABILITY, LEASE_SIGN_CAPABILITY)
-    draft = draft_command(unit, customer, start_date=start, end_date=start + timedelta(days=365))
+    draft = draft_command(
+        unit, customer, start_date=start, end_date=month_end(start + timedelta(days=365))
+    )
     leases.draft(draft, actor=who)
     leases.record_signature(
         signature_command(draft.lease_id, draft.primary_signer_id, 1), actor=who

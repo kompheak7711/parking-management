@@ -291,7 +291,7 @@ def test_http_create_update_sign_and_replay_use_runtime_role(
             ("lease.sign",),
         ]
         assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-            "20261010_75",
+            "20261011_76",
         )
         assert connection.execute(
             "SELECT has_function_privilege('prm_runtime',"
@@ -378,7 +378,7 @@ def test_http_draft_requires_security_deposit_from_the_same_reservation_unit(
             "primary_tenant_id": str(customer_id),
             "primary_signer_id": str(uuid4()),
             "start_date": "2027-01-10",
-            "end_date": "2028-01-09",
+            "end_date": "2028-01-31",
             "monthly_rent_usd_cents": 80000,
             "predecessor_lease_id": None,
             "additional_signers": [],

@@ -34564,6 +34564,50 @@
       "test_path": "frontend/src/LeaseManagement.test.tsx",
       "status": "implemented",
       "notes": "Labels the Initial Rent Due Date override and Rent-nonpayment events the server returns; synthetic fixtures only."
+    },
+    {
+      "test_id": "test_lease_draft_and_update_accept_only_a_month_end_end_date",
+      "upstream_ids": [
+        "BR-LEASE-031",
+        "BR-LEASE-013",
+        "PR-LEASE-013"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_end_date_month_end_migration.py",
+      "status": "implemented",
+      "notes": "Draft, draft with terms and draft update reject an End Date that is not the last day of its month (30 May, 28 Feb 2028, 1 June) and write no Lease; month ends (31 May, 29 Feb 2028, 28 Feb 2027) and an open draft without dates are accepted."
+    },
+    {
+      "test_id": "test_signing_rejects_a_stored_end_date_that_is_not_a_month_end",
+      "upstream_ids": [
+        "BR-LEASE-031",
+        "BR-LEASE-013"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_end_date_month_end_migration.py",
+      "status": "implemented",
+      "notes": "No table constraint: an earlier draft row keeps its mid-month End Date, but signing it is refused with no sign command recorded; a month-end draft signs."
+    },
+    {
+      "test_id": "test_no_rent_invoice_is_generated_for_a_month_after_the_end_date",
+      "upstream_ids": [
+        "BR-LEASE-031",
+        "BR-LEASE-013"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_end_date_month_end_migration.py",
+      "status": "implemented",
+      "notes": "A Lease ending 31 August gets its Initial Invoice but no recurring Rent Invoice for September; a Lease ending 30 September gets September Rent."
+    },
+    {
+      "test_id": "test_month_end_migration_changes_only_the_four_functions_and_is_forward_only",
+      "upstream_ids": [
+        "BR-LEASE-031"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_lease_end_date_month_end_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20261011_76 changes only the Lease draft, draft-with-terms, draft-update and sign functions (grants and SECURITY DEFINER kept), adds no table or constraint, runs the check after the idempotent replay and is forward-only."
     }
   ]
 }

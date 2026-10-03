@@ -11,6 +11,7 @@ from alembic import command as alembic_command
 from alembic.config import Config
 from alembic.script import ScriptDirectory
 
+from property_rental.billing import month_end
 from property_rental.identity import AuthenticatedActor
 from property_rental.lease import (
     LEASE_DRAFT_CAPABILITY,
@@ -84,7 +85,7 @@ def signed(
         unit_id,
         customer_id,
         start_date=today - timedelta(days=1),
-        end_date=today + timedelta(days=365),
+        end_date=month_end(today + timedelta(days=365)),
     )
     service.draft(draft, actor=who)
     service.record_signature(
