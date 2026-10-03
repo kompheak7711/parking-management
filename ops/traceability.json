@@ -34608,6 +34608,119 @@
       "test_path": "backend/tests/test_lease_end_date_month_end_migration.py",
       "status": "implemented",
       "notes": "Migration 20261011_76 changes only the Lease draft, draft-with-terms, draft-update and sign functions (grants and SECURITY DEFINER kept), adds no table or constraint, runs the check after the idempotent replay and is forward-only."
+    },
+    {
+      "test_id": "test_staff_cannot_reject_and_approver_decides_a_draft_once",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-AUTH-008",
+        "BR-AUTH-009"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_draft_migration.py",
+      "status": "implemented",
+      "notes": "Staff without financial.approve, or an approver of another Property, cannot reject; an approver rejects once with a reason, an exact replay returns the same result, and any later decision is refused."
+    },
+    {
+      "test_id": "test_database_refuses_a_rejection_without_the_approval_reference",
+      "upstream_ids": [
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_draft_migration.py",
+      "status": "implemented",
+      "notes": "A direct call through the financial role without the financial.approve reference is refused (42501), before and after the draft is decided; an exact approved repeat replays."
+    },
+    {
+      "test_id": "test_only_the_preparer_with_the_prepare_capability_may_withdraw",
+      "upstream_ids": [
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_draft_migration.py",
+      "status": "implemented",
+      "notes": "Withdrawal needs the draft's own prepare capability (final_settlements.prepare here) and the preparer's identity, before and after the decision; another Staff member or another capability is refused; the exact repeat replays."
+    },
+    {
+      "test_id": "test_confirmation_is_recorded_once_with_preparer_and_confirmer",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-AUTH-009"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_draft_migration.py",
+      "status": "implemented",
+      "notes": "The internal confirm record needs the financial.approve reference (42501 otherwise) and the matching draft kind (22023 otherwise), keeps the preparer and the confirmer (here the same approver), and a second decision is refused."
+    },
+    {
+      "test_id": "test_draft_history_is_append_only_and_internal_helpers_are_not_granted",
+      "upstream_ids": [
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_draft_migration.py",
+      "status": "implemented",
+      "notes": "UPDATE, DELETE and TRUNCATE on drafts and decisions are refused; runtime and financial roles have no table access and no EXECUTE on internal helpers; reject and withdraw are granted only to the financial role and reads only to the runtime role; PUBLIC has no EXECUTE."
+    },
+    {
+      "test_id": "test_reads_need_a_draft_capability_and_stay_inside_the_property",
+      "upstream_ids": [
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_draft_migration.py",
+      "status": "implemented",
+      "notes": "Reads need financial.approve or a prepare capability; unknown drafts are not found; state filter and page limit work; an inactive account cannot read."
+    },
+    {
+      "test_id": "test_financial_draft_migration_is_additive_and_forward_only",
+      "upstream_ids": [
+        "BR-AUTH-010"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_financial_draft_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20261012_77 adds only the two draft tables and draft functions, leaves every earlier function unchanged and is forward-only."
+    },
+    {
+      "test_id": "test_each_draft_kind_accepts_only_its_own_prepare_capabilities",
+      "upstream_ids": [
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_draft_migration.py",
+      "status": "implemented",
+      "notes": "A draft kind paired with another kind's prepare capability is refused (23514); Final Settlement and correction drafts need final_settlements.prepare."
+    },
+    {
+      "test_id": "test_readers_see_only_their_kinds_and_never_another_property",
+      "upstream_ids": [
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_draft_migration.py",
+      "status": "implemented",
+      "notes": "Without financial.approve a reader sees only the kinds its capabilities may prepare; a draft is never read, rejected or withdrawn through another Property."
+    },
+    {
+      "test_id": "test_reject_and_withdraw_need_a_trimmed_reason",
+      "upstream_ids": [
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_draft_migration.py",
+      "status": "implemented",
+      "notes": "A blank, padded or missing reason is refused by the service and directly by the database (22023) for both reject and withdraw, and no decision is written."
+    },
+    {
+      "test_id": "test_bad_page_and_capability_input_is_refused_as_invalid",
+      "upstream_ids": [
+        "BR-AUTH-010"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_financial_draft_migration.py",
+      "status": "implemented",
+      "notes": "A non-datetime page cursor and a non-text prepare capability raise FinancialDraftInvalidError."
     }
   ]
 }
