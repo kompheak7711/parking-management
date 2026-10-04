@@ -2237,6 +2237,8 @@ including resolution of active financial dependencies.
 
 Amended by DL-068 and DL-069 (2026-10-03): a VOID under BR-RENT-030 VOIDs the whole Invoice, including its fixed Service lines.
 
+Amended by the owner's answer to Q-2026-10-04-9 (2026-10-04): Under BR-RENT-030, a fully paid Rent Invoice for the hand-back month, or for the next month when the hand-back is between the 25th and the month end, is kept as issued with no VOID, Refund or credit Adjustment (DL-068, Q-2026-10-04-8).
+
 ### PR-RENT-027 — Scheduled Billing Idempotency
 
 **Business-rule traceability:** `BR-RENT-027`
