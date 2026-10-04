@@ -55,4 +55,6 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md.
 
 - V1-056 slice 5 (2026-10-04, 501fa2d, migration 20261017_82): COMMITTED. Hand-back month monthly Rent Invoices (BR-RENT-030, BR-RENT-026 amended 9a7e288): VOID or per-line credit Adjustment after a verified voluntary early hand-back; round 3 (independent and security) no should-fix; unit 3349, PostgreSQL 1716 passed. Open for the owner, not blocking: Q-2026-10-04-10 (migration 70 may fail with two credit Adjustments; move-out correction after a resolution). NEXT: slice 6 (Deposit forfeiture and Pet Deposit cases). Nothing pushed.
 
+- V1-056 slice 6 (2026-10-04): STOPPED before code. No Deposit application record exists for BR-DEP-027, the 30-day default termination is not linked to its Serious Default event, and the migration 70 resolution forfeits directly; questions with recommendations in Q-2026-10-04-11. Q-2026-10-04-10 also open. NEXT: owner answers. Nothing pushed.
+
 - Updated: 2026-10-04.
