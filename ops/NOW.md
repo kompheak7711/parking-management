@@ -40,6 +40,6 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md.
 - V1-056 plan (2026-10-03, 14e2a4d): takeover rules and slice plan committed (ops/V1_056_TAKEOVER.md, ops/V1_056_PLAN.md). Owner approved the plan and answered all questions (section 6 of the plan). NEXT: slice 1 (Lease End Date month end). Nothing pushed.
 - V1-056 slice 1 (2026-10-03, f11e085, migration 20261011_76): Lease End Date must be a month end; checked in the draft, draft-with-terms, update and sign functions only; review record ops/reviews/V1-056-slice-01-lease-end-date.md. NEXT: slice 2 (financial.approve, final_settlements.prepare, drafts). Nothing pushed.
 - V1-056 slice 2 (2026-10-03, 627f63b, migration 20261012_77): financial.approve, final_settlements.prepare and append-only financial drafts; owner-approved third review round had no should-fix; review record ops/reviews/V1-056-slice-02-financial-drafts.md. NEXT: slice 3 (Refund methods, joint-Signer recipient). Nothing pushed.
-- STOPPED (2026-10-03): slice 3 not started. Reservation Refunds and forfeitures are atomic with cancellation, and expiry forfeits automatically (BR-RES-016/021/022); making them drafts conflicts with these approved rules. Owner answers needed: ops/V1_056_QUESTIONS.md Q-2026-10-03-2. Nothing pushed.
+- STOPPED (2026-10-04): slice 3a-1 (Refund methods and Refund drafts, migration 20261013_78) built, full PostgreSQL suite 1676 passed, but review round 2 has one should-fix (Payment draft gone stale through new unpaid charges reports 503 instead of 422). Uncommitted in the working tree. Owner decision: ops/V1_056_QUESTIONS.md Q-2026-10-04-3. Owner answered Q-2026-10-03-2 (recorded in docs/010, uncommitted). Nothing pushed.
 
-- Updated: 2026-10-03.
+- Updated: 2026-10-04.
