@@ -1,0 +1,51 @@
+cd frontend && npm run format:check
+
+> property-rental-frontend@0.1.0 format:check
+> prettier --check --ignore-unknown .
+
+Checking formatting...
+All matched files use Prettier code style!
+cd frontend && npm run lint
+
+> property-rental-frontend@0.1.0 lint
+> eslint . --max-warnings 0
+
+cd frontend && npm run typecheck
+
+> property-rental-frontend@0.1.0 typecheck
+> tsc -b
+
+cd frontend && npm run test
+
+> property-rental-frontend@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.11 /Users/sokompheak/Development/property-rental-management/frontend
+
+
+ Test Files  38 passed (38)
+      Tests  1590 passed (1590)
+   Start at  01:47:43
+   Duration  9.43s (transform 3.49s, setup 1.56s, import 5.07s, tests 46.15s, environment 10.51s)
+
+cd frontend && npm run build
+
+> property-rental-frontend@0.1.0 build
+> tsc -b && vite build
+
+[36mvite v7.3.6 [32mbuilding client environment for production...[36m[39m
+transforming...
+[32m✓[39m 82 modules transformed.
+rendering chunks...
+computing gzip size...
+[2mdist/[22m[32mindex.html                 [39m[1m[2m  0.51 kB[22m[1m[22m[2m │ gzip:   0.31 kB[22m
+[2mdist/[22m[2massets/[22m[35mindex-DIwvQor4.css  [39m[1m[2m 10.72 kB[22m[1m[22m[2m │ gzip:   2.76 kB[22m
+[2mdist/[22m[2massets/[22m[36mindex-BDNwcljC.js   [39m[1m[33m750.09 kB[39m[22m[2m │ gzip: 201.17 kB[22m
+[33m
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
+[32m✓ built in 521ms[39m
+exit=0

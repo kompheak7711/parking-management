@@ -4248,6 +4248,8 @@ by the approved rules.
 An Invoice without a Lease remains eligible when it belongs to that Customer and
 is otherwise a valid applicable obligation.
 
+Amended by the owner's answer to Q-2026-10-05-16 (2026-10-05): under BR-PAY-042, a confirmed wrong-Unit Payment move may allocate a normal Customer Payment to an Invoice of another Customer or outside the Payment's identified Invoice; only that move, or a credit Adjustment's re-post of such an allocation on the same Invoice, does so.
+
 ### PR-PAY-026 — Third-party Payment Scope
 
 **Business-rule traceability:** `BR-PAY-026`
@@ -4264,6 +4266,8 @@ making the Payment.
 For allocation purposes, a jointly responsible Lease Signer who is not the
 Invoice Customer uses this designated-payment path. That treatment does not
 remove or change the Signer's approved joint Lease responsibility.
+
+Amended by the owner's answer to Q-2026-10-05-16 (2026-10-05): under BR-PAY-042, a confirmed wrong-Unit Payment move may allocate a third-party Payment outside its identified Invoice or Lease intent; only that move, or a credit Adjustment's re-post of such an allocation on the same Invoice, does so.
 
 ### PR-PAY-027 — Allocation Amount Limits
 

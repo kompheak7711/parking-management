@@ -1195,6 +1195,8 @@ Payment or target obligation, requires detail totals to equal header amount, and
 authorized confirmation. A generated proposal never posts or authorizes itself.
 Update/delete is prohibited.
 
+V1-056 slice 7 (migration `20261020_85`, BR-PAY-042): `between_invoice_basis` also allows `WRONG_UNIT_MOVE`. Only a confirmed wrong-Unit Payment move (DB-PAY-008), or a credit Adjustment's re-post of such an allocation, creates it; a deferred constraint trigger proves the link. It is exempt from the payer and third-party intent scope (BR-PAY-025 and BR-PAY-026 amendments), uses the proposal shape with the within-Invoice default order (BR-PAY-036), and is never reversed by the one-call allocation reversal (SQLSTATE P4904; owner answer to Q-2026-10-05-17): only another move or a credit Adjustment on its Invoice reverses it.
+
 ## DB-PAY-005 — `payment_allocation_reversals`
 
 Append-only: `id uuid PK`, `payment_allocation_id uuid NOT NULL UNIQUE FK`, `reason text NOT NULL`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`, `authorization_reference text NOT NULL`. Active Allocation effect is original Allocation less its linked reversal (zero when reversed).
@@ -1222,6 +1224,10 @@ match the header target and Customer. The category snapshot is required only for
 Invoice line; a Late-payment Charge remains an obligation kind, never an Invoice
 Category. A Charge allocation has exactly one Charge detail, reduces only that Charge,
 and cannot exceed its remaining balance or affect the source Invoice.
+
+## DB-PAY-008 — `payment_moves`
+
+Append-only link of one confirmed wrong-Unit Payment move (BR-PAY-042, V1-056 slice 7, migration `20261020_85`): `id uuid PK`, `draft_id uuid NOT NULL UNIQUE FK financial_drafts`, `property_id`, `payment_id`, `source_allocation_id uuid NOT NULL UNIQUE FK payment_allocations`, `source_reversal_id uuid NOT NULL UNIQUE FK payment_allocation_reversals`, `source_reversed_by_move boolean NOT NULL`, `target_allocation_id uuid NOT NULL UNIQUE FK payment_allocations`, `source_invoice_id`, `target_invoice_id`, `moved_usd_cents bigint NOT NULL CHECK (>0)`, `source_acknowledgement` and `target_acknowledgement text NOT NULL` (1 to 2,000 characters: who acknowledged for each Customer, the date and how), `confirmed_at`, `confirmed_by`. Staff record a `PAYMENT_MOVE` draft under `payments.allocations.reverse` (`app.record_payment_move_draft`); a `financial.approve` holder confirms it (`app.confirm_payment_move_draft`), which in one transaction reverses the wrong Invoice allocation (unless the one-call reversal already did), posts the same Payment to the correct Invoice of another Unit and inserts this row; a deferred check requires the draft's CONFIRMED decision. The move is refused while the Payment has Customer Credit that is not reversed or a Refund that is not fully returned, and a draft is stale when the correct Invoice or the source changed. The Payment row and its Receipt never change. No runtime or financial role has table privileges. Update/delete is prohibited. The reversal and the new allocation share one instant, and one `payment_move.confirmed` audit event per move carries the draft id as its correlation id. The draft payload (both acknowledgements and the line split of the correct Invoice) must fit the 16,000-byte draft limit. The confirmation advances the correct Invoice's version even when its status is unchanged. A Customer Credit that a credit Adjustment released from a moved allocation is never reversed by the one-call Credit reversal unless the Payment is a normal Customer Payment and the Credit belongs to its payer (`customer_credit_reversals_moved_payment`, SQLSTATE P4904; owner answers to Q-2026-10-05-18 and Q-2026-10-05-19); otherwise it stays with its Customer. A Credit of a Customer other than the payer can only be applied to that Customer's Invoices or Late-payment Charges: the existing Refund rules pay a Credit Refund only to a recipient who is both the Credit's Customer and the payer, so its Refund to that Customer (BR-CREDIT-014) is planned for slice 9, as a Refund draft confirmed by `financial.approve`. A third-party payer's own Credit can still be refunded to the payer through a Refund draft.
 
 ## DB-CREDIT-001 — `customer_credits`
 
@@ -1255,6 +1261,8 @@ Append-only: `id uuid PK`, `credit_application_id uuid NOT NULL UNIQUE FK`, `rea
 ## DB-CREDIT-004 — `customer_credit_reversals`
 
 Append-only: `id uuid PK`, `customer_credit_id uuid NOT NULL UNIQUE FK`, `reason text NOT NULL`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`, `authorization_reference text NOT NULL`. It requires all applications and Refund commitments sourced from the Credit to be resolved explicitly.
+
+V1-056 slice 7: a reversal of a Credit released from a moved allocation is refused unless the Payment is a normal Customer Payment and the Credit belongs to its payer (DB-PAY-008, `customer_credit_reversals_moved_payment`).
 
 ## DB-CREDIT-005 — `customer_credit_application_details`
 

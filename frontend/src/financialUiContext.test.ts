@@ -139,6 +139,35 @@ describe("complete staff financial contexts", () => {
     },
   );
 
+  it.each([
+    ["WRONG_UNIT_MOVE", true],
+    ["UNKNOWN_BASIS", false],
+  ] as const)(
+    "TEST-FE-672 loads an allocation reversal context with basis %s=%s",
+    async (basis, loads) => {
+      const original = actionContextFixtures.find(
+        (s) => s.request.purpose === "allocation_reversal",
+      );
+      if (!original) throw new Error("Allocation reversal fixture missing");
+      const sample = structuredClone(original);
+      const context = financialObject(sample.data.context);
+      // A one-Customer wrong-Unit move (BR-PAY-042) keeps the payer scope, so its
+      // reversal context loads; an unknown basis is still refused.
+      financialObject(context.allocation).between_invoice_basis = basis;
+      const s = scope(sample);
+      const fetcher = vi.fn<typeof fetch>((_url, init) =>
+        Promise.resolve(response(sample.data, init ?? {}, s)),
+      );
+      const result = loadFinancialActionContext(
+        s,
+        sample.request,
+        createFinancialReferenceClient(fetcher),
+      );
+      if (loads) await expect(result).resolves.toEqual(sample.data);
+      else await expect(result).rejects.toThrow();
+    },
+  );
+
   it("TEST-FE-418 continues the exact action revision and returns only the complete Invoice lines", async () => {
     const { sample, first, second, cursor } = invoicePair();
     const s = scope(sample);

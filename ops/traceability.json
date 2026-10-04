@@ -35812,6 +35812,382 @@
       "test_path": "backend/tests/test_lease_deposit_forfeiture_migration.py",
       "status": "implemented",
       "notes": "Migration 20261018_83 follows 20261017_82 and refuses downgrade."
+    },
+    {
+      "test_id": "test_payment_move_record_and_confirm_refuse_missing_capability_before_any_connection",
+      "upstream_ids": [
+        "BR-PAY-042",
+        "BR-AUTH-010"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_payment_move.py",
+      "status": "implemented",
+      "notes": "Recording a wrong-Unit Payment move draft needs payments.allocations.reverse and confirming it needs financial.approve; financial.approve, payments.allocate, a nil or malformed actor identity are refused before any database connection (V1-056 slice 7)."
+    },
+    {
+      "test_id": "test_payment_move_invalid_input_is_refused_before_any_connection",
+      "upstream_ids": [
+        "BR-PAY-042"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_move.py",
+      "status": "implemented",
+      "notes": "Nil identities, a reason outside 1 to 1,000 trimmed characters and acknowledgements outside 1 to 2,000 trimmed characters or with NUL are refused before any connection; the limits are inclusive."
+    },
+    {
+      "test_id": "test_payment_move_database_failures_map_to_stable_errors",
+      "upstream_ids": [
+        "BR-PAY-042",
+        "BR-AUTH-010"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_move.py",
+      "status": "implemented",
+      "notes": "Database refusals map to stable service errors: not found, permission, invalid input (22023), key reuse, and business-state refusals (55000, 23514, 23505, P4904, 40001, 40P01, 55P03) as conflicts; connection and timeout failures stay unresolved for replay."
+    },
+    {
+      "test_id": "test_payment_move_business_state_refusals_are_conflicts",
+      "upstream_ids": [
+        "BR-PAY-042"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_move.py",
+      "status": "implemented",
+      "notes": "Stale or blocked move drafts reach the user as conflicts, not invalid input (owner answer for slice 11c, 2026-10-05)."
+    },
+    {
+      "test_id": "test_payment_move_draft_id_is_scoped_to_property_preparer_and_key",
+      "upstream_ids": [
+        "BR-PAY-042",
+        "BR-AUTH-010"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_move.py",
+      "status": "implemented",
+      "notes": "The move draft id is stable for one Property, preparer and command key and differs when any of them changes."
+    },
+    {
+      "test_id": "test_payment_move_drafts_are_prepared_only_under_the_allocation_reversal_capability",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-PAY-042"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_payment_move.py",
+      "status": "implemented",
+      "notes": "The PAYMENT_MOVE draft kind is prepared only under payments.allocations.reverse (plan answer Q3)."
+    },
+    {
+      "test_id": "test_wrong_unit_move_is_a_draft_until_an_approver_confirms",
+      "upstream_ids": [
+        "BR-PAY-042",
+        "BR-AUTH-010",
+        "BR-PAY-025",
+        "BR-PAY-029"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_move_migration.py",
+      "status": "implemented",
+      "notes": "A Payment allocated to the Unit 203 Invoice is moved to the Unit 201 Invoice of another Customer only after a financial.approve holder confirms the staff draft; the draft records both acknowledgements and the BR-PAY-036 line split and has no effect before confirmation; staff and a wrong database reference cannot confirm; record and confirm replay; confirmation reverses the wrong allocation and posts a WRONG_UNIT_MOVE allocation in one transaction, links draft, reversal and new allocation, names the approver, audits the move reason, and leaves the Payment row, its Receipt and Customer Credit unchanged; a decided draft cannot be confirmed again. The reversal and the new allocation share one instant, and one payment_move.confirmed audit event names the approver under financial.approve with the draft id as correlation id and the preparer."
+    },
+    {
+      "test_id": "test_move_refuses_wrong_targets_reused_keys_and_a_second_waiting_draft",
+      "upstream_ids": [
+        "BR-PAY-042",
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_move_migration.py",
+      "status": "implemented",
+      "notes": "A correct Invoice of the same Unit is invalid, unknown allocations or Invoices are not found, a reused key with other content is refused, only one move draft per allocation may wait, and the database refuses a draft prepared under another capability; nothing moves."
+    },
+    {
+      "test_id": "test_correct_invoice_with_nothing_outstanding_is_a_conflict",
+      "upstream_ids": [
+        "BR-PAY-042",
+        "BR-PAY-028"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_move_migration.py",
+      "status": "implemented",
+      "notes": "A move to an Invoice with nothing outstanding is refused as a conflict and records no draft."
+    },
+    {
+      "test_id": "test_stale_draft_stays_pending_and_the_rest_stays_unallocated_on_the_payer",
+      "upstream_ids": [
+        "BR-PAY-042",
+        "BR-AUTH-010",
+        "BR-PAY-028"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_move_migration.py",
+      "status": "implemented",
+      "notes": "A draft whose correct Invoice changed is refused as stale and stays pending; the preparer withdraws it; a new draft moves only what the correct Invoice still owes and the rest stays unallocated on the recorded payer, not Credit (plan Q16)."
+    },
+    {
+      "test_id": "test_rejected_draft_moves_nothing_and_a_new_draft_may_follow",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-PAY-042"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_move_migration.py",
+      "status": "implemented",
+      "notes": "Only a financial.approve holder rejects a move draft; a rejected draft cannot be confirmed and moves nothing; a new draft may follow and be confirmed."
+    },
+    {
+      "test_id": "test_customer_credit_or_refund_from_the_payment_blocks_the_move",
+      "upstream_ids": [
+        "BR-PAY-042",
+        "BR-CREDIT-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_move_migration.py",
+      "status": "implemented",
+      "notes": "Customer Credit from the Payment that is not reversed blocks the move until it is reversed; a Refund from the Payment blocks it until the Refund is verified as fully returned (owner answer 4 to Q-2026-10-05-16)."
+    },
+    {
+      "test_id": "test_credit_adjustment_release_never_moves_and_its_replacement_waits_for_the_credit",
+      "upstream_ids": [
+        "BR-PAY-042",
+        "BR-CREDIT-014"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_move_migration.py",
+      "status": "implemented",
+      "notes": "An allocation released by a credit Adjustment never moves; its replacement cannot move while the released Customer Credit stands, and may be drafted once that Credit (here the payer's own) is reversed (owner answer 4 to Q-2026-10-05-16)."
+    },
+    {
+      "test_id": "test_already_reversed_allocation_moves_while_the_payment_holds_its_value",
+      "upstream_ids": [
+        "BR-PAY-042",
+        "BR-PAY-029"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_move_migration.py",
+      "status": "implemented",
+      "notes": "A wrong allocation already reversed by the one-call reversal moves without a second reversal while the Payment still holds its value, at most once; when the released value was allocated elsewhere the move is refused (owner answer 5)."
+    },
+    {
+      "test_id": "test_one_call_reversal_cannot_undo_a_move_but_another_move_can",
+      "upstream_ids": [
+        "BR-PAY-042",
+        "BR-PAY-012",
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_move_migration.py",
+      "status": "implemented",
+      "notes": "The one-call allocation reversal refuses a moved allocation (owner answer to Q-2026-10-05-17), so the Payment is not reversed while it is active (status stays RECEIVED); another confirmed move draft takes it back."
+    },
+    {
+      "test_id": "test_credit_adjustment_on_the_correct_invoice_reposts_a_moved_allocation",
+      "upstream_ids": [
+        "BR-PAY-042",
+        "BR-CREDIT-014"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_move_migration.py",
+      "status": "implemented",
+      "notes": "A credit Adjustment on the correct Invoice releases moved value as that Invoice Customer's Credit and re-posts the rest with the WRONG_UNIT_MOVE basis."
+    },
+    {
+      "test_id": "test_third_party_payment_moves_outside_its_identified_lease",
+      "upstream_ids": [
+        "BR-PAY-042",
+        "BR-PAY-026"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_move_migration.py",
+      "status": "implemented",
+      "notes": "A third-party Payment identified for the Unit 203 Lease moves to the Unit 201 Invoice only through a confirmed move (BR-PAY-026 amendment)."
+    },
+    {
+      "test_id": "test_late_payment_charge_allocation_does_not_move",
+      "upstream_ids": [
+        "BR-PAY-042",
+        "BR-PAY-040"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_move_migration.py",
+      "status": "implemented",
+      "notes": "Only an Invoice allocation moves; a Late-payment Charge allocation is refused as invalid (owner answer 6)."
+    },
+    {
+      "test_id": "test_move_changes_no_late_payment_or_nonpayment_record_and_the_normal_rules_apply",
+      "upstream_ids": [
+        "BR-PAY-042"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_move_migration.py",
+      "status": "implemented",
+      "notes": "The move changes no Late-payment Decision or Charge, Rent nonpayment case or event, Payment or Receipt; afterwards the late-payment review sees the first Invoice as unpaid under the unchanged rules (owner answer 3)."
+    },
+    {
+      "test_id": "test_one_customer_two_unit_one_call_path_stays_an_ordinary_correction",
+      "upstream_ids": [
+        "BR-PAY-029",
+        "BR-PAY-025"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_move_migration.py",
+      "status": "implemented",
+      "notes": "One Customer's Payment still moves between that Customer's two Units through the one-call reversal and allocation without a move draft (owner answer 2 to Q-2026-10-05-16)."
+    },
+    {
+      "test_id": "test_database_guards_need_a_confirmed_move_and_keep_moves_append_only",
+      "upstream_ids": [
+        "BR-PAY-042",
+        "BR-AUTH-010"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_payment_move_migration.py",
+      "status": "implemented",
+      "notes": "Even the database owner cannot post a WRONG_UNIT_MOVE allocation without a confirmed move or reverse a moved allocation directly (P4904); confirmed moves cannot be updated or deleted."
+    },
+    {
+      "test_id": "test_payment_move_roles_and_grants",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-PAY-042"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_payment_move_migration.py",
+      "status": "implemented",
+      "notes": "Only the financial role executes the record and confirm functions (security definer, fixed search path); every internal and guard function, including the Credit reversal guard, and the move table are closed to the runtime and financial roles and PUBLIC."
+    },
+    {
+      "test_id": "test_payment_move_migration_is_forward_only",
+      "upstream_ids": [
+        "BR-PAY-042"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_payment_move_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20261020_85 follows 20261019_84 and refuses downgrade."
+    },
+    {
+      "test_id": "TEST-FE-672",
+      "upstream_ids": [
+        "BR-PAY-042"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/financialUiContext.test.ts",
+      "status": "implemented",
+      "notes": "The allocation reversal context loads a one-Customer moved allocation with basis WRONG_UNIT_MOVE and still refuses an unknown basis (V1-056 slice 7, review round 1)."
+    },
+    {
+      "test_id": "test_unknown_property_is_not_found_and_moves_nothing",
+      "upstream_ids": [
+        "BR-PAY-042",
+        "BR-AUTH-010"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_payment_move_migration.py",
+      "status": "implemented",
+      "notes": "Recording or confirming a move under an unknown Property id is not found (P4501; V1 holds one Property) and moves nothing; the draft stays undecided."
+    },
+    {
+      "test_id": "test_moved_amount_follows_the_rent_then_service_order",
+      "upstream_ids": [
+        "BR-PAY-042",
+        "BR-PAY-036"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_move_migration.py",
+      "status": "implemented",
+      "notes": "On the correct Invoice the moved amount pays the Rent line in full and then the Service line, in the stored draft and in the posted allocation details; other lines are untouched (owner answer 6). The correct Invoice stays PARTIALLY_PAID and its version still advances, so a command prepared before the move is stale (review round 2)."
+    },
+    {
+      "test_id": "test_credit_or_refund_after_the_draft_blocks_confirmation",
+      "upstream_ids": [
+        "BR-PAY-042",
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_move_migration.py",
+      "status": "implemented",
+      "notes": "Customer Credit recognized or a Refund made from the Payment after the draft was recorded blocks confirmation; the draft stays pending and nothing moves (owner answer 4)."
+    },
+    {
+      "test_id": "test_two_drafts_recorded_at_once_for_one_allocation_leave_one_waiting",
+      "upstream_ids": [
+        "BR-PAY-042",
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_move_migration.py",
+      "status": "implemented",
+      "notes": "Two move drafts recorded at the same time for one allocation leave exactly one waiting; the other is a conflict."
+    },
+    {
+      "test_id": "test_two_approvers_confirming_at_once_move_the_payment_once",
+      "upstream_ids": [
+        "BR-PAY-042",
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_move_migration.py",
+      "status": "implemented",
+      "notes": "Two financial.approve holders confirming one draft at the same time move the Payment once; the other gets a conflict."
+    },
+    {
+      "test_id": "test_credit_released_from_a_moved_allocation_stays_with_the_invoice_customer",
+      "upstream_ids": [
+        "BR-PAY-042",
+        "BR-CREDIT-014",
+        "BR-AUTH-010"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_payment_move_migration.py",
+      "status": "implemented",
+      "notes": "A Credit that a credit Adjustment released from a moved allocation belongs to the correct Invoice's Customer and cannot be reversed back onto the payer's Payment with the one-call Credit reversal; nothing changes (owner answer to Q-2026-10-05-18)."
+    },
+    {
+      "test_id": "test_normal_payment_identified_invoice_moves_only_through_a_draft",
+      "upstream_ids": [
+        "BR-PAY-042",
+        "BR-PAY-025"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_move_migration.py",
+      "status": "implemented",
+      "notes": "A normal Payment that names one Invoice cannot be allocated by the one-call path to the same Customer's Invoice on another Unit; a confirmed move posts it there; a Credit released from a one-Customer move may still be reversed."
+    },
+    {
+      "test_id": "test_credit_reversal_of_moved_payment_value_is_a_conflict",
+      "upstream_ids": [
+        "BR-PAY-042",
+        "BR-CREDIT-014"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_move.py",
+      "status": "implemented",
+      "notes": "The Credit service reports the moved-Payment Credit reversal refusal (P4904) as a conflict without the database text."
+    },
+    {
+      "test_id": "test_third_party_payers_own_released_credit_is_not_reversed_back_to_the_identified_lease",
+      "upstream_ids": [
+        "BR-PAY-042",
+        "BR-PAY-026",
+        "BR-AUTH-010"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_payment_move_migration.py",
+      "status": "implemented",
+      "notes": "A third-party Payment moved to its payer's own Invoice: the Credit a credit Adjustment releases there belongs to the payer but cannot be reversed back onto the Payment, whose value could otherwise reach the identified Lease's Customer by one call (owner answer to Q-2026-10-05-19)."
+    },
+    {
+      "test_id": "test_credit_of_another_customer_from_a_moved_payment_is_not_refunded_to_the_payer",
+      "upstream_ids": [
+        "BR-PAY-042",
+        "BR-CREDIT-014",
+        "BR-REFUND-014"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_move_migration.py",
+      "status": "implemented",
+      "notes": "A Credit Refund of another Customer's Credit released from a moved allocation is refused and records no Refund; the Refund to that Customer is planned for slice 9 (owner answer to Q-2026-10-05-19)."
     }
   ]
 }

@@ -676,6 +676,8 @@ function originalEvent(
       "CUSTOMER_DESIGNATED",
       "THIRD_PARTY_DESIGNATED",
       "DIRECT_LATE_PAYMENT_CHARGE",
+      // A confirmed wrong-Unit Payment move (BR-PAY-042, V1-056 slice 7).
+      "WRONG_UNIT_MOVE",
     ]);
     if (
       ["CUSTOMER_DESIGNATED", "THIRD_PARTY_DESIGNATED"].includes(basis) !==

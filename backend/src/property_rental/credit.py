@@ -311,6 +311,11 @@ class CustomerCreditService:
                 ) from exc
             if exc.sqlstate in {"P4506", "42501"}:
                 raise CreditAuthorizationError("Credit actor is not authorized") from exc
+            if exc.sqlstate == "P4904":
+                # V1-056 slice 7: a Credit released from a moved Payment stays with its Customer.
+                raise CreditConflictError(
+                    "Credit from a moved Payment stays with its Customer; apply it to its Invoices"
+                ) from exc
             # A serialization/timeout/deferred constraint failure does not prove
             # an earlier transmission with the same key did not commit.
             raise CreditUnavailableError(
