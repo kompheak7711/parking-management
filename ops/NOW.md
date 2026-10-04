@@ -51,4 +51,6 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md.
 
 - V1-056 slice 4 (2026-10-04, bea99fe, migration 20261016_81): COMMITTED. Unit cleaning rate and move-out cleaning charge on MISCELLANEOUS_CHARGES with the link table (owner Option B); round 3 no should-fix; unit 3346, PostgreSQL 1708 passed. NEXT: slice 5 (hand-back month: VOID, keep, credit Adjustment). Ask the owner before building anything differently from the plan. Nothing pushed.
 
+- V1-056 slice 5 (2026-10-04): STOPPED before code. BR-RENT-030 leaves three gaps (which terminations; a paid or partly paid next-month Invoice; the Initial Rent Invoice); questions with recommendations in Q-2026-10-04-8 (ops/V1_056_QUESTIONS.md). NEXT: owner answer to Q-2026-10-04-8. Nothing pushed.
+
 - Updated: 2026-10-04.
