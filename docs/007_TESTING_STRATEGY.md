@@ -733,9 +733,10 @@ violation termination.
 Verify actual occupancy end, readings, inspection evidence, and final-charge inputs
 are recorded without falsely marking financial closure complete.
 
-Verify an unpaid-Initial termination: never moved in (deposit forfeited, Invoice VOIDed
-with reason when nothing was paid or its unpaid remainder credited when partly paid, Unit
-returned to VACANT) and moved in (Invoice kept, prorated credit Adjustment for the remaining days,
+Verify an unpaid-Initial termination: never moved in (Invoice VOIDed with reason when
+nothing was paid or its unpaid remainder credited when partly paid, Unit returned to VACANT;
+since V1-056 slice 6 the Security Deposit stays held until a forfeiture draft is confirmed,
+covered by `backend/tests/test_lease_deposit_forfeiture_migration.py`) and moved in (Invoice kept, prorated credit Adjustment for the remaining days,
 move-out applies). Covered for migration `20261005_70` by
 `backend/tests/test_unpaid_initial_termination_migration.py`, including the ground check at
 termination time and CLEANING with a reason and the Unit management capability. Verify the final Utility Invoice is created off-cycle from the final

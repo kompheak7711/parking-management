@@ -30,6 +30,7 @@ from property_rental.deposit import (
     DepositNotFoundError,
     DepositServiceUnavailableError,
     DepositSnapshot,
+    LeaseDepositDraftRequired,
     PostgresDepositService,
     QualifyPetDepositRefundReviewCommand,
     RecordPetDepartureCommand,
@@ -825,7 +826,7 @@ def _translate(exc: Exception) -> Exception:
         return exc
     if isinstance(exc, HTTPException):
         return exc
-    if isinstance(exc, ReservationDepositDraftRequired):
+    if isinstance(exc, (ReservationDepositDraftRequired, LeaseDepositDraftRequired)):
         return exc
     if isinstance(exc, (DepositResourceNotFound, DepositNotFoundError)):
         return HTTPException(status_code=status.HTTP_404_NOT_FOUND)
@@ -905,14 +906,10 @@ def _ledger_body(
             ),
         )
     elif value.reversal_eligible and value.event_kind == "DISPOSITION":
-        # A Reservation disposition is corrected only through a correction draft (V1-056 3b).
-        if value.governing_source_kind == "LEASE":
-            can_reverse = is_authorized(
-                actor,
-                AuthorizationRequirement(
-                    capability=DEPOSIT_CORRECT_CAPABILITY, property_id=str(property_id)
-                ),
-            )
+        # A Reservation disposition is corrected only through a correction draft (V1-056 3b);
+        # a Lease forfeiture reversal is a draft too (Q-2026-10-04-13, slice 6b), so no
+        # disposition offers the one-call reverse route.
+        can_reverse = False
     result["can_reverse"] = can_reverse
     return result
 
@@ -1092,25 +1089,10 @@ def create_deposit_router(
             require_browser_mutation(request, settings)
             if reservation_id is not None:
                 raise ReservationDepositDraftRequired
-            value = flow.reverse_disposition(
-                disposition_id,
-                ReverseDepositDispositionCommand(
-                    idempotency_key,
-                    source.reversal_id,
-                    disposition_id,
-                    source.reason,
-                    source.evidence_reference,
-                ),
-                replacement_disposition_id=source.replacement_disposition_id,
-                expected_reservation_version=source.expected_reservation_version,
-                actor=actor,
-            )
+            # V1-056 slice 6 (Q-2026-10-04-13): a Lease forfeiture reversal is a draft (slice 6b).
+            raise LeaseDepositDraftRequired("Lease Deposit forfeiture reversal draft required")
         except Exception as exc:
             raise _translate(exc) from exc
-        return {
-            "data": _snapshot_body(value, actor),
-            "meta": {"request_id": request.state.request_id},
-        }
 
     @router.post("/leases/{lease_id}/pet-departures", status_code=status.HTTP_201_CREATED)
     def record_departure_route(

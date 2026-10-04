@@ -79,7 +79,7 @@ from property_rental.customer_api import (
 )
 from property_rental.customer_ledger_api import CustomerLedgerFlow, create_customer_ledger_router
 from property_rental.customer_ledger_read import CustomerLedgerReadService
-from property_rental.deposit import DepositIdempotencyKeyReused
+from property_rental.deposit import DepositIdempotencyKeyReused, LeaseDepositDraftRequired
 from property_rental.deposit_api import (
     DepositResourceFlow,
     PostgresDepositResourceFlow,
@@ -462,6 +462,32 @@ def create_app(
                     ),
                     "fields": [],
                     "rule_ids": ["BR-AUTH-010", "BR-RES-021", "BR-RES-022"],
+                    "current_version": None,
+                },
+                "meta": {"request_id": request_id},
+            },
+            headers={
+                REQUEST_ID_HEADER: request_id,
+                "Cache-Control": "private, no-store",
+            },
+        )
+
+    @app.exception_handler(LeaseDepositDraftRequired)
+    async def lease_deposit_draft_required(
+        request: Request, _: LeaseDepositDraftRequired
+    ) -> JSONResponse:
+        request_id = request.state.request_id
+        return JSONResponse(
+            status_code=status.HTTP_409_CONFLICT,
+            content={
+                "error": {
+                    "code": "LEASE_DEPOSIT_DRAFT_REQUIRED",
+                    "message": (
+                        "A Lease Deposit forfeiture or its reversal is recorded as a draft and "
+                        "takes effect only when a financial.approve holder confirms it."
+                    ),
+                    "fields": [],
+                    "rule_ids": ["BR-AUTH-010", "BR-DEP-026"],
                     "current_version": None,
                 },
                 "meta": {"request_id": request_id},

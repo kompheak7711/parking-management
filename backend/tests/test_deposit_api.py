@@ -26,6 +26,7 @@ from property_rental.deposit_api import (
     PetDepartureResource,
     PetRefundReviewResource,
     PostgresDepositResourceFlow,
+    _ledger_body,
 )
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
 
@@ -408,6 +409,58 @@ def test_mutations_conceal_cross_property_targets_before_command_execution() -> 
     assert reversed_receipt.status_code == 404
     assert departure.status_code == 404
     assert flow.last_command is None
+
+
+def test_lease_disposition_reversal_is_a_draft_and_no_lease_disposition_offers_reverse() -> None:
+    """V1-056 slice 6 (Q-2026-10-04-13): the one-call Lease reversal route records nothing."""
+    property_id = uuid4()
+    flow = InMemoryDepositFlow(snapshot(property_id, deposit_type=DepositType.PET))
+    payload = {
+        "reversal_id": str(uuid4()),
+        "reason": "Correct reviewed evidence",
+        "evidence_reference": "EVIDENCE-LEASE-1",
+    }
+    route = f"/api/v1/deposit-dispositions/{flow.disposition_id}/reverse"
+    denied = client(flow, actor(property_id, "deposits.read")).post(
+        route, json=payload, headers=mutation_headers()
+    )
+    assert denied.status_code == 404
+    missing_csrf = client(flow, actor(property_id, "deposits.read", "deposits.correct")).post(
+        route,
+        json=payload,
+        headers={"Origin": "https://localhost", "Idempotency-Key": str(uuid4())},
+    )
+    assert missing_csrf.status_code == 403
+    refused = client(flow, actor(property_id, "deposits.read", "deposits.correct")).post(
+        route, json=payload, headers=mutation_headers()
+    )
+    assert refused.status_code == 409
+    assert refused.json()["error"]["code"] == "LEASE_DEPOSIT_DRAFT_REQUIRED"
+    assert refused.json()["error"]["rule_ids"] == ["BR-AUTH-010", "BR-DEP-026"]
+    assert refused.headers["cache-control"] == "private, no-store"
+    assert flow.last_command is None
+    corrector = actor(property_id, "deposits.read", "deposits.correct")
+    for kind in ("LEASE", "RESERVATION"):
+        event = DepositLedgerEvent(
+            uuid4(),
+            "DISPOSITION",
+            datetime(2026, 8, 26, tzinfo=UTC),
+            20_000,
+            uuid4(),
+            "Approved forfeiture",
+            None,
+            uuid4(),
+            "deposits.dispose",
+            "USD",
+            20_000,
+            None,
+            kind,
+            uuid4(),
+            None,
+            None,
+            True,
+        )
+        assert _ledger_body(event, corrector, property_id)["can_reverse"] is False
 
 
 def test_reservation_disposition_correction_requires_replacement_and_exact_capabilities() -> None:

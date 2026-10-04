@@ -65,6 +65,17 @@ Each slice: one local checkpoint commit, explicit paths, secret and diff scan, i
 - Tests: each ground; forfeiture equals the full held amount; an application from a forfeited deposit is refused at the database; Pet Deposit pays pet damage first and the Refund draft gets the rest; pet noncompliance keeps both; draft has no effect until confirmed; audit fields per BR-DEP-019.
 - Sec: yes.
 
+### Slice 6b — Lease Deposit forfeiture reversal draft (BR-AUTH-010, BR-DEP-019; owner answers to Q-2026-10-04-13 and Q-2026-10-04-14)
+- Scope (owner answer to Q-2026-10-04-13, 2026-10-04): the reversal of a confirmed Lease Deposit forfeiture becomes a draft that Staff prepare and a `financial.approve` holder confirms; until then (slice 6) the one-call reversal answers 409. The Deposit receipt reversal stays without a draft, like a Payment reversal.
+- Change: a reversal draft recorded with a reason and an evidence reference, confirmed by running the existing reversal function with the approver as actor, so every earlier reversal rule applies; stale and replay rules as for the forfeiture draft. Tests in slices 6 that reverse a Lease disposition as the owner and whose subject is the reversal move to this draft path (docs/010 note per test).
+- Moved here from slice 6 round 3 (owner answer to Q-2026-10-04-14):
+  - a new Lease forfeiture draft must also refuse a disposition id that a pending Reservation Deposit draft will use (`payload->>'outcome_id'`), not only Lease drafts' `disposition_id`;
+  - a test for a disposition id used only by a recorded disposition (no draft holds it);
+  - the stale status lines (the "Known gap" line in ops/reviews/V1-056-slice-06-lease-deposit-forfeiture.md and older ops/NOW.md lines);
+  - the draft read filter: a reader without `financial.approve` sees only drafts of the capability they may prepare (`prepare_capability`, not only the kind), so a holder of only `reservation_deposits.dispose` cannot read Lease forfeiture drafts and the reverse; needed before the slice 11b and 11c draft routes.
+- Migration: `20261019_84` additive (draft variant, record and confirm functions, the disposition-id check change).
+- Sec: yes (deposits, approvals).
+
 ### Slice 7 — Wrong-Unit Payment move (BR-PAY-042)
 - Change: a draft records the source allocation, target Invoice and the confirmation text (both Customers, who, date, how). Confirm by `financial.approve` reverses the wrong allocation and allocates the same Payment to the target Invoice in one transaction. Blocked if the released value already became Customer Credit or a Refund that is not reversed. Payment amount, date and Receipt never change. No Credit moves between Customers.
 - Migration: `20261017_82` additive (draft kind, move link table, confirm function).

@@ -1,0 +1,62 @@
+== npm run format:check
+
+> property-rental-frontend@0.1.0 format:check
+> prettier --check --ignore-unknown .
+
+Checking formatting...
+All matched files use Prettier code style!
+format:check exit=0
+== npm run lint
+
+> property-rental-frontend@0.1.0 lint
+> eslint . --max-warnings 0
+
+lint exit=0
+== npm run typecheck
+
+> property-rental-frontend@0.1.0 typecheck
+> tsc -b
+
+typecheck exit=0
+== npm run test
+
+> property-rental-frontend@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.11 /Users/sokompheak/Development/property-rental-management/frontend
+
+
+ Test Files  38 passed (38)
+      Tests  1587 passed (1587)
+   Start at  22:51:35
+   Duration  12.43s (transform 3.34s, setup 1.78s, import 5.29s, tests 64.75s, environment 14.24s)
+
+test exit=0
+== npm run build
+
+> property-rental-frontend@0.1.0 build
+> tsc -b && vite build
+
+[36mvite v7.3.6 [32mbuilding client environment for production...[36m[39m
+transforming...
+[32m✓[39m 82 modules transformed.
+rendering chunks...
+computing gzip size...
+[2mdist/[22m[32mindex.html                 [39m[1m[2m  0.51 kB[22m[1m[22m[2m │ gzip:   0.31 kB[22m
+[2mdist/[22m[2massets/[22m[35mindex-DIwvQor4.css  [39m[1m[2m 10.72 kB[22m[1m[22m[2m │ gzip:   2.76 kB[22m
+[2mdist/[22m[2massets/[22m[36mindex-JMgWGC_3.js   [39m[1m[33m749.95 kB[39m[22m[2m │ gzip: 201.11 kB[22m
+[33m
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
+[32m✓ built in 579ms[39m
+build exit=0
+== cd backend && uv run --extra dev pytest tests/test_traceability.py
+collected 28 items
+
+tests/test_traceability.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                  [100%][0m
+
+[32m============================== [32m[1m28 passed[0m[32m in 9.78s[0m[32m ==============================[0m
+traceability exit=0

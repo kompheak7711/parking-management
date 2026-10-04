@@ -13,10 +13,12 @@ from alembic.config import Config
 from psycopg import Connection, Cursor, sql
 from psycopg.conninfo import conninfo_to_dict, make_conninfo
 
-from deposit_disposition_test_support import disposition_context
+from lease_deposit_forfeiture_test_support import (
+    forfeit_through_draft,
+    reverse_disposition_as_owner,
+)
 from property_rental.deposit import (
     PostgresDepositService,
-    RecordDepositDispositionCommand,
     ReverseDepositDispositionCommand,
     ReverseDepositReceiptCommand,
 )
@@ -156,17 +158,15 @@ def test_disposition_and_reversal_change_current_readiness_without_completing_fi
     actor = reader_actor(human, prop)
     deposits = PostgresDepositService(financial_database_url(), prop, human)
     authority = deposit_actor(human, prop)
-    command = RecordDepositDispositionCommand(
-        uuid4(),
-        uuid4(),
+    # V1-056 slice 6: the forfeiture is a draft confirmed under financial.approve; the reversal
+    # runs as the owner until slice 6b builds the reversal draft.
+    disposition = uuid4()
+    forfeit_through_draft(
+        deposits,
         security,
-        lease,
-        50_000,
-        day,
-        "Approved BR-DEP-023 Security disposition",
-        context=disposition_context(migrated_database_url, security),
+        disposition_id=disposition,
+        reason="Approved BR-DEP-023 Security disposition",
     )
-    deposits.record_disposition(command, actor=authority)
     zero = read.get(lease, actor=actor)
     item = next(d for d in zero.deposits if d.deposit_id == security)
     assert (
@@ -175,11 +175,12 @@ def test_disposition_and_reversal_change_current_readiness_without_completing_fi
         item.explicit_disposition_pending,
     ) == (0, 50_000, False)
     assert not zero.financial_completion_assessed
-    deposits.reverse_disposition(
+    reverse_disposition_as_owner(
+        deposits,
         ReverseDepositDispositionCommand(
             uuid4(),
             uuid4(),
-            command.disposition_id,
+            disposition,
             "Approved correction",
             "Synthetic correction evidence",
         ),

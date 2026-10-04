@@ -17,6 +17,11 @@ from alembic import command as alembic_command
 from alembic.config import Config
 
 from deposit_disposition_test_support import disposition_context, terminate_for_disposition
+from lease_deposit_forfeiture_test_support import (
+    forfeit_through_draft,
+    record_disposition_as_owner,
+    reverse_disposition_as_owner,
+)
 from payment_test_support import seed_deposit_payment
 from property_rental.deposit import (
     DEPOSIT_CORRECT_CAPABILITY,
@@ -443,12 +448,12 @@ def test_same_key_replays_are_concurrency_safe_for_exposed_deposit_commands(
         "Approved Lease outcome",
         context=disposition_context(migrated_database_url, deposit2),
     )
-    service2.record_disposition(disposition, actor=actor2)
+    record_disposition_as_owner(service2, disposition, actor=actor2)
     disposition_reversal = ReverseDepositDispositionCommand(
         uuid4(), uuid4(), disposition.disposition_id, "Correct evidence", "CASE-038"
     )
     reversed_dispositions = concurrent(
-        lambda: service2.reverse_disposition(disposition_reversal, actor=actor2)
+        lambda: reverse_disposition_as_owner(service2, disposition_reversal, actor=actor2)
     )
     assert reversed_dispositions[0] == reversed_dispositions[1]
     with psycopg.connect(migrated_database_url) as evidence:
@@ -543,25 +548,35 @@ def test_lease_disposition_and_reversal_are_bounded_idempotent_and_auditable(
         amount_usd_cents=20_000,
     )
     terminate_for_disposition(migrated_database_url, service, lease_id, date.today())
-    command = RecordDepositDispositionCommand(
-        uuid4(),
-        uuid4(),
+    # V1-056 slice 6: the forfeiture is a draft confirmed under financial.approve and covers the
+    # whole held Pet Deposit (BR-DEP-022); a repeat replays both steps. The reversal runs as the
+    # owner until slice 6b builds the reversal draft.
+    key, disposition = uuid4(), uuid4()
+    disposed = forfeit_through_draft(
+        service,
         deposit_id,
-        lease_id,
-        12_000,
-        date.today(),
-        "Approved non-refundable Lease outcome",
-        context=disposition_context(migrated_database_url, deposit_id),
+        disposition_id=disposition,
+        idempotency_key=key,
+        reason="Approved non-refundable Lease outcome",
     )
-    disposed = service.record_disposition(command, actor=actor)
-    assert disposed.deposit_disposition_id == command.disposition_id
-    assert disposed.held_refundable_usd_cents == 8_000
-    assert service.record_disposition(command, actor=actor) == disposed
-    reversed_snapshot = service.reverse_disposition(
+    assert disposed.deposit_disposition_id == disposition
+    assert disposed.held_refundable_usd_cents == 0
+    assert (
+        forfeit_through_draft(
+            service,
+            deposit_id,
+            disposition_id=disposition,
+            idempotency_key=key,
+            reason="Approved non-refundable Lease outcome",
+        )
+        == disposed
+    )
+    reversed_snapshot = reverse_disposition_as_owner(
+        service,
         ReverseDepositDispositionCommand(
             uuid4(),
             uuid4(),
-            command.disposition_id,
+            disposition,
             "Authorized correction",
             "case-review-37",
         ),
@@ -573,7 +588,7 @@ def test_lease_disposition_and_reversal_are_bounded_idempotent_and_auditable(
         assert owner.execute(
             "SELECT governing_reservation_id,source_lifecycle_event_id,governing_lease_id "
             "FROM app.deposit_dispositions WHERE id=%s",
-            (command.disposition_id,),
+            (disposition,),
         ).fetchone() == (None, None, lease_id)
 
 
@@ -594,7 +609,8 @@ def test_concurrent_lease_dispositions_cannot_exceed_one_held_balance(
     def attempt() -> str:
         barrier.wait()
         try:
-            service.record_disposition(
+            record_disposition_as_owner(
+                service,
                 RecordDepositDispositionCommand(
                     uuid4(),
                     uuid4(),
@@ -644,7 +660,8 @@ def test_storage_triggers_reject_negative_required_amount_and_dependent_receipt_
         amount_usd_cents=20_000,
     )
     terminate_for_disposition(migrated_database_url, service, lease_id, date.today())
-    service.record_disposition(
+    record_disposition_as_owner(
+        service,
         RecordDepositDispositionCommand(
             uuid4(),
             uuid4(),

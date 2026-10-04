@@ -35417,6 +35417,231 @@
       "test_path": "backend/tests/test_hand_back_rent_migration.py",
       "status": "implemented",
       "notes": "A voluntary early termination with a recorded notice dated 26 August (which would point at September) and a move-out on 3 August covers the August Invoice and not the September Invoice: the notice date is ignored (BR-RENT-030)."
+    },
+    {
+      "test_id": "test_never_moved_in_credits_every_unpaid_line_of_a_two_line_initial_invoice",
+      "upstream_ids": [
+        "BR-LEASE-005",
+        "BR-INV-048"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_deposit_forfeiture_migration.py",
+      "status": "implemented",
+      "notes": "A never-moved-in unpaid-Initial resolution with a partly paid Initial Invoice that has a Rent line and Trash Collection lines credits each line's unpaid rest with its own credit Adjustment and leaves the Invoice PAID; without the fix it failed (slice 6 run 2) (owner answer to Q-2026-10-04-10 (a))."
+    },
+    {
+      "test_id": "test_voluntary_early_security_forfeiture_is_a_draft_until_an_approver_confirms",
+      "upstream_ids": [
+        "BR-DEP-023",
+        "BR-DEP-026",
+        "BR-DEP-018",
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_deposit_forfeiture_migration.py",
+      "status": "implemented",
+      "notes": "A voluntary early termination gives a BR-DEP-023 forfeiture draft of the whole held Security Deposit under deposits.dispose; nothing changes until a financial.approve holder confirms; the preparer without financial.approve and a wrong database reference are refused; replays return the same result; a second pending draft and a Pet Deposit draft are refused."
+    },
+    {
+      "test_id": "test_pet_noncompliance_forfeits_both_deposits_through_drafts",
+      "upstream_ids": [
+        "BR-DEP-022",
+        "BR-DEP-018",
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_deposit_forfeiture_migration.py",
+      "status": "implemented",
+      "notes": "A BR-DEP-022 pet noncompliance termination forfeits both the Security and the Pet Deposit, each in full, through confirmed drafts."
+    },
+    {
+      "test_id": "test_violation_and_default_grounds_come_from_the_termination_record",
+      "upstream_ids": [
+        "BR-DEP-026",
+        "BR-DEP-019"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_deposit_forfeiture_migration.py",
+      "status": "implemented",
+      "notes": "A BR-LEASE-025 violation termination gives a BR-LEASE-025 Security forfeiture draft of the whole held amount and refuses the Pet Deposit (BR-DEP-027 at Final Settlement); confirming the draft forfeits the whole held amount; a BR-LEASE-028 termination without a recorded Serious Default event and a termination under another clause are refused because the ground cannot be worked out."
+    },
+    {
+      "test_id": "test_unpaid_initial_resolution_no_longer_forfeits_and_the_draft_does",
+      "upstream_ids": [
+        "BR-DEP-026",
+        "BR-LEASE-005",
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_deposit_forfeiture_migration.py",
+      "status": "implemented",
+      "notes": "The never-moved-in unpaid-Initial resolution no longer forfeits the Security Deposit, which still holds money; a confirmed forfeiture draft forfeits it, with ground BR-LEASE-005."
+    },
+    {
+      "test_id": "test_move_out_correction_is_refused_when_a_hand_back_resolution_relies_on_it",
+      "upstream_ids": [
+        "BR-RENT-030",
+        "BR-MOVEOUT-011"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_deposit_forfeiture_migration.py",
+      "status": "implemented",
+      "notes": "A physical move-out correction is refused with an error naming the hand-back resolution that relies on the record, and nothing is recorded (owner answer to Q-2026-10-04-10 b)."
+    },
+    {
+      "test_id": "test_forfeiture_functions_are_least_privilege",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "SEC-020"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_lease_deposit_forfeiture_migration.py",
+      "status": "implemented",
+      "notes": "Only the financial role executes the forfeiture draft record and confirm functions; the internal source function is executable by neither application role; the financial, runtime and bootstrap roles and PUBLIC cannot execute the retired one-call Lease disposition functions (migrations 27 and 58) or the Lease disposition reversal (migration 28) (owner answers to Q-2026-10-04-12 and Q-2026-10-04-13)."
+    },
+    {
+      "test_id": "test_unpaid_initial_security_is_forfeited_also_after_move_in",
+      "upstream_ids": [
+        "BR-DEP-026",
+        "BR-LEASE-005",
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_deposit_forfeiture_migration.py",
+      "status": "implemented",
+      "notes": "After the Customer moved in, an unpaid-Initial (BR-LEASE-005) termination gives a BR-LEASE-005 forfeiture draft of the whole held Security Deposit, and the confirmed draft forfeits it (BR-DEP-026: kept whether or not the Customer moved in)."
+    },
+    {
+      "test_id": "test_thirty_day_default_ground_forfeits_with_a_recorded_serious_default_event",
+      "upstream_ids": [
+        "BR-DEP-026",
+        "BR-LEASE-028",
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_deposit_forfeiture_migration.py",
+      "status": "implemented",
+      "notes": "A BR-LEASE-028 termination with a THIRTY_DAY_SERIOUS_DEFAULT event recorded for the Lease on or before the termination date gives a BR-LEASE-028 forfeiture draft of the whole held Security Deposit, and the confirmed draft forfeits it (owner answer to Q-2026-10-04-11, 2). A Serious Default event of another Lease gives no ground: that Lease's draft is refused."
+    },
+    {
+      "test_id": "test_forfeiture_draft_refusals_change_nothing",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-DEP-018",
+        "BR-DEP-019"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_lease_deposit_forfeiture_migration.py",
+      "status": "implemented",
+      "notes": "A reused command key with a changed request, a disposition id already used by a recorded disposition or held by another pending forfeiture draft, an unknown Property (record and confirm; the schema holds one Property), a confirm naming another Deposit, an unknown Deposit, a reason the confirmation would refuse (direct database call) and a draft made stale by a later Deposit change are all refused; nothing is forfeited and the draft stays undecided."
+    },
+    {
+      "test_id": "test_concurrent_drafts_for_one_deposit_leave_one_pending",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-DEP-018"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_deposit_forfeiture_migration.py",
+      "status": "implemented",
+      "notes": "Two forfeiture drafts recorded at the same moment for one Deposit give one waiting draft and one conflict; nothing is forfeited."
+    },
+    {
+      "test_id": "test_one_call_lease_disposition_and_reversal_are_refused",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-DEP-026"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_lease_deposit_forfeiture_migration.py",
+      "status": "implemented",
+      "notes": "The one-call service paths for a Lease Deposit forfeiture and its reversal answer 'draft required' and record nothing, and the financial role cannot execute the reversal function directly (owner answers to Q-2026-10-04-12 and Q-2026-10-04-13)."
+    },
+    {
+      "test_id": "test_lease_disposition_reversal_is_a_draft_and_no_lease_disposition_offers_reverse",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-DEP-026"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_deposit_api.py",
+      "status": "implemented",
+      "notes": "POST /deposit-dispositions/{id}/reverse for a Lease disposition is hidden (404) without deposits.correct, answers 403 without the CSRF token, and otherwise answers 409 LEASE_DEPOSIT_DRAFT_REQUIRED without calling the flow; no Lease or Reservation disposition offers can_reverse in the Deposit ledger."
+    },
+    {
+      "test_id": "test_record_and_confirm_refuse_missing_capability_before_any_connection",
+      "upstream_ids": [
+        "BR-AUTH-010"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_lease_deposit_forfeiture.py",
+      "status": "implemented",
+      "notes": "Recording a forfeiture draft needs deposits.dispose and confirming needs financial.approve; a missing capability or an invalid actor identity is refused before any database connection."
+    },
+    {
+      "test_id": "test_invalid_input_is_refused_before_any_connection",
+      "upstream_ids": [
+        "BR-DEP-019",
+        "BR-AUTH-010"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_lease_deposit_forfeiture.py",
+      "status": "implemented",
+      "notes": "Nil identities, a blank, padded, too long or NUL-containing reason and nil confirm identities are refused before any database connection."
+    },
+    {
+      "test_id": "test_one_call_lease_disposition_and_reversal_refuse_before_any_connection",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-DEP-026"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_lease_deposit_forfeiture.py",
+      "status": "implemented",
+      "notes": "PostgresDepositService.record_disposition and reverse_disposition check the capability and then refuse with 'draft required' before any database connection."
+    },
+    {
+      "test_id": "test_database_failures_map_to_stable_errors",
+      "upstream_ids": [
+        "BR-AUTH-010"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_lease_deposit_forfeiture.py",
+      "status": "implemented",
+      "notes": "Database failures map to stable service errors: not found, not authorized, invalid or stale, key reused, conflict (including P5801 and 23P01) and outcome unresolved."
+    },
+    {
+      "test_id": "test_draft_id_is_scoped_to_property_preparer_and_key",
+      "upstream_ids": [
+        "BR-AUTH-010"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_lease_deposit_forfeiture.py",
+      "status": "implemented",
+      "notes": "The forfeiture draft id is stable for one Property, preparer and command key and differs when any of them changes."
+    },
+    {
+      "test_id": "TEST-FE-671",
+      "upstream_ids": [
+        "UI-042",
+        "BR-LEASE-005",
+        "BR-DEP-026",
+        "BR-AUTH-010"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/LeaseManagement.test.tsx",
+      "status": "implemented",
+      "notes": "The never-moved-in follow-up form and its confirmation say that the resolution VOIDs or credits the Initial Rent Invoice and releases the Unit while the Security Deposit stays held until a forfeiture draft is confirmed; a declined confirmation calls nothing (V1-056 slice 6, owner answer to Q-2026-10-04-14)."
+    },
+    {
+      "test_id": "test_lease_deposit_forfeiture_migration_is_forward_only",
+      "upstream_ids": [
+        "BR-DEP-026"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_lease_deposit_forfeiture_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20261018_83 follows 20261017_82 and refuses downgrade."
     }
   ]
 }

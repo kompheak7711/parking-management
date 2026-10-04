@@ -221,7 +221,14 @@ def test_never_moved_in_with_nothing_paid_forfeits_voids_and_releases_the_unit(
         "WHERE d.deposit_id=%s",
         source["deposit"],
     )
-    assert disposition == ((held, "BR-LEASE-005") if held > 0 else None)
+    # V1-056 slice 6 (owner answer to Q-2026-10-04-11): the resolution no longer forfeits;
+    # the Security Deposit is forfeited only through a confirmed forfeiture draft.
+    assert disposition is None
+    assert row(
+        migrated_database_url,
+        "SELECT app.deposit_held_value_at(%s,statement_timestamp())",
+        source["deposit"],
+    ) == (held,)
     assert row(
         migrated_database_url,
         "SELECT cause,reason,actor_id FROM app.unpaid_initial_termination_resolutions WHERE id=%s",

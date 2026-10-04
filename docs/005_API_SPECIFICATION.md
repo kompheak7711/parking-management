@@ -493,9 +493,20 @@ Reservation disposition, `POST /deposit-dispositions/{id}/reverse` answers the s
 the correction is a Reservation Deposit correction draft. Lease dispositions are
 unchanged.
 
+Amended by V1-056 slice 6 (owner answers to Q-2026-10-04-12 and Q-2026-10-04-13): a
+Lease Deposit forfeiture is a `DEPOSIT_FORFEITURE` draft confirmed by a
+`financial.approve` holder (its draft routes come with the draft screens). For a Lease
+disposition, `POST /deposit-dispositions/{id}/reverse` checks `deposits.correct` and the
+browser mutation rules, then records nothing and answers 409
+`LEASE_DEPOSIT_DRAFT_REQUIRED` (rule IDs `BR-AUTH-010`, `BR-DEP-026`); the forfeiture
+reversal draft comes in slice 6b. The Deposit ledger no longer offers `can_reverse` for
+any disposition.
+
 `POST /deposit-receipts/{id}/reverse` and
 `POST /deposit-dispositions/{id}/reverse` create DB-DEP-007/DB-DEP-008 linked
-correction events and never rewrite originals.
+correction events and never rewrite originals. Since V1-056 slices 3b and 6 only the
+receipt reversal records anything here; a disposition reversal is a draft (see the
+amendments above).
 
 ## API-094 — Active-Lease Pet Deposit Refund Qualification
 

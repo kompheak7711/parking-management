@@ -59,6 +59,10 @@ class DepositServiceUnavailableError(RuntimeError):
     pass
 
 
+class LeaseDepositDraftRequired(RuntimeError):
+    """A Lease Deposit forfeiture or its reversal is a draft now (BR-AUTH-010, V1-056 slice 6)."""
+
+
 def _identity(value: UUID, field: str) -> None:
     if value == NIL_UUID:
         raise ValueError(f"{field} must not be the nil UUID")
@@ -477,51 +481,16 @@ class PostgresDepositService:
     def record_disposition(
         self, command: RecordDepositDispositionCommand, *, actor: AuthenticatedActor
     ) -> DepositSnapshot:
+        """Refused: a Lease Deposit forfeiture is a draft confirmed by financial.approve.
+
+        Use ``LeaseDepositForfeitureService`` (owner answer to Q-2026-10-04-12).
+        """
         self._authorize(actor, DEPOSIT_DISPOSE_CAPABILITY, command.authorization_reference)
-        parameters: tuple[object, ...] = (
-            self.property_id,
-            self.actor_id,
-            command.idempotency_key,
-            deposit_request_digest("deposit.disposition.record", command),
-            command.disposition_id,
-            command.deposit_id,
-            command.governing_lease_id,
-            command.amount_usd_cents,
-            command.effective_date,
-            command.reason,
-            command.authorization_reference,
-        )
-        if command.context is None:
-            return self._execute(
-                "SELECT app.record_lease_deposit_disposition(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-                parameters,
-            )
-        return self._execute(
-            "SELECT app.record_lease_deposit_disposition_with_context("
-            "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-            (
-                *parameters,
-                command.context.termination_event_id,
-                command.context.governing_rule,
-                command.context.expected_state_version,
-            ),
-        )
+        raise LeaseDepositDraftRequired("Lease Deposit forfeiture draft required")
 
     def reverse_disposition(
         self, command: ReverseDepositDispositionCommand, *, actor: AuthenticatedActor
     ) -> DepositSnapshot:
+        """Refused: a Lease forfeiture reversal is a draft (owner answer to Q-2026-10-04-13)."""
         self._authorize(actor, DEPOSIT_CORRECT_CAPABILITY, command.authorization_reference)
-        return self._execute(
-            "SELECT app.reverse_deposit_disposition_v2(%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-            (
-                self.property_id,
-                self.actor_id,
-                command.idempotency_key,
-                deposit_request_digest("deposit.disposition.reverse", command),
-                command.reversal_id,
-                command.disposition_id,
-                command.reason,
-                command.evidence_reference,
-                command.authorization_reference,
-            ),
-        )
+        raise LeaseDepositDraftRequired("Lease Deposit forfeiture reversal draft required")

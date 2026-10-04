@@ -15,6 +15,12 @@ from psycopg import Connection
 from psycopg.conninfo import conninfo_to_dict, make_conninfo
 
 from deposit_disposition_test_support import disposition_context, terminate_for_disposition
+from lease_deposit_forfeiture_test_support import (
+    forfeit_through_draft,
+    owner_database_url,
+    record_disposition_as_owner,
+    reverse_disposition_as_owner,
+)
 from property_rental.deposit import (
     AdjustDepositRequiredAmountCommand,
     DepositAdjustmentType,
@@ -115,8 +121,13 @@ def test_voluntary_security_context_links_exact_original_event_command_and_audit
     migrated_database_url: str,
 ) -> None:
     service, command = ready_command(migrated_database_url)
-    original = service.record_disposition(
-        command, actor=deposit_actor(service.actor_id, service.property_id)
+    # V1-056 slice 6: the forfeiture is a draft confirmed under financial.approve; it forfeits
+    # the whole held Security Deposit (BR-DEP-026), so nothing stays held.
+    original = forfeit_through_draft(
+        service,
+        command.deposit_id,
+        disposition_id=command.disposition_id,
+        idempotency_key=command.idempotency_key,
     )
     with psycopg.connect(migrated_database_url) as connection:
         row = connection.execute(
@@ -142,10 +153,14 @@ def test_voluntary_security_context_links_exact_original_event_command_and_audit
         )
         assert row[3] == row[4]
         before = history(connection)
-    assert original.held_refundable_usd_cents == 38000
+    assert original.held_refundable_usd_cents == 0
+    assert original.deposit_disposition_id == command.disposition_id
     assert (
-        service.record_disposition(
-            command, actor=deposit_actor(service.actor_id, service.property_id)
+        forfeit_through_draft(
+            service,
+            command.deposit_id,
+            disposition_id=command.disposition_id,
+            idempotency_key=command.idempotency_key,
         )
         == original
     )
@@ -171,18 +186,19 @@ def test_explicit_pet_noncompliance_source_supports_each_applicable_deposit(
         context.termination_event_id == event
         and context.governing_rule is DepositDispositionRule.PET_NONCOMPLIANCE
     )
-    command = RecordDepositDispositionCommand(
-        uuid4(),
-        uuid4(),
-        deposit,
-        lease,
-        1000,
-        day,
-        "Approved original BR-DEP-022 decision",
-        context=context,
+    # V1-056 slice 6: the forfeiture is a draft confirmed under financial.approve; it forfeits
+    # the whole held Deposit (BR-DEP-022), so nothing stays held.
+    disposition = uuid4()
+    result = forfeit_through_draft(
+        service, deposit, disposition_id=disposition, reason="Approved original BR-DEP-022 decision"
     )
-    result = service.record_disposition(command, actor=deposit_actor(human, prop))
-    assert result.held_refundable_usd_cents == (49000 if kind == "SECURITY" else 4000)
+    assert result.held_refundable_usd_cents == 0
+    with psycopg.connect(migrated_database_url) as connection:
+        assert connection.execute(
+            "SELECT termination_event_id,governing_rule,amount_usd_cents "
+            "FROM app.lease_deposit_disposition_contexts WHERE disposition_id=%s",
+            (disposition,),
+        ).fetchone() == (event, "BR-DEP-022", 50000 if kind == "SECURITY" else 5000)
     with psycopg.connect(migrated_database_url) as connection:
         assert connection.execute(
             "SELECT count(*) FROM app.lease_termination_warning_sources WHERE command_event_id=%s",
@@ -244,7 +260,7 @@ def test_unsupported_source_rule_or_relationship_rejects_without_financial_effec
     with psycopg.connect(migrated_database_url) as connection:
         before = history(connection)
     with pytest.raises(DepositInvalidError):
-        service.record_disposition(command, actor=deposit_actor(human, prop))
+        record_disposition_as_owner(service, command, actor=deposit_actor(human, prop))
     with psycopg.connect(migrated_database_url) as connection:
         assert history(connection) == before
 
@@ -256,7 +272,8 @@ def test_old_fresh_entry_and_direct_storage_require_context_without_changing_his
     with psycopg.connect(migrated_database_url) as connection:
         before = history(connection)
     with pytest.raises(DepositInvalidError):
-        service.record_disposition(
+        record_disposition_as_owner(
+            service,
             replace(command, context=None),
             actor=deposit_actor(service.actor_id, service.property_id),
         )
@@ -319,8 +336,9 @@ def test_net_zero_history_invalidates_fresh_posting_even_when_balance_is_restore
         )
     else:
         fresh = replace(command, idempotency_key=uuid4(), disposition_id=uuid4())
-        service.record_disposition(fresh, actor=actor)
-        service.reverse_disposition(
+        record_disposition_as_owner(service, fresh, actor=actor)
+        reverse_disposition_as_owner(
+            service,
             ReverseDepositDispositionCommand(
                 uuid4(), uuid4(), fresh.disposition_id, "Approved correction", "Synthetic review"
             ),
@@ -329,13 +347,16 @@ def test_net_zero_history_invalidates_fresh_posting_even_when_balance_is_restore
     with psycopg.connect(migrated_database_url) as connection:
         before = history(connection)
     with pytest.raises(DepositConflictError):
-        service.record_disposition(command, actor=actor)
+        record_disposition_as_owner(service, command, actor=actor)
     with psycopg.connect(migrated_database_url) as connection:
         assert history(connection) == before
     refreshed = replace(
         command, context=disposition_context(migrated_database_url, command.deposit_id)
     )
-    assert service.record_disposition(refreshed, actor=actor).held_refundable_usd_cents == 38000
+    assert (
+        record_disposition_as_owner(service, refreshed, actor=actor).held_refundable_usd_cents
+        == 38000
+    )
 
 
 @pytest.mark.parametrize("change", ["refund", "return", "return_reversal"])
@@ -394,10 +415,12 @@ def test_refund_history_participates_in_posting_observation(
         uuid4(), uuid4(), pet, lease, 1000, day, "Approved BR-DEP-022 source", context=context
     )
     with pytest.raises(DepositConflictError):
-        service.record_disposition(command, actor=deposit_actor(human, prop))
+        record_disposition_as_owner(service, command, actor=deposit_actor(human, prop))
     fresh = replace(command, context=disposition_context(migrated_database_url, pet))
     assert (
-        service.record_disposition(fresh, actor=deposit_actor(human, prop)).deposit_disposition_id
+        record_disposition_as_owner(
+            service, fresh, actor=deposit_actor(human, prop)
+        ).deposit_disposition_id
         == command.disposition_id
     )
 
@@ -410,7 +433,7 @@ def test_repeatable_read_cannot_post_against_an_observation_before_concurrent_co
     service, command = ready_command(migrated_database_url)
     if event == "receipt":
         command = prepare_receipt_capacity(migrated_database_url, service, command)
-    with psycopg.connect(financial_database_url()) as stale:
+    with psycopg.connect(owner_database_url(financial_database_url())) as stale:
         stale.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
         stale.execute("SELECT app.deposit_snapshot(%s)", (command.deposit_id,)).fetchone()
         if event == "required":
@@ -452,8 +475,8 @@ def test_two_fresh_commands_cannot_both_consume_one_financial_observation(
     def run(value: RecordDepositDispositionCommand) -> str:
         barrier.wait(timeout=5)
         try:
-            service.record_disposition(
-                value, actor=deposit_actor(service.actor_id, service.property_id)
+            record_disposition_as_owner(
+                service, value, actor=deposit_actor(service.actor_id, service.property_id)
             )
         except DepositConflictError:
             return "stale"
@@ -470,7 +493,9 @@ def test_raw_replay_rejects_changed_fields_even_with_the_old_digest(
     index: int,
 ) -> None:
     service, command = ready_command(migrated_database_url)
-    service.record_disposition(command, actor=deposit_actor(service.actor_id, service.property_id))
+    record_disposition_as_owner(
+        service, command, actor=deposit_actor(service.actor_id, service.property_id)
+    )
     assert command.context is not None
     params = [
         *parameters(service, command),
@@ -492,7 +517,7 @@ def test_raw_replay_rejects_changed_fields_even_with_the_old_digest(
     params[index] = changes[index]
     with psycopg.connect(migrated_database_url) as owner:
         before = history(owner)
-    with psycopg.connect(financial_database_url()) as connection:
+    with psycopg.connect(owner_database_url(financial_database_url())) as connection:
         with pytest.raises(psycopg.errors.UniqueViolation):
             connection.execute(
                 "SELECT app.record_lease_deposit_disposition_with_context("
@@ -509,7 +534,7 @@ def test_immediate_constraints_and_transaction_rollback_preserve_atomic_history(
     service, command = ready_command(migrated_database_url)
     with psycopg.connect(migrated_database_url) as owner:
         before = history(owner)
-    with psycopg.connect(financial_database_url()) as connection:
+    with psycopg.connect(owner_database_url(financial_database_url())) as connection:
         connection.execute("SET CONSTRAINTS ALL IMMEDIATE")
         assert isinstance(raw_context(connection, service, command), dict)
         connection.execute("SET CONSTRAINTS ALL IMMEDIATE")
@@ -517,8 +542,8 @@ def test_immediate_constraints_and_transaction_rollback_preserve_atomic_history(
     with psycopg.connect(migrated_database_url) as owner:
         assert history(owner) == before
     assert (
-        service.record_disposition(
-            command, actor=deposit_actor(service.actor_id, service.property_id)
+        record_disposition_as_owner(
+            service, command, actor=deposit_actor(service.actor_id, service.property_id)
         ).deposit_disposition_id
         == command.disposition_id
     )
@@ -530,7 +555,9 @@ def test_context_is_append_only_and_only_financial_role_has_the_narrow_wrapper(
     role: str,
 ) -> None:
     service, command = ready_command(migrated_database_url)
-    service.record_disposition(command, actor=deposit_actor(service.actor_id, service.property_id))
+    record_disposition_as_owner(
+        service, command, actor=deposit_actor(service.actor_id, service.property_id)
+    )
     wrapper = (
         "app.record_lease_deposit_disposition_with_context(uuid,uuid,"
         "uuid,text,uuid,uuid,uuid,bigint,date,text,text,uuid,text,big"
@@ -549,7 +576,9 @@ def test_context_is_append_only_and_only_financial_role_has_the_narrow_wrapper(
                 "TRUNCATE')"
             ),
             (role, wrapper, role, helper, role),
-        ).fetchone() == (role == "prm_financial", False, False)
+            # V1-056 slice 6 (owner answer to Q-2026-10-04-12): the financial role lost EXECUTE
+            # on the wrapper too; only the forfeiture draft confirm runs it, as the owner.
+        ).fetchone() == (False, False, False)
         for query in (
             (
                 "UPDATE app.lease_deposit_disposition_contexts SET "
@@ -598,7 +627,7 @@ def test_forward58_preserves_all57_history_function_identity_and_legacy_replay(
         alembic_command.upgrade(config, "20260914_57")
         service, command = ready_command(temporary, legacy=True)
         actor = deposit_actor(service.actor_id, service.property_id)
-        original = service.record_disposition(command, actor=actor)
+        original = record_disposition_as_owner(service, command, actor=actor)
         with psycopg.connect(temporary) as connection:
             before = history(connection)
             functions = {row[0]: row[1:] for row in connection.execute(query)}
@@ -625,7 +654,8 @@ def test_forward58_preserves_all57_history_function_identity_and_legacy_replay(
             assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
                 "20260914_58",
             )
-        service.reverse_disposition(
+        reverse_disposition_as_owner(
+            service,
             ReverseDepositDispositionCommand(
                 uuid4(),
                 uuid4(),
@@ -637,6 +667,6 @@ def test_forward58_preserves_all57_history_function_identity_and_legacy_replay(
         )
         with psycopg.connect(temporary) as connection:
             before_replay = history(connection)
-        assert service.record_disposition(command, actor=actor) == original
+        assert record_disposition_as_owner(service, command, actor=actor) == original
         with psycopg.connect(temporary) as connection:
             assert history(connection) == before_replay

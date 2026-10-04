@@ -617,7 +617,7 @@ export function LeaseManagement({ api = leaseApi }: LeaseManagementProps) {
     if (
       !window.confirm(
         name === "never-moved-in"
-          ? "Forfeit the Security Deposit, VOID or credit the Initial Rent Invoice and release the Unit? This cannot be edited afterwards."
+          ? "VOID or credit the Initial Rent Invoice and release the Unit? The Security Deposit stays held until a forfeiture draft is confirmed. This cannot be edited afterwards."
           : "Credit the Initial Rent for the days after the termination date? This cannot be edited afterwards.",
       )
     )
@@ -1496,9 +1496,10 @@ export function LeaseManagement({ api = leaseApi }: LeaseManagementProps) {
               >
                 <h5>Customer never moved in</h5>
                 <p>
-                  Forfeits the Security Deposit under BR-LEASE-005, VOIDs the
-                  Initial Rent Invoice when nothing was applied or credits its
-                  unpaid lines, and releases the Unit.
+                  VOIDs the Initial Rent Invoice when nothing was applied or
+                  credits its unpaid lines, and releases the Unit. The Security
+                  Deposit stays held until a forfeiture draft under BR-LEASE-005
+                  is confirmed by a financial.approve holder.
                 </p>
                 <label>
                   Termination event identifier

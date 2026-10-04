@@ -150,7 +150,7 @@ Questions (with my recommendation):
 
 If you accept the recommendations, slice 6 builds: forfeiture drafts (`DEPOSIT_FORFEITURE`, `deposits.dispose` to prepare, `financial.approve` to confirm) for every BR-DEP-026 ground and for both deposits under BR-DEP-022, always the whole held amount, never applied to what the Customer owes; the ground taken from the termination record; the direct Lease disposition route answering 409; and the migration 70 change in (3). The BR-DEP-027 Pet Deposit outcome moves to slices 8 and 9.
 
-## Q-2026-10-04-12 — Slice 6 stopped after review round 1: a direct Lease Deposit forfeiture is still possible
+## Q-2026-10-04-12 — Slice 6 stopped after review round 1: a direct Lease Deposit forfeiture is still possible (ANSWERED 2026-10-04: Option A; real draft and confirm path where a test checks the forfeiture, owner test helper only for setup; do not block move-out corrections for the cleaning charge)
 
 Slice 6 (migration `20261018_83`) is built and its full PostgreSQL run passes (1724), but both round-1 reviewers found the same blocker. Nothing of slice 6 is committed; the files are in the working tree. Record: ops/reviews/V1-056-slice-06-lease-deposit-forfeiture.md.
 
@@ -163,3 +163,47 @@ Recommendation (Option A): in migration `20261018_83`, revoke the financial role
 Also from round 1 (no decision needed; I will fix them before round 2): tests that confirm a `BR-LEASE-025` draft, a `BR-LEASE-028` draft with a recorded Serious Default event and a `BR-LEASE-005` draft after move-in; stale-draft, key-reuse, disposition-id-reuse, wrong-Property and wrong-Deposit tests; the least-privilege test also asserting the revoked grants; a unit test that the service refuses before any connection; error mapping of P5801 and 23P01 to a conflict; one guarded `if` turned into an assertion; the docs/010 note corrected (the bug failed in run 2, not run 1).
 
 One related note for you (no change unless you say so): a Unit cleaning charge (slice 4) also records the move-out event it relied on, but a move-out correction does not change the charge, so I recommend not blocking corrections for it.
+
+## Q-2026-10-04-13 — Slice 6 stopped before the round-1 fixes: a Lease Deposit forfeiture can be reversed directly (ANSWERED 2026-10-04: Option A; revoke in migration 83, route and service answer 409 in slice 6, reversal draft in sub-slice 6b; Deposit receipt reversal stays as it is)
+
+You answered Q-2026-10-04-12 (Option A) and asked for one more read-only search of the whole backend for any database grant or service method that can keep or move Deposit money without a draft and an approver, and to stop if another one is found. One is found. No file of slice 6 has been changed since your answer; nothing is committed.
+
+The finding: a confirmed Lease Deposit forfeiture can be reversed at once, without a draft and without a `financial.approve` holder.
+
+- HTTP: `POST /deposit-dispositions/{disposition_id}/reverse` (`deposit_api.py`, `reverse_disposition_route`), under `deposits.correct` with a reason and an evidence reference.
+- Service: `DepositFlow.reverse_disposition` and `PostgresDepositService.reverse_disposition`.
+- Database: `app.reverse_deposit_disposition_v2` (migration `20260826_28`), EXECUTE granted to the financial role; it calls `app.reverse_deposit_disposition` (migration `20260826_27`), which accepts Lease dispositions only.
+- Effect: the forfeited amount returns to the held Deposit. No money is paid out by the reversal itself; any later Refund or new forfeiture of that Deposit still needs a draft and an approver. But a holder of `deposits.correct` alone can undo a forfeiture that a `financial.approve` holder confirmed.
+- The Reservation equivalent is already a draft (your answer to Q-2026-10-03-2: "Reservation outcome corrections are drafts too"; the route refuses Reservation dispositions since slice 3b). Refund corrections (verified returns and their reversal) stay without a draft by the same answer. BR-AUTH-010 names forfeiture, not its reversal.
+
+Everything else the search found is already draft-only or outside the rule:
+
+- Lease forfeiture: `app.record_lease_deposit_disposition` and `app.record_lease_deposit_disposition_with_context` (migrations 27 and 58) and `PostgresDepositService.record_disposition` — being closed under your Option A answer to Q-2026-10-04-12.
+- Reservation Deposit: `app.cancel_reservation_v2`, `app.expire_reservation_v2`, `app.correct_reservation_deposit_outcome`, `app.correct_reservation_deposit_disposition_v2` revoked from the financial role (migration 80); `app.complete_reservation_deposit_outcome` and `app.create_reservation_deposit_outcome` never granted to it; only the draft record and confirm functions remain.
+- Refunds (Credit, Payment, Pet Deposit): `app.create_usd_refund` and `app.create_pet_usd_refund` revoked (migration 78); `app.create_pet_usd_refund_to_signer` internal (migration 79); `POST /refunds` answers 409; only `app.record_refund_draft` and `app.confirm_refund_draft` remain.
+- Unpaid-Initial termination: the never-moved-in resolution stops forfeiting in slice 6; the moved-in resolution (`app.credit_initial_rent_after_termination`) only records credit Adjustments and does not touch a Deposit.
+- Refund corrections: `app.verify_usd_refund_return`, `app.reverse_refund_correction` (`refunds.correct`, `refunds.corrections.reverse`) — no draft by your answer to Q-2026-10-03-2.
+- Deposit receipt reversal: `app.reverse_deposit_receipt_v2` (`deposits.correct`, `POST` receipt reverse route) records that money recorded as received was not received (for example a returned transfer). It lowers the held amount but keeps or pays out nothing; I treat it like a Payment reversal and do not count it as a finding. Tell me if you see it differently.
+- No other function that writes Deposit dispositions, Deposit reversals or Refunds is executable by the financial or runtime role; no Deposit application record exists yet (slice 9).
+
+Options:
+
+- **Option A — make the Lease forfeiture reversal a draft too**, like the Reservation outcome corrections. In migration `20261018_83`: revoke the financial role's EXECUTE on `app.reverse_deposit_disposition_v2` (a tightening change, needs your approval); the route and service answer 409 "forfeiture reversal draft required" for Lease dispositions; the existing reversal tests use the owner test helper for setup or move to the draft path. The reversal draft itself (record under `deposits.correct`, confirm under `financial.approve`) is either built in slice 6 as well, or in a short sub-slice 6b right after slice 6 (until then a Lease forfeiture cannot be reversed; nothing is published, so no user is affected).
+- **Option B — leave the reversal as it is** and record in docs/010 that a forfeiture reversal is a correction like a Refund correction: it returns the money to the held Deposit, pays nothing out, and every later outflow still needs a draft and an approver.
+
+Recommendation: Option A with the reversal draft in sub-slice 6b, because your Reservation answer treats forfeiture corrections as drafts and Option B lets `deposits.correct` alone undo an approver's decision. Option B is acceptable if you prefer to keep reversals quick for staff; no money can leave the Deposit through it.
+
+After your answer I continue with your Q-2026-10-04-12 instructions (revoke, `record_disposition` refusal, test narrowing, the round-1 fixes), then one full backend unit run, one full PostgreSQL run, and review round 2.
+
+## Q-2026-10-04-14 — Slice 6 stopped: round 3 has one should-fix (stale screen text and docs) (ANSWERED 2026-10-04: Option A, text and docs only, one frontend test, frontend checks once, commit; the round-3 notes and the draft-read filter move to sub-slice 6b; the owner helper for tests of the old function's own checks is accepted)
+
+Slice 6 is built with your answers to Q-2026-10-04-12 and Q-2026-10-04-13. Latest runs: backend unit 3368 passed (run 7), PostgreSQL 1729 passed (run 8); format, lint and type check clean. Round 3 security review: no blocker, no should-fix. Round 3 independent review: no blocker, one should-fix, so under your standing rule I stopped. Nothing is committed; all files are in the working tree. Record: ops/reviews/V1-056-slice-06-lease-deposit-forfeiture.md.
+
+The should-fix: migration 83 stops the never-moved-in unpaid-Initial resolution from forfeiting the Security Deposit, but the staff screen still says it does. The confirm dialog (`frontend/src/LeaseManagement.tsx:620`) asks "Forfeit the Security Deposit, VOID or credit the Initial Rent Invoice and release the Unit?", and the form description (`:1499`) says "Forfeits the Security Deposit under BR-LEASE-005". docs/004 (line 293), docs/006 (lines 343 and 740) and docs/007 (line 736) say the same. Staff could believe the Deposit is settled while it stays held until a forfeiture draft is confirmed. No frontend test asserts these strings.
+
+Options:
+
+- **Option A (recommended): correct the text now.** Change the two screen strings to say the resolution VOIDs or credits the Initial Rent Invoice and releases the Unit, and that the Security Deposit is forfeited only through a forfeiture draft confirmed by a `financial.approve` holder. Correct the four doc lines the same way. Also take three cheap round-3 notes: the disposition-id reservation also checks a Reservation draft's `outcome_id` (migration 83, same function), a test for a disposition id used only by a recorded disposition, and the stale status lines (ops/NOW.md, the "Known gap" line in the review record). Then run the frontend gates (format, lint, type check, tests, build) and the backend unit and PostgreSQL suites once each, and commit slice 6 without a round 4. If you prefer, I can drop the migration note and change only text and docs; then only the frontend gates need to run.
+- **Option B: answer in writing.** Add a named open item to ops/V1_056_PLAN.md (slice 11c) for the two screen strings and the four doc lines, add one line to the docs/010 slice 6 note saying they are stale until then, and commit slice 6 as it is now (runs 7 and 8).
+
+Open for later either way (recorded, no change in slice 6): the disposition-id check is not serialized across Deposits and has no index; draft reads are filtered by kind only (to fix before the slice 11b/11c draft routes); the BR-LEASE-028 date boundary has no test; the disposition audit names `deposits.dispose` with the approver as actor (revisit in slice 6b).

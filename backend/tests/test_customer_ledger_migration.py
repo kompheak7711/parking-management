@@ -13,6 +13,10 @@ from alembic.config import Config
 from alembic.script import ScriptDirectory
 
 from deposit_disposition_test_support import disposition_context, terminate_for_disposition
+from lease_deposit_forfeiture_test_support import (
+    record_disposition_as_owner,
+    reverse_disposition_as_owner,
+)
 from payment_test_support import database_instant, seed_payment
 from property_rental.billing import PostgresRentBillingService
 from property_rental.credit import ReverseCreditApplicationCommand, ReverseCreditCommand
@@ -648,7 +652,8 @@ def test_ledger_pet_receipt_requirement_disposition_and_reversals_remain_separat
         assert assert_reconciled(connection, customer) == LedgerPosition(pet_deposit=20000)
     terminate_for_disposition(migrated_database_url, service, lease, date.today())
     disposition = uuid4()
-    service.record_disposition(
+    record_disposition_as_owner(
+        service,
         RecordDepositDispositionCommand(
             uuid4(),
             disposition,
@@ -663,7 +668,8 @@ def test_ledger_pet_receipt_requirement_disposition_and_reversals_remain_separat
     )
     with psycopg.connect(migrated_database_url) as connection:
         assert assert_reconciled(connection, customer) == LedgerPosition(pet_deposit=8000)
-    service.reverse_disposition(
+    reverse_disposition_as_owner(
+        service,
         ReverseDepositDispositionCommand(
             uuid4(), uuid4(), disposition, "Wrong disposition", "Evidence corrected"
         ),
@@ -779,7 +785,7 @@ def test_ledger_forward_projection_upgrade_preserves_populated_predecessor(
 ) -> None:
     config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
     scripts = ScriptDirectory.from_config(config)
-    assert scripts.get_heads() == ["20261017_82"]
+    assert scripts.get_heads() == ["20261018_83"]
     revision = scripts.get_revision("20260909_48")
     assert revision is not None
     assert revision.down_revision == "20260908_47"

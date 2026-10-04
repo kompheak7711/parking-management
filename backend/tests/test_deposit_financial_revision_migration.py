@@ -13,6 +13,10 @@ from psycopg import Connection
 from psycopg.conninfo import conninfo_to_dict, make_conninfo
 
 from deposit_disposition_test_support import disposition_context
+from lease_deposit_forfeiture_test_support import (
+    record_disposition_as_owner,
+    reverse_disposition_as_owner,
+)
 from property_rental.deposit import (
     AdjustDepositRequiredAmountCommand,
     DepositAdjustmentType,
@@ -129,11 +133,12 @@ def test_disposition_reversal_and_exact_replay_keep_separate_observation_and_sav
         "Approved BR-DEP-023 synthetic disposition",
         context=disposition_context(migrated_database_url, security),
     )
-    original = deposits.record_disposition(command, actor=authority)
+    original = record_disposition_as_owner(deposits, command, actor=authority)
     posted = observe(human, prop, lease, security)
     assert posted.disposition_state_version == before.disposition_state_version + 1
     assert posted.held_refundable_usd_cents == before.held_refundable_usd_cents - 12000
-    deposits.reverse_disposition(
+    reverse_disposition_as_owner(
+        deposits,
         ReverseDepositDispositionCommand(
             uuid4(),
             uuid4(),
@@ -149,7 +154,7 @@ def test_disposition_reversal_and_exact_replay_keep_separate_observation_and_sav
     assert restored.version == original.version == before.version
     with psycopg.connect(migrated_database_url) as connection:
         all_history = history(connection)
-    assert deposits.record_disposition(command, actor=authority) == original
+    assert record_disposition_as_owner(deposits, command, actor=authority) == original
     assert observe(human, prop, lease, security) == restored
     with psycopg.connect(migrated_database_url) as connection:
         assert history(connection) == all_history
@@ -323,7 +328,7 @@ def test_forward57_preserves_all56_rows_other_functions_and_historical_command_r
             day,
             "Synthetic approved BR-DEP-023 disposition",
         )
-        original = deposits.record_disposition(command, actor=authority)
+        original = record_disposition_as_owner(deposits, command, actor=authority)
         with psycopg.connect(temporary) as owner:
             before = history(owner)
             functions = {row[0]: row[1:] for row in owner.execute(query)}
@@ -356,7 +361,7 @@ def test_forward57_preserves_all56_rows_other_functions_and_historical_command_r
         for row in cast(list[dict[str, object]], new_payload["deposits"]):
             assert type(row.pop("disposition_state_version")) is int
         assert new_payload == old_payload
-        assert deposits.record_disposition(command, actor=authority) == original
+        assert record_disposition_as_owner(deposits, command, actor=authority) == original
         with psycopg.connect(temporary) as owner:
             assert history(owner) == before
         assert observe(human, prop, lease, security).active_disposition_usd_cents == 12000

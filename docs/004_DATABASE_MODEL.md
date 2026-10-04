@@ -290,11 +290,14 @@ the signed clause reference, no warning letters, and, at termination time in
 Asia/Phnom_Penh, a date after Lease Start plus five days with the Initial Rent or the
 Security Deposit still unpaid. `unpaid_initial_termination_resolutions` (append-only, one per
 termination event) records the cause `CUSTOMER_UNPAID_INITIAL_OBLIGATION`, the reason, the
-actor and what was done. Never moved in: the Security Deposit held value is forfeited
-under rule `BR-LEASE-005` (`lease_deposit_disposition_contexts.governing_rule` now also
-accepts it), the Initial Rent Invoice is VOIDed when nothing was applied or its unpaid lines
-are credited, and the Unit becomes VACANT or CLEANING with a reason; the Pet Deposit and
-the COMPLETED Reservation are untouched. Moved in: the Initial Invoice is kept and its Rent
+actor and what was done. Never moved in: the Initial Rent Invoice is VOIDed when nothing
+was applied or its unpaid lines are credited, and the Unit becomes VACANT or CLEANING with a
+reason; the Pet Deposit and the COMPLETED Reservation are untouched. Since V1-056 slice 6
+(migration `20261018_83`) the resolution no longer forfeits the Security Deposit: it stays
+held until a forfeiture draft under rule `BR-LEASE-005`
+(`lease_deposit_disposition_contexts.governing_rule` accepts it) is confirmed by a
+`financial.approve` holder. Resolutions recorded before that migration keep the forfeiture
+they recorded. Moved in: the Initial Invoice is kept and its Rent
 is credited for the days after the termination date with BR-RENT-007 proration.
 
 ## DB-LEASE-001 — `leases`

@@ -46,6 +46,10 @@ class PhysicalMoveOutUtilityConflictError(PhysicalMoveOutConflictError):
     """Existing Utility evidence requires responsibility-boundary reconciliation."""
 
 
+class PhysicalMoveOutResolutionReliance(PhysicalMoveOutConflictError):
+    """A hand-back resolution relies on the move-out record a correction would supersede."""
+
+
 class PhysicalMoveOutKeyReused(PhysicalMoveOutConflictError):
     pass
 
@@ -204,6 +208,12 @@ class PostgresPhysicalMoveOutService:
             )
         if error.sqlstate == "P5N05":
             return PhysicalMoveOutKeyReused("Physical departure command key was reused")
+        if error.sqlstate == "P5N06":
+            # The database names the resolution; past decisions are never changed silently.
+            return PhysicalMoveOutResolutionReliance(
+                error.diag.message_primary
+                or "A hand-back resolution relies on this move-out record"
+            )
         if error.sqlstate == "P5406":
             return PhysicalMoveOutAuthorizationError("Physical departure actor is not active")
         return PhysicalMoveOutUnavailableError("Physical departure persistence is unavailable")

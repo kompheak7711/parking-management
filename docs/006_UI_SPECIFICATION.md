@@ -340,9 +340,10 @@ not merge Lease-violation warnings with Rent-nonpayment milestones.
 Unpaid Initial obligation (V1-055 slice 9c): a signed Lease the viewer may terminate offers the form
 "Terminate for an unpaid Initial obligation" with the governing reference BR-LEASE-005, the signed clause, approved
 grounds, authorization and evidence references, and either an applicable notice or the reason none applies. A
-TERMINATED Lease offers the explicit follow-up forms "Customer never moved in" (forfeit the Security Deposit, VOID or
-credit the Initial Rent Invoice, release the Unit to VACANT or CLEANING with a reason) and "Customer moved in" (credit
-the Rent after the termination date). Each follow-up asks for confirmation, is recorded once, and a retry of an
+TERMINATED Lease offers the explicit follow-up forms "Customer never moved in" (VOID or credit the Initial Rent
+Invoice, release the Unit to VACANT or CLEANING with a reason; since V1-056 slice 6 the Security Deposit stays held until
+a forfeiture draft is confirmed by a `financial.approve` holder) and "Customer moved in" (credit the Rent after the
+termination date). Each follow-up asks for confirmation, is recorded once, and a retry of an
 unchanged form reuses its identities. The Rent nonpayment workflow also lists unpaid Initial Rent alerts read only. The permanent Lease timeline names each follow-up and links it to its termination event.
 
 Lease Utility records (V1-055 slice 9d): the Utility workspace offers, for one Lease, the Utility baseline (one validated
@@ -737,8 +738,9 @@ violation termination, show and validate at least three documented warning lette
 and the signed-Lease authority.
 
 For an unpaid Initial Rent Invoice, show the signed-Lease clause reference and the path
-that applies: never moved in (deposit forfeiture, Invoice VOID or credit Adjustment of
-the unpaid remainder with reason, Unit returned to VACANT) or moved in (Invoice kept, prorated credit Adjustment for the
+that applies: never moved in (Invoice VOID or credit Adjustment of the unpaid remainder
+with reason, Unit returned to VACANT; the Security Deposit stays held until a forfeiture
+draft is confirmed by a `financial.approve` holder, V1-056 slice 6) or moved in (Invoice kept, prorated credit Adjustment for the
 days after termination, move-out). Every step requires explicit authorized confirmation.
 
 ## UI-077 — Continued Occupancy

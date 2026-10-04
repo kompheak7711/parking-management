@@ -15,6 +15,10 @@ from alembic.script import ScriptDirectory
 from psycopg import sql
 
 from deposit_disposition_test_support import disposition_context, terminate_for_disposition
+from lease_deposit_forfeiture_test_support import (
+    record_disposition_as_owner,
+    reverse_disposition_as_owner,
+)
 from payment_test_support import seed_deposit_payment, seed_payment
 from property_rental.credit import ReverseCreditApplicationCommand, ReverseCreditCommand
 from property_rental.deposit import (
@@ -373,7 +377,7 @@ def test_payment_reversal_context_database_migration_privileges_and_readonly_tra
     migrated_database_url: str,  # noqa: F811
 ) -> None:
     scripts = ScriptDirectory.from_config(Config("alembic.ini"))
-    assert scripts.get_heads() == ["20261017_82"]
+    assert scripts.get_heads() == ["20261018_83"]
     revision = scripts.get_revision("20260908_46")
     assert revision is not None and revision.down_revision == "20260907_45"
     with pytest.raises(RuntimeError, match="forward-only"):
@@ -455,7 +459,7 @@ def test_payment_reversal_context_database_shared_deposit_descendants_deduplicat
         "Approved Lease outcome",
         context=disposition_context(migrated_database_url, deposit),
     )
-    service.record_disposition(disposition, actor=staff)
+    record_disposition_as_owner(service, disposition, actor=staff)
     with pytest.raises(PaymentReversalContextChanged):
         get(human, prop, payment, limit=1, cursor=initial_cursor)
     impact = items(get(human, prop, payment))
@@ -468,7 +472,8 @@ def test_payment_reversal_context_database_shared_deposit_descendants_deduplicat
     assert len(position) == 1 and position[0]["id"] == str(deposit)
     assert payload(position[0])["held_usd_cents"] == 15000
     before = get(human, prop, payment, limit=1)
-    service.reverse_disposition(
+    reverse_disposition_as_owner(
+        service,
         ReverseDepositDispositionCommand(
             uuid4(), uuid4(), disposition.disposition_id, "Correct evidence", "CASE-052"
         ),

@@ -14,6 +14,10 @@ from alembic.config import Config
 from psycopg.conninfo import conninfo_to_dict, make_conninfo
 
 from deposit_disposition_test_support import disposition_context
+from lease_deposit_forfeiture_test_support import (
+    record_disposition_as_owner,
+    reverse_disposition_as_owner,
+)
 from property_rental.deposit import (
     DepositAuthorizationError,
     DepositConflictError,
@@ -76,7 +80,7 @@ def test_concurrent_lease_disposition_identity_is_serialized_and_atomic(
     def run(value: RecordDepositDispositionCommand) -> DepositSnapshot | str:
         barrier.wait(timeout=5)
         try:
-            return observed_service.record_disposition(value, actor=actor)
+            return record_disposition_as_owner(observed_service, value, actor=actor)
         except DepositIdempotencyKeyReused:
             return "conflicting_identity"
 
@@ -136,7 +140,9 @@ def test_disabled_lease_disposition_actor_is_rechecked_before_write_and_replay(
 ) -> None:
     service, command = ready_command(migrated_database_url)
     actor = deposit_actor(service.actor_id, service.property_id)
-    original = service.record_disposition(command, actor=actor) if already_recorded else None
+    original = (
+        record_disposition_as_owner(service, command, actor=actor) if already_recorded else None
+    )
     with psycopg.connect(migrated_database_url) as connection:
         connection.execute(
             "UPDATE app.user_accounts SET lifecycle_state='disabled' WHERE actor_id=%s",
@@ -145,14 +151,14 @@ def test_disabled_lease_disposition_actor_is_rechecked_before_write_and_replay(
     with psycopg.connect(migrated_database_url) as connection:
         before = history(connection)
     with pytest.raises(DepositAuthorizationError):
-        service.record_disposition(command, actor=actor)
+        record_disposition_as_owner(service, command, actor=actor)
     with psycopg.connect(migrated_database_url) as connection:
         assert history(connection) == before
         connection.execute(
             "UPDATE app.user_accounts SET lifecycle_state='active' WHERE actor_id=%s",
             (service.actor_id,),
         )
-    result = service.record_disposition(command, actor=actor)
+    result = record_disposition_as_owner(service, command, actor=actor)
     if original is not None:
         assert result == original
     assert result.deposit_disposition_id == command.disposition_id
@@ -166,9 +172,12 @@ def test_lease_disposition_property_and_balance_failures_leave_no_effects(
     with psycopg.connect(migrated_database_url) as connection:
         before = history(connection)
     with pytest.raises(DepositNotFoundError):
-        wrong.record_disposition(command, actor=deposit_actor(service.actor_id, wrong.property_id))
+        record_disposition_as_owner(
+            wrong, command, actor=deposit_actor(service.actor_id, wrong.property_id)
+        )
     with pytest.raises(DepositInvalidError):
-        service.record_disposition(
+        record_disposition_as_owner(
+            service,
             replace(command, amount_usd_cents=50_001),
             actor=deposit_actor(service.actor_id, service.property_id),
         )
@@ -188,7 +197,8 @@ def test_lease_disposition_audit_conflict_rolls_back_financial_and_command_rows(
         assert prior is not None
         before = history(connection)
     with pytest.raises(DepositConflictError):
-        service.record_disposition(
+        record_disposition_as_owner(
+            service,
             replace(command, disposition_id=prior[0]),
             actor=deposit_actor(service.actor_id, service.property_id),
         )
@@ -225,7 +235,7 @@ def test_forward56_preserves_all55_history_and_original_successful_replay(
         alembic_command.upgrade(config, "20260914_55")
         service, command = ready_command(temporary, legacy=True)
         actor = deposit_actor(service.actor_id, service.property_id)
-        original = service.record_disposition(command, actor=actor)
+        original = record_disposition_as_owner(service, command, actor=actor)
         with psycopg.connect(temporary) as connection:
             before = history(connection)
             functions = {row[0]: row[1:] for row in connection.execute(query)}
@@ -248,7 +258,8 @@ def test_forward56_preserves_all55_history_and_original_successful_replay(
                 "has_function_privilege('prm_bootstrap',%s,'EXECUTE')",
                 (signature, signature, signature),
             ).fetchone() == (True, False, False)
-        service.reverse_disposition(
+        reverse_disposition_as_owner(
+            service,
             ReverseDepositDispositionCommand(
                 uuid4(),
                 uuid4(),
@@ -260,6 +271,6 @@ def test_forward56_preserves_all55_history_and_original_successful_replay(
         )
         with psycopg.connect(temporary) as connection:
             after_reversal = history(connection)
-        assert service.record_disposition(command, actor=actor) == original
+        assert record_disposition_as_owner(service, command, actor=actor) == original
         with psycopg.connect(temporary) as connection:
             assert history(connection) == after_reversal

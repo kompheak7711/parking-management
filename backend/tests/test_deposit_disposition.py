@@ -14,6 +14,7 @@ from property_rental.deposit import (
     DepositAuthorizationError,
     DepositConflictError,
     DepositSnapshot,
+    LeaseDepositDraftRequired,
     PostgresDepositService,
     RecordDepositDispositionCommand,
     deposit_request_digest,
@@ -138,12 +139,12 @@ def test_service_preserves_legacy_route_and_sends_complete_explicit_context(
         frozenset({CapabilityGrant("deposits.dispose", frozenset({str(service.property_id)}))}),
     )
     value = command() if legacy else replace(command(), context=context())
-    assert service.record_disposition(value, actor=actor) is result
-    assert len(calls) == 1 and len(calls[0][1]) == (11 if legacy else 14)
-    assert ("_with_context(" in calls[0][0]) is (not legacy)
-    if not legacy:
-        assert calls[0][1][-3:] == (UUID(int=5), DepositDispositionRule.VOLUNTARY_SECURITY, 9)
-    calls.clear()
+    # V1-056 slice 6 (owner answer to Q-2026-10-04-12): a Lease Deposit forfeiture is a draft
+    # confirmed under financial.approve; the one-call service path refuses before any database
+    # call, with and without the explicit context.
+    with pytest.raises(LeaseDepositDraftRequired, match="forfeiture draft required"):
+        service.record_disposition(value, actor=actor)
+    assert calls == []
     with pytest.raises(DepositAuthorizationError):
         service.record_disposition(value, actor=replace(actor, capability_grants=frozenset()))
     assert calls == []

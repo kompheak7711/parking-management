@@ -768,6 +768,32 @@ describe("Lease staff workflow", () => {
       );
       expect(api.creditMovedInInitialRent).not.toHaveBeenCalled();
     });
+    it("TEST-FE-671 says the Security Deposit stays held before resolving never moved in", async () => {
+      const api = client({ get: vi.fn().mockResolvedValue(terminated) });
+      const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+      await loadAndOpen(api);
+      const region = await screen.findByRole("region", {
+        name: "Unpaid Initial obligation follow-up",
+      });
+      expect(region).toHaveTextContent(
+        "The Security Deposit stays held until a forfeiture draft under BR-LEASE-005 is confirmed by a financial.approve holder.",
+      );
+      expect(region).not.toHaveTextContent("Forfeits the Security Deposit");
+      fireEvent.change(
+        within(region).getByLabelText("Never moved in: resolution reason"),
+        { target: { value: "Never moved in and did not pay" } },
+      );
+      fireEvent.click(
+        within(region).getByRole("button", { name: "Resolve never moved in" }),
+      );
+      expect(confirm).toHaveBeenCalledTimes(1);
+      const message = String(confirm.mock.calls[0]?.[0]);
+      expect(message).toContain(
+        "The Security Deposit stays held until a forfeiture draft is confirmed.",
+      );
+      expect(message).not.toContain("Forfeit the Security Deposit");
+      expect(api.resolveNeverMovedIn).not.toHaveBeenCalled();
+    });
   });
 
   it("TEST-FE-660 labels the unpaid Initial follow-up events in the permanent timeline with their source", async () => {
