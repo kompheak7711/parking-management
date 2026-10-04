@@ -34721,6 +34721,174 @@
       "test_path": "backend/tests/test_financial_draft_migration.py",
       "status": "implemented",
       "notes": "A non-datetime page cursor and a non-text prepare capability raise FinancialDraftInvalidError."
+    },
+    {
+      "test_id": "test_refund_methods_start_with_cash_and_bank_transfer_and_are_configurable",
+      "upstream_ids": [
+        "BR-REFUND-014"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_draft_migration.py",
+      "status": "implemented",
+      "notes": "The list starts with Cash and Bank transfer; only property.manage adds or deactivates a method; an inactive method cannot be used; code and name never change and no method is deleted."
+    },
+    {
+      "test_id": "test_refund_draft_has_no_effect_until_an_approver_confirms_it",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-REFUND-014",
+        "BR-AUTH-008"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_draft_migration.py",
+      "status": "implemented",
+      "notes": "A Payment Refund draft changes no balance and creates no Refund; Staff cannot confirm (service or direct call); the approver's confirmation creates the USD Refund and records method, reference note, preparer and confirmer; replay is exact and another approver gets a conflict."
+    },
+    {
+      "test_id": "test_a_stale_refund_draft_is_refused_and_stays_pending",
+      "upstream_ids": [
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_draft_migration.py",
+      "status": "implemented",
+      "notes": "When an earlier confirmation used the available value, a second draft for the same value is refused at confirmation and stays pending."
+    },
+    {
+      "test_id": "test_pet_refund_draft_is_confirmed_with_its_method",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-REFUND-014"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_draft_migration.py",
+      "status": "implemented",
+      "notes": "A qualified Pet Deposit Refund draft creates nothing until confirmed; confirmation pays the Pet Deposit Customer and keeps the reference note."
+    },
+    {
+      "test_id": "test_the_direct_refund_functions_are_closed_to_application_roles",
+      "upstream_ids": [
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_draft_migration.py",
+      "status": "implemented",
+      "notes": "Runtime and financial roles cannot execute the direct Refund functions or read the new tables; a direct call is refused (42501) and creates no Refund."
+    },
+    {
+      "test_id": "test_refund_draft_migration_is_additive_and_forward_only",
+      "upstream_ids": [
+        "BR-REFUND-014"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_refund_draft_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20261013_78 adds only the two tables and new functions, leaves every earlier function body unchanged and is forward-only."
+    },
+    {
+      "test_id": "test_refund_draft_http_records_a_draft_only_under_refunds_create",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-REFUND-014"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "POST /refund-drafts needs refunds.create for the source Property, CSRF and an Idempotency-Key; it records only a draft with the method and reference note and never confirms."
+    },
+    {
+      "test_id": "test_refund_draft_http_confirm_needs_financial_approve_and_returns_the_refund",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-AUTH-008"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "Confirming over HTTP needs financial.approve for the Property and CSRF; refunds.create alone is refused without dispatch; the response is the Refund body with its Location; a decided draft gives 409 without private detail."
+    },
+    {
+      "test_id": "test_a_stale_pet_refund_draft_is_refused_and_stays_pending",
+      "upstream_ids": [
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_draft_migration.py",
+      "status": "implemented",
+      "notes": "A second Pet Deposit Refund draft for value already refunded is refused at confirmation (422 class) and stays pending."
+    },
+    {
+      "test_id": "test_a_method_turned_off_after_drafting_blocks_confirmation_but_not_replay",
+      "upstream_ids": [
+        "BR-REFUND-014",
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_draft_migration.py",
+      "status": "implemented",
+      "notes": "Only property.manage turns a method off; afterwards an exact draft repeat still replays, a new draft is refused and the pending draft cannot be confirmed."
+    },
+    {
+      "test_id": "test_a_credit_refund_draft_pays_the_credit_customer_once_confirmed",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-CREDIT-014"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_draft_migration.py",
+      "status": "implemented",
+      "notes": "A Customer Credit Refund draft leaves the Credit available until confirmed; confirmation pays the Credit Customer and reduces the Credit."
+    },
+    {
+      "test_id": "test_a_draft_id_that_is_already_a_refund_command_key_is_refused",
+      "upstream_ids": [
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_draft_migration.py",
+      "status": "implemented",
+      "notes": "A draft whose id equals an earlier Refund command key of the approver is refused at confirmation and creates no second Refund."
+    },
+    {
+      "test_id": "test_refund_draft_ids_keep_the_property_person_kind_and_key_scope",
+      "upstream_ids": [
+        "BR-AUTH-010"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_refund_draft_migration.py",
+      "status": "implemented",
+      "notes": "The draft id is stable for one Property, person, Refund kind and key, and differs when any of them differs."
+    },
+    {
+      "test_id": "test_a_payment_draft_is_stale_once_the_payer_has_a_new_unpaid_invoice",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-PAY-034"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_draft_migration.py",
+      "status": "implemented",
+      "notes": "A Payment Refund draft becomes stale when the payer gets a new unpaid Invoice; confirmation is refused as a stale draft (422 class), no Refund is created and the draft stays pending."
+    },
+    {
+      "test_id": "test_the_database_refuses_a_bad_note_or_source_kind",
+      "upstream_ids": [
+        "BR-REFUND-014"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_draft_migration.py",
+      "status": "implemented",
+      "notes": "A direct database call with an empty, padded or 501-character reference note, or a source kind other than PAYMENT or CREDIT, is refused (P5202) and records no draft."
+    },
+    {
+      "test_id": "test_a_refund_draft_of_an_unknown_variant_is_never_confirmed",
+      "upstream_ids": [
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_draft_migration.py",
+      "status": "implemented",
+      "notes": "A REFUND draft whose variant is not USD or PET is refused at confirmation and creates no Refund."
     }
   ]
 }

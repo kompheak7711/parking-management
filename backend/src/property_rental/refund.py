@@ -11,8 +11,8 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import cast
-from uuid import UUID
+from typing import Final, cast
+from uuid import UUID, uuid5
 
 import psycopg
 from psycopg.types.json import set_json_loads
@@ -94,6 +94,30 @@ class CreateUsdRefundCommand:
         _source(self.source_kind, self.source_id)
         _amount(self.amount_usd_cents)
         _text(self.reason, 1000)
+
+
+# Refund command keys keep their earlier scope (Property, actor, Refund kind and key): the
+# draft id is derived from them, so two people or two Properties may reuse one key.
+REFUND_DRAFT_NAMESPACE: Final = UUID("6f0f5c8e-2b1a-4f8e-9d43-56a1d3b7c901")
+
+
+def refund_draft_id(property_id: UUID, actor_id: UUID, variant: str, idempotency_key: UUID) -> UUID:
+    """Stable draft id for one preparer's Refund command key in one Property."""
+    return uuid5(
+        REFUND_DRAFT_NAMESPACE, f"refund:{property_id}:{actor_id}:{variant}:{idempotency_key}"
+    )
+
+
+@dataclass(frozen=True, slots=True)
+class RefundMethodChoice:
+    """Configured Refund method and its reference note (BR-REFUND-014)."""
+
+    refund_method_id: UUID
+    reference_note: str
+
+    def __post_init__(self) -> None:
+        _uuid(self.refund_method_id)
+        _text(self.reference_note, 500)
 
 
 @dataclass(frozen=True, slots=True)
@@ -262,32 +286,6 @@ class RefundService:
             (property_id, actor_id, source_kind, source_id),
         )
 
-    def create_usd(
-        self, property_id: UUID, command: CreateUsdRefundCommand, *, actor: AuthenticatedActor
-    ) -> dict[str, object]:
-        actor_id = self._authorize(actor, property_id, "refunds.create")
-        # Reconstruct/revalidate all scalar intent at transmission.
-        request = CreateUsdRefundCommand(
-            command.idempotency_key,
-            command.source_kind,
-            command.source_id,
-            command.amount_usd_cents,
-            command.reason,
-        )
-        return self._query(
-            "SELECT app.create_usd_refund(%s,%s,%s,%s,%s,%s,%s)",
-            (
-                property_id,
-                actor_id,
-                request.idempotency_key,
-                request.source_kind,
-                request.source_id,
-                request.amount_usd_cents,
-                request.reason,
-            ),
-            mutation=True,
-        )
-
     def pet_source(
         self,
         property_id: UUID,
@@ -304,9 +302,88 @@ class RefundService:
             (property_id, actor_id, deposit_id, pet_refund_review_id),
         )
 
-    def create_pet(
-        self, property_id: UUID, command: CreatePetRefundCommand, *, actor: AuthenticatedActor
+    def refund_methods(self, property_id: UUID, *, actor: AuthenticatedActor) -> dict[str, object]:
+        """List the configured Refund methods (BR-REFUND-014)."""
+        _uuid(property_id)
+        if not any(
+            is_authorized(actor, AuthorizationRequirement(capability, str(property_id)))
+            for capability in ("refunds.read", "refunds.create", "property.manage")
+        ):
+            raise RefundAuthorizationError("Refund method read is not authorized")
+        try:
+            actor_id = UUID(actor.actor_id)
+        except (ValueError, TypeError, AttributeError) as exc:
+            raise RefundAuthorizationError("Refund actor identity is invalid") from exc
+        return self._query(
+            "SELECT app.list_refund_methods(%s,%s)", (property_id, actor_id), mutation=False
+        )
+
+    def _draft_call(self, sql: str, parameters: tuple[object, ...]) -> dict[str, object]:
+        try:
+            row = retry_lock_not_available(lambda: self._attempt(sql, parameters, True))
+        except psycopg.Error as exc:
+            if exc.sqlstate in {"P5201", "P4501", "P0002"}:
+                raise RefundNotFoundError("Refund source or draft was not found") from exc
+            if exc.sqlstate == "P5202":
+                raise RefundInvalidError("Refund command is invalid") from exc
+            if exc.sqlstate == "P5205":
+                raise RefundIdempotencyKeyReused("Refund command key was reused") from exc
+            if exc.sqlstate in {"P4506", "42501"}:
+                raise RefundAuthorizationError("Refund actor is not authorized") from exc
+            if exc.sqlstate == "55000" and exc.diag.message_primary == (
+                "Financial draft is already decided"
+            ):
+                raise RefundConflictError("Refund draft is already decided") from exc
+            raise RefundUnavailableError(
+                "Refund outcome unresolved; preserve and replay the original command"
+            ) from exc
+        if row is None or not isinstance(row[0], dict):
+            raise RefundNotFoundError("Refund source or resource was not found")
+        return cast(dict[str, object], row[0])
+
+    def record_usd_draft(
+        self,
+        property_id: UUID,
+        command: CreateUsdRefundCommand,
+        method: RefundMethodChoice,
+        *,
+        actor: AuthenticatedActor,
     ) -> dict[str, object]:
+        """Record a Credit or Payment Refund draft; it has no effect until confirmed."""
+        actor_id = self._authorize(actor, property_id, "refunds.create")
+        request = CreateUsdRefundCommand(
+            command.idempotency_key,
+            command.source_kind,
+            command.source_id,
+            command.amount_usd_cents,
+            command.reason,
+        )
+        choice = RefundMethodChoice(method.refund_method_id, method.reference_note)
+        return self._draft_call(
+            "SELECT app.record_refund_draft(%s,%s,%s,'USD',%s,%s,NULL,%s,%s,%s,%s,%s)",
+            (
+                property_id,
+                actor_id,
+                refund_draft_id(property_id, actor_id, "USD", request.idempotency_key),
+                request.source_kind,
+                request.source_id,
+                request.amount_usd_cents,
+                request.reason,
+                choice.refund_method_id,
+                choice.reference_note,
+                "refunds.create",
+            ),
+        )
+
+    def record_pet_draft(
+        self,
+        property_id: UUID,
+        command: CreatePetRefundCommand,
+        method: RefundMethodChoice,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        """Record a qualified Pet Deposit Refund draft; it has no effect until confirmed."""
         actor_id = self._authorize(actor, property_id, "refunds.create")
         request = CreatePetRefundCommand(
             command.idempotency_key,
@@ -315,18 +392,32 @@ class RefundService:
             command.amount_usd_cents,
             command.reason,
         )
-        return self._query(
-            "SELECT app.create_pet_usd_refund(%s,%s,%s,%s,%s,%s,%s)",
+        choice = RefundMethodChoice(method.refund_method_id, method.reference_note)
+        return self._draft_call(
+            "SELECT app.record_refund_draft(%s,%s,%s,'PET',NULL,%s,%s,%s,%s,%s,%s,%s)",
             (
                 property_id,
                 actor_id,
-                request.idempotency_key,
+                refund_draft_id(property_id, actor_id, "PET", request.idempotency_key),
                 request.deposit_id,
                 request.pet_refund_review_id,
                 request.amount_usd_cents,
                 request.reason,
+                choice.refund_method_id,
+                choice.reference_note,
+                "refunds.create",
             ),
-            mutation=True,
+        )
+
+    def confirm_draft(
+        self, property_id: UUID, draft_id: UUID, *, actor: AuthenticatedActor
+    ) -> dict[str, object]:
+        """Create the Refund of a draft; only a financial.approve holder may confirm."""
+        actor_id = self._authorize(actor, property_id, "financial.approve")
+        _uuid(draft_id)
+        return self._draft_call(
+            "SELECT app.confirm_refund_draft(%s,%s,%s,%s)",
+            (property_id, actor_id, draft_id, "financial.approve"),
         )
 
     def verify_usd_return(

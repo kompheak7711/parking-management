@@ -18,14 +18,20 @@ from property_rental.refund import (
     RefundAuthorizationError,
     RefundIdempotencyKeyReused,
     RefundInvalidError,
+    RefundMethodChoice,
     RefundNotFoundError,
     RefundPage,
     RefundService,
     RefundUnavailableError,
     ReverseRefundCorrectionCommand,
     VerifyUsdRefundReturnCommand,
+    refund_draft_id,
 )
 from test_credit import staff
+
+
+def method() -> RefundMethodChoice:
+    return RefundMethodChoice(uuid4(), "Cash handed over at the office")
 
 
 def create() -> CreateUsdRefundCommand:
@@ -139,9 +145,10 @@ CAPABILITIES = {
     "get": "refunds.read",
     "list": "refunds.read",
     "usd_source": "refunds.create",
-    "create_usd": "refunds.create",
+    "record_usd_draft": "refunds.create",
     "pet_source": "refunds.create",
-    "create_pet": "refunds.create",
+    "record_pet_draft": "refunds.create",
+    "confirm_draft": "financial.approve",
     "verify_usd_return": "refunds.correct",
     "reverse_correction": "refunds.corrections.reverse",
 }
@@ -157,14 +164,17 @@ def invoke(
         return service.list(prop, actor=actor, customer_id=target)
     if operation == "usd_source":
         return service.usd_source(prop, "PAYMENT", target, actor=actor)
-    if operation == "create_usd":
-        return service.create_usd(prop, create(), actor=actor)
+    if operation == "record_usd_draft":
+        return service.record_usd_draft(prop, create(), method(), actor=actor)
+    if operation == "confirm_draft":
+        return service.confirm_draft(prop, target, actor=actor)
     if operation == "pet_source":
         return service.pet_source(prop, target, uuid4(), actor=actor)
-    if operation == "create_pet":
-        return service.create_pet(
+    if operation == "record_pet_draft":
+        return service.record_pet_draft(
             prop,
             CreatePetRefundCommand(uuid4(), target, uuid4(), 100, "Qualified Refund"),
+            method(),
             actor=actor,
         )
     if operation == "verify_usd_return":
@@ -221,23 +231,28 @@ def test_refund_complete_command_envelope_and_transmission_revalidation() -> Non
     with patch("property_rental.refund.psycopg.connect") as connect:
         connect.return_value.__enter__.return_value = connection
         service = RefundService("read", "write")
-        service.create_usd(prop, request, actor=actor)
+        choice = method()
+        # V1-056 slice 3a: the command is recorded as a Refund draft (BR-AUTH-010).
+        service.record_usd_draft(prop, request, choice, actor=actor)
         connection.execute.assert_called_with(
-            "SELECT app.create_usd_refund(%s,%s,%s,%s,%s,%s,%s)",
+            "SELECT app.record_refund_draft(%s,%s,%s,'USD',%s,%s,NULL,%s,%s,%s,%s,%s)",
             (
                 prop,
                 UUID(actor.actor_id),
-                request.idempotency_key,
+                refund_draft_id(prop, UUID(actor.actor_id), "USD", request.idempotency_key),
                 "PAYMENT",
                 request.source_id,
                 100,
                 request.reason,
+                choice.refund_method_id,
+                choice.reference_note,
+                "refunds.create",
             ),
         )
         connect.reset_mock()
         object.__setattr__(request, "amount_usd_cents", True)
         with pytest.raises(RefundInvalidError):
-            service.create_usd(prop, request, actor=actor)
+            service.record_usd_draft(prop, request, choice, actor=actor)
         page = RefundPage()
         object.__setattr__(page, "limit", 1001)
         with pytest.raises(RefundInvalidError):
@@ -249,26 +264,30 @@ def test_pet_refund_transmission_preserves_review_and_revalidates_intent() -> No
     prop = uuid4()
     actor = staff(prop, "refunds.create")
     request = CreatePetRefundCommand(uuid4(), uuid4(), uuid4(), 100, "Qualified Pet Refund")
-    with patch.object(RefundService, "_query", return_value={}) as query:
+    choice = method()
+    with patch.object(RefundService, "_draft_call", return_value={}) as query:
         service = RefundService("read", "write")
-        service.create_pet(prop, request, actor=actor)
+        # V1-056 slice 3a: the command is recorded as a Refund draft (BR-AUTH-010).
+        service.record_pet_draft(prop, request, choice, actor=actor)
         query.assert_called_once_with(
-            "SELECT app.create_pet_usd_refund(%s,%s,%s,%s,%s,%s,%s)",
+            "SELECT app.record_refund_draft(%s,%s,%s,'PET',NULL,%s,%s,%s,%s,%s,%s,%s)",
             (
                 prop,
                 UUID(actor.actor_id),
-                request.idempotency_key,
+                refund_draft_id(prop, UUID(actor.actor_id), "PET", request.idempotency_key),
                 request.deposit_id,
                 request.pet_refund_review_id,
                 100,
                 request.reason,
+                choice.refund_method_id,
+                choice.reference_note,
+                "refunds.create",
             ),
-            mutation=True,
         )
         query.reset_mock()
         object.__setattr__(request, "pet_refund_review_id", UUID(int=0))
         with pytest.raises(RefundInvalidError):
-            service.create_pet(prop, request, actor=actor)
+            service.record_pet_draft(prop, request, choice, actor=actor)
         query.assert_not_called()
 
 
@@ -300,8 +319,8 @@ def test_refund_failure_preserves_original_command_and_safe_message(
     prop = uuid4()
     with patch("property_rental.refund.psycopg.connect", side_effect=error):
         with pytest.raises(expected) as caught:
-            RefundService("read", "write").create_usd(
-                prop, request, actor=staff(prop, "refunds.create")
+            RefundService("read", "write").record_usd_draft(
+                prop, request, method(), actor=staff(prop, "refunds.create")
             )
     assert "private diagnostic" not in str(caught.value)
     assert request == before

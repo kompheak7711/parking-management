@@ -31,6 +31,7 @@ from property_rental.deposit_disposition import (
     LeaseDepositDispositionContext,
 )
 from property_rental.refund import ReverseRefundCorrectionCommand
+from refund_test_support import create_pet_refund
 from test_credit_migration import actor as refund_actor
 from test_deposit_migration import (
     deposit_actor,
@@ -350,7 +351,8 @@ def test_refund_history_participates_in_posting_observation(
         ).fetchone()
         assert row is not None and type(row[0]) is int and type(row[1]) is date
         version, day = row[0], row[1]
-    original = refund_service().create_pet(
+    original = create_pet_refund(
+        refund_service(),
         prop,
         pet_refund_command(pet, review, 10000),
         actor=refund_actor(human, prop, "refunds.create"),

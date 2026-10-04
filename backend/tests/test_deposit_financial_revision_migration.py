@@ -27,6 +27,7 @@ from property_rental.termination_deposit import (
     PostgresTerminationDepositReadService,
     TerminationDepositBalance,
 )
+from refund_test_support import create_pet_refund
 from test_credit_migration import actor as refund_actor
 from test_deposit_migration import (
     deposit_actor,
@@ -161,7 +162,7 @@ def test_refund_return_and_correction_reversal_advance_without_changing_old_repl
     before = observe(human, prop, lease, pet)
     command = pet_refund_command(pet, review, 10000)
     creator = refund_actor(human, prop, "refunds.create")
-    original = service().create_pet(prop, command, actor=creator)
+    original = create_pet_refund(service(), prop, command, actor=creator)
     identity = refund_id(original)
     posted = observe(human, prop, lease, pet)
     assert posted.disposition_state_version == before.disposition_state_version + 1
@@ -183,7 +184,7 @@ def test_refund_return_and_correction_reversal_advance_without_changing_old_repl
     assert reversed_return.disposition_state_version == before.disposition_state_version + 3
     assert reversed_return.held_refundable_usd_cents == posted.held_refundable_usd_cents
     assert reversed_return.version == before.version
-    assert service().create_pet(prop, command, actor=creator) == original
+    assert create_pet_refund(service(), prop, command, actor=creator) == original
     assert observe(human, prop, lease, pet) == reversed_return
 
 

@@ -25,6 +25,7 @@ from property_rental.refund import (
     RefundUnavailableError,
     ReverseRefundCorrectionCommand,
 )
+from refund_test_support import create_pet_refund
 from test_credit_migration import actor
 from test_deposit_api_migration import seed_pet_deposit
 from test_deposit_migration import financial_database_url, runtime_database_url
@@ -101,11 +102,11 @@ def test_pet_refund_reuses_review_preserves_lease_and_exact_replay_audit(
     before = service().pet_source(prop, deposit, review, actor=creator)
     assert before["available_usd_cents"] == 20000 and before["eligible"] is True
     request = command(deposit, review)
-    result = service().create_pet(prop, request, actor=creator)
+    result = create_pet_refund(service(), prop, request, actor=creator)
     identity = refund_id(result)
-    assert service().create_pet(prop, request, actor=creator) == result
+    assert create_pet_refund(service(), prop, request, actor=creator) == result
     with pytest.raises(RefundIdempotencyKeyReused):
-        service().create_pet(prop, replace(request, amount_usd_cents=14999), actor=creator)
+        create_pet_refund(service(), prop, replace(request, amount_usd_cents=14999), actor=creator)
     assert service().get(prop, identity, actor=actor(human, prop, "refunds.read")) == result
     assert cast(dict[str, object], result["refund"])["recipient_customer_id"] == str(customer)
     assert cast(dict[str, object], result["pet_refund_review"])["id"] == str(review)
@@ -157,8 +158,11 @@ def test_pet_refund_rejects_unqualified_scope_amount_and_chronology(
     if invalid == "wrong_property":
         unknown = uuid4()
         with pytest.raises(RefundNotFoundError):
-            service().create_pet(
-                unknown, command(deposit, review), actor=actor(human, unknown, "refunds.create")
+            create_pet_refund(
+                service(),
+                unknown,
+                command(deposit, review),
+                actor=actor(human, unknown, "refunds.create"),
             )
         return
     if invalid == "wrong_review":
@@ -206,8 +210,8 @@ def test_departure_alone_and_security_deposit_never_qualify_for_active_refund(
     deposits.record_pet_departure(departure, actor=human)
     creator = actor(deposits.actor_id, deposits.property_id, "refunds.create")
     with pytest.raises(RefundNotFoundError):
-        service().create_pet(
-            deposits.property_id, command(deposit, departure.departure_id), actor=creator
+        create_pet_refund(
+            service(), deposits.property_id, command(deposit, departure.departure_id), actor=creator
         )
     _, _, _, _, _, review = qualified(migrated_database_url)
     move_service, move_actor, move_command, security = setup_move_in(migrated_database_url)
@@ -232,8 +236,8 @@ def test_departure_alone_and_security_deposit_never_qualify_for_active_refund(
     with pytest.raises(RefundNotFoundError):
         service().pet_source(move_service.property_id, security, review, actor=security_creator)
     with pytest.raises(RefundNotFoundError):
-        service().create_pet(
-            move_service.property_id, command(security, review), actor=security_creator
+        create_pet_refund(
+            service(), move_service.property_id, command(security, review), actor=security_creator
         )
     with psycopg.connect(migrated_database_url) as connection:
         assert connection.execute(
@@ -264,8 +268,8 @@ def test_pet_verified_returns_reconcile_receipt_ledger_eligibility_and_reversal(
 
     receipt_id, eligible = receipt()
     assert eligible is True
-    original = service().create_pet(
-        prop, command(deposit, review, 20000), actor=actor(human, prop, "refunds.create")
+    original = create_pet_refund(
+        service(), prop, command(deposit, review, 20000), actor=actor(human, prop, "refunds.create")
     )
     identity = refund_id(original)
     assert receipt() == (receipt_id, False)
@@ -323,7 +327,7 @@ def test_pet_verified_return_correction_reversal_and_reused_balance_are_exact(
 ) -> None:
     human, prop, _, _, deposit, review = qualified(migrated_database_url)
     creator = actor(human, prop, "refunds.create")
-    result = service().create_pet(prop, command(deposit, review, 20000), actor=creator)
+    result = create_pet_refund(service(), prop, command(deposit, review, 20000), actor=creator)
     identity = refund_id(result)
     correction = service().verify_usd_return(
         prop, identity, returned(5000), actor=actor(human, prop, "refunds.correct")
@@ -354,7 +358,7 @@ def test_pet_verified_return_correction_reversal_and_reused_balance_are_exact(
         prop, identity, returned(5000), actor=actor(human, prop, "refunds.correct")
     )
     active = corrections(corrected)[0]
-    service().create_pet(prop, command(deposit, review, 5000), actor=creator)
+    create_pet_refund(service(), prop, command(deposit, review, 5000), actor=creator)
     with pytest.raises(RefundUnavailableError):
         service().reverse_correction(
             prop,
@@ -373,8 +377,8 @@ def test_deposit_historical_budget_rejects_backdated_receipt_reversal_after_retu
     migrated_database_url: str,  # noqa: F811
 ) -> None:
     human, prop, _, _, deposit, review = qualified(migrated_database_url)
-    result = service().create_pet(
-        prop, command(deposit, review, 20000), actor=actor(human, prop, "refunds.create")
+    result = create_pet_refund(
+        service(), prop, command(deposit, review, 20000), actor=actor(human, prop, "refunds.create")
     )
     instant = datetime.fromisoformat(str(cast(dict[str, object], result["refund"])["processed_at"]))
     service().verify_usd_return(
@@ -404,8 +408,8 @@ def test_pet_deposit_mvcc_guard_rejects_stale_competing_consumers(
         stale.execute("SET TRANSACTION ISOLATION LEVEL " + isolation)
         stale.execute("SET LOCAL statement_timeout='5000ms'")
         stale.execute("SELECT app.deposit_held_value_at(%s,'infinity')", (deposit,))
-        service().create_pet(
-            prop, command(deposit, review), actor=actor(human, prop, "refunds.create")
+        create_pet_refund(
+            service(), prop, command(deposit, review), actor=actor(human, prop, "refunds.create")
         )
         with pytest.raises(psycopg.Error) as failure:
             if consumer == "refund":
@@ -466,8 +470,8 @@ def test_pet_return_cannot_restore_reversed_deposit_receipt_for_correction_rever
     migrated_database_url: str,  # noqa: F811
 ) -> None:
     human, prop, _, _, deposit, review = qualified(migrated_database_url)
-    result = service().create_pet(
-        prop, command(deposit, review, 20000), actor=actor(human, prop, "refunds.create")
+    result = create_pet_refund(
+        service(), prop, command(deposit, review, 20000), actor=actor(human, prop, "refunds.create")
     )
     identity = refund_id(result)
     correction = service().verify_usd_return(
@@ -511,7 +515,7 @@ def test_pet_helpers_and_guard_state_remain_private_and_financial_role_has_only_
                 "SELECT has_function_privilege(%s,"
                 "'app.create_pet_usd_refund(uuid,uuid,uuid,uuid,uuid,bigint,text)','EXECUTE')",
                 (role,),
-            ).fetchone() == (role == "prm_financial",)
+            ).fetchone() == (False,)  # V1-056 slice 3a: only app.confirm_refund_draft calls it
 
 
 def test_pet_refund_holds_signed_lease_status_until_commit(
@@ -552,7 +556,7 @@ def test_pet_correction_reversal_cannot_spend_stale_returned_balance(
 ) -> None:
     human, prop, _, _, deposit, review = qualified(migrated_database_url)
     creator = actor(human, prop, "refunds.create")
-    result = service().create_pet(prop, command(deposit, review, 20000), actor=creator)
+    result = create_pet_refund(service(), prop, command(deposit, review, 20000), actor=creator)
     identity = refund_id(result)
     corrected = service().verify_usd_return(
         prop, identity, returned(5000), actor=actor(human, prop, "refunds.correct")
@@ -561,7 +565,7 @@ def test_pet_correction_reversal_cannot_spend_stale_returned_balance(
     with psycopg.connect(migrated_database_url) as stale:
         stale.execute("SET TRANSACTION ISOLATION LEVEL " + isolation)
         stale.execute("SELECT app.deposit_held_value_at(%s,'infinity')", (deposit,))
-        service().create_pet(prop, command(deposit, review, 5000), actor=creator)
+        create_pet_refund(service(), prop, command(deposit, review, 5000), actor=creator)
         with pytest.raises(psycopg.Error) as failure:
             correct(stale, human, identity, -5000, reverses=correction)
             stale.commit()
@@ -584,8 +588,8 @@ def test_pet_refund_resource_links_retained_narratives_without_unbounded_embeddi
 ) -> None:
     findings = ("Synthetic resolved inspection evidence " * 20000).strip()
     human, prop, _, _, deposit, review = qualified(migrated_database_url, findings=findings)
-    result = service().create_pet(
-        prop, command(deposit, review), actor=actor(human, prop, "refunds.create")
+    result = create_pet_refund(
+        service(), prop, command(deposit, review), actor=actor(human, prop, "refunds.create")
     )
     assert result["source"] == {"type": "DEPOSIT", "id": str(deposit), "property_id": str(prop)}
     assert cast(dict[str, object], result["pet_refund_review"])["id"] == str(review)

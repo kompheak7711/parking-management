@@ -52,6 +52,7 @@ from property_rental.late_payment import (
 )
 from property_rental.payment_allocation import ReverseAllocationCommand
 from property_rental.settings import Settings
+from refund_test_support import create_usd_refund
 from test_credit_application_migration import application_id
 from test_credit_application_migration import source as credit_source
 from test_credit_migration import actor
@@ -333,7 +334,8 @@ def test_ledger_runtime_coherent_snapshot_survives_concurrent_refund_commit(
                     "SELECT app.customer_ledger_snapshot(%s,%s,%s)",
                     (prop, customer, human),
                 ).fetchone()
-                refunds().create_usd(
+                create_usd_refund(
+                    refunds(),
                     prop,
                     create(payment, 3000),
                     actor=actor(human, prop, "refunds.create"),
@@ -600,7 +602,7 @@ def test_ledger_read_migration_is_forward_only_and_preserves_populated48_sources
 ) -> None:
     config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
     scripts = ScriptDirectory.from_config(config)
-    assert scripts.get_heads() == ["20261012_77"]
+    assert scripts.get_heads() == ["20261013_78"]
     revision = scripts.get_revision("20260909_49")
     assert revision is not None and revision.down_revision == "20260909_48"
     with pytest.raises(RuntimeError, match="forward-only"):

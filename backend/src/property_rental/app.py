@@ -238,9 +238,9 @@ LATE_PAYMENT_API_PATH_PATTERN: Final = re.compile(
 )
 PAYMENT_API_PATH_PATTERN: Final = re.compile(
     r"^/api/v1/(?:financial-workspaces$|properties/[^/]+/(?:financial-capabilities|payment-methods)$|"
-    r"properties/[^/]+/(?:payments|refunds|payment-allocations|receipts|customer-credits|credit-applications)(?:/|$)|"
+    r"properties/[^/]+/(?:payments|refunds|refund-drafts|payment-allocations|receipts|customer-credits|credit-applications)(?:/|$)|"
     r"customer-ledger/customers(?:/|$)|customers/[^/]+/(?:credits|account-ledger)(?:/|$)|"
-    r"(?:payments|payment-allocations|receipts|customer-credits|credit-applications|refunds|refund-sources)(?:/|$))"
+    r"(?:payments|payment-allocations|receipts|customer-credits|credit-applications|refunds|refund-drafts|refund-sources)(?:/|$))"
 )
 DATABASE_TIMEOUT_SECONDS: Final = 2
 ERROR_STATUS_DETAILS: Final = {

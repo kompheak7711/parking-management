@@ -18,6 +18,7 @@ from property_rental.credit import (
     ReverseCreditCommand,
 )
 from property_rental.refund import RefundPage, ReverseRefundCorrectionCommand
+from refund_test_support import create_usd_refund
 from test_credit_application_migration import application_id, designated
 from test_credit_application_migration import source as application_source
 from test_credit_migration import actor, credit_id, recognize, service, source
@@ -51,8 +52,8 @@ def test_credit_ledger_reconstructs_all_event_families_and_exact_positions(
     applied = service().apply(
         prop, credit, designated(invoice, line, 30000), actor=actor(human, prop, "credits.apply")
     )
-    paid = refunds().create_usd(
-        prop, create(credit, 20000, "CREDIT"), actor=actor(human, prop, "refunds.create")
+    paid = create_usd_refund(
+        refunds(), prop, create(credit, 20000, "CREDIT"), actor=actor(human, prop, "refunds.create")
     )
     refund = refund_id(paid)
     partial = refunds().verify_usd_return(
@@ -192,8 +193,11 @@ def test_credit_read_only_snapshot_survives_concurrent_refund_commit_without_gua
         reader.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
         old = reader.execute(sql, (prop, credit, human)).fetchone()
         assert old is not None and position(old[0])["available_usd_cents"] == 8000
-        refunds().create_usd(
-            prop, create(credit, 3000, "CREDIT"), actor=actor(human, prop, "refunds.create")
+        create_usd_refund(
+            refunds(),
+            prop,
+            create(credit, 3000, "CREDIT"),
+            actor=actor(human, prop, "refunds.create"),
         )
         assert reader.execute(sql, (prop, credit, human)).fetchone() == old
         listed = reader.execute(
@@ -396,9 +400,9 @@ def test_credit_reads_preserve_exact_khr_source_and_bound_large_original_evidenc
         "refunds.corrections.reverse",
     )
     refund_request = create(credit, 101, "CREDIT")
-    outbound = refunds().create_usd(prop, refund_request, actor=refund_actor)
+    outbound = create_usd_refund(refunds(), prop, refund_request, actor=refund_actor)
     identity = refund_id(outbound)
-    assert refunds().create_usd(prop, refund_request, actor=refund_actor) == outbound
+    assert create_usd_refund(refunds(), prop, refund_request, actor=refund_actor) == outbound
     first_return = returned(1)
     corrected = refunds().verify_usd_return(prop, identity, first_return, actor=refund_actor)
     assert (

@@ -50,6 +50,7 @@ from property_rental.payment_read import (
     PaymentReadUnavailableError,
 )
 from property_rental.refund import ReverseRefundCorrectionCommand
+from refund_test_support import create_pet_refund, create_usd_refund
 from test_allocation_read_migration import large_history_source
 from test_credit_application_migration import application_id, designated
 from test_credit_application_migration import source as application_source
@@ -257,8 +258,8 @@ def test_financial_action_context_database_refund_original_return_and_exact_corr
 ) -> None:
     human, prop, _, payment = source(migrated_database_url)
     source_id = credit_id(recognize(prop, payment, human)) if kind == "CREDIT" else payment
-    posted = refunds().create_usd(
-        prop, create(source_id, kind=kind), actor=actor(human, prop, "refunds.create")
+    posted = create_usd_refund(
+        refunds(), prop, create(source_id, kind=kind), actor=actor(human, prop, "refunds.create")
     )
     identity = refund_id(posted)
     original = context(get(human, prop, "refund_return", identity))
@@ -312,7 +313,7 @@ def test_financial_action_context_database_migration_privileges_and_forward_only
     migrated_database_url: str,  # noqa: F811
 ) -> None:
     scripts = ScriptDirectory.from_config(Config("alembic.ini"))
-    assert scripts.get_heads() == ["20261012_77"]
+    assert scripts.get_heads() == ["20261013_78"]
     revision = scripts.get_revision("20260908_47")
     assert revision is not None and revision.down_revision == "20260908_46"
     with pytest.raises(RuntimeError, match="forward-only"):
@@ -497,8 +498,8 @@ def test_financial_action_context_database_selected_correction_beyond_max_histor
     migrated_database_url: str,  # noqa: F811
 ) -> None:
     human, prop, _, payment = source(migrated_database_url)
-    original = refunds().create_usd(
-        prop, create(payment), actor=actor(human, prop, "refunds.create")
+    original = create_usd_refund(
+        refunds(), prop, create(payment), actor=actor(human, prop, "refunds.create")
     )
     identity = refund_id(original)
     first = None
@@ -635,8 +636,8 @@ def test_financial_action_context_database_coherent_snapshot_during_new_refund(
         self: FinancialReferenceService, who: AuthenticatedActor, property_id: UUID | None = None
     ) -> Iterator[psycopg.Connection[tuple[object, ...]]]:
         with read(self, who, property_id) as connection:
-            refunds().create_usd(
-                prop, create(payment, 1000), actor=actor(human, prop, "refunds.create")
+            create_usd_refund(
+                refunds(), prop, create(payment, 1000), actor=actor(human, prop, "refunds.create")
             )
             yield connection
 
@@ -832,7 +833,7 @@ def test_financial_action_context_database_deposit_refund_return_and_correction_
 ) -> None:
     human, prop, _, _, deposit, review = qualified(migrated_database_url)
     staff = actor(human, prop, "refunds.create", "refunds.correct", "refunds.corrections.reverse")
-    created = refunds().create_pet(prop, pet_refund(deposit, review), actor=staff)
+    created = create_pet_refund(refunds(), prop, pet_refund(deposit, review), actor=staff)
     identity = refund_id(created)
     before = snapshot(migrated_database_url)
     initial = get(human, prop, "refund_return", identity)
@@ -1291,8 +1292,10 @@ def test_financial_action_context_database_review_aa_refund_multiple_and_parent_
     human, prop, _, payment = source(migrated_database_url)
     identity = credit_id(recognize(prop, payment, human)) if kind == "CREDIT" else payment
     staff = actor(human, prop, "refunds.create", "refunds.correct", "refunds.corrections.reverse")
-    first = refund_id(refunds().create_usd(prop, create(identity, 3000, kind), actor=staff))
-    second = refund_id(refunds().create_usd(prop, create(identity, 2000, kind), actor=staff))
+    first = refund_id(create_usd_refund(refunds(), prop, create(identity, 3000, kind), actor=staff))
+    second = refund_id(
+        create_usd_refund(refunds(), prop, create(identity, 2000, kind), actor=staff)
+    )
     before = snapshot(migrated_database_url)
     original = get(human, prop, "refund_return", first)
     assert cast(dict[str, object], context(original)["refund"])["net_refund_usd_cents"] == 3000

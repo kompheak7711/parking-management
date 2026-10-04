@@ -92,7 +92,6 @@ def test_lock_retry_replays_the_same_service_command_in_a_new_connection(
     from property_rental.credit import CustomerCreditService, RecognizeCreditCommand
     from property_rental.refund import RefundService
     from test_credit import staff
-    from test_refund import create
 
     connection = MagicMock()
     connection.execute.return_value.fetchone.return_value = ({"id": "synthetic"},)
@@ -109,8 +108,9 @@ def test_lock_retry_replays_the_same_service_command_in_a_new_connection(
                 prop, uuid4(), request, actor=staff(prop, "credits.recognize")
             )
         else:
-            result = RefundService("read", "write").create_usd(
-                prop, create(), actor=staff(prop, "refunds.create")
+            # V1-056 slice 3a: a Refund is created by confirming its draft.
+            result = RefundService("read", "write").confirm_draft(
+                prop, uuid4(), actor=staff(prop, "financial.approve")
             )
     assert result == {"id": "synthetic"}
     assert connect.call_count == 2

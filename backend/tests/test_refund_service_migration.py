@@ -23,7 +23,9 @@ from property_rental.refund import (
     RefundUnavailableError,
     ReverseRefundCorrectionCommand,
     VerifyUsdRefundReturnCommand,
+    refund_draft_id,
 )
+from refund_test_support import create_usd_refund
 from test_credit_migration import actor, credit_id, recognize, source
 from test_invoice_migration import financial_database_url, runtime_database_url
 from test_payment_migration import fx_payment
@@ -90,7 +92,7 @@ def test_refund_service_create_source_replay_verified_return_reversal_history(
         "eligible": True,
     }
     command = create(source_id, kind=kind)
-    original = service().create_usd(prop, command, actor=creator)
+    original = create_usd_refund(service(), prop, command, actor=creator)
     identity = refund_id(original)
     assert service().get(prop, identity, actor=reader) == original
     assert original["source"] == {"type": kind, "id": str(source_id), "property_id": str(prop)}
@@ -122,7 +124,7 @@ def test_refund_service_create_source_replay_verified_return_reversal_history(
         corrections(reversed_result)[0]["authorization_reference"] == "refunds.corrections.reverse"
     )
     # Replay returns the immutable response from THAT command, not today's net position.
-    assert service().create_usd(prop, command, actor=creator) == original
+    assert create_usd_refund(service(), prop, command, actor=creator) == original
     assert service().verify_usd_return(prop, identity, return_command, actor=corrector) == corrected
     assert (
         service().reverse_correction(
@@ -166,13 +168,14 @@ def test_refund_service_each_command_key_is_exact_and_actor_scoped(
     human, prop, _, payment = source(migrated_database_url)
     staff = actor(human, prop, "refunds.create", "refunds.correct", "refunds.corrections.reverse")
     command = create(payment)
-    result = service().create_usd(prop, command, actor=staff)
+    result = create_usd_refund(service(), prop, command, actor=staff)
     identity = refund_id(result)
     with pytest.raises(RefundIdempotencyKeyReused):
-        service().create_usd(prop, replace(command, amount_usd_cents=7000), actor=staff)
+        create_usd_refund(service(), prop, replace(command, amount_usd_cents=7000), actor=staff)
     other_human, same_prop, _, other_payment = source(migrated_database_url)
     assert same_prop == prop
-    other_result = service().create_usd(
+    other_result = create_usd_refund(
+        service(),
         prop,
         replace(command, source_id=other_payment),
         actor=actor(other_human, prop, "refunds.create"),
@@ -220,7 +223,7 @@ def test_refund_service_fresh_disabled_actor_rejected_before_replay(
         "refunds.corrections.reverse",
     )
     command = create(payment)
-    identity = refund_id(service().create_usd(prop, command, actor=staff))
+    identity = refund_id(create_usd_refund(service(), prop, command, actor=staff))
     request = returned()
     correction_id = UUID(
         str(corrections(service().verify_usd_return(prop, identity, request, actor=staff))[0]["id"])
@@ -233,7 +236,7 @@ def test_refund_service_fresh_disabled_actor_rejected_before_replay(
         )
     with pytest.raises(RefundAuthorizationError):
         if action == "create":
-            service().create_usd(prop, command, actor=staff)
+            create_usd_refund(service(), prop, command, actor=staff)
         elif action == "return":
             service().verify_usd_return(prop, identity, request, actor=staff)
         elif action == "reverse":
@@ -253,14 +256,14 @@ def test_refund_service_wrong_property_customer_and_resource_are_not_disclosed(
     other_human, _, other_customer, _ = source(migrated_database_url)
     other_prop = uuid4()  # V1 has one Property; an unknown scope must not authorize it.
     staff = actor(human, prop, "refunds.create", "refunds.read", "refunds.correct")
-    identity = refund_id(service().create_usd(prop, create(payment), actor=staff))
+    identity = refund_id(create_usd_refund(service(), prop, create(payment), actor=staff))
     other = actor(other_human, other_prop, "refunds.create", "refunds.read", "refunds.correct")
     with pytest.raises(RefundNotFoundError):
         service().get(other_prop, identity, actor=other)
     with pytest.raises(RefundNotFoundError):
         service().usd_source(other_prop, "PAYMENT", payment, actor=other)
     with pytest.raises(RefundNotFoundError):
-        service().create_usd(prop, create(uuid4()), actor=staff)
+        create_usd_refund(service(), prop, create(uuid4()), actor=staff)
     with pytest.raises(RefundNotFoundError):
         service().verify_usd_return(other_prop, identity, returned(), actor=other)
     with pytest.raises(RefundNotFoundError):
@@ -289,7 +292,7 @@ def test_refund_service_concurrent_commands_replay_once_or_fail_closed(
     def worker(command: CreateUsdRefundCommand) -> UUID | None:
         barrier.wait(timeout=5)
         try:
-            return refund_id(service().create_usd(prop, command, actor=staff))
+            return refund_id(create_usd_refund(service(), prop, command, actor=staff))
         except RefundUnavailableError:
             return None
 
@@ -407,7 +410,7 @@ def test_refund_service_coherent_history_during_concurrent_corrections(
 ) -> None:
     human, prop, _, payment = source(migrated_database_url)
     staff = actor(human, prop, "refunds.create", "refunds.read", "refunds.correct")
-    identity = refund_id(service().create_usd(prop, create(payment), actor=staff))
+    identity = refund_id(create_usd_refund(service(), prop, create(payment), actor=staff))
     barrier = Barrier(2)
 
     def writer() -> None:
@@ -459,7 +462,7 @@ def test_refund_service_khr_origin_refunds_usd_and_preserves_fx(
     preview = service().usd_source(prop, kind, identity, actor=staff)
     assert preview["refund_currency"] == "USD"
     assert preview["available_usd_cents"] == 101
-    result = service().create_usd(prop, create(identity, 101, kind), actor=staff)
+    result = create_usd_refund(service(), prop, create(identity, 101, kind), actor=staff)
     payment_data = cast(dict[str, object], result["source_payment"])
     rate = cast(dict[str, object], result["source_exchange_rate"])
     assert payment_data["id"] == str(payment)
@@ -499,7 +502,7 @@ def test_khr_origin_usd_partial_returns_reconcile_exact_cents_and_preserve_histo
     )
     source_id = credit_id(recognize(prop, payment, human, 101)) if kind == "CREDIT" else payment
     original_command = create(source_id, 101, kind)
-    original = service().create_usd(prop, original_command, actor=staff)
+    original = create_usd_refund(service(), prop, original_command, actor=staff)
     identity = refund_id(original)
     first_return = returned(1)
     first = service().verify_usd_return(prop, identity, first_return, actor=staff)
@@ -523,7 +526,7 @@ def test_khr_origin_usd_partial_returns_reconcile_exact_cents_and_preserve_histo
         assert item["verified_return_amount_minor"] == item["source_balance_effect_usd_cents"]
     with pytest.raises(RefundUnavailableError):
         service().verify_usd_return(prop, identity, returned(1), actor=staff)
-    assert service().create_usd(prop, original_command, actor=staff) == original
+    assert create_usd_refund(service(), prop, original_command, actor=staff) == original
     assert service().usd_source(prop, kind, source_id, actor=staff)["available_usd_cents"] == 101
     reverse_command = ReverseRefundCorrectionCommand(
         uuid4(), "Synthetic reversal evidence", "Reverse one cent"
@@ -533,7 +536,7 @@ def test_khr_origin_usd_partial_returns_reconcile_exact_cents_and_preserve_histo
     )
     assert reversed_result["net_refund_usd_cents"] == 1
     assert service().usd_source(prop, kind, source_id, actor=staff)["available_usd_cents"] == 100
-    service().create_usd(prop, create(source_id, 100, kind), actor=staff)
+    create_usd_refund(service(), prop, create(source_id, 100, kind), actor=staff)
     assert service().usd_source(prop, kind, source_id, actor=staff)["available_usd_cents"] == 0
     with psycopg.connect(migrated_database_url) as connection:
         assert (
@@ -554,7 +557,7 @@ def test_refund_command_receipts_are_immutable_and_private(
 ) -> None:
     human, prop, _, payment = source(migrated_database_url)
     command = create(payment)
-    service().create_usd(prop, command, actor=actor(human, prop, "refunds.create"))
+    create_usd_refund(service(), prop, command, actor=actor(human, prop, "refunds.create"))
     with psycopg.connect(migrated_database_url) as connection:
         query = {
             "UPDATE": (
@@ -564,9 +567,9 @@ def test_refund_command_receipts_are_immutable_and_private(
             "TRUNCATE": "TRUNCATE app.refund_commands",
         }[operation]
         with pytest.raises(psycopg.Error), connection.transaction():
-            connection.execute(
-                query, (command.idempotency_key,) if operation != "TRUNCATE" else None
-            )
+            # V1-056 slice 3a: the stored command key is the Refund draft id.
+            key = refund_draft_id(prop, human, "USD", command.idempotency_key)
+            connection.execute(query, (key,) if operation != "TRUNCATE" else None)
         for role in ("prm_runtime", "prm_financial", "prm_bootstrap"):
             for privilege in ("SELECT", "INSERT", "UPDATE", "DELETE", "TRUNCATE"):
                 assert connection.execute(
@@ -606,7 +609,9 @@ def test_refund_database_page_parameters_fail_closed(
 ) -> None:
     human, prop, _, payment = source(migrated_database_url)
     target = refund_id(
-        service().create_usd(prop, create(payment), actor=actor(human, prop, "refunds.create"))
+        create_usd_refund(
+            service(), prop, create(payment), actor=actor(human, prop, "refunds.create")
+        )
     )
     with psycopg.connect(runtime_database_url()) as connection:
         for function, params in (
@@ -628,7 +633,7 @@ def test_refund_service_correction_rollback_removes_event_receipt_and_audit(
 ) -> None:
     human, prop, _, payment = source(migrated_database_url)
     staff = actor(human, prop, "refunds.create", "refunds.correct")
-    identity = refund_id(service().create_usd(prop, create(payment), actor=staff))
+    identity = refund_id(create_usd_refund(service(), prop, create(payment), actor=staff))
     original_correction: UUID | None = None
     if action == "reverse":
         result = service().verify_usd_return(prop, identity, returned(), actor=staff)
@@ -689,5 +694,7 @@ def test_refund_service_facade_database_roles_are_separated(migrated_database_ur
                 assert connection.execute(
                     "SELECT has_function_privilege(%s,%s,'EXECUTE')", (role, f"app.{signature}")
                 ).fetchone() == (
-                    role == "prm_financial" or (role == "prm_runtime" and signature in reads),
+                    # V1-056 slice 3a: only app.confirm_refund_draft creates a USD Refund.
+                    (role == "prm_financial" and not signature.startswith("create_usd_refund"))
+                    or (role == "prm_runtime" and signature in reads),
                 )

@@ -845,6 +845,32 @@ remainder or new exchange rate. Preserve original source KHR/FX evidence for aud
 reject KHR Refund requests. An active-Lease Pet Deposit Refund requires the matching Pet Deposit
 source and `pet_refund_review_id` and prohibits a Final Settlement link.
 
+Amended by DL-069 and V1-056 slice 3a (2026-10-04): a Refund is a draft first
+(BR-AUTH-010). `POST /refunds` validates and authorizes the request but records nothing
+and answers 409 with error code `REFUND_DRAFT_REQUIRED`.
+
+- `POST /refund-drafts` (capability `refunds.create`, `Idempotency-Key` required) takes
+  the same body plus `refund_method_id` (an active configured Refund method) and
+  `reference_note` (1 to 500 characters). It answers 201 with the pending draft and
+  changes no balance and has no `Location` header (the draft read routes come later).
+  The draft id is derived from the Property, the preparer, the Refund kind and the key,
+  the same scope the one-call create used, so an exact repeat returns the same draft,
+  even after the method or source changed, and a changed body with the same key is
+  refused.
+- `POST /properties/{property_id}/refund-drafts/{draft_id}/confirm` (capability
+  `financial.approve`, `Idempotency-Key` required) creates the Refund under every
+  earlier Refund rule and answers 201 with the same body as `GET /refunds/{id}`.
+  The draft id is the idempotency identity: the `Idempotency-Key` header is required
+  like on every financial command but is not stored, and an exact repeat by the same
+  approver returns the original body; another approver gets 409. A stale draft is refused
+  with 422 and stays pending: its amount is no longer available, its method was turned
+  off, the payer of a Payment source now has unpaid Invoices or Late-payment Charges,
+  or a Pet Deposit source is no longer qualified; when another confirmation takes the same value at the same moment, the
+  loser may get 503 instead and its draft also stays pending.
+
+The Refund methods routes (BR-REFUND-014) and the Reservation Refund drafts come with
+later V1-056 slices.
+
 ## API-066 — Refund Correction
 
 `POST /refunds/{id}/verified-returns` records only value demonstrably returned after

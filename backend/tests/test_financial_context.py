@@ -70,6 +70,15 @@ def boundary(index: int, denial: Literal["anonymous", "grant"] | None = None) ->
         method, path, body = route.method, "/api/v1" + route.path, route.body
         capability, params = route.capability, route.params
         status = 201 if index - 11 in (3, 6, 12) else 200
+        if index - 11 == 12:
+            # V1-056 slice 3a: a Refund is created through its draft; POST /refunds records nothing.
+            path = "/api/v1/refund-drafts"
+            body = {**(body or {}), "refund_method_id": str(uuid4()), "reference_note": "Cash"}
+            credit.refund_service.record_usd_draft.return_value = {
+                "draft_id": str(uuid4()),
+                "property_id": str(prop),
+                "kind": "REFUND",
+            }
 
         def dispatched() -> bool:
             return any(name != "resolve" for name, _ in credit.calls)

@@ -16,6 +16,7 @@ from property_rental.payment_read import (
     PaymentReadNotFoundError,
     PaymentReadService,
 )
+from refund_test_support import create_usd_refund
 from test_credit_migration import actor, credit_id, recognize, source
 from test_invoice_migration import runtime_database_url
 from test_payment_migration import fx_payment, reverse
@@ -97,11 +98,11 @@ def test_payment_reads_reconcile_credit_and_direct_usd_refund_without_double_con
     reader = actor(human, prop, "payments.read")
     original = header(service().get(prop, payment, actor=reader))
     credit = credit_id(recognize(prop, payment, human, 2000))
-    refunds().create_usd(
-        prop, create(credit, 1000, "CREDIT"), actor=actor(human, prop, "refunds.create")
+    create_usd_refund(
+        refunds(), prop, create(credit, 1000, "CREDIT"), actor=actor(human, prop, "refunds.create")
     )
-    direct = refunds().create_usd(
-        prop, create(payment, 3000), actor=actor(human, prop, "refunds.create")
+    direct = create_usd_refund(
+        refunds(), prop, create(payment, 3000), actor=actor(human, prop, "refunds.create")
     )
     refunds().verify_usd_return(
         prop, refund_id(direct), returned(500), actor=actor(human, prop, "refunds.correct")

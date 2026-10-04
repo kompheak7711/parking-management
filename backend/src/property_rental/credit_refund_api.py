@@ -12,6 +12,7 @@ from typing import Annotated, Literal, Protocol, TypeVar, cast
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, Response
+from fastapi.responses import JSONResponse
 from pydantic import Field, model_validator
 from starlette.types import Receive, Scope, Send
 
@@ -63,8 +64,10 @@ from property_rental.refund import (
     CreatePetRefundCommand,
     CreateUsdRefundCommand,
     RefundAuthorizationError,
+    RefundConflictError,
     RefundIdempotencyKeyReused,
     RefundInvalidError,
+    RefundMethodChoice,
     RefundNotFoundError,
     RefundPage,
     RefundService,
@@ -105,6 +108,11 @@ class CreateRefundInput(ReversalInput):
         if (self.source_type == "PET_DEPOSIT") != (self.pet_refund_review_id is not None):
             raise ValueError("Only Pet sources require a matching qualifying review")
         return self
+
+
+class CreateRefundDraftInput(CreateRefundInput):
+    refund_method_id: Identity
+    reference_note: Evidence
 
 
 class VerifiedReturnInput(ReversalInput):
@@ -195,7 +203,7 @@ def _invoke(call: Callable[[], T], *, query: bool = False) -> T:
         raise HTTPException(404) from exc
     except (CreditInvalidError, RefundInvalidError, FinancialReadInvalidError) as exc:
         raise HTTPException(400 if query else 422) from exc
-    except CreditConflictError as exc:
+    except (CreditConflictError, RefundConflictError) as exc:
         raise HTTPException(409) from exc
     except (CreditUnavailableError, RefundUnavailableError, FinancialReadUnavailableError) as exc:
         raise HTTPException(503) from exc
@@ -600,26 +608,52 @@ def create_credit_refund_router(
 
     @router.post("/refunds", status_code=201, dependencies=[Depends(_financial_json)])
     def create_refund(
-        body: CreateRefundInput, request: Request, response: Response, idempotency_key: Key
+        body: CreateRefundInput, request: Request, idempotency_key: Key
+    ) -> JSONResponse:
+        """Refunds are drafts now (BR-AUTH-010); this route records nothing."""
+        queries(request, set())
+        context(request, _source_resource(body.source_type), body.source_id, "refunds.create")
+        request_id = request.state.request_id
+        return JSONResponse(
+            status_code=409,
+            content={
+                "error": {
+                    "code": "REFUND_DRAFT_REQUIRED",
+                    "message": (
+                        "A Refund is recorded as a draft and takes effect only when a "
+                        "financial.approve holder confirms it."
+                    ),
+                    "fields": [],
+                    "rule_ids": ["BR-AUTH-010", "BR-REFUND-014"],
+                    "current_version": None,
+                },
+                "meta": financial_metadata(request),
+            },
+            headers={"X-Request-ID": request_id, "Cache-Control": "private, no-store"},
+        )
+
+    @router.post("/refund-drafts", status_code=201, dependencies=[Depends(_financial_json)])
+    def create_refund_draft(
+        body: CreateRefundDraftInput, request: Request, idempotency_key: Key
     ) -> dict[str, object]:
+        """Record a Refund draft (BR-AUTH-010); it has no financial effect until confirmed."""
         queries(request, set())
         actor, prop = context(
             request, _source_resource(body.source_type), body.source_id, "refunds.create"
         )
+        method = _invoke(lambda: RefundMethodChoice(body.refund_method_id, body.reference_note))
         if body.source_type == "PET_DEPOSIT":
             review_id = body.pet_refund_review_id
             assert review_id is not None
             pet_command = _invoke(
                 lambda: CreatePetRefundCommand(
-                    idempotency_key,
-                    body.source_id,
-                    review_id,
-                    body.amount_usd_cents,
-                    body.reason,
+                    idempotency_key, body.source_id, review_id, body.amount_usd_cents, body.reason
                 )
             )
             result = _invoke(
-                lambda: flow.refunds(mutation=True).create_pet(prop, pet_command, actor=actor)
+                lambda: flow.refunds(mutation=True).record_pet_draft(
+                    prop, pet_command, method, actor=actor
+                )
             )
         else:
             usd_command = _invoke(
@@ -632,12 +666,39 @@ def create_credit_refund_router(
                 )
             )
             result = _invoke(
-                lambda: flow.refunds(mutation=True).create_usd(prop, usd_command, actor=actor)
+                lambda: flow.refunds(mutation=True).record_usd_draft(
+                    prop, usd_command, method, actor=actor
+                )
             )
-        result = _refund_result(result, prop)
-        header = cast(dict[str, object], result["refund"])
-        response.headers["Location"] = f"/api/v1/refunds/{header['id']}"
+        if result.get("property_id") != str(prop) or result.get("kind") != "REFUND":
+            raise HTTPException(503)
+        # No Location header: the draft read routes come with the draft screens (slice 11b).
         return envelope(request, result)
+
+    @router.post("/properties/{property_id}/refund-drafts/{draft_id}/confirm", status_code=201)
+    def confirm_refund_draft(
+        property_id: Identity,
+        draft_id: Identity,
+        request: Request,
+        response: Response,
+        idempotency_key: Key,
+    ) -> dict[str, object]:
+        """Create the Refund of a draft; only a financial.approve holder may confirm."""
+        queries(request, set())
+        actor, prop = context(request, "property", property_id, "financial.approve")
+        result = _invoke(
+            lambda: flow.refunds(mutation=True).confirm_draft(prop, draft_id, actor=actor)
+        )
+        draft, refund = result.get("draft"), result.get("refund")
+        if not isinstance(draft, dict) or draft.get("draft_id") != str(draft_id):
+            raise HTTPException(503)
+        if not isinstance(refund, dict):
+            raise HTTPException(503)
+        data = _refund_result(cast(dict[str, object], refund), prop)
+        header = cast(dict[str, object], data["refund"])
+        response.headers["Location"] = f"/api/v1/refunds/{header['id']}"
+        # Same body as GET /refunds/{id}; the confirmed draft is read through the draft API.
+        return envelope(request, data)
 
     @router.post("/refunds/{refund_id}/verified-returns", dependencies=[Depends(_financial_json)])
     def verified_return(

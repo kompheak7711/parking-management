@@ -182,6 +182,7 @@ database_test_suites='
   tests/test_lease_timeline_restricted_migration.py
   tests/test_lease_end_date_month_end_migration.py
   tests/test_financial_draft_migration.py
+  tests/test_refund_draft_migration.py
 '
 
 for database_test_file in $database_test_suites; do

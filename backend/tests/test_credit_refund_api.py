@@ -36,8 +36,8 @@ from property_rental.credit_refund_read import (
 from property_rental.identity import AuthenticatedActor
 from property_rental.payment_api import _cursor
 from property_rental.refund import (
-    CreatePetRefundCommand,
     RefundAuthorizationError,
+    RefundConflictError,
     RefundIdempotencyKeyReused,
     RefundInvalidError,
     RefundNotFoundError,
@@ -107,7 +107,7 @@ class Flow:
             "net_refund_usd_cents": 1000,
             "corrections": {"items": [], "next_cursor": None},
         }
-        for name in ("get", "create_usd", "create_pet", "verify_usd_return", "reverse_correction"):
+        for name in ("get", "verify_usd_return", "reverse_correction"):
             getattr(self.refund_service, name).return_value = refund
         self.refund_service.list.return_value = {"items": [refund], "next_cursor": None}
         self.refund_service.usd_source.return_value = {
@@ -354,6 +354,12 @@ def test_credit_refund_http_exact_service_dispatch_and_private_response(index: i
         params=route.params,
         headers=mutation_headers(key=key),
     )
+    if index == 12:
+        # V1-056 slice 3a: a Refund is a draft now; the old route records nothing (BR-AUTH-010).
+        assert response.status_code == 409, response.text
+        assert response.json()["error"]["code"] == "REFUND_DRAFT_REQUIRED"
+        assert flow.refund_service.method_calls == []
+        return
     assert response.status_code == (201 if index in (3, 6, 12) else 200), response.text
     assert response.headers["cache-control"] == "private, no-store"
     assert response.json()["meta"]["request_id"] == response.headers["x-request-id"]
@@ -692,7 +698,9 @@ def test_credit_refund_http_service_failures_keep_safe_unknown_outcome_and_key_r
     error: type[Exception], status: int
 ) -> None:
     flow = Flow()
-    route = routes(flow)[12 if error.__name__.startswith("Refund") else 3]
+    # V1-056 slice 3a: POST /refunds no longer reaches the service; the verified-return
+    # route (13) still dispatches to the Refund service and keeps the same error mapping.
+    route = routes(flow)[13 if error.__name__.startswith("Refund") else 3]
     service = flow.refund_service if route.family == "refunds" else flow.credit_service
     getattr(service, route.operation).side_effect = error("private SQL and persisted evidence")
     response = api(flow, actor(flow.prop, route.capability)).post(
@@ -765,11 +773,10 @@ def test_credit_refund_http_pet_creation_uses_only_qualified_existing_service() 
     response = api(flow, actor(flow.prop, "refunds.create")).post(
         "/api/v1/refunds", json=body, headers=mutation_headers()
     )
-    assert response.status_code == 201, response.text
-    flow.refund_service.create_usd.assert_not_called()
-    request = flow.refund_service.create_pet.call_args.args[1]
-    assert isinstance(request, CreatePetRefundCommand)
-    assert request.deposit_id == deposit and request.pet_refund_review_id == review
+    # V1-056 slice 3a: a Pet Refund is a draft now; the old route records nothing.
+    assert response.status_code == 409, response.text
+    assert response.json()["error"]["code"] == "REFUND_DRAFT_REQUIRED"
+    assert flow.refund_service.method_calls == []
 
 
 def test_credit_refund_http_runtime_readers_never_borrow_writer_and_mutations_require_it() -> None:
@@ -955,3 +962,95 @@ def test_credit_refund_http_query_guard_preserves_unsupported_method_response(in
     assert response.json()["meta"]["request_id"] == response.headers["x-request-id"]
     assert flow.calls == []
     assert not flow.credit_service.mock_calls and not flow.refund_service.mock_calls
+
+
+def _draft_body(flow: Flow) -> dict[str, object]:
+    return {
+        "currency": "USD",
+        "source_type": "PAYMENT",
+        "source_id": str(flow.payment),
+        "amount_usd_cents": 1000,
+        "reason": "Return eligible excess",
+        "refund_method_id": str(uuid4()),
+        "reference_note": "Cash at the office",
+    }
+
+
+def test_refund_draft_http_records_a_draft_only_under_refunds_create() -> None:
+    flow = Flow()
+    draft_id = uuid4()
+    flow.refund_service.record_usd_draft.return_value = {
+        "draft_id": str(draft_id),
+        "property_id": str(flow.prop),
+        "kind": "REFUND",
+        "state": "PENDING",
+    }
+    key = uuid4()
+    for who in (actor(flow.prop, "financial.approve"), actor(uuid4(), "refunds.create"), None):
+        denied = api(flow, who).post(
+            "/api/v1/refund-drafts", json=_draft_body(flow), headers=mutation_headers(key=key)
+        )
+        assert denied.status_code in {401, 404}
+    flow.refund_service.record_usd_draft.assert_not_called()
+    for header in ("X-CSRF-Token", "Idempotency-Key"):
+        headers = mutation_headers(key=key)
+        del headers[header]
+        refused = api(flow, actor(flow.prop, "refunds.create")).post(
+            "/api/v1/refund-drafts", json=_draft_body(flow), headers=headers
+        )
+        assert refused.status_code in {400, 403, 422}
+    flow.refund_service.record_usd_draft.assert_not_called()
+
+    who = actor(flow.prop, "refunds.create")
+    response = api(flow, who).post(
+        "/api/v1/refund-drafts", json=_draft_body(flow), headers=mutation_headers(key=key)
+    )
+    assert response.status_code == 201, response.text
+    assert response.headers["cache-control"] == "private, no-store"
+    assert "location" not in response.headers
+    call = flow.refund_service.record_usd_draft.call_args
+    assert call.args[0] == flow.prop and call.kwargs["actor"] == who
+    assert call.args[1].idempotency_key == key and call.args[1].amount_usd_cents == 1000
+    assert call.args[2].reference_note == "Cash at the office"
+    flow.refund_service.confirm_draft.assert_not_called()
+
+
+def test_refund_draft_http_confirm_needs_financial_approve_and_returns_the_refund() -> None:
+    flow = Flow()
+    draft_id = uuid4()
+    refund = {
+        "refund": {"id": str(flow.refund), "refund_currency": "USD", "refund_amount_minor": 1000},
+        "source": {"type": "PAYMENT", "id": str(flow.payment), "property_id": str(flow.prop)},
+        "net_refund_usd_cents": 1000,
+        "corrections": {"items": [], "next_cursor": None},
+    }
+    flow.refund_service.confirm_draft.return_value = {
+        "draft": {"draft_id": str(draft_id), "state": "CONFIRMED"},
+        "refund": refund,
+    }
+    path = f"/api/v1/properties/{flow.prop}/refund-drafts/{draft_id}/confirm"
+    for who in (
+        actor(flow.prop, "refunds.create"),
+        actor(uuid4(), "financial.approve"),
+        None,
+    ):
+        assert api(flow, who).post(path, headers=mutation_headers()).status_code in {401, 404}
+    headers = mutation_headers()
+    del headers["X-CSRF-Token"]
+    assert api(flow, actor(flow.prop, "financial.approve")).post(
+        path, headers=headers
+    ).status_code in {400, 403}
+    flow.refund_service.confirm_draft.assert_not_called()
+
+    who = actor(flow.prop, "financial.approve")
+    response = api(flow, who).post(path, headers=mutation_headers())
+    assert response.status_code == 201, response.text
+    assert response.headers["cache-control"] == "private, no-store"
+    assert response.headers["location"] == f"/api/v1/refunds/{flow.refund}"
+    assert response.json()["data"]["refund"]["id"] == str(flow.refund)
+    assert "draft" not in response.json()["data"]
+    flow.refund_service.confirm_draft.assert_called_once_with(flow.prop, draft_id, actor=who)
+
+    flow.refund_service.confirm_draft.side_effect = RefundConflictError("private detail")
+    conflict = api(flow, who).post(path, headers=mutation_headers())
+    assert conflict.status_code == 409 and "private detail" not in conflict.text

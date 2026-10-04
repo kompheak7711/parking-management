@@ -49,6 +49,7 @@ from property_rental.payment_reversal_context import (
     ReversalContextPage,
 )
 from property_rental.refund import ReverseRefundCorrectionCommand
+from refund_test_support import create_pet_refund, create_usd_refund
 from test_credit_application_migration import application_id, designated
 from test_credit_application_migration import source as application_source
 from test_credit_migration import actor, credit_id, recognize, source
@@ -259,7 +260,7 @@ def test_payment_reversal_context_database_partial_full_refund_returns_and_corre
     human, prop, _, payment = source(migrated_database_url)
     source_id = credit_id(recognize(prop, payment, human)) if kind == "CREDIT" else payment
     staff = actor(human, prop, "refunds.create", "refunds.correct", "refunds.corrections.reverse")
-    result = refunds().create_usd(prop, create(source_id, kind=kind), actor=staff)
+    result = create_usd_refund(refunds(), prop, create(source_id, kind=kind), actor=staff)
     refund = refund_id(result)
 
     def net() -> int | None:
@@ -372,7 +373,7 @@ def test_payment_reversal_context_database_migration_privileges_and_readonly_tra
     migrated_database_url: str,  # noqa: F811
 ) -> None:
     scripts = ScriptDirectory.from_config(Config("alembic.ini"))
-    assert scripts.get_heads() == ["20261012_77"]
+    assert scripts.get_heads() == ["20261013_78"]
     revision = scripts.get_revision("20260908_46")
     assert revision is not None and revision.down_revision == "20260907_45"
     with pytest.raises(RuntimeError, match="forward-only"):
@@ -507,7 +508,7 @@ def test_payment_reversal_context_database_pet_refund_and_return_use_deposit_rev
         payment = row[0]
     staff = actor(human, prop, "refunds.create", "refunds.correct", "refunds.corrections.reverse")
     original = data(get(human, prop, payment))["revision"]
-    result = refunds().create_pet(prop, pet_refund(deposit, review), actor=staff)
+    result = create_pet_refund(refunds(), prop, pet_refund(deposit, review), actor=staff)
     assert data(get(human, prop, payment))["revision"] != original
     first = get(human, prop, payment, limit=1)
     children = items(get(human, prop, payment))
@@ -664,8 +665,8 @@ def test_payment_reversal_context_database_coherent_snapshot_during_new_refund(
         self: FinancialReferenceService, who: AuthenticatedActor, property_id: UUID | None = None
     ) -> Iterator[psycopg.Connection[tuple[object, ...]]]:
         with read(self, who, property_id) as connection:
-            refunds().create_usd(
-                prop, create(payment, 1000), actor=actor(human, prop, "refunds.create")
+            create_usd_refund(
+                refunds(), prop, create(payment, 1000), actor=actor(human, prop, "refunds.create")
             )
             yield connection
 

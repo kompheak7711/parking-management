@@ -15,6 +15,7 @@ from property_rental.credit_refund_read import (
     FinancialReadNotFoundError,
     Resource,
 )
+from refund_test_support import create_usd_refund
 from test_credit_application_migration import application_id, designated
 from test_credit_application_migration import source as application_source
 from test_credit_migration import actor, credit_id, recognize, service, source
@@ -49,8 +50,8 @@ def test_credit_refund_read_all_resource_scopes_and_no_side_effects(
     human, prop, customer, payment = source(migrated_database_url)
     credit = credit_id(recognize(prop, payment, human, 5000))
     refund = refund_id(
-        refunds().create_usd(
-            prop, create(payment, 1000), actor=actor(human, prop, "refunds.create")
+        create_usd_refund(
+            refunds(), prop, create(payment, 1000), actor=actor(human, prop, "refunds.create")
         )
     )
     before = snapshot(migrated_database_url, payment)
@@ -185,14 +186,14 @@ def test_credit_refund_read_migration_graph_and_execute_only_privileges(
 ) -> None:
     config = Config("alembic.ini")
     scripts = ScriptDirectory.from_config(config)
-    assert scripts.get_heads() == ["20261012_77"]
+    assert scripts.get_heads() == ["20261013_78"]
     revision = scripts.get_revision("20260907_45")
     assert revision is not None and revision.down_revision == "20260907_44"
     with pytest.raises(RuntimeError, match="forward-only"):
         revision.module.downgrade()
     with psycopg.connect(migrated_database_url) as connection:
         assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-            "20261012_77",
+            "20261013_78",
         )
         for signature in (
             "app.credit_refund_http_scope(text,uuid,uuid,uuid[])",

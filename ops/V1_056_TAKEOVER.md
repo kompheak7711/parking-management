@@ -54,6 +54,8 @@ These slices also get a security review (/security-review or an equivalent fresh
 
 Save each review result in ops/reviews/ with the slice name and commit hash.
 
+Standing rule added by the owner on 2026-10-04: If review round 2 has no blocker and at most 2 should-fix findings, Claude Code may do one round 3 without asking the owner. Round 3 must have no should-fix, or Claude Code stops. Before round 3, run the full backend unit suite and the full PostgreSQL suite once each.
+
 5. Test runs
 Follow the run rules: one targeted PostgreSQL run per sub-slice, after a read-only search of all backend tests for other affected tests. No retry.
 Read and save the full unfiltered output to a file.

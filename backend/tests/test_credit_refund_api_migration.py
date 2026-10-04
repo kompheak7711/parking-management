@@ -14,15 +14,18 @@ import pytest
 from alembic import command
 from alembic.config import Config
 from fastapi.testclient import TestClient
+from httpx import Response
 from pydantic import SecretStr
 
 from property_rental.app import create_app
+from property_rental.refund import RefundService
 from property_rental.settings import Settings
+from refund_test_support import cash, create_usd_refund
 from test_credit_application_migration import source as application_source
 from test_credit_migration import actor, credit_id, recognize, source
 from test_credit_refund_read_migration import snapshot as read_snapshot
 from test_invoice import mutation_headers
-from test_invoice_migration import runtime_database_url
+from test_invoice_migration import financial_database_url, runtime_database_url
 from test_migrations import _required_url, _temporary_migration_database, _url_with_database
 from test_payment_api_migration import api
 from test_refund_service_migration import returned
@@ -38,6 +41,7 @@ CAPABILITIES = (
     "refunds.create",
     "refunds.correct",
     "refunds.corrections.reverse",
+    "financial.approve",
 )
 
 
@@ -49,6 +53,37 @@ def snapshot(url: str, payment: UUID) -> tuple[object, ...]:
 
 def headers(human: UUID, key: UUID | None = None) -> dict[str, str]:
     return {**mutation_headers(key=key), "X-Billing-Actor-ID": str(human)}
+
+
+def post_refund(
+    client: TestClient,
+    prop: UUID,
+    human: UUID,
+    body: dict[str, object],
+    headers: dict[str, str],
+) -> Response:
+    """V1-056 slice 3a: record the Refund draft, then confirm it under financial.approve."""
+    choice = cash(
+        RefundService(runtime_database_url(), financial_database_url()),
+        prop,
+        actor(human, prop, "refunds.read"),
+    )
+    draft: Response = client.post(
+        "/api/v1/refund-drafts",
+        json={
+            **body,
+            "refund_method_id": str(choice.refund_method_id),
+            "reference_note": choice.reference_note,
+        },
+        headers=headers,
+    )
+    if draft.status_code != 201:
+        return draft
+    draft_id = draft.json()["data"]["draft_id"]
+    confirmed: Response = client.post(
+        f"/api/v1/properties/{prop}/refund-drafts/{draft_id}/confirm", headers=headers
+    )
+    return confirmed
 
 
 def value(response: object, status: int = 200) -> dict[str, object]:
@@ -215,7 +250,7 @@ def test_credit_refund_http_real_usd_refund_return_reversal_original_fx_and_repl
         "reason": "Return eligible USD excess",
     }
     create_headers = headers(human)
-    original = value(client.post("/api/v1/refunds", json=body, headers=create_headers), 201)
+    original = value(post_refund(client, prop, human, body, headers=create_headers), 201)
     refund = cast(dict[str, object], original["refund"])
     path = f"/api/v1/refunds/{refund['id']}"
     assert refund["refund_currency"] == "USD" and refund["refund_amount_minor"] == 500
@@ -250,7 +285,7 @@ def test_credit_refund_http_real_usd_refund_return_reversal_original_fx_and_repl
     reversed_result = value(client.post(reverse_path, json=reverse_body, headers=reverse_headers))
     assert reversed_result["net_refund_usd_cents"] == 500
     assert reversed_result["refund"] == original["refund"]
-    assert value(client.post("/api/v1/refunds", json=body, headers=create_headers), 201) == original
+    assert value(post_refund(client, prop, human, body, headers=create_headers), 201) == original
     assert (
         value(client.post(path + "/verified-returns", json=return_body, headers=return_headers))
         == corrected
@@ -298,13 +333,15 @@ def test_credit_refund_http_real_pet_requires_matching_review_and_preserves_leas
         "reason": "Qualified Pet exception",
     }
     request_headers = headers(human)
-    result = value(client.post("/api/v1/refunds", json=body, headers=request_headers), 201)
+    result = value(post_refund(client, prop, human, body, headers=request_headers), 201)
     assert cast(dict[str, object], result["refund"])["pet_refund_review_id"] == str(review)
-    assert value(client.post("/api/v1/refunds", json=body, headers=request_headers), 201) == result
+    assert value(post_refund(client, prop, human, body, headers=request_headers), 201) == result
     assert (
-        client.post(
-            "/api/v1/refunds",
-            json={**body, "final_settlement_id": str(uuid4())},
+        post_refund(
+            client,
+            prop,
+            human,
+            {**body, "final_settlement_id": str(uuid4())},
             headers=headers(human),
         ).status_code
         == 422
@@ -386,7 +423,7 @@ def test_credit_refund_http_real_runtime_reads_need_no_writer_and_never_fall_bac
         "amount_usd_cents": 500,
         "reason": "Authorized but no writer",
     }
-    assert client.post("/api/v1/refunds", json=body, headers=headers(human)).status_code == 503
+    assert post_refund(client, prop, human, body, headers=headers(human)).status_code == 503
     assert (
         client.post(
             f"/api/v1/customer-credits/{credit}/reverse",
@@ -463,7 +500,7 @@ def test_credit_refund_http_real_competing_refunds_cannot_double_consume_credit(
 
     def send(index: int) -> object:
         barrier.wait(timeout=10)
-        return clients[index].post("/api/v1/refunds", json=body, headers=request_headers[index])
+        return post_refund(clients[index], prop, human, body, headers=request_headers[index])
 
     from httpx import Response
 
@@ -476,9 +513,7 @@ def test_credit_refund_http_real_competing_refunds_cannot_double_consume_credit(
     winner = next(i for i, result in enumerate(responses) if result.status_code == 201)
     original = value(responses[winner], 201)
     assert (
-        value(
-            clients[winner].post("/api/v1/refunds", json=body, headers=request_headers[winner]), 201
-        )
+        value(post_refund(clients[winner], prop, human, body, headers=request_headers[winner]), 201)
         == original
     )
     assert value(clients[0].get(f"/api/v1/customer-credits/{credit}"))["available_usd_cents"] == 200
@@ -526,9 +561,7 @@ def test_credit_refund_http_real_correction_identity_cannot_cross_refunds(
             "amount_usd_cents": 1000,
             "reason": "Eligible excess return",
         }
-        results.append(
-            value(client.post("/api/v1/refunds", json=body, headers=headers(human)), 201)
-        )
+        results.append(value(post_refund(client, prop, human, body, headers=headers(human)), 201))
     refunds = [str(cast(dict[str, object], result["refund"])["id"]) for result in results]
     command = returned(100)
     body = {
@@ -575,7 +608,7 @@ def test_credit_refund_http_ledger_pages_preserve_all_seven_event_families(
     human, prop, credit, invoice, line, payment = application_source(migrated_database_url)
     who = actor(human, prop, *CAPABILITIES)
     applied = credits().apply(prop, credit, designated(invoice, line, 30000), actor=who)
-    paid = refunds().create_usd(prop, create(credit, 20000, "CREDIT"), actor=who)
+    paid = create_usd_refund(refunds(), prop, create(credit, 20000, "CREDIT"), actor=who)
     refund = refund_id(paid)
     partial = refunds().verify_usd_return(prop, refund, returned(5000), actor=who)
     refunds().reverse_correction(

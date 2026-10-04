@@ -43,6 +43,7 @@ from property_rental.payment_allocation import (
     ReversePaymentCommand,
 )
 from property_rental.refund import ReverseRefundCorrectionCommand
+from refund_test_support import create_pet_refund, create_usd_refund
 from test_billing_service_migration import (
     add_service,
     authenticated,
@@ -426,8 +427,8 @@ def test_ledger_refund_return_and_correction_reversal_reconstruct_consumption(
 ) -> None:
     human, prop, customer, payment = payment_source(migrated_database_url)
     source = credit_id(recognize(prop, payment, human, 10000)) if kind == "CREDIT" else payment
-    paid = refunds().create_usd(
-        prop, create(source, 8000, kind), actor=actor(human, prop, "refunds.create")
+    paid = create_usd_refund(
+        refunds(), prop, create(source, 8000, kind), actor=actor(human, prop, "refunds.create")
     )
     identity = refund_id(paid)
     correction = refunds().verify_usd_return(
@@ -720,8 +721,8 @@ def test_ledger_read_only_snapshot_is_coherent_across_concurrent_financial_commi
         guard = reader.execute(
             "SELECT revision FROM app.payment_serialization_guards WHERE payment_id=%s", (payment,)
         ).fetchone()
-        refunds().create_usd(
-            prop, create(payment, 3000), actor=actor(human, prop, "refunds.create")
+        create_usd_refund(
+            refunds(), prop, create(payment, 3000), actor=actor(human, prop, "refunds.create")
         )
         assert history(reader, customer) == before
         assert assert_reconciled(reader, customer) == LedgerPosition(payment=10000)
@@ -778,7 +779,7 @@ def test_ledger_forward_projection_upgrade_preserves_populated_predecessor(
 ) -> None:
     config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
     scripts = ScriptDirectory.from_config(config)
-    assert scripts.get_heads() == ["20261012_77"]
+    assert scripts.get_heads() == ["20261013_78"]
     revision = scripts.get_revision("20260909_48")
     assert revision is not None
     assert revision.down_revision == "20260908_47"
@@ -848,7 +849,9 @@ def test_ledger_retains_original_khr_and_exact_fx_when_refunding_only_usd(
             ),
             (payment,),
         ).fetchone()
-    refunds().create_usd(prop, create(payment, 100), actor=actor(human, prop, "refunds.create"))
+    create_usd_refund(
+        refunds(), prop, create(payment, 100), actor=actor(human, prop, "refunds.create")
+    )
     with psycopg.connect(migrated_database_url) as connection:
         assert assert_reconciled(connection, customer) == LedgerPosition(payment=1)
         received = next(
@@ -1039,8 +1042,11 @@ def test_ledger_qualified_pet_refund_and_return_are_distinct_from_credit(
     from test_pet_refund_migration import qualified
 
     human, prop, customer, _, deposit, review = qualified(migrated_database_url)
-    paid = refunds().create_pet(
-        prop, pet_command(deposit, review, 15000), actor=actor(human, prop, "refunds.create")
+    paid = create_pet_refund(
+        refunds(),
+        prop,
+        pet_command(deposit, review, 15000),
+        actor=actor(human, prop, "refunds.create"),
     )
     with psycopg.connect(migrated_database_url) as connection:
         assert assert_reconciled(connection, customer) == LedgerPosition(pet_deposit=5000)
