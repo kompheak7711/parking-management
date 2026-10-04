@@ -397,3 +397,42 @@ Conflicts and open points:
    Recommendation: (a), with one sentence added to BR-DEP-027 (docs/002): "At these terminations the remaining Pet Deposit pays other debt only when the Customer chooses it, recorded as text (who, the date, how) with the staff reason; otherwise the rest is refunded (owner answer to Q-2026-10-05-20)."
 
 Points 1 and 2 decide which obligations a Deposit application may pay, which sub-slice 8a builds, so I stopped before 8a. After your answers I amend docs/002 and docs/003 as approved, record them in docs/010 and start 8a under the takeover rules.
+
+## Q-2026-10-05-22 — Sub-slice 8a-1 stopped after review round 1: a Deposit receipt reversal lets Deposit money pay debt without an approver
+
+Sub-slice 8a-1 (Final Settlement record and Deposit application record, migration `20261021_86`) is built. Latest runs: backend unit 3422 passed (U2), full PostgreSQL 1772 passed (P5). Round 1: no blocker. The independent review has five should-fix items that I can fix inside the sub-slice. The security review found one should-fix in code that already existed, and only you can settle it. Nothing of 8a-1 is committed; all files are in the working tree. Record: ops/reviews/V1-056-slice-08a1-settlement-deposit-applications.md.
+
+**The finding (security S1, verified by reading the code).**
+
+1. Staff holding `deposits.correct` reverse a Lease Deposit receipt with one call (`app.reverse_deposit_receipt_v2`). No draft is needed; this is your answer to Q-2026-10-04-13.
+2. The Payment that funded the receipt stays RECEIVED. Its value counts as unused again, because `app.payment_disposition_summary` counts only receipts that are not reversed.
+3. Staff then allocate that value to the payer's Invoices with one call (`payments.allocate`), or recognize it as Credit with the payer's authorization and apply it.
+
+The result: Deposit money pays debt with no draft and no `financial.approve` holder.
+
+- During an active Lease, Deposit money pays ordinary Invoices, which BR-DEP-013 and BR-SETTLE-010 forbid.
+- After termination, it skips the kept-Deposit rule (BR-DEP-026) and the DL-032 order.
+- It also works on a kept Security Deposit while its Lease forfeiture draft is pending. The receipt-reversal trigger looks only for Reservation drafts (`payload->>'reservation_id'`). The forfeiture draft then fails as stale.
+
+My statement in Q-2026-10-04-13 that a receipt reversal "lowers the held amount but keeps or pays out nothing" was incomplete. It pays out nothing itself, but it frees the money for a one-call allocation. Reservation Deposit receipts have the same two-step path when no Reservation draft is pending. This is not new in 8a-1, and 8a-1 does not make it worse: its new guard refuses a receipt reversal only once a Deposit application exists.
+
+Options:
+
+- **(a) A Deposit receipt reversal becomes a draft.** Staff with `deposits.correct` prepare it, and a `financial.approve` holder confirms it, like the forfeiture reversal (sub-slice 6b). The one-call reversal answers 409 for Lease and Reservation Deposits; revoking the financial role's EXECUTE is a tightening. The pending-draft check also matches `payload->>'deposit_id'`, so a receipt reversal is refused while any draft for that Deposit is pending. A returned transfer still works: the approver confirms the receipt reversal, then the Payment is reversed as today.
+- **(b) Keep the one-call reversal, but lock the freed value.** After a Deposit receipt reversal, that Payment's freed value may only be used by a Payment reversal: no allocation, no Credit recognition, no Refund. This changes four accepted guards (allocation, Credit recognition, Payment Refund, Payment move). You chose not to take the same approach for slice 7 (Q-2026-10-05-17).
+- **(c) Refuse it after termination only.** Refuse a Lease Deposit receipt reversal once the Lease is TERMINATED, or while a Lease forfeiture draft or a Final Settlement exists. This leaves the path open during an active Lease.
+- **(d) Leave it, and record it as an accepted risk.**
+
+Recommendation: (a), because it closes the path everywhere with the draft-then-confirm model the other Deposit corrections already use. I would build it as its own short sub-slice, 8r, right after 8a-1 and before 8b, with its own runs and reviews.
+
+**Also to confirm:**
+
+1. Please allow me to continue 8a-1 now, treating security S1 as answered by sub-slice 8r. Since 8a-1 does not introduce the path, this does not have to wait for 8r.
+2. The round-1 fixes I would make:
+   - Independent S1: the Payment reversal context and the financial action context read the Late-payment Charge balance from `app.late_payment_charge_financial_position`.
+   - Independent S2: the new refusal reaches Late-payment Charge corrections as a conflict, with a service-level test.
+   - Independent S3: docs/004 DB-DEP-005 says the trigger checks stage order and Deposit type, and the draft and confirm (8c, 8e) enforce the strict order.
+   - Independent S4: tests for the BR-LEASE-005, BR-LEASE-025 and BR-LEASE-028 grounds through the shared rule, and the Pet Deposit staying applicable at those terminations.
+   - Independent S5: a test of a Deposit paying another Signer's Invoice.
+   - Notes I would take: a clear refusal for an unknown target, the human-actor check in the writer, and a wider least-privilege test.
+   After the fixes: backend unit and full PostgreSQL once each, then review round 2 under the standing round-3 rule.
