@@ -312,3 +312,63 @@ Options for 2:
 - (b) Remove the Q-2026-10-05-18 refusal and record the Credit reversal path as a slice 12 open item (the path stays open).
 
 Recommendation: fix 1 as described, take (a) for 2, take the two notes (the grants test also lists the new trigger function; the stale ops/NOW.md line), run the backend unit and full PostgreSQL suites once each, then one more fresh review (independent and security, with the same path search) limited to these changes; commit only if it has no should-fix.
+
+## Q-2026-10-05-20 — Slice 8 stopped before code: open points in the Final Settlement design
+
+Slice 8 (Final Settlement, now including the Deposit application record and the confirm, as you asked) is not started; no code is written. I wrote the design note (ops/V1_056_PLAN.md, "Slice 8 design note"), checked it against your rules in docs/010 and docs/002, and searched the backend read-only for every path that can change a balance, a Deposit or a Credit that the Settlement uses. Some points are open, so I stopped under your instruction and ops/V1_056_TAKEOVER.md section 6.
+
+**Read-only path search (2026-10-05).** "Draft" means a draft confirmed by a `financial.approve` holder.
+
+Invoice and Invoice line balances (Settlement obligations):
+
+1. Payment allocation: `POST /payments/{id}/allocations`, `PaymentAllocationService.post`, `app.post_payment_allocations` (`payments.allocate`). One call. Pays an obligation with the payer's own Payment.
+2. Allocation reversal: `POST /payment-allocations/{id}/reverse`, `app.reverse_payment_allocation_command` (`payments.allocations.reverse`). One call; refused for a moved allocation (slice 7). The value goes back to the Payment.
+3. Payment reversal: `POST /payments/{id}/reverse`, `app.reverse_payment_command` (`payments.reverse`). Refused while an allocation, Credit or Refund from the Payment is active.
+4. Wrong-Unit Payment move: draft only (slice 7).
+5. Credit application and its reversal: `app.post_credit_application` (`credits.apply`), `app.reverse_credit_application` (`credits.applications.reverse`). One call, same Customer only (BR-CREDIT-008).
+6. Invoice VOID: `app.void_invoice` (`invoices.void`). One call.
+7. Credit and debit Adjustments: `app.adjust_invoice` (`invoices.adjust`). One call. A credit Adjustment on a paid line releases value as Credit of the Invoice Customer at once (migration 67). Callers: the hand-back resolution (`app.resolve_hand_back_rent_invoice`, slice 5) and the unpaid-Initial resolutions (`app.resolve_unpaid_initial_never_moved_in`, `app.credit_initial_rent_after_termination`; `unpaid_initial.never_moved_in`, `unpaid_initial.moved_in_credit`). No function writes an Adjustment reversal.
+8. Late-payment Decision and Charge: `app.finalize_late_payment_decision` (`late_payment.final_decision`) creates a Charge; `app.correct_late_payment_charge` (`late_payment.charge_correction`) changes it. One call each. One Decision per Invoice (migration 29).
+9. New obligations on the Lease: `app.record_one_time_charge` (`invoices.create`, Damage with `damage_charges.bill`), `app.record_unit_cleaning_charge` (`invoices.create`), the final Utility Invoice functions (migration 72), `app.create_invoice_draft` and `app.issue_invoice` (`invoices.create`, `invoices.issue`). One call each.
+
+Deposit held balance:
+
+10. Deposit receipts: recorded with a Payment or at Reservation creation. Receipt reversal: `app.reverse_deposit_receipt_v2` (`deposits.correct`), one call, no draft (your answer for slice 6). The command already calls `app.deposit_has_active_application` (migration 28), which starts to count applications once the table exists; the reversal trigger (migration 80 body) checks dispositions and Refunds but not applications.
+11. Forfeiture and forfeiture reversal: drafts only (slices 6 and 6b).
+12. Pet Deposit Refund: draft only (slice 3a); its source needs a SIGNED Lease, so it is refused after termination.
+13. Refund corrections (verified return, correction reversal): `app.verify_usd_refund_return` (`refunds.correct`), `app.reverse_refund_correction` (`refunds.corrections.reverse`). One call, no draft (your answer to Q-2026-10-03-2). A verified return puts value back into the Deposit or Credit; nothing is paid out.
+14. Required-amount adjustment, pet departure and Pet Refund qualification: change no held value.
+15. Reservation Deposit drafts: act only on a Reservation in status CANCELLED, not on a Lease Deposit.
+
+Customer Credit:
+
+16. Recognition from a Payment's excess: `app.recognize_customer_credit` (`credits.recognize`), with the payer's authorization. From a credit Adjustment: inside item 7.
+17. Credit reversal: `app.reverse_customer_credit` (`credits.reverse`); refused for a moved-value Credit (slice 7).
+18. Credit and Payment Refunds: drafts only (slice 3a).
+
+Deposit application: no record exists yet (`app.deposit_applications` is only named in migration 28). The earlier slice reviews found no direct table write granted to the runtime or financial role on these tables; the 8a least-privilege test also checks the new tables.
+
+**Result of the search.**
+
+- Before the Settlement is confirmed, no path moves Deposit money without a draft. One-call paths 1 to 9, 16 and 17 can change a Settlement obligation or Credit, but the confirmation re-checks every source and refuses a stale draft, so nothing moves on an old picture.
+- After a Settlement is closed, paths 6 to 9 can still change the settled obligations or add new ones for that Lease, with one call and no approver. A credit Adjustment then works like a write-off, and BR-SETTLE-013 and DL-068 say a later fix is a post-settlement correction confirmed by `financial.approve`. See question 7.
+- A Credit or Payment Refund draft of a Customer whose Settlement is still open can be confirmed before the Settlement applies that Credit. It has an approver, so I suggest no change: the preview lists pending drafts on the Settlement's sources as a blocking issue.
+- New-state guards I will add in sub-slice 8a (not a tightening, because no Deposit application exists before): VOID, Adjustments and Late-payment Charge corrections refuse a target with an active Deposit application, and the receipt-reversal trigger also refuses while an application is active.
+
+**Questions (with my recommendation):**
+
+1. (B) **Can a Deposit pay a Late-payment Charge?** docs/004 DB-DEP-005 says a Deposit application cannot target a separate Late-payment Charge. DL-069 says Late-payment Charges are part of what a leaving Customer owes, and BR-SETTLE-017 lets the remaining Pet Deposit pay "any remaining balance". Options: (a) a Deposit application may target an Invoice line or a Late-payment Charge of the Settlement, as Credit applications already can; docs/004 is updated. (b) Invoice lines only; a Late-payment Charge is paid only by a Payment or Credit, otherwise it stays as debt. Recommendation: (a).
+
+2. (B) **Which terminations use the DL-032 Security Deposit step?** There is no "normal Lease end" basis. A termination record has a basis (`VOLUNTARY_EARLY`, `CUSTOMER_VIOLATION`, `SIGNED_LEASE_OTHER`, `UNPAID_INITIAL_OBLIGATION`) and a governing rule; a Lease that ends on its End Date is recorded with `SIGNED_LEASE_OTHER` (older commands have no context). Every kept case of BR-DEP-026 is found by the slice 6 forfeiture source. Not covered: an early termination with `SIGNED_LEASE_OTHER` that cites no forfeiture rule (for example an end agreed with the Property, or caused by the Property). Options: (a) the Security Deposit is kept only when the forfeiture source finds a Security ground; every other termination, on the End Date or not, follows DL-032 (the Security Deposit may pay remaining charges and the rest is refunded), because BR-DEP-025 refunds every Deposit that is not forfeited; (b) only a termination dated on the Lease End Date follows DL-032; any other termination without a forfeiture ground shows a blocking issue until you decide the case. Recommendation: (a).
+
+3. (B) **How strict is the DL-032 order?** BR-SETTLE-006 says no Deposit is applied automatically, and BR-SETTLE-008 says the Customer must not get Deposit money back while a balance stays unpaid "when that available Deposit has been authorized for application". Options: (a) strict: the draft is refused unless (i) each Customer's available Credit is used on that Customer's open Settlement obligations before any Deposit is applied to them, (ii) the Pet Deposit pays open pet damage before any Pet Deposit Refund, and (iii) where DL-032 applies, the Security Deposit pays the Primary Tenant's open obligations before any Security Deposit Refund; staff still choose which obligations each step pays; the remaining Pet Deposit for other balances stays optional (the Customer's choice, or staff with a reason). (b) order only: staff choose freely which steps to use; the system only checks that the chosen steps run in DL-032 order. Recommendation: (a), because it matches "pays pet damage first and the rest is refunded" and "the Security Deposit may pay remaining charges and the rest is refunded".
+
+4. **Remaining Pet Deposit by staff at the BR-DEP-027 terminations.** BR-DEP-027 says the Pet Deposit pays pet damage first and the rest is refunded "as in DL-013". DL-013 also lets authorized management apply the remaining Pet Deposit to another remaining obligation (DL-032 step 5). I read this as: at unpaid-Initial, non-pet violation and 30-day default terminations, both the Customer's choice and the staff step (with a reason, confirmed by `financial.approve`) are allowed. Recommendation: yes, confirm this reading.
+
+5. (B) **Lease Invoices of a Signer who is not the Primary Tenant.** The billing functions issue the Lease's Rent, Utility, Damage, one-time, cleaning and final Utility Invoices to the Primary Tenant, but an ordinary Invoice draft with the Lease may name any signed Signer (migration 29). BR-SETTLE-016 puts settlement debt on the Primary Tenant's ledger, and an Invoice's Customer never changes. Options: (a) the Settlement includes every issued Invoice of the Lease; an unpaid Invoice of another Signer stays on that Signer's ledger and the preview shows it separately; the Deposits (owned by the Primary Tenant) pay only the Primary Tenant's obligations; Credit pays only its own Customer's obligations (BR-CREDIT-008). (b) Such an Invoice is a blocking issue until it is paid or corrected. Recommendation: (a).
+
+6. (B) **Late-payment Decisions at the Settlement.** Each Invoice has at most one Late-payment Decision. A Decision made after closure would add a new Late-payment Charge outside the closed Settlement. docs/004 DB-SETTLE-001 says closure waits until every applicable Late-payment Charge is final. Options: (a) the preview shows a blocking issue for every Settlement Invoice where the existing late-payment review says a Decision is possible and none is recorded; staff record the Decision (charge, reduce or waive) before closure; (b) no blocking issue; a later Decision is handled as a post-settlement correction. Recommendation: (a).
+
+7. (B) **One-call changes after closure (search result above).** Options: (a) in sub-slice 8e, refuse VOID, Adjustments (including the hand-back and unpaid-Initial resolutions), Late-payment Decisions and Charge corrections on the Invoices and Late-payment Charges of a closed Settlement, and refuse new obligations for that Lease (one-time and Damage charges, cleaning charge, final Utility Invoice, Invoice drafts with the Lease). Payments, allocations, Credit applications and their ordinary reversals stay open, so the Customer can still pay the debt. Changing the settled obligations then waits for the post-settlement correction draft (slice 10). This refuses input that is accepted today, so it is a tightening and needs your approval. (b) Leave these paths open until slice 10 and record them as an open item. Recommendation: (a).
+
+After your answers I record them in docs/010 and start sub-slice 8a under the run rule and the standing round-3 rule.

@@ -77,4 +77,6 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md.
 
 - V1-056 slice 7 (2026-10-05, 2f1e58b, migration 20261020_85): COMMITTED. Wrong-Unit Payment moves are drafts (payments.allocations.reverse prepares, financial.approve confirms) with basis WRONG_UNIT_MOVE; the one-call allocation reversal of a moved allocation and the one-call Credit reversal of moved value that could reach another Customer are refused (Q-2026-10-05-16 to -19). Rounds 1 to 3 plus the owner-approved extra review (no should-fix; path search clean); unit 3400, PostgreSQL 1764, frontend 1589 passed. Plan: Refund of such Credit to the Invoice Customer in slice 9; lasting-block and returned-transfer items in slice 12. NEXT: slice 8 (Final Settlement draft and preview) after the owner confirms a fresh session. Nothing pushed.
 
+- V1-056 slice 8 (2026-10-05): STOPPED before code. Design note written (ops/V1_056_PLAN.md, slice 8 now covers the whole Final Settlement in sub-slices 8a to 8f, owner instruction); read-only path search done; seven open points in Q-2026-10-05-20 (Deposit and Late-payment Charges, which terminations use DL-032, strictness of the order, staff Pet step at BR-DEP-027, other Signers' Invoices, Late-payment Decisions, one-call changes after closure). No run. NEXT: owner answers. Nothing pushed.
+
 - Updated: 2026-10-05.
