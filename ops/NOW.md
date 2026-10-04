@@ -45,4 +45,6 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md.
 
 - V1-056 slice 3b (2026-10-04, migration 20261015_80): Reservation Deposit drafts built, NOT committed; full PostgreSQL 1697 passed; STOPPED after review round 2 with four should-fix (Q-2026-10-04-5 in ops/V1_056_QUESTIONS.md, record ops/reviews/V1-056-slice-03b-reservation-drafts.md). Owner answered Q-2026-10-04-5 (Option A); fixes done; unit 3343 and PostgreSQL 1701 passed; round 3 found no blocker but one documentation should-fix (docs/010 sentence on the receipt guard), so slice 3b is STOPPED and NOT committed (Q-2026-10-04-6). All slice 3b files are in the working tree. NEXT: owner answer to Q-2026-10-04-6. Nothing pushed.
 
+- V1-056 slice 3b (2026-10-04, c7aa7ea, migration 20261015_80): COMMITTED after the owner answered Q-2026-10-04-6 (Yes; docs/010 note corrected, no new run or review); Reservation Deposit refunds and forfeitures are drafts confirmed under financial.approve, with the waiting list; unit 3343, PostgreSQL 1701 passed; three round-3 notes added to the slice 12 open list. NEXT: slice 4 (Unit cleaning rate and move-out cleaning charge). Nothing pushed.
+
 - Updated: 2026-10-04.
