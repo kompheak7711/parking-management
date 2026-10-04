@@ -207,3 +207,17 @@ Options:
 - **Option B: answer in writing.** Add a named open item to ops/V1_056_PLAN.md (slice 11c) for the two screen strings and the four doc lines, add one line to the docs/010 slice 6 note saying they are stale until then, and commit slice 6 as it is now (runs 7 and 8).
 
 Open for later either way (recorded, no change in slice 6): the disposition-id check is not serialized across Deposits and has no index; draft reads are filtered by kind only (to fix before the slice 11b/11c draft routes); the BR-LEASE-028 date boundary has no test; the disposition audit names `deposits.dispose` with the approver as actor (revisit in slice 6b).
+
+## Q-2026-10-05-15 — Sub-slice 6b stopped after review round 2: a reversal draft cannot be withdrawn (ANSWERED 2026-10-05: yes to steps 1 to 4; a database refusal for a permission or rule reason must reach the user as a permission or conflict error, with a test for the withdraw case; round 3 reviewers list every capability check for preparing, withdrawing, rejecting and confirming a reversal draft and confirm they match Option A of Q-2026-10-04-13; commit 6b if round 3 has no should-fix)
+
+Sub-slice 6b (Lease Deposit forfeiture reversal drafts, migration `20261019_84`) is built: unit 3374 and PostgreSQL 1735 passed (run 2). Review round 2: the independent reviewer found one blocker, the security reviewer the same defect as a should-fix. Under ops/V1_056_TAKEOVER.md a blocker after round 2 stops the work, and the standing round-3 rule does not apply. Nothing of 6b is committed; all files are in the working tree. Record: ops/reviews/V1-056-slice-06b-reversal-drafts.md.
+
+The defect (verified): after round 1, reversal drafts are prepared under `deposits.correct`, as your Option A wording says. I relaxed the two capability checks on the draft table, but not the third check, on the decision table (`financial_draft_decision_shape`, migration 77), which lists the capabilities allowed for a WITHDRAWN decision. So the preparer cannot withdraw a reversal draft: the database refuses it and the service reports "storage is unavailable". A `financial.approve` holder can still reject it. No money can move through this; but a mistaken reversal draft blocks a new one for that forfeiture until an approver rejects it. No test withdrew a reversal draft, so the runs passed.
+
+Recommendation: allow me to
+1. relax that decision check in migration 84 (add `deposits.correct` to the WITHDRAWN list; a relaxing change, like the draft-table checks);
+2. add tests: the preparer withdraws; another `deposits.correct` holder and a wrong capability are refused; an approver rejects; a new reversal draft can follow a withdrawal or rejection; confirming a decided draft is refused; the two missing cross-flow refusals; readers with only `deposits.correct` or only `deposits.dispose`; two reversal drafts recorded at once;
+3. fix the wording notes (review record "Built" line, one unit test name and its traceability id, migration numbers in the plan) and list the "approver named with `deposits.correct` in the reversal row and audit" point as an owner item in slice 12 instead of calling it closed;
+4. run the backend unit and PostgreSQL suites once each, then get one fresh round 3 review (independent and security). If round 3 has no should-fix, commit 6b and continue with slice 7.
+
+Alternative: treat the two reports as one should-fix (they describe one defect), and continue under the standing round-3 rule with the same steps 1 to 4.

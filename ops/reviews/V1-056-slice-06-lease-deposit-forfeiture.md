@@ -13,7 +13,7 @@ Migration `20261018_83`: forfeiture drafts for Lease Deposits (`app.lease_deposi
 3. Loop fix restored: 1 failed, 1723 passed (ops/reviews/V1-056-slice-06-full-test-run-3.txt). The two-line test passes. The pet-noncompliance test's Pet Deposit held nothing ("The Deposit holds nothing to forfeit") — test correction 1: a Pet Deposit receipt is recorded first.
 4. 1724 passed (ops/reviews/V1-056-slice-06-full-test-run-4.txt). Backend unit suite: 3350 passed (ops/reviews/V1-056-slice-06-unit-test-run.txt). Format, lint and type check clean.
 
-Known gap: acceptance of the BR-LEASE-028 ground (with a recorded Serious Default event) is not tested; only its refusal without the event is.
+Known gap (closed after round 1): acceptance of the BR-LEASE-028 ground (with a recorded Serious Default event) was not tested at run 4; `test_thirty_day_default_ground_forfeits_with_a_recorded_serious_default_event` covers it since the round-1 fixes.
 
 ## Round 1
 

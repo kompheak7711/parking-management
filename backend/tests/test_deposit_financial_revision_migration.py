@@ -15,14 +15,13 @@ from psycopg.conninfo import conninfo_to_dict, make_conninfo
 from deposit_disposition_test_support import disposition_context
 from lease_deposit_forfeiture_test_support import (
     record_disposition_as_owner,
-    reverse_disposition_as_owner,
+    reverse_through_draft,
 )
 from property_rental.deposit import (
     AdjustDepositRequiredAmountCommand,
     DepositAdjustmentType,
     PostgresDepositService,
     RecordDepositDispositionCommand,
-    ReverseDepositDispositionCommand,
     ReverseDepositReceiptCommand,
     deposit_request_digest,
 )
@@ -137,16 +136,12 @@ def test_disposition_reversal_and_exact_replay_keep_separate_observation_and_sav
     posted = observe(human, prop, lease, security)
     assert posted.disposition_state_version == before.disposition_state_version + 1
     assert posted.held_refundable_usd_cents == before.held_refundable_usd_cents - 12000
-    reverse_disposition_as_owner(
+    # V1-056 sub-slice 6b: the reversal is a draft confirmed under financial.approve.
+    reverse_through_draft(
         deposits,
-        ReverseDepositDispositionCommand(
-            uuid4(),
-            uuid4(),
-            command.disposition_id,
-            "Synthetic correction",
-            "Reviewed synthetic evidence",
-        ),
-        actor=authority,
+        command.disposition_id,
+        reason="Synthetic correction",
+        evidence_reference="Reviewed synthetic evidence",
     )
     restored = observe(human, prop, lease, security)
     assert restored.held_refundable_usd_cents == before.held_refundable_usd_cents

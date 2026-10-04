@@ -69,22 +69,22 @@ Each slice: one local checkpoint commit, explicit paths, secret and diff scan, i
 - Scope (owner answer to Q-2026-10-04-13, 2026-10-04): the reversal of a confirmed Lease Deposit forfeiture becomes a draft that Staff prepare and a `financial.approve` holder confirms; until then (slice 6) the one-call reversal answers 409. The Deposit receipt reversal stays without a draft, like a Payment reversal.
 - Change: a reversal draft recorded with a reason and an evidence reference, confirmed by running the existing reversal function with the approver as actor, so every earlier reversal rule applies; stale and replay rules as for the forfeiture draft. Tests in slices 6 that reverse a Lease disposition as the owner and whose subject is the reversal move to this draft path (docs/010 note per test).
 - Moved here from slice 6 round 3 (owner answer to Q-2026-10-04-14):
-  - a new Lease forfeiture draft must also refuse a disposition id that a pending Reservation Deposit draft will use (`payload->>'outcome_id'`), not only Lease drafts' `disposition_id`;
+  - a new Lease forfeiture draft must also refuse a disposition id that a Reservation Deposit draft, in any state, holds as its `outcome_id` (`payload->>'outcome_id'`), not only Lease drafts' `disposition_id`;
   - a test for a disposition id used only by a recorded disposition (no draft holds it);
   - the stale status lines (the "Known gap" line in ops/reviews/V1-056-slice-06-lease-deposit-forfeiture.md and older ops/NOW.md lines);
   - the draft read filter: a reader without `financial.approve` sees only drafts of the capability they may prepare (`prepare_capability`, not only the kind), so a holder of only `reservation_deposits.dispose` cannot read Lease forfeiture drafts and the reverse; needed before the slice 11b and 11c draft routes.
-- Migration: `20261019_84` additive (draft variant, record and confirm functions, the disposition-id check change).
+- Migration: `20261019_84` additive and relaxing (draft variant prepared under `deposits.correct`, record and confirm functions, capability-scoped draft reads, the disposition-id check change).
 - Sec: yes (deposits, approvals).
 
 ### Slice 7 — Wrong-Unit Payment move (BR-PAY-042)
 - Change: a draft records the source allocation, target Invoice and the confirmation text (both Customers, who, date, how). Confirm by `financial.approve` reverses the wrong allocation and allocates the same Payment to the target Invoice in one transaction. Blocked if the released value already became Customer Credit or a Refund that is not reversed. Payment amount, date and Receipt never change. No Credit moves between Customers.
-- Migration: `20261017_82` additive (draft kind, move link table, confirm function).
+- Migration: next free number, additive (draft kind, move link table, confirm function).
 - Tests: move succeeds and both Invoices show correct balances; first Invoice becomes unpaid and later late-payment/nonpayment evaluation counts from the move, earlier records unchanged; blocked when Credit or Refund exists; Payment row and Receipt unchanged; Staff cannot confirm.
 - Sec: yes.
 
 ### Slice 8 — Final Settlement draft and preview (BR-SETTLE-001 to 007, 016, 017, DL-032)
 - Change: `final_settlements` (one per terminated Lease), obligation snapshots (Invoices, Late-payment Charges, cleaning charge), preview in DL-032 order: obligations, Customer Credit first, Pet Deposit to pet-related lines, explicit Security Deposit applications (not when forfeited), explicit remaining Pet Deposit (Customer choice or staff with reason), remaining balance, Refunds. Blocking issues listed (for example final Utility not issued, cleaning charge missing).
-- Migration: `20261018_83` additive (DB-SETTLE-001, 002, 004, 006 plus the draft kind).
+- Migration: next free number, additive (DB-SETTLE-001, 002, 004, 006 plus the draft kind).
 - Tests: order is exactly DL-032; no inferred FIFO between Deposit types; forfeited Security Deposit never offered; normal Lease end offers Security Deposit then refund of the rest; preview changes nothing.
 - Note (slice 4 review round 2): "cleaning charge missing" must check that the linked cleaning charge (`app.unit_cleaning_charges`) is on an issued, non-VOID Invoice, not only that the link row exists; a draft correction can swap the source and a VOID releases it. It must not report the charge as missing when the Customer never moved in or when the Unit's rate was zero at move-out (slice 4 refuses the charge in both cases, owner answers to Q13 and Q14).
 - Sec: yes.
@@ -92,13 +92,13 @@ Each slice: one local checkpoint commit, explicit paths, secret and diff scan, i
 ### Slice 9 — Final Settlement confirm and close (BR-SETTLE-008 to 015, 016)
 - Moved here (owner answer to Q-2026-10-04-11, 2026-10-04): the record that pays an Invoice from a Deposit (built once, used by DL-032 steps 3 to 5) and the BR-DEP-027 Pet Deposit outcome: valid pet damage first, the rest refunded through a Refund draft, at unpaid-Initial-Rent, non-pet violation and 30-day default terminations as well as at Final Settlement; pet noncompliance keeps both deposits (BR-DEP-022). Tests: Pet Deposit pays only pet-related Damage charges first; the rest becomes a Refund draft; nothing is applied before confirmation; outstanding amounts, Invoice status and the Customer Ledger count the Deposit application as paid; a forfeited Security Deposit can never be applied; unpaid-Initial-Rent and violation terminations follow the same Pet Deposit rule.
 - Change: confirm by `financial.approve` executes the chosen Credit applications, Deposit applications and Refunds in DL-032 order and closes the Settlement in one transaction, revalidating every source. The unpaid rest stays as debt on the Primary Tenant's Customer Ledger; no write-off. A closed Settlement is never reopened.
-- Migration: `20261019_84` additive (close function, closure snapshot, guards forbidding UPDATE of closed rows).
+- Migration: next free number, additive (close function, closure snapshot, guards forbidding UPDATE of closed rows).
 - Tests: atomic close; stale draft rejected; debt shows on the Primary Tenant's ledger for joint Signers; no reopen path exists at the database; every step is a separate linked record.
 - Sec: yes.
 
 ### Slice 10 — Post-settlement corrections (BR-SETTLE-013)
 - Change: correction draft linked to the closed Settlement with a reason; kinds per Q15; confirm by `financial.approve`; no time limit; the closed Settlement row is never changed.
-- Migration: `20261020_85` additive (DB-SETTLE-003, 005).
+- Migration: next free number, additive (DB-SETTLE-003, 005).
 - Tests: correction years after closure accepted; closed Settlement row unchanged; correction effect linked by exactly one typed foreign key; Staff cannot confirm.
 - Sec: recommended (Q17).
 
@@ -121,6 +121,9 @@ Each slice: one local checkpoint commit, explicit paths, secret and diff scan, i
 - Open item (slice 3b round 3 review): the Reservation read in `reservation_api.py` repeats the held/outcome check inline in SQL instead of calling the shared function `app.reservation_deposit_held_cents`.
 - Open item (slice 3b round 3 review): the plain `CREATE INDEX` on `app.financial_drafts` in migration `20261015_80` takes a write lock on the drafts table while it builds.
 - Open item (owner, Q-2026-10-04-10): a physical move-out correction is refused once a hand-back resolution relies on that move-out record; decide whether staff need a controlled way to correct such a case.
+- Open item (sub-slice 6b review round 1): a new Lease forfeiture draft does not refuse a disposition id equal to an existing audit event id or to a reversal draft's `reversal_id`, and the Reservation draft functions (migration 80) do not refuse ids held by Lease drafts; such a draft fails safely at confirmation (23505) and must be rejected or withdrawn. Changing those functions refuses more input, so it needs the owner. The id checks are not serialized across Deposits and have no expression index.
+- Open item (sub-slice 6b review round 2, owner item): a confirmed Lease forfeiture and its reversal are recorded with the approver as actor and the one-call reference (`deposits.dispose`, `deposits.correct`), which the approver need not hold; the draft keeps the preparer, the decision records `financial.approve`, and the audit correlation id is the draft id. Decide whether the disposition and reversal records should name `financial.approve` instead (it would change the earlier disposition and reversal functions).
+- Open item (sub-slice 6b review round 1, needs the owner): the kind-only draft read functions `app.financial_draft_resource` and `app.list_financial_drafts` stay granted to the runtime role but are unused since 6b; revoking them is a tightening.
 - docs 004 to 007 updated; every new rule ID has a test and an appended traceability entry; TEST-118 passes locally.
 - Full gates once: backend format, lint, type check, tests; full PostgreSQL suite; frontend format, lint, type check, tests, build; audit (the known braces advisory stays until V1-059).
 - Final independent review of the whole V1-056 diff, owner report, request for one push.

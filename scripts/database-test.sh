@@ -122,6 +122,7 @@ database_test_suites='
   tests/test_unit_cleaning_charge_migration.py
   tests/test_hand_back_rent_migration.py
   tests/test_lease_deposit_forfeiture_migration.py
+  tests/test_lease_deposit_reversal_draft_migration.py
   tests/test_lease_migration.py
   tests/test_lease_lifecycle_migration.py
   tests/test_move_in_migration.py

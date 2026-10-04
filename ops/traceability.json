@@ -35634,6 +35634,176 @@
       "notes": "The never-moved-in follow-up form and its confirmation say that the resolution VOIDs or credits the Initial Rent Invoice and releases the Unit while the Security Deposit stays held until a forfeiture draft is confirmed; a declined confirmation calls nothing (V1-056 slice 6, owner answer to Q-2026-10-04-14)."
     },
     {
+      "test_id": "test_forfeiture_reversal_is_a_draft_until_an_approver_confirms",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-DEP-019",
+        "BR-DEP-026"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_deposit_reversal_draft_migration.py",
+      "status": "implemented",
+      "notes": "The reversal of a confirmed Lease forfeiture is a draft prepared under deposits.correct with no effect until a financial.approve holder confirms; deposits.dispose or financial.approve alone cannot record it; the preparer and a wrong database reference cannot confirm; record and confirm replay; a second person confirms and the reversal row, the decision and the audit event name that approver (audit correlation id is the draft id) while the draft keeps the preparer; the held amount is restored; a reversed forfeiture cannot be reversed again; a new forfeiture after it is a new draft."
+    },
+    {
+      "test_id": "test_reversal_draft_refusals_change_nothing",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-DEP-019"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_lease_deposit_reversal_draft_migration.py",
+      "status": "implemented",
+      "notes": "A second waiting reversal draft, a reused key with a changed request, a reversal id held by a draft, used by a recorded reversal or already used as a disposition (audit) id, an unknown Property or forfeiture, a confirm naming another forfeiture, the forfeiture confirm given a reversal draft, a reason the draft refuses (trailing newline; stricter than the reversal) and a draft made stale by a later Deposit change are all refused; nothing is reversed and the draft stays undecided."
+    },
+    {
+      "test_id": "test_forfeiture_draft_refuses_a_disposition_id_already_used_elsewhere",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-DEP-019"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_deposit_reversal_draft_migration.py",
+      "status": "implemented",
+      "notes": "A Lease forfeiture draft refuses a disposition id used only by a recorded disposition and one a Reservation Deposit draft will use as its outcome id (moved from slice 6 round 3)."
+    },
+    {
+      "test_id": "test_draft_reads_follow_the_capability_each_draft_was_prepared_under",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "SEC-020"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_lease_deposit_reversal_draft_migration.py",
+      "status": "implemented",
+      "notes": "A holder of only deposits.dispose reads Lease forfeiture drafts but not Reservation Deposit drafts, a holder of only reservation_deposits.dispose the reverse, and a financial.approve holder reads both (moved from slice 6 round 3)."
+    },
+    {
+      "test_id": "test_reversal_draft_withdraw_reject_and_reads_follow_deposits_correct",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-DEP-019"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_lease_deposit_reversal_draft_migration.py",
+      "status": "implemented",
+      "notes": "A reversal draft prepared under deposits.correct is read by deposits.correct but not by deposits.dispose alone; only its preparer withdraws it, with deposits.correct (another holder or a wrong capability gets a permission error); a financial.approve holder rejects; a decided draft cannot be confirmed (conflict); a new reversal draft may follow; nothing is reversed (owner answers to Q-2026-10-04-13 and Q-2026-10-05-15)."
+    },
+    {
+      "test_id": "test_cross_flow_confirms_refuse_each_others_drafts",
+      "upstream_ids": [
+        "BR-AUTH-010"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_lease_deposit_reversal_draft_migration.py",
+      "status": "implemented",
+      "notes": "The reversal confirm refuses a Lease forfeiture draft, the forfeiture confirm and the Reservation confirm refuse a reversal draft; no draft is decided and nothing moves."
+    },
+    {
+      "test_id": "test_concurrent_reversal_drafts_for_one_forfeiture_leave_one_waiting",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-DEP-019"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_deposit_reversal_draft_migration.py",
+      "status": "implemented",
+      "notes": "Two reversal drafts recorded at the same moment for one forfeiture give one waiting draft and one conflict; nothing is reversed."
+    },
+    {
+      "test_id": "test_reversal_and_read_functions_are_least_privilege",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "SEC-020"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_lease_deposit_reversal_draft_migration.py",
+      "status": "implemented",
+      "notes": "Only the financial role executes the reversal draft record and confirm functions, only the runtime role the capability-scoped draft reads; the internal reversal source is executable by no application role, bootstrap or PUBLIC."
+    },
+    {
+      "test_id": "test_lease_deposit_reversal_draft_migration_is_forward_only",
+      "upstream_ids": [
+        "BR-DEP-019"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_lease_deposit_reversal_draft_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20261019_84 follows 20261018_83 and refuses downgrade."
+    },
+    {
+      "test_id": "test_reversal_needs_deposits_correct_and_approval_before_any_connection",
+      "upstream_ids": [
+        "BR-AUTH-010"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_lease_deposit_forfeiture.py",
+      "status": "implemented",
+      "notes": "Recording a reversal draft needs deposits.correct (deposits.dispose or financial.approve alone is not enough) and confirming needs financial.approve; a missing capability, an invalid actor or nil confirm identities are refused before any database connection."
+    },
+    {
+      "test_id": "test_reversal_input_is_refused_before_any_connection",
+      "upstream_ids": [
+        "BR-DEP-019"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_lease_deposit_forfeiture.py",
+      "status": "implemented",
+      "notes": "Nil identities, a reversal id equal to the disposition id, and a blank, padded or too long reason or evidence reference are refused before any database connection."
+    },
+    {
+      "test_id": "test_reversal_draft_id_is_scoped_and_differs_from_the_forfeiture_draft_id",
+      "upstream_ids": [
+        "BR-AUTH-010"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_lease_deposit_forfeiture.py",
+      "status": "implemented",
+      "notes": "The reversal draft id is stable for one Property, preparer and key, differs when any changes, and differs from the forfeiture draft id for the same key."
+    },
+    {
+      "test_id": "test_draft_reads_pass_only_the_prepare_capabilities_the_reader_holds",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "SEC-020"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_lease_deposit_forfeiture.py",
+      "status": "implemented",
+      "notes": "FinancialDraftService reads call the capability-scoped functions with only the prepare capabilities the reader holds (deposits.correct alone gives only reversal drafts), or all of them for a financial.approve holder."
+    },
+    {
+      "test_id": "test_no_application_module_uses_the_kind_only_draft_reads",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "SEC-020"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_lease_deposit_forfeiture.py",
+      "status": "implemented",
+      "notes": "No module under backend/src/property_rental calls the kind-only draft read functions; reads go through the capability-scoped functions (V1-056 sub-slice 6b)."
+    },
+    {
+      "test_id": "test_capability_scoped_reads_fit_the_database_bound",
+      "upstream_ids": [
+        "BR-AUTH-010"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_lease_deposit_forfeiture.py",
+      "status": "implemented",
+      "notes": "The number of prepare capabilities fits the bound of the capability-scoped read functions (7)."
+    },
+    {
+      "test_id": "test_a_refused_withdrawal_is_a_conflict_not_unavailable_storage",
+      "upstream_ids": [
+        "BR-AUTH-010"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_lease_deposit_forfeiture.py",
+      "status": "implemented",
+      "notes": "A withdrawal refused by a database rule (SQLSTATE 23514 or 23505) reaches the user as FinancialDraftConflictError, not unavailable storage (owner answer to Q-2026-10-05-15)."
+    },
+    {
       "test_id": "test_lease_deposit_forfeiture_migration_is_forward_only",
       "upstream_ids": [
         "BR-DEP-026"

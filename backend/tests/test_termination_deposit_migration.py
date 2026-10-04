@@ -15,11 +15,10 @@ from psycopg.conninfo import conninfo_to_dict, make_conninfo
 
 from lease_deposit_forfeiture_test_support import (
     forfeit_through_draft,
-    reverse_disposition_as_owner,
+    reverse_through_draft,
 )
 from property_rental.deposit import (
     PostgresDepositService,
-    ReverseDepositDispositionCommand,
     ReverseDepositReceiptCommand,
 )
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
@@ -157,9 +156,8 @@ def test_disposition_and_reversal_change_current_readiness_without_completing_fi
     read = PostgresTerminationDepositReadService(runtime_database_url(), prop)
     actor = reader_actor(human, prop)
     deposits = PostgresDepositService(financial_database_url(), prop, human)
-    authority = deposit_actor(human, prop)
-    # V1-056 slice 6: the forfeiture is a draft confirmed under financial.approve; the reversal
-    # runs as the owner until slice 6b builds the reversal draft.
+    # V1-056 slice 6 and sub-slice 6b: the forfeiture and its reversal are drafts confirmed
+    # under financial.approve.
     disposition = uuid4()
     forfeit_through_draft(
         deposits,
@@ -175,16 +173,11 @@ def test_disposition_and_reversal_change_current_readiness_without_completing_fi
         item.explicit_disposition_pending,
     ) == (0, 50_000, False)
     assert not zero.financial_completion_assessed
-    reverse_disposition_as_owner(
+    reverse_through_draft(
         deposits,
-        ReverseDepositDispositionCommand(
-            uuid4(),
-            uuid4(),
-            disposition,
-            "Approved correction",
-            "Synthetic correction evidence",
-        ),
-        actor=authority,
+        disposition,
+        reason="Approved correction",
+        evidence_reference="Synthetic correction evidence",
     )
     reopened = read.get(lease, actor=actor)
     item = next(d for d in reopened.deposits if d.deposit_id == security)

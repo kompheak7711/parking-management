@@ -37,11 +37,14 @@ class FinancialDraftState(StrEnum):
 
 
 # Capabilities that let Staff prepare each draft kind; the database enforces the same pairs.
-# A reader without financial.approve sees only the kinds it may prepare.
+# A reader without financial.approve sees only the drafts prepared under a capability it holds
+# (V1-056 sub-slice 6b), so a holder of only reservation_deposits.dispose cannot read Lease
+# forfeiture drafts and the reverse.
 KIND_PREPARE_CAPABILITIES: Final[dict[FinancialDraftKind, frozenset[str]]] = {
     FinancialDraftKind.REFUND: frozenset({"refunds.create", "reservation_deposits.refund"}),
+    # deposits.correct prepares a Lease forfeiture reversal draft (V1-056 sub-slice 6b).
     FinancialDraftKind.DEPOSIT_FORFEITURE: frozenset(
-        {"deposits.dispose", "reservation_deposits.dispose"}
+        {"deposits.dispose", "reservation_deposits.dispose", "deposits.correct"}
     ),
     FinancialDraftKind.PAYMENT_MOVE: frozenset({"payments.allocations.reverse"}),
     FinancialDraftKind.FINAL_SETTLEMENT: frozenset({FINAL_SETTLEMENTS_PREPARE_CAPABILITY}),
@@ -115,17 +118,17 @@ def require_draft_preparer(actor: AuthenticatedActor, property_id: UUID, capabil
 
 
 def _require_reader(actor: AuthenticatedActor, property_id: UUID) -> tuple[UUID, list[str]]:
-    """Return the actor identity and the draft kinds it may read for the Property."""
+    """Return the actor identity and the prepare capabilities whose drafts it may read."""
     _identity(property_id, "property_id")
     approver = _holds(actor, FINANCIAL_APPROVE_CAPABILITY, property_id)
-    kinds = sorted(
-        kind.value
-        for kind, capabilities in KIND_PREPARE_CAPABILITIES.items()
-        if approver or any(_holds(actor, value, property_id) for value in capabilities)
+    capabilities = sorted(
+        capability
+        for capability in PREPARE_CAPABILITIES
+        if approver or _holds(actor, capability, property_id)
     )
-    if not kinds:
+    if not capabilities:
         raise FinancialDraftAuthorizationError("Financial draft read is not authorized")
-    return _actor_identity(actor), kinds
+    return _actor_identity(actor), capabilities
 
 
 @dataclass(frozen=True, slots=True)
@@ -177,6 +180,12 @@ class FinancialDraftService:
                 raise FinancialDraftInvalidError("Financial draft command is invalid") from exc
             if exc.sqlstate == "55000":
                 raise FinancialDraftConflictError("Financial draft is already decided") from exc
+            # A refusal by a database rule (for example a decision the draft's recorded
+            # capability does not allow) is a conflict, not unavailable storage.
+            if exc.sqlstate in {"23514", "23505"}:
+                raise FinancialDraftConflictError(
+                    "Financial draft decision conflicts with the draft's rules"
+                ) from exc
             raise FinancialDraftUnavailableError("Financial draft storage is unavailable") from exc
         if row is None or not isinstance(row[0], dict):
             raise FinancialDraftUnavailableError("Financial draft storage returned no result")
@@ -185,11 +194,11 @@ class FinancialDraftService:
     def get(
         self, property_id: UUID, draft_id: UUID, *, actor: AuthenticatedActor
     ) -> dict[str, object]:
-        actor_id, kinds = _require_reader(actor, property_id)
+        actor_id, capabilities = _require_reader(actor, property_id)
         _identity(draft_id, "draft_id")
         return self._call(
-            "SELECT app.financial_draft_resource(%s,%s,%s,%s::text[])",
-            (property_id, actor_id, draft_id, kinds),
+            "SELECT app.financial_draft_resource_by_capability(%s,%s,%s,%s::text[])",
+            (property_id, actor_id, draft_id, capabilities),
             mutation=False,
         )
 
@@ -200,14 +209,14 @@ class FinancialDraftService:
         actor: AuthenticatedActor,
         page: FinancialDraftPage | None = None,
     ) -> dict[str, object]:
-        actor_id, kinds = _require_reader(actor, property_id)
+        actor_id, capabilities = _require_reader(actor, property_id)
         selected = page or FinancialDraftPage()
         return self._call(
-            "SELECT app.list_financial_drafts(%s,%s,%s::text[],%s,%s,%s,%s)",
+            "SELECT app.list_financial_drafts_by_capability(%s,%s,%s::text[],%s,%s,%s,%s)",
             (
                 property_id,
                 actor_id,
-                kinds,
+                capabilities,
                 None if selected.state is None else selected.state.value,
                 selected.limit,
                 selected.after_prepared_at,

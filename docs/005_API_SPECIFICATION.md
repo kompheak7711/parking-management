@@ -499,7 +499,8 @@ Lease Deposit forfeiture is a `DEPOSIT_FORFEITURE` draft confirmed by a
 disposition, `POST /deposit-dispositions/{id}/reverse` checks `deposits.correct` and the
 browser mutation rules, then records nothing and answers 409
 `LEASE_DEPOSIT_DRAFT_REQUIRED` (rule IDs `BR-AUTH-010`, `BR-DEP-026`); the forfeiture
-reversal draft comes in slice 6b. The Deposit ledger no longer offers `can_reverse` for
+reversal draft exists since V1-056 sub-slice 6b (database and service; prepared under
+`deposits.correct`, confirmed under `financial.approve`) and its routes come in slice 11c. The Deposit ledger no longer offers `can_reverse` for
 any disposition.
 
 `POST /deposit-receipts/{id}/reverse` and

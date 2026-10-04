@@ -21,6 +21,7 @@ from lease_deposit_forfeiture_test_support import (
     forfeit_through_draft,
     record_disposition_as_owner,
     reverse_disposition_as_owner,
+    reverse_through_draft,
 )
 from payment_test_support import seed_deposit_payment
 from property_rental.deposit import (
@@ -549,8 +550,8 @@ def test_lease_disposition_and_reversal_are_bounded_idempotent_and_auditable(
     )
     terminate_for_disposition(migrated_database_url, service, lease_id, date.today())
     # V1-056 slice 6: the forfeiture is a draft confirmed under financial.approve and covers the
-    # whole held Pet Deposit (BR-DEP-022); a repeat replays both steps. The reversal runs as the
-    # owner until slice 6b builds the reversal draft.
+    # whole held Pet Deposit (BR-DEP-022); a repeat replays both steps. Sub-slice 6b: the
+    # reversal is a draft confirmed under financial.approve as well.
     key, disposition = uuid4(), uuid4()
     disposed = forfeit_through_draft(
         service,
@@ -571,16 +572,11 @@ def test_lease_disposition_and_reversal_are_bounded_idempotent_and_auditable(
         )
         == disposed
     )
-    reversed_snapshot = reverse_disposition_as_owner(
+    reversed_snapshot = reverse_through_draft(
         service,
-        ReverseDepositDispositionCommand(
-            uuid4(),
-            uuid4(),
-            disposition,
-            "Authorized correction",
-            "case-review-37",
-        ),
-        actor=actor,
+        disposition,
+        reason="Authorized correction",
+        evidence_reference="case-review-37",
     )
     assert reversed_snapshot.deposit_disposition_reversal_id is not None
     assert reversed_snapshot.held_refundable_usd_cents == 20_000

@@ -7,12 +7,14 @@ disposition and reversal functions (owner answers to Q-2026-10-04-12 and Q-2026-
 - ``forfeit_through_draft`` uses the real path: the person records the draft under
   deposits.dispose and, holding financial.approve, confirms it. A repeated call with the same
   key and disposition id replays both steps.
+- ``reverse_through_draft`` (sub-slice 6b) records the forfeiture reversal draft under
+  deposits.correct and confirms it as the same financial.approve holder.
 - ``record_disposition_as_owner`` and ``reverse_disposition_as_owner`` call the earlier one-call
   database functions as the database owner, with the same parameters and error mapping the
-  service used. They are only for tests where the disposition is setup for another subject,
-  tests of the database function's own guards that the draft path cannot reach (partial amount,
-  explicit stale context, raw replay), tests of earlier migration revisions, and reversals until
-  slice 6b builds the reversal draft.
+  service used. They are only for tests where the disposition or reversal is setup for another
+  subject, tests of the database function's own guards that the draft path cannot reach
+  (partial amount, explicit stale context, raw replay), and tests of earlier migration
+  revisions.
 """
 
 from __future__ import annotations
@@ -39,6 +41,7 @@ from property_rental.lease_deposit_forfeiture import (
     FINANCIAL_APPROVE_CAPABILITY,
     LeaseDepositForfeitureService,
     RecordLeaseDepositForfeitureCommand,
+    RecordLeaseDepositReversalCommand,
 )
 
 
@@ -119,6 +122,46 @@ def reverse_disposition_as_owner(
     )
 
 
+def _approver(service: PostgresDepositService, *capabilities: str) -> AuthenticatedActor:
+    scope = frozenset({str(service.property_id)})
+    return AuthenticatedActor(
+        str(service.actor_id),
+        frozenset(
+            CapabilityGrant(capability, scope)
+            for capability in (*capabilities, FINANCIAL_APPROVE_CAPABILITY)
+        ),
+    )
+
+
+def reverse_through_draft(
+    service: PostgresDepositService,
+    disposition_id: UUID,
+    *,
+    reversal_id: UUID | None = None,
+    idempotency_key: UUID | None = None,
+    reason: str = "Approved forfeiture correction",
+    evidence_reference: str = "Reviewed correction evidence",
+) -> DepositSnapshot:
+    """Record the forfeiture reversal draft and confirm it as the same financial.approve holder."""
+    person = _approver(service, DEPOSIT_CORRECT_CAPABILITY)
+    forfeitures = LeaseDepositForfeitureService(service.financial_database_url)
+    draft = forfeitures.record_reversal(
+        service.property_id,
+        RecordLeaseDepositReversalCommand(
+            idempotency_key or uuid4(),
+            disposition_id,
+            reversal_id or uuid4(),
+            reason,
+            evidence_reference,
+        ),
+        actor=person,
+    )
+    confirmed = forfeitures.confirm_reversal(
+        service.property_id, disposition_id, UUID(str(draft["draft_id"])), actor=person
+    )
+    return _snapshot((cast(dict[str, object], confirmed["deposit"]),))
+
+
 def forfeit_through_draft(
     service: PostgresDepositService,
     deposit_id: UUID,
@@ -128,14 +171,7 @@ def forfeit_through_draft(
     reason: str = "Approved Lease Deposit forfeiture",
 ) -> DepositSnapshot:
     """Record the forfeiture draft and confirm it as the same financial.approve holder."""
-    scope = frozenset({str(service.property_id)})
-    person = AuthenticatedActor(
-        str(service.actor_id),
-        frozenset(
-            CapabilityGrant(capability, scope)
-            for capability in (DEPOSIT_DISPOSE_CAPABILITY, FINANCIAL_APPROVE_CAPABILITY)
-        ),
-    )
+    person = _approver(service, DEPOSIT_DISPOSE_CAPABILITY)
     forfeitures = LeaseDepositForfeitureService(service.financial_database_url)
     draft = forfeitures.record(
         service.property_id,
