@@ -69,4 +69,6 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md.
 
 - V1-056 sub-slice 6b (2026-10-05, bdeb0c9, migration 20261019_84): COMMITTED. Lease forfeiture reversal drafts (deposits.correct prepares and withdraws, financial.approve confirms and rejects), capability-scoped draft reads, rule refusals reported as conflicts; round 3 (independent and security) no should-fix; unit 3377, PostgreSQL 1738 passed. Owner items in plan slice 12 (approver naming in disposition and reversal records; revoking the kind-only reads; id collisions on the forfeiture and Reservation side). NEXT: slice 7 (wrong-Unit Payment move) after the owner confirms a fresh session. Nothing pushed.
 
+- V1-056 slice 7 (2026-10-05): STOPPED before code. Read-only search of every allocation reversal and change path done; a move between two Customers conflicts with the payer rule (BR-PAY-025/026), one Customer can still move a Payment between two Units in two one-call steps, and late-payment counting after a move is unclear (Q-2026-10-05-16 in ops/V1_056_QUESTIONS.md). Owner answer on business-state refusals ("conflict", not "invalid") written under plan slice 11c. No run. NEXT: owner answers to Q-2026-10-05-16. Nothing pushed.
+
 - Updated: 2026-10-05.

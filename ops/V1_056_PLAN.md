@@ -107,6 +107,7 @@ Each slice: one local checkpoint commit, explicit paths, secret and diff scan, i
 - 11b: draft list, draft detail, confirm, reject, withdraw (shared by all kinds).
   - Moved (owner answer to Q-2026-10-04-5, 2026-10-04): reject and withdraw for Reservation Deposit drafts only are built in slice 3b; the shared routes for the other kinds stay in 11b.
 - 11c: Refund methods, Refund drafts, joint-Signer agreement, deposit forfeiture and Pet Deposit drafts.
+  - Owner answer (2026-10-05, to the round-3 note of sub-slice 6b): a refusal caused by business state reaches the user as "conflict", not "invalid". This covers "forfeiture already reversed" and "reversal draft is stale" (sub-slice 6b) and the stale forfeiture draft (slice 6). No code change before 11c; the draft routes are built that way.
 - 11d: Wrong-Unit Payment move.
 - 11e: Final Settlement (API-070 to 072), preview, confirm, corrections.
 - Each: routes in the existing style, docs/005 entries, frontend client layer, screens with loading, empty, success and error states, accessible forms, backend route tests and frontend tests.

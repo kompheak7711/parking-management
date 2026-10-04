@@ -221,3 +221,56 @@ Recommendation: allow me to
 4. run the backend unit and PostgreSQL suites once each, then get one fresh round 3 review (independent and security). If round 3 has no should-fix, commit 6b and continue with slice 7.
 
 Alternative: treat the two reports as one should-fix (they describe one defect), and continue under the standing round-3 rule with the same steps 1 to 4.
+
+## Q-2026-10-05-16 — Slice 7 stopped before code: open points in the wrong-Unit Payment move (BR-PAY-042)
+
+Slice 7 is not started; no code is written. As you asked, I first searched the backend read-only for every path that can reverse or change a Payment Allocation, and checked BR-PAY-042, DL-068, DL-069 and the plan against the database. Some points are open, so I stopped under your instruction and ops/V1_056_TAKEOVER.md section 6.
+
+**Every path that can reverse or change a Payment Allocation (read-only search, 2026-10-05):**
+
+1. `POST /payment-allocations/{allocation_id}/reverse` (`allocation_receipt_api.py`), `PaymentAllocationService.reverse_allocation`, `app.reverse_payment_allocation_command` (migration `20260905_39`, financial role, `payments.allocations.reverse`): reverses one whole allocation at once, with a reason. No draft, no approver.
+2. `POST /payments/{payment_id}/allocations`, `PaymentAllocationService.post`, `app.post_payment_allocations` (migration 39, financial role, `payments.allocate`): posts new allocations of a Payment (proposal, designated, or direct Late-payment Charge). No draft, no approver.
+3. `POST /payments/{payment_id}/reverse`, `PaymentAllocationService.reverse_payment`, `app.reverse_payment_command` (migration 39, financial role, `payments.reverse`): reverses the whole Payment; refused while an allocation, Credit or Refund from that Payment is still active (BR-PAY-012). It moves no value.
+4. A credit Adjustment on a paid Invoice line: `app.adjust_invoice` calls `app.reverse_line_value_for_credit_excess` and `app.repost_line_value_after_credit_excess` (migration `20261003_67`; internal, no role may call them directly). They reverse allocations on that line and re-post the rest on the same Invoice; the released value becomes Customer Credit of that Invoice's Customer. The hand-back resolution (slice 5) and the unpaid-Initial moved-in resolution (migration 70) reach them through `app.adjust_invoice`. Always the same Invoice.
+5. The guards on `app.payment_allocations` and `app.payment_allocation_reversals` (migration 39, never replaced): append-only; a normal Customer Payment may be allocated only to the payer's own Invoices and Late-payment Charges (BR-PAY-025); a third-party Payment only inside its identified Lease or Invoice (BR-PAY-026). A Payment row cannot be updated except its status change to REVERSED (`payments_immutable`).
+
+No other function or route writes allocations or allocation reversals.
+
+**Can a Payment move between Units today without a draft and an approver?**
+
+- Between two different Customers: no. Paths 1 and 2 together cannot put a Payment on another Customer's Invoice, because of the guard in item 5. A third-party Payment is bound to one Lease or Invoice, so it cannot reach another Unit either.
+- One Customer with two Units (two Leases): yes. A holder of `payments.allocations.reverse` reverses the allocation on the Unit 203 Invoice, and a holder of `payments.allocate` allocates the same Payment to that Customer's Unit 201 Invoice. Two one-call commands, no draft, no approver. See question 2.
+- A Payment reversal (path 3) followed by a new Payment recorded for the other Customer (`payments.record`) gives the same money result, but with a new Payment and a new Receipt. It does not move a Payment, so I do not count it as a move. Tell me if you see it differently.
+
+**What I will do unless you say otherwise** (plan slice 7, plan answers Q3, Q4 and Q16, DL-069):
+
+- Draft kind `PAYMENT_MOVE`, prepared under `payments.allocations.reverse` (the slice 2 constraint), confirmed only by a `financial.approve` holder; the preparer withdraws and an approver rejects, as for the other kinds.
+- The draft records the wrong allocation, the correct Invoice, a reason, and two acknowledgements as free text: one by the Customer of the wrong Invoice, one by the Customer of the correct Invoice. Each states who acknowledged, the date and how (1 to 2,000 characters each, like the BR-REFUND-015 agreement). No file upload.
+- The correct Invoice must be in the same Property, issued, not VOID, on another Unit, and must have an outstanding balance. The whole wrong allocation moves; if the correct Invoice owes less, the rest stays unallocated on the Payment (Q16). A wrong allocation can be moved at most once.
+- Confirm locks the Payment and both Invoices, refuses a stale draft, reverses the wrong allocation and posts the new allocation in one transaction, and links the draft, the reversal and the new allocation in a link table. The Payment row and the Receipt never change. Nothing runs automatically.
+- A refusal caused by business state (stale draft, blocked by Credit or Refund) is reported as a conflict, as you answered for slice 11c. No HTTP route or screen before slice 11d.
+
+**Questions (with my recommendation):**
+
+1. (B) **A move between two Customers breaks the payer rule.** The BR-PAY-042 example (paid on Unit 203, meant for Unit 201) needs the Payment to pay another Customer's Invoice. BR-PAY-025, BR-PAY-026 and the guard in item 5 allow a normal Payment only on the payer's own Invoices, and a third-party Payment only inside its identified Lease or Invoice. The Payment record never changes, so the recorded payer stays the Customer of Unit 203. Options:
+   - (a) The new allocation made by the move gets its own allocation basis (for example `WRONG_UNIT_MOVE`). Only a confirmed move draft can create it, and it is exempt from the payer and third-party intent checks. This is a relaxing change to the allocation guard in a new migration; migration 39 is not edited. The Customer Ledger already books the use of a Payment on the payer's ledger and the Invoice reduction on the Invoice Customer's ledger, so the ledger needs no change. Consequence: if the correct Invoice owes less (Q16), the rest stays unallocated on the recorded payer, and the normal Credit rule (payer authorization, BR-CREDIT-002) and Refund drafts apply to that payer.
+   - (b) Only moves that the existing checks already allow: one Customer with two Units, or a third-party Payment inside its own Lease. The two-Customer case in BR-PAY-042 then cannot be done.
+   Recommendation: (a), with one sentence added to BR-PAY-025 and BR-PAY-026 that points to BR-PAY-042.
+
+2. (B) **The one-Customer two-step path (one-call reversal, then one-call allocation to another Unit).** Options:
+   - (a) Close it: the one-call allocation refuses to put a Payment on an Invoice or Late-payment Charge of a Unit other than the Unit of any of its earlier one-call reversed allocations; only a confirmed move draft may. This tightens an accepted guard. Side effect: value of that Payment that was never on the wrong Unit could then reach another Unit only through a move draft, which would need a second draft form (value without a source allocation). Some existing tests may need narrowing.
+   - (b) Keep it as the ordinary allocation correction of BR-PAY-029: the value stays with the same Customer, so no value moves between Customers. I record this in docs/010. The move draft can still be used for one Customer.
+   Recommendation: (b). Closing it exactly needs per-Unit tracking of released value, which the allocation records do not have, and the simple rule in (a) also blocks correct allocations. Choose (a) if every move between Units must have an approver, even for one Customer.
+
+3. (B) **Late-payment and Rent nonpayment counting after the move.** Today a Late-payment Decision is possible for an UNPAID Invoice after its Due Date, and the 20-day warning and 30-day Serious Default count from the day before the billing period starts (`app.rent_nonpayment_day_zero`, migration 68). So a move made 30 days or more after the billing period starts makes the first Customer at once eligible for a Late-payment Decision and the 30-day Serious Default, although the Invoice looked paid until the move. The plan says "evaluation counts from the move"; DL-069 says "the normal late-payment and Rent nonpayment rules apply from then on". Options:
+   - (a) Existing rules unchanged: the days count as today; the move records nothing about late payment; staff decide (Decisions and milestones are never automatic, and a Late-payment Decision can be WAIVED). The plan test becomes "after the move the normal rules see the Invoice as unpaid; earlier records are unchanged".
+   - (b) Count from the move date for that Invoice: a new start date used by the late-payment and nonpayment checks. This changes accepted rules and functions.
+   Recommendation: (a), because it follows "the normal rules" and changes no accepted function; staff can waive.
+
+4. **When Customer Credit or a Refund blocks the move.** Credit and Refunds are recorded per Payment, not per allocation, so "the wrong allocation became Credit or a Refund" can be traced only for a credit Adjustment (`app.invoice_credit_excess_releases`). Recommendation: block the move while the Payment has any Customer Credit that is not reversed, or any Refund that is not fully returned. Staff reverse those first.
+
+5. **The wrong allocation was already reversed.** If staff already reversed the wrong allocation with the one-call reversal (for example before reversing a Credit made from that value), there is no active allocation to move. Recommendation: the draft may also name a wrong allocation reversed by the one-call reversal, when the Payment's unallocated value still covers its amount; confirm then only posts the new allocation.
+
+6. **Which allocations, and how the moved amount is spread.** Recommendation: only an allocation on an Invoice moves, and only to an Invoice (not a Late-payment Charge allocation, and not to a Late-payment Charge), because BR-PAY-042 names Invoices. On the correct Invoice the amount is spread over its lines by the existing within-Invoice default order (BR-PAY-036), worked out when the draft is recorded and stored in it; confirm refuses the draft as stale if that Invoice changed since.
+
+If you accept the recommendations, I build slice 7 with these limits, record them in docs/010, and continue under the run rule and the standing round-3 rule.
