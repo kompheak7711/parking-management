@@ -57,4 +57,6 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md.
 
 - V1-056 slice 6 (2026-10-04): STOPPED before code. No Deposit application record exists for BR-DEP-027, the 30-day default termination is not linked to its Serious Default event, and the migration 70 resolution forfeits directly; questions with recommendations in Q-2026-10-04-11. Q-2026-10-04-10 also open. NEXT: owner answers. Nothing pushed.
 
+- V1-056 slice 6 (2026-10-04, migration 20261018_83): Lease Deposit forfeiture drafts, migration 70 resolution stops forfeiting and its two-line credit bug fixed (shown failing in run 2), move-out correction refused when a hand-back resolution relies on it. Built, NOT committed; run 4: 1724 passed, unit 3350. STOPPED after review round 1: both reviewers found that the financial role can still forfeit a Lease Deposit directly (migration 58 grant and record_disposition); closing it is a tightening revoke, so Q-2026-10-04-12 asks the owner. All slice 6 files are in the working tree. NEXT: owner answer to Q-2026-10-04-12, then the round-1 fixes, round 2 and the standing round-3 rule. Start a fresh session. Nothing pushed.
+
 - Updated: 2026-10-04.
