@@ -53,4 +53,6 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md.
 
 - V1-056 slice 5 (2026-10-04): STOPPED before code. Owner answered Q-2026-10-04-8 (recorded in docs/010); the kept fully paid next-month Invoice conflicts with the BR-RENT-026 text, so stopped again with Q-2026-10-04-9 (one-sentence amendment recommended). NEXT: owner answer to Q-2026-10-04-9. Nothing pushed.
 
+- V1-056 slice 5 (2026-10-04, 501fa2d, migration 20261017_82): COMMITTED. Hand-back month monthly Rent Invoices (BR-RENT-030, BR-RENT-026 amended 9a7e288): VOID or per-line credit Adjustment after a verified voluntary early hand-back; round 3 (independent and security) no should-fix; unit 3349, PostgreSQL 1716 passed. Open for the owner, not blocking: Q-2026-10-04-10 (migration 70 may fail with two credit Adjustments; move-out correction after a resolution). NEXT: slice 6 (Deposit forfeiture and Pet Deposit cases). Nothing pushed.
+
 - Updated: 2026-10-04.
