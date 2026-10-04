@@ -35199,6 +35199,112 @@
       "test_path": "backend/tests/test_reservation_api.py",
       "status": "implemented",
       "notes": "The reject route needs financial.approve, the withdraw route the draft kind's prepare capability; both need a reason and the CSRF token and answer private no-store."
+    },
+    {
+      "test_id": "test_cleaning_charge_uses_the_current_rate_once_per_lease_and_is_due_issue_plus_days",
+      "upstream_ids": [
+        "BR-MOVEOUT-013",
+        "BR-UNIT-014",
+        "BR-INV-018",
+        "BR-MOVEOUT-006",
+        "BR-SVC-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_unit_cleaning_charge_migration.py",
+      "status": "implemented",
+      "notes": "A recorded move-out allows one Unit cleaning charge per Lease for the Primary Tenant, equal to the Unit's current rate; a later rate change leaves the recorded charge unchanged; the issued Invoice is due on the issue date plus the Property's configured days; replay returns the same charge; rates and charges are append-only and audited. The id of another one-time charge cannot be reused for a cleaning charge. The cleaning charge is a one-time charge source, not a recurring Service (BR-SVC-001 amendment)."
+    },
+    {
+      "test_id": "test_cleaning_charge_due_date_override_and_reduction_by_credit_adjustment",
+      "upstream_ids": [
+        "BR-MOVEOUT-013",
+        "BR-INV-018",
+        "BR-INV-048"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_unit_cleaning_charge_migration.py",
+      "status": "implemented",
+      "notes": "The cleaning charge Invoice accepts the existing authorized Due Date override with a reason. Only a holder of invoices.adjust can reduce it, and only with a reason: a user without invoices.adjust is refused and a blank reason is rejected by the Adjustment command; an authorized credit Adjustment with a reason reduces it while the charge source, rate snapshot and Invoice line keep their amounts."
+    },
+    {
+      "test_id": "test_cleaning_charge_is_refused_without_move_in_move_out_rate_or_a_positive_rate",
+      "upstream_ids": [
+        "BR-MOVEOUT-013",
+        "BR-UNIT-014"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_unit_cleaning_charge_migration.py",
+      "status": "implemented",
+      "notes": "No cleaning charge when the Customer never moved in, before the move-out is recorded, when the Unit has no rate, when the rate is zero, when the expected rate is no longer current, for an unknown Lease id in the Property, or under an unknown Property; nothing is recorded."
+    },
+    {
+      "test_id": "test_cleaning_rate_chain_is_linear_scoped_replay_safe_and_authorized",
+      "upstream_ids": [
+        "BR-UNIT-014",
+        "SEC-019"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_unit_cleaning_charge_migration.py",
+      "status": "implemented",
+      "notes": "A Unit cleaning rate needs property.manage, supersedes exactly the current rate of the same Unit, replays by identity, refuses identity reuse, negative amounts, an unknown Unit id in the Property and an unknown Property; a database insert that supersedes another Unit's rate is refused; it can be read with invoices.create or property.manage."
+    },
+    {
+      "test_id": "test_cleaning_functions_and_tables_are_least_privilege",
+      "upstream_ids": [
+        "BR-UNIT-014",
+        "BR-MOVEOUT-013",
+        "SEC-020"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_unit_cleaning_charge_migration.py",
+      "status": "implemented",
+      "notes": "The runtime role executes only the rate set and read functions, the financial role only the charge function; neither role has table access or the internal snapshot functions."
+    },
+    {
+      "test_id": "test_unit_cleaning_charge_migration_is_forward_only",
+      "upstream_ids": [
+        "BR-UNIT-014",
+        "BR-MOVEOUT-013"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_unit_cleaning_charge_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20261016_81 follows 20261015_80 and refuses downgrade."
+    },
+    {
+      "test_id": "test_unit_cleaning_commands_validate_money_identities_and_reason",
+      "upstream_ids": [
+        "BR-UNIT-014",
+        "BR-MOVEOUT-013"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_invoice.py",
+      "status": "implemented",
+      "notes": "The rate command accepts integer USD cents from zero, refuses negative, float and boolean amounts, nil identities and unnormalized reasons; the charge command refuses nil identities."
+    },
+    {
+      "test_id": "test_unit_cleaning_service_checks_capabilities_before_any_connection",
+      "upstream_ids": [
+        "BR-UNIT-014",
+        "BR-MOVEOUT-013",
+        "SEC-020"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_invoice.py",
+      "status": "implemented",
+      "notes": "Setting a rate needs property.manage, recording the charge needs invoices.create in the same Property, and reading the rate needs invoices.create or property.manage; refusals happen before any database connection."
+    },
+    {
+      "test_id": "test_cleaning_functions_refuse_an_inactive_actor",
+      "upstream_ids": [
+        "BR-UNIT-014",
+        "BR-MOVEOUT-013",
+        "SEC-014"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_unit_cleaning_charge_migration.py",
+      "status": "implemented",
+      "notes": "The rate set, rate read and cleaning charge database functions refuse a disabled user account (P4506) and record nothing; the service read maps it to an authorization error."
     }
   ]
 }

@@ -47,4 +47,6 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md.
 
 - V1-056 slice 3b (2026-10-04, c7aa7ea, migration 20261015_80): COMMITTED after the owner answered Q-2026-10-04-6 (Yes; docs/010 note corrected, no new run or review); Reservation Deposit refunds and forfeitures are drafts confirmed under financial.approve, with the waiting list; unit 3343, PostgreSQL 1701 passed; three round-3 notes added to the slice 12 open list. NEXT: slice 4 (Unit cleaning rate and move-out cleaning charge). Nothing pushed.
 
+- V1-056 slice 4 (2026-10-04, migration 20261016_81): Unit cleaning rate and move-out cleaning charge built, NOT committed; STOPPED after review round 1 for an owner decision on the category (Q-2026-10-04-7); owner answered Option B (keep MISCELLANEOUS_CHARGES with the link table). PostgreSQL run 1: 1 failed (test assumed a second Property; V1 has one Property), corrections 1 and 2 used for that cause; run 2: 1708 passed. Round 2: 0 blocker, 1 should-fix (test only), fixed; unit 3346 and PostgreSQL run 3 1708 passed; round 3 no should-fix. Review record ops/reviews/V1-056-slice-04-cleaning-charge.md. Committed next (see following line). Owner rule: ask before building anything differently from the approved plan. Nothing pushed.
+
 - Updated: 2026-10-04.

@@ -1293,3 +1293,54 @@ def test_adjustment_commands_preserve_valid_integer_cents(
     )
     assert request.amount_usd_cents == amount
     assert type(request.amount_usd_cents) is int
+
+
+def test_unit_cleaning_commands_validate_money_identities_and_reason() -> None:
+    from property_rental.invoice import (
+        RecordUnitCleaningChargeCommand,
+        SetUnitCleaningRateCommand,
+    )
+
+    assert SetUnitCleaningRateCommand(uuid4(), uuid4(), None, 0, "Zero rate").rate_usd_cents == 0
+    with pytest.raises(ValueError, match="nonnegative integer"):
+        SetUnitCleaningRateCommand(uuid4(), uuid4(), None, -1, "Negative")
+    with pytest.raises(ValueError, match="nonnegative integer"):
+        SetUnitCleaningRateCommand(uuid4(), uuid4(), None, cast(int, 12.5), "Float")
+    with pytest.raises(ValueError, match="nonnegative integer"):
+        SetUnitCleaningRateCommand(uuid4(), uuid4(), None, cast(int, True), "Boolean")
+    with pytest.raises(ValueError, match="nil UUID"):
+        SetUnitCleaningRateCommand(uuid4(), uuid4(), UUID(int=0), 100, "Nil current")
+    with pytest.raises(ValueError, match="normalized"):
+        SetUnitCleaningRateCommand(uuid4(), uuid4(), None, 100, " padded ")
+    with pytest.raises(ValueError, match="nil UUID"):
+        RecordUnitCleaningChargeCommand(uuid4(), UUID(int=0), uuid4())
+    with pytest.raises(ValueError, match="nil UUID"):
+        RecordUnitCleaningChargeCommand(uuid4(), uuid4(), UUID(int=0))
+
+
+def test_unit_cleaning_service_checks_capabilities_before_any_connection(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from property_rental.invoice import (
+        InvoiceAuthorizationError,
+        RecordUnitCleaningChargeCommand,
+        SetUnitCleaningRateCommand,
+    )
+
+    def unexpected_connect(*args: object, **kwargs: object) -> None:
+        del args, kwargs
+        raise AssertionError("an unauthorized cleaning command must not connect")
+
+    monkeypatch.setattr("property_rental.invoice.psycopg.connect", unexpected_connect)
+    service = PostgresInvoiceService("postgresql://unused", "postgresql://unused")
+    prop = uuid4()
+    rate = SetUnitCleaningRateCommand(uuid4(), uuid4(), None, 2_500, "Configured rate")
+    charge = RecordUnitCleaningChargeCommand(uuid4(), uuid4(), uuid4())
+    with pytest.raises(InvoiceAuthorizationError):
+        service.set_unit_cleaning_rate(prop, rate, actor=actor(prop, "invoices.create"))
+    with pytest.raises(InvoiceAuthorizationError):
+        service.record_unit_cleaning_charge(prop, charge, actor=actor(prop, "property.manage"))
+    with pytest.raises(InvoiceAuthorizationError):
+        service.unit_cleaning_rate(prop, uuid4(), actor=actor(prop, "invoices.read"))
+    with pytest.raises(InvoiceAuthorizationError):
+        service.record_unit_cleaning_charge(prop, charge, actor=actor(uuid4(), "invoices.create"))

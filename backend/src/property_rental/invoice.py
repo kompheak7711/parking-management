@@ -186,6 +186,43 @@ class RecordOneTimeChargeCommand:
 
 
 @dataclass(frozen=True, slots=True)
+class SetUnitCleaningRateCommand:
+    """A new Unit cleaning rate (BR-UNIT-014); it supersedes the current rate, if any."""
+
+    rate_id: UUID
+    unit_id: UUID
+    expected_current_rate_id: UUID | None
+    rate_usd_cents: int
+    reason: str
+
+    def __post_init__(self) -> None:
+        _identity(self.rate_id, "rate_id")
+        _identity(self.unit_id, "unit_id")
+        if self.expected_current_rate_id is not None:
+            _identity(self.expected_current_rate_id, "expected_current_rate_id")
+        if (
+            type(self.rate_usd_cents) is not int
+            or not 0 <= self.rate_usd_cents <= 9_000_000_000_000_000
+        ):
+            raise ValueError("rate_usd_cents must be a bounded nonnegative integer")
+        _normalized(self.reason, "reason")
+
+
+@dataclass(frozen=True, slots=True)
+class RecordUnitCleaningChargeCommand:
+    """The move-out Unit cleaning charge (BR-MOVEOUT-013) from the Unit's current rate."""
+
+    charge_id: UUID
+    lease_id: UUID
+    expected_rate_id: UUID
+
+    def __post_init__(self) -> None:
+        _identity(self.charge_id, "charge_id")
+        _identity(self.lease_id, "lease_id")
+        _identity(self.expected_rate_id, "expected_rate_id")
+
+
+@dataclass(frozen=True, slots=True)
 class SetOneTimeChargeDueDaysCommand:
     days: int
     reason: str
@@ -609,6 +646,91 @@ class PostgresInvoiceService:
                 command.evidence_reference,
             ),
         )
+
+    def record_unit_cleaning_charge(
+        self,
+        property_id: UUID,
+        command: RecordUnitCleaningChargeCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        """Record the cleaning charge source; an Invoice DRAFT is then created from it."""
+        self._authorize(actor, property_id, INVOICE_CREATE_CAPABILITY)
+        return self._execute(
+            "SELECT app.record_unit_cleaning_charge(%s,%s,%s,%s,%s)",
+            (
+                property_id,
+                self._actor_id(actor),
+                command.charge_id,
+                command.lease_id,
+                command.expected_rate_id,
+            ),
+        )
+
+    def set_unit_cleaning_rate(
+        self,
+        property_id: UUID,
+        command: SetUnitCleaningRateCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        """Append a Unit cleaning rate; issued cleaning charges keep their amounts."""
+        self._authorize(actor, property_id, PROPERTY_MANAGE_CAPABILITY)
+        return self._runtime_execute(
+            "SELECT app.set_unit_cleaning_rate(%s,%s,%s,%s,%s,%s,%s)",
+            (
+                property_id,
+                self._actor_id(actor),
+                command.unit_id,
+                command.rate_id,
+                command.expected_current_rate_id,
+                command.rate_usd_cents,
+                command.reason,
+            ),
+        )
+
+    def unit_cleaning_rate(
+        self,
+        property_id: UUID,
+        unit_id: UUID,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object] | None:
+        """Return the Unit's current cleaning rate, or None when no rate is configured."""
+        if not is_authorized(
+            actor,
+            AuthorizationRequirement(
+                capability=INVOICE_CREATE_CAPABILITY, property_id=str(property_id)
+            ),
+        ):
+            self._authorize(actor, property_id, PROPERTY_MANAGE_CAPABILITY)
+        try:
+            with self._read_connection() as connection:
+                self._bound_query(connection)
+                row = connection.execute(
+                    "SELECT app.unit_cleaning_rate_current(%s,%s,%s)",
+                    (property_id, self._actor_id(actor), unit_id),
+                ).fetchone()
+        except InvoiceAuthorizationError:
+            raise
+        except psycopg.Error as exc:
+            raise self._map_error(exc) from exc
+        if row is None:
+            raise InvoiceServiceUnavailableError("Unit cleaning rate read returned no result")
+        return None if row[0] is None else self._resource(row[0])
+
+    def _runtime_execute(self, query: str, parameters: tuple[object, ...]) -> dict[str, object]:
+        try:
+            with self._read_connection() as connection:
+                self._bound_query(connection)
+                row = connection.execute(query, parameters).fetchone()
+        except InvoiceAuthorizationError:
+            raise
+        except psycopg.Error as exc:
+            raise self._map_error(exc) from exc
+        if row is None:
+            raise InvoiceServiceUnavailableError("Invoice command returned no result")
+        return self._resource(row[0])
 
     def set_initial_rent_due_date(
         self,

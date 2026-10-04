@@ -48,7 +48,7 @@ Each slice: one local checkpoint commit, explicit paths, secret and diff scan, i
 
 ### Slice 4 — Unit cleaning rate and move-out cleaning charge (BR-UNIT-014, BR-MOVEOUT-013, BR-SVC-001, BR-MOVEOUT-006)
 - Change: Unit cleaning rate in USD cents, set with `property.manage`, history kept. At move-out an authorized user issues the cleaning charge as a one-time charge from the Unit's rate at that moment (rate snapshot on the line). Due Date = issue date + Property due-days, with the existing BR-INV-018 override. Reduction only by a linked credit Adjustment with a reason. Refused when the Customer never moved in. Billed at most once per Lease.
-- Migration: `20261014_79` additive: Unit cleaning rate history table, new one-time charge category `UNIT_CLEANING`, issue function.
+- Migration: `20261016_81` additive: Unit cleaning rate history table, a link table that marks the cleaning charge (rate snapshot, Lease, Unit, move-out event, at most one per Lease), and the charge command. The charge uses the existing `MISCELLANEOUS_CHARGES` one-time charge category (owner answer to Q-2026-10-04-7, Option B, 2026-10-04).
 - Tests: charge equals the rate at issue; later rate change leaves the charge unchanged; never-moved-in refused; second charge refused; Due Date default and override; reduction by credit Adjustment only.
 - Sec: no.
 
@@ -74,6 +74,7 @@ Each slice: one local checkpoint commit, explicit paths, secret and diff scan, i
 - Change: `final_settlements` (one per terminated Lease), obligation snapshots (Invoices, Late-payment Charges, cleaning charge), preview in DL-032 order: obligations, Customer Credit first, Pet Deposit to pet-related lines, explicit Security Deposit applications (not when forfeited), explicit remaining Pet Deposit (Customer choice or staff with reason), remaining balance, Refunds. Blocking issues listed (for example final Utility not issued, cleaning charge missing).
 - Migration: `20261018_83` additive (DB-SETTLE-001, 002, 004, 006 plus the draft kind).
 - Tests: order is exactly DL-032; no inferred FIFO between Deposit types; forfeited Security Deposit never offered; normal Lease end offers Security Deposit then refund of the rest; preview changes nothing.
+- Note (slice 4 review round 2): "cleaning charge missing" must check that the linked cleaning charge (`app.unit_cleaning_charges`) is on an issued, non-VOID Invoice, not only that the link row exists; a draft correction can swap the source and a VOID releases it. It must not report the charge as missing when the Customer never moved in or when the Unit's rate was zero at move-out (slice 4 refuses the charge in both cases, owner answers to Q13 and Q14).
 - Sec: yes.
 
 ### Slice 9 — Final Settlement confirm and close (BR-SETTLE-008 to 015, 016)
