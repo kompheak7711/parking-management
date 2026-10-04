@@ -79,4 +79,6 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md.
 
 - V1-056 slice 8 (2026-10-05): STOPPED before code. Design note written (ops/V1_056_PLAN.md, slice 8 now covers the whole Final Settlement in sub-slices 8a to 8f, owner instruction); read-only path search done; seven open points in Q-2026-10-05-20 (Deposit and Late-payment Charges, which terminations use DL-032, strictness of the order, staff Pet step at BR-DEP-027, other Signers' Invoices, Late-payment Decisions, one-call changes after closure). No run. NEXT: owner answers. Nothing pushed.
 
+- V1-056 slice 8 (2026-10-05): owner answered Q-2026-10-05-20 (recorded in docs/010; docs/004 DB-DEP-005, DB-DER-007, DB-DER-009 amended so a Deposit may pay a Late-payment Charge). STOPPED again before 8a: answer 5 (Deposits pay any Signer's Lease debt; leftover debt stays with the person on the Invoice) conflicts with the BR-SETTLE-016 text; BR-DEP-014 says "Invoice obligations"; one Pet Deposit case open (Q-2026-10-05-21). No code, no run. NEXT: owner answers. Nothing pushed.
+
 - Updated: 2026-10-05.

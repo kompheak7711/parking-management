@@ -1423,21 +1423,24 @@ applications/reversals must extend balance and financial revision invalidation.
 
 ## DB-DEP-005 — `deposit_applications`
 
-Append-only Final Settlement financial event: `id uuid PK`, `deposit_id uuid NOT NULL FK`, `final_settlement_id uuid NOT NULL FK`, `invoice_id uuid NOT NULL FK`, `invoice_line_id uuid NOT NULL FK`, `application_stage text NOT NULL CHECK IN ('PET_RELATED_FIRST','SECURITY_EXPLICIT','PET_REMAINDER_EXPLICIT')`, `amount_usd_cents bigint NOT NULL CHECK (>0)`, `application_order integer NOT NULL CHECK (>0)`, `reason text NOT NULL`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`, `authorization_reference text NOT NULL`, `UNIQUE (final_settlement_id, application_order)`.
+Append-only Final Settlement financial event: `id uuid PK`, `deposit_id uuid NOT NULL FK`, `final_settlement_id uuid NOT NULL FK`, `target_kind text NOT NULL CHECK IN ('INVOICE_LINE','LATE_PAYMENT_CHARGE')`, `invoice_id uuid NULL FK`, `invoice_line_id uuid NULL FK`, `late_payment_charge_id uuid NULL FK` (exactly the Invoice and line for `INVOICE_LINE`, exactly the Charge for `LATE_PAYMENT_CHARGE`), `application_stage text NOT NULL CHECK IN ('PET_RELATED_FIRST','SECURITY_EXPLICIT','PET_REMAINDER_EXPLICIT')`, `amount_usd_cents bigint NOT NULL CHECK (>0)`, `application_order integer NOT NULL CHECK (>0)`, `reason text NOT NULL`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`, `authorization_reference text NOT NULL`, `UNIQUE (final_settlement_id, application_order)`.
 
 - Application is allowed only after Lease TERMINATED and before the Settlement's `closed_at` is set.
 - Applicable Customer Credit is handled first. `PET_RELATED_FIRST` preserves Pet Deposit
   identity against pet-related Invoice lines before Security Deposit use.
   `SECURITY_EXPLICIT` then permits authorized management to select Security Deposit
   applications. `PET_REMAINDER_EXPLICIT` may finally apply remaining Pet Deposit to any
-  valid remaining Settlement Invoice line, not only pet-related damage.
+  valid remaining Settlement Invoice line or Late-payment Charge, not only pet-related damage.
 - Every stage and target is explicitly authorized. `application_order` records the
   actual sequence; neither Payment FIFO nor an inferred Deposit-type FIFO is reused.
 - A deferred trigger matches PET stages to a Pet Deposit and SECURITY stage to a
   Security Deposit and verifies all prior-stage prerequisites from current balances.
-- The line must belong to the Invoice and Settlement Lease. Application cannot exceed
-  held refundable Deposit balance or the current Invoice-line obligation. A Deposit
-  Application cannot target a separate Late-payment Charge.
+- The target must belong to the Settlement Lease: an Invoice line of an Invoice of that
+  Lease, or a Late-payment Charge whose source Invoice belongs to that Lease. Application
+  cannot exceed the held refundable Deposit balance or the target's current outstanding
+  balance. A Deposit may pay a Late-payment Charge like any other debt (owner answer to
+  Q-2026-10-05-20, 2026-10-05); `PET_RELATED_FIRST` targets only pet-related Damage
+  Invoice lines.
 
 ## DB-DEP-006 — `deposit_application_reversals`
 
@@ -1943,7 +1946,8 @@ Raw Utility Readings are authoritative measurements. Actual consumption is deriv
 
 Before closure, Settlement net balance is derived from included DB-SETTLE-006
 Invoice-line obligations and included separate Late-payment Charge balances, authorized
-Payment Allocations and Credit Applications, permitted Invoice-only Deposit Applications,
+Payment Allocations and Credit Applications, permitted Deposit Applications to Invoice
+lines and Late-payment Charges,
 and their reversals/corrections. Deposit Dispositions and Refunds are separate
 Deposit-liability/outbound effects and closure prerequisites; they never reduce the
 Customer receivable formula. `closing_balance_due_usd_cents` is stored only as the
@@ -1966,6 +1970,7 @@ Charge remaining balance
 = adjusted Charge obligation
 - active Payment Allocation details targeting the Charge
 - active Customer Credit Application details targeting the Charge
+- active Deposit Applications targeting the Charge (DB-DEP-005)
 ```
 
 Both values are derived, cannot be negative, and cannot exceed the immutable original
