@@ -126,7 +126,7 @@ Recommendation: approve a one-sentence amendment to BR-RENT-026 (and its docs/00
 
 Alternative: the fully paid next-month Invoice must follow BR-RENT-026 after all; then tell me which process (VOID would require reversing the Payment Allocations first; a credit Adjustment on a fully paid line is allowed and its excess becomes Customer Credit (migration 20261003_67). Either way the paid Rent would come back to the Customer as Credit, which your answer 2 rules out).
 
-## Q-2026-10-04-10 — Open item found in slice 5 (not blocking): unpaid-Initial termination may fail with two credit Adjustments
+## Q-2026-10-04-10 — Open item found in slice 5 (not blocking): unpaid-Initial termination may fail with two credit Adjustments (ANSWERED 2026-10-04: test then fix in the slice 6 migration; refuse a move-out correction that a hand-back resolution relies on)
 
 While building slice 5 I found that `app.adjust_invoice` ends with `SET CONSTRAINTS ALL IMMEDIATE`, which stays in force for the rest of the transaction. A function that calls it more than once in one transaction then fails on the second call when that call brings the Invoice to zero outstanding (slice 5 run 3). Slice 5 handles this by deferring the constraints again before each call (precedent: migrations 39 and 41).
 
@@ -136,7 +136,7 @@ Recommendation: in a later slice (or slice 12), add a test with two lines needin
 
 Second open question from slice 5 (security review round 1): should a physical move-out correction be refused once a hand-back resolution refers to that move-out record? Today the correction is allowed and the resolution keeps the record it used. Refusing it would change the physical move-out rules, so I did not build it. Recommendation: allow it (as built) and show the resolution with its recorded move-out in the later screens.
 
-## Q-2026-10-04-11 — Slice 6 stopped before code: three gaps for Deposit forfeiture and the Pet Deposit
+## Q-2026-10-04-11 — Slice 6 stopped before code: three gaps for Deposit forfeiture and the Pet Deposit (ANSWERED 2026-10-04: all three recommendations; answers in docs/010)
 
 Slice 6 (BR-DEP-018, 019, 022, 023, 026, 027) is not started; no code is written. A read-only survey found three points the plan and rules do not settle.
 

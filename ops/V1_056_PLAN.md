@@ -59,6 +59,7 @@ Each slice: one local checkpoint commit, explicit paths, secret and diff scan, i
 - Sec: recommended (Q17).
 
 ### Slice 6 — Deposit forfeiture and Pet Deposit cases (BR-DEP-018, 019, 022, 023, 026, 027)
+- Scope per owner answers to Q-2026-10-04-11 (2026-10-04): forfeiture drafts only; the BR-DEP-027 Pet Deposit outcome moved to slice 9; the 30-day default ground needs `BR-LEASE-028` and a recorded Serious Default event; the direct Lease disposition route answers 409; the unpaid-Initial-Rent termination command stops forfeiting (new relaxing migration). Also in this slice (Q-2026-10-04-10): the migration 70 two-line credit Adjustment bug (test first) and the refusal of a move-out correction that a hand-back resolution relies on.
 - Change: forfeiture and Pet Deposit use become draft kinds confirmed by `financial.approve`. Forfeiture is always the whole Security Deposit and is never applied to what the Customer owes. New grounds: non-pet violation termination and 30-day Rent nonpayment default termination (Q10). Pet Deposit at those terminations and at unpaid-Initial termination pays valid pet damage first (findings with `pet_related`) and the rest is refunded through a Refund draft (slice 3). Pet noncompliance keeps both deposits (BR-DEP-022 unchanged).
 - Migration: `20261016_81` additive: new disposition ground values, draft kinds, a guard that a forfeited Security Deposit cannot be the source of any application.
 - Tests: each ground; forfeiture equals the full held amount; an application from a forfeited deposit is refused at the database; Pet Deposit pays pet damage first and the Refund draft gets the rest; pet noncompliance keeps both; draft has no effect until confirmed; audit fields per BR-DEP-019.
@@ -78,6 +79,7 @@ Each slice: one local checkpoint commit, explicit paths, secret and diff scan, i
 - Sec: yes.
 
 ### Slice 9 — Final Settlement confirm and close (BR-SETTLE-008 to 015, 016)
+- Moved here (owner answer to Q-2026-10-04-11, 2026-10-04): the record that pays an Invoice from a Deposit (built once, used by DL-032 steps 3 to 5) and the BR-DEP-027 Pet Deposit outcome: valid pet damage first, the rest refunded through a Refund draft, at unpaid-Initial-Rent, non-pet violation and 30-day default terminations as well as at Final Settlement; pet noncompliance keeps both deposits (BR-DEP-022). Tests: Pet Deposit pays only pet-related Damage charges first; the rest becomes a Refund draft; nothing is applied before confirmation; outstanding amounts, Invoice status and the Customer Ledger count the Deposit application as paid; a forfeited Security Deposit can never be applied; unpaid-Initial-Rent and violation terminations follow the same Pet Deposit rule.
 - Change: confirm by `financial.approve` executes the chosen Credit applications, Deposit applications and Refunds in DL-032 order and closes the Settlement in one transaction, revalidating every source. The unpaid rest stays as debt on the Primary Tenant's Customer Ledger; no write-off. A closed Settlement is never reopened.
 - Migration: `20261019_84` additive (close function, closure snapshot, guards forbidding UPDATE of closed rows).
 - Tests: atomic close; stale draft rejected; debt shows on the Primary Tenant's ledger for joint Signers; no reopen path exists at the database; every step is a separate linked record.
@@ -107,6 +109,7 @@ Each slice: one local checkpoint commit, explicit paths, secret and diff scan, i
 - Open item (slice 3b round 3 review): error responses on the waiting-list path (`GET /properties/{property_id}/reservation-deposit-decisions`) have no Cache-Control header.
 - Open item (slice 3b round 3 review): the Reservation read in `reservation_api.py` repeats the held/outcome check inline in SQL instead of calling the shared function `app.reservation_deposit_held_cents`.
 - Open item (slice 3b round 3 review): the plain `CREATE INDEX` on `app.financial_drafts` in migration `20261015_80` takes a write lock on the drafts table while it builds.
+- Open item (owner, Q-2026-10-04-10): a physical move-out correction is refused once a hand-back resolution relies on that move-out record; decide whether staff need a controlled way to correct such a case.
 - docs 004 to 007 updated; every new rule ID has a test and an appended traceability entry; TEST-118 passes locally.
 - Full gates once: backend format, lint, type check, tests; full PostgreSQL suite; frontend format, lint, type check, tests, build; audit (the known braces advisory stays until V1-059).
 - Final independent review of the whole V1-056 diff, owner report, request for one push.
