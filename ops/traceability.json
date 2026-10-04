@@ -35305,6 +35305,118 @@
       "test_path": "backend/tests/test_unit_cleaning_charge_migration.py",
       "status": "implemented",
       "notes": "The rate set, rate read and cleaning charge database functions refuse a disabled user account (P4506) and record nothing; the service read maps it to an authorization error."
+    },
+    {
+      "test_id": "test_hand_back_before_the_fifth_voids_the_whole_unpaid_invoice_with_its_service_lines",
+      "upstream_ids": [
+        "BR-RENT-030",
+        "BR-RENT-026",
+        "BR-LEASE-021",
+        "BR-MOVEOUT-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_hand_back_rent_migration.py",
+      "status": "implemented",
+      "notes": "After a verified voluntary early termination with a hand-back on 3 August, the unpaid August monthly Rent Invoice is assessed as VOID without showing Lease, move-out or date identities, and an invoices.void holder VOIDs the whole Invoice, Rent and Trash Collection lines, with a reason; invoices.adjust alone, a mismatched expected action and a mismatched expected outstanding amount are refused; replay returns the same result; key reuse (other reason or other Invoice) and a second resolution are refused; lines keep their amounts; the append-only resolution links the move-out record, the VOID event and its own audit event."
+    },
+    {
+      "test_id": "test_partly_paid_invoice_keeps_the_paid_part_and_credits_each_unpaid_line",
+      "upstream_ids": [
+        "BR-RENT-030",
+        "BR-RENT-026",
+        "BR-INV-048"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_hand_back_rent_migration.py",
+      "status": "implemented",
+      "notes": "A Payment on the Rent line and Customer Credit on the Trash line both count as paid; an invoices.adjust holder removes the unpaid rest of each line with one linked credit Adjustment per line (Rent and Trash) and a reason, leaving nothing outstanding; the Payment and Credit applications are unchanged and invoices.void alone is refused. Each Adjustment references the resolution, not the move-out record."
+    },
+    {
+      "test_id": "test_after_the_25th_the_next_month_invoice_is_voided_when_unpaid_and_kept_when_paid",
+      "upstream_ids": [
+        "BR-RENT-030",
+        "BR-RENT-026"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_hand_back_rent_migration.py",
+      "status": "implemented",
+      "notes": "A hand-back on or after the 25th covers the next month's monthly Rent Invoice only: unpaid it is VOIDed; fully paid it is kept as issued and the command records nothing (BR-RENT-026 amendment, Q-2026-10-04-9); the hand-back month's own Invoice is not covered."
+    },
+    {
+      "test_id": "test_hand_back_rule_refuses_other_terminations_dates_initial_rent_and_stale_input",
+      "upstream_ids": [
+        "BR-RENT-030",
+        "BR-RENT-024",
+        "SEC-014",
+        "SEC-019"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_hand_back_rent_migration.py",
+      "status": "implemented",
+      "notes": "The rule refuses a non-voluntary termination, hand-backs on the 5th and the 24th, the Initial Rent Invoice, a Lease without a recorded move-out, a wrong Invoice version, an expected action that no longer matches after a Payment, an assessment without both invoices.read and leases.read, an unknown Property (P4501) and a disabled account (P4506); nothing is VOIDed, adjusted or recorded."
+    },
+    {
+      "test_id": "test_hand_back_functions_and_table_are_least_privilege",
+      "upstream_ids": [
+        "BR-RENT-030",
+        "SEC-020"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_hand_back_rent_migration.py",
+      "status": "implemented",
+      "notes": "The runtime role executes only the assessment, the financial role only the resolution command; neither has access to the resolution table or the trigger function."
+    },
+    {
+      "test_id": "test_hand_back_rent_migration_is_forward_only",
+      "upstream_ids": [
+        "BR-RENT-030"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_hand_back_rent_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20261017_82 follows 20261016_81 and refuses downgrade."
+    },
+    {
+      "test_id": "test_hand_back_rent_command_validates_action_reason_and_version",
+      "upstream_ids": [
+        "BR-RENT-030"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_invoice.py",
+      "status": "implemented",
+      "notes": "The hand-back command accepts only VOID or CREDIT_ADJUSTMENT, needs a normalized reason and a positive version, and refuses a nil key."
+    },
+    {
+      "test_id": "test_hand_back_rent_service_needs_the_capability_of_the_action_before_any_connection",
+      "upstream_ids": [
+        "BR-RENT-030",
+        "SEC-020"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_invoice.py",
+      "status": "implemented",
+      "notes": "VOID needs invoices.void and the credit Adjustment needs invoices.adjust in the same Property; the assessment needs both invoices.read and leases.read because it reveals the termination basis and move-out window; refusals happen before any database connection."
+    },
+    {
+      "test_id": "test_hand_back_uses_the_current_move_out_date_not_the_termination_date",
+      "upstream_ids": [
+        "BR-RENT-030",
+        "BR-MOVEOUT-011"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_hand_back_rent_migration.py",
+      "status": "implemented",
+      "notes": "The date that counts is the actual move-out date of the current physical move-out record: a termination dated the 10th with a move-out on the 3rd is covered, and a move-out on the 10th corrected to the 2nd becomes covered and the resolution links the correcting record."
+    },
+    {
+      "test_id": "test_hand_back_ignores_the_notice_date",
+      "upstream_ids": [
+        "BR-RENT-030"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_hand_back_rent_migration.py",
+      "status": "implemented",
+      "notes": "A voluntary early termination with a recorded notice dated 26 August (which would point at September) and a move-out on 3 August covers the August Invoice and not the September Invoice: the notice date is ignored (BR-RENT-030)."
     }
   ]
 }

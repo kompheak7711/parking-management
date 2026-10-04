@@ -54,7 +54,7 @@ Each slice: one local checkpoint commit, explicit paths, secret and diff scan, i
 
 ### Slice 5 — Hand-back month (BR-RENT-030, BR-RENT-024, BR-RENT-026, BR-LEASE-021, BR-MOVEOUT-010)
 - Change: a service that, for an early-terminated Lease with a hand-back date before the 5th, lets an authorized user (a) VOID the whole unpaid hand-back-month Rent Invoice with a reason, including fixed Service lines, and the next month's Invoice generated on the 25th when the hand-back is between the 25th and the month end; (b) keep a fully paid Invoice (no action); (c) remove the unpaid rest of a partly paid Invoice with a linked credit Adjustment and a reason. It checks the conditions and refuses otherwise. Nothing runs automatically. Uses existing `invoices.void` and `invoices.adjust` (Q8).
-- Migration: `20261015_80` additive (eligibility read function and a guarded wrapper over the existing VOID and Adjustment functions).
+- Migration: `20261017_82` additive (eligibility read function and a guarded wrapper over the existing VOID and Adjustment functions). Scope per owner answers to Q-2026-10-04-8 and Q-2026-10-04-9 (docs/010).
 - Tests: hand-back on the 4th unpaid gives whole VOID with Trash line; on the 5th refused (BR-RENT-024 applies); fully paid refused; partly paid gives credit Adjustment equal to the unpaid rest; hand-back on the 26th covers the next month's Invoice; notice date ignored; original Invoice and Payment rows unchanged.
 - Sec: recommended (Q17).
 

@@ -120,6 +120,7 @@ database_test_suites='
   tests/test_reservation_worker_migration.py
   tests/test_reservation_deposit_draft_migration.py
   tests/test_unit_cleaning_charge_migration.py
+  tests/test_hand_back_rent_migration.py
   tests/test_lease_migration.py
   tests/test_lease_lifecycle_migration.py
   tests/test_move_in_migration.py

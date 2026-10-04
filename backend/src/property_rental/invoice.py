@@ -25,9 +25,14 @@ INVOICE_ADJUST_CAPABILITY: Final = "invoices.adjust"
 INVOICE_VOID_CAPABILITY: Final = "invoices.void"
 DAMAGE_CHARGE_BILL_CAPABILITY: Final = "damage_charges.bill"
 PROPERTY_MANAGE_CAPABILITY: Final = "property.manage"
+LEASE_READ_CAPABILITY: Final = "leases.read"
 ONE_TIME_CHARGE_CAPABILITIES: Final = {
     "DAMAGE_CHARGES": DAMAGE_CHARGE_BILL_CAPABILITY,
     "MISCELLANEOUS_CHARGES": INVOICE_CREATE_CAPABILITY,
+}
+HAND_BACK_RENT_CAPABILITIES: Final = {
+    "VOID": INVOICE_VOID_CAPABILITY,
+    "CREDIT_ADJUSTMENT": INVOICE_ADJUST_CAPABILITY,
 }
 INVOICE_CONNECT_TIMEOUT_SECONDS: Final = 3
 INVOICE_LOCK_TIMEOUT_MS: Final = 3_000
@@ -220,6 +225,29 @@ class RecordUnitCleaningChargeCommand:
         _identity(self.charge_id, "charge_id")
         _identity(self.lease_id, "lease_id")
         _identity(self.expected_rate_id, "expected_rate_id")
+
+
+@dataclass(frozen=True, slots=True)
+class ResolveHandBackRentCommand:
+    """BR-RENT-030 for one monthly Rent Invoice: VOID it, or remove each line's unpaid rest."""
+
+    idempotency_key: UUID
+    expected_action: str
+    expected_outstanding_usd_cents: int
+    reason: str
+    expected_version: int
+
+    def __post_init__(self) -> None:
+        _identity(self.idempotency_key, "idempotency_key")
+        if self.expected_action not in HAND_BACK_RENT_CAPABILITIES:
+            raise ValueError("expected_action must be VOID or CREDIT_ADJUSTMENT")
+        if (
+            type(self.expected_outstanding_usd_cents) is not int
+            or not 1 <= self.expected_outstanding_usd_cents <= 9_000_000_000_000_000
+        ):
+            raise ValueError("expected_outstanding_usd_cents must be a bounded positive integer")
+        _normalized(self.reason, "reason")
+        _expected_version(self.expected_version)
 
 
 @dataclass(frozen=True, slots=True)
@@ -731,6 +759,49 @@ class PostgresInvoiceService:
         if row is None:
             raise InvoiceServiceUnavailableError("Invoice command returned no result")
         return self._resource(row[0])
+
+    def hand_back_rent_assessment(
+        self,
+        property_id: UUID,
+        invoice_id: UUID,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        """Show which BR-RENT-030 action applies to a monthly Rent Invoice; changes nothing.
+
+        The answer reveals the Lease termination basis and move-out window, so it needs
+        leases.read as well, like the termination Invoice readiness read.
+        """
+        self._authorize(actor, property_id, INVOICE_READ_CAPABILITY)
+        self._authorize(actor, property_id, LEASE_READ_CAPABILITY)
+        return self._runtime_execute(
+            "SELECT app.hand_back_rent_invoice_assessment(%s,%s,%s)",
+            (property_id, self._actor_id(actor), invoice_id),
+        )
+
+    def resolve_hand_back_rent(
+        self,
+        property_id: UUID,
+        invoice_id: UUID,
+        command: ResolveHandBackRentCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        """VOID the Invoice (invoices.void) or remove each line's unpaid rest (invoices.adjust)."""
+        self._authorize(actor, property_id, HAND_BACK_RENT_CAPABILITIES[command.expected_action])
+        return self._execute(
+            "SELECT app.resolve_hand_back_rent_invoice(%s,%s,%s,%s,%s,%s,%s,%s)",
+            (
+                property_id,
+                self._actor_id(actor),
+                invoice_id,
+                command.idempotency_key,
+                command.expected_action,
+                command.expected_version,
+                command.expected_outstanding_usd_cents,
+                command.reason,
+            ),
+        )
 
     def set_initial_rent_due_date(
         self,

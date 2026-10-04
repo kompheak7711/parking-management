@@ -125,3 +125,13 @@ No code depends on the answer: for a fully paid Invoice the slice 5 command reco
 Recommendation: approve a one-sentence amendment to BR-RENT-026 (and its docs/003 traceability note): "Under BR-RENT-030, a fully paid Rent Invoice for the hand-back month, or for the next month when the hand-back is between the 25th and the month end, is kept as issued with no VOID, Refund or credit Adjustment (DL-068, Q-2026-10-04-8)." I would add it to docs/002 and docs/003 and record it in docs/010, then build slice 5.
 
 Alternative: the fully paid next-month Invoice must follow BR-RENT-026 after all; then tell me which process (VOID would require reversing the Payment Allocations first; a credit Adjustment on a fully paid line is allowed and its excess becomes Customer Credit (migration 20261003_67). Either way the paid Rent would come back to the Customer as Credit, which your answer 2 rules out).
+
+## Q-2026-10-04-10 — Open item found in slice 5 (not blocking): unpaid-Initial termination may fail with two credit Adjustments
+
+While building slice 5 I found that `app.adjust_invoice` ends with `SET CONSTRAINTS ALL IMMEDIATE`, which stays in force for the rest of the transaction. A function that calls it more than once in one transaction then fails on the second call when that call brings the Invoice to zero outstanding (slice 5 run 3). Slice 5 handles this by deferring the constraints again before each call (precedent: migrations 39 and 41).
+
+The accepted migration `20261005_70` (unpaid-Initial termination resolutions) calls `app.adjust_invoice` in a loop the same way (`20261005_70_unpaid_initial_rent_termination.py` lines 236 and 329), so it may fail when more than one Invoice line needs a credit Adjustment. Changing an earlier accepted migration is a stop condition, so I have not touched it and not tested it.
+
+Recommendation: in a later slice (or slice 12), add a test with two lines needing a credit, and if it fails, fix it in a new additive migration that replaces only that function body with the same deferral, under your approval.
+
+Second open question from slice 5 (security review round 1): should a physical move-out correction be refused once a hand-back resolution refers to that move-out record? Today the correction is allowed and the resolution keeps the record it used. Refusing it would change the physical move-out rules, so I did not build it. Recommendation: allow it (as built) and show the resolution with its recorded move-out in the later screens.
