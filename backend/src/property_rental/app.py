@@ -159,12 +159,17 @@ from property_rental.property_api import (
 )
 from property_rental.receipt import ReceiptIdempotencyKeyReused
 from property_rental.refund import RefundIdempotencyKeyReused
+from property_rental.reservation import (
+    ReservationDepositDraftRequired,
+    ReservationIdempotencyKeyReused,
+)
 from property_rental.reservation_api import (
     PostgresReservationResourceFlow,
     ReservationResourceFlow,
     UnavailableReservationResourceFlow,
     create_reservation_router,
 )
+from property_rental.reservation_deposit_draft import ReservationDepositDraftKeyReused
 from property_rental.settings import Settings
 from property_rental.unit_api import (
     PostgresUnitResourceFlow,
@@ -440,6 +445,33 @@ def create_app(
     ) -> JSONResponse:
         return payment_key_reused_response(request)
 
+    @app.exception_handler(ReservationDepositDraftRequired)
+    async def reservation_deposit_draft_required(
+        request: Request, _: ReservationDepositDraftRequired
+    ) -> JSONResponse:
+        request_id = request.state.request_id
+        return JSONResponse(
+            status_code=status.HTTP_409_CONFLICT,
+            content={
+                "error": {
+                    "code": "RESERVATION_DEPOSIT_DRAFT_REQUIRED",
+                    "message": (
+                        "A Reservation Deposit Refund, forfeiture or correction is recorded as "
+                        "a draft and takes effect only when a financial.approve holder "
+                        "confirms it."
+                    ),
+                    "fields": [],
+                    "rule_ids": ["BR-AUTH-010", "BR-RES-021", "BR-RES-022"],
+                    "current_version": None,
+                },
+                "meta": {"request_id": request_id},
+            },
+            headers={
+                REQUEST_ID_HEADER: request_id,
+                "Cache-Control": "private, no-store",
+            },
+        )
+
     @app.exception_handler(AuthenticationUnavailable)
     async def authentication_unavailable(
         request: Request,
@@ -565,9 +597,15 @@ def create_app(
         return customer_idempotency_key_reused_response(request)
 
     @app.exception_handler(DepositIdempotencyKeyReused)
+    @app.exception_handler(ReservationIdempotencyKeyReused)
+    @app.exception_handler(ReservationDepositDraftKeyReused)
     async def deposit_idempotency_key_reused(
         request: Request,
-        _: DepositIdempotencyKeyReused,
+        _: (
+            DepositIdempotencyKeyReused
+            | ReservationIdempotencyKeyReused
+            | ReservationDepositDraftKeyReused
+        ),
     ) -> JSONResponse:
         return deposit_idempotency_key_reused_response(request)
 

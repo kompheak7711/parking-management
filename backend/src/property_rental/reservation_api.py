@@ -18,7 +18,6 @@ from property_rental.deposit import (
     DEPOSIT_CONNECT_TIMEOUT_SECONDS,
     DEPOSIT_LOCK_TIMEOUT_MS,
     DEPOSIT_QUERY_TIMEOUT_MS,
-    DepositIdempotencyKeyReused,
 )
 from property_rental.identity import (
     ActorResolver,
@@ -26,6 +25,7 @@ from property_rental.identity import (
     AuthorizationRequirement,
     is_authorized,
 )
+from property_rental.refund import RefundMethodChoice
 from property_rental.reservation import (
     CancellationResponsibility,
     DepositOutcomeState,
@@ -35,12 +35,27 @@ from property_rental.reservation import (
     ReservationCommandConflictError,
     ReservationCommandInvalidError,
     ReservationCreateCommand,
+    ReservationDepositDraftRequired,
     ReservationExtendCommand,
-    ReservationLifecycleResult,
+    ReservationIdempotencyKeyReused,
     ReservationNotFoundError,
     ReservationStatus,
     ReservationVersionConflictError,
-    reservation_request_digest,
+)
+from property_rental.reservation_deposit_draft import (
+    DECISION_CAPABILITIES,
+    DEPOSIT_OUTCOME_CORRECT_CAPABILITY,
+    FINANCIAL_APPROVE_CAPABILITY,
+    RecordReservationDepositCorrectionDraftCommand,
+    RecordReservationDepositDraftCommand,
+    ReservationDepositDecision,
+    ReservationDepositDecisionPage,
+    ReservationDepositDraftAuthorizationError,
+    ReservationDepositDraftConflictError,
+    ReservationDepositDraftInvalidError,
+    ReservationDepositDraftKeyReused,
+    ReservationDepositDraftNotFoundError,
+    ReservationDepositDraftService,
 )
 from property_rental.settings import Settings
 
@@ -180,12 +195,51 @@ class ReservationResourceFlow(Protocol):
 
     def property_for_security_deposit_disposition(self, reservation_id: UUID) -> UUID: ...
 
-    def create_security_deposit_disposition(
+    def record_deposit_draft(
         self,
-        command: ReservationCancelCommand,
+        property_id: UUID,
+        decision: ReservationDepositDecision,
+        command: RecordReservationDepositDraftCommand,
         *,
         actor: AuthenticatedActor,
-    ) -> ReservationLifecycleResult: ...
+    ) -> dict[str, object]: ...
+
+    def record_deposit_correction_draft(
+        self,
+        property_id: UUID,
+        decision: ReservationDepositDecision,
+        command: RecordReservationDepositCorrectionDraftCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]: ...
+
+    def confirm_deposit_draft(
+        self,
+        property_id: UUID,
+        reservation_id: UUID,
+        draft_id: UUID,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]: ...
+
+    def decide_deposit_draft(
+        self,
+        property_id: UUID,
+        reservation_id: UUID,
+        draft_id: UUID,
+        reason: str,
+        *,
+        withdraw_as: ReservationDepositDecision | None,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]: ...
+
+    def awaiting_deposit_decisions(
+        self,
+        property_id: UUID,
+        *,
+        actor: AuthenticatedActor,
+        page: ReservationDepositDecisionPage,
+    ) -> dict[str, object]: ...
 
 
 class UnavailableReservationResourceFlow:
@@ -245,13 +299,64 @@ class UnavailableReservationResourceFlow:
         self._raise()
         raise AssertionError
 
-    def create_security_deposit_disposition(
+    def record_deposit_draft(
         self,
-        command: ReservationCancelCommand,
+        property_id: UUID,
+        decision: ReservationDepositDecision,
+        command: RecordReservationDepositDraftCommand,
         *,
         actor: AuthenticatedActor,
-    ) -> ReservationLifecycleResult:
-        del command, actor
+    ) -> dict[str, object]:
+        del property_id, decision, command, actor
+        self._raise()
+        raise AssertionError
+
+    def record_deposit_correction_draft(
+        self,
+        property_id: UUID,
+        decision: ReservationDepositDecision,
+        command: RecordReservationDepositCorrectionDraftCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        del property_id, decision, command, actor
+        self._raise()
+        raise AssertionError
+
+    def confirm_deposit_draft(
+        self,
+        property_id: UUID,
+        reservation_id: UUID,
+        draft_id: UUID,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        del property_id, reservation_id, draft_id, actor
+        self._raise()
+        raise AssertionError
+
+    def decide_deposit_draft(
+        self,
+        property_id: UUID,
+        reservation_id: UUID,
+        draft_id: UUID,
+        reason: str,
+        *,
+        withdraw_as: ReservationDepositDecision | None,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        del property_id, reservation_id, draft_id, reason, withdraw_as, actor
+        self._raise()
+        raise AssertionError
+
+    def awaiting_deposit_decisions(
+        self,
+        property_id: UUID,
+        *,
+        actor: AuthenticatedActor,
+        page: ReservationDepositDecisionPage,
+    ) -> dict[str, object]:
+        del property_id, actor, page
         self._raise()
         raise AssertionError
 
@@ -296,6 +401,16 @@ class PostgresReservationResourceFlow:
                                 SELECT 1 FROM app.deposit_disposition_reversals AS reversal
                                 WHERE reversal.deposit_disposition_id=disposition.id))
                    THEN 'NON_REFUNDABLE_DISPOSITION'
+                 WHEN reservation.status = 'CANCELLED'
+                  AND NOT EXISTS (SELECT 1 FROM app.deposit_dispositions AS any_disposition
+                                  WHERE any_disposition.deposit_id=deposit.id)
+                  AND NOT EXISTS (SELECT 1 FROM app.refunds AS any_refund
+                                  WHERE any_refund.source_deposit_id=deposit.id)
+                  AND EXISTS (SELECT 1 FROM app.deposit_receipts AS held_receipt
+                              WHERE held_receipt.deposit_id=deposit.id AND NOT EXISTS (
+                                SELECT 1 FROM app.deposit_receipt_reversals AS held_reversal
+                                WHERE held_reversal.deposit_receipt_id=held_receipt.id))
+                   THEN 'AWAITING_DECISION'
                  ELSE 'PENDING_V1_031'
                END, reservation.cancellation_reason_code,
                reservation.cancellation_responsibility, reservation.resulting_lease_id,
@@ -540,86 +655,70 @@ class PostgresReservationResourceFlow:
             raise ReservationResourceNotFound
         return UUID(str(row[0]))
 
-    def create_security_deposit_disposition(
-        self,
-        command: ReservationCancelCommand,
-        *,
-        actor: AuthenticatedActor,
-    ) -> ReservationLifecycleResult:
-        property_id = self.property_for_security_deposit_disposition(command.reservation_id)
-        try:
-            actor_id = UUID(actor.actor_id)
-        except ValueError as exc:
-            raise ReservationAuthorizationError("Reservation actor is invalid") from exc
-        if not (
-            _can(actor, property_id, RESERVATION_CANCEL_CAPABILITY)
-            and _can(actor, property_id, "reservation_deposits.dispose")
-        ):
-            raise ReservationAuthorizationError("Reservation disposition is not authorized")
+    def _drafts(self) -> ReservationDepositDraftService:
         if self._financial_database_url is None:
             raise ReservationAuthorizationError(
                 "Dedicated Reservation financial persistence is unavailable"
             )
-        try:
-            with psycopg.connect(
-                self._financial_database_url,
-                connect_timeout=DEPOSIT_CONNECT_TIMEOUT_SECONDS,
-            ) as connection:
-                self._bound_disposition_query(connection)
-                row = connection.execute(
-                    "SELECT * FROM app.cancel_reservation_v2("
-                    "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-                    (
-                        property_id,
-                        command.idempotency_key,
-                        reservation_request_digest("reservation.cancel", command),
-                        command.event_id,
-                        command.outcome_id,
-                        command.refund_number,
-                        command.reservation_id,
-                        command.expected_version,
-                        command.reason_code,
-                        command.responsibility.value,
-                        command.property_could_provide_unit,
-                        command.reason_memo,
-                        command.coordination_reference,
-                        command.authorization_reference,
-                        command.outcome_authorization_reference,
-                        actor_id,
-                    ),
-                ).fetchone()
-        except psycopg.Error as exc:
-            if exc.sqlstate == "P0002":
-                raise ReservationNotFoundError("Reservation resource was not found") from exc
-            if exc.sqlstate == "40001":
-                raise ReservationVersionConflictError(
-                    "Reservation version precondition was not met"
-                ) from exc
-            if exc.sqlstate == "P0001" and "idempotency key was reused" in str(exc).lower():
-                raise DepositIdempotencyKeyReused("Reservation idempotency key was reused") from exc
-            if exc.sqlstate in {"P0001", "23505"}:
-                raise ReservationCommandConflictError("Reservation command conflicted") from exc
-            if exc.sqlstate in {"22023", "23514", "55000"}:
-                raise ReservationCommandInvalidError("Reservation command is invalid") from exc
-            raise ReservationResourceUnavailable from exc
-        if row is None:
-            raise ReservationResourceUnavailable
-        return ReservationLifecycleResult(
-            UUID(str(row[0])),
-            UUID(str(row[1])),
-            ReservationStatus(str(row[2])),
-            str(row[3]),
-            CancellationResponsibility(str(row[4])),
-            cast(date, row[5]),
-            int(str(row[6])),
-            str(row[7]),
-            int(str(row[8])),
-            UUID(str(row[9])),
-            int(str(row[10])),
-            DepositOutcomeState(str(row[11])),
-            UUID(str(row[12])),
-            None if row[13] is None else str(row[13]),
+        return ReservationDepositDraftService(self._database_url, self._financial_database_url)
+
+    def record_deposit_draft(
+        self,
+        property_id: UUID,
+        decision: ReservationDepositDecision,
+        command: RecordReservationDepositDraftCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        return self._drafts().record(property_id, decision, command, actor=actor)
+
+    def record_deposit_correction_draft(
+        self,
+        property_id: UUID,
+        decision: ReservationDepositDecision,
+        command: RecordReservationDepositCorrectionDraftCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        return self._drafts().record_correction(property_id, decision, command, actor=actor)
+
+    def confirm_deposit_draft(
+        self,
+        property_id: UUID,
+        reservation_id: UUID,
+        draft_id: UUID,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        return self._drafts().confirm(property_id, reservation_id, draft_id, actor=actor)
+
+    def decide_deposit_draft(
+        self,
+        property_id: UUID,
+        reservation_id: UUID,
+        draft_id: UUID,
+        reason: str,
+        *,
+        withdraw_as: ReservationDepositDecision | None,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        """Reject (``withdraw_as`` None) or withdraw a Reservation Deposit draft."""
+        if withdraw_as is None:
+            return self._drafts().reject(property_id, reservation_id, draft_id, reason, actor=actor)
+        return self._drafts().withdraw(
+            property_id, reservation_id, withdraw_as, draft_id, reason, actor=actor
         )
+
+    def awaiting_deposit_decisions(
+        self,
+        property_id: UUID,
+        *,
+        actor: AuthenticatedActor,
+        page: ReservationDepositDecisionPage,
+    ) -> dict[str, object]:
+        return ReservationDepositDraftService(
+            self._database_url, self._financial_database_url or self._database_url
+        ).awaiting(property_id, actor=actor, page=page)
 
     def create(
         self,
@@ -684,6 +783,19 @@ class ReservationCancel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     event_id: UUID
+    reason_code: Annotated[str, Field(min_length=1, max_length=100)]
+    responsibility: CancellationResponsibility
+    property_could_provide_unit: bool
+    reason_memo: Annotated[str, Field(max_length=500)] = ""
+    coordination_reference: Annotated[str | None, Field(max_length=255)] = None
+
+
+class RetiredSecurityDepositDisposition(BaseModel):
+    """The earlier atomic cancellation body; the route records nothing now."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    event_id: UUID
     outcome_id: UUID
     reason_code: Annotated[str, Field(min_length=1, max_length=100)]
     responsibility: CancellationResponsibility
@@ -691,6 +803,35 @@ class ReservationCancel(BaseModel):
     reason_memo: Annotated[str, Field(max_length=500)] = ""
     coordination_reference: Annotated[str | None, Field(max_length=255)] = None
     refund_number: Annotated[str | None, Field(max_length=100)] = None
+
+
+class ReservationDepositDraftCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    outcome_id: UUID
+    reason: Annotated[str, Field(min_length=1, max_length=1000)]
+    refund_number: Annotated[str | None, Field(min_length=1, max_length=128)] = None
+    refund_method_id: UUID | None = None
+    reference_note: Annotated[str | None, Field(min_length=1, max_length=500)] = None
+
+
+class ReservationDepositDraftDecision(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    reason: Annotated[str, Field(min_length=1, max_length=1000)]
+
+
+class ReservationDepositCorrectionDraftCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    expected_outcome_id: UUID
+    correction_id: UUID
+    replacement_outcome_id: UUID
+    reason: Annotated[str, Field(min_length=1, max_length=1000)]
+    evidence_reference: Annotated[str, Field(min_length=1, max_length=500)]
+    refund_number: Annotated[str | None, Field(min_length=1, max_length=128)] = None
+    refund_method_id: UUID | None = None
+    reference_note: Annotated[str | None, Field(min_length=1, max_length=500)] = None
 
 
 def _require_actor(request: Request, resolver: ActorResolver) -> AuthenticatedActor:
@@ -752,33 +893,69 @@ def _body(resource: ReservationResource, actor: AuthenticatedActor) -> dict[str,
     return result
 
 
-def _lifecycle_body(result: ReservationLifecycleResult) -> dict[str, object]:
-    """Render only the transaction-persisted result so API-016 replay stays exact."""
-    return {
-        "reservation_id": str(result.reservation_id),
-        "unit_id": str(result.unit_id),
-        "status": result.status.value,
-        "cancellation_reason_code": result.cancellation_reason_code,
-        "cancellation_responsibility": result.cancellation_responsibility.value,
-        "effective_expiration_date": result.effective_expiration_date.isoformat(),
-        "version": result.version,
-        "unit_status": result.unit_status,
-        "unit_version": result.unit_version,
-        "deposit_id": str(result.deposit_id),
-        "deposit_received_usd_cents": result.deposit_received_usd_cents,
-        "deposit_outcome_state": result.deposit_outcome_state.value,
-        "outcome_id": str(result.outcome_id),
-        "refund_number": result.refund_number,
-    }
+def _encode_decision_cursor(value: object) -> str | None:
+    if not isinstance(value, dict):
+        return None
+    raw = json.dumps([str(value["cancelled_at"]), str(value["reservation_id"])]).encode()
+    return base64.urlsafe_b64encode(raw).decode().rstrip("=")
 
 
-def _translate(exc: Exception) -> HTTPException:
-    if isinstance(exc, DepositIdempotencyKeyReused):
-        return exc  # type: ignore[return-value]
-    if isinstance(exc, HTTPException):
+def _decode_decision_cursor(value: str | None) -> tuple[datetime | None, UUID | None]:
+    if value is None:
+        return None, None
+    try:
+        raw = base64.urlsafe_b64decode(value + "=" * (-len(value) % 4))
+        decoded = json.loads(raw)
+        if not isinstance(decoded, list) or len(decoded) != 2:
+            raise ValueError
+        return datetime.fromisoformat(str(decoded[0])), UUID(str(decoded[1]))
+    except (ValueError, TypeError, json.JSONDecodeError) as exc:
+        raise ReservationResourceInvalid("cursor is invalid") from exc
+
+
+def _decision(resource: ReservationResource) -> ReservationDepositDecision:
+    """The draft kind follows the cancellation responsibility (BR-RES-021, BR-RES-022)."""
+    if resource.cancellation_responsibility is CancellationResponsibility.CUSTOMER:
+        return ReservationDepositDecision.DEPOSIT_FORFEITURE
+    if resource.cancellation_responsibility is CancellationResponsibility.PROPERTY:
+        return ReservationDepositDecision.REFUND
+    raise ReservationResourceInvalid("Reservation is not cancelled")
+
+
+def _method(refund_method_id: UUID | None, reference_note: str | None) -> RefundMethodChoice | None:
+    if refund_method_id is None and reference_note is None:
+        return None
+    if refund_method_id is None or reference_note is None:
+        raise ReservationResourceInvalid("Refund method and reference note go together")
+    return RefundMethodChoice(refund_method_id, reference_note)
+
+
+def _translate(exc: Exception) -> Exception:
+    if isinstance(
+        exc,
+        (
+            HTTPException,
+            ReservationDepositDraftRequired,
+            ReservationIdempotencyKeyReused,
+            ReservationDepositDraftKeyReused,
+        ),
+    ):
         return exc
-    if isinstance(exc, (ReservationResourceNotFound, ReservationNotFoundError)):
+    if isinstance(
+        exc,
+        (
+            ReservationResourceNotFound,
+            ReservationNotFoundError,
+            ReservationDepositDraftNotFoundError,
+        ),
+    ):
         return HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    if isinstance(exc, ReservationDepositDraftConflictError):
+        return HTTPException(status_code=status.HTTP_409_CONFLICT)
+    if isinstance(exc, ReservationDepositDraftInvalidError):
+        return HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT)
+    if isinstance(exc, ReservationDepositDraftAuthorizationError):
+        return HTTPException(status_code=status.HTTP_403_FORBIDDEN)
     if isinstance(exc, ReservationVersionConflictError):
         return HTTPException(status_code=status.HTTP_412_PRECONDITION_FAILED)
     if isinstance(exc, ReservationCommandConflictError):
@@ -945,16 +1122,10 @@ def create_reservation_router(
             current = flow.get(reservation_id)
             _require(actor, current.property_id, RESERVATION_CANCEL_CAPABILITY)
             require_browser_mutation(request, settings)
-            outcome_capability = (
-                "reservation_deposits.dispose"
-                if source.responsibility is CancellationResponsibility.CUSTOMER
-                else "reservation_deposits.refund"
-            )
             resource = flow.cancel(
                 ReservationCancelCommand(
                     idempotency_key=idempotency_key,
                     event_id=source.event_id,
-                    outcome_id=source.outcome_id,
                     reservation_id=reservation_id,
                     expected_version=_version(if_match),
                     reason_code=source.reason_code,
@@ -963,8 +1134,6 @@ def create_reservation_router(
                     reason_memo=source.reason_memo,
                     coordination_reference=source.coordination_reference,
                     authorization_reference=RESERVATION_CANCEL_CAPABILITY,
-                    outcome_authorization_reference=outcome_capability,
-                    refund_number=source.refund_number,
                 ),
                 actor=actor,
             )
@@ -976,50 +1145,213 @@ def create_reservation_router(
     @router.post("/api/v1/reservations/{reservation_id}/security-deposit-dispositions")
     def create_reservation_security_deposit_disposition(
         reservation_id: UUID,
-        source: ReservationCancel,
+        source: RetiredSecurityDepositDisposition,
         request: Request,
-        response: Response,
         idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
-        if_match: Annotated[str | None, Header(alias="If-Match")] = None,
     ) -> dict[str, object]:
-        """Atomically classify customer cancellation and its Security Deposit outcome."""
+        """Retired (V1-056 slice 3b): the Deposit outcome is a draft; this records nothing."""
+        del source, idempotency_key
         actor = _require_actor(request, resolver)
         try:
             property_id = flow.property_for_security_deposit_disposition(reservation_id)
             _require(actor, property_id, RESERVATION_CANCEL_CAPABILITY)
             _require(actor, property_id, "reservation_deposits.dispose")
             require_browser_mutation(request, settings)
-            if source.responsibility is not CancellationResponsibility.CUSTOMER:
-                raise ReservationResourceInvalid(
-                    "The disposition endpoint accepts only customer-caused outcomes"
-                )
-            if if_match is None:
-                raise HTTPException(status_code=status.HTTP_412_PRECONDITION_FAILED)
-            result = flow.create_security_deposit_disposition(
-                ReservationCancelCommand(
-                    idempotency_key=idempotency_key,
-                    event_id=source.event_id,
-                    outcome_id=source.outcome_id,
-                    reservation_id=reservation_id,
-                    expected_version=_version(if_match),
-                    reason_code=source.reason_code,
-                    responsibility=source.responsibility,
-                    property_could_provide_unit=source.property_could_provide_unit,
-                    reason_memo=source.reason_memo,
-                    coordination_reference=source.coordination_reference,
-                    authorization_reference=RESERVATION_CANCEL_CAPABILITY,
-                    outcome_authorization_reference="reservation_deposits.dispose",
-                    refund_number=source.refund_number,
+        except Exception as exc:
+            raise _translate(exc) from exc
+        raise ReservationDepositDraftRequired
+
+    @router.get("/properties/{property_id}/reservation-deposit-decisions")
+    def list_reservation_deposit_decisions(
+        property_id: UUID,
+        request: Request,
+        response: Response,
+        limit: Annotated[int, Query(ge=1, le=MAX_PAGE_SIZE)] = DEFAULT_PAGE_SIZE,
+        cursor: Annotated[str | None, Query(max_length=512)] = None,
+    ) -> dict[str, object]:
+        """Reservations waiting for a Deposit decision (owner answer, 2026-10-04)."""
+        actor = _require_actor(request, resolver)
+        _require(actor, property_id, RESERVATION_READ_CAPABILITY)
+        try:
+            after_cancelled_at, after_id = _decode_decision_cursor(cursor)
+            page = ReservationDepositDecisionPage(limit, after_cancelled_at, after_id)
+            value = flow.awaiting_deposit_decisions(property_id, actor=actor, page=page)
+        except Exception as exc:
+            raise _translate(exc) from exc
+        response.headers["Cache-Control"] = "private, no-store"
+        response.headers["Vary"] = "Cookie"
+        return {
+            "data": {
+                "items": value.get("items", []),
+                "next_cursor": _encode_decision_cursor(value.get("next_after")),
+            },
+            "meta": {"request_id": request.state.request_id},
+        }
+
+    @router.post(
+        "/reservations/{reservation_id}/deposit-drafts", status_code=status.HTTP_201_CREATED
+    )
+    def create_reservation_deposit_draft(
+        reservation_id: UUID,
+        source: ReservationDepositDraftCreate,
+        request: Request,
+        response: Response,
+        idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
+    ) -> dict[str, object]:
+        """Record the Deposit Refund or forfeiture draft (BR-AUTH-010); no effect yet."""
+        actor = _require_actor(request, resolver)
+        try:
+            current = flow.get(reservation_id)
+            _require(actor, current.property_id, RESERVATION_READ_CAPABILITY)
+            decision = _decision(current)
+            _require(actor, current.property_id, DECISION_CAPABILITIES[decision])
+            require_browser_mutation(request, settings)
+            draft = flow.record_deposit_draft(
+                current.property_id,
+                decision,
+                RecordReservationDepositDraftCommand(
+                    idempotency_key,
+                    reservation_id,
+                    source.outcome_id,
+                    source.reason,
+                    source.refund_number,
+                    _method(source.refund_method_id, source.reference_note),
                 ),
                 actor=actor,
             )
         except Exception as exc:
             raise _translate(exc) from exc
-        response.headers["ETag"] = f'"{result.version}"'
         response.headers["Cache-Control"] = "private, no-store"
-        return {
-            "data": _lifecycle_body(result),
-            "meta": {"request_id": request.state.request_id},
-        }
+        return {"data": draft, "meta": {"request_id": request.state.request_id}}
+
+    @router.post(
+        "/reservations/{reservation_id}/deposit-correction-drafts",
+        status_code=status.HTTP_201_CREATED,
+    )
+    def create_reservation_deposit_correction_draft(
+        reservation_id: UUID,
+        source: ReservationDepositCorrectionDraftCreate,
+        request: Request,
+        response: Response,
+        idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
+    ) -> dict[str, object]:
+        """Record a draft that replaces the confirmed Deposit outcome; no effect yet."""
+        actor = _require_actor(request, resolver)
+        try:
+            current = flow.get(reservation_id)
+            _require(actor, current.property_id, RESERVATION_READ_CAPABILITY)
+            decision = _decision(current)
+            _require(actor, current.property_id, DEPOSIT_OUTCOME_CORRECT_CAPABILITY)
+            _require(actor, current.property_id, DECISION_CAPABILITIES[decision])
+            require_browser_mutation(request, settings)
+            draft = flow.record_deposit_correction_draft(
+                current.property_id,
+                decision,
+                RecordReservationDepositCorrectionDraftCommand(
+                    idempotency_key,
+                    reservation_id,
+                    source.expected_outcome_id,
+                    source.correction_id,
+                    source.replacement_outcome_id,
+                    source.reason,
+                    source.evidence_reference,
+                    source.refund_number,
+                    _method(source.refund_method_id, source.reference_note),
+                ),
+                actor=actor,
+            )
+        except Exception as exc:
+            raise _translate(exc) from exc
+        response.headers["Cache-Control"] = "private, no-store"
+        return {"data": draft, "meta": {"request_id": request.state.request_id}}
+
+    @router.post("/reservations/{reservation_id}/deposit-drafts/{draft_id}/confirm")
+    def confirm_reservation_deposit_draft(
+        reservation_id: UUID,
+        draft_id: UUID,
+        request: Request,
+        response: Response,
+        idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
+    ) -> dict[str, object]:
+        """Apply the draft's outcome; only a financial.approve holder may confirm.
+
+        The draft id is the idempotency identity; the header is required like on every
+        financial command but is not stored.
+        """
+        del idempotency_key
+        actor = _require_actor(request, resolver)
+        try:
+            current = flow.get(reservation_id)
+            _require(actor, current.property_id, RESERVATION_READ_CAPABILITY)
+            _require(actor, current.property_id, FINANCIAL_APPROVE_CAPABILITY)
+            require_browser_mutation(request, settings)
+            value = flow.confirm_deposit_draft(
+                current.property_id, reservation_id, draft_id, actor=actor
+            )
+        except Exception as exc:
+            raise _translate(exc) from exc
+        response.headers["Cache-Control"] = "private, no-store"
+        return {"data": value, "meta": {"request_id": request.state.request_id}}
+
+    @router.post("/reservations/{reservation_id}/deposit-drafts/{draft_id}/reject")
+    def reject_reservation_deposit_draft(
+        reservation_id: UUID,
+        draft_id: UUID,
+        source: ReservationDepositDraftDecision,
+        request: Request,
+        response: Response,
+        idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
+    ) -> dict[str, object]:
+        """Reject a pending draft (financial.approve only); it moves no money."""
+        del idempotency_key
+        actor = _require_actor(request, resolver)
+        try:
+            current = flow.get(reservation_id)
+            _require(actor, current.property_id, RESERVATION_READ_CAPABILITY)
+            _require(actor, current.property_id, FINANCIAL_APPROVE_CAPABILITY)
+            require_browser_mutation(request, settings)
+            value = flow.decide_deposit_draft(
+                current.property_id,
+                reservation_id,
+                draft_id,
+                source.reason,
+                withdraw_as=None,
+                actor=actor,
+            )
+        except Exception as exc:
+            raise _translate(exc) from exc
+        response.headers["Cache-Control"] = "private, no-store"
+        return {"data": value, "meta": {"request_id": request.state.request_id}}
+
+    @router.post("/reservations/{reservation_id}/deposit-drafts/{draft_id}/withdraw")
+    def withdraw_reservation_deposit_draft(
+        reservation_id: UUID,
+        draft_id: UUID,
+        source: ReservationDepositDraftDecision,
+        request: Request,
+        response: Response,
+        idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
+    ) -> dict[str, object]:
+        """Withdraw a pending draft (its preparer only); it moves no money."""
+        del idempotency_key
+        actor = _require_actor(request, resolver)
+        try:
+            current = flow.get(reservation_id)
+            _require(actor, current.property_id, RESERVATION_READ_CAPABILITY)
+            decision = _decision(current)
+            _require(actor, current.property_id, DECISION_CAPABILITIES[decision])
+            require_browser_mutation(request, settings)
+            value = flow.decide_deposit_draft(
+                current.property_id,
+                reservation_id,
+                draft_id,
+                source.reason,
+                withdraw_as=decision,
+                actor=actor,
+            )
+        except Exception as exc:
+            raise _translate(exc) from exc
+        response.headers["Cache-Control"] = "private, no-store"
+        return {"data": value, "meta": {"request_id": request.state.request_id}}
 
     return router

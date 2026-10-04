@@ -435,9 +435,11 @@ def test_reservation_disposition_correction_requires_replacement_and_exact_capab
         },
         headers=mutation_headers(),
     )
-    assert response.status_code == 200
-    assert flow.replacement_disposition_id == replacement_id
-    assert flow.expected_reservation_version == 2
+    # V1-056 slice 3b: a Reservation outcome correction is a draft; this route records nothing.
+    assert response.status_code == 409
+    assert response.json()["error"]["code"] == "RESERVATION_DEPOSIT_DRAFT_REQUIRED"
+    assert flow.replacement_disposition_id is None
+    assert flow.expected_reservation_version is None
 
     split_capabilities = client(
         InMemoryDepositFlow(value),

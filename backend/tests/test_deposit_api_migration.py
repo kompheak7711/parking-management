@@ -24,7 +24,6 @@ from property_rental.deposit import (
     AdjustDepositRequiredAmountCommand,
     DepositAdjustmentType,
     DepositConflictError,
-    DepositSnapshot,
     PostgresDepositService,
     QualifyPetDepositRefundReviewCommand,
     RecordPetDepartureCommand,
@@ -32,6 +31,12 @@ from property_rental.deposit import (
 )
 from property_rental.deposit_api import PostgresDepositResourceFlow
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
+from property_rental.reservation_deposit_draft import (
+    RecordReservationDepositCorrectionDraftCommand,
+    ReservationDepositDecision,
+    ReservationDepositDraftService,
+)
+from reservation_deposit_test_support import correct_reservation_outcome
 from test_deposit_migration import (
     create_pet,
     financial_database_url,
@@ -616,25 +621,19 @@ def test_ledger_includes_refund_and_refund_correction_history(
             refund_number="RF-LEDGER-ORIGINAL",
         )
         financial.commit()
-        financial.execute(
-            "SELECT * FROM app.correct_reservation_deposit_outcome("
-            "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-            (
-                property_id,
-                uuid4(),
-                "a" * 64,
-                correction_id,
-                refund_id,
-                replacement_id,
-                "RF-LEDGER-REPLACEMENT",
-                reservation_id,
-                cancelled[6],
-                "Correct external processing reference",
-                "EVIDENCE-LEDGER",
-                "reservation_deposits.correct",
-                "reservation_deposits.refund",
-                actor_id,
-            ),
+        # V1-056 slice 3b: the correction is a draft confirmed under financial.approve.
+        correct_reservation_outcome(
+            financial,
+            actor_id=actor_id,
+            property_id=property_id,
+            reservation_id=reservation_id,
+            idempotency_key=uuid4(),
+            correction_id=correction_id,
+            expected_outcome_id=refund_id,
+            replacement_outcome_id=replacement_id,
+            replacement_refund_number="RF-LEDGER-REPLACEMENT",
+            reason="Correct external processing reference",
+            evidence_reference="EVIDENCE-LEDGER",
         )
         financial.commit()
     page = PostgresDepositResourceFlow(runtime_database_url()).ledger(
@@ -681,6 +680,7 @@ def test_reservation_disposition_correction_is_atomic_replay_safe_and_reconstruc
             {
                 CapabilityGrant("reservation_deposits.correct", frozenset({str(property_id)})),
                 CapabilityGrant("reservation_deposits.dispose", frozenset({str(property_id)})),
+                CapabilityGrant("financial.approve", frozenset({str(property_id)})),
             }
         ),
     )
@@ -693,29 +693,40 @@ def test_reservation_disposition_correction_is_atomic_replay_safe_and_reconstruc
         "Correct customer cancellation evidence",
         "EVIDENCE-RESERVATION-DISPOSITION",
     )
+    # V1-056 slice 3b: a Reservation outcome correction is a draft confirmed under
+    # financial.approve; the same command replays exactly, also when sent twice at once.
+    drafts = ReservationDepositDraftService(runtime_database_url(), financial_database_url())
+    draft_command = RecordReservationDepositCorrectionDraftCommand(
+        correction.idempotency_key,
+        reservation_id,
+        disposition_id,
+        correction.reversal_id,
+        replacement_id,
+        correction.reason,
+        correction.evidence_reference,
+    )
     barrier = Barrier(2)
 
-    def correct(_: int) -> DepositSnapshot:
-        barrier.wait()
-        return flow.reverse_disposition(
-            disposition_id,
-            correction,
-            replacement_disposition_id=replacement_id,
-            expected_reservation_version=cast(int, disposed[6]),
+    def confirmed_correction() -> dict[str, object]:
+        draft = drafts.record_correction(
+            property_id,
+            ReservationDepositDecision.DEPOSIT_FORFEITURE,
+            draft_command,
             actor=scoped_actor,
         )
+        return drafts.confirm(
+            property_id, reservation_id, UUID(str(draft["draft_id"])), actor=scoped_actor
+        )
+
+    def correct(_: int) -> dict[str, object]:
+        barrier.wait()
+        return confirmed_correction()
 
     with ThreadPoolExecutor(max_workers=2) as executor:
         concurrent_results = list(executor.map(correct, range(2)))
     assert concurrent_results[0] == concurrent_results[1]
     corrected = concurrent_results[0]
-    replay = flow.reverse_disposition(
-        disposition_id,
-        correction,
-        replacement_disposition_id=replacement_id,
-        expected_reservation_version=cast(int, disposed[6]),
-        actor=scoped_actor,
-    )
+    replay = confirmed_correction()
     assert corrected == replay
     client = TestClient(
         create_app(actor_resolver=lambda _: scoped_actor, deposit_resource_flow=flow)
@@ -738,13 +749,15 @@ def test_reservation_disposition_correction_is_atomic_replay_safe_and_reconstruc
         json={**correction_payload, "reason": "Changed correction evidence"},
         headers=headers(correction.idempotency_key),
     )
-    assert http_replay.status_code == 200
-    assert http_replay.json()["data"]["deposit_disposition_id"] == str(replacement_id)
+    # The earlier one-call correction route records nothing now.
+    assert http_replay.status_code == 409
+    assert http_replay.json()["error"]["code"] == "RESERVATION_DEPOSIT_DRAFT_REQUIRED"
     assert changed_http_replay.status_code == 409
-    assert changed_http_replay.json()["error"]["code"] == "IDEMPOTENCY_KEY_REUSED"
-    assert changed_http_replay.json()["error"]["rule_ids"] == ["API-016"]
-    assert corrected.deposit_disposition_id == replacement_id
-    assert corrected.deposit_disposition_reversal_id == correction.reversal_id
+    assert changed_http_replay.json()["error"]["code"] == "RESERVATION_DEPOSIT_DRAFT_REQUIRED"
+    reservation_result = cast(dict[str, object], corrected["reservation"])
+    assert reservation_result["outcome_id"] == str(replacement_id)
+    draft_result = cast(dict[str, dict[str, object]], corrected["draft"])
+    assert draft_result["payload"]["correction_id"] == str(correction.reversal_id)
     with psycopg.connect(migrated_database_url) as connection:
         assert connection.execute(
             "SELECT deposit_disposition_id FROM app.deposit_disposition_reversals WHERE id=%s",
@@ -756,7 +769,7 @@ def test_reservation_disposition_correction_is_atomic_replay_safe_and_reconstruc
         ).fetchone() == (2,)
     events = (
         PostgresDepositResourceFlow(runtime_database_url())
-        .ledger(corrected.deposit_id, limit=100, cursor=None)
+        .ledger(cast(UUID, disposed[9]), limit=100, cursor=None)
         .items
     )
     original = next(event for event in events if event.event_id == disposition_id)

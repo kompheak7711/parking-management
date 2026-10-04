@@ -779,7 +779,7 @@ def test_ledger_forward_projection_upgrade_preserves_populated_predecessor(
 ) -> None:
     config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
     scripts = ScriptDirectory.from_config(config)
-    assert scripts.get_heads() == ["20261014_79"]
+    assert scripts.get_heads() == ["20261015_80"]
     revision = scripts.get_revision("20260909_48")
     assert revision is not None
     assert revision.down_revision == "20260908_47"
@@ -971,7 +971,7 @@ def test_ledger_security_refund_coordinated_correction_keeps_liability_distinct(
         )
     identity = uuid4()
     with psycopg.connect(financial_database_url()) as writer:
-        cancelled = cancel(
+        cancel(
             writer,
             actor_id=human,
             property_id=prop,
@@ -994,29 +994,23 @@ def test_ledger_security_refund_coordinated_correction_keeps_liability_distinct(
             prop, identity, returned(1000), actor=actor(human, prop, "refunds.correct")
         )
     correction, replacement = uuid4(), uuid4()
+    # V1-056 slice 3b: the correction is a draft confirmed under financial.approve.
+    from reservation_deposit_test_support import correct_reservation_outcome
+
     with psycopg.connect(financial_database_url()) as writer:
-        corrected = writer.execute(
-            (
-                "SELECT * FROM app.correct_reservation_deposit_outcome(%"
-                "s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
-            ),
-            (
-                prop,
-                uuid4(),
-                "a" * 64,
-                correction,
-                identity,
-                replacement,
-                "LEDGER-" + replacement.hex,
-                reservation,
-                cancelled[6],
-                "Correct duplicated external processing reference",
-                "Synthetic coordinated evidence",
-                "reservation_deposits.correct",
-                "reservation_deposits.refund",
-                human,
-            ),
-        ).fetchone()
+        corrected = correct_reservation_outcome(
+            writer,
+            actor_id=human,
+            property_id=prop,
+            reservation_id=reservation,
+            idempotency_key=uuid4(),
+            correction_id=correction,
+            expected_outcome_id=identity,
+            replacement_outcome_id=replacement,
+            replacement_refund_number="LEDGER-" + replacement.hex,
+            reason="Correct duplicated external processing reference",
+            evidence_reference="Synthetic coordinated evidence",
+        )
         assert corrected is not None
     with psycopg.connect(migrated_database_url) as connection:
         assert assert_reconciled(connection, customer) == LedgerPosition()

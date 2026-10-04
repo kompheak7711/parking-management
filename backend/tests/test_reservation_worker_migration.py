@@ -16,8 +16,6 @@ from fastapi.testclient import TestClient
 
 from payment_test_support import seed_payment
 from property_rental.app import create_app
-from property_rental.deposit import ReverseDepositDispositionCommand
-from property_rental.deposit_api import PostgresDepositResourceFlow
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
 from property_rental.reservation import ReservationServiceUnavailableError
 from property_rental.reservation_api import PostgresReservationResourceFlow
@@ -26,6 +24,7 @@ from property_rental.reservation_worker import (
     ReservationExpirationWorker,
     run_scheduled,
 )
+from reservation_deposit_test_support import confirm_reservation_outcome
 from test_reservation_lifecycle_migration import (
     expired_reservation,
     financial_database_url,
@@ -117,7 +116,8 @@ def test_failure_concurrent_retry_and_replay_produce_one_logical_execution(
     assert second_reservation == ("CANCELLED", "RESERVATION_EXPIRED")
     assert second_unit == ("VACANT",)
     assert run == ("SUCCEEDED", 2, 2, 2, None)
-    assert outcomes == (2,)
+    # V1-056 slice 3b: expiry never forfeits; the forfeiture waits for a confirmed draft.
+    assert outcomes == (0,)
     assert attempts == [
         (1, "FAILED", "ReservationServiceUnavailableError", 0, 0),
         (2, "SUCCEEDED", None, 2, 2),
@@ -172,16 +172,36 @@ def test_downtime_catch_up_preserves_the_first_missed_logical_date(
 def test_http_detail_reads_real_postgres_receipt_lifecycle_and_outcome_evidence(
     migrated_database_url: str,
 ) -> None:
+    # V1-056 slice 3b: expiry never forfeits, so this test expires its own Reservation and
+    # confirms the forfeiture draft before reading the outcome evidence.
     with psycopg.connect(migrated_database_url) as setup:
-        existing = setup.execute(
-            "SELECT event.actor_id,unit.property_id,event.reservation_id "
-            "FROM app.reservation_lifecycle_events AS event "
-            "JOIN app.reservations AS reservation ON reservation.id=event.reservation_id "
-            "JOIN app.units AS unit ON unit.id=reservation.unit_id "
-            "WHERE event.event_kind='EXPIRATION' ORDER BY event.occurred_at LIMIT 1"
+        actor_id, property_id, _, _, reservation_id, _ = expired_reservation(setup)
+        setup.commit()
+    with psycopg.connect(financial_database_url()) as financial:
+        # The expiry command the worker runs (worker runs are keyed by logical date, and the
+        # shared test Property already has today's run).
+        financial.execute(
+            "SELECT * FROM app.expire_reservation_v3(%s,%s,%s,%s,%s,1,true,%s,%s)",
+            (
+                property_id,
+                uuid4(),
+                "e" * 64,
+                uuid4(),
+                reservation_id,
+                "reservations.cancel",
+                actor_id,
+            ),
         ).fetchone()
-    assert existing is not None
-    actor_id, property_id, reservation_id = map(UUID, map(str, existing))
+        confirm_reservation_outcome(
+            financial,
+            actor_id=actor_id,
+            property_id=property_id,
+            reservation_id=reservation_id,
+            idempotency_key=uuid4(),
+            outcome_id=uuid4(),
+            responsibility="CUSTOMER",
+            reason="Reservation expired while the Property could provide the Unit",
+        )
     scope = frozenset({str(property_id)})
     authenticated = AuthenticatedActor(
         actor_id=str(actor_id),
@@ -228,6 +248,7 @@ def test_http_mutations_reach_real_postgres_with_security_replay_and_rollback(
                 "reservations.extend",
                 "reservations.cancel",
                 "reservation_deposits.dispose",
+                "financial.approve",
             )
         ),
     )
@@ -367,15 +388,15 @@ def test_http_mutations_reach_real_postgres_with_security_replay_and_rollback(
     cancel_event_id = uuid4()
     cancel_outcome_id = uuid4()
     cancel_key = uuid4()
+    # V1-056 slice 3b: the cancel route only cancels; the Deposit forfeiture is a draft that a
+    # financial.approve holder confirms (the earlier atomic route records nothing now).
     cancel_payload = {
         "event_id": str(cancel_event_id),
-        "outcome_id": str(cancel_outcome_id),
         "reason_code": "CUSTOMER_WITHDREW",
         "responsibility": "CUSTOMER",
         "property_could_provide_unit": True,
         "reason_memo": "Customer request",
         "coordination_reference": None,
-        "refund_number": None,
     }
     cancel_headers = {
         **create_headers,
@@ -383,20 +404,32 @@ def test_http_mutations_reach_real_postgres_with_security_replay_and_rollback(
         "If-Match": '"2"',
     }
     cancelled = api.post(
-        f"/api/v1/reservations/{reservation_id}/security-deposit-dispositions",
+        f"/reservations/{reservation_id}/cancel",
         json=cancel_payload,
         headers=cancel_headers,
     )
     cancel_replay = api.post(
-        f"/api/v1/reservations/{reservation_id}/security-deposit-dispositions",
+        f"/reservations/{reservation_id}/cancel",
         json=cancel_payload,
         headers=cancel_headers,
     )
     changed_cancel_replay = api.post(
-        f"/api/v1/reservations/{reservation_id}/security-deposit-dispositions",
+        f"/reservations/{reservation_id}/cancel",
         json={**cancel_payload, "reason_memo": "Changed customer evidence"},
         headers=cancel_headers,
     )
+    draft_headers = {**create_headers, "Idempotency-Key": str(uuid4())}
+    draft = api.post(
+        f"/reservations/{reservation_id}/deposit-drafts",
+        json={"outcome_id": str(cancel_outcome_id), "reason": "Customer request"},
+        headers=draft_headers,
+    )
+    assert draft.status_code == 201, draft.json()
+    confirmed = api.post(
+        f"/reservations/{reservation_id}/deposit-drafts/{draft.json()['data']['draft_id']}/confirm",
+        headers=create_headers,
+    )
+    assert confirmed.status_code == 200, confirmed.json()
 
     assert missing_csrf.status_code == 403
     assert wrong_scope.status_code == 404
@@ -461,7 +494,7 @@ def test_http_mutations_reach_real_postgres_with_security_replay_and_rollback(
     ]
     assert cancelled_resource["deposit_outcomes"] == [
         {
-            "outcome_id": cancel_payload["outcome_id"],
+            "outcome_id": str(cancel_outcome_id),
             "outcome_kind": "DISPOSITION",
             "amount_usd_cents": 10_001,
             "source_lifecycle_event_id": cancel_payload["event_id"],
@@ -560,45 +593,70 @@ def test_http_mutations_reach_real_postgres_with_security_replay_and_rollback(
     )
     assert [(row[0], row[1], row[2]) for row in command_evidence] == [
         ("reservation.cancel", cancel_key, cancel_event_id),
-        ("reservation.cancel.outcome", cancel_key, cancel_outcome_id),
         ("reservation.create", create_key, reservation_id),
         ("reservation.extend", extend_key, notice_id),
     ]
     assert all(len(row[3]) == 64 and isinstance(row[4], dict) for row in command_evidence)
-    assert [row[4]["version"] for row in command_evidence] == [3, 3, 1, 2]
+    assert [row[4]["version"] for row in command_evidence] == [3, 1, 2]
 
+    correction_draft = api.post(
+        f"/reservations/{reservation_id}/deposit-correction-drafts",
+        json={
+            "expected_outcome_id": str(cancel_outcome_id),
+            "correction_id": str(uuid4()),
+            "replacement_outcome_id": str(uuid4()),
+            "reason": "Correct cancellation evidence",
+            "evidence_reference": "case-v1-038-replay",
+        },
+        headers={**create_headers, "Idempotency-Key": str(uuid4())},
+    )
+    assert correction_draft.status_code == 404
     correction_actor = AuthenticatedActor(
         actor_id=str(actor_id),
-        capability_grants=frozenset(
-            {
-                CapabilityGrant("reservation_deposits.correct", scope),
-                CapabilityGrant("reservation_deposits.dispose", scope),
-            }
-        ),
+        capability_grants=authenticated.capability_grants
+        | {CapabilityGrant("reservation_deposits.correct", scope)},
     )
-    correction = ReverseDepositDispositionCommand(
-        uuid4(),
-        uuid4(),
-        cancel_outcome_id,
-        "Correct cancellation evidence",
-        "case-v1-038-replay",
+    correction_api = TestClient(
+        create_app(
+            actor_resolver=lambda _: correction_actor,
+            reservation_resource_flow=PostgresReservationResourceFlow(
+                runtime_database_url(), financial_database_url()
+            ),
+        )
     )
-    PostgresDepositResourceFlow(
-        runtime_database_url(), financial_database_url()
-    ).reverse_disposition(
-        cancel_outcome_id,
-        correction,
-        replacement_disposition_id=uuid4(),
-        expected_reservation_version=3,
-        actor=correction_actor,
+    correction_api.cookies.set("__Host-prm_csrf", "csrf")
+    correction_draft = correction_api.post(
+        f"/reservations/{reservation_id}/deposit-correction-drafts",
+        json={
+            "expected_outcome_id": str(cancel_outcome_id),
+            "correction_id": str(uuid4()),
+            "replacement_outcome_id": str(uuid4()),
+            "reason": "Correct cancellation evidence",
+            "evidence_reference": "case-v1-038-replay",
+        },
+        headers={**create_headers, "Idempotency-Key": str(uuid4())},
     )
+    assert correction_draft.status_code == 201, correction_draft.json()
+    corrected = correction_api.post(
+        f"/reservations/{reservation_id}/deposit-drafts/"
+        f"{correction_draft.json()['data']['draft_id']}/confirm",
+        headers=create_headers,
+    )
+    assert corrected.status_code == 200, corrected.json()
     replay_after_correction = api.post(
-        f"/api/v1/reservations/{reservation_id}/security-deposit-dispositions",
+        f"/reservations/{reservation_id}/cancel",
         json=cancel_payload,
         headers=cancel_headers,
     )
     assert replay_after_correction.status_code == 200
-    assert replay_after_correction.json()["data"] == cancelled_result
+    # The cancel route answers with the current Reservation, so the replay keeps the
+    # cancellation identity and version while the Deposit outcome shows the correction.
+    replayed = replay_after_correction.json()["data"]
+    assert (replayed["reservation_id"], replayed["version"], replayed["status"]) == (
+        cancelled_result["reservation_id"],
+        cancelled_result["version"],
+        cancelled_result["status"],
+    )
 
 
 def test_run_identity_is_property_scoped_and_nonzero() -> None:

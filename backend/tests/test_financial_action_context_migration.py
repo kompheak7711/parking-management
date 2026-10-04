@@ -51,6 +51,7 @@ from property_rental.payment_read import (
 )
 from property_rental.refund import ReverseRefundCorrectionCommand
 from refund_test_support import create_pet_refund, create_usd_refund
+from reservation_deposit_test_support import correct_reservation_outcome
 from test_allocation_read_migration import large_history_source
 from test_credit_application_migration import application_id, designated
 from test_credit_application_migration import source as application_source
@@ -313,7 +314,7 @@ def test_financial_action_context_database_migration_privileges_and_forward_only
     migrated_database_url: str,  # noqa: F811
 ) -> None:
     scripts = ScriptDirectory.from_config(Config("alembic.ini"))
-    assert scripts.get_heads() == ["20261014_79"]
+    assert scripts.get_heads() == ["20261015_80"]
     revision = scripts.get_revision("20260908_47")
     assert revision is not None and revision.down_revision == "20260908_46"
     with pytest.raises(RuntimeError, match="forward-only"):
@@ -1408,7 +1409,7 @@ def test_financial_action_context_database_review_aa_legacy_reservation_null_evi
         human, prop, _, _, reservation = active_reservation(connection)
     original, correction_id, replacement = uuid4(), uuid4(), uuid4()
     with psycopg.connect(financial_database_url()) as connection:
-        cancelled = cancel(
+        cancel(
             connection,
             actor_id=human,
             property_id=prop,
@@ -1421,27 +1422,21 @@ def test_financial_action_context_database_review_aa_legacy_reservation_null_evi
             coordination_reference="Synthetic reviewed case",
             refund_number="RF-" + str(original),
         )
+    # V1-056 slice 3b: the correction is a draft confirmed under financial.approve.
     with psycopg.connect(financial_database_url()) as connection:
-        corrected = connection.execute(
-            "SELECT * FROM app.correct_reservation_deposit_outcome("
-            "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-            (
-                prop,
-                uuid4(),
-                "a" * 64,
-                correction_id,
-                original,
-                replacement,
-                "RF-" + str(replacement),
-                reservation,
-                cancelled[6],
-                "Correct synthetic processing reference",
-                "Synthetic review evidence",
-                "reservation_deposits.correct",
-                "reservation_deposits.refund",
-                human,
-            ),
-        ).fetchone()
+        corrected = correct_reservation_outcome(
+            connection,
+            actor_id=human,
+            property_id=prop,
+            reservation_id=reservation,
+            idempotency_key=uuid4(),
+            correction_id=correction_id,
+            expected_outcome_id=original,
+            replacement_outcome_id=replacement,
+            replacement_refund_number="RF-" + str(replacement),
+            reason="Correct synthetic processing reference",
+            evidence_reference="Synthetic review evidence",
+        )
         assert corrected is not None and corrected[12] == replacement
     before = snapshot(migrated_database_url)
     selected = context(

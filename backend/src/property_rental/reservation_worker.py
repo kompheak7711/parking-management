@@ -114,14 +114,11 @@ class ReservationExpirationWorker:
                     self._financial_database_url,
                 )
                 scope = frozenset({str(self._property_id)})
+                # Expiry never forfeits (owner answer, 2026-10-04): the forfeiture waits for
+                # a Staff draft and a financial.approve holder.
                 actor = AuthenticatedActor(
                     actor_id=str(self._actor_id),
-                    capability_grants=frozenset(
-                        {
-                            CapabilityGrant("reservations.cancel", scope),
-                            CapabilityGrant("reservation_deposits.dispose", scope),
-                        }
-                    ),
+                    capability_grants=frozenset({CapabilityGrant("reservations.cancel", scope)}),
                 )
                 candidates = 0
                 expired = 0
@@ -141,16 +138,10 @@ class ReservationExpirationWorker:
                                     event_id=_stable_id(
                                         self._property_id, logical_date, base + "/event"
                                     ),
-                                    outcome_id=_stable_id(
-                                        self._property_id, logical_date, base + "/outcome"
-                                    ),
                                     reservation_id=item.reservation_id,
                                     expected_version=item.version,
                                     property_could_provide_unit=True,
                                     authorization_reference="reservations.cancel",
-                                    outcome_authorization_reference=(
-                                        "reservation_deposits.dispose"
-                                    ),
                                 ),
                                 actor=actor,
                             )

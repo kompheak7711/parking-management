@@ -331,6 +331,58 @@ one-extension/14-day rules. `cancel` requires reason; expiration uses
 coordinates Reservation `COMPLETED` with the resulting Lease, Occupancy, Unit, and
 continuing Security Deposit effects.
 
+Amended by V1-056 slice 3b (owner answers of 2026-10-04 to Q-2026-10-03-2): `cancel`
+records the classified cancellation and releases the Unit at once; it takes no
+`outcome_id` or `refund_number` and needs only `reservations.cancel`. The Security
+Deposit stays held (`deposit_outcome_state` `AWAITING_DECISION`) until a
+`financial.approve` holder confirms its Refund or forfeiture draft (BR-AUTH-010).
+Automatic expiration also cancels and releases the Unit but never forfeits. A reused
+`Idempotency-Key` with a different body answers 409 `IDEMPOTENCY_KEY_REUSED` (API-016).
+
+Reservation Deposit drafts (V1-056 slice 3b):
+
+- `GET /properties/{property_id}/reservation-deposit-decisions` (capability
+  `reservations.read`; `limit` 1 to 100, default 50; opaque `cursor`) lists the
+  Reservations waiting for a Deposit decision: cancelled or expired, Deposit received,
+  and no outcome record yet, oldest cancellation first. Each item gives the Reservation,
+  Unit, Customer, cancellation reason and responsibility, `cancelled_at`, the held amount
+  in USD cents, the `decision_kind` the responsibility allows (`DEPOSIT_FORFEITURE` for
+  Customer-caused, `REFUND` for Property-caused) and the `pending_draft_id`, if any.
+- `POST /reservations/{reservation_id}/deposit-drafts` (`Idempotency-Key` required)
+  records the decision draft. The kind follows the cancellation responsibility
+  (BR-RES-021, BR-RES-022): a forfeiture draft needs `reservation_deposits.dispose`, a
+  Refund draft `reservation_deposits.refund` plus `refund_number`, `refund_method_id` and
+  `reference_note` (BR-REFUND-014). Body: `outcome_id`, `reason` and, for a Refund, those
+  three fields. The draft covers the whole received Deposit, the Refund always goes to
+  the Reservation Customer, and only one draft per Reservation may be pending. It answers
+  201 with the pending draft and changes no balance.
+- `POST /reservations/{reservation_id}/deposit-correction-drafts` records a draft that
+  replaces the confirmed outcome with a new outcome of the same kind; it needs
+  `reservation_deposits.correct` and the kind's capability. Body: `expected_outcome_id`,
+  `correction_id`, `replacement_outcome_id`, `reason`, `evidence_reference` and, for a
+  Refund, the three Refund fields. The original outcome stays unchanged until
+  confirmation.
+- `POST /reservations/{reservation_id}/deposit-drafts/{draft_id}/confirm` (capability
+  `financial.approve`, `Idempotency-Key` required but not stored) applies the outcome
+  under every earlier Reservation outcome rule, with the approver as actor, and answers
+  200 with the draft and the Reservation result. An exact repeat by the same approver
+  returns the stored result; another approver gets 409. A stale draft (the Reservation
+  or its received Deposit changed; defensive, since neither can change while waiting) is
+  refused with 422 and stays pending. A Deposit receipt cannot be reversed while a
+  Reservation Deposit draft is pending.
+
+- `POST /reservations/{reservation_id}/deposit-drafts/{draft_id}/reject` (capability
+  `financial.approve`) and `.../withdraw` (the preparer, with the draft's prepare
+  capability) take `{"reason": "..."}` (1 to 1,000 characters, `Idempotency-Key`
+  required but not stored), record the decision and answer 200 with the draft. They never
+  move money; the Reservation stays on the waiting list. Brought forward from slice 11b for
+  Reservation Deposit drafts only.
+
+The draft id is derived from the Property, the preparer and the key, so an exact repeat
+returns the same draft and a changed body with the same key answers 409
+`IDEMPOTENCY_KEY_REUSED`. `AWAITING_DECISION` appears only while a Deposit is held and no
+outcome record exists.
+
 ## API-034 — No Generic Reservation Status Patch
 
 Clients cannot set `ACTIVE`, `CANCELLED`, or `COMPLETED` through PATCH. Unsupported
@@ -433,6 +485,13 @@ Each idempotent command records Deposit, amount, governing event,
 cause/responsibility, reason, authorization, timestamp, and actor. Property-caused
 pre-Lease cancellation uses the explicit Refund path instead. Unsupported free-form
 forfeiture is rejected, and ordinary Invoice APIs never accept a Deposit balance.
+
+Amended by V1-056 slice 3b: `POST /reservations/{id}/security-deposit-dispositions`
+validates and authorizes the request but records nothing and answers 409
+`RESERVATION_DEPOSIT_DRAFT_REQUIRED`; the forfeiture is a draft (API-033). For a
+Reservation disposition, `POST /deposit-dispositions/{id}/reverse` answers the same 409;
+the correction is a Reservation Deposit correction draft. Lease dispositions are
+unchanged.
 
 `POST /deposit-receipts/{id}/reverse` and
 `POST /deposit-dispositions/{id}/reverse` create DB-DEP-007/DB-DEP-008 linked

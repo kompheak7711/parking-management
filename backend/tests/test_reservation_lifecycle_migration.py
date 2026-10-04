@@ -7,7 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from threading import Barrier
-from uuid import UUID, uuid4
+from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 
 import psycopg
 import pytest
@@ -27,6 +27,7 @@ from property_rental.reservation import (
     ReservationExtendCommand,
     ReservationStatus,
 )
+from reservation_deposit_test_support import confirm_reservation_outcome
 from test_reservation_migration import (
     create_reservation,
     reservation_business_date,
@@ -207,18 +208,21 @@ def cancel(
     coordination_reference: str | None = None,
     refund_number: str | None = None,
 ) -> tuple[object, ...]:
-    outcome_id = outcome_id or uuid4()
+    """Cancel, then record and confirm the Deposit draft (V1-056 slice 3b).
+
+    The earlier one-call ``app.cancel_reservation_v2`` is retired for the financial role. The
+    default outcome id is derived from the command key so a repeated call replays exactly.
+    """
+    outcome_id = outcome_id or uuid5(NAMESPACE_URL, f"test-outcome/{idempotency_key}")
     if responsibility == "PROPERTY" and refund_number is None:
         refund_number = f"RF-{outcome_id}"
     row = connection.execute(
-        "SELECT * FROM app.cancel_reservation_v2(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+        "SELECT * FROM app.cancel_reservation_v3(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
         (
             property_id,
             idempotency_key,
             digest,
             event_id,
-            outcome_id,
-            refund_number,
             reservation_id,
             expected_version,
             "CUSTOMER_WITHDREW"
@@ -229,14 +233,21 @@ def cancel(
             "Approved cancellation reason",
             coordination_reference,
             "reservations.cancel",
-            "reservation_deposits.dispose"
-            if responsibility == "CUSTOMER"
-            else "reservation_deposits.refund",
             actor_id,
         ),
     ).fetchone()
     assert row is not None
-    return row
+    return confirm_reservation_outcome(
+        connection,
+        actor_id=actor_id,
+        property_id=property_id,
+        reservation_id=reservation_id,
+        idempotency_key=idempotency_key,
+        outcome_id=outcome_id,
+        responsibility=responsibility,
+        reason="Approved cancellation reason",
+        refund_number=refund_number,
+    )
 
 
 def test_postgres_service_creates_extends_and_cancels_one_stable_reservation(
@@ -307,7 +318,6 @@ def test_postgres_service_creates_extends_and_cancels_one_stable_reservation(
         ReservationCancelCommand(
             idempotency_key=uuid4(),
             event_id=uuid4(),
-            outcome_id=uuid4(),
             reservation_id=created.reservation_id,
             expected_version=extended.version,
             reason_code="CUSTOMER_WITHDREW",
@@ -316,8 +326,6 @@ def test_postgres_service_creates_extends_and_cancels_one_stable_reservation(
             reason_memo="Customer requested cancellation",
             coordination_reference=None,
             authorization_reference="reservations.cancel",
-            outcome_authorization_reference="reservation_deposits.dispose",
-            refund_number=None,
         ),
         actor=financial_actor(actor_id, property_id, "reservation_deposits.dispose"),
     )
@@ -329,7 +337,8 @@ def test_postgres_service_creates_extends_and_cancels_one_stable_reservation(
     assert cancelled.status is ReservationStatus.CANCELLED
     assert cancelled.version == 3
     assert cancelled.deposit_id == created.deposit_id
-    assert cancelled.deposit_outcome_state is DepositOutcomeState.NON_REFUNDABLE_DISPOSITION
+    # V1-056 slice 3b: the Deposit stays held until its forfeiture draft is confirmed.
+    assert cancelled.deposit_outcome_state is DepositOutcomeState.AWAITING_DECISION
 
 
 def test_customer_cancellation_is_atomic_idempotent_and_preserves_deposit(
@@ -471,16 +480,14 @@ def test_expiration_uses_end_of_date_is_bounded_and_preserves_classification(
     with psycopg.connect(financial_database_url()) as runtime:
         with pytest.raises(Error) as misclassified:
             runtime.execute(
-                "SELECT * FROM app.expire_reservation_v2(%s,%s,%s,%s,%s,%s,1,false,%s,%s,%s)",
+                "SELECT * FROM app.expire_reservation_v3(%s,%s,%s,%s,%s,1,false,%s,%s)",
                 (
                     property_id,
                     uuid4(),
                     "e" * 64,
                     uuid4(),
-                    uuid4(),
                     reservation_id,
                     "reservations.cancel",
-                    "reservation_deposits.dispose",
                     actor_id,
                 ),
             ).fetchone()
@@ -488,17 +495,16 @@ def test_expiration_uses_end_of_date_is_bounded_and_preserves_classification(
         runtime.rollback()
         key = uuid4()
         event_id = uuid4()
+        # V1-056 slice 3b: expiry records only the lifecycle event; it never forfeits.
         row = runtime.execute(
-            "SELECT * FROM app.expire_reservation_v2(%s,%s,%s,%s,%s,%s,1,true,%s,%s,%s)",
+            "SELECT * FROM app.expire_reservation_v3(%s,%s,%s,%s,%s,1,true,%s,%s)",
             (
                 property_id,
                 key,
                 "f" * 64,
                 event_id,
-                uuid4(),
                 reservation_id,
                 "reservations.cancel",
-                "reservation_deposits.dispose",
                 actor_id,
             ),
         ).fetchone()

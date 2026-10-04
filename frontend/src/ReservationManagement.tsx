@@ -17,7 +17,6 @@ export interface ReservationManagementProps {
 interface PendingCancellation {
   fingerprint: string;
   eventId: string;
-  outcomeId: string;
   idempotencyKey: string;
 }
 
@@ -229,10 +228,6 @@ export function ReservationManagement({
         responsibility === "PROPERTY"
           ? formString(data, "coordination-reference")
           : null,
-      refund_number:
-        responsibility === "PROPERTY"
-          ? formString(data, "refund-number")
-          : null,
     };
     const fingerprint = JSON.stringify({
       reservationId: selected.reservation_id,
@@ -245,13 +240,12 @@ export function ReservationManagement({
         : {
             fingerprint,
             eventId: crypto.randomUUID(),
-            outcomeId: crypto.randomUUID(),
             idempotencyKey: crypto.randomUUID(),
           };
     pendingCancellation.current = identity;
     if (
       !window.confirm(
-        "Cancel this ACTIVE Reservation and apply the displayed Deposit outcome?",
+        "Cancel this ACTIVE Reservation? The Deposit stays held until an approver confirms its draft.",
       )
     ) {
       setNotice("Cancellation was not submitted.");
@@ -259,15 +253,12 @@ export function ReservationManagement({
     }
     const operation = ++sequence.current;
     setBusy(true);
-    setNotice(
-      "Applying the classified cancellation and linked Deposit outcome…",
-    );
+    setNotice("Recording the classified cancellation…");
     void api
       .cancel(
         selected,
         {
           event_id: identity.eventId,
-          outcome_id: identity.outcomeId,
           ...sourceValues,
         },
         identity.idempotencyKey,
@@ -280,8 +271,8 @@ export function ReservationManagement({
         update(value);
         setNotice(
           responsibility === "PROPERTY"
-            ? "Reservation cancelled with an explicit linked Security Deposit Refund."
-            : "Reservation cancelled with an explicit non-refundable Deposit disposition.",
+            ? "Reservation cancelled. The Security Deposit stays held until a Refund draft is confirmed by an approver."
+            : "Reservation cancelled. The Security Deposit stays held until a forfeiture draft is confirmed by an approver.",
         );
       })
       .catch((error: unknown) => {
@@ -560,10 +551,10 @@ export function ReservationManagement({
                 Responsibility
                 <select name="responsibility" required>
                   <option value="CUSTOMER">
-                    Customer-caused / non-refundable disposition
+                    Customer-caused / forfeiture draft
                   </option>
                   <option value="PROPERTY">
-                    Property-caused / full Refund
+                    Property-caused / full Refund draft
                   </option>
                 </select>
               </label>
@@ -579,21 +570,15 @@ export function ReservationManagement({
                 Property coordination reference (required for Property-caused)
                 <input name="coordination-reference" />
               </label>
-              <label>
-                Refund number (required for Property-caused)
-                <input name="refund-number" />
-              </label>
               <p>
-                No free-form forfeiture is offered. The server derives the
-                Deposit outcome from the approved responsibility classification.
-                Customer responsibility creates a{" "}
-                {money(selected.deposit_received_usd_cents)}
-                non-refundable disposition authorized by
-                reservation_deposits.dispose; Property responsibility creates a{" "}
-                {money(selected.deposit_received_usd_cents)}
-                Refund authorized by reservation_deposits.refund. The submitted
-                reason, coordination reference, authenticated actor, and
-                lifecycle event become the governing audit evidence.
+                Cancellation releases the Unit at once. No free-form forfeiture
+                is offered: the {money(selected.deposit_received_usd_cents)}
+                Security Deposit stays held until a financial.approve holder
+                confirms a draft. Customer responsibility leads to a forfeiture
+                draft; Property responsibility leads to a full Refund draft to
+                the Reservation Customer. The submitted reason, coordination
+                reference, authenticated actor, and lifecycle event become the
+                governing audit evidence.
               </p>
               <button disabled={busy} type="submit">
                 Review and confirm cancellation

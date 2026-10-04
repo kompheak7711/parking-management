@@ -144,7 +144,7 @@ describe("Reservation staff workflow", () => {
       expect(client.cancel).toHaveBeenCalledTimes(1);
     });
     expect(screen.getByTestId("reservation-status")).toHaveTextContent(
-      "non-refundable Deposit disposition",
+      "forfeiture draft is confirmed by an approver",
     );
   });
 

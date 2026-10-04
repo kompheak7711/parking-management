@@ -6,7 +6,8 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from threading import Barrier
-from uuid import uuid4
+from typing import cast
+from uuid import UUID, uuid4
 
 import psycopg
 import pytest
@@ -14,6 +15,7 @@ from alembic import command
 from alembic.config import Config
 from psycopg import Error
 
+from reservation_deposit_test_support import correct_reservation_outcome
 from test_reservation_lifecycle_migration import (
     active_reservation,
     cancel,
@@ -233,29 +235,21 @@ def test_correction_replaces_outcome_without_erasing_financial_history(
         )
         runtime.commit()
     replacement_number = None if responsibility == "CUSTOMER" else "RF-REPLACEMENT"
+    # V1-056 slice 3b: the correction is a draft confirmed under financial.approve.
     with psycopg.connect(financial_database_url()) as runtime:
-        corrected = runtime.execute(
-            "SELECT * FROM app.correct_reservation_deposit_outcome("
-            "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-            (
-                property_id,
-                uuid4(),
-                "a" * 64,
-                correction_id,
-                original_id,
-                replacement_id,
-                replacement_number,
-                reservation_id,
-                row[6],
-                "Correct duplicated external processing reference",
-                "EVIDENCE-CASE-1",
-                "reservation_deposits.correct",
-                "reservation_deposits.dispose"
-                if responsibility == "CUSTOMER"
-                else "reservation_deposits.refund",
-                actor_id,
-            ),
-        ).fetchone()
+        corrected = correct_reservation_outcome(
+            runtime,
+            actor_id=actor_id,
+            property_id=property_id,
+            reservation_id=reservation_id,
+            idempotency_key=uuid4(),
+            correction_id=correction_id,
+            expected_outcome_id=original_id,
+            replacement_outcome_id=replacement_id,
+            replacement_refund_number=replacement_number,
+            reason="Correct duplicated external processing reference",
+            evidence_reference="EVIDENCE-CASE-1",
+        )
         runtime.commit()
     assert corrected is not None
     assert corrected[12] == replacement_id
@@ -297,7 +291,7 @@ def test_concurrent_stale_outcome_correction_has_one_exact_winner(
         setup.commit()
     original_id = uuid4()
     with psycopg.connect(financial_database_url()) as financial:
-        cancelled = cancel(
+        cancel(
             financial,
             actor_id=actor_id,
             property_id=property_id,
@@ -319,26 +313,21 @@ def test_concurrent_stale_outcome_correction_has_one_exact_winner(
         with psycopg.connect(financial_database_url()) as financial:
             barrier.wait()
             try:
-                financial.execute(
-                    "SELECT * FROM app.correct_reservation_deposit_outcome("
-                    "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-                    (
-                        property_id,
-                        idempotency_key,
-                        digest,
-                        correction_id,
-                        original_id,
-                        replacement_id,
-                        None,
-                        reservation_id,
-                        cancelled[6],
-                        "Correct concurrent external processing reference",
-                        "EVIDENCE-CONCURRENT-CORRECTION",
-                        "reservation_deposits.correct",
-                        "reservation_deposits.dispose",
-                        actor_id,
-                    ),
-                ).fetchone()
+                # V1-056 slice 3b: each correction is a draft confirmed under financial.approve.
+                del digest
+                correct_reservation_outcome(
+                    financial,
+                    actor_id=actor_id,
+                    property_id=property_id,
+                    reservation_id=reservation_id,
+                    idempotency_key=cast(UUID, idempotency_key),
+                    correction_id=cast(UUID, correction_id),
+                    expected_outcome_id=original_id,
+                    replacement_outcome_id=cast(UUID, replacement_id),
+                    replacement_refund_number=None,
+                    reason="Correct concurrent external processing reference",
+                    evidence_reference="EVIDENCE-CONCURRENT-CORRECTION",
+                )
                 financial.commit()
                 return "success"
             except Error as error:
@@ -457,7 +446,9 @@ def test_financial_history_is_append_only_and_runtime_is_least_privilege(
                 )
             """
         ).fetchone()
-    assert financial_privileges == (True, False, False, True, True, True, False)
+    # V1-056 slice 3b: the one-call cancel, expire and correction functions are retired for the
+    # financial role (owner answer to plan Q6); outcomes are confirmed drafts.
+    assert financial_privileges == (True, False, False, False, False, False, False)
 
 
 def test_reservation_outcome_migration_is_forward_only() -> None:

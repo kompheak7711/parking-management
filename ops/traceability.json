@@ -34950,6 +34950,255 @@
       "test_path": "backend/tests/test_refund_signer_recipient_migration.py",
       "status": "implemented",
       "notes": "For the seeded Payment and Pet Deposit Refunds and every other Refund or Refund correction already in the database without a Signer agreement, the rebuilt ledger books the recipient and adds no paid-to field, exactly as the revision 48 projection did. The upgrade's refusal when an earlier Deposit Refund was paid to someone else is a defensive precondition and is not tested (the earlier Pet Refund source trigger prevents seeding such a row)."
+    },
+    {
+      "test_id": "test_deposit_draft_kind_and_capability_follow_cancellation_responsibility",
+      "upstream_ids": [
+        "BR-RES-021",
+        "BR-RES-022",
+        "BR-AUTH-010",
+        "BR-REFUND-014",
+        "API-033",
+        "SEC-020"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_reservation_api.py",
+      "status": "implemented",
+      "notes": "POST /reservations/{id}/deposit-drafts derives the draft kind from the cancellation responsibility: a Customer-caused cancellation gives a forfeiture draft under reservation_deposits.dispose, a Property-caused one a Refund draft under reservation_deposits.refund with the Refund method and reference note; an actor holding only the other capability is refused (404) and nothing is recorded."
+    },
+    {
+      "test_id": "test_deposit_draft_routes_refuse_active_reservations_csrf_and_partial_method",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-REFUND-014",
+        "API-033",
+        "SEC-036"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_reservation_api.py",
+      "status": "implemented",
+      "notes": "The Reservation Deposit draft route refuses an ACTIVE Reservation (422), a request without the CSRF token (403) and a Refund method without its reference note (422) before any service call."
+    },
+    {
+      "test_id": "test_only_financial_approve_confirms_a_reservation_deposit_draft",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "SEC-020",
+        "SEC-022"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_reservation_api.py",
+      "status": "implemented",
+      "notes": "A Staff actor holding reservations.read, reservation_deposits.dispose and reservation_deposits.correct cannot confirm a Reservation Deposit draft (404); a financial.approve holder confirms it with the CSRF token, and the confirm call is bound to the Reservation in the path."
+    },
+    {
+      "test_id": "test_correction_draft_needs_the_correct_capability_and_the_kind_capability",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "SEC-020"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_reservation_api.py",
+      "status": "implemented",
+      "notes": "A Reservation outcome correction draft needs reservation_deposits.correct and the capability of the replacement kind; with either one missing the route answers 404 and records nothing."
+    },
+    {
+      "test_id": "test_waiting_list_is_bounded_private_paged_and_read_capability_scoped",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "API-032",
+        "SEC-019",
+        "SEC-040"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_reservation_api.py",
+      "status": "implemented",
+      "notes": "GET /properties/{id}/reservation-deposit-decisions needs reservations.read, refuses a page size over 100 and a malformed cursor (422), answers private no-store, and passes the opaque next cursor back as the time and Reservation identity of the last item."
+    },
+    {
+      "test_id": "test_staff_cancellation_holds_the_deposit_until_an_approver_confirms_the_forfeiture",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-RES-021",
+        "BR-DEP-018",
+        "SEC-022"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_deposit_draft_migration.py",
+      "status": "implemented",
+      "notes": "Staff cancellation releases the Unit and records no Deposit outcome; the Reservation is on the waiting list with its held amount; the Staff forfeiture draft changes no balance; Staff cannot confirm (service and database refuse); the financial.approve holder's confirmation records the full forfeiture once, replays exactly, and removes the Reservation from the list."
+    },
+    {
+      "test_id": "test_expired_reservation_stays_on_the_waiting_list_until_its_draft_is_confirmed",
+      "upstream_ids": [
+        "BR-RES-016",
+        "BR-RES-021",
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_deposit_draft_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer of 2026-10-04: the expiry command (the one the worker runs) cancels and releases the Unit but never forfeits; the expired Reservation stays on the waiting list while a draft is pending and after a draft is rejected, and leaves it only when a forfeiture draft is confirmed."
+    },
+    {
+      "test_id": "test_property_cancellation_refund_goes_to_the_reservation_customer_with_method_and_note",
+      "upstream_ids": [
+        "BR-RES-022",
+        "BR-REFUND-014",
+        "BR-REFUND-015",
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_deposit_draft_migration.py",
+      "status": "implemented",
+      "notes": "A Property-caused cancellation waits for a Refund draft that must carry a Refund method and reference note; on confirmation the full received amount is refunded in USD to the Reservation Customer, with the approver as processor and the method and note recorded against the draft."
+    },
+    {
+      "test_id": "test_reservation_deposit_draft_refuses_wrong_kind_second_draft_and_used_number",
+      "upstream_ids": [
+        "BR-RES-020",
+        "BR-RES-021",
+        "BR-RES-022",
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_deposit_draft_migration.py",
+      "status": "implemented",
+      "notes": "A Reservation Deposit draft is refused for an ACTIVE Reservation, for a kind that does not follow the cancellation responsibility, for a Refund number already used, and while another draft for the same Reservation is pending; an exact repeat replays the first draft."
+    },
+    {
+      "test_id": "test_receipt_reversal_is_refused_only_while_a_draft_is_pending",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-DEP-018"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_deposit_draft_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer to Q-2026-10-04-5: a receipt reversal is refused (55000) while a Reservation Deposit draft is pending; after the preparer withdraws it the reversal works as before, the Reservation leaves the waiting list, no longer reads AWAITING_DECISION, and a new draft is refused because nothing is held."
+    },
+    {
+      "test_id": "test_outcome_correction_is_a_draft_and_keeps_the_original_until_confirmed",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-DEP-018"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_deposit_draft_migration.py",
+      "status": "implemented",
+      "notes": "A Reservation outcome correction is a draft that needs reservation_deposits.correct and the current outcome; until a financial.approve holder confirms it the original forfeiture stays active and unreversed; confirmation adds the linked reversal and the replacement forfeiture and keeps the original row unchanged."
+    },
+    {
+      "test_id": "test_reservation_deposit_draft_roles_and_retired_one_call_paths",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "SEC-020",
+        "SEC-040"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_reservation_deposit_draft_migration.py",
+      "status": "implemented",
+      "notes": "The financial role can no longer run the one-call cancel, expire and outcome correction functions; it runs the new cancel, expire, draft and confirm functions, which the runtime role cannot; only the runtime role reads the waiting list; PUBLIC runs none of them; the list refuses page sizes outside 1 to 100 and a half cursor. PUBLIC, prm_runtime, prm_financial and prm_bootstrap run none of the four internal helpers or the four retired functions; the reject and withdraw functions are financial-role only."
+    },
+    {
+      "test_id": "test_reused_draft_key_with_other_input_is_refused",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "API-016"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_deposit_draft_migration.py",
+      "status": "implemented",
+      "notes": "The same command key with a changed reason, or reused for a correction draft, is refused as a reused key and records nothing; the exact repeat replays the first draft."
+    },
+    {
+      "test_id": "test_another_person_confirms_and_a_third_cannot_confirm_again",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "SEC-022"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_deposit_draft_migration.py",
+      "status": "implemented",
+      "notes": "Staff prepares, a second person holding financial.approve confirms, and a third approver's later confirmation is refused as a conflict; the draft records preparer and approver, and the forfeiture names the approver as actor."
+    },
+    {
+      "test_id": "test_two_drafts_sent_at_once_leave_exactly_one_pending",
+      "upstream_ids": [
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_deposit_draft_migration.py",
+      "status": "implemented",
+      "notes": "Two Deposit drafts for one Reservation recorded at the same moment with different keys leave exactly one draft; the other is refused as a conflict."
+    },
+    {
+      "test_id": "test_reused_draft_key_answers_idempotency_key_reused",
+      "upstream_ids": [
+        "API-016",
+        "BR-AUTH-010"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_reservation_api.py",
+      "status": "implemented",
+      "notes": "A reused Reservation Deposit draft key answers 409 IDEMPOTENCY_KEY_REUSED with rule API-016."
+    },
+    {
+      "test_id": "test_cancellation_without_a_held_deposit_does_not_wait_for_a_decision",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-RES-021"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_deposit_draft_migration.py",
+      "status": "implemented",
+      "notes": "A Reservation whose receipt was reversed before cancellation is cancelled without AWAITING_DECISION (PENDING_V1_031 in the command result and the Reservation read) and is not on the waiting list."
+    },
+    {
+      "test_id": "test_a_completed_earlier_outcome_does_not_read_as_waiting",
+      "upstream_ids": [
+        "BR-RES-022",
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_deposit_draft_migration.py",
+      "status": "implemented",
+      "notes": "A cancelled Reservation whose Refund was fully returned and whose receipt was unwound keeps reading PENDING_V1_031, not AWAITING_DECISION, and is not on the waiting list."
+    },
+    {
+      "test_id": "test_reject_and_withdraw_decide_without_moving_money",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "SEC-022"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_deposit_draft_migration.py",
+      "status": "implemented",
+      "notes": "Only a financial.approve holder rejects (service and database refuse Staff); only the preparer withdraws; a reason is required; repeats replay; a withdrawn draft cannot be confirmed; no outcome is recorded, the Deposit stays held and the Reservation stays on the waiting list with no pending draft."
+    },
+    {
+      "test_id": "test_drafts_cannot_cross_reservations_properties_or_flows",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "SEC-019",
+        "SEC-038"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_reservation_deposit_draft_migration.py",
+      "status": "implemented",
+      "notes": "A Reservation Deposit draft cannot be confirmed or rejected through another Reservation or under another Property id; the slice 3a Refund confirm refuses it; the Reservation confirm and reject refuse a slice 3a Refund draft; nothing is recorded."
+    },
+    {
+      "test_id": "test_reject_needs_financial_approve_and_withdraw_needs_the_kind_capability",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "SEC-020",
+        "SEC-036"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_reservation_api.py",
+      "status": "implemented",
+      "notes": "The reject route needs financial.approve, the withdraw route the draft kind's prepare capability; both need a reason and the CSRF token and answer private no-store."
     }
   ]
 }

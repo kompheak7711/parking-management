@@ -91,6 +91,7 @@ Each slice: one local checkpoint commit, explicit paths, secret and diff scan, i
 ### Slices 11a to 11e — HTTP routes and staff screens
 - 11a: Lease End Date error, Unit cleaning rate, cleaning charge, hand-back month actions.
 - 11b: draft list, draft detail, confirm, reject, withdraw (shared by all kinds).
+  - Moved (owner answer to Q-2026-10-04-5, 2026-10-04): reject and withdraw for Reservation Deposit drafts only are built in slice 3b; the shared routes for the other kinds stay in 11b.
 - 11c: Refund methods, Refund drafts, joint-Signer agreement, deposit forfeiture and Pet Deposit drafts.
 - 11d: Wrong-Unit Payment move.
 - 11e: Final Settlement (API-070 to 072), preview, confirm, corrections.
@@ -102,6 +103,9 @@ Each slice: one local checkpoint commit, explicit paths, secret and diff scan, i
 - Open item (slice 3a-2 review): add a test that a correction of a Signer-paid Deposit Refund is booked on the Deposit owner's ledger.
 - Open item (slice 3a-2 review): add a test that a Lease Signer who has not signed cannot be named as a Deposit Refund recipient.
 - Open item (owner, 2026-10-04): add a test for the 422 when a Pet Deposit Refund draft's source is no longer qualified at confirmation, once the fixtures allow removing a qualification without changing protected history.
+- Open item (slice 3b round 3 review): error responses on the waiting-list path (`GET /properties/{property_id}/reservation-deposit-decisions`) have no Cache-Control header.
+- Open item (slice 3b round 3 review): the Reservation read in `reservation_api.py` repeats the held/outcome check inline in SQL instead of calling the shared function `app.reservation_deposit_held_cents`.
+- Open item (slice 3b round 3 review): the plain `CREATE INDEX` on `app.financial_drafts` in migration `20261015_80` takes a write lock on the drafts table while it builds.
 - docs 004 to 007 updated; every new rule ID has a test and an appended traceability entry; TEST-118 passes locally.
 - Full gates once: backend format, lint, type check, tests; full PostgreSQL suite; frontend format, lint, type check, tests, build; audit (the known braces advisory stays until V1-059).
 - Final independent review of the whole V1-056 diff, owner report, request for one push.

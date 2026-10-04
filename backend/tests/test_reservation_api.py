@@ -16,7 +16,6 @@ from property_rental.reservation import (
     ReservationCancelCommand,
     ReservationCreateCommand,
     ReservationExtendCommand,
-    ReservationLifecycleResult,
     ReservationStatus,
 )
 from property_rental.reservation_api import (
@@ -25,6 +24,13 @@ from property_rental.reservation_api import (
     ReservationPage,
     ReservationResource,
     ReservationResourceNotFound,
+)
+from property_rental.reservation_deposit_draft import (
+    RecordReservationDepositCorrectionDraftCommand,
+    RecordReservationDepositDraftCommand,
+    ReservationDepositDecision,
+    ReservationDepositDecisionPage,
+    ReservationDepositDraftKeyReused,
 )
 
 
@@ -72,6 +78,8 @@ class InMemoryReservationFlow:
     create_command: ReservationCreateCommand | None = None
     extend_command: ReservationExtendCommand | None = None
     cancel_command: ReservationCancelCommand | None = None
+    draft_calls: list[tuple[str, UUID, object, object]] = field(default_factory=list)
+    awaiting_page: ReservationDepositDecisionPage | None = None
 
     def list(
         self,
@@ -170,11 +178,7 @@ class InMemoryReservationFlow:
             version=current.version + 1,
             cancellation_reason_code=command.reason_code,
             cancellation_responsibility=command.responsibility,
-            deposit_outcome_state=(
-                DepositOutcomeState.NON_REFUNDABLE_DISPOSITION
-                if command.responsibility is CancellationResponsibility.CUSTOMER
-                else DepositOutcomeState.REFUND
-            ),
+            deposit_outcome_state=DepositOutcomeState.AWAITING_DECISION,
         )
         self.resources[updated.reservation_id] = updated
         return updated
@@ -182,29 +186,86 @@ class InMemoryReservationFlow:
     def property_for_security_deposit_disposition(self, reservation_id: UUID) -> UUID:
         return self.get(reservation_id).property_id
 
-    def create_security_deposit_disposition(
+    def record_deposit_draft(
         self,
-        command: ReservationCancelCommand,
+        property_id: UUID,
+        decision: ReservationDepositDecision,
+        command: RecordReservationDepositDraftCommand,
         *,
         actor: AuthenticatedActor,
-    ) -> ReservationLifecycleResult:
-        updated = self.cancel(command, actor=actor)
-        return ReservationLifecycleResult(
-            updated.reservation_id,
-            updated.unit_id,
-            updated.status,
-            command.reason_code,
-            command.responsibility,
-            updated.effective_expiration_date,
-            updated.version,
-            "VACANT",
-            1,
-            updated.deposit_id,
-            updated.deposit_received_usd_cents,
-            updated.deposit_outcome_state,
-            command.outcome_id,
-            command.refund_number,
+    ) -> dict[str, object]:
+        del actor
+        self.draft_calls.append(("record", property_id, decision, command))
+        return {"draft_id": str(uuid4()), "kind": decision.value, "state": "PENDING"}
+
+    def record_deposit_correction_draft(
+        self,
+        property_id: UUID,
+        decision: ReservationDepositDecision,
+        command: RecordReservationDepositCorrectionDraftCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        del actor
+        self.draft_calls.append(("correct", property_id, decision, command))
+        return {"draft_id": str(uuid4()), "kind": decision.value, "state": "PENDING"}
+
+    def confirm_deposit_draft(
+        self,
+        property_id: UUID,
+        reservation_id: UUID,
+        draft_id: UUID,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        del actor
+        self.draft_calls.append(("confirm", property_id, reservation_id, draft_id))
+        return {"draft": {"draft_id": str(draft_id), "state": "CONFIRMED"}, "reservation": {}}
+
+    def decide_deposit_draft(
+        self,
+        property_id: UUID,
+        reservation_id: UUID,
+        draft_id: UUID,
+        reason: str,
+        *,
+        withdraw_as: ReservationDepositDecision | None,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        del actor, reason
+        self.draft_calls.append(
+            ("reject" if withdraw_as is None else "withdraw", property_id, reservation_id, draft_id)
         )
+        return {
+            "draft_id": str(draft_id),
+            "state": "REJECTED" if withdraw_as is None else "WITHDRAWN",
+        }
+
+    def awaiting_deposit_decisions(
+        self,
+        property_id: UUID,
+        *,
+        actor: AuthenticatedActor,
+        page: ReservationDepositDecisionPage,
+    ) -> dict[str, object]:
+        del actor
+        self.awaiting_page = page
+        items = [
+            {"reservation_id": str(item.reservation_id)}
+            for item in self.resources.values()
+            if item.property_id == property_id and item.status is ReservationStatus.CANCELLED
+        ]
+        return {
+            "items": items[: page.limit],
+            "next_after": (
+                {
+                    "cancelled_at": "2026-08-27T01:02:03.000004+00:00",
+                    "reservation_id": items[page.limit - 1]["reservation_id"],
+                }
+                if len(items) > page.limit
+                else None
+            ),
+        }
 
 
 def headers(*, version: int | None = None) -> dict[str, str]:
@@ -373,13 +434,11 @@ def test_cancel_derives_customer_deposit_disposition_without_free_form_outcome()
         headers=headers(version=1),
         json={
             "event_id": str(uuid4()),
-            "outcome_id": str(uuid4()),
             "reason_code": "CUSTOMER_WITHDREW",
             "responsibility": "CUSTOMER",
             "property_could_provide_unit": True,
             "reason_memo": "Customer request",
             "coordination_reference": None,
-            "refund_number": None,
         },
     )
 
@@ -387,8 +446,9 @@ def test_cancel_derives_customer_deposit_disposition_without_free_form_outcome()
     assert response.headers["cache-control"] == "private, no-store"
     assert "Cookie" in response.headers["vary"]
     assert flow.cancel_command is not None
-    assert flow.cancel_command.outcome_authorization_reference == "reservation_deposits.dispose"
-    assert response.json()["data"]["deposit_outcome_state"] == "NON_REFUNDABLE_DISPOSITION"
+    # V1-056 slice 3b: cancellation releases the Unit; the Deposit waits for a confirmed draft.
+    assert flow.cancel_command.authorization_reference == "reservations.cancel"
+    assert response.json()["data"]["deposit_outcome_state"] == "AWAITING_DECISION"
 
 
 def test_explicit_security_deposit_disposition_route_reuses_atomic_cancellation() -> None:
@@ -413,39 +473,26 @@ def test_explicit_security_deposit_disposition_route_reuses_atomic_cancellation(
             "refund_number": None,
         },
     )
-    assert response.status_code == 200
+    # V1-056 slice 3b: the earlier atomic route records nothing; the outcome is a draft.
+    assert response.status_code == 409
     assert response.headers["cache-control"] == "private, no-store"
-    assert flow.cancel_command is not None
-    assert flow.cancel_command.outcome_authorization_reference == "reservation_deposits.dispose"
-    assert response.json()["data"] == {
-        "reservation_id": str(current.reservation_id),
-        "unit_id": str(current.unit_id),
-        "status": "CANCELLED",
-        "cancellation_reason_code": "CUSTOMER_WITHDREW",
-        "cancellation_responsibility": "CUSTOMER",
-        "effective_expiration_date": current.effective_expiration_date.isoformat(),
-        "version": 2,
-        "unit_status": "VACANT",
-        "unit_version": 1,
-        "deposit_id": str(current.deposit_id),
-        "deposit_received_usd_cents": current.deposit_received_usd_cents,
-        "deposit_outcome_state": "NON_REFUNDABLE_DISPOSITION",
-        "outcome_id": response.json()["data"]["outcome_id"],
-        "refund_number": None,
-    }
+    assert response.json()["error"]["code"] == "RESERVATION_DEPOSIT_DRAFT_REQUIRED"
+    assert flow.cancel_command is None
+    assert flow.get(current.reservation_id).status is ReservationStatus.ACTIVE
 
 
 def test_postgres_security_disposition_route_is_time_bounded(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    # V1-056 slice 3b: the Reservation Deposit write is now the draft record; it keeps the
+    # same connect, lock and statement time bounds on the financial connection.
     property_id = uuid4()
     actor_id = uuid4()
     reservation_id = uuid4()
-    unit_id = uuid4()
-    deposit_id = uuid4()
-    outcome_id = uuid4()
+    draft = {"draft_id": str(uuid4()), "state": "PENDING"}
     connect_options: list[dict[str, object]] = []
     statements: list[tuple[str, tuple[object, ...]]] = []
+    urls: list[str] = []
 
     class Result:
         def __init__(self, row: tuple[object, ...]) -> None:
@@ -464,28 +511,12 @@ def test_postgres_security_disposition_route_is_time_bounded(
         def execute(self, statement: str, parameters: tuple[object, ...] = ()) -> Result:
             normalized = " ".join(statement.split())
             statements.append((normalized, parameters))
-            if "cancel_reservation_v2" in normalized:
-                return Result(
-                    (
-                        reservation_id,
-                        unit_id,
-                        "CANCELLED",
-                        "CUSTOMER_WITHDREW",
-                        "CUSTOMER",
-                        date(2026, 9, 5),
-                        2,
-                        "VACANT",
-                        1,
-                        deposit_id,
-                        10_000,
-                        "NON_REFUNDABLE_DISPOSITION",
-                        outcome_id,
-                        None,
-                    )
-                )
-            return Result((property_id,))
+            if "record_reservation_deposit_draft" in normalized:
+                return Result((draft,))
+            return Result((None,))
 
-    def connect(_: str, **options: object) -> Connection:
+    def connect(url: str, **options: object) -> Connection:
+        urls.append(url)
         connect_options.append(options)
         return Connection()
 
@@ -494,40 +525,25 @@ def test_postgres_security_disposition_route_is_time_bounded(
     authenticated = AuthenticatedActor(
         actor_id=str(actor_id),
         capability_grants=frozenset(
-            {
-                CapabilityGrant("reservations.cancel", frozenset({str(property_id)})),
-                CapabilityGrant("reservation_deposits.dispose", frozenset({str(property_id)})),
-            }
+            {CapabilityGrant("reservation_deposits.dispose", frozenset({str(property_id)}))}
         ),
     )
-    result = flow.create_security_deposit_disposition(
-        ReservationCancelCommand(
-            uuid4(),
-            uuid4(),
-            outcome_id,
-            reservation_id,
-            1,
-            "CUSTOMER_WITHDREW",
-            CancellationResponsibility.CUSTOMER,
-            True,
-            "Customer request",
-            None,
-            "reservations.cancel",
-            "reservation_deposits.dispose",
-            None,
-        ),
+    result = flow.record_deposit_draft(
+        property_id,
+        ReservationDepositDecision.DEPOSIT_FORFEITURE,
+        RecordReservationDepositDraftCommand(uuid4(), reservation_id, uuid4(), "Customer request"),
         actor=authenticated,
     )
 
-    assert result.outcome_id == outcome_id
-    assert connect_options == [{"connect_timeout": 3}, {"connect_timeout": 3}]
+    assert result == draft
+    assert urls == ["postgresql://financial"]
+    assert connect_options == [{"connect_timeout": 3}]
     assert [parameters for statement, parameters in statements if "lock_timeout" in statement] == [
-        ("3000",),
         ("3000",),
     ]
     assert [
         parameters for statement, parameters in statements if "statement_timeout" in statement
-    ] == [("3000",), ("3000",)]
+    ] == [("3000",)]
 
 
 def test_explicit_security_deposit_disposition_requires_precondition_without_caching() -> None:
@@ -553,8 +569,9 @@ def test_explicit_security_deposit_disposition_requires_precondition_without_cac
         },
     )
 
-    assert response.status_code == 412
-    assert response.json()["error"]["code"] == "PRECONDITION_FAILED"
+    # V1-056 slice 3b: the retired route answers 409 before any precondition check.
+    assert response.status_code == 409
+    assert response.json()["error"]["code"] == "RESERVATION_DEPOSIT_DRAFT_REQUIRED"
     assert response.headers["cache-control"] == "private, no-store"
     assert "Cookie" in response.headers["vary"]
     assert flow.cancel_command is None
@@ -574,3 +591,265 @@ def test_no_generic_status_patch_and_move_in_requires_v1_036_command_schema() ->
     )
     assert patch_response.status_code == 405
     assert api.post(f"/reservations/{current.reservation_id}/complete-move-in").status_code == 404
+
+
+def cancelled(property_id: UUID, responsibility: CancellationResponsibility) -> ReservationResource:
+    return replace(
+        resource(property_id),
+        status=ReservationStatus.CANCELLED,
+        version=2,
+        cancellation_reason_code="CUSTOMER_WITHDREW"
+        if responsibility is CancellationResponsibility.CUSTOMER
+        else "PROPERTY_UNABLE_TO_PROVIDE_UNIT",
+        cancellation_responsibility=responsibility,
+        deposit_outcome_state=DepositOutcomeState.AWAITING_DECISION,
+    )
+
+
+def test_deposit_draft_kind_and_capability_follow_cancellation_responsibility() -> None:
+    property_id = uuid4()
+    customer = cancelled(property_id, CancellationResponsibility.CUSTOMER)
+    refund = cancelled(property_id, CancellationResponsibility.PROPERTY)
+    flow = InMemoryReservationFlow(
+        {customer.reservation_id: customer, refund.reservation_id: refund}
+    )
+    forfeiture_only = client(
+        flow, actor(property_id, "reservations.read", "reservation_deposits.dispose")
+    )
+    method_id = uuid4()
+
+    forfeiture = forfeiture_only.post(
+        f"/reservations/{customer.reservation_id}/deposit-drafts",
+        json={"outcome_id": str(uuid4()), "reason": "Customer withdrew"},
+        headers=headers(),
+    )
+    refund_denied = forfeiture_only.post(
+        f"/reservations/{refund.reservation_id}/deposit-drafts",
+        json={
+            "outcome_id": str(uuid4()),
+            "reason": "Property could not provide the Unit",
+            "refund_number": "RF-1",
+            "refund_method_id": str(method_id),
+            "reference_note": "Cash at the office",
+        },
+        headers=headers(),
+    )
+    refund_allowed = client(
+        flow, actor(property_id, "reservations.read", "reservation_deposits.refund")
+    ).post(
+        f"/reservations/{refund.reservation_id}/deposit-drafts",
+        json={
+            "outcome_id": str(uuid4()),
+            "reason": "Property could not provide the Unit",
+            "refund_number": "RF-1",
+            "refund_method_id": str(method_id),
+            "reference_note": "Cash at the office",
+        },
+        headers=headers(),
+    )
+
+    assert forfeiture.status_code == 201
+    assert forfeiture.headers["cache-control"] == "private, no-store"
+    assert refund_denied.status_code == 404
+    assert refund_allowed.status_code == 201
+    kinds = [call[2] for call in flow.draft_calls]
+    assert kinds == [
+        ReservationDepositDecision.DEPOSIT_FORFEITURE,
+        ReservationDepositDecision.REFUND,
+    ]
+    refund_command = flow.draft_calls[1][3]
+    assert isinstance(refund_command, RecordReservationDepositDraftCommand)
+    assert refund_command.method is not None
+    assert refund_command.method.refund_method_id == method_id
+
+
+def test_deposit_draft_routes_refuse_active_reservations_csrf_and_partial_method() -> None:
+    property_id = uuid4()
+    active = resource(property_id)
+    refund = cancelled(property_id, CancellationResponsibility.PROPERTY)
+    flow = InMemoryReservationFlow({active.reservation_id: active, refund.reservation_id: refund})
+    api = client(
+        flow,
+        actor(
+            property_id,
+            "reservations.read",
+            "reservation_deposits.dispose",
+            "reservation_deposits.refund",
+        ),
+    )
+    not_cancelled = api.post(
+        f"/reservations/{active.reservation_id}/deposit-drafts",
+        json={"outcome_id": str(uuid4()), "reason": "Too early"},
+        headers=headers(),
+    )
+    no_csrf = api.post(
+        f"/reservations/{refund.reservation_id}/deposit-drafts",
+        json={"outcome_id": str(uuid4()), "reason": "No token"},
+        headers={"Idempotency-Key": str(uuid4())},
+    )
+    partial_method = api.post(
+        f"/reservations/{refund.reservation_id}/deposit-drafts",
+        json={
+            "outcome_id": str(uuid4()),
+            "reason": "Method without note",
+            "refund_number": "RF-2",
+            "refund_method_id": str(uuid4()),
+        },
+        headers=headers(),
+    )
+
+    assert not_cancelled.status_code == 422
+    assert no_csrf.status_code == 403
+    assert partial_method.status_code == 422
+    assert flow.draft_calls == []
+
+
+def test_only_financial_approve_confirms_a_reservation_deposit_draft() -> None:
+    property_id = uuid4()
+    customer = cancelled(property_id, CancellationResponsibility.CUSTOMER)
+    flow = InMemoryReservationFlow({customer.reservation_id: customer})
+    draft_id = uuid4()
+    path = f"/reservations/{customer.reservation_id}/deposit-drafts/{draft_id}/confirm"
+
+    staff = client(
+        flow,
+        actor(
+            property_id,
+            "reservations.read",
+            "reservation_deposits.dispose",
+            "reservation_deposits.correct",
+        ),
+    ).post(path, headers=headers())
+    approver = client(flow, actor(property_id, "reservations.read", "financial.approve"))
+    no_csrf = approver.post(path, headers={"Idempotency-Key": str(uuid4())})
+    confirmed = approver.post(path, headers=headers())
+
+    assert staff.status_code == 404
+    assert no_csrf.status_code == 403
+    assert confirmed.status_code == 200
+    assert confirmed.headers["cache-control"] == "private, no-store"
+    assert flow.draft_calls == [("confirm", property_id, customer.reservation_id, draft_id)]
+
+
+def test_correction_draft_needs_the_correct_capability_and_the_kind_capability() -> None:
+    property_id = uuid4()
+    customer = cancelled(property_id, CancellationResponsibility.CUSTOMER)
+    flow = InMemoryReservationFlow({customer.reservation_id: customer})
+    body = {
+        "expected_outcome_id": str(uuid4()),
+        "correction_id": str(uuid4()),
+        "replacement_outcome_id": str(uuid4()),
+        "reason": "Correct evidence",
+        "evidence_reference": "CASE-1",
+    }
+    path = f"/reservations/{customer.reservation_id}/deposit-correction-drafts"
+
+    without_correct = client(
+        flow, actor(property_id, "reservations.read", "reservation_deposits.dispose")
+    ).post(path, json=body, headers=headers())
+    without_kind = client(
+        flow, actor(property_id, "reservations.read", "reservation_deposits.correct")
+    ).post(path, json=body, headers=headers())
+    allowed = client(
+        flow,
+        actor(
+            property_id,
+            "reservations.read",
+            "reservation_deposits.correct",
+            "reservation_deposits.dispose",
+        ),
+    ).post(path, json=body, headers=headers())
+
+    assert without_correct.status_code == 404
+    assert without_kind.status_code == 404
+    assert allowed.status_code == 201
+    assert [call[0] for call in flow.draft_calls] == ["correct"]
+    assert flow.draft_calls[0][2] is ReservationDepositDecision.DEPOSIT_FORFEITURE
+
+
+def test_waiting_list_is_bounded_private_paged_and_read_capability_scoped() -> None:
+    property_id = uuid4()
+    first = cancelled(property_id, CancellationResponsibility.CUSTOMER)
+    second = cancelled(property_id, CancellationResponsibility.PROPERTY)
+    flow = InMemoryReservationFlow({first.reservation_id: first, second.reservation_id: second})
+    path = f"/properties/{property_id}/reservation-deposit-decisions"
+
+    denied = client(flow, actor(property_id, "reservation_deposits.dispose")).get(path)
+    reader = client(flow, actor(property_id, "reservations.read"))
+    too_large = reader.get(path + "?limit=101")
+    bad_cursor = reader.get(path + "?cursor=not-a-cursor")
+    page = reader.get(path + "?limit=1")
+    cursor = page.json()["data"]["next_cursor"]
+    following = reader.get(path, params={"limit": 1, "cursor": cursor})
+
+    assert denied.status_code == 404
+    assert too_large.status_code == 422
+    assert bad_cursor.status_code == 422
+    assert page.status_code == 200
+    assert page.headers["cache-control"] == "private, no-store"
+    assert len(page.json()["data"]["items"]) == 1
+    assert isinstance(cursor, str)
+    assert following.status_code == 200
+    assert flow.awaiting_page is not None
+    assert flow.awaiting_page.after_id == UUID(page.json()["data"]["items"][0]["reservation_id"])
+    assert flow.awaiting_page.after_cancelled_at is not None
+
+
+def test_reused_draft_key_answers_idempotency_key_reused() -> None:
+    property_id = uuid4()
+    customer = cancelled(property_id, CancellationResponsibility.CUSTOMER)
+
+    class ReusedFlow(InMemoryReservationFlow):
+        def record_deposit_draft(
+            self,
+            property_id: UUID,
+            decision: ReservationDepositDecision,
+            command: RecordReservationDepositDraftCommand,
+            *,
+            actor: AuthenticatedActor,
+        ) -> dict[str, object]:
+            del property_id, decision, command, actor
+            raise ReservationDepositDraftKeyReused("Reservation Deposit draft key was reused")
+
+    response = client(
+        ReusedFlow({customer.reservation_id: customer}),
+        actor(property_id, "reservations.read", "reservation_deposits.dispose"),
+    ).post(
+        f"/reservations/{customer.reservation_id}/deposit-drafts",
+        json={"outcome_id": str(uuid4()), "reason": "Changed reason"},
+        headers=headers(),
+    )
+
+    assert response.status_code == 409
+    assert response.json()["error"]["code"] == "IDEMPOTENCY_KEY_REUSED"
+    assert response.json()["error"]["rule_ids"] == ["API-016"]
+
+
+def test_reject_needs_financial_approve_and_withdraw_needs_the_kind_capability() -> None:
+    property_id = uuid4()
+    customer = cancelled(property_id, CancellationResponsibility.CUSTOMER)
+    flow = InMemoryReservationFlow({customer.reservation_id: customer})
+    draft_id = uuid4()
+    base = f"/reservations/{customer.reservation_id}/deposit-drafts/{draft_id}"
+    body = {"reason": "Wrong reason text"}
+    staff = client(flow, actor(property_id, "reservations.read", "reservation_deposits.dispose"))
+    approver = client(flow, actor(property_id, "reservations.read", "financial.approve"))
+
+    staff_reject = staff.post(base + "/reject", json=body, headers=headers())
+    approver_withdraw = approver.post(base + "/withdraw", json=body, headers=headers())
+    no_reason = approver.post(base + "/reject", json={}, headers=headers())
+    no_csrf = approver.post(base + "/reject", json=body, headers={"Idempotency-Key": str(uuid4())})
+    rejected = approver.post(base + "/reject", json=body, headers=headers())
+    withdrawn = staff.post(base + "/withdraw", json=body, headers=headers())
+
+    assert staff_reject.status_code == 404
+    assert approver_withdraw.status_code == 404
+    assert no_reason.status_code == 422
+    assert no_csrf.status_code == 403
+    assert rejected.status_code == 200
+    assert rejected.headers["cache-control"] == "private, no-store"
+    assert withdrawn.status_code == 200
+    assert flow.draft_calls == [
+        ("reject", property_id, customer.reservation_id, draft_id),
+        ("withdraw", property_id, customer.reservation_id, draft_id),
+    ]

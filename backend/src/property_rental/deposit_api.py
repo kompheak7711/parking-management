@@ -50,11 +50,10 @@ from property_rental.reservation import (
     ReservationAuthorizationError,
     ReservationCommandConflictError,
     ReservationCommandInvalidError,
+    ReservationDepositDraftRequired,
     ReservationNotFoundError,
-    ReservationOutcomeCorrectionCommand,
     ReservationServiceUnavailableError,
     ReservationVersionConflictError,
-    reservation_request_digest,
 )
 from property_rental.settings import Settings
 
@@ -677,58 +676,9 @@ class PostgresDepositResourceFlow:
         reservation_id = None if row[1] is None else UUID(str(row[1]))
         current = self.get(deposit_id)
         if reservation_id is not None:
-            if replacement_disposition_id is None or expected_reservation_version is None:
-                raise DepositResourceInvalid(
-                    "Reservation disposition correction requires replacement and version evidence"
-                )
-            try:
-                actor_id = UUID(actor.actor_id)
-            except ValueError as exc:
-                raise DepositAuthorizationError("Deposit actor is invalid") from exc
-            for capability in (
-                DEPOSIT_OUTCOME_CORRECT_CAPABILITY,
-                RESERVATION_DEPOSIT_DISPOSITION_CAPABILITY,
-            ):
-                if not is_authorized(
-                    actor,
-                    AuthorizationRequirement(
-                        capability=capability, property_id=str(current.property_id)
-                    ),
-                ):
-                    raise DepositAuthorizationError(
-                        "Reservation Deposit correction is not authorized"
-                    )
-            correction = ReservationOutcomeCorrectionCommand(
-                idempotency_key=command.idempotency_key,
-                correction_id=command.reversal_id,
-                expected_outcome_id=disposition_id,
-                replacement_outcome_id=replacement_disposition_id,
-                reservation_id=reservation_id,
-                expected_version=expected_reservation_version,
-                reason=command.reason,
-                evidence_reference=command.evidence_reference,
-                authorization_reference=DEPOSIT_OUTCOME_CORRECT_CAPABILITY,
-                replacement_authorization_reference=(RESERVATION_DEPOSIT_DISPOSITION_CAPABILITY),
-                replacement_refund_number=None,
-            )
-            return self._financial_snapshot(
-                "SELECT app.correct_reservation_deposit_disposition_v2("
-                "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-                (
-                    current.property_id,
-                    actor_id,
-                    correction.idempotency_key,
-                    reservation_request_digest("reservation.outcome.correct", correction),
-                    correction.correction_id,
-                    correction.expected_outcome_id,
-                    correction.replacement_outcome_id,
-                    correction.reservation_id,
-                    correction.expected_version,
-                    correction.reason,
-                    correction.evidence_reference,
-                    correction.authorization_reference,
-                    correction.replacement_authorization_reference,
-                ),
+            # V1-056 slice 3b: a Reservation outcome correction is a draft (BR-AUTH-010).
+            raise ReservationDepositDraftRequired(
+                "Reservation outcome corrections are recorded as drafts"
             )
         if replacement_disposition_id is not None or expected_reservation_version is not None:
             raise DepositResourceInvalid(
@@ -875,6 +825,8 @@ def _translate(exc: Exception) -> Exception:
         return exc
     if isinstance(exc, HTTPException):
         return exc
+    if isinstance(exc, ReservationDepositDraftRequired):
+        return exc
     if isinstance(exc, (DepositResourceNotFound, DepositNotFoundError)):
         return HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     if isinstance(exc, DepositConflictError):
@@ -953,18 +905,8 @@ def _ledger_body(
             ),
         )
     elif value.reversal_eligible and value.event_kind == "DISPOSITION":
-        if value.governing_source_kind == "RESERVATION":
-            can_reverse = all(
-                is_authorized(
-                    actor,
-                    AuthorizationRequirement(capability=capability, property_id=str(property_id)),
-                )
-                for capability in (
-                    DEPOSIT_OUTCOME_CORRECT_CAPABILITY,
-                    RESERVATION_DEPOSIT_DISPOSITION_CAPABILITY,
-                )
-            )
-        elif value.governing_source_kind == "LEASE":
+        # A Reservation disposition is corrected only through a correction draft (V1-056 3b).
+        if value.governing_source_kind == "LEASE":
             can_reverse = is_authorized(
                 actor,
                 AuthorizationRequirement(
@@ -1148,6 +1090,8 @@ def create_deposit_router(
                 _require(actor, property_id, DEPOSIT_OUTCOME_CORRECT_CAPABILITY)
                 _require(actor, property_id, RESERVATION_DEPOSIT_DISPOSITION_CAPABILITY)
             require_browser_mutation(request, settings)
+            if reservation_id is not None:
+                raise ReservationDepositDraftRequired
             value = flow.reverse_disposition(
                 disposition_id,
                 ReverseDepositDispositionCommand(

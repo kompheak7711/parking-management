@@ -100,70 +100,54 @@ describe("Reservation API client", () => {
         reservation,
         {
           event_id: "event-1",
-          outcome_id: "outcome-1",
           reason_code: "CUSTOMER_WITHDREW",
           responsibility: "CUSTOMER",
           property_could_provide_unit: true,
           reason_memo: "Customer request",
           coordination_reference: null,
-          refund_number: null,
         },
         "command-1",
       ),
     ).rejects.toBeInstanceOf(ReservationConflictError);
+    // V1-056 slice 3b: every cancellation uses the cancel route; the Deposit outcome is a draft.
     expect(fetchMock.mock.calls[0]?.[0]).toBe(
-      "/api/v1/reservations/reservation-1/security-deposit-dispositions",
+      "/reservations/reservation-1/cancel",
     );
   });
 
   it("TEST-FE-211 reloads detail after the replay-stable disposition result", async () => {
-    const fetchMock = vi
-      .spyOn(globalThis, "fetch")
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({
-            data: {
-              reservation_id: reservation.reservation_id,
-              version: 3,
-              deposit_outcome_state: "NON_REFUNDABLE_DISPOSITION",
-            },
-          }),
-          { status: 200, headers: { "Content-Type": "application/json" } },
-        ),
-      )
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({
-            data: {
-              ...reservation,
-              status: "CANCELLED",
-              version: 3,
-              deposit_outcome_state: "NON_REFUNDABLE_DISPOSITION",
-            },
-          }),
-          { status: 200, headers: { "Content-Type": "application/json" } },
-        ),
-      );
+    // V1-056 slice 3b: the cancel route returns the Reservation itself; the Deposit is held
+    // until its draft is confirmed, so there is no disposition result to reload from.
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          data: {
+            ...reservation,
+            status: "CANCELLED",
+            version: 3,
+            deposit_outcome_state: "AWAITING_DECISION",
+          },
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    );
 
     const result = await reservationApi.cancel(
       reservation,
       {
         event_id: "event-1",
-        outcome_id: "outcome-1",
         reason_code: "CUSTOMER_WITHDREW",
         responsibility: "CUSTOMER",
         property_could_provide_unit: true,
         reason_memo: "Customer request",
         coordination_reference: null,
-        refund_number: null,
       },
       "command-1",
     );
 
     expect(result.status).toBe("CANCELLED");
     expect(fetchMock.mock.calls.map(([path]) => path)).toEqual([
-      "/api/v1/reservations/reservation-1/security-deposit-dispositions",
-      "/reservations/reservation-1",
+      "/reservations/reservation-1/cancel",
     ]);
   });
 });

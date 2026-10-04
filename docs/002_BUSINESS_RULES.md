@@ -498,6 +498,8 @@ Automatic expiration performs the approved ACTIVE to CANCELLED transition,
 records `RESERVATION_EXPIRED`, preserves history, and releases the Unit as one
 coordinated business action.
 
+Amended by the owner answers of 2026-10-04 to Q-2026-10-03-2 (docs/010, V1-056 slice 3b): automatic expiration still cancels and releases the Unit, but never forfeits the Security Deposit; the forfeiture is a Staff draft confirmed by a `financial.approve` holder (BR-AUTH-010). Until then the Reservation is listed as waiting for a Deposit decision.
+
 ---
 
 ## BR-RES-017 — Single Extension Limit
@@ -539,6 +541,8 @@ providing the Unit as agreed, the Security Deposit received is non-refundable.
 
 Waiting for expiration must not bypass the customer-caused cancellation policy.
 
+Amended by the owner answers of 2026-10-04 to Q-2026-10-03-2 (docs/010, V1-056 slice 3b): the non-refundable outcome is recorded as a forfeiture draft and takes effect only when a `financial.approve` holder confirms it (BR-AUTH-010); the Security Deposit stays held until then. Corrections of the outcome are drafts too.
+
 ---
 
 ## BR-RES-022 — Property-caused Cancellation
@@ -552,6 +556,8 @@ This rule creates no additional temporary-accommodation financial policy.
 If the Customer rejects the delay or alternative and requests cancellation, the
 Reservation must be cancelled and all Security Deposit received for that
 Reservation must be refunded through an explicit Refund event.
+
+Amended by the owner answers of 2026-10-04 to Q-2026-10-03-2 (docs/010, V1-056 slice 3b): the cancellation and Unit release happen at once; the Refund is a draft with a Refund method and reference note (BR-REFUND-014) and takes effect only when a `financial.approve` holder confirms it (BR-AUTH-010). A Reservation Refund always goes to the Reservation Customer.
 
 ---
 
