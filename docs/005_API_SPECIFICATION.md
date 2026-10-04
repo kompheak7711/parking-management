@@ -868,6 +868,12 @@ and answers 409 with error code `REFUND_DRAFT_REQUIRED`.
   or a Pet Deposit source is no longer qualified; when another confirmation takes the same value at the same moment, the
   loser may get 503 instead and its draft also stays pending.
 
+A Pet Deposit Refund draft may add `recipient_customer_id` (another signed Signer of the
+Lease) and `signer_agreement` (the written agreement of all Signers, 1 to 2,000
+characters), always together (BR-REFUND-015, slice 3a-2); otherwise the Refund goes to
+the Primary Tenant. The Customer Ledger books every Deposit Refund on the Deposit
+owner's ledger and names the paid Signer in `source_audit.paid_to_customer_id`.
+
 The Refund methods routes (BR-REFUND-014) and the Reservation Refund drafts come with
 later V1-056 slices.
 

@@ -34889,6 +34889,67 @@
       "test_path": "backend/tests/test_refund_draft_migration.py",
       "status": "implemented",
       "notes": "A REFUND draft whose variant is not USD or PET is refused at confirmation and creates no Refund."
+    },
+    {
+      "test_id": "test_a_pet_refund_goes_to_an_agreed_signer_and_books_on_the_owner_ledger",
+      "upstream_ids": [
+        "BR-REFUND-015",
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_signer_recipient_migration.py",
+      "status": "implemented",
+      "notes": "With the written agreement recorded on the draft, the confirmed Pet Deposit Refund names the other Signer as recipient; the agreement is append-only; the Primary Tenant's ledger shows the Pet Deposit leaving and names the Signer who was paid."
+    },
+    {
+      "test_id": "test_the_default_recipient_stays_the_primary_tenant_with_no_paid_to",
+      "upstream_ids": [
+        "BR-REFUND-015"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_signer_recipient_migration.py",
+      "status": "implemented",
+      "notes": "Without an agreement the Pet Deposit Refund goes to the Primary Tenant and the ledger row has no paid-to Signer, as before."
+    },
+    {
+      "test_id": "test_only_another_signer_with_a_written_agreement_may_receive_it",
+      "upstream_ids": [
+        "BR-REFUND-015"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_signer_recipient_migration.py",
+      "status": "implemented",
+      "notes": "A non-Signer or the Primary Tenant as named recipient is refused; a missing, empty, padded or over-long agreement or a Payment Refund with a recipient is refused (P5202); a Refund row naming another Signer without a recorded agreement is refused by the database."
+    },
+    {
+      "test_id": "test_signer_recipient_migration_is_forward_only_and_changes_only_two_functions",
+      "upstream_ids": [
+        "BR-REFUND-015"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_refund_signer_recipient_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20261014_79 adds only the agreement table, changes only the Pet Refund source check and the Refund confirm function among earlier functions, keeps the ledger view columns and is forward-only."
+    },
+    {
+      "test_id": "test_refund_draft_http_signer_recipient_needs_a_pet_source_and_the_agreement",
+      "upstream_ids": [
+        "BR-REFUND-015"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "POST /refund-drafts refuses a Signer recipient without the agreement, an agreement without a recipient, or a recipient on a Payment Refund (422), and passes both to the Pet Refund draft."
+    },
+    {
+      "test_id": "test_refunds_of_the_earlier_shape_project_exactly_as_before",
+      "upstream_ids": [
+        "BR-REFUND-015"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_signer_recipient_migration.py",
+      "status": "implemented",
+      "notes": "For the seeded Payment and Pet Deposit Refunds and every other Refund or Refund correction already in the database without a Signer agreement, the rebuilt ledger books the recipient and adds no paid-to field, exactly as the revision 48 projection did. The upgrade's refusal when an earlier Deposit Refund was paid to someone else is a defensive precondition and is not tested (the earlier Pet Refund source trigger prevents seeding such a row)."
     }
   ]
 }

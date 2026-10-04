@@ -1054,3 +1054,48 @@ def test_refund_draft_http_confirm_needs_financial_approve_and_returns_the_refun
     flow.refund_service.confirm_draft.side_effect = RefundConflictError("private detail")
     conflict = api(flow, who).post(path, headers=mutation_headers())
     assert conflict.status_code == 409 and "private detail" not in conflict.text
+
+
+def test_refund_draft_http_signer_recipient_needs_a_pet_source_and_the_agreement() -> None:
+    flow = Flow()
+    deposit, review, signer = uuid4(), uuid4(), uuid4()
+    flow.refund_service.record_pet_draft.return_value = {
+        "draft_id": str(uuid4()),
+        "property_id": str(flow.prop),
+        "kind": "REFUND",
+    }
+    who = actor(flow.prop, "refunds.create")
+    pet = {
+        **_draft_body(flow),
+        "source_type": "PET_DEPOSIT",
+        "source_id": str(deposit),
+        "pet_refund_review_id": str(review),
+    }
+    for body in (
+        {**pet, "recipient_customer_id": str(signer)},
+        {**pet, "signer_agreement": "All Signers agreed"},
+        {
+            **_draft_body(flow),
+            "recipient_customer_id": str(signer),
+            "signer_agreement": "All Signers agreed",
+        },
+    ):
+        refused = api(flow, who).post(
+            "/api/v1/refund-drafts", json=body, headers=mutation_headers()
+        )
+        assert refused.status_code == 422, refused.text
+    flow.refund_service.record_pet_draft.assert_not_called()
+    flow.refund_service.record_usd_draft.assert_not_called()
+    response = api(flow, who).post(
+        "/api/v1/refund-drafts",
+        json={
+            **pet,
+            "recipient_customer_id": str(signer),
+            "signer_agreement": "All Signers agreed in writing on 2026-10-04",
+        },
+        headers=mutation_headers(),
+    )
+    assert response.status_code == 201, response.text
+    recipient = flow.refund_service.record_pet_draft.call_args.kwargs["recipient"]
+    assert recipient.customer_id == signer
+    assert recipient.agreement == "All Signers agreed in writing on 2026-10-04"

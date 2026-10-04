@@ -121,6 +121,18 @@ class RefundMethodChoice:
 
 
 @dataclass(frozen=True, slots=True)
+class SignerRecipient:
+    """Another Lease Signer chosen in writing by all Signers (BR-REFUND-015)."""
+
+    customer_id: UUID
+    agreement: str
+
+    def __post_init__(self) -> None:
+        _uuid(self.customer_id)
+        _text(self.agreement, 2000)
+
+
+@dataclass(frozen=True, slots=True)
 class CreatePetRefundCommand:
     idempotency_key: UUID
     deposit_id: UUID
@@ -382,8 +394,13 @@ class RefundService:
         method: RefundMethodChoice,
         *,
         actor: AuthenticatedActor,
+        recipient: SignerRecipient | None = None,
     ) -> dict[str, object]:
-        """Record a qualified Pet Deposit Refund draft; it has no effect until confirmed."""
+        """Record a qualified Pet Deposit Refund draft; it has no effect until confirmed.
+
+        Without ``recipient`` the Refund goes to the Primary Tenant; with it, to another Lease
+        Signer named by the written agreement of all Signers (BR-REFUND-015).
+        """
         actor_id = self._authorize(actor, property_id, "refunds.create")
         request = CreatePetRefundCommand(
             command.idempotency_key,
@@ -393,20 +410,27 @@ class RefundService:
             command.reason,
         )
         choice = RefundMethodChoice(method.refund_method_id, method.reference_note)
+        parameters: tuple[object, ...] = (
+            property_id,
+            actor_id,
+            refund_draft_id(property_id, actor_id, "PET", request.idempotency_key),
+            request.deposit_id,
+            request.pet_refund_review_id,
+            request.amount_usd_cents,
+            request.reason,
+            choice.refund_method_id,
+            choice.reference_note,
+            "refunds.create",
+        )
+        if recipient is None:
+            return self._draft_call(
+                "SELECT app.record_refund_draft(%s,%s,%s,'PET',NULL,%s,%s,%s,%s,%s,%s,%s)",
+                parameters,
+            )
+        signer = SignerRecipient(recipient.customer_id, recipient.agreement)
         return self._draft_call(
-            "SELECT app.record_refund_draft(%s,%s,%s,'PET',NULL,%s,%s,%s,%s,%s,%s,%s)",
-            (
-                property_id,
-                actor_id,
-                refund_draft_id(property_id, actor_id, "PET", request.idempotency_key),
-                request.deposit_id,
-                request.pet_refund_review_id,
-                request.amount_usd_cents,
-                request.reason,
-                choice.refund_method_id,
-                choice.reference_note,
-                "refunds.create",
-            ),
+            "SELECT app.record_refund_draft(%s,%s,%s,'PET',NULL,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            (*parameters, signer.customer_id, signer.agreement),
         )
 
     def confirm_draft(

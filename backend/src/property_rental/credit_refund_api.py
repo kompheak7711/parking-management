@@ -52,6 +52,7 @@ from property_rental.payment_api import (
     Evidence,
     Identity,
     Instant,
+    Memo,
     MinorUnits,
     StrictInput,
     _actor,
@@ -73,6 +74,7 @@ from property_rental.refund import (
     RefundService,
     RefundUnavailableError,
     ReverseRefundCorrectionCommand,
+    SignerRecipient,
     VerifyUsdRefundReturnCommand,
 )
 from property_rental.settings import Settings
@@ -113,6 +115,17 @@ class CreateRefundInput(ReversalInput):
 class CreateRefundDraftInput(CreateRefundInput):
     refund_method_id: Identity
     reference_note: Evidence
+    recipient_customer_id: Identity | None = None
+    signer_agreement: Memo | None = None
+
+    @model_validator(mode="after")
+    def signer_recipient(self) -> CreateRefundDraftInput:
+        # BR-REFUND-015: another Signer only for a Deposit Refund, with the written agreement.
+        if (self.recipient_customer_id is None) != (self.signer_agreement is None):
+            raise ValueError("A Signer recipient needs the written agreement")
+        if self.recipient_customer_id is not None and self.source_type != "PET_DEPOSIT":
+            raise ValueError("Only a Deposit Refund may go to another Signer")
+        return self
 
 
 class VerifiedReturnInput(ReversalInput):
@@ -650,9 +663,15 @@ def create_credit_refund_router(
                     idempotency_key, body.source_id, review_id, body.amount_usd_cents, body.reason
                 )
             )
+            recipient_id, agreement = body.recipient_customer_id, body.signer_agreement
+            signer = (
+                None
+                if recipient_id is None or agreement is None
+                else _invoke(lambda: SignerRecipient(recipient_id, agreement))
+            )
             result = _invoke(
                 lambda: flow.refunds(mutation=True).record_pet_draft(
-                    prop, pet_command, method, actor=actor
+                    prop, pet_command, method, actor=actor, recipient=signer
                 )
             )
         else:

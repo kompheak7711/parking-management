@@ -57,7 +57,7 @@ Save each review result in ops/reviews/ with the slice name and commit hash.
 Standing rule added by the owner on 2026-10-04: If review round 2 has no blocker and at most 2 should-fix findings, Claude Code may do one round 3 without asking the owner. Round 3 must have no should-fix, or Claude Code stops. Before round 3, run the full backend unit suite and the full PostgreSQL suite once each.
 
 5. Test runs
-Follow the run rules: one targeted PostgreSQL run per sub-slice, after a read-only search of all backend tests for other affected tests. No retry.
+Default: one full PostgreSQL run per sub-slice, because many tests compare the whole database function list. A rerun is allowed only after a real correction, at most 2 corrections per distinct cause. Every run is listed in the slice report with its result and cause. A targeted run is allowed when you can show it covers every affected test. (Owner rule update, 2026-10-04; replaces the earlier one-targeted-run line.)
 Read and save the full unfiltered output to a file.
 Every new rule ID gets a real test and a traceability entry in the slice that builds it. Twelve new IDs from DL-069 have no test yet; CI check TEST-118 fails until they do. That is one more reason not to push.
 A known intermittent frontend test (TEST-FE-087, 128) failing once is recorded, not retried and not hidden.

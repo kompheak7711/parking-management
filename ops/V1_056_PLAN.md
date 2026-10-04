@@ -99,6 +99,9 @@ Each slice: one local checkpoint commit, explicit paths, secret and diff scan, i
 - Note: the app still has no working login, so there is no browser check; that waits for the login slice (DL-067).
 
 ### Slice 12 — Documentation, traceability, final gates
+- Open item (slice 3a-2 review): add a test that a correction of a Signer-paid Deposit Refund is booked on the Deposit owner's ledger.
+- Open item (slice 3a-2 review): add a test that a Lease Signer who has not signed cannot be named as a Deposit Refund recipient.
+- Open item (owner, 2026-10-04): add a test for the 422 when a Pet Deposit Refund draft's source is no longer qualified at confirmation, once the fixtures allow removing a qualification without changing protected history.
 - docs 004 to 007 updated; every new rule ID has a test and an appended traceability entry; TEST-118 passes locally.
 - Full gates once: backend format, lint, type check, tests; full PostgreSQL suite; frontend format, lint, type check, tests, build; audit (the known braces advisory stays until V1-059).
 - Final independent review of the whole V1-056 diff, owner report, request for one push.
