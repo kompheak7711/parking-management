@@ -1101,13 +1101,15 @@ staff cannot allocate it to an ordinary Invoice before Final Settlement.
 
 **Normative product behavior**
 
-Deposits may be applied to Invoice obligations only as part of the Final Settlement
-process after Lease termination. An active-Lease Pet Deposit Refund under BR-DEP-012
+Deposits may be applied to Invoice obligations and Late-payment Charges only as part
+of the Final Settlement process after Lease termination. An active-Lease Pet Deposit Refund under BR-DEP-012
 is a separate Refund process, not Deposit application to an Invoice.
 
 An explicit forfeiture/disposition event under an approved non-refundable policy
 is not an Invoice allocation and must remain separate from Final Settlement
 application. This distinction does not create any new reason for forfeiture.
+
+Amended by the owner answers to Q-2026-10-05-20 and Q-2026-10-05-21 (2026-10-05): a Deposit may pay a Late-payment Charge like any other debt; the first sentence now names Late-payment Charges.
 
 ### PR-DEP-015 — Customer-caused Reservation Cancellation
 

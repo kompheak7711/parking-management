@@ -102,7 +102,7 @@ Each slice: one local checkpoint commit, explicit paths, secret and diff scan, i
 
 ### Slice 8 design note (2026-10-05)
 
-Written before any code, at the owner's request. Status: the owner answered Q-2026-10-05-20 (docs/010, 2026-10-05) and this note follows the answers; STOPPED again before 8a for Q-2026-10-05-21 (answer 5 conflicts with the BR-SETTLE-016 text; BR-DEP-014 wording; one Pet Deposit case). The read-only path search is recorded in Q-2026-10-05-20.
+Written before any code, at the owner's request. Status: the owner answered Q-2026-10-05-20 (docs/010, 2026-10-05) and this note follows the answers; the owner answered Q-2026-10-05-21 the same day (BR-SETTLE-016, BR-DEP-014, PR-DEP-014 and BR-DEP-027 amended; at the BR-DEP-027 terminations a Pet Deposit rest without the Customer's choice is refunded and the debt stays; the DL-013 staff step stays at a normal end and at voluntary early leaving). Sub-slice 8a started. The read-only path search is recorded in Q-2026-10-05-20.
 
 **Reading of the rules (checked against docs/010 DL-012, DL-013, DL-032, DL-068, DL-069 and the later notes, docs/002 BR-SETTLE-001 to 017, BR-DEP-022 to 027, BR-CREDIT-005 to 008 and 014, BR-REFUND-007 and 015, BR-AUTH-008 to 010):**
 

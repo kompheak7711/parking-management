@@ -1076,13 +1076,15 @@ staff cannot allocate it to an ordinary Invoice before Final Settlement.
 
 ## BR-DEP-014 — Deposit Application During Final Settlement Only
 
-Deposits may be applied to Invoice obligations only as part of the Final Settlement
-process after Lease termination. An active-Lease Pet Deposit Refund under BR-DEP-012
+Deposits may be applied to Invoice obligations and Late-payment Charges only as part
+of the Final Settlement process after Lease termination. An active-Lease Pet Deposit Refund under BR-DEP-012
 is a separate Refund process, not Deposit application to an Invoice.
 
 An explicit forfeiture/disposition event under an approved non-refundable policy
 is not an Invoice allocation and must remain separate from Final Settlement
 application. This distinction does not create any new reason for forfeiture.
+
+Amended by the owner answers to Q-2026-10-05-20 and Q-2026-10-05-21 (2026-10-05): a Deposit may pay a Late-payment Charge like any other debt; the first sentence now names Late-payment Charges.
 
 ---
 
@@ -4366,6 +4368,8 @@ When the Security Deposit is kept, the whole deposit is forfeited through an exp
 
 At termination for unpaid Initial Rent or Security Deposit, for a non-pet violation, or after the 30-day Rent nonpayment default, the Pet Deposit pays valid pet damage first and the rest is refunded, as in DL-013. Termination for pet noncompliance follows BR-DEP-022: both deposits are kept (DL-068, DL-069).
 
+Amended by the owner answer to Q-2026-10-05-21 (2026-10-05): at these terminations the remaining Pet Deposit pays other debt only when the Customer chooses it, recorded as text (who, the date, how) with the staff reason; otherwise the rest is refunded (owner answer to Q-2026-10-05-20). At a normal Lease end and at voluntary early leaving the DL-013 staff step stays: authorized staff may apply the remaining Pet Deposit with a reason when the Customer will not pay (BR-SETTLE-017).
+
 ---
 
 # 26. Final Settlement Rules
@@ -4542,6 +4546,8 @@ result necessary to reconstruct it.
 ## BR-SETTLE-016 — Settlement Debt and Joint Signers
 
 A balance the Customer does not pay after Final Settlement stays open as debt on the Primary Tenant's Customer Ledger. There is no write-off in V1 (DL-068, DL-069).
+
+Amended by the owner answer to Q-2026-10-05-21 (2026-10-05): debt left on an Invoice issued to another Signer of the Lease stays on that Signer's Customer Ledger, because an Invoice's Customer never changes; at Final Settlement the Lease's Deposits may pay it in the DL-032 order (owner answer to Q-2026-10-05-20).
 
 ---
 
