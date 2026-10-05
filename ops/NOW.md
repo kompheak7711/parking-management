@@ -87,4 +87,6 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md.
 
 - V1-056 sub-slice 8a-1 (2026-10-05, dba972d, migration 20261021_86): COMMITTED. Final Settlement record and Deposit application record; owner answered Q-2026-10-05-22 (Option (a): Deposit receipt reversal becomes a draft in sub-slice 8r, replacing the Q-2026-10-04-13 answer); round-1 and round-2 fixes done; round 3 (independent and security) no should-fix; unit 3422 (U4), PostgreSQL 1776 (P7) passed. Round-3 notes in plan slice 12. NEXT: sub-slice 8r (Deposit receipt reversal draft, also check the slice 3b Reservation receipt reversal). Nothing pushed.
 
+- V1-056 sub-slice 8r (2026-10-05, 7db72ad, migration 20261022_87): COMMITTED. Deposit receipt reversals (Lease and Reservation) are drafts: deposits.correct prepares, financial.approve confirms; one-call reversal revoked from the financial role and its route answers 409; Reservation receipts could free money the same way and are closed by the same draft (owner answer (c)). Rounds 1 to 3 (independent and security), round 3 no should-fix; unit 3440 (U3), PostgreSQL 1783 (P3) passed. NEXT: sub-slice 8a-2 (Customer Ledger projection and the Deposit history event of Deposit applications), then 8b. Start a fresh session. Nothing pushed.
+
 - Updated: 2026-10-05.
