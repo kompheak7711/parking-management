@@ -1433,8 +1433,11 @@ Append-only Final Settlement financial event: `id uuid PK`, `deposit_id uuid NOT
   valid remaining Settlement Invoice line or Late-payment Charge, not only pet-related damage.
 - Every stage and target is explicitly authorized. `application_order` records the
   actual sequence; neither Payment FIFO nor an inferred Deposit-type FIFO is reused.
-- A deferred trigger matches PET stages to a Pet Deposit and SECURITY stage to a
-  Security Deposit and verifies all prior-stage prerequisites from current balances.
+- A trigger matches PET stages to a Pet Deposit and SECURITY stage to a Security
+  Deposit and keeps the stage order within a Settlement. The prior-stage prerequisites
+  (the DL-032 order and the strict-order rules of owner answer 3 to Q-2026-10-05-20) are
+  checked from current balances by the Settlement draft and its confirmation (V1-056
+  sub-slices 8c and 8e), not by this trigger.
 - The target must belong to the Settlement Lease: an Invoice line of an Invoice of that
   Lease, or a Late-payment Charge whose source Invoice belongs to that Lease. Application
   cannot exceed the held refundable Deposit balance or the target's current outstanding
@@ -1442,7 +1445,24 @@ Append-only Final Settlement financial event: `id uuid PK`, `deposit_id uuid NOT
   Q-2026-10-05-20, 2026-10-05); `PET_RELATED_FIRST` targets only pet-related Damage
   Invoice lines.
 
+- As built in V1-056 sub-slice 8a-1 (migration `20261021_86`): no role may write the table;
+  the internal `app.post_deposit_application` is the only writer and records the
+  `financial.approve` reference. A kept Deposit (a forfeiture ground in the termination record,
+  or an active disposition) is refused. The order number only grows within a Settlement and
+  the stages keep the DL-032 order. The application counts in every Invoice line, Invoice
+  status, Late-payment Charge and Deposit held balance, including the Late-payment Charge
+  balance in the Payment reversal and financial action contexts; VOID, Adjustments and
+  Late-payment Charge corrections of a paid obligation, and a receipt reversal of the
+  Deposit, are refused. The writer refuses an unknown target, and the writer and the
+  record's trigger refuse an approver who is not a person. The Customer's choice and the
+  staff reason for the remaining Pet Deposit (`PET_REMAINDER_EXPLICIT`, BR-SETTLE-017,
+  BR-DEP-027, DL-013) are checked by the Settlement draft and its confirmation (V1-056
+  sub-slices 8c and 8e), not by this table.
+
 ## DB-DEP-006 — `deposit_application_reversals`
+
+Not built in V1-056 (plan Q15: post-settlement corrections are only an extra charge or a
+Refund).
 
 Append-only: `id uuid PK`, `deposit_application_id uuid NOT NULL UNIQUE FK`, `reason text NOT NULL`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`, `authorization_reference text NOT NULL`.
 
@@ -1661,6 +1681,12 @@ Closure occurs once, only after every valid final charge—including unresolved
 Utility handling and every applicable separate Late-payment Charge—is final, all
 required applications/dispositions/Refunds are represented, and final balance is
 reconciled. A closed Settlement is never reopened; correction uses linked events.
+
+As built in V1-056 sub-slice 8a-1 (migration `20261021_86`): the table also stores
+`property_id`; `app.start_final_settlement` (financial role, `final_settlements.prepare`
+checked by the application) opens it; a guard allows only the single closure change
+(all four closure columns together, identity columns unchanged) and refuses any change
+of a closed Settlement and every delete.
 
 `closing_balance_due_usd_cents` is the post-application, post-disposition, and
 post-Refund Customer receivable remaining at closure. A refundable amount is not

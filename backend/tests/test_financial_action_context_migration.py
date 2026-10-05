@@ -15,6 +15,7 @@ from alembic.script import ScriptDirectory
 from psycopg.types.json import Jsonb
 
 from payment_test_support import seed_payment
+from pre_settlement_test_support import pre_settlement_database  # noqa: F401
 from property_rental.credit import (
     ApplyCreditCommand,
     ReverseCreditApplicationCommand,
@@ -314,7 +315,7 @@ def test_financial_action_context_database_migration_privileges_and_forward_only
     migrated_database_url: str,  # noqa: F811
 ) -> None:
     scripts = ScriptDirectory.from_config(Config("alembic.ini"))
-    assert scripts.get_heads() == ["20261020_85"]
+    assert scripts.get_heads() == ["20261021_86"]
     revision = scripts.get_revision("20260908_47")
     assert revision is not None and revision.down_revision == "20260908_46"
     with pytest.raises(RuntimeError, match="forward-only"):
@@ -911,17 +912,21 @@ def test_financial_action_context_database_direct_sql_rejects_malformed_argument
 
 @pytest.mark.parametrize("historical", [False, True])
 def test_financial_action_context_database_future_deposit_application_is_explicit(
-    migrated_database_url: str,  # noqa: F811
+    pre_settlement_database: str,  # noqa: F811
     historical: bool,
 ) -> None:
-    service, staff, _, deposit, payment, receipts = deposit_source(migrated_database_url)
+    # V1-056 sub-slice 8a-1: migration 86 creates app.deposit_applications, so this contract test
+    # of the forward check now runs on the schema before it (revision 20261020_85); every
+    # assertion is unchanged. The head behavior is tested in test_final_settlement_migration.
+    url = pre_settlement_database
+    service, staff, _, deposit, payment, receipts = deposit_source(url)
     if historical:
         for receipt in receipts:
             service.reverse_receipt(
                 ReverseDepositReceiptCommand(uuid4(), uuid4(), receipt, "Resolve source"),
                 actor=staff,
             )
-    with psycopg.connect(migrated_database_url) as connection:
+    with psycopg.connect(url) as connection:
         assert connection.execute("SELECT to_regclass('app.deposit_applications')").fetchone() == (
             None,
         )

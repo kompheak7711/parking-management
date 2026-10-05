@@ -785,7 +785,7 @@ def test_ledger_forward_projection_upgrade_preserves_populated_predecessor(
 ) -> None:
     config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
     scripts = ScriptDirectory.from_config(config)
-    assert scripts.get_heads() == ["20261020_85"]
+    assert scripts.get_heads() == ["20261021_86"]
     revision = scripts.get_revision("20260909_48")
     assert revision is not None
     assert revision.down_revision == "20260908_47"
@@ -1030,9 +1030,15 @@ def test_ledger_security_refund_coordinated_correction_keeps_liability_distinct(
         events = history(connection, customer)
         assert len([e for e in events if e["event_kind"] == "REFUND_PAID"]) == 2
         assert len([e for e in events if e["event_kind"] == "REFUND_CORRECTED"]) == 1
+        # V1-056 sub-slice 8a-1: both tables exist since migration 86; this Customer still has
+        # no Final Settlement and no Deposit application.
         assert connection.execute(
-            "SELECT to_regclass('app.final_settlements'),to_regclass('app.deposit_applications')"
-        ).fetchone() == (None, None)
+            "SELECT (SELECT count(*) FROM app.final_settlements settlement JOIN app.leases lease "
+            "ON lease.id=settlement.lease_id WHERE lease.primary_tenant_id=%s),"
+            "(SELECT count(*) FROM app.deposit_applications application JOIN app.deposits d "
+            "ON d.id=application.deposit_id WHERE d.customer_id=%s)",
+            (customer, customer),
+        ).fetchone() == (0, 0)
 
 
 def test_ledger_qualified_pet_refund_and_return_are_distinct_from_credit(

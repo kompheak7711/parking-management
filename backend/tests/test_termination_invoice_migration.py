@@ -468,14 +468,21 @@ def test_forward59_preserves_every58_table_function_and_genuine_legacy_source(
             assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
                 "20260914_59",
             )
-        result = PostgresTerminationInvoiceReadService(runtime_database_url(), prop).page(
-            lease, actor=reader(human, prop)
-        )
+        # V1-056 sub-slice 8a-1: the current reader expects the migration 86 line field
+        # deposit_applied_usd_cents, so the revision 59 read is checked through its database
+        # function as the runtime role; the asserted facts are unchanged.
+        with psycopg.connect(runtime_database_url()) as connection:
+            found = connection.execute(
+                "SELECT app.lease_termination_invoice_readiness(%s,%s,%s,50,NULL)",
+                (prop, lease, human),
+            ).fetchone()
+        assert found is not None
+        result = found[0]
         assert (
-            result.evidence_status == "VOLUNTARY_EARLY_VERIFIED"
-            and result.termination_event_id is not None
+            result["evidence_status"] == "VOLUNTARY_EARLY_VERIFIED"
+            and result["termination_event_id"] is not None
         )
-        assert result.full_final_month_rent_usd_cents == 80000
+        assert result["full_final_month_rent_usd_cents"] == 80000
         with psycopg.connect(temporary) as connection:
             assert history(connection) == before
 

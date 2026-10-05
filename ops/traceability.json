@@ -36188,6 +36188,217 @@
       "test_path": "backend/tests/test_payment_move_migration.py",
       "status": "implemented",
       "notes": "A Credit Refund of another Customer's Credit released from a moved allocation is refused and records no Refund; the Refund to that Customer is planned for slice 9 (owner answer to Q-2026-10-05-19)."
+    },
+    {
+      "test_id": "test_start_refuses_a_missing_capability_before_any_connection",
+      "upstream_ids": [
+        "BR-SETTLE-001",
+        "BR-AUTH-009",
+        "BR-AUTH-010"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_final_settlement.py",
+      "status": "implemented",
+      "notes": "Opening a Final Settlement needs final_settlements.prepare for the Property; financial.approve alone does not prepare (V1-056 sub-slice 8a-1)."
+    },
+    {
+      "test_id": "test_start_refuses_invalid_identities_before_any_connection",
+      "upstream_ids": [
+        "BR-SETTLE-001"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_final_settlement.py",
+      "status": "implemented",
+      "notes": "Nil or malformed Property and Lease identities are refused before any database connection."
+    },
+    {
+      "test_id": "test_final_settlement_failures_map_to_stable_errors",
+      "upstream_ids": [
+        "BR-SETTLE-001",
+        "BR-AUTH-010"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_final_settlement.py",
+      "status": "implemented",
+      "notes": "Database refusals map to not found, permission, invalid, conflict (business state) or unresolved outcome."
+    },
+    {
+      "test_id": "test_no_application_module_writes_deposit_applications",
+      "upstream_ids": [
+        "BR-DEP-014",
+        "BR-AUTH-010",
+        "DB-DEP-005"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_final_settlement.py",
+      "status": "implemented",
+      "notes": "No application module writes a Deposit application; only the Settlement confirm (sub-slice 8e) will call the internal writer."
+    },
+    {
+      "test_id": "test_a_settlement_opens_once_for_a_terminated_lease_only",
+      "upstream_ids": [
+        "BR-SETTLE-001",
+        "BR-SETTLE-012",
+        "BR-SETTLE-015",
+        "DB-SETTLE-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_migration.py",
+      "status": "implemented",
+      "notes": "One Final Settlement per TERMINATED Lease, opened by final_settlements.prepare, replayed unchanged, audited, never deleted and never changed except by its closure."
+    },
+    {
+      "test_id": "test_a_closed_settlement_is_never_changed_again",
+      "upstream_ids": [
+        "BR-SETTLE-012",
+        "BR-SETTLE-013",
+        "DB-SETTLE-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_migration.py",
+      "status": "implemented",
+      "notes": "The single closure transition happens once; a closed Settlement is never changed again and takes no new Deposit application."
+    },
+    {
+      "test_id": "test_a_deposit_application_counts_as_paid_everywhere",
+      "upstream_ids": [
+        "BR-DEP-014",
+        "BR-DEP-027",
+        "BR-SETTLE-005",
+        "BR-SETTLE-006",
+        "BR-SETTLE-009",
+        "DB-DEP-005",
+        "DB-DER-004",
+        "DB-DER-007",
+        "DB-DER-009"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_migration.py",
+      "status": "implemented",
+      "notes": "Pet Deposit pays pet damage first, then a Late-payment Charge and Rent (owner answers to Q-2026-10-05-20); Invoice line outstanding, Invoice status and version, Late-payment Charge balance, Deposit held amount, termination Invoice readiness and the audit all count the Deposit application."
+    },
+    {
+      "test_id": "test_deposit_application_refusals_change_nothing",
+      "upstream_ids": [
+        "BR-DEP-027",
+        "BR-SETTLE-005",
+        "BR-SETTLE-006",
+        "DB-DEP-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_migration.py",
+      "status": "implemented",
+      "notes": "Only pet-related Damage lines take the first Pet stage; stage must match the Deposit type; amounts are bounded by the held Deposit and the open obligation; another Lease's targets and Deposits are refused; the DL-032 stage order holds; applications are append-only."
+    },
+    {
+      "test_id": "test_kept_deposits_are_never_applied",
+      "upstream_ids": [
+        "BR-DEP-026",
+        "BR-DEP-022",
+        "BR-DEP-023",
+        "BR-SETTLE-006",
+        "BR-SETTLE-014"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_migration.py",
+      "status": "implemented",
+      "notes": "A Security Deposit kept for voluntary early leaving, and both Deposits kept for pet noncompliance, are never applied, even before the forfeiture draft is confirmed; another termination follows DL-032 (owner answer 2 to Q-2026-10-05-20)."
+    },
+    {
+      "test_id": "test_paid_obligations_and_deposit_receipts_are_protected",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-DEP-014",
+        "DB-DEP-007"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_migration.py",
+      "status": "implemented",
+      "notes": "VOID, Adjustments and Late-payment Charge corrections of an obligation a Deposit application paid, and a receipt reversal of that Deposit, are refused."
+    },
+    {
+      "test_id": "test_settlement_records_are_least_privilege",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-SETTLE-015",
+        "DB-SETTLE-001",
+        "DB-DEP-005"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_final_settlement_migration.py",
+      "status": "implemented",
+      "notes": "No role, PUBLIC included, holds any privilege on the new tables; only the financial role may open a Settlement; the twelve listed new functions are security definers with a fixed search path (the append-only refusal trigger function only raises)."
+    },
+    {
+      "test_id": "test_final_settlement_migration_is_forward_only",
+      "upstream_ids": [
+        "DB-SETTLE-001",
+        "DB-DEP-005"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_final_settlement_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20261021_86 follows 20261020_85 and refuses downgrade."
+    },
+    {
+      "test_id": "test_a_final_settlement_deposit_application_counts_as_applied_value",
+      "upstream_ids": [
+        "BR-DEP-014",
+        "DB-DER-007"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_termination_invoice.py",
+      "status": "implemented",
+      "notes": "Termination Invoice readiness counts a Deposit application as applied value and rejects a contradictory status."
+    },
+    {
+      "test_id": "test_violation_default_and_unpaid_initial_grounds_keep_only_the_security_deposit",
+      "upstream_ids": [
+        "BR-DEP-026",
+        "BR-DEP-027",
+        "BR-LEASE-005",
+        "BR-LEASE-025",
+        "BR-LEASE-028",
+        "DB-DEP-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_migration.py",
+      "status": "implemented",
+      "notes": "At non-pet violation, 30-day default and unpaid-Initial terminations the shared slice 6 rule keeps the Security Deposit, which is never applied, while the Pet Deposit stays applicable (V1-056 sub-slice 8a-1 review round 1)."
+    },
+    {
+      "test_id": "test_a_deposit_pays_an_invoice_of_another_signer",
+      "upstream_ids": [
+        "BR-SETTLE-016",
+        "BR-DEP-014",
+        "DB-DEP-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_migration.py",
+      "status": "implemented",
+      "notes": "A Lease Deposit owned by the Primary Tenant pays an Invoice issued to another signed Signer of the Lease; the Invoice keeps its Customer (owner answer 5 to Q-2026-10-05-20)."
+    },
+    {
+      "test_id": "test_payment_contexts_count_a_deposit_application_on_a_charge",
+      "upstream_ids": [
+        "BR-DEP-014",
+        "DB-DER-009"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_migration.py",
+      "status": "implemented",
+      "notes": "The Payment reversal and financial action contexts read a Late-payment Charge balance that counts a Deposit application."
+    },
+    {
+      "test_id": "test_a_charge_correction_after_a_deposit_application_is_a_conflict",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "DB-DEP-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_migration.py",
+      "status": "implemented",
+      "notes": "A Late-payment Charge correction of a Charge a Deposit application paid reaches the Late-payment service as a conflict and records nothing."
     }
   ]
 }

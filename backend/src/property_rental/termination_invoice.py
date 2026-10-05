@@ -73,6 +73,7 @@ class TerminationInvoiceLine:
     adjusted_usd_cents: int
     payment_applied_usd_cents: int
     credit_applied_usd_cents: int
+    deposit_applied_usd_cents: int
     outstanding_usd_cents: int
     active_adjustment_count: int
     components: tuple[InvoiceCalculationComponent, ...]
@@ -336,7 +337,7 @@ def parse_termination_invoice_readiness(
                 "rent_billing_kind category period_start period_end source_type so"
                 "urce_id original_usd_cents "
                 "adjusted_usd_cents payment_applied_usd_cents credit_applied_usd_c"
-                "ents outstanding_usd_cents "
+                "ents deposit_applied_usd_cents outstanding_usd_cents "
                 "active_adjustment_count components",
             )
             line_id, invoice_id = _uuid(row["invoice_line_id"]), _uuid(row["invoice_id"])
@@ -375,19 +376,21 @@ def parse_termination_invoice_readiness(
                 raise ValueError("Rent source needs its billing period")
             original = _integer(row["original_usd_cents"], minimum=1)
             adjusted = _integer(row["adjusted_usd_cents"])
-            payment, credit = (
+            payment, credit, deposit = (
                 _integer(row["payment_applied_usd_cents"]),
                 _integer(row["credit_applied_usd_cents"]),
+                _integer(row["deposit_applied_usd_cents"]),
             )
+            applied = payment + credit + deposit
             outstanding = _integer(row["outstanding_usd_cents"])
-            if adjusted < payment + credit or outstanding != (
-                0 if invoice_status in {"DRAFT", "VOID"} else adjusted - payment - credit
+            if adjusted < applied or outstanding != (
+                0 if invoice_status in {"DRAFT", "VOID"} else adjusted - applied
             ):
                 raise ValueError("Inconsistent current financial position")
-            if invoice_status in {"DRAFT", "VOID"} and payment + credit:
+            if invoice_status in {"DRAFT", "VOID"} and applied:
                 raise ValueError("Invalid active applications on inactive Invoice")
             if (invoice_status == "PAID" and outstanding != 0) or (
-                invoice_status == "UNPAID" and payment + credit != 0
+                invoice_status == "UNPAID" and applied != 0
             ):
                 raise ValueError("Invoice status contradicts this line's financial position")
             components = _components(
@@ -416,6 +419,7 @@ def parse_termination_invoice_readiness(
                     adjusted,
                     payment,
                     credit,
+                    deposit,
                     outstanding,
                     _integer(row["active_adjustment_count"]),
                     components,

@@ -293,9 +293,11 @@ def test_pet_refund_qualification_keeps_signed_lease_and_creates_no_refund_or_ap
         assert connection.execute(
             "SELECT count(*) FROM app.refunds WHERE source_deposit_id=%s", (deposit_id,)
         ).fetchone() == (0,)
-        assert connection.execute("SELECT to_regclass('app.deposit_applications')").fetchone() == (
-            None,
-        )
+        # V1-056 sub-slice 8a-1: app.deposit_applications exists since migration 86; the
+        # qualification still records no Deposit application.
+        assert connection.execute(
+            "SELECT count(*) FROM app.deposit_applications WHERE deposit_id=%s", (deposit_id,)
+        ).fetchone() == (0,)
 
 
 @pytest.mark.parametrize("departure_offset", [-2, 2])

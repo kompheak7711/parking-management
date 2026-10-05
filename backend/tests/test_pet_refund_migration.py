@@ -127,9 +127,14 @@ def test_pet_refund_reuses_review_preserves_lease_and_exact_replay_audit(
         assert connection.execute(
             "SELECT count(*) FROM app.deposit_dispositions WHERE deposit_id=%s", (deposit,)
         ).fetchone() == (0,)
+        # V1-056 sub-slice 8a-1: both tables exist since migration 86; the Pet Refund still
+        # opens no Final Settlement and records no Deposit application.
         assert connection.execute(
-            "SELECT to_regclass('app.final_settlements'),to_regclass('app.deposit_applications')"
-        ).fetchone() == (None, None)
+            "SELECT (SELECT count(*) FROM app.final_settlements settlement JOIN app.deposits d "
+            "ON d.lease_id=settlement.lease_id WHERE d.id=%s),"
+            "(SELECT count(*) FROM app.deposit_applications WHERE deposit_id=%s)",
+            (deposit, deposit),
+        ).fetchone() == (0, 0)
         assert connection.execute(
             "SELECT property_id,customer_id,lease_id,authorization_reference FROM app.audit_events "
             "WHERE entity_id=%s AND action='refund.created'",

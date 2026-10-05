@@ -17,6 +17,7 @@ from alembic.config import Config
 from fastapi.testclient import TestClient
 
 from payment_test_support import seed_deposit_payment
+from pre_settlement_test_support import pre_settlement_database  # noqa: F401
 from property_rental.app import create_app
 from property_rental.customer_api import PostgresCustomerResourceFlow
 from property_rental.deposit import (
@@ -133,9 +134,13 @@ def test_split_departure_and_review_are_idempotent_and_create_no_refund(
         assert connection.execute(
             "SELECT count(*) FROM app.refunds WHERE source_deposit_id=%s", (deposit_id,)
         ).fetchone() == (0,)
-        assert connection.execute("SELECT to_regclass('app.final_settlements')").fetchone() == (
-            None,
-        )
+        # V1-056 sub-slice 8a-1: app.final_settlements now exists (migration 86); the review
+        # still opens no Final Settlement for this Lease.
+        assert connection.execute(
+            "SELECT count(*) FROM app.final_settlements settlement JOIN app.deposits deposit "
+            "ON deposit.lease_id=settlement.lease_id WHERE deposit.id=%s",
+            (deposit_id,),
+        ).fetchone() == (0,)
 
 
 def test_departure_without_received_balance_persists_independently(
@@ -403,8 +408,12 @@ def test_runtime_role_can_read_but_only_financial_role_can_execute_split_command
 
 
 def test_future_deposit_application_dependency_is_fail_closed_and_reversal_aware(
-    migrated_database_url: str,
+    pre_settlement_database: str,  # noqa: F811
 ) -> None:
+    # V1-056 sub-slice 8a-1: migration 86 creates app.deposit_applications, so this contract test
+    # of the migration 28 forward check now runs on the schema before it (revision 20261020_85);
+    # every assertion is unchanged. The head behavior is tested in test_final_settlement_migration.
+    migrated_database_url = pre_settlement_database
     _, _, _, deposit_id = seed_pet_deposit(migrated_database_url)
     application_id = uuid4()
     with psycopg.connect(migrated_database_url) as owner:

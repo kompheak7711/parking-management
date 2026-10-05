@@ -398,7 +398,7 @@ Conflicts and open points:
 
 Points 1 and 2 decide which obligations a Deposit application may pay, which sub-slice 8a builds, so I stopped before 8a. After your answers I amend docs/002 and docs/003 as approved, record them in docs/010 and start 8a under the takeover rules.
 
-## Q-2026-10-05-22 — Sub-slice 8a-1 stopped after review round 1: a Deposit receipt reversal lets Deposit money pay debt without an approver
+## Q-2026-10-05-22 — Sub-slice 8a-1 stopped after review round 1: a Deposit receipt reversal lets Deposit money pay debt without an approver (ANSWERED 2026-10-05: (a) Option (a), the receipt reversal becomes a draft prepared under `deposits.correct` and confirmed by `financial.approve`, an approved tightening that replaces the Q-2026-10-04-13 answer; (b) built as sub-slice 8r right after 8a-1 is committed; (c) 8r also checks the slice 3b Reservation Deposit receipt reversal and closes it too if it can free money the same way, or says why not; (d) continue 8a-1 now with the five independent fixes and the cheap notes, unit and full PostgreSQL once each, then round 2 under the standing round-3 rule; security S1 is answered by 8r; answers in docs/010)
 
 Sub-slice 8a-1 (Final Settlement record and Deposit application record, migration `20261021_86`) is built. Latest runs: backend unit 3422 passed (U2), full PostgreSQL 1772 passed (P5). Round 1: no blocker. The independent review has five should-fix items that I can fix inside the sub-slice. The security review found one should-fix in code that already existed, and only you can settle it. Nothing of 8a-1 is committed; all files are in the working tree. Record: ops/reviews/V1-056-slice-08a1-settlement-deposit-applications.md.
 

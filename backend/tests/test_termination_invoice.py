@@ -75,6 +75,7 @@ def payload() -> dict[str, object]:
                 "adjusted_usd_cents": 75000,
                 "payment_applied_usd_cents": 10000,
                 "credit_applied_usd_cents": 20000,
+                "deposit_applied_usd_cents": 0,
                 "outstanding_usd_cents": 45000,
                 "active_adjustment_count": 1,
                 "components": [component()],
@@ -260,6 +261,8 @@ def test_malformed_or_overclaiming_observation_is_rejected(key: str, bad: object
         ("adjusted_usd_cents", -1),
         ("payment_applied_usd_cents", 80000),
         ("credit_applied_usd_cents", True),
+        ("deposit_applied_usd_cents", -1),
+        ("deposit_applied_usd_cents", 5000),
         ("outstanding_usd_cents", 0),
         ("active_adjustment_count", -1),
         ("components", [{}] * 101),
@@ -462,3 +465,30 @@ def test_valid_line_positions_do_not_infer_whole_invoice_totals(
         row.payment_applied_usd_cents,
         row.credit_applied_usd_cents,
     ) == (adjusted, payment, credit)
+
+
+@pytest.mark.parametrize(
+    "status,payment,credit,deposit,outstanding",
+    [
+        ("PARTIALLY_PAID", 10000, 20000, 5000, 40000),
+        ("PAID", 0, 0, 75000, 0),
+        ("PAID", 10000, 20000, 45000, 0),
+    ],
+)
+def test_a_final_settlement_deposit_application_counts_as_applied_value(
+    status: str, payment: int, credit: int, deposit: int, outstanding: int
+) -> None:
+    """V1-056 sub-slice 8a-1: a Deposit application pays the line like a Payment or Credit."""
+    value = payload()
+    line(value).update(
+        invoice_status=status,
+        payment_applied_usd_cents=payment,
+        credit_applied_usd_cents=credit,
+        deposit_applied_usd_cents=deposit,
+        outstanding_usd_cents=outstanding,
+    )
+    row = parse(value).items[0]
+    assert (row.deposit_applied_usd_cents, row.outstanding_usd_cents) == (deposit, outstanding)
+    line(value).update(invoice_status="UNPAID")
+    with pytest.raises(TerminationInvoiceUnavailableError):
+        parse(value)
