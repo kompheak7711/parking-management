@@ -915,6 +915,13 @@ amount/currency, authorization, and idempotency; they revalidate Credit availabi
 and target outstanding balance transactionally. A Late-payment Charge application
 reduces only that separate Charge and never the source Invoice.
 
+Amended by V1-056 sub-slice 8e-2 (owner answer 3 to Q-2026-10-06-32): `POST
+/credit-applications/{id}/reverse` answers 409 for a Credit application the Final Settlement
+made (its `final_settlement_id` is set); such an application changes only through the
+post-settlement corrections (slice 10). Other Credit applications and their reversals are
+unchanged. The Final Settlement's Credit applications have no route; only the Settlement
+confirm writes them.
+
 # 20. Refund Endpoints
 
 ## API-064 — Refund Resource
@@ -1123,7 +1130,8 @@ gets 422 from the earlier rule `invoices_due_date_issued`, open or closed. A sch
 Utility run (`POST /properties/{property_id}/billing-runs/rent`
 and `.../utilities`) records the Lease's item as `SKIPPED` with the diagnostic
 `FINAL_SETTLEMENT_CLOSED` and can still succeed (owner answer 1 to Q-2026-10-06-33). Payments,
-allocations, Payment reversals, Credit applications and their reversals stay open.
+allocations, Payment reversals, Credit applications and their reversals stay open, except the
+reversal of a Credit application the Final Settlement made (409, sub-slice 8e-2, API-063).
 
 # 23. Audit Endpoints
 

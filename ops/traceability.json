@@ -37355,6 +37355,101 @@
       "test_path": "backend/tests/test_final_settlement_closed_refusal_migration.py",
       "status": "implemented",
       "notes": "A scheduled Utility run records the consumption period of a Lease whose Settlement is closed as SKIPPED with FINAL_SETTLEMENT_CLOSED and no Invoice, bills the period of a Lease whose Settlement is started but open, and succeeds; the billed Invoice can then be VOIDed (owner answer 1 to Q-2026-10-06-33; V1-056 sub-slice 8e-1, review round 2)."
+    },
+    {
+      "test_id": "test_a_settlement_credit_application_pays_an_invoice_without_rent_or_service_lines",
+      "upstream_ids": [
+        "BR-SETTLE-004",
+        "BR-SETTLE-009",
+        "BR-CREDIT-006",
+        "DB-CREDIT-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_credit_application_migration.py",
+      "status": "implemented",
+      "notes": "The Final Settlement's Customer Credit step on an Invoice without Rent or Service lines is written by the internal writer as OTHER_APPLICABLE_OBLIGATION with OTHER_CONFIRMED details, linked to its Settlement, authorized by financial.approve and audited; a repeat and the writer's input refusals write nothing (owner answers 1 and 2 to Q-2026-10-06-32; V1-056 sub-slice 8e-2)."
+    },
+    {
+      "test_id": "test_settlement_credit_on_a_mixed_rent_invoice_follows_the_proposal_or_the_designation",
+      "upstream_ids": [
+        "BR-CREDIT-006",
+        "BR-SETTLE-004",
+        "BR-AUTH-010",
+        "DB-CREDIT-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_credit_application_migration.py",
+      "status": "implemented",
+      "notes": "On an Invoice with Rent and Service lines the writer records the Rent-first proposal with its trace (re-run by the existing Credit check) or the Customer's designation as text; a step that is not the proposal's first line is refused; a repeated step meets the id derived from the draft and the step (23505); rows written as the owner without financial.approve are refused when written (42501), as are a header backdated before the Settlement started and a header whose designation the step does not have (23514), and a detail on another line than the step's is refused at commit (owner answer 1 to Q-2026-10-05-29; V1-056 sub-slice 8e-2, review rounds 1 and 2)."
+    },
+    {
+      "test_id": "test_a_settlement_credit_application_pays_its_own_customers_late_payment_charge",
+      "upstream_ids": [
+        "BR-CREDIT-008",
+        "BR-SETTLE-004",
+        "DB-CREDIT-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_credit_application_migration.py",
+      "status": "implemented",
+      "notes": "Each Customer's Credit pays only that Customer's debt: a direct Late-payment Charge (NOT_APPLICABLE, DIRECT_LATE_PAYMENT_CHARGE) and another Signer's Invoice; a forged draft step naming another Customer's Charge or an obligation outside the Settlement Lease is refused by the database (owner answer to Q-2026-10-05-29; V1-056 sub-slice 8e-2)."
+    },
+    {
+      "test_id": "test_a_settlement_credit_application_commits_only_with_its_draft_confirmed_by_the_approver",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-SETTLE-004",
+        "DL-032"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_credit_application_migration.py",
+      "status": "implemented",
+      "notes": "A Settlement Credit application is written only while its draft waits or is confirmed by the same approver and commits only with that confirmation; in the confirm's order the Credit, Deposit application and Refund writers compose in one transaction, also after SET CONSTRAINTS ALL IMMEDIATE, and Customer Credit comes before any Deposit application (V1-056 sub-slice 8e-2)."
+    },
+    {
+      "test_id": "test_a_settlement_credit_application_is_never_reversed_with_one_call",
+      "upstream_ids": [
+        "BR-SETTLE-012",
+        "BR-SETTLE-013",
+        "DB-CREDIT-003"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_credit_application_migration.py",
+      "status": "implemented",
+      "notes": "After closure the one-call reversal and the credit Adjustment excess path cannot reverse a Credit application the Settlement made (P5S01, a conflict) and a closed Settlement takes no new one; an ordinary Credit application and its one-call reversal stay open (owner answer 3 to Q-2026-10-06-32; V1-056 sub-slice 8e-2)."
+    },
+    {
+      "test_id": "test_no_role_can_write_a_settlement_credit_application",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "DB-CREDIT-002",
+        "DB-CREDIT-003"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_credit_application_migration.py",
+      "status": "implemented",
+      "notes": "The writer and its checks are definer functions no role may execute (a call as the financial or runtime role is refused); the relaxed CHECK allows financial.approve only with a final_settlement_id; the reversal refusal runs first (owner answer 1 to Q-2026-10-06-32; V1-056 sub-slice 8e-2)."
+    },
+    {
+      "test_id": "test_final_settlement_credit_application_migration_is_forward_only",
+      "upstream_ids": [
+        "DB-CREDIT-002",
+        "BR-SETTLE-009"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_credit_application_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20261028_93 follows 20261027_92 and is forward-only (V1-056 sub-slice 8e-2)."
+    },
+    {
+      "test_id": "test_a_settlement_credit_application_reversal_is_reported_as_a_conflict",
+      "upstream_ids": [
+        "BR-SETTLE-013"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_final_settlement_credit_application.py",
+      "status": "implemented",
+      "notes": "The Credit service maps the refusal of a one-call reversal of a Final Settlement Credit application (P5S01) to its conflict error (owner answer 3 to Q-2026-10-06-32; V1-056 sub-slice 8e-2)."
     }
   ]
 }

@@ -1254,9 +1254,33 @@ Invoice. Proposal timestamps/traces and detail proposed amounts are required onl
 the Rent-first proposal was generated and are absent for direct Customer designation or
 direct Charge application.
 
+As built in V1-056 sub-slice 8e-2 (migration `20261028_93`; owner answers to
+Q-2026-10-06-32): `final_settlement_id` is a foreign key to `app.final_settlements` (its
+earlier NULL-only CHECK is dropped; every earlier row stays NULL). A row with a
+`final_settlement_id` records `authorization_reference = 'financial.approve'` and the
+approver as `actor_id`; every other row records `credits.apply` (one CHECK). Only the
+internal `app.post_final_settlement_credit_application` (no grant) writes such a row, for
+one Customer Credit step of a `FINAL_SETTLEMENT` draft; the Settlement confirm calls it.
+It writes the same header and detail shapes as the one-call Credit application: the
+Rent-first proposal with its trace, the Customer's designation, a direct Late-payment
+Charge, and on an Invoice without Rent or Service lines `OTHER_APPLICABLE_OBLIGATION` with
+`OTHER_CONFIRMED` details. Its `id` is derived from the draft and the step
+(`app.final_settlement_credit_application_id`) and its detail's `calculation_trace` names
+the draft and the step. A source check before insert requires an open Settlement of a
+terminated Lease, a time not before the Settlement started, a human approver, a target of
+that Lease, no Deposit application or Settlement Refund yet, and an exact match with the
+step of a draft that waits or is
+confirmed by the same approver; a deferred check requires that draft CONFIRMED under
+`financial.approve` by the same approver at commit and exactly one detail on the step's
+obligation. All earlier Credit checks still run on these rows.
+
 ## DB-CREDIT-003 — `customer_credit_application_reversals`
 
 Append-only: `id uuid PK`, `credit_application_id uuid NOT NULL UNIQUE FK`, `reason text NOT NULL`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`, `authorization_reference text NOT NULL`.
+
+V1-056 sub-slice 8e-2: a reversal of a Credit application that has a `final_settlement_id`
+is refused (SQLSTATE `P5S01`, a conflict) before any other reversal check, for every writer;
+it waits for the post-settlement corrections (slice 10). Other reversals are unchanged.
 
 ## DB-CREDIT-004 — `customer_credit_reversals`
 
@@ -1843,9 +1867,10 @@ Settlement is closed; a Lease without a Settlement takes no lock. So a change wa
 closure and is then refused, and a closure waits for a running change. A DRAFT may still become
 VOID by UPDATE, but its VOID event is refused (owner answer 3 to Q-2026-10-06-33); a one-time-charge
 draft without a Due Date cannot be VOIDed at all (`invoices_due_date_issued`). Payments,
-allocations, Payment reversals, Credit applications and their reversals are not guarded. A
-scheduled Rent or Utility run item locks the Lease's Settlement row `FOR SHARE` and records a
-Lease whose Settlement is closed as `SKIPPED` with the diagnostic `FINAL_SETTLEMENT_CLOSED`
+allocations, Payment reversals, Credit applications and their reversals are not guarded by this
+trigger (sub-slice 8e-2 refuses the reversal of a Credit application the Settlement made:
+DB-CREDIT-003). A scheduled Rent or Utility run item locks the Lease's Settlement row
+`FOR SHARE` and records a Lease whose Settlement is closed as `SKIPPED` with the diagnostic `FINAL_SETTLEMENT_CLOSED`
 (owner answer 1 to Q-2026-10-06-33), an accepted outcome of a successful run.
 
 `closing_balance_due_usd_cents` is the post-application, post-disposition, and

@@ -1,0 +1,113 @@
+Excerpt of V1-056-slice-08e2-full-test-run.txt (P1, 44 MB, untracked): the session header, the first setup error and the summary.
+
+ Volume prm-database-test-38703_postgres_data Creating 
+ Network prm-database-test-38703_default Creating 
+ Volume prm-database-test-38703_postgres_data Creating 
+ Network prm-database-test-38703_default Creating 
+ Volume prm-database-test-38703_postgres_data Created 
+ Volume prm-database-test-38703_postgres_data Created 
+ Network prm-database-test-38703_default Created 
+ Network prm-database-test-38703_default Created 
+ Container prm-database-test-38703-postgres-1 Creating 
+ Container prm-database-test-38703-postgres-1 Created 
+ Container prm-database-test-38703-postgres-1 Starting 
+ Container prm-database-test-38703-postgres-1 Started 
+[...]
+tests/test_lease_end_date_month_end_migration.py EEEE                    [ 96%]
+tests/test_financial_draft_migration.py EEEEEEEEEEEE.                    [ 97%]
+tests/test_refund_draft_migration.py EEEEEEEEEE.EEEEEE                   [ 98%]
+tests/test_refund_signer_recipient_migration.py EEEEE                    [ 98%]
+tests/test_final_settlement_refund_migration.py EEEEEEEEEE.              [ 99%]
+tests/test_final_settlement_closed_refusal_migration.py EEEEEEEEE.       [ 99%]
+tests/test_final_settlement_credit_application_migration.py EEEEEE.      [100%]
+
+==================================== ERRORS ====================================
+___ ERROR at setup of test_migration_persists_property_identity_and_timezone ___
+.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1969: in _exec_single_context
+    self.dialect.do_execute(
+.venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py:952: in do_execute
+    cursor.execute(statement, parameters)
+.venv/lib/python3.11/site-packages/psycopg/cursor.py:117: in execute
+    raise ex.with_traceback(None)
+E   psycopg.errors.SyntaxError: syntax error at end of input
+E   LINE 97: ...           CASE WHEN v_basis='CUSTOMER_DESIGNATED' THEN v_st...
+E                                                                 ^
+
+The above exception was the direct cause of the following exception:
+tests/test_property_migration.py:27: in migrated_database_url
+    command.upgrade(alembic_config, "head")
+.venv/lib/python3.11/site-packages/alembic/command.py:487: in upgrade
+    script.run_env()
+.venv/lib/python3.11/site-packages/alembic/script/base.py:550: in run_env
+    util.load_python_file(self.dir, "env.py")
+.venv/lib/python3.11/site-packages/alembic/util/pyfiles.py:114: in load_python_file
+    module = load_module_py(module_id, path)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/alembic/util/pyfiles.py:132: in load_module_py
+    spec.loader.exec_module(module)  # type: ignore
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap_external>:940: in exec_module
+    ???
+<frozen importlib._bootstrap>:241: in _call_with_frames_removed
+    ???
+migrations/env.py:36: in <module>
+    run_migrations_online()
+migrations/env.py:33: in run_migrations_online
+    context.run_migrations()
+<string>:8: in run_migrations
+    ???
+.venv/lib/python3.11/site-packages/alembic/runtime/environment.py:967: in run_migrations
+    self.get_context().run_migrations(**kw)
+.venv/lib/python3.11/site-packages/alembic/runtime/migration.py:621: in run_migrations
+    step.migration_fn(**kw)
+migrations/versions/20261028_93_final_settlement_credit_applications.py:77: in upgrade
+    op.execute("""
+<string>:8: in execute
+    ???
+<string>:3: in execute
+    ???
+.venv/lib/python3.11/site-packages/alembic/operations/ops.py:2645: in execute
+    return operations.invoke(op)
+           ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/alembic/operations/base.py:448: in invoke
+    return fn(self, operation)
+           ^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/alembic/operations/toimpl.py:259: in execute_sql
+    operations.migration_context.impl.execute(
+.venv/lib/python3.11/site-packages/alembic/ddl/impl.py:259: in execute
+    self._exec(sql, execution_options)
+.venv/lib/python3.11/site-packages/alembic/ddl/impl.py:252: in _exec
+    return conn.execute(construct, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1421: in execute
+    return meth(
+.venv/lib/python3.11/site-packages/sqlalchemy/sql/elements.py:526: in _execute_on_connection
+    return connection._execute_clauseelement(
+.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1643: in _execute_clauseelement
+    ret = self._execute_context(
+.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1848: in _execute_context
+    return self._exec_single_context(
+.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1988: in _exec_single_context
+    self._handle_dbapi_exception(
+.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py:2365: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1969: in _exec_single_context
+    self.dialect.do_execute(
+.venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py:952: in do_execute
+    cursor.execute(statement, parameters)
+.venv/lib/python3.11/site-packages/psycopg/cursor.py:117: in execute
+    raise ex.with_traceback(None)
+E   sqlalchemy.exc.ProgrammingError: (psycopg.errors.SyntaxError) syntax error at end of input
+E   LINE 97: ...           CASE WHEN v_basis='CUSTOMER_DESIGNATED' THEN v_st...
+E                                                                 ^
+E   [SQL: 
+E           -- Relaxed (owner answers 1 and 2 to Q-2026-10-06-32): a Credit application may name its Final
+E           -- Settlement (docs/004 DB-CREDIT-002); such a row records the Settlement's financial.approve
+E           -- confirmation, every other row credits.apply as before.
+[...]
+FAILED tests/test_payment_api_migration.py::test_payment_http_real_evidence_view_upgrade_preserves_history_and_hides_keys
+FAILED tests/test_receipt_migration.py::test_receipt_display_snapshot_is_coherent_during_deposit_reversal
+FAILED tests/test_credit_migration.py::test_credit_forward_upgrade_preserves_existing_payment_receipt_and_no_auto_credit
+FAILED tests/test_utility_unbilled_periods_migration.py::test_utility_unbilled_migration_is_forward_only_and_read_is_runtime_only
+===== 109 failed, 193 passed, 1 warning, 1548 errors in 505.28s (0:08:25) ======
+exit=1

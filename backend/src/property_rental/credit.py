@@ -316,6 +316,15 @@ class CustomerCreditService:
                 raise CreditConflictError(
                     "Credit from a moved Payment stays with its Customer; apply it to its Invoices"
                 ) from exc
+            if exc.sqlstate == "P5S01":
+                # V1-056 sub-slice 8e-2: a Credit application the Final Settlement made changes
+                # only through a post-settlement correction (owner answer 3 to Q-2026-10-06-32).
+                # Only the application reversal can raise P5S01 in this service today; revisit
+                # the message if another Credit command gains a Final Settlement refusal.
+                raise CreditConflictError(
+                    "A Final Settlement Credit application changes only through a "
+                    "post-settlement correction"
+                ) from exc
             # A serialization/timeout/deferred constraint failure does not prove
             # an earlier transmission with the same key did not commit.
             raise CreditUnavailableError(
