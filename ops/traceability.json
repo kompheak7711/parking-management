@@ -37225,6 +37225,136 @@
       "test_path": "backend/tests/test_final_settlement_refund_migration.py",
       "status": "implemented",
       "notes": "Migration 20261026_91 follows 20261025_90 and is forward-only (V1-056 sub-slice 8d)."
+    },
+    {
+      "test_id": "test_a_closed_settlement_refuses_one_call_changes_and_keeps_payments_open",
+      "upstream_ids": [
+        "BR-SETTLE-012",
+        "BR-SETTLE-013"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_closed_refusal_migration.py",
+      "status": "implemented",
+      "notes": "Once a Final Settlement is closed, VOID, credit and debit Adjustments, a new charge with the Lease and an Invoice draft of a Lease charge are refused as a conflict (P5S01) and write nothing, while the open Settlement accepted the same charge; seven of the eight guarded tables refuse at their own trigger, the Adjustment reversal and the Late-payment Charge included (the Charge correction table in the Late-payment test); a Payment allocation, its reversal, the Payment reversal, a Credit application and its reversal stay open (owner answer 7 to Q-2026-10-05-20; V1-056 sub-slice 8e-1)."
+    },
+    {
+      "test_id": "test_late_payment_decisions_charge_corrections_and_rent_are_refused_after_closure",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-SETTLE-012"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_closed_refusal_migration.py",
+      "status": "implemented",
+      "notes": "After closure a Late-payment Decision on an eligible Invoice of the Lease, a Late-payment Charge correction and a new Rent Invoice of the Lease are refused (P5S01) and write nothing (owner answers 6 and 7 to Q-2026-10-05-20; V1-056 sub-slice 8e-1)."
+    },
+    {
+      "test_id": "test_unpaid_initial_resolutions_are_refused_after_closure",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-LEASE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_closed_refusal_migration.py",
+      "status": "implemented",
+      "notes": "The never-moved-in unpaid-Initial resolution is refused as a conflict after closure and leaves the Initial Rent Invoice and the Unit unchanged (owner answer 7 to Q-2026-10-05-20; V1-056 sub-slice 8e-1)."
+    },
+    {
+      "test_id": "test_a_closure_and_a_change_of_its_obligations_wait_for_each_other",
+      "upstream_ids": [
+        "BR-SETTLE-012",
+        "BR-SETTLE-013"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_closed_refusal_migration.py",
+      "status": "implemented",
+      "notes": "The refusal locks the Settlement row FOR SHARE: a closure waits for a change in progress, and a change waits for a closure in progress and is then refused (V1-056 sub-slice 8e-1)."
+    },
+    {
+      "test_id": "test_the_closed_settlement_guard_runs_first_and_is_least_privilege",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "SEC-020"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_closed_refusal_migration.py",
+      "status": "implemented",
+      "notes": "The refusal function is SECURITY DEFINER with a fixed search path and no role may execute it; on each of the eight guarded tables its BEFORE INSERT trigger runs first and is enabled, and on app.invoices its BEFORE UPDATE OF lease_id, status trigger runs first for a row that gets a Lease or a DRAFT that is issued; the two patched run item functions keep their definer settings and only the financial role may execute them (V1-056 sub-slice 8e-1, review rounds 1 and 2)."
+    },
+    {
+      "test_id": "test_final_settlement_closed_refusal_migration_is_forward_only",
+      "upstream_ids": [
+        "DB-SETTLE-001",
+        "BR-SETTLE-012"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_closed_refusal_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20261027_92 follows 20261026_91 and is forward-only (V1-056 sub-slice 8e-1)."
+    },
+    {
+      "test_id": "test_invoice_late_payment_and_final_utility_services_report_a_conflict",
+      "upstream_ids": [
+        "BR-SETTLE-013"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_final_settlement_closed_refusal.py",
+      "status": "implemented",
+      "notes": "The Invoice, Late-payment and final Utility Invoice services map the closed Final Settlement refusal (P5S01) to their conflict errors (V1-056 sub-slice 8e-1)."
+    },
+    {
+      "test_id": "test_rent_billing_and_unpaid_initial_resolutions_report_a_conflict",
+      "upstream_ids": [
+        "BR-SETTLE-013"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_final_settlement_closed_refusal.py",
+      "status": "implemented",
+      "notes": "Rent generation and the unpaid-Initial resolutions map the closed Final Settlement refusal (P5S01) to their conflict errors and keep the database cause (V1-056 sub-slice 8e-1)."
+    },
+    {
+      "test_id": "test_a_corrected_draft_cannot_bring_a_charge_onto_a_closed_lease",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-SETTLE-012"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_closed_refusal_migration.py",
+      "status": "implemented",
+      "notes": "While the Settlement is open a VOID, a credit Adjustment and a draft correction onto a VOIDed Lease charge work as before; after closure the issue of that corrected draft and a new correction onto a Lease charge are refused as a conflict (P5S01) and write nothing, and the VOID of the draft with the Lease stays refused (a one-time-charge draft without a Due Date is refused by invoices_due_date_issued, open or closed) (review round 1 blocker B1; owner answer 3 to Q-2026-10-06-33; V1-056 sub-slice 8e-1)."
+    },
+    {
+      "test_id": "test_a_billing_run_skips_a_closed_lease_and_keeps_its_other_invoices_voidable",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-INV-050"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_closed_refusal_migration.py",
+      "status": "implemented",
+      "notes": "A scheduled Rent run records a Lease whose Settlement is closed as SKIPPED with FINAL_SETTLEMENT_CLOSED and no Invoice, generates the open Lease's Invoice and succeeds, and that Invoice can then be VOIDed (owner answer 1 to Q-2026-10-06-33; V1-056 sub-slice 8e-1)."
+    },
+    {
+      "test_id": "test_a_final_utility_invoice_is_refused_after_closure",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-SETTLE-012"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_closed_refusal_migration.py",
+      "status": "implemented",
+      "notes": "The final Utility Invoice service reports the closed Settlement as a conflict (P5S01) and writes no Invoice (owner answer 7 to Q-2026-10-05-20; V1-056 sub-slice 8e-1)."
+    },
+    {
+      "test_id": "test_a_utility_run_skips_only_a_closed_lease_and_keeps_its_other_invoices_voidable",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-INV-050"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_closed_refusal_migration.py",
+      "status": "implemented",
+      "notes": "A scheduled Utility run records the consumption period of a Lease whose Settlement is closed as SKIPPED with FINAL_SETTLEMENT_CLOSED and no Invoice, bills the period of a Lease whose Settlement is started but open, and succeeds; the billed Invoice can then be VOIDed (owner answer 1 to Q-2026-10-06-33; V1-056 sub-slice 8e-1, review round 2)."
     }
   ]
 }

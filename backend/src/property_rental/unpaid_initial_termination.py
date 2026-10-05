@@ -132,7 +132,17 @@ class PostgresUnpaidInitialTerminationService:
         except psycopg.Error as exc:
             if exc.sqlstate == "P0002":
                 raise UnpaidInitialTerminationNotFoundError("Termination was not found") from exc
-            if exc.sqlstate in {"23505", "23P01", "40001", "55P03", "P4503", "P4504", "P4509"}:
+            # P5S01: a closed Final Settlement (V1-056 sub-slice 8e-1).
+            if exc.sqlstate in {
+                "23505",
+                "23P01",
+                "40001",
+                "55P03",
+                "P4503",
+                "P4504",
+                "P4509",
+                "P5S01",
+            }:
                 raise UnpaidInitialTerminationConflictError("Resolution conflicted") from exc
             if exc.sqlstate in {"22023", "23514", "55000", "P4502", "P4508"}:
                 raise UnpaidInitialTerminationInvalidError("Resolution is invalid") from exc

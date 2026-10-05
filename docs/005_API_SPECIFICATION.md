@@ -1104,6 +1104,27 @@ all sources in one transaction, returns the immutable
 `closing_balance_due_usd_cents` snapshot, and does not convert Deposits into ordinary
 Invoice Credit before Settlement.
 
+Amended by V1-056 sub-slice 8e-1 (owner answer 7 to Q-2026-10-05-20; migration
+`20261027_92`): once a Lease's Final Settlement is closed, these existing routes answer 409
+(conflict) for that Lease's obligations until the post-settlement corrections exist (slice
+10): `POST /invoices/{invoice_id}/void`, `POST /invoices/{invoice_id}/adjustments`,
+`POST /invoices/{invoice_id}/late-payment-decision`,
+`POST /late-payment-charges/{charge_id}/corrections`,
+`POST /properties/{property_id}/lease-terminations/{termination_event_id}/unpaid-initial-never-moved-in`
+and `.../unpaid-initial-moved-in-credit`, and every route that adds a charge or an Invoice
+with the Lease: `POST /properties/{property_id}/one-time-charges` (with the Lease),
+`POST /properties/{property_id}/invoices` (a draft of a Lease charge),
+`PATCH /invoices/{invoice_id}` (a draft corrected onto a charge of the Lease),
+`POST /invoices/{invoice_id}/issue` (a draft with the Lease),
+`POST /properties/{property_id}/leases/{lease_id}/final-utility-invoice` and
+`.../utility-catch-up-invoice`. A draft with the Lease stays un-VOIDable: a draft that has a Due
+Date gets 409, and a one-time-charge draft, which has no Due Date until it is issued, already
+gets 422 from the earlier rule `invoices_due_date_issued`, open or closed. A scheduled Rent or
+Utility run (`POST /properties/{property_id}/billing-runs/rent`
+and `.../utilities`) records the Lease's item as `SKIPPED` with the diagnostic
+`FINAL_SETTLEMENT_CLOSED` and can still succeed (owner answer 1 to Q-2026-10-06-33). Payments,
+allocations, Payment reversals, Credit applications and their reversals stay open.
+
 # 23. Audit Endpoints
 
 ## API-073 — Record Audit

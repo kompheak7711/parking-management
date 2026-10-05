@@ -417,7 +417,8 @@ class PostgresInvoiceService:
         if exc.sqlstate == "P4509":
             balance = re.search(r"balance:(-?\d+)", str(exc))
             return InvoiceLineFullyPaid(int(balance.group(1)) if balance else None)
-        if exc.sqlstate in {"P4503", "P4507", "23505", "23P01", "40001", "55P03"}:
+        # P5S01: a closed Final Settlement (V1-056 sub-slice 8e-1) is business state.
+        if exc.sqlstate in {"P4503", "P4507", "P5S01", "23505", "23P01", "40001", "55P03"}:
             return InvoiceConflictError("Invoice command conflicted")
         if exc.sqlstate in {"P4502", "P4508", "22023", "23503", "23514", "55000"}:
             return InvoiceInvalidError("Invoice command is invalid")

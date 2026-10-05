@@ -192,7 +192,8 @@ class PostgresFinalUtilityInvoiceService:
             return FinalUtilityInvoiceNotFoundError("Utility Invoice resource was not found")
         if state == "P5N02" or state in {"P4502", "P0002", "23514", "22023"}:
             return FinalUtilityInvoiceInvalidError("Utility Invoice request is invalid", reason)
-        if state in {"P5N03", "55P03", "40001", "40P01", "23505"}:
+        # P5S01: a closed Final Settlement (V1-056 sub-slice 8e-1).
+        if state in {"P5N03", "P5S01", "55P03", "40001", "40P01", "23505"}:
             return FinalUtilityInvoiceConflictError(
                 "Utility Invoice sources changed or are in use", reason
             )

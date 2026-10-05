@@ -1827,6 +1827,27 @@ is stale at confirmation, which fails safe); the confirm recomputes it. One draf
 Settlement; an exact repeat replays and a reused draft id is refused (P5205); withdraw and reject
 use the shared draft functions.
 
+As built in V1-056 sub-slice 8e-1 (migration `20261027_92`, owner answer 7 to
+Q-2026-10-05-20): once a Settlement is closed its obligations change only through a
+post-settlement correction (BR-SETTLE-013; slice 10). `app.refuse_closed_final_settlement_change`
+(SECURITY DEFINER, no grant) runs as the first BEFORE INSERT trigger
+(`a0_<table>_final_settlement_closed`) on `invoice_void_events`, `invoice_adjustments`,
+`invoice_adjustment_reversals`, `late_payment_decisions`, `late_payment_charges` and
+`late_payment_charge_corrections` (through the Invoice or the Charge's source Invoice) and on
+`invoices` and `authorized_nonrecurring_obligations` (a new row with the Lease), and as the
+first BEFORE UPDATE OF `lease_id`, `status` trigger on `invoices`
+(`a0_invoices_final_settlement_closed_update`) when a row gets a Lease or a DRAFT with a Lease
+is issued (a draft correction or issue). For a Lease with a Final Settlement it locks the target
+Invoice, then the Settlement row `FOR SHARE`, and refuses with SQLSTATE `P5S01` when the
+Settlement is closed; a Lease without a Settlement takes no lock. So a change waits for a running
+closure and is then refused, and a closure waits for a running change. A DRAFT may still become
+VOID by UPDATE, but its VOID event is refused (owner answer 3 to Q-2026-10-06-33); a one-time-charge
+draft without a Due Date cannot be VOIDed at all (`invoices_due_date_issued`). Payments,
+allocations, Payment reversals, Credit applications and their reversals are not guarded. A
+scheduled Rent or Utility run item locks the Lease's Settlement row `FOR SHARE` and records a
+Lease whose Settlement is closed as `SKIPPED` with the diagnostic `FINAL_SETTLEMENT_CLOSED`
+(owner answer 1 to Q-2026-10-06-33), an accepted outcome of a successful run.
+
 `closing_balance_due_usd_cents` is the post-application, post-disposition, and
 post-Refund Customer receivable remaining at closure. A refundable amount is not
 stored as a negative balance; it must be represented by its explicit Refund event.

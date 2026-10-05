@@ -210,7 +210,9 @@ class PostgresLatePaymentService:
         # Generic database failures can occur while acquiring the Property/actor
         # or advisory locks, reading a receipt, or committing. Current terminal
         # state cannot prove that this exact request has no successful receipt.
-        if exc.sqlstate == "P4603":
+        # P5S01 (a closed Final Settlement, V1-056 sub-slice 8e-1) is raised by the insert,
+        # which also comes after the receipt lookup.
+        if exc.sqlstate in {"P4603", "P5S01"}:
             return LatePaymentConflictError("Late-payment command conflicted")
         if exc.sqlstate == "P4602":
             return LatePaymentInvalidError("Late-payment command is invalid")

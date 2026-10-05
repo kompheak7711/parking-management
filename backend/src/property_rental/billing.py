@@ -313,7 +313,8 @@ class PostgresRentBillingService:
                 raise BillingAuthorizationError("Billing actor is no longer active") from exc
             if exc.sqlstate == "23505" and "idempotency key" in str(exc).lower():
                 raise BillingIdempotencyKeyReused("Billing idempotency key was reused") from exc
-            if exc.sqlstate in {"23505", "23P01", "40001"}:
+            # P5S01: a closed Final Settlement (V1-056 sub-slice 8e-1).
+            if exc.sqlstate in {"23505", "23P01", "40001", "P5S01"}:
                 raise BillingConflictError("Billing command conflicted") from exc
             if exc.sqlstate in {"22023", "23514", "55000"}:
                 raise BillingInvalidError("Billing command is invalid") from exc
