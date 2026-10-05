@@ -4,13 +4,16 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from datetime import UTC, date, datetime, timedelta
 from threading import Barrier
+from time import monotonic, sleep
 from typing import cast
 from uuid import UUID, uuid4
 
 import psycopg
 import pytest
 from psycopg import Connection
+from psycopg.conninfo import make_conninfo
 
+from deposit_receipt_reversal_test_support import approver as receipt_approver
 from deposit_receipt_reversal_test_support import reverse_receipt_as_owner
 from property_rental.deposit import (
     DepositInvalidError,
@@ -20,14 +23,23 @@ from property_rental.deposit import (
     ReverseDepositReceiptCommand,
 )
 from property_rental.deposit_api import PostgresDepositResourceFlow, _ledger_body
+from property_rental.deposit_receipt_reversal import (
+    DepositReceiptReversalService,
+    RecordDepositReceiptReversalCommand,
+)
+from property_rental.financial_draft import FinancialDraftService
 from property_rental.refund import (
     CreatePetRefundCommand,
+    RefundConflictError,
     RefundIdempotencyKeyReused,
     RefundNotFoundError,
+    RefundService,
     RefundUnavailableError,
     ReverseRefundCorrectionCommand,
 )
-from refund_test_support import create_pet_refund
+from refund_test_support import approver as refund_approver
+from refund_test_support import cash, create_pet_refund
+from test_billing_service_migration import admin_database_url
 from test_credit_migration import actor
 from test_deposit_api_migration import seed_pet_deposit
 from test_deposit_migration import financial_database_url, runtime_database_url
@@ -609,3 +621,152 @@ def test_pet_refund_resource_links_retained_narratives_without_unbounded_embeddi
         assert connection.execute(
             "SELECT review_findings FROM app.pet_deposit_refund_reviews WHERE id=%s", (review,)
         ).fetchone() == (findings,)
+
+
+def test_a_pet_refund_confirmation_waits_for_a_pending_receipt_reversal_draft(
+    migrated_database_url: str,  # noqa: F811
+) -> None:
+    """Owner answer 2 to Q-2026-10-05-23 (V1-056 sub-slice 8a-2): no Refund while the receipt
+    may be reversed. Kept in this module, after test_lease_migration, because that earlier
+    test counts every Pet Refund review of the shared database."""
+    url = migrated_database_url
+    human, prop, _, _, deposit, review = qualified(url)
+
+    def value(sql: str, *parameters: object) -> object:
+        with psycopg.connect(url) as connection:
+            row = connection.execute(sql, parameters).fetchone()
+        assert row is not None
+        return row[0]
+
+    def held() -> int:
+        return int(str(value("SELECT app.deposit_held_value_at(%s,'infinity')", deposit)))
+
+    def decided(draft: UUID) -> int:
+        return int(
+            str(
+                value("SELECT count(*) FROM app.financial_draft_decisions WHERE draft_id=%s", draft)
+            )
+        )
+
+    amount = held()
+    receipt = UUID(str(value("SELECT id FROM app.deposit_receipts WHERE deposit_id=%s", deposit)))
+    reversal = DepositReceiptReversalService(financial_database_url()).record(
+        prop,
+        RecordDepositReceiptReversalCommand(uuid4(), receipt, uuid4(), "Transfer returned"),
+        actor=receipt_approver(human, prop, "deposits.correct"),
+    )
+    creator = actor(human, prop, "refunds.create")
+    # Recording the Refund draft stays allowed.
+    recorded = service().record_pet_draft(
+        prop, command(deposit, review), cash(service(), prop, creator), actor=creator
+    )
+    draft = UUID(str(recorded["draft_id"]))
+    with pytest.raises(RefundConflictError, match="receipt reversal draft"):
+        service().confirm_draft(prop, draft, actor=refund_approver(creator, prop))
+    assert (decided(draft), held()) == (0, amount)
+    assert value("SELECT count(*) FROM app.refunds WHERE source_deposit_id=%s", deposit) == 0
+    # A rejected receipt reversal draft no longer holds the Refund back.
+    FinancialDraftService(runtime_database_url(), financial_database_url()).reject(
+        prop,
+        UUID(str(reversal["draft_id"])),
+        "The transfer was not returned",
+        actor=receipt_approver(human, prop, "financial.approve"),
+    )
+    service().confirm_draft(prop, draft, actor=refund_approver(creator, prop))
+    assert held() == amount - 15_000
+
+
+def test_a_pet_refund_waits_for_a_receipt_reversal_draft_being_recorded(
+    migrated_database_url: str,  # noqa: F811
+) -> None:
+    """V1-056 sub-slice 8a-2 review round 1: the receipt reversal draft recorder locks the
+    Deposit row, so a Pet Refund draft recorded and confirmed while that draft is not yet
+    committed waits for it and is then refused, instead of paying out."""
+    url = migrated_database_url
+    human, prop, _, _, deposit, review = qualified(url)
+    creator = actor(human, prop, "refunds.create")
+    with psycopg.connect(url) as connection:
+        receipt = connection.execute(
+            "SELECT id FROM app.deposit_receipts WHERE deposit_id=%s", (deposit,)
+        ).fetchone()
+    assert receipt is not None
+    name = f"pet-refund-wait-{uuid4().hex[:12]}"
+    waiting = RefundService(
+        runtime_database_url(), make_conninfo(financial_database_url(), application_name=name)
+    )
+
+    def record_and_confirm() -> dict[str, object]:
+        recorded = waiting.record_pet_draft(
+            prop, command(deposit, review), cash(waiting, prop, creator), actor=creator
+        )
+        return waiting.confirm_draft(
+            prop, UUID(str(recorded["draft_id"])), actor=refund_approver(creator, prop)
+        )
+
+    with psycopg.connect(financial_database_url()) as recorder:
+        recorder.execute(
+            "SELECT app.record_deposit_receipt_reversal_draft(%s,%s,%s,%s,%s,%s,%s)",
+            (prop, human, uuid4(), receipt[0], uuid4(), "Transfer returned", "deposits.correct"),
+        )
+        # Not committed yet: the recorder holds the Deposit row.
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(record_and_confirm)
+            with psycopg.connect(admin_database_url(), autocommit=True) as observer:
+                deadline = monotonic() + 10
+                while monotonic() < deadline and not future.done():
+                    # Waiting for the recorder itself, not for some other lock.
+                    state = observer.execute(
+                        "SELECT wait_event_type,%s=ANY(pg_catalog.pg_blocking_pids(pid)) "
+                        "FROM pg_catalog.pg_stat_activity "
+                        "WHERE application_name=%s AND state='active'",
+                        (recorder.info.backend_pid, name),
+                    ).fetchone()
+                    if state is not None and state == ("Lock", True):
+                        break
+                    sleep(0.02)
+                else:
+                    pytest.fail("the Pet Refund did not wait for the receipt reversal draft")
+            recorder.commit()
+            with pytest.raises(RefundConflictError, match="receipt reversal draft"):
+                future.result(timeout=30)
+    with psycopg.connect(url) as connection:
+        assert connection.execute(
+            "SELECT count(*) FROM app.refunds WHERE source_deposit_id=%s", (deposit,)
+        ).fetchone() == (0,)
+
+
+def test_the_deposit_history_reads_a_legacy_combined_qualification_departure(
+    migrated_database_url: str,  # noqa: F811
+) -> None:
+    """A departure recorded by the V1-037 combined qualification has only a
+    deposit.pet_refund.qualify command; the head Deposit ledger read takes its authorization
+    from that command (the branch test_v1_038_upgrade... checked on revision 37)."""
+    url = migrated_database_url
+    deposits, _, lease, deposit = seed_pet_deposit(url)
+    departure = uuid4()
+    with psycopg.connect(url) as connection:
+        approval = connection.execute(
+            "SELECT pet_approval_id FROM app.deposits WHERE id=%s", (deposit,)
+        ).fetchone()
+        assert approval is not None
+        connection.execute(
+            "INSERT INTO app.lease_pet_departures(id,pet_approval_id,lease_id,"
+            "permanently_left_date,reason,occurred_at,actor_id) "
+            "VALUES (%s,%s,%s,(SELECT timezone('Asia/Phnom_Penh',clock_timestamp())::date),"
+            "'Pet permanently left',clock_timestamp(),%s)",
+            (departure, approval[0], lease, deposits.actor_id),
+        )
+        connection.execute(
+            "INSERT INTO app.deposit_commands(actor_id,property_id,action,idempotency_key,"
+            "request_digest,deposit_id,reason,authorization_reference,result_snapshot) "
+            "VALUES (%s,%s,'deposit.pet_refund.qualify',%s,%s,%s,'Legacy combined review',"
+            "'deposits.refund.qualify',jsonb_build_object('pet_departure_id',%s::text))",
+            (deposits.actor_id, deposits.property_id, uuid4(), "b" * 64, deposit, departure),
+        )
+    events = PostgresDepositResourceFlow(runtime_database_url()).ledger(
+        deposit, limit=100, cursor=None
+    )
+    found = [event for event in events.items if event.event_id == departure]
+    assert [(event.event_kind, event.authorization_reference) for event in found] == [
+        ("PET_DEPARTURE", "deposits.refund.qualify")
+    ]

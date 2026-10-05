@@ -1,0 +1,11 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.11.15, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/sokompheak/Development/property-rental-management/backend
+configfile: pyproject.toml
+plugins: anyio-4.14.2
+collected 28 items
+
+tests/test_traceability.py ............................                  [100%]
+
+============================== 28 passed in 9.18s ==============================
+exit=0

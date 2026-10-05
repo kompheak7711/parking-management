@@ -307,6 +307,12 @@ links and timestamps.
 The endpoint is read-only. It does not create a General Ledger, Accounts Payable,
 journal-entry system, or competing financial source of truth.
 
+Amended by V1-056 sub-slice 8a-2 (migration `20261023_88`): a Final Settlement Deposit
+application is the event kind `DEPOSIT_APPLIED` (order 75), accepted as a history filter.
+The Deposit owner's ledger shows the Deposit held reduced and the evidence names the
+obligation's Customer; the ledger of the Customer named on the Invoice or Late-payment
+Charge shows that obligation reduced. One Customer gets one header with both components.
+
 # 11. Reservation Endpoints
 
 ## API-032 — Reservation Resource
@@ -453,6 +459,14 @@ letters and authority from the signed Lease.
 Security and Pet Deposits remain separate typed liabilities with receipt,
 application, disposition, and Refund history.
 
+Amended by V1-056 sub-slice 8a-2: `GET /deposits/{deposit_id}/ledger` lists each Final
+Settlement Deposit application as `APPLICATION_INVOICE_LINE` or
+`APPLICATION_LATE_PAYMENT_CHARGE`, with `source_id` the Invoice line or Late-payment
+Charge, `governing_source_kind` `FINAL_SETTLEMENT` and `governing_source_id` the
+Settlement, the approver as `actor_id`, `authorization_reference` `financial.approve`,
+the amount in USD cents and `can_reverse` false, so every lower held amount has its event
+(BR-SETTLE-009).
+
 ## API-040 — Deposit Receipt
 
 The following explicit commands create or continue the applicable liability and
@@ -517,6 +531,13 @@ variant `DEPOSIT_RECEIPT_REVERSAL`, prepared under `deposits.correct` and confir
 rules, then records nothing and answers 409 `DEPOSIT_RECEIPT_REVERSAL_DRAFT_REQUIRED`
 (rule ID `BR-AUTH-010`). The Deposit resource's `can_reverse_receipt` and the ledger's
 `can_reverse` are always false, so no event offers a one-call reverse route.
+
+Amended by V1-056 sub-slice 8a-2 (owner answer 2 to Q-2026-10-05-23): while a receipt
+reversal draft for a Deposit is pending, confirming a Refund draft or a forfeiture draft
+for the same Deposit is refused as a conflict and the draft stays pending: the Refund
+draft and Reservation Deposit draft confirm routes answer 409, and the Lease forfeiture
+draft service reports a conflict (its routes come in slice 11c). Recording such drafts
+stays allowed.
 
 ## API-094 — Active-Lease Pet Deposit Refund Qualification
 

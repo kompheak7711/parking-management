@@ -37,7 +37,7 @@ export interface DepositLedgerEvent {
   currency: string | null;
   amount_minor: number | null;
   reference_number: string | null;
-  governing_source_kind: "RESERVATION" | "LEASE" | null;
+  governing_source_kind: "RESERVATION" | "LEASE" | "FINAL_SETTLEMENT" | null;
   governing_source_id: string | null;
   source_lifecycle_event_id: string | null;
   effective_date: string | null;

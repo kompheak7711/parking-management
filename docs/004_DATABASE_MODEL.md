@@ -1458,6 +1458,10 @@ Append-only Final Settlement financial event: `id uuid PK`, `deposit_id uuid NOT
   staff reason for the remaining Pet Deposit (`PET_REMAINDER_EXPLICIT`, BR-SETTLE-017,
   BR-DEP-027, DL-013) are checked by the Settlement draft and its confirmation (V1-056
   sub-slices 8c and 8e), not by this table.
+- As built in V1-056 sub-slice 8a-2 (migration `20261023_88`): the Customer Ledger shows each
+  application (DB-DER-010), and the Deposit's own history reads the applications of one
+  Deposit of one Property through the bounded `app.deposit_application_history(property,
+  deposit)`; the runtime role executes that function only and has no table privilege.
 
 ## DB-DEP-006 — `deposit_application_reversals`
 
@@ -1484,6 +1488,22 @@ while a `REFUND` or `DEPOSIT_FORFEITURE` draft for that Deposit is pending (its 
 names the Deposit or its Reservation); the Final Settlement drafts (V1-056 8c, 8e) must
 extend this check. The row names the approver with the `deposits.correct` reference;
 the draft decision records `financial.approve`.
+
+As built in V1-056 sub-slice 8a-2 (migration `20261023_88`, owner answer 2 to
+Q-2026-10-05-23, an approved tightening): the other direction too. While a receipt
+reversal draft for a Deposit is pending, a trigger on `app.financial_draft_decisions`
+refuses the confirmation (SQLSTATE 55000) of any `REFUND` or `DEPOSIT_FORFEITURE` draft
+whose payload names that Deposit or its Reservation; recording such drafts stays allowed,
+and the refused draft stays pending. A Lease forfeiture reversal draft and the receipt
+reversal draft itself are not affected; a rejected or withdrawn receipt reversal draft no
+longer holds anything back. When a receipt reversal draft and a Refund or forfeiture draft
+of the same Deposit are both pending, each confirmation is refused, and only a rejection or
+withdrawal of one of them lets the other be confirmed. The receipt reversal draft recorder
+locks the Deposit row after its advisory lock, so no Refund or forfeiture confirmation
+commits while a receipt reversal draft for the same Deposit is pending or still being
+recorded (the Refund and Reservation Deposit confirmations lock that row; the Lease
+forfeiture confirmation takes the same advisory lock). This relies on READ COMMITTED, the
+isolation every confirmation uses: a statement after a lock wait takes a fresh snapshot.
 
 ## DB-DEP-008 — `deposit_disposition_reversals`
 
@@ -2030,6 +2050,17 @@ obligation composition, separate Charge balances, total owed, available Customer
 Credit, unallocated Payment, and Security/Pet Deposit liabilities remain separately
 identifiable. The projection is reconstructable and reconcilable; it is not a General
 Ledger, Chart of Accounts, vendor Accounts Payable, or second source of financial truth.
+
+As built in V1-056 sub-slice 8a-2 (migration `20261023_88`): each Final Settlement Deposit
+application (DB-DEP-005) is the event `DEPOSIT_APPLIED` (event order 75, after Credit
+applications and before dispositions). It has two components with the same evidence: the
+Deposit owner's component reduces the Security or Pet Deposit held, and the component of
+the Customer named on the Invoice or Late-payment Charge reduces that Invoice line or
+Charge. When both are the same Customer the event has one header with both components;
+when the Deposit pays another Signer's debt, each ledger shows its own component, and the
+evidence names the Deposit owner, the Invoice Customer, the Settlement, the stage, the
+order and the reason. Every earlier projection result is unchanged. The ledger page accepts
+`DEPOSIT_APPLIED` as a history filter.
 
 ## DB-DER-011 — Remaining Rent obligation
 

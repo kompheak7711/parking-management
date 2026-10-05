@@ -3637,7 +3637,7 @@ def test_protected_bootstrap_migration_accepts_large_object_without_bootstrap_au
         with psycopg.connect(migration_url) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT version_num FROM alembic_version")
-                assert cursor.fetchone() == ("20261022_87",)
+                assert cursor.fetchone() == ("20261023_88",)
 
 
 def test_customer_migration_accepts_a_malformed_revision_15_email_domain() -> None:
@@ -4266,7 +4266,7 @@ def test_v1_027_upgrade_preserves_v1_022_payment_configuration() -> None:
         with psycopg.connect(migration_url) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT version_num FROM alembic_version")
-                assert cursor.fetchone() == ("20261022_87",)
+                assert cursor.fetchone() == ("20261023_88",)
                 cursor.execute(
                     """
                     SELECT id, code, display_name, accepted, created_by, updated_by
@@ -4420,7 +4420,7 @@ def test_v1_029_upgrade_preserves_v1_028_property_unit_and_customer_data() -> No
         with psycopg.connect(migration_url) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT version_num FROM alembic_version")
-                assert cursor.fetchone() == ("20261022_87",)
+                assert cursor.fetchone() == ("20261023_88",)
                 cursor.execute(
                     """
                     SELECT unit.id, unit.property_id, unit.status, customer.id
@@ -4820,7 +4820,7 @@ def test_v1_034_upgrade_preserves_v1_033_lease_and_replaces_unbounded_runtime_he
         assert result.returncode == 0, result.stderr
         with psycopg.connect(migration_url) as connection:
             assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-                "20261022_87",
+                "20261023_88",
             )
             assert connection.execute(
                 "SELECT id,status,version,start_date,end_date FROM app.leases WHERE id=%s",
@@ -4919,12 +4919,20 @@ def test_v1_038_upgrade_projects_legacy_pet_departure_authorization() -> None:
             )
             assert preserved.execute("SELECT to_regclass('app.payments')").fetchone() == (None,)
         flow = PostgresDepositResourceFlow(migration_url)
-        departure = next(
-            event
-            for event in flow.ledger(deposit_id, limit=100, cursor=None).items
-            if event.event_id == departure_id
-        )
-        assert departure.authorization_reference == "deposits.refund.qualify"
+        # The current Deposit ledger read also needs migration 20261023_88 (V1-056 sub-slice
+        # 8a-2), which this database cannot reach; read the departure's authorization the way
+        # the ledger read derives it (docs/010).
+        with psycopg.connect(migration_url) as preserved:
+            assert preserved.execute(
+                "SELECT source.authorization_reference FROM app.lease_pet_departures departure "
+                "JOIN app.deposits deposit ON deposit.pet_approval_id=departure.pet_approval_id "
+                "JOIN app.deposit_commands source ON source.deposit_id=deposit.id "
+                "AND source.action IN "
+                "('deposit.pet_departure.record','deposit.pet_refund.qualify') "
+                "AND source.result_snapshot->>'pet_departure_id'=departure.id::text "
+                "WHERE departure.id=%s AND deposit.id=%s ORDER BY source.created_at DESC LIMIT 1",
+                (departure_id, deposit_id),
+            ).fetchone() == ("deposits.refund.qualify",)
         historical_review = flow.review(review_id)
         assert historical_review.refundable_usd_cents == 20_000
         assert historical_review.current_refundable_usd_cents == 20_000
@@ -5008,7 +5016,7 @@ def test_v1_039_upgrade_serializes_user_creation_across_actor_identity_backfill(
                 (actor_id,),
             ).fetchone() == ("HUMAN",)
             assert verify.execute("SELECT version_num FROM alembic_version").fetchone() == (
-                "20261022_87",
+                "20261023_88",
             )
 
 
@@ -5096,7 +5104,7 @@ def test_v1_042_published_schema_upgrades_to_corrected_runtime_contract() -> Non
         assert corrected.returncode == 0, corrected.stderr
         with psycopg.connect(migration_url) as connection:
             assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-                "20261022_87",
+                "20261023_88",
             )
             assert connection.execute(
                 "SELECT format_type(attribute.atttypid,attribute.atttypmod) "
@@ -5264,7 +5272,7 @@ def test_v1_045_populated_revision_35_upgrades_to_invoice_command_boundary() -> 
         assert upgraded.returncode == 0, upgraded.stderr
         with psycopg.connect(migration_url) as connection:
             assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-                "20261022_87",
+                "20261023_88",
             )
             snapshot = connection.execute(
                 "SELECT app.invoice_resource_snapshot(%s)", (invoice_id,)
@@ -5469,7 +5477,7 @@ def test_v1_042_upgrade_front_door_gate_prevents_service_writer_deadlock() -> No
 
         with psycopg.connect(migration_url) as connection:
             assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-                "20261022_87",
+                "20261023_88",
             )
             assert connection.execute(
                 "SELECT consumption_quantity FROM app.utility_consumption_periods WHERE id=%s",

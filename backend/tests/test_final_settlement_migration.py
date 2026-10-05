@@ -738,9 +738,9 @@ def test_violation_default_and_unpaid_initial_grounds_keep_only_the_security_dep
     )
 
 
-def test_a_deposit_pays_an_invoice_of_another_signer(migrated_database_url: str) -> None:
-    """Owner answer 5: a Lease Deposit pays any Signer's debt; the Invoice keeps its Customer."""
-    url = migrated_database_url
+def another_signer_invoice(url: str) -> dict[str, UUID]:
+    """A terminated Lease whose co-signer owes an issued Invoice and whose Primary Tenant
+    holds a received Pet Deposit."""
     now = today(url)
     first = date(now.year - 1, 1, 1)
     with psycopg.connect(url) as connection:
@@ -785,6 +785,24 @@ def test_a_deposit_pays_an_invoice_of_another_signer(migrated_database_url: str)
     line = line_of(url, invoice)
     pet = pet_deposit(url, human, prop, lease, now)
     terminate(url, human, prop, lease, now, voluntary=False)
+    return {
+        "human": human,
+        "prop": prop,
+        "tenant": tenant,
+        "co_signer": co_signer,
+        "lease": lease,
+        "invoice": invoice,
+        "line": line,
+        "pet": pet,
+    }
+
+
+def test_a_deposit_pays_an_invoice_of_another_signer(migrated_database_url: str) -> None:
+    """Owner answer 5: a Lease Deposit pays any Signer's debt; the Invoice keeps its Customer."""
+    url = migrated_database_url
+    f = another_signer_invoice(url)
+    human, prop, lease, pet, line = f["human"], f["prop"], f["lease"], f["pet"], f["line"]
+    invoice, tenant, co_signer = f["invoice"], f["tenant"], f["co_signer"]
     settlement = start(prop, human, lease)
     apply(
         url, prop, human, settlement, pet, "PET_REMAINDER_EXPLICIT", "INVOICE_LINE", line, 2_500, 1

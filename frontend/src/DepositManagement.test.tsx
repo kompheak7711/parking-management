@@ -139,6 +139,44 @@ describe("DepositManagement", () => {
     ).toBeInTheDocument();
   });
 
+  it("TEST-FE-673 shows a Final Settlement Deposit application in the Deposit history", async () => {
+    const client = api();
+    vi.mocked(client.ledger).mockResolvedValue({
+      items: [
+        {
+          event_id: "application-1",
+          event_kind: "APPLICATION_INVOICE_LINE",
+          occurred_at: "2026-10-05T03:00:00Z",
+          amount_usd_cents: 2500,
+          source_id: "invoice-line-1",
+          reason: "Applied at Final Settlement",
+          evidence_reference: null,
+          actor_id: "approver-1",
+          authorization_reference: "financial.approve",
+          currency: "USD",
+          amount_minor: 2500,
+          reference_number: null,
+          governing_source_kind: "FINAL_SETTLEMENT",
+          governing_source_id: "settlement-1",
+          source_lifecycle_event_id: null,
+          effective_date: null,
+          can_reverse: false,
+        },
+      ],
+      next_cursor: null,
+    });
+    render(<DepositManagement api={client} />);
+    fireEvent.change(screen.getByLabelText("Deposit identifier"), {
+      target: { value: "deposit-1" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Load one Deposit" }));
+    expect(
+      await screen.findByText(
+        /APPLICATION_INVOICE_LINE — \$25\.00 .*source invoice-line-1 — governing final settlement settlement-1/,
+      ),
+    ).toBeInTheDocument();
+  });
+
   it("TEST-FE-209 refreshes the Deposit before combining it with current history", async () => {
     const client = api();
     const refreshed = {

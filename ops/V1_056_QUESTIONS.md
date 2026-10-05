@@ -436,3 +436,33 @@ Recommendation: (a), because it closes the path everywhere with the draft-then-c
    - Independent S5: a test of a Deposit paying another Signer's Invoice.
    - Notes I would take: a clear refusal for an unknown target, the human-actor check in the writer, and a wider least-privilege test.
    After the fixes: backend unit and full PostgreSQL once each, then review round 2 under the standing round-3 rule.
+
+## Q-2026-10-05-23 — Sub-slice 8r report: four points for the owner (ANSWERED 2026-10-05: (1) accepted; (2) tightening approved, built in 8a-2 with a test; (3) a reversed forfeiture leaves the Security Deposit held, DL-032 at settlement unless a new forfeiture draft is confirmed; stop before 8c if this conflicts with a written rule; (4) agreed; answers in docs/010)
+
+The four points of the 8r report (sub-slice 8r committed as 7db72ad):
+
+1. Until slice 11c builds the receipt reversal draft routes, a returned transfer is processed only through the service. Answer: accepted; the screen hides the action; there are no real users yet.
+2. While a receipt reversal draft waits, a Refund draft or a forfeiture draft for the same Deposit can still be recorded and confirmed first; refusing them would be a tightening. Answer: tightening approved. Refuse the confirmation of a Refund draft or a forfeiture draft for the same Deposit while a receipt reversal draft is pending; recording stays allowed. Build it in 8a-2 with a test, because it stops money going out that may never have been received.
+3. A Security Deposit whose forfeiture was reversed (sub-slice 6b): `app.lease_deposit_kept_rule` reads only the termination record, so that Deposit stays kept and is never applied. Answer: it is held again, as if that forfeiture never happened. At settlement it follows DL-032 (it pays open debt, and the rest is refunded), unless a new forfeiture draft is confirmed. It must never be stuck with no way to apply or refund it. If this conflicts with a written rule, stop and ask before 8c (see Q-2026-10-05-24).
+4. 8c and 8e must extend the receipt reversal pending-draft checks to the Final Settlement drafts. Answer: agreed.
+
+## Q-2026-10-05-24 — Before sub-slice 8c: answer 3 of Q-2026-10-05-23 conflicts with the text of BR-DEP-023 and BR-DEP-026 (OPEN; does not block 8a-2; needed before 8b's preview path and 8c)
+
+You asked me to stop before 8c if answer 3 conflicts with a written rule. I checked docs/002 and docs/010 (read only). Sub-slice 8a-2 does not depend on it, so I continue with 8a-2.
+
+What conflicts:
+
+- **BR-DEP-023** (docs/002): "When voluntary early termination is processed under BR-LEASE-021, the Security Deposit is non-refundable and is resolved through an explicit disposition event." Under answer 3, after a reversed forfeiture the rest of that Security Deposit is refunded at Final Settlement unless a new forfeiture is confirmed.
+- **BR-DEP-026** (docs/002): "When the Security Deposit is kept, the whole deposit is forfeited ... and is never used to pay what the Customer owes. ... This applies to voluntary early leaving, termination for unpaid Initial Rent or Security Deposit, ... violation ... and ... the 30-day Rent nonpayment default." The text ties "kept" to the termination ground alone. Under answer 3 the same ground can end in DL-032.
+- No conflict with answer 2 of Q-2026-10-05-20 (docs/010): the Security Deposit is kept only where the termination record gives a forfeiture ground and its forfeiture draft is confirmed. Answer 3 fits it.
+- Inside answer 3, "as if that forfeiture never happened" could also be read as "the ground still applies, so the Settlement waits for a new forfeiture". The next sentence ("at settlement it follows DL-032 ... unless a new forfeiture draft is confirmed") decides it, so I read it that way.
+
+What the code does today (8a-1): `app.lease_deposit_kept_rule` gives the ground from the termination record only, and `app.post_deposit_application` refuses any application from a Security Deposit with a ground. After a reversed forfeiture that Deposit cannot be applied, and 8b's plan lists "kept Deposit still held without a confirmed forfeiture" as a blocking issue, so it would be stuck. 8b, 8c and 8e must change this (a relaxing change of the 8a-1 check).
+
+Recommendation:
+
+1. Add one sentence to BR-DEP-026 (docs/002), and a pointer in BR-DEP-023: "When a confirmed forfeiture of the Security Deposit is reversed, the Deposit is held again; at Final Settlement it follows DL-032 (it pays open debt and the rest is refunded) unless a new forfeiture draft is confirmed (owner answer to Q-2026-10-05-23)."
+2. The three cases in the preview (8b) and the confirm (8e): a ground and no forfeiture ever confirmed is a blocking issue (as planned); a ground with a confirmed, active forfeiture is kept and never applied; a ground whose last forfeiture was reversed follows DL-032, and a pending new forfeiture draft for it is a blocking issue.
+3. The same rule for a Pet Deposit kept under BR-DEP-022 (pet noncompliance) whose forfeiture was reversed: it is held again and follows the Pet Deposit steps of DL-032, unless a new forfeiture draft is confirmed.
+
+Please confirm 1 to 3, or say what to change. I will not start 8c, or build 8b's path for this case, before your answer.

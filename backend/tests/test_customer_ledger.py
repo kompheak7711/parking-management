@@ -102,7 +102,8 @@ def test_ledger_equal_time_order_and_filter_are_deterministic_across_timezones()
     assert sorted(keys, key=lambda key: key.order) == [keys[1], keys[2], keys[0]]
     filters = LedgerFilter(local, local, "PAYMENT_RECEIVED")
     assert [key for key in keys if filters.includes(key)] == [keys[0], keys[2]]
-    assert len(EVENT_ORDER) == 23
+    # Sub-slice 8a-2 adds DEPOSIT_APPLIED (docs/010).
+    assert len(EVENT_ORDER) == 24
 
 
 def test_ledger_cursor_round_trip_binds_scope_filters_and_source_revision() -> None:

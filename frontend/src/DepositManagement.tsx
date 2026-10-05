@@ -605,7 +605,7 @@ export function DepositManagement({
                   {event.governing_source_kind === null ||
                   event.governing_source_id === null
                     ? ""
-                    : ` — governing ${event.governing_source_kind.toLowerCase()} ${event.governing_source_id}`}
+                    : ` — governing ${event.governing_source_kind.toLowerCase().replace(/_/g, " ")} ${event.governing_source_id}`}
                   {event.source_lifecycle_event_id === null
                     ? ""
                     : ` — lifecycle event ${event.source_lifecycle_event_id}`}

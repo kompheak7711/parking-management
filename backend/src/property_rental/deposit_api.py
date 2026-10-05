@@ -445,7 +445,7 @@ class PostgresDepositResourceFlow:
         )
 
     def ledger(self, deposit_id: UUID, *, limit: int, cursor: str | None) -> DepositLedgerPage:
-        self.get(deposit_id)
+        snapshot = self.get(deposit_id)
         decoded = _decode_cursor(cursor)
         rows = self._fetchall(
             """
@@ -581,6 +581,18 @@ class PostgresDepositResourceFlow:
                 JOIN app.refunds AS refund ON refund.id=correction.refund_id
                 JOIN app.deposits AS deposit ON deposit.id=refund.source_deposit_id
                 WHERE refund.source_deposit_id=%s
+                UNION ALL
+                -- A Final Settlement Deposit application (BR-SETTLE-009): every lower held
+                -- amount has its event; the source is the Invoice line or Late-payment Charge.
+                -- The runtime role reads applications only through this bounded function.
+                SELECT application.application_id,'APPLICATION_' || application.target_kind,
+                    application.occurred_at,application.amount_usd_cents,application.target_id,
+                    application.reason,NULL::text,application.actor_id,
+                    application.authorization_reference,'USD'::text,
+                    application.amount_usd_cents,NULL::text,
+                    'FINAL_SETTLEMENT'::text,application.final_settlement_id,NULL::uuid,
+                    NULL::date,false
+                FROM app.deposit_application_history(%s,%s) AS application
             )
             SELECT event_id,event_kind,occurred_at,amount_usd_cents,source_id,reason,
                    evidence_reference,actor_id,authorization_reference,currency,
@@ -600,6 +612,8 @@ class PostgresDepositResourceFlow:
                 deposit_id,
                 deposit_id,
                 deposit_id,
+                deposit_id,
+                snapshot.property_id,
                 deposit_id,
                 None if decoded is None else decoded[0],
                 None if decoded is None else decoded[0],

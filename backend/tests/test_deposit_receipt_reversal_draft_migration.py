@@ -10,11 +10,16 @@ from alembic.config import Config
 from alembic.script import ScriptDirectory
 
 from deposit_receipt_reversal_test_support import approver
-from lease_deposit_forfeiture_test_support import owner_database_url
+from lease_deposit_forfeiture_test_support import (
+    forfeit_through_draft,
+    owner_database_url,
+    reverse_through_draft,
+)
 from property_rental.deposit import (
     AdjustDepositRequiredAmountCommand,
     DepositAdjustmentType,
     DepositReceiptReversalDraftRequired,
+    PostgresDepositService,
     ReverseDepositReceiptCommand,
 )
 from property_rental.deposit_receipt_reversal import (
@@ -28,6 +33,7 @@ from property_rental.deposit_receipt_reversal import (
 )
 from property_rental.financial_draft import FinancialDraftService
 from property_rental.lease_deposit_forfeiture import (
+    LeaseDepositForfeitureConflictError,
     LeaseDepositForfeitureNotFoundError,
     LeaseDepositForfeitureService,
 )
@@ -38,8 +44,11 @@ from property_rental.payment_allocation import (
 from property_rental.reservation_deposit_draft import (
     RecordReservationDepositDraftCommand,
     ReservationDepositDecision,
+    ReservationDepositDraftConflictError,
 )
 from test_invoice_migration import financial_database_url, runtime_database_url
+from test_lease_deposit_forfeiture_migration import draft as forfeiture_draft
+from test_lease_deposit_forfeiture_migration import forfeited, forfeitures
 from test_move_in_migration import migrated_database_url as migrated_database_url
 from test_payment_allocation_migration import actor as allocation_actor
 from test_payment_allocation_migration import service as allocations
@@ -47,6 +56,7 @@ from test_payment_reversal_context_migration import deposit_source
 from test_reservation_deposit_draft_migration import cancel_by_staff, drafts, person
 from test_reservation_lifecycle_migration import active_reservation
 from test_termination_deposit_migration import setup_deposits
+from test_termination_deposit_migration import terminate as terminate_voluntary
 
 ONE_CALL = "app.reverse_deposit_receipt_v2(uuid,uuid,uuid,text,uuid,uuid,text,text)"
 RECORD = "app.record_deposit_receipt_reversal_draft(uuid,uuid,uuid,uuid,uuid,text,text)"
@@ -393,6 +403,139 @@ def test_receipt_reversal_grants_are_least_privilege(migrated_database_url: str)
                 ).fetchone()
                 expected = role == "prm_financial" and function in (RECORD, CONFIRM)
                 assert allowed == (expected,), (role, function)
+
+
+def receipt_of(url: str, deposit: UUID) -> UUID:
+    return UUID(
+        str(one(url, "SELECT id FROM app.deposit_receipts WHERE deposit_id=%s", deposit)[0])
+    )
+
+
+def test_a_lease_forfeiture_confirmation_waits_for_a_pending_receipt_reversal_draft(
+    migrated_database_url: str,
+) -> None:
+    """Owner answer 2 to Q-2026-10-05-23: no forfeiture while the receipt may be reversed."""
+    url = migrated_database_url
+    human, prop, lease, security, _pet, day = setup_deposits(url)
+    terminate_voluntary(url, human, prop, lease, day)
+    amount = held(url, security)
+    reversal = record(prop, human, receipt_of(url, security))
+    # Recording the forfeiture draft stays allowed.
+    forfeiture = forfeiture_draft(prop, human, security)
+    draft = UUID(str(forfeiture["draft_id"]))
+    with pytest.raises(LeaseDepositForfeitureConflictError):
+        forfeitures().confirm(
+            prop, security, draft, actor=approver(human, prop, "financial.approve")
+        )
+    assert (decisions(url, draft), held(url, security), forfeited(url, security)) == (
+        0,
+        amount,
+        [],
+    )
+    # The database refuses the confirmation itself, not only the service.
+    with psycopg.connect(financial_database_url()) as connection:
+        with pytest.raises(psycopg.Error) as refused:
+            connection.execute(
+                "SELECT app.confirm_lease_deposit_forfeiture_draft(%s,%s,%s,%s,%s)",
+                (prop, human, security, draft, "financial.approve"),
+            )
+    assert (refused.value.sqlstate, refused.value.diag.message_primary) == (
+        "55000",
+        "A Deposit receipt reversal draft for this Deposit is waiting",
+    )
+    # A withdrawal is not a confirmation: it passes while the receipt reversal draft waits.
+    FinancialDraftService(runtime_database_url(), financial_database_url()).withdraw(
+        prop,
+        draft,
+        "Recorded before the transfer question was settled",
+        prepare_capability="deposits.dispose",
+        actor=approver(human, prop, "deposits.dispose"),
+    )
+    assert decisions(url, draft) == 1
+    again = UUID(str(forfeiture_draft(prop, human, security)["draft_id"]))
+    with pytest.raises(LeaseDepositForfeitureConflictError):
+        forfeitures().confirm(
+            prop, security, again, actor=approver(human, prop, "financial.approve")
+        )
+    withdraw(prop, human, reversal["draft_id"])
+    forfeitures().confirm(prop, security, again, actor=approver(human, prop, "financial.approve"))
+    assert held(url, security) == 0 and forfeited(url, security) == [(amount, "BR-DEP-023")]
+
+
+def test_a_forfeiture_reversal_confirmation_does_not_wait_for_a_receipt_reversal_draft(
+    migrated_database_url: str,
+) -> None:
+    """Owner answer 2 to Q-2026-10-05-23 covers Refund and forfeiture drafts only; a Lease
+    forfeiture reversal (6b) returns money to the held Deposit and is not held back."""
+    url = migrated_database_url
+    human, prop, lease, security, _pet, day = setup_deposits(url)
+    terminate_voluntary(url, human, prop, lease, day)
+    amount = held(url, security)
+    service = PostgresDepositService(financial_database_url(), prop, human)
+    disposition = uuid4()
+    forfeit_through_draft(service, security, disposition_id=disposition)
+    assert held(url, security) == 0
+    reversal = record(prop, human, receipt_of(url, security))
+    reverse_through_draft(service, disposition)
+    assert held(url, security) == amount
+    # The receipt reversal draft is still pending; the Deposit changed, so it is now stale
+    # (23514, reported as invalid until slice 11c, see the plan).
+    assert decisions(url, UUID(str(reversal["draft_id"]))) == 0
+    with pytest.raises(DepositReceiptReversalInvalidError):
+        confirm(prop, human, receipt_of(url, security), reversal["draft_id"])
+
+
+def test_a_reservation_outcome_confirmation_waits_for_a_pending_receipt_reversal_draft(
+    migrated_database_url: str,
+) -> None:
+    """Owner answer 2 to Q-2026-10-05-23, for a Reservation Deposit draft (it names the
+    Reservation and the Deposit)."""
+    url = migrated_database_url
+    with psycopg.connect(url) as setup:
+        human, prop, _, _, reservation = active_reservation(setup)
+        setup.commit()
+    receipt, deposit = one(
+        url,
+        "SELECT receipt.id,receipt.deposit_id FROM app.deposit_receipts receipt "
+        "JOIN app.deposits deposit ON deposit.id=receipt.deposit_id "
+        "WHERE deposit.reservation_id=%s",
+        reservation,
+    )
+    amount = held(url, deposit)
+    cancel_by_staff(human, prop, reservation)
+    reversal = record(prop, human, receipt)
+    recorded = drafts().record(
+        prop,
+        ReservationDepositDecision.DEPOSIT_FORFEITURE,
+        RecordReservationDepositDraftCommand(uuid4(), reservation, uuid4(), "Forfeit"),
+        actor=person(human, prop, "reservation_deposits.dispose"),
+    )
+    draft = UUID(str(recorded["draft_id"]))
+    with pytest.raises(ReservationDepositDraftConflictError):
+        drafts().confirm(prop, reservation, draft, actor=approver(human, prop, "financial.approve"))
+    assert (decisions(url, draft), held(url, deposit)) == (0, amount)
+    # A rejection is not a confirmation: it passes while the receipt reversal draft waits.
+    drafts().reject(
+        prop,
+        reservation,
+        draft,
+        "Wait for the transfer question",
+        actor=approver(human, prop, "financial.approve"),
+    )
+    assert decisions(url, draft) == 1 and held(url, deposit) == amount
+    again = UUID(
+        str(
+            drafts().record(
+                prop,
+                ReservationDepositDecision.DEPOSIT_FORFEITURE,
+                RecordReservationDepositDraftCommand(uuid4(), reservation, uuid4(), "Forfeit"),
+                actor=person(human, prop, "reservation_deposits.dispose"),
+            )["draft_id"]
+        )
+    )
+    withdraw(prop, human, reversal["draft_id"])
+    drafts().confirm(prop, reservation, again, actor=approver(human, prop, "financial.approve"))
+    assert held(url, deposit) == 0
 
 
 def test_receipt_reversal_draft_migration_is_forward_only() -> None:

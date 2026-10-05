@@ -346,6 +346,13 @@ class RefundService:
                 "Financial draft is already decided"
             ):
                 raise RefundConflictError("Refund draft is already decided") from exc
+            if exc.sqlstate == "55000" and exc.diag.message_primary == (
+                "A Deposit receipt reversal draft for this Deposit is waiting"
+            ):
+                # Owner answer 2 to Q-2026-10-05-23: the Refund draft stays pending.
+                raise RefundConflictError(
+                    "A Deposit receipt reversal draft for this Deposit is waiting"
+                ) from exc
             raise RefundUnavailableError(
                 "Refund outcome unresolved; preserve and replay the original command"
             ) from exc

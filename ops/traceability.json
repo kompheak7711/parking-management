@@ -36538,6 +36538,148 @@
       "test_path": "backend/tests/test_deposit_api.py",
       "status": "implemented",
       "notes": "The one-call receipt reverse route conceals the receipt without deposits.correct (404), applies the browser mutation rules (403), then answers 409 DEPOSIT_RECEIPT_REVERSAL_DRAFT_REQUIRED and sends no command (V1-056 sub-slice 8r)."
+    },
+    {
+      "test_id": "test_deposit_applications_are_customer_ledger_events",
+      "upstream_ids": [
+        "BR-SETTLE-009",
+        "BR-LEDGER-003",
+        "BR-LEDGER-006",
+        "DB-DER-010",
+        "DB-DEP-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_application_ledger_migration.py",
+      "status": "implemented",
+      "notes": "Each Final Settlement Deposit application is one DEPOSIT_APPLIED ledger event: on one Customer it has one header with the Deposit and the Invoice line or Late-payment Charge components, the ledger reconciles per source, and the runtime reader filters by the new kind and shows its components (V1-056 sub-slice 8a-2)."
+    },
+    {
+      "test_id": "test_a_deposit_application_to_another_signer_shows_on_both_ledgers",
+      "upstream_ids": [
+        "BR-SETTLE-016",
+        "BR-LEDGER-003",
+        "DB-DER-010",
+        "DB-DEP-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_application_ledger_migration.py",
+      "status": "implemented",
+      "notes": "A Pet Deposit of the Primary Tenant pays a co-signer's Invoice: the owner's ledger shows the Deposit applied naming the Invoice Customer, the co-signer's ledger shows the Invoice paid by the application, and both reconcile (V1-056 sub-slice 8a-2)."
+    },
+    {
+      "test_id": "test_the_deposit_history_shows_each_application",
+      "upstream_ids": [
+        "BR-SETTLE-009",
+        "DB-DEP-005",
+        "API-039"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_application_ledger_migration.py",
+      "status": "implemented",
+      "notes": "The Deposit's own history lists each application with its target, Final Settlement, approver and amount, so received minus applied equals the held amount; the bounded read is scoped to the Deposit's Property (V1-056 sub-slice 8a-2)."
+    },
+    {
+      "test_id": "test_deposit_application_reads_are_least_privilege",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "DB-DEP-005"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_deposit_application_ledger_migration.py",
+      "status": "implemented",
+      "notes": "Only the runtime role may execute the bounded Deposit application read, no role may read the table, the receipt reversal wait guard has no grant, and the guard trigger is enabled (V1-056 sub-slice 8a-2)."
+    },
+    {
+      "test_id": "test_deposit_application_ledger_migration_is_forward_only",
+      "upstream_ids": [
+        "DB-DER-010"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_deposit_application_ledger_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20261023_88 follows 20261022_87 and refuses a downgrade (V1-056 sub-slice 8a-2)."
+    },
+    {
+      "test_id": "test_a_lease_forfeiture_confirmation_waits_for_a_pending_receipt_reversal_draft",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-DEP-018",
+        "DB-DEP-007"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_receipt_reversal_draft_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer 2 to Q-2026-10-05-23: while a receipt reversal draft for the Security Deposit is pending, its forfeiture draft can be recorded and withdrawn but its confirmation is refused (service and database), the draft stays pending and nothing changes; after the receipt reversal draft is withdrawn a new forfeiture draft is confirmed (V1-056 sub-slice 8a-2)."
+    },
+    {
+      "test_id": "test_a_pet_refund_confirmation_waits_for_a_pending_receipt_reversal_draft",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-REFUND-014",
+        "DB-DEP-007"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_pet_refund_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer 2 to Q-2026-10-05-23: a Pet Deposit Refund draft recorded while a receipt reversal draft is pending is refused at confirmation as a conflict, creates no Refund and stays pending; after the receipt reversal draft is rejected the Refund is confirmed (V1-056 sub-slice 8a-2)."
+    },
+    {
+      "test_id": "test_a_reservation_outcome_confirmation_waits_for_a_pending_receipt_reversal_draft",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-RES-021",
+        "DB-DEP-007"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_receipt_reversal_draft_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer 2 to Q-2026-10-05-23: a Reservation Deposit forfeiture draft recorded while a receipt reversal draft for that Deposit is pending is refused at confirmation and stays pending, can still be rejected, and a new draft is confirmed after the receipt reversal draft is withdrawn (V1-056 sub-slice 8a-2)."
+    },
+    {
+      "test_id": "TEST-FE-673",
+      "upstream_ids": [
+        "BR-SETTLE-009",
+        "API-039"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/DepositManagement.test.tsx",
+      "status": "implemented",
+      "notes": "The Deposit history shows a Final Settlement Deposit application with its amount, target and governing Final Settlement (V1-056 sub-slice 8a-2)."
+    },
+    {
+      "test_id": "test_a_forfeiture_reversal_confirmation_does_not_wait_for_a_receipt_reversal_draft",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-DEP-019",
+        "DB-DEP-007"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_receipt_reversal_draft_migration.py",
+      "status": "implemented",
+      "notes": "A Lease forfeiture reversal draft (6b) is confirmed while a receipt reversal draft for the Deposit is pending, because owner answer 2 to Q-2026-10-05-23 covers Refund and forfeiture drafts only; the pending receipt reversal draft is then stale (V1-056 sub-slice 8a-2)."
+    },
+    {
+      "test_id": "test_a_pet_refund_waits_for_a_receipt_reversal_draft_being_recorded",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-REFUND-014",
+        "DB-DEP-007"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_pet_refund_migration.py",
+      "status": "implemented",
+      "notes": "Two connections: a Pet Refund draft recorded and confirmed while a receipt reversal draft for the Deposit is being recorded waits on the Deposit row, then is refused as a conflict and pays nothing (V1-056 sub-slice 8a-2, review round 1)."
+    },
+    {
+      "test_id": "test_the_deposit_history_reads_a_legacy_combined_qualification_departure",
+      "upstream_ids": [
+        "BR-DEP-019",
+        "API-039"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_pet_refund_migration.py",
+      "status": "implemented",
+      "notes": "At head, the Deposit ledger read shows a departure recorded only by a legacy combined deposit.pet_refund.qualify command with that command's authorization (V1-056 sub-slice 8a-2 review round 2; the branch test_v1_038_upgrade_projects_legacy_pet_departure_authorization checked through the reader before migration 88)."
     }
   ]
 }

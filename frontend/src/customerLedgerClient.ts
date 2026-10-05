@@ -26,6 +26,7 @@ export const LEDGER_EVENTS = {
   CREDIT_RECOGNITION_REVERSED: [61, "Customer Credit recognition reversed"],
   CREDIT_APPLIED: [70, "Customer Credit applied"],
   CREDIT_APPLICATION_REVERSED: [71, "Customer Credit application reversed"],
+  DEPOSIT_APPLIED: [75, "Deposit applied"],
   DEPOSIT_DISPOSED: [80, "Deposit disposed"],
   DEPOSIT_DISPOSITION_REVERSED: [81, "Deposit disposition reversed"],
   REFUND_PAID: [82, "Refund paid"],
