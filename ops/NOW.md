@@ -103,4 +103,6 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md.
 
 - V1-056 sub-slice 8d (2026-10-05, 373afc0, migration 20261026_91): COMMITTED. Owner answer to choice (4a) (Q-2026-10-05-30) built first in the shared plan check; Settlement Deposit Refunds through an internal writer, the link and method/note/agreement in app.final_settlement_refund_details (owner-accepted), refused while a receipt reversal or forfeiture draft waits (8r rule) or open debt a Deposit could pay remains, committed only with the same approver's confirmation. Rounds 1 to 3 (round 3 as owner exception, Q-2026-10-05-31) no should-fix; unit 3451 (U3), PostgreSQL 1833 (P3), no correction. Pydantic warning: not from 8c, slice 12 item. Owner rule: ask before a design differs from docs/004 or the plan. NEXT: sub-slice 8e (confirm and close). Start a fresh session. Nothing pushed.
 
-- Updated: 2026-10-05.
+- V1-056 sub-slice 8e (2026-10-06): pre-code review in the plan (every 8e note mapped, read-only path search of one-call changes after closure); 8e split into 8e-1 (refusals after closure), 8e-2 (Settlement Credit application writer) and 8e-3 (confirm and close). Q-2026-10-06-32 open (the Credit steps cannot use the existing Credit application function as the plan says; reversal of a Settlement Credit application; DB-SETTLE-006 key); 8e-2 and 8e-3 wait for it. NEXT: 8e-1. Nothing pushed.
+
+- Updated: 2026-10-06.
