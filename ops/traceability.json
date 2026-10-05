@@ -36881,6 +36881,208 @@
       "test_path": "backend/tests/test_final_settlement_preview_migration.py",
       "status": "implemented",
       "notes": "At an unpaid-Initial termination (BR-LEASE-005) a Security Deposit whose receipts were reversed holds nothing (NOTHING_HELD), the remaining Pet step is the Customer's choice only, and the preview is ready; a 30-day default termination (BR-LEASE-028) also allows only the Customer's choice (V1-056 sub-slice 8b review round 2)."
+    },
+    {
+      "test_id": "test_a_settlement_draft_records_the_dl032_steps_and_changes_nothing",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-SETTLE-004",
+        "BR-SETTLE-005",
+        "BR-SETTLE-006",
+        "BR-SETTLE-007",
+        "BR-SETTLE-008",
+        "BR-SETTLE-015",
+        "DL-032",
+        "DB-SETTLE-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_draft_migration.py",
+      "status": "implemented",
+      "notes": "Staff holding final_settlements.prepare record a FINAL_SETTLEMENT draft with the DL-032 steps in order (Credit, Pet Deposit to pet damage, Security Deposit, remaining Pet Deposit with the staff reason, Pet Deposit Refund); the draft stores the steps, the Deposits it uses, the expected closing balance and the digest of every Settlement source; it changes no balance, Credit, Deposit or preview; an exact repeat replays, a reused key is refused, one draft waits per Settlement, and withdraw and reject use the shared decisions (V1-056 sub-slice 8c)."
+    },
+    {
+      "test_id": "test_the_strict_dl032_order_refuses_plans_that_break_it",
+      "upstream_ids": [
+        "BR-SETTLE-004",
+        "BR-SETTLE-005",
+        "BR-SETTLE-006",
+        "BR-SETTLE-008",
+        "BR-SETTLE-017",
+        "BR-REFUND-014",
+        "BR-REFUND-015",
+        "DL-032"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_draft_migration.py",
+      "status": "implemented",
+      "notes": "The draft is refused when a Customer's Credit does not pay that Customer's open debt up to what it can pay, the steps leave the DL-032 order, the Pet Deposit pays something other than pet damage first or before pet damage is paid, a Deposit type, obligation, Credit or Deposit amount does not fit, a Deposit balance is left unapplied and unrefunded, a Deposit is refunded while the Lease has debt that Deposit could pay, the remaining Pet Deposit has no recorded choice or reason, or a Refund names an inactive method or a recipient the rules do not allow; malformed plans are refused by the database and no refusal leaves a draft (owner answer 3 to Q-2026-10-05-20; V1-056 sub-slice 8c)."
+    },
+    {
+      "test_id": "test_a_security_refund_follows_once_no_debt_is_left",
+      "upstream_ids": [
+        "BR-SETTLE-006",
+        "BR-SETTLE-008",
+        "BR-SETTLE-017",
+        "DL-032"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_draft_migration.py",
+      "status": "implemented",
+      "notes": "A Security Deposit Refund is accepted once the chosen Deposit applications leave no debt, with the remaining Pet Deposit used by the Customer's recorded choice (V1-056 sub-slice 8c)."
+    },
+    {
+      "test_id": "test_a_br_dep_027_termination_lets_only_the_customer_choose_the_pet_remainder",
+      "upstream_ids": [
+        "BR-DEP-027",
+        "BR-SETTLE-005",
+        "BR-SETTLE-017",
+        "BR-DEP-026",
+        "DL-032"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_draft_migration.py",
+      "status": "implemented",
+      "notes": "At an unpaid-Initial-Rent termination the remaining Pet Deposit pays other debt only by the Customer's recorded choice (the staff reason alone is refused), a Security Deposit that holds nothing is never applied, and without the Customer's choice the Pet Deposit's rest is refunded while the debt stays on the ledger (Q-2026-10-05-21; V1-056 sub-slice 8c)."
+    },
+    {
+      "test_id": "test_receipt_reversals_and_settlement_drafts_wait_for_each_other",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-SETTLE-011"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_draft_migration.py",
+      "status": "implemented",
+      "notes": "A waiting Deposit receipt reversal draft blocks the Settlement draft; while a Settlement draft that uses the Deposit waits, a receipt reversal draft is not recorded and the receipt reversal guard refuses a reversal; a Settlement draft is not confirmed while a receipt reversal draft of its Deposit waits (owner answer 4 to Q-2026-10-05-23; V1-056 sub-slice 8c)."
+    },
+    {
+      "test_id": "test_replaced_one_time_charges_are_listed_as_information",
+      "upstream_ids": [
+        "BR-SETTLE-003",
+        "BR-SETTLE-011",
+        "API-071"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_draft_migration.py",
+      "status": "implemented",
+      "notes": "The Settlement preview lists each one-time charge a draft correction replaced under information, with the charge that replaced it on another Lease or on no Lease; neither blocks the Settlement (owner answer to Q-2026-10-05-28; V1-056 sub-slice 8c)."
+    },
+    {
+      "test_id": "test_settlement_drafts_are_least_privilege",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "SEC-020"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_draft_migration.py",
+      "status": "implemented",
+      "notes": "Only the financial role executes the Settlement draft recorder and only with final_settlements.prepare as the authorization; the internal plan and source functions have no grant; the runtime role cannot record; an unknown Settlement is not found and leaves no draft (V1-056 sub-slice 8c)."
+    },
+    {
+      "test_id": "test_final_settlement_draft_migration_is_forward_only",
+      "upstream_ids": [
+        "DB-SETTLE-001",
+        "BR-SETTLE-015"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_draft_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20261025_90 follows 20261024_89 and is forward-only (V1-056 sub-slice 8c)."
+    },
+    {
+      "test_id": "test_settlement_draft_commands_refuse_bad_input_before_any_connection",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-SETTLE-006",
+        "BR-REFUND-015"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_final_settlement.py",
+      "status": "implemented",
+      "notes": "The Settlement draft command refuses invalid identities, amounts, step kinds, texts, step counts and Pet Deposit remainder decisions, and a person without final_settlements.prepare, before any database connection (V1-056 sub-slice 8c)."
+    },
+    {
+      "test_id": "test_settlement_draft_sends_the_plan_with_a_stable_draft_id",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-SETTLE-006",
+        "DL-032"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_final_settlement.py",
+      "status": "implemented",
+      "notes": "The service sends the plan as JSON with every step, the Pet Deposit remainder decision and the reason, through the financial database URL, with a draft id stable for the Property, preparer and key (V1-056 sub-slice 8c)."
+    },
+    {
+      "test_id": "test_a_reused_settlement_draft_key_is_a_conflict",
+      "upstream_ids": [
+        "BR-AUTH-010"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_final_settlement.py",
+      "status": "implemented",
+      "notes": "A reused Settlement draft key (P5205) reaches the caller as a key-reuse conflict (V1-056 sub-slice 8c)."
+    },
+    {
+      "test_id": "test_a_payment_after_the_draft_makes_its_source_revision_stale",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-SETTLE-015",
+        "DB-SETTLE-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_draft_migration.py",
+      "status": "implemented",
+      "notes": "The draft's source revision equals the one the plan check returns for the same state; a payment after the draft changes the digest of the Settlement sources and the stored plan no longer passes the check (Q-2026-10-05-29 fixes; a payment between two statements of one call cannot be scheduled from a test; V1-056 sub-slice 8c)."
+    },
+    {
+      "test_id": "test_each_customer_s_credit_pays_only_and_always_its_own_debt",
+      "upstream_ids": [
+        "BR-CREDIT-008",
+        "BR-SETTLE-004",
+        "BR-REFUND-015",
+        "DL-032"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_draft_migration.py",
+      "status": "implemented",
+      "notes": "With two signed Signers, a Customer's Credit is refused on another Customer's obligation, is required up to what it can pay of its own Customer's debt even when no Deposit pays that Customer, and a Pet Deposit Refund to the other signed Signer with the written agreement of all Signers is accepted (owner answer 2 to Q-2026-10-05-29; V1-056 sub-slice 8c)."
+    },
+    {
+      "test_id": "test_a_late_payment_charge_and_a_rent_invoice_follow_the_credit_and_deposit_rules",
+      "upstream_ids": [
+        "BR-DEP-014",
+        "BR-SETTLE-003",
+        "BR-SETTLE-016",
+        "DL-032"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_draft_migration.py",
+      "status": "implemented",
+      "notes": "A Pet Deposit pays a Late-payment Charge and a Rent line of the Settlement; the closing balance stays with the Customer named on each obligation (owner answer 1 to Q-2026-10-05-20; V1-056 sub-slice 8c)."
+    },
+    {
+      "test_id": "test_credit_on_a_rent_invoice_follows_the_rent_first_proposal_order",
+      "upstream_ids": [
+        "BR-CREDIT-006",
+        "BR-SETTLE-004"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_draft_migration.py",
+      "status": "implemented",
+      "notes": "The Rent-first helper returns, for an Invoice with Rent or Service lines, the first line that still owes in the Credit proposal order (Rent, then recurring Services by line order), nothing when no line owes, and nothing for an Invoice without such lines (owner answer 1 to Q-2026-10-05-29; V1-056 sub-slice 8c)."
+    },
+    {
+      "test_id": "test_credit_on_a_mixed_rent_invoice_follows_the_proposal_or_a_designation",
+      "upstream_ids": [
+        "BR-CREDIT-006",
+        "BR-SETTLE-004",
+        "BR-SETTLE-006"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_draft_migration.py",
+      "status": "implemented",
+      "notes": "Through the plan check on a mixed Initial Rent Invoice: without the Customer's designation a Credit step on a Service line before the Rent line, or on the second Service line before the first, is refused; the proposal order is recorded; with the designation a Service line may come first and the text is stored; the order equals the existing Credit proposal's (owner answer 1 to Q-2026-10-05-29; V1-056 sub-slice 8c)."
     }
   ]
 }

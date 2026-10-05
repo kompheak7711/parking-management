@@ -188,6 +188,7 @@ database_test_suites='
   tests/test_final_utility_invoice_migration.py
   tests/test_utility_unbilled_periods_migration.py
   tests/test_final_settlement_preview_migration.py
+  tests/test_final_settlement_draft_migration.py
   tests/test_billing_run_migration.py
   tests/test_lease_timeline_restricted_migration.py
   tests/test_lease_end_date_month_end_migration.py

@@ -1,0 +1,83 @@
+Excerpt of P1 (full output 52 MB, kept locally, not committed): first error and summary.
+tests/test_utility_meter_migration.py .EEEEEEEEEEEE                      [ 85%]
+tests/test_utility_consumption_migration.py EEEEEEEEEEEEEEEEEEEEEEEEEEEE [ 87%]
+EEEEEEEEEEEEEEEEEEEEEE                                                   [ 88%]
+tests/test_utility_api_migration.py ...........EEEE                      [ 89%]
+tests/test_move_out_final_inputs_migration.py EEEEEEEEEEEEEEEEEE.E       [ 90%]
+tests/test_initial_rent_lease_start_migration.py EEEEEE.E                [ 90%]
+tests/test_one_time_charges_migration.py EEEEEE.                         [ 91%]
+tests/test_debit_adjustment_line_block_migration.py EEEEEE..             [ 91%]
+tests/test_credit_adjustment_excess_migration.py EEEEEEEEE.              [ 92%]
+tests/test_rent_nonpayment_recurring_only_migration.py EEEEEEEE.E        [ 92%]
+tests/test_lease_signing_reservation_migration.py EEEEEE.                [ 93%]
+tests/test_unpaid_initial_termination_migration.py EEEEE.EEEEE           [ 93%]
+tests/test_initial_rent_override_capability_migration.py EEEE.           [ 93%]
+tests/test_utility_baseline_migration.py EEEEEEEEEEEEE.E                 [ 94%]
+tests/test_final_utility_invoice_migration.py EEEEEEE.EE                 [ 95%]
+tests/test_utility_unbilled_periods_migration.py EEEEEFE                 [ 95%]
+tests/test_final_settlement_preview_migration.py EEEEEEEEEEEEE.          [ 96%]
+tests/test_final_settlement_draft_migration.py EEEEEEE.                  [ 96%]
+tests/test_billing_run_migration.py EEEEEEEEEEE                          [ 97%]
+tests/test_lease_timeline_restricted_migration.py EEEEEE                 [ 97%]
+tests/test_lease_end_date_month_end_migration.py EEEE                    [ 98%]
+tests/test_financial_draft_migration.py EEEEEEEEEEEE.                    [ 98%]
+tests/test_refund_draft_migration.py EEEEEEEEEE.EEEEEE                   [ 99%]
+tests/test_refund_signer_recipient_migration.py EEEEE                    [100%]
+
+==================================== ERRORS ====================================
+___ ERROR at setup of test_migration_persists_property_identity_and_timezone ___
+.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1969: in _exec_single_context
+    self.dialect.do_execute(
+.venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py:952: in do_execute
+    cursor.execute(statement, parameters)
+.venv/lib/python3.11/site-packages/psycopg/cursor.py:117: in execute
+    raise ex.with_traceback(None)
+E   psycopg.errors.SyntaxError: syntax error at end of input
+E   LINE 186: ...pe->>v_deposit IS DISTINCT FROM CASE v_step WHEN 4 THEN 'SEC...
+E                                                                  ^
+
+The above exception was the direct cause of the following exception:
+tests/test_property_migration.py:27: in migrated_database_url
+    command.upgrade(alembic_config, "head")
+.venv/lib/python3.11/site-packages/alembic/command.py:487: in upgrade
+    script.run_env()
+.venv/lib/python3.11/site-packages/alembic/script/base.py:550: in run_env
+    util.load_python_file(self.dir, "env.py")
+.venv/lib/python3.11/site-packages/alembic/util/pyfiles.py:114: in load_python_file
+    module = load_module_py(module_id, path)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/alembic/util/pyfiles.py:132: in load_module_py
+    spec.loader.exec_module(module)  # type: ignore
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap_external>:940: in exec_module
+    ???
+<frozen importlib._bootstrap>:241: in _call_with_frames_removed
+    ???
+migrations/env.py:36: in <module>
+    run_migrations_online()
+migrations/env.py:33: in run_migrations_online
+    context.run_migrations()
+<string>:8: in run_migrations
+    ???
+.venv/lib/python3.11/site-packages/alembic/runtime/environment.py:967: in run_migrations
+    self.get_context().run_migrations(**kw)
+.venv/lib/python3.11/site-packages/alembic/runtime/migration.py:621: in run_migrations
+    step.migration_fn(**kw)
+migrations/versions/20261025_90_final_settlement_drafts.py:152: in upgrade
+    op.execute("""
+<string>:8: in execute
+    ???
+<string>:3: in execute
+    ???
+.venv/lib/python3.11/site-packages/alembic/operations/ops.py:2645: in execute
+    return operations.invoke(op)
+           ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/alembic/operations/base.py:448: in invoke
+    return fn(self, operation)
+           ^^^^^^^^^^^^^^^^^^^
+...
+FAILED tests/test_receipt_migration.py::test_receipt_display_snapshot_is_coherent_during_deposit_reversal
+FAILED tests/test_credit_migration.py::test_credit_forward_upgrade_preserves_existing_payment_receipt_and_no_auto_credit
+FAILED tests/test_utility_unbilled_periods_migration.py::test_utility_unbilled_migration_is_forward_only_and_read_is_runtime_only
+===== 109 failed, 190 passed, 1 warning, 1517 errors in 515.35s (0:08:35) ======
+exit=1

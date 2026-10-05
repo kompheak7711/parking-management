@@ -1517,6 +1517,16 @@ recorded (the Refund and Reservation Deposit confirmations lock that row; the Le
 forfeiture confirmation takes the same advisory lock). This relies on READ COMMITTED, the
 isolation every confirmation uses: a statement after a lock wait takes a fresh snapshot.
 
+As built in V1-056 sub-slice 8c (migration `20261025_90`, owner answer 4 to Q-2026-10-05-23):
+both directions also see the Final Settlement draft. A pending `FINAL_SETTLEMENT` draft whose
+payload lists the Deposit in `deposit_ids` (the Deposits it applies or refunds) refuses a new
+receipt reversal draft of that Deposit and, through the receipt reversal guard, the reversal
+itself; the decision trigger refuses the confirmation of such a Settlement draft while a receipt
+reversal draft of one of its Deposits is pending. A receipt reversal draft that is already
+pending blocks the recording of the Settlement draft through the preview's `PENDING_DRAFT`
+issue. The Settlement draft recorder locks the Lease's Deposit rows in a fixed order after the
+same per-Deposit advisory lock, so each recorder waits for the other and then sees its draft.
+
 ## DB-DEP-008 — `deposit_disposition_reversals`
 
 Append-only: `id uuid PK`, `deposit_disposition_id uuid NOT NULL UNIQUE FK`, `reason
@@ -1767,6 +1777,51 @@ A VOIDed cleaning charge is listed there and still blocks through `CLEANING_CHAR
 because the cleaning charge is required (BR-MOVEOUT-013) and a VOID lets it be billed again.
 A Deposit counts as having a reversed forfeiture only through a disposition of its own Lease
 (`governing_lease_id`); any active disposition still makes it `KEPT`.
+
+As built in V1-056 sub-slice 8c (migration `20261025_90`): `information` also lists each
+one-time charge that a draft correction replaced (`CHARGE_REPLACED_BY_DRAFT_CORRECTION`, with its
+amount, `replacement_authorized_obligation_id` from the latest such correction and that
+charge's `replacement_lease_id`, which may be another Lease or none), without blocking (owner
+answer to Q-2026-10-05-28). Staff record the Settlement draft with
+`app.record_final_settlement_draft(property, actor, draft, settlement, plan, reason,
+authorization)` (financial role; the application checks `final_settlements.prepare`; the database
+checks an active person, the Property and the `final_settlements.prepare` reference). It writes a
+`financial_drafts` row of kind `FINAL_SETTLEMENT` and nothing else; the confirm (8e) gives it its
+effect. The plan holds the DL-032 steps in order: `CUSTOMER_CREDIT` (a Credit, a target Invoice
+line or Late-payment Charge, an amount, and the Customer's designation as text or null), `PET_DEPOSIT_PET_DAMAGE`, `SECURITY_DEPOSIT` and
+`PET_DEPOSIT_REMAINDER` (a Deposit, a target, an amount) and `DEPOSIT_REFUNDS` (a Deposit, an
+amount, an active Refund method, a reference note of 1 to 500 characters, the recipient, and the
+written agreement of all Signers of 1 to 2,000 characters when the recipient is another signed
+Signer, never for the Primary Tenant), plus `pet_remainder` when step 5 is used: the Customer's
+choice as text (who, the date, how) with the staff reason, or the staff reason alone, which is
+refused at the three BR-DEP-027 terminations. `app.final_settlement_plan_result` (internal; the
+confirm calls it again) checks the plan against the current preview: the preview must be
+`ready`; the steps keep the DL-032 order; amounts are whole cents within what each obligation
+still owes, each Credit has available and each Deposit holds; a Credit pays only its own
+Customer's obligations; only a Deposit on the `DL_032` path that holds money is applied or
+refunded, by the matching type, the first Pet step only on pet damage; every such Deposit ends
+with nothing held (BR-SETTLE-008); and the strict order of the owner answer 3 to
+Q-2026-10-05-20 and the owner answers to Q-2026-10-05-29: each Customer's Credit pays that
+Customer's own open debt, up to what it can pay (the lower of the Credit available and that debt),
+before any Deposit pays; on an Invoice with Rent or Service lines a Credit step without the
+Customer's designation (who, the date, how; 1 to 500 characters) may pay only the first line that
+still owes in the Credit proposal order, Rent then recurring Services then the other lines
+(`app.final_settlement_rent_first_line`, BR-CREDIT-006); the Pet Deposit pays open pet damage before any other use or
+Refund; and no Deposit is refunded while the Lease still has open debt that the Deposit could
+pay (the Security Deposit always could; the Pet Deposit could except at a BR-DEP-027 termination,
+where without the Customer's choice its rest is refunded and the debt stays). Malformed input is
+refused with 22023 and a plan the current Settlement does not allow with 55000. The draft payload
+stores the steps, `pet_remainder`, the Lease, the termination ground, who may choose step 5,
+`deposit_ids`, the open total and the expected closing balance in total and per Customer; its
+`source_revision` is the SHA-256 digest of `app.final_settlement_source_state` (each Invoice of the
+Lease with status, version, latest allocation event and open lines, each Late-payment Charge with
+its remaining balance and latest event, the available Credit of every Customer of the Lease and
+each Deposit's state version and held amount), computed in the same call as the plan check so both
+read one snapshot (except the preview's Late-payment review, an earlier VOLATILE function that reads
+its own snapshot: a Late-payment Charge finalized during the call changes the digest, so the draft
+is stale at confirmation, which fails safe); the confirm recomputes it. One draft waits per
+Settlement; an exact repeat replays and a reused draft id is refused (P5205); withdraw and reject
+use the shared draft functions.
 
 `closing_balance_due_usd_cents` is the post-application, post-disposition, and
 post-Refund Customer receivable remaining at closure. A refundable amount is not

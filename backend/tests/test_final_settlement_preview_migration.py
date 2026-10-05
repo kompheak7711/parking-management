@@ -937,7 +937,18 @@ def test_withdrawn_one_time_charges_do_not_block_and_voided_ones_are_listed(
         "category": "MISCELLANEOUS_CHARGES",
         "amount_usd_cents": 1_500,
     }
-    assert view["information"] == [voided_info]
+    # Narrowed in V1-056 sub-slice 8c (owner answer to Q-2026-10-05-28): the replaced charge is
+    # listed too, with the charge that replaced it; it still does not block.
+    replaced_info = {
+        "code": "CHARGE_REPLACED_BY_DRAFT_CORRECTION",
+        "authorized_obligation_id": str(replaced.charge_id),
+        "customer_id": str(customer),
+        "category": "MISCELLANEOUS_CHARGES",
+        "amount_usd_cents": 1_500,
+        "replacement_authorized_obligation_id": str(replacement.charge_id),
+        "replacement_lease_id": str(lease),
+    }
+    assert view["information"] == [voided_info, replaced_info]
     invoices().issue(
         prop,
         UUID(str(draft["id"])),
@@ -947,7 +958,7 @@ def test_withdrawn_one_time_charges_do_not_block_and_voided_ones_are_listed(
     after = draft_and_issue(prop, waiting.charge_id, staff)
     view = preview(prop, human, settlement)
     assert not codes(view) & {"ONE_TIME_CHARGE_NOT_INVOICED", "INVOICE_DRAFT_NOT_ISSUED"}
-    assert view["information"] == [voided_info]
+    assert view["information"] == [voided_info, replaced_info]
     lines = {item["invoice_id"] for item in view["customers"][0]["invoice_lines"]}
     assert {draft["id"], after["id"]} <= lines and issued["id"] not in lines
 

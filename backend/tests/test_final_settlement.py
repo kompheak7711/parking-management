@@ -10,10 +10,20 @@ from property_rental.final_settlement import (
     FinalSettlementAuthorizationError,
     FinalSettlementConflictError,
     FinalSettlementInvalidError,
+    FinalSettlementKeyReused,
     FinalSettlementNotFoundError,
     FinalSettlementReadService,
     FinalSettlementService,
     FinalSettlementUnavailableError,
+    PetRemainderBasis,
+    PetRemainderDecision,
+    RecordFinalSettlementDraftCommand,
+    SettlementCreditStep,
+    SettlementDepositRefund,
+    SettlementDepositStep,
+    SettlementDepositStepKind,
+    SettlementTargetKind,
+    final_settlement_draft_id,
 )
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
 
@@ -187,3 +197,170 @@ def test_preview_reads_read_only_through_the_runtime_url_with_the_draft_capabili
         True,
     )
     assert all(call[-1] is True for call in calls[1:])
+
+
+def _plan_command(**changes: object) -> "RecordFinalSettlementDraftCommand":
+    values: dict[str, object] = {
+        "idempotency_key": UUID(int=11),
+        "settlement_id": SETTLEMENT,
+        "steps": (
+            SettlementCreditStep(
+                UUID(int=12), SettlementTargetKind.INVOICE_LINE, UUID(int=13), 400
+            ),
+            SettlementDepositStep(
+                SettlementDepositStepKind.PET_DEPOSIT_REMAINDER,
+                UUID(int=14),
+                SettlementTargetKind.LATE_PAYMENT_CHARGE,
+                UUID(int=15),
+                700,
+            ),
+            SettlementDepositRefund(UUID(int=14), 300, UUID(int=16), "Cash at the desk", HUMAN),
+        ),
+        "reason": "Settlement prepared",
+        "pet_remainder": PetRemainderDecision(
+            PetRemainderBasis.CUSTOMER_CHOICE, "Customer asked", "Tenant, 2026-10-05, in writing"
+        ),
+    }
+    values.update(changes)
+    return RecordFinalSettlementDraftCommand(**values)  # type: ignore[arg-type]
+
+
+def test_settlement_draft_commands_refuse_bad_input_before_any_connection(
+    no_connection: None,
+) -> None:
+    """V1-056 sub-slice 8c: the service checks the input shape; the database checks the rules."""
+    line = SettlementTargetKind.INVOICE_LINE
+    for build in (
+        lambda: SettlementCreditStep(UUID(int=0), line, UUID(int=13), 400),
+        lambda: SettlementCreditStep(UUID(int=12), "INVOICE_LINE", UUID(int=13), 400),  # type: ignore[arg-type]
+        lambda: SettlementCreditStep(UUID(int=12), line, UUID(int=13), 0),
+        lambda: SettlementCreditStep(UUID(int=12), line, UUID(int=13), True),
+        lambda: SettlementCreditStep(UUID(int=12), line, UUID(int=13), 9_000_000_000_000_001),
+        lambda: SettlementCreditStep(UUID(int=12), line, UUID(int=13), 400, "d" * 501),
+        lambda: SettlementCreditStep(UUID(int=12), line, UUID(int=13), 400, " Tenant"),
+        lambda: SettlementDepositStep(
+            "SECURITY_DEPOSIT",  # type: ignore[arg-type]
+            UUID(int=14),
+            line,
+            UUID(int=13),
+            1,
+        ),
+        lambda: SettlementDepositRefund(UUID(int=14), 300, UUID(int=16), " note", HUMAN),
+        lambda: SettlementDepositRefund(UUID(int=14), 300, UUID(int=16), "n" * 501, HUMAN),
+        lambda: SettlementDepositRefund(UUID(int=14), 300, UUID(int=16), "note", HUMAN, ""),
+        lambda: PetRemainderDecision(PetRemainderBasis.CUSTOMER_CHOICE, "Customer asked"),
+        lambda: PetRemainderDecision(PetRemainderBasis.STAFF_REASON, "Will not pay", "Choice"),
+        lambda: PetRemainderDecision(PetRemainderBasis.STAFF_REASON, "r" * 1001),
+        lambda: _plan_command(steps=[]),
+        lambda: _plan_command(steps=("not a step",)),
+        lambda: _plan_command(steps=(_plan_command().steps[0],) * 201),
+        lambda: _plan_command(reason=""),
+        lambda: _plan_command(settlement_id=UUID(int=0)),
+        lambda: _plan_command(pet_remainder="CUSTOMER_CHOICE"),
+    ):
+        with pytest.raises(FinalSettlementInvalidError):
+            build()
+    service = FinalSettlementService("unused")
+    for actor in (
+        person(),
+        person("financial.approve"),
+        person("deposits.dispose"),
+        person("final_settlements.prepare", actor_id="not-a-uuid"),
+    ):
+        with pytest.raises(FinalSettlementAuthorizationError):
+            service.record_draft(PROPERTY, _plan_command(), actor=actor)
+
+
+def test_settlement_draft_sends_the_plan_with_a_stable_draft_id(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[tuple[object, ...]] = []
+
+    class Connection:
+        read_only: bool | None = None
+
+        def __enter__(self) -> "Connection":
+            return self
+
+        def __exit__(self, *args: object) -> None:
+            return None
+
+        def execute(self, sql: str, parameters: tuple[object, ...] = ()) -> "Connection":
+            calls.append((sql, parameters, self.read_only))
+            return self
+
+        def fetchone(self) -> tuple[dict[str, object]]:
+            return ({"state": "PENDING"},)
+
+    def connect(url: str, **kwargs: object) -> Connection:
+        calls.append(("connect", url))
+        return Connection()
+
+    monkeypatch.setattr(psycopg, "connect", connect)
+    command = _plan_command()
+    result = FinalSettlementService("financial-url").record_draft(
+        PROPERTY, command, actor=person("final_settlements.prepare")
+    )
+    assert result == {"state": "PENDING"}
+    assert calls[0] == ("connect", "financial-url")
+    sql, parameters, read_only = calls[-1]
+    assert sql == "SELECT app.record_final_settlement_draft(%s,%s,%s,%s,%s,%s,%s)"
+    assert read_only is None
+    assert isinstance(parameters, tuple)
+    draft_id = final_settlement_draft_id(PROPERTY, HUMAN, command.idempotency_key)
+    assert parameters[:4] == (PROPERTY, HUMAN, draft_id, SETTLEMENT)
+    assert parameters[5:] == ("Settlement prepared", "final_settlements.prepare")
+    assert parameters[4].obj == {
+        "steps": [
+            {
+                "kind": "CUSTOMER_CREDIT",
+                "customer_credit_id": str(UUID(int=12)),
+                "target_kind": "INVOICE_LINE",
+                "target_id": str(UUID(int=13)),
+                "amount_usd_cents": 400,
+                "customer_designation": None,
+            },
+            {
+                "kind": "PET_DEPOSIT_REMAINDER",
+                "deposit_id": str(UUID(int=14)),
+                "target_kind": "LATE_PAYMENT_CHARGE",
+                "target_id": str(UUID(int=15)),
+                "amount_usd_cents": 700,
+            },
+            {
+                "kind": "DEPOSIT_REFUNDS",
+                "deposit_id": str(UUID(int=14)),
+                "amount_usd_cents": 300,
+                "refund_method_id": str(UUID(int=16)),
+                "reference_note": "Cash at the desk",
+                "recipient_customer_id": str(HUMAN),
+                "signer_agreement": None,
+            },
+        ],
+        "pet_remainder": {
+            "basis": "CUSTOMER_CHOICE",
+            "staff_reason": "Customer asked",
+            "customer_choice": "Tenant, 2026-10-05, in writing",
+        },
+    }
+    # The same preparer, Property and key always give the same draft; another key does not.
+    assert draft_id == final_settlement_draft_id(PROPERTY, HUMAN, UUID(int=11))
+    assert draft_id != final_settlement_draft_id(PROPERTY, HUMAN, UUID(int=17))
+    assert draft_id != final_settlement_draft_id(PROPERTY, UUID(int=18), UUID(int=11))
+
+
+def test_a_reused_settlement_draft_key_is_a_conflict(monkeypatch: pytest.MonkeyPatch) -> None:
+    class Failure(psycopg.Error):
+        pass
+
+    failure = Failure("Synthetic failure")
+    failure.sqlstate = "P5205"
+
+    def connect(*args: object, **kwargs: object) -> None:
+        raise failure
+
+    monkeypatch.setattr(psycopg, "connect", connect)
+    with pytest.raises(FinalSettlementKeyReused):
+        FinalSettlementService("unused").record_draft(
+            PROPERTY, _plan_command(), actor=person("final_settlements.prepare")
+        )
