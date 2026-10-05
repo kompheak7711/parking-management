@@ -36928,7 +36928,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_final_settlement_draft_migration.py",
       "status": "implemented",
-      "notes": "A Security Deposit Refund is accepted once the chosen Deposit applications leave no debt, with the remaining Pet Deposit used by the Customer's recorded choice (V1-056 sub-slice 8c)."
+      "notes": "The plan that uses the remaining Pet Deposit for debt the Security Deposit could still pay and then refunds the Security Deposit is refused, with the Customer's recorded choice too (owner answer to choice (4a), 2026-10-05; expectation changed in V1-056 sub-slice 8d; the test name is kept; first added in sub-slice 8c)."
     },
     {
       "test_id": "test_a_br_dep_027_termination_lets_only_the_customer_choose_the_pet_remainder",
@@ -37083,6 +37083,148 @@
       "test_path": "backend/tests/test_final_settlement_draft_migration.py",
       "status": "implemented",
       "notes": "Through the plan check on a mixed Initial Rent Invoice: without the Customer's designation a Credit step on a Service line before the Rent line, or on the second Service line before the first, is refused; the proposal order is recorded; with the designation a Service line may come first and the text is stored; the order equals the existing Credit proposal's (owner answer 1 to Q-2026-10-05-29; V1-056 sub-slice 8c)."
+    },
+    {
+      "test_id": "test_the_remaining_pet_deposit_pays_only_debt_left_after_the_security_deposit",
+      "upstream_ids": [
+        "BR-SETTLE-005",
+        "BR-SETTLE-008",
+        "BR-SETTLE-017",
+        "DL-032"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_draft_migration.py",
+      "status": "implemented",
+      "notes": "A Final Settlement plan in which the remaining Pet Deposit pays debt while the Security Deposit still holds money is refused, by the staff step and by the Customer's choice, down to one cent left, at draft time and by the plan check the confirm runs again; a Security Refund with debt left stays refused; once the Security Deposit is used up the remaining Pet Deposit may pay the rest and the stored basis (staff reason, or the Customer's choice as text) is kept, and with less debt the Security Deposit pays it all and its rest is refunded (owner answer to choice (4a); V1-056 sub-slice 8d)."
+    },
+    {
+      "test_id": "test_a_settlement_refund_pays_each_deposit_separately_from_its_draft",
+      "upstream_ids": [
+        "BR-DEP-025",
+        "BR-REFUND-007",
+        "BR-REFUND-014",
+        "BR-SETTLE-008",
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_refund_migration.py",
+      "status": "implemented",
+      "notes": "The internal writer refunds the Security and the Pet Deposit by separate Refund events linked to the Final Settlement and the draft's Refund steps, with the method and reference note recorded, the approver and financial.approve as the reference; the Deposits hold nothing after; the Refund row keeps its keys; the Refund summary, the Customer Ledger (Deposit owner, by Deposit type) and the Refund audit show them; a second Refund of a Deposit in the Settlement is refused; the rows are append-only (V1-056 sub-slice 8d)."
+    },
+    {
+      "test_id": "test_settlement_refund_refusals_change_nothing",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-REFUND-014",
+        "BR-REFUND-015",
+        "BR-SETTLE-008"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_refund_migration.py",
+      "status": "implemented",
+      "notes": "A Settlement Refund is refused when its draft was withdrawn or rejected, is confirmed by another approver, or does not hold exactly that Refund step (other amount, other note); when it names an agreement for the Primary Tenant or a recipient who is not a signed Signer, has no human approver, uses the draft's own method deactivated later, comes from a closed Settlement, has no source context, details naming another Deposit or the one-call reference, refunds a Deposit of another Lease, or names an unknown Settlement or an invalid Refund identity; and at commit while its draft is still pending; nothing is written. Once the draft is confirmed the Security Refund is accepted; new debt then refuses the Pet Refund, because outside the BR-DEP-027 terminations the Pet Deposit could pay it, until the debt is paid (owner answer 3 to Q-2026-10-05-20; V1-056 sub-slice 8d)."
+    },
+    {
+      "test_id": "test_a_settlement_refund_is_not_corrected_by_a_one_call_correction",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-SETTLE-008"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_refund_migration.py",
+      "status": "implemented",
+      "notes": "The one-call Refund correction path and a direct correction row refuse a Final Settlement Refund, which waits for the post-settlement corrections; a Deposit application of the Settlement after its Refunds is refused (V1-056 sub-slice 8d)."
+    },
+    {
+      "test_id": "test_a_br_dep_027_pet_refund_waits_for_pet_damage_and_a_usable_security_deposit",
+      "upstream_ids": [
+        "BR-DEP-027",
+        "BR-DEP-026",
+        "BR-SETTLE-008",
+        "DL-032"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_refund_migration.py",
+      "status": "implemented",
+      "notes": "At an unpaid-Initial-Rent termination with the Security Deposit's forfeiture reversed, the Pet Deposit Refund is refused while pet damage is open and while the Security Deposit could pay the other debt; once both are applied it is accepted with the other debt left, because without the Customer's choice the Pet Deposit does not pay it (Q-2026-10-05-21, Q-2026-10-05-24; V1-056 sub-slice 8d)."
+    },
+    {
+      "test_id": "test_a_br_dep_027_pet_refund_waits_only_for_pet_damage_when_the_security_is_kept",
+      "upstream_ids": [
+        "BR-DEP-027",
+        "BR-DEP-026",
+        "BR-SETTLE-008"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_refund_migration.py",
+      "status": "implemented",
+      "notes": "At an unpaid-Initial-Rent termination with the Security Deposit kept by a confirmed forfeiture, the kept Security Deposit is never refunded, and the Pet Deposit Refund is refused only while pet damage is open; after the pet-damage application it is accepted with the other debt left (BR-DEP-026, Q-2026-10-05-21; V1-056 sub-slice 8d)."
+    },
+    {
+      "test_id": "test_a_security_refund_waits_for_any_debt_even_where_the_pet_deposit_may_not_pay_it",
+      "upstream_ids": [
+        "BR-SETTLE-008",
+        "BR-DEP-025",
+        "DL-032"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_refund_migration.py",
+      "status": "implemented",
+      "notes": "At an unpaid-Initial-Rent termination with the Security Deposit's forfeiture reversed and all debt paid, new debt refuses the Security Deposit Refund, which could pay it, although the Pet Deposit may not pay it without the Customer's choice; once paid both Refunds are accepted (owner answer 3 to Q-2026-10-05-20; V1-056 sub-slice 8d)."
+    },
+    {
+      "test_id": "test_a_settlement_refund_to_another_signer_needs_the_signers_agreement",
+      "upstream_ids": [
+        "BR-REFUND-015"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_refund_migration.py",
+      "status": "implemented",
+      "notes": "A Settlement Deposit Refund to the other signed Signer is refused without the written agreement and to someone who is not a signed Signer; with the agreement it is accepted, the agreement is recorded, and the Customer Ledger books it on the Deposit owner naming the Signer who was paid (V1-056 sub-slice 8d)."
+    },
+    {
+      "test_id": "test_a_settlement_refund_waits_for_a_receipt_reversal_or_forfeiture_draft",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-SETTLE-008",
+        "BR-DEP-025"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_refund_migration.py",
+      "status": "implemented",
+      "notes": "A Settlement Refund is refused while a receipt reversal draft or a forfeiture draft waits for the same Deposit: a receipt reversal draft cannot be recorded while the Settlement draft waits and, recorded after the confirmation, holds back that Deposit's Refund only; a forfeiture draft recorded before the confirmation and one recorded after it both hold it back; once the draft is withdrawn or rejected the Refund is accepted (the owner's 8r rule, Q-2026-10-05-31; V1-056 sub-slice 8d)."
+    },
+    {
+      "test_id": "test_the_confirmation_decides_the_commit_also_in_the_same_transaction",
+      "upstream_ids": [
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_refund_migration.py",
+      "status": "implemented",
+      "notes": "A Refund written before its draft's confirmation in the same transaction commits only with the same approver's confirmation; with another approver's confirmation the commit is refused and neither the Refund nor the decision is written; an earlier SET CONSTRAINTS ALL IMMEDIATE in the transaction does not stop the writer (review round 2; V1-056 sub-slice 8d)."
+    },
+    {
+      "test_id": "test_settlement_refund_records_are_least_privilege",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "SEC-020"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_refund_migration.py",
+      "status": "implemented",
+      "notes": "No role may read or write the Settlement Refund details or execute the Settlement Refund writer, its source check, its commit-time confirmation check or the details trigger function; the first three are SECURITY DEFINER with a fixed search path (V1-056 sub-slice 8d)."
+    },
+    {
+      "test_id": "test_final_settlement_refund_migration_is_forward_only",
+      "upstream_ids": [
+        "DB-REFUND-001",
+        "BR-SETTLE-015"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_refund_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20261026_91 follows 20261025_90 and is forward-only (V1-056 sub-slice 8d)."
     }
   ]
 }

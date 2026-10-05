@@ -114,6 +114,10 @@ CREDIT_FIRST = (
     "Each Customer's Credit must pay that Customer's open debt, up to what it can pay, "
     "before any Deposit pays"
 )
+AFTER_SECURITY = (
+    "The remaining Pet Deposit pays only debt still open after the Security Deposit has been used"
+)
+NO_REFUND = "No Deposit Refund while the Lease still has open debt that the Deposit could pay"
 STAFF = PetRemainderDecision(PetRemainderBasis.STAFF_REASON, "The Customer will not pay the rest")
 CHOICE = PetRemainderDecision(
     PetRemainderBasis.CUSTOMER_CHOICE,
@@ -993,7 +997,12 @@ def test_a_security_refund_follows_once_no_debt_is_left(migrated_database_url: s
     choose which Deposit pays which obligation (BR-SETTLE-006)."""
     url = migrated_database_url
     case = leaving_case(url)
-    draft = record(
+    # Owner answer to choice (4a) of sub-slice 8c (2026-10-05, built in 8d): this plan uses the
+    # remaining Pet Deposit for debt the Security Deposit could still pay, so it is now refused.
+    # The test name is kept under the run rules; the accepted Security Refund is in
+    # test_the_remaining_pet_deposit_pays_only_debt_left_after_the_security_deposit (docs/010).
+    assert refusal(
+        record,
         case,
         (
             SettlementCreditStep(case["credit"], LINE, case["other_line"], 400),
@@ -1003,10 +1012,90 @@ def test_a_security_refund_follows_once_no_debt_is_left(migrated_database_url: s
             refund(case, "security", 5_400),
         ),
         pet_remainder=CHOICE,
+    ) == ("55000", AFTER_SECURITY)
+
+
+def test_the_remaining_pet_deposit_pays_only_debt_left_after_the_security_deposit(
+    migrated_database_url: str,
+) -> None:
+    """Owner answer to choice (4a) of sub-slice 8c (2026-10-05, built in 8d): the remaining Pet
+    Deposit (DL-032 step 5) pays only debt still open after the Security Deposit has been used,
+    by the staff step or by the Customer's choice. Refused at draft time and by the plan check
+    the confirm (8e) runs again. A Security Deposit Refund follows only when no debt is left."""
+    url = migrated_database_url
+    case = leaving_case(url)
+    prop, human, settlement = case["prop"], case["human"], case["settlement"]
+    first = SettlementCreditStep(case["credit"], LINE, case["other_line"], 400)
+    pet_damage = SettlementDepositStep(PET_FIRST, case["pet"], LINE, case["pet_line"], 12_500)
+
+    def security(amount: int) -> SettlementDepositStep:
+        return SettlementDepositStep(SECURITY, case["security"], LINE, case["other_line"], amount)
+
+    def pet_rest(amount: int) -> SettlementDepositStep:
+        return SettlementDepositStep(PET_REST, case["pet"], LINE, case["other_line"], amount)
+
+    # The other damage owes 12,100 after the Credit. The Security Deposit pays 4,600 and keeps
+    # 5,400, the remaining Pet Deposit pays the other 7,500 and the Security Deposit is refunded:
+    # no debt is left, but the Pet Deposit paid debt the Security Deposit could still pay.
+    four_a = (first, pet_damage, security(4_600), pet_rest(7_500), refund(case, "security", 5_400))
+    for basis in (STAFF, CHOICE):
+        assert refusal(record, case, four_a, pet_remainder=basis) == (
+            "55000",
+            AFTER_SECURITY,
+        ), basis
+    # One cent left in the Security Deposit is enough to refuse step 5.
+    one_cent = (
+        first,
+        pet_damage,
+        security(9_999),
+        pet_rest(2_101),
+        refund(case, "security", 1),
+        refund(case, "pet", 5_399),
+    )
+    assert refusal(record, case, one_cent, pet_remainder=STAFF) == ("55000", AFTER_SECURITY)
+    # The plan check that the confirm (8e) calls again refuses the same plan.
+    plan = RecordFinalSettlementDraftCommand(uuid4(), settlement, four_a, REASON, CHOICE).plan()
+    with pytest.raises(psycopg.Error) as failure, psycopg.connect(url) as connection:
+        connection.execute(
+            "SELECT app.final_settlement_plan_result(%s,%s,%s,%s)",
+            (prop, human, settlement, Jsonb(plan)),
+        )
+    assert (failure.value.sqlstate, failure.value.diag.message_primary) == (
+        "55000",
+        AFTER_SECURITY,
+    )
+    # A Security Refund while debt is left stays refused (owner answer 3 (iii)).
+    early = (first, pet_damage, security(4_000), refund(case, "security", 6_000))
+    assert refusal(record, case, (*early, refund(case, "pet", 7_500))) == ("55000", NO_REFUND)
+    assert settlement_drafts(url, settlement) == 0
+    # Once the Security Deposit is used up, the remaining Pet Deposit may pay the rest, by the
+    # staff step or by the Customer's choice.
+    for basis in (STAFF, CHOICE):
+        used_up = record(case, normal_plan(case), pet_remainder=basis)
+        stored = cast(dict[str, Any], used_up["payload"])
+        assert stored["closing_balance_usd_cents"] == 0
+        # The basis, with the Customer's choice as text (who, the date, how), is stored.
+        assert stored["pet_remainder"] == basis.payload()
+        assert stored["pet_remainder_chosen_by"] == "CUSTOMER_OR_STAFF_WITH_REASON"
+        withdraw(case, used_up)
+    # With less debt the Security Deposit pays all of it and its rest is refunded.
+    other_invoice = one(
+        url, "SELECT invoice_id FROM app.invoice_lines WHERE id=%s", case["other_line"]
+    )[0]
+    pay(url, prop, human, case["customer"], other_invoice, case["other_line"], 5_000)
+    draft = record(
+        case,
+        (
+            first,
+            pet_damage,
+            security(7_100),
+            refund(case, "security", 2_900),
+            refund(case, "pet", 7_500),
+        ),
     )
     payload = cast(dict[str, Any], draft["payload"])
     assert payload["closing_balance_usd_cents"] == 0
-    assert payload["pet_remainder"] == CHOICE.payload()
+    assert [step["kind"] for step in payload["steps"]][-2:] == ["DEPOSIT_REFUNDS"] * 2
 
 
 def test_a_br_dep_027_termination_lets_only_the_customer_choose_the_pet_remainder(

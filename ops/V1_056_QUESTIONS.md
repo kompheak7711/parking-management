@@ -559,3 +559,40 @@ Sub-slice 8c (Final Settlement draft, migration `20261025_90`) is built and gree
 After your answers: the fixes, backend unit and full PostgreSQL once each, then review round 2 under the standing round-3 rule.
 
 Owner answer (2026-10-05): (1) option (a). The draft follows the existing Credit rule BR-CREDIT-006: on an Invoice with Rent or Service lines, Credit follows the Rent-first proposal, or the Customer's designation recorded as text (who, the date, how). No Settlement-only exception; docs/002 stays as it is. (2) option (a). Each Customer's Credit is always used against that Customer's own open debt in this Settlement, up to what it can pay, before any Deposit pays; it is never used for another Customer's debt. A Settlement must not show open debt and unused Credit for the same Customer. Make all the fixes listed above, including reading the plan check and the source digest at the same moment, with a test for a payment arriving in between if one can be written; then unit and full PostgreSQL once each and review round 2 under the standing rules.
+
+## Q-2026-10-05-30 — Sub-slice 8c owner item: choice (4a) in docs/010 (ANSWERED 2026-10-05: rejected; recorded in docs/010; built in sub-slice 8d)
+
+The 8c round-3 review listed choice (4a) for the owner: at a termination where the staff step is allowed, staff could use the remaining Pet Deposit for debt the Security Deposit could also pay and then refund the Security Deposit, because the Refund check looked at the debt left after all chosen applications.
+
+Owner answer (2026-10-05): I reject it. The leftover Pet Deposit may pay only the debt that is still open after the Security Deposit has been used. This follows my words "the rest is refunded; the Customer may choose to use the rest for any remaining balance", and the step order the draft already uses (Security Deposit before the remaining Pet Deposit). The same applies when the Customer chooses it. Build the check first in 8d, with a test: a draft in which the remaining Pet Deposit pays debt that the Security Deposit could still pay is refused, at draft time and in the check that 8e runs again at confirm; stop if this needs more than a small change to the 8c check.
+
+## Q-2026-10-05-31 — Sub-slice 8d stopped after review round 2: three should-fix findings (ANSWERED 2026-10-05: (1) yes, owner exception to the standing round-3 rule, fix 1 per the 8r rule with tests for both orders; (2) yes, docs/002 lines added; (3) the details table is accepted, docs/004 matches; answers in docs/010)
+
+Sub-slice 8d (Final Settlement Deposit Refund source, migration `20261026_91`) is built and green, but not committed; all 8d files are in the working tree. Your answer to choice (4a) (Q-2026-10-05-30) is built first, in the plan check that the draft recorder and the 8e confirm share, with a test. Runs: U1 3451 and U2 3451 backend unit passed; P1 1829 and P2 1831 full PostgreSQL passed; no correction used. Record: ops/reviews/V1-056-slice-08d-settlement-refunds.md.
+
+Review round 1 (security 1 should-fix, independent 3 should-fix) was fixed. The main fix is a check at commit: a Settlement Refund commits only when its draft is CONFIRMED under `financial.approve` by the same approver. Round 2 confirmed every round-1 fix but found three new should-fix items. The standing rule allows round 3 only with at most two, so I stopped.
+
+**The three findings (none can move money today, because the writer is internal and 8e is not built):**
+
+1. **(Security SF-A) A pending receipt reversal or forfeiture draft is not seen by a later Refund.** The commit check accepts a confirmation made in an earlier transaction. A receipt reversal draft recorded after that confirmation would not stop a later Refund of the same Deposit (your answer 4 to Q-2026-10-05-23 says they wait for each other). A new forfeiture draft for a Deposit whose forfeiture was reversed is not seen either. My round-1 written answer said the opposite; it was wrong.
+2. **(Security SF-B) The commit check's own conditions have no test of their own.** The tests refuse rejected, withdrawn and other-approver drafts earlier, in the source check. No test writes the confirmation in the same transaction as the Refund.
+3. **(Independent SF1) The writer fails after the existing Credit application.** `app.post_credit_application` ends with `SET CONSTRAINTS ALL IMMEDIATE`, and that setting stays for the rest of the transaction. The plan has 8e apply the Credit steps through that function and then call the Refund writer. The writer's details row relies on two deferred checks, so even a valid confirmed draft would fail. It fails safe, but 8e could not use the writer as planned.
+
+**Fixes I would make (no rule change):**
+
+- For 1: the Refund source check refuses (55000) while any pending `DEPOSIT_FORFEITURE` draft (forfeiture, forfeiture reversal or receipt reversal) exists for that Deposit, with a test. The recorders take the same Deposit row lock, so READ COMMITTED serializes them. (Correction, 8d review round 3: the forfeiture and forfeiture-reversal recorders take the per-Deposit advisory lock, not the row lock; the Refund check takes that lock too, so READ COMMITTED still serializes them.) I correct the round-1 answer.
+- For 2: two single-transaction tests. A Refund followed by the same approver's confirmation commits. A Refund followed by another approver's confirmation is refused at commit (42501) and writes nothing.
+- For 3: the writer sets its two deferred checks (the Refund key of the details row and the confirmation check) back to DEFERRED before it writes, as migration 83 already does with `SET CONSTRAINTS ALL DEFERRED`. This only moves those checks to commit. A test runs `SET CONSTRAINTS ALL IMMEDIATE`, then the writer, then the confirmation, in one transaction.
+- Notes I would take as well (tests and docs only):
+  - tests for a kept Deposit, a Deposit of another Lease and the writer's input refusals;
+  - the least-privilege list gains the details trigger function;
+  - the 8c entry in docs/010 marks choice (4a) as rejected;
+  - an 8e note on lock order (the Settlement advisory lock first, or the Settlement row before the Deposit rows).
+
+**Question:**
+
+(a) Do you want a docs/002 line for your answer to Q-2026-10-05-30, as the answers to Q-21 and Q-24 have? It would be added under BR-SETTLE-005 and BR-SETTLE-017: "Amended by the owner answer to Q-2026-10-05-30 (2026-10-05): the remaining Pet Deposit pays only debt still open after the Security Deposit has been used, also when the Customer chooses it." Or should docs/002 stay unchanged, with docs/010 saying so? Recommendation: add the line, because BR-SETTLE-006 ("no inferred order between Deposit types") otherwise reads as if staff may choose that order.
+
+**Recommendation:** allow the fixes and notes above, then backend unit and full PostgreSQL once each, then one round 3 under the standing rule (no should-fix, or I stop again).
+
+Owner answer (2026-10-05): (1) Yes, as an owner exception to the standing round-3 rule. Make the three fixes and the notes listed in Q-31. For fix 1: a Refund must be refused while a Deposit receipt reversal draft or a forfeiture draft is pending for the same Deposit, even when that draft was recorded after the Settlement draft was confirmed. This is my 8r rule. Add tests for both orders. Correct your round-1 written answer in the review record. Then run backend unit and full PostgreSQL once each, then one round 3. Round 3 must have no blocker and no should-fix, or stop and tell me. (2) Yes. Add the "Amended by the owner answer to Q-2026-10-05-30" line under BR-SETTLE-005 and BR-SETTLE-017 in docs/002. (3) The new table app.final_settlement_refund_details is accepted instead of a refunds.final_settlement_id column. Update docs/004 to match. Next time a design differs from docs/004 or the plan, ask me first.

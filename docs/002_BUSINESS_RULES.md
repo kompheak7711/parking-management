@@ -4442,6 +4442,8 @@ obligations.
 
 Amended by DL-068 and DL-069 (2026-10-03): the Customer may also choose to use the remaining Pet Deposit for any remaining balance (BR-SETTLE-017).
 
+Amended by the owner answer to Q-2026-10-05-30 (2026-10-05): the remaining Pet Deposit pays only debt still open after the Security Deposit has been used, also when the Customer chooses it.
+
 ---
 
 ## BR-SETTLE-006 — Explicit Deposit Selection
@@ -4558,6 +4560,8 @@ Amended by the owner answer to Q-2026-10-05-21 (2026-10-05): debt left on an Inv
 ## BR-SETTLE-017 — Customer-chosen Pet Deposit Use
 
 At move-out the Customer may choose to use the remaining Pet Deposit to pay any remaining balance. Authorized staff may also do this with a reason when the Customer will not pay (DL-032 step 5). The application is confirmed by a `financial.approve` holder (DL-068).
+
+Amended by the owner answer to Q-2026-10-05-30 (2026-10-05): the remaining Pet Deposit pays only debt still open after the Security Deposit has been used, also when the Customer chooses it.
 
 ---
 

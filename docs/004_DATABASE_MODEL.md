@@ -1809,7 +1809,11 @@ still owes in the Credit proposal order, Rent then recurring Services then the o
 (`app.final_settlement_rent_first_line`, BR-CREDIT-006); the Pet Deposit pays open pet damage before any other use or
 Refund; and no Deposit is refunded while the Lease still has open debt that the Deposit could
 pay (the Security Deposit always could; the Pet Deposit could except at a BR-DEP-027 termination,
-where without the Customer's choice its rest is refunded and the debt stays). Malformed input is
+where without the Customer's choice its rest is refunded and the debt stays); and the remaining
+Pet Deposit (step 5) pays only debt still open after the Security Deposit has been used, by the
+staff step or the Customer's choice: a plan is refused while a Security Deposit on the `DL_032`
+path still holds money when step 5 starts (owner answer to choice (4a), built in sub-slice 8d,
+migration `20261026_91`). Malformed input is
 refused with 22023 and a plan the current Settlement does not allow with 55000. The draft payload
 stores the steps, `pet_remainder`, the Lease, the termination ground, who may choose step 5,
 `deposit_ids`, the open total and the expected closing balance in total and per Customer; its
@@ -1892,7 +1896,7 @@ Append-only outbound financial event.
 | `source_payment_id` | `uuid` | yes | unallocated excess source |
 | `source_customer_credit_id` | `uuid` | yes | Credit source |
 | `source_deposit_id` | `uuid` | yes | Deposit source |
-| `final_settlement_id` | `uuid` | yes | required for settlement Deposit refund |
+| `final_settlement_id` | — | — | not a column: a settlement Deposit Refund's Final Settlement is held in `final_settlement_refund_details` (owner answer 3 to Q-2026-10-05-31) |
 | `pet_refund_review_id` | `uuid` | yes | required for active-Lease Pet Deposit Refund; FK `pet_deposit_refund_reviews` |
 | `usd_accounting_value_cents` | `bigint` | no | `CHECK (>0)` |
 | `refund_currency` | `text` | no | `USD` only (DL-060) |
@@ -1902,7 +1906,7 @@ Append-only outbound financial event.
 | `processed_by` | `uuid` | no | |
 | `authorization_reference` | `text` | no | |
 
-Exactly one of the three source FKs is non-null. Source Customer must match recipient
+Exactly one of the three source FKs (`source_payment_id`, `source_customer_credit_id`, `source_deposit_id`) is non-null. Source Customer must match recipient
 and available recorded USD source value must not be exceeded. A direct Refund of
 eligible KHR-origin Payment excess and a Credit Refund are paid and recorded in USD;
 neither calculates a KHR remainder nor creates a Refund-date exchange record.
@@ -1914,10 +1918,55 @@ separate by Deposit.
 
 A Security Deposit Refund requires the Lease to be TERMINATED and the applicable Final
 Settlement. A Pet Deposit Refund normally follows that path, but while its Lease remains
-SIGNED it instead requires `pet_refund_review_id`, prohibits `final_settlement_id`, verifies
+SIGNED it instead requires `pet_refund_review_id`, prohibits `final_settlement_id` (as built: has no
+`final_settlement_refund_details` row), verifies
 the review's recorded permanent departure and resolved pet obligations, and preserves explicit
 authorization. An active-Lease Refund never applies Deposit value to an Invoice, does
 not require or create Final Settlement, and does not limit Customer liability.
+
+As built (V1-056 sub-slice 8d, migration `20261026_91`; accepted by the owner, answer 3 to
+Q-2026-10-05-31): the `final_settlement_id` link is not a column of `refunds`; it is held in
+`final_settlement_refund_details`, because every Refund
+reader returns the whole Refund row and the frontend checks its keys exactly, so a new column
+would change every Refund response. The `refunds` source-context check is relaxed: only a
+Deposit Refund has a context (`source_lifecycle_event_id` for a Reservation or
+`pet_refund_review_id` for an active-Lease Pet Deposit), at most one, and a Deposit Refund with
+neither is a Final Settlement Deposit Refund, which the Refund source trigger refuses without its
+details row. `final_settlement_refund_details` (append-only; no role may read or write it) records
+each Settlement Deposit Refund's `refund_id` (PK, deferred FK so it is written first),
+`final_settlement_id`, `deposit_id`, the `FINAL_SETTLEMENT` `draft_id`, `refund_method_id`,
+`reference_note` (1 to 500 characters), `signer_agreement` (null, or 1 to 2,000 characters) and
+`recorded_at`, with `UNIQUE (final_settlement_id, deposit_id)`: one Refund per Deposit per
+Settlement. The only writer is `app.post_final_settlement_deposit_refund(property, actor,
+settlement, draft, refund, deposit, amount, recipient, refund method, reference note, signer
+agreement, reason)`, internal (no role may call it), which the Settlement confirm (8e) calls with
+the approver; the Refund row records `authorization_reference = 'financial.approve'`. The Refund
+source trigger calls `app.assert_final_settlement_refund_source` for every writer: the Settlement
+is open (55000 otherwise) and its Lease TERMINATED; the approver is an active person (42501 for a
+non-person); the Deposit is a Security or Pet Deposit of that Lease owned by the Primary Tenant and
+on the `DL_032` settlement path; the details row matches; the method is active (55000); the
+recipient is the Primary Tenant without an agreement, or another signed Signer of the Lease with
+the agreement (BR-REFUND-015); the Refund is exactly a `DEPOSIT_REFUNDS` step (Deposit, amount,
+recipient, method, note, agreement) of a `FINAL_SETTLEMENT` draft of that Settlement that is
+pending or confirmed by the same approver, and a deferred check lets the Refund commit only when
+that draft is CONFIRMED under `financial.approve` by the Refund's approver (BR-AUTH-010); the
+writer locks the Settlement row, then the Deposit's draft lock (`lease-deposit-forfeiture:<deposit>`)
+and row, and sets its two deferred checks back to DEFERRED before it writes, so an earlier
+`SET CONSTRAINTS ALL IMMEDIATE` in the transaction does not stop it; the amount is within what the Deposit
+holds; no Deposit receipt reversal draft or forfeiture (or forfeiture reversal) draft is pending
+for the Deposit, also one recorded after the Settlement draft was confirmed (the owner's 8r rule,
+answer to Q-2026-10-05-31; 55000); the time is after the Deposit's latest balance event and the
+Settlement start; and no open
+debt of the Lease (every issued, non-VOID Invoice and its Late-payment Charges, read as the
+preview reads them) is left that a Deposit could pay (55000): a Security Deposit could pay any of
+it; a Pet Deposit is refused while pet damage is open and, outside the three BR-DEP-027
+terminations, while any debt is open; and any Deposit is refused while debt is open and a Security
+Deposit of the Lease on the `DL_032` path still holds money. The general Refund audit books a
+Settlement Refund on the Deposit's Property and Lease, the Customer Ledger books it on the Deposit
+owner (slice 3a-2), and the Refund correction paths (`app.require_correctable_usd_refund` and the
+correction trigger) refuse it: it is corrected only through a post-settlement correction (slice
+10). A Deposit application of a Settlement is refused once that Settlement has a Refund
+(BR-SETTLE-008: applications first).
 
 Refund delivery methods or operational pending/failed states are deferred technical
 workflow choices. This logical model records only the approved completed Refund event
