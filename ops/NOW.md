@@ -85,4 +85,6 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md.
 
 - V1-056 sub-slice 8a-1 (2026-10-05, migration 20261021_86): Settlement record and Deposit application record built, NOT committed; unit 3422 (U2) and PostgreSQL 1772 (P5) passed. Review round 1: no blocker; independent 5 should-fix (fixable in the sub-slice); security S1 needs the owner: a one-call Deposit receipt reversal frees the Payment value for a one-call allocation, so Deposit money can pay debt without an approver (Q-2026-10-05-22, recommendation: receipt reversal as a draft in a new sub-slice 8r). 8a-2 (Customer Ledger) planned after 8a-1. All 8a-1 files are in the working tree. NEXT: owner answer. Start a fresh session. Nothing pushed.
 
+- V1-056 sub-slice 8a-1 (2026-10-05, dba972d, migration 20261021_86): COMMITTED. Final Settlement record and Deposit application record; owner answered Q-2026-10-05-22 (Option (a): Deposit receipt reversal becomes a draft in sub-slice 8r, replacing the Q-2026-10-04-13 answer); round-1 and round-2 fixes done; round 3 (independent and security) no should-fix; unit 3422 (U4), PostgreSQL 1776 (P7) passed. Round-3 notes in plan slice 12. NEXT: sub-slice 8r (Deposit receipt reversal draft, also check the slice 3b Reservation receipt reversal). Nothing pushed.
+
 - Updated: 2026-10-05.
