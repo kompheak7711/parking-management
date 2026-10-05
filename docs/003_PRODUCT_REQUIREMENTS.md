@@ -1220,6 +1220,8 @@ Deposit is non-refundable and is resolved through an explicit disposition event.
 
 Amended by DL-068 and DL-069 (2026-10-03): the whole Security Deposit is forfeited and never applied to what the Customer owes (BR-DEP-026).
 
+Amended by the owner answer to Q-2026-10-05-24 (2026-10-05): when a confirmed forfeiture of the Security Deposit is reversed, the Deposit is held again; at Final Settlement it follows DL-032 (it pays open debt and the rest is refunded) unless a new forfeiture draft is confirmed (BR-DEP-026).
+
 ### PR-DEP-024 — Pet Deposit During Voluntary Early Termination
 
 **Business-rule traceability:** `BR-DEP-024`

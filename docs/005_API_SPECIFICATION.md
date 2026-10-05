@@ -1082,6 +1082,14 @@ Every Deposit target and amount is explicitly authorized. Payment FIFO and any
 inferred Deposit-type FIFO or oldest-Due ordering are not reused for Deposit
 applications. Every application, disposition, and Refund remains a separate event.
 
+As built in V1-056 sub-slice 8b (migration `20261024_89`): the preview contents exist as a
+service read, `FinalSettlementReadService.preview` over `app.final_settlement_preview`
+(runtime role), for holders of `final_settlements.prepare` or `financial.approve` on the
+Property; docs/004 DB-SETTLE-001 lists its contents and blocking issues. It proposes no
+amounts: each DL-032 step shows what it may use. A pending draft blocks for every reader, but
+its id, kind and variant are shown only to a `financial.approve` holder or a holder of the
+draft's prepare capability. The route is built in slice 11e.
+
 ## API-072 — Settlement Actions
 
 - `POST /final-settlements/{id}/deposit-applications`

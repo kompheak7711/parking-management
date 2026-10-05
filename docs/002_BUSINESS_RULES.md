@@ -4339,6 +4339,8 @@ Deposit is non-refundable and is resolved through an explicit disposition event.
 
 Amended by DL-068 and DL-069 (2026-10-03): the whole Security Deposit is forfeited and is never applied to what the Customer owes; unpaid charges stay as debt (BR-DEP-026).
 
+Amended by the owner answer to Q-2026-10-05-24 (2026-10-05): when a confirmed forfeiture of this Security Deposit is reversed, BR-DEP-026 applies.
+
 ---
 
 ## BR-DEP-024 — Pet Deposit During Voluntary Early Termination
@@ -4361,6 +4363,8 @@ and Refund remains separately traceable.
 ## BR-DEP-026 — Forfeited Security Deposit Is Never Applied
 
 When the Security Deposit is kept, the whole deposit is forfeited through an explicit disposition event and is never used to pay what the Customer owes. Unpaid charges stay as debt on the Customer Ledger. This applies to voluntary early leaving, termination for unpaid Initial Rent or Security Deposit (whether or not the Customer moved in), termination for a violation (pet or non-pet) and termination after the 30-day Rent nonpayment default. At a normal Lease end DL-032 is unchanged (DL-064, DL-068, DL-069).
+
+Amended by the owner answer to Q-2026-10-05-24 (2026-10-05): when a confirmed forfeiture of the Security Deposit is reversed, the Deposit is held again; at Final Settlement it follows DL-032 (it pays open debt and the rest is refunded) unless a new forfeiture draft is confirmed (owner answer to Q-2026-10-05-23).
 
 ---
 

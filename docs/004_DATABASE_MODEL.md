@@ -1462,6 +1462,18 @@ Append-only Final Settlement financial event: `id uuid PK`, `deposit_id uuid NOT
   application (DB-DER-010), and the Deposit's own history reads the applications of one
   Deposit of one Property through the bounded `app.deposit_application_history(property,
   deposit)`; the runtime role executes that function only and has no table privilege.
+- As built in V1-056 sub-slice 8b (migration `20261024_89`, owner answer to Q-2026-10-05-24):
+  the kept-Deposit check of the record's trigger reads the Deposit's Settlement path from
+  `app.lease_deposit_settlement_path(property, deposit)` and refuses every path except
+  `DL_032`. `KEPT`: an active disposition exists. `FORFEITURE_REQUIRED`: the termination
+  record gives a forfeiture ground, no forfeiture was ever confirmed and the Deposit holds money.
+  `NOTHING_HELD`: the same, but the Deposit holds nothing (nothing to forfeit, apply or refund;
+  no blocking issue). `DL_032`: no ground,
+  or every confirmed forfeiture was reversed, so a Security Deposit whose forfeiture was
+  reversed, or a Pet Deposit kept for pet noncompliance whose forfeiture was reversed, may now
+  be applied (a relaxing change). The termination record lookup is the shared
+  `app.lease_termination_forfeiture_rule(property, lease, deposit type)`;
+  `app.lease_deposit_kept_rule` keeps its result and errors and delegates to it.
 
 ## DB-DEP-006 — `deposit_application_reversals`
 
@@ -1718,6 +1730,43 @@ As built in V1-056 sub-slice 8a-1 (migration `20261021_86`): the table also stor
 checked by the application) opens it; a guard allows only the single closure change
 (all four closure columns together, identity columns unchanged) and refuses any change
 of a closed Settlement and every delete.
+
+As built in V1-056 sub-slice 8b (migration `20261024_89`): `app.final_settlement_preview(property,
+actor, settlement, capabilities)` (runtime role; STABLE; the application checks
+`final_settlements.prepare` or `financial.approve` and passes the reader's draft capabilities on
+the Property; the database checks an active person and the Property; the service reads in a
+read-only transaction) reads one Settlement and writes nothing. It returns the open Invoice lines and Late-payment Charges of
+every issued, non-VOID Invoice of the Lease per Customer named on them (the Primary Tenant
+first), each Customer's available Credit (`app.credit_available_value`) with what it may pay of
+that Customer's obligations, every Lease Security and Pet Deposit with its held amount, ground,
+forfeiture state and path (DB-DEP-005 note), the seven DL-032 steps in order with upper bounds
+only (no amount is proposed; step 5 says whether the remaining Pet Deposit is the Customer's
+choice only, at the three BR-DEP-027 terminations, or also the staff step with a reason everywhere
+else, owner answer 2 to Q-2026-10-05-25),
+and the blocking issues: `SETTLEMENT_CLOSED`; `FINAL_UTILITY_NOT_ISSUED` when the Primary Tenant
+moved in and the current move-out is not recorded, its final Utility inputs are missing or
+unresolved, or no final Utility Invoice was created although a final Reading has consumption not
+yet in a period or a period of the Lease with consumption is on no Invoice;
+`UTILITY_PERIOD_NOT_BILLED` for every Utility period the Lease is responsible for with consumption
+and no Invoice line, whether or not the final Utility Invoice exists; `CLEANING_CHARGE_MISSING`
+when the Customer moved in and out, the Unit's current cleaning rate is above zero or not set, and
+no cleaning charge sits on an issued, non-VOID Invoice; `LATE_PAYMENT_DECISION_MISSING` for each
+UNPAID or PARTIALLY_PAID Invoice whose Late-payment review is eligible; `FORFEITURE_NOT_CONFIRMED`
+for a Deposit on the `FORFEITURE_REQUIRED` path; `PENDING_DRAFT` for a pending Refund, forfeiture
+(including the reversal and receipt reversal variants) or Payment move draft on a Lease Deposit,
+a Settlement Customer's Credit or Payment, or an allocation or target Invoice of the Lease (its
+draft id, kind and variant only for a `financial.approve` holder or a holder of the draft's
+prepare capability); `ONE_TIME_CHARGE_NOT_INVOICED` for a one-time charge source of the Lease on
+no DRAFT or issued, non-VOID Invoice that is still waiting to be billed (not one whose Invoice was
+VOIDed and not one a draft correction replaced, read from `app.invoice_draft_revision_events`;
+owner answer to Q-2026-10-05-27); `INVOICE_DRAFT_NOT_ISSUED` for an Invoice draft of the Lease.
+`ready` is true when no blocking issue exists (owner answers to Q-2026-10-05-25). The key
+`information` lists, without blocking, each one-time charge whose Invoice was VOIDed and that was
+not billed again (`VOIDED_CHARGE_NOT_BILLED_AGAIN`, with its amount), so the approver sees it.
+A VOIDed cleaning charge is listed there and still blocks through `CLEANING_CHARGE_MISSING`,
+because the cleaning charge is required (BR-MOVEOUT-013) and a VOID lets it be billed again.
+A Deposit counts as having a reversed forfeiture only through a disposition of its own Lease
+(`governing_lease_id`); any active disposition still makes it `KEPT`.
 
 `closing_balance_due_usd_cents` is the post-application, post-disposition, and
 post-Refund Customer receivable remaining at closure. A refundable amount is not

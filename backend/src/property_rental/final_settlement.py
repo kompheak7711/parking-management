@@ -3,8 +3,9 @@
 Staff holding ``final_settlements.prepare`` open the one Final Settlement of a TERMINATED Lease.
 Opening it has no financial effect. Deposit applications (DB-DEP-005) are written only by the
 Settlement confirm, which a ``financial.approve`` holder runs (sub-slice 8e); no role may write
-them directly. The preview, the draft and the confirm follow in sub-slices 8b to 8e; the HTTP
-routes and screens come in slice 11e.
+them directly. The preview (sub-slice 8b) is a read under the runtime role for holders of
+``final_settlements.prepare`` or ``financial.approve``; it writes nothing. The draft and the
+confirm follow in sub-slices 8c to 8e; the HTTP routes and screens come in slice 11e.
 """
 
 from __future__ import annotations
@@ -20,7 +21,11 @@ from property_rental.deposit import (
     DEPOSIT_LOCK_TIMEOUT_MS,
     DEPOSIT_QUERY_TIMEOUT_MS,
 )
-from property_rental.financial_draft import FINAL_SETTLEMENTS_PREPARE_CAPABILITY
+from property_rental.financial_draft import (
+    FINAL_SETTLEMENTS_PREPARE_CAPABILITY,
+    FINANCIAL_APPROVE_CAPABILITY,
+    PREPARE_CAPABILITIES,
+)
 from property_rental.identity import AuthenticatedActor, AuthorizationRequirement, is_authorized
 
 
@@ -71,11 +76,16 @@ class FinalSettlementService:
             raise FinalSettlementAuthorizationError("Final Settlement action is not authorized")
         return _actor_identity(actor)
 
-    def _call(self, sql: str, parameters: tuple[object, ...]) -> dict[str, object]:
+    def _call(
+        self, sql: str, parameters: tuple[object, ...], *, read_only: bool | None = None
+    ) -> dict[str, object]:
         try:
             with psycopg.connect(
                 self.financial_database_url, connect_timeout=DEPOSIT_CONNECT_TIMEOUT_SECONDS
             ) as connection:
+                # A read runs in a read-only transaction, so any write fails (sub-slice 8b); None
+                # keeps the server default for commands.
+                connection.read_only = read_only
                 connection.execute(
                     "SELECT pg_catalog.set_config('lock_timeout', %s, true)",
                     (str(DEPOSIT_LOCK_TIMEOUT_MS),),
@@ -117,4 +127,37 @@ class FinalSettlementService:
         _uuid(lease_id, "lease_id")
         return self._call(
             "SELECT app.start_final_settlement(%s,%s,%s)", (property_id, actor_id, lease_id)
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class FinalSettlementReadService:
+    """Reads under the runtime role (``database_url``); nothing here writes."""
+
+    database_url: str
+
+    def preview(
+        self, property_id: UUID, settlement_id: UUID, *, actor: AuthenticatedActor
+    ) -> dict[str, object]:
+        """The Settlement's obligations, Credit, Deposits, DL-032 steps and blocking issues."""
+        _uuid(property_id, "property_id")
+        if not any(
+            is_authorized(actor, AuthorizationRequirement(capability, str(property_id)))
+            for capability in (FINAL_SETTLEMENTS_PREPARE_CAPABILITY, FINANCIAL_APPROVE_CAPABILITY)
+        ):
+            raise FinalSettlementAuthorizationError("Final Settlement preview is not authorized")
+        actor_id = _actor_identity(actor)
+        _uuid(settlement_id, "settlement_id")
+        # The reader's draft capabilities on the Property: a pending draft's identity is shown
+        # only to a financial.approve holder or a holder of its prepare capability.
+        capabilities = [
+            capability
+            for capability in sorted(PREPARE_CAPABILITIES | {FINANCIAL_APPROVE_CAPABILITY})
+            if is_authorized(actor, AuthorizationRequirement(capability, str(property_id)))
+        ]
+        # The same connection settings and error mapping as the commands, on the runtime role.
+        return FinalSettlementService(self.database_url)._call(
+            "SELECT app.final_settlement_preview(%s,%s,%s,%s)",
+            (property_id, actor_id, settlement_id, capabilities),
+            read_only=True,
         )

@@ -446,7 +446,7 @@ The four points of the 8r report (sub-slice 8r committed as 7db72ad):
 3. A Security Deposit whose forfeiture was reversed (sub-slice 6b): `app.lease_deposit_kept_rule` reads only the termination record, so that Deposit stays kept and is never applied. Answer: it is held again, as if that forfeiture never happened. At settlement it follows DL-032 (it pays open debt, and the rest is refunded), unless a new forfeiture draft is confirmed. It must never be stuck with no way to apply or refund it. If this conflicts with a written rule, stop and ask before 8c (see Q-2026-10-05-24).
 4. 8c and 8e must extend the receipt reversal pending-draft checks to the Final Settlement drafts. Answer: agreed.
 
-## Q-2026-10-05-24 — Before sub-slice 8c: answer 3 of Q-2026-10-05-23 conflicts with the text of BR-DEP-023 and BR-DEP-026 (OPEN; does not block 8a-2; needed before 8b's preview path and 8c)
+## Q-2026-10-05-24 — Before sub-slice 8c: answer 3 of Q-2026-10-05-23 conflicts with the text of BR-DEP-023 and BR-DEP-026 (ANSWERED 2026-10-05: yes to recommendations 1 to 3; sentence added to BR-DEP-026, pointer in BR-DEP-023, note under PR-DEP-023 in docs/003; 8b and 8e handle the three cases; the same rule for a Pet Deposit kept under BR-DEP-022; answers in docs/010)
 
 You asked me to stop before 8c if answer 3 conflicts with a written rule. I checked docs/002 and docs/010 (read only). Sub-slice 8a-2 does not depend on it, so I continue with 8a-2.
 
@@ -466,3 +466,63 @@ Recommendation:
 3. The same rule for a Pet Deposit kept under BR-DEP-022 (pet noncompliance) whose forfeiture was reversed: it is held again and follows the Pet Deposit steps of DL-032, unless a new forfeiture draft is confirmed.
 
 Please confirm 1 to 3, or say what to change. I will not start 8c, or build 8b's path for this case, before your answer.
+
+Owner answer (2026-10-05): yes to the recommendation. Add the sentence to BR-DEP-026 and its note in docs/003. In 8b and 8e handle the three cases: a forfeiture ground with no confirmed forfeiture blocks the Settlement; an active forfeiture keeps the Deposit; a reversed forfeiture follows DL-032. The same rule applies to a Pet Deposit kept for pet noncompliance whose forfeiture was reversed. Recorded in docs/010.
+
+## Q-2026-10-05-25 — Sub-slice 8b stopped after review round 1: two rule points, one extra blocking issue, and the fixes I plan (ANSWERED 2026-10-05: yes to all four recommendations; make the listed fixes, unit and full PostgreSQL once each, then review round 2; answers in docs/010)
+
+Sub-slice 8b (Final Settlement preview, migration `20261024_89`) is built and green: backend unit 3445 passed (U1), full PostgreSQL 1803 passed (P1); no correction used. Review round 1 (record: ops/reviews/V1-056-slice-08b-settlement-preview.md): independent 2 blockers and 4 should-fix, security 0 blockers and 2 should-fix. Nothing is committed and no fix is made yet; all 8b files are in the working tree.
+
+**Questions (with my recommendation):**
+
+1. (B) **Which cleaning rate decides "cleaning charge missing"?** The plan note says "the Unit's rate in force at the move-out is above zero (or no rate is set)"; the slice 4 command charges the Unit's current rate and refuses a zero rate. They differ only when the rate changes after the move-out. As built (plan text): if the rate at the move-out was above zero and staff later set it to 0, the Settlement stays blocked until a positive rate is set again and charged. Options: (a) keep the plan text; (b) use the current rate, the same rule as the command: the issue shows while no cleaning charge is on an issued, non-VOID Invoice and the current rate is above zero or not set; a rate change after the move-out (audited, with a reason, under `property.manage`) decides. Recommendation: (b), because the plan note's reason is "slice 4 refuses the charge", and only the command can clear the issue.
+
+2. (B) **Remaining Pet Deposit (DL-032 step 5) after a reversed pet-noncompliance forfeiture.** BR-DEP-027 (Customer's choice only) names the unpaid-Initial, non-pet violation and 30-day default terminations; your answer to Q-2026-10-05-24 says that Pet Deposit "follows the Pet Deposit steps of DL-032", and DL-032 step 5 allows the Customer's choice or staff with a reason. I built "Customer's choice only" for it, which no rule says. Recommendation: the staff step (with a reason) is allowed at every termination except the three BR-DEP-027 terminations; this also covers a termination with no forfeiture ground (DL-032, your answer 2 to Q-2026-10-05-20).
+
+3. (B) **Utility periods finalized after the final Utility Invoice.** Migration 73 bills such a period only through the catch-up command. Today the preview can show "ready" while a period of this Lease with consumption is on no Invoice, against BR-SETTLE-011. The plan lists only "final Utility Invoice not issued". Recommendation: one more blocking reason, `UTILITY_PERIOD_NOT_BILLED`, for every period this Lease is responsible for with consumption and no Invoice line, whether or not the final Utility Invoice exists, with a test.
+
+4. **A recorded one-time charge of the Lease on no Invoice.** A Damage or Miscellaneous charge source recorded with `record_one_time_charge` but never put on an Invoice draft is not a blocking issue; the plan lists only an Invoice draft that is not issued (the cleaning charge has its own check). Recommendation: add `ONE_TIME_CHARGE_NOT_INVOICED` for a charge source of the Lease that is on no DRAFT or issued, non-VOID Invoice (BR-SETTLE-003, BR-SETTLE-011), with a test. Not needed if you prefer staff to check this themselves.
+
+**Fixes I will make inside 8b after your answers (no rule change):**
+
+- Independent B1: a Deposit with a forfeiture ground and nothing held is not "forfeiture required" (the forfeiture draft refuses a Deposit that holds nothing, so the Settlement would be blocked for ever; the plan says "still held"); it gets the path `NOTHING_HELD`, is never applied and raises no issue; test: unpaid Security Deposit at a BR-LEASE-005 termination becomes ready.
+- Independent B2: the Late-payment check also reads PARTIALLY_PAID Invoices, as the existing review allows; test with a partly paid overdue Invoice.
+- Independent S3: tests for a BR-DEP-027 termination and for two Customers (obligations per Customer, Credit bounded to its own Customer); plus the kept-rule error branches and the forfeiture reversal and receipt reversal draft cases of the pending-draft check.
+- Security S1: a pending draft stays a blocking issue for everyone, but its id, kind and variant are shown only to a `financial.approve` holder or a holder of that draft's prepare capability (the slice 2 and 6b read rule).
+- Security S2: tests for an active service identity and a deactivated person (both refused), and the kept rule in the no-EXECUTE list. The second-Property test cannot exist: V1 stores one Property (`properties_singleton_key_unique`).
+- Security N1: the preview runs in a read-only transaction.
+- Notes for 8e and 11e go to the plan (8e re-checks every blocking issue under its locks; read error wording).
+
+After the fixes: backend unit and full PostgreSQL once each, then review round 2 under the standing round-3 rule.
+
+Owner answer (2026-10-05): yes to all four recommendations: (1) the current cleaning rate decides; (2) the staff step for the remaining Pet Deposit is allowed everywhere except the three BR-DEP-027 terminations; (3) add UTILITY_PERIOD_NOT_BILLED; (4) add ONE_TIME_CHARGE_NOT_INVOICED. Make the fixes listed above, run unit and full PostgreSQL once each, then review round 2 under the takeover rules. Recorded in docs/010.
+
+## Q-2026-10-05-26 — Sub-slice 8b stopped before review round 2: the known lock failure in a test outside 8b (ANSWERED 2026-10-05: option (a), one more full PostgreSQL run; stop if the same test fails again; slice 12 item to make the test robust against LockNotAvailable without weakening it)
+
+The round-1 fixes and your Q-2026-10-05-25 answers are built. Runs: U2 backend unit 3446 passed. P2 full PostgreSQL: one failure in the new 8b test (its WATER meter used the default unit KWH); corrected (correction 1 of 2). P3 full PostgreSQL: the 8b module passed, 1805 passed, and one test outside 8b failed: `test_refund_migration.py::test_usd_refund_khr_origin_uses_recorded_usd_without_repricing`, `LockNotAvailable` on `app.payment_allocations` from the `NOWAIT` lock in `app.assert_payment_excess_eligible`. That module runs before the 8b module, passed in P1 and P2, and 8b changes nothing on that path; it is the known intermittent failure recorded on 2026-10-02 and 2026-10-03 (likely autovacuum, not proven). The run rules allow no retry without a correction, and takeover section 6 says stop. Record: ops/reviews/V1-056-slice-08b-settlement-preview.md.
+
+Options:
+- (a) Allow one more full PostgreSQL run (P4) now, recorded as an owner-approved rerun after an outside intermittent failure; if it is green, start review round 2.
+- (b) Accept P2 and P3 together as the evidence (every test passed in at least one of them after the correction, and the only P3 failure is outside 8b) and start review round 2; the full run before round 3 (standing rule) checks again.
+- (c) Stop 8b and look into the lock failure first.
+
+Recommendation: (a), because a green full run before the reviews is the clearer evidence and it costs one run of about nine minutes.
+
+Owner answer (2026-10-05): option (a). Run the full PostgreSQL suite once more (P4). Record the P3 lock failure in the review record and docs/010 with the test name and the earlier dates. If that same test fails again, stop and report. If the run is green, start review round 2. Slice 12 item: make `test_usd_refund_khr_origin_uses_recorded_usd_without_repricing` robust against LockNotAvailable, without weakening it.
+
+## Q-2026-10-05-27 — Sub-slice 8b stopped after review round 2: a withdrawn one-time charge blocks the Settlement (ANSWERED 2026-10-05: option (b) plus VOIDed charges listed as information; answers in docs/010)
+
+P4 full PostgreSQL passed (1806). Review round 2: security 0 blockers and 0 should-fix; independent 0 blockers and 2 should-fix. Should-fix 2 (plan text) is fixed. Should-fix 1 needs your rule decision. Record: ops/reviews/V1-056-slice-08b-settlement-preview.md.
+
+**The point.** `ONE_TIME_CHARGE_NOT_INVOICED` (your answer 4 to Q-2026-10-05-25) flags every one-time charge source of the Lease that is on no DRAFT or issued, non-VOID Invoice. Two normal commands leave a source like that on purpose: a draft correction moves an Invoice draft from source A to a replacement source B (recorded as `invoice.draft_corrected` with a reason), and a wrong one-time Invoice is VOIDed with a reason. A charge source can never be cancelled, so today the only way to clear the issue is to bill the wrong charge again and remove it with a credit Adjustment. BR-SETTLE-003 speaks of valid obligations only.
+
+Options:
+- (a) Keep it as built; staff clear a withdrawn charge by billing it again and crediting it away with a reason.
+- (b) Flag only a source still waiting to be billed: leave out a source whose last Invoice was VOIDed (the VOID has a reason) and a source a recorded draft correction replaced; a test for each. Risk: a VOID meant to be followed by a new Invoice is not flagged, so staff must remember to bill it again.
+- (c) Remove `ONE_TIME_CHARGE_NOT_INVOICED`; staff check uncharged sources themselves.
+
+Recommendation: (b).
+
+**After your answer** I would also take these review notes, all tests or defensive changes, no rule change: the BR-LEASE-005 unpaid Security Deposit case with a `ready` assertion and `CUSTOMER_ONLY` at BR-LEASE-005 and BR-LEASE-028; a path-only refusal check; a Payment-source Refund pending draft; the Deposit draft capabilities in the masking test; the empty, NULL-element and over-10 capability inputs; a test that the old 3-argument preview does not exist; `UTILITY_PERIOD_NOT_BILLED` before the final Utility Invoice; the Settlement path counting only dispositions of the Lease; `read_only=None` for commands. Then backend unit and full PostgreSQL once each and round 3 under the standing rule.
+
+Owner answer (2026-10-05): option (b), with one addition. `ONE_TIME_CHARGE_NOT_INVOICED` flags only charges still waiting to be billed; a charge whose last Invoice was VOIDed and a charge a draft correction replaced are left out, and the replacement charge is checked like any other charge. Addition: the preview lists the VOIDed charges that were not billed again as information, not as a blocking issue, so the approver sees them; stop if that needs more than a small additive change. (Implementer note: it did not; one more key, `information`.) Tests: a VOIDed charge does not block but is listed; a replaced charge does not block; its replacement blocks until billed. Reason (BR-SETTLE-003): only valid obligations belong in the Settlement, and a VOID or a draft correction withdraws a charge with a recorded reason. Then the Q-27 review notes, unit and full PostgreSQL once each, and round 3 under the standing rule.

@@ -36680,6 +36680,207 @@
       "test_path": "backend/tests/test_pet_refund_migration.py",
       "status": "implemented",
       "notes": "At head, the Deposit ledger read shows a departure recorded only by a legacy combined deposit.pet_refund.qualify command with that command's authorization (V1-056 sub-slice 8a-2 review round 2; the branch test_v1_038_upgrade_projects_legacy_pet_departure_authorization checked through the reader before migration 88)."
+    },
+    {
+      "test_id": "test_the_preview_shows_obligations_and_deposits_in_dl032_order_and_writes_nothing",
+      "upstream_ids": [
+        "BR-SETTLE-002",
+        "BR-SETTLE-003",
+        "BR-SETTLE-006",
+        "DL-032",
+        "API-071"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_preview_migration.py",
+      "status": "implemented",
+      "notes": "The Settlement preview lists each Customer's open Invoice lines and Late-payment Charges, the Pet Deposit's DL-032 path, the seven DL-032 steps in order with upper bounds only, and a missing move-out as a final Utility blocking issue; an approver reads the same preview and it runs in a read-only transaction (V1-056 sub-slice 8b)."
+    },
+    {
+      "test_id": "test_credit_and_pending_drafts_on_settlement_sources_are_shown_to_allowed_readers",
+      "upstream_ids": [
+        "BR-SETTLE-004",
+        "BR-CREDIT-008",
+        "BR-AUTH-010",
+        "BR-SETTLE-011",
+        "API-071"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_preview_migration.py",
+      "status": "implemented",
+      "notes": "A Customer's available Credit is listed with what it may pay of that Customer's obligations; a pending Credit Refund draft and a pending wrong-Unit Payment move draft block the Settlement for every reader, but their ids, kinds and variants are shown only to a financial.approve holder or a holder of the draft's prepare capability; the move draft also blocks the target Lease's Settlement (V1-056 sub-slice 8b). A pending Payment Refund draft of the Customer's unallocated Payment value blocks too (review round 2)."
+    },
+    {
+      "test_id": "test_late_payment_decisions_and_uninvoiced_charges_block_until_recorded",
+      "upstream_ids": [
+        "BR-SETTLE-011",
+        "BR-SETTLE-003",
+        "DL-050",
+        "API-071"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_preview_migration.py",
+      "status": "implemented",
+      "notes": "An UNPAID and a PARTIALLY_PAID overdue Invoice whose Late-payment Decision the review allows, a one-time charge source on no Invoice and then its Invoice draft are blocking issues until the Decisions are recorded and the draft is issued; all then appear as obligations (owner answer 6 to Q-2026-10-05-20, answer 4 to Q-2026-10-05-25) (V1-056 sub-slice 8b)."
+    },
+    {
+      "test_id": "test_three_forfeiture_cases_of_a_security_deposit",
+      "upstream_ids": [
+        "BR-DEP-026",
+        "BR-DEP-023",
+        "BR-SETTLE-014",
+        "BR-SETTLE-006",
+        "DL-032"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_preview_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer to Q-2026-10-05-24: a ground with no confirmed forfeiture blocks the Settlement and the Deposit is never applied; a pending forfeiture or forfeiture reversal draft blocks; a confirmed forfeiture keeps it; after the reversal the Security Deposit follows DL-032, a new forfeiture draft is a blocking issue, and the relaxed application guard accepts it (V1-056 sub-slice 8b). A deposits.dispose holder sees the forfeiture draft but not the reversal draft, and a deposits.correct holder the reverse (review round 2)."
+    },
+    {
+      "test_id": "test_a_pet_deposit_kept_for_pet_noncompliance_follows_dl032_after_its_reversal",
+      "upstream_ids": [
+        "BR-DEP-022",
+        "BR-SETTLE-017",
+        "DL-032"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_preview_migration.py",
+      "status": "implemented",
+      "notes": "Pet noncompliance keeps both Deposits until each forfeiture is confirmed; once the Pet Deposit's forfeiture is reversed it follows the DL-032 Pet steps with the staff step allowed (not a BR-DEP-027 termination; owner answer 2 to Q-2026-10-05-25), may be applied, and the Security Deposit stays kept (V1-056 sub-slice 8b)."
+    },
+    {
+      "test_id": "test_a_br_dep_027_termination_keeps_security_and_lets_only_the_customer_choose",
+      "upstream_ids": [
+        "BR-DEP-027",
+        "BR-DEP-026",
+        "BR-SETTLE-017",
+        "DL-032"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_preview_migration.py",
+      "status": "implemented",
+      "notes": "At a non-pet violation termination (BR-LEASE-025) the Security Deposit waits for its forfeiture while the Pet Deposit follows DL-032 and its remainder pays other debt only by the Customer's choice (V1-056 sub-slice 8b)."
+    },
+    {
+      "test_id": "test_a_kept_deposit_that_holds_nothing_does_not_block_the_settlement",
+      "upstream_ids": [
+        "BR-DEP-022",
+        "BR-DEP-026",
+        "BR-SETTLE-011"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_preview_migration.py",
+      "status": "implemented",
+      "notes": "A Pet Deposit never paid at a pet-noncompliance termination has the path NOTHING_HELD: it raises no forfeiture issue, is never applied or refunded, and the Settlement waits only for the Security Deposit's forfeiture (review round 1) (V1-056 sub-slice 8b). The refusal comes from the path guard, before any amount check (review round 2)."
+    },
+    {
+      "test_id": "test_obligations_and_credit_stay_with_each_customer_of_the_lease",
+      "upstream_ids": [
+        "BR-SETTLE-002",
+        "BR-SETTLE-016",
+        "BR-CREDIT-008",
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_preview_migration.py",
+      "status": "implemented",
+      "notes": "The Primary Tenant and another Signer are listed separately with their own obligations; the Signer's Credit may pay none of the Primary Tenant's debt; the Deposits may pay any open debt of the Lease; a pending Deposit receipt reversal draft blocks the Settlement (V1-056 sub-slice 8b)."
+    },
+    {
+      "test_id": "test_a_moved_out_lease_waits_for_final_utility_cleaning_and_billed_periods",
+      "upstream_ids": [
+        "BR-SETTLE-011",
+        "BR-MOVEOUT-013",
+        "BR-UNIT-014",
+        "BR-SETTLE-003"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_preview_migration.py",
+      "status": "implemented",
+      "notes": "A moved-out Lease is blocked until the final Utility inputs are recorded and resolved and the final Utility Invoice is created, and until the cleaning charge from the Unit's current rate is on an issued Invoice (a zero rate needs none; the recorded charge source is first not invoiced, then on a draft); with every issue resolved the preview is ready, and a Utility period with consumption finalized afterwards blocks again (owner answers 1, 3 and 4 to Q-2026-10-05-25) (V1-056 sub-slice 8b)."
+    },
+    {
+      "test_id": "test_a_final_reading_without_consumption_needs_no_final_utility_invoice",
+      "upstream_ids": [
+        "BR-SETTLE-011"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_preview_migration.py",
+      "status": "implemented",
+      "notes": "A final Reading equal to the meter's last validated Reading has nothing to bill, so the preview does not wait for a final Utility Invoice that the command would refuse (V1-056 sub-slice 8b). Before the final Utility Invoice, a period with consumption on no Invoice raises both the final Utility and the UTILITY_PERIOD_NOT_BILLED issues (review round 2)."
+    },
+    {
+      "test_id": "test_the_preview_refuses_unknown_actors_and_settlements_and_is_least_privilege",
+      "upstream_ids": [
+        "API-071",
+        "BR-SETTLE-002",
+        "DB-SETTLE-001",
+        "DL-048"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_final_settlement_preview_migration.py",
+      "status": "implemented",
+      "notes": "The kept rule keeps its earlier errors; the database refuses an unknown actor, a billing service identity and a deactivated person (42501), a Settlement of another Property (P0002) and missing input (22023); only the runtime role executes the preview, the internal functions and the replaced kept rule have no grant, and all are STABLE SECURITY DEFINER with a fixed search_path and no PUBLIC EXECUTE (V1-056 sub-slice 8b). Also refuses an empty, NULL-element or over-10 capability list (22023), and no 3-argument preview exists (review round 2)."
+    },
+    {
+      "test_id": "test_final_settlement_preview_migration_is_forward_only",
+      "upstream_ids": [
+        "DB-SETTLE-001",
+        "DB-DEP-005"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_final_settlement_preview_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20261024_89 follows 20261023_88 and cannot be downgraded (V1-056 sub-slice 8b)."
+    },
+    {
+      "test_id": "test_preview_needs_prepare_or_approve_and_valid_identities_before_any_connection",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "API-071",
+        "DL-048"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_final_settlement.py",
+      "status": "implemented",
+      "notes": "Only final_settlements.prepare or financial.approve holders for the Property may read the preview; other capabilities, another Property and invalid identities are refused before any connection (V1-056 sub-slice 8b)."
+    },
+    {
+      "test_id": "test_preview_reads_read_only_through_the_runtime_url_with_the_draft_capabilities",
+      "upstream_ids": [
+        "API-071",
+        "BR-AUTH-010",
+        "BR-SETTLE-002"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_final_settlement.py",
+      "status": "implemented",
+      "notes": "The preview service reads through the runtime database URL in a read-only transaction and passes exactly the reader's draft capabilities on the Property (V1-056 sub-slice 8b)."
+    },
+    {
+      "test_id": "test_withdrawn_one_time_charges_do_not_block_and_voided_ones_are_listed",
+      "upstream_ids": [
+        "BR-SETTLE-003",
+        "BR-SETTLE-011",
+        "API-071"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_preview_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer to Q-2026-10-05-27: a one-time charge whose Invoice was VOIDed and a charge a draft correction replaced do not block; the VOIDed charge not billed again is listed under information; the replacement charge's Invoice draft blocks until issued, and a charge on no Invoice blocks until billed (V1-056 sub-slice 8b)."
+    },
+    {
+      "test_id": "test_unpaid_initial_and_default_terminations_let_only_the_customer_choose",
+      "upstream_ids": [
+        "BR-DEP-027",
+        "BR-DEP-026",
+        "BR-SETTLE-017",
+        "BR-SETTLE-011"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_preview_migration.py",
+      "status": "implemented",
+      "notes": "At an unpaid-Initial termination (BR-LEASE-005) a Security Deposit whose receipts were reversed holds nothing (NOTHING_HELD), the remaining Pet step is the Customer's choice only, and the preview is ready; a 30-day default termination (BR-LEASE-028) also allows only the Customer's choice (V1-056 sub-slice 8b review round 2)."
     }
   ]
 }
