@@ -11,8 +11,10 @@ import psycopg
 import pytest
 from psycopg import Connection
 
+from deposit_receipt_reversal_test_support import reverse_receipt_as_owner
 from property_rental.deposit import (
     DepositInvalidError,
+    PostgresDepositService,
     QualifyPetDepositRefundReviewCommand,
     RecordPetDepartureCommand,
     ReverseDepositReceiptCommand,
@@ -259,6 +261,8 @@ def test_pet_verified_returns_reconcile_receipt_ledger_eligibility_and_reversal(
     human, prop, _, _, deposit, review = qualified(migrated_database_url)
     flow = PostgresDepositResourceFlow(runtime_database_url(), financial_database_url())
     corrector = actor(human, prop, "deposits.correct")
+    # The earlier one-call reversal runs as the owner: its own rules are the subject here.
+    deposits = PostgresDepositService(financial_database_url(), prop, human)
     reader = actor(human, prop, "deposits.read")
 
     def receipt() -> tuple[UUID, bool]:
@@ -268,7 +272,8 @@ def test_pet_verified_returns_reconcile_receipt_ledger_eligibility_and_reversal(
             if item.event_kind == "RECEIPT"
         )
         assert _ledger_body(event, reader, prop)["can_reverse"] is False
-        assert _ledger_body(event, corrector, prop)["can_reverse"] is event.reversal_eligible
+        # Since sub-slice 8r a receipt reversal is a draft: no one-call reverse is offered.
+        assert _ledger_body(event, corrector, prop)["can_reverse"] is False
         return event.event_id, event.reversal_eligible
 
     receipt_id, eligible = receipt()
@@ -280,14 +285,14 @@ def test_pet_verified_returns_reconcile_receipt_ledger_eligibility_and_reversal(
     assert receipt() == (receipt_id, False)
     reversal = ReverseDepositReceiptCommand(uuid4(), uuid4(), receipt_id, "Correct receipt")
     with pytest.raises(DepositInvalidError):
-        flow.reverse_receipt(receipt_id, reversal, actor=corrector)
+        reverse_receipt_as_owner(deposits, reversal, actor=corrector)
     partial = service().verify_usd_return(
         prop, identity, returned(5000), actor=actor(human, prop, "refunds.correct")
     )
     assert partial["net_refund_usd_cents"] == 15000
     assert receipt() == (receipt_id, False)
     with pytest.raises(DepositInvalidError):
-        flow.reverse_receipt(receipt_id, reversal, actor=corrector)
+        reverse_receipt_as_owner(deposits, reversal, actor=corrector)
     full = service().verify_usd_return(
         prop, identity, returned(15000), actor=actor(human, prop, "refunds.correct")
     )
@@ -304,13 +309,13 @@ def test_pet_verified_returns_reconcile_receipt_ledger_eligibility_and_reversal(
     assert undone["net_refund_usd_cents"] == 5000
     assert receipt() == (receipt_id, False)
     with pytest.raises(DepositInvalidError):
-        flow.reverse_receipt(receipt_id, reversal, actor=corrector)
+        reverse_receipt_as_owner(deposits, reversal, actor=corrector)
     service().verify_usd_return(
         prop, identity, returned(5000), actor=actor(human, prop, "refunds.correct")
     )
     assert receipt() == (receipt_id, True)
-    reversed_snapshot = flow.reverse_receipt(receipt_id, reversal, actor=corrector)
-    assert flow.reverse_receipt(receipt_id, reversal, actor=corrector) == reversed_snapshot
+    reversed_snapshot = reverse_receipt_as_owner(deposits, reversal, actor=corrector)
+    assert reverse_receipt_as_owner(deposits, reversal, actor=corrector) == reversed_snapshot
     assert receipt() == (receipt_id, False)
     with psycopg.connect(migrated_database_url) as connection:
         assert connection.execute(

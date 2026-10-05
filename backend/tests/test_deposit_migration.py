@@ -17,6 +17,7 @@ from alembic import command as alembic_command
 from alembic.config import Config
 
 from deposit_disposition_test_support import disposition_context, terminate_for_disposition
+from deposit_receipt_reversal_test_support import reverse_receipt_as_owner
 from lease_deposit_forfeiture_test_support import (
     forfeit_through_draft,
     record_disposition_as_owner,
@@ -232,7 +233,8 @@ def test_adjustments_and_receipt_reversals_preserve_history(
         actor_id=service.actor_id,
         amount_usd_cents=25_000,
     )
-    reversed_snapshot = service.reverse_receipt(
+    reversed_snapshot = reverse_receipt_as_owner(
+        service,
         ReverseDepositReceiptCommand(uuid4(), uuid4(), receipt_id, "Payment receipt corrected"),
         actor=actor,
     )
@@ -429,7 +431,9 @@ def test_same_key_replays_are_concurrency_safe_for_exposed_deposit_commands(
     receipt_reversal = ReverseDepositReceiptCommand(
         uuid4(), uuid4(), receipt_id, "Verified duplicate receipt"
     )
-    reversed_receipts = concurrent(lambda: service.reverse_receipt(receipt_reversal, actor=actor))
+    reversed_receipts = concurrent(
+        lambda: reverse_receipt_as_owner(service, receipt_reversal, actor=actor)
+    )
     assert reversed_receipts[0] == reversed_receipts[1]
 
     service2, actor2, lease2, approval2, day2 = setup_signed_pet_lease(migrated_database_url)

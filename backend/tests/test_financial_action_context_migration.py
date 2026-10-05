@@ -14,6 +14,7 @@ from alembic.config import Config
 from alembic.script import ScriptDirectory
 from psycopg.types.json import Jsonb
 
+from deposit_receipt_reversal_test_support import reverse_receipt_as_owner
 from payment_test_support import seed_payment
 from pre_settlement_test_support import pre_settlement_database  # noqa: F401
 from property_rental.credit import (
@@ -315,7 +316,7 @@ def test_financial_action_context_database_migration_privileges_and_forward_only
     migrated_database_url: str,  # noqa: F811
 ) -> None:
     scripts = ScriptDirectory.from_config(Config("alembic.ini"))
-    assert scripts.get_heads() == ["20261021_86"]
+    assert scripts.get_heads() == ["20261022_87"]
     revision = scripts.get_revision("20260908_47")
     assert revision is not None and revision.down_revision == "20260908_46"
     with pytest.raises(RuntimeError, match="forward-only"):
@@ -603,7 +604,8 @@ def test_financial_action_context_database_shared_deposit_guard_changes_source_c
         guard = connection.execute(
             "SELECT revision FROM app.payment_serialization_guards WHERE payment_id=%s", (payment,)
         ).fetchone()
-    service.reverse_receipt(
+    reverse_receipt_as_owner(
+        service,
         ReverseDepositReceiptCommand(uuid4(), uuid4(), receipts[0], "Resolve original direction"),
         actor=staff,
     )
@@ -922,7 +924,8 @@ def test_financial_action_context_database_future_deposit_application_is_explici
     service, staff, _, deposit, payment, receipts = deposit_source(url)
     if historical:
         for receipt in receipts:
-            service.reverse_receipt(
+            reverse_receipt_as_owner(
+                service,
                 ReverseDepositReceiptCommand(uuid4(), uuid4(), receipt, "Resolve source"),
                 actor=staff,
             )

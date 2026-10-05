@@ -125,6 +125,7 @@ database_test_suites='
   tests/test_lease_deposit_reversal_draft_migration.py
   tests/test_payment_move_migration.py
   tests/test_final_settlement_migration.py
+  tests/test_deposit_receipt_reversal_draft_migration.py
   tests/test_lease_migration.py
   tests/test_lease_lifecycle_migration.py
   tests/test_move_in_migration.py

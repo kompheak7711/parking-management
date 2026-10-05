@@ -63,6 +63,10 @@ class LeaseDepositDraftRequired(RuntimeError):
     """A Lease Deposit forfeiture or its reversal is a draft now (BR-AUTH-010, V1-056 slice 6)."""
 
 
+class DepositReceiptReversalDraftRequired(RuntimeError):
+    """A Deposit receipt reversal is a draft now (BR-AUTH-010, V1-056 sub-slice 8r)."""
+
+
 def _identity(value: UUID, field: str) -> None:
     if value == NIL_UUID:
         raise ValueError(f"{field} must not be the nil UUID")
@@ -421,20 +425,12 @@ class PostgresDepositService:
     def reverse_receipt(
         self, command: ReverseDepositReceiptCommand, *, actor: AuthenticatedActor
     ) -> DepositSnapshot:
+        """Refused: a receipt reversal is a draft confirmed by financial.approve.
+
+        Use ``DepositReceiptReversalService`` (owner answer to Q-2026-10-05-22).
+        """
         self._authorize(actor, DEPOSIT_CORRECT_CAPABILITY, command.authorization_reference)
-        return self._execute(
-            "SELECT app.reverse_deposit_receipt_v2(%s,%s,%s,%s,%s,%s,%s,%s)",
-            (
-                self.property_id,
-                self.actor_id,
-                command.idempotency_key,
-                deposit_request_digest("deposit.receipt.reverse", command),
-                command.reversal_id,
-                command.receipt_id,
-                command.reason,
-                command.authorization_reference,
-            ),
-        )
+        raise DepositReceiptReversalDraftRequired("Deposit receipt reversal draft required")
 
     def record_pet_departure(
         self, command: RecordPetDepartureCommand, *, actor: AuthenticatedActor

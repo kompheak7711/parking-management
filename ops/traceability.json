@@ -36399,6 +36399,145 @@
       "test_path": "backend/tests/test_final_settlement_migration.py",
       "status": "implemented",
       "notes": "A Late-payment Charge correction of a Charge a Deposit application paid reaches the Late-payment service as a conflict and records nothing."
+    },
+    {
+      "test_id": "test_receipt_reversal_needs_deposits_correct_and_approval_before_any_connection",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "DB-DEP-007"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_deposit_receipt_reversal_draft.py",
+      "status": "implemented",
+      "notes": "Recording a Deposit receipt reversal draft needs deposits.correct and confirming it needs financial.approve, checked before any database connection (V1-056 sub-slice 8r)."
+    },
+    {
+      "test_id": "test_receipt_reversal_input_is_refused_before_any_connection",
+      "upstream_ids": [
+        "DB-DEP-007"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_deposit_receipt_reversal_draft.py",
+      "status": "implemented",
+      "notes": "Nil identities, a reversal id equal to the receipt id and a reason that is not trimmed text of 1 to 500 characters are refused before any connection."
+    },
+    {
+      "test_id": "test_one_call_receipt_reversal_refuses_before_any_connection",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "DB-DEP-007"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_deposit_receipt_reversal_draft.py",
+      "status": "implemented",
+      "notes": "The one-call Deposit receipt reversal refuses as draft required after its capability check and before any connection (owner answer to Q-2026-10-05-22)."
+    },
+    {
+      "test_id": "test_receipt_reversal_failures_map_to_stable_errors",
+      "upstream_ids": [
+        "BR-AUTH-010"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_deposit_receipt_reversal_draft.py",
+      "status": "implemented",
+      "notes": "Database refusals map to not found, permission, invalid, key reused, conflict (business state) or unresolved outcome."
+    },
+    {
+      "test_id": "test_receipt_reversal_draft_id_is_scoped_to_property_preparer_and_key",
+      "upstream_ids": [
+        "BR-AUTH-010"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_deposit_receipt_reversal_draft.py",
+      "status": "implemented",
+      "notes": "The receipt reversal draft id is stable for one preparer's command key in one Property."
+    },
+    {
+      "test_id": "test_a_receipt_reversal_is_a_draft_until_an_approver_confirms",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "DB-DEP-007"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_receipt_reversal_draft_migration.py",
+      "status": "implemented",
+      "notes": "A Deposit receipt reversal draft has no effect (held amount and the Payment's free value unchanged) until a financial.approve holder confirms it; deposits.correct alone cannot confirm; the confirmation replays and is audited with the draft as correlation."
+    },
+    {
+      "test_id": "test_a_receipt_reversal_waits_for_any_pending_draft_of_its_deposit",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "DB-DEP-007"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_receipt_reversal_draft_migration.py",
+      "status": "implemented",
+      "notes": "A receipt reversal draft, and the receipt reversal guard itself, are refused while another draft for the same Deposit is pending; after withdrawal the reversal proceeds."
+    },
+    {
+      "test_id": "test_a_reservation_deposit_receipt_reversal_is_a_draft_too",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "DB-DEP-007"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_receipt_reversal_draft_migration.py",
+      "status": "implemented",
+      "notes": "A Reservation Deposit receipt reversal is the same draft; a pending Reservation Deposit draft refuses both its recording and its confirmation (owner answer (c) to Q-2026-10-05-22)."
+    },
+    {
+      "test_id": "test_receipt_reversal_draft_refusals_change_nothing",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "DB-DEP-007"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_receipt_reversal_draft_migration.py",
+      "status": "implemented",
+      "notes": "Key reuse, an unknown receipt, a confirm by the forfeiture reversal function, a stale draft, a reused reversal id and an already reversed receipt are refused and change nothing."
+    },
+    {
+      "test_id": "test_receipt_reversal_grants_are_least_privilege",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "DB-DEP-007"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_receipt_reversal_draft_migration.py",
+      "status": "implemented",
+      "notes": "The financial role can no longer execute the one-call receipt reversal; only the record and confirm functions are granted, to the financial role; all are security definers with a fixed search path."
+    },
+    {
+      "test_id": "test_receipt_reversal_draft_migration_is_forward_only",
+      "upstream_ids": [
+        "DB-DEP-007"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_deposit_receipt_reversal_draft_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20261022_87 follows 20261021_86 and refuses downgrade."
+    },
+    {
+      "test_id": "test_a_returned_transfer_is_reversed_after_the_receipt_reversal_draft",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "DB-DEP-007"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_receipt_reversal_draft_migration.py",
+      "status": "implemented",
+      "notes": "A returned transfer: the Payment cannot be reversed while the receipt reversal is only a draft; after an approver confirms it the Payment is reversed; a rejected draft changes nothing."
+    },
+    {
+      "test_id": "test_receipt_reverse_route_checks_access_and_csrf_before_the_draft_refusal",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "DB-DEP-007"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_deposit_api.py",
+      "status": "implemented",
+      "notes": "The one-call receipt reverse route conceals the receipt without deposits.correct (404), applies the browser mutation rules (403), then answers 409 DEPOSIT_RECEIPT_REVERSAL_DRAFT_REQUIRED and sends no command (V1-056 sub-slice 8r)."
     }
   ]
 }

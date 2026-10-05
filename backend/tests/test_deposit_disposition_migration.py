@@ -15,6 +15,7 @@ from psycopg import Connection
 from psycopg.conninfo import conninfo_to_dict, make_conninfo
 
 from deposit_disposition_test_support import disposition_context, terminate_for_disposition
+from deposit_receipt_reversal_test_support import reverse_receipt_as_owner
 from lease_deposit_forfeiture_test_support import (
     forfeit_through_draft,
     owner_database_url,
@@ -330,7 +331,8 @@ def test_net_zero_history_invalidates_fresh_posting_even_when_balance_is_restore
             actor_id=service.actor_id,
             amount_usd_cents=1000,
         )
-        service.reverse_receipt(
+        reverse_receipt_as_owner(
+            service,
             ReverseDepositReceiptCommand(uuid4(), uuid4(), receipt, "Approved correction"),
             actor=actor,
         )

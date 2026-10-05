@@ -16,6 +16,7 @@ from alembic import command as alembic_command
 from alembic.config import Config
 from fastapi.testclient import TestClient
 
+from deposit_receipt_reversal_test_support import approver, reverse_receipt_through_draft
 from payment_test_support import seed_deposit_payment
 from pre_settlement_test_support import pre_settlement_database  # noqa: F401
 from property_rental.app import create_app
@@ -31,6 +32,7 @@ from property_rental.deposit import (
     ReverseDepositDispositionCommand,
 )
 from property_rental.deposit_api import PostgresDepositResourceFlow
+from property_rental.deposit_receipt_reversal import DepositReceiptReversalService
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
 from property_rental.reservation_deposit_draft import (
     RecordReservationDepositCorrectionDraftCommand,
@@ -302,10 +304,22 @@ def test_real_http_reads_history_and_splits_departure_from_review(
         json={"reversal_id": str(reversal_id), "reason": "Verified duplicate receipt"},
         headers=headers(reversal_key),
     )
-    assert reversal.status_code == 200
-    assert reversal.json()["data"]["pet_departure_id"] == str(departure_id)
-    assert reversal.json()["data"]["pet_refund_review_id"] == str(review_id)
-    assert reversal.json()["data"]["refund_qualified"] is True
+    # Since sub-slice 8r a receipt reversal is a draft: the one-call route answers 409 and the
+    # reversal is recorded and confirmed through the draft (owner answer to Q-2026-10-05-22).
+    assert reversal.status_code == 409
+    assert reversal.json()["error"]["code"] == "DEPOSIT_RECEIPT_REVERSAL_DRAFT_REQUIRED"
+    confirmed = reverse_receipt_through_draft(
+        financial_database_url(),
+        service.property_id,
+        service.actor_id,
+        receipt_id,
+        reason="Verified duplicate receipt",
+        reversal_id=reversal_id,
+    )
+    reversed_body = client.get(f"/api/v1/deposits/{deposit_id}").json()["data"]
+    assert reversed_body["pet_departure_id"] == str(departure_id)
+    assert reversed_body["pet_refund_review_id"] == str(review_id)
+    assert reversed_body["refund_qualified"] is True
     service.adjust_required_amount(
         AdjustDepositRequiredAmountCommand(
             uuid4(),
@@ -318,27 +332,17 @@ def test_real_http_reads_history_and_splits_departure_from_review(
         ),
         actor=domain_actor,
     )
-    replay = client.post(
-        f"/api/v1/deposit-receipts/{receipt_id}/reverse",
-        json={"reversal_id": str(reversal_id), "reason": "Verified duplicate receipt"},
-        headers=headers(reversal_key),
+    # An exact repeat of the confirmation still replays after later Deposit activity.
+    draft = cast(dict[str, object], confirmed["draft"])
+    assert (
+        DepositReceiptReversalService(financial_database_url()).confirm(
+            service.property_id,
+            receipt_id,
+            UUID(str(draft["draft_id"])),
+            actor=approver(service.actor_id, service.property_id, "financial.approve"),
+        )
+        == confirmed
     )
-    assert replay.status_code == 200
-    assert replay.json()["data"] == reversal.json()["data"]
-    assert replay.json()["meta"]["request_id"] != reversal.json()["meta"]["request_id"]
-    conflicting_replay = client.post(
-        f"/api/v1/deposit-receipts/{receipt_id}/reverse",
-        json={"reversal_id": str(reversal_id), "reason": "Different receipt evidence"},
-        headers=headers(reversal_key),
-    )
-    assert conflicting_replay.status_code == 409
-    assert conflicting_replay.json()["error"] == {
-        "code": "IDEMPOTENCY_KEY_REUSED",
-        "message": "The idempotency key was already used for different input.",
-        "fields": [],
-        "rule_ids": ["API-016"],
-        "current_version": None,
-    }
     assert (
         client.get(f"/api/v1/deposits/{deposit_id}").json()["data"]["required_usd_cents"] == 21_000
     )

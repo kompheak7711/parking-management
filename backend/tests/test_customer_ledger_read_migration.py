@@ -18,6 +18,7 @@ from fastapi.testclient import TestClient
 from psycopg import sql
 from pydantic import SecretStr
 
+from deposit_receipt_reversal_test_support import reverse_receipt_as_owner
 from payment_test_support import seed_payment
 from property_rental.app import create_app
 from property_rental.credit import ApplyCreditCommand, ReverseCreditApplicationCommand
@@ -544,7 +545,8 @@ def test_ledger_runtime_deposit_receipt_reversal_keeps_held_liability_and_paymen
         customer = UUID(str(row[0]))
     before = get(human, prop, customer)
     assert data(before)["position"] == LedgerPosition(payment=10000, pet_deposit=20000).as_wire()
-    service.reverse_receipt(
+    reverse_receipt_as_owner(
+        service,
         ReverseDepositReceiptCommand(uuid4(), uuid4(), receipts[0], "Incorrect receipt"),
         actor=staff,
     )
@@ -602,7 +604,7 @@ def test_ledger_read_migration_is_forward_only_and_preserves_populated48_sources
 ) -> None:
     config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
     scripts = ScriptDirectory.from_config(config)
-    assert scripts.get_heads() == ["20261021_86"]
+    assert scripts.get_heads() == ["20261022_87"]
     revision = scripts.get_revision("20260909_49")
     assert revision is not None and revision.down_revision == "20260909_48"
     with pytest.raises(RuntimeError, match="forward-only"):

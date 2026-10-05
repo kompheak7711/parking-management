@@ -13,6 +13,7 @@ from alembic.config import Config
 from psycopg import Connection, Cursor, sql
 from psycopg.conninfo import conninfo_to_dict, make_conninfo
 
+from deposit_receipt_reversal_test_support import reverse_receipt_as_owner
 from lease_deposit_forfeiture_test_support import (
     forfeit_through_draft,
     reverse_through_draft,
@@ -217,7 +218,8 @@ def test_unreceived_liability_then_later_receipt_and_reversal_are_separate_obser
         paid.held_refundable_usd_cents,
         paid.outstanding_required_usd_cents,
     ) == (12_000, 12_000, 8_000)
-    deposits.reverse_receipt(
+    reverse_receipt_as_owner(
+        deposits,
         ReverseDepositReceiptCommand(
             uuid4(), uuid4(), receipt, "Approved synthetic receipt correction"
         ),

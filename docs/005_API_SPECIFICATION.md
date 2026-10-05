@@ -509,6 +509,15 @@ correction events and never rewrite originals. Since V1-056 slices 3b and 6 only
 receipt reversal records anything here; a disposition reversal is a draft (see the
 amendments above).
 
+Amended by V1-056 sub-slice 8r (owner answer to Q-2026-10-05-22): a Deposit receipt
+reversal, for a Lease or a Reservation Deposit, is a `DEPOSIT_FORFEITURE` draft with
+variant `DEPOSIT_RECEIPT_REVERSAL`, prepared under `deposits.correct` and confirmed by a
+`financial.approve` holder (database and service; its routes come in slice 11c).
+`POST /deposit-receipts/{id}/reverse` checks `deposits.correct` and the browser mutation
+rules, then records nothing and answers 409 `DEPOSIT_RECEIPT_REVERSAL_DRAFT_REQUIRED`
+(rule ID `BR-AUTH-010`). The Deposit resource's `can_reverse_receipt` and the ledger's
+`can_reverse` are always false, so no event offers a one-call reverse route.
+
 ## API-094 — Active-Lease Pet Deposit Refund Qualification
 
 - `POST /leases/{lease_id}/pet-departures`

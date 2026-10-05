@@ -1474,6 +1474,17 @@ NOT NULL`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`,
 Deposit disposition, application, or Refund remains active. It removes the receipt's
 derived liability effect without altering the original receipt.
 
+As built in V1-056 sub-slice 8r (migration `20261022_87`, owner answer to
+Q-2026-10-05-22): a receipt reversal is a financial draft (kind `DEPOSIT_FORFEITURE`,
+variant `DEPOSIT_RECEIPT_REVERSAL`, prepared under `deposits.correct`), and only
+`app.confirm_deposit_receipt_reversal_draft` with the `financial.approve` reference
+posts it, by running the earlier reversal function with the approver as actor; the
+financial role no longer executes the one-call function. A reversal is also refused
+while a `REFUND` or `DEPOSIT_FORFEITURE` draft for that Deposit is pending (its payload
+names the Deposit or its Reservation); the Final Settlement drafts (V1-056 8c, 8e) must
+extend this check. The row names the approver with the `deposits.correct` reference;
+the draft decision records `financial.approve`.
+
 ## DB-DEP-008 — `deposit_disposition_reversals`
 
 Append-only: `id uuid PK`, `deposit_disposition_id uuid NOT NULL UNIQUE FK`, `reason

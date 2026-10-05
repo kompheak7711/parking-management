@@ -13,6 +13,7 @@ from alembic.config import Config
 from alembic.script import ScriptDirectory
 
 from deposit_disposition_test_support import disposition_context, terminate_for_disposition
+from deposit_receipt_reversal_test_support import reverse_receipt_as_owner
 from lease_deposit_forfeiture_test_support import (
     record_disposition_as_owner,
     reverse_disposition_as_owner,
@@ -675,8 +676,10 @@ def test_ledger_pet_receipt_requirement_disposition_and_reversals_remain_separat
         ),
         actor=staff,
     )
-    service.reverse_receipt(
-        ReverseDepositReceiptCommand(uuid4(), uuid4(), receipt, "Wrong receipt"), actor=staff
+    reverse_receipt_as_owner(
+        service,
+        ReverseDepositReceiptCommand(uuid4(), uuid4(), receipt, "Wrong receipt"),
+        actor=staff,
     )
     with psycopg.connect(migrated_database_url) as connection:
         assert assert_reconciled(connection, customer) == LedgerPosition(payment=20000)
@@ -785,7 +788,7 @@ def test_ledger_forward_projection_upgrade_preserves_populated_predecessor(
 ) -> None:
     config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
     scripts = ScriptDirectory.from_config(config)
-    assert scripts.get_heads() == ["20261021_86"]
+    assert scripts.get_heads() == ["20261022_87"]
     revision = scripts.get_revision("20260909_48")
     assert revision is not None
     assert revision.down_revision == "20260908_47"

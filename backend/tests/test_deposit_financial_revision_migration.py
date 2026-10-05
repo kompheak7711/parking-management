@@ -13,6 +13,7 @@ from psycopg import Connection
 from psycopg.conninfo import conninfo_to_dict, make_conninfo
 
 from deposit_disposition_test_support import disposition_context
+from deposit_receipt_reversal_test_support import reverse_receipt_as_owner
 from lease_deposit_forfeiture_test_support import (
     record_disposition_as_owner,
     reverse_through_draft,
@@ -104,12 +105,12 @@ def test_required_corrections_and_receipt_reversal_advance_even_at_original_net_
     assert paid.disposition_state_version == initial.disposition_state_version + 3
     assert paid.received_usd_cents == paid.held_refundable_usd_cents == 5000
     reversal = ReverseDepositReceiptCommand(uuid4(), uuid4(), receipt, "Synthetic correction")
-    replay = deposits.reverse_receipt(reversal, actor=authority)
+    replay = reverse_receipt_as_owner(deposits, reversal, actor=authority)
     corrected = observe(human, prop, lease, pet)
     assert corrected.disposition_state_version == initial.disposition_state_version + 4
     assert corrected.received_usd_cents == corrected.held_refundable_usd_cents == 0
     assert corrected.version == initial.version
-    assert deposits.reverse_receipt(reversal, actor=authority) == replay
+    assert reverse_receipt_as_owner(deposits, reversal, actor=authority) == replay
     assert observe(human, prop, lease, pet) == corrected
     assert observe(human, prop, lease, security) == separate
 

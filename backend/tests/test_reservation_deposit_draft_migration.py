@@ -23,6 +23,7 @@ from alembic import command
 from alembic.config import Config
 from psycopg import Error
 
+from lease_deposit_forfeiture_test_support import owner_database_url
 from property_rental.deposit_api import PostgresDepositResourceFlow
 from property_rental.financial_draft import FinancialDraftService
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
@@ -445,7 +446,9 @@ def reverse_receipt(property_id: UUID, actor_id: UUID, reservation_id: UUID) -> 
             (reservation_id,),
         ).fetchone()
     assert receipt is not None
-    with psycopg.connect(financial_database_url()) as financial:
+    # Since sub-slice 8r a receipt reversal is a draft and the financial role cannot run the
+    # one-call function; the owner runs it so its pending-draft guard is still tested here.
+    with psycopg.connect(owner_database_url(financial_database_url())) as financial:
         financial.execute(
             "SELECT app.reverse_deposit_receipt_v2(%s,%s,%s,%s,%s,%s,%s,%s)",
             (

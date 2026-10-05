@@ -353,7 +353,10 @@ def test_linked_reversals_and_split_pet_refund_qualification_preserve_sources() 
         json={"reversal_id": str(uuid4()), "reason": "Verified duplicate"},
         headers=mutation_headers(),
     )
-    assert reversed_receipt.status_code == 200
+    # V1-056 sub-slice 8r: a receipt reversal is a draft; this route records nothing.
+    assert reversed_receipt.status_code == 409
+    assert reversed_receipt.json()["error"]["code"] == "DEPOSIT_RECEIPT_REVERSAL_DRAFT_REQUIRED"
+    assert flow.last_command is None
     departure_id = uuid4()
     departure = api.post(
         f"/api/v1/leases/{lease_id}/pet-departures",
@@ -382,6 +385,31 @@ def test_linked_reversals_and_split_pet_refund_qualification_preserve_sources() 
     assert review.status_code == 201
     assert review.json()["data"]["refund_qualified"] is True
     assert review.headers["location"].endswith(str(flow.value.pet_refund_review_id))
+
+
+def test_receipt_reverse_route_checks_access_and_csrf_before_the_draft_refusal() -> None:
+    property_id = uuid4()
+    flow = InMemoryDepositFlow(snapshot(property_id, deposit_type=DepositType.PET))
+    payload = {"reversal_id": str(uuid4()), "reason": "Verified duplicate"}
+    route = f"/api/v1/deposit-receipts/{flow.receipt_id}/reverse"
+    denied = client(flow, actor(property_id, "deposits.read")).post(
+        route, json=payload, headers=mutation_headers()
+    )
+    assert denied.status_code == 404
+    missing_csrf = client(flow, actor(property_id, "deposits.read", "deposits.correct")).post(
+        route,
+        json=payload,
+        headers={"Origin": "https://localhost", "Idempotency-Key": str(uuid4())},
+    )
+    assert missing_csrf.status_code == 403
+    refused = client(flow, actor(property_id, "deposits.read", "deposits.correct")).post(
+        route, json=payload, headers=mutation_headers()
+    )
+    assert refused.status_code == 409
+    assert refused.json()["error"]["code"] == "DEPOSIT_RECEIPT_REVERSAL_DRAFT_REQUIRED"
+    assert refused.json()["error"]["rule_ids"] == ["BR-AUTH-010"]
+    assert refused.headers["cache-control"] == "private, no-store"
+    assert flow.last_command is None
 
 
 def test_mutations_conceal_cross_property_targets_before_command_execution() -> None:
@@ -498,5 +526,6 @@ def test_reservation_disposition_correction_requires_replacement_and_exact_capab
         InMemoryDepositFlow(value),
         actor(property_id, "deposits.read", "deposits.correct"),
     ).get(f"/api/v1/deposits/{value.deposit_id}")
-    assert split_capabilities.json()["data"]["can_reverse_receipt"] is True
+    # V1-056 sub-slice 8r: no one-call receipt reversal is offered, even to deposits.correct.
+    assert split_capabilities.json()["data"]["can_reverse_receipt"] is False
     assert "can_reverse_disposition" not in split_capabilities.json()["data"]

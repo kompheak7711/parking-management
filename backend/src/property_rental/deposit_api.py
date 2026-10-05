@@ -28,6 +28,7 @@ from property_rental.deposit import (
     DepositIdempotencyKeyReused,
     DepositInvalidError,
     DepositNotFoundError,
+    DepositReceiptReversalDraftRequired,
     DepositServiceUnavailableError,
     DepositSnapshot,
     LeaseDepositDraftRequired,
@@ -826,7 +827,14 @@ def _translate(exc: Exception) -> Exception:
         return exc
     if isinstance(exc, HTTPException):
         return exc
-    if isinstance(exc, (ReservationDepositDraftRequired, LeaseDepositDraftRequired)):
+    if isinstance(
+        exc,
+        (
+            ReservationDepositDraftRequired,
+            LeaseDepositDraftRequired,
+            DepositReceiptReversalDraftRequired,
+        ),
+    ):
         return exc
     if isinstance(exc, (DepositResourceNotFound, DepositNotFoundError)):
         return HTTPException(status_code=status.HTTP_404_NOT_FOUND)
@@ -871,13 +879,9 @@ def _snapshot_body(value: DepositSnapshot, actor: AuthenticatedActor) -> dict[st
                     capability=DEPOSIT_MANAGE_CAPABILITY, property_id=str(value.property_id)
                 ),
             ),
-            "can_reverse_receipt": is_authorized(
-                actor,
-                AuthorizationRequirement(
-                    capability=DEPOSIT_CORRECT_CAPABILITY,
-                    property_id=str(value.property_id),
-                ),
-            ),
+            # A receipt reversal is a draft (owner answer to Q-2026-10-05-22, sub-slice 8r);
+            # no one-call reverse route is offered.
+            "can_reverse_receipt": False,
             "can_qualify_pet_refund": is_authorized(
                 actor,
                 AuthorizationRequirement(
@@ -897,20 +901,10 @@ def _ledger_body(
 ) -> dict[str, object]:
     result = asdict(value)
     result.pop("reversal_eligible")
-    can_reverse = False
-    if value.reversal_eligible and value.event_kind == "RECEIPT":
-        can_reverse = is_authorized(
-            actor,
-            AuthorizationRequirement(
-                capability=DEPOSIT_CORRECT_CAPABILITY, property_id=str(property_id)
-            ),
-        )
-    elif value.reversal_eligible and value.event_kind == "DISPOSITION":
-        # A Reservation disposition is corrected only through a correction draft (V1-056 3b);
-        # a Lease forfeiture reversal is a draft too (Q-2026-10-04-13, slice 6b), so no
-        # disposition offers the one-call reverse route.
-        can_reverse = False
-    result["can_reverse"] = can_reverse
+    # A Reservation disposition is corrected only through a correction draft (V1-056 3b); a
+    # Lease forfeiture reversal is a draft (Q-2026-10-04-13, slice 6b) and so is a receipt
+    # reversal (Q-2026-10-05-22, sub-slice 8r), so no event offers a one-call reverse route.
+    result["can_reverse"] = False
     return result
 
 
@@ -1057,19 +1051,10 @@ def create_deposit_router(
             property_id = flow.property_for_receipt(receipt_id)
             _require(actor, property_id, DEPOSIT_CORRECT_CAPABILITY)
             require_browser_mutation(request, settings)
-            value = flow.reverse_receipt(
-                receipt_id,
-                ReverseDepositReceiptCommand(
-                    idempotency_key, source.reversal_id, receipt_id, source.reason
-                ),
-                actor=actor,
-            )
+            # V1-056 sub-slice 8r (Q-2026-10-05-22): a receipt reversal is a draft.
+            raise DepositReceiptReversalDraftRequired("Deposit receipt reversal draft required")
         except Exception as exc:
             raise _translate(exc) from exc
-        return {
-            "data": _snapshot_body(value, actor),
-            "meta": {"request_id": request.state.request_id},
-        }
 
     @router.post("/deposit-dispositions/{disposition_id}/reverse")
     def reverse_disposition_route(

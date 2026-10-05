@@ -42,7 +42,8 @@ class FinancialDraftState(StrEnum):
 # forfeiture drafts and the reverse.
 KIND_PREPARE_CAPABILITIES: Final[dict[FinancialDraftKind, frozenset[str]]] = {
     FinancialDraftKind.REFUND: frozenset({"refunds.create", "reservation_deposits.refund"}),
-    # deposits.correct prepares a Lease forfeiture reversal draft (V1-056 sub-slice 6b).
+    # deposits.correct prepares a Lease forfeiture reversal draft (V1-056 sub-slice 6b) and a
+    # Deposit receipt reversal draft (V1-056 sub-slice 8r).
     FinancialDraftKind.DEPOSIT_FORFEITURE: frozenset(
         {"deposits.dispose", "reservation_deposits.dispose", "deposits.correct"}
     ),
