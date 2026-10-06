@@ -117,4 +117,6 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md.
 
 - V1-056 sub-slice 8g (2026-10-06, 3e22cfe, migration 20261031_96): COMMITTED. Owner answers to the 8f report recorded (23505 stays a conflict; Q-2026-10-06-35 yes; new run rule: one static check per tool call). The one-call Credit reversal is refused (P4904, a conflict) for every Credit a credit Adjustment released to a Customer other than the payer; consequence for the owner: a third-party Payment with such a Credit cannot be reversed until a controlled path exists. Mistaken credit Adjustment: no draft-based fix exists; reversal draft added to slice 10. Rounds 1 and 2 (independent and security), round 2 no should-fix; unit 3498 (U1), PostgreSQL 1878 (P1), no correction. NEXT: slice 10 design only (owner). Nothing pushed.
 
+- V1-056 slice 10 (2026-10-06, 5c7906f): DESIGN ONLY, committed. Design note and sub-slices 10a to 10f in ops/V1_056_PLAN.md; read-only path search (one-call allocation and Credit application reversals, Payment move and forfeiture reversal drafts still change a closed Settlement's money); seven open points in Q-2026-10-06-36. STOPPED: no slice 10 code until the owner answers. Nothing pushed.
+
 - Updated: 2026-10-06.
