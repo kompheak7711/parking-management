@@ -2060,6 +2060,26 @@ inside itself (`SET CONSTRAINTS ALL IMMEDIATE`) once every linked record is writ
 Invoice writers do. No Late-payment Charge follows: the 8e-1 refusal of Late-payment Decisions
 stays.
 
+As built in V1-056 sub-slice 10c-1a (migration `20261103_99`): the `CHARGE_REDUCTION` correction
+removes a wrong charge that is still unpaid. Staff record a `SETTLEMENT_CORRECTION` draft with
+`payload.variant` `CHARGE_REDUCTION` under `final_settlements.prepare`
+(`app.record_settlement_charge_reduction_draft`: an issued, non-VOID Invoice of the Settlement's
+Lease, one of its lines and an amount in cents of at most the line's unpaid rest; the reason is
+at most 500 characters because the Adjustment keeps it); only a `financial.approve` holder
+confirms it (`app.confirm_settlement_charge_reduction`), which writes, linked
+(`invoice_adjustment_id`), a credit Adjustment of that line authorized by the approver under
+`financial.approve`, with `source_reference` `settlement-correction:<correction id>`; the
+Adjustment follows its Invoice's Customer (BR-INV-045). A reduction that would release paid
+value is refused (a `REFUND` correction, sub-slice 10c-1b), and an Invoice that a Deposit
+application paid stays refused (DB-DEP-005; sub-slice 10c-2). A draft whose line changed since it
+was recorded (a Payment, a Credit, an Adjustment, the Invoice's issue state or Deposit
+applications) is stale (P5S02) and stays pending. The confirm locks the Invoice before the
+Settlement row (the order of the 8e-1 refusal), runs only at READ COMMITTED, gives the Adjustment
+a fresh id, and its result never returns the decision's transaction id. The text
+`settlement-correction:<correction id>` is a label, not a reserved key: an ordinary Adjustment of
+an open Lease may carry the same text, so the link in this table, not the label, shows which
+Adjustment a correction wrote.
+
 ## DB-SETTLE-006 — `settlement_invoice_line_items`
 
 Immutable line-aware closure membership/snapshot: `id uuid PK`,

@@ -9,6 +9,10 @@ Sub-slice 10b: the ``EXTRA_CHARGE`` variant, a missed amount billed after closur
 Miscellaneous or Damage charge (BR-INV-044) on a new issued Invoice with the Lease. It goes to the
 Customer of the corrected Invoice when the draft names one, otherwise to the Primary Tenant
 (BR-SETTLE-016; owner answer 6 to Q-2026-10-06-36). The HTTP routes come in slice 11e.
+
+Sub-slice 10c-1a: the ``CHARGE_REDUCTION`` variant, a wrong charge that is still unpaid removed by
+a credit Adjustment of its Invoice line (owner answer 1 to Q-2026-10-06-36). The amount is at most
+the line's unpaid rest; releasing paid value is a ``REFUND`` correction.
 """
 
 from __future__ import annotations
@@ -38,6 +42,8 @@ SETTLEMENT_CORRECTION_DRAFT_NAMESPACE: Final = UUID("0b6f6d2e-4c1a-4f0e-9a57-3d8
 # confirms on one Lease are serialized by the database locks, so a finding billed by the other is
 # seen as a changed source; any other refusal keeps the Final Settlement error mapping.
 EXTRA_CHARGE_CONFIRM_STALE_STATES: Final = frozenset({"P5S02"})
+# A charge reduction whose line changed since the draft (a Payment, Credit or Adjustment) is stale.
+CHARGE_REDUCTION_CONFIRM_STALE_STATES: Final = frozenset({"P5S02"})
 
 
 def settlement_correction_draft_id(
@@ -145,6 +151,43 @@ class RecordExtraChargeCorrectionCommand:
 
 
 @dataclass(frozen=True, slots=True)
+class RecordChargeReductionCorrectionCommand:
+    """A wrong charge still unpaid after closure; the database checks it against current state.
+
+    The credit Adjustment reduces one line of an issued Invoice of the Settlement's Lease by at most
+    the line's unpaid rest. The reason is at most 500 characters, because the Adjustment keeps it.
+    """
+
+    idempotency_key: UUID
+    settlement_id: UUID
+    invoice_id: UUID
+    invoice_line_id: UUID
+    amount_usd_cents: int
+    reason: str
+
+    def __post_init__(self) -> None:
+        _uuid(self.idempotency_key, "idempotency_key")
+        _uuid(self.settlement_id, "settlement_id")
+        _uuid(self.invoice_id, "invoice_id")
+        _uuid(self.invoice_line_id, "invoice_line_id")
+        if (
+            type(self.amount_usd_cents) is not int
+            or not 1 <= self.amount_usd_cents <= MAX_USD_CENTS
+        ):
+            raise FinalSettlementInvalidError(
+                "amount_usd_cents must be a positive whole number of cents"
+            )
+        _text(self.reason, "reason", 500)
+
+    def reduction(self) -> dict[str, object]:
+        return {
+            "invoice_id": str(self.invoice_id),
+            "invoice_line_id": str(self.invoice_line_id),
+            "amount_usd_cents": self.amount_usd_cents,
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class SettlementCorrectionService:
     """Commands under the financial role; capabilities are checked before any connection."""
 
@@ -206,4 +249,58 @@ class SettlementCorrectionService:
             "SELECT app.confirm_settlement_extra_charge(%s,%s,%s,%s)",
             (property_id, actor_id, draft_id, FINANCIAL_APPROVE_CAPABILITY),
             stale=EXTRA_CHARGE_CONFIRM_STALE_STATES,
+        )
+
+    def record_charge_reduction(
+        self,
+        property_id: UUID,
+        command: RecordChargeReductionCorrectionCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        """Record a charge reduction correction draft; it has no effect until confirmed."""
+        actor_id = FinalSettlementService._authorize(
+            actor, property_id, FINAL_SETTLEMENTS_PREPARE_CAPABILITY
+        )
+        if not isinstance(command, RecordChargeReductionCorrectionCommand):
+            raise FinalSettlementInvalidError("Charge reduction correction command is invalid")
+        request = RecordChargeReductionCorrectionCommand(
+            command.idempotency_key,
+            command.settlement_id,
+            command.invoice_id,
+            command.invoice_line_id,
+            command.amount_usd_cents,
+            command.reason,
+        )
+        return FinalSettlementService(self.financial_database_url)._call(
+            "SELECT app.record_settlement_charge_reduction_draft(%s,%s,%s,%s,%s,%s,%s)",
+            (
+                property_id,
+                actor_id,
+                settlement_correction_draft_id(property_id, actor_id, request.idempotency_key),
+                request.settlement_id,
+                Jsonb(request.reduction()),
+                request.reason,
+                FINAL_SETTLEMENTS_PREPARE_CAPABILITY,
+            ),
+        )
+
+    def confirm_charge_reduction(
+        self, property_id: UUID, draft_id: UUID, *, actor: AuthenticatedActor
+    ) -> dict[str, object]:
+        """Confirm a pending charge reduction correction (financial.approve only).
+
+        A draft whose line changed since it was recorded is stale and stays pending; an exact
+        repeat by the same approver writes nothing and returns the result again, rebuilt from the
+        stored records (the Invoice as it is now). The result never returns the decision's
+        transaction id; the general draft reads still do until slice 11e.
+        """
+        actor_id = FinalSettlementService._authorize(
+            actor, property_id, FINANCIAL_APPROVE_CAPABILITY
+        )
+        _uuid(draft_id, "draft_id")
+        return FinalSettlementService(self.financial_database_url)._call(
+            "SELECT app.confirm_settlement_charge_reduction(%s,%s,%s,%s)",
+            (property_id, actor_id, draft_id, FINANCIAL_APPROVE_CAPABILITY),
+            stale=CHARGE_REDUCTION_CONFIRM_STALE_STATES,
         )

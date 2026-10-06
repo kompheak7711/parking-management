@@ -38124,6 +38124,109 @@
       "test_path": "backend/tests/test_settlement_extra_charge_migration.py",
       "status": "implemented",
       "notes": "Only the financial role may record or confirm an extra charge correction; the internal functions and the changed refusals are definer functions no role may call; the new link is a deferrable, unique foreign key inside the one-link check; no 10b function has a time limit (BR-SETTLE-013); the migration is forward-only and adds only the listed functions (V1-056 sub-slice 10b)."
+    },
+    {
+      "test_id": "test_a_charge_reduction_is_recorded_by_staff_and_confirmed_only_by_an_approver",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-SETTLE-013"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "Only final_settlements.prepare records a charge reduction correction and only financial.approve on the Property confirms it, both checked before any connection; the Adjustment capability alone does neither (V1-056 sub-slice 10c-1a)."
+    },
+    {
+      "test_id": "test_the_charge_reduction_command_refuses_malformed_input",
+      "upstream_ids": [
+        "BR-SETTLE-013"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "The charge reduction command needs nonzero ids, whole positive cents within the cap and a reason of at most 500 characters (V1-056 sub-slice 10c-1a)."
+    },
+    {
+      "test_id": "test_charge_reduction_record_and_confirm_send_the_stored_reduction",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-AUTH-010"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "The service records the reduction in its stored form under final_settlements.prepare with the command-key draft id and confirms under financial.approve (V1-056 sub-slice 10c-1a)."
+    },
+    {
+      "test_id": "test_charge_reduction_failures_map_to_stable_errors",
+      "upstream_ids": [
+        "BR-SETTLE-013"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "A stale charge reduction draft is a stale-draft conflict at confirm; business state and unique violations are conflicts; authorization, not-found, invalid and key-reuse refusals keep the Final Settlement mapping (V1-056 sub-slice 10c-1a)."
+    },
+    {
+      "test_id": "test_a_charge_reduction_removes_an_unpaid_wrong_charge_through_a_linked_credit_adjustment",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-SETTLE-012",
+        "BR-INV-045",
+        "BR-AUTH-010",
+        "DB-SETTLE-003",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_charge_reduction_migration.py",
+      "status": "implemented",
+      "notes": "A wrong unpaid charge after closure is removed by a confirmed CHARGE_REDUCTION correction: a linked credit Adjustment on the Invoice Customer's ledger; Staff cannot confirm; an open Settlement, a DRAFT or foreign Invoice, a line of another Invoice and a reduction of paid value are refused; the Settlement row is unchanged; an exact repeat replays; the one-call Adjustment stays refused (V1-056 sub-slice 10c-1a; owner answer 1 to Q-2026-10-06-36)."
+    },
+    {
+      "test_id": "test_a_partly_paid_line_is_reduced_within_its_unpaid_rest_and_a_changed_line_is_stale",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_charge_reduction_migration.py",
+      "status": "implemented",
+      "notes": "A partly paid line is reduced by at most its unpaid rest; a draft whose line changed (another reduction, a later Payment) is stale and stays pending; the confirm runs only at READ COMMITTED; a reused draft key is refused (V1-056 sub-slice 10c-1a)."
+    },
+    {
+      "test_id": "test_an_invoice_paid_by_a_deposit_application_takes_no_charge_reduction_yet",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "DB-DEP-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_charge_reduction_migration.py",
+      "status": "implemented",
+      "notes": "An Invoice that a Deposit application paid takes no charge reduction until sub-slice 10c-2 (the 8a-1 refusal stays) (V1-056 sub-slice 10c-1a)."
+    },
+    {
+      "test_id": "test_another_signers_reduction_stays_on_that_signer_and_the_variants_do_not_cross",
+      "upstream_ids": [
+        "BR-INV-045",
+        "BR-SETTLE-016",
+        "BR-SETTLE-013",
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_charge_reduction_migration.py",
+      "status": "implemented",
+      "notes": "A reduction of another Signer's Invoice is that Signer's Adjustment on that Signer's ledger; the charge reduction and extra charge confirms refuse each other's drafts and a draft key of one variant is refused for the other; an unknown Property and a service identity cannot confirm (V1-056 sub-slice 10c-1a, review round 1)."
+    },
+    {
+      "test_id": "test_charge_reduction_functions_are_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-SETTLE-013"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_charge_reduction_migration.py",
+      "status": "implemented",
+      "notes": "Only the financial role may record or confirm a charge reduction correction; the internal functions are definer functions no role may call; no 10c-1a function has a time limit; the migration is forward-only, adds only the listed functions and changes no earlier function (V1-056 sub-slice 10c-1a)."
     }
   ]
 }

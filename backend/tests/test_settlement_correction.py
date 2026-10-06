@@ -1,6 +1,7 @@
-"""V1-056 sub-slice 10b: the extra charge correction service checks the capability before any
-connection (final_settlements.prepare records, only financial.approve confirms, BR-AUTH-010),
-validates the command, and maps every database refusal to a stable error."""
+"""V1-056 sub-slices 10b and 10c-1a: the extra charge and charge reduction correction services
+check the capability before any connection (final_settlements.prepare records, only
+financial.approve confirms, BR-AUTH-010), validate the command, and map every database refusal to
+a stable error."""
 
 from dataclasses import replace
 from datetime import date, datetime
@@ -23,6 +24,7 @@ from property_rental.final_settlement import (
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
 from property_rental.settlement_correction import (
     ExtraChargeCategory,
+    RecordChargeReductionCorrectionCommand,
     RecordExtraChargeCorrectionCommand,
     SettlementCorrectionService,
     settlement_correction_draft_id,
@@ -34,6 +36,7 @@ DRAFT = UUID(int=21)
 SETTLEMENT = UUID(int=31)
 FINDING = UUID(int=41)
 INVOICE = UUID(int=51)
+LINE = UUID(int=52)
 KEY = UUID(int=61)
 
 
@@ -257,4 +260,180 @@ def test_failures_map_to_stable_errors(
         assert isinstance(refused.value, FinalSettlementConflictError)
     with pytest.raises(record_error) as recorded:
         service.record_extra_charge(PROPERTY, command(), actor=person("final_settlements.prepare"))
+    assert type(recorded.value) is record_error and recorded.value.__cause__ is failure
+
+
+def reduction(**changes: Any) -> RecordChargeReductionCorrectionCommand:
+    base = RecordChargeReductionCorrectionCommand(
+        KEY,
+        SETTLEMENT,
+        INVOICE,
+        LINE,
+        2_500,
+        "The window latch was charged at the wrong amount",
+    )
+    return replace(base, **changes)
+
+
+def test_a_charge_reduction_is_recorded_by_staff_and_confirmed_only_by_an_approver(
+    no_connection: None,
+) -> None:
+    """BR-AUTH-010 (sub-slice 10c-1a): final_settlements.prepare records a charge reduction and
+    only financial.approve confirms it, before any connection; the Adjustment capability alone
+    does neither."""
+    service = SettlementCorrectionService("unused")
+    for actor in (
+        person(),
+        person("financial.approve"),
+        person("invoices.adjust", "invoices.void"),
+        person("final_settlements.prepare", actor_id="not-a-uuid"),
+    ):
+        with pytest.raises(FinalSettlementAuthorizationError):
+            service.record_charge_reduction(PROPERTY, reduction(), actor=actor)
+    for actor in (
+        person(),
+        person("final_settlements.prepare"),
+        person("invoices.adjust"),
+        person("financial.approve", actor_id=str(UUID(int=0))),
+    ):
+        with pytest.raises(FinalSettlementAuthorizationError):
+            service.confirm_charge_reduction(PROPERTY, DRAFT, actor=actor)
+    with pytest.raises(FinalSettlementInvalidError):
+        service.confirm_charge_reduction(PROPERTY, UUID(int=0), actor=person("financial.approve"))
+    with pytest.raises(FinalSettlementInvalidError):
+        service.record_charge_reduction(
+            PROPERTY,
+            command(),  # type: ignore[arg-type]
+            actor=person("final_settlements.prepare"),
+        )
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"idempotency_key": UUID(int=0)},
+        {"settlement_id": "not-a-uuid"},
+        {"invoice_id": UUID(int=0)},
+        {"invoice_line_id": str(LINE)},
+        {"amount_usd_cents": 0},
+        {"amount_usd_cents": -1},
+        {"amount_usd_cents": 25.0},
+        {"amount_usd_cents": True},
+        {"amount_usd_cents": 9_000_000_000_000_001},
+        {"reason": ""},
+        {"reason": " padded"},
+        {"reason": "x" * 501},
+    ],
+)
+def test_the_charge_reduction_command_refuses_malformed_input(changes: dict[str, Any]) -> None:
+    """Money in whole positive cents within the cap; the reason fits the Adjustment (500)."""
+    with pytest.raises(FinalSettlementInvalidError):
+        reduction(**changes)
+
+
+def test_charge_reduction_record_and_confirm_send_the_stored_reduction(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[tuple[object, ...]] = []
+
+    class Connection:
+        read_only: bool | None = None
+
+        def __enter__(self) -> "Connection":
+            return self
+
+        def __exit__(self, *args: object) -> None:
+            return None
+
+        def execute(self, sql: str, parameters: tuple[object, ...] = ()) -> "Connection":
+            calls.append((sql, parameters))
+            return self
+
+        def fetchone(self) -> tuple[dict[str, object]]:
+            return ({"draft_id": str(DRAFT)},)
+
+    def connect(url: str, **kwargs: object) -> Connection:
+        calls.append(("connect", url))
+        return Connection()
+
+    monkeypatch.setattr(psycopg, "connect", connect)
+    service = SettlementCorrectionService("financial-url")
+    assert service.record_charge_reduction(
+        PROPERTY, reduction(), actor=person("final_settlements.prepare")
+    ) == {"draft_id": str(DRAFT)}
+    assert calls[0] == ("connect", "financial-url")
+    sql, parameters = calls[-1]
+    assert sql == "SELECT app.record_settlement_charge_reduction_draft(%s,%s,%s,%s,%s,%s,%s)"
+    assert isinstance(parameters, tuple)
+    assert parameters[:4] == (
+        PROPERTY,
+        HUMAN,
+        settlement_correction_draft_id(PROPERTY, HUMAN, KEY),
+        SETTLEMENT,
+    )
+    stored = parameters[4]
+    assert isinstance(stored, Jsonb)
+    assert stored.obj == {
+        "invoice_id": str(INVOICE),
+        "invoice_line_id": str(LINE),
+        "amount_usd_cents": 2_500,
+    }
+    assert parameters[5:] == (
+        "The window latch was charged at the wrong amount",
+        "final_settlements.prepare",
+    )
+    calls.clear()
+    assert service.confirm_charge_reduction(PROPERTY, DRAFT, actor=person("financial.approve")) == {
+        "draft_id": str(DRAFT)
+    }
+    assert calls[-1] == (
+        "SELECT app.confirm_settlement_charge_reduction(%s,%s,%s,%s)",
+        (PROPERTY, HUMAN, DRAFT, "financial.approve"),
+    )
+
+
+@pytest.mark.parametrize(
+    ("sqlstate", "confirm_error", "record_error"),
+    [
+        ("P5S02", FinalSettlementStaleDraftError, FinalSettlementUnavailableError),
+        ("23505", FinalSettlementConflictError, FinalSettlementConflictError),
+        ("55000", FinalSettlementConflictError, FinalSettlementConflictError),
+        ("P5S01", FinalSettlementConflictError, FinalSettlementConflictError),
+        ("40P01", FinalSettlementConflictError, FinalSettlementConflictError),
+        ("42501", FinalSettlementAuthorizationError, FinalSettlementAuthorizationError),
+        ("P4506", FinalSettlementAuthorizationError, FinalSettlementAuthorizationError),
+        ("P0002", FinalSettlementNotFoundError, FinalSettlementNotFoundError),
+        ("22023", FinalSettlementInvalidError, FinalSettlementInvalidError),
+        ("23514", FinalSettlementInvalidError, FinalSettlementInvalidError),
+        ("P5205", FinalSettlementKeyReused, FinalSettlementKeyReused),
+        (None, FinalSettlementUnavailableError, FinalSettlementUnavailableError),
+    ],
+)
+def test_charge_reduction_failures_map_to_stable_errors(
+    monkeypatch: pytest.MonkeyPatch,
+    sqlstate: str | None,
+    confirm_error: type[Exception],
+    record_error: type[Exception],
+) -> None:
+    """A reduction whose line changed since the draft is stale and stays pending; a release of
+    paid value, an open Settlement or a Deposit application is a conflict."""
+
+    class Failure(psycopg.Error):
+        pass
+
+    failure = Failure("Synthetic failure")
+    failure.sqlstate = sqlstate
+
+    def connect(*args: object, **kwargs: object) -> None:
+        raise failure
+
+    monkeypatch.setattr(psycopg, "connect", connect)
+    service = SettlementCorrectionService("unused")
+    with pytest.raises(confirm_error) as refused:
+        service.confirm_charge_reduction(PROPERTY, DRAFT, actor=person("financial.approve"))
+    assert type(refused.value) is confirm_error and refused.value.__cause__ is failure
+    with pytest.raises(record_error) as recorded:
+        service.record_charge_reduction(
+            PROPERTY, reduction(), actor=person("final_settlements.prepare")
+        )
     assert type(recorded.value) is record_error and recorded.value.__cause__ is failure

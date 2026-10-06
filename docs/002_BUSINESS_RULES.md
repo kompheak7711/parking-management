@@ -4187,6 +4187,8 @@ no automatic Pet Deposit forfeiture. Its Due Date follows BR-INV-018.
 
 Amended by DL-068 and DL-069 (2026-10-03): the Unit cleaning charge in BR-MOVEOUT-013 is an approved move-out charge and is not an invented fee.
 
+Amended by the owner's answer to the V1-056 sub-slice 10b report (2026-10-07): after the Final Settlement is closed, a Damage charge is billed only as a post-settlement correction (BR-SETTLE-013). Staff prepare it under the Final Settlement preparer capability, and a holder of `financial.approve` confirms and authorizes it, like every correction; the Damage-charge capability is not used for it. The other rules of this section still apply: a recorded inspection damage finding, billed at most once, matching the finding's Customer, Lease and Unit, with the amount, a reason and an evidence reference.
+
 ---
 
 ## BR-MOVEOUT-007 — Normal Lease End
@@ -4528,6 +4530,8 @@ linked financial correction. The closed Settlement and original financial events
 are not reopened or rewritten.
 
 Amended by DL-068 and DL-069 (2026-10-03): a finalized Final Settlement is never reopened. A later fix is a new linked post-settlement correction (extra charge or Refund) with a reason. There is no time limit for post-settlement corrections.
+
+Amended by the owner's answers to Q-2026-10-06-36 and Q-2026-10-06-37 (2026-10-06 and 2026-10-07): the post-settlement correction kinds are the extra charge, the charge reduction (a credit Adjustment that removes a wrong charge that is still unpaid), the Refund, the returned Payment, the Adjustment reversal, the forfeiture reversal and the Payment move. Each needs a reason; Staff prepare it, and only a holder of `financial.approve` confirms it.
 
 ---
 
