@@ -1288,7 +1288,8 @@ def test_credit_of_another_customer_from_a_moved_payment_is_not_refunded_to_the_
     credit_adjustment(url, case.human, case.prop, case.invoice_right, case.line_right, 5_000)
     credit = released_credit(url, case.payment)
     # Existing Refund rules pay a Credit Refund only to the Payment's payer, who must also own the
-    # Credit; a Refund to the Invoice Customer is planned for slice 9 (Q-2026-10-05-19).
+    # Credit; the Refund to the Invoice Customer is the CREDIT_CUSTOMER draft of V1-056 sub-slice 8f
+    # (Q-2026-10-05-19).
     with pytest.raises((RefundConflictError, RefundInvalidError, RefundUnavailableError)):
         create_usd_refund(
             RefundService(runtime_database_url(), financial_database_url()),

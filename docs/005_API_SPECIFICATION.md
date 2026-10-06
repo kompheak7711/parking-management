@@ -975,6 +975,11 @@ and answers 409 with error code `REFUND_DRAFT_REQUIRED`.
   off, the payer of a Payment source now has unpaid Invoices or Late-payment Charges,
   or a Pet Deposit source is no longer qualified; when another confirmation takes the same value at the same moment, the
   loser may get 503 instead and its draft also stays pending.
+  Amended by V1-056 sub-slice 8f (2026-10-06): a check violation at confirmation (SQLSTATE 23514;
+  for example that competing confirmation, or a Credit Refund draft whose Credit belongs to a
+  Customer other than the payer) or a unique violation (23505, a Refund id or number already
+  taken) answers 409 instead of 503; the command rolled back and the draft stays pending. A lock
+  timeout or a lost reply still answers 503.
 
 A Pet Deposit Refund draft may add `recipient_customer_id` (another signed Signer of the
 Lease) and `signer_agreement` (the written agreement of all Signers, 1 to 2,000
@@ -984,6 +989,13 @@ owner's ledger and names the paid Signer in `source_audit.paid_to_customer_id`.
 
 The Refund methods routes (BR-REFUND-014) and the Reservation Refund drafts come with
 later V1-056 slices.
+
+V1-056 sub-slice 8f (BR-CREDIT-014): a Customer Credit that a credit Adjustment released to a
+Customer other than the payer is refunded to that Customer through a `CREDIT_CUSTOMER` Refund
+draft (service `RefundService.record_credit_customer_draft`, capability `refunds.create`). No
+route records that draft yet (slice 11c); `POST /properties/{property_id}/refund-drafts/{draft_id}/confirm`
+confirms it like any Refund draft. An ordinary Credit Refund draft for such a Credit is refused at
+confirmation with 409.
 
 ## API-066 — Refund Correction
 

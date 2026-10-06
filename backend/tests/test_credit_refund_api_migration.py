@@ -509,7 +509,8 @@ def test_credit_refund_http_real_competing_refunds_cannot_double_consume_credit(
     assert all(isinstance(result, Response) for result in raw_responses)
     responses = cast(list[Response], raw_responses)
     assert sum(result.status_code == 201 for result in responses) == 1
-    assert all(result.status_code in {201, 422, 503} for result in responses)
+    # V1-056 sub-slice 8f: a check violation at confirmation answers 409 (the draft stays pending).
+    assert all(result.status_code in {201, 409, 422, 503} for result in responses)
     winner = next(i for i, result in enumerate(responses) if result.status_code == 201)
     original = value(responses[winner], 201)
     assert (

@@ -16,6 +16,7 @@ from payment_test_support import database_instant, seed_payment
 from property_rental.refund import (
     CreateUsdRefundCommand,
     RefundAuthorizationError,
+    RefundConflictError,
     RefundIdempotencyKeyReused,
     RefundNotFoundError,
     RefundPage,
@@ -293,7 +294,9 @@ def test_refund_service_concurrent_commands_replay_once_or_fail_closed(
         barrier.wait(timeout=5)
         try:
             return refund_id(create_usd_refund(service(), prop, command, actor=staff))
-        except RefundUnavailableError:
+        # V1-056 sub-slice 8f: a check violation at confirmation is a conflict (the draft stays
+        # pending), so the loser may also get RefundConflictError; no Refund is written for it.
+        except (RefundUnavailableError, RefundConflictError):
             return None
 
     with ThreadPoolExecutor(max_workers=2) as pool:

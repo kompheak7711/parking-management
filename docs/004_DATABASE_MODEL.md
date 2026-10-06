@@ -1227,7 +1227,7 @@ and cannot exceed its remaining balance or affect the source Invoice.
 
 ## DB-PAY-008 — `payment_moves`
 
-Append-only link of one confirmed wrong-Unit Payment move (BR-PAY-042, V1-056 slice 7, migration `20261020_85`): `id uuid PK`, `draft_id uuid NOT NULL UNIQUE FK financial_drafts`, `property_id`, `payment_id`, `source_allocation_id uuid NOT NULL UNIQUE FK payment_allocations`, `source_reversal_id uuid NOT NULL UNIQUE FK payment_allocation_reversals`, `source_reversed_by_move boolean NOT NULL`, `target_allocation_id uuid NOT NULL UNIQUE FK payment_allocations`, `source_invoice_id`, `target_invoice_id`, `moved_usd_cents bigint NOT NULL CHECK (>0)`, `source_acknowledgement` and `target_acknowledgement text NOT NULL` (1 to 2,000 characters: who acknowledged for each Customer, the date and how), `confirmed_at`, `confirmed_by`. Staff record a `PAYMENT_MOVE` draft under `payments.allocations.reverse` (`app.record_payment_move_draft`); a `financial.approve` holder confirms it (`app.confirm_payment_move_draft`), which in one transaction reverses the wrong Invoice allocation (unless the one-call reversal already did), posts the same Payment to the correct Invoice of another Unit and inserts this row; a deferred check requires the draft's CONFIRMED decision. The move is refused while the Payment has Customer Credit that is not reversed or a Refund that is not fully returned, and a draft is stale when the correct Invoice or the source changed. The Payment row and its Receipt never change. No runtime or financial role has table privileges. Update/delete is prohibited. The reversal and the new allocation share one instant, and one `payment_move.confirmed` audit event per move carries the draft id as its correlation id. The draft payload (both acknowledgements and the line split of the correct Invoice) must fit the 16,000-byte draft limit. The confirmation advances the correct Invoice's version even when its status is unchanged. A Customer Credit that a credit Adjustment released from a moved allocation is never reversed by the one-call Credit reversal unless the Payment is a normal Customer Payment and the Credit belongs to its payer (`customer_credit_reversals_moved_payment`, SQLSTATE P4904; owner answers to Q-2026-10-05-18 and Q-2026-10-05-19); otherwise it stays with its Customer. A Credit of a Customer other than the payer can only be applied to that Customer's Invoices or Late-payment Charges: the existing Refund rules pay a Credit Refund only to a recipient who is both the Credit's Customer and the payer, so its Refund to that Customer (BR-CREDIT-014) is planned for slice 9, as a Refund draft confirmed by `financial.approve`. A third-party payer's own Credit can still be refunded to the payer through a Refund draft.
+Append-only link of one confirmed wrong-Unit Payment move (BR-PAY-042, V1-056 slice 7, migration `20261020_85`): `id uuid PK`, `draft_id uuid NOT NULL UNIQUE FK financial_drafts`, `property_id`, `payment_id`, `source_allocation_id uuid NOT NULL UNIQUE FK payment_allocations`, `source_reversal_id uuid NOT NULL UNIQUE FK payment_allocation_reversals`, `source_reversed_by_move boolean NOT NULL`, `target_allocation_id uuid NOT NULL UNIQUE FK payment_allocations`, `source_invoice_id`, `target_invoice_id`, `moved_usd_cents bigint NOT NULL CHECK (>0)`, `source_acknowledgement` and `target_acknowledgement text NOT NULL` (1 to 2,000 characters: who acknowledged for each Customer, the date and how), `confirmed_at`, `confirmed_by`. Staff record a `PAYMENT_MOVE` draft under `payments.allocations.reverse` (`app.record_payment_move_draft`); a `financial.approve` holder confirms it (`app.confirm_payment_move_draft`), which in one transaction reverses the wrong Invoice allocation (unless the one-call reversal already did), posts the same Payment to the correct Invoice of another Unit and inserts this row; a deferred check requires the draft's CONFIRMED decision. The move is refused while the Payment has Customer Credit that is not reversed or a Refund that is not fully returned, and a draft is stale when the correct Invoice or the source changed. The Payment row and its Receipt never change. No runtime or financial role has table privileges. Update/delete is prohibited. The reversal and the new allocation share one instant, and one `payment_move.confirmed` audit event per move carries the draft id as its correlation id. The draft payload (both acknowledgements and the line split of the correct Invoice) must fit the 16,000-byte draft limit. The confirmation advances the correct Invoice's version even when its status is unchanged. A Customer Credit that a credit Adjustment released from a moved allocation is never reversed by the one-call Credit reversal unless the Payment is a normal Customer Payment and the Credit belongs to its payer (`customer_credit_reversals_moved_payment`, SQLSTATE P4904; owner answers to Q-2026-10-05-18 and Q-2026-10-05-19); otherwise it stays with its Customer. A Credit of a Customer other than the payer can be applied to that Customer's Invoices or Late-payment Charges, or refunded to that Customer through a `CREDIT_CUSTOMER` Refund draft confirmed by `financial.approve` (BR-CREDIT-014; V1-056 sub-slice 8f, migration `20261030_95`, DB-REFUND-001); the ordinary Credit Refund draft pays only a recipient who is both the Credit's Customer and the payer, so it is refused for such a Credit. A third-party payer's own Credit can still be refunded to the payer through a Refund draft.
 
 ## DB-CREDIT-001 — `customer_credits`
 
@@ -2069,6 +2069,37 @@ owner (slice 3a-2), and the Refund correction paths (`app.require_correctable_us
 correction trigger) refuse it: it is corrected only through a post-settlement correction (slice
 10). A Deposit application of a Settlement is refused once that Settlement has a Refund
 (BR-SETTLE-008: applications first).
+
+As built (V1-056 sub-slice 8f, migration `20261030_95`; BR-CREDIT-014, owner answer to
+Q-2026-10-05-19): a Customer Credit that a credit Adjustment released
+(`invoice_credit_excess_releases.customer_credit_id`) and whose Customer is not the payer of its
+source Payment (a third-party Payment, or a wrong-Unit move to another Customer; no other Credit
+has a Customer other than the payer) is refunded to that Customer. The "source Customer must match
+recipient" rule above holds for every Credit Refund; only the payer rule is lifted, and only for
+such a Credit. Staff with `refunds.create` record a `REFUND` draft of variant `CREDIT_CUSTOMER`
+(`app.record_credit_customer_refund_draft`, financial role) with a Refund method, a reference note
+and the Credit's Customer as `recipient_customer_id`; the payload keeps `source_kind` `CREDIT` and
+`source_id`, so the draft reads and the Final Settlement preview's pending-draft check see it. Any
+other Credit is refused with SQLSTATE `P5206`. A `financial.approve` holder confirms it through
+`app.confirm_refund_draft`, which calls the internal writer `app.post_credit_customer_refund` (no
+role may call it): Payment, then Credit lock; the Credit checked again (`P5206`); the amount within
+the available Credit (`P5202`, the draft stays pending); the Refund row (id
+`app.credit_customer_refund_id(draft)`, `processed_by` the approver, `authorization_reference`
+`refunds.create` as every confirmed Refund draft) and the approver's replay row; the confirm then
+writes `refund_draft_details` and the decision and sets the deferred checks IMMEDIATE (the writer
+first sets its own deferred check back to DEFERRED, so an earlier `SET CONSTRAINTS ALL IMMEDIATE`
+in the transaction does not refuse a valid confirmation). The Refund
+source trigger accepts a recipient other than the payer only through
+`app.credit_customer_refund_allowed`: such a Credit, paid to its Customer, with a matching
+`CREDIT_CUSTOMER` draft (Property, Credit, recipient, amount, reason and the derived Refund id)
+pending or confirmed by the Refund's approver; the deferred constraint trigger
+`refunds_credit_customer_confirmed` lets such a Refund commit only with that draft CONFIRMED under
+`financial.approve` by the same approver and its `refund_draft_details` row (42501 otherwise). The
+Customer Ledger books it on the recipient in the `CREDIT` bucket, as every Credit Refund, and the
+existing backend Refund correction paths apply (the frontend action context still expects a Credit
+Refund's recipient to be the payer; slices 11c and 11e change that before a screen shows one). The ordinary `USD` Credit Refund draft of such a Credit still
+records, and its confirmation is refused by the source check (23514), which the service reports as a
+conflict, as it does a unique violation (23505) at confirmation.
 
 Refund delivery methods or operational pending/failed states are deferred technical
 workflow choices. This logical model records only the approved completed Refund event

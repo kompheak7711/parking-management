@@ -101,6 +101,26 @@ class CreateUsdRefundCommand:
 REFUND_DRAFT_NAMESPACE: Final = UUID("6f0f5c8e-2b1a-4f8e-9d43-56a1d3b7c901")
 
 
+@dataclass(frozen=True, slots=True)
+class CreateCreditCustomerRefundCommand:
+    """Refund a Credit that a credit Adjustment released to a Customer who is not the payer.
+
+    BR-CREDIT-014: such a Credit belongs to the Customer named on the Invoice, and its Refund goes
+    to that Customer (a third-party Payment, or a wrong-Unit move to another Customer).
+    """
+
+    idempotency_key: UUID
+    credit_id: UUID
+    amount_usd_cents: int
+    reason: str
+
+    def __post_init__(self) -> None:
+        _uuid(self.idempotency_key)
+        _uuid(self.credit_id)
+        _amount(self.amount_usd_cents)
+        _text(self.reason, 1000)
+
+
 def refund_draft_id(property_id: UUID, actor_id: UUID, variant: str, idempotency_key: UUID) -> UUID:
     """Stable draft id for one preparer's Refund command key in one Property."""
     return uuid5(
@@ -330,7 +350,12 @@ class RefundService:
             "SELECT app.list_refund_methods(%s,%s)", (property_id, actor_id), mutation=False
         )
 
-    def _draft_call(self, sql: str, parameters: tuple[object, ...]) -> dict[str, object]:
+    def _draft_call(
+        self,
+        sql: str,
+        parameters: tuple[object, ...],
+        conflict_states: frozenset[str] = frozenset(),
+    ) -> dict[str, object]:
         try:
             row = retry_lock_not_available(lambda: self._attempt(sql, parameters, True))
         except psycopg.Error as exc:
@@ -342,6 +367,16 @@ class RefundService:
                 raise RefundIdempotencyKeyReused("Refund command key was reused") from exc
             if exc.sqlstate in {"P4506", "42501"}:
                 raise RefundAuthorizationError("Refund actor is not authorized") from exc
+            if exc.sqlstate == "P5206":
+                # BR-CREDIT-014 (V1-056 sub-slice 8f): the Credit is not one this draft refunds.
+                raise RefundConflictError(
+                    "Only a Credit that a credit Adjustment released to a Customer other than "
+                    "the payer is refunded to that Customer"
+                ) from exc
+            if exc.sqlstate in conflict_states:
+                raise RefundConflictError(
+                    "Refund draft cannot be confirmed in the current state"
+                ) from exc
             if exc.sqlstate == "55000" and exc.diag.message_primary == (
                 "Financial draft is already decided"
             ):
@@ -446,9 +481,50 @@ class RefundService:
         """Create the Refund of a draft; only a financial.approve holder may confirm."""
         actor_id = self._authorize(actor, property_id, "financial.approve")
         _uuid(draft_id)
+        # A check violation at confirmation (for example a Credit Refund to a recipient the Refund
+        # rules refuse, or a competing confirmation that took the value first) or a unique
+        # violation (a Refund id or number already taken) rolled the command back and left the
+        # draft pending: a conflict, not an unknown outcome (sub-slice 8f).
         return self._draft_call(
             "SELECT app.confirm_refund_draft(%s,%s,%s,%s)",
             (property_id, actor_id, draft_id, "financial.approve"),
+            conflict_states=frozenset({"23514", "23505"}),
+        )
+
+    def record_credit_customer_draft(
+        self,
+        property_id: UUID,
+        command: CreateCreditCustomerRefundCommand,
+        method: RefundMethodChoice,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        """Record a Refund draft that pays a Credit to its own Customer (BR-CREDIT-014).
+
+        Only for a Credit that a credit Adjustment released to a Customer other than the Payment's
+        payer; it has no effect until a financial.approve holder confirms it.
+        """
+        actor_id = self._authorize(actor, property_id, "refunds.create")
+        request = CreateCreditCustomerRefundCommand(
+            command.idempotency_key,
+            command.credit_id,
+            command.amount_usd_cents,
+            command.reason,
+        )
+        choice = RefundMethodChoice(method.refund_method_id, method.reference_note)
+        return self._draft_call(
+            "SELECT app.record_credit_customer_refund_draft(%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            (
+                property_id,
+                actor_id,
+                refund_draft_id(property_id, actor_id, "CREDIT_CUSTOMER", request.idempotency_key),
+                request.credit_id,
+                request.amount_usd_cents,
+                request.reason,
+                choice.refund_method_id,
+                choice.reference_note,
+                "refunds.create",
+            ),
         )
 
     def verify_usd_return(

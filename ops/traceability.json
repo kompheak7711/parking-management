@@ -37687,6 +37687,157 @@
       "test_path": "backend/tests/test_final_settlement_confirm_migration.py",
       "status": "implemented",
       "notes": "The hand-back month and next month VOIDed by a plain staff VOID, not the hand-back resolution, are unbilled and block the Settlement with RENT_PERIOD_NOT_BILLED (owner follow-up to Q-2026-10-06-34)."
+    },
+    {
+      "test_id": "test_a_third_party_paid_credit_is_refunded_to_the_invoice_customer_after_approval",
+      "upstream_ids": [
+        "BR-CREDIT-014",
+        "BR-AUTH-010",
+        "BR-REFUND-009",
+        "BR-REFUND-011",
+        "BR-REFUND-014",
+        "DB-REFUND-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_customer_refund_migration.py",
+      "status": "implemented",
+      "notes": "A Credit a credit Adjustment released from a third-party Payment is refunded to the Invoice Customer only after a financial.approve holder confirms the CREDIT_CUSTOMER draft; Staff cannot confirm; amounts, ledger (Credit Customer only, payer unchanged), audit, replay and a verified return are exact to the cent (V1-056 sub-slice 8f)."
+    },
+    {
+      "test_id": "test_a_credit_from_a_moved_allocation_is_refunded_to_its_customer_not_the_payer",
+      "upstream_ids": [
+        "BR-CREDIT-014",
+        "BR-PAY-042",
+        "BR-AUTH-010",
+        "BR-REFUND-003"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_customer_refund_migration.py",
+      "status": "implemented",
+      "notes": "A Credit released from a wrong-Unit moved allocation is refunded to the correct Invoice Customer; the ordinary Credit Refund draft to the payer is refused at confirmation as a conflict (23514) and stays pending, then becomes stale and is withdrawn (owner answer to Q-2026-10-05-19) (V1-056 sub-slice 8f)."
+    },
+    {
+      "test_id": "test_the_credit_customer_draft_covers_only_credits_released_to_another_customer",
+      "upstream_ids": [
+        "BR-CREDIT-014",
+        "BR-REFUND-002",
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_customer_refund_migration.py",
+      "status": "implemented",
+      "notes": "The CREDIT_CUSTOMER draft refuses (P5206, a conflict) the payer's own recognized Credit and an adjustment Credit owned by the payer, which the ordinary draft still pays; an unknown Credit is not found; recording needs refunds.create in the service and the database (V1-056 sub-slice 8f)."
+    },
+    {
+      "test_id": "test_a_stale_or_rejected_credit_customer_draft_pays_nothing",
+      "upstream_ids": [
+        "BR-REFUND-003",
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_customer_refund_migration.py",
+      "status": "implemented",
+      "notes": "A CREDIT_CUSTOMER draft whose amount is no longer available is refused at confirmation and stays pending; a rejected draft cannot be confirmed; a reused key with another body is refused (V1-056 sub-slice 8f)."
+    },
+    {
+      "test_id": "test_a_credit_customer_refund_is_written_only_through_its_confirmed_draft",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-CREDIT-014",
+        "DB-REFUND-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_customer_refund_migration.py",
+      "status": "implemented",
+      "notes": "Without a matching draft the Refund source check refuses a Refund to the Invoice Customer; with a pending draft but no confirmation the deferred check refuses the commit; the financial role cannot call the internal writer (V1-056 sub-slice 8f)."
+    },
+    {
+      "test_id": "test_credit_customer_refund_records_are_least_privilege",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "DB-REFUND-001"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_credit_customer_refund_migration.py",
+      "status": "implemented",
+      "notes": "Only the financial role executes the CREDIT_CUSTOMER record function; the writer, the source helpers and the deferred check are definer functions with a fixed search path that no role or PUBLIC may execute; the deferred check is DEFERRABLE INITIALLY DEFERRED (V1-056 sub-slice 8f)."
+    },
+    {
+      "test_id": "test_credit_customer_refund_migration_is_forward_only_and_changes_two_functions",
+      "upstream_ids": [
+        "DB-REFUND-001",
+        "BR-CREDIT-014"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_customer_refund_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20261030_95 follows 20261029_94, is forward-only, adds no table, adds only its seven functions and changes only the Refund source check and the Refund draft confirmation (V1-056 sub-slice 8f)."
+    },
+    {
+      "test_id": "test_credit_customer_refund_command_is_exact_and_bounded",
+      "upstream_ids": [
+        "BR-REFUND-003",
+        "BR-CREDIT-014"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_customer_refund.py",
+      "status": "implemented",
+      "notes": "The Credit Customer Refund command takes non-nil identities, exact positive bounded USD cents and a normalized bounded reason (V1-056 sub-slice 8f)."
+    },
+    {
+      "test_id": "test_credit_customer_draft_needs_refunds_create_for_the_property",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-CREDIT-014"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_customer_refund.py",
+      "status": "implemented",
+      "notes": "Recording a CREDIT_CUSTOMER Refund draft needs refunds.create for that Property; financial.approve alone is not enough; nothing is sent to the database otherwise (V1-056 sub-slice 8f)."
+    },
+    {
+      "test_id": "test_credit_customer_draft_sends_the_derived_draft_and_the_exact_values",
+      "upstream_ids": [
+        "BR-CREDIT-014",
+        "BR-REFUND-014"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_customer_refund.py",
+      "status": "implemented",
+      "notes": "The service sends the derived CREDIT_CUSTOMER draft id, the Credit, the exact amount, reason, Refund method and reference note on the financial connection (V1-056 sub-slice 8f)."
+    },
+    {
+      "test_id": "test_credit_customer_draft_failures_are_mapped_without_private_text",
+      "upstream_ids": [
+        "BR-CREDIT-014"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_customer_refund.py",
+      "status": "implemented",
+      "notes": "A Credit the draft does not cover (P5206) is a conflict; other recording failures stay unresolved; no private database text reaches the caller (V1-056 sub-slice 8f)."
+    },
+    {
+      "test_id": "test_refund_draft_confirmation_maps_a_check_violation_to_a_conflict",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-CREDIT-014"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_customer_refund.py",
+      "status": "implemented",
+      "notes": "At Refund draft confirmation a check violation (23514), a unique violation (23505) and P5206 are conflicts (the draft stays pending), not an unknown outcome; other mappings are unchanged (V1-056 sub-slice 8f)."
+    },
+    {
+      "test_id": "test_only_the_same_approver_s_confirmation_and_details_let_the_refund_stand",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-CREDIT-014",
+        "DB-REFUND-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_customer_refund_migration.py",
+      "status": "implemented",
+      "notes": "A decision that is not a CONFIRMED one by the Refund's approver lets the Refund source check refuse a Credit Refund to the Invoice Customer at once; a Refund written while its draft waits is refused at commit unless the same approver's CONFIRMED decision and the details row both exist; the real confirmation succeeds after an earlier SET CONSTRAINTS ALL IMMEDIATE (V1-056 sub-slice 8f review rounds 1 and 2)."
     }
   ]
 }
