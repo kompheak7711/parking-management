@@ -37897,6 +37897,117 @@
       "test_path": "backend/tests/test_credit_customer_credit_reversal.py",
       "status": "implemented",
       "notes": "The Credit reversal refusal P4904 reaches the caller as a conflict with a fixed message that names applying the Credit to its Customer's obligations or refunding it to that Customer, without database text (V1-056 sub-slice 8g)."
+    },
+    {
+      "test_id": "test_a_correction_needs_a_closed_settlement_and_writes_its_header_and_links",
+      "upstream_ids": [
+        "BR-SETTLE-012",
+        "BR-SETTLE-013",
+        "BR-AUTH-010",
+        "DB-SETTLE-003",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_correction_migration.py",
+      "status": "implemented",
+      "notes": "An open Final Settlement takes no correction; only financial.approve confirms a SETTLEMENT_CORRECTION draft; a draft naming no valid Settlement id is not found; a header alone never commits; a correction records the approver's CONFIRMED decision, a header with the draft's reason and the derived id, and one link per record, while the Settlement row stays unchanged; a decided draft is never confirmed again (V1-056 sub-slice 10a)."
+    },
+    {
+      "test_id": "test_a_correction_commits_only_with_its_draft_confirmed_by_its_approver",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-AUTH-010",
+        "DB-SETTLE-003"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_correction_migration.py",
+      "status": "implemented",
+      "notes": "A correction header written while its draft waits, or under another person's confirmation in the same transaction, is refused at commit (42501) even for the table owner; a header needs a closed Settlement, that Settlement's own draft, the draft's reason, and a time not before the closure and not later than the clock plus 5 seconds (V1-056 sub-slice 10a)."
+    },
+    {
+      "test_id": "test_each_effect_has_exactly_one_link_and_belongs_to_a_new_correction",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_correction_migration.py",
+      "status": "implemented",
+      "notes": "Every correction effect has exactly one typed link, a record is linked to at most one correction, an unknown link is refused, and a committed correction takes no further effect (V1-056 sub-slice 10a)."
+    },
+    {
+      "test_id": "test_the_closed_settlement_refusal_lets_through_only_a_record_linked_in_this_transaction",
+      "upstream_ids": [
+        "BR-SETTLE-012",
+        "BR-SETTLE-013",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_correction_migration.py",
+      "status": "implemented",
+      "notes": "After closure an unlinked Adjustment, an Adjustment linked to another Settlement's correction, an unlinked Adjustment reversal and a VOID, even inside a correction, are refused (P5S01); a link committed earlier no longer counts; an Adjustment reversal linked to a new correction of the same Settlement passes and restores the line balance to the cent (V1-056 sub-slice 10a)."
+    },
+    {
+      "test_id": "test_a_settlement_credit_application_reversal_passes_only_inside_a_correction",
+      "upstream_ids": [
+        "BR-SETTLE-012",
+        "BR-SETTLE-013",
+        "BR-CREDIT-006",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_correction_migration.py",
+      "status": "implemented",
+      "notes": "A Credit application the Final Settlement made is reversed only when the reversal is linked to a correction of that Settlement confirmed in the same transaction, not another Settlement's; the Credit is then available again by the exact amount (V1-056 sub-slice 10a)."
+    },
+    {
+      "test_id": "test_correction_records_are_append_only_and_have_no_time_limit",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "DB-SETTLE-003",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_correction_migration.py",
+      "status": "implemented",
+      "notes": "Correction headers and effects can be neither changed nor removed; across every correction function the only time checks are not before the closure and not later than the clock plus 5 seconds, so there is no time limit (V1-056 sub-slice 10a)."
+    },
+    {
+      "test_id": "test_settlement_correction_records_are_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-AUTH-010",
+        "DB-SETTLE-003",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_correction_migration.py",
+      "status": "implemented",
+      "notes": "No application role may read or write the correction tables or call the internal functions; every function is SECURITY DEFINER with a fixed search_path; migration 20261101_97 is forward-only, adds two tables and the internal functions and changes only the two closed-Settlement refusal functions (V1-056 sub-slice 10a)."
+    },
+    {
+      "test_id": "test_an_invoice_draft_moves_onto_the_closed_lease_only_inside_its_own_correction",
+      "upstream_ids": [
+        "BR-SETTLE-012",
+        "BR-SETTLE-013",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_correction_migration.py",
+      "status": "implemented",
+      "notes": "An Invoice draft with no Lease linked by a committed correction cannot be corrected onto a charge of the closed Lease in a later transaction (a conflict, P5S01); a draft linked by a correction confirmed in the same transaction can (V1-056 sub-slice 10a review round 1)."
+    },
+    {
+      "test_id": "test_a_transaction_that_started_before_another_committed_cannot_use_its_correction",
+      "upstream_ids": [
+        "BR-SETTLE-012",
+        "BR-SETTLE-013",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_correction_migration.py",
+      "status": "implemented",
+      "notes": "Two transactions start before a third commits a correction: neither may use that committed link to pass the closed Settlement refusal (P5S01) nor add an effect to the committed correction (23514); the correction keeps exactly its one effect (V1-056 sub-slice 10a review round 2)."
     }
   ]
 }

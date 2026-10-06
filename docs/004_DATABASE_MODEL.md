@@ -1938,6 +1938,19 @@ NOT NULL`, `actor_id uuid NOT NULL`, `authorization_reference text NOT NULL`, an
 or rewrites the Settlement; one or more DB-SETTLE-005 rows identify every typed event
 that produces the corrective effect.
 
+As built in V1-056 sub-slice 10a (migration `20261101_97`; owner answers to Q-2026-10-06-36):
+`correlation_id` is the `SETTLEMENT_CORRECTION` draft (unique, a foreign key to
+`financial_drafts`), `authorization_reference` is `financial.approve` and `actor_id` the approver.
+A BEFORE INSERT check needs the Settlement closed, `occurred_at` not before the closure and not
+later than the clock plus 5 seconds (no time limit), the draft of the same Property under
+`final_settlements.prepare` naming this Settlement with the same reason, and an active financial
+actor. A deferred check lets a header commit only with its draft CONFIRMED by the same approver
+under `financial.approve` in the same transaction (the decision carries the top-level transaction
+id and was written after the transaction started; 42501 otherwise) and at least one effect. The
+id is derived from the draft (`app.settlement_correction_id`). Only the internal `app.begin_settlement_correction` writes
+a header (the decision first, then the header; 55000 while the Settlement is open). Append-only;
+no application role may read or write the table (the backup role reads every table).
+
 ## DB-SETTLE-004 — `settlement_late_payment_charge_items`
 
 Append-preserved heterogeneous-obligation snapshot: `final_settlement_id uuid NOT NULL
@@ -1966,6 +1979,28 @@ NULL FK`, `refund_id uuid NULL FK`, and `refund_correction_id uuid NULL FK`, wit
 Its Customer/Lease/source context and correlation must match the Settlement correction.
 This explicit one-of-FK design preserves enforceable source identity; a free-form event
 type/UUID or JSON-only reference is prohibited.
+
+Amended by owner answer 2 to Q-2026-10-06-36 (2026-10-06): the links also include `invoice_id
+uuid NULL FK` (an extra charge Invoice), `payment_reversal_id uuid NULL FK`,
+`customer_credit_reversal_id uuid NULL FK`, `deposit_receipt_reversal_id uuid NULL FK` and
+`deposit_application_id uuid NULL FK` (a Deposit application inside a correction, owner answer
+4), and `deposit_application_reversal_id` refers to the new append-only table
+`deposit_application_reversals`, written only by a correction.
+
+As built in V1-056 sub-slice 10a (migration `20261101_97`): every link is a deferrable foreign key
+(a writer links a record before it writes it) and unique (a record is the effect of at most one
+correction); `CHECK (num_nonnulls(...)=1)`; an effect is accepted only for a correction confirmed
+in the same transaction (its draft's CONFIRMED decision carries the top-level transaction id,
+`pg_current_xact_id()`, and was written after the current transaction started); append-only; no
+application role may read or write the table. The link `deposit_application_reversal_id` is added with its table in sub-slice 10c-2. The context of each
+linked record is checked by the variant writer that writes it (later sub-slices); whether a record
+of another Lease may be linked (the correct Invoice of a wrong-Unit move, the other allocations of
+a returned Payment) is Q-2026-10-06-37 point 5. The closed Settlement refusals of sub-slices 8e-1
+and 8e-2 let a record through only when `app.settlement_correction_linked` finds it linked to a
+correction of the same Settlement confirmed in the same transaction (an Invoice, an Adjustment, an
+Adjustment reversal, a Late-payment Charge correction, a Settlement Credit application reversal);
+VOID events, Late-payment Decisions and Charges and one-time charge records have no link and stay
+refused.
 
 ## DB-SETTLE-006 — `settlement_invoice_line_items`
 
