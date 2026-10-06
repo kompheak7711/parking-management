@@ -1,0 +1,311 @@
+ Volume prm-database-test-94493_postgres_data Creating 
+ Volume prm-database-test-94493_postgres_data Creating 
+ Network prm-database-test-94493_default Creating 
+ Network prm-database-test-94493_default Creating 
+ Volume prm-database-test-94493_postgres_data Created 
+ Volume prm-database-test-94493_postgres_data Created 
+ Network prm-database-test-94493_default Created 
+ Network prm-database-test-94493_default Created 
+ Container prm-database-test-94493-postgres-1 Creating 
+ Container prm-database-test-94493-postgres-1 Created 
+ Container prm-database-test-94493-postgres-1 Starting 
+ Container prm-database-test-94493-postgres-1 Started 
+ Container prm-database-test-94493-postgres-1 Waiting 
+ Container prm-database-test-94493-postgres-1 Healthy 
+============================= test session starts ==============================
+collected 1893 items
+
+tests/test_migrations.py ............................................... [  2%]
+........................................................................ [  6%]
+....                                                                     [  6%]
+tests/test_audit_migration.py .......                                    [  6%]
+tests/test_property_migration.py ...........                             [  7%]
+tests/test_unit_migration.py ..................................          [  9%]
+tests/test_customer_migration.py .........................               [ 10%]
+tests/test_configuration_migration.py ..............                     [ 11%]
+tests/test_reservation_migration.py ...........                          [ 11%]
+tests/test_reservation_lifecycle_migration.py .........                  [ 12%]
+tests/test_reservation_outcome_migration.py ........                     [ 12%]
+tests/test_reservation_worker_migration.py .......                       [ 13%]
+tests/test_reservation_deposit_draft_migration.py ..............         [ 13%]
+tests/test_unit_cleaning_charge_migration.py .......                     [ 14%]
+tests/test_hand_back_rent_migration.py ........                          [ 14%]
+tests/test_lease_deposit_forfeiture_migration.py .............           [ 15%]
+tests/test_lease_deposit_reversal_draft_migration.py .........           [ 15%]
+tests/test_payment_move_migration.py ..........................          [ 17%]
+tests/test_final_settlement_migration.py ............                    [ 17%]
+tests/test_deposit_receipt_reversal_draft_migration.py ..........        [ 18%]
+tests/test_deposit_application_ledger_migration.py .....                 [ 18%]
+tests/test_lease_migration.py ..............                             [ 19%]
+tests/test_lease_lifecycle_migration.py ......                           [ 19%]
+tests/test_move_in_migration.py .......                                  [ 20%]
+tests/test_lease_api_migration.py ...                                    [ 20%]
+tests/test_lease_enforcement_migration.py .............................. [ 21%]
+.....                                                                    [ 22%]
+tests/test_lease_enforcement_api_migration.py .......................... [ 23%]
+...........................                                              [ 24%]
+tests/test_lease_notices_migration.py .................................. [ 26%]
+........................................................................ [ 30%]
+..........................................                               [ 32%]
+tests/test_lease_termination_migration.py .............................. [ 34%]
+.........                                                                [ 34%]
+tests/test_termination_deposit_migration.py .......                      [ 35%]
+tests/test_termination_invoice_migration.py ................             [ 35%]
+tests/test_move_out_inspection_migration.py ..........................   [ 37%]
+tests/test_move_out_inspection_consumers_migration.py .................. [ 38%]
+..                                                                       [ 38%]
+tests/test_physical_move_out_migration.py .............................. [ 39%]
+......                                                                   [ 40%]
+tests/test_physical_move_out_consumers_migration.py .................... [ 41%]
+...                                                                      [ 41%]
+tests/test_deposit_financial_revision_migration.py ..........            [ 42%]
+tests/test_deposit_disposition_migration.py ............................ [ 43%]
+.....                                                                    [ 43%]
+tests/test_lease_deposit_command_guards_migration.py ........            [ 44%]
+tests/test_deposit_migration.py ..............                           [ 44%]
+tests/test_deposit_api_migration.py .............                        [ 45%]
+tests/test_invoice_migration.py ...................................      [ 47%]
+tests/test_late_payment_migration.py .............                       [ 48%]
+tests/test_payment_migration.py ........................................ [ 50%]
+.....                                                                    [ 50%]
+tests/test_payment_read_migration.py ........                            [ 50%]
+tests/test_financial_reference_migration.py ...                          [ 51%]
+tests/test_payment_reversal_context_migration.py ....................    [ 52%]
+tests/test_financial_action_context_migration.py ....................... [ 53%]
+...........................                                              [ 54%]
+tests/test_customer_ledger_migration.py .........................        [ 56%]
+tests/test_customer_ledger_read_migration.py .....................       [ 57%]
+tests/test_payment_confirmation_migration.py ........................... [ 58%]
+...........                                                              [ 59%]
+tests/test_khr_payment_confirmation_migration.py ....................... [ 60%]
+.....................................                                    [ 62%]
+tests/test_payment_api_migration.py .....................                [ 63%]
+tests/test_financial_fixture_clock_migration.py .......                  [ 63%]
+tests/test_payment_allocation_migration.py ............................. [ 65%]
+..........                                                               [ 65%]
+tests/test_allocation_read_migration.py ......                           [ 66%]
+tests/test_allocation_receipt_api_migration.py ..............            [ 67%]
+tests/test_receipt_migration.py ...............................          [ 68%]
+tests/test_credit_migration.py ......................................... [ 70%]
+                                                                         [ 70%]
+tests/test_credit_application_migration.py .......................       [ 72%]
+tests/test_credit_history_migration.py ...........                       [ 72%]
+tests/test_refund_migration.py ...................................       [ 74%]
+tests/test_refund_service_migration.py ................................  [ 76%]
+tests/test_credit_refund_read_migration.py ..............                [ 76%]
+tests/test_credit_refund_api_migration.py ..............                 [ 77%]
+tests/test_pet_refund_migration.py ................................      [ 79%]
+tests/test_billing_service_migration.py ................................ [ 81%]
+........                                                                 [ 81%]
+tests/test_utility_meter_migration.py .............                      [ 82%]
+tests/test_utility_consumption_migration.py ............................ [ 83%]
+......................                                                   [ 84%]
+tests/test_utility_api_migration.py ...............                      [ 85%]
+tests/test_move_out_final_inputs_migration.py ....................       [ 86%]
+tests/test_initial_rent_lease_start_migration.py ........                [ 87%]
+tests/test_one_time_charges_migration.py .......                         [ 87%]
+tests/test_debit_adjustment_line_block_migration.py ........             [ 87%]
+tests/test_credit_adjustment_excess_migration.py ..........              [ 88%]
+tests/test_rent_nonpayment_recurring_only_migration.py ..........        [ 88%]
+tests/test_lease_signing_reservation_migration.py .......                [ 89%]
+tests/test_unpaid_initial_termination_migration.py ...........           [ 89%]
+tests/test_initial_rent_override_capability_migration.py .....           [ 90%]
+tests/test_utility_baseline_migration.py ...............                 [ 90%]
+tests/test_final_utility_invoice_migration.py ..........                 [ 91%]
+tests/test_utility_unbilled_periods_migration.py .......                 [ 91%]
+tests/test_final_settlement_preview_migration.py ..............          [ 92%]
+tests/test_final_settlement_draft_migration.py ..............            [ 93%]
+tests/test_billing_run_migration.py ...........                          [ 93%]
+tests/test_lease_timeline_restricted_migration.py ......                 [ 94%]
+tests/test_lease_end_date_month_end_migration.py ....                    [ 94%]
+tests/test_financial_draft_migration.py .............                    [ 95%]
+tests/test_refund_draft_migration.py .................                   [ 95%]
+tests/test_refund_signer_recipient_migration.py .....                    [ 96%]
+tests/test_final_settlement_refund_migration.py ...........              [ 96%]
+tests/test_final_settlement_closed_refusal_migration.py ..........       [ 97%]
+tests/test_final_settlement_credit_application_migration.py .......      [ 97%]
+tests/test_final_settlement_confirm_migration.py ................        [ 98%]
+tests/test_credit_customer_refund_migration.py ........                  [ 98%]
+tests/test_credit_customer_credit_reversal_migration.py ....             [ 99%]
+tests/test_settlement_correction_migration.py .....F...                  [ 99%]
+tests/test_settlement_extra_charge_migration.py FFFFF.                   [100%]
+
+=================================== FAILURES ===================================
+_ test_an_invoice_draft_moves_onto_the_closed_lease_only_inside_its_own_correction _
+tests/test_settlement_correction_migration.py:513: in test_an_invoice_draft_moves_onto_the_closed_lease_only_inside_its_own_correction
+    connection.execute(
+.venv/lib/python3.11/site-packages/psycopg/connection.py:300: in execute
+    raise ex.with_traceback(None)
+E   psycopg.errors.CheckViolation: An Invoice linked to a post-settlement correction must be issued
+E   CONTEXT:  PL/pgSQL function app.assert_settlement_correction_invoice_issued() line 5 at RAISE
+E   SQL statement "SET CONSTRAINTS ALL IMMEDIATE"
+E   PL/pgSQL function app.correct_invoice_draft(uuid,uuid,uuid,uuid,uuid,text,integer,text,uuid) line 62 at SQL statement
+_ test_an_extra_charge_is_a_new_issued_invoice_linked_to_the_closed_settlement _
+src/property_rental/final_settlement.py:325: in _call
+    with psycopg.connect(
+.venv/lib/python3.11/site-packages/psycopg/connection.py:172: in __exit__
+    self.commit()
+.venv/lib/python3.11/site-packages/psycopg/connection.py:305: in commit
+    self.wait(self._commit_gen())
+.venv/lib/python3.11/site-packages/psycopg/connection.py:484: in wait
+    return waiting.wait(gen, self.pgconn.socket, interval=interval)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+psycopg_binary/_psycopg/waiting.pyx:241: in psycopg_binary._psycopg.wait_c
+    ???
+.venv/lib/python3.11/site-packages/psycopg/_connection_base.py:585: in _commit_gen
+    yield from self._exec_command(b"COMMIT")
+.venv/lib/python3.11/site-packages/psycopg/_connection_base.py:483: in _exec_command
+    raise e.error_from_result(result, encoding=self.pgconn._encoding)
+E   psycopg.errors.InsufficientPrivilege: permission denied for table lease_signers
+E   CONTEXT:  SQL expression "v_validate_sources AND NOT v_draft_void
+E                   AND v_invoice.lease_id IS NOT NULL AND NOT EXISTS (
+E                   SELECT 1 FROM app.lease_signers AS signer
+E                   WHERE signer.lease_id=v_invoice.lease_id
+E                     AND signer.customer_id=v_invoice.customer_id AND signer.signed_at IS NOT NULL
+E                     AND (v_invoice.status='DRAFT' OR signer.signed_at<=v_invoice.issued_at)
+E               )"
+E   PL/pgSQL function app.validate_invoice_record() line 10 at IF
+
+The above exception was the direct cause of the following exception:
+tests/test_settlement_extra_charge_migration.py:207: in test_an_extra_charge_is_a_new_issued_invoice_linked_to_the_closed_settlement
+    result = corrections().confirm_extra_charge(prop, draft, actor=approving(person, prop))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/property_rental/settlement_correction.py:203: in confirm_extra_charge
+    return FinalSettlementService(self.financial_database_url)._call(
+src/property_rental/final_settlement.py:350: in _call
+    raise FinalSettlementAuthorizationError(
+E   property_rental.final_settlement.FinalSettlementAuthorizationError: Final Settlement actor is not authorized
+---------------------------- Captured stderr setup -----------------------------
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+_____ test_an_extra_charge_for_another_signers_invoice_goes_to_that_signer _____
+src/property_rental/final_settlement.py:325: in _call
+    with psycopg.connect(
+.venv/lib/python3.11/site-packages/psycopg/connection.py:172: in __exit__
+    self.commit()
+.venv/lib/python3.11/site-packages/psycopg/connection.py:305: in commit
+    self.wait(self._commit_gen())
+.venv/lib/python3.11/site-packages/psycopg/connection.py:484: in wait
+    return waiting.wait(gen, self.pgconn.socket, interval=interval)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+psycopg_binary/_psycopg/waiting.pyx:241: in psycopg_binary._psycopg.wait_c
+    ???
+.venv/lib/python3.11/site-packages/psycopg/_connection_base.py:585: in _commit_gen
+    yield from self._exec_command(b"COMMIT")
+.venv/lib/python3.11/site-packages/psycopg/_connection_base.py:483: in _exec_command
+    raise e.error_from_result(result, encoding=self.pgconn._encoding)
+E   psycopg.errors.InsufficientPrivilege: permission denied for table lease_signers
+E   CONTEXT:  SQL expression "v_validate_sources AND NOT v_draft_void
+E                   AND v_invoice.lease_id IS NOT NULL AND NOT EXISTS (
+E                   SELECT 1 FROM app.lease_signers AS signer
+E                   WHERE signer.lease_id=v_invoice.lease_id
+E                     AND signer.customer_id=v_invoice.customer_id AND signer.signed_at IS NOT NULL
+E                     AND (v_invoice.status='DRAFT' OR signer.signed_at<=v_invoice.issued_at)
+E               )"
+E   PL/pgSQL function app.validate_invoice_record() line 10 at IF
+
+The above exception was the direct cause of the following exception:
+tests/test_settlement_extra_charge_migration.py:294: in test_an_extra_charge_for_another_signers_invoice_goes_to_that_signer
+    result = corrections().confirm_extra_charge(prop, draft, actor=approving(person, prop))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/property_rental/settlement_correction.py:203: in confirm_extra_charge
+    return FinalSettlementService(self.financial_database_url)._call(
+src/property_rental/final_settlement.py:350: in _call
+    raise FinalSettlementAuthorizationError(
+E   property_rental.final_settlement.FinalSettlementAuthorizationError: Final Settlement actor is not authorized
+_ test_a_damage_extra_charge_bills_a_current_unbilled_finding_and_a_stale_draft_waits _
+src/property_rental/final_settlement.py:325: in _call
+    with psycopg.connect(
+.venv/lib/python3.11/site-packages/psycopg/connection.py:172: in __exit__
+    self.commit()
+.venv/lib/python3.11/site-packages/psycopg/connection.py:305: in commit
+    self.wait(self._commit_gen())
+.venv/lib/python3.11/site-packages/psycopg/connection.py:484: in wait
+    return waiting.wait(gen, self.pgconn.socket, interval=interval)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+psycopg_binary/_psycopg/waiting.pyx:241: in psycopg_binary._psycopg.wait_c
+    ???
+.venv/lib/python3.11/site-packages/psycopg/_connection_base.py:585: in _commit_gen
+    yield from self._exec_command(b"COMMIT")
+.venv/lib/python3.11/site-packages/psycopg/_connection_base.py:483: in _exec_command
+    raise e.error_from_result(result, encoding=self.pgconn._encoding)
+E   psycopg.errors.InsufficientPrivilege: permission denied for table lease_signers
+E   CONTEXT:  SQL expression "v_validate_sources AND NOT v_draft_void
+E                   AND v_invoice.lease_id IS NOT NULL AND NOT EXISTS (
+E                   SELECT 1 FROM app.lease_signers AS signer
+E                   WHERE signer.lease_id=v_invoice.lease_id
+E                     AND signer.customer_id=v_invoice.customer_id AND signer.signed_at IS NOT NULL
+E                     AND (v_invoice.status='DRAFT' OR signer.signed_at<=v_invoice.issued_at)
+E               )"
+E   PL/pgSQL function app.validate_invoice_record() line 10 at IF
+
+The above exception was the direct cause of the following exception:
+tests/test_settlement_extra_charge_migration.py:405: in test_a_damage_extra_charge_bills_a_current_unbilled_finding_and_a_stale_draft_waits
+    result = corrections().confirm_extra_charge(prop, first, actor=approving(person, prop))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/property_rental/settlement_correction.py:203: in confirm_extra_charge
+    return FinalSettlementService(self.financial_database_url)._call(
+src/property_rental/final_settlement.py:350: in _call
+    raise FinalSettlementAuthorizationError(
+E   property_rental.final_settlement.FinalSettlementAuthorizationError: Final Settlement actor is not authorized
+_______ test_no_late_payment_decision_and_unlinked_charges_stay_refused ________
+src/property_rental/final_settlement.py:325: in _call
+    with psycopg.connect(
+.venv/lib/python3.11/site-packages/psycopg/connection.py:172: in __exit__
+    self.commit()
+.venv/lib/python3.11/site-packages/psycopg/connection.py:305: in commit
+    self.wait(self._commit_gen())
+.venv/lib/python3.11/site-packages/psycopg/connection.py:484: in wait
+    return waiting.wait(gen, self.pgconn.socket, interval=interval)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+psycopg_binary/_psycopg/waiting.pyx:241: in psycopg_binary._psycopg.wait_c
+    ???
+.venv/lib/python3.11/site-packages/psycopg/_connection_base.py:585: in _commit_gen
+    yield from self._exec_command(b"COMMIT")
+.venv/lib/python3.11/site-packages/psycopg/_connection_base.py:483: in _exec_command
+    raise e.error_from_result(result, encoding=self.pgconn._encoding)
+E   psycopg.errors.InsufficientPrivilege: permission denied for table lease_signers
+E   CONTEXT:  SQL expression "v_validate_sources AND NOT v_draft_void
+E                   AND v_invoice.lease_id IS NOT NULL AND NOT EXISTS (
+E                   SELECT 1 FROM app.lease_signers AS signer
+E                   WHERE signer.lease_id=v_invoice.lease_id
+E                     AND signer.customer_id=v_invoice.customer_id AND signer.signed_at IS NOT NULL
+E                     AND (v_invoice.status='DRAFT' OR signer.signed_at<=v_invoice.issued_at)
+E               )"
+E   PL/pgSQL function app.validate_invoice_record() line 10 at IF
+
+The above exception was the direct cause of the following exception:
+tests/test_settlement_extra_charge_migration.py:464: in test_no_late_payment_decision_and_unlinked_charges_stay_refused
+    result = corrections().confirm_extra_charge(prop, draft, actor=approving(person, prop))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/property_rental/settlement_correction.py:203: in confirm_extra_charge
+    return FinalSettlementService(self.financial_database_url)._call(
+src/property_rental/final_settlement.py:350: in _call
+    raise FinalSettlementAuthorizationError(
+E   property_rental.final_settlement.FinalSettlementAuthorizationError: Final Settlement actor is not authorized
+_ test_a_linked_invoice_is_issued_before_commit_and_the_decision_must_be_this_transactions _
+tests/test_settlement_extra_charge_migration.py:570: in test_a_linked_invoice_is_issued_before_commit_and_the_decision_must_be_this_transactions
+    assert (bound.value.sqlstate, bound.value.diag.message_primary) == ("42501", NOT_CONFIRMED)
+E   assert ('42501', 'pe...cation_role"') == ('42501', 'A ...its approver')
+E     
+E     At index 1 diff: 'permission denied to set parameter "session_replication_role"' != 'A post-settlement correction needs its draft confirmed by its approver'
+E     Use -v to get more diff
+=============================== warnings summary ===============================
+.venv/lib/python3.11/site-packages/fastapi/testclient.py:1
+  /Users/sokompheak/Development/property-rental-management/backend/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_credit_refund_api_migration.py::test_credit_refund_http_real_competing_refunds_cannot_double_consume_credit
+  /Users/sokompheak/Development/property-rental-management/backend/.venv/lib/python3.11/site-packages/pydantic/_internal/_generate_schema.py:2274: UnsupportedFieldAttributeWarning: The 'alias' attribute with value 'source' was provided to the `Field()` function, which has no effect in the context it was used. 'alias' is field-specific metadata, and can only be attached to a model field using `Annotated` metadata or by assignment. This may have happened because an `Annotated` type alias using the `type` statement was used, or if the `Field()` function was attached to a single member of a union type.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_settlement_correction_migration.py::test_an_invoice_draft_moves_onto_the_closed_lease_only_inside_its_own_correction
+FAILED tests/test_settlement_extra_charge_migration.py::test_an_extra_charge_is_a_new_issued_invoice_linked_to_the_closed_settlement
+FAILED tests/test_settlement_extra_charge_migration.py::test_an_extra_charge_for_another_signers_invoice_goes_to_that_signer
+FAILED tests/test_settlement_extra_charge_migration.py::test_a_damage_extra_charge_bills_a_current_unbilled_finding_and_a_stale_draft_waits
+FAILED tests/test_settlement_extra_charge_migration.py::test_no_late_payment_decision_and_unlinked_charges_stay_refused
+FAILED tests/test_settlement_extra_charge_migration.py::test_a_linked_invoice_is_issued_before_commit_and_the_decision_must_be_this_transactions
+============ 6 failed, 1887 passed, 2 warnings in 522.32s (0:08:42) ============
+exit=1

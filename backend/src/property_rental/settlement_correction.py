@@ -1,0 +1,209 @@
+"""Post-settlement corrections (BR-SETTLE-013; V1-056 slice 10).
+
+A closed Final Settlement is never reopened. A later fix is a new correction linked to it, with a
+reason: Staff holding ``final_settlements.prepare`` record a ``SETTLEMENT_CORRECTION`` draft, and
+only a ``financial.approve`` holder confirms it (BR-AUTH-010). The confirmation writes new records
+linked to the Settlement (DB-SETTLE-003, DB-SETTLE-005); there is no time limit.
+
+Sub-slice 10b: the ``EXTRA_CHARGE`` variant, a missed amount billed after closure as a one-time
+Miscellaneous or Damage charge (BR-INV-044) on a new issued Invoice with the Lease. It goes to the
+Customer of the corrected Invoice when the draft names one, otherwise to the Primary Tenant
+(BR-SETTLE-016; owner answer 6 to Q-2026-10-06-36). The HTTP routes come in slice 11e.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from datetime import date, datetime
+from enum import StrEnum
+from typing import Final
+from uuid import UUID, uuid5
+
+from psycopg.types.json import Jsonb
+
+from property_rental.final_settlement import (
+    MAX_USD_CENTS,
+    FinalSettlementInvalidError,
+    FinalSettlementService,
+)
+from property_rental.financial_draft import (
+    FINAL_SETTLEMENTS_PREPARE_CAPABILITY,
+    FINANCIAL_APPROVE_CAPABILITY,
+)
+from property_rental.identity import AuthenticatedActor
+
+# Draft keys keep the command-key scope (Property, preparer and key), as other drafts do.
+SETTLEMENT_CORRECTION_DRAFT_NAMESPACE: Final = UUID("0b6f6d2e-4c1a-4f0e-9a57-3d8c2e91b7a4")
+# The confirm reports a draft whose sources changed as stale (P5S02); the draft stays pending. Two
+# confirms on one Lease are serialized by the database locks, so a finding billed by the other is
+# seen as a changed source; any other refusal keeps the Final Settlement error mapping.
+EXTRA_CHARGE_CONFIRM_STALE_STATES: Final = frozenset({"P5S02"})
+
+
+def settlement_correction_draft_id(
+    property_id: UUID, actor_id: UUID, idempotency_key: UUID
+) -> UUID:
+    """Stable draft id for one preparer's command key in one Property."""
+    return uuid5(
+        SETTLEMENT_CORRECTION_DRAFT_NAMESPACE,
+        f"settlement-correction-draft:{property_id}:{actor_id}:{idempotency_key}",
+    )
+
+
+def _uuid(value: object, name: str) -> UUID:
+    if not isinstance(value, UUID) or value.int == 0:
+        raise FinalSettlementInvalidError(f"{name} must be a nonzero UUID")
+    return value
+
+
+def _text(value: object, name: str, limit: int) -> str:
+    if (
+        not isinstance(value, str)
+        or value != value.strip()
+        or not 1 <= len(value) <= limit
+        or "\x00" in value
+    ):
+        raise FinalSettlementInvalidError(f"{name} must be trimmed text of 1 to {limit}")
+    return value
+
+
+class ExtraChargeCategory(StrEnum):
+    MISCELLANEOUS_CHARGES = "MISCELLANEOUS_CHARGES"
+    DAMAGE_CHARGES = "DAMAGE_CHARGES"
+
+
+@dataclass(frozen=True, slots=True)
+class RecordExtraChargeCorrectionCommand:
+    """An extra charge after closure; the database checks every rule against current state.
+
+    A Damage charge names the inspection finding it bills (BR-INV-044); a Miscellaneous charge
+    names none. ``corrects_invoice_id`` names the Settlement obligation the charge corrects,
+    whose Customer is charged. The Due Date override and its reason come together. The reason is
+    at most 500 characters, because the one-time charge record keeps it.
+    """
+
+    idempotency_key: UUID
+    settlement_id: UUID
+    category: ExtraChargeCategory
+    description: str
+    amount_usd_cents: int
+    evidence_reference: str
+    reason: str
+    inspection_damage_finding_id: UUID | None = None
+    corrects_invoice_id: UUID | None = None
+    due_date: date | None = None
+    due_date_reason: str | None = None
+
+    def __post_init__(self) -> None:
+        _uuid(self.idempotency_key, "idempotency_key")
+        _uuid(self.settlement_id, "settlement_id")
+        if not isinstance(self.category, ExtraChargeCategory):
+            raise FinalSettlementInvalidError("Extra charge category is invalid")
+        _text(self.description, "description", 1000)
+        if (
+            type(self.amount_usd_cents) is not int
+            or not 1 <= self.amount_usd_cents <= MAX_USD_CENTS
+        ):
+            raise FinalSettlementInvalidError(
+                "amount_usd_cents must be a positive whole number of cents"
+            )
+        _text(self.evidence_reference, "evidence_reference", 500)
+        _text(self.reason, "reason", 500)
+        damage = self.category is ExtraChargeCategory.DAMAGE_CHARGES
+        if damage != (self.inspection_damage_finding_id is not None):
+            raise FinalSettlementInvalidError(
+                "A Damage charge names one inspection finding; a Miscellaneous charge names none"
+            )
+        if self.inspection_damage_finding_id is not None:
+            _uuid(self.inspection_damage_finding_id, "inspection_damage_finding_id")
+        if self.corrects_invoice_id is not None:
+            _uuid(self.corrects_invoice_id, "corrects_invoice_id")
+        if (self.due_date is None) != (self.due_date_reason is None):
+            raise FinalSettlementInvalidError("Due Date override and its reason come together")
+        if self.due_date is not None and (
+            not isinstance(self.due_date, date) or isinstance(self.due_date, datetime)
+        ):
+            raise FinalSettlementInvalidError("due_date must be a calendar date")
+        if self.due_date_reason is not None:
+            _text(self.due_date_reason, "due_date_reason", 500)
+
+    def charge(self) -> dict[str, object]:
+        return {
+            "category": self.category.value,
+            "description": self.description,
+            "amount_usd_cents": self.amount_usd_cents,
+            "evidence_reference": self.evidence_reference,
+            "inspection_damage_finding_id": None
+            if self.inspection_damage_finding_id is None
+            else str(self.inspection_damage_finding_id),
+            "corrects_invoice_id": None
+            if self.corrects_invoice_id is None
+            else str(self.corrects_invoice_id),
+            "due_date": None if self.due_date is None else self.due_date.isoformat(),
+            "due_date_reason": self.due_date_reason,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class SettlementCorrectionService:
+    """Commands under the financial role; capabilities are checked before any connection."""
+
+    financial_database_url: str
+
+    def record_extra_charge(
+        self,
+        property_id: UUID,
+        command: RecordExtraChargeCorrectionCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        """Record an extra charge correction draft; it has no effect until confirmed."""
+        actor_id = FinalSettlementService._authorize(
+            actor, property_id, FINAL_SETTLEMENTS_PREPARE_CAPABILITY
+        )
+        if not isinstance(command, RecordExtraChargeCorrectionCommand):
+            raise FinalSettlementInvalidError("Extra charge correction command is invalid")
+        request = RecordExtraChargeCorrectionCommand(
+            command.idempotency_key,
+            command.settlement_id,
+            command.category,
+            command.description,
+            command.amount_usd_cents,
+            command.evidence_reference,
+            command.reason,
+            command.inspection_damage_finding_id,
+            command.corrects_invoice_id,
+            command.due_date,
+            command.due_date_reason,
+        )
+        return FinalSettlementService(self.financial_database_url)._call(
+            "SELECT app.record_settlement_extra_charge_draft(%s,%s,%s,%s,%s,%s,%s)",
+            (
+                property_id,
+                actor_id,
+                settlement_correction_draft_id(property_id, actor_id, request.idempotency_key),
+                request.settlement_id,
+                Jsonb(request.charge()),
+                request.reason,
+                FINAL_SETTLEMENTS_PREPARE_CAPABILITY,
+            ),
+        )
+
+    def confirm_extra_charge(
+        self, property_id: UUID, draft_id: UUID, *, actor: AuthenticatedActor
+    ) -> dict[str, object]:
+        """Confirm a pending extra charge correction (financial.approve only).
+
+        A draft whose sources changed is stale and stays pending; an exact repeat by the same
+        approver writes nothing and returns the result again, rebuilt from the stored records.
+        The decision's transaction id is never returned.
+        """
+        actor_id = FinalSettlementService._authorize(
+            actor, property_id, FINANCIAL_APPROVE_CAPABILITY
+        )
+        _uuid(draft_id, "draft_id")
+        return FinalSettlementService(self.financial_database_url)._call(
+            "SELECT app.confirm_settlement_extra_charge(%s,%s,%s,%s)",
+            (property_id, actor_id, draft_id, FINANCIAL_APPROVE_CAPABILITY),
+            stale=EXTRA_CHARGE_CONFIRM_STALE_STATES,
+        )

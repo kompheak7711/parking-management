@@ -464,7 +464,8 @@ def test_an_invoice_draft_moves_onto_the_closed_lease_only_inside_its_own_correc
 ) -> None:
     """Review round 1: the UPDATE path of the 8e-1 refusal. A draft with no Lease linked by a
     committed correction cannot be corrected onto a charge of the closed Lease in a later
-    transaction; a draft linked by a correction confirmed in the same transaction can."""
+    transaction; a draft linked by a correction confirmed in the same transaction can (since
+    sub-slice 10b the commit check then refuses it, because it is still DRAFT)."""
     url = migrated_database_url
     case = leaving_case(url)
     human, prop, lease, customer = case["human"], case["prop"], case["lease"], case["customer"]
@@ -485,9 +486,15 @@ def test_an_invoice_draft_moves_onto_the_closed_lease_only_inside_its_own_correc
     committed, current = (UUID(str(draft["id"])) for draft in drafts)
     draft = correction_draft(url, case)
     correction = UUID(str(one(url, "SELECT app.settlement_correction_id(%s)", draft)[0]))
-    with psycopg.connect(url) as connection:
+    # Sub-slice 10b: a correction no longer commits while a linked Invoice is still DRAFT, so
+    # this link is refused at commit; the later transaction below still has no link of its own.
+    with pytest.raises(psycopg.Error) as draft_linked, psycopg.connect(url) as connection:
         connection.execute(BEGIN, (prop, person, draft, "financial.approve"))
         connection.execute(LINK, (correction, "invoice_id", committed))
+    assert (draft_linked.value.sqlstate, draft_linked.value.diag.message_primary) == (
+        "23514",
+        "An Invoice linked to a post-settlement correction must be issued",
+    )
     closed_refusal(
         InvoiceConflictError,
         invoices().correct_draft,
@@ -501,7 +508,7 @@ def test_an_invoice_draft_moves_onto_the_closed_lease_only_inside_its_own_correc
     assert one(url, "SELECT lease_id FROM app.invoices WHERE id=%s", committed) == (None,)
     draft = correction_draft(url, case)
     correction = UUID(str(one(url, "SELECT app.settlement_correction_id(%s)", draft)[0]))
-    with psycopg.connect(url) as connection:
+    with pytest.raises(psycopg.Error) as moved, psycopg.connect(url) as connection:
         connection.execute(BEGIN, (prop, person, draft, "financial.approve"))
         connection.execute(LINK, (correction, "invoice_id", current))
         connection.execute(
@@ -518,8 +525,15 @@ def test_an_invoice_draft_moves_onto_the_closed_lease_only_inside_its_own_correc
                 uuid4(),
             ),
         )
+    # Sub-slice 10b: the linked draft passes the 8e-1 refusal of the UPDATE path (not P5S01);
+    # the new commit check, which correct_invoice_draft runs at once, then refuses it because a
+    # correction never keeps a linked Invoice in DRAFT, so nothing moves.
+    assert (moved.value.sqlstate, moved.value.diag.message_primary) == (
+        "23514",
+        "An Invoice linked to a post-settlement correction must be issued",
+    )
     assert one(url, "SELECT lease_id,status FROM app.invoices WHERE id=%s", current) == (
-        lease,
+        None,
         "DRAFT",
     )
 

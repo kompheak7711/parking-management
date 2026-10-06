@@ -38008,6 +38008,122 @@
       "test_path": "backend/tests/test_settlement_correction_migration.py",
       "status": "implemented",
       "notes": "Two transactions start before a third commits a correction: neither may use that committed link to pass the closed Settlement refusal (P5S01) nor add an effect to the committed correction (23514); the correction keeps exactly its one effect (V1-056 sub-slice 10a review round 2)."
+    },
+    {
+      "test_id": "test_staff_record_and_only_a_financial_approve_holder_confirms_before_any_connection",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-SETTLE-013"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "Only final_settlements.prepare records an extra charge correction and only financial.approve on the Property confirms it, both checked before any connection (V1-056 sub-slice 10b)."
+    },
+    {
+      "test_id": "test_the_command_refuses_malformed_input",
+      "upstream_ids": [
+        "BR-INV-044",
+        "BR-SETTLE-013"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "The extra charge command needs whole cents, a Damage charge with one finding and a Miscellaneous charge with none, the Due Date override with its reason, and a reason of at most 500 characters (V1-056 sub-slice 10b)."
+    },
+    {
+      "test_id": "test_record_sends_the_stored_charge_under_the_prepare_reference",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-AUTH-010"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "The recorder receives the draft id scoped to the Property, preparer and key, the stored charge and final_settlements.prepare; the confirm receives financial.approve (V1-056 sub-slice 10b)."
+    },
+    {
+      "test_id": "test_failures_map_to_stable_errors",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-AUTH-010"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "A stale extra charge draft (P5S02) is a conflict that stays pending; business state and a unique violation are conflicts; authorization, not found, invalid and reused keys map to stable errors (V1-056 sub-slice 10b, review round 1)."
+    },
+    {
+      "test_id": "test_an_extra_charge_is_a_new_issued_invoice_linked_to_the_closed_settlement",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-SETTLE-012",
+        "BR-SETTLE-016",
+        "BR-AUTH-010",
+        "DB-SETTLE-003",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_extra_charge_migration.py",
+      "status": "implemented",
+      "notes": "An open Settlement takes no correction; a DRAFT Invoice of the Lease is no obligation to correct; the database refuses malformed input with no draft; the draft has no effect; the recorder takes only final_settlements.prepare and Staff cannot confirm; the recorder's replay of the decided draft hides the transaction id; the confirmation writes the one-time charge record and its issued Invoice to the Primary Tenant with fresh ids, due on the issue date plus the Property's days, both linked to the correction, on the Customer Ledger, with the Settlement row unchanged and no transaction id returned; an exact repeat replays (V1-056 sub-slice 10b, review round 1)."
+    },
+    {
+      "test_id": "test_an_extra_charge_for_another_signers_invoice_goes_to_that_signer",
+      "upstream_ids": [
+        "BR-SETTLE-016",
+        "BR-SETTLE-013"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_extra_charge_migration.py",
+      "status": "implemented",
+      "notes": "A charge that corrects another Signer's Invoice goes to that Signer's ledger; a Damage charge goes only to the Primary Tenant; another Lease's Invoice is not this Settlement's obligation (V1-056 sub-slice 10b)."
+    },
+    {
+      "test_id": "test_a_damage_extra_charge_bills_a_current_unbilled_finding_and_a_stale_draft_waits",
+      "upstream_ids": [
+        "BR-INV-044",
+        "BR-MOVEOUT-006",
+        "BR-SETTLE-013"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_extra_charge_migration.py",
+      "status": "implemented",
+      "notes": "A Damage extra charge bills one current unbilled finding with the authorized Due Date override, never before the issue date; the confirm runs only at READ COMMITTED; a second draft for the finding is stale and stays pending; a billed or superseded finding and a reused key are refused; an override that precedes the issue date at the confirm is a conflict and the draft stays pending (V1-056 sub-slice 10b, review rounds 1 and 2)."
+    },
+    {
+      "test_id": "test_no_late_payment_decision_and_unlinked_charges_stay_refused",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_extra_charge_migration.py",
+      "status": "implemented",
+      "notes": "No Late-payment Decision or Charge on a correction Invoice; a one-time charge with the closed Lease is refused when unlinked or linked to another Settlement's correction (V1-056 sub-slice 10b)."
+    },
+    {
+      "test_id": "test_a_linked_invoice_is_issued_before_commit_and_the_decision_must_be_this_transactions",
+      "upstream_ids": [
+        "DB-SETTLE-003",
+        "DB-SETTLE-005",
+        "BR-SETTLE-013"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_extra_charge_migration.py",
+      "status": "implemented",
+      "notes": "A correction never commits with a linked Invoice still DRAFT, also under SET CONSTRAINTS ALL IMMEDIATE, and a check run before the linked Invoice exists refuses too; a CONFIRMED decision with this transaction's id but written before the transaction started gives no effect, no link and no commit (V1-056 sub-slice 10b, 10a round 3 notes)."
+    },
+    {
+      "test_id": "test_extra_charge_functions_are_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_extra_charge_migration.py",
+      "status": "implemented",
+      "notes": "Only the financial role may record or confirm an extra charge correction; the internal functions and the changed refusals are definer functions no role may call; the new link is a deferrable, unique foreign key inside the one-link check; no 10b function has a time limit (BR-SETTLE-013); the migration is forward-only and adds only the listed functions (V1-056 sub-slice 10b)."
     }
   ]
 }

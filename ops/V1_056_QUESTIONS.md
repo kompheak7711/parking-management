@@ -710,7 +710,7 @@ Until you answer, no slice 10 code. If you approve, I would build 10a first (rec
 
 Agent check of answer 6 before use: the recommendations follow those rules (docs/010). Recorded in docs/010; the slice 10 design note is updated. Follow-up points that do not block 10a are in Q-2026-10-06-37.
 
-## Q-2026-10-06-37 — Slice 10 follow-up points from the owner answers to Q-2026-10-06-36 (not blocking 10a)
+## Q-2026-10-06-37 — Slice 10 follow-up points from the owner answers to Q-2026-10-06-36 (not blocking 10a) (ANSWERED 2026-10-07: yes to points 1 to 5, with one condition on point 5; answers in docs/010)
 
 None of these points changes 10a (the correction record and its passage through the closed-Settlement refusals), so I build 10a now under the standing rules. Each point blocks only the sub-slice named in it.
 
@@ -720,3 +720,13 @@ None of these points changes 10a (the correction record and its passage through 
 4. **One more link for the extra charge** (blocks 10b). A one-time charge is first recorded as a one-time charge record (`authorized_nonrecurring_obligations`, migration 65) and then billed on its Invoice; the 8e-1 refusal guards that record too, and DB-SETTLE-005 has no link for it, so an extra charge with the Lease cannot pass. **Recommendation:** add the link `authorized_nonrecurring_obligation_id` to DB-SETTLE-005 in 10b (the same kind of link as the approved ones).
 5. **DB-SETTLE-005 context of a linked record** (blocks 10e and 10g). docs/004 says each effect's "Customer/Lease/source context and correlation must match the Settlement correction". Two approved fixes write records of another Lease: the wrong-Unit fix allocates the Payment to the correct Invoice of another Lease (your answer 4), and a returned Payment must reverse all its allocations, Credits and receipts, also those on other Leases, before the Payment can be reversed (your answer 5). 10a does not check context in the table: each variant writer will check it. **Recommendation:** every linked record must belong to the Settlement's Lease, except the correct Invoice's new allocation in a wrong-Unit fix and the returned Payment's own records (its allocations, Credit applications, Credits, Deposit receipts and its reversal); docs/004 says so.
 6. **For your information, no answer needed:** the Adjustment reversal before closure needs a new draft kind `ADJUSTMENT_REVERSAL` with the preparer `invoices.adjust` (your answer 7; a relaxing change of the draft kind check in 10f). In 10a the header's `correlation_id` (DB-SETTLE-003) is the draft id, and "a correction years after closure" cannot be run as a test (every writer stamps the database clock), so 10a shows it by checking that the only time checks are "not before the closure" and "not later than the clock plus 5 seconds".
+
+**Owner answer (2026-10-07).**
+
+1. Yes. `FORFEITURE_REVERSAL` and `PAYMENT_MOVE` are correction kinds.
+2. Yes. A new append-only table `payment_returns` for a returned Payment with no Settlement. Update docs/004 to match.
+3. Yes. `payments.reverse` prepares it as a new draft kind `PAYMENT_RETURN`. Only a `financial.approve` holder confirms it.
+4. Yes. Add the one-time charge link (`authorized_nonrecurring_obligation_id`) for the extra charge.
+5. Yes, allow exactly these two exceptions to the same-Lease rule: the wrong-Unit move paying another Lease's Invoice, and a returned Payment reversing records on other Leases. One condition: neither may change a record that another Lease's closed Settlement relied on, unless that change is also a confirmed correction of that Settlement. Test it. If this is hard to build, write the case in ops/V1_056_QUESTIONS.md with your recommendation and stop.
+
+Recorded in docs/010; docs/004 DB-SETTLE-005 amended and DB-PAY-009 (`payment_returns`) added. Point 4 is built in sub-slice 10b; points 1, 2, 3 and 5 in 10d, 10e and 10g.

@@ -944,6 +944,14 @@ and an obligation may be billed once. Pet-related use is derived only through th
 linked finding's `pet_related` flag. This relation creates no new fee, penalty,
 category, or charging right.
 
+V1-056 sub-slice 10b (migration `20261102_98`): after a Lease's Final Settlement closes, a
+one-time charge with that Lease is written only by an `EXTRA_CHARGE` post-settlement
+correction (`app.confirm_settlement_extra_charge`, DB-SETTLE-005), authorized by the
+`financial.approve` holder who confirms it (`authorization_reference` `financial.approve`). It
+uses the same one-time rule; its Customer is the Customer of the corrected Invoice, which may be
+another signed Signer of the Lease, or the Primary Tenant (a Damage charge always the Primary
+Tenant).
+
 ## DB-INV-006 — `invoice_line_calculation_components`
 
 Immutable relational calculation detail: `id uuid PK`, `invoice_line_id uuid NOT NULL
@@ -1228,6 +1236,23 @@ and cannot exceed its remaining balance or affect the source Invoice.
 ## DB-PAY-008 — `payment_moves`
 
 Append-only link of one confirmed wrong-Unit Payment move (BR-PAY-042, V1-056 slice 7, migration `20261020_85`): `id uuid PK`, `draft_id uuid NOT NULL UNIQUE FK financial_drafts`, `property_id`, `payment_id`, `source_allocation_id uuid NOT NULL UNIQUE FK payment_allocations`, `source_reversal_id uuid NOT NULL UNIQUE FK payment_allocation_reversals`, `source_reversed_by_move boolean NOT NULL`, `target_allocation_id uuid NOT NULL UNIQUE FK payment_allocations`, `source_invoice_id`, `target_invoice_id`, `moved_usd_cents bigint NOT NULL CHECK (>0)`, `source_acknowledgement` and `target_acknowledgement text NOT NULL` (1 to 2,000 characters: who acknowledged for each Customer, the date and how), `confirmed_at`, `confirmed_by`. Staff record a `PAYMENT_MOVE` draft under `payments.allocations.reverse` (`app.record_payment_move_draft`); a `financial.approve` holder confirms it (`app.confirm_payment_move_draft`), which in one transaction reverses the wrong Invoice allocation (unless the one-call reversal already did), posts the same Payment to the correct Invoice of another Unit and inserts this row; a deferred check requires the draft's CONFIRMED decision. The move is refused while the Payment has Customer Credit that is not reversed or a Refund that is not fully returned, and a draft is stale when the correct Invoice or the source changed. The Payment row and its Receipt never change. No runtime or financial role has table privileges. Update/delete is prohibited. The reversal and the new allocation share one instant, and one `payment_move.confirmed` audit event per move carries the draft id as its correlation id. The draft payload (both acknowledgements and the line split of the correct Invoice) must fit the 16,000-byte draft limit. The confirmation advances the correct Invoice's version even when its status is unchanged. A Customer Credit that a credit Adjustment released from a moved allocation is never reversed by the one-call Credit reversal unless the Payment is a normal Customer Payment and the Credit belongs to its payer (`customer_credit_reversals_moved_payment`, SQLSTATE P4904; owner answers to Q-2026-10-05-18 and Q-2026-10-05-19); otherwise it stays with its Customer. A Credit of a Customer other than the payer can be applied to that Customer's Invoices or Late-payment Charges, or refunded to that Customer through a `CREDIT_CUSTOMER` Refund draft confirmed by `financial.approve` (BR-CREDIT-014; V1-056 sub-slice 8f, migration `20261030_95`, DB-REFUND-001); the ordinary Credit Refund draft pays only a recipient who is both the Credit's Customer and the payer, so it is refused for such a Credit. A third-party payer's own Credit can still be refunded to the payer through a Refund draft.
+
+## DB-PAY-009 — `payment_returns`
+
+Approved by owner answers 2 and 3 to Q-2026-10-06-37 (2026-10-07); built in V1-056 sub-slice 10e.
+Append-only record of one returned Payment (a bounced transfer): one row per returned Payment
+with the Payment, the draft, the reason, the approver, `authorization_reference`
+`financial.approve`, and the Settlement correction (DB-SETTLE-003) when there is one. With no
+closed Settlement, a `payments.reverse` holder prepares a draft of the new kind `PAYMENT_RETURN`;
+with a closed Settlement it is the `RETURNED_PAYMENT` correction variant under
+`final_settlements.prepare`; only a `financial.approve` holder confirms either. The confirmation
+reverses, in one transaction, the Payment's allocations, Credit applications, Credits and Deposit
+receipts and then the Payment. The slice 7 and sub-slice 8g refusals and the sub-slice 8e-2
+refusal accept such a reversal only when this row for that Payment was written earlier in the
+same transaction by the internal writer (never a session setting). A returned Payment may reverse
+its records on other Leases, but never a record that another Lease's closed Settlement relied on
+unless that change is also a confirmed correction of that Settlement (DB-SETTLE-005, owner answer
+5). No application role may write the table.
 
 ## DB-CREDIT-001 — `customer_credits`
 
@@ -1995,12 +2020,45 @@ in the same transaction (its draft's CONFIRMED decision carries the top-level tr
 application role may read or write the table. The link `deposit_application_reversal_id` is added with its table in sub-slice 10c-2. The context of each
 linked record is checked by the variant writer that writes it (later sub-slices); whether a record
 of another Lease may be linked (the correct Invoice of a wrong-Unit move, the other allocations of
-a returned Payment) is Q-2026-10-06-37 point 5. The closed Settlement refusals of sub-slices 8e-1
+a returned Payment) is answered below (owner answer 5 to Q-2026-10-06-37). The closed Settlement refusals of sub-slices 8e-1
 and 8e-2 let a record through only when `app.settlement_correction_linked` finds it linked to a
 correction of the same Settlement confirmed in the same transaction (an Invoice, an Adjustment, an
 Adjustment reversal, a Late-payment Charge correction, a Settlement Credit application reversal);
 VOID events, Late-payment Decisions and Charges and one-time charge records have no link and stay
-refused.
+refused (one-time charge records until sub-slice 10b, below).
+
+Amended by owner answers 4 and 5 to Q-2026-10-06-37 (2026-10-07): the links also include
+`authorized_nonrecurring_obligation_id uuid NULL FK` (the one-time charge record of an extra
+charge, built in sub-slice 10b). Every record linked to a correction belongs to the Settlement's
+Lease, with exactly two exceptions: the wrong-Unit move of a `PAYMENT_MOVE` correction may pay
+another Lease's Invoice, and a returned Payment may reverse its own records on other Leases (its
+allocations, Credit applications, Credits, Deposit receipts and its reversal). Neither exception
+may change a record that another Lease's closed Settlement relied on, unless that change is also
+a confirmed correction of that Settlement.
+
+As built in V1-056 sub-slice 10b (migration `20261102_98`): the link
+`authorized_nonrecurring_obligation_id` is a deferrable, unique foreign key like the others and
+the one-link check covers it; the 8e-1 refusal lets a one-time charge record through when it is
+linked that way. A deferred check refuses the commit while an Invoice linked to a correction is
+not issued (23514; a positive check, so it also refuses when run before the Invoice is written).
+The first variant writer is the `EXTRA_CHARGE` correction: Staff record a
+`SETTLEMENT_CORRECTION` draft with `payload.variant` `EXTRA_CHARGE` under
+`final_settlements.prepare` (`app.record_settlement_extra_charge_draft`; the reason is at most
+500 characters because the one-time charge record keeps it); only a `financial.approve` holder
+confirms it (`app.confirm_settlement_extra_charge`), which writes, linked in this order, a
+Miscellaneous or Damage one-time charge record (authorized by the approver under
+`financial.approve`, BR-INV-044) and its Invoice with the Lease and one line, issued in the
+same call with the one-time charge Due Date (the issue date plus the Property's days, or the
+override with its reason, never before the issue date). The Customer is the Customer of the
+corrected Invoice when the draft names one (an issued, non-VOID Invoice of the Settlement's
+Lease), otherwise the Primary Tenant; a Damage charge always goes to the Primary Tenant. A draft
+whose sources changed (the closure, the Primary Tenant, the corrected Invoice, the finding) is
+stale (P5S02) and stays pending. The confirm runs only at READ COMMITTED, locks the Lease row
+after the Settlement draft lock, gives its records fresh ids (an exact repeat finds them through
+the links) and never returns the decision's transaction id. The writer runs the deferred checks
+inside itself (`SET CONSTRAINTS ALL IMMEDIATE`) once every linked record is written, as the
+Invoice writers do. No Late-payment Charge follows: the 8e-1 refusal of Late-payment Decisions
+stays.
 
 ## DB-SETTLE-006 — `settlement_invoice_line_items`
 
