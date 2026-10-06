@@ -671,3 +671,5 @@ Sub-slice 8e-3 (confirm and close) is not started; no code is written and no run
 Please confirm the recommendation or say what to change. Nothing else in 8e-3 is unclear; the rest follows the plan notes.
 
 Owner answer (2026-10-06): leave it out, as recommended. A month whose Rent Invoice was VOIDed by a BR-RENT-030 hand-back resolution does not block; every other month a Rent run would bill with no active Rent Invoice blocks, including a month VOIDed for any other reason; recurring months only.
+
+Owner follow-up (2026-10-06, after the 8e-3 report): leave it out, as recommended. The answer also covers next month's Rent Invoice VOIDed by the hand-back resolution when the Customer leaves between the 25th and the month end (slice 5). A month VOIDed for any other reason still blocks. A test for both cases. Built as two tests after commit 660f83e: the existing rule already matches every month whose Rent Invoice a hand-back resolution VOIDed, whatever its coverage, so no code changed.

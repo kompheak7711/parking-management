@@ -226,3 +226,36 @@ are exactly what U3 and P5 ran. Final runs: U3 backend unit 3477 passed; P5 full
 passed. Corrections used: stale-test plan arithmetic 1 of 2, single test Property 1 of 2,
 departed rate slot 1 of 2. All run outputs are small (at most 200 KB) and committed; nothing was
 moved to `~/Development/prm-run-logs/` for 8e-3.
+
+## Follow-up after the 8e-3 report (2026-10-06): owner answer on the hand-back months
+
+Owner: leave it out, as recommended; the answer also covers next month's Rent Invoice VOIDed by
+the hand-back resolution after a hand-back between the 25th and the month end (slice 5); a month
+VOIDed for any other reason still blocks; a test for both cases. The committed rule already leaves
+out every month whose Rent Invoice a hand-back resolution VOIDed, whatever its coverage, so no code
+changed. Added `test_a_next_month_voided_by_the_hand_back_rule_does_not_block` (hand-back on 26
+August, termination dated 10 September, so the billing rule counts September as billable; the
+resolution VOIDs it; it does not block) and
+`test_a_month_voided_for_another_reason_still_blocks_after_a_hand_back` (the hand-back month and
+next month VOIDed by a plain staff VOID instead; each blocks with `RENT_PERIOD_NOT_BILLED`); two
+traceability entries appended; docs/010 and the questions file record the answer.
+
+Static checks (separate commands): `ruff format` (the new tests reformatted), `ruff check src
+tests` (clean), `ruff format --check src tests` (294 files formatted), `mypy` (no issues in 294
+source files). Read-only search: no code or migration changed; only the two new tests are
+affected, and each uses its own temporary database. Migration-only check before P6: exit 0.
+
+| Run | Kind | Result | Cause | Output |
+|---|---|---|---|---|
+| U4 | backend unit, full | 3477 passed, 1703 skipped, 1 warning (Starlette) | owner follow-up (traceability) | `V1-056-slice-08e3-unit-test-run-4.txt` |
+| P6 | PostgreSQL, full | 1866 passed, 3 warnings | owner follow-up | `V1-056-slice-08e3-full-test-run-6.txt` |
+
+The P6 warnings are the Starlette deprecation and the known intermittent pydantic warning in two
+`test_credit_refund_api_migration.py` tests (slice 12 item).
+
+Independent review (fresh read-only reviewer, tests and documents only, so no security review):
+0 blockers, 0 should-fix, 4 notes. It confirmed that September is billable only through the
+early-final-month rule, that the plain VOID writes no resolution, and that an exclusion of any
+VOIDed month or of the hand-back month only would fail one of the tests. Notes: three test
+additions (slice 12 list in the plan) and the docs/004 wording (taken). The committed tests are
+exactly what P6 ran.

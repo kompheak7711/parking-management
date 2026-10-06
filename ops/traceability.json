@@ -37665,6 +37665,28 @@
       "test_path": "backend/tests/test_final_settlement_confirm_migration.py",
       "status": "implemented",
       "notes": "At an unpaid-Initial termination the Security Deposit is kept, the Pet Deposit pays the pet damage and other debt only by the Customer's recorded choice, and its rest is refunded while the debt stays (Q-2026-10-05-21; V1-056 sub-slice 8e-3 review round 1)."
+    },
+    {
+      "test_id": "test_a_next_month_voided_by_the_hand_back_rule_does_not_block",
+      "upstream_ids": [
+        "BR-RENT-030",
+        "BR-SETTLE-011"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_confirm_migration.py",
+      "status": "implemented",
+      "notes": "Next month's Rent Invoice VOIDed by the hand-back resolution after a hand-back between the 25th and the month end stays billable for the billing rule (termination dated in that month) but does not block the Settlement (owner follow-up to Q-2026-10-06-34)."
+    },
+    {
+      "test_id": "test_a_month_voided_for_another_reason_still_blocks_after_a_hand_back",
+      "upstream_ids": [
+        "BR-RENT-030",
+        "BR-SETTLE-011"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_confirm_migration.py",
+      "status": "implemented",
+      "notes": "The hand-back month and next month VOIDed by a plain staff VOID, not the hand-back resolution, are unbilled and block the Settlement with RENT_PERIOD_NOT_BILLED (owner follow-up to Q-2026-10-06-34)."
     }
   ]
 }

@@ -1903,8 +1903,9 @@ the bound of the other Settlement writers (23514). The preview gains the
 blocking issue `RENT_PERIOD_NOT_BILLED` for each recurring Rent month a Rent run would still bill
 (`app.lease_is_billable_for_recurring_period`) with no non-VOID Rent Invoice of the Lease covering
 it, read by `app.final_settlement_unbilled_rent_months`; a month whose Rent Invoice a BR-RENT-030
-hand-back resolution VOIDed does not count (owner answers 2 to Q-2026-10-06-33 and to
-Q-2026-10-06-34).
+hand-back resolution VOIDed (the hand-back month or, after the 25th, the next month) does not
+count, while a month VOIDed for any other reason does (owner answers 2 to Q-2026-10-06-33 and to
+Q-2026-10-06-34, with its follow-up).
 
 `closing_balance_due_usd_cents` is the post-application, post-disposition, and
 post-Refund Customer receivable remaining at closure. A refundable amount is not

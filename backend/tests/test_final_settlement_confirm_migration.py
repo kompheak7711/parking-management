@@ -72,6 +72,7 @@ from test_final_settlement_preview_migration import (
 from test_final_utility_invoice_migration import create_final, departed, final_reading, record_final
 from test_hand_back_rent_migration import (
     AUGUST,
+    SEPTEMBER,
     Scenario,
     correct_move_out,
     hand_back,
@@ -1139,6 +1140,99 @@ def test_a_month_voided_by_the_hand_back_rule_does_not_block(hand_back_database:
     assert (
         issues(preview(scenario.prop, scenario.human, settlement), "RENT_PERIOD_NOT_BILLED") == []
     )
+
+
+def rent_issue(first: date) -> dict[str, str]:
+    """The RENT_PERIOD_NOT_BILLED issue of the calendar month that starts on first."""
+    last = (first.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+    return {
+        "code": "RENT_PERIOD_NOT_BILLED",
+        "period_start": first.isoformat(),
+        "period_end": last.isoformat(),
+    }
+
+
+def test_a_next_month_voided_by_the_hand_back_rule_does_not_block(
+    hand_back_database: str,
+) -> None:
+    """Owner answer to Q-2026-10-06-34 (follow-up, 2026-10-06): after a hand-back between the
+    25th and the month end, the hand-back resolution VOIDs next month's Rent Invoice (BR-RENT-030,
+    slice 5). With the termination dated in that next month, the billing rule counts the month as
+    billable (the early final month), but its Rent was decided, so it does not block."""
+    url = hand_back_database
+    scenario = lease_with_invoices(url, (AUGUST, SEPTEMBER))
+    september = scenario.invoices[SEPTEMBER]
+    hand_back(url, scenario, date(2026, 8, 26), terminated_on=date(2026, 9, 10))
+    who = hand_back_staff(scenario.human, scenario.prop)
+    owed = hand_back_invoices().hand_back_rent_assessment(scenario.prop, september, actor=who)
+    assert (owed["coverage"], owed["action"]) == ("NEXT_MONTH", "VOID")
+    assert unbilled_rent_months(url, scenario.lease) == []
+    hand_back_invoices().resolve_hand_back_rent(
+        scenario.prop,
+        september,
+        ResolveHandBackRentCommand(
+            uuid4(),
+            "VOID",
+            int(str(owed["outstanding_usd_cents"])),
+            "Customer handed back the Unit on 26 August",
+            invoice_version(url, september),
+        ),
+        actor=who,
+    )
+    assert (
+        one(
+            url,
+            "SELECT app.lease_is_billable_for_recurring_period(%s,%s,%s,statement_timestamp())",
+            scenario.lease,
+            SEPTEMBER,
+            date(2026, 9, 30),
+        )[0]
+        is True
+    )
+    assert unbilled_rent_months(url, scenario.lease) == []
+    settlement = start(scenario.prop, scenario.human, scenario.lease)
+    assert (
+        issues(preview(scenario.prop, scenario.human, settlement), "RENT_PERIOD_NOT_BILLED") == []
+    )
+
+
+def test_a_month_voided_for_another_reason_still_blocks_after_a_hand_back(
+    hand_back_database: str,
+) -> None:
+    """Owner answer to Q-2026-10-06-34 (follow-up, 2026-10-06): only a BR-RENT-030 hand-back
+    resolution decides a month. The same Rent Invoices VOIDed by staff for another reason (a plain
+    VOID, not the hand-back resolution) leave the month unbilled, and it blocks: the hand-back
+    month (hand-back before the 5th) and the next month (hand-back on or after the 25th, the
+    termination dated in that month)."""
+    url = hand_back_database
+    early = lease_with_invoices(url, (AUGUST,))
+    hand_back(url, early, date(2026, 8, 3))
+    late = lease_with_invoices(url, (AUGUST, SEPTEMBER))
+    hand_back(url, late, date(2026, 8, 26), terminated_on=date(2026, 9, 10))
+    for scenario, month in ((early, AUGUST), (late, SEPTEMBER)):
+        invoice = scenario.invoices[month]
+        assert unbilled_rent_months(url, scenario.lease) == []
+        hand_back_invoices().void(
+            scenario.prop,
+            invoice,
+            VoidInvoiceCommand(uuid4(), "Billed in error", invoice_version(url, invoice)),
+            actor=hand_back_staff(scenario.human, scenario.prop),
+        )
+        assert (
+            one(
+                url,
+                "SELECT count(*) FROM app.hand_back_rent_resolutions WHERE invoice_id=%s",
+                invoice,
+            )[0]
+            == 0
+        )
+        issue = rent_issue(month)
+        assert unbilled_rent_months(url, scenario.lease) == [
+            (date.fromisoformat(issue["period_start"]), date.fromisoformat(issue["period_end"]))
+        ]
+        settlement = start(scenario.prop, scenario.human, scenario.lease)
+        view = preview(scenario.prop, scenario.human, settlement)
+        assert issues(view, "RENT_PERIOD_NOT_BILLED") == [issue] and view["ready"] is False
 
 
 def test_the_closure_guard_and_snapshots_refuse_what_the_confirm_would_not_write(
