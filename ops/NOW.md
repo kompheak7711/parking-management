@@ -113,4 +113,6 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md.
 
 - V1-056 8e-3 follow-up (2026-10-06, c304b43): owner follow-up to Q-2026-10-06-34 tested, no code change: next month's Rent Invoice VOIDed by the hand-back resolution (hand-back after the 25th) does not block; a month VOIDed for any other reason still blocks; unit 3477 (U4), PostgreSQL 1866 (P6); independent review no should-fix. NEXT: wait for the owner before sub-slice 8f. Nothing pushed.
 
+- V1-056 sub-slice 8f (2026-10-06, 1254264, migration 20261030_95): COMMITTED. Credit Refund to the Invoice Customer who is not the payer (BR-CREDIT-014, Q-2026-10-05-19): REFUND draft variant CREDIT_CUSTOMER (refunds.create records, financial.approve confirms, internal writer, payer rule lifted only for such a Credit, deferred same-approver check); 23514 and 23505 at Refund draft confirmation are conflicts. Rounds 1 to 3 (independent and security), round 3 no should-fix; unit 3497 (U4), PostgreSQL 1874 (P3); corrections 1 of 2 (missing traceability entries). OPEN, not blocking: Q-2026-10-06-35 (a third-party adjustment Credit can still go back to the payer through the one-call Credit reversal; tightening needs the owner). Slice 8 complete. NEXT: wait for the owner before slice 9. Nothing pushed.
+
 - Updated: 2026-10-06.
