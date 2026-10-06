@@ -51,6 +51,7 @@ from property_rental.invoice import (
 )
 from property_rental.late_payment import DecisionOutcome, FinalizeLatePaymentDecisionCommand
 from property_rental.move_out_inspection import InspectionFinding, RecordMoveOutInspection
+from rent_month_test_support import bill_unbilled_rent_months
 from test_billing_service_migration import (
     add_service,
     authenticated,
@@ -134,13 +135,17 @@ def drafts() -> FinancialDraftService:
     return FinancialDraftService(runtime_database_url(), financial_database_url())
 
 
-def leaving_case(url: str, *, unpaid_initial: bool = False) -> dict[str, Any]:
+def leaving_case(
+    url: str, *, unpaid_initial: bool = False, start_offset: int = 10, voluntary: bool = False
+) -> dict[str, Any]:
     """A signed Lease that never moved in, with its Security Deposit (10,000 held), a Pet Deposit
     (20,000 held) and two issued Damage charges of 12,500, one pet-related. Normally the Initial
     Rent Invoice is paid and a credit Adjustment releases 400 of Customer Credit, then the Lease is
     terminated with no forfeiture ground; with unpaid_initial it is terminated for the unpaid
-    Initial Rent (BR-LEASE-005, a BR-DEP-027 termination)."""
-    source = signed_with_initial(url, 10)
+    Initial Rent (BR-LEASE-005, a BR-DEP-027 termination). The Lease starts start_offset days
+    before today; with voluntary the termination is voluntary early leaving (BR-LEASE-021, a
+    Security forfeiture ground, BR-DEP-023) instead (sub-slice 8e-3)."""
+    source = signed_with_initial(url, start_offset)
     human, prop, lease = source["actor"], source["property"], source["lease"]
     customer, day = source["customer"], source["today"]
     pet = pet_deposit(url, human, prop, lease, day)
@@ -182,7 +187,7 @@ def leaving_case(url: str, *, unpaid_initial: bool = False) -> dict[str, Any]:
         credit = UUID(
             str(one(url, "SELECT id FROM app.customer_credits WHERE customer_id=%s", customer)[0])
         )
-        terminate(url, human, prop, lease, day, voluntary=False)
+        terminate(url, human, prop, lease, day, voluntary=voluntary)
     settlement = start(prop, human, lease)
     return {
         "human": human,
@@ -731,6 +736,8 @@ def two_signer_case(url: str, *, overdue_rent: bool = False) -> dict[str, Any]:
         )
     pet = pet_deposit(url, human, prop, lease, now)
     terminate(url, human, prop, lease, now, voluntary=False)
+    # Sub-slice 8e-3: every Rent month of the Lease is billed and paid (RENT_PERIOD_NOT_BILLED).
+    bill_unbilled_rent_months(url, human, prop, lease)
     return {
         "human": human,
         "prop": prop,
@@ -926,6 +933,8 @@ def mixed_rent_case(url: str) -> dict[str, Any]:
             ).fetchall()
         ]
     terminate(url, human, prop, lease, today(url), voluntary=False)
+    # Sub-slice 8e-3: every Rent month of the Lease is billed and paid (RENT_PERIOD_NOT_BILLED).
+    bill_unbilled_rent_months(url, human, prop, lease)
     return {
         "human": human,
         "prop": prop,
@@ -1292,6 +1301,8 @@ def test_replaced_one_time_charges_are_listed_as_information(migrated_database_u
             actor=staff,
         )
     terminate(url, human, prop, lease, now, voluntary=False)
+    # Sub-slice 8e-3: every Rent month of the Lease is billed and paid (RENT_PERIOD_NOT_BILLED).
+    bill_unbilled_rent_months(url, human, prop, lease)
     view = preview(prop, human, start(prop, human, lease))
     assert view["information"] == [
         {

@@ -37450,6 +37450,221 @@
       "test_path": "backend/tests/test_final_settlement_credit_application.py",
       "status": "implemented",
       "notes": "The Credit service maps the refusal of a one-call reversal of a Final Settlement Credit application (P5S01) to its conflict error (owner answer 3 to Q-2026-10-06-32; V1-056 sub-slice 8e-2)."
+    },
+    {
+      "test_id": "test_a_normal_end_applies_credit_and_deposits_and_refunds_the_rest_to_the_cent",
+      "upstream_ids": [
+        "BR-SETTLE-004",
+        "BR-SETTLE-008",
+        "BR-SETTLE-009",
+        "BR-SETTLE-012",
+        "BR-SETTLE-015",
+        "BR-AUTH-010",
+        "DL-032",
+        "DB-SETTLE-001",
+        "DB-SETTLE-002",
+        "DB-SETTLE-006"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_confirm_migration.py",
+      "status": "implemented",
+      "notes": "A Lease that ends with no forfeiture ground: the confirm writes the Credit application, the Pet and Security Deposit applications and both Deposit Refunds in the DL-032 order, every amount checked to the cent with the Customer Ledger, the closure snapshots and the audit event; only financial.approve confirms, an approver who did not prepare the draft is named on every record written, an exact repeat replays, the closed Settlement and its snapshots never change (V1-056 sub-slice 8e-3)."
+    },
+    {
+      "test_id": "test_debt_larger_than_the_deposits_stays_open_on_the_tenant_s_ledger",
+      "upstream_ids": [
+        "BR-SETTLE-007",
+        "BR-SETTLE-016",
+        "BR-SETTLE-017",
+        "DL-032",
+        "DB-SETTLE-006"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_confirm_migration.py",
+      "status": "implemented",
+      "notes": "Credit and both Deposits are used in the DL-032 order, nothing is refunded, and the 9,600 left stays open on the Primary Tenant's ledger, still payable after closure; the remaining Pet Deposit records the staff reason (V1-056 sub-slice 8e-3)."
+    },
+    {
+      "test_id": "test_early_leaving_keeps_the_security_deposit_and_never_lets_it_pay_debt",
+      "upstream_ids": [
+        "BR-DEP-023",
+        "BR-DEP-026",
+        "BR-SETTLE-005",
+        "BR-SETTLE-011",
+        "BR-SETTLE-016"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_confirm_migration.py",
+      "status": "implemented",
+      "notes": "Voluntary early leaving: a draft written before the forfeiture is confirmed is refused at the confirm; the kept Security Deposit is never in a plan; the Pet Deposit pays the pet damage and, by the staff step, other debt; the rest stays open (owner answer to Q-2026-10-05-24; V1-056 sub-slice 8e-3)."
+    },
+    {
+      "test_id": "test_a_reversed_forfeiture_follows_dl032_and_a_new_forfeiture_draft_waits",
+      "upstream_ids": [
+        "BR-DEP-026",
+        "BR-SETTLE-011",
+        "BR-AUTH-010",
+        "DL-032"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_confirm_migration.py",
+      "status": "implemented",
+      "notes": "A Security Deposit whose forfeiture was reversed follows DL-032 at the confirm; a new forfeiture draft recorded after the Settlement draft holds the confirm back until it is withdrawn (owner answers to Q-2026-10-05-23 and -24; V1-056 sub-slice 8e-3)."
+    },
+    {
+      "test_id": "test_a_signer_s_own_invoice_keeps_its_debt_on_the_signer_s_ledger",
+      "upstream_ids": [
+        "BR-SETTLE-016",
+        "BR-CREDIT-006",
+        "BR-CREDIT-008",
+        "BR-SETTLE-004",
+        "DB-SETTLE-004"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_confirm_migration.py",
+      "status": "implemented",
+      "notes": "Each Customer's Credit pays only that Customer's debt (a designated Credit step on a Late-payment Charge recorded as designated); the Pet Deposit pays the Primary Tenant's debt; 67,600 stays on the Primary Tenant's ledger and 600 on the Signer's (owner answers to Q-2026-10-05-20 and -21; V1-056 sub-slice 8e-3)."
+    },
+    {
+      "test_id": "test_a_stale_or_blocked_draft_is_refused_and_stays_pending",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-SETTLE-011",
+        "BR-SETTLE-015"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_confirm_migration.py",
+      "status": "implemented",
+      "notes": "Under its locks the confirm refuses a stale draft (P5S02), a waiting receipt reversal draft of a Lease Deposit and an Invoice draft of the Lease, and an inactive approver as an authorization error; each refusal writes nothing and leaves the draft pending (plan notes 4, 6, 8 and 16; V1-056 sub-slice 8e-3)."
+    },
+    {
+      "test_id": "test_a_settlement_waits_for_every_unbilled_rent_month",
+      "upstream_ids": [
+        "BR-SETTLE-011",
+        "BR-SETTLE-003"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_confirm_migration.py",
+      "status": "implemented",
+      "notes": "RENT_PERIOD_NOT_BILLED lists every recurring Rent month a Rent run would still bill, also a month whose Rent Invoice staff VOIDed for another reason, and refuses the draft until each month is billed; then nothing blocks (owner answers 2 to Q-2026-10-06-33 and to Q-2026-10-06-34; V1-056 sub-slice 8e-3)."
+    },
+    {
+      "test_id": "test_a_month_voided_by_the_hand_back_rule_does_not_block",
+      "upstream_ids": [
+        "BR-RENT-030",
+        "BR-SETTLE-011"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_confirm_migration.py",
+      "status": "implemented",
+      "notes": "A month whose Rent Invoice a BR-RENT-030 hand-back resolution VOIDed stays billable for the billing rule but does not block the Settlement (owner answer to Q-2026-10-06-34; V1-056 sub-slice 8e-3)."
+    },
+    {
+      "test_id": "test_the_closure_guard_and_snapshots_refuse_what_the_confirm_would_not_write",
+      "upstream_ids": [
+        "BR-SETTLE-012",
+        "BR-AUTH-010",
+        "DB-SETTLE-001",
+        "DB-SETTLE-002",
+        "DB-SETTLE-006"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_confirm_migration.py",
+      "status": "implemented",
+      "notes": "Every closure needs an active human approver and a time not later than the clock; a closure snapshot is written only while its Settlement closes and must reconcile at commit (plan note 3; V1-056 sub-slice 8e-3)."
+    },
+    {
+      "test_id": "test_settlement_confirm_records_are_least_privilege",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "DB-SETTLE-002",
+        "DB-SETTLE-004",
+        "DB-SETTLE-006"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_confirm_migration.py",
+      "status": "implemented",
+      "notes": "Only the financial role may execute the confirm; its helpers and the snapshot checks are definer functions no role may execute, and no role may read or write the snapshot tables (V1-056 sub-slice 8e-3)."
+    },
+    {
+      "test_id": "test_final_settlement_confirm_migration_is_forward_only",
+      "upstream_ids": [
+        "DB-SETTLE-001",
+        "BR-SETTLE-012"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_confirm_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20261029_94 follows 20261028_93 and is forward-only (V1-056 sub-slice 8e-3)."
+    },
+    {
+      "test_id": "test_only_a_financial_approve_holder_confirms_before_any_connection",
+      "upstream_ids": [
+        "BR-AUTH-010"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_final_settlement_confirm.py",
+      "status": "implemented",
+      "notes": "The confirm needs financial.approve on the Property and valid identities before any connection (V1-056 sub-slice 8e-3)."
+    },
+    {
+      "test_id": "test_confirm_failures_map_to_stable_errors",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-SETTLE-015"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_final_settlement_confirm.py",
+      "status": "implemented",
+      "notes": "A stale draft is a conflict, an inactive approver an authorization error, a lock or deadlock a conflict, an unknown draft not found (plan note 16; V1-056 sub-slice 8e-3)."
+    },
+    {
+      "test_id": "test_confirm_sends_the_draft_with_the_financial_approve_reference",
+      "upstream_ids": [
+        "BR-AUTH-010"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_final_settlement_confirm.py",
+      "status": "implemented",
+      "notes": "The service calls the confirm on the financial connection with the approver and the financial.approve reference (V1-056 sub-slice 8e-3)."
+    },
+    {
+      "test_id": "test_the_confirm_refuses_other_drafts_approvers_and_isolation_levels",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-SETTLE-012",
+        "BR-SETTLE-015"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_confirm_migration.py",
+      "status": "implemented",
+      "notes": "An unknown Property (one Property per database) and a draft of another kind are not found; a rejected, withdrawn or (for another approver) confirmed draft is a conflict; a transaction that is not READ COMMITTED is refused; only the same approver replays (plan notes 15 and 16; V1-056 sub-slice 8e-3 review round 1)."
+    },
+    {
+      "test_id": "test_a_moved_out_lease_closes_with_its_current_move_out",
+      "upstream_ids": [
+        "BR-SETTLE-007",
+        "BR-SETTLE-016",
+        "DB-SETTLE-001",
+        "DB-SETTLE-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_confirm_migration.py",
+      "status": "implemented",
+      "notes": "A moved-out Lease whose kept Deposits cannot pay closes with an empty plan; the closure snapshot records the current physical move-out, corrected after the Settlement started, and the final Utility Invoice; the whole debt stays on the Customer's ledger (plan note 1; V1-056 sub-slice 8e-3 review round 1)."
+    },
+    {
+      "test_id": "test_a_br_dep_027_termination_refunds_the_pet_rest_while_debt_stays",
+      "upstream_ids": [
+        "BR-DEP-027",
+        "BR-SETTLE-008",
+        "BR-SETTLE-017",
+        "BR-DEP-026"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_settlement_confirm_migration.py",
+      "status": "implemented",
+      "notes": "At an unpaid-Initial termination the Security Deposit is kept, the Pet Deposit pays the pet damage and other debt only by the Customer's recorded choice, and its rest is refunded while the debt stays (Q-2026-10-05-21; V1-056 sub-slice 8e-3 review round 1)."
     }
   ]
 }

@@ -23,6 +23,8 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md. Nothing else 
 - One targeted PostgreSQL run per sub-slice where a database is involved, after a read-only search of ALL backend tests for other affected tests.
 - No retry. Routine allowance: at most 2 corrections per distinct cause.
 - Check new tests for hard-coded values and dates tied to the real clock.
+- Before each full PostgreSQL run, first check that the new migration applies on its own, in the cheapest way the repo allows (owner, 2026-10-06; a CASE inside an IF broke the first run of 8c and 8e-2). Today that is a throwaway copy of `scripts/database-test.sh`, kept outside the repo, that runs `uv run alembic upgrade head` on a fresh container instead of pytest. This check is not a test run.
+- When a full run output is very large, commit an excerpt and move the full file to `~/Development/prm-run-logs/` (owner, 2026-10-06). Never delete a run output.
 
 ## Commits
 - One local checkpoint commit per sub-slice, explicit paths, secret and diff scan.

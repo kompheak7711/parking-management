@@ -1133,6 +1133,17 @@ and `.../utilities`) records the Lease's item as `SKIPPED` with the diagnostic
 allocations, Payment reversals, Credit applications and their reversals stay open, except the
 reversal of a Credit application the Final Settlement made (409, sub-slice 8e-2, API-063).
 
+As built in V1-056 sub-slice 8e-3 (migration `20261029_94`): the close action exists as a service,
+`FinalSettlementService.confirm(property, draft)` over `app.confirm_final_settlement_draft`, for a
+`financial.approve` holder only. Under the draft-then-confirm model (BR-AUTH-010) one confirm of
+the Settlement draft writes its Credit applications, Deposit applications and Deposit Refunds,
+the closure snapshots and the closing balance, and closes the Settlement in one transaction; the
+separate deposit-application and deposit-refund actions above are not built. A draft whose sources
+changed is refused as stale (409) and stays pending; a blocking issue, a pending draft on a
+Settlement source, a decided draft or a closed Settlement is 409; a missing or inactive approver
+is 403; an exact repeat by the same approver returns the stored result. The route is built in
+slice 11e.
+
 # 23. Audit Endpoints
 
 ## API-073 — Record Audit

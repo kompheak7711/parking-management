@@ -7,8 +7,10 @@ them directly. The preview (sub-slice 8b) is a read under the runtime role for h
 ``final_settlements.prepare`` or ``financial.approve``; it writes nothing. Staff record the
 Settlement draft (sub-slice 8c) under ``final_settlements.prepare``: the DL-032 steps in order with
 amounts in cents. The draft has no financial effect; only a ``financial.approve`` holder confirms
-it (sub-slice 8e), and withdraw and reject use the shared draft decisions. The HTTP routes and
-screens come in slice 11e.
+it (sub-slice 8e), and withdraw and reject use the shared draft decisions. A ``financial.approve``
+holder confirms the draft (sub-slice 8e-3): in one transaction the database checks the plan again,
+writes the Credit applications, Deposit applications and Refunds, the closure snapshots and the
+closing balance, and closes the Settlement for good. The HTTP routes and screens come in slice 11e.
 """
 
 from __future__ import annotations
@@ -54,6 +56,10 @@ class FinalSettlementKeyReused(FinalSettlementConflictError):
     pass
 
 
+class FinalSettlementStaleDraftError(FinalSettlementConflictError):
+    """The draft no longer matches its sources; it stays pending and is prepared again."""
+
+
 class FinalSettlementUnavailableError(RuntimeError):
     """An outcome may be unknown: preserve and replay the original command."""
 
@@ -62,6 +68,9 @@ class FinalSettlementUnavailableError(RuntimeError):
 FINAL_SETTLEMENT_DRAFT_NAMESPACE: Final = UUID("5c0f3c55-0f43-4b8e-9d4a-7f1d2b6a8e31")
 MAX_SETTLEMENT_STEPS: Final = 200
 MAX_USD_CENTS: Final = 9_000_000_000_000_000
+# The confirm (sub-slice 8e-3) reports a draft its sources no longer match as stale (P5S02); the
+# Settlement writers it calls refuse such a step with 23514, 23505 or a Credit proposal code.
+CONFIRM_STALE_STATES: Final = frozenset({"P5S02", "23514", "23505", "P5101", "P5102", "P5104"})
 
 
 def final_settlement_draft_id(property_id: UUID, actor_id: UUID, idempotency_key: UUID) -> UUID:
@@ -305,7 +314,12 @@ class FinalSettlementService:
         return _actor_identity(actor)
 
     def _call(
-        self, sql: str, parameters: tuple[object, ...], *, read_only: bool | None = None
+        self,
+        sql: str,
+        parameters: tuple[object, ...],
+        *,
+        read_only: bool | None = None,
+        stale: frozenset[str] = frozenset(),
     ) -> dict[str, object]:
         try:
             with psycopg.connect(
@@ -324,6 +338,10 @@ class FinalSettlementService:
                 )
                 row = connection.execute(sql, parameters).fetchone()
         except psycopg.Error as exc:
+            if exc.sqlstate in stale:
+                raise FinalSettlementStaleDraftError(
+                    "Final Settlement draft is stale; prepare it again"
+                ) from exc
             if exc.sqlstate in {"P0002", "P4501"}:
                 raise FinalSettlementNotFoundError(
                     "Lease or Final Settlement was not found"
@@ -337,9 +355,10 @@ class FinalSettlementService:
             if exc.sqlstate == "P5205":
                 raise FinalSettlementKeyReused("Final Settlement draft key was reused") from exc
             # 55000: business state (for example the Lease is not TERMINATED, a blocking issue or
-            # a plan the current Settlement does not allow); a refusal caused by business state
-            # reaches the user as a conflict (owner answer for slice 11c).
-            if exc.sqlstate in {"55000", "55P03", "40001", "40P01", "23505"}:
+            # a plan the current Settlement does not allow); P5S01: a closed Settlement (8e-1); a
+            # refusal caused by business state reaches the user as a conflict (owner answer for
+            # slice 11c). A lock that cannot be taken or a detected deadlock is a conflict too.
+            if exc.sqlstate in {"55000", "55P03", "40001", "40P01", "23505", "P5S01"}:
                 raise FinalSettlementConflictError(
                     "Final Settlement conflicts with the current state"
                 ) from exc
@@ -389,6 +408,22 @@ class FinalSettlementService:
                 request.reason,
                 FINAL_SETTLEMENTS_PREPARE_CAPABILITY,
             ),
+        )
+
+    def confirm(
+        self, property_id: UUID, draft_id: UUID, *, actor: AuthenticatedActor
+    ) -> dict[str, object]:
+        """Confirm a pending Settlement draft and close its Settlement (financial.approve only).
+
+        An inactive or missing approver is an authorization error; a draft whose sources changed
+        is stale and stays pending; an exact repeat by the same approver replays the stored result.
+        """
+        actor_id = self._authorize(actor, property_id, FINANCIAL_APPROVE_CAPABILITY)
+        _uuid(draft_id, "draft_id")
+        return self._call(
+            "SELECT app.confirm_final_settlement_draft(%s,%s,%s,%s)",
+            (property_id, actor_id, draft_id, FINANCIAL_APPROVE_CAPABILITY),
+            stale=CONFIRM_STALE_STATES,
         )
 
 

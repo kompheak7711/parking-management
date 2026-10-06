@@ -119,10 +119,15 @@ def create_recurring_rent_invoice(
     due_date_source: str = "BR-RENT-018",
     validate_immediately: bool = True,
     invoice_number: str | None = None,
+    add_occupancy: bool = True,
 ) -> tuple[UUID, UUID]:
-    """Create the exact relational shape for one recurring Rent Invoice."""
+    """Create the exact relational shape for one recurring Rent Invoice.
+
+    add_occupancy=False leaves a Lease that never moved in as it is (V1-056 sub-slice 8e-3):
+    recurring Rent coverage follows the Lease Start Date, not an Occupancy (migration 64)."""
     if (
-        connection.execute(
+        add_occupancy
+        and connection.execute(
             "SELECT 1 FROM app.occupancies WHERE lease_id=%s LIMIT 1", (lease_id,)
         ).fetchone()
         is None
@@ -596,7 +601,7 @@ def test_invoice_tables_are_current_forward_only_and_read_only_to_runtime(
     obligation_id = uuid4()
     with psycopg.connect(migrated_database_url) as owner:
         assert owner.execute("SELECT version_num FROM alembic_version").fetchone() == (
-            "20261028_93",
+            "20261029_94",
         )
         expected = {
             "actor_identities",
@@ -730,7 +735,7 @@ def test_invoice_tables_are_current_forward_only_and_read_only_to_runtime(
         command.downgrade(Config(str(Path(__file__).parents[1] / "alembic.ini")), "20260826_28")
     with psycopg.connect(migrated_database_url) as owner:
         assert owner.execute("SELECT version_num FROM alembic_version").fetchone() == (
-            "20261028_93",
+            "20261029_94",
         )
         assert owner.execute(
             "SELECT description FROM app.authorized_nonrecurring_obligations WHERE id=%s",

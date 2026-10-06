@@ -1873,6 +1873,39 @@ DB-CREDIT-003). A scheduled Rent or Utility run item locks the Lease's Settlemen
 `FOR SHARE` and records a Lease whose Settlement is closed as `SKIPPED` with the diagnostic `FINAL_SETTLEMENT_CLOSED`
 (owner answer 1 to Q-2026-10-06-33), an accepted outcome of a successful run.
 
+As built in V1-056 sub-slice 8e-3 (migration `20261029_94`): a `financial.approve` holder
+confirms a pending `FINAL_SETTLEMENT` draft with `app.confirm_final_settlement_draft(property,
+approver, draft, authorization)` (financial role; `FinalSettlementService.confirm` checks
+`financial.approve`; the database checks an active human approver and the `financial.approve`
+reference). In one READ COMMITTED transaction it takes the Settlement draft lock, the Lease row,
+the Payments and then the Credits of the Customer Credit steps, the Lease's Late-payment Charges
+and then its Invoices in id order (`FOR UPDATE` where a step pays them, `FOR NO KEY UPDATE`
+otherwise), the Settlement row, and each Deposit's draft lock and row in id order; then it checks
+that the sources still have the draft's digest and runs `app.final_settlement_plan_result` again
+(every blocking issue, pending drafts included, and the strict DL-032 order), refusing a draft
+whose sources or result changed as stale (SQLSTATE `P5S02`; the draft stays pending). It writes
+the decision first, then each Customer Credit step (`app.post_final_settlement_credit_application`,
+draft order), each Deposit application (`app.post_deposit_application`, draft order, stage from
+the step kind; the remaining Pet Deposit records its staff reason), each Refund in Deposit id order
+(`app.post_final_settlement_deposit_refund`), with ids derived from the draft and the step or
+Deposit (`app.final_settlement_deposit_application_id`, `app.final_settlement_refund_id`); it then
+checks exactly one Credit application, Deposit application and Refund per step and that every
+`DL_032` Deposit holds nothing, writes the closure snapshots (DB-SETTLE-002, 004, 006), closes the
+Settlement once (`closed_at`, `closed_by`, `closing_balance_due_usd_cents`, and a `source_snapshot`
+with the draft, its source revision, the termination ground, the Deposit ids, the written ids and
+the current physical move-out) and writes one `final_settlement.closed` audit event whose
+correlation id is the draft id. An exact repeat by the same approver returns the stored result. The
+closing balance stays open on the ledger of the Customer named on each obligation; nothing is
+written off. The 8a-1 closure guard now also refuses a closure whose `closed_by` is not an active
+human account (42501; the database keeps no Property membership, the application checks
+`financial.approve` on the Property) or whose `closed_at` is later than the clock plus 5 seconds,
+the bound of the other Settlement writers (23514). The preview gains the
+blocking issue `RENT_PERIOD_NOT_BILLED` for each recurring Rent month a Rent run would still bill
+(`app.lease_is_billable_for_recurring_period`) with no non-VOID Rent Invoice of the Lease covering
+it, read by `app.final_settlement_unbilled_rent_months`; a month whose Rent Invoice a BR-RENT-030
+hand-back resolution VOIDed does not count (owner answers 2 to Q-2026-10-06-33 and to
+Q-2026-10-06-34).
+
 `closing_balance_due_usd_cents` is the post-application, post-disposition, and
 post-Refund Customer receivable remaining at closure. A refundable amount is not
 stored as a negative balance; it must be represented by its explicit Refund event.
@@ -1880,6 +1913,18 @@ stored as a negative balance; it must be represented by its explicit Refund even
 ## DB-SETTLE-002 — `settlement_invoice_items`
 
 Append-preserved membership snapshot: `final_settlement_id uuid NOT NULL FK`, `invoice_id uuid NOT NULL FK`, `outstanding_at_inclusion_usd_cents bigint NOT NULL CHECK (>=0)`, `included_at timestamptz NOT NULL`, `included_by uuid NOT NULL`, PK `(final_settlement_id, invoice_id)`. It identifies source obligations without replacing them.
+
+As built in V1-056 sub-slice 8e-3 (migration `20261029_94`; owner answer 4 to Q-2026-10-06-32):
+the table also has `id uuid NOT NULL UNIQUE`, the key of DB-SETTLE-006. Only the Settlement confirm
+writes it, while the Settlement is still open, one row per issued, non-VOID Invoice of the Lease
+(whoever is named on it, paid ones included); `outstanding_at_inclusion_usd_cents` is what the
+Invoice still owes after every Settlement application, `included_by` is the approver. Each
+Invoice or Late-payment Charge snapshot row (a line row through its Invoice row) starts a deferred
+check at commit: the Settlement is closed, every such Invoice and
+Late-payment Charge of the Lease is included, each Invoice row equals the sum of its line rows, and
+all rows together equal `closing_balance_due_usd_cents`. A closure that writes no snapshot row
+starts no such check; the confirm, the only closure writer, compares the snapshot sum with the
+closing balance itself before it closes. Rows are append-only and no role may read or write them.
 
 ## DB-SETTLE-003 — `settlement_corrections`
 
@@ -1899,6 +1944,10 @@ NULL`, PK `(final_settlement_id, late_payment_charge_id)`. The Charge Customer a
 source Invoice Lease context must match the Settlement Customer/Lease. This table
 includes the separate obligation for reconciliation without converting it into an
 Invoice or `settlement_invoice_items` row.
+
+As built in V1-056 sub-slice 8e-3 (migration `20261029_94`): written by the Settlement confirm for
+every Late-payment Charge of the Lease's Invoices, with its remaining balance after every
+Settlement application (0 when paid); the same deferred closure check as DB-SETTLE-002.
 
 ## DB-SETTLE-005 — `settlement_correction_effects`
 
@@ -1929,6 +1978,12 @@ Immutable line-aware closure membership/snapshot: `id uuid PK`,
 Invoice and Settlement Lease. Deferred closure validation reconciles each row to
 DB-DER-001 and its header totals. This preserves mixed Rent/Service composition and
 remaining Rent without making Settlement snapshots a new financial source.
+
+As built in V1-056 sub-slice 8e-3 (migration `20261029_94`): the CHECK
+`settlement_invoice_line_items_reconcile` requires `closing_outstanding` = original + adjustment
+net − Payment − Credit − Deposit; an insert trigger requires every value to equal the line's
+current derived values and the line to belong to the parent Invoice; the deferred closure check of
+DB-SETTLE-002 reconciles the header totals at commit.
 
 ## DB-REFUND-001 — `refunds`
 
