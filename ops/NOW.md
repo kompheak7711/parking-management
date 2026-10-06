@@ -119,4 +119,6 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md.
 
 - V1-056 slice 10 (2026-10-06, 5c7906f): DESIGN ONLY, committed. Design note and sub-slices 10a to 10f in ops/V1_056_PLAN.md; read-only path search (one-call allocation and Credit application reversals, Payment move and forfeiture reversal drafts still change a closed Settlement's money); seven open points in Q-2026-10-06-36. STOPPED: no slice 10 code until the owner answers. Nothing pushed.
 
+- V1-056 sub-slice 10a (2026-10-06, f4123d5, migration 20261101_97): COMMITTED. Owner answers to Q-2026-10-06-36 recorded and built into the design note (sub-slices 10a to 10h). Correction record: header and typed effect links (append-only, no role grants), internal confirm step (decision with the top-level transaction id, then header), deferred checks, the 8e-1 and 8e-2 refusals pass only a record linked to a correction of the same Settlement confirmed in the same transaction. Rounds 1 to 3 (independent and security), round 3 no should-fix; unit 3498 (U3), PostgreSQL 1887 (P4); corrections 1 of 2 (uuid pattern braces). OPEN: Q-2026-10-06-37 blocks 10b (one-time charge link), 10d, 10e, 10g. NEXT: owner answer to Q-2026-10-06-37, then 10b. Nothing pushed.
+
 - Updated: 2026-10-06.
