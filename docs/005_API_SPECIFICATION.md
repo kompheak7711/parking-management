@@ -905,6 +905,17 @@ not create a separate KHR Credit balance.
 Credit from eligible unallocated Payment value. It is not automatic and does not
 use Payment Allocation.
 
+`POST /customer-credits/{credit_id}/reverse` (`credits.reverse`) reverses a Customer Credit
+whose value is fully available, returning it to its source Payment. Amended by V1-056 slice 7
+(owner answers to Q-2026-10-05-18 and Q-2026-10-05-19) and sub-slice 8g (owner answer to
+Q-2026-10-06-35): it answers 409 for a Credit released from a moved (`WRONG_UNIT_MOVE`)
+allocation unless the Payment is a normal Customer Payment and the Credit belongs to its payer,
+and for every Credit that a credit Adjustment released to a Customer other than the payer of its
+source Payment. Such a Credit stays with its Customer: it is applied to that Customer's
+obligations, or refunded to that Customer through a Refund draft (the `CREDIT_CUSTOMER` variant
+when the Customer is not the payer; no route records that variant yet, see API-065). The payer's
+own Credits are reversed as before.
+
 ## API-063 — Apply and Reverse Credit
 
 - `POST /customer-credits/{id}/applications`

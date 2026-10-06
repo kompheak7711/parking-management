@@ -1288,6 +1288,8 @@ Append-only: `id uuid PK`, `customer_credit_id uuid NOT NULL UNIQUE FK`, `reason
 
 V1-056 slice 7: a reversal of a Credit released from a moved allocation is refused unless the Payment is a normal Customer Payment and the Credit belongs to its payer (DB-PAY-008, `customer_credit_reversals_moved_payment`).
 
+V1-056 sub-slice 8g (migration `20261031_96`, owner answer to Q-2026-10-06-35, approved tightening): a reversal of any Credit that a credit Adjustment released to a Customer other than the payer of its source Payment (`app.credit_customer_refund_basis` is not NULL: the Credits that the `CREDIT_CUSTOMER` Refund draft pays, DB-REFUND-001) is refused for every writer with SQLSTATE `P4904` (BEFORE INSERT trigger `customer_credit_reversals_other_customer`, after the slice 7 refusal and before the Credit reversal checks). Such a Credit stays with its Customer: it is applied to that Customer's obligations or refunded to that Customer. Earlier reversal rows are unchanged.
+
 ## DB-CREDIT-005 — `customer_credit_application_details`
 
 Append-only attribution: `id uuid PK`, `customer_credit_application_id uuid NOT NULL

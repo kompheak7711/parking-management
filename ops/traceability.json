@@ -37838,6 +37838,65 @@
       "test_path": "backend/tests/test_credit_customer_refund_migration.py",
       "status": "implemented",
       "notes": "A decision that is not a CONFIRMED one by the Refund's approver lets the Refund source check refuse a Credit Refund to the Invoice Customer at once; a Refund written while its draft waits is refused at commit unless the same approver's CONFIRMED decision and the details row both exist; the real confirmation succeeds after an earlier SET CONSTRAINTS ALL IMMEDIATE (V1-056 sub-slice 8f review rounds 1 and 2)."
+    },
+    {
+      "test_id": "test_a_third_party_adjustment_credit_is_not_reversed_back_onto_the_payers_payment",
+      "upstream_ids": [
+        "BR-CREDIT-014",
+        "BR-CREDIT-008",
+        "BR-AUTH-010",
+        "DB-CREDIT-004"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_customer_credit_reversal_migration.py",
+      "status": "implemented",
+      "notes": "The one-call Credit reversal of a Credit that a credit Adjustment released from a third-party Payment to the Invoice Customer is refused as a conflict (P4904) and writes nothing; the Payment's value stays allocated and the Credit is refunded to its Customer only through the CREDIT_CUSTOMER draft confirmed by financial.approve (V1-056 sub-slice 8g, owner answer to Q-2026-10-06-35)."
+    },
+    {
+      "test_id": "test_the_payers_own_credits_are_still_reversed_with_one_call",
+      "upstream_ids": [
+        "BR-CREDIT-014",
+        "DB-CREDIT-004"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_customer_credit_reversal_migration.py",
+      "status": "implemented",
+      "notes": "The payer's recognized Credit and an adjustment Credit whose Customer is the payer of a normal Customer Payment are still reversed with one call; the reversed value returns to the Payment (V1-056 sub-slice 8g)."
+    },
+    {
+      "test_id": "test_every_writer_is_refused_and_the_slice_7_refusal_still_answers_first",
+      "upstream_ids": [
+        "BR-CREDIT-014",
+        "BR-CREDIT-008",
+        "BR-PAY-042",
+        "DB-CREDIT-004"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_customer_credit_reversal_migration.py",
+      "status": "implemented",
+      "notes": "A direct reversal row by the database owner is refused at the table with P4904 and the 8g message; a Credit released from a moved allocation to another Customer still gets the slice 7 refusal first (V1-056 sub-slice 8g)."
+    },
+    {
+      "test_id": "test_credit_customer_credit_reversal_refusal_is_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "BR-CREDIT-014",
+        "DB-CREDIT-004"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_customer_credit_reversal_migration.py",
+      "status": "implemented",
+      "notes": "The refusal trigger function is SECURITY DEFINER with a fixed search_path and no role may execute it; the BEFORE INSERT triggers fire in the order slice 7 refusal, 8g refusal, Credit reversal checks; migration 20261031_96 is forward-only and adds one function and one trigger and changes nothing else (V1-056 sub-slice 8g)."
+    },
+    {
+      "test_id": "test_a_refused_credit_reversal_is_a_conflict_with_a_safe_message",
+      "upstream_ids": [
+        "BR-CREDIT-014",
+        "BR-CREDIT-008"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_customer_credit_reversal.py",
+      "status": "implemented",
+      "notes": "The Credit reversal refusal P4904 reaches the caller as a conflict with a fixed message that names applying the Credit to its Customer's obligations or refunding it to that Customer, without database text (V1-056 sub-slice 8g)."
     }
   ]
 }

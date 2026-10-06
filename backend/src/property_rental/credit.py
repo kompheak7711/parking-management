@@ -312,9 +312,12 @@ class CustomerCreditService:
             if exc.sqlstate in {"P4506", "42501"}:
                 raise CreditAuthorizationError("Credit actor is not authorized") from exc
             if exc.sqlstate == "P4904":
-                # V1-056 slice 7: a Credit released from a moved Payment stays with its Customer.
+                # V1-056 slice 7 and sub-slice 8g: a Credit released from a moved Payment, or
+                # released by a credit Adjustment to a Customer other than the payer, stays with
+                # its Customer (Q-2026-10-05-18, Q-2026-10-05-19, Q-2026-10-06-35).
                 raise CreditConflictError(
-                    "Credit from a moved Payment stays with its Customer; apply it to its Invoices"
+                    "This Credit stays with its Customer; apply it to that Customer's "
+                    "obligations or refund it to that Customer"
                 ) from exc
             if exc.sqlstate == "P5S01":
                 # V1-056 sub-slice 8e-2: a Credit application the Final Settlement made changes

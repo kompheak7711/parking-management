@@ -200,6 +200,7 @@ database_test_suites='
   tests/test_final_settlement_credit_application_migration.py
   tests/test_final_settlement_confirm_migration.py
   tests/test_credit_customer_refund_migration.py
+  tests/test_credit_customer_credit_reversal_migration.py
 '
 
 for database_test_file in $database_test_suites; do

@@ -25,6 +25,7 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md. Nothing else 
 - Check new tests for hard-coded values and dates tied to the real clock.
 - Before each full PostgreSQL run, first check that the new migration applies on its own, in the cheapest way the repo allows (owner, 2026-10-06; a CASE inside an IF broke the first run of 8c and 8e-2). Today that is a throwaway copy of `scripts/database-test.sh`, kept outside the repo, that runs `uv run alembic upgrade head` on a fresh container instead of pytest. This check is not a test run.
 - When a full run output is very large, commit an excerpt and move the full file to `~/Development/prm-run-logs/` (owner, 2026-10-06). Never delete a run output.
+- Run every lint, format and type check in its own tool call: one tool, one command. Never join two of them with `&&`, `;`, `||` or a pipe, not even on one file and not even after a quick fix (owner, 2026-10-06; it happened in 8e-2 and 8f).
 
 ## Commits
 - One local checkpoint commit per sub-slice, explicit paths, secret and diff scan.
