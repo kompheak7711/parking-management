@@ -131,4 +131,6 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md.
 
 - V1-056 sub-slice 10c-1b (2026-10-07, cc5a1ea, migration 20261104_100): COMMITTED. Owner answered Q-2026-10-07-40 ((a), owner exception) and the five review-record points (docs/010); cumulative-cap test added; U4 unit 3589, P4 PostgreSQL 1907 passed; limited round (independent and security) no blocker, no should-fix. Approved tightening for 10c-2 (10h at the latest): a correction's Credit Refund is corrected only through another correction. NEXT: sub-slice 10c-2 (Deposit-paid lines). Nothing pushed.
 
+- V1-056 sub-slice 10c-2 (2026-10-07): STOPPED before code. Pre-code design in the plan (10c entry; split into 10c-2a Deposit-paid line and 10c-2b returned Refund); Q-2026-10-07-41 open (DL-032 for released Deposit value, release order, where a correction Deposit Refund keeps its Deposit and Signer agreement, the returned-Refund rules). No 10c-2 code, no run. NEXT: owner answers. Nothing pushed.
+
 - Updated: 2026-10-07.
