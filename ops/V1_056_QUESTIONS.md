@@ -924,7 +924,7 @@ Q-2026-10-07-45 does not change 10c-2a-2 or 10c-2a-3. The refusal itself (10c-2a
 
 Recorded in docs/010. The point about a supersede before closure is still open for a later decision (not blocking).
 
-## Q-2026-10-07-46 — Sub-slice 10c-2a-3 stopped before code: the Deposit-application refusal of an Adjustment conflicts with the newest-first release
+## Q-2026-10-07-46 — Sub-slice 10c-2a-3 stopped before code: the Deposit-application refusal of an Adjustment conflicts with the newest-first release (ANSWERED 2026-10-07: (a), with an overpayment and no-Credit condition; answer in docs/010)
 
 The 10c-2a-3 pre-code design is in the plan (10c entry, "10c-2a-3 pre-code design"). One point conflicts, so I stopped before code. Nothing else in the design needs an answer.
 
@@ -942,5 +942,30 @@ The plan's 10c-2a text says the refusal "passes it only when every Deposit appli
 - (c) A `REFUND` correction is refused (a conflict) when the release does not reverse every Deposit application of the Invoice. Staff could not correct these cases until another kind exists.
 
 **Recommendation: (a).** It keeps your newest-first answer. It changes only what the correction itself corrects, and the 8a-1 and 8e-1 refusals still stop every unlinked change. It is a relaxing change of a committed refusal, which the plan text did not foresee, so I ask before building it.
+
+Until you answer, no 10c-2a-3 code.
+
+**Owner answer (2026-10-07).** Option (a).
+
+- Let through only an Invoice Adjustment that is linked to a correction of that Invoice's own Settlement, confirmed in the same transaction by that correction's approver. Every unlinked Adjustment stays refused, as in 8a-1.
+- The release stays newest first, as the Q-41 answer 2.
+- After such an Adjustment, no line may be paid more than its new amount. Deposit value is freed only by the correction's own Deposit application reversal, following the plan; it never turns into Customer Credit by itself. If the database does not already enforce this on the new path, add the check.
+- Tests for both cases (an older Deposit application on the same line that the release does not reach; a Deposit application on another line of the same Invoice), and a test that an unlinked Adjustment on such an Invoice is still refused.
+
+Recorded in docs/010; the 10c-2a-3 design in the plan is updated.
+
+## Q-2026-10-07-47 — Sub-slice 10c-2a-3 stopped before code: the 10c-1b tests need new fixtures, not one changed expectation
+
+Your answer 2 to Q-42 changes 10c-1b: a `REFUND` correction first uses the Credit it releases against that Credit's Customer's open debt on this Lease, and refunds only the rest. In 10c-2a-3 every `REFUND` correction runs the shared DL-032 step for this, with its committed rules (sub-slice 10c-2a-2): every DL-032 Deposit that holds money must be applied or refunded (BR-SETTLE-008), and while a Deposit holds money each Customer's Credit pays that Customer's debt first.
+
+Read-only search: six of the nine 10c-1b tests (`test_settlement_refund_correction_migration.py`) record and confirm Refund corrections on a Settlement closed with `leaving_case` and the owner-written `close()` helper of sub-slice 8e-1 (a seventh uses `close()` but builds its correction by hand through the internal functions; the last two do not close a Settlement). That helper only marks the Settlement closed. It applies nothing, so after closure both Deposits still hold money (Security 10,000, Pet 20,000) and the Invoice Customer still owes both Damage lines (25,000). A real closure (the 8e-3 confirm) never leaves a DL-032 Deposit holding money. In that state every Refund correction of those tests would be refused under the new rules (the released Credit must pay the Customer's open debt first; the held Deposits must be emptied). The run rules let me narrow a historical test only by changing one expectation. These tests need new fixtures, so I stopped before code.
+
+**Options:**
+
+- (a) Rebuild the 10c-1b test fixtures on a real closure: the 8e-3 confirm with a plan that empties both Deposits, as the 10c-2a-2 tests do (`closed_case`), so the Invoice Customer owes nothing on the Lease after closure. Each test keeps its name and what it proves: a Customer with no open debt gets the Refund as in 10c-1b. Amounts and source lists in those tests change with the new closure. A test whose corrected line a Deposit now pays moves to another line paid by a Payment or Credit. Every changed test is listed in docs/010. The new 10c-2a-3 tests prove the case where the Customer owes (released Credit pays the debt first, and only the rest is refunded). The one expectation "a Deposit-paid Invoice waits" changes to accepted, as the narrowing rule allows.
+- (b) Narrow each 10c-1b test to expect the new refusal, one expectation each, and move the success paths of 10c-1b into the new 10c-2a-3 module. This follows the narrowing rule literally, but the 10c-1b module would then mostly prove refusals.
+- (c) Keep the 10c-1b tests as they are by applying the step only when the correction releases Deposit value. This does not work: the released Credit's Customer still owes 25,000 in those tests, so your Q-42 answer 2 still requires the Credit to pay first.
+
+**Recommendation: (a).** It keeps each 10c-1b test proving its own behaviour, on the state a real closure leaves. The change follows from your approved Q-42 answer 2, not from a weaker test.
 
 Until you answer, no 10c-2a-3 code.

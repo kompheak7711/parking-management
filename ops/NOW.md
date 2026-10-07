@@ -147,4 +147,6 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md.
 
 - V1-056 sub-slice 10c-2a-3 (2026-10-07): STOPPED before code. Pre-code design in the plan (10c entry); Q-2026-10-07-46 open: the 8a-1 refusal blocks the correction's credit Adjustment while a Deposit application the newest-first release does not reach stays on the Invoice (recommendation (a): let a linked, confirmed correction's Adjustment through). No code, no run. NEXT: owner answer. Nothing pushed.
 
+- V1-056 sub-slice 10c-2a-3 (2026-10-07): owner answered Q-2026-10-07-46 ((a): a linked, confirmed correction's Adjustment passes the 8a-1 refusal; overpayment already refused at commit; docs/010, plan). STOPPED again before code (Q-2026-10-07-47): six 10c-1b tests confirm Refund corrections on a Settlement closed with the owner-written close() (Deposits still hold money, the Customer owes 25,000), so under Q-42 answer 2 and the step's rules they need new fixtures (recommendation (a): a real 8e-3 closure). No code, no run. NEXT: owner answer. Nothing pushed.
+
 - Updated: 2026-10-07.
