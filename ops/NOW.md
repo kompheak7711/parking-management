@@ -133,4 +133,6 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md.
 
 - V1-056 sub-slice 10c-2 (2026-10-07): STOPPED before code. Pre-code design in the plan (10c entry; split into 10c-2a Deposit-paid line and 10c-2b returned Refund); Q-2026-10-07-41 open (DL-032 for released Deposit value, release order, where a correction Deposit Refund keeps its Deposit and Signer agreement, the returned-Refund rules). No 10c-2 code, no run. NEXT: owner answers. Nothing pushed.
 
+- V1-056 sub-slice 10c-2 (2026-10-07, f6cd81c): owner answers to Q-2026-10-07-41 recorded; 10c-2a split into 10c-2a-1 (Deposit application reversal record and readers), 10c-2a-2 (shared DL-032 step) and 10c-2a-3 (Deposit-paid `REFUND`); Q-2026-10-07-42 open ("Credit before Deposits" after closure, 10c-1b consistency, returned Deposit Refund), blocks 10c-2a-2, 10c-2a-3 and 10c-2b. NEXT: 10c-2a-1. Nothing pushed.
+
 - Updated: 2026-10-07.
