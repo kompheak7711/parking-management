@@ -896,7 +896,7 @@ Until you answer, no 10c-2a-2 fix, no commit, and no 10c-2a-3.
 
 Recorded in docs/010.
 
-## Q-2026-10-07-45 — A wrong pet classification of a Damage line after closure: no correction kind fits (blocks only the fix path of sub-slice 10c-2a-4)
+## Q-2026-10-07-45 — A wrong pet classification of a Damage line after closure: no correction kind fits (blocks only the fix path of sub-slice 10c-2a-4) (ANSWERED 2026-10-07: (a), a new correction kind, sub-slice 10c-2a-5; answer in docs/010)
 
 Your answer 2 to Q-2026-10-07-44 asks which correction kind staff use for a wrong pet-damage line after closure. The plan (10c-2a-4) lists the kinds that fit when the Damage charge itself is wrong: `CHARGE_REDUCTION` (unpaid line), `REFUND` (paid line; for a Deposit-paid line 10c-2a-3, and the released Pet Deposit value then goes through the shared DL-032 step) and `EXTRA_CHARGE` (damage billed too low).
 
@@ -913,3 +913,13 @@ No kind fits when the charge is right but its pet classification is wrong. Examp
 **Also (before closure, existing behaviour, for your information and decision):** before closure a supersede of the inspection also makes every line billed from the old inspection no longer pet damage, even when the new inspection repeats the same pet finding, because the Damage charge keeps the old finding's id. The Settlement preview then lets the Security Deposit pay such lines first and the Pet Deposit only at step 5. **Recommendation:** a later sub-slice lets a superseding inspection carry a finding forward (a link from the new finding to the old one) so that a repeated pet finding keeps its lines pet damage; until then, the move-out inspection screen warns staff that a supersede changes the pet status of lines already billed.
 
 Q-2026-10-07-45 does not change 10c-2a-2 or 10c-2a-3. The refusal itself (10c-2a-4) does not depend on it; only the fix path for a wrong classification does.
+
+**Owner answer (2026-10-07).** Option (a); continue with 10c-2a-3 now.
+
+- A new correction kind for a Damage line whose pet classification is wrong after closure. The charge amount stays the same. The closed inspection record is not changed. The correction records the corrected classification and the reason.
+- It covers both directions: a line wrongly marked as pet damage, and a line that should have been pet damage.
+- It re-runs the shared DL-032 step after closure, with all Settlement rules (Q-24, Q-29, Q-30) and the Q-44 answer 3 (a new Customer choice for this correction).
+- It is prepared under `final_settlements.prepare` and confirmed only by a `financial.approve` holder, like every correction.
+- Built after 10c-2a-4 and before 10h, with tests for both directions; in the plan (sub-slice 10c-2a-5).
+
+Recorded in docs/010. The point about a supersede before closure is still open for a later decision (not blocking).

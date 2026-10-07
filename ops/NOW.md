@@ -143,4 +143,6 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md.
 
 - V1-056 sub-slice 10c-2a-2 (2026-10-07, bab3849, migration 20261106_102): COMMITTED after the owner answered Q-2026-10-07-44 ((a): text fixes; no PostgreSQL test reads them, so no PostgreSQL run; static checks clean; U4 unit 3589 passed). Shared DL-032 step after closure with the Lease row lock FOR UPDATE. Approved: inspection supersede refused after closure (sub-slice 10c-2a-4, after 10c-2a-3); a new Customer choice per correction at BR-DEP-027 terminations; 10c-1b takes the Lease lock in 10c-2a-3. OPEN: Q-2026-10-07-45 (wrong pet classification after closure: no correction kind fits; recommendation a new kind). NEXT: 10c-2a-3. Nothing pushed.
 
+- V1-056 (2026-10-07): owner answered Q-2026-10-07-45 ((a): a new pet classification correction kind, sub-slice 10c-2a-5 after 10c-2a-4 and before 10h; docs/010, plan). NEXT: 10c-2a-3 pre-code design. Nothing pushed.
+
 - Updated: 2026-10-07.
