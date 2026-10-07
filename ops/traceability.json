@@ -38321,7 +38321,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_refund_correction_migration.py",
       "status": "implemented",
-      "notes": "A Refund correction whose line changed is stale and stays pending; a method deactivated after the draft is a conflict at confirm and at record; READ COMMITTED only; key reuse and crossed variants are refused; a Deposit-paid Invoice waits for sub-slice 10c-2 (V1-056 sub-slice 10c-1b)."
+      "notes": "A Refund correction whose line changed is stale and stays pending; a method deactivated after the draft is a conflict at confirm and at record; READ COMMITTED only; key reuse and crossed variants are refused; a Deposit-paid Invoice waits for sub-slice 10c-2 (V1-056 sub-slice 10c-1b). Since sub-slice 10c-2a-3 (narrowed expectation; rebuilt on the real closure, owner answer to Q-2026-10-07-47): a Deposit-paid Invoice is no longer refused for that reason, and a Refund correction without a plan for the released Deposit value is refused by the DL-032 step."
     },
     {
       "test_id": "test_a_credit_released_before_closure_to_the_invoice_customer_is_refunded_to_that_customer",
@@ -38574,6 +38574,138 @@
       "test_path": "backend/tests/test_settlement_correction_plan_migration.py",
       "status": "implemented",
       "notes": "After the correction reverses the Settlement's Credit applications on an Invoice with a Rent line and two Service lines, the correction plan refuses Credit steps that do not follow the Rent-first proposal without the Customer's designation; the step writes a designated step as CUSTOMER_DESIGNATED with the designation text and the other steps as the Rent-first proposal (RENT_FIRST_PROPOSAL, SERVICE_PROPOSAL), as the correction's Credit check requires; the Invoice is paid again and the ledger reconciles (V1-056 sub-slice 10c-2a-2, owner answer to Q-2026-10-07-43)."
+    },
+    {
+      "test_id": "test_a_deposit_paid_line_is_refunded_after_the_released_value_pays_the_open_debt",
+      "upstream_ids": [
+        "DL-032",
+        "BR-SETTLE-008",
+        "BR-SETTLE-013",
+        "BR-REFUND-014",
+        "DB-DEP-006",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_refund_correction_migration.py",
+      "status": "implemented",
+      "notes": "A Refund correction of a line two Deposit applications and a Credit application paid at closure reverses the Deposit applications newest first, writes the linked credit Adjustment and runs the shared DL-032 step: the Customer's Credit first, the Security Deposit pays what the line still owes, and only the rest of each Deposit is refunded; without a plan the step refuses the draft; the released Deposit value never becomes Customer Credit; every record is linked, the audit names them, the Settlement row is unchanged, the ledger reconciles and a repeat replays (V1-056 sub-slice 10c-2a-3)."
+    },
+    {
+      "test_id": "test_released_credit_pays_its_own_customer_s_debt_before_any_refund",
+      "upstream_ids": [
+        "BR-CREDIT-014",
+        "BR-CREDIT-008",
+        "BR-SETTLE-013",
+        "DB-REFUND-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_refund_correction_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer 2 to Q-2026-10-07-42, both cases: with no open debt on the Lease the released Credit is refunded as before; once the Customer owes a charge issued after closure, a Refund correction without a plan is refused, and with the plan the released Credit pays that charge first and only the rest is refunded (V1-056 sub-slice 10c-2a-3)."
+    },
+    {
+      "test_id": "test_a_mixed_line_releases_the_newest_payment_before_the_deposit_application",
+      "upstream_ids": [
+        "DL-032",
+        "BR-SETTLE-008",
+        "BR-SETTLE-013",
+        "BR-CREDIT-014",
+        "BR-DEP-027",
+        "DB-DEP-006"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_refund_correction_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer 2 to Q-2026-10-07-41 and answer 2 to Q-2026-10-07-42: a line paid at closure by the Pet Deposit and after closure by a Payment is refunded in part; the release takes the newest Payment allocation whole and then part of the older Deposit application, reversed whole; the released Payment value becomes the Customer's Credit and pays that Customer's debt before the Deposit, the Pet Deposit pays the rest of the line by a new Customer choice and its rest is refunded while the unpaid Initial Rent stays; no other line changes how it is paid and no Credit is refunded; a plan in which the Pet Deposit pays before that Credit is refused (V1-056 sub-slice 10c-2a-3, review rounds 1 and 2)."
+    },
+    {
+      "test_id": "test_a_refund_above_the_paid_part_also_removes_the_unpaid_part",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-CREDIT-014",
+        "BR-INV-045",
+        "DB-REFUND-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_refund_correction_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer to Q-2026-10-08-48 (the case the 10c-1b tests 5 and 6 covered before their rebuild): a 1,500 charge issued after closure, 1,000 paid, refunded for 1,200: the unpaid 500 is removed, the Payment allocation is reversed whole, 300 re-posted, 700 recognized as the Customer's Credit and refunded; the line's charge is 300, fully paid (V1-056 sub-slice 10c-2a-3)."
+    },
+    {
+      "test_id": "test_a_deposit_paid_line_that_still_owes_is_refunded_above_its_paid_part",
+      "upstream_ids": [
+        "DL-032",
+        "BR-SETTLE-008",
+        "BR-SETTLE-013",
+        "BR-DEP-027",
+        "DB-DEP-006"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_refund_correction_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer to Q-2026-10-08-48: a line paid 7,500 by the Pet Deposit that still owes 5,000 is refunded for 6,000: the unpaid 5,000 is removed, 1,000 is released, the Pet Deposit application is reversed whole (7,500 back to the Pet Deposit), the overlay equals the state after the release (the line owes 6,500), the plan pays 6,500 from the Pet Deposit by a new Customer choice and refunds 1,000; no Credit, no other line changed (V1-056 sub-slice 10c-2a-3)."
+    },
+    {
+      "test_id": "test_an_older_deposit_application_on_the_line_stays_and_unlinked_adjustments_stay_refused",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-AUTH-010",
+        "DL-032",
+        "DB-DEP-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_refund_correction_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer to Q-2026-10-07-46: a Refund correction releases only the line's newest Deposit application, the older one on the same line stays active and the correction's own Adjustment passes the 8a-1 refusal; an unlinked Adjustment stays refused, one linked but written by another person is refused by 8a-1, and a linked one that would leave the line paid above its new amount is refused at commit (V1-056 sub-slice 10c-2a-3)."
+    },
+    {
+      "test_id": "test_a_deposit_application_on_another_line_of_the_invoice_stays",
+      "upstream_ids": [
+        "DL-032",
+        "BR-SETTLE-008",
+        "BR-SETTLE-013",
+        "DB-DEP-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_refund_correction_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer to Q-2026-10-07-46: at closure the remaining Pet Deposit, by the Customer's choice, paid both Service lines and part of the Rent line of one Initial Invoice, and the rest of the Rent stayed as debt; a Refund of one Service line reverses only its application, the applications on the other lines of the same Invoice stay active, the correction's own Adjustment passes the 8a-1 refusal, and the released value pays the Rent still owed under a new Customer choice for this correction, so nothing is refunded (V1-056 sub-slice 10c-2a-3)."
+    },
+    {
+      "test_id": "test_a_br_dep_027_correction_needs_a_new_customer_choice",
+      "upstream_ids": [
+        "BR-DEP-027",
+        "BR-LEASE-005",
+        "BR-SETTLE-017",
+        "DL-032"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_refund_correction_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer 3 to Q-2026-10-07-44: at an unpaid-Initial termination a correction that uses the remaining Pet Deposit for other debt is refused with the Customer choice recorded at the Settlement and accepted with a new choice; the released pet damage value is applied again, the remaining Pet Deposit pays the other line and its rest is refunded while other debt stays open; a later correction that reuses that correction's choice text is refused (V1-056 sub-slice 10c-2a-3, review round 1)."
+    },
+    {
+      "test_id": "test_the_refund_confirm_and_the_step_hold_the_lease_row_lock",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-CREDIT-006",
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_refund_correction_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer 4 to Q-2026-10-07-44: the Refund correction's confirm locks the Lease row FOR UPDATE after the two draft locks and before the first source Payment, so another session's lock on the Lease is refused while it runs; every other lock is taken by the step's lock function, which takes the released sources' Payments and Credits in its single id-ordered passes and the corrected Invoice FOR UPDATE after the Charges, also when no step pays that Invoice, so a confirm waiting on a step Credit's Payment holds no lock on that Invoice (review rounds 1 and 2); the shared step takes the same Lease lock when no variant did; a correction Credit application whose basis is not its step's is refused (V1-056 sub-slice 10c-2a-3, round-3 hardening of 10c-2a-2)."
+    },
+    {
+      "test_id": "test_the_deposit_refund_correction_is_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-SETTLE-013"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_refund_correction_migration.py",
+      "status": "implemented",
+      "notes": "No role may execute the two new internal functions; the Refund correction's record and confirm keep their financial-role grant only; the migration is forward-only, adds only the two functions and changes only the eight listed functions; no time limit (V1-056 sub-slice 10c-2a-3)."
     }
   ]
 }

@@ -954,7 +954,7 @@ Until you answer, no 10c-2a-3 code.
 
 Recorded in docs/010; the 10c-2a-3 design in the plan is updated.
 
-## Q-2026-10-07-47 — Sub-slice 10c-2a-3 stopped before code: the 10c-1b tests need new fixtures, not one changed expectation
+## Q-2026-10-07-47 — Sub-slice 10c-2a-3 stopped before code: the 10c-1b tests need new fixtures, not one changed expectation (ANSWERED 2026-10-07: (a), owner exception for the six tests; answer in docs/010)
 
 Your answer 2 to Q-42 changes 10c-1b: a `REFUND` correction first uses the Credit it releases against that Credit's Customer's open debt on this Lease, and refunds only the rest. In 10c-2a-3 every `REFUND` correction runs the shared DL-032 step for this, with its committed rules (sub-slice 10c-2a-2): every DL-032 Deposit that holds money must be applied or refunded (BR-SETTLE-008), and while a Deposit holds money each Customer's Credit pays that Customer's debt first.
 
@@ -969,3 +969,53 @@ Read-only search: six of the nine 10c-1b tests (`test_settlement_refund_correcti
 **Recommendation: (a).** It keeps each 10c-1b test proving its own behaviour, on the state a real closure leaves. The change follows from your approved Q-42 answer 2, not from a weaker test.
 
 Until you answer, no 10c-2a-3 code.
+
+**Owner answer (2026-10-07).** Option (a), as an owner exception to the narrowing rule for these six tests only.
+
+- Rebuild the six 10c-1b tests on a real closure, the 8e-3 confirm, as the 10c-2a-2 tests do.
+- Each test keeps its name and must still prove the same 10c-1b behaviour. No assertion about that behaviour is removed or loosened; only the setup, amounts and source lists may change.
+- docs/010 lists each changed test with what changed and why.
+- The independent reviewer checks each rebuilt test against its old version and confirms that none was weakened.
+- New correction tests do not use the test-only close helper. Slice 12 list: check every other test that uses it and leaves a state a real closure cannot leave.
+
+Recorded in docs/010; the slice 12 item is in the plan.
+
+## Q-2026-10-08-48 — Sub-slice 10c-2a-3 stopped after review round 3: two should-fix findings (a test gap and plan text) (ANSWERED 2026-10-08: (a), owner exception like Q-43; answer in docs/010)
+
+10c-2a-3 (the `REFUND` correction of a Deposit-paid charge, migration `20261107_103`) is built, documented and green, but not committed; all files are in the working tree. Record: ops/reviews/V1-056-slice-10c-2a-3-deposit-refund-correction.md.
+
+- Your answers of 2026-10-07 were applied. Cause C was a host clock ahead of the Docker VM clock while the Mac display slept (the lease signature fixtures take host time); it was not product code and not shared test state, so nothing was changed, and later runs ran under `caffeinate`. Cause A was fixed with its second correction (the Q-46 case of a Deposit application on another line stays, with a new Customer choice and nothing refunded). Cause B was fixed with its first correction.
+- Runs: U2, U3, U4 backend unit 3589 passed; P3 1928, P5 1929, P6 1929 full PostgreSQL passed. P4 failed once on cause D (my round-1 change of the `failure` test helper rolled back before the deferred checks; one correction).
+- Round 1: security 1 should-fix (the corrected Invoice was locked before the Late-payment Charges); independent 2 should-fix (no mixed Payment and Deposit line test; a date-bound fixture). All fixed or answered.
+- Round 2: security 1 should-fix (the released sources' Payments were locked in a pass of their own, so Payments were not locked in one id order); independent 0. Fixed; the lock function now takes every Payment and Credit in one id-ordered pass each.
+- Round 3: security 0 should-fix. Independent 2 should-fix, so under the standing rule I stopped. Nothing is fixed after round 3 and nothing is committed.
+
+**The two findings:**
+
+1. **(Test gap; touches your Q-47 rule.)** At HEAD, 10c-1b tests 5 and 6 were the only PostgreSQL tests that confirmed a `REFUND` correction whose amount included an unpaid part (12,200 with 12,100 unpaid; 12,300 with 12,200 unpaid). Test 5's last check (`outstanding == 0`) therefore proved that the unpaid part is removed together with the paid part (docs/004: "An unpaid part of the amount is removed with it"). The rebuild pays the line before closure, so both tests now correct 100 on a fully paid line. Every assertion is kept, but that check no longer proves anything, and no other test confirms a `REFUND` with 0 < outstanding < amount. This matters more after 10c-2a-3: on a Deposit-paid line that still owes, `amount - outstanding` decides how much is released, and the step's overlay must match the real state after the Adjustment. The reviewer's derivation says it does, but no test shows it.
+2. **(Plan text.)** The plan's "Notes for the writers" (the 10c-2a-2 entries) still tell 10c-2b and 10d to lock "its own sources (for example the Payment of an allocation it releases), then call the lock function". That is the separate pass that round 2 removed as a deadlock risk. The lock function's new branch covers only `REFUND`, so a later variant that followed the note would bring the risk back.
+
+**Options:**
+
+- (a) As an owner exception like Q-2026-10-05-31, Q-2026-10-07-40 and Q-2026-10-07-43:
+  - Two new tests in the new module, with the six rebuilt tests unchanged: a charge issued after closure, partly paid by the Customer, refunded for more than the paid part (the unpaid part is removed, the paid part is released and refunded); and a Deposit-paid line that still owes, refunded for more than the paid part (the unpaid part is removed, part of the Deposit application is released and reversed whole, and the plan pays the rest).
+  - A docs/010 sentence on the coverage moved from tests 5 and 6.
+  - The two plan notes amended: after the Lease row a variant takes no lock of its own; it extends the lock function for its variant.
+  - The cheap round-3 notes: the "as amended by 10c-2a-3" marker in the docs/004 10c-1b paragraph; stronger source assertions (no `serialize_payment_state` in the confirm, one Payment and one Credit lock statement in the lock function); "except the Refund method, last" in docs/010.
+  - Then static checks, the migration-only check, the backend unit suite and the full PostgreSQL suite once each, and one more limited round (independent and security) on these changes. Commit only if that round has no blocker and no should-fix; otherwise stop and report, with no further fix without you.
+- (b) Fix only the plan text, record finding 1 as a slice 12 test item, run the static checks and the backend unit suite, and commit without another review round.
+
+**Recommendation: (a).** Finding 1 is real lost coverage in tests rebuilt under your Q-47 rule. It covers the release arithmetic that 10c-2a-3 now relies on for Deposit-paid lines, so it should be proven before the commit. Finding 2 is text, but it guards the next two sub-slices.
+
+Until you answer, no fix, no commit, and no 10c-2a-4.
+
+**Owner answer (2026-10-08).** Option (a), as an owner exception like Q-43.
+
+- My Q-47 answer said each rebuilt test must still prove the same behaviour. Tests 5 and 6 lost the check of a Refund that includes an unpaid part, so this coverage must come back before the commit.
+- Add the two tests: a charge partly paid after closure and refunded for more than the paid part, and a Deposit-paid line that still owes, refunded the same way. Check each amount to the cent, including how much Deposit value is released.
+- Leave the six rebuilt tests as they are. Fix the two plan notes and the cheap round-3 notes.
+- Run each check once. Then one limited review of the new tests and the changed text. If it finds no blocker and no should-fix, commit 10c-2a-3. If it finds any, stop and report.
+- Cause C: the finding is accepted. Keep the Mac awake with `caffeinate` during full runs until the slice 12 item is done.
+- After 10c-2a-3 is committed, continue with 10c-2a-4 under the same rules.
+
+Recorded in docs/010.

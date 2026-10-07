@@ -34,6 +34,9 @@ from property_rental.final_settlement import (
     FinalSettlementKeyReused,
     FinalSettlementNotFoundError,
     FinalSettlementStaleDraftError,
+    SettlementCreditStep,
+    SettlementDepositStep,
+    SettlementTargetKind,
 )
 from property_rental.invoice import AdjustInvoiceCommand, AdjustmentType, InvoiceConflictError
 from property_rental.settlement_correction import RecordRefundCorrectionCommand
@@ -44,10 +47,19 @@ from test_credit_migration import actor as credit_actor
 from test_credit_migration import service as credits
 from test_customer_ledger_migration import assert_reconciled, history
 from test_final_settlement_closed_refusal_migration import close, closed_refusal
-from test_final_settlement_credit_application_migration import decide, write
-from test_final_settlement_draft_migration import STAFF, leaving_case, normal_plan
+from test_final_settlement_confirm_migration import confirm as confirm_settlement
+from test_final_settlement_confirm_migration import this_month
+from test_final_settlement_draft_migration import (
+    LINE,
+    PET_REST,
+    STAFF,
+    leaving_case,
+    normal_plan,
+    two_signer_case,
+)
 from test_final_settlement_draft_migration import record as record_settlement
-from test_final_settlement_migration import apply, one, outstanding, preparer
+from test_final_settlement_draft_migration import refund as settlement_refund
+from test_final_settlement_migration import charge_remaining, one, outstanding, preparer
 from test_final_settlement_preview_migration import credit_adjustment, pay
 from test_invoice_migration import invoice_api_actor, runtime_database_url
 from test_migrations import _temporary_migration_database
@@ -245,6 +257,37 @@ def apply_credit(
     )
 
 
+def really_close(case: dict[str, Any]) -> None:
+    """The real closure (sub-slice 8e-3; owner answer to Q-2026-10-07-47): the normal plan
+    confirmed, so both Deposits end empty and the Customer owes nothing on the Lease."""
+    confirm_settlement(case, record_settlement(case, normal_plan(case), pet_remainder=STAFF))
+
+
+def close_by_refunds(case: dict[str, Any]) -> None:
+    """The real closure of a Lease whose obligations are all paid: both Deposits refunded to the
+    Primary Tenant (owner answer to Q-2026-10-07-47)."""
+    confirm_settlement(
+        case,
+        record_settlement(
+            case,
+            (settlement_refund(case, "security", 10_000), settlement_refund(case, "pet", 20_000)),
+        ),
+    )
+
+
+def unpaid_charge(url: str, case: dict[str, Any], person: UUID) -> tuple[UUID, UUID]:
+    """After closure, an EXTRA_CHARGE correction (sub-slice 10b) issues an unpaid charge of
+    1,500 to the Primary Tenant: a line no closure step paid."""
+    draft = record_extra_charge(case, extra_charge(case["settlement"]))
+    result = corrections().confirm_extra_charge(
+        case["prop"], draft, actor=approving(person, case["prop"])
+    )
+    invoice = UUID(str(cast(dict[str, Any], result["invoice"])["id"]))
+    line = UUID(str(one(url, "SELECT id FROM app.invoice_lines WHERE invoice_id=%s", invoice)[0]))
+    assert outstanding(url, line) == 1_500
+    return invoice, line
+
+
 def reverse_application(case: dict[str, Any], application: object) -> None:
     credits().reverse_application(
         case["prop"],
@@ -264,9 +307,11 @@ def test_a_refund_correction_releases_a_paid_wrong_charge_and_refunds_it_to_the_
     Credit back in one Refund with the draft's method and note, every record linked to the
     correction; the Settlement row stays unchanged; an exact repeat replays. An open Settlement,
     an unpaid line (a charge reduction), more than the line's charge, an unknown Refund method and
-    malformed input are refused; the one-call Adjustment stays refused after closure."""
+    malformed input are refused; the one-call Adjustment stays refused after closure. Rebuilt on
+    the real closure (owner answer to Q-2026-10-07-47): the unpaid line is a charge issued after
+    closure, checked at the end."""
     url = migrated_database_url
-    case = leaving_case(url)
+    case = leaving_case(url, start_offset=this_month(url))
     prop, human, customer = case["prop"], case["human"], case["customer"]
     person = approver(url)
     invoice = case["initial"]
@@ -280,7 +325,7 @@ def test_a_refund_correction_releases_a_paid_wrong_charge_and_refunds_it_to_the_
         "55000",
         "A post-settlement correction needs a closed Final Settlement",
     )
-    close(url, human, case["settlement"])
+    really_close(case)
     # The database refuses malformed input on its own and writes no draft.
     drafts_before = count(url, "SELECT count(*) FROM app.financial_drafts")
     good = command.refund()
@@ -302,11 +347,6 @@ def test_a_refund_correction_releases_a_paid_wrong_charge_and_refunds_it_to_the_
             )
         assert refused.value.sqlstate == "22023", malformed
     assert count(url, "SELECT count(*) FROM app.financial_drafts") == drafts_before
-    # Nothing paid on the line would be released: that is a charge reduction, not a Refund.
-    other = case["other_line"]
-    with pytest.raises(FinalSettlementConflictError) as unpaid:
-        record(case, correction(case, invoice_of(url, other), other, 1_000))
-    assert cause(unpaid) == ("55000", NOTHING_RELEASED)
     with pytest.raises(FinalSettlementConflictError) as too_much:
         record(case, correction(case, invoice, rent, charge + 1))
     assert cause(too_much) == ("55000", "The Refund correction exceeds the charge on the line")
@@ -468,6 +508,12 @@ def test_a_refund_correction_releases_a_paid_wrong_charge_and_refunds_it_to_the_
     assert count(url, "SELECT count(*) FROM app.refunds") == refunds_before + 1
     # The one-call credit Adjustment is not linked, so the 8e-1 refusal still holds.
     closed_refusal(InvoiceConflictError, credit_adjustment, url, human, prop, invoice, rent)
+    # Nothing paid on the line would be released: that is a charge reduction, not a Refund. After
+    # a real closure no line is unpaid, so the line is a charge issued after closure.
+    other_invoice, other = unpaid_charge(url, case, person)
+    with pytest.raises(FinalSettlementConflictError) as unpaid:
+        record(case, correction(case, other_invoice, other, 1_000))
+    assert cause(unpaid) == ("55000", NOTHING_RELEASED)
 
 
 def test_one_refund_correction_pays_a_payment_and_a_settlement_credit_back_in_two_refunds(
@@ -478,30 +524,53 @@ def test_one_refund_correction_pays_a_payment_and_a_settlement_credit_back_in_tw
     first and refunded in two Refunds, each with its own details row. The Settlement Credit
     application is reversed only because it is linked, and its re-posted rest is an ordinary
     Credit application whose one-call reversal is refused (owner answer 2 to Q-2026-10-07-39),
-    also after a second correction re-posts it again."""
+    also after a second correction re-posts it again. Rebuilt on the real closure (owner answer
+    to Q-2026-10-07-47): the second Signer's Credit pays 400 of that Signer's 1,000 line at the
+    Settlement, the Pet Deposit pays the Primary Tenant's Late-payment Charge and Rent, and the
+    Signer pays the 600 left after closure; the Signer owes nothing else on the Lease."""
     url = migrated_database_url
-    case = leaving_case(url)
-    prop, human, customer = case["prop"], case["human"], case["customer"]
+    case = two_signer_case(url, overdue_rent=True)
+    prop, human, pet, charge = case["prop"], case["human"], case["pet"], case["charge"]
+    customer = case["co_signer"]
     person = approver(url)
-    settlement_draft = record_settlement(case, normal_plan(case), pet_remainder=STAFF)["draft_id"]
-    with psycopg.connect(url) as connection:
-        decide(connection, case, settlement_draft)
-        settlement_application = UUID(write(connection, case, settlement_draft, 1)["id"])
-    close(url, human, case["settlement"])
-    line = case["other_line"]
+    on_charge = charge_remaining(url, charge)
+    confirm_settlement(
+        case,
+        record_settlement(
+            case,
+            (
+                SettlementCreditStep(case["credit"], LINE, case["signer_line"], 400),
+                SettlementDepositStep(
+                    PET_REST, pet, SettlementTargetKind.LATE_PAYMENT_CHARGE, charge, on_charge
+                ),
+                SettlementDepositStep(PET_REST, pet, LINE, case["rent_line"], 20_000 - on_charge),
+            ),
+            pet_remainder=STAFF,
+        ),
+    )
+    line = case["signer_line"]
+    settlement_application = UUID(
+        str(
+            one(
+                url,
+                "SELECT id FROM app.customer_credit_applications WHERE final_settlement_id=%s",
+                case["settlement"],
+            )[0]
+        )
+    )
     invoice = invoice_of(url, line)
-    assert outstanding(url, line) == 12_100
-    payment = pay(url, prop, human, customer, invoice, line, 12_100)
+    assert outstanding(url, line) == 600
+    payment = pay(url, prop, human, customer, invoice, line, 600)
     assert outstanding(url, line) == 0
 
-    result = confirm(case, person, record(case, correction(case, invoice, line, 12_300)))
+    result = confirm(case, person, record(case, correction(case, invoice, line, 800)))
     correction_id = UUID(str(cast(dict[str, Any], result["settlement_correction"])["id"]))
     allocation_source, application_source = released_of(result)
     assert (
         allocation_source["source_kind"],
         allocation_source["released_usd_cents"],
         allocation_source["replacement_payment_allocation_id"],
-    ) == ("PAYMENT_ALLOCATION", 12_100, None)
+    ) == ("PAYMENT_ALLOCATION", 600, None)
     assert (
         application_source["source_kind"],
         application_source["reversed_credit_application_id"],
@@ -519,7 +588,7 @@ def test_one_refund_correction_pays_a_payment_and_a_settlement_credit_back_in_tw
         (paid["source_customer_credit_id"], paid["amount_usd_cents"], paid["recipient_customer_id"])
         for paid in refunds_of(result)
     ] == [
-        (allocation_source["customer_credit_id"], 12_100, str(customer)),
+        (allocation_source["customer_credit_id"], 600, str(customer)),
         (str(case["credit"]), 200, str(customer)),
     ]
     assert (
@@ -587,17 +656,17 @@ def test_a_third_party_payment_is_refunded_to_the_invoice_customer_not_the_payer
     Customer's Credit and is refunded to that Customer, not the payer, through the relaxed Refund
     source checks. The relaxation accepts nothing outside a correction: a details row is refused
     outside its correction's transaction, and a Credit Refund to a Customer other than the payer
-    still needs its own draft or correction."""
+    still needs its own draft or correction. Rebuilt on the real closure (owner answer to
+    Q-2026-10-07-47): the third party pays a 1,500 charge issued after closure."""
     url = migrated_database_url
-    case = leaving_case(url)
-    human, customer = case["human"], case["customer"]
+    case = leaving_case(url, start_offset=this_month(url))
+    customer = case["customer"]
     person = approver(url)
-    close(url, human, case["settlement"])
-    line = case["other_line"]
-    invoice = invoice_of(url, line)
-    payer, _ = third_party_payment(url, case, invoice, line, 12_500)
+    really_close(case)
+    invoice, line = unpaid_charge(url, case, person)
+    payer, _ = third_party_payment(url, case, invoice, line, 1_500)
     assert outstanding(url, line) == 0
-    draft = record(case, correction(case, invoice, line, 5_000))
+    draft = record(case, correction(case, invoice, line, 500))
     assert one(
         url,
         "SELECT payload->'released_sources'->0->>'payer_customer_id',"
@@ -617,12 +686,12 @@ def test_a_third_party_payment_is_refunded_to_the_invoice_customer_not_the_payer
         url,
         "SELECT recipient_customer_id,usd_accounting_value_cents FROM app.refunds WHERE id=%s",
         refund,
-    ) == (customer, 5_000)
+    ) == (customer, 500)
     assert one(
         url,
         "SELECT amount_usd_cents FROM app.payment_allocations WHERE id=%s",
         source["replacement_payment_allocation_id"],
-    ) == (7_500,)
+    ) == (1_000,)
     assert available(url, credit) == 0
     assert str(refund) in ledger_event_ids(url, customer)
     assert str(refund) not in ledger_event_ids(url, payer)
@@ -665,41 +734,31 @@ def test_a_changed_line_is_stale_an_inactive_method_conflicts_and_a_deposit_paid
     """A draft whose line or paying sources changed since it was recorded is stale and stays
     pending; a Refund method deactivated after the draft is a conflict (BR-REFUND-014) and the
     draft stays pending; the confirm runs only at READ COMMITTED; a reused key is refused, also
-    across variants, and one variant's confirm refuses the other's draft. An Invoice that a Deposit
-    application paid stays refused until sub-slice 10c-2."""
+    across variants, and one variant's confirm refuses the other's draft. Rebuilt on the real
+    closure (owner answer to Q-2026-10-07-47); narrowed expectation (sub-slice 10c-2a-3): an
+    Invoice a Deposit application paid is no longer refused for that reason, and a Refund
+    correction without a plan for the released Deposit value is refused by the DL-032 step."""
     url = migrated_database_url
-    case = leaving_case(url)
+    case = leaving_case(url, start_offset=this_month(url))
     prop, human, customer = case["prop"], case["human"], case["customer"]
     person = approver(url)
     pet_line = case["pet_line"]
-    apply(
-        url,
-        prop,
-        human,
-        case["settlement"],
-        case["pet"],
-        "PET_RELATED_FIRST",
-        "INVOICE_LINE",
-        pet_line,
-        1_000,
-        1,
-    )
-    close(url, human, case["settlement"])
+    really_close(case)
     with pytest.raises(FinalSettlementConflictError) as deposit:
         record(case, correction(case, invoice_of(url, pet_line), pet_line, 500))
+    # Narrowed (sub-slice 10c-2a-3; was the 8a-1 refusal of a Deposit-paid Invoice).
     assert cause(deposit) == (
         "55000",
-        "A Deposit application paid this obligation at Final Settlement",
+        "Every remaining Deposit balance must be applied or refunded",
     )
-    line = case["other_line"]
-    invoice = invoice_of(url, line)
-    pay(url, prop, human, customer, invoice, line, 12_500)
-    command = correction(case, invoice, line, 2_000)
+    invoice, line = unpaid_charge(url, case, person)
+    pay(url, prop, human, customer, invoice, line, 1_500)
+    command = correction(case, invoice, line, 500)
     first = record(case, command)
     assert record(case, command) == first
     with pytest.raises(FinalSettlementKeyReused):
-        record(case, replace(command, amount_usd_cents=1_999))
-    second = record(case, replace(command, idempotency_key=uuid4(), amount_usd_cents=3_000))
+        record(case, replace(command, amount_usd_cents=499))
+    second = record(case, replace(command, idempotency_key=uuid4(), amount_usd_cents=700))
     with pytest.raises(psycopg.Error) as isolation, psycopg.connect(url) as connection:
         connection.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
         connection.execute(
@@ -769,18 +828,22 @@ def test_a_credit_released_before_closure_to_the_invoice_customer_is_refunded_to
     """BR-CREDIT-014 and BR-CREDIT-008, the Credit-application half of the relaxed Refund checks
     (review round 1): a Credit that an ordinary credit Adjustment released before closure from a
     third-party Payment to the Invoice Customer, and that the Customer applied to another line, is
-    released again by a Refund correction and refunded to the Invoice Customer, not the payer."""
+    released again by a Refund correction and refunded to the Invoice Customer, not the payer.
+    Rebuilt on the real closure (owner answer to Q-2026-10-07-47): the Customer pays the rest of
+    that line before closure, the Credit application is its newest source, and the Settlement
+    refunds both Deposits."""
     url = migrated_database_url
-    case = leaving_case(url)
-    human, customer = case["human"], case["customer"]
+    case = leaving_case(url, start_offset=this_month(url))
+    prop, human, customer = case["prop"], case["human"], case["customer"]
     person = approver(url)
     payer, credit = third_party_released_credit(url, case)
     pet = case["pet_line"]
     pet_invoice = invoice_of(url, pet)
+    pay(url, prop, human, customer, pet_invoice, pet, 12_100)
     applied = apply_credit(case, credit, pet_invoice, pet, 400)
-    close(url, human, case["settlement"])
-    assert outstanding(url, pet) == 12_100
-    result = confirm(case, person, record(case, correction(case, pet_invoice, pet, 12_200)))
+    close_by_refunds(case)
+    assert outstanding(url, pet) == 0
+    result = confirm(case, person, record(case, correction(case, pet_invoice, pet, 100)))
     [source] = released_of(result)
     assert (
         source["source_kind"],
@@ -887,18 +950,22 @@ def test_a_second_refund_of_the_same_credit_beyond_what_the_correction_released_
     not the payer and refunds it; a second Refund of 1 cent from the same Credit, linked to the
     same correction with its details row and processed by the approver, is refused although the
     Credit still has value, because together with the correction's first Refund it is more than
-    the correction released to that Credit. Everything rolls back and the draft stays pending."""
+    the correction released to that Credit. Everything rolls back and the draft stays pending.
+    Rebuilt on the real closure (owner answer to Q-2026-10-07-47): the Customer pays the rest of
+    that line before closure, the Credit application is its newest source, and the Settlement
+    refunds both Deposits."""
     url = migrated_database_url
-    case = leaving_case(url)
+    case = leaving_case(url, start_offset=this_month(url))
     customer = case["customer"]
     person = approver(url)
     _, credit = third_party_released_credit(url, case)
     pet = case["pet_line"]
     pet_invoice = invoice_of(url, pet)
+    pay(url, case["prop"], case["human"], customer, pet_invoice, pet, 12_200)
     apply_credit(case, credit, pet_invoice, pet, 300)
-    close(url, case["human"], case["settlement"])
-    assert (available(url, credit), outstanding(url, pet)) == (100, 12_200)
-    draft = record(case, correction(case, pet_invoice, pet, 12_300))
+    close_by_refunds(case)
+    assert (available(url, credit), outstanding(url, pet)) == (100, 0)
+    draft = record(case, correction(case, pet_invoice, pet, 100))
     second = uuid4()
     with pytest.raises(psycopg.Error) as capped, psycopg.connect(url) as connection:
         found = connection.execute(

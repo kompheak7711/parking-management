@@ -1,0 +1,207 @@
+./scripts/database-test.sh
+ Network prm-database-test-14051_default Creating 
+ Network prm-database-test-14051_default Creating 
+ Volume prm-database-test-14051_postgres_data Creating 
+ Volume prm-database-test-14051_postgres_data Creating 
+ Volume prm-database-test-14051_postgres_data Created 
+ Volume prm-database-test-14051_postgres_data Created 
+ Network prm-database-test-14051_default Created 
+ Network prm-database-test-14051_default Created 
+ Container prm-database-test-14051-postgres-1 Creating 
+ Container prm-database-test-14051-postgres-1 Created 
+ Container prm-database-test-14051-postgres-1 Starting 
+ Container prm-database-test-14051-postgres-1 Started 
+ Container prm-database-test-14051-postgres-1 Waiting 
+ Container prm-database-test-14051-postgres-1 Healthy 
+============================= test session starts ==============================
+collected 1928 items
+
+tests/test_migrations.py ............................................... [  2%]
+........................................................................ [  6%]
+....                                                                     [  6%]
+tests/test_audit_migration.py .......                                    [  6%]
+tests/test_property_migration.py ...........                             [  7%]
+tests/test_unit_migration.py ..................................          [  9%]
+tests/test_customer_migration.py .........................               [ 10%]
+tests/test_configuration_migration.py ..............                     [ 11%]
+tests/test_reservation_migration.py ...........                          [ 11%]
+tests/test_reservation_lifecycle_migration.py .........                  [ 12%]
+tests/test_reservation_outcome_migration.py ........                     [ 12%]
+tests/test_reservation_worker_migration.py .......                       [ 12%]
+tests/test_reservation_deposit_draft_migration.py ..............         [ 13%]
+tests/test_unit_cleaning_charge_migration.py .......                     [ 14%]
+tests/test_hand_back_rent_migration.py ........                          [ 14%]
+tests/test_lease_deposit_forfeiture_migration.py .............           [ 15%]
+tests/test_lease_deposit_reversal_draft_migration.py .........           [ 15%]
+tests/test_payment_move_migration.py ..........................          [ 16%]
+tests/test_final_settlement_migration.py ............                    [ 17%]
+tests/test_deposit_receipt_reversal_draft_migration.py ..........        [ 18%]
+tests/test_deposit_application_ledger_migration.py .....                 [ 18%]
+tests/test_lease_migration.py ..............                             [ 19%]
+tests/test_lease_lifecycle_migration.py ......                           [ 19%]
+tests/test_move_in_migration.py .......                                  [ 19%]
+tests/test_lease_api_migration.py ...                                    [ 19%]
+tests/test_lease_enforcement_migration.py .............................. [ 21%]
+.....                                                                    [ 21%]
+tests/test_lease_enforcement_api_migration.py .......................... [ 23%]
+...........................                                              [ 24%]
+tests/test_lease_notices_migration.py .................................. [ 26%]
+........................................................................ [ 29%]
+..........................................                               [ 32%]
+tests/test_lease_termination_migration.py .............................. [ 33%]
+.........                                                                [ 34%]
+tests/test_termination_deposit_migration.py .......                      [ 34%]
+tests/test_termination_invoice_migration.py ................             [ 35%]
+tests/test_move_out_inspection_migration.py ..........................   [ 36%]
+tests/test_move_out_inspection_consumers_migration.py .................. [ 37%]
+..                                                                       [ 37%]
+tests/test_physical_move_out_migration.py .............................. [ 39%]
+......                                                                   [ 39%]
+tests/test_physical_move_out_consumers_migration.py .................... [ 40%]
+...                                                                      [ 40%]
+tests/test_deposit_financial_revision_migration.py ..........            [ 41%]
+tests/test_deposit_disposition_migration.py ............................ [ 42%]
+.....                                                                    [ 42%]
+tests/test_lease_deposit_command_guards_migration.py ........            [ 43%]
+tests/test_deposit_migration.py ..............                           [ 44%]
+tests/test_deposit_api_migration.py .............                        [ 44%]
+tests/test_invoice_migration.py ...................................      [ 46%]
+tests/test_late_payment_migration.py .............                       [ 47%]
+tests/test_payment_migration.py ........................................ [ 49%]
+.....                                                                    [ 49%]
+tests/test_payment_read_migration.py ........                            [ 50%]
+tests/test_financial_reference_migration.py ...                          [ 50%]
+tests/test_payment_reversal_context_migration.py ....................    [ 51%]
+tests/test_financial_action_context_migration.py ....................... [ 52%]
+...........................                                              [ 53%]
+tests/test_customer_ledger_migration.py .........................        [ 55%]
+tests/test_customer_ledger_read_migration.py .....................       [ 56%]
+tests/test_payment_confirmation_migration.py ........................... [ 57%]
+...........                                                              [ 58%]
+tests/test_khr_payment_confirmation_migration.py ....................... [ 59%]
+.....................................                                    [ 61%]
+tests/test_payment_api_migration.py .....................                [ 62%]
+tests/test_financial_fixture_clock_migration.py .......                  [ 62%]
+tests/test_payment_allocation_migration.py ............................. [ 64%]
+..........                                                               [ 64%]
+tests/test_allocation_read_migration.py ......                           [ 65%]
+tests/test_allocation_receipt_api_migration.py ..............            [ 65%]
+tests/test_receipt_migration.py ...............................          [ 67%]
+tests/test_credit_migration.py ......................................... [ 69%]
+                                                                         [ 69%]
+tests/test_credit_application_migration.py .......................       [ 70%]
+tests/test_credit_history_migration.py ...........                       [ 71%]
+tests/test_refund_migration.py ...................................       [ 73%]
+tests/test_refund_service_migration.py ................................  [ 74%]
+tests/test_credit_refund_read_migration.py ..............                [ 75%]
+tests/test_credit_refund_api_migration.py ..............                 [ 76%]
+tests/test_pet_refund_migration.py ................................      [ 77%]
+tests/test_billing_service_migration.py ................................ [ 79%]
+........                                                                 [ 79%]
+tests/test_utility_meter_migration.py .............                      [ 80%]
+tests/test_utility_consumption_migration.py ............................ [ 82%]
+......................                                                   [ 83%]
+tests/test_utility_api_migration.py ...............                      [ 84%]
+tests/test_move_out_final_inputs_migration.py ....................       [ 85%]
+tests/test_initial_rent_lease_start_migration.py ........                [ 85%]
+tests/test_one_time_charges_migration.py .......                         [ 85%]
+tests/test_debit_adjustment_line_block_migration.py ........             [ 86%]
+tests/test_credit_adjustment_excess_migration.py ..........              [ 86%]
+tests/test_rent_nonpayment_recurring_only_migration.py ..........        [ 87%]
+tests/test_lease_signing_reservation_migration.py .......                [ 87%]
+tests/test_unpaid_initial_termination_migration.py ...........           [ 88%]
+tests/test_initial_rent_override_capability_migration.py .....           [ 88%]
+tests/test_utility_baseline_migration.py ...............                 [ 89%]
+tests/test_final_utility_invoice_migration.py ..........                 [ 89%]
+tests/test_utility_unbilled_periods_migration.py .......                 [ 90%]
+tests/test_final_settlement_preview_migration.py ..............          [ 90%]
+tests/test_final_settlement_draft_migration.py ..............            [ 91%]
+tests/test_billing_run_migration.py ...........                          [ 92%]
+tests/test_lease_timeline_restricted_migration.py ......                 [ 92%]
+tests/test_lease_end_date_month_end_migration.py ....                    [ 92%]
+tests/test_financial_draft_migration.py .............                    [ 93%]
+tests/test_refund_draft_migration.py .................                   [ 94%]
+tests/test_refund_signer_recipient_migration.py .....                    [ 94%]
+tests/test_final_settlement_refund_migration.py ...........              [ 95%]
+tests/test_final_settlement_closed_refusal_migration.py ..........       [ 95%]
+tests/test_final_settlement_credit_application_migration.py .......      [ 95%]
+tests/test_final_settlement_confirm_migration.py ................        [ 96%]
+tests/test_credit_customer_refund_migration.py ........                  [ 97%]
+tests/test_credit_customer_credit_reversal_migration.py ....             [ 97%]
+tests/test_settlement_correction_migration.py .........                  [ 97%]
+tests/test_settlement_extra_charge_migration.py ......                   [ 98%]
+tests/test_settlement_charge_reduction_migration.py .....                [ 98%]
+tests/test_settlement_refund_correction_migration.py .........           [ 98%]
+tests/test_deposit_application_reversal_migration.py ....                [ 99%]
+tests/test_settlement_correction_plan_migration.py ..........            [ 99%]
+tests/test_settlement_deposit_refund_correction_migration.py ...FFF.     [100%]
+
+=================================== FAILURES ===================================
+_______ test_a_deposit_application_on_another_line_of_the_invoice_stays ________
+tests/test_settlement_deposit_refund_correction_migration.py:505: in test_a_deposit_application_on_another_line_of_the_invoice_stays
+    assert len(lines) >= 3 and all(owed > 0 for _, _, owed in lines) and paid < deposit
+E   AssertionError: assert (3 >= 3 and True and 95700 < 20000)
+E    +  where 3 = len([(UUID('3e01de82-b400-4c17-9689-d785f1995bed'), 'RENT', 92903), (UUID('865e6c12-0b91-4e48-a031-a2d294df2939'), 'SERVICE_CHARGES', 1597), (UUID('a811dea9-0285-4529-8b00-561de06ba145'), 'SERVICE_CHARGES', 1200)])
+E    +  and   True = all(<generator object test_a_deposit_application_on_another_line_of_the_invoice_stays.<locals>.<genexpr> at 0x10d5f8660>)
+___________ test_a_br_dep_027_correction_needs_a_new_customer_choice ___________
+src/property_rental/lease.py:496: in _execute
+    row = connection.execute(query, parameters).fetchone()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/psycopg/connection.py:300: in execute
+    raise ex.with_traceback(None)
+E   psycopg.errors.InvalidParameterValue: Signature evidence is invalid
+E   CONTEXT:  PL/pgSQL function app.record_lease_signature(uuid,uuid,text,uuid,uuid,uuid,integer,timestamp with time zone,text,uuid) line 17 at RAISE
+
+The above exception was the direct cause of the following exception:
+tests/test_settlement_deposit_refund_correction_migration.py:551: in test_a_br_dep_027_correction_needs_a_new_customer_choice
+    case = {**leaving_case(url, unpaid_initial=True), "url": url}
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_final_settlement_draft_migration.py:148: in leaving_case
+    source = signed_with_initial(url, start_offset)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_unpaid_initial_termination_migration.py:95: in signed_with_initial
+    leases.record_signature(
+src/property_rental/lease.py:637: in record_signature
+    return self._execute(
+src/property_rental/lease.py:507: in _execute
+    raise LeaseCommandInvalidError("Lease command is invalid") from exc
+E   property_rental.lease.LeaseCommandInvalidError: Lease command is invalid
+_________ test_the_refund_confirm_and_the_step_hold_the_lease_row_lock _________
+src/property_rental/lease.py:496: in _execute
+    row = connection.execute(query, parameters).fetchone()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/psycopg/connection.py:300: in execute
+    raise ex.with_traceback(None)
+E   psycopg.errors.InvalidParameterValue: Signature evidence is invalid
+E   CONTEXT:  PL/pgSQL function app.record_lease_signature(uuid,uuid,text,uuid,uuid,uuid,integer,timestamp with time zone,text,uuid) line 17 at RAISE
+
+The above exception was the direct cause of the following exception:
+tests/test_settlement_deposit_refund_correction_migration.py:609: in test_the_refund_confirm_and_the_step_hold_the_lease_row_lock
+    case = {**closed_case(url), "url": url}
+              ^^^^^^^^^^^^^^^^
+tests/test_settlement_correction_plan_migration.py:145: in closed_case
+    case = leaving_case(url, start_offset=this_month(url))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_final_settlement_draft_migration.py:148: in leaving_case
+    source = signed_with_initial(url, start_offset)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_unpaid_initial_termination_migration.py:95: in signed_with_initial
+    leases.record_signature(
+src/property_rental/lease.py:637: in record_signature
+    return self._execute(
+src/property_rental/lease.py:507: in _execute
+    raise LeaseCommandInvalidError("Lease command is invalid") from exc
+E   property_rental.lease.LeaseCommandInvalidError: Lease command is invalid
+=============================== warnings summary ===============================
+.venv/lib/python3.11/site-packages/fastapi/testclient.py:1
+  /Users/sokompheak/Development/property-rental-management/backend/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_settlement_deposit_refund_correction_migration.py::test_a_deposit_application_on_another_line_of_the_invoice_stays
+FAILED tests/test_settlement_deposit_refund_correction_migration.py::test_a_br_dep_027_correction_needs_a_new_customer_choice
+FAILED tests/test_settlement_deposit_refund_correction_migration.py::test_the_refund_confirm_and_the_step_hold_the_lease_row_lock
+============ 3 failed, 1925 passed, 1 warning in 658.73s (0:10:58) =============
+make: *** [database-test] Error 1
+exit=2

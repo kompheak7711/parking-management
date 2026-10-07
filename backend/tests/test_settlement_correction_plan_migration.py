@@ -388,16 +388,29 @@ def pet_first_application(url: str, case: dict[str, Any]) -> UUID:
 
 
 def blocked_by(application_name: str, holder: psycopg.Connection[Any]) -> bool:
-    """Whether the session with this application name waits, within 2 seconds, on a lock that
-    the holder's transaction holds."""
+    """Whether the session with this application name, within 10 seconds, is blocked by the
+    holder's transaction while it holds or waits for a lock on app.leases (any lock on that
+    relation; round-3 hardening, carried into sub-slice 10c-2a-3)."""
+    found = holder.execute("SELECT 'app.leases'::regclass::oid").fetchone()
+    assert found is not None
     with psycopg.connect(admin_database_url(), autocommit=True) as observer:
-        deadline = time.monotonic() + 2
+        deadline = time.monotonic() + 10
         while time.monotonic() < deadline:
             waiting = observer.execute(
-                "SELECT EXISTS(SELECT 1 FROM pg_catalog.pg_stat_activity "
-                "WHERE application_name=%s AND datname=%s AND wait_event_type='Lock' "
-                "AND %s=ANY(pg_catalog.pg_blocking_pids(pid)))",
-                (application_name, holder.info.dbname, holder.info.backend_pid),
+                "SELECT EXISTS(SELECT 1 FROM pg_catalog.pg_stat_activity activity "
+                "WHERE activity.application_name=%s AND activity.datname=%s "
+                "AND activity.wait_event_type='Lock' "
+                "AND %s=ANY(pg_catalog.pg_blocking_pids(activity.pid)) "
+                "AND EXISTS(SELECT 1 FROM pg_catalog.pg_locks lock WHERE lock.pid=activity.pid "
+                "AND lock.relation=%s AND lock.database=(SELECT oid FROM pg_catalog.pg_database "
+                "WHERE datname=%s)))",
+                (
+                    application_name,
+                    holder.info.dbname,
+                    holder.info.backend_pid,
+                    found[0],
+                    holder.info.dbname,
+                ),
             ).fetchone()
             if waiting == (True,):
                 return True
@@ -414,9 +427,16 @@ def post(connection: psycopg.Connection[Any], case: dict[str, Any], draft: UUID)
 def failure(
     url: str, action: Callable[[psycopg.Connection[Any]], object]
 ) -> tuple[str | None, str | None]:
-    """The SQLSTATE and message of an action that must fail; its transaction rolls back."""
+    """The SQLSTATE and message of an action that must fail, also at commit: the deferred checks
+    run as a commit would run them, and the transaction then rolls back, also when the action
+    unexpectedly succeeds (review round 1 of sub-slice 10c-2a-3), so a failing test leaves
+    nothing behind."""
     with pytest.raises(psycopg.Error) as error, psycopg.connect(url) as connection:
-        action(connection)
+        try:
+            action(connection)
+            connection.execute("SET CONSTRAINTS ALL IMMEDIATE")
+        finally:
+            connection.rollback()
     return error.value.sqlstate, error.value.diag.message_primary
 
 
@@ -1329,6 +1349,8 @@ def test_the_relaxed_checks_accept_only_a_correction_s_own_records(
         {"lease_id": str(uuid4())},
         {"termination_ground": "BR-LEASE-005"},
     )
+    # The changes cover every recorded field (round-3 hardening, carried into 10c-2a-3).
+    assert set().union(*changes) == set(recorded)
     changed_drafts = [
         plan_draft(url, case, main_plan(case), released_overlay(case), {**recorded, **change})
         for change in changes

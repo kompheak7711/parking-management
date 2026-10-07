@@ -33,9 +33,15 @@ from uuid import UUID, uuid5
 from psycopg.types.json import Jsonb
 
 from property_rental.final_settlement import (
+    MAX_SETTLEMENT_STEPS,
     MAX_USD_CENTS,
     FinalSettlementInvalidError,
     FinalSettlementService,
+    PetRemainderDecision,
+    SettlementCreditStep,
+    SettlementDepositRefund,
+    SettlementDepositStep,
+    SettlementStep,
 )
 from property_rental.financial_draft import (
     FINAL_SETTLEMENTS_PREPARE_CAPABILITY,
@@ -204,6 +210,12 @@ class RecordRefundCorrectionCommand:
     Settlement's Lease, at most the line's charge, and must release paid value. Every Refund of
     the correction records the Refund method and the reference note (BR-REFUND-014). The reason is
     at most 500 characters, because the Adjustment keeps it.
+
+    ``steps`` and ``pet_remainder`` are the DL-032 plan for the released value, in the Final
+    Settlement plan format (V1-056 sub-slice 10c-2a-3): released Credit first pays its own
+    Customer's open debt on the Lease, released Deposit value then pays the Lease's open debt in
+    the DL-032 order, and only the rest is refunded; staff choose every step. Every Deposit Refund
+    step uses this command's Refund method and reference note.
     """
 
     idempotency_key: UUID
@@ -214,6 +226,8 @@ class RecordRefundCorrectionCommand:
     refund_method_id: UUID
     reference_note: str
     reason: str
+    steps: tuple[SettlementStep, ...] = ()
+    pet_remainder: PetRemainderDecision | None = None
 
     def __post_init__(self) -> None:
         _uuid(self.idempotency_key, "idempotency_key")
@@ -230,6 +244,25 @@ class RecordRefundCorrectionCommand:
         _uuid(self.refund_method_id, "refund_method_id")
         _text(self.reference_note, "reference_note", 500)
         _text(self.reason, "reason", 500)
+        if not isinstance(self.steps, tuple) or len(self.steps) > MAX_SETTLEMENT_STEPS:
+            raise FinalSettlementInvalidError(
+                f"steps must be a tuple of at most {MAX_SETTLEMENT_STEPS} steps"
+            )
+        for step in self.steps:
+            if not isinstance(
+                step, (SettlementCreditStep, SettlementDepositStep, SettlementDepositRefund)
+            ):
+                raise FinalSettlementInvalidError("Settlement step is invalid")
+        if self.pet_remainder is not None and not isinstance(
+            self.pet_remainder, PetRemainderDecision
+        ):
+            raise FinalSettlementInvalidError("Pet Deposit remainder decision is invalid")
+
+    def plan(self) -> dict[str, object]:
+        return {
+            "steps": [step.payload() for step in self.steps],
+            "pet_remainder": None if self.pet_remainder is None else self.pet_remainder.payload(),
+        }
 
     def refund(self) -> dict[str, object]:
         return {
@@ -381,6 +414,8 @@ class SettlementCorrectionService:
             command.refund_method_id,
             command.reference_note,
             command.reason,
+            command.steps,
+            command.pet_remainder,
         )
         return FinalSettlementService(self.financial_database_url)._call(
             "SELECT app.record_settlement_refund_draft(%s,%s,%s,%s,%s,%s,%s)",
@@ -389,7 +424,7 @@ class SettlementCorrectionService:
                 actor_id,
                 settlement_correction_draft_id(property_id, actor_id, request.idempotency_key),
                 request.settlement_id,
-                Jsonb(request.refund()),
+                Jsonb({**request.refund(), "plan": request.plan()}),
                 request.reason,
                 FINAL_SETTLEMENTS_PREPARE_CAPABILITY,
             ),

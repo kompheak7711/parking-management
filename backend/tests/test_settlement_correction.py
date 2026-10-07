@@ -560,12 +560,14 @@ def test_refund_correction_record_and_confirm_send_the_stored_correction(
     )
     stored = parameters[4]
     assert isinstance(stored, Jsonb)
+    # Narrowed (V1-056 sub-slice 10c-2a-3): the request also carries the DL-032 plan, empty here.
     assert stored.obj == {
         "invoice_id": str(INVOICE),
         "invoice_line_id": str(LINE),
         "amount_usd_cents": 2_500,
         "refund_method_id": str(METHOD),
         "reference_note": "Cash handed over at the front desk",
+        "plan": {"steps": [], "pet_remainder": None},
     }
     assert parameters[5:] == (
         "The window latch was charged twice and paid",

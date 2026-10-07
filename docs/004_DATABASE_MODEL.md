@@ -1519,7 +1519,10 @@ Append-only Final Settlement financial event: `id uuid PK`, `deposit_id uuid NOT
   balance in the Payment reversal and financial action contexts; VOID, Adjustments and
   Late-payment Charge corrections of a paid obligation, and a receipt reversal of the
   Deposit, are refused (as amended by sub-slice 10c-2a-1: only while the application is not
-  reversed, DB-DEP-006). The writer refuses an unknown target, and the writer and the
+  reversed, DB-DEP-006; and by sub-slice 10c-2a-3, owner answer to Q-2026-10-07-46: an Invoice
+  Adjustment linked to a post-settlement correction of its Invoice's own Settlement, confirmed
+  in the same transaction by that correction's approver under `financial.approve`, passes; every
+  unlinked Adjustment stays refused). The writer refuses an unknown target, and the writer and the
   record's trigger refuse an approver who is not a person. The Customer's choice and the
   staff reason for the remaining Pet Deposit (`PET_REMAINDER_EXPLICIT`, BR-SETTLE-017,
   BR-DEP-027, DL-013) are checked by the Settlement draft and its confirmation (V1-056
@@ -2121,7 +2124,8 @@ confirms it (`app.confirm_settlement_charge_reduction`), which writes, linked
 `financial.approve`, with `source_reference` `settlement-correction:<correction id>`; the
 Adjustment follows its Invoice's Customer (BR-INV-045). A reduction that would release paid
 value is refused (a `REFUND` correction, sub-slice 10c-1b), and an Invoice that a Deposit
-application paid stays refused (DB-DEP-005; sub-slice 10c-2). A draft whose line changed since it
+application paid stays refused (DB-DEP-005; sub-slice 10c-2; still refused after sub-slice
+10c-2a-3, which corrects such a line only with a `REFUND`). A draft whose line changed since it
 was recorded (a Payment, a Credit, an Adjustment, the Invoice's issue state or Deposit
 applications) is stale (P5S02) and stays pending. The confirm locks the Invoice before the
 Settlement row (the order of the 8e-1 refusal), runs only at READ COMMITTED, gives the Adjustment
@@ -2155,10 +2159,11 @@ transaction (approved tightening; such a row exists only through a correction). 
 line or paying sources changed since it was recorded is stale (P5S02) and stays pending; a
 Refund method deactivated after the draft is a conflict (55000). The confirm locks each source
 Payment and then each source Credit in id order before the Invoice (the order of the allocation,
-Credit and Refund writers), runs only at READ COMMITTED and gives every record a fresh id. Its
+Credit and Refund writers; as amended by sub-slice 10c-2a-3: after the Lease row, all through the
+step's lock function, below), runs only at READ COMMITTED and gives every record a fresh id. Its
 `final_settlement.correction.confirmed` audit event names every released source, re-post,
 released Credit and Refund. An Invoice that a Deposit application paid stays refused (sub-slice
-10c-2).
+10c-2; as amended by sub-slice 10c-2a-3: such a line is corrected, below).
 
 As built in V1-056 sub-slice 10c-2a-2 (migration `20261106_102`; owner answers 1 and 3 to
 Q-2026-10-07-41 and 1 and 2 to Q-2026-10-07-42): the shared DL-032 step after closure, for the
@@ -2182,6 +2187,51 @@ the draft and Settlement draft locks, the Lease row `FOR UPDATE` (the move-out i
 locks it too, so no inspection is superseded and no line stops being pet damage while the step
 runs), the Credit steps' Payments and Credits, the Lease's Late-payment Charges and Invoices, the
 Settlement row, then each Deposit's draft lock and row.
+
+As built in V1-056 sub-slice 10c-2a-3 (migration `20261107_103`; owner answers 1 and 2 to
+Q-2026-10-07-41, 1 and 2 to Q-2026-10-07-42, 3 and 4 to Q-2026-10-07-44, and the answers to
+Q-2026-10-07-46 and Q-2026-10-07-47): the `REFUND` correction of sub-slice 10c-1b also corrects a
+line that a Deposit application paid, and every `REFUND` correction runs the shared DL-032 step
+after its release (same function signatures, replaced in place). The release takes whole sources
+newest first across Deposit applications, Payment allocations and Credit applications, only until
+the paid part is covered (owner answer 2 to Q-2026-10-07-41). A released Deposit application is
+reversed whole (`deposit_application_reversal_id`, DB-DEP-006, dated after the latest events of
+the Invoice and of the Deposit) and its value goes back to its Deposit, never to Customer Credit;
+the rest of a partly released Deposit application is paid again only as a step of the
+correction's plan. Payment allocations and Credit applications are released as in 10c-1b: their
+re-posted rests keep the amounts of every other line, so no other line changes how it is paid.
+The draft request carries `plan` (the Settlement plan format: `steps` and `pet_remainder`; staff
+choose every step); the recorder builds `plan_overlay` from the release (the internal
+`app.settlement_refund_overlay`) and stores `plan_result` (sub-slice 10c-2a-2). Every Deposit
+Refund step uses the draft's Refund method and note. A remaining Pet Deposit step with the
+`CUSTOMER_CHOICE` basis needs a choice text other than the one the confirmed Settlement recorded
+(owner answer 3 to Q-2026-10-07-44) and other than the one any earlier confirmed correction of that
+Settlement recorded (review round 1); the database compares the recorded text only, when the draft
+is recorded. At the BR-DEP-027 terminations the step's check still refuses
+the staff basis. The confirm locks, in the 8e-3 order, the draft lock, the Settlement's draft
+lock, the Lease row `FOR UPDATE` (owner answer 4 to Q-2026-10-07-44; 10c-1b as committed took no
+Lease lock), then the step's locks (`app.lock_settlement_correction_plan`, which for a `REFUND`
+draft also takes the released sources' Payments and then their Credits in its single id-ordered
+Payment and Credit passes, together with the Credit steps', so Payments are always locked in id
+order (review round 2), and the corrected Invoice `FOR UPDATE` in its id-ordered Invoice pass,
+after the Late-payment Charges, so no Invoice is locked before a Charge, as the one-call writers
+lock them (review round 1)). After the stale checks it writes the
+release (the reversals, the credit Adjustment, the re-posted rests), refreshes the Invoice status,
+runs `app.post_settlement_correction_plan` (Credit first, Deposit applications, Deposit Refunds),
+and then writes one Credit Refund per released Payment allocation or Credit application only for
+the value left in that Credit after the step, at most what this correction released to it (owner
+answer 2 to Q-2026-10-07-42: a Customer with open debt on the Lease gets back only the rest; a
+Customer with none gets the Refund as in 10c-1b; a correction may end with no Refund). The
+`final_settlement.correction.confirmed` audit event also names the Deposit application reversals
+and the step's Credit applications, Deposit applications and Deposit Refunds. The 8a-1 refusal
+(DB-DEP-005) lets through only an Adjustment linked to a correction of its Invoice's own closed
+Settlement, confirmed in the same transaction by that correction's approver under
+`financial.approve` (the internal `app.settlement_correction_adjustment_allowed`; owner answer to
+Q-2026-10-07-46), so the correction's Adjustment passes while Deposit applications the release
+does not reach stay active, on the same line or on other lines of the Invoice. No line is paid
+more than its new amount: the deferred Adjustment check already refuses a line whose outstanding
+value at the Adjustment's time, Deposit applications included, is below zero. The
+`CHARGE_REDUCTION` recorder (10c-1a) still refuses an Invoice that a Deposit application paid.
 
 ## DB-SETTLE-006 — `settlement_invoice_line_items`
 
@@ -2320,7 +2370,9 @@ records, and its confirmation is refused by the source check (23514), which the 
 conflict, as it does a unique violation (23505) at confirmation.
 
 As built (V1-056 sub-slice 10c-1b, migration `20261104_100`; owner answer 1 to Q-2026-10-07-39): a
-post-settlement `REFUND` correction (DB-SETTLE-005) pays one Credit Refund per source it releases.
+post-settlement `REFUND` correction (DB-SETTLE-005) pays one Credit Refund per source it releases
+(as amended by sub-slice 10c-2a-3, owner answer 2 to Q-2026-10-07-42: only for the value left in
+that Credit after the shared DL-032 step, so none when the step used it all).
 `settlement_correction_refund_details` (append-only; no role may read or write it), like
 `final_settlement_refund_details`, records each such Refund's `refund_id` (PK, deferred FK so it
 is written first), `settlement_correction_id`, the correction's `draft_id`, `refund_method_id`,
