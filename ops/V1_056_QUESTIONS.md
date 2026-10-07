@@ -1019,3 +1019,37 @@ Until you answer, no fix, no commit, and no 10c-2a-4.
 - After 10c-2a-3 is committed, continue with 10c-2a-4 under the same rules.
 
 Recorded in docs/010.
+
+## Q-2026-10-08-49 — Sub-slice 10c-2a-4 stopped before code: refusing an inspection supersede after closure conflicts with the committed 10b Damage extra charge
+
+10c-2a-3 is committed (fe59f0e; NOW.md f2aa647). A read-only check before the 10c-2a-4 design found a conflict, so there is no 10c-2a-4 code and no run.
+
+Your approved tightening (answer 2 to Q-2026-10-07-44): once a Settlement is closed, a supersede of its move-out inspection is refused; a wrong pet-damage line after closure is fixed only with a post-settlement correction.
+
+**The conflict.**
+- Sub-slice 10b (`EXTRA_CHARGE`, BR-INV-044, migration `20261102_98`, committed) bills a Damage charge after closure only from a current, unbilled finding of a move-out inspection of the Lease.
+- Its committed test `test_a_damage_extra_charge_bills_a_current_unbilled_finding_and_a_stale_draft_waits` (`test_settlement_extra_charge_migration.py`) records damage found after closure by superseding the closure-time inspection (`supersedes_inspection_id=earlier`).
+- Under the tightening that supersede is refused. The test would fail, and staff could no longer record damage found after closure that way.
+
+**What the database allows today (read-only check).**
+- `app.move_out_inspections` has no rule of one inspection per Lease. An inspection that supersedes nothing can be recorded next to the first one; only the superseded id is unique.
+- The pet-damage reader (migration 86), the 10b extra charge (migration 98) and the inspection snapshot treat every inspection that nothing supersedes as current.
+- So damage found after closure can be recorded as an independent inspection. It leaves every billed finding current, so no line the Settlement paid changes its pet classification.
+
+**Options:**
+- (a) Refuse every supersede after closure, as you approved (P5S01, before anything is written, in the inspection command and its insert trigger, with the service mapping it to a conflict). Damage found after closure is recorded as a new inspection that supersedes nothing.
+  - The 10b test changes its setup from a supersede to an independent inspection. It is one committed test; its refusal of the old, already billed finding stays (the expected message may change from "not current" to "already billed"); a docs/010 note.
+  - The 10c-2a-2 inspection test changes as the plan says.
+  - Before code, a read-only check that no consumer of inspections (physical move-out, the Settlement preview, one-time charges, the readers and screens) assumes a single inspection chain. If one does, I stop again.
+- (b) Refuse a supersede after closure only when the superseded inspection has a finding already billed on an Invoice line, which is the case your tightening protects. A supersede of an inspection with only unbilled findings stays allowed. The 10b test still passes only if its superseded inspection has no billed finding, which it has (both Settlement lines were billed from it), so the test changes anyway. This is weaker than your words.
+- (c) Withdraw the tightening and keep supersede after closure; wrong pet classifications are fixed only by the 10c-2a-5 correction. Not recommended: a supersede after closure would still change what the closed Settlement paid as pet damage without an approver (the round-3 note of 10c-2a-2).
+
+**Recommendation: (a).**
+- It keeps your rule as written.
+- Damage found after closure stays billable through 10b.
+- No line the closed Settlement paid changes its pet classification.
+- The cost is a changed setup in one committed 10b test, plus the 10c-2a-2 test change the plan already names.
+
+Also done in this stop, text only: the plan notes and docs/004 wording carried from the 10c-2a-3 limited review (old clauses removed; the Refund method exception named; "such an Invoice's lines"; the as-built note lists the two new tests).
+
+Until you answer, no 10c-2a-4 code.

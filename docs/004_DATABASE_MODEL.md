@@ -2125,7 +2125,7 @@ confirms it (`app.confirm_settlement_charge_reduction`), which writes, linked
 Adjustment follows its Invoice's Customer (BR-INV-045). A reduction that would release paid
 value is refused (a `REFUND` correction, sub-slice 10c-1b), and an Invoice that a Deposit
 application paid stays refused (DB-DEP-005; sub-slice 10c-2; still refused after sub-slice
-10c-2a-3, which corrects such a line only with a `REFUND`). A draft whose line changed since it
+10c-2a-3, which corrects such an Invoice's lines only with a `REFUND`). A draft whose line changed since it
 was recorded (a Payment, a Credit, an Adjustment, the Invoice's issue state or Deposit
 applications) is stale (P5S02) and stays pending. The confirm locks the Invoice before the
 Settlement row (the order of the 8e-1 refusal), runs only at READ COMMITTED, gives the Adjustment
