@@ -38432,6 +38432,148 @@
       "test_path": "backend/tests/test_deposit_application_reversal_migration.py",
       "status": "implemented",
       "notes": "No role may read or write the reversal table; only the runtime role executes the bounded Deposit history read; the new link is deferrable, unique and in the one-link check; no time limit; the migration is forward-only, adds only the listed table, functions and triggers, and changes only the readers, the link functions and the ledger view (V1-056 sub-slice 10c-2a-1)."
+    },
+    {
+      "test_id": "test_released_deposit_value_pays_the_open_debt_after_credit_and_the_rest_is_refunded",
+      "upstream_ids": [
+        "DL-032",
+        "BR-SETTLE-004",
+        "BR-SETTLE-008",
+        "BR-SETTLE-013",
+        "BR-REFUND-014",
+        "DB-REFUND-001",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_correction_plan_migration.py",
+      "status": "implemented",
+      "notes": "After a correction gives Deposit value back and the line owes again, the shared DL-032 step applies the Customer's own Credit first, then the Security Deposit, and refunds only what remains in each Deposit; every record is linked to the correction before it is written, the Credit application is a Settlement Credit application under financial.approve whose one-call reversal is refused, the Deposit application takes the Settlement's next order number, each Deposit Refund keeps its Deposit in its correction details row, both Deposits end empty, the closed Settlement row is unchanged and the ledger reconciles (V1-056 sub-slice 10c-2a-2)."
+    },
+    {
+      "test_id": "test_credit_released_from_a_payment_pays_its_customer_s_debt_before_the_deposit",
+      "upstream_ids": [
+        "BR-CREDIT-014",
+        "BR-SETTLE-004",
+        "DL-032",
+        "DB-CREDIT-002",
+        "DB-REFUND-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_correction_plan_migration.py",
+      "status": "implemented",
+      "notes": "A plan key naming a released Payment allocation resolves to the Credit the correction's own credit Adjustment recognized; that released Credit pays its Customer's open pet damage before the Pet Deposit, the Pet Deposit pays the rest and its rest is refunded; a draft whose allocation the correction did not release is stale and stays pending (V1-056 sub-slice 10c-2a-2). The 10c-1b Credit Refund check accepts a correction's Credit Refund (here to the payer) only when its details name no Deposit (DB-REFUND-001; wording corrected after review round 2)."
+    },
+    {
+      "test_id": "test_the_correction_plan_follows_every_settlement_rule_after_closure",
+      "upstream_ids": [
+        "DL-032",
+        "BR-SETTLE-004",
+        "BR-SETTLE-005",
+        "BR-SETTLE-008",
+        "BR-SETTLE-017",
+        "BR-REFUND-014",
+        "BR-REFUND-015"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_correction_plan_migration.py",
+      "status": "implemented",
+      "notes": "The correction plan check refuses an open Settlement, Credit not used before a Deposit pays, released Credit left while its Customer owes, a Deposit Refund while debt remains, a Deposit not emptied, steps out of the DL-032 order, a Deposit of the wrong type for its step, a Pet Deposit first step on a line that is not pet damage, a Pet Deposit Refund before open pet damage is paid, the remaining Pet Deposit while the Security Deposit holds money, mixed Refund details, a Refund to another Customer without the agreement, a Deposit that holds nothing, malformed or foreign overlays and plans, and a waiting draft on a Settlement source (V1-056 sub-slice 10c-2a-2; the order, type and pet damage refusals added after review round 2)."
+    },
+    {
+      "test_id": "test_the_relaxed_checks_accept_only_a_correction_s_own_records",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-AUTH-010",
+        "BR-REFUND-014",
+        "BR-REFUND-015",
+        "DB-DEP-005",
+        "DB-REFUND-001",
+        "DB-CREDIT-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_correction_plan_migration.py",
+      "status": "implemented",
+      "notes": "After closure a Settlement Credit application, a Deposit application and a Deposit Refund stay refused unless they are the own record of a correction confirmed in the same transaction, written or processed by its approver, matching a step of its plan once (the deferred Credit check refuses a step written twice; a Deposit application off the plan or beyond its steps is refused), in the DL-032 order (Credit before Deposit applications before Refunds; no Security Deposit step after a remaining Pet Deposit step), once per Deposit (the details key), with the BR-REFUND-015 recipient (the Primary Tenant without an agreement, another Customer only as a signed Signer with it), an active Refund method (BR-REFUND-014), no waiting receipt reversal draft and no open debt a Deposit could pay; details naming another Deposit, or a Credit Refund whose details name a Deposit, are refused; the step runs only inside its correction, for that correction's approver and at READ COMMITTED (both added after review round 2), and a draft whose recorded result differs in any field is stale; each refusal leaves the draft pending (V1-056 sub-slice 10c-2a-2)."
+    },
+    {
+      "test_id": "test_the_settlement_correction_step_is_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-SETTLE-013",
+        "DB-REFUND-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_correction_plan_migration.py",
+      "status": "implemented",
+      "notes": "No role may execute the new internal functions or read or write the correction Refund details; the two new details columns are nullable, an agreement needs a Deposit and each Deposit is refunded at most once per correction; no time limit; the migration is forward-only, adds only the listed functions and changes only the seven relaxed or extended checks and writers (V1-056 sub-slice 10c-2a-2)."
+    },
+    {
+      "test_id": "test_each_customer_s_credit_and_a_refund_to_another_signer_after_closure",
+      "upstream_ids": [
+        "BR-CREDIT-008",
+        "BR-SETTLE-004",
+        "BR-REFUND-015",
+        "DB-REFUND-001",
+        "DL-032"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_correction_plan_migration.py",
+      "status": "implemented",
+      "notes": "With two Signers after closure, the Signer's Credit is refused on the Primary Tenant's line, the Primary Tenant's own Credit must pay before the Pet Deposit while the Signer's Credit is not required because the Signer owes nothing, and the rest of the Pet Deposit is refunded to the signed Signer with the written agreement of all Signers kept in the correction's details row; both ledgers reconcile (V1-056 sub-slice 10c-2a-2)."
+    },
+    {
+      "test_id": "test_a_late_payment_charge_target_and_another_settlement_s_correction",
+      "upstream_ids": [
+        "DL-032",
+        "BR-SETTLE-013",
+        "BR-AUTH-010",
+        "DB-DEP-005",
+        "DB-CREDIT-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_correction_plan_migration.py",
+      "status": "implemented",
+      "notes": "After a correction gives the Pet Deposit a Late-payment Charge's amount back, the step pays the Charge with the Customer's Credit first (direct Charge basis) and then with the Pet Deposit after the pet damage; a Credit application, a Deposit application or a Deposit Refund of one Settlement linked to a correction of another Settlement is refused (V1-056 sub-slice 10c-2a-2)."
+    },
+    {
+      "test_id": "test_an_inspection_correction_waits_for_the_step_and_its_line_is_then_no_pet_damage",
+      "upstream_ids": [
+        "DL-032",
+        "BR-SETTLE-013",
+        "DB-DEP-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_correction_plan_migration.py",
+      "status": "implemented",
+      "notes": "The step locks the Lease row FOR UPDATE, as the move-out inspection command does, so an inspection correction that supersedes the inspection waits while a correction pays a pet damage line from the Pet Deposit; after the inspection is superseded the line is no longer pet damage and the Pet Deposit cannot pay it as pet damage; the draft stays pending and nothing is written (V1-056 sub-slice 10c-2a-2, owner answer to Q-2026-10-07-43)."
+    },
+    {
+      "test_id": "test_a_br_dep_027_termination_after_closure",
+      "upstream_ids": [
+        "BR-DEP-027",
+        "BR-LEASE-005",
+        "BR-SETTLE-005",
+        "BR-SETTLE-017",
+        "DL-032",
+        "DB-REFUND-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_correction_plan_migration.py",
+      "status": "implemented",
+      "notes": "After closure at an unpaid-Initial termination the correction plan refuses the remaining Pet Deposit on other debt by a staff reason; with the Customer's choice the step writes the pet damage and remaining Pet Deposit applications, and the Pet Deposit's rest is refunded while other debt stays open, accepted by both the plan check and the correction's Deposit Refund source check; the kept Security Deposit holds nothing and the ledger reconciles (V1-056 sub-slice 10c-2a-2, owner answer to Q-2026-10-07-43)."
+    },
+    {
+      "test_id": "test_credit_after_closure_follows_the_rent_first_proposal_or_the_designation",
+      "upstream_ids": [
+        "BR-CREDIT-006",
+        "BR-SETTLE-004",
+        "BR-SETTLE-013",
+        "DB-CREDIT-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_correction_plan_migration.py",
+      "status": "implemented",
+      "notes": "After the correction reverses the Settlement's Credit applications on an Invoice with a Rent line and two Service lines, the correction plan refuses Credit steps that do not follow the Rent-first proposal without the Customer's designation; the step writes a designated step as CUSTOMER_DESIGNATED with the designation text and the other steps as the Rent-first proposal (RENT_FIRST_PROPOSAL, SERVICE_PROPOSAL), as the correction's Credit check requires; the Invoice is paid again and the ledger reconciles (V1-056 sub-slice 10c-2a-2, owner answer to Q-2026-10-07-43)."
     }
   ]
 }

@@ -1,0 +1,209 @@
+ Network prm-database-test-31561_default Creating 
+ Network prm-database-test-31561_default Creating 
+ Volume prm-database-test-31561_postgres_data Creating 
+ Volume prm-database-test-31561_postgres_data Creating 
+ Volume prm-database-test-31561_postgres_data Created 
+ Volume prm-database-test-31561_postgres_data Created 
+ Network prm-database-test-31561_default Created 
+ Network prm-database-test-31561_default Created 
+ Container prm-database-test-31561-postgres-1 Creating 
+ Container prm-database-test-31561-postgres-1 Created 
+ Container prm-database-test-31561-postgres-1 Starting 
+ Container prm-database-test-31561-postgres-1 Started 
+ Container prm-database-test-31561-postgres-1 Waiting 
+ Container prm-database-test-31561-postgres-1 Healthy 
+============================= test session starts ==============================
+collected 1916 items
+
+tests/test_migrations.py ............................................... [  2%]
+........................................................................ [  6%]
+....                                                                     [  6%]
+tests/test_audit_migration.py .......                                    [  6%]
+tests/test_property_migration.py ...........                             [  7%]
+tests/test_unit_migration.py ..................................          [  9%]
+tests/test_customer_migration.py .........................               [ 10%]
+tests/test_configuration_migration.py ..............                     [ 11%]
+tests/test_reservation_migration.py ...........                          [ 11%]
+tests/test_reservation_lifecycle_migration.py .........                  [ 12%]
+tests/test_reservation_outcome_migration.py ........                     [ 12%]
+tests/test_reservation_worker_migration.py .......                       [ 12%]
+tests/test_reservation_deposit_draft_migration.py ..............         [ 13%]
+tests/test_unit_cleaning_charge_migration.py .......                     [ 14%]
+tests/test_hand_back_rent_migration.py ........                          [ 14%]
+tests/test_lease_deposit_forfeiture_migration.py .............           [ 15%]
+tests/test_lease_deposit_reversal_draft_migration.py .........           [ 15%]
+tests/test_payment_move_migration.py ..........................          [ 17%]
+tests/test_final_settlement_migration.py ............                    [ 17%]
+tests/test_deposit_receipt_reversal_draft_migration.py ..........        [ 18%]
+tests/test_deposit_application_ledger_migration.py .....                 [ 18%]
+tests/test_lease_migration.py ..............                             [ 19%]
+tests/test_lease_lifecycle_migration.py ......                           [ 19%]
+tests/test_move_in_migration.py .......                                  [ 19%]
+tests/test_lease_api_migration.py ...                                    [ 19%]
+tests/test_lease_enforcement_migration.py .............................. [ 21%]
+.....                                                                    [ 21%]
+tests/test_lease_enforcement_api_migration.py .......................... [ 23%]
+...........................                                              [ 24%]
+tests/test_lease_notices_migration.py .................................. [ 26%]
+........................................................................ [ 30%]
+..........................................                               [ 32%]
+tests/test_lease_termination_migration.py .............................. [ 33%]
+.........                                                                [ 34%]
+tests/test_termination_deposit_migration.py .......                      [ 34%]
+tests/test_termination_invoice_migration.py ................             [ 35%]
+tests/test_move_out_inspection_migration.py ..........................   [ 36%]
+tests/test_move_out_inspection_consumers_migration.py .................. [ 37%]
+..                                                                       [ 37%]
+tests/test_physical_move_out_migration.py .............................. [ 39%]
+......                                                                   [ 39%]
+tests/test_physical_move_out_consumers_migration.py .................... [ 40%]
+...                                                                      [ 41%]
+tests/test_deposit_financial_revision_migration.py ..........            [ 41%]
+tests/test_deposit_disposition_migration.py ............................ [ 43%]
+.....                                                                    [ 43%]
+tests/test_lease_deposit_command_guards_migration.py ........            [ 43%]
+tests/test_deposit_migration.py ..............                           [ 44%]
+tests/test_deposit_api_migration.py .............                        [ 45%]
+tests/test_invoice_migration.py ...................................      [ 46%]
+tests/test_late_payment_migration.py .............                       [ 47%]
+tests/test_payment_migration.py ........................................ [ 49%]
+.....                                                                    [ 49%]
+tests/test_payment_read_migration.py ........                            [ 50%]
+tests/test_financial_reference_migration.py ...                          [ 50%]
+tests/test_payment_reversal_context_migration.py ....................    [ 51%]
+tests/test_financial_action_context_migration.py ....................... [ 52%]
+...........................                                              [ 54%]
+tests/test_customer_ledger_migration.py .........................        [ 55%]
+tests/test_customer_ledger_read_migration.py .....................       [ 56%]
+tests/test_payment_confirmation_migration.py ........................... [ 57%]
+...........                                                              [ 58%]
+tests/test_khr_payment_confirmation_migration.py ....................... [ 59%]
+.....................................                                    [ 61%]
+tests/test_payment_api_migration.py .....................                [ 62%]
+tests/test_financial_fixture_clock_migration.py .......                  [ 63%]
+tests/test_payment_allocation_migration.py ............................. [ 64%]
+..........                                                               [ 65%]
+tests/test_allocation_read_migration.py ......                           [ 65%]
+tests/test_allocation_receipt_api_migration.py ..............            [ 66%]
+tests/test_receipt_migration.py ...............................          [ 67%]
+tests/test_credit_migration.py ......................................... [ 69%]
+                                                                         [ 69%]
+tests/test_credit_application_migration.py .......................       [ 71%]
+tests/test_credit_history_migration.py ...........                       [ 71%]
+tests/test_refund_migration.py ...................................       [ 73%]
+tests/test_refund_service_migration.py ................................  [ 75%]
+tests/test_credit_refund_read_migration.py ..............                [ 75%]
+tests/test_credit_refund_api_migration.py ..............                 [ 76%]
+tests/test_pet_refund_migration.py ................................      [ 78%]
+tests/test_billing_service_migration.py ................................ [ 80%]
+........                                                                 [ 80%]
+tests/test_utility_meter_migration.py .............                      [ 81%]
+tests/test_utility_consumption_migration.py ............................ [ 82%]
+......................                                                   [ 83%]
+tests/test_utility_api_migration.py ...............                      [ 84%]
+tests/test_move_out_final_inputs_migration.py ....................       [ 85%]
+tests/test_initial_rent_lease_start_migration.py ........                [ 86%]
+tests/test_one_time_charges_migration.py .......                         [ 86%]
+tests/test_debit_adjustment_line_block_migration.py ........             [ 86%]
+tests/test_credit_adjustment_excess_migration.py ..........              [ 87%]
+tests/test_rent_nonpayment_recurring_only_migration.py ..........        [ 87%]
+tests/test_lease_signing_reservation_migration.py .......                [ 88%]
+tests/test_unpaid_initial_termination_migration.py ...........           [ 88%]
+tests/test_initial_rent_override_capability_migration.py .....           [ 89%]
+tests/test_utility_baseline_migration.py ...............                 [ 89%]
+tests/test_final_utility_invoice_migration.py ..........                 [ 90%]
+tests/test_utility_unbilled_periods_migration.py .......                 [ 90%]
+tests/test_final_settlement_preview_migration.py ..............          [ 91%]
+tests/test_final_settlement_draft_migration.py ..............            [ 92%]
+tests/test_billing_run_migration.py ...........                          [ 92%]
+tests/test_lease_timeline_restricted_migration.py ......                 [ 93%]
+tests/test_lease_end_date_month_end_migration.py ....                    [ 93%]
+tests/test_financial_draft_migration.py .............                    [ 93%]
+tests/test_refund_draft_migration.py .................                   [ 94%]
+tests/test_refund_signer_recipient_migration.py .....                    [ 95%]
+tests/test_final_settlement_refund_migration.py ...........              [ 95%]
+tests/test_final_settlement_closed_refusal_migration.py ..........       [ 96%]
+tests/test_final_settlement_credit_application_migration.py .......      [ 96%]
+tests/test_final_settlement_confirm_migration.py ................        [ 97%]
+tests/test_credit_customer_refund_migration.py ........                  [ 97%]
+tests/test_credit_customer_credit_reversal_migration.py ....             [ 98%]
+tests/test_settlement_correction_migration.py .........                  [ 98%]
+tests/test_settlement_extra_charge_migration.py ......                   [ 98%]
+tests/test_settlement_charge_reduction_migration.py .....                [ 99%]
+tests/test_settlement_refund_correction_migration.py .........           [ 99%]
+tests/test_deposit_application_reversal_migration.py ....                [ 99%]
+tests/test_settlement_correction_plan_migration.py FF.FF                 [100%]
+
+=================================== FAILURES ===================================
+_ test_released_deposit_value_pays_the_open_debt_after_credit_and_the_rest_is_refunded _
+tests/test_settlement_correction_plan_migration.py:339: in test_released_deposit_value_pays_the_open_debt_after_credit_and_the_rest_is_refunded
+    written = post(connection, case, draft)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_settlement_correction_plan_migration.py:290: in post
+    found = connection.execute(POST_PLAN, (case["prop"], case["person"], draft)).fetchone()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/psycopg/connection.py:300: in execute
+    raise ex.with_traceback(None)
+E   psycopg.errors.ForeignKeyViolation: insert or update on table "settlement_correction_effects" violates foreign key constraint "settlement_correction_effects_customer_credit_application__fkey"
+E   DETAIL:  Key (customer_credit_application_id)=(5dcf6e02-12c5-432f-8312-32ca14b0e5eb) is not present in table "customer_credit_applications".
+E   CONTEXT:  SQL statement "INSERT INTO app.settlement_correction_effects(id,settlement_correction_id,effect_sequence,invoice_id,invoice_adjustment_id,invoice_adjustment_reversal_id,payment_allocation_id,payment_allocation_reversal_id,payment_reversal_id,customer_credit_application_id,credit_application_reversal_id,customer_credit_reversal_id,deposit_application_id,deposit_disposition_reversal_id,deposit_receipt_reversal_id,late_payment_charge_correction_id,refund_id,refund_correction_id,authorized_nonrecurring_obligation_id,deposit_application_reversal_id)
+E               SELECT v_effect,p_correction,v_sequence,CASE WHEN p_link='invoice_id' THEN p_record END,CASE WHEN p_link='invoice_adjustment_id' THEN p_record END,CASE WHEN p_link='invoice_adjustment_reversal_id' THEN p_record END,CASE WHEN p_link='payment_allocation_id' THEN p_record END,CASE WHEN p_link='payment_allocation_reversal_id' THEN p_record END,CASE WHEN p_link='payment_reversal_id' THEN p_record END,CASE WHEN p_link='customer_credit_application_id' THEN p_record END,CASE WHEN p_link='credit_application_reversal_id' THEN p_record END,CASE WHEN p_link='customer_credit_reversal_id' THEN p_record END,CASE WHEN p_link='deposit_application_id' THEN p_record END,CASE WHEN p_link='deposit_disposition_reversal_id' THEN p_record END,CASE WHEN p_link='deposit_receipt_reversal_id' THEN p_record END,CASE WHEN p_link='late_payment_charge_correction_id' THEN p_record END,CASE WHEN p_link='refund_id' THEN p_record END,CASE WHEN p_link='refund_correction_id' THEN p_record END,CASE WHEN p_link='authorized_nonrecurring_obligation_id' THEN p_record END,CASE WHEN p_link='deposit_application_reversal_id' THEN p_record END"
+E   PL/pgSQL function app.link_settlement_correction_effect(uuid,text,uuid) line 9 at SQL statement
+E   SQL statement "SELECT app.link_settlement_correction_effect(app.settlement_correction_id(p_draft),
+E                       'customer_credit_application_id',v_id)"
+E   PL/pgSQL function app.post_final_settlement_credit_application(uuid,uuid,uuid,uuid,integer) line 86 at PERFORM
+E   PL/pgSQL function app.post_settlement_correction_plan(uuid,uuid,uuid) line 64 at assignment
+---------------------------- Captured stderr setup -----------------------------
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+_ test_credit_released_from_a_payment_pays_its_customer_s_debt_before_the_deposit _
+tests/test_settlement_correction_plan_migration.py:520: in test_credit_released_from_a_payment_pays_its_customer_s_debt_before_the_deposit
+    written = post(connection, case, draft)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_settlement_correction_plan_migration.py:290: in post
+    found = connection.execute(POST_PLAN, (case["prop"], case["person"], draft)).fetchone()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/psycopg/connection.py:300: in execute
+    raise ex.with_traceback(None)
+E   psycopg.errors.ForeignKeyViolation: insert or update on table "settlement_correction_effects" violates foreign key constraint "settlement_correction_effects_customer_credit_application__fkey"
+E   DETAIL:  Key (customer_credit_application_id)=(62482870-4c83-4d4b-886a-091652c6824c) is not present in table "customer_credit_applications".
+E   CONTEXT:  SQL statement "INSERT INTO app.settlement_correction_effects(id,settlement_correction_id,effect_sequence,invoice_id,invoice_adjustment_id,invoice_adjustment_reversal_id,payment_allocation_id,payment_allocation_reversal_id,payment_reversal_id,customer_credit_application_id,credit_application_reversal_id,customer_credit_reversal_id,deposit_application_id,deposit_disposition_reversal_id,deposit_receipt_reversal_id,late_payment_charge_correction_id,refund_id,refund_correction_id,authorized_nonrecurring_obligation_id,deposit_application_reversal_id)
+E               SELECT v_effect,p_correction,v_sequence,CASE WHEN p_link='invoice_id' THEN p_record END,CASE WHEN p_link='invoice_adjustment_id' THEN p_record END,CASE WHEN p_link='invoice_adjustment_reversal_id' THEN p_record END,CASE WHEN p_link='payment_allocation_id' THEN p_record END,CASE WHEN p_link='payment_allocation_reversal_id' THEN p_record END,CASE WHEN p_link='payment_reversal_id' THEN p_record END,CASE WHEN p_link='customer_credit_application_id' THEN p_record END,CASE WHEN p_link='credit_application_reversal_id' THEN p_record END,CASE WHEN p_link='customer_credit_reversal_id' THEN p_record END,CASE WHEN p_link='deposit_application_id' THEN p_record END,CASE WHEN p_link='deposit_disposition_reversal_id' THEN p_record END,CASE WHEN p_link='deposit_receipt_reversal_id' THEN p_record END,CASE WHEN p_link='late_payment_charge_correction_id' THEN p_record END,CASE WHEN p_link='refund_id' THEN p_record END,CASE WHEN p_link='refund_correction_id' THEN p_record END,CASE WHEN p_link='authorized_nonrecurring_obligation_id' THEN p_record END,CASE WHEN p_link='deposit_application_reversal_id' THEN p_record END"
+E   PL/pgSQL function app.link_settlement_correction_effect(uuid,text,uuid) line 9 at SQL statement
+E   SQL statement "SELECT app.link_settlement_correction_effect(app.settlement_correction_id(p_draft),
+E                       'customer_credit_application_id',v_id)"
+E   PL/pgSQL function app.post_final_settlement_credit_application(uuid,uuid,uuid,uuid,integer) line 86 at PERFORM
+E   PL/pgSQL function app.post_settlement_correction_plan(uuid,uuid,uuid) line 64 at assignment
+________ test_the_relaxed_checks_accept_only_a_correction_s_own_records ________
+tests/test_settlement_correction_plan_migration.py:818: in test_the_relaxed_checks_accept_only_a_correction_s_own_records
+    assert inside(
+E   assert ('23503', 'in...ation__fkey"') == ('42501', 'A ...cial.approve')
+E     
+E     At index 0 diff: '23503' != '42501'
+E     Use -v to get more diff
+___ test_the_settlement_correction_step_is_least_privilege_and_forward_only ____
+tests/test_settlement_correction_plan_migration.py:935: in test_the_settlement_correction_step_is_least_privilege_and_forward_only
+    assert source is not None and "age(" not in str(source[0]), function
+E   AssertionError: app.settlement_correction_plan_result(uuid,uuid,uuid,jsonb,jsonb)
+E   assert (("\n    DECLARE v_settlement app.final_settlements%ROWTYPE; v_preview jsonb; v_open jsonb; v_open_start jsonb;\n      ...rt_to(\n                app.final_settlement_source_state(p_property,p_settlement)::text,'UTF8')),'hex'));\n    END ",) is not None and 'age(' not in "\n    DECLA...);\n    END "
+E     
+E     'age(' is contained here:
+E       is_pet_damage(v_line,v_lease) THEN v_pet:=v_pet||v_entry.key; END IF;
+E     ?           ++++
+E                       ELSE
+E                           SELECT charge.customer_id INTO v_customer FROM app.late_payment_charges charge
+E                           JOIN app.invoices invoice ON invoice.id=charge.source_invoice_id...
+E     
+E     ...Full output truncated (293 lines hidden), use '-vv' to show)
+=============================== warnings summary ===============================
+.venv/lib/python3.11/site-packages/fastapi/testclient.py:1
+  /Users/sokompheak/Development/property-rental-management/backend/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_settlement_correction_plan_migration.py::test_released_deposit_value_pays_the_open_debt_after_credit_and_the_rest_is_refunded
+FAILED tests/test_settlement_correction_plan_migration.py::test_credit_released_from_a_payment_pays_its_customer_s_debt_before_the_deposit
+FAILED tests/test_settlement_correction_plan_migration.py::test_the_relaxed_checks_accept_only_a_correction_s_own_records
+FAILED tests/test_settlement_correction_plan_migration.py::test_the_settlement_correction_step_is_least_privilege_and_forward_only
+============ 4 failed, 1912 passed, 1 warning in 551.44s (0:09:11) =============

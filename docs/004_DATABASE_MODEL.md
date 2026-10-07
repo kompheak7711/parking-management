@@ -1299,6 +1299,20 @@ confirmed by the same approver; a deferred check requires that draft CONFIRMED u
 `financial.approve` by the same approver at commit and exactly one detail on the step's
 obligation. All earlier Credit checks still run on these rows.
 
+As built in V1-056 sub-slice 10c-2a-2 (migration `20261106_102`; owner answer 1 to
+Q-2026-10-07-42): the same writer also writes the Customer Credit steps of a post-settlement
+correction's DL-032 plan (DB-SETTLE-005): it reads the step from the `SETTLEMENT_CORRECTION`
+draft's `plan`, resolves its Credit key (an existing Credit, or the Credit that a Payment
+allocation released by the same correction became, BR-CREDIT-014) and gives the row a fresh `id`,
+linked (`customer_credit_application_id`) to the correction before it is written; the row keeps
+the Settlement link and `financial.approve`, so its one-call reversal stays refused. For such a row
+the source check needs the link to a correction of that Settlement confirmed in the same
+transaction, the correction's approver (a person, active, `financial.approve`; 42501 otherwise),
+a time not before the correction, a target of the Settlement Lease, no Deposit application or
+Refund of the same correction yet (55000), and a matching Credit step of that correction's plan
+with the basis BR-CREDIT-006 gives (23514); the deferred check needs the correction's draft
+CONFIRMED by the same approver and pins the row to the plan step its detail names, once.
+
 ## DB-CREDIT-003 — `customer_credit_application_reversals`
 
 Append-only: `id uuid PK`, `credit_application_id uuid NOT NULL UNIQUE FK`, `reason text NOT NULL`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`, `authorization_reference text NOT NULL`.
@@ -1526,6 +1540,17 @@ Append-only Final Settlement financial event: `id uuid PK`, `deposit_id uuid NOT
   be applied (a relaxing change). The termination record lookup is the shared
   `app.lease_termination_forfeiture_rule(property, lease, deposit type)`;
   `app.lease_deposit_kept_rule` keeps its result and errors and delegates to it.
+- As built in V1-056 sub-slice 10c-2a-2 (migration `20261106_102`; owner answer 1 to
+  Q-2026-10-07-41): after closure a Deposit application is still refused unless it is linked
+  (DB-SETTLE-005 `deposit_application_id`, written first) to a post-settlement correction of its
+  Settlement confirmed in the same transaction, written by that correction's approver, not before
+  the correction, before any Refund of the same correction, and matching a Deposit step of that
+  correction's plan (Deposit, stage, target and amount), each step at most once (a relaxing
+  change; 23514 or 55000 otherwise). Such an application's `application_order` still follows the Settlement's last
+  number, and its stage order is checked within that correction. Every other check stays (the
+  DL-032 path, pet damage for the first Pet stage, the target's balance, the held balance and the
+  chronology). The only writer is the shared DL-032 step of the correction
+  (`app.post_settlement_correction_plan`, DB-SETTLE-005), through `app.post_deposit_application`.
 
 ## DB-DEP-006 — `deposit_application_reversals`
 
@@ -1545,7 +1570,8 @@ Append-only: `id uuid PK`, `deposit_application_id uuid NOT NULL UNIQUE FK`, `re
   application does; the reason follows the application's rule (22023 otherwise). At commit a
   deferred trigger refreshes the reversed line's Invoice status and version, as the application's
   own trigger does. One reversal per application: a partial
-  release reverses the whole application and re-posts the rest (sub-slice 10c-2a-2 or 10c-2a-3).
+  release reverses the whole application, and the rest is applied again only as a Deposit step of
+  the correction's plan, through the shared DL-032 step (sub-slice 10c-2a-2).
   Once every Deposit application of a Deposit is reversed, `app.deposit_has_active_application`
   is false, so a receipt reversal draft of that Deposit is no longer held back by it (still a
   draft confirmed by `financial.approve`, 8r).
@@ -2134,6 +2160,29 @@ Credit and Refund writers), runs only at READ COMMITTED and gives every record a
 released Credit and Refund. An Invoice that a Deposit application paid stays refused (sub-slice
 10c-2).
 
+As built in V1-056 sub-slice 10c-2a-2 (migration `20261106_102`; owner answers 1 and 3 to
+Q-2026-10-07-41 and 1 and 2 to Q-2026-10-07-42): the shared DL-032 step after closure, for the
+variants that release or hold Deposit value (10c-2a-3, 10c-2b, 10d); no variant uses it yet and no
+role may call it. A correction draft that runs it keeps `plan` (the Settlement plan format of
+DB-SETTLE-001's draft), `plan_overlay` (what the correction itself changes before the step: what
+each obligation owes after the release, the value each released Credit gains, keyed by the Credit
+or by the released Payment allocation, and the value each Deposit gets back) and `plan_result`.
+The internal check `app.settlement_correction_plan_result` reads the closed Settlement as the
+Settlement preview does, applies the overlay, refuses while a draft waits on a Settlement source,
+and applies the Settlement plan rules plus three correction rules: when a Deposit holds money each
+Customer's Credit pays that Customer's open debt first; a released Credit with value left needs its
+Customer to owe nothing on the Lease; one Refund method, note, recipient and agreement. Inside its
+correction, after the variant's release, `app.post_settlement_correction_plan` (READ COMMITTED,
+under the step's locks) runs the check again on the real state, refuses a draft whose recorded
+result differs in any field (P5S02), and writes the
+Customer Credit applications, the Deposit applications and the Deposit Refunds, each linked to the
+correction first with a fresh id. `app.lock_settlement_correction_plan` takes the step's locks in
+the Settlement confirm's order, for a variant to call before `app.begin_settlement_correction`:
+the draft and Settlement draft locks, the Lease row `FOR UPDATE` (the move-out inspection command
+locks it too, so no inspection is superseded and no line stops being pet damage while the step
+runs), the Credit steps' Payments and Credits, the Lease's Late-payment Charges and Invoices, the
+Settlement row, then each Deposit's draft lock and row.
+
 ## DB-SETTLE-006 — `settlement_invoice_line_items`
 
 Immutable line-aware closure membership/snapshot: `id uuid PK`,
@@ -2289,6 +2338,25 @@ its details row names, confirmed in the same transaction, and, together with tha
 other Refunds of that Credit, for at most what that correction's own Adjustment released to that
 Credit. The Customer Ledger books it on the recipient in the `CREDIT` bucket, and the Refund
 correction paths apply as for any Credit Refund.
+
+As built (V1-056 sub-slice 10c-2a-2, migration `20261106_102`; owner answer 3 to
+Q-2026-10-07-41): `settlement_correction_refund_details` gains `deposit_id` (nullable FK) and
+`signer_agreement` (nullable, 1 to 2,000 characters; only with a Deposit), so a correction's
+Deposit Refund keeps its Deposit and the written agreement of all Signers (BR-REFUND-015), as
+`final_settlement_refund_details` does at the Settlement. The internal writer
+`app.post_settlement_correction_deposit_refund` links the Refund to the correction, then writes
+the details row and the Refund (`financial.approve`, processed by the correction's approver). The
+table is unique on the correction and the Deposit (each Deposit refunded at most once per
+correction), and its deferred check also needs the details to name the Refund's own Deposit (no
+Deposit for a Credit Refund). The Final Settlement Deposit Refund source check hands a Refund whose correction details
+name a Deposit to `app.assert_settlement_correction_deposit_refund_source`, which accepts only the
+Refund of a correction confirmed in the same transaction, linked to it, processed by its approver,
+matching a `DEPOSIT_REFUNDS` step of its plan, at most one per Deposit per correction, with the
+8d rules (DL-032 path, no waiting receipt reversal or forfeiture draft, active method, the
+BR-REFUND-015 recipient, the held amount, chronology, and no open Lease debt a Deposit could pay);
+everything else stays refused. `app.settlement_correction_refund_allowed` (Credit Refunds) also
+needs a details row that names no Deposit. One method, note, recipient and agreement per
+correction draft (Q-41 answer 3). The one-call Refund corrections refuse such a Refund (8d).
 
 Refund delivery methods or operational pending/failed states are deferred technical
 workflow choices. This logical model records only the approved completed Refund event

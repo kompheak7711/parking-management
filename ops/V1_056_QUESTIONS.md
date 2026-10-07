@@ -802,7 +802,7 @@ Q-2026-10-07-41 does not change 10c-1b. Until you answer, no 10c-2 code.
 
 Recorded in docs/010. Two conflicts found while applying answers 1 and 4: Q-2026-10-07-42.
 
-## Q-2026-10-07-42 — Sub-slice 10c-2: "Credit before Deposits" after closure, and a returned Deposit Refund (blocks 10c-2a-2, 10c-2a-3 and 10c-2b; not 10c-2a-1)
+## Q-2026-10-07-42 — Sub-slice 10c-2: "Credit before Deposits" after closure, and a returned Deposit Refund (blocks 10c-2a-2, 10c-2a-3 and 10c-2b; not 10c-2a-1) (ANSWERED 2026-10-07: (a) to all three; answers in docs/010)
 
 10c-2a is split (a split needs no owner answer): **10c-2a-1** the Deposit application reversal record (DB-DEP-006) and every reader of Deposit applications (balances, the Invoice status refresh, the Customer Ledger, the Deposit history), written only inside a correction confirmed in the same transaction (corrected after review round 1: no writer yet; the correction writers of 10c-2a-3 and 10e write it); **10c-2a-2** the shared step of your answer 1 (released or held Deposit value first pays the Lease's open debt under the Settlement rules, then the rest is refunded), reused by 10d; **10c-2a-3** the `REFUND` correction of a Deposit-paid line. 10c-2a-1 does not depend on the points below and goes ahead under the standing rules, as 10a did while Q-37 was open.
 
@@ -813,3 +813,103 @@ Recorded in docs/010. Two conflicts found while applying answers 1 and 4: Q-2026
 For your information, no answer needed: after a return-only correction of a Credit Refund, the Customer may apply that Credit to debt with the ordinary one-call Credit application, as with any Credit after closure (owner answer 7 to Q-2026-10-05-20); the Credit came back through a correction confirmed by an approver, which your tightening asked for.
 
 Until you answer, only 10c-2a-1 is built.
+
+**Owner answer (2026-10-07).**
+
+1. Yes. Before released Deposit value pays open debt, the correction first applies that Customer's own Credit to that Customer's own open debt on this Lease, as the Settlement draft does (Q-29). Credit never pays another Customer's debt. Reuse the 8e-2 Credit application writer with a correction link if you can.
+2. Yes, this change is approved. Every Refund correction first uses released Credit against its own Customer's open debt on this Lease, and refunds only the rest. A Customer who has no open debt on this Lease (for example, a third-party payer) gets the Refund as now. Change 10c-1b in 10c-2a-3 as proposed, with tests for both cases.
+3. Yes. A returned Deposit Refund goes back to the Deposit, not to Customer Credit. It stays held by the Deposit until a later correction, which first pays this Lease's open debt in the DL-032 order and then refunds the rest. The Q-41 answer 4 (the returned amount stays as Customer Credit) still applies to a returned Credit Refund only.
+
+Recorded in docs/010; the 10c-2 design in the plan is updated.
+
+## Q-2026-10-07-43 — Sub-slice 10c-2a-2 stopped after review round 2: four should-fix findings (ANSWERED 2026-10-07: (a), owner exception; choices 5 confirmed, 16 accepted as a known limit; answers in docs/010)
+
+10c-2a-2 (the shared DL-032 step after closure, migration `20261106_102`) is built and green: backend unit U2 3589 passed, full PostgreSQL P5 1918 passed (P1 and P3 failed on causes inside the slice, corrected once each; record: ops/reviews/V1-056-slice-10c-2a-2-settlement-correction-plan.md). Round 1 (no blocker; 6 should-fix) is fixed with tests. Round 2 found no blocker and no bypass, but four distinct should-fix findings, more than the standing round-3 rule allows. Nothing is committed; all 10c-2a-2 files are in the working tree.
+
+**The four should-fix findings, each with the fix I would make:**
+
+1. (Security SF1, code) The step's lock function takes no Lease row lock (the Settlement confirm locks it `FOR UPDATE`, 10b `FOR SHARE`). A move-out inspection superseded by another user while a correction runs could turn a line the Pet Deposit is paying as pet damage into non-pet debt before the commit. Fix: lock the Lease row `FOR UPDATE` right after the two advisory locks (the Settlement confirm's order), with a two-connection test (another connection's `FOR UPDATE NOWAIT` on the Lease gets 55P03 while the locks are held), and the docs.
+2. (Security SF2, tests) The step's own guards are untested inside a live correction: another person than the approver calling it, and the READ COMMITTED refusal. Fix: two refusal tests, each leaving the draft pending.
+3. (Independent SF1, tests) BR-DEP-027 and BR-CREDIT-006 are claimed, but their copied branches have no test (the "only the Customer may choose" step 5 refusal and the Pet Deposit Refund while debt remains at a BR-DEP-027 termination; the Rent-first refusal and the proposal and designation bases). Fix: tests with an unpaid-Initial termination (BR-LEASE-005) and a Rent Invoice line, plus the cheap DL-032 order, wrong Deposit type and non-pet line refusals.
+4. (Independent SF2, record) The record pointed to a "For the owner" section that did not exist. Done (no code): the record now has it; the three points are below.
+
+I would also take the round-2 notes that cost little: the docs/004 sentence on a partial release (the rest is re-applied only as a plan step), test and traceability wording (test 2 recipient is the payer; test 4 rule IDs; the two stale fields not changed by a test; assertions that the Late-payment Charge test really has its pet damage and Charge steps). The other notes become plan notes for 10c-2a-3, 10c-2b and 10d: a variant must not write a linked Deposit application, Credit application or Deposit Refund outside the step (or a deferred check that the step ran), must call the lock function before begin and lock the released allocation's Payment, and its audit event must name every record.
+
+**Options:**
+
+- (a) As an owner exception like Q-2026-10-05-31 and Q-2026-10-07-40: make fixes 1 to 3 and the cheap notes, run the backend unit suite and the full PostgreSQL suite once each, then one more review round (independent and security); commit only if that round has no blocker and no should-fix.
+- (b) Stop 10c-2a-2 here and decide the design points first.
+
+**Recommendation: (a).** Fix 1 is the only code change (a lock, no rule change); 2 and 3 are tests.
+
+**Also for you (named choices in docs/010, not blocking the fixes):**
+
+- Choice 5, first part: Customer Credit before Deposits (your answer 1 to Q-42) applies after closure only when a Deposit holds money; at the Settlement it applies always (Q-29 answer 2). Always after closure would make a Credit-only `REFUND` correction apply the Credit of Customers it does not concern. Is the conditional rule right?
+- Choice 5, second part: "released Credit first" (your answer 2 to Q-42) counts all of that Credit's available value, also value it held before the correction (a Credit that a reversed Credit application refills). Is that right, or only the released part?
+- Choice 16 (accepted race): the Credit-before-Deposits rule reads every Credit of the Lease's Customers but locks only the Credits the steps name, as the Settlement confirm; a Credit recognized by a concurrent one-call command after the check is not used first. Nothing is overpaid.
+
+Until you answer, no 10c-2a-2 fix and no commit.
+
+**Owner answer (2026-10-07).** Option (a), as an owner exception like Q-31 and Q-40.
+
+1. Fix item 1. The step must hold a lock that really stops the move-out inspection from being superseded while the step runs. Check that the command that supersedes an inspection takes the same lock; if it does not, lock what that command locks, in the lock order of the 8e-3 plan note. Add a test that shows the Pet Deposit cannot pay a line that is no longer pet damage. (Done: `app.move_out_inspection_record` and its insert trigger lock the Lease row `FOR UPDATE`; the step's lock function now locks the same row `FOR UPDATE` right after the two draft locks, as the Settlement confirm.)
+2. Fix item 2: test both guards inside a live correction (a person other than the approver; the READ COMMITTED refusal).
+3. Fix item 3: add tests for the BR-DEP-027 and BR-CREDIT-006 branches.
+
+Then the backend unit suite and the full PostgreSQL suite once each, then one more independent round and one security round on the three fixes and the code they touch. Commit only if both rounds have no blocker and no should-fix; otherwise stop and report, with no further fix without the owner.
+
+Choices: (1) confirmed: Credit before Deposits after closure applies only when a Deposit holds money; the rule protects Deposit money, and a correction must not apply the Credit of Customers it does not concern. (2) Confirmed: "released Credit first" counts the whole Credit of that Customer, including value it held before the correction; a Customer is never refunded while that Customer owes money on this Lease that the Credit could pay (Q-29). (3) Accepted: Credit recognized by another command right after the step's check is not used first; nothing is overpaid and that Credit stays with the Customer; written as a known limit in docs/010.
+
+Recorded in docs/010.
+
+## Q-2026-10-07-44 — Sub-slice 10c-2a-2 stopped after review round 3: two text should-fix findings (ANSWERED 2026-10-07: (a); inspection supersede refused after closure; a new Customer choice per correction; 10c-1b takes the Lease lock in 10c-2a-3; answers in docs/010)
+
+The three fixes of Q-2026-10-07-43 are built and green: backend unit U3 3589 passed, full PostgreSQL P6 1921 passed (the new module 10 passed), no correction (record: ops/reviews/V1-056-slice-10c-2a-2-settlement-correction-plan.md). Round 3: the security review has no blocker and no should-fix; the independent review has no blocker and two should-fix findings, both verified. Under your answer to Q-43, nothing is fixed and nothing is committed; all 10c-2a-2 files are in the working tree.
+
+**The two should-fix findings (text only; no behaviour change):**
+
+1. The comment before `app.lock_settlement_correction_plan` (migration 102, a SQL comment outside the function body, so not stored in the database) says a variant takes "the draft lock, the Settlement's draft lock and the Lease row first (as sub-slice 10c-1b ...)". The 10c-1b confirm takes no Lease lock, and neither the comment nor the plan's "Notes for the writers" says the variant must take the Lease row `FOR UPDATE`. A later writer that copied 10b's `FOR SHARE` would upgrade the lock after its own sources (deadlock risk, 40P01). Fix: "the Lease row `FOR UPDATE`, as the Settlement confirm", naming 10c-1b only for the two draft locks, in the comment and in the plan note.
+2. The inspection test's docstring and its traceability entry cite BR-DEP-027, but that test's Settlement has no termination ground, so BR-DEP-027 does not apply there (the new BR-DEP-027 test covers it). Fix: remove BR-DEP-027 from that entry and docstring.
+
+**Options:**
+
+- (a) Make the two text fixes; run the static checks (each in its own call) and the backend unit suite once (the traceability entry changes; the unit suite checks traceability); no PostgreSQL run, because the migration change is a comment outside any function body and the test change is a docstring; no further review round (as Q-2026-10-04-6); then commit 10c-2a-2.
+- (b) As (a), plus a full PostgreSQL run and one more limited review round on the two text fixes.
+
+**Recommendation: (a).** Both findings are wording; the code, the database and every test result stay the same.
+
+**Notes from round 3 for you (not blocking; your decision where marked):**
+
+- (Owner policy) Security N1: the Lease lock makes the step's checks consistent while it runs, but not lasting. After a correction, or the Settlement confirm itself, has committed a pet-damage Deposit application, a user with the inspection capability can still supersede the inspection, and the line stops being pet damage. The money already applied stays applied. Options: refuse an inspection supersede once the Lease's Settlement is closed (a conflict; a tightening that needs you), route such a change through a correction (later sub-slice), or record it as a known limit. My recommendation: refuse the supersede after closure, in its own small sub-slice after 10c-2a-3, because an inspection after closure can otherwise change what the closed Settlement paid as pet damage without an approver.
+- (Owner policy) Independent note 7: in the BR-DEP-027 test the correction reuses the Customer's choice text recorded at the Settlement. Should a correction after closure that uses the remaining Pet Deposit at a BR-DEP-027 termination need a new Customer choice? My recommendation: yes; the variant recorders (10c-2a-3, 10d) ask for the Customer's choice again and store it in the draft, because the Customer chose for the Settlement, not for the later correction.
+- Optional test hardening (no rule change): a case where only the step itself takes the lock function (without the variant's call); a wrong `within_invoice_basis` on a correction's Credit application refused (23514); a check that the stale test covers every result key; `blocked_by` looks for the Lease row lock in `pg_locks` and waits up to 10 seconds. I would add them in 10c-2a-3, with its own runs.
+- Availability (as the Settlement confirm): while a correction runs the step, inserts that name the Lease wait and the `NOWAIT` Lease readers (move-out final inputs, final Utility Invoice, Utility baseline, hand-back Rent) fail at once with 55P03; the variant services map 55P03 and 40P01 to a conflict. I would add one docs/004 line with the text fixes.
+
+Until you answer, no 10c-2a-2 fix, no commit, and no 10c-2a-3.
+
+**Owner answer (2026-10-07).**
+
+1. Option (a). Fix the two texts: the comment before the lock function and the plan note say that 10c-1b does not take the Lease lock and that every later correction type takes the Lease row lock `FOR UPDATE` in the 8e-3 order; the inspection test's docstring and traceability entry do not cite BR-DEP-027. Before skipping the PostgreSQL run, a read-only search confirms that no PostgreSQL test reads the changed comment, docstring or traceability entry (if one does, one full PostgreSQL run). Then the static checks, each in its own call, and the backend unit suite once; if all are clean, commit 10c-2a-2. (Done: the search found no such test; static checks clean; unit U4 3589 passed.)
+2. Inspection after closure: yes, the tightening is approved. Once a Settlement is closed, a supersede of its move-out inspection is refused. A wrong pet-damage line after closure is fixed only with a post-settlement correction. The plan names the correction kind staff use; if no kind fits, the question goes here with a recommendation and the work stops. Built in a small sub-slice after 10c-2a-3, with tests. (Plan: sub-slice 10c-2a-4; for a wrong classification no kind fits, Q-2026-10-07-45.)
+3. Customer choice: yes. A correction that uses the rest of the Pet Deposit at a BR-DEP-027 termination needs a new Customer choice, recorded for that correction; it does not reuse the choice given for the Settlement; without a new choice the rest of the Pet Deposit is not used for other debt (one agreement per correction, as the Q-41 answer).
+4. After 10c-2a-2 is committed, continue with 10c-2a-3. When 10c-1b uses the shared step there, it takes the same Lease lock in the 8e-3 order, with a test, and the comment and the plan note are updated.
+
+Recorded in docs/010.
+
+## Q-2026-10-07-45 — A wrong pet classification of a Damage line after closure: no correction kind fits (blocks only the fix path of sub-slice 10c-2a-4)
+
+Your answer 2 to Q-2026-10-07-44 asks which correction kind staff use for a wrong pet-damage line after closure. The plan (10c-2a-4) lists the kinds that fit when the Damage charge itself is wrong: `CHARGE_REDUCTION` (unpaid line), `REFUND` (paid line; for a Deposit-paid line 10c-2a-3, and the released Pet Deposit value then goes through the shared DL-032 step) and `EXTRA_CHARGE` (damage billed too low).
+
+No kind fits when the charge is right but its pet classification is wrong. Example: at closure the Pet Deposit paid a 12,500 Damage line first, as pet damage (DL-032 step 3); later staff learn that the pet did not break the window latch. The charge is still owed, but under DL-032 the Security Deposit should have paid it (step 4), and the Pet Deposit only at step 5 (a staff reason, or at a BR-DEP-027 termination the Customer's choice). The reverse case also exists: a pet-caused line marked not pet, so the Security Deposit paid it while the Pet Deposit was refunded. Every existing kind changes the charge. An inspection supersede cannot carry the fix either: pet damage is read from the current inspection's findings (`app.invoice_line_is_pet_damage`), and a new inspection cannot reuse finding ids, so a supersede makes every line billed from the old inspection no longer pet damage, the correct ones too.
+
+**Options:**
+
+- (a) A new correction kind, for example `PET_DAMAGE_RECLASSIFICATION`, one Damage line per draft (`final_settlements.prepare` records, `financial.approve` confirms): the draft names the line, its corrected classification (pet-related or not) and an evidence reference; the confirm writes an append-only classification record for that line, linked to the correction (a new DB-SETTLE-005 link and table; docs/004 change); `app.invoice_line_is_pet_damage` reads the latest such record before the inspection; when the new classification changes which Deposit should pay, the confirm reverses the line's Deposit applications (10c-2a-1) and runs the shared step (10c-2a-2) on the released value: each Customer's Credit first, then the Deposits in the DL-032 order, and the rest refunded; at a BR-DEP-027 termination the Pet Deposit pays other debt only with a new Customer choice (your answer 3). A Deposit already refunded at closure is not taken back, so the line may stay open debt on the Customer's ledger. One sub-slice after 10c-2a-4, before 10h.
+- (b) Record the corrected classification only (an audited record linked to a correction), with no money effect: the Deposit applications stay as paid.
+- (c) No reclassification after closure: accept it as a known limit; only a wrong charge is corrected, with the kinds above.
+
+**Recommendation: (a).** DL-032 decides which Deposit pays by this classification, and your answer says a wrong pet-damage line after closure is fixed only with a correction.
+
+**Also (before closure, existing behaviour, for your information and decision):** before closure a supersede of the inspection also makes every line billed from the old inspection no longer pet damage, even when the new inspection repeats the same pet finding, because the Damage charge keeps the old finding's id. The Settlement preview then lets the Security Deposit pay such lines first and the Pet Deposit only at step 5. **Recommendation:** a later sub-slice lets a superseding inspection carry a finding forward (a link from the new finding to the old one) so that a repeated pet finding keeps its lines pet damage; until then, the move-out inspection screen warns staff that a supersede changes the pet status of lines already billed.
+
+Q-2026-10-07-45 does not change 10c-2a-2 or 10c-2a-3. The refusal itself (10c-2a-4) does not depend on it; only the fix path for a wrong classification does.
