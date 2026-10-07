@@ -2080,6 +2080,36 @@ a fresh id, and its result never returns the decision's transaction id. The text
 an open Lease may carry the same text, so the link in this table, not the label, shows which
 Adjustment a correction wrote.
 
+As built in V1-056 sub-slice 10c-1b (migration `20261104_100`; owner answers to Q-2026-10-07-39):
+the `REFUND` correction fixes a wrong charge that was paid. Staff record a
+`SETTLEMENT_CORRECTION` draft with `payload.variant` `REFUND` under `final_settlements.prepare`
+(`app.record_settlement_refund_draft`: an issued, non-VOID Invoice of the Settlement's Lease, one
+of its lines, an amount in cents of at most the line's charge that releases paid value (otherwise
+a `CHARGE_REDUCTION`), an active Refund method and a reference note of 1 to 500 characters; the
+draft stores the sources it will release); only a `financial.approve` holder confirms it
+(`app.confirm_settlement_refund`), which writes, each linked before it is written, the release of
+the paid part in the order of the credit Adjustment excess (newest first: a Payment allocation is
+reversed (`payment_allocation_reversal_id`), its unreleased rest re-posted
+(`payment_allocation_id`) and the released value recognized as Customer Credit of the Invoice
+Customer, BR-CREDIT-014; a Credit application is reversed (`credit_application_reversal_id`) and
+its unreleased rest re-posted (`customer_credit_application_id`), so the value returns to its
+Credit), the credit Adjustment (`invoice_adjustment_id`, authorized under `financial.approve`), and
+one Credit Refund per released source (`refund_id`), paid to that Credit's Customer, with its row
+in `settlement_correction_refund_details` (DB-REFUND-001). An unpaid part of the amount is removed
+with it. The released Credits are not linked here: the Adjustment's
+`invoice_credit_excess_releases` rows name them. A Settlement Credit application's reversal
+passes the 8e-2 refusal because it is linked first; the reversal of a Credit application that
+re-posts, directly or through earlier re-posts, the remainder of a Settlement Credit application
+is refused (P5S01) unless it is linked to a correction of that Settlement confirmed in the same
+transaction (approved tightening; such a row exists only through a correction). A draft whose
+line or paying sources changed since it was recorded is stale (P5S02) and stays pending; a
+Refund method deactivated after the draft is a conflict (55000). The confirm locks each source
+Payment and then each source Credit in id order before the Invoice (the order of the allocation,
+Credit and Refund writers), runs only at READ COMMITTED and gives every record a fresh id. Its
+`final_settlement.correction.confirmed` audit event names every released source, re-post,
+released Credit and Refund. An Invoice that a Deposit application paid stays refused (sub-slice
+10c-2).
+
 ## DB-SETTLE-006 — `settlement_invoice_line_items`
 
 Immutable line-aware closure membership/snapshot: `id uuid PK`,
@@ -2215,6 +2245,26 @@ existing backend Refund correction paths apply (the frontend action context stil
 Refund's recipient to be the payer; slices 11c and 11e change that before a screen shows one). The ordinary `USD` Credit Refund draft of such a Credit still
 records, and its confirmation is refused by the source check (23514), which the service reports as a
 conflict, as it does a unique violation (23505) at confirmation.
+
+As built (V1-056 sub-slice 10c-1b, migration `20261104_100`; owner answer 1 to Q-2026-10-07-39): a
+post-settlement `REFUND` correction (DB-SETTLE-005) pays one Credit Refund per source it releases.
+`settlement_correction_refund_details` (append-only; no role may read or write it), like
+`final_settlement_refund_details`, records each such Refund's `refund_id` (PK, deferred FK so it
+is written first), `settlement_correction_id`, the correction's `draft_id`, `refund_method_id`,
+`reference_note` (1 to 500 characters) and `recorded_at`; a row is accepted only for a correction
+confirmed in the same transaction with that draft and a Refund already linked to that correction,
+and a deferred check needs its Refund processed by the correction's approver. The draft holds one method and one note, and
+every Refund of the correction keeps them in its own row; the Refund row carries the recipient,
+the Credit's Customer, which for every released source is the Invoice Customer (BR-CREDIT-014,
+BR-CREDIT-008). The Refund row records `processed_by` the approver and `authorization_reference`
+`refunds.create`, as every confirmed Refund draft. The general Refund source check and the
+deferred `refunds_credit_customer_confirmed` check lift the payer rule also through
+`app.settlement_correction_refund_allowed`: a Credit Refund paid to its Credit's Customer, with
+its details row, processed by the correction's approver, linked (`refund_id`) to the correction
+its details row names, confirmed in the same transaction, and, together with that correction's
+other Refunds of that Credit, for at most what that correction's own Adjustment released to that
+Credit. The Customer Ledger books it on the recipient in the `CREDIT` bucket, and the Refund
+correction paths apply as for any Credit Refund.
 
 Refund delivery methods or operational pending/failed states are deferred technical
 workflow choices. This logical model records only the approved completed Refund event

@@ -731,7 +731,7 @@ None of these points changes 10a (the correction record and its passage through 
 
 Recorded in docs/010; docs/004 DB-SETTLE-005 amended and DB-PAY-009 (`payment_returns`) added. Point 4 is built in sub-slice 10b; points 1, 2, 3 and 5 in 10d, 10e and 10g.
 
-## Q-2026-10-07-38 — Sub-slice 10c: a wrong Late-payment Charge after closure has no fix (not blocking 10c-1a or 10c-1b)
+## Q-2026-10-07-38 — Sub-slice 10c: a wrong Late-payment Charge after closure has no fix (not blocking 10c-1a or 10c-1b) (ANSWERED 2026-10-07: yes, sub-slice 10c-3; answers in docs/010)
 
 Your answer 1 to Q-2026-10-06-36 asks for a clear fix for a wrong charge that is still unpaid, and the design note builds `CHARGE_REDUCTION` and `REFUND` as a linked credit Adjustment. A credit Adjustment exists only on an Invoice line. A Late-payment Charge is a separate obligation of the Settlement (DL-069, owner answer 1 to Q-2026-10-05-20); it is corrected only by a Late-payment Charge correction (`app.correct_late_payment_charge`: `REDUCTION`, `CHARGE_REVERSAL`), which the 8e-1 refusal stops after closure. That command never releases paid value: it refuses a result below the Charge's active applications ("Active applications require explicit reversal", P4608). So today a wrong Late-payment Charge after closure has no fix at all, paid or unpaid. The 10a migration already lets a linked Late-payment Charge correction through the 8e-1 refusal, and DB-SETTLE-005 already has the link `late_payment_charge_correction_id`.
 
@@ -739,7 +739,9 @@ Your answer 1 to Q-2026-10-06-36 asks for a clear fix for a wrong charge that is
 
 10c-1a (`CHARGE_REDUCTION` on Invoice lines) and 10c-1b (`REFUND` of Invoice lines paid by Payments or Credits) do not depend on this answer and go ahead under the standing rules.
 
-## Q-2026-10-07-39 — Sub-slice 10c-1b stopped before code: where a correction's Refunds keep their method and note, and the remainder of a Settlement Credit application
+**Owner answer (2026-10-07).** Yes. Add sub-slice 10c-3 for a wrong Late-payment Charge after closure, using a linked Late-payment Charge correction, prepared under `final_settlements.prepare` and confirmed only by a `financial.approve` holder. For the paid case, treat it like a credit Adjustment of an Invoice line: the released value follows BR-CREDIT-014, so Credit released to a Customer who did not make the Payment is refunded to that Customer. Recorded in docs/010 and docs/002 (BR-SETTLE-013, BR-LATE-005, BR-CREDIT-014); the plan's 10c entry gains sub-slice 10c-3.
+
+## Q-2026-10-07-39 — Sub-slice 10c-1b stopped before code: where a correction's Refunds keep their method and note, and the remainder of a Settlement Credit application (ANSWERED 2026-10-07: yes to (a) and yes to the tightening; answers in docs/010)
 
 10c-1a is committed (656f822). The 10c-1b design is in the plan (10c entry, "10c-1b pre-code design"). A `REFUND` correction reduces a paid line with a linked credit Adjustment; the paid part is released as migration 67 does (newest first: each Payment allocation becomes a new Customer Credit of the Invoice Customer, each Credit application gives its value back to its Credit), and the correction pays one Credit Refund per released source to that Credit's Customer. Two points differ from docs/004 or are not decided:
 
@@ -749,3 +751,33 @@ Your answer 1 to Q-2026-10-06-36 asks for a clear fix for a wrong charge that is
 For your information, no answer needed: a Credit released from a Payment allocation belongs to the Invoice Customer (BR-CREDIT-014); when that Customer is not the payer, the correction's Refund pays that Customer, as the 8f `CREDIT_CUSTOMER` Refund does, through a relaxing change of the Refund source checks that accepts only a Refund linked to a correction confirmed in the same transaction.
 
 Until you answer, no 10c-1b code.
+
+**Owner answer (2026-10-07).**
+
+1. Yes. Add the new append-only table `settlement_correction_refund_details`, like 8d's `final_settlement_refund_details`, so one correction can pay several Refunds, each with its own method, reference note and recipient. Staff must not have to split a correction by hand. Update docs/004 to match.
+2. Yes, this tightening is approved. Refuse the one-call reversal of the leftover ordinary Credit application written when a Refund releases only part of a Settlement Credit application. It is still money the closed Settlement relied on, as in the owner's Q-32 and Q-36 answers.
+
+Also (2026-10-07): the gap until 10h (a one-call allocation reversal, then a `CHARGE_REDUCTION` without a `REFUND` record) is accepted for now, because no money can leave without an approved Refund draft and nothing is live; 10h must close it with a test. Recorded in docs/010; docs/004 gains the table; built in sub-slice 10c-1b.
+
+## Q-2026-10-07-40 — Sub-slice 10c-1b stopped after review round 3: one test gap (the cumulative Refund cap) (ANSWERED 2026-10-07: (a), as an owner exception like Q-2026-10-05-31; the five "For the owner" points answered, point 4 an approved tightening for 10c-2 or 10h; answers in docs/010)
+
+10c-1b is built and green but NOT committed: U3 backend unit 3589 passed, P3 PostgreSQL 1906 passed. Rounds 1 and 2 found no blocker; their findings are fixed or answered (record: ops/reviews/V1-056-slice-10c-1b-refund-correction.md). Round 3: security 0 blockers, 0 should-fix; independent 0 blockers, 1 should-fix. Under your standing rule a round-3 should-fix stops the sub-slice.
+
+The finding: `app.settlement_correction_refund_allowed` (the check that lets a correction's Refund go to a Customer who did not make the Payment) limits a Refund, together with the same correction's other Refunds of the same Credit, to what that correction released to that Credit. The "together with the other Refunds" part is not tested: the test only shows the limit when the correction released nothing. Removing that part would leave every test green. It is defence in depth: no role can write such a Refund, only the confirm can, and the confirm writes exactly one Refund per released amount. The review record also said the round-2 test covered it; that sentence overstated the coverage and is corrected.
+
+Options:
+- (a) Add one test now: in one owner transaction, a real confirm that releases an amount to a Credit, then a second linked Refund of 1 cent from the same Credit with its details row, refused (23514). Then U4 and P4, and one more review round (independent and security) limited to the new test and the record, as an owner exception like Q-2026-10-05-31.
+- (b) No code change: keep the corrected record text, add the cumulative-cap test to the slice 12 hardening item, and commit 10c-1b as it is (the committed code is exactly what U3 and P3 ran).
+
+**Recommendation: (a).** This check is the database guard on money going to someone other than the payer; one test closes the gap now, and the cost is one short test, two runs and one limited review.
+
+Also for you (no answer needed unless you disagree; listed in the record's "For the owner" section): one Refund method and note per correction draft, stored per Refund; the released Credits are named by the Adjustment's release records, not by a correction link; a possible harmless deadlock with a one-call Adjustment on the same Invoice; correction Refunds stay correctable by the one-call verified return like any Credit Refund (8d made Settlement Deposit Refunds correctable only through a correction); the 10h reading of your yes to Q-39 point 2.
+
+Until you answer, 10c-1b is not committed and 10c-2 does not start.
+
+**Owner answer (2026-10-07).**
+
+- Q-40: option (a), as an owner exception like Q-31. Add the one test (a second 1-cent Refund from the same Credit is refused). Then run the backend unit suite and the full PostgreSQL suite once each. Then one review round limited to the new test and the review record. If that round has no blocker and no should-fix, commit 10c-1b; if it has any, stop.
+- "For the owner" points: (1) accepted: one Refund method and one reference note per correction draft, and every Refund goes to the Invoice Customer. (2) Accepted: the released Credits are named by the release records and the audit event, without a correction link. (3) Accepted: the deadlock ends as a conflict, and the draft stays pending. (4) Yes, correction Refunds follow 8d. This tightening is approved: a Credit Refund paid by a post-settlement correction can be corrected only through another post-settlement correction, not by the one-call verified return; otherwise a one-call return could create Credit that pays debt without an approver. Not in 10c-1b: build it with a test in the next sub-slice, or in 10h, and put it in the plan. (5) Yes, both: a re-posted leftover of anything that existed at closure counts as existing at closure.
+
+Recorded in docs/010; the plan's 10c-2 entry gains point 4 (10h at the latest).

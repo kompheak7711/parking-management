@@ -3038,6 +3038,8 @@ balance, and all affected applications. Silent deletion or rewriting is prohibit
 Correction must obey the approved maximum and final-decision rules and must not be used
 to supplement a reduced charge or replace a waived decision.
 
+Amended by the owner's answer to Q-2026-10-07-38 (2026-10-07): after the Lease's Final Settlement is closed, a Late-payment Charge correction is made only as a post-settlement correction (BR-SETTLE-013). When the corrected Charge was paid, the released value follows BR-CREDIT-014.
+
 ---
 
 ### BR-LATE-006 — No Recursive Charge
@@ -3697,6 +3699,8 @@ supplier and vendor Accounts Payable is outside this application's scope.
 ## BR-CREDIT-014 — Credit From a Credit Adjustment
 
 Customer Credit created from value released by a credit Adjustment belongs to the Customer named on the Lease and Invoice, even when a third party paid. It is recognized at once, without payer authorization, and any Refund of it goes to that Customer (DL-064, DL-068).
+
+Amended by the owner's answer to Q-2026-10-07-38 (2026-10-07): the same applies to value released when a paid Late-payment Charge is corrected after the Lease's Final Settlement is closed. Credit released to a Customer who did not make the Payment is refunded to that Customer.
 
 ---
 
@@ -4532,6 +4536,8 @@ are not reopened or rewritten.
 Amended by DL-068 and DL-069 (2026-10-03): a finalized Final Settlement is never reopened. A later fix is a new linked post-settlement correction (extra charge or Refund) with a reason. There is no time limit for post-settlement corrections.
 
 Amended by the owner's answers to Q-2026-10-06-36 and Q-2026-10-06-37 (2026-10-06 and 2026-10-07): the post-settlement correction kinds are the extra charge, the charge reduction (a credit Adjustment that removes a wrong charge that is still unpaid), the Refund, the returned Payment, the Adjustment reversal, the forfeiture reversal and the Payment move. Each needs a reason; Staff prepare it, and only a holder of `financial.approve` confirms it.
+
+Amended by the owner's answer to Q-2026-10-07-38 (2026-10-07): a wrong Late-payment Charge after closure is fixed by a Late-payment Charge correction linked to the Settlement, prepared under the Final Settlement preparer capability and confirmed only by a holder of `financial.approve`. When the Charge was paid, the value released by the correction follows BR-CREDIT-014, as for a credit Adjustment of an Invoice line.
 
 ---
 

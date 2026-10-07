@@ -13,6 +13,13 @@ Customer of the corrected Invoice when the draft names one, otherwise to the Pri
 Sub-slice 10c-1a: the ``CHARGE_REDUCTION`` variant, a wrong charge that is still unpaid removed by
 a credit Adjustment of its Invoice line (owner answer 1 to Q-2026-10-06-36). The amount is at most
 the line's unpaid rest; releasing paid value is a ``REFUND`` correction.
+
+Sub-slice 10c-1b: the ``REFUND`` variant, a wrong charge that was paid. A credit Adjustment of the
+line releases the paid part as a credit Adjustment always does (newest Payment allocation or Credit
+application first; released Payment value becomes Customer Credit of the Invoice Customer,
+BR-CREDIT-014), and one Credit Refund per released source pays it to that Credit's Customer, each
+with the draft's Refund method and reference note (BR-REFUND-014; owner answers to
+Q-2026-10-07-39).
 """
 
 from __future__ import annotations
@@ -44,6 +51,8 @@ SETTLEMENT_CORRECTION_DRAFT_NAMESPACE: Final = UUID("0b6f6d2e-4c1a-4f0e-9a57-3d8
 EXTRA_CHARGE_CONFIRM_STALE_STATES: Final = frozenset({"P5S02"})
 # A charge reduction whose line changed since the draft (a Payment, Credit or Adjustment) is stale.
 CHARGE_REDUCTION_CONFIRM_STALE_STATES: Final = frozenset({"P5S02"})
+# A Refund correction whose line or paying sources changed since the draft is stale.
+REFUND_CONFIRM_STALE_STATES: Final = frozenset({"P5S02"})
 
 
 def settlement_correction_draft_id(
@@ -188,6 +197,51 @@ class RecordChargeReductionCorrectionCommand:
 
 
 @dataclass(frozen=True, slots=True)
+class RecordRefundCorrectionCommand:
+    """A wrong charge that was paid; the database checks it against current state.
+
+    The credit Adjustment removes ``amount_usd_cents`` from one line of an issued Invoice of the
+    Settlement's Lease, at most the line's charge, and must release paid value. Every Refund of
+    the correction records the Refund method and the reference note (BR-REFUND-014). The reason is
+    at most 500 characters, because the Adjustment keeps it.
+    """
+
+    idempotency_key: UUID
+    settlement_id: UUID
+    invoice_id: UUID
+    invoice_line_id: UUID
+    amount_usd_cents: int
+    refund_method_id: UUID
+    reference_note: str
+    reason: str
+
+    def __post_init__(self) -> None:
+        _uuid(self.idempotency_key, "idempotency_key")
+        _uuid(self.settlement_id, "settlement_id")
+        _uuid(self.invoice_id, "invoice_id")
+        _uuid(self.invoice_line_id, "invoice_line_id")
+        if (
+            type(self.amount_usd_cents) is not int
+            or not 1 <= self.amount_usd_cents <= MAX_USD_CENTS
+        ):
+            raise FinalSettlementInvalidError(
+                "amount_usd_cents must be a positive whole number of cents"
+            )
+        _uuid(self.refund_method_id, "refund_method_id")
+        _text(self.reference_note, "reference_note", 500)
+        _text(self.reason, "reason", 500)
+
+    def refund(self) -> dict[str, object]:
+        return {
+            "invoice_id": str(self.invoice_id),
+            "invoice_line_id": str(self.invoice_line_id),
+            "amount_usd_cents": self.amount_usd_cents,
+            "refund_method_id": str(self.refund_method_id),
+            "reference_note": self.reference_note,
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class SettlementCorrectionService:
     """Commands under the financial role; capabilities are checked before any connection."""
 
@@ -303,4 +357,60 @@ class SettlementCorrectionService:
             "SELECT app.confirm_settlement_charge_reduction(%s,%s,%s,%s)",
             (property_id, actor_id, draft_id, FINANCIAL_APPROVE_CAPABILITY),
             stale=CHARGE_REDUCTION_CONFIRM_STALE_STATES,
+        )
+
+    def record_refund(
+        self,
+        property_id: UUID,
+        command: RecordRefundCorrectionCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        """Record a Refund correction draft; it has no effect until confirmed."""
+        actor_id = FinalSettlementService._authorize(
+            actor, property_id, FINAL_SETTLEMENTS_PREPARE_CAPABILITY
+        )
+        if not isinstance(command, RecordRefundCorrectionCommand):
+            raise FinalSettlementInvalidError("Refund correction command is invalid")
+        request = RecordRefundCorrectionCommand(
+            command.idempotency_key,
+            command.settlement_id,
+            command.invoice_id,
+            command.invoice_line_id,
+            command.amount_usd_cents,
+            command.refund_method_id,
+            command.reference_note,
+            command.reason,
+        )
+        return FinalSettlementService(self.financial_database_url)._call(
+            "SELECT app.record_settlement_refund_draft(%s,%s,%s,%s,%s,%s,%s)",
+            (
+                property_id,
+                actor_id,
+                settlement_correction_draft_id(property_id, actor_id, request.idempotency_key),
+                request.settlement_id,
+                Jsonb(request.refund()),
+                request.reason,
+                FINAL_SETTLEMENTS_PREPARE_CAPABILITY,
+            ),
+        )
+
+    def confirm_refund(
+        self, property_id: UUID, draft_id: UUID, *, actor: AuthenticatedActor
+    ) -> dict[str, object]:
+        """Confirm a pending Refund correction (financial.approve only).
+
+        A draft whose line or paying sources changed since it was recorded is stale and stays
+        pending; an inactive Refund method is a conflict; an exact repeat by the same approver
+        writes nothing and returns the result again, rebuilt from the stored records. The result
+        never returns the decision's transaction id.
+        """
+        actor_id = FinalSettlementService._authorize(
+            actor, property_id, FINANCIAL_APPROVE_CAPABILITY
+        )
+        _uuid(draft_id, "draft_id")
+        return FinalSettlementService(self.financial_database_url)._call(
+            "SELECT app.confirm_settlement_refund(%s,%s,%s,%s)",
+            (property_id, actor_id, draft_id, FINANCIAL_APPROVE_CAPABILITY),
+            stale=REFUND_CONFIRM_STALE_STATES,
         )

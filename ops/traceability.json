@@ -38227,6 +38227,159 @@
       "test_path": "backend/tests/test_settlement_charge_reduction_migration.py",
       "status": "implemented",
       "notes": "Only the financial role may record or confirm a charge reduction correction; the internal functions are definer functions no role may call; no 10c-1a function has a time limit; the migration is forward-only, adds only the listed functions and changes no earlier function (V1-056 sub-slice 10c-1a)."
+    },
+    {
+      "test_id": "test_a_refund_correction_is_recorded_by_staff_and_confirmed_only_by_an_approver",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-SETTLE-013"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "Only final_settlements.prepare records a Refund correction and only financial.approve on the Property confirms it, both checked before any connection; the Refund or Adjustment capabilities alone do neither (V1-056 sub-slice 10c-1b)."
+    },
+    {
+      "test_id": "test_the_refund_correction_command_refuses_malformed_input",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-REFUND-014"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "The Refund correction command needs nonzero ids, whole positive cents within the cap, a Refund method, a reference note of at most 500 characters and a reason of at most 500 characters (V1-056 sub-slice 10c-1b)."
+    },
+    {
+      "test_id": "test_refund_correction_record_and_confirm_send_the_stored_correction",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-AUTH-010"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "The service records the Refund correction in its stored form, with the method and note, under final_settlements.prepare with the command-key draft id and confirms under financial.approve (V1-056 sub-slice 10c-1b)."
+    },
+    {
+      "test_id": "test_refund_correction_failures_map_to_stable_errors",
+      "upstream_ids": [
+        "BR-SETTLE-013"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "A Refund correction whose line or sources changed is stale; nothing released, an inactive method, an open Settlement or a Deposit application is a conflict; every other refusal keeps the Final Settlement mapping (V1-056 sub-slice 10c-1b)."
+    },
+    {
+      "test_id": "test_a_refund_correction_releases_a_paid_wrong_charge_and_refunds_it_to_the_invoice_customer",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-SETTLE-012",
+        "BR-CREDIT-014",
+        "BR-REFUND-014",
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_refund_correction_migration.py",
+      "status": "implemented",
+      "notes": "A paid wrong charge after closure is fixed by a Refund correction: the allocation is reversed and its rest re-posted, the released value becomes the Invoice Customer's Credit and is refunded with the draft's method and note, every record linked to the correction; Staff cannot confirm; replay; the Settlement row is unchanged (V1-056 sub-slice 10c-1b)."
+    },
+    {
+      "test_id": "test_one_refund_correction_pays_a_payment_and_a_settlement_credit_back_in_two_refunds",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-SETTLE-012",
+        "BR-CREDIT-008",
+        "BR-REFUND-014",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_refund_correction_migration.py",
+      "status": "implemented",
+      "notes": "One correction pays a Payment and a Settlement Credit application back in two Refunds, each with its own details row; the re-posted rest of the Settlement Credit application cannot be reversed with one call, also after a second correction (owner answers to Q-2026-10-07-39; V1-056 sub-slice 10c-1b)."
+    },
+    {
+      "test_id": "test_a_third_party_payment_is_refunded_to_the_invoice_customer_not_the_payer",
+      "upstream_ids": [
+        "BR-CREDIT-014",
+        "BR-SETTLE-013",
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_refund_correction_migration.py",
+      "status": "implemented",
+      "notes": "Value a correction releases from a third-party Payment is refunded to the Invoice Customer, not the payer; the relaxed Refund source checks accept nothing outside a correction or its own draft (V1-056 sub-slice 10c-1b)."
+    },
+    {
+      "test_id": "test_a_changed_line_is_stale_an_inactive_method_conflicts_and_a_deposit_paid_invoice_waits",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-REFUND-014",
+        "DB-DEP-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_refund_correction_migration.py",
+      "status": "implemented",
+      "notes": "A Refund correction whose line changed is stale and stays pending; a method deactivated after the draft is a conflict at confirm and at record; READ COMMITTED only; key reuse and crossed variants are refused; a Deposit-paid Invoice waits for sub-slice 10c-2 (V1-056 sub-slice 10c-1b)."
+    },
+    {
+      "test_id": "test_a_credit_released_before_closure_to_the_invoice_customer_is_refunded_to_that_customer",
+      "upstream_ids": [
+        "BR-CREDIT-014",
+        "BR-CREDIT-008",
+        "BR-SETTLE-013"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_refund_correction_migration.py",
+      "status": "implemented",
+      "notes": "A Credit released before closure from a third-party Payment to the Invoice Customer and applied to another line is released again by a Refund correction and refunded to that Customer, not the payer, through the Credit-application half of the relaxed Refund checks (V1-056 sub-slice 10c-1b, review round 1)."
+    },
+    {
+      "test_id": "test_the_relaxed_refund_checks_hold_inside_a_hand_built_correction",
+      "upstream_ids": [
+        "BR-CREDIT-014",
+        "BR-AUTH-010",
+        "DB-REFUND-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_refund_correction_migration.py",
+      "status": "implemented",
+      "notes": "Inside a correction confirmed in the same transaction, a Refund to a Customer other than the payer of a Credit the correction did not release is refused, a details row needs its Refund linked first, and a Refund with a details row commits only when the correction's approver processed it (V1-056 sub-slice 10c-1b, review round 2)."
+    },
+    {
+      "test_id": "test_a_second_refund_of_the_same_credit_beyond_what_the_correction_released_is_refused",
+      "upstream_ids": [
+        "BR-CREDIT-014",
+        "BR-SETTLE-013"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_refund_correction_migration.py",
+      "status": "implemented",
+      "notes": "The relaxed check's cap is cumulative: after a real confirm refunds what the correction released to a Credit whose Customer is not the payer, a second linked 1-cent Refund of the same Credit with its details row, processed by the approver, is refused although the Credit still has value; the draft stays pending (owner answer (a) to Q-2026-10-07-40; V1-056 sub-slice 10c-1b)."
+    },
+    {
+      "test_id": "test_an_ordinary_re_posted_credit_application_still_reverses_with_one_call",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-CREDIT-008"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_refund_correction_migration.py",
+      "status": "implemented",
+      "notes": "The approved remainder refusal reaches only re-posts of a Settlement Credit application: the rest of an ordinary Credit application re-posted by a one-call credit Adjustment on an open Settlement's Lease still reverses with one call (owner answer 2 to Q-2026-10-07-39; V1-056 sub-slice 10c-1b, review round 1)."
+    },
+    {
+      "test_id": "test_refund_correction_records_are_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-SETTLE-013",
+        "DB-REFUND-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_refund_correction_migration.py",
+      "status": "implemented",
+      "notes": "Only the financial role may record or confirm a Refund correction; the details table is append-only and no role may read or write it; no 10c-1b function has a time limit; the migration is forward-only, adds only the listed table, functions and triggers, and changes only the two Refund source checks (V1-056 sub-slice 10c-1b)."
     }
   ]
 }
