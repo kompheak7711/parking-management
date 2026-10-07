@@ -1,0 +1,266 @@
+ Network prm-database-test-94815_default Creating 
+ Volume prm-database-test-94815_postgres_data Creating 
+ Volume prm-database-test-94815_postgres_data Creating 
+ Network prm-database-test-94815_default Creating 
+ Volume prm-database-test-94815_postgres_data Created 
+ Volume prm-database-test-94815_postgres_data Created 
+ Network prm-database-test-94815_default Created 
+ Network prm-database-test-94815_default Created 
+ Container prm-database-test-94815-postgres-1 Creating 
+ Container prm-database-test-94815-postgres-1 Created 
+ Container prm-database-test-94815-postgres-1 Starting 
+ Container prm-database-test-94815-postgres-1 Started 
+ Container prm-database-test-94815-postgres-1 Waiting 
+ Container prm-database-test-94815-postgres-1 Healthy 
+============================= test session starts ==============================
+collected 1911 items
+
+tests/test_migrations.py ............................................... [  2%]
+........................................................................ [  6%]
+....                                                                     [  6%]
+tests/test_audit_migration.py .......                                    [  6%]
+tests/test_property_migration.py ...........                             [  7%]
+tests/test_unit_migration.py ..................................          [  9%]
+tests/test_customer_migration.py .........................               [ 10%]
+tests/test_configuration_migration.py ..............                     [ 11%]
+tests/test_reservation_migration.py ...........                          [ 11%]
+tests/test_reservation_lifecycle_migration.py .........                  [ 12%]
+tests/test_reservation_outcome_migration.py ........                     [ 12%]
+tests/test_reservation_worker_migration.py .......                       [ 13%]
+tests/test_reservation_deposit_draft_migration.py ..............         [ 13%]
+tests/test_unit_cleaning_charge_migration.py .......                     [ 14%]
+tests/test_hand_back_rent_migration.py ........                          [ 14%]
+tests/test_lease_deposit_forfeiture_migration.py .............           [ 15%]
+tests/test_lease_deposit_reversal_draft_migration.py .........           [ 15%]
+tests/test_payment_move_migration.py ..........................          [ 17%]
+tests/test_final_settlement_migration.py ............                    [ 17%]
+tests/test_deposit_receipt_reversal_draft_migration.py ..........        [ 18%]
+tests/test_deposit_application_ledger_migration.py .....                 [ 18%]
+tests/test_lease_migration.py ..............                             [ 19%]
+tests/test_lease_lifecycle_migration.py ......                           [ 19%]
+tests/test_move_in_migration.py .......                                  [ 19%]
+tests/test_lease_api_migration.py ...                                    [ 20%]
+tests/test_lease_enforcement_migration.py .............................. [ 21%]
+.....                                                                    [ 21%]
+tests/test_lease_enforcement_api_migration.py .......................... [ 23%]
+...........................                                              [ 24%]
+tests/test_lease_notices_migration.py .................................. [ 26%]
+........................................................................ [ 30%]
+..........................................                               [ 32%]
+tests/test_lease_termination_migration.py .............................. [ 33%]
+.........                                                                [ 34%]
+tests/test_termination_deposit_migration.py .......                      [ 34%]
+tests/test_termination_invoice_migration.py ................             [ 35%]
+tests/test_move_out_inspection_migration.py ..........................   [ 36%]
+tests/test_move_out_inspection_consumers_migration.py .................. [ 37%]
+..                                                                       [ 38%]
+tests/test_physical_move_out_migration.py .............................. [ 39%]
+......                                                                   [ 39%]
+tests/test_physical_move_out_consumers_migration.py .................... [ 40%]
+...                                                                      [ 41%]
+tests/test_deposit_financial_revision_migration.py ..........            [ 41%]
+tests/test_deposit_disposition_migration.py ............................ [ 43%]
+.....                                                                    [ 43%]
+tests/test_lease_deposit_command_guards_migration.py ........            [ 43%]
+tests/test_deposit_migration.py ..............                           [ 44%]
+tests/test_deposit_api_migration.py .............                        [ 45%]
+tests/test_invoice_migration.py ...................................      [ 47%]
+tests/test_late_payment_migration.py .............                       [ 47%]
+tests/test_payment_migration.py ........................................ [ 49%]
+.....                                                                    [ 50%]
+tests/test_payment_read_migration.py ........                            [ 50%]
+tests/test_financial_reference_migration.py ...                          [ 50%]
+tests/test_payment_reversal_context_migration.py ....................    [ 51%]
+tests/test_financial_action_context_migration.py ....................... [ 52%]
+...........................                                              [ 54%]
+tests/test_customer_ledger_migration.py .........................        [ 55%]
+tests/test_customer_ledger_read_migration.py .....................       [ 56%]
+tests/test_payment_confirmation_migration.py ........................... [ 58%]
+...........                                                              [ 58%]
+tests/test_khr_payment_confirmation_migration.py ....................... [ 59%]
+.....................................                                    [ 61%]
+tests/test_payment_api_migration.py .....................                [ 62%]
+tests/test_financial_fixture_clock_migration.py .......                  [ 63%]
+tests/test_payment_allocation_migration.py ............................. [ 64%]
+..........                                                               [ 65%]
+tests/test_allocation_read_migration.py ......                           [ 65%]
+tests/test_allocation_receipt_api_migration.py ..............            [ 66%]
+tests/test_receipt_migration.py ...............................          [ 68%]
+tests/test_credit_migration.py ......................................... [ 70%]
+                                                                         [ 70%]
+tests/test_credit_application_migration.py .......................       [ 71%]
+tests/test_credit_history_migration.py ...........                       [ 71%]
+tests/test_refund_migration.py ...................................       [ 73%]
+tests/test_refund_service_migration.py ................................  [ 75%]
+tests/test_credit_refund_read_migration.py ..............                [ 76%]
+tests/test_credit_refund_api_migration.py ..............                 [ 76%]
+tests/test_pet_refund_migration.py ................................      [ 78%]
+tests/test_billing_service_migration.py ................................ [ 80%]
+........                                                                 [ 80%]
+tests/test_utility_meter_migration.py .............                      [ 81%]
+tests/test_utility_consumption_migration.py ............................ [ 82%]
+......................                                                   [ 83%]
+tests/test_utility_api_migration.py ...............                      [ 84%]
+tests/test_move_out_final_inputs_migration.py ....................       [ 85%]
+tests/test_initial_rent_lease_start_migration.py ........                [ 86%]
+tests/test_one_time_charges_migration.py .......                         [ 86%]
+tests/test_debit_adjustment_line_block_migration.py ........             [ 87%]
+tests/test_credit_adjustment_excess_migration.py ..........              [ 87%]
+tests/test_rent_nonpayment_recurring_only_migration.py ..........        [ 88%]
+tests/test_lease_signing_reservation_migration.py .......                [ 88%]
+tests/test_unpaid_initial_termination_migration.py ...........           [ 89%]
+tests/test_initial_rent_override_capability_migration.py .....           [ 89%]
+tests/test_utility_baseline_migration.py ...............                 [ 90%]
+tests/test_final_utility_invoice_migration.py ..........                 [ 90%]
+tests/test_utility_unbilled_periods_migration.py .......                 [ 90%]
+tests/test_final_settlement_preview_migration.py ..............          [ 91%]
+tests/test_final_settlement_draft_migration.py ..............            [ 92%]
+tests/test_billing_run_migration.py ...........                          [ 92%]
+tests/test_lease_timeline_restricted_migration.py ......                 [ 93%]
+tests/test_lease_end_date_month_end_migration.py ....                    [ 93%]
+tests/test_financial_draft_migration.py .............                    [ 94%]
+tests/test_refund_draft_migration.py .................                   [ 95%]
+tests/test_refund_signer_recipient_migration.py .....                    [ 95%]
+tests/test_final_settlement_refund_migration.py ...........              [ 95%]
+tests/test_final_settlement_closed_refusal_migration.py ..........       [ 96%]
+tests/test_final_settlement_credit_application_migration.py .......      [ 96%]
+tests/test_final_settlement_confirm_migration.py ................        [ 97%]
+tests/test_credit_customer_refund_migration.py ........                  [ 98%]
+tests/test_credit_customer_credit_reversal_migration.py ....             [ 98%]
+tests/test_settlement_correction_migration.py .........                  [ 98%]
+tests/test_settlement_extra_charge_migration.py ......                   [ 99%]
+tests/test_settlement_charge_reduction_migration.py .....                [ 99%]
+tests/test_settlement_refund_correction_migration.py .........           [ 99%]
+tests/test_deposit_application_reversal_migration.py .F.F                [100%]
+
+=================================== FAILURES ===================================
+_ test_a_deposit_application_is_reversed_only_inside_its_own_settlements_correction _
+tests/test_deposit_application_reversal_migration.py:469: in test_a_deposit_application_is_reversed_only_inside_its_own_settlements_correction
+    assert refused(
+E   AssertionError: assert ('42703', 'co...es not exist') == ('23514', 'De...y is invalid')
+E     
+E     At index 0 diff: '42703' != '23514'
+E     Use -v to get more diff
+___ test_deposit_application_reversals_are_least_privilege_and_forward_only ____
+tests/test_deposit_application_reversal_migration.py:669: in test_deposit_application_reversals_are_least_privilege_and_forward_only
+    assert set(after_functions) - set(before_functions) == {HISTORY, *INTERNAL}
+E   AssertionError: assert {'app.complet...n_reversal()'} == {'app.deposit...n_reversal()'}
+E     
+E     Extra items in the left set:
+E     'app.complete_deposit_application_reversal()'
+E     Use -v to get more diff
+----------------------------- Captured stderr call -----------------------------
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260813_01, Add the smallest useful Phase 1C schema baseline.
+INFO  [alembic.runtime.migration] Running upgrade 20260813_01 -> 20260817_02, Add bounded DB-AUTH-001 local human-account storage.
+INFO  [alembic.runtime.migration] Running upgrade 20260817_02 -> 20260817_03, Add bounded DB-AUTH-002 password-credential storage.
+INFO  [alembic.runtime.migration] Running upgrade 20260817_03 -> 20260817_04, Add bounded DB-AUTH-003 recovery-code verifier persistence.
+INFO  [alembic.runtime.migration] Running upgrade 20260817_04 -> 20260818_05, Add the bounded DB-AUTH-005 initial Owner bootstrap closure guard.
+INFO  [alembic.runtime.migration] Running upgrade 20260818_05 -> 20260819_06, Add bounded DB-AUTH-003 protected TOTP enrollment persistence.
+INFO  [alembic.runtime.migration] Running upgrade 20260819_06 -> 20260819_07, Add bounded DB-AUTH-004 browser-session persistence.
+INFO  [alembic.runtime.migration] Running upgrade 20260819_07 -> 20260819_08, Add bounded DB-AUTH-005 account-recovery audit persistence.
+INFO  [alembic.runtime.migration] Running upgrade 20260819_08 -> 20260820_09, Add the atomic least-privilege protected initial Owner bootstrap operation.
+INFO  [alembic.runtime.migration] Running upgrade 20260820_09 -> 20260823_10, Add immutable append-only audit event storage.
+INFO  [alembic.runtime.migration] Running upgrade 20260823_10 -> 20260823_11, Add the single-Property identity and versioned configuration.
+INFO  [alembic.runtime.migration] Running upgrade 20260823_11 -> 20260823_12, Complete Property source fields and configured Payment Methods.
+INFO  [alembic.runtime.migration] Running upgrade 20260823_12 -> 20260823_13, Add stable, Property-scoped Unit identity and persistence.
+INFO  [alembic.runtime.migration] Running upgrade 20260823_13 -> 20260824_14, Add the version-checked Unit source-data update boundary.
+INFO  [alembic.runtime.migration] Running upgrade 20260824_14 -> 20260824_15, Add canonical Customer identity and audited contact-history persistence.
+INFO  [alembic.runtime.migration] Running upgrade 20260824_15 -> 20260824_16, Add history-safe Customer deactivation without deleting identity.
+INFO  [alembic.runtime.migration] Running upgrade 20260824_16 -> 20260825_17, Add effective-dated configuration and append-preserved rate history.
+INFO  [alembic.runtime.migration] Running upgrade 20260825_17 -> 20260825_18, Add atomic idempotent commands for configuration APIs.
+INFO  [alembic.runtime.migration] Running upgrade 20260825_18 -> 20260825_19, Add protected Reservation and reservation-deposit persistence.
+INFO  [alembic.runtime.migration] Running upgrade 20260825_19 -> 20260825_20, Add transactional Reservation lifecycle and Unit availability services.
+INFO  [alembic.runtime.migration] Running upgrade 20260825_20 -> 20260825_21, Add transactional Reservation cancellation Deposit outcomes.
+INFO  [alembic.runtime.migration] Running upgrade 20260825_21 -> 20260826_22, Add durable singleton Reservation expiration-run state.
+INFO  [alembic.runtime.migration] Running upgrade 20260826_22 -> 20260826_23, Add protected Lease, signer, and occupancy persistence.
+INFO  [alembic.runtime.migration] Running upgrade 20260826_23 -> 20260826_24, Add protected Lease lifecycle command services.
+INFO  [alembic.runtime.migration] Running upgrade 20260826_24 -> 20260826_25, Add atomic Reservation-to-Lease move-in orchestration.
+INFO  [alembic.runtime.migration] Running upgrade 20260826_25 -> 20260826_26, Add the bounded API-facing Lease draft update command.
+INFO  [alembic.runtime.migration] Running upgrade 20260826_26 -> 20260826_27, Add protected Security and Pet Deposit domain persistence.
+INFO  [alembic.runtime.migration] Running upgrade 20260826_27 -> 20260826_28, Split active-Lease Pet Deposit departure and qualification commands.
+INFO  [alembic.runtime.migration] Running upgrade 20260826_28 -> 20260827_29, Add protected Invoice, adjustment, late-charge, and billing-run persistence.
+INFO  [alembic.runtime.migration] Running upgrade 20260827_29 -> 20260828_30, Add transactional Rent proration and fixed-Service billing.
+INFO  [alembic.runtime.migration] Running upgrade 20260828_30 -> 20260828_31, Add protected Utility Meter, Reading, replacement, and correction persistence.
+INFO  [alembic.runtime.migration] Running upgrade 20260828_31 -> 20260828_32, Add Utility consumption and confirmed broken-Meter calculation services.
+INFO  [alembic.runtime.migration] Running upgrade 20260828_32 -> 20260829_33, Apply forward-only corrections to the published V1-042 Utility schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_33 -> 20260829_34, Add the least-privilege V1-043 Utility resource command boundary.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_34 -> 20260831_35, Activate idempotent scheduled Rent, Service, and Utility billing runs.
+INFO  [alembic.runtime.migration] Running upgrade 20260831_35 -> 20260831_36, Add the bounded human Invoice lifecycle command boundary.
+INFO  [alembic.runtime.migration] Running upgrade 20260831_36 -> 20260831_37, Add the bounded late-payment Decision, Charge, and correction API boundary.
+INFO  [alembic.runtime.migration] Running upgrade 20260831_37 -> 20260905_38, Persist immutable Payment facts, confirmed FX and explicit reversals.
+INFO  [alembic.runtime.migration] Running upgrade 20260905_38 -> 20260905_39, Add explicit Payment allocation events and authoritative application projections.
+INFO  [alembic.runtime.migration] Running upgrade 20260905_39 -> 20260906_40, Immutable Payment Receipt identities and append-only authorized reprints.
+INFO  [alembic.runtime.migration] Running upgrade 20260906_40 -> 20260906_41, Customer Credit recognition and permanent source history.
+INFO  [alembic.runtime.migration] Running upgrade 20260906_41 -> 20260906_42, Explicit USD Payment confirmation with immutable received facts and exact replay.
+INFO  [alembic.runtime.migration] Running upgrade 20260906_42 -> 20260906_43, Atomic incoming KHR confirmation using preserved reference and channel evidence.
+INFO  [alembic.runtime.migration] Running upgrade 20260906_43 -> 20260907_44, Expose only original receipt facts, never private confirmation command identity.
+INFO  [alembic.runtime.migration] Running upgrade 20260907_44 -> 20260907_45, Narrow runtime Credit/Refund scope and immutable source-audit reads.
+INFO  [alembic.runtime.migration] Running upgrade 20260907_45 -> 20260908_46, Narrow, coherent and paginated Payment reversal context; no write changes.
+INFO  [alembic.runtime.migration] Running upgrade 20260908_46 -> 20260908_47, Selected financial action facts and bounded details without financial writes.
+INFO  [alembic.runtime.migration] Running upgrade 20260908_47 -> 20260909_48, Read-only Customer financial chronology over retained authoritative facts.
+INFO  [alembic.runtime.migration] Running upgrade 20260909_48 -> 20260909_49, Narrow, coherent Customer ledger reads; no grants or writes to financial sources.
+INFO  [alembic.runtime.migration] Running upgrade 20260909_49 -> 20260910_50, Add separate immutable Lease warnings and Rent nonpayment workflows.
+INFO  [alembic.runtime.migration] Running upgrade 20260910_50 -> 20260910_51, Add narrow enforcement discovery and explicitly scoped read-only evaluation.
+INFO  [alembic.runtime.migration] Running upgrade 20260910_51 -> 20260911_52, Add immutable approved notice context without changing tenancy or finances.
+INFO  [alembic.runtime.migration] Running upgrade 20260911_52 -> 20260914_53, Align recurring final-month generation with existing approved source coverage.
+INFO  [alembic.runtime.migration] Running upgrade 20260914_53 -> 20260914_54, Bind fresh termination to explicit signed authority and real prerequisite sources.
+INFO  [alembic.runtime.migration] Running upgrade 20260914_54 -> 20260914_55, Project current termination Deposit consequences without financial mutations.
+INFO  [alembic.runtime.migration] Running upgrade 20260914_55 -> 20260914_56, Serialize Lease Deposit commands and preserve financial/audit admission.
+INFO  [alembic.runtime.migration] Running upgrade 20260914_56 -> 20260914_57, Expose a read-only revision over existing immutable Deposit financial history.
+INFO  [alembic.runtime.migration] Running upgrade 20260914_57 -> 20260914_58, Require original approved source and a current financial observation for disposition.
+INFO  [alembic.runtime.migration] Running upgrade 20260914_58 -> 20260914_59, Read original Invoice coverage and current positions without approving corrections.
+INFO  [alembic.runtime.migration] Running upgrade 20260914_59 -> 20260915_60, Add immutable operational inspection evidence without posting financial effects.
+INFO  [alembic.runtime.migration] Running upgrade 20260915_60 -> 20260915_61, Add explicit physical-departure evidence under existing financial source guards.
+INFO  [alembic.runtime.migration] Running upgrade 20260915_61 -> 20260917_63, Record final Utility inputs for a physical departure without creating readings or charges.
+INFO  [alembic.runtime.migration] Running upgrade 20260917_63 -> 20261001_64, Bill Initial Rent from the signed Lease Start Date with a proposed or authorized Due Date.
+INFO  [alembic.runtime.migration] Running upgrade 20261001_64 -> 20261002_65, Record manual one-time Damage and Miscellaneous charges with an issue-time Due Date.
+INFO  [alembic.runtime.migration] Running upgrade 20261002_65 -> 20261003_66, Reject a debit Adjustment once its Invoice line has no remaining balance (BR-INV-044).
+INFO  [alembic.runtime.migration] Running upgrade 20261003_66 -> 20261003_67, Record credit Adjustment excess as Customer Credit through append-only reversals (BR-INV-044).
+INFO  [alembic.runtime.migration] Running upgrade 20261003_67 -> 20261004_68, Rent nonpayment counts from the 1st for recurring Rent only; Initial Rent gets an alert, no late fee.
+INFO  [alembic.runtime.migration] Running upgrade 20261004_68 -> 20261005_69, Complete the Reservation and occupy the Unit at Lease signing; move-in only starts Occupancy.
+INFO  [alembic.runtime.migration] Running upgrade 20261005_69 -> 20261005_70, Explicit termination paths for an unpaid Initial obligation (BR-LEASE-005, DL-064).
+INFO  [alembic.runtime.migration] Running upgrade 20261005_70 -> 20261006_71, Record a Utility baseline Reading event per Lease and make it the Customer's responsibility boundary.
+INFO  [alembic.runtime.migration] Running upgrade 20261006_71 -> 20261007_72, Create the final Utility Invoice at move-out and the explicit NOT_MOVED_IN catch-up Invoice.
+INFO  [alembic.runtime.migration] Running upgrade 20261007_72 -> 20261008_73, Let Utility runs of overlapping dates coexist, list unbilled periods and catch them up.
+INFO  [alembic.runtime.migration] Running upgrade 20261008_73 -> 20261009_74, Record the real capability of an Initial Rent Due Date override and retire the old sign grant.
+INFO  [alembic.runtime.migration] Running upgrade 20261009_74 -> 20261010_75, Bounded read of restricted Lease timeline events (DL-067, slice 9f-5).
+INFO  [alembic.runtime.migration] Running upgrade 20261010_75 -> 20261011_76, Require a Lease End Date on the last day of a calendar month (BR-LEASE-031, DL-069).
+INFO  [alembic.runtime.migration] Running upgrade 20261011_76 -> 20261012_77, Financial drafts: prepare first, confirm only under financial.approve (BR-AUTH-010, DL-069).
+INFO  [alembic.runtime.migration] Running upgrade 20261012_77 -> 20261013_78, Refund methods and Refund drafts (BR-REFUND-014, BR-AUTH-010, DL-069; V1-056 slice 3a).
+INFO  [alembic.runtime.migration] Running upgrade 20261013_78 -> 20261014_79, Deposit Refund to another Lease Signer with a written agreement (BR-REFUND-015; V1-056 slice 3a-2).
+INFO  [alembic.runtime.migration] Running upgrade 20261014_79 -> 20261015_80, Reservation Deposit Refunds and forfeitures as drafts (BR-AUTH-010, BR-RES-016, BR-RES-021, BR-RES-022; V1-056 slice 3b).
+INFO  [alembic.runtime.migration] Running upgrade 20261015_80 -> 20261016_81, Unit cleaning rate history and the move-out Unit cleaning charge (BR-UNIT-014, BR-MOVEOUT-013).
+INFO  [alembic.runtime.migration] Running upgrade 20261016_81 -> 20261017_82, Hand-back month Rent Invoices (BR-RENT-030, BR-RENT-026, BR-LEASE-021; owner answers Q-2026-10-04-8 and -9).
+INFO  [alembic.runtime.migration] Running upgrade 20261017_82 -> 20261018_83, Lease Deposit forfeiture drafts (BR-DEP-018, 019, 022, 023, 026; BR-AUTH-010; V1-056 slice 6).
+INFO  [alembic.runtime.migration] Running upgrade 20261018_83 -> 20261019_84, Lease Deposit forfeiture reversal drafts (BR-AUTH-010, BR-DEP-019; V1-056 sub-slice 6b).
+INFO  [alembic.runtime.migration] Running upgrade 20261019_84 -> 20261020_85, Wrong-Unit Payment move drafts (BR-PAY-042, BR-AUTH-010; V1-056 slice 7).
+INFO  [alembic.runtime.migration] Running upgrade 20261020_85 -> 20261021_86, Final Settlement record and Deposit application record (V1-056 sub-slice 8a-1).
+INFO  [alembic.runtime.migration] Running upgrade 20261021_86 -> 20261022_87, Deposit receipt reversal drafts (BR-AUTH-010; V1-056 sub-slice 8r).
+INFO  [alembic.runtime.migration] Running upgrade 20261022_87 -> 20261023_88, Customer Ledger events for Deposit applications; confirmations wait for a receipt reversal draft.
+INFO  [alembic.runtime.migration] Running upgrade 20261023_88 -> 20261024_89, Final Settlement preview (V1-056 sub-slice 8b).
+INFO  [alembic.runtime.migration] Running upgrade 20261024_89 -> 20261025_90, Final Settlement drafts (V1-056 sub-slice 8c).
+INFO  [alembic.runtime.migration] Running upgrade 20261025_90 -> 20261026_91, Final Settlement Deposit Refunds (V1-056 sub-slice 8d).
+INFO  [alembic.runtime.migration] Running upgrade 20261026_91 -> 20261027_92, Refusals after a Final Settlement closes (V1-056 sub-slice 8e-1).
+INFO  [alembic.runtime.migration] Running upgrade 20261027_92 -> 20261028_93, Final Settlement Credit applications (V1-056 sub-slice 8e-2).
+INFO  [alembic.runtime.migration] Running upgrade 20261028_93 -> 20261029_94, Final Settlement confirm and close (V1-056 sub-slice 8e-3).
+INFO  [alembic.runtime.migration] Running upgrade 20261029_94 -> 20261030_95, Credit Refund to the Invoice Customer who is not the payer (V1-056 sub-slice 8f).
+INFO  [alembic.runtime.migration] Running upgrade 20261030_95 -> 20261031_96, Refuse the one-call reversal of a Credit released to another Customer (V1-056 sub-slice 8g).
+INFO  [alembic.runtime.migration] Running upgrade 20261031_96 -> 20261101_97, Post-settlement correction record (V1-056 sub-slice 10a).
+INFO  [alembic.runtime.migration] Running upgrade 20261101_97 -> 20261102_98, Post-settlement correction: extra charge (V1-056 sub-slice 10b).
+INFO  [alembic.runtime.migration] Running upgrade 20261102_98 -> 20261103_99, Post-settlement correction: charge reduction (V1-056 sub-slice 10c-1a).
+INFO  [alembic.runtime.migration] Running upgrade 20261103_99 -> 20261104_100, Post-settlement correction: Refund of a paid wrong charge (V1-056 sub-slice 10c-1b).
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade 20261104_100 -> 20261105_101, Deposit application reversals (V1-056 sub-slice 10c-2a-1).
+=============================== warnings summary ===============================
+.venv/lib/python3.11/site-packages/fastapi/testclient.py:1
+  /Users/sokompheak/Development/property-rental-management/backend/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_deposit_application_reversal_migration.py::test_a_deposit_application_is_reversed_only_inside_its_own_settlements_correction
+FAILED tests/test_deposit_application_reversal_migration.py::test_deposit_application_reversals_are_least_privilege_and_forward_only
+============ 2 failed, 1909 passed, 1 warning in 546.65s (0:09:06) =============

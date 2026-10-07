@@ -1,0 +1,13 @@
+
+> property-rental-frontend@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.11 /Users/sokompheak/Development/property-rental-management/frontend
+
+
+ Test Files  38 passed (38)
+      Tests  1592 passed (1592)
+   Start at  11:09:18
+   Duration  9.14s (transform 3.10s, setup 1.56s, import 5.00s, tests 44.03s, environment 10.37s)
+

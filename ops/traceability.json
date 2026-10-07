@@ -38380,6 +38380,58 @@
       "test_path": "backend/tests/test_settlement_refund_correction_migration.py",
       "status": "implemented",
       "notes": "Only the financial role may record or confirm a Refund correction; the details table is append-only and no role may read or write it; no 10c-1b function has a time limit; the migration is forward-only, adds only the listed table, functions and triggers, and changes only the two Refund source checks (V1-056 sub-slice 10c-1b)."
+    },
+    {
+      "test_id": "test_a_reversed_deposit_application_pays_nothing_and_the_deposit_holds_it_again",
+      "upstream_ids": [
+        "DB-DEP-006",
+        "DB-DER-004",
+        "DB-DER-010",
+        "BR-SETTLE-009",
+        "BR-SETTLE-012",
+        "BR-LEDGER-003"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_application_reversal_migration.py",
+      "status": "implemented",
+      "notes": "Once a post-settlement correction reverses a Deposit application on a line and one on a Late-payment Charge, the Deposit holds the amounts again, the line and the Charge owe them again, every reader agrees (held balance, snapshot, balance events, line value as of a time, Charge summary, latest event time), the Invoice status and version are refreshed at commit, both ledgers reconcile with DEPOSIT_APPLICATION_REVERSED and the runtime ledger read filters it, the Deposit history shows each reversal, the closed Settlement is unchanged and a second reversal is refused (V1-056 sub-slice 10c-2a-1)."
+    },
+    {
+      "test_id": "test_a_deposit_application_is_reversed_only_inside_its_own_settlements_correction",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-AUTH-010",
+        "DB-DEP-006"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_application_reversal_migration.py",
+      "status": "implemented",
+      "notes": "A Deposit application reversal is refused when not linked to a correction, when linked to another Settlement's correction, when another person or authorization writes it, for an unknown application, with an invalid reason, before the closure or the correction, not later than the latest event of its target or Deposit, or later than the clock plus 5 seconds; the draft stays pending; the table is append-only (V1-056 sub-slice 10c-2a-1)."
+    },
+    {
+      "test_id": "test_a_deposit_paid_obligation_changes_inside_a_correction_only_once_reversed",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "DB-DEP-005",
+        "DB-DEP-006",
+        "BR-LATE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_application_reversal_migration.py",
+      "status": "implemented",
+      "notes": "Inside a correction a linked credit Adjustment of a Deposit-paid Invoice and a linked Late-payment Charge correction of a Deposit-paid Charge are refused while the Deposit application is active and accepted once the same correction reversed it; an unlinked one-call change stays refused after closure (8e-1) (V1-056 sub-slice 10c-2a-1)."
+    },
+    {
+      "test_id": "test_deposit_application_reversals_are_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "DB-DEP-006",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_application_reversal_migration.py",
+      "status": "implemented",
+      "notes": "No role may read or write the reversal table; only the runtime role executes the bounded Deposit history read; the new link is deferrable, unique and in the one-link check; no time limit; the migration is forward-only, adds only the listed table, functions and triggers, and changes only the readers, the link functions and the ledger view (V1-056 sub-slice 10c-2a-1)."
     }
   ]
 }

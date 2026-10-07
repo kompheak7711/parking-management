@@ -313,6 +313,10 @@ The Deposit owner's ledger shows the Deposit held reduced and the evidence names
 obligation's Customer; the ledger of the Customer named on the Invoice or Late-payment
 Charge shows that obligation reduced. One Customer gets one header with both components.
 
+Amended by V1-056 sub-slice 10c-2a-1 (migration `20261105_101`): the reversal of such an
+application by a post-settlement correction is the event kind `DEPOSIT_APPLICATION_REVERSED`
+(order 76), accepted as a history filter, with the same components and the opposite effect.
+
 # 11. Reservation Endpoints
 
 ## API-032 — Reservation Resource
@@ -466,6 +470,13 @@ Charge, `governing_source_kind` `FINAL_SETTLEMENT` and `governing_source_id` the
 Settlement, the approver as `actor_id`, `authorization_reference` `financial.approve`,
 the amount in USD cents and `can_reverse` false, so every lower held amount has its event
 (BR-SETTLE-009).
+
+Amended by V1-056 sub-slice 10c-2a-1: the same read lists the reversal of such an application
+by a post-settlement correction as `APPLICATION_REVERSAL_INVOICE_LINE` or
+`APPLICATION_REVERSAL_LATE_PAYMENT_CHARGE`, with `source_id` the reversed application,
+`governing_source_kind` `FINAL_SETTLEMENT`, the correction's approver as `actor_id`,
+`authorization_reference` `financial.approve`, the reversed amount in USD cents and
+`can_reverse` false.
 
 ## API-040 — Deposit Receipt
 

@@ -1504,7 +1504,8 @@ Append-only Final Settlement financial event: `id uuid PK`, `deposit_id uuid NOT
   status, Late-payment Charge and Deposit held balance, including the Late-payment Charge
   balance in the Payment reversal and financial action contexts; VOID, Adjustments and
   Late-payment Charge corrections of a paid obligation, and a receipt reversal of the
-  Deposit, are refused. The writer refuses an unknown target, and the writer and the
+  Deposit, are refused (as amended by sub-slice 10c-2a-1: only while the application is not
+  reversed, DB-DEP-006). The writer refuses an unknown target, and the writer and the
   record's trigger refuse an approver who is not a person. The Customer's choice and the
   staff reason for the remaining Pet Deposit (`PET_REMAINDER_EXPLICIT`, BR-SETTLE-017,
   BR-DEP-027, DL-013) are checked by the Settlement draft and its confirmation (V1-056
@@ -1528,10 +1529,33 @@ Append-only Final Settlement financial event: `id uuid PK`, `deposit_id uuid NOT
 
 ## DB-DEP-006 — `deposit_application_reversals`
 
-Not built in V1-056 (plan Q15: post-settlement corrections are only an extra charge or a
-Refund).
+Built in V1-056 sub-slice 10c-2a-1 (owner answer 2 to Q-2026-10-06-36, which replaced plan Q15).
 
 Append-only: `id uuid PK`, `deposit_application_id uuid NOT NULL UNIQUE FK`, `reason text NOT NULL`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`, `authorization_reference text NOT NULL`.
+
+- As built in V1-056 sub-slice 10c-2a-1 (migration `20261105_101`): `reason` is 1 to 1,000
+  characters (as the application's), `actor_id` refers to a user account and
+  `authorization_reference` is always `financial.approve`. No role may read or write the table; no
+  UPDATE, DELETE or TRUNCATE. A BEFORE INSERT check (23514) needs the reversal linked
+  (DB-SETTLE-005 `deposit_application_reversal_id`, written first) to a post-settlement correction
+  of the application's Settlement confirmed in the same transaction, the correction's approver as
+  `actor_id`, and `occurred_at` not before the closure or the correction and later than the latest
+  event of the target and of the Deposit, not later than the clock plus 5 seconds; there is no
+  other time limit. It locks the Deposit, then the Invoice or Late-payment Charge, as the Deposit
+  application does; the reason follows the application's rule (22023 otherwise). At commit a
+  deferred trigger refreshes the reversed line's Invoice status and version, as the application's
+  own trigger does. One reversal per application: a partial
+  release reverses the whole application and re-posts the rest (sub-slice 10c-2a-2 or 10c-2a-3).
+  Once every Deposit application of a Deposit is reversed, `app.deposit_has_active_application`
+  is false, so a receipt reversal draft of that Deposit is no longer held back by it (still a
+  draft confirmed by `financial.approve`, 8r).
+  Every reader counts only applications not reversed (DB-DER-004 held balance, the Invoice line
+  value paid by Deposits as of a time, the Late-payment Charge application summary, the 8a-1
+  refusal of changes to a Deposit-paid obligation); the latest event time of an allocation target
+  counts the reversal. The Customer Ledger shows it as `DEPOSIT_APPLICATION_REVERSED`
+  (DB-DER-010), and the Deposit history reads it through the bounded
+  `app.deposit_application_reversal_history(property, deposit)` (runtime EXECUTE only). No writer
+  exists yet: the correction writers (10c-2a-3, 10e) write it.
 
 ## DB-DEP-007 — `deposit_receipt_reversals`
 
@@ -2017,7 +2041,7 @@ As built in V1-056 sub-slice 10a (migration `20261101_97`): every link is a defe
 correction); `CHECK (num_nonnulls(...)=1)`; an effect is accepted only for a correction confirmed
 in the same transaction (its draft's CONFIRMED decision carries the top-level transaction id,
 `pg_current_xact_id()`, and was written after the current transaction started); append-only; no
-application role may read or write the table. The link `deposit_application_reversal_id` is added with its table in sub-slice 10c-2. The context of each
+application role may read or write the table. The link `deposit_application_reversal_id` is added with its table in sub-slice 10c-2 (as built: sub-slice 10c-2a-1, migration `20261105_101`; deferrable, unique, inside the one-link check; the link functions are rebuilt with it). The context of each
 linked record is checked by the variant writer that writes it (later sub-slices); whether a record
 of another Lease may be linked (the correct Invoice of a wrong-Unit move, the other allocations of
 a returned Payment) is answered below (owner answer 5 to Q-2026-10-06-37). The closed Settlement refusals of sub-slices 8e-1
@@ -2512,6 +2536,14 @@ when the Deposit pays another Signer's debt, each ledger shows its own component
 evidence names the Deposit owner, the Invoice Customer, the Settlement, the stage, the
 order and the reason. Every earlier projection result is unchanged. The ledger page accepts
 `DEPOSIT_APPLIED` as a history filter.
+
+As built in V1-056 sub-slice 10c-2a-1 (migration `20261105_101`): the reversal of such an
+application by a post-settlement correction (DB-DEP-006) is the event
+`DEPOSIT_APPLICATION_REVERSED` (event order 76), with the same two components and the opposite
+effect (the Deposit holds the amount again; the Invoice line or Charge owes it again); its
+evidence names the reversal, the application, the Settlement, the stage, the Deposit owner, the
+obligation's Customer and the reversal reason. The ledger page accepts it as a history filter.
+Every earlier projection result is unchanged.
 
 ## DB-DER-011 — Remaining Rent obligation
 

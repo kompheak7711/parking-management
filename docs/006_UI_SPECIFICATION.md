@@ -261,6 +261,10 @@ Amended by V1-056 sub-slice 8a-2: the history labels the event `DEPOSIT_APPLIED`
 applied". The Deposit history screen lists each Final Settlement Deposit application with
 its amount, target and governing Final Settlement.
 
+Amended by V1-056 sub-slice 10c-2a-1: the history labels the event
+`DEPOSIT_APPLICATION_REVERSED` "Deposit application reversed"; the Deposit history screen lists
+each reversal with its amount and governing Final Settlement.
+
 # 9. Reservation Workflow
 
 ## UI-031 — Reservation List

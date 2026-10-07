@@ -142,8 +142,9 @@ describe("Customer account ledger", () => {
     });
     for (const [, label] of Object.values(LEDGER_EVENTS))
       expect(within(history).getByText(label)).toBeInTheDocument();
-    // Sub-slice 8a-2 adds DEPOSIT_APPLIED: 24 event rows plus the header row (docs/010).
-    expect(within(history).getAllByRole("row")).toHaveLength(25);
+    // Sub-slice 8a-2 adds DEPOSIT_APPLIED and 10c-2a-1 DEPOSIT_APPLICATION_REVERSED: 25 event
+    // rows plus the header row (docs/010).
+    expect(within(history).getAllByRole("row")).toHaveLength(26);
     expect(screen.getByText(/Events at the same instant/)).toBeInTheDocument();
   });
   it("TEST-FE-565 retains original KHR and FX evidence with accessible source navigation and focus return", async () => {

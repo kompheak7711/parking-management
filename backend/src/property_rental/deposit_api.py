@@ -593,6 +593,17 @@ class PostgresDepositResourceFlow:
                     'FINAL_SETTLEMENT'::text,application.final_settlement_id,NULL::uuid,
                     NULL::date,false
                 FROM app.deposit_application_history(%s,%s) AS application
+                UNION ALL
+                -- The reversal of such an application by a post-settlement correction
+                -- (DB-DEP-006): the Deposit holds the amount again.
+                SELECT reversal.reversal_id,'APPLICATION_REVERSAL_' || reversal.target_kind,
+                    reversal.occurred_at,reversal.amount_usd_cents,reversal.application_id,
+                    reversal.reason,NULL::text,reversal.actor_id,
+                    reversal.authorization_reference,'USD'::text,
+                    reversal.amount_usd_cents,NULL::text,
+                    'FINAL_SETTLEMENT'::text,reversal.final_settlement_id,NULL::uuid,
+                    NULL::date,false
+                FROM app.deposit_application_reversal_history(%s,%s) AS reversal
             )
             SELECT event_id,event_kind,occurred_at,amount_usd_cents,source_id,reason,
                    evidence_reference,actor_id,authorization_reference,currency,
@@ -612,6 +623,8 @@ class PostgresDepositResourceFlow:
                 deposit_id,
                 deposit_id,
                 deposit_id,
+                deposit_id,
+                snapshot.property_id,
                 deposit_id,
                 snapshot.property_id,
                 deposit_id,
