@@ -135,4 +135,6 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md.
 
 - V1-056 sub-slice 10c-2 (2026-10-07, f6cd81c): owner answers to Q-2026-10-07-41 recorded; 10c-2a split into 10c-2a-1 (Deposit application reversal record and readers), 10c-2a-2 (shared DL-032 step) and 10c-2a-3 (Deposit-paid `REFUND`); Q-2026-10-07-42 open ("Credit before Deposits" after closure, 10c-1b consistency, returned Deposit Refund), blocks 10c-2a-2, 10c-2a-3 and 10c-2b. NEXT: 10c-2a-1. Nothing pushed.
 
+- V1-056 sub-slice 10c-2a-1 (2026-10-07, 9e76910, migration 20261105_101): COMMITTED. Deposit application reversals (DB-DEP-006): written only inside a correction of the same Settlement confirmed in the same transaction, by its approver; Deposit and target locks and the application's chronology; deferred Invoice status refresh; link `deposit_application_reversal_id`; readers count only applications not reversed; ledger `DEPOSIT_APPLICATION_REVERSED`, Deposit history rows. No writer yet (10c-2a-3, 10e). Rounds 1 to 3 (independent and security), round 3 no should-fix; unit 3589 (U3), PostgreSQL 1911 (P5), frontend 1592; corrections 1 of 2 for three test causes. NEXT: owner answer to Q-2026-10-07-42 (blocks 10c-2a-2, 10c-2a-3, 10c-2b; 10c-3 and 10d follow 10c-2). Nothing pushed.
+
 - Updated: 2026-10-07.
