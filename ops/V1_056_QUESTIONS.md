@@ -923,3 +923,24 @@ Q-2026-10-07-45 does not change 10c-2a-2 or 10c-2a-3. The refusal itself (10c-2a
 - Built after 10c-2a-4 and before 10h, with tests for both directions; in the plan (sub-slice 10c-2a-5).
 
 Recorded in docs/010. The point about a supersede before closure is still open for a later decision (not blocking).
+
+## Q-2026-10-07-46 — Sub-slice 10c-2a-3 stopped before code: the Deposit-application refusal of an Adjustment conflicts with the newest-first release
+
+The 10c-2a-3 pre-code design is in the plan (10c entry, "10c-2a-3 pre-code design"). One point conflicts, so I stopped before code. Nothing else in the design needs an answer.
+
+**The conflict.** Since sub-slice 8a-1, an Invoice Adjustment is refused while any Deposit application on that Invoice is still active (`app.refuse_deposit_applied_obligation_change`, 55000 "A Deposit application paid this obligation at Final Settlement"). Sub-slice 10c-2a-1 relaxed it only for applications that are reversed. It has no exception for a correction's own Adjustment, and it looks at the whole Invoice, not the corrected line. Your answer 2 to Q-41 says the release takes the newest sources first across Deposit applications, Payment allocations and Credit applications, only until the paid part is covered. So the correction's credit Adjustment is refused when:
+
+- the corrected line has an older Deposit application that the release does not reach (example: the Security Deposit paid 10,000 of a Damage line and a later Payment paid 2,500; a Refund of 2,000 releases only the Payment, and the Security Deposit application stays active), or
+- another line of the same Invoice was paid by a Deposit (example: the Security Deposit paid the Rent line and the Trash line of one Invoice; a Refund on the Trash line leaves the Rent line's application active).
+
+The plan's 10c-2a text says the refusal "passes it only when every Deposit application of the line is reversed in the same correction", which cannot hold together with the newest-first release.
+
+**Options:**
+
+- (a) Relaxing change: the refusal lets through a credit Adjustment that is linked to a post-settlement correction of that Invoice's Settlement, confirmed in the same transaction by its approver. This is the path the refusal's own comment names ("An obligation a Deposit application paid changes only through a post-settlement correction"). The release stays newest first (Q-41 answer 2). Deposit applications the release does not reach stay as they are, and they still pay their own lines. Every unlinked Adjustment, VOID or Late-payment Charge correction stays refused (8a-1 and 8e-1). One test shows each example above, and one shows an unlinked Adjustment still refused.
+- (b) The release reverses every active Deposit application of the Invoice, then the plan pays the rests again. This is many more records, and the DL-032 rules (Credit first) could change who pays lines the Customer did not ask to correct.
+- (c) A `REFUND` correction is refused (a conflict) when the release does not reverse every Deposit application of the Invoice. Staff could not correct these cases until another kind exists.
+
+**Recommendation: (a).** It keeps your newest-first answer. It changes only what the correction itself corrects, and the 8a-1 and 8e-1 refusals still stop every unlinked change. It is a relaxing change of a committed refusal, which the plan text did not foresee, so I ask before building it.
+
+Until you answer, no 10c-2a-3 code.

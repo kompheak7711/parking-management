@@ -145,4 +145,6 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md.
 
 - V1-056 (2026-10-07): owner answered Q-2026-10-07-45 ((a): a new pet classification correction kind, sub-slice 10c-2a-5 after 10c-2a-4 and before 10h; docs/010, plan). NEXT: 10c-2a-3 pre-code design. Nothing pushed.
 
+- V1-056 sub-slice 10c-2a-3 (2026-10-07): STOPPED before code. Pre-code design in the plan (10c entry); Q-2026-10-07-46 open: the 8a-1 refusal blocks the correction's credit Adjustment while a Deposit application the newest-first release does not reach stays on the Invoice (recommendation (a): let a linked, confirmed correction's Adjustment through). No code, no run. NEXT: owner answer. Nothing pushed.
+
 - Updated: 2026-10-07.
