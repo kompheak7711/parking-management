@@ -171,4 +171,6 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md.
 
 - V1-056 sub-slice 10c-2a-5 (2026-10-08, 8b9a1ca, migration 20261109_105): COMMITTED. Pet classification correction after closure (`PET_DAMAGE_RECLASSIFICATION`, DB-SETTLE-007), both directions; owner answers to the six report items recorded (Q-2026-10-08-52); Q-2026-10-08-53 open (answer before 10h). U3 3606, P4 1949 passed; round 3 no should-fix. NEXT: sub-slice 10c-2a-6 (Customer choice re-check in the shared step, approved tightening), then 10c-2b. Nothing pushed.
 
+- V1-056 sub-slice 10c-2a-6 (2026-10-08): STOPPED before code (Q-2026-10-08-54). Pre-code design in the plan (migration 20261110_106: the step re-checks the Customer choice under the Settlement's draft lock before its stale comparison; test on the owner's case, a reclassification confirmed first then a `REFUND` with the same choice refused and left pending). Conflict: the committed 10c-2a-2 test `test_a_br_dep_027_termination_after_closure` runs the step by hand with the Final Settlement's own choice text, so the re-check refuses it; recommendation (a): change only that test's choice text (set-up), name and assertions kept. No code, no run. NEXT: owner answer. Nothing pushed.
+
 - Updated: 2026-10-08.

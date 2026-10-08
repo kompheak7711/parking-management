@@ -1179,3 +1179,25 @@ Example: inspection A has a pet finding, billed as a 12,500 Damage line. Before 
 **Recommendation: (a)**, in a small relaxing sub-slice before 10h. The classification record is already the source of truth after closure; (a) only lets staff use it for these lines, under the same `financial.approve` confirm. The "Also" point (b), for the time before closure, stays open for a later decision.
 
 Until the owner answers, nothing changes; 10c-2a-5 keeps refusing such a line.
+
+## Q-2026-10-08-54 — Sub-slice 10c-2a-6 stopped before code: the Customer choice re-check in the shared step refuses one committed test
+
+10c-2a-5 is committed (8b9a1ca; NOW.md bb571e7). The 10c-2a-6 pre-code design is in the plan (10c-2a-6 entry). There is no 10c-2a-6 code and no run.
+
+**Your rule (answer 1 to Q-2026-10-08-52).** Every correction confirm that uses a Customer choice re-checks it, including the committed `REFUND` confirm. The change goes into the shared step (`app.post_settlement_correction_plan`), with a test.
+
+**The design.** The step re-checks the choice exactly as the recorders and the 10c-2a-5 confirm check it: the text may not equal the confirmed Final Settlement's choice, nor the choice of any other confirmed correction of that Settlement (55000, the same messages). It runs under the Settlement's draft lock, before the stale comparison.
+
+**The conflict.**
+- The committed 10c-2a-2 test `test_a_br_dep_027_termination_after_closure` (`test_settlement_correction_plan_migration.py`) builds a correction by hand, with no recorder, and runs the step.
+- Its plan uses the `CUSTOMER_CHOICE` basis with the Final Settlement's own choice text (`CHOICE.customer_choice`). The 10c-2a-2 round-3 review named this test (Q-2026-10-07-44, note 7) before your answer 3 required a new choice per correction; only the recorders built later enforce it.
+- With the re-check in the step, the test's `post` is refused (55000, "the Final Settlement's choice is not reused"). The test would fail.
+- A read-only search of every backend test found no other test that runs the step, or confirms two corrections of one Settlement, with a reused choice.
+
+**Options:**
+- (a) The step re-checks both parts (the Settlement's choice and every earlier confirmed correction's choice), as designed. The committed test changes its set-up only: the hand-built correction's choice becomes a new text given for that correction (your answer 3 to Q-2026-10-07-44). Its name and every assertion stay; the Deposit application's reason in the test is the choice's staff-reason field, which does not change. docs/010 note; the independent reviewer compares the test with its version at HEAD.
+- (b) The step re-checks only the choices of earlier confirmed corrections, the only part that can change after a draft is recorded. The Final Settlement's choice is fixed at closure, every recorder refuses it, and the 10c-2a-5 confirm checks it again. No committed test changes. The difference: a correction built by hand by the table owner (no recorder) could still reuse the Settlement's choice; no role can do that.
+
+**Recommendation: (a).** It matches your words ("re-checks it") and the 10c-2a-5 confirm, so every variant checks the same thing in one place, and it brings the old test in line with your answer 3. The cost is a set-up change in one committed test.
+
+Until you answer, no 10c-2a-6 code.
