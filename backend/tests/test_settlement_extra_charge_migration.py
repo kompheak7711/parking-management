@@ -406,12 +406,14 @@ def test_a_damage_extra_charge_bills_a_current_unbilled_finding_and_a_stale_draf
     case = leaving_case(url)
     prop, human, lease, customer = case["prop"], case["human"], case["lease"], case["customer"]
     person = approver(url)
-    close(url, human, case["settlement"])
     earlier = UUID(
         str(one(url, "SELECT id FROM app.move_out_inspections WHERE lease_id=%s", lease)[0])
     )
     version = int(one(url, "SELECT version FROM app.leases WHERE id=%s", lease)[0])
-    finding = uuid4()
+    # Set-up changed in sub-slice 10c-2a-4 (owner answers to Q-2026-10-08-49 and
+    # Q-2026-10-08-50): a supersede after closure is now refused, so the closure-time inspection
+    # is superseded before the Settlement closes (its billed findings are then not current), and
+    # the damage found after closure is a separate inspection that supersedes nothing.
     inspection_flow().record(
         prop,
         lease,
@@ -422,10 +424,29 @@ def test_a_damage_extra_charge_bills_a_current_unbilled_finding_and_a_stale_draf
             today(url),
             "Corrected inspection condition",
             "Approved inspection",
+            "Evidence-901",
+            "Inspection corrected before the Final Settlement closed",
+            (),
+            supersedes_inspection_id=earlier,
+        ),
+        actor=inspection_actor(human, prop),
+        request_id="settlement-extra-charge-correction",
+    )
+    close(url, human, case["settlement"])
+    finding = uuid4()
+    inspection_flow().record(
+        prop,
+        lease,
+        RecordMoveOutInspection(
+            uuid4(),
+            uuid4(),
+            version,
+            today(url),
+            "Later inspection condition",
+            "Approved inspection",
             "Evidence-902",
             "Cracked tile found after the Final Settlement",
             (InspectionFinding(finding, "Cracked bathroom tile", False),),
-            supersedes_inspection_id=earlier,
         ),
         actor=inspection_actor(human, prop),
         request_id="settlement-extra-charge-inspection",

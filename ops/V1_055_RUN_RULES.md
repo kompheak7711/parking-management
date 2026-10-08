@@ -8,6 +8,7 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md. Nothing else 
 - No tool may commit, push, open PRs, save plan files in the repo, edit settings, or schedule loops or wakeups.
 - Do not touch user-level settings or any service. OpenClaw stays untouched.
 - Do not search other folders, ~/Documents or old session records.
+- Edit long documents (docs/, ops/, the questions file included) only with exact-text edits, also when adding at the end; never append with a shell redirect or rewrite the whole file. Check `git diff --stat` after each edit (owner, 2026-10-08).
 
 ## Database and history
 - Additive or relaxing migrations only.

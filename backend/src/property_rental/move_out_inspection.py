@@ -189,6 +189,12 @@ class PostgresMoveOutInspectionService:
             return MoveOutInspectionConflictError(
                 "Lease or inspection evidence changed; refresh it"
             )
+        # P5S01: the Lease's Final Settlement is closed, so its inspections are not superseded
+        # (V1-056 sub-slice 10c-2a-4); later damage is recorded as a new inspection.
+        if error.sqlstate == "P5S01":
+            return MoveOutInspectionConflictError(
+                "The Final Settlement is closed; record later damage as a new inspection"
+            )
         if error.sqlstate == "P5M05":
             return MoveOutInspectionKeyReused("Inspection command key was reused")
         if error.sqlstate == "P5406":

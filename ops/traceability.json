@@ -38089,7 +38089,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_extra_charge_migration.py",
       "status": "implemented",
-      "notes": "A Damage extra charge bills one current unbilled finding with the authorized Due Date override, never before the issue date; the confirm runs only at READ COMMITTED; a second draft for the finding is stale and stays pending; a billed or superseded finding and a reused key are refused; an override that precedes the issue date at the confirm is a conflict and the draft stays pending (V1-056 sub-slice 10b, review rounds 1 and 2)."
+      "notes": "A Damage extra charge bills one current unbilled finding with the authorized Due Date override, never before the issue date; the confirm runs only at READ COMMITTED; a second draft for the finding is stale and stays pending; a billed or superseded finding and a reused key are refused; an override that precedes the issue date at the confirm is a conflict and the draft stays pending (V1-056 sub-slice 10b, review rounds 1 and 2). Since sub-slice 10c-2a-4 (set-up only, owner answers to Q-2026-10-08-49 and Q-2026-10-08-50): the closure-time inspection is superseded before the Settlement closes and the damage found after closure is a separate inspection that supersedes nothing, because a supersede after closure is refused; every assertion is unchanged."
     },
     {
       "test_id": "test_no_late_payment_decision_and_unlinked_charges_stay_refused",
@@ -38545,7 +38545,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_correction_plan_migration.py",
       "status": "implemented",
-      "notes": "The step locks the Lease row FOR UPDATE, as the move-out inspection command does, so an inspection correction that supersedes the inspection waits while a correction pays a pet damage line from the Pet Deposit; after the inspection is superseded the line is no longer pet damage and the Pet Deposit cannot pay it as pet damage; the draft stays pending and nothing is written (V1-056 sub-slice 10c-2a-2, owner answer to Q-2026-10-07-43)."
+      "notes": "The step locks the Lease row FOR UPDATE, as the move-out inspection command does, so an inspection correction that supersedes the inspection waits while a correction pays a pet damage line from the Pet Deposit; after the inspection is superseded the line is no longer pet damage and the Pet Deposit cannot pay it as pet damage; the draft stays pending and nothing is written (V1-056 sub-slice 10c-2a-2, owner answer to Q-2026-10-07-43). Since sub-slice 10c-2a-4 (owner exception, owner answer to Q-2026-10-08-50; the name is kept and its last words describe the earlier behaviour): the waiting supersede waits on the Lease row itself (not on the Settlement row the step also holds), reads the closed Settlement after the Lease lock and is refused (P5S01) with nothing written; the line stays pet damage and the step pays it from the Pet Deposit as pet damage."
     },
     {
       "test_id": "test_a_br_dep_027_termination_after_closure",
@@ -38706,6 +38706,103 @@
       "test_path": "backend/tests/test_settlement_deposit_refund_correction_migration.py",
       "status": "implemented",
       "notes": "No role may execute the two new internal functions; the Refund correction's record and confirm keep their financial-role grant only; the migration is forward-only, adds only the two functions and changes only the eight listed functions; no time limit (V1-056 sub-slice 10c-2a-3)."
+    },
+    {
+      "test_id": "test_a_supersede_refused_after_final_settlement_closure_is_a_conflict",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "BR-SETTLE-012",
+        "DB-MOVEOUT-001"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_move_out_inspection.py",
+      "status": "implemented",
+      "notes": "The inspection service reports the database refusal of a supersede on a Lease whose Final Settlement is closed (P5S01) as a conflict, not as an unknown outcome (V1-056 sub-slice 10c-2a-4)."
+    },
+    {
+      "test_id": "test_a_supersede_after_closure_is_refused_and_the_settlement_s_inspection_stays",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "BR-SETTLE-012",
+        "BR-SETTLE-013",
+        "DB-MOVEOUT-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_inspection_supersede_after_closure_migration.py",
+      "status": "implemented",
+      "notes": "After a real closure a supersede of the inspection the Settlement relied on is refused as a conflict (P5S01) and writes no inspection, finding, command or audit row; the inspection stays current and its pet damage line stays pet damage; damage found after closure is a separate inspection, accepted and current next to the earlier one; a supersede of that later inspection is refused too; an exact repeat replays (V1-056 sub-slice 10c-2a-4, owner answers to Q-2026-10-07-44 and Q-2026-10-08-49)."
+    },
+    {
+      "test_id": "test_a_supersede_before_closure_is_accepted_and_after_closure_refused",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "BR-SETTLE-012",
+        "DB-MOVEOUT-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_inspection_supersede_after_closure_migration.py",
+      "status": "implemented",
+      "notes": "Before the Final Settlement closes a supersede is accepted as before; after the closure an exact repeat of that supersede replays its saved response and writes nothing, and a supersede of the superseding inspection is refused (P5S01) and writes nothing (V1-056 sub-slice 10c-2a-4, review round 1)."
+    },
+    {
+      "test_id": "test_the_insert_trigger_refuses_a_superseding_row_after_closure",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "BR-SETTLE-012",
+        "DB-MOVEOUT-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_inspection_supersede_after_closure_migration.py",
+      "status": "implemented",
+      "notes": "The BEFORE INSERT trigger repeats the refusal: a superseding row inserted directly is refused outside READ COMMITTED (55000); at READ COMMITTED it passes the trigger before closure (and fails only at the deferred completion check) and is refused by it after closure (P5S01) (V1-056 sub-slice 10c-2a-4, owner answer to Q-2026-10-08-51)."
+    },
+    {
+      "test_id": "test_a_supersede_at_repeatable_read_cannot_miss_a_closure",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "BR-SETTLE-012",
+        "DB-MOVEOUT-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_inspection_supersede_after_closure_migration.py",
+      "status": "implemented",
+      "notes": "The gap found in review round 1: a REPEATABLE READ transaction whose snapshot was taken before the Final Settlement existed still sees no Settlement row after the Settlement starts and closes; its supersede after closure is refused because it does not run at READ COMMITTED (55000), and nothing is written (V1-056 sub-slice 10c-2a-4, owner answer to Q-2026-10-08-51)."
+    },
+    {
+      "test_id": "test_a_supersede_outside_read_committed_is_refused_also_before_closure",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "BR-SETTLE-012",
+        "DB-MOVEOUT-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_inspection_supersede_after_closure_migration.py",
+      "status": "implemented",
+      "notes": "A supersede outside READ COMMITTED is refused (55000) before closure too, at REPEATABLE READ and SERIALIZABLE, with nothing written; an inspection that supersedes nothing is not affected; the same supersede at READ COMMITTED is accepted while the Settlement is open (V1-056 sub-slice 10c-2a-4, owner answer to Q-2026-10-08-51)."
+    },
+    {
+      "test_id": "test_a_supersede_waiting_on_the_settlement_confirm_is_refused_once_it_commits",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "BR-SETTLE-012",
+        "BR-SETTLE-013",
+        "DB-MOVEOUT-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_inspection_supersede_after_closure_migration.py",
+      "status": "implemented",
+      "notes": "A supersede that starts while the Settlement confirm holds the Lease row lock waits on that Lease row (not on the Settlement row) and, once the confirm commits the closure, is refused (P5S01) with nothing written (V1-056 sub-slice 10c-2a-4, review round 1)."
+    },
+    {
+      "test_id": "test_the_inspection_refusal_is_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "DB-MOVEOUT-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_inspection_supersede_after_closure_migration.py",
+      "status": "implemented",
+      "notes": "The inspection command keeps its financial-role grant only and the trigger function has none; the migration is forward-only and changes only the bodies of those two functions (security, settings, privileges and owner kept); the refusal reads the Settlement row FOR SHARE after the Lease row lock (V1-056 sub-slice 10c-2a-4)."
     }
   ]
 }

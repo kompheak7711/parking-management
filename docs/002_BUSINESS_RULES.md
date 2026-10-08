@@ -4193,6 +4193,8 @@ Amended by DL-068 and DL-069 (2026-10-03): the Unit cleaning charge in BR-MOVEOU
 
 Amended by the owner's answer to the V1-056 sub-slice 10b report (2026-10-07): after the Final Settlement is closed, a Damage charge is billed only as a post-settlement correction (BR-SETTLE-013). Staff prepare it under the Final Settlement preparer capability, and a holder of `financial.approve` confirms and authorizes it, like every correction; the Damage-charge capability is not used for it. The other rules of this section still apply: a recorded inspection damage finding, billed at most once, matching the finding's Customer, Lease and Unit, with the amount, a reason and an evidence reference.
 
+Amended by the owner's answers to Q-2026-10-07-44 (answer 2) and Q-2026-10-08-49 (2026-10-08; V1-056 sub-slice 10c-2a-4): once a Lease's Final Settlement is closed, no move-out inspection on that Lease may be superseded; the attempt is refused as a conflict and nothing is recorded. The inspection the closed Settlement relied on never changes. Damage found after closure is recorded as a new, separate inspection that supersedes nothing, and its finding is billed only as a post-settlement correction. A wrong finding on the inspection the Settlement relied on is fixed only with a post-settlement correction. Known limit: a mistake in an inspection recorded after closure cannot be fixed by a supersede either; the wrong finding is simply not billed, because billing it needs a correction confirmed by a holder of `financial.approve`.
+
 ---
 
 ## BR-MOVEOUT-007 — Normal Lease End

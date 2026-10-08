@@ -1703,6 +1703,23 @@ recording uses read-committed transactions. Connection, lock and statement timeo
 are bounded and timestamps use UTC. Unknown database outcomes preserve the exact
 original command for recovery; no automatic new command is inferred.
 
+Amended by V1-056 sub-slice 10c-2a-4 (migration `20261108_104`; owner answers to
+Q-2026-10-07-44, Q-2026-10-08-49 and Q-2026-10-08-51): once the Lease's Final Settlement
+is closed, a command or row with `supersedes_inspection_id` is refused with P5S01 before
+anything is written. Both `app.move_out_inspection_record` and the insert trigger
+`app.validate_move_out_inspection_source` read the Lease's `final_settlements` row
+`FOR SHARE` after the Lease row lock (the confirm, the only writer of `closed_at`, locks
+the Lease row `FOR UPDATE` before it closes the Settlement), so a supersede that waited
+while the Settlement closed reads the closure. A supersede runs only at READ COMMITTED
+(55000 otherwise, before and after closure), as the Settlement confirm and the correction
+confirms require: a REPEATABLE READ or SERIALIZABLE snapshot older than the Settlement's
+start would not see the Settlement row, and the Lease row lock raises nothing because the
+start and the confirm never change that row. An inspection that supersedes
+nothing is not checked: damage found after closure is a new inspection, and every
+inspection that no other inspection supersedes stays current. The exact-repeat replay
+stays first and writes nothing. The service maps P5S01 to a conflict. Known limit: an
+inspection recorded after closure cannot be superseded either.
+
 The existing DAMAGE_CHARGES prohibition remains until a separate stage installs
 the complete typed authorized-charge/source relationship and bill-once semantics.
 This inspection stage neither establishes amounts nor issues an Invoice, disposes

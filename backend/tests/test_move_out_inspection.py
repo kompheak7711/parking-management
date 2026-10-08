@@ -13,6 +13,7 @@ from property_rental.move_out_inspection import (
     INSPECTION_RECORD,
     InspectionFinding,
     MoveOutInspectionAuthorizationError,
+    MoveOutInspectionConflictError,
     MoveOutInspectionInvalidError,
     MoveOutInspectionNotFoundError,
     MoveOutInspectionUnavailableError,
@@ -148,3 +149,19 @@ def test_inspection_unknown_database_outcomes_keep_exact_recovery_required(state
         PostgresMoveOutInspectionService._error(psycopg.errors.lookup(state)("Synthetic failure")),
         MoveOutInspectionUnavailableError,
     )
+
+
+def test_a_supersede_refused_after_final_settlement_closure_is_a_conflict() -> None:
+    """V1-056 sub-slice 10c-2a-4: the database refuses a supersede on a Lease whose Final
+    Settlement is closed (P5S01); the service reports a conflict, not an unknown outcome."""
+
+    class Failure(psycopg.Error):
+        pass
+
+    failure = Failure(
+        "A move-out inspection of a Lease with a closed Final Settlement cannot be superseded"
+    )
+    failure.sqlstate = "P5S01"
+    error = PostgresMoveOutInspectionService._error(failure)
+    assert type(error) is MoveOutInspectionConflictError
+    assert str(error) == "The Final Settlement is closed; record later damage as a new inspection"

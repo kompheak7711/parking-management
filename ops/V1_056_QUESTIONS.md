@@ -1065,7 +1065,7 @@ Until you answer, no 10c-2a-4 code.
 
 Recorded in docs/010.
 
-## Q-2026-10-08-50 — Sub-slice 10c-2a-4 stopped before code: the plan's change to the 10c-2a-2 inspection test cannot be built as written
+## Q-2026-10-08-50 — Sub-slice 10c-2a-4 stopped before code: the plan's change to the 10c-2a-2 inspection test cannot be built as written (ANSWERED 2026-10-08: (a), owner exception for this one test; answer in docs/010)
 
 Your answer to Q-2026-10-08-49 is recorded (docs/010, above). The read-only check found nothing that assumes one inspection chain per Lease. The 10c-2a-4 pre-code design is in the plan. There is no 10c-2a-4 code and no run.
 
@@ -1093,3 +1093,45 @@ Your answer to Q-2026-10-08-49 is recorded (docs/010, above). The read-only chec
 3. A supersede of an inspection recorded after closure is refused too (your answer: every supersede on that Lease).
 
 Until you answer, no 10c-2a-4 code.
+
+**Owner answer (2026-10-08).** Option (a), as an owner exception like Q-47, for this one test only.
+
+- Keep the lock part on the closed Settlement. The test must show that the superseding command waits for the step's Lease lock and is then refused (P5S01), and that the line stays pet damage and is paid from the Pet Deposit.
+- Keep the test's name. Its docstring and docs/010 say that its last words describe the old behaviour, and why.
+- The step's own re-check of pet damage stays as a second guard. If no command can reach it any more, docs/010 says so.
+- The independent reviewer compares the test with its version at HEAD and confirms the lock is still proved.
+- The 10b test change is accepted as described above.
+- Use exact-text edits for the questions file too, also when adding at the end; this rule is added to ops/V1_055_RUN_RULES.md for every later session.
+
+Recorded in docs/010. 10c-2a-4 is built under the takeover rules and the design in the plan.
+
+## Q-2026-10-08-51 — Sub-slice 10c-2a-4 stopped after review round 1: a supersede in a REPEATABLE READ transaction can miss the closure (the fix is a further tightening) (ANSWERED 2026-10-08: (a), tightening approved; answer in docs/010)
+
+10c-2a-4 is built and green before review: backend unit U1 3590 passed, full PostgreSQL P1 1937 passed. Record: ops/reviews/V1-056-slice-10c-2a-4-inspection-supersede-after-closure.md. Review round 1: no blocker; both reviewers found the same should-fix (below). The other findings are fixed in the working tree (a stricter lock-wait check, lock-order wording, a replay test); static checks clean; no run since. Nothing committed.
+
+**The gap.**
+- The refusal reads the Lease's Final Settlement row `FOR SHARE` after the Lease row lock. At READ COMMITTED (the only isolation the service uses) this is safe: a supersede that waited while the Settlement closed reads the closure.
+- At REPEATABLE READ or SERIALIZABLE the transaction's snapshot is taken at its first statement. If that snapshot is older than the Settlement's start, the Settlement row is not visible: the read finds no row, the insert trigger (same snapshot) finds none either, and the Lease row lock raises nothing, because the Settlement start and confirm lock the Lease row but never change it.
+- So a session that opens a REPEATABLE READ transaction before the Settlement starts, waits until the Settlement is closed, and then calls the inspection command can still supersede the inspection the closed Settlement relied on.
+- Only a direct database session with the financial role can do this. No screen or service path can.
+- My design note said "at REPEATABLE READ the row lock fails with 40001"; that holds only when the Settlement row is in the snapshot (the committed test covers that case).
+
+**Options:**
+- (a) Refuse a supersede outside READ COMMITTED: in the command and in the insert trigger, a row with `supersedes_inspection_id` is refused unless the transaction runs at READ COMMITTED (55000, "A move-out inspection is superseded only at READ COMMITTED"), as the Settlement confirm and every correction confirm already require. This also refuses such a supersede before closure. No service path changes, because the service always writes at READ COMMITTED. An inspection that supersedes nothing is not affected. Tests: a REPEATABLE READ snapshot taken before the Settlement starts is refused (55000, nothing written); the existing REPEATABLE READ test then expects 55000; SERIALIZABLE the same. It is a further tightening beyond your words ("after closure"), so it needs you.
+- (b) Keep the code. Narrow the wording (docs/004, docs/010, the migration text, the test docstring) to "when the Settlement row is in the snapshot", and record the rest as a known limit: a direct financial-role session at REPEATABLE READ or SERIALIZABLE whose snapshot predates the Settlement start can still supersede after closure.
+
+**Recommendation: (a).** Your rule says every supersede after closure is refused; (a) is the only way the database can guarantee it. The cost falls only on a direct database session that no product path uses.
+
+After your answer: the fix, the docs, static checks, U2 and P2 (under `caffeinate`), then review round 2.
+
+Until you answer, no further 10c-2a-4 change and no commit.
+
+**Owner answer (2026-10-08).** Option (a). This tightening is approved.
+
+- Refuse any inspection supersede outside READ COMMITTED with 55000, before and after closure, as the Settlement confirm and the correction confirms already do.
+- No screen or service path changes. If any existing test supersedes outside READ COMMITTED, name it in the report and change only that expectation.
+- Add a test for the gap itself: a REPEATABLE READ transaction that started before the Settlement existed is refused when it tries the supersede after closure.
+- Fix the design note that said the row lock fails with 40001.
+- Then static checks, U2 and P2 under `caffeinate`, then review round 2 under the standing round-3 rule. After 10c-2a-4 is committed, 10c-2a-5 may follow.
+
+Recorded in docs/010.

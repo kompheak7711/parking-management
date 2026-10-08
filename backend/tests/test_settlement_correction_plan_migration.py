@@ -35,6 +35,7 @@ from property_rental.deposit import PostgresDepositService
 from property_rental.final_settlement import SettlementCreditStep, SettlementDepositStep
 from property_rental.move_out_inspection import (
     InspectionFinding,
+    MoveOutInspectionConflictError,
     PostgresMoveOutInspectionService,
     RecordMoveOutInspection,
 )
@@ -125,6 +126,10 @@ CLOSED_CREDIT = "A closed Final Settlement takes no new Credit application"
 CLOSED_DEPOSIT = "A closed Final Settlement takes no new Deposit application"
 ONLY_INSIDE = "The DL-032 step of a post-settlement correction runs only inside that correction"
 PET_DAMAGE_ONLY = "The Pet Deposit first pays only valid pet damage"
+# Sub-slice 10c-2a-4: a supersede on a Lease whose Final Settlement is closed.
+SUPERSEDE_CLOSED = (
+    "A move-out inspection of a Lease with a closed Final Settlement cannot be superseded"
+)
 CUSTOMER_ONLY = "At this termination only the Customer may choose to use the remaining Pet Deposit"
 RENT_FIRST = (
     "Credit on an Invoice with Rent or Service lines follows the Rent-first proposal unless the "
@@ -416,6 +421,31 @@ def blocked_by(application_name: str, holder: psycopg.Connection[Any]) -> bool:
                 return True
             time.sleep(0.01)
     return False
+
+
+def blocked_on_lease_row(application_name: str, holder: psycopg.Connection[Any]) -> bool:
+    """As blocked_by, and the waiter waits on a Lease row, not on a Final Settlement row: while
+    it sleeps on the holder's transaction it holds the tuple lock of an app.leases row and no
+    tuple lock of an app.final_settlements row (sub-slice 10c-2a-4 review round 1; blocked_by
+    alone accepts any lock on app.leases, which every inspection command holds)."""
+    if not blocked_by(application_name, holder):
+        return False
+    relations = holder.execute(
+        "SELECT 'app.leases'::regclass::oid,'app.final_settlements'::regclass::oid"
+    ).fetchone()
+    assert relations is not None
+    with psycopg.connect(admin_database_url(), autocommit=True) as observer:
+        found = observer.execute(
+            "SELECT bool_or(lock.relation=%s AND lock.locktype='tuple'),"
+            "bool_or(lock.relation=%s AND lock.locktype='tuple') "
+            "FROM pg_catalog.pg_stat_activity activity "
+            "JOIN pg_catalog.pg_locks lock ON lock.pid=activity.pid "
+            "WHERE activity.application_name=%s AND activity.datname=%s "
+            "AND activity.wait_event_type='Lock'",
+            (relations[0], relations[1], application_name, holder.info.dbname),
+        ).fetchone()
+    assert found is not None
+    return found[0] is True and found[1] is not True
 
 
 def post(connection: psycopg.Connection[Any], case: dict[str, Any], draft: UUID) -> Any:
@@ -1656,8 +1686,15 @@ def test_an_inspection_correction_waits_for_the_step_and_its_line_is_then_no_pet
     """DL-032 step 3 and the owner answer to Q-2026-10-07-43 (review round 2): the
     step locks the Lease row FOR UPDATE, as the move-out inspection command that supersedes an
     inspection does, so that command waits while a correction pays a pet damage line from the
-    Pet Deposit; once the inspection is superseded the line is no longer pet damage, and the
-    Pet Deposit cannot pay it as pet damage (the draft stays pending, nothing is written)."""
+    Pet Deposit.
+
+    Changed in sub-slice 10c-2a-4 (owner exception, owner answer to Q-2026-10-08-50): the name's
+    last words ("its line is then no pet damage") describe the behaviour before 10c-2a-4, when the
+    waiting supersede was written after the step and the line stopped being pet damage. Since
+    10c-2a-4 a supersede on a Lease whose Final Settlement is closed is refused (owner answer to
+    Q-2026-10-08-49), and the command reads the closure only after the Lease row lock, so the wait
+    still matters: the command waits for the step's lock, is then refused (P5S01) and writes
+    nothing; the line stays pet damage and the Pet Deposit pays it as pet damage."""
     url = migrated_database_url
     case = closed_case(url)
     prop, human, lease = case["prop"], case["human"], case["lease"]
@@ -1708,21 +1745,56 @@ def test_an_inspection_correction_waits_for_the_step_and_its_line_is_then_no_pet
                 request_id="settlement-correction-inspection",
             )
             try:
-                assert blocked_by(application_name, holding), (
+                # Since 10c-2a-4 (review round 1): the wait is on the Lease row itself, not on
+                # the Settlement row the step also holds.
+                assert blocked_on_lease_row(application_name, holding), (
                     "The inspection correction must wait on the step's Lease lock"
                 )
             finally:
                 holding.rollback()
-            future.result(timeout=10)
+            # Changed in 10c-2a-4 (owner answer to Q-2026-10-08-50): the waiting supersede now
+            # reads the closed Settlement after the lock and is refused (was: written).
+            with pytest.raises(MoveOutInspectionConflictError) as refused:
+                future.result(timeout=10)
+    error = refused.value.__cause__
+    assert isinstance(error, psycopg.Error)
+    assert (error.sqlstate, error.diag.message_primary) == ("P5S01", SUPERSEDE_CLOSED)
+    assert (
+        int(
+            str(
+                one(
+                    url,
+                    "SELECT count(*) FROM app.move_out_inspections WHERE lease_id=%s OR id=%s",
+                    lease,
+                    superseding.inspection_id,
+                )[0]
+            )
+        )
+        == 1
+    )
     assert state(url, draft) == "PENDING"
     assert (held(url, pet), outstanding(url, pet_line)) == (0, 0)
-    assert one(url, "SELECT app.invoice_line_is_pet_damage(%s,%s)", pet_line, lease) == (False,)
+    # Changed in 10c-2a-4: the line stays pet damage (was: False after the supersede).
+    assert one(url, "SELECT app.invoice_line_is_pet_damage(%s,%s)", pet_line, lease) == (True,)
 
-    def pet_step(connection: psycopg.Connection[Any]) -> None:
-        release_line(connection, case, draft, (pet_first,), pet_line, 4_000)
-        post(connection, case, draft)
-
-    assert failure(url, pet_step) == ("55000", PET_DAMAGE_ONLY)
+    # Changed in 10c-2a-4: the step pays the line from the Pet Deposit as pet damage (was: refused
+    # with PET_DAMAGE_ONLY). The step's own re-check of pet damage stays as a second guard; the
+    # deferred checks run as a commit would, and the transaction then rolls back.
+    with psycopg.connect(url) as connection:
+        try:
+            release_line(connection, case, draft, (pet_first,), pet_line, 4_000)
+            paid = post(connection, case, draft)
+            assert [
+                tuple(row)
+                for row in connection.execute(
+                    "SELECT deposit_id,invoice_line_id,amount_usd_cents,application_stage "
+                    "FROM app.deposit_applications WHERE id=ANY(%s)",
+                    ([UUID(str(item)) for item in paid["deposit_application_ids"]],),
+                ).fetchall()
+            ] == [(pet, pet_line, 8_200, "PET_RELATED_FIRST")]
+            connection.execute("SET CONSTRAINTS ALL IMMEDIATE")
+        finally:
+            connection.rollback()
     assert state(url, draft) == "PENDING"
     assert (held(url, pet), outstanding(url, pet_line)) == (0, 0)
 
