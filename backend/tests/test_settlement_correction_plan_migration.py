@@ -1832,9 +1832,11 @@ def test_a_br_dep_027_termination_after_closure(migrated_database_url: str) -> N
         10_500,
     )
     shape = overlay({f"INVOICE_LINE:{pet_line}": 8_500}, {str(pet): 12_500})
+    # Sub-slice 10c-2a-6 (owner answer to Q-2026-10-08-54): the step refuses the Final
+    # Settlement's own choice text, so this correction carries a choice given for it.
     choice = {
         "basis": "CUSTOMER_CHOICE",
-        "customer_choice": CHOICE.customer_choice,
+        "customer_choice": "Primary Tenant, 2026-10-08, signed note for this correction",
         "staff_reason": CHOICE.staff_reason,
     }
     staff = {"basis": "STAFF_REASON", "customer_choice": None, "staff_reason": STAFF_REASON}

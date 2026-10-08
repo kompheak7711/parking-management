@@ -504,9 +504,11 @@ class SettlementCorrectionService:
         """Confirm a pending Refund correction (financial.approve only).
 
         A draft whose line or paying sources changed since it was recorded is stale and stays
-        pending; an inactive Refund method is a conflict; an exact repeat by the same approver
-        writes nothing and returns the result again, rebuilt from the stored records. The result
-        never returns the decision's transaction id.
+        pending; an inactive Refund method is a conflict; a Customer choice for the remaining Pet
+        Deposit that the Final Settlement or another confirmed correction already used is a
+        conflict and the draft stays pending (sub-slice 10c-2a-6, checked in the shared step); an
+        exact repeat by the same approver writes nothing and returns the result again, rebuilt
+        from the stored records. The result never returns the decision's transaction id.
         """
         actor_id = FinalSettlementService._authorize(
             actor, property_id, FINANCIAL_APPROVE_CAPABILITY

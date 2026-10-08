@@ -2203,7 +2203,12 @@ the Settlement confirm's order, for a variant to call before `app.begin_settleme
 the draft and Settlement draft locks, the Lease row `FOR UPDATE` (the move-out inspection command
 locks it too, so no inspection is superseded and no line stops being pet damage while the step
 runs), the Credit steps' Payments and Credits, the Lease's Late-payment Charges and Invoices, the
-Settlement row, then each Deposit's draft lock and row.
+Settlement row, then each Deposit's draft lock and row. Since sub-slice 10c-2a-6 (migration
+`20261110_106`; owner answer 1 to Q-2026-10-08-52 and the answer to Q-2026-10-08-54), the step,
+right after these locks and before it reads the plan and compares the result, also refuses (55000)
+a `CUSTOMER_CHOICE` text for the remaining Pet Deposit that the confirmed Final Settlement or
+another confirmed correction of the same Settlement recorded, for every variant that runs it; the
+confirm rolls back and the draft stays pending.
 
 As built in V1-056 sub-slice 10c-2a-3 (migration `20261107_103`; owner answers 1 and 2 to
 Q-2026-10-07-41, 1 and 2 to Q-2026-10-07-42, 3 and 4 to Q-2026-10-07-44, and the answers to
@@ -2224,7 +2229,8 @@ Refund step uses the draft's Refund method and note. A remaining Pet Deposit ste
 `CUSTOMER_CHOICE` basis needs a choice text other than the one the confirmed Settlement recorded
 (owner answer 3 to Q-2026-10-07-44) and other than the one any earlier confirmed correction of that
 Settlement recorded (review round 1); the database compares the recorded text only, when the draft
-is recorded. At the BR-DEP-027 terminations the step's check still refuses
+is recorded and again in the shared step at the confirm (sub-slice 10c-2a-6). At the BR-DEP-027
+terminations the step's check still refuses
 the staff basis. The confirm locks, in the 8e-3 order, the draft lock, the Settlement's draft
 lock, the Lease row `FOR UPDATE` (owner answer 4 to Q-2026-10-07-44; 10c-1b as committed took no
 Lease lock), then the step's locks (`app.lock_settlement_correction_plan`, which for a `REFUND`

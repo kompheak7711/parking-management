@@ -38915,6 +38915,30 @@
       "test_path": "backend/tests/test_settlement_pet_classification_migration.py",
       "status": "implemented",
       "notes": "A Damage line billed from an inspection superseded before closure is not eligible for a pet classification correction (the owner's open point on carrying a finding forward stays open); the draft is refused and nothing is recorded (V1-056 sub-slice 10c-2a-5, review round 2)."
+    },
+    {
+      "test_id": "test_a_refund_confirm_checks_the_customer_choice_again_in_the_step",
+      "upstream_ids": ["BR-DEP-027", "BR-SETTLE-013", "BR-AUTH-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_correction_choice_recheck_migration.py",
+      "status": "implemented",
+      "notes": "At a BR-DEP-027 termination a Refund correction and a pet classification correction recorded while both are pending carry the same new Customer choice; the classification is confirmed first and leaves every balance as it was; the Refund confirm is refused in the shared step (55000), stays pending and writes nothing; the same Refund with a choice given for it confirms (V1-056 sub-slice 10c-2a-6, owner answer 1 to Q-2026-10-08-52)."
+    },
+    {
+      "test_id": "test_the_choice_recheck_is_in_the_step_and_forward_only",
+      "upstream_ids": ["BR-SETTLE-013", "BR-AUTH-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_correction_choice_recheck_migration.py",
+      "status": "implemented",
+      "notes": "The Customer choice re-check sits in the shared step after its locks and before the stale comparison; the migration is forward-only and changes only that function, its new body exactly the old one with the single replacement, keeping its owner, SECURITY DEFINER, settings and privileges; no role may call it (V1-056 sub-slice 10c-2a-6, review round 1)."
+    },
+    {
+      "test_id": "test_the_step_refuses_the_final_settlement_s_own_choice",
+      "upstream_ids": ["BR-DEP-027", "BR-SETTLE-013"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_correction_choice_recheck_migration.py",
+      "status": "implemented",
+      "notes": "A correction built by hand whose plan reuses the Final Settlement's own Customer choice text is refused by the shared step (55000); the draft stays pending, no correction is written and every balance stays (V1-056 sub-slice 10c-2a-6, review round 1)."
     }
   ]
 }

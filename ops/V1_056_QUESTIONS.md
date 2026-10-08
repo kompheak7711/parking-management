@@ -1180,7 +1180,7 @@ Example: inspection A has a pet finding, billed as a 12,500 Damage line. Before 
 
 Until the owner answers, nothing changes; 10c-2a-5 keeps refusing such a line.
 
-## Q-2026-10-08-54 — Sub-slice 10c-2a-6 stopped before code: the Customer choice re-check in the shared step refuses one committed test
+## Q-2026-10-08-54 — Sub-slice 10c-2a-6 stopped before code: the Customer choice re-check in the shared step refuses one committed test (ANSWERED 2026-10-08: (a); answer in docs/010)
 
 10c-2a-5 is committed (8b9a1ca; NOW.md bb571e7). The 10c-2a-6 pre-code design is in the plan (10c-2a-6 entry). There is no 10c-2a-6 code and no run.
 
@@ -1201,3 +1201,12 @@ Until the owner answers, nothing changes; 10c-2a-5 keeps refusing such a line.
 **Recommendation: (a).** It matches your words ("re-checks it") and the 10c-2a-5 confirm, so every variant checks the same thing in one place, and it brings the old test in line with your answer 3. The cost is a set-up change in one committed test.
 
 Until you answer, no 10c-2a-6 code.
+
+**Owner answer (2026-10-08).** Option (a).
+
+- Keep the full re-check in the shared step. It refuses the Final Settlement's own choice text and any earlier confirmed correction's choice.
+- In `test_a_br_dep_027_termination_after_closure`, change only the choice text to a new one. Its name and every assertion stay the same. The change is listed in docs/010.
+- The independent reviewer compares that test with its version at HEAD and confirms it was not weakened.
+- Then build 10c-2a-6 and continue with 10c-2b under the same rules.
+
+Recorded in docs/010.
