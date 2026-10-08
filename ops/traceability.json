@@ -39091,6 +39091,70 @@
       "test_path": "backend/tests/test_settlement_deposit_refund_return_migration.py",
       "status": "implemented",
       "notes": "Under the hold rule of a return-only Credit correction, a Security Deposit keeps no money while debt stays open, and a Pet Deposit keeps no money while pet damage stays open after its own step even when the Security Deposit pays that pet damage instead; with the Customer's Credit first and the Pet Deposit paying the pet damage, both may keep the rest (V1-056 sub-slice 10c-2b-2a, owner answer 2 to Q-2026-10-08-59, review round 2)."
+    },
+    {
+      "test_id": "test_an_older_return_is_not_reversed_against_money_a_return_only_correction_left_held",
+      "upstream_ids": ["BR-SETTLE-013", "DL-053", "BR-REFUND-014"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_pet_refund_return_migration.py",
+      "status": "implemented",
+      "notes": "After closure the one-call return of a Pet Refund-review Refund and the one-call reversal of its return recorded before closure are refused (P5S01, a conflict), also after a return-only correction of the Settlement's Pet Deposit Refund leaves the Pet Deposit holding more than that return; a reversal row or an unlinked return row written directly is refused by the Refund correction check (P5S01); nothing is written (V1-056 sub-slice 10c-2b-2b, owner answer 6 to Q-2026-10-08-55 and the owner instruction of 2026-10-09)."
+    },
+    {
+      "test_id": "test_a_pet_refund_review_refund_is_returned_through_a_correction",
+      "upstream_ids": ["BR-SETTLE-013", "DL-053", "DL-032", "BR-REFUND-014", "BR-AUTH-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_pet_refund_return_migration.py",
+      "status": "implemented",
+      "notes": "After closure a Pet Refund-review Refund comes back through REFUND_RETURN: a return-only correction writes the verified return under financial.approve, linked first, and the Pet Deposit holds it; a later return with a new Refund runs the DL-032 step and, with no open debt, refunds the Pet Deposit's whole balance; the Settlement row is unchanged and the ledger reconciles (V1-056 sub-slice 10c-2b-2b, owner answer 6 to Q-2026-10-08-55)."
+    },
+    {
+      "test_id": "test_a_lease_deposit_forfeiture_draft_is_recorded_only_at_read_committed",
+      "upstream_ids": ["BR-SETTLE-013", "BR-AUTH-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_pet_refund_return_migration.py",
+      "status": "implemented",
+      "notes": "A Lease Deposit forfeiture draft is refused at REPEATABLE READ and SERIALIZABLE (55000) and nothing is written; at READ COMMITTED the same call reaches the closure refusal (P5S01) (V1-056 sub-slice 10c-2b-2b, owner answer to Q-2026-10-08-60, approved tightening)."
+    },
+    {
+      "test_id": "test_the_pet_refund_return_migration_is_forward_only",
+      "upstream_ids": ["BR-SETTLE-013"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_settlement_pet_refund_return_migration.py",
+      "status": "implemented",
+      "notes": "The migration replaces only the returned-Refund Settlement lookup and patches three functions (each new body exactly the old one with its replacements, privileges, owner, SECURITY DEFINER and settings kept); it adds no relation or trigger and is forward-only (V1-056 sub-slice 10c-2b-2b)."
+    },
+    {
+      "test_id": "test_a_closed_settlement_refusal_of_a_one_call_correction_is_a_conflict",
+      "upstream_ids": ["BR-SETTLE-013", "DL-053"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_refund.py",
+      "status": "implemented",
+      "notes": "The Refund service reports the closed-Settlement refusal (P5S01) of the one-call verified return and of its reversal as a conflict with a safe message (V1-056 sub-slice 10c-2b-2b, owner answer 6 to Q-2026-10-08-55)."
+    },
+    {
+      "test_id": "test_a_refund_return_correction_refuses_an_instant_without_a_utc_form",
+      "upstream_ids": ["BR-SETTLE-013", "BR-REFUND-014"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "A returned-Refund correction command refuses an aware return date at the edge of the date range, or one whose tzinfo raises, as invalid input (V1-056 sub-slice 10c-2b-2b, 10c-2b-1 review round 3 note)."
+    },
+    {
+      "test_id": "test_a_returned_pet_refund_off_the_dl032_path_is_only_held",
+      "upstream_ids": ["BR-SETTLE-013", "BR-DEP-022", "DL-032", "DL-053"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_pet_refund_return_migration.py",
+      "status": "implemented",
+      "notes": "After a pet noncompliance termination (BR-DEP-022) the kept Pet Deposit's Pet Refund-review Refund is not returned with a new Refund (55000, only on the DL-032 path) and no draft is recorded; the return-only form is accepted and the kept Pet Deposit holds the money, which a forfeiture after closure cannot take either (P5S01) (V1-056 sub-slice 10c-2b-2b, review round 1, Q-2026-10-09-61)."
+    },
+    {
+      "test_id": "test_a_stale_repeatable_read_one_call_correction_fails_on_the_deposit_guard",
+      "upstream_ids": ["BR-SETTLE-013", "DL-053"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_pet_refund_return_migration.py",
+      "status": "implemented",
+      "notes": "A REPEATABLE READ transaction whose snapshot predates the closure fails with 40001 on the Pet Deposit's serialization guard when it tries the one-call return of a Pet Refund-review Refund or the reversal of its older return after closure; it checks the fail-closed claim of the migration comment, the guard predates the migration (V1-056 sub-slice 10c-2b-2b, security review round 1)."
     }
   ]
 }

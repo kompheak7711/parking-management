@@ -388,7 +388,19 @@ class RecordRefundReturnCorrectionCommand:
             raise FinalSettlementInvalidError(
                 "returned_amount_usd_cents must be a positive whole number of cents"
             )
-        if not isinstance(self.returned_at, datetime) or self.returned_at.utcoffset() is None:
+        if not isinstance(self.returned_at, datetime):
+            raise FinalSettlementInvalidError("returned_at must be a timezone-aware instant")
+        try:
+            offset = self.returned_at.utcoffset()
+            if offset is not None:
+                # An instant at the edge of the date range has no UTC form, and a broken tzinfo
+                # may raise; both are invalid input, as refund.py _instant (sub-slice 10c-2b-2b).
+                self.returned_at.astimezone(UTC)
+        except (ValueError, TypeError, OverflowError) as exc:
+            raise FinalSettlementInvalidError(
+                "returned_at must be a timezone-aware instant"
+            ) from exc
+        if offset is None:
             raise FinalSettlementInvalidError("returned_at must be a timezone-aware instant")
         _text(self.return_method_reference, "return_method_reference", 500)
         _text(self.evidence_reference, "evidence_reference", 500)

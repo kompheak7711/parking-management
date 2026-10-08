@@ -1048,6 +1048,13 @@ Refund is corrected only through a post-settlement `REFUND_RETURN` correction (D
 DB-REFUND-002), which has no HTTP route until slice 11e; a return recorded by a correction is
 never reversed.
 
+Amended by V1-056 sub-slice 10c-2b-2b (migration `20261113_109`; owner answer 6 to
+Q-2026-10-08-55, an approved tightening): once the Lease's Final Settlement is closed, both routes
+answer 409 for a Pet Refund-review Refund (DL-053) of that Lease (the service maps the database's
+P5S01 to a conflict). Its return is then recorded only through a `REFUND_RETURN` correction, and a
+return recorded with one call before closure is no longer reversed. Before closure both routes
+work as before.
+
 # 21. Warning and Termination Records
 
 ## API-067 — Lease Violation Warning Records

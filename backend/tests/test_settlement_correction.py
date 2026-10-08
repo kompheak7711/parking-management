@@ -4,7 +4,7 @@ only financial.approve confirms, BR-AUTH-010), validate the command, and map eve
 to a stable error."""
 
 from dataclasses import replace
-from datetime import date, datetime
+from datetime import date, datetime, timedelta, timezone, tzinfo
 from typing import Any
 from uuid import UUID
 
@@ -822,6 +822,36 @@ def test_refund_return_correction_commands_are_validated(changes: dict[str, Any]
     its method and its note; the plan has typed steps."""
     with pytest.raises(FinalSettlementInvalidError):
         refund_return(**changes)
+
+
+class BrokenOffset(tzinfo):
+    """A tzinfo whose offset cannot be read."""
+
+    def utcoffset(self, value: datetime | None) -> timedelta:
+        raise ValueError("Synthetic broken offset")
+
+    def dst(self, value: datetime | None) -> timedelta:
+        return timedelta(0)
+
+    def tzname(self, value: datetime | None) -> str:
+        return "Broken"
+
+
+@pytest.mark.parametrize(
+    "instant",
+    [
+        datetime.min.replace(tzinfo=timezone(timedelta(hours=1))),
+        datetime.max.replace(tzinfo=timezone(timedelta(hours=-1))),
+        datetime(2026, 10, 8, 9, 30, tzinfo=BrokenOffset()),
+    ],
+)
+def test_a_refund_return_correction_refuses_an_instant_without_a_utc_form(
+    instant: datetime,
+) -> None:
+    """V1-056 sub-slice 10c-2b-2b (10c-2b-1 review round 3 note): an aware return date at the edge
+    of the date range, or one whose tzinfo raises, is invalid input, as refund.py _instant."""
+    with pytest.raises(FinalSettlementInvalidError):
+        refund_return(returned_at=instant)
 
 
 def test_refund_return_correction_record_and_confirm_send_the_stored_correction(

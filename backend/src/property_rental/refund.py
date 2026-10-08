@@ -269,6 +269,13 @@ class RefundService:
                 raise RefundIdempotencyKeyReused("Refund command key was reused") from exc
             if exc.sqlstate in {"P4506", "42501"}:
                 raise RefundAuthorizationError("Refund actor is not authorized") from exc
+            if exc.sqlstate == "P5S01":
+                # V1-056 sub-slice 10c-2b-2b: a closed Final Settlement changes only through a
+                # post-settlement correction (today: the one-call return of a Pet Refund-review
+                # Refund and the reversal of its return).
+                raise RefundConflictError(
+                    "Refund command conflicts with a closed Final Settlement"
+                ) from exc
             # A new timeout/constraint failure cannot resolve an earlier lost reply.
             raise RefundUnavailableError(
                 "Refund outcome unresolved; preserve and replay the original command"

@@ -1351,10 +1351,92 @@ Recorded in docs/010. Next: the fixes, the tests, the runs and review round 2, t
 
 **Implementer note on answer 1 (no stop, as you said):** no correction kind can link a forfeiture today: DB-SETTLE-005 has no `deposit_disposition_id` link (it has `deposit_disposition_reversal_id`, for 10d), and no planned kind writes a new forfeiture after closure. So the insert refusal passes nothing yet. Recommendation: no link now; if a later kind ever needs to forfeit after closure, it adds the link and the pass in its own sub-slice (a relaxing change).
 
-## Q-2026-10-08-60 — The Lease forfeiture draft recorder outside READ COMMITTED (not blocking; review round 2 of sub-slice 10c-2b-2a)
+**Owner answer to the implementer note on answer 1 (2026-10-09).** The note is accepted. After closure, no correction links a forfeiture for now. If a later correction kind needs one, ask the owner first. Recorded in docs/010.
+
+## Q-2026-10-08-60 — The Lease forfeiture draft recorder outside READ COMMITTED (not blocking; review round 2 of sub-slice 10c-2b-2a) (ANSWERED 2026-10-09: (a), tightening approved; answer in docs/010)
 
 Both round-2 reviewers noted: like the receipt reversal recorder before your answer 4 to Q-59, the Lease Deposit forfeiture draft recorder reads the closure with a plain read and has no READ COMMITTED guard. A direct database caller in a REPEATABLE READ transaction whose snapshot predates the closure could record a forfeiture draft after closure. No money moves (the confirm's insert is refused, P5S01), but while that draft is pending every correction that runs the DL-032 step on that Settlement, and every correction Deposit Refund, is refused as a pending draft until someone rejects or withdraws it. The application services always use READ COMMITTED.
 
 Options: (a) the same rule as your answer 4: refuse recording a Lease forfeiture draft outside READ COMMITTED (55000), a further tightening, in 10c-2b-2b; (b) leave it (only a direct database client can do it).
 
 **Recommendation: (a).** Not blocking 10c-2b-2a.
+
+**Owner answer (2026-10-09).** Yes, this tightening is approved. Refuse recording a Lease Deposit forfeiture draft outside READ COMMITTED (55000), as in the answers to Q-2026-10-08-51 and Q-2026-10-08-59. Build it in 10c-2b-2b, with a test.
+
+Further owner instructions given with this answer (2026-10-09):
+
+- 10c-2b-2b must close the gap named in review round 3 of 10c-2b-2a (security N1): an older one-call return of a Pet Refund-review Refund must not be reversed against Pet Deposit money that a return-only correction left held. Add a test for it.
+- Q-2026-10-08-53 and Q-2026-10-08-57 stay open. The owner answers them before 10h. The work does not stop for them.
+
+Recorded in docs/010.
+
+## Q-2026-10-09-61 — A returned Pet Refund-review Refund whose Pet Deposit is not on the DL-032 path has no way out after closure (not blocking 10c-2b-2b; blocks only that case in 10c-2b-3) (OPEN: the owner answers before 10h, with Q-2026-10-08-53 and Q-2026-10-08-57; no correction that links a forfeiture until then)
+
+Found while building 10c-2b-2b (the reviewer check of your answer to Q-2026-10-08-58: a returned Deposit Refund off the DL-032 path must still have a way to be refunded again).
+
+**The case.**
+- A Pet Refund-review Refund (DL-053) is paid while the Lease is signed, after the pet left.
+- Later the Lease is terminated for pet noncompliance with the customer-violation basis (BR-DEP-022). The Pet Deposit then has a forfeiture ground: "non-refundable ... resolved through explicit disposition events".
+- At closure that Pet Deposit is empty (path `NOTHING_HELD`) or its rest is forfeited (path `KEPT`).
+- After closure the DL-053 Refund comes back (for example a closed bank account). 10c-2b-2b records the return only through `REFUND_RETURN`, and the money goes back to the Pet Deposit (DB-DER-004). The Deposit is then on the path `FORFEITURE_REQUIRED` (or stays `KEPT` with money held).
+- The money has no way out: a forfeiture after closure is refused and no correction links one (your answer of 2026-10-09: ask you first); the step, a new Refund in the same correction and the planned refund-only form (10c-2b-3) use only Deposits on the DL-032 path (55000 otherwise, sub-slice 10c-2b-2a). Tested in 10c-2b-2b on the `KEPT` case (`test_a_returned_pet_refund_off_the_dl032_path_is_only_held`).
+- Before closure the two cases differ (review round 2 correction of this text; read from the code, not tested before closure):
+  - A Pet Deposit with the ground and no forfeiture (`NOTHING_HELD`): a one-call return before closure makes it `FORFEITURE_REQUIRED`, and the Settlement cannot close until it is forfeited (BR-DEP-022). There the rule is clear.
+  - A Pet Deposit already forfeited (`KEPT`): a one-call return before closure leaves money held that the Settlement neither requires forfeiting nor refunds ("a kept Deposit is never refunded"); only an optional second forfeiture draft could take it. So the same gap already exists before closure for a `KEPT` Pet Deposit.
+- 10c-2b-2b creates no new held state: before it, the one-call return after closure put the same money into that Deposit (and the one-call reversal could take it out again). No money leaves.
+
+**Options (superseded by the owner instruction of 2026-10-09 below; kept as written):**
+- (a) A new correction variant that forfeits such returned value after closure under BR-DEP-022, as a linked forfeiture: a DB-SETTLE-005 link `deposit_disposition_id` and the pass in the disposition insert check (a relaxing change); prepared under `final_settlements.prepare` with a reason, confirmed only by `financial.approve`. It would be the first correction that links a forfeiture, which your answer of 2026-10-09 asks me to bring to you first. For a `KEPT` Pet Deposit it is a second forfeiture (disposition) of a Deposit already forfeited once.
+- (b) Treat the returned value as refundable: the refund-only form pays the Lease's open debt and refunds the rest also for a Deposit off the DL-032 path. This goes against BR-DEP-022 ("non-refundable").
+- (c) Leave the money held as a known gap (recorded in docs/010) until a later decision.
+
+**Recommendation: (a)** (superseded: the recommendation is now "pay back", below), because BR-DEP-022 says such a Pet Deposit is non-refundable and resolved through explicit disposition events, and a closed Settlement changes only through a linked correction. It would be built after 10c-2b-3, in its own sub-slice.
+
+**What goes ahead (while this question is open, as 10c-2a-1 went ahead while Q-2026-10-07-42 was open):** 10c-2b-2b (it records the return only; nothing leaves). 10c-2b-3 for a Credit and for Deposits on the DL-032 path, which does not depend on this answer; it refuses a Deposit off the DL-032 path (55000), as 10c-2b-2a does. Not built until you answer: anything that moves money out of a Deposit off the DL-032 path after closure.
+
+**Owner instruction (2026-10-09).** Not blocking; keep it open; it is in the plan before 10h, next to Q-2026-10-08-53 and Q-2026-10-08-57; the owner answers all three before 10h. No correction that links a forfeiture is built until the owner answers. The case is written out below so the owner can decide; the options (a) to (c) above are replaced by the two options below.
+
+**The case, step by step (read from the code; the after-closure part is tested in 10c-2b-2b).**
+
+1. *When the Pet Refund-review Refund is paid.* Always while the Lease is signed, so always before the termination and before the closure: the pet left, the review qualified (DL-053), and the Refund draft and its confirm need a signed Lease. It pays part or all of what the Pet Deposit held to the Customer (or an agreed Signer, BR-REFUND-015).
+2. *The termination.* Later, the Lease is terminated for pet noncompliance (for example a new pet whose required Pet Deposit the Customer refuses to pay, after three warnings), the BR-DEP-022 customer-violation basis. From then on both Deposits have a forfeiture ground ("non-refundable according to the signed Lease ... resolved through explicit disposition events").
+3. *The Final Settlement.* If the Pet Deposit still holds money, the Settlement cannot close until that money is forfeited (path `FORFEITURE_REQUIRED`, then `KEPT`). If the DL-053 Refund took everything, the Pet Deposit is empty (`NOTHING_HELD`) and nothing is forfeited. A kept Deposit is never applied to debt or refunded; the Customer's open debt stays on that Customer's ledger (BR-DEP-026 for the Security Deposit, BR-DEP-027 for the Pet Deposit at this termination, BR-SETTLE-016).
+4. *The return.* The DL-053 Refund comes back, for example because the bank account was closed. The money goes back to the Pet Deposit (DB-DER-004). Before closure this is the one-call return; after closure only `REFUND_RETURN` (10c-2b-2b). In both cases the money is money that left the Pet Deposit before the termination.
+
+**Option keep.** The returned money stays with the Pet Deposit and is kept under BR-DEP-022.
+- After closure: a new correction variant forfeits the returned amount as a linked forfeiture (a DB-SETTLE-005 link `deposit_disposition_id` and the pass in the disposition insert check, a relaxing change), prepared under `final_settlements.prepare` with a reason, confirmed only by `financial.approve`. For a `KEPT` Pet Deposit it is a second forfeiture of a Deposit already forfeited once; for a `NOTHING_HELD` one it is the first.
+- Open debt: unchanged. The kept money never pays the Customer's open debt on this Lease; the debt stays on the Customer's ledger (as BR-DEP-026, BR-SETTLE-016).
+- Before closure: for a `NOTHING_HELD` Pet Deposit this is already how it works (the return makes it `FORFEITURE_REQUIRED`, and the Settlement waits for the forfeiture). For a `KEPT` Pet Deposit the returned money stays held and nothing requires a second forfeiture today (only an optional second forfeiture draft, which the code reads as allowed; not tested); option keep needs the Settlement preview to require that second forfeiture too.
+
+**Option pay back.** The returned money is refunded to the Customer again, because it had already left the Pet Deposit before the termination; BR-DEP-022 keeps only what the Deposit held at the termination.
+- After closure: the refund-only form (10c-2b-3) or a `REFUND_RETURN` with a new Refund also accepts this Pet Deposit, but only for the returned amount of a Pet Refund-review Refund paid before the termination (a relaxing exception to the "only on the DL-032 path" refusal; the rest of the Deposit stays kept). No forfeiture is linked.
+- Open debt: as every returned Deposit Refund (owner answer 3 to Q-2026-10-08-55), the returned money first pays this Lease's open debt in the DL-032 order, with the Settlement rules, and only the rest is refunded. If you prefer that it is refunded in full while the debt stays on the ledger, say so; that would be an exception to answer 3.
+- Before closure: today the Settlement would force a forfeiture of that money for a `NOTHING_HELD` Pet Deposit (it becomes `FORFEITURE_REQUIRED`), and for a `KEPT` one it would leave it held. Option pay back needs the Settlement to treat the returned amount of a pre-termination DL-053 Refund as DL-032 value in both cases: no forfeiture required for it, it first pays the open debt, and the rest is refunded by the Settlement's own Deposit Refund step.
+
+**Recommendation: pay back.** The DL-053 Refund was a valid Refund of money that already belonged to the Customer before the termination ground existed; the bank return only means the Customer did not receive it. BR-DEP-022 makes the Deposit non-refundable at the termination, that is, the money it held then. Keeping the returned money would forfeit money that was not in the Deposit at the termination, only because of a failed payment. Paying the open debt first follows your answer 3 to Q-2026-10-08-55 for every returned Deposit Refund. The cost is one exception to the DL-032-only rule, for the returned amount of a pre-termination DL-053 Refund only, and the matching change to the Settlement preview before closure. If the signed Lease says that such money is kept too, choose keep.
+
+## Q-2026-10-09-62 — Sub-slice 10c-2b-2b stopped before review round 3: the known lock failure in a test outside 10c-2b-2b (ANSWERED 2026-10-09: option (a); answer in docs/010)
+
+10c-2b-2b is built, reviewed twice and not committed. Record: ops/reviews/V1-056-slice-10c-2b-2b-pet-refund-return.md.
+
+- Review round 1: no blocker; 2 should-fix (tests), fixed. Review round 2: no blocker; independent 2 should-fix (documentation), fixed; security none. So the standing rule allows one round 3, after one full unit run and one full PostgreSQL run.
+- U4 (full unit): 3635 passed.
+- P2 (full PostgreSQL): 1973 passed, 1 failed. The new 10c-2b-2b module passed (6 tests). The failure is outside 10c-2b-2b: `test_refund_migration.py::test_usd_refund_blocks_source_reversal_until_full_verified_return[False]`, `LockNotAvailable` on `app.payment_allocations` from `LOCK TABLE ... IN SHARE MODE NOWAIT` in `app.assert_payment_excess_eligible`, during a direct Payment Refund insert. The same test passed in P1 (1972 passed) on the same code paths: the round 2 fixes changed only tests and texts in the new module, docs, and a migration docstring.
+- This is the known intermittent failure (NOW.md 2026-10-02 and 9f-3, likely autovacuum; Q-2026-10-05-26 for `test_usd_refund_khr_origin_uses_recorded_usd_without_repricing`, the same lock in the same module). 10c-2b-2b does not touch Payment Refunds, `app.validate_general_refund_source` or `app.assert_payment_excess_eligible`.
+- The run rule says no retry, and the takeover stops on a test outside the slice that passed before. So I stopped. Nothing is committed and no round 3 has started.
+
+Options:
+- (a) Allow one more full PostgreSQL run (P3), recorded as an owner-approved rerun after an outside intermittent failure (as your answer to Q-2026-10-05-26). If it is green, run review round 3; if the same lock failure comes back, stop and report.
+- (b) Accept P1 and P2 together as the evidence (every test passed in at least one of them; the only P2 failure is outside 10c-2b-2b) and go to review round 3.
+- (c) Stop 10c-2b-2b and look into the lock failure first.
+
+**Recommendation: (a)**, as in Q-2026-10-05-26. Also add this second test name to the slice 12 item that makes the `test_refund_migration.py` tests robust against `LockNotAvailable` without weakening them.
+
+Until you answer, no further 10c-2b-2b change, no run and no commit. 10c-2b-3 waits.
+
+**Owner answer (2026-10-09).** Option (a).
+
+- One more full PostgreSQL run (P3) is allowed. If it is green, do review round 3. If P3 fails again with `LockNotAvailable`, or any other test fails, stop and report.
+- Slice 12: add `test_usd_refund_blocks_source_reversal_until_full_verified_return` to the `LockNotAvailable` robustness item, next to `test_usd_refund_khr_origin_uses_recorded_usd_without_repricing`. Look for the cause in the lock code too, not only in the two tests. If the fix needs a product code change, ask the owner first.
+
+Also answered with it (2026-10-09): the return refusals after closure keep P5S01 and 409 for both return routes (a business-state refusal; the 11c plan answers those with 409). The 11c plan gets a note to check the 10c-2b-1 refusal (P5202, 422) and move it to 409, so both routes answer the same way; not changed now. Recorded in docs/010 and the plan.

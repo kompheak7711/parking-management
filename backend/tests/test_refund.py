@@ -16,6 +16,7 @@ from property_rental.refund import (
     CreatePetRefundCommand,
     CreateUsdRefundCommand,
     RefundAuthorizationError,
+    RefundConflictError,
     RefundIdempotencyKeyReused,
     RefundInvalidError,
     RefundMethodChoice,
@@ -324,6 +325,32 @@ def test_refund_failure_preserves_original_command_and_safe_message(
             )
     assert "private diagnostic" not in str(caught.value)
     assert request == before
+
+
+@pytest.mark.parametrize("operation", ["verify_usd_return", "reverse_correction"])
+def test_a_closed_settlement_refusal_of_a_one_call_correction_is_a_conflict(
+    operation: str,
+) -> None:
+    """V1-056 sub-slice 10c-2b-2b (owner answer 6 to Q-2026-10-08-55): after closure the one-call
+    return of a Pet Refund-review Refund and the reversal of its return are refused (P5S01); the
+    service reports a conflict with a safe message."""
+
+    class DatabaseError(psycopg.Error):
+        pass
+
+    error = DatabaseError("Synthetic private diagnostic")
+    error.sqlstate = "P5S01"
+    prop = uuid4()
+    with patch("property_rental.refund.psycopg.connect", side_effect=error):
+        with pytest.raises(RefundConflictError) as caught:
+            invoke(
+                RefundService("read", "write"),
+                operation,
+                prop,
+                staff(prop, CAPABILITIES[operation]),
+            )
+    assert "private diagnostic" not in str(caught.value)
+    assert caught.value.__cause__ is error
 
 
 def test_refund_response_decoder_is_exact_nested_and_connection_local() -> None:

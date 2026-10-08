@@ -1637,6 +1637,10 @@ reversal draft is recorded only at READ COMMITTED (55000); and once a Lease's Fi
 closed, a Lease Deposit forfeiture draft is refused at record and a `deposit_dispositions` row at
 insert (P5S01) unless a correction of that Settlement links it (no correction kind links a
 forfeiture yet).
+As built in V1-056 sub-slice 10c-2b-2b (migration `20261113_109`; owner answer to
+Q-2026-10-08-60, an approved tightening): a Lease Deposit forfeiture draft is recorded only at
+READ COMMITTED (55000), so its closure read sees every committed closure; an exact repeat of an
+earlier request replays its draft before this check, as the receipt reversal recorder does.
 
 As built in V1-056 sub-slice 8c (migration `20261025_90`, owner answer 4 to Q-2026-10-05-23):
 both directions also see the Final Settlement draft. A pending `FINAL_SETTLEMENT` draft whose
@@ -2327,6 +2331,12 @@ Deposit balance while pet damage stays open after the Pet Deposit's own step, or
 debt stays open that the remaining Pet Deposit may pay by a staff decision); the returned Credit
 still pays its own Customer's debt first.
 
+As built in V1-056 sub-slice 10c-2b-2b (migration `20261113_109`; owner answer 6 to
+Q-2026-10-08-55): `REFUND_RETURN` also returns a Pet Refund-review Refund (DL-053) of a Deposit of
+the Settlement's Lease, paid while the Lease was signed. The return gives the amount back to the
+Pet Deposit; return only, the Pet Deposit keeps holding it; with a new Refund the step runs as for
+a Settlement Deposit Refund, only on the DL-032 path.
+
 ## DB-SETTLE-007 — `settlement_pet_classifications`
 
 Added in V1-056 sub-slice 10c-2a-5 (migration `20261109_105`; owner answer to
@@ -2571,6 +2581,17 @@ As built in V1-056 sub-slice 10c-2b-2a (migration `20261112_108`): the same pass
 Final Settlement Deposit Refund (8d) and a correction's Deposit Refund, whose one-call
 corrections stay refused; the check reads such a Refund's own Deposit for its lock and chronology,
 and binds the row's reason to the draft's.
+
+As built in V1-056 sub-slice 10c-2b-2b (migration `20261113_109`; owner answer 6 to
+Q-2026-10-08-55, an approved tightening): once the Lease's Final Settlement is closed, a Pet
+Refund-review Refund (DL-053) is corrected only through a post-settlement correction. The
+one-call verified return and the one-call reversal of a return refuse it (P5S01, a conflict,
+through `app.require_correctable_usd_refund`, after the Deposit lock; a REPEATABLE READ caller
+whose snapshot predates the closure fails earlier on the Deposit guard, 40001), and the BEFORE INSERT check
+refuses every row for it (P5S01) except the verified return of its own `REFUND_RETURN`
+correction. So a return recorded with one call before closure is never reversed after closure,
+also when a return-only correction leaves the Pet Deposit holding money (owner instruction of
+2026-10-09). Before closure both one-call paths work as before.
 
 ---
 
