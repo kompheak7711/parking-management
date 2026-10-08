@@ -181,4 +181,6 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md.
 
 - V1-056 sub-slice 10c-2b-1 (2026-10-08, be4919a, migration 20261111_107): COMMITTED. Owner answers to Q-2026-10-08-55 recorded (docs/010, questions). A correction's Credit Refund is corrected only through a correction (approved tightening; one-call return and reversal refused, P5202, routes 422); new variant `REFUND_RETURN`: the verified return under financial.approve, the Credit first pays its Customer's open debt on the Lease, the rest refunded or kept as Credit. U3 3628, P6 1958 passed; rounds 1 to 3 (round 3 no should-fix). Owner items in the record (docs/010 choices (1) and (6)). NEXT: 10c-2b-2 (Deposit Refund return; owner answer 5 needs the correction kind for a wrong Deposit receipt named first). Nothing pushed.
 
+- V1-056 sub-slice 10c-2b-2 (2026-10-08): STOPPED before code (Q-2026-10-08-56). Owner answer 5 to Q-55 asks the plan to name the correction kind for a Deposit receipt found wrong after closure: `RETURNED_PAYMENT` (10e) fits a bounced Payment; a receipt wrong while its Payment is real fits no planned kind; recommendation (a): new kind `DEPOSIT_RECEIPT_CORRECTION` after 10e, and build the approved refusal now. No code, no run. NEXT: owner answer. Nothing pushed.
+
 - Updated: 2026-10-08.

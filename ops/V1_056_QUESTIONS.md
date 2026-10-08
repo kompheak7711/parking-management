@@ -1254,3 +1254,21 @@ Until you answer, no 10c-2b code.
 6. Yes, this tightening is approved. After closure, refuse the one-call return of a Pet Refund-review Refund and its reversal, as the Q-40 point 4 answer did for correction Credit Refunds. Such a return is handled by the 10c-2b-2 returned Deposit Refund correction. Test it there.
 
 Recorded in docs/010. Next: 10c-2b-1, 10c-2b-2 and 10c-2b-3 in order.
+
+## Q-2026-10-08-56 — Sub-slice 10c-2b-2 stopped before code: no planned correction kind fixes a Deposit receipt that is wrong for a reason other than a returned Payment (owner answer 5 to Q-2026-10-08-55)
+
+10c-2b-1 is committed (be4919a; NOW.md 5148684). Your answer 5 to Q-55 approves refusing the receipt reversal draft of a Lease Deposit after closure, and says a Deposit receipt found wrong after closure is fixed only through a post-settlement correction whose kind the plan names; if none fits, ask first. There is no 10c-2b-2 code and no run.
+
+**What the planned kinds cover.** A Deposit receipt is Payment value placed in a Deposit (DB-DEP-002: the Deposit, the Payment, the amount).
+- A receipt whose Payment bounced or was returned: the planned `RETURNED_PAYMENT` kind (sub-slice 10e, your answer 5 to Q-2026-10-06-36) fits. In one correction it reverses the Settlement's Deposit applications of a Deposit that Payment funded, the receipt and the Payment; a Settlement Refund already paid from that Deposit becomes an `EXTRA_CHARGE` to the Deposit owner. I will name it in the plan.
+- A receipt that is wrong while its Payment is real (for example, the Payment was meant for Rent but recorded into the Security Deposit, recorded into the wrong Deposit of the Lease, or for the wrong amount): no planned kind fits. `RETURNED_PAYMENT` needs a returned Payment; the other kinds (`EXTRA_CHARGE`, `CHARGE_REDUCTION`, `REFUND`, `PET_DAMAGE_RECLASSIFICATION`, `REFUND_RETURN`, `HELD_VALUE_REFUND`, `ADJUSTMENT_REVERSAL`, `FORFEITURE_REVERSAL`, `PAYMENT_MOVE`) do not reverse a receipt.
+
+**Options for such a receipt after closure:**
+- (a) A new correction kind, `DEPOSIT_RECEIPT_CORRECTION` (a variant of the `SETTLEMENT_CORRECTION` draft kind; Staff record it under `final_settlements.prepare` with a reason and evidence; only `financial.approve` confirms). It reuses the `RETURNED_PAYMENT` records without the Payment reversal: it reverses, as linked records, the Settlement's Deposit applications of that Deposit and the receipt; a Settlement Refund already paid from that Deposit becomes an `EXTRA_CHARGE` to the Deposit owner (money that left the Property cannot be undone); the freed Payment value becomes the payer's Customer Credit, which first pays that Customer's open debt on the Lease through the shared DL-032 step, and only the rest is refunded or kept as Credit (your Q-42 and Q-55 rules). Built right after 10e, which builds the shared records.
+- (b) No fix kind: after closure, a receipt wrong for a reason other than a returned Payment stays as the closure used it (a known limit in docs/010); staff fix only the money still open, with the existing kinds.
+
+**Recommendation: (a)**, because your answer 5 says a wrong receipt is fixed only through a correction, and (b) would leave such a receipt with no fix. Until the new kind exists, a wrong receipt after closure waits, as a wrong Late-payment Charge waited for 10c-3.
+
+**Also, please confirm:** 10c-2b-2 may build the approved refusal of the receipt reversal draft after closure now, before 10e and the new kind exist. In that time a bounced Deposit Payment after closure also has no fix (as today for a bounced Payment whose Credit the Settlement used, accepted until slice 10). Recommendation: yes; the refusal only removes a path that moves a closed Settlement's money without a correction.
+
+Until you answer, no 10c-2b-2 code. 10c-2b-3 waits for 10c-2b-2.
