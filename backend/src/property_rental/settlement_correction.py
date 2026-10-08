@@ -26,12 +26,18 @@ classification is wrong after closure, in both directions (owner answer to Q-202
 charge amount stays the same and the closed inspection is not changed: the confirmation records
 the corrected classification, reverses the line's Deposit applications where it changes which
 Deposit should pay, and runs the shared DL-032 step after closure.
+
+Sub-slice 10c-2b-1: the ``REFUND_RETURN`` variant, a correction's Credit Refund whose money came
+back (owner answers to Q-2026-10-08-55). The confirmation records the verified return, so the value
+goes back to the Credit; that Credit first pays its own Customer's open debt on the Lease through
+the shared DL-032 step, and only the rest is refunded to the same Customer when the draft asks for
+a new Refund, or stays as that Customer's Credit. Such a Refund is never corrected with one call.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from enum import StrEnum
 from typing import Final
 from uuid import UUID, uuid5
@@ -67,6 +73,8 @@ CHARGE_REDUCTION_CONFIRM_STALE_STATES: Final = frozenset({"P5S02"})
 REFUND_CONFIRM_STALE_STATES: Final = frozenset({"P5S02"})
 # A pet classification correction whose line, Deposit applications or Deposits changed is stale.
 PET_CLASSIFICATION_CONFIRM_STALE_STATES: Final = frozenset({"P5S02"})
+# A returned-Refund correction whose Refund, its corrections or its Credit changed is stale.
+REFUND_RETURN_CONFIRM_STALE_STATES: Final = frozenset({"P5S02"})
 
 
 def settlement_correction_draft_id(
@@ -343,6 +351,93 @@ class RecordPetClassificationCorrectionCommand:
 
 
 @dataclass(frozen=True, slots=True)
+class RecordRefundReturnCorrectionCommand:
+    """A correction's Credit Refund whose money came back; the database checks it against current
+    state (V1-056 sub-slice 10c-2b-1).
+
+    ``returned_amount_usd_cents`` is at most the Refund's net value; ``returned_at`` is a
+    timezone-aware instant not before the Refund and not in the future. The return method
+    reference and the evidence reference are what the verified return records. A new Refund is
+    paid only when ``new_refund_method_id`` and ``new_refund_reference_note`` are both given
+    (BR-REFUND-014); it goes to the same Customer. ``steps`` and ``pet_remainder`` are the DL-032
+    plan, in the Final Settlement plan format: the returned Credit first pays its own Customer's
+    open debt on the Lease (owner answer 1 to Q-2026-10-08-55); staff choose every step.
+    """
+
+    idempotency_key: UUID
+    settlement_id: UUID
+    refund_id: UUID
+    returned_amount_usd_cents: int
+    returned_at: datetime
+    return_method_reference: str
+    evidence_reference: str
+    reason: str
+    new_refund_method_id: UUID | None = None
+    new_refund_reference_note: str | None = None
+    steps: tuple[SettlementStep, ...] = ()
+    pet_remainder: PetRemainderDecision | None = None
+
+    def __post_init__(self) -> None:
+        _uuid(self.idempotency_key, "idempotency_key")
+        _uuid(self.settlement_id, "settlement_id")
+        _uuid(self.refund_id, "refund_id")
+        if (
+            type(self.returned_amount_usd_cents) is not int
+            or not 1 <= self.returned_amount_usd_cents <= MAX_USD_CENTS
+        ):
+            raise FinalSettlementInvalidError(
+                "returned_amount_usd_cents must be a positive whole number of cents"
+            )
+        if not isinstance(self.returned_at, datetime) or self.returned_at.utcoffset() is None:
+            raise FinalSettlementInvalidError("returned_at must be a timezone-aware instant")
+        _text(self.return_method_reference, "return_method_reference", 500)
+        _text(self.evidence_reference, "evidence_reference", 500)
+        _text(self.reason, "reason", 500)
+        if (self.new_refund_method_id is None) != (self.new_refund_reference_note is None):
+            raise FinalSettlementInvalidError(
+                "A new Refund needs both its Refund method and its reference note"
+            )
+        if self.new_refund_method_id is not None:
+            _uuid(self.new_refund_method_id, "new_refund_method_id")
+            _text(self.new_refund_reference_note, "new_refund_reference_note", 500)
+        if not isinstance(self.steps, tuple) or len(self.steps) > MAX_SETTLEMENT_STEPS:
+            raise FinalSettlementInvalidError(
+                f"steps must be a tuple of at most {MAX_SETTLEMENT_STEPS} steps"
+            )
+        for step in self.steps:
+            if not isinstance(
+                step, (SettlementCreditStep, SettlementDepositStep, SettlementDepositRefund)
+            ):
+                raise FinalSettlementInvalidError("Settlement step is invalid")
+        if self.pet_remainder is not None and not isinstance(
+            self.pet_remainder, PetRemainderDecision
+        ):
+            raise FinalSettlementInvalidError("Pet Deposit remainder decision is invalid")
+
+    def refund_return(self) -> dict[str, object]:
+        return {
+            "refund_id": str(self.refund_id),
+            "returned_amount_usd_cents": self.returned_amount_usd_cents,
+            # In UTC: PostgreSQL refuses some offsets that Python accepts (review round 1).
+            "returned_at": self.returned_at.astimezone(UTC).isoformat(),
+            "return_method_reference": self.return_method_reference,
+            "evidence_reference": self.evidence_reference,
+            "new_refund": None
+            if self.new_refund_method_id is None
+            else {
+                "refund_method_id": str(self.new_refund_method_id),
+                "reference_note": self.new_refund_reference_note,
+            },
+            "plan": {
+                "steps": [step.payload() for step in self.steps],
+                "pet_remainder": None
+                if self.pet_remainder is None
+                else self.pet_remainder.payload(),
+            },
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class SettlementCorrectionService:
     """Commands under the financial role; capabilities are checked before any connection."""
 
@@ -574,4 +669,64 @@ class SettlementCorrectionService:
             "SELECT app.confirm_settlement_pet_classification(%s,%s,%s,%s)",
             (property_id, actor_id, draft_id, FINANCIAL_APPROVE_CAPABILITY),
             stale=PET_CLASSIFICATION_CONFIRM_STALE_STATES,
+        )
+
+    def record_refund_return(
+        self,
+        property_id: UUID,
+        command: RecordRefundReturnCorrectionCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        """Record a returned-Refund correction draft; it has no effect until confirmed."""
+        actor_id = FinalSettlementService._authorize(
+            actor, property_id, FINAL_SETTLEMENTS_PREPARE_CAPABILITY
+        )
+        if not isinstance(command, RecordRefundReturnCorrectionCommand):
+            raise FinalSettlementInvalidError("Returned Refund correction command is invalid")
+        request = RecordRefundReturnCorrectionCommand(
+            command.idempotency_key,
+            command.settlement_id,
+            command.refund_id,
+            command.returned_amount_usd_cents,
+            command.returned_at,
+            command.return_method_reference,
+            command.evidence_reference,
+            command.reason,
+            command.new_refund_method_id,
+            command.new_refund_reference_note,
+            command.steps,
+            command.pet_remainder,
+        )
+        return FinalSettlementService(self.financial_database_url)._call(
+            "SELECT app.record_settlement_refund_return_draft(%s,%s,%s,%s,%s,%s,%s)",
+            (
+                property_id,
+                actor_id,
+                settlement_correction_draft_id(property_id, actor_id, request.idempotency_key),
+                request.settlement_id,
+                Jsonb(request.refund_return()),
+                request.reason,
+                FINAL_SETTLEMENTS_PREPARE_CAPABILITY,
+            ),
+        )
+
+    def confirm_refund_return(
+        self, property_id: UUID, draft_id: UUID, *, actor: AuthenticatedActor
+    ) -> dict[str, object]:
+        """Confirm a pending returned-Refund correction (financial.approve only).
+
+        A draft whose Refund, its corrections or its Credit changed since it was recorded is stale
+        and stays pending; an inactive Refund method or a reused Customer choice is a conflict; an
+        exact repeat by the same approver writes nothing and returns the result again. The result
+        never returns the decision's transaction id.
+        """
+        actor_id = FinalSettlementService._authorize(
+            actor, property_id, FINANCIAL_APPROVE_CAPABILITY
+        )
+        _uuid(draft_id, "draft_id")
+        return FinalSettlementService(self.financial_database_url)._call(
+            "SELECT app.confirm_settlement_refund_return(%s,%s,%s,%s)",
+            (property_id, actor_id, draft_id, FINANCIAL_APPROVE_CAPABILITY),
+            stale=REFUND_RETURN_CONFIRM_STALE_STATES,
         )

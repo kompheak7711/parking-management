@@ -2272,6 +2272,26 @@ classification (the step's overlay key `pet_damage`); the lock function takes th
 `FOR UPDATE` in its Invoice pass. No Adjustment: the charge amount stays the same, and a Deposit
 refunded at closure is not taken back, so the line may stay open debt.
 
+As built in V1-056 sub-slice 10c-2b-1 (migration `20261111_107`; owner answer 4 to the 10c-1b
+review record, answers 1, 2 and 4 to Q-2026-10-08-55): the variant `REFUND_RETURN` (recorder
+`app.record_settlement_refund_return_draft` under `final_settlements.prepare`, confirm
+`app.confirm_settlement_refund_return` under `financial.approve`, READ COMMITTED only) records
+that the money of a correction's Credit Refund (a Refund with a
+`settlement_correction_refund_details` row and a Credit source) came back. The draft names the
+Refund, the returned amount (at most its net value), the return date (not before the Refund, not
+in the future), the return method reference, the evidence, the DL-032 plan and, optionally, a new
+Refund's method and reference note; a Deposit Refund step needs that method and note. The
+confirm writes, each linked before it is written: the verified return (a DB-REFUND-002
+`VALUE_CORRECTION` under `financial.approve`, link `refund_correction_id`), which gives the value
+back to the Credit; the shared DL-032 step, in which the Credit first pays its own Customer's open
+debt on the Lease (the step's rule for a Credit in the overlay); and, when asked for, one Credit
+Refund to the same Customer of what is left in the Credit, at most the returned amount, with its
+details row. Without a new Refund the rest stays as that Customer's Credit. The lock function
+takes the returned Refund's Credit and its Payment in its id-ordered passes. The relaxed Credit
+Refund check (`app.settlement_correction_refund_allowed`) also counts what the correction's own
+returns gave back to the Credit. A Settlement Deposit Refund, a correction's Deposit Refund and a
+Pet Refund-review Refund are refused by this variant until sub-slice 10c-2b-2.
+
 ## DB-SETTLE-007 — `settlement_pet_classifications`
 
 Added in V1-056 sub-slice 10c-2a-5 (migration `20261109_105`; owner answer to
@@ -2500,6 +2520,17 @@ evidence and all historical facts. Net corrected Refund value may
 not fall below zero or exceed the immutable original Refund. This table implements only
 an authorized linked Refund correction; it invents no delivery status, returned-funds
 workflow, collection right, or new Refund right.
+
+As built in V1-056 sub-slice 10c-2b-1 (migration `20261111_107`; owner answer 4 to the 10c-1b
+review record, an approved tightening): a Refund that a post-settlement correction paid (it has a
+`settlement_correction_refund_details` row) is corrected only through another post-settlement
+correction. The one-call verified return and the one-call reversal refuse it (P5202, through
+`app.require_correctable_usd_refund`), and the BEFORE INSERT check refuses every row for it
+(23514) except the verified return of its own `REFUND_RETURN` correction
+(`app.settlement_refund_return_allowed`): a `VALUE_CORRECTION` under `financial.approve`, linked
+to a correction of the Refund's own Final Settlement confirmed in this transaction, written by
+that correction's approver, with the amount, return date, return method reference and evidence
+its draft names, one return per correction. No row reverses such a return.
 
 ---
 

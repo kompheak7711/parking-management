@@ -1211,7 +1211,7 @@ Until you answer, no 10c-2a-6 code.
 
 Recorded in docs/010.
 
-## Q-2026-10-08-55 — Sub-slice 10c-2b stopped before code: four rule points for the returned-Refund correction, and two paths that move a closed Settlement's Deposit money without a correction
+## Q-2026-10-08-55 — Sub-slice 10c-2b stopped before code: four rule points for the returned-Refund correction, and two paths that move a closed Settlement's Deposit money without a correction (ANSWERED 2026-10-08: yes to points 1 to 4; points 5 and 6 approved tightenings; answers in docs/010)
 
 10c-2a-6 is committed (94230f2; NOW.md 36c14bb). The 10c-2b pre-code design is in the plan (10c entry, "10c-2b pre-code design"), with a proposed split into 10c-2b-1 (a correction's Credit Refund), 10c-2b-2 (a Deposit Refund) and 10c-2b-3 (the refund-only form). There is no 10c-2b code and no run.
 
@@ -1243,3 +1243,14 @@ For your information: the Lease forfeiture draft and the forfeiture reversal dra
 **What can go ahead.** 10c-2b-1 does not depend on points 3, 5 and 6. Its return-only form follows your answer 4 to Q-41 as written. Its form with a new Refund depends on point 1. If you agree, the next session builds 10c-2b-1 after your answer to point 1, then 10c-2b-2 after points 3, 5 and 6.
 
 Until you answer, no 10c-2b code.
+
+**Owner answer (2026-10-08).**
+
+1. Yes. A returned Credit Refund's Credit first pays its own Customer's open debt on this Lease, as in every Refund correction (Q-42 answer 2). This holds whether or not the same correction pays a new Refund. Only the rest is refunded, or stays as that Customer's Credit.
+2. Yes. Credit left by a return-only correction is that Customer's Credit, as in the Q-41 answer 4. A later correction may refund it, and the ordinary Credit paths stay as they are.
+3. Yes. A returned Deposit Refund goes back to the Deposit. When the same correction pays a new Refund, the Deposit value first pays this Lease's open debt in the DL-032 order, with all Settlement rules. Only the rest is refunded.
+4. Yes, use the names `REFUND_RETURN` and `HELD_VALUE_REFUND`.
+5. Yes, this tightening is approved. After closure, refuse the receipt reversal draft of a Lease Deposit. A Deposit receipt found wrong after closure, for example a bounced Payment, is fixed only through a post-settlement correction. Name that correction kind in the plan. If none fits, write it in this file with a recommendation and stop.
+6. Yes, this tightening is approved. After closure, refuse the one-call return of a Pet Refund-review Refund and its reversal, as the Q-40 point 4 answer did for correction Credit Refunds. Such a return is handled by the 10c-2b-2 returned Deposit Refund correction. Test it there.
+
+Recorded in docs/010. Next: 10c-2b-1, 10c-2b-2 and 10c-2b-3 in order.

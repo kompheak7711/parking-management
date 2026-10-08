@@ -38939,6 +38939,78 @@
       "test_path": "backend/tests/test_settlement_correction_choice_recheck_migration.py",
       "status": "implemented",
       "notes": "A correction built by hand whose plan reuses the Final Settlement's own Customer choice text is refused by the shared step (55000); the draft stays pending, no correction is written and every balance stays (V1-056 sub-slice 10c-2a-6, review round 1)."
+    },
+    {
+      "test_id": "test_refund_return_correction_commands_are_validated",
+      "upstream_ids": ["BR-SETTLE-013", "BR-REFUND-014"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "A returned-Refund correction command needs a positive returned amount in cents, a timezone-aware return date, trimmed return references and reason, both or neither of the new Refund's method and note, and typed plan steps (V1-056 sub-slice 10c-2b-1)."
+    },
+    {
+      "test_id": "test_refund_return_correction_record_and_confirm_send_the_stored_correction",
+      "upstream_ids": ["BR-SETTLE-013", "BR-AUTH-010"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "Only final_settlements.prepare records and only financial.approve confirms a returned-Refund correction; the record call carries the Refund, the returned amount, the return date and references, the new Refund or none, and the DL-032 plan (V1-056 sub-slice 10c-2b-1)."
+    },
+    {
+      "test_id": "test_refund_return_correction_confirm_maps_database_refusals",
+      "upstream_ids": ["BR-SETTLE-013"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "A returned-Refund correction draft whose Refund or Credit changed is stale and stays pending; other database refusals keep the Final Settlement error mapping (V1-056 sub-slice 10c-2b-1)."
+    },
+    {
+      "test_id": "test_a_returned_correction_refund_is_corrected_only_through_a_correction",
+      "upstream_ids": ["BR-SETTLE-013", "BR-REFUND-014", "BR-CREDIT-014", "BR-AUTH-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_refund_return_migration.py",
+      "status": "implemented",
+      "notes": "The one-call verified return of a correction's Credit Refund and a direct Refund correction row are refused; a REFUND_RETURN draft has no effect and Staff cannot confirm it (the service, and the database for any other authorization reference or a billing service identity; the recorder takes only final_settlements.prepare); the confirm writes the verified return under financial.approve, linked first, and a new Refund of the returned amount to the same Customer with the draft's method and note; neither the return nor the new Refund is corrected with one call; the Settlement row is unchanged and the ledger reconciles (V1-056 sub-slice 10c-2b-1, owner answer 4 to the 10c-1b review record and answers 1 and 4 to Q-2026-10-08-55)."
+    },
+    {
+      "test_id": "test_the_returned_credit_first_pays_its_customer_s_open_debt_on_the_lease",
+      "upstream_ids": ["BR-SETTLE-013", "BR-CREDIT-006", "BR-CREDIT-008", "DL-032"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_refund_return_migration.py",
+      "status": "implemented",
+      "notes": "A returned Credit first pays its own Customer's open debt on the Lease, whether or not a new Refund is paid: a return without a plan is refused while the Customer owes a charge, with or without a new Refund; with the plan the Credit pays part of the charge and the new Refund asked for is not paid as nothing is left; a return-only correction pays more; a last return with a new Refund pays the rest of the charge first and refunds only what is left, each amount to the cent (V1-056 sub-slice 10c-2b-1, owner answers 1 and 2 to Q-2026-10-08-55, review round 2)."
+    },
+    {
+      "test_id": "test_a_third_party_credit_refund_is_paid_again_only_within_what_the_correction_returned",
+      "upstream_ids": ["BR-SETTLE-013", "BR-CREDIT-014", "BR-REFUND-014"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_refund_return_migration.py",
+      "status": "implemented",
+      "notes": "A correction's Credit Refund of value released from a third-party Payment comes back in part: a return-only correction leaves the Credit with its Customer; a later return pays a new Refund to the Invoice Customer, not the payer; a second linked Refund of 1 cent beyond what that correction returned is refused although the Credit still holds value (V1-056 sub-slice 10c-2b-1, owner answer 2 to Q-2026-10-08-55)."
+    },
+    {
+      "test_id": "test_a_returned_refund_correction_refuses_wrong_input_and_a_stale_draft_waits",
+      "upstream_ids": ["BR-SETTLE-013", "BR-REFUND-014", "BR-AUTH-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_refund_return_migration.py",
+      "status": "implemented",
+      "notes": "A returned-Refund correction refuses a Refund no correction paid, an unknown Refund, more than the net value, a return dated before the Refund or in the future, a Deposit Refund step without a new Refund, malformed input, an impossible return date or offset (22023) and a reused key; a second draft on the same Refund is stale after the first and stays pending; the confirm runs at READ COMMITTED and holds the Lease row and the returned Refund's Credit until it commits (V1-056 sub-slice 10c-2b-1)."
+    },
+    {
+      "test_id": "test_the_relaxed_refund_correction_check_accepts_nothing_else",
+      "upstream_ids": ["BR-SETTLE-013", "BR-AUTH-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_refund_return_migration.py",
+      "status": "implemented",
+      "notes": "For a correction's Refund the Refund correction check accepts only the verified return of its own REFUND_RETURN correction: inside a correction confirmed by hand a linked row with another amount, another actor, the one-call reference, another return date, another correction Refund, another method reference or other evidence than the draft's is refused, the draft's own row passes but a second return in the same correction is refused, and a financial.approve row outside a correction is refused; after a real return no row reverses it, linked or not, under either reference (V1-056 sub-slice 10c-2b-1, review rounds 1 and 2)."
+    },
+    {
+      "test_id": "test_refund_return_records_are_least_privilege_and_forward_only",
+      "upstream_ids": ["BR-SETTLE-013", "BR-AUTH-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_refund_return_migration.py",
+      "status": "implemented",
+      "notes": "Only the financial role records and confirms a returned-Refund correction; no role calls its internal functions; the migration adds only its functions, changes only the four patched functions (each new body exactly the old one with its replacements, privileges, owner, SECURITY DEFINER and settings kept) and is forward-only (V1-056 sub-slice 10c-2b-1)."
     }
   ]
 }

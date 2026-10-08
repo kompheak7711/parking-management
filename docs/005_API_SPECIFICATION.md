@@ -1030,6 +1030,14 @@ Refund. Preserve source KHR/FX history without rewriting it. It creates no colle
 right and never erases the original outbound event. Generic PATCH/DELETE is
 prohibited.
 
+Amended by V1-056 sub-slice 10c-2b-1 (migration `20261111_107`; owner answer 4 to the
+sub-slice 10c-1b review record, an approved tightening): `POST /refunds/{id}/verified-returns`
+and `POST /refunds/{id}/verified-returns/{correction_id}/reverse` answer 422 for a Refund paid
+by a Final Settlement (sub-slice 8d, already so) or by a post-settlement correction. Such a
+Refund is corrected only through a post-settlement `REFUND_RETURN` correction (DB-SETTLE-005,
+DB-REFUND-002), which has no HTTP route until slice 11e; a return recorded by a correction is
+never reversed.
+
 # 21. Warning and Termination Records
 
 ## API-067 — Lease Violation Warning Records

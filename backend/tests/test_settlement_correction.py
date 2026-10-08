@@ -28,6 +28,7 @@ from property_rental.settlement_correction import (
     RecordExtraChargeCorrectionCommand,
     RecordPetClassificationCorrectionCommand,
     RecordRefundCorrectionCommand,
+    RecordRefundReturnCorrectionCommand,
     SettlementCorrectionService,
     settlement_correction_draft_id,
 )
@@ -769,6 +770,180 @@ def test_pet_classification_correction_confirm_maps_database_refusals(
     monkeypatch.setattr(psycopg, "connect", connect)
     with pytest.raises(confirm_error) as refused:
         SettlementCorrectionService("unused").confirm_pet_classification(
+            PROPERTY, DRAFT, actor=person("financial.approve")
+        )
+    assert type(refused.value) is confirm_error and refused.value.__cause__ is failure
+
+
+REFUND = UUID(int=81)
+RETURNED_AT = datetime.fromisoformat("2026-10-08T09:30:00+07:00")
+
+
+def refund_return(**changes: Any) -> RecordRefundReturnCorrectionCommand:
+    return replace(
+        RecordRefundReturnCorrectionCommand(
+            KEY,
+            SETTLEMENT,
+            REFUND,
+            1_200,
+            RETURNED_AT,
+            "Bank transfer came back, reference BT-77",
+            "Bank statement line 4",
+            "The Refund transfer was returned by the bank",
+            METHOD,
+            "Cash handed over at the front desk",
+        ),
+        **changes,
+    )
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"refund_id": UUID(int=0)},
+        {"returned_amount_usd_cents": 0},
+        {"returned_amount_usd_cents": 1.5},
+        {"returned_amount_usd_cents": True},
+        {"returned_at": datetime(2026, 10, 8, 9, 30)},
+        {"returned_at": "2026-10-08T09:30:00+07:00"},
+        {"return_method_reference": " padded"},
+        {"evidence_reference": "x" * 501},
+        {"reason": ""},
+        {"new_refund_method_id": None},
+        {"new_refund_reference_note": None},
+        {"new_refund_reference_note": "x" * 501},
+        {"steps": ["not a step"]},
+        {"pet_remainder": "staff"},
+    ],
+)
+def test_refund_return_correction_commands_are_validated(changes: dict[str, Any]) -> None:
+    """V1-056 sub-slice 10c-2b-1: a positive returned amount in cents, a timezone-aware return
+    date, the return references and the reason fit the verified return; a new Refund needs both
+    its method and its note; the plan has typed steps."""
+    with pytest.raises(FinalSettlementInvalidError):
+        refund_return(**changes)
+
+
+def test_refund_return_correction_record_and_confirm_send_the_stored_correction(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The record call carries the Refund, the returned amount, the return date and references,
+    the new Refund and the DL-032 plan; a return-only draft sends no new Refund; only
+    final_settlements.prepare records and only financial.approve confirms."""
+    calls: list[tuple[object, ...]] = []
+
+    class Connection:
+        read_only: bool | None = None
+
+        def __enter__(self) -> "Connection":
+            return self
+
+        def __exit__(self, *args: object) -> None:
+            return None
+
+        def execute(self, sql: str, parameters: tuple[object, ...] = ()) -> "Connection":
+            calls.append((sql, parameters))
+            return self
+
+        def fetchone(self) -> tuple[dict[str, object]]:
+            return ({"draft_id": str(DRAFT)},)
+
+    def connect(url: str, **kwargs: object) -> Connection:
+        calls.append(("connect", url))
+        return Connection()
+
+    monkeypatch.setattr(psycopg, "connect", connect)
+    service = SettlementCorrectionService("financial-url")
+    with pytest.raises(FinalSettlementAuthorizationError):
+        service.record_refund_return(PROPERTY, refund_return(), actor=person("financial.approve"))
+    with pytest.raises(FinalSettlementAuthorizationError):
+        service.confirm_refund_return(PROPERTY, DRAFT, actor=person("final_settlements.prepare"))
+    assert calls == []
+    assert service.record_refund_return(
+        PROPERTY, refund_return(), actor=person("final_settlements.prepare")
+    ) == {"draft_id": str(DRAFT)}
+    assert calls[0] == ("connect", "financial-url")
+    sql, parameters = calls[-1]
+    assert sql == "SELECT app.record_settlement_refund_return_draft(%s,%s,%s,%s,%s,%s,%s)"
+    assert isinstance(parameters, tuple)
+    assert parameters[:4] == (
+        PROPERTY,
+        HUMAN,
+        settlement_correction_draft_id(PROPERTY, HUMAN, KEY),
+        SETTLEMENT,
+    )
+    stored = parameters[4]
+    assert isinstance(stored, Jsonb)
+    assert stored.obj == {
+        "refund_id": str(REFUND),
+        "returned_amount_usd_cents": 1_200,
+        "returned_at": "2026-10-08T02:30:00+00:00",
+        "return_method_reference": "Bank transfer came back, reference BT-77",
+        "evidence_reference": "Bank statement line 4",
+        "new_refund": {
+            "refund_method_id": str(METHOD),
+            "reference_note": "Cash handed over at the front desk",
+        },
+        "plan": {"steps": [], "pet_remainder": None},
+    }
+    assert parameters[5:] == (
+        "The Refund transfer was returned by the bank",
+        "final_settlements.prepare",
+    )
+    service.record_refund_return(
+        PROPERTY,
+        refund_return(
+            new_refund_method_id=None,
+            new_refund_reference_note=None,
+            returned_at=datetime.fromisoformat("2026-10-08T20:00:00+16:00"),
+        ),
+        actor=person("final_settlements.prepare"),
+    )
+    only_return = calls[-1][1]
+    assert isinstance(only_return, tuple) and isinstance(only_return[4], Jsonb)
+    assert only_return[4].obj["new_refund"] is None
+    # Sent in UTC, so an offset PostgreSQL would refuse never reaches it (review round 1).
+    assert only_return[4].obj["returned_at"] == "2026-10-08T04:00:00+00:00"
+    calls.clear()
+    assert service.confirm_refund_return(PROPERTY, DRAFT, actor=person("financial.approve")) == {
+        "draft_id": str(DRAFT)
+    }
+    assert calls[-1] == (
+        "SELECT app.confirm_settlement_refund_return(%s,%s,%s,%s)",
+        (PROPERTY, HUMAN, DRAFT, "financial.approve"),
+    )
+
+
+@pytest.mark.parametrize(
+    ("sqlstate", "confirm_error"),
+    [
+        ("P5S02", FinalSettlementStaleDraftError),
+        ("55000", FinalSettlementConflictError),
+        ("40P01", FinalSettlementConflictError),
+        ("42501", FinalSettlementAuthorizationError),
+        ("P0002", FinalSettlementNotFoundError),
+        ("22023", FinalSettlementInvalidError),
+        (None, FinalSettlementUnavailableError),
+    ],
+)
+def test_refund_return_correction_confirm_maps_database_refusals(
+    monkeypatch: pytest.MonkeyPatch, sqlstate: str | None, confirm_error: type[Exception]
+) -> None:
+    """A draft whose Refund or Credit changed is stale and stays pending; other refusals keep the
+    Final Settlement error mapping."""
+
+    class Failure(psycopg.Error):
+        pass
+
+    failure = Failure("Synthetic failure")
+    failure.sqlstate = sqlstate
+
+    def connect(*args: object, **kwargs: object) -> None:
+        raise failure
+
+    monkeypatch.setattr(psycopg, "connect", connect)
+    with pytest.raises(confirm_error) as refused:
+        SettlementCorrectionService("unused").confirm_refund_return(
             PROPERTY, DRAFT, actor=person("financial.approve")
         )
     assert type(refused.value) is confirm_error and refused.value.__cause__ is failure
