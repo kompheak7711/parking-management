@@ -1020,7 +1020,7 @@ Until you answer, no fix, no commit, and no 10c-2a-4.
 
 Recorded in docs/010.
 
-## Q-2026-10-08-49 — Sub-slice 10c-2a-4 stopped before code: refusing an inspection supersede after closure conflicts with the committed 10b Damage extra charge
+## Q-2026-10-08-49 — Sub-slice 10c-2a-4 stopped before code: refusing an inspection supersede after closure conflicts with the committed 10b Damage extra charge (ANSWERED 2026-10-08: (a); answer in docs/010)
 
 10c-2a-3 is committed (fe59f0e; NOW.md f2aa647). A read-only check before the 10c-2a-4 design found a conflict, so there is no 10c-2a-4 code and no run.
 
@@ -1051,5 +1051,45 @@ Your approved tightening (answer 2 to Q-2026-10-07-44): once a Settlement is clo
 - The cost is a changed setup in one committed 10b test, plus the 10c-2a-2 test change the plan already names.
 
 Also done in this stop, text only: the plan notes and docs/004 wording carried from the 10c-2a-3 limited review (old clauses removed; the Refund method exception named; "such an Invoice's lines"; the as-built note lists the two new tests).
+
+Until you answer, no 10c-2a-4 code.
+
+**Owner answer (2026-10-08).** Option (a).
+
+- Once a Lease's Settlement is closed, every supersede of a move-out inspection on that Lease is refused. The refusal is a conflict, like the other refusals after closure.
+- Damage found after closure is recorded as a new, separate inspection. The inspection the closed Settlement relied on never changes.
+- A wrong finding on the inspection the Settlement relied on is fixed only with a post-settlement correction (10c-2a-5 for a wrong pet classification).
+- A mistake in an inspection recorded after closure cannot be fixed by a supersede either (a known limit in docs/010). The wrong finding is simply not billed, because billing still needs a correction confirmed by a `financial.approve` holder.
+- Before code, check that nothing assumes one chain of inspections per Lease, in particular the readers that decide current findings and pet damage for the Settlement and for corrections. If one does, write it here with a recommendation and stop. (Done 2026-10-08: none found; docs/010.)
+- The committed 10b test changes its set-up so that it records the new damage as a separate inspection. It keeps its name and must still prove the same behaviour. A part that can no longer happen after closure is named in docs/010 and in the report. The independent reviewer compares it with its version at HEAD.
+
+Recorded in docs/010.
+
+## Q-2026-10-08-50 — Sub-slice 10c-2a-4 stopped before code: the plan's change to the 10c-2a-2 inspection test cannot be built as written
+
+Your answer to Q-2026-10-08-49 is recorded (docs/010, above). The read-only check found nothing that assumes one inspection chain per Lease. The 10c-2a-4 pre-code design is in the plan. There is no 10c-2a-4 code and no run.
+
+**The problem.** Your answer (a) says the 10c-2a-2 inspection test changes "as the plan says". The plan says: "a supersede after closure is now refused; its lock part keeps a Settlement still open or moves to a Lease without a closed Settlement". That cannot be built:
+
+- The test is `test_an_inspection_correction_waits_for_the_step_and_its_line_is_then_no_pet_damage` (`test_settlement_correction_plan_migration.py`, sub-slice 10c-2a-2).
+- Its lock part holds the Lease row lock with the post-settlement correction step (`app.post_settlement_correction_plan`). A superseding inspection command waits on that lock. When the holder rolls back, the supersede is written, the line stops being pet damage, and the Pet Deposit can no longer pay it as pet damage.
+- The step runs only inside a correction of a closed Settlement. So the lock part cannot use an open Settlement, or a Lease without a closed Settlement.
+- After 10c-2a-4, the supersede in this test is refused. Its last part ("its line is then no pet damage") can no longer happen after closure.
+
+**What the design keeps.** The new refusal reads the Lease's Final Settlement row `FOR SHARE` after the command's Lease row lock, as the 8e-1 refusal does. The Settlement confirm and every correction lock the Lease row `FOR UPDATE` first. So a supersede that waits while the Settlement closes sees the closure and is refused. The wait in this test is therefore still real and still matters.
+
+**Options:**
+
+- (a) Keep the test on the closed Settlement. Its lock part stays line for line: the step holds the Lease row lock, the superseding command waits (`blocked_by`, unchanged). The end changes: after the holder rolls back, the command is refused with the new conflict (P5S01) and writes nothing; the line stays pet damage; the step then pays it from the Pet Deposit as pet damage. The name stays (run rule), although its last words describe the behaviour before 10c-2a-4; the docstring, a comment and a docs/010 note say so. More than one expectation changes, so this is an owner exception like Q-2026-10-07-47.
+- (b) Move the lock part to an open Settlement, with the Settlement confirm (8e-3) as the lock holder instead of the step. The supersede waits on the confirm's Lease lock; the confirm rolls back; the supersede is written and the line is no longer pet damage. This is close to a new test with another holder, and it no longer tests the correction step's lock.
+- (c) Keep the lock part on the closed Settlement, but with an independent inspection (it supersedes nothing). It waits on the step's lock and is then written; the line stays pet damage; the step pays it as pet damage. The refusal itself is tested only in the new 10c-2a-4 module.
+
+**Recommendation: (a).** It keeps the lock part unchanged, shows the refusal at the place where the step runs, and shows that the closed Settlement's pet-damage line does not change. The new 10c-2a-4 module adds a two-connection test of the race the lock order closes: a supersede that waits on the Settlement confirm's Lease lock is refused once the confirm commits.
+
+**For your information (no answer needed unless you disagree):**
+
+1. The 10b test. Its set-up becomes: the closure-time inspection is superseded before the Settlement closes (allowed), then the Settlement closes, then the damage found after closure is recorded as a separate inspection that supersedes nothing. Every assertion stays as at HEAD, including the refusal of the old billed finding as "not on the current inspection" (a finding superseded before closure is still not current after closure). The only part that can no longer happen after closure is recording later damage by a supersede; the new module tests that refusal.
+2. An exact repeat (same command key and request) of a supersede committed before closure still returns its saved response after closure. It writes nothing, so it does not change what the Settlement relied on.
+3. A supersede of an inspection recorded after closure is refused too (your answer: every supersede on that Lease).
 
 Until you answer, no 10c-2a-4 code.
