@@ -37,8 +37,13 @@ from property_rental.final_settlement import (
     FinalSettlementStaleDraftError,
     SettlementCreditStep,
 )
-from property_rental.refund import RefundInvalidError, ReverseRefundCorrectionCommand
+from property_rental.refund import (
+    CreateUsdRefundCommand,
+    RefundInvalidError,
+    ReverseRefundCorrectionCommand,
+)
 from property_rental.settlement_correction import RecordRefundReturnCorrectionCommand
+from refund_test_support import create_usd_refund
 from test_credit_migration import actor as refund_actor
 from test_customer_ledger_migration import assert_reconciled, history
 from test_final_settlement_confirm_migration import this_month
@@ -48,7 +53,7 @@ from test_final_settlement_migration import one, outstanding, preparer
 from test_invoice_migration import register_billing_service_principal
 from test_migrations import _temporary_migration_database
 from test_move_in_migration import migrated_database_url as migrated_database_url
-from test_refund_service_migration import returned
+from test_refund_service_migration import refund_id, returned
 from test_refund_service_migration import service as refunds
 from test_settlement_correction_migration import approver, settlement_row
 from test_settlement_correction_plan_migration import closed_case
@@ -98,7 +103,7 @@ RETURN_ROW = (
     "occurred_at,actor_id,authorization_reference,verified_return_amount_minor,"
     "verified_return_currency,verified_returned_at,return_method_reference) "
     "SELECT %s,refund.id,'VALUE_CORRECTION',%s,%s,app.refund_net_value_at(refund.id,'infinity'),"
-    "app.refund_net_value_at(refund.id,'infinity')-%s,'Direct',%s,"
+    "app.refund_net_value_at(refund.id,'infinity')-%s,%s,%s,"
     "GREATEST(clock_timestamp(),app.credit_latest_at(refund.source_customer_credit_id)"
     "+interval '1 microsecond'),%s,%s,%s,'USD',%s,%s "
     "FROM app.refunds refund WHERE refund.id=%s"
@@ -114,9 +119,25 @@ def return_values(
     refund: UUID,
     evidence: str = EVIDENCE,
     method: str = METHOD_REFERENCE,
+    reason: str = REASON,
 ) -> tuple[object, ...]:
-    """The parameters of RETURN_ROW: by default the draft's evidence and method references."""
-    return (row, amount, amount, amount, evidence, actor_id, reference, amount, at, method, refund)
+    """The parameters of RETURN_ROW: by default the draft's reason, evidence and method references
+    (sub-slice 10c-2b-2a binds the reason too, so the rows carry the draft's reason; owner answer 3
+    to Q-2026-10-08-59)."""
+    return (
+        row,
+        amount,
+        amount,
+        amount,
+        reason,
+        evidence,
+        actor_id,
+        reference,
+        amount,
+        at,
+        method,
+        refund,
+    )
 
 
 REVERSAL_ROW = (
@@ -551,24 +572,29 @@ def test_a_third_party_credit_refund_is_paid_again_only_within_what_the_correcti
 def test_a_returned_refund_correction_refuses_wrong_input_and_a_stale_draft_waits(
     migrated_database_url: str,
 ) -> None:
-    """Refusals: a Refund no correction paid (the Settlement's own Deposit Refund, sub-slice
-    10c-2b-2) and an unknown Refund; more than the Refund's net value; a return dated before the
-    Refund or in the future; a Deposit Refund step without a new Refund; malformed input and an
-    impossible return date; a key reused for another correction. Two drafts return the same Refund:
-    the second is stale after the first and stays pending. The confirm runs at READ COMMITTED and
-    holds the Lease row and the returned Refund's Credit until it commits (the Refund correction
-    and Refund checks lock that Credit too; the forward-only test pins the lock function's patch,
-    review round 2)."""
+    """Refusals: a Refund neither the Settlement nor a correction paid (an ordinary Credit Refund;
+    sub-slice 10c-2b-2a made the Settlement's own Deposit Refund returnable) and an unknown
+    Refund; more than the Refund's net value; a return dated before the Refund or in the future;
+    a Deposit Refund step without a new Refund; malformed input and an impossible return date; a
+    key reused for another correction. Two drafts return the same Refund: the second is stale
+    after the first and stays pending. The confirm runs at READ COMMITTED and holds the Lease row
+    and the returned Refund's Credit until it commits (the Refund correction and Refund checks
+    lock that Credit too; the forward-only test pins the lock function's patch, review round 2)."""
     url = migrated_database_url
     case = refunded_case(url)
     refund = case["refund"]
-    settlement_refund_id = one(
-        url,
-        "SELECT refund_id FROM app.final_settlement_refund_details WHERE final_settlement_id=%s",
-        case["settlement"],
-    )[0]
+    # Sub-slice 10c-2b-2a made the Settlement's own Deposit Refund returnable, so an ordinary
+    # Credit Refund (the Customer's own 300 of Credit, refunded through its draft) stands in.
+    ordinary = refund_id(
+        create_usd_refund(
+            refunds(),
+            case["prop"],
+            CreateUsdRefundCommand(uuid4(), "CREDIT", case["new_credit"], 300, "Return excess"),
+            actor=refund_actor(case["human"], case["prop"], "refunds.create"),
+        )
+    )
     with pytest.raises(FinalSettlementConflictError) as deposit_refund:
-        record(case, return_command(case, settlement_refund_id, 100))
+        record(case, return_command(case, ordinary, 100))
     assert cause(deposit_refund) == ("55000", NOT_RETURNABLE)
     with pytest.raises(FinalSettlementNotFoundError):
         record(case, return_command(case, uuid4(), 100))
@@ -800,7 +826,7 @@ def test_refund_return_records_are_least_privilege_and_forward_only(
             ).fetchone() == (function != INTERNAL[5], True), function
     config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
     scripts = ScriptDirectory.from_config(config)
-    assert scripts.get_current_head() == "20261111_107"
+    assert scripts.get_current_head() == "20261112_108"
     revision = scripts.get_revision("20261111_107")
     assert revision is not None and revision.down_revision == "20261110_106"
     with pytest.raises(RuntimeError, match="forward-only"):

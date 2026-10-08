@@ -1255,7 +1255,7 @@ Until you answer, no 10c-2b code.
 
 Recorded in docs/010. Next: 10c-2b-1, 10c-2b-2 and 10c-2b-3 in order.
 
-## Q-2026-10-08-56 — Sub-slice 10c-2b-2 stopped before code: no planned correction kind fixes a Deposit receipt that is wrong for a reason other than a returned Payment (owner answer 5 to Q-2026-10-08-55)
+## Q-2026-10-08-56 — Sub-slice 10c-2b-2 stopped before code: no planned correction kind fixes a Deposit receipt that is wrong for a reason other than a returned Payment (owner answer 5 to Q-2026-10-08-55) (ANSWERED 2026-10-08: (a), and the refusal is built now; answers in docs/010)
 
 10c-2b-1 is committed (be4919a; NOW.md 5148684). Your answer 5 to Q-55 approves refusing the receipt reversal draft of a Lease Deposit after closure, and says a Deposit receipt found wrong after closure is fixed only through a post-settlement correction whose kind the plan names; if none fits, ask first. There is no 10c-2b-2 code and no run.
 
@@ -1272,3 +1272,89 @@ Recorded in docs/010. Next: 10c-2b-1, 10c-2b-2 and 10c-2b-3 in order.
 **Also, please confirm:** 10c-2b-2 may build the approved refusal of the receipt reversal draft after closure now, before 10e and the new kind exist. In that time a bounced Deposit Payment after closure also has no fix (as today for a bounced Payment whose Credit the Settlement used, accepted until slice 10). Recommendation: yes; the refusal only removes a path that moves a closed Settlement's money without a correction.
 
 Until you answer, no 10c-2b-2 code. 10c-2b-3 waits for 10c-2b-2.
+
+**Owner answer (2026-10-08).**
+
+1. Yes to the recommendation. A Deposit receipt whose Payment bounced is fixed by `RETURNED_PAYMENT` (10e). A Deposit receipt that is wrong while its Payment is real gets a new correction kind, `DEPOSIT_RECEIPT_CORRECTION`, built right after 10e. It follows all Settlement rules and the DL-032 order, like the other corrections.
+2. Yes, 10c-2b-2 may build the approved refusal of the receipt reversal now. Until `DEPOSIT_RECEIPT_CORRECTION` exists, such a receipt has no fix after closure. Write this gap in docs/010 and in the plan. It must be closed before V1-056 ends.
+
+Also answered with the 10c-2b-1 report: docs/010 choice (1) is kept as built (the new Refund is what is left in the Credit after the debt is paid, at most the returned amount; the whole Credit pays the debt first, as the Q-43 answer); docs/010 choice (6) is accepted for now, and the fix path for a return recorded by mistake is Q-2026-10-08-57, answered before 10h together with Q-2026-10-08-53.
+
+Recorded in docs/010. Next: 10c-2b-2, then 10c-2b-3.
+
+## Q-2026-10-08-57 — The fix path for a return recorded by mistake (docs/010 choice (6) of sub-slice 10c-2b-1; not blocking; the owner answers before 10h, with Q-2026-10-08-53)
+
+**The gap.** A `REFUND_RETURN` correction records that a Refund's money came back (a verified return, DB-REFUND-002). That return can never be reversed: the one-call reversal is refused for a correction's Refund and for a Settlement Deposit Refund, and the Refund correction check accepts no reversal row. If the money did not really come back (for example, the bank later takes the returned transfer back), the records show value in the Credit or the Deposit that the Property does not hold. By then the same correction may have used that value: its DL-032 step may have paid the Customer's debt (Settlement Credit applications or Deposit applications linked to the correction), and a new Refund may have paid it out again.
+
+**Options:**
+- (a) A new correction variant, `RETURN_REVERSAL` (a variant of the `SETTLEMENT_CORRECTION` draft kind; Staff record it under `final_settlements.prepare` with a reason and evidence; only `financial.approve` confirms), for one return recorded by an earlier correction of the same Settlement. In one transaction, each record linked before it is written: the earlier correction's Credit applications and Deposit applications paid from that value are reversed, so the debt comes back on its obligations and stays on its Customers' ledgers (BR-SETTLE-016); the return is reversed (a linked `CORRECTION_REVERSAL` row, the only one the Refund correction check would accept); and any part of the value that has already left the Property again (a new Refund paid from it) becomes an `EXTRA_CHARGE` to that Customer, as `RETURNED_PAYMENT` does for a Settlement Refund already paid. Built before 10h, after 10e (it shares the 10e rule for an `EXTRA_CHARGE` in the same correction as the step).
+- (b) No reversal: a return recorded by mistake is fixed only with an `EXTRA_CHARGE` correction to the Customer for the amount; the return record stays, so the history shows a return that did not happen.
+
+**Recommendation: (a)**, because it keeps the history true (the wrong return is reversed by a linked record, not hidden behind a charge) and puts the debt back where it was. It is added to the plan before 10h.
+
+## Q-2026-10-08-58 — Sub-slice 10c-2b-2a stopped before its first run: the lint correction allowance for one cause is used up (a docstring line I re-wrapped twice) (ANSWERED 2026-10-08: (a), owner exception; answer in docs/010)
+
+Your answers to Q-2026-10-08-56 and to the 10c-2b-1 report are recorded (docs/010, this file with Q-2026-10-08-57, the plan; not committed yet). 10c-2b-2 is split (a split needs no owner answer): **10c-2b-2a** the returned Settlement and correction Deposit Refunds, the approved receipt reversal refusal after closure, and the to-pet-damage test on the real path; **10c-2b-2b** the Pet Refund-review Refund after closure (the approved one-call refusal and its return through the correction; it needs a new test fixture, because no fixture pays a Pet Refund-review Refund on a Lease that later closes).
+
+**What is built (working tree, not committed, not run):** migration `20261112_108` (the `REFUND_RETURN` correction also returns a Settlement Deposit Refund and a correction's Deposit Refund; return only leaves the amount held by the Deposit with no step; with a new Refund the step runs; the receipt reversal recorder and its insert check refuse a closed Settlement's Lease Deposit, P5S01; the relaxed return check also binds the reason), the receipt reversal service maps P5S01 to a conflict, the new test module `test_settlement_deposit_refund_return_migration.py`, the 27 head-revision assertions, and one changed committed test (below). Format and type checks are clean. No migration-only check and no test run yet.
+
+**The stop.** Lint failed on two findings in `test_settlement_refund_return_migration.py`, both from my edit of the 10c-2b-1 test `test_a_returned_refund_correction_refuses_wrong_input_and_a_stale_draft_waits`: import order (fixed) and one docstring line over 100 characters. My two exact-text corrections of that docstring each moved the overlong text to the next line instead of wrapping it, so the line is still too long (E501, line 562). That is two corrections for one cause, and your rule allows at most two.
+
+**The change to the committed 10c-2b-1 test** (needs a docs/010 note under the narrowing rule): that test used the Settlement's own Pet Deposit Refund as "a Refund no correction paid"; 10c-2b-2a makes that Refund returnable, so the test now uses an ordinary Credit Refund (the Customer's own 300 of Credit, refunded through its draft); the expected refusal (55000, "The returned Refund is not a Refund this correction may return"), the test name and every other assertion stay.
+
+**Options:**
+- (a) Owner exception for this one cause: one more correction, text only (re-wrap the docstring paragraph so every line is within 100 characters), then the static checks each in its own call, the migration-only check, the read-only search, the unit and PostgreSQL runs, and the review rounds under the standing rules.
+- (b) Stop 10c-2b-2a here; the next session starts it again from the working tree.
+
+**Recommendation: (a).** The fix is text only and changes no behaviour.
+
+Until you answer, no further edit and no run.
+
+**Owner answer (2026-10-08).** Option (a), as an owner exception: one more text-only fix, re-wrapping that docstring so every line is within the limit; if lint still fails, stop. (Done: lint passed.) The change to the committed 10c-2b-1 test is accepted: it now uses an ordinary Credit Refund as the Refund that cannot be returned, because answer 3 to Q-55 makes the Settlement Deposit Refund returnable; its name and all its checks stay; a docs/010 note is added and the independent reviewer compares it with its version at HEAD. Check for the reviewers: a returned Deposit Refund on a path other than DL-032 (for example, the Pet Deposit rest refunded at a BR-DEP-027 termination) must still have a way to be refunded again, through 10c-2b-3 or another planned step; if it has none, write it here with a recommendation.
+
+Recorded in docs/010. Next: 10c-2b-2a checks, runs and reviews, then 10c-2b-2b and 10c-2b-3.
+
+## Q-2026-10-08-59 — Sub-slice 10c-2b-2a stopped after review round 1: a returned Deposit Refund can be forfeited again after closure (your path check), and three smaller points (ANSWERED 2026-10-08: 1 (a), 2 allow it, 3 (b), 4 (a); answers in docs/010)
+
+10c-2b-2a is built and green but not committed: U1 3629 passed, full PostgreSQL P1 1964 passed (targeted T1 failed on a test helper, corrected once; record: ops/reviews/V1-056-slice-10c-2b-2a-deposit-refund-return.md). Review round 1: independent 1 blocker, 2 should-fix, 4 notes; security 1 should-fix (the same as independent SF1), 5 notes. The independent reviewer compared the changed 10c-2b-1 test with HEAD: not weakened. All files are in the working tree; no fix is made yet.
+
+**1. Your check (independent SF1, security SF1).** Every Deposit Refund that 10c-2b-2a can return (a Final Settlement Deposit Refund, or a correction's) was paid while its Deposit was on the DL-032 path.
+- A Deposit with no forfeiture ground stays on DL-032 for good. That is every Pet Deposit except at a BR-DEP-022 customer-violation termination, so your example, the Pet Deposit rest at a BR-DEP-027 termination, is included. It can always be refunded again: in the same correction with a new Refund (the BR-DEP-027 Pet rules apply), by any later correction that runs the step, or by the 10c-2b-3 refund-only form.
+- A Deposit with a ground (BR-DEP-022, BR-DEP-023, BR-LEASE-005, BR-LEASE-025, BR-LEASE-028) is on DL-032 only because its forfeiture was reversed. After a return-only correction it holds money after closure, and nothing stops a new Lease forfeiture draft: the forfeiture draft and the disposition insert have no closure check. That forfeiture changes the closed Settlement's money without a correction (against BR-SETTLE-013) and moves the Deposit to KEPT; a later return of the same Refund is then held by a KEPT Deposit with no refund path (the step and 10c-2b-3 use only DL-032 Deposits). Before 10c-2b-2a this could not happen, because closure leaves every DL-032 Deposit empty.
+
+Options:
+- (a) Approved tightening, in 10c-2b-2a: after the Lease's Final Settlement closes, refuse the Lease Deposit forfeiture draft at record and the `deposit_dispositions` insert for that Lease's Deposit (P5S01, a conflict) unless a correction of that Settlement links the row, as the receipt reversal. Then no returnable Deposit Refund can leave DL-032, and the "only on the DL-032 path" refusal of a new Refund stays as defence in depth. (The forfeiture reversal after closure stays planned for 10d/10h, as you approved in Q-2026-10-06-36.)
+- (b) Keep the forfeiture path open; record the gap in docs/010; test the 55000 refusal on that real path.
+
+**Recommendation: (a).**
+
+**2. A Credit return-only correction while a Deposit holds returned money (independent SF2).** A Credit `REFUND_RETURN` always runs the step, and the step needs every DL-032 Deposit balance applied or refunded; a return-only draft may not have a Deposit Refund step. So while a Deposit holds an earlier returned amount that no debt takes, a Credit return-only correction is refused (55000) until that Deposit value is handled. Options: (a) accept it as an order of work: staff first refund the held Deposit value (the 10c-2b-3 refund-only form, or a Deposit return with a new Refund), then record the Credit return; documented in docs/010; (b) let a Credit return-only draft carry a Deposit Refund step with its own method and note. **Recommendation: (a)**, because it keeps one Refund method and note per correction (your answer to the 10c-1b points).
+
+**3. The blocker: the reason binding (independent).** I added a check that the return row's reason equals the draft's (a 10c-2b-1 round-3 note, defence in depth). The committed 10c-2b-1 test `test_the_relaxed_refund_correction_check_accepts_nothing_else` writes its hand-built rows with the reason `'Direct'`, so every one of its attempts is now refused by the reason alone and it no longer proves the other conditions; it still passes. Options: (a) remove the reason binding (no committed test changes; the confirm always writes the draft's reason, and no role can write such a row); (b) keep it and change that committed test so its rows carry the draft's reason, with one more attempt with another reason (an owner exception for a committed test, like Q-58). **Recommendation: (a)**, the smaller change; the binding goes to the slice 12 list.
+
+**4. The receipt reversal recorder at REPEATABLE READ (security N2).** Its closure check is a plain read; a REPEATABLE READ caller whose snapshot predates the closure could record a draft that can never be confirmed but blocks correction steps as a pending draft until rejected (the service always uses READ COMMITTED). Options: (a) refuse recording that draft outside READ COMMITTED (55000), a further tightening like your answer to Q-2026-10-08-51; (b) leave it (only a direct database client can do it). **Recommendation: (a).**
+
+**What I fix without an answer, after your answers:** the return-only plan must be exactly the empty plan (security N3); docs/010 notes on drafts recorded under 107 (they fail closed) and on the reversal branch the future `RETURN_REVERSAL` (Q-57) must switch to `source_deposit_id`; added tests (a stale Deposit return draft; a correction's Deposit Refund returned with a new Refund; the receipt reversal confirm path; the 8d branch for a hand-built mismatched row; BR-REFUND-015 traceability). Then the static checks, the migration check, U2, P2 and round 2 under the standing rules.
+
+Until you answer, no further change and no run. 10c-2b-2b and 10c-2b-3 wait.
+
+**Owner answer (2026-10-08).**
+
+1. Yes, option (a); approved tightening. After closure, refuse the Lease Deposit forfeiture draft at record and the forfeiture row at insert (P5S01), unless a correction of that Settlement links it. If no correction kind can link a forfeiture today, write that here with a recommendation, but do not stop.
+2. No order of work. Refunds often come back together (for example from the same closed bank account); staff must be able to record each return before they can pay again. A return-only correction pays nothing out, and a Deposit return-only correction already leaves money held (Q-42 answer 3). So allow a Credit return-only correction while a Deposit holds returned money that no debt can take; that money stays held until a later correction refunds it (10c-2b-3). The returned Credit still pays its own Customer's open debt first (Q-55 answer 1). Add a test. If allowing this breaks another rule, write it here and stop.
+3. Option (b), as an owner exception like Q-58. Keep the reason check; change only the set-up of `test_the_relaxed_refund_correction_check_accepts_nothing_else` so it again proves what it proved before; its name and checks stay; add a separate test for the reason check; list the change in docs/010; the independent reviewer compares it with HEAD.
+4. Yes, option (a); approved tightening. Refuse recording a receipt reversal draft outside READ COMMITTED, as in the Q-51 answer.
+
+Recorded in docs/010. Next: the fixes, the tests, the runs and review round 2, then 10c-2b-2b and 10c-2b-3.
+
+**Implementer note on the "what I fix" list above (review rounds 1 and 2):** added: the exact empty plan, the docs/010 notes, a stale Deposit return draft test, the 8d branch for a hand-built row (the reason test), BR-REFUND-015 traceability; not added: a correction's Deposit Refund returned with a new Refund and the receipt reversal confirm path (a draft cannot be recorded after closure, and closure waits for pending drafts); see the review record.
+
+**Implementer note on answer 1 (no stop, as you said):** no correction kind can link a forfeiture today: DB-SETTLE-005 has no `deposit_disposition_id` link (it has `deposit_disposition_reversal_id`, for 10d), and no planned kind writes a new forfeiture after closure. So the insert refusal passes nothing yet. Recommendation: no link now; if a later kind ever needs to forfeit after closure, it adds the link and the pass in its own sub-slice (a relaxing change).
+
+## Q-2026-10-08-60 — The Lease forfeiture draft recorder outside READ COMMITTED (not blocking; review round 2 of sub-slice 10c-2b-2a)
+
+Both round-2 reviewers noted: like the receipt reversal recorder before your answer 4 to Q-59, the Lease Deposit forfeiture draft recorder reads the closure with a plain read and has no READ COMMITTED guard. A direct database caller in a REPEATABLE READ transaction whose snapshot predates the closure could record a forfeiture draft after closure. No money moves (the confirm's insert is refused, P5S01), but while that draft is pending every correction that runs the DL-032 step on that Settlement, and every correction Deposit Refund, is refused as a pending draft until someone rejects or withdraws it. The application services always use READ COMMITTED.
+
+Options: (a) the same rule as your answer 4: refuse recording a Lease forfeiture draft outside READ COMMITTED (55000), a further tightening, in 10c-2b-2b; (b) leave it (only a direct database client can do it).
+
+**Recommendation: (a).** Not blocking 10c-2b-2a.

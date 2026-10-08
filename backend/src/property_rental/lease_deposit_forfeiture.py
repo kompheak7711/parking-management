@@ -187,8 +187,18 @@ class LeaseDepositForfeitureService:
                     "Lease Deposit forfeiture key was reused"
                 ) from exc
             # P5801: the Deposit's financial observation changed during confirmation;
-            # 23P01: an exclusion constraint met a concurrent record.
-            if exc.sqlstate in {"55000", "55P03", "40001", "23505", "23P01", "P5801", "P0001"}:
+            # 23P01: an exclusion constraint met a concurrent record; P5S01: the Lease's Final
+            # Settlement is closed (V1-056 sub-slice 10c-2b-2a).
+            if exc.sqlstate in {
+                "55000",
+                "55P03",
+                "40001",
+                "23505",
+                "23P01",
+                "P5801",
+                "P0001",
+                "P5S01",
+            }:
                 raise LeaseDepositForfeitureConflictError(
                     "Lease Deposit forfeiture conflicts with the current state"
                 ) from exc

@@ -101,6 +101,8 @@ def test_one_call_receipt_reversal_refuses_before_any_connection(no_connection: 
         ("23505", DepositReceiptReversalConflictError),
         ("P5801", DepositReceiptReversalConflictError),
         ("40001", DepositReceiptReversalConflictError),
+        # V1-056 sub-slice 10c-2b-2a: a closed Final Settlement's Deposit receipt.
+        ("P5S01", DepositReceiptReversalConflictError),
         ("XX000", DepositReceiptReversalUnavailableError),
     ],
 )

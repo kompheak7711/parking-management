@@ -154,8 +154,18 @@ class DepositReceiptReversalService:
                     "Deposit receipt reversal key was reused"
                 ) from exc
             # 55000: dependent history or a pending draft; P5801: the Deposit's financial
-            # observation changed during confirmation.
-            if exc.sqlstate in {"55000", "55P03", "40001", "23505", "23P01", "P5801", "P0001"}:
+            # observation changed during confirmation; P5S01: the Lease's Final Settlement is
+            # closed (V1-056 sub-slice 10c-2b-2a).
+            if exc.sqlstate in {
+                "55000",
+                "55P03",
+                "40001",
+                "23505",
+                "23P01",
+                "P5801",
+                "P0001",
+                "P5S01",
+            }:
                 raise DepositReceiptReversalConflictError(
                     "Deposit receipt reversal conflicts with the current state"
                 ) from exc

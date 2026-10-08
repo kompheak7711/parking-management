@@ -141,6 +141,8 @@ def test_one_call_lease_disposition_and_reversal_refuse_before_any_connection(
         ("23P01", LeaseDepositForfeitureConflictError),
         ("P5801", LeaseDepositForfeitureConflictError),
         ("40001", LeaseDepositForfeitureConflictError),
+        # V1-056 sub-slice 10c-2b-2a: a closed Final Settlement's Deposit.
+        ("P5S01", LeaseDepositForfeitureConflictError),
         ("XX000", LeaseDepositForfeitureUnavailableError),
     ],
 )

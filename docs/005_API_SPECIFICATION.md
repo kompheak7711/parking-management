@@ -550,6 +550,16 @@ draft and Reservation Deposit draft confirm routes answer 409, and the Lease for
 draft service reports a conflict (its routes come in slice 11c). Recording such drafts
 stays allowed.
 
+Amended by V1-056 sub-slice 10c-2b-2a (owner answer 5 to Q-2026-10-08-55, an approved
+tightening): once a Lease's Final Settlement is closed, recording or confirming a receipt
+reversal draft for that Lease's Deposit is refused as a conflict (the service maps the
+database's P5S01 to a conflict; the draft routes come in slice 11c); a wrong receipt is then
+fixed only through a post-settlement correction (`RETURNED_PAYMENT`, `DEPOSIT_RECEIPT_CORRECTION`;
+not built yet). After its review round 1 (owner answers 1 and 4 to Q-2026-10-08-59): a receipt
+reversal draft is recorded only at READ COMMITTED, and recording a Lease Deposit forfeiture draft
+after the Lease's Final Settlement is closed is refused as a conflict too (the forfeiture service
+maps P5S01 to a conflict; its routes come in slice 11c).
+
 ## API-094 — Active-Lease Pet Deposit Refund Qualification
 
 - `POST /leases/{lease_id}/pet-departures`

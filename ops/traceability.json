@@ -39011,6 +39011,86 @@
       "test_path": "backend/tests/test_settlement_refund_return_migration.py",
       "status": "implemented",
       "notes": "Only the financial role records and confirms a returned-Refund correction; no role calls its internal functions; the migration adds only its functions, changes only the four patched functions (each new body exactly the old one with its replacements, privileges, owner, SECURITY DEFINER and settings kept) and is forward-only (V1-056 sub-slice 10c-2b-1)."
+    },
+    {
+      "test_id": "test_a_returned_settlement_deposit_refund_stays_held_by_its_deposit",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-008", "BR-AUTH-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_refund_return_migration.py",
+      "status": "implemented",
+      "notes": "A Final Settlement Deposit Refund is not returned with one call; a return-only correction writes the verified return under financial.approve, linked first, and the Deposit holds the returned amount again; no step runs, so no Credit, Deposit application or Refund is written; a return-only form refuses a plan; the Settlement row is unchanged and the ledger reconciles (V1-056 sub-slice 10c-2b-2a, owner answer 3 to Q-2026-10-07-42)."
+    },
+    {
+      "test_id": "test_a_returned_settlement_deposit_refund_first_pays_the_lease_s_open_debt",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-008", "DL-032", "BR-REFUND-014", "BR-REFUND-015"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_refund_return_migration.py",
+      "status": "implemented",
+      "notes": "A returned Settlement Deposit Refund with a new Refund runs the shared DL-032 step: without a plan it is refused; with the plan the Customer's own Credit pays first, the remaining Pet Deposit pays the rest of the open debt, and only what is left is refunded from the Deposit, each amount to the cent (V1-056 sub-slice 10c-2b-2a, owner answer 3 to Q-2026-10-08-55)."
+    },
+    {
+      "test_id": "test_a_correction_s_deposit_refund_is_returned_to_its_deposit",
+      "upstream_ids": ["BR-SETTLE-013", "BR-REFUND-014"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_refund_return_migration.py",
+      "status": "implemented",
+      "notes": "A Deposit Refund paid by a post-settlement correction is not returned with one call; a return-only correction gives part of it back to its Deposit (V1-056 sub-slice 10c-2b-2a)."
+    },
+    {
+      "test_id": "test_the_to_pet_reversal_runs_on_a_pet_deposit_that_holds_its_returned_refund",
+      "upstream_ids": ["BR-SETTLE-013", "DL-032", "BR-SETTLE-008"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_refund_return_migration.py",
+      "status": "implemented",
+      "notes": "On the real path, a Pet Deposit holds money again after its Settlement Refund came back; a pet classification correction to pet damage then reverses the line's Security Deposit application, and the plan pays the line with the Customer's own Credit first, the Pet Deposit as pet damage and the Security Deposit, refunding the Security Deposit's rest (V1-056 sub-slice 10c-2b-2a, owner answer 5 to Q-2026-10-08-52)."
+    },
+    {
+      "test_id": "test_a_lease_deposit_receipt_is_not_reversed_after_closure",
+      "upstream_ids": ["BR-SETTLE-013", "BR-AUTH-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_refund_return_migration.py",
+      "status": "implemented",
+      "notes": "Once the Final Settlement is closed, a receipt reversal draft for a Lease Deposit receipt is refused at record as a conflict (P5S01), and a receipt reversal row written directly is refused unless a correction of that Settlement links it (V1-056 sub-slice 10c-2b-2a, owner answer 5 to Q-2026-10-08-55, approved tightening)."
+    },
+    {
+      "test_id": "test_the_deposit_refund_return_migration_is_forward_only",
+      "upstream_ids": ["BR-SETTLE-013", "BR-AUTH-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_refund_return_migration.py",
+      "status": "implemented",
+      "notes": "The migration replaces only the returned-Refund correction functions and patches the Refund correction check, the receipt reversal recorder and trigger, the forfeiture recorder and disposition check, the plan check and the step (each new body exactly the old one with its replacements); every changed function keeps its owner, SECURITY DEFINER, settings and privileges; only the financial role records and confirms (V1-056 sub-slice 10c-2b-2a)."
+    },
+    {
+      "test_id": "test_a_credit_return_only_correction_leaves_a_deposit_holding_returned_money",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-008", "BR-CREDIT-006", "DL-032"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_refund_return_migration.py",
+      "status": "implemented",
+      "notes": "While a Deposit holds returned money that no debt can take, a return-only correction of a correction's Credit Refund is accepted and both keep their value; once the Customer owes a charge, the returned Credit and the Customer's other Credit pay first and the Deposit pays what a staff decision lets it pay; a plan that leaves that debt open while the Deposit keeps money is refused (V1-056 sub-slice 10c-2b-2a, owner answer 2 to Q-2026-10-08-59)."
+    },
+    {
+      "test_id": "test_a_closed_settlement_s_deposit_is_not_forfeited_and_receipt_drafts_need_read_committed",
+      "upstream_ids": ["BR-SETTLE-013", "BR-AUTH-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_refund_return_migration.py",
+      "status": "implemented",
+      "notes": "Once the Final Settlement is closed, a Lease Deposit forfeiture draft is refused at record (P5S01); a receipt reversal draft is recorded only at READ COMMITTED (55000) (V1-056 sub-slice 10c-2b-2a, owner answers 1 and 4 to Q-2026-10-08-59, approved tightenings)."
+    },
+    {
+      "test_id": "test_the_return_check_binds_the_draft_s_reason",
+      "upstream_ids": ["BR-SETTLE-013", "BR-AUTH-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_refund_return_migration.py",
+      "status": "implemented",
+      "notes": "Inside a return-only correction of a Settlement Deposit Refund confirmed by hand, a return row with another reason than the draft's is refused (23514) and the same row with the draft's reason passes (V1-056 sub-slice 10c-2b-2a, owner answer 3 to Q-2026-10-08-59)."
+    },
+    {
+      "test_id": "test_the_hold_rule_keeps_only_money_no_open_debt_can_take",
+      "upstream_ids": ["BR-SETTLE-008", "DL-032", "BR-SETTLE-013"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_refund_return_migration.py",
+      "status": "implemented",
+      "notes": "Under the hold rule of a return-only Credit correction, a Security Deposit keeps no money while debt stays open, and a Pet Deposit keeps no money while pet damage stays open after its own step even when the Security Deposit pays that pet damage instead; with the Customer's Credit first and the Pet Deposit paying the pet damage, both may keep the rest (V1-056 sub-slice 10c-2b-2a, owner answer 2 to Q-2026-10-08-59, review round 2)."
     }
   ]
 }

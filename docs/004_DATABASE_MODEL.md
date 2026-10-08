@@ -1407,6 +1407,10 @@ Append-only: `id uuid PK`, `deposit_id uuid NOT NULL FK`, `adjustment_type text 
 
 Append-only non-refundable event: `id uuid PK`, `deposit_id uuid NOT NULL FK`, `amount_usd_cents bigint NOT NULL CHECK (>0)`, `governing_reservation_id uuid NULL FK`, `governing_lease_id uuid NULL FK`, `effective_date date NOT NULL`, `reason text NOT NULL`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`, `authorization_reference text NOT NULL`. Exactly one governing Reservation/Lease is required and must match the Deposit. It cannot exceed refundable held balance and is not an Invoice allocation.
 
+As built in V1-056 sub-slice 10c-2b-2a (migration `20261112_108`): once the governing Lease's Final
+Settlement is closed, a row is refused (P5S01) unless a correction of that Settlement links it
+(none can yet), and the Lease forfeiture draft is refused at record; see DB-DEP-007.
+
 ### Lease Deposit command admission (V1-055)
 
 The existing Lease Deposit disposition command serializes its Property, actor,
@@ -1620,6 +1624,19 @@ commits while a receipt reversal draft for the same Deposit is pending or still 
 recorded (the Refund and Reservation Deposit confirmations lock that row; the Lease
 forfeiture confirmation takes the same advisory lock). This relies on READ COMMITTED, the
 isolation every confirmation uses: a statement after a lock wait takes a fresh snapshot.
+
+As built in V1-056 sub-slice 10c-2b-2a (migration `20261112_108`; owner answer 5 to
+Q-2026-10-08-55 and the answer to Q-2026-10-08-56, approved tightening): once the Lease's Final
+Settlement is closed, the receipt reversal draft of that Lease's Deposit is refused at record and
+a receipt reversal row is refused at insert (P5S01, a conflict) unless it is linked to a correction
+of that Settlement confirmed in the same transaction. A receipt whose Payment bounced is fixed by
+`RETURNED_PAYMENT` (10e); a receipt that is wrong while its Payment is real by
+`DEPOSIT_RECEIPT_CORRECTION` (10e-2); until those exist such a receipt has no fix after closure.
+After review round 1 (owner answers 1 and 4 to Q-2026-10-08-59, approved tightenings): a receipt
+reversal draft is recorded only at READ COMMITTED (55000); and once a Lease's Final Settlement is
+closed, a Lease Deposit forfeiture draft is refused at record and a `deposit_dispositions` row at
+insert (P5S01) unless a correction of that Settlement links it (no correction kind links a
+forfeiture yet).
 
 As built in V1-056 sub-slice 8c (migration `20261025_90`, owner answer 4 to Q-2026-10-05-23):
 both directions also see the Final Settlement draft. A pending `FINAL_SETTLEMENT` draft whose
@@ -2292,6 +2309,24 @@ Refund check (`app.settlement_correction_refund_allowed`) also counts what the c
 returns gave back to the Credit. A Settlement Deposit Refund, a correction's Deposit Refund and a
 Pet Refund-review Refund are refused by this variant until sub-slice 10c-2b-2.
 
+As built in V1-056 sub-slice 10c-2b-2a (migration `20261112_108`; owner answer 3 to
+Q-2026-10-07-42, answer 3 to Q-2026-10-08-55): `REFUND_RETURN` also returns a Final Settlement
+Deposit Refund (8d) and a correction's Deposit Refund. The return gives the amount back to the
+Deposit (DB-DER-004), never to Customer Credit. Without a new Refund the Deposit keeps holding it
+and the draft has no DL-032 step (`runs_step` false; a plan is refused, 22023); a later correction
+that runs the step must apply or refund it (BR-SETTLE-008), except a return-only Credit
+correction under the hold rule below. With a new Refund the same correction runs the step on the
+Deposit (overlay `deposits`), so the value first pays the Lease's open debt in
+the DL-032 order and the plan's Deposit Refund step refunds the rest; only a Deposit on the DL-032
+path may do so (55000 otherwise). The return check now binds the row's reason to the draft's too.
+A Pet Refund-review Refund after closure is sub-slice 10c-2b-2b. After review round 1 (owner
+answer 2 to Q-2026-10-08-59): a return-only correction of a Credit Refund records the overlay flag
+`hold_deposits`, which the step keeps; with it the plan check lets a DL-032 Deposit keep returned
+money that no open debt can take (no Security Deposit balance while debt stays open; no Pet
+Deposit balance while pet damage stays open after the Pet Deposit's own step, or while other
+debt stays open that the remaining Pet Deposit may pay by a staff decision); the returned Credit
+still pays its own Customer's debt first.
+
 ## DB-SETTLE-007 — `settlement_pet_classifications`
 
 Added in V1-056 sub-slice 10c-2a-5 (migration `20261109_105`; owner answer to
@@ -2531,6 +2566,11 @@ correction. The one-call verified return and the one-call reversal refuse it (P5
 to a correction of the Refund's own Final Settlement confirmed in this transaction, written by
 that correction's approver, with the amount, return date, return method reference and evidence
 its draft names, one return per correction. No row reverses such a return.
+
+As built in V1-056 sub-slice 10c-2b-2a (migration `20261112_108`): the same pass applies to a
+Final Settlement Deposit Refund (8d) and a correction's Deposit Refund, whose one-call
+corrections stay refused; the check reads such a Refund's own Deposit for its lock and chronology,
+and binds the row's reason to the draft's.
 
 ---
 
