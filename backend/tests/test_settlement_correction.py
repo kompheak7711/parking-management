@@ -26,6 +26,7 @@ from property_rental.settlement_correction import (
     ExtraChargeCategory,
     RecordChargeReductionCorrectionCommand,
     RecordExtraChargeCorrectionCommand,
+    RecordPetClassificationCorrectionCommand,
     RecordRefundCorrectionCommand,
     SettlementCorrectionService,
     settlement_correction_draft_id,
@@ -627,3 +628,147 @@ def test_refund_correction_failures_map_to_stable_errors(
     with pytest.raises(record_error) as recorded:
         service.record_refund(PROPERTY, refund(), actor=person("final_settlements.prepare"))
     assert type(recorded.value) is record_error and recorded.value.__cause__ is failure
+
+
+def classification(**changes: Any) -> RecordPetClassificationCorrectionCommand:
+    return replace(
+        RecordPetClassificationCorrectionCommand(
+            KEY,
+            SETTLEMENT,
+            INVOICE,
+            LINE,
+            False,
+            "Vet letter 12",
+            "The pet did not break the window latch",
+        ),
+        **changes,
+    )
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"pet_related": 1},
+        {"pet_related": None},
+        {"evidence_reference": ""},
+        {"evidence_reference": "x" * 501},
+        {"reason": "x" * 501},
+        {"invoice_line_id": "not-a-uuid"},
+        {"steps": ["not a step"]},
+        {"pet_remainder": "staff"},
+    ],
+)
+def test_pet_classification_correction_commands_are_validated(changes: dict[str, Any]) -> None:
+    """V1-056 sub-slice 10c-2a-5: the corrected classification is true or false; the evidence
+    reference and the reason fit the classification record; the plan has typed steps."""
+    with pytest.raises(FinalSettlementInvalidError):
+        classification(**changes)
+
+
+def test_pet_classification_correction_record_and_confirm_send_the_stored_correction(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The record call carries the line, the corrected classification, the evidence and the
+    DL-032 plan; only final_settlements.prepare records and only financial.approve confirms."""
+    calls: list[tuple[object, ...]] = []
+
+    class Connection:
+        read_only: bool | None = None
+
+        def __enter__(self) -> "Connection":
+            return self
+
+        def __exit__(self, *args: object) -> None:
+            return None
+
+        def execute(self, sql: str, parameters: tuple[object, ...] = ()) -> "Connection":
+            calls.append((sql, parameters))
+            return self
+
+        def fetchone(self) -> tuple[dict[str, object]]:
+            return ({"draft_id": str(DRAFT)},)
+
+    def connect(url: str, **kwargs: object) -> Connection:
+        calls.append(("connect", url))
+        return Connection()
+
+    monkeypatch.setattr(psycopg, "connect", connect)
+    service = SettlementCorrectionService("financial-url")
+    with pytest.raises(FinalSettlementAuthorizationError):
+        service.record_pet_classification(
+            PROPERTY, classification(), actor=person("financial.approve")
+        )
+    with pytest.raises(FinalSettlementAuthorizationError):
+        service.confirm_pet_classification(
+            PROPERTY, DRAFT, actor=person("final_settlements.prepare")
+        )
+    assert calls == []
+    assert service.record_pet_classification(
+        PROPERTY, classification(), actor=person("final_settlements.prepare")
+    ) == {"draft_id": str(DRAFT)}
+    assert calls[0] == ("connect", "financial-url")
+    sql, parameters = calls[-1]
+    assert sql == "SELECT app.record_settlement_pet_classification_draft(%s,%s,%s,%s,%s,%s,%s)"
+    assert isinstance(parameters, tuple)
+    assert parameters[:4] == (
+        PROPERTY,
+        HUMAN,
+        settlement_correction_draft_id(PROPERTY, HUMAN, KEY),
+        SETTLEMENT,
+    )
+    stored = parameters[4]
+    assert isinstance(stored, Jsonb)
+    assert stored.obj == {
+        "invoice_id": str(INVOICE),
+        "invoice_line_id": str(LINE),
+        "pet_related": False,
+        "evidence_reference": "Vet letter 12",
+        "plan": {"steps": [], "pet_remainder": None},
+    }
+    assert parameters[5:] == (
+        "The pet did not break the window latch",
+        "final_settlements.prepare",
+    )
+    calls.clear()
+    assert service.confirm_pet_classification(
+        PROPERTY, DRAFT, actor=person("financial.approve")
+    ) == {"draft_id": str(DRAFT)}
+    assert calls[-1] == (
+        "SELECT app.confirm_settlement_pet_classification(%s,%s,%s,%s)",
+        (PROPERTY, HUMAN, DRAFT, "financial.approve"),
+    )
+
+
+@pytest.mark.parametrize(
+    ("sqlstate", "confirm_error"),
+    [
+        ("P5S02", FinalSettlementStaleDraftError),
+        ("55000", FinalSettlementConflictError),
+        ("40P01", FinalSettlementConflictError),
+        ("42501", FinalSettlementAuthorizationError),
+        ("P0002", FinalSettlementNotFoundError),
+        ("22023", FinalSettlementInvalidError),
+        (None, FinalSettlementUnavailableError),
+    ],
+)
+def test_pet_classification_correction_confirm_maps_database_refusals(
+    monkeypatch: pytest.MonkeyPatch, sqlstate: str | None, confirm_error: type[Exception]
+) -> None:
+    """A draft whose sources changed is stale and stays pending; other refusals keep the Final
+    Settlement error mapping."""
+
+    class Failure(psycopg.Error):
+        pass
+
+    failure = Failure("Synthetic failure")
+    failure.sqlstate = sqlstate
+
+    def connect(*args: object, **kwargs: object) -> None:
+        raise failure
+
+    monkeypatch.setattr(psycopg, "connect", connect)
+    with pytest.raises(confirm_error) as refused:
+        SettlementCorrectionService("unused").confirm_pet_classification(
+            PROPERTY, DRAFT, actor=person("financial.approve")
+        )
+    assert type(refused.value) is confirm_error and refused.value.__cause__ is failure

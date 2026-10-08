@@ -1135,3 +1135,47 @@ Until you answer, no further 10c-2a-4 change and no commit.
 - Then static checks, U2 and P2 under `caffeinate`, then review round 2 under the standing round-3 rule. After 10c-2a-4 is committed, 10c-2a-5 may follow.
 
 Recorded in docs/010.
+
+## Q-2026-10-08-52 — Sub-slice 10c-2a-5 report: six owner items from review rounds 1 and 2 (ANSWERED 2026-10-08; answers in docs/010)
+
+10c-2a-5 was stopped at about 65% context after review round 2, with the round-2 fixes in the working tree and not run (record: ops/reviews/V1-056-slice-10c-2a-5-pet-classification-correction.md). The report named six owner items:
+
+1. The committed `REFUND` confirm (10c-2a-3) does not check the Customer choice again at the confirm. A `PET_DAMAGE_RECLASSIFICATION` confirmed first that leaves the balances unchanged lets a `REFUND` draft with the same choice confirm. Suggested fix: move the re-check into the shared step, a change to committed behaviour.
+2. The 10c-2a-1 Deposit application reversal check is not bound to the correction draft's list of reversals (`reversed_applications`, `released_sources`); only owner or definer code can write the table.
+3. "A new Customer choice" is compared as exact text; a reworded earlier consent passes.
+4. A Damage line billed from a finding of an inspection superseded before closure has no pet classification fix after closure (10c-2a-5 refuses it).
+5. The to-pet-damage reversal branch is reachable only from a hand-built state until 10c-2b or 10d returns value to a Pet Deposit.
+6. Which Deposit applications the confirm reverses (choice (1) of the docs/010 entry), and the behaviour at a normal end (a line moved to not pet damage is paid by the remaining Pet Deposit with a staff reason).
+
+**Owner answer (2026-10-08).**
+
+1. Yes, this tightening is approved. Every correction confirm that uses a Customer choice re-checks it, including the committed `REFUND` confirm from 10c-2a-3. Make the change in the shared step, with a test. Build it as a small sub-slice right after 10c-2a-5 is committed. (Plan: sub-slice 10c-2a-6.)
+2. Add the binding of the 10c-2a-1 reversal check to the draft's list of reversals to the slice 12 list.
+3. The exact-text comparison is accepted. docs/010 records it as a known limit: the system cannot prove that a Customer gave a choice again, so the `financial.approve` holder who confirms is the real check.
+4. Do not stop for this now. Write the case here with the recommended fix path, and add it to the plan before 10h. The owner answers it before 10h. (Q-2026-10-08-53.)
+5. Accepted. Whichever of 10c-2b or 10d first returns value to a Pet Deposit must add a test of the to-pet reversal on a real path, not a hand-built state. In the plan.
+6. The reading of which Deposit applications are reversed is confirmed, in both directions. The behaviour at a normal end is also confirmed: a line moved to not pet damage is paid by the remaining Pet Deposit with a staff reason (DL-032 step 5), because no Deposit is refunded while the line still owes.
+
+Recorded in docs/010.
+
+## Q-2026-10-08-53 — A Damage line billed from an inspection superseded before closure has no pet classification fix after closure (not blocking; the owner answers before 10h)
+
+Found in sub-slice 10c-2a-5 review rounds 1 and 2 (security note N2, independent note N2). Owner answer 4 to Q-2026-10-08-52: not a stop; the case is written here with a recommended fix path and placed in the plan before 10h.
+
+**The case.**
+- `app.invoice_line_is_pet_damage` reads the finding's flag only while the finding's inspection is current (no other inspection supersedes it). A Damage charge keeps the id of the finding it was billed from.
+- Before closure, a supersede of the inspection therefore makes every line billed from the old inspection no longer pet damage, even when the new inspection repeats the same pet finding (Q-2026-10-07-45, "Also"; still open).
+- The Settlement then lets the Security Deposit pay such a line first (DL-032 step 4), and the Pet Deposit only at step 5.
+- After closure no supersede is possible (10c-2a-4). The `PET_DAMAGE_RECLASSIFICATION` correction (10c-2a-5) is the only fix for a wrong classification, and as built it refuses such a line ("a finding of a current inspection", docs/010 choice (10)), so that the open "Also" point was not decided inside 10c-2a-5.
+- Result: when the damage on such a line was caused by the pet, nothing can mark the line as pet damage after closure. Only that direction is concerned: the line already reads as not pet damage.
+
+Example: inspection A has a pet finding, billed as a 12,500 Damage line. Before closure staff supersede A with inspection B to add another finding; B repeats the pet finding, but the line still points to A's finding. At closure the Security Deposit pays the line at step 4, and the Pet Deposit is refunded or pays other debt at step 5.
+
+**Options:**
+- (a) Relax the 10c-2a-5 eligibility: a Damage line billed from a finding of any move-out inspection of the Lease, including one superseded before closure, may take a `PET_DAMAGE_RECLASSIFICATION` correction. The reader already lets the latest classification record decide before the inspection rule, so only the eligibility function `app.settlement_pet_classification_line` changes (it is called by the recorder and by the classification insert check). The same-classification refusal then allows only the to-pet direction for such a line. The to-pet reversal rule stays as confirmed (answer 6 to Q-52): the line's Security Deposit applications are reversed only while a Pet Deposit on the DL-032 path holds money; otherwise only the record is written. A relaxing migration in one small sub-slice before 10h, with tests: a line from an inspection superseded before closure set to pet damage (with and without a Pet Deposit holding money); the to-not-pet direction for such a line refused as the same classification; the evidence reference names the new inspection's finding.
+- (b) Carry a finding forward on supersede (the Q-45 "Also" recommendation): a link from the new finding to the old one, and the reader treats a carried pet finding as current. This helps future supersedes before closure, but not a Settlement already closed: after closure no supersede is allowed, so no link can be added. Closed cases would still need (a) or a known limit.
+- (c) Known limit: such a line keeps its classification after closure. Staff can change only the charge, with the other kinds (`CHARGE_REDUCTION`, `REFUND`, `EXTRA_CHARGE`).
+
+**Recommendation: (a)**, in a small relaxing sub-slice before 10h. The classification record is already the source of truth after closure; (a) only lets staff use it for these lines, under the same `financial.approve` confirm. The "Also" point (b), for the time before closure, stays open for a later decision.
+
+Until the owner answers, nothing changes; 10c-2a-5 keeps refusing such a line.

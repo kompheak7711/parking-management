@@ -20,6 +20,12 @@ application first; released Payment value becomes Customer Credit of the Invoice
 BR-CREDIT-014), and one Credit Refund per released source pays it to that Credit's Customer, each
 with the draft's Refund method and reference note (BR-REFUND-014; owner answers to
 Q-2026-10-07-39).
+
+Sub-slice 10c-2a-5: the ``PET_DAMAGE_RECLASSIFICATION`` variant, a Damage line whose pet
+classification is wrong after closure, in both directions (owner answer to Q-2026-10-07-45). The
+charge amount stays the same and the closed inspection is not changed: the confirmation records
+the corrected classification, reverses the line's Deposit applications where it changes which
+Deposit should pay, and runs the shared DL-032 step after closure.
 """
 
 from __future__ import annotations
@@ -59,6 +65,8 @@ EXTRA_CHARGE_CONFIRM_STALE_STATES: Final = frozenset({"P5S02"})
 CHARGE_REDUCTION_CONFIRM_STALE_STATES: Final = frozenset({"P5S02"})
 # A Refund correction whose line or paying sources changed since the draft is stale.
 REFUND_CONFIRM_STALE_STATES: Final = frozenset({"P5S02"})
+# A pet classification correction whose line, Deposit applications or Deposits changed is stale.
+PET_CLASSIFICATION_CONFIRM_STALE_STATES: Final = frozenset({"P5S02"})
 
 
 def settlement_correction_draft_id(
@@ -275,6 +283,66 @@ class RecordRefundCorrectionCommand:
 
 
 @dataclass(frozen=True, slots=True)
+class RecordPetClassificationCorrectionCommand:
+    """A Damage line whose pet classification is wrong; the database checks it against current
+    state (V1-056 sub-slice 10c-2a-5).
+
+    ``pet_related`` is the corrected classification of one Damage line billed from an inspection
+    finding on an issued Invoice of the Settlement's Lease; it must differ from the current one.
+    The evidence reference and the reason are at most 500 characters, because the classification
+    record keeps them. ``steps`` and ``pet_remainder`` are the DL-032 plan for the Deposit value
+    the reversals give back, in the Final Settlement plan format; staff choose every step.
+    """
+
+    idempotency_key: UUID
+    settlement_id: UUID
+    invoice_id: UUID
+    invoice_line_id: UUID
+    pet_related: bool
+    evidence_reference: str
+    reason: str
+    steps: tuple[SettlementStep, ...] = ()
+    pet_remainder: PetRemainderDecision | None = None
+
+    def __post_init__(self) -> None:
+        _uuid(self.idempotency_key, "idempotency_key")
+        _uuid(self.settlement_id, "settlement_id")
+        _uuid(self.invoice_id, "invoice_id")
+        _uuid(self.invoice_line_id, "invoice_line_id")
+        if type(self.pet_related) is not bool:
+            raise FinalSettlementInvalidError("pet_related must be true or false")
+        _text(self.evidence_reference, "evidence_reference", 500)
+        _text(self.reason, "reason", 500)
+        if not isinstance(self.steps, tuple) or len(self.steps) > MAX_SETTLEMENT_STEPS:
+            raise FinalSettlementInvalidError(
+                f"steps must be a tuple of at most {MAX_SETTLEMENT_STEPS} steps"
+            )
+        for step in self.steps:
+            if not isinstance(
+                step, (SettlementCreditStep, SettlementDepositStep, SettlementDepositRefund)
+            ):
+                raise FinalSettlementInvalidError("Settlement step is invalid")
+        if self.pet_remainder is not None and not isinstance(
+            self.pet_remainder, PetRemainderDecision
+        ):
+            raise FinalSettlementInvalidError("Pet Deposit remainder decision is invalid")
+
+    def classification(self) -> dict[str, object]:
+        return {
+            "invoice_id": str(self.invoice_id),
+            "invoice_line_id": str(self.invoice_line_id),
+            "pet_related": self.pet_related,
+            "evidence_reference": self.evidence_reference,
+            "plan": {
+                "steps": [step.payload() for step in self.steps],
+                "pet_remainder": None
+                if self.pet_remainder is None
+                else self.pet_remainder.payload(),
+            },
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class SettlementCorrectionService:
     """Commands under the financial role; capabilities are checked before any connection."""
 
@@ -448,4 +516,60 @@ class SettlementCorrectionService:
             "SELECT app.confirm_settlement_refund(%s,%s,%s,%s)",
             (property_id, actor_id, draft_id, FINANCIAL_APPROVE_CAPABILITY),
             stale=REFUND_CONFIRM_STALE_STATES,
+        )
+
+    def record_pet_classification(
+        self,
+        property_id: UUID,
+        command: RecordPetClassificationCorrectionCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        """Record a pet classification correction draft; it has no effect until confirmed."""
+        actor_id = FinalSettlementService._authorize(
+            actor, property_id, FINAL_SETTLEMENTS_PREPARE_CAPABILITY
+        )
+        if not isinstance(command, RecordPetClassificationCorrectionCommand):
+            raise FinalSettlementInvalidError("Pet classification correction command is invalid")
+        request = RecordPetClassificationCorrectionCommand(
+            command.idempotency_key,
+            command.settlement_id,
+            command.invoice_id,
+            command.invoice_line_id,
+            command.pet_related,
+            command.evidence_reference,
+            command.reason,
+            command.steps,
+            command.pet_remainder,
+        )
+        return FinalSettlementService(self.financial_database_url)._call(
+            "SELECT app.record_settlement_pet_classification_draft(%s,%s,%s,%s,%s,%s,%s)",
+            (
+                property_id,
+                actor_id,
+                settlement_correction_draft_id(property_id, actor_id, request.idempotency_key),
+                request.settlement_id,
+                Jsonb(request.classification()),
+                request.reason,
+                FINAL_SETTLEMENTS_PREPARE_CAPABILITY,
+            ),
+        )
+
+    def confirm_pet_classification(
+        self, property_id: UUID, draft_id: UUID, *, actor: AuthenticatedActor
+    ) -> dict[str, object]:
+        """Confirm a pending pet classification correction (financial.approve only).
+
+        A draft whose line, Deposit applications or Deposits changed since it was recorded is
+        stale and stays pending; an exact repeat by the same approver writes nothing and returns
+        the result again. The result never returns the decision's transaction id.
+        """
+        actor_id = FinalSettlementService._authorize(
+            actor, property_id, FINANCIAL_APPROVE_CAPABILITY
+        )
+        _uuid(draft_id, "draft_id")
+        return FinalSettlementService(self.financial_database_url)._call(
+            "SELECT app.confirm_settlement_pet_classification(%s,%s,%s,%s)",
+            (property_id, actor_id, draft_id, FINANCIAL_APPROVE_CAPABILITY),
+            stale=PET_CLASSIFICATION_CONFIRM_STALE_STATES,
         )

@@ -38803,6 +38803,118 @@
       "test_path": "backend/tests/test_inspection_supersede_after_closure_migration.py",
       "status": "implemented",
       "notes": "The inspection command keeps its financial-role grant only and the trigger function has none; the migration is forward-only and changes only the bodies of those two functions (security, settings, privileges and owner kept); the refusal reads the Settlement row FOR SHARE after the Lease row lock (V1-056 sub-slice 10c-2a-4)."
+    },
+    {
+      "test_id": "test_pet_classification_correction_commands_are_validated",
+      "upstream_ids": ["BR-SETTLE-013", "DB-SETTLE-007"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "The pet classification correction command takes a true or false classification, an evidence reference and a reason that fit the classification record, and a plan of typed steps (V1-056 sub-slice 10c-2a-5)."
+    },
+    {
+      "test_id": "test_pet_classification_correction_record_and_confirm_send_the_stored_correction",
+      "upstream_ids": ["BR-SETTLE-013", "BR-AUTH-010", "DB-SETTLE-007"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "Only final_settlements.prepare records and only financial.approve confirms a pet classification correction; the record call carries the line, the corrected classification, the evidence and the DL-032 plan (V1-056 sub-slice 10c-2a-5)."
+    },
+    {
+      "test_id": "test_pet_classification_correction_confirm_maps_database_refusals",
+      "upstream_ids": ["BR-SETTLE-013"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "A pet classification correction whose sources changed is stale and stays pending; other refusals keep the Final Settlement error mapping (V1-056 sub-slice 10c-2a-5)."
+    },
+    {
+      "test_id": "test_a_pet_line_corrected_to_not_pet_is_paid_by_the_remaining_pet_deposit_on_a_staff_reason",
+      "upstream_ids": ["DL-032", "BR-SETTLE-008", "BR-SETTLE-012", "BR-SETTLE-013", "BR-AUTH-010", "DB-SETTLE-005", "DB-SETTLE-007"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_pet_classification_migration.py",
+      "status": "implemented",
+      "notes": "To not pet damage: the line's Pet-Deposit-first application is reversed, the Customer's Credit pays first, the remaining Pet Deposit pays the rest at step 5 on a staff reason and its last 300 is refunded; the classification record is linked and the reader follows it; the inspection and the closed Settlement are unchanged; ledgers reconcile; an exact repeat replays (V1-056 sub-slice 10c-2a-5, owner answer to Q-2026-10-07-45)."
+    },
+    {
+      "test_id": "test_the_draft_is_checked_under_the_corrected_classification_and_the_settlement_rules",
+      "upstream_ids": ["DL-032", "BR-SETTLE-008", "BR-SETTLE-013"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_pet_classification_migration.py",
+      "status": "implemented",
+      "notes": "The draft's plan is checked under the corrected classification before the record exists (a Pet Deposit pet damage step on the line corrected to not pet damage is refused at record), and at a normal end the Pet Deposit's value may not be refunded while the line it can pay still owes; nothing is written (V1-056 sub-slice 10c-2a-5)."
+    },
+    {
+      "test_id": "test_without_a_customer_choice_the_pet_deposit_value_is_refunded_and_the_line_stays_open",
+      "upstream_ids": ["DL-032", "BR-DEP-027", "BR-SETTLE-008", "BR-SETTLE-013"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_pet_classification_migration.py",
+      "status": "implemented",
+      "notes": "At a BR-DEP-027 termination with no Customer choice for the correction, the Pet Deposit value released from the line corrected to not pet damage is refunded to the Primary Tenant and the line stays open debt (V1-056 sub-slice 10c-2a-5)."
+    },
+    {
+      "test_id": "test_a_line_corrected_to_pet_damage_with_no_pet_deposit_money_only_records_it",
+      "upstream_ids": ["DL-032", "BR-SETTLE-013", "DB-SETTLE-007"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_pet_classification_migration.py",
+      "status": "implemented",
+      "notes": "To pet damage while no Pet Deposit holds money: nothing is reversed, only the classification record is written, and the line's applications and the Deposits are unchanged (V1-056 sub-slice 10c-2a-5)."
+    },
+    {
+      "test_id": "test_a_line_corrected_to_pet_damage_while_the_pet_deposit_holds_money_is_paid_by_it_first",
+      "upstream_ids": ["DL-032", "BR-SETTLE-008", "BR-SETTLE-013", "DB-SETTLE-007"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_pet_classification_migration.py",
+      "status": "implemented",
+      "notes": "To pet damage while the Pet Deposit holds money: the line's Security Deposit application is reversed, the Customer's Credit pays first, the Pet Deposit pays the pet damage lines first, the Security Deposit the rest and its rest is refunded; the remaining Pet Deposit application stays (V1-056 sub-slice 10c-2a-5)."
+    },
+    {
+      "test_id": "test_the_step_rechecks_pet_damage_when_the_classification_changed_after_the_draft",
+      "upstream_ids": ["DL-032", "BR-SETTLE-013"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_pet_classification_migration.py",
+      "status": "implemented",
+      "notes": "Carried from sub-slice 10c-2a-4 review round 2: the shared step's own pet-damage re-check refuses through the step (55000) when a later correction changed the line's classification after the draft; the draft stays pending and nothing is written (V1-056 sub-slice 10c-2a-5)."
+    },
+    {
+      "test_id": "test_a_br_dep_027_reclassification_needs_a_new_customer_choice",
+      "upstream_ids": ["BR-DEP-027", "DL-032", "BR-SETTLE-013"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_pet_classification_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer 3 to Q-2026-10-07-44: at a BR-DEP-027 termination the remaining Pet Deposit pays the line corrected to not pet damage only by a Customer choice given for this correction; neither the Final Settlement's choice nor an earlier correction's is reused, at record and again at the confirm, where of two drafts recorded while both were pending with the same choice the second is refused and stays pending (V1-056 sub-slice 10c-2a-5, review round 1)."
+    },
+    {
+      "test_id": "test_a_pet_classification_correction_refuses_what_it_cannot_correct",
+      "upstream_ids": ["BR-SETTLE-013", "BR-AUTH-010", "DB-SETTLE-007"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_pet_classification_migration.py",
+      "status": "implemented",
+      "notes": "Refusals: the same classification, a line that is not a Damage line billed from a finding, a line of another Invoice, a Settlement still open, a line of another Lease, malformed input; Staff cannot confirm; READ COMMITTED only; replay and reused key; a draft whose sources changed is stale and stays pending (V1-056 sub-slice 10c-2a-5)."
+    },
+    {
+      "test_id": "test_the_pet_classification_correction_is_least_privilege_and_forward_only",
+      "upstream_ids": ["BR-AUTH-010", "BR-SETTLE-013", "DB-SETTLE-007"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_pet_classification_migration.py",
+      "status": "implemented",
+      "notes": "No role may read or write the classification table or run the internal functions; the record and confirm are granted to the financial role only; the migration is forward-only, adds the table, its three triggers and the listed functions, and changes only the five listed functions with their privileges kept; the confirm takes its locks in the 8e-3 order and the lock function takes this variant's line Invoice (V1-056 sub-slice 10c-2a-5, review round 1)."
+    },
+    {
+      "test_id": "test_a_classification_record_is_written_only_as_its_own_draft_prepared_it",
+      "upstream_ids": ["DB-SETTLE-007", "DB-SETTLE-005", "BR-SETTLE-013", "BR-AUTH-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_pet_classification_migration.py",
+      "status": "implemented",
+      "notes": "The DB-SETTLE-007 insert check: a record is accepted only linked to its own correction confirmed in this transaction and exactly as its draft prepared it; unlinked, another line, classification, evidence, reason or person, a time before the correction or at the line's latest record are refused (23514), each by its own clause; the confirm dates its record after the line's latest record; the table is append-only (V1-056 sub-slice 10c-2a-5, review rounds 1 and 2)."
+    },
+    {
+      "test_id": "test_a_line_billed_from_an_inspection_superseded_before_closure_is_not_eligible",
+      "upstream_ids": ["BR-SETTLE-013", "BR-MOVEOUT-006", "DB-SETTLE-007"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_pet_classification_migration.py",
+      "status": "implemented",
+      "notes": "A Damage line billed from an inspection superseded before closure is not eligible for a pet classification correction (the owner's open point on carrying a finding forward stays open); the draft is refused and nothing is recorded (V1-056 sub-slice 10c-2a-5, review round 2)."
     }
   ]
 }

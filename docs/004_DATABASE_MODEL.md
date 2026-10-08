@@ -2250,6 +2250,51 @@ more than its new amount: the deferred Adjustment check already refuses a line w
 value at the Adjustment's time, Deposit applications included, is below zero. The
 `CHARGE_REDUCTION` recorder (10c-1a) still refuses an Invoice that a Deposit application paid.
 
+As built in V1-056 sub-slice 10c-2a-5 (migration `20261109_105`; owner answer to
+Q-2026-10-07-45): the effects gain the link `settlement_pet_classification_id` (a DB-SETTLE-007
+record; deferrable, unique; the one-link check and the two link functions rebuilt). The variant
+`PET_DAMAGE_RECLASSIFICATION` (recorder `app.record_settlement_pet_classification_draft` under
+`final_settlements.prepare`, confirm `app.confirm_settlement_pet_classification` under
+`financial.approve`, READ COMMITTED only) corrects the pet classification of one Damage line
+billed from an inspection finding, in both directions. The confirm writes, each linked before it
+is written: the DB-SETTLE-007 record; the reversal of the line's Deposit applications where the
+corrected classification changes which Deposit should pay (to not pet damage, its
+`PET_RELATED_FIRST` applications; to pet damage, its `SECURITY_EXPLICIT` applications while a Pet
+Deposit of the Lease on the DL-032 path holds money; a `PET_REMAINDER_EXPLICIT` application stays); then the shared
+DL-032 step with the draft's plan. The plan is checked at record under the corrected
+classification (the step's overlay key `pet_damage`); the lock function takes the line's Invoice
+`FOR UPDATE` in its Invoice pass. No Adjustment: the charge amount stays the same, and a Deposit
+refunded at closure is not taken back, so the line may stay open debt.
+
+## DB-SETTLE-007 — `settlement_pet_classifications`
+
+Added in V1-056 sub-slice 10c-2a-5 (migration `20261109_105`; owner answer to
+Q-2026-10-07-45). The corrected pet classification of one Damage line after its Lease's Final
+Settlement is closed, written only by a `PET_DAMAGE_RECLASSIFICATION` post-settlement correction.
+The closed inspection record is never changed.
+
+| Column | Type | Null | Rule |
+|---|---|---:|---|
+| `id` | `uuid` | no | PK; linked first by DB-SETTLE-005 `settlement_pet_classification_id` |
+| `settlement_correction_id` | `uuid` | no | FK DB-SETTLE-003; unique (one record per correction) |
+| `invoice_line_id` | `uuid` | no | FK; a `DAMAGE_CHARGES` line billed from a finding of a current inspection of the Settlement's Lease, on an issued, non-VOID Invoice of that Lease |
+| `pet_related` | `boolean` | no | the corrected classification; differs from the line's current one |
+| `evidence_reference` | `text` | no | 1 to 500 characters |
+| `reason` | `text` | no | 1 to 500 characters (the correction draft's reason) |
+| `recorded_at` | `timestamptz` | no | not before the correction; later than the line's latest record; not later than the clock plus 5 seconds |
+| `actor_id` | `uuid` | no | FK; the correction's approver |
+| `authorization_reference` | `text` | no | `financial.approve` |
+
+A BEFORE INSERT check (23514) locks the line's Invoice and needs the record linked in the same
+transaction to its own correction of the line's own closed Settlement confirmed by its approver
+(`app.settlement_correction_linked` and the effect row of `settlement_correction_id`), exactly as
+that correction's `PET_DAMAGE_RECLASSIFICATION` draft prepared it (line, classification,
+evidence, reason), a line billed from a finding of a current inspection, and `recorded_at` later
+than the line's latest record (review round 1). Append-only; no application role may read or
+write it.
+`app.invoice_line_is_pet_damage` reads the line's latest record (by `recorded_at`, then id)
+before the inspection rule; records exist only after closure, so nothing before closure changes.
+
 ## DB-SETTLE-006 — `settlement_invoice_line_items`
 
 Immutable line-aware closure membership/snapshot: `id uuid PK`,

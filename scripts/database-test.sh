@@ -209,6 +209,7 @@ database_test_suites='
   tests/test_settlement_correction_plan_migration.py
   tests/test_settlement_deposit_refund_correction_migration.py
   tests/test_inspection_supersede_after_closure_migration.py
+  tests/test_settlement_pet_classification_migration.py
 '
 
 for database_test_file in $database_test_suites; do
