@@ -177,4 +177,6 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md.
 
 - V1-056 sub-slice 10c-2a-6 (2026-10-08, 94230f2, migration 20261110_106): COMMITTED. The shared step re-checks the Customer choice for every correction variant (the `REFUND` confirm included); U2 3606, P2 1952 passed; rounds 1 and 2 no should-fix. NEXT: 10c-2b pre-code design (returned Refund correction). Nothing pushed.
 
+- V1-056 sub-slice 10c-2b (2026-10-08): STOPPED before code (Q-2026-10-08-55). Pre-code design in the plan (split 10c-2b-1 Credit Refund return with the approved one-call tightening, 10c-2b-2 Deposit Refund return, 10c-2b-3 refund-only form). Rule points: returned Credit with a new Refund pays its Customer's open debt first; the later life of a returned Credit; a Deposit return with a new Refund runs the step; names. Read-only path search: after closure the receipt reversal draft and the one-call return and reversal of a Pet Refund-review Refund move a closed Deposit's money without a correction (tightenings recommended). No code, no run. NEXT: owner answer; 10c-2b-1 after point 1. Nothing pushed.
+
 - Updated: 2026-10-08.
