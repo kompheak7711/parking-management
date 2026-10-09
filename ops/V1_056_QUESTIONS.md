@@ -1489,3 +1489,92 @@ Until you answer, no further 10c-2b-3 change, no run and no commit. All 10c-2b-3
 2. Yes, keep it as built, as approved for 10c-2b-1. Credit spent through the ordinary Credit paths lowers only the Credit's available value. The available value still caps every Refund. Write it in docs/010 as a known limit: the value an earlier correction left can be more than the Customer can still get back.
 
 Recorded in docs/010. Next: the round 1 fixes (the listed tests, the audit `customer_id` of a Deposit correction, a Credit correction whose Credit is empty), the static checks, the runs, review rounds 2 and 3 under the standing rule, then the commit.
+
+## Q-2026-10-09-64 — The Deposit counting of the refund-only form, reported after 10c-2b-3 (ANSWERED 2026-10-09: the stricter count, an approved tightening; built as sub-slice 10c-2b-4)
+
+**The point reported after 10c-2b-3.** As committed (migration `20261114_110`), the value an earlier return-only correction left in a Deposit is lowered only by the corrections linked to it, and the shared step of every `HELD_VALUE_REFUND` correction must apply or refund every held DL-032 Deposit balance (BR-SETTLE-008). So a correction that names one earlier correction can also use Deposit money that another earlier correction returned (for example a Credit correction that also refunds the Pet Deposit's returned money, as owner answer 2 to Q-2026-10-08-59 allowed), and the other earlier correction then shows value left that the Deposit no longer holds (the known limit written with owner answer 1 to Q-2026-10-09-63).
+
+**Owner answer (2026-10-09).** I want the stricter count. This tightening is approved.
+- A Deposit correction that names an earlier correction may use at most the value that correction has left. This limit covers the Lease debt it pays and the Refund together.
+- To use more held money, staff prepare another correction that names the other earlier correction.
+- Build it as a small sub-slice before 10c-3b, with a new migration. Do not change any committed migration.
+- Change the committed test that shows the old limit so that it proves the new refusal. It keeps its name. The independent reviewer compares it with its version at HEAD and confirms that this is the only change.
+- Update the known-limit entry in docs/010.
+- Check that the Credit side counts the debt it pays in the same way. If it does not, tell me in your report. Do not change it.
+
+Recorded in docs/010. The pre-code design is in the plan (10c entry, "10c-2b-4").
+
+**Credit side check (your last point; reported, not changed).** The Credit form does not count the debt it pays in the same way. Its new Refund is at most what the earlier correction left, but this correction's own step applications from that Credit are left out of the cap (your answer 2 to Q-2026-10-09-63, kept as built). So the debt it pays and its Refund together may exceed what the earlier correction left: the committed test 1 of 10c-2b-3 has 1,800 left, pays 1,500 to debt and refunds 500.
+
+## Q-2026-10-09-65 — Sub-slice 10c-2b-4 stopped after review round 2: with exact use, two held-value corrections can block each other (ANSWERED 2026-10-09: (b); the narrow guard agreed; Credit side kept; 10c-3b findings accepted; answers in docs/010)
+
+10c-2b-4 (migration `20261116_112`) is built and NOT committed. Runs: T1 15, U1 3663, P1 1994 passed; after the round-1 fixes T2 15, U2 3663, P2 1994 passed; after the round-2 fix T3 15 passed (no full run since). Record: ops/reviews/V1-056-slice-10c-2b-4-held-deposit-limit.md. Review round 1: one should-fix each, both fixed. Review round 2: security 0 blockers, 0 should-fix; independent 0 blockers, 1 should-fix (the new "pet damage first" guard refused every Security Deposit use; it now refuses only a Security Deposit step that pays pet damage). That reviewer also found the case below, which needs you.
+
+**What I built.** Your answer says a correction "may use at most" the value its earlier correction left. BR-SETTLE-008 says every remaining Deposit balance is applied or refunded. I combined the two: a held-value correction applies or refunds exactly the smaller of its value left and what the Deposit holds, so it never leaves part of its own value behind.
+
+**The case.** A termination where the remaining Pet Deposit pays other debt only by the Customer's choice or a staff decision, and the Customer has no Credit. A return-only correction E1 put 300 back in the Pet Deposit, and E2 put 200 back in the Security Deposit. Later, other corrections open 50 of pet damage and 100 of other debt.
+- A correction naming E2 must use exactly 200 of the Security Deposit. It may pay the other debt (100). It may not pay the pet damage, because the Pet Deposit pays pet damage first and still holds money. It may not refund the rest while debt stays open. So it is refused.
+- A correction naming E1 must use exactly 300 of the Pet Deposit. It pays the pet damage (50). The rest may not pay the other debt while the Security Deposit holds money (the remaining Pet Deposit comes after the Security Deposit), and it may not be refunded while debt stays open. So it is refused.
+- Neither correction can be recorded until the Customer pays the other debt. No money is wrong, but staff are stuck.
+
+**Options:**
+- (a) Keep exact use. Such a case waits until the Customer pays; docs/010 says so.
+- (b) "At most", as your words say: a held-value correction may leave part of its own value held, for a later correction that names the same earlier correction. A Deposit correction must still use some of its own value; one that uses none stays refused with the existing every-balance message, so the committed no-plan test does not change. In the case above: E2 pays the other debt (100) and keeps 100; E1 pays the pet damage and refunds 250; a second correction naming E2 refunds the last 100.
+- (c) Keep exact use, but let the Security Deposit pay pet damage when the Pet Deposit's money belongs to another earlier correction. This changes the DL-032 order (pet damage first), so I do not recommend it.
+
+**Recommendation: (b).** It follows your words "at most", keeps every DL-032 rule, and never uses more than the value left.
+
+**For you, not blocking (details in docs/010, 10c-2b-4 entry):**
+- When held money is less than the value left (a correction that names no earlier correction settled some of it, then a later return brought money back), a correction naming the first earlier correction may use the later return's money, and naming the later one is then refused. Changing this would change how answer 1 to Q-2026-10-09-63 counts the value left.
+- Corrections that name no earlier correction (`REFUND`, `REFUND_RETURN` with a new Refund, `PET_DAMAGE_RECLASSIFICATION`, and a return-only Credit correction under the hold rule) still apply or refund held Deposit money (BR-SETTLE-008).
+- Each Customer's Credit still pays that Customer's open debt first whenever a Deposit holds money, also money this correction may not use.
+
+Until you answer: no further 10c-2b-4 change, no run, no commit; 10c-3b is not started (your answers for it are recorded under Q-2026-10-09-66).
+
+**Owner answer (2026-10-09).**
+
+1. Option (b). My words were "at most", and that is what I meant. A correction may leave part of the value that its named correction left in a Deposit. That part stays held for a later correction that names the same earlier correction. The correction must still use some value, so the committed no-plan test does not change. BR-SETTLE-008 and the DL-032 order stay exactly as they are for every correction, including one that leaves value held. Add tests: the Q-65 case is fully settled through more than one correction, once with the Pet Deposit correction first and once with the Security Deposit correction first, and each end result follows the DL-032 order; a correction that leaves value held still cannot pay a Refund that BR-SETTLE-008 would refuse.
+2. The narrow guard: agreed. My answer 3 (ii) to Q-2026-10-05-20 and the 10c-2b-2a hold rule only stop the Security Deposit from paying pet damage instead of the Pet Deposit. They never stopped the Security Deposit from paying other debt. Write this reason in docs/010.
+3. The Credit side: keep it as built. A Customer's Credit pays that Customer's own debt first, whatever its source (my Q-29 and Q-55 answers). Add to the docs/010 known-limit entry: on the Credit side, only Refunds lower the value an earlier correction left; debt that the correction pays from the Credit does not.
+4. 10c-3b: the read-only findings are accepted. Relax `invoice_credit_excess_releases` as described, with exactly one of the two links. The split into Payment and Credit sources first, then Deposit-paid Charges, is fine.
+5. Then apply answer 1, the static checks, the migration-only check, the read-only search for affected tests, the full unit run and the full PostgreSQL run under caffeinate, then review round 3 under the standing round-3 rule; commit 10c-2b-4 only if the runs are green and round 3 has no blocker and no should-fix. After that, build 10c-3b.
+
+Recorded in docs/010 (see Q-2026-10-09-67 for the round-3 result). Implementer note on answer 3: in the code, the value an earlier correction left in a Credit is also lowered by the debt that the earlier correction's own step and the other linked held-value corrections paid from that Credit (owner answer 1 to Q-2026-10-09-63); only a held-value correction's own debt payment does not lower its own cap. docs/010 says so, to stay true to the code.
+
+## Q-2026-10-09-66 — Owner answers for sub-slice 10c-3b, given before its design (ANSWERED 2026-10-09)
+
+1. Deposit applications on a paid Late-payment Charge: follow the Q-2026-10-07-46 answer, the same way as for Adjustments. If it does not fit Charges, write why in this file with a recommendation and stop.
+2. Where to record the Credit freed from a paid Charge: a technical choice. Use an additive or relaxing migration only. Every money movement must link to the correction that caused it. Write the choice in the design and in docs/004; the reviewers must check it. If the choice would change who gets the money, or the order the money is used in, stop and ask.
+
+Read-only findings so far (head `20261115_111`), for the 10c-3b design: (1) the Q-46 answer fits a Charge: the 8a-1 refusal of a Charge correction (`app.refuse_deposit_applied_obligation_change`, P4603) can let through a Charge correction linked to a correction of its own Settlement confirmed in the same transaction by that approver, and the Charge correction's deferred validator already refuses a result below the active applications (Deposit applications not reversed included), so no Charge can be paid more than its new amount. (2) Recommended record: relax `invoice_credit_excess_releases` (its Adjustment link becomes optional and it gains an optional link to the Late-payment Charge correction, exactly one of the two); most readers key on the released source, its replacement or the Credit, so few need a patch (the release validator, the Credit recognition validator that finds the Customer, the relaxed Credit Refund check and the plan's Credit key). Released Payment value still becomes the Charge Customer's Credit (BR-CREDIT-014), newest first (Q-41 answer 2), and released Credit first pays its own Customer's open debt (Q-42 answer 2): who gets the money and the order do not change. A split like 10c-1b and 10c-2a-3 is likely: Payment and Credit sources first, Deposit-paid Charges second.
+
+## Q-2026-10-09-67 — Sub-slice 10c-2b-4 stopped after review round 3: one text should-fix (stale wording of the old exact-use rule) (ANSWERED 2026-10-09: (a), owner exception as Q-2026-10-07-44; answer in docs/010)
+
+Your answers to Q-2026-10-09-65 are built (option (b), "at most"; the narrow guard; the Credit-side known limit; recorded in docs/010). Runs, all green: T4 16 passed, U3 3663 passed, P3 1995 passed (under caffeinate). Record: ops/reviews/V1-056-slice-10c-2b-4-held-deposit-limit.md. Nothing is committed.
+
+**Review round 3 (standing rule):**
+- Independent: 0 blockers, 0 should-fix, 4 notes. It confirms that the migration implements (b) exactly, that the tests prove your requested cases and fail without the code, and that the changed committed test is not weakened.
+- Security: 0 blockers, 1 should-fix, which is text only. Checks 1 to 4 pass: no money moves beyond the limit, no Refund while debt stays open, the DL-032 order holds, callers cannot set the limit, and there is no new SQLSTATE.
+
+**The should-fix (both reviewers name it, the independent one as notes).** Four places still describe the old exact-use rule:
+- the new test module's docstring (`backend/tests/test_settlement_held_deposit_limit_migration.py`, line 6: "applies or refunds all of that value the Deposit holds");
+- three plan sentences (`ops/V1_056_PLAN.md`, the 10c-2b-4 Rule sentence, the plan-check bullet and the tests bullet, which still describe test 1 before (b)).
+
+Independent note 3 is also text: docs/010 says the limit is refused "together with `hold_deposits`"; the code refuses it only with `hold_deposits` true. No code is wrong.
+
+**Options:**
+- (a) An owner exception, as for Q-2026-10-07-44: make these text fixes only. Then run lint, format and type check, each in its own call, and one full backend unit run. No PostgreSQL test reads a module docstring or the plan, so there is no PostgreSQL run. Then commit 10c-2b-4.
+- (b) The text fixes, then U, P and a limited review round of the text.
+
+**Recommendation: (a).** The fixes change no code and no test assertion.
+
+Until you answer: no change, no run, no commit. 10c-3b is not started.
+
+**Owner answer (2026-10-09).**
+
+1. Option (a), the same exception as Q-2026-10-07-44. Fix the four stale texts and the loose docs/010 sentence. Check with git diff that only text lines changed. Then run the three static checks, each in its own call, and one full unit run. Commit 10c-2b-4 if they are clean.
+2. The Q-65 test in both orders is accepted for now. A real-path version, with real corrections recorded and confirmed, not a state carried by hand from one step to the next, is a task in the plan that must be done before 10h. Written in the review record.
+3. The docs/010 wording for the Credit side is right: it matches the code, and the docs must match the code. The wording of owner answer 3 to Q-2026-10-09-65 was not exact. Nothing else changes.
+4. After 10c-2b-4 is committed, write the 10c-3b pre-code design in the plan and commit it. No code. Then stop and report. A design question goes to this file with a recommendation. The owner starts a fresh session to build 10c-3b.
+
+Recorded in docs/010.

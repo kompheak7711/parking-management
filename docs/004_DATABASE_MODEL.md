@@ -2355,6 +2355,18 @@ held-value corrections), and the Credit or the Deposit must still hold value; th
 Deposit's owner, and the confirm's audit event names the Deposit Refund's recipient and lists every
 Deposit balance the step settled.
 
+As built in V1-056 sub-slice 10c-2b-4 (migration `20261116_112`; owner answer to Q-2026-10-09-64, an
+approved tightening): a `HELD_VALUE_REFUND` correction uses, in each Deposit, at most what its
+earlier correction left there, the Lease debt it pays and the Refund together; a Deposit the earlier
+correction returned nothing to gives it nothing, so a Credit correction uses no Deposit money.
+It must use some of that value; the rest may stay held for a later correction that names the same
+earlier correction (owner answer 1 to Q-2026-10-09-65), and BR-SETTLE-008 and the DL-032 order hold
+for the money it uses; other held money stays held until a correction names the earlier correction
+that returned it (or a correction that names none settles it, docs/010 known limit). While a Pet
+Deposit keeps such money and pet damage stays open after its step, no Security Deposit step pays
+that pet damage (DL-032, pet damage first). The draft's `plan_overlay` records the limit (`held_left`, a Deposit id to cents),
+the shared step checks it, and a draft without it is stale at the confirm. No new table or column.
+
 As built in V1-056 sub-slice 10c-3a (migration `20261115_111`; owner answer to Q-2026-10-07-38): the
 `CHARGE_REDUCTION` variant also reduces an unpaid Late-payment Charge of an Invoice of the
 Settlement's Lease (draft `target_kind` `LATE_PAYMENT_CHARGE`, its own recorder and confirm). Its

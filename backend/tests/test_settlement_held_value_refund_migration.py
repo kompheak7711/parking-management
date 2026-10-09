@@ -598,17 +598,18 @@ def test_what_an_earlier_correction_left_caps_the_refund_after_its_own_step_paid
 def test_a_credit_return_while_a_deposit_holds_money_is_refunded_with_that_money(
     migrated_database_url: str,
 ) -> None:
-    """Owner answer 2 to Q-2026-10-08-59 and owner answers 1 and 2 to Q-2026-10-09-63: the Pet
-    Deposit holds 2,000 that a return-only correction Ed brought back; a return-only correction Ec
-    of a correction's Credit Refund (1,000) is still recorded. The Customer then spends 600 of that
-    Credit through an ordinary Credit Refund, which lowers only the Credit's available value (the
-    known limit: Ec still shows 1,000 left). A held-value Refund linked to Ec must also settle the
-    held Pet Deposit money, so it refunds both: the Credit's 400 (capped by what it holds) and the
-    Pet Deposit's 2,000; its audit lists that Deposit balance. Ed was not linked, so it still
-    shows 2,000 left, but the Pet Deposit holds nothing and naming Ed is refused. When the Pet
-    Deposit holds 500 again, a correction linked to Ec is refused because the Credit holds
-    nothing, although its plan has a Deposit Refund step; no record is written; a correction
-    linked to the new return refunds the 500."""
+    """Owner answer 2 to Q-2026-10-08-59, owner answers 1 and 2 to Q-2026-10-09-63 and the owner
+    answer to Q-2026-10-09-64 (sub-slice 10c-2b-4): the Pet Deposit holds 2,000 that a return-only
+    correction Ed brought back; a return-only correction Ec of a correction's Credit Refund (1,000)
+    is still recorded. The Customer then spends 600 of that Credit through an ordinary Credit
+    Refund, which lowers only the Credit's available value (the known limit: Ec still shows 1,000
+    left). A held-value Refund linked to Ec may use no Deposit money, because Ec returned none:
+    with the Pet Deposit's Refund step it is refused and writes nothing; without it, it refunds
+    the Credit's 400 (capped by what it holds) and the Pet Deposit keeps its 2,000. A correction
+    linked to Ed refunds those 2,000 and its audit lists that Deposit balance; Ed then has nothing
+    left and naming it again is refused. When the Pet Deposit holds 500 again, a correction linked
+    to Ec is refused because the Credit holds nothing, although its plan has a Deposit Refund
+    step; no record is written; a correction linked to the new return refunds the 500."""
     url = migrated_database_url
     case = refunded_case(url)
     refund, credit, customer, pet = (
@@ -627,30 +628,45 @@ def test_a_credit_return_while_a_deposit_holds_money_is_refunded_with_that_money
         actor=refund_actor(case["human"], case["prop"], "refunds.create"),
     )
     assert (available(url, credit), credit_left(url, credit_return, credit)) == (400, 1_000)
-    with pytest.raises(FinalSettlementConflictError) as unplanned:
-        record_held(case, held_command(case, credit_return))
-    assert cause(unplanned) == ("55000", EVERY_BALANCE)
+    counted = one(url, COUNTS)
+    with pytest.raises(FinalSettlementConflictError) as beyond:
+        record_held(case, held_command(case, credit_return, settlement_refund(case, "pet", 2_000)))
+    assert cause(beyond) == (
+        "55000",
+        "A held-value correction uses at most what its earlier correction left in each Deposit",
+    )
+    assert (one(url, COUNTS), held(url, pet), available(url, credit)) == (counted, 2_000, 400)
+    result = confirm_held(case, record_held(case, held_command(case, credit_return)))
+    assert {
+        (paid["source_customer_credit_id"], paid["source_deposit_id"], paid["amount_usd_cents"])
+        for paid in result["refunds"]
+    } == {(str(credit), None, 400)}
+    customer_id, confirmed = audit(url, result["settlement_correction"]["id"])
+    assert (customer_id, confirmed["settled_deposits"]) == (customer, [])
+    assert (held(url, pet), available(url, credit)) == (2_000, 0)
+    assert (credit_left(url, credit_return, credit), deposit_left(url, deposit_return, pet)) == (
+        600,
+        2_000,
+    )
     result = confirm_held(
         case,
-        record_held(case, held_command(case, credit_return, settlement_refund(case, "pet", 2_000))),
+        record_held(
+            case, held_command(case, deposit_return, settlement_refund(case, "pet", 2_000))
+        ),
     )
     assert {
         (paid["source_customer_credit_id"], paid["source_deposit_id"], paid["amount_usd_cents"])
         for paid in result["refunds"]
-    } == {(str(credit), None, 400), (None, str(pet), 2_000)}
+    } == {(None, str(pet), 2_000)}
     customer_id, confirmed = audit(url, result["settlement_correction"]["id"])
     assert (customer_id, confirmed["settled_deposits"]) == (
         customer,
         [{"deposit_id": str(pet), "applied_usd_cents": 0, "refunded_usd_cents": 2_000}],
     )
-    assert (held(url, pet), available(url, credit)) == (0, 0)
-    assert (credit_left(url, credit_return, credit), deposit_left(url, deposit_return, pet)) == (
-        600,
-        2_000,
-    )
+    assert (held(url, pet), deposit_left(url, deposit_return, pet)) == (0, 0)
     with pytest.raises(FinalSettlementConflictError) as emptied:
         record_held(case, held_command(case, deposit_return, settlement_refund(case, "pet", 2_000)))
-    assert cause(emptied) == ("55000", DEPOSIT_EMPTY)
+    assert cause(emptied) == ("55000", NOTHING_LEFT)
     newest = return_only(case, pet_refund(case), 500)
     before = one(url, COUNTS)
     with pytest.raises(FinalSettlementConflictError) as no_credit:

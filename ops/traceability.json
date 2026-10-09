@@ -39242,7 +39242,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_held_value_refund_migration.py",
       "status": "implemented",
-      "notes": "A Credit return-only correction recorded while a Deposit holds returned money is refunded by a HELD_VALUE_REFUND correction that also refunds the held Deposit money (its audit lists that Deposit balance); an ordinary Credit Refund lowers only the Credit's available value, which caps the Refund; a Credit correction whose Credit holds nothing is refused even with a Deposit Refund step, and no record is written (V1-056 sub-slice 10c-2b-3, owner answer 2 to Q-2026-10-08-59, owner answers 1 and 2 to Q-2026-10-09-63)."
+      "notes": "A Credit return-only correction recorded while a Deposit holds returned money is refunded by a HELD_VALUE_REFUND correction that may use no Deposit money (with the Deposit's Refund step it is refused and writes nothing; without it the Deposit keeps its money), and the correction naming the Deposit's return refunds that money (its audit lists that Deposit balance); an ordinary Credit Refund lowers only the Credit's available value, which caps the Refund; a Credit correction whose Credit holds nothing is refused even with a Deposit Refund step, and no record is written (V1-056 sub-slices 10c-2b-3 and 10c-2b-4, owner answer 2 to Q-2026-10-08-59, owner answers 1 and 2 to Q-2026-10-09-63, owner answer to Q-2026-10-09-64)."
     },
     {
       "test_id": "test_a_deposit_correction_audit_names_the_refund_recipient",
@@ -39315,6 +39315,62 @@
       "test_path": "backend/tests/test_settlement_correction.py",
       "status": "implemented",
       "notes": "The Late-payment Charge reduction service sends the stored reduction, confirms under financial.approve and maps a changed Charge to a stale draft (V1-056 sub-slice 10c-3a)."
+    },
+    {
+      "test_id": "test_a_deposit_correction_uses_at_most_what_its_earlier_correction_left",
+      "upstream_ids": ["BR-SETTLE-008", "BR-SETTLE-013", "BR-REFUND-014", "DL-032"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_held_deposit_limit_migration.py",
+      "status": "implemented",
+      "notes": "A HELD_VALUE_REFUND correction of a Pet Deposit that holds money from two return-only corrections uses at most what its earlier correction left there, the Lease debt it pays and the Refund together: more is refused, none of it is refused with the every-balance message, a Refund while the charge stays open is refused (BR-SETTLE-008), nothing is written; a correction that leaves part of the value held is confirmed and a later correction naming the same earlier correction refunds that part; the other correction's money stays held and is refunded by the correction that names it (V1-056 sub-slice 10c-2b-4, owner answers to Q-2026-10-09-64 and Q-2026-10-09-65)."
+    },
+    {
+      "test_id": "test_a_credit_correction_leaves_held_deposit_money_to_the_correction_that_returned_it",
+      "upstream_ids": ["BR-SETTLE-013", "BR-CREDIT-006", "DL-032"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_held_deposit_limit_migration.py",
+      "status": "implemented",
+      "notes": "A HELD_VALUE_REFUND correction of a returned Credit pays its Customer's debt from Credit first and may use no Deposit money (a Pet Deposit step is refused and writes nothing); the debt stays open while the Pet Deposit keeps its returned money, which the correction naming the Deposit's return then applies and refunds (V1-056 sub-slice 10c-2b-4, owner answer to Q-2026-10-09-64)."
+    },
+    {
+      "test_id": "test_a_correction_that_names_no_earlier_correction_still_settles_held_money",
+      "upstream_ids": ["BR-SETTLE-008", "BR-SETTLE-013"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_held_deposit_limit_migration.py",
+      "status": "implemented",
+      "notes": "The known limit that stays: a returned-Refund correction with a new Refund names no earlier correction and refunds every held DL-032 Deposit balance, so the return-only correction of that Deposit still shows value left while the Deposit is empty, and naming it is refused with nothing written; when a later return-only correction brings money back, a correction naming the first may use it and naming the later one is then refused (V1-056 sub-slice 10c-2b-4, review round 1)."
+    },
+    {
+      "test_id": "test_the_plan_check_takes_the_limit_per_deposit",
+      "upstream_ids": ["BR-SETTLE-008", "DL-032"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_held_deposit_limit_migration.py",
+      "status": "implemented",
+      "notes": "The shared plan check with a per-Deposit limit accepts the limit or less, refuses more and refuses a plan that uses none of it, refuses any use of a Deposit outside the limit, lets the Security Deposit be refunded while the Pet Deposit keeps its money, refuses a Security Deposit step on open pet damage while a Pet Deposit keeps money (DL-032, pet damage first), lets the Security Deposit pay other debt meanwhile and lets the Pet Deposit pay the pet damage, and refuses a malformed limit (also above the cap) or a limit together with the return-only flag as invalid input (V1-056 sub-slice 10c-2b-4, review round 1)."
+    },
+    {
+      "test_id": "test_a_draft_recorded_without_the_limit_is_stale",
+      "upstream_ids": ["BR-SETTLE-013", "BR-AUTH-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_held_deposit_limit_migration.py",
+      "status": "implemented",
+      "notes": "A HELD_VALUE_REFUND draft records its Deposit limit (the Deposit form its value left, the Credit form none); a draft without it, as recorded before the limit existed, is stale at the confirm and stays pending with nothing moved, in both forms (V1-056 sub-slice 10c-2b-4, review round 1)."
+    },
+    {
+      "test_id": "test_the_q65_case_is_settled_in_either_order",
+      "upstream_ids": ["BR-SETTLE-008", "BR-SETTLE-013", "DL-032"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_held_deposit_limit_migration.py",
+      "status": "implemented",
+      "notes": "With the Pet Deposit and the Security Deposit each holding another return-only correction's money, pet damage and other debt open and no Customer Credit, the plan check accepts the corrections in either order, each leaving part of its value held where the rules hold it back (a Refund while debt stays open and the remaining Pet Deposit before the Security Deposit are refused), and both orders end with the pet damage paid by the Pet Deposit, the other debt by the Security Deposit and every Refund after the debt (V1-056 sub-slice 10c-2b-4, owner answer 1 to Q-2026-10-09-65)."
+    },
+    {
+      "test_id": "test_held_deposit_limit_is_least_privilege_and_forward_only",
+      "upstream_ids": ["BR-SETTLE-013", "BR-AUTH-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_held_deposit_limit_migration.py",
+      "status": "implemented",
+      "notes": "Only the financial role records and confirms a held-value Refund correction and no role calls the plan check or the step; the migration changes only the four patched functions, each exactly by its replacements with privileges, owner and settings kept, and is forward-only (V1-056 sub-slice 10c-2b-4)."
     }
   ]
 }
