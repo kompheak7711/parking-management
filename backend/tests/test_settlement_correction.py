@@ -27,6 +27,7 @@ from property_rental.settlement_correction import (
     RecordChargeReductionCorrectionCommand,
     RecordExtraChargeCorrectionCommand,
     RecordHeldValueRefundCorrectionCommand,
+    RecordLateChargeReductionCorrectionCommand,
     RecordPetClassificationCorrectionCommand,
     RecordRefundCorrectionCommand,
     RecordRefundReturnCorrectionCommand,
@@ -1123,3 +1124,144 @@ def test_held_value_refund_correction_confirm_maps_database_refusals(
             PROPERTY, DRAFT, actor=person("financial.approve")
         )
     assert type(refused.value) is confirm_error and refused.value.__cause__ is failure
+
+
+CHARGE = UUID(int=81)
+
+
+def late_charge_reduction(**changes: Any) -> RecordLateChargeReductionCorrectionCommand:
+    base = RecordLateChargeReductionCorrectionCommand(
+        KEY, SETTLEMENT, CHARGE, 1_000, "The Late-payment Charge used the wrong rate"
+    )
+    return replace(base, **changes)
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"idempotency_key": UUID(int=0)},
+        {"settlement_id": "not-a-uuid"},
+        {"late_payment_charge_id": UUID(int=0)},
+        {"amount_usd_cents": 0},
+        {"amount_usd_cents": 10.0},
+        {"amount_usd_cents": True},
+        {"amount_usd_cents": 9_000_000_000_000_001},
+        {"reason": " padded"},
+        {"reason": "x" * 501},
+    ],
+)
+def test_the_late_charge_reduction_command_refuses_malformed_input(
+    changes: dict[str, Any],
+) -> None:
+    """Sub-slice 10c-3a: money in whole positive cents within the cap; the reason fits the Charge
+    correction (500)."""
+    with pytest.raises(FinalSettlementInvalidError):
+        late_charge_reduction(**changes)
+
+
+def test_a_late_charge_reduction_is_recorded_by_staff_and_confirmed_only_by_an_approver(
+    no_connection: None,
+) -> None:
+    """BR-AUTH-010 (sub-slice 10c-3a): final_settlements.prepare records a Late-payment Charge
+    reduction and only financial.approve confirms it, before any connection; the Late-payment
+    capability alone does neither."""
+    service = SettlementCorrectionService("unused")
+    for actor in (
+        person(),
+        person("financial.approve"),
+        person("late_payment.charge_correction"),
+    ):
+        with pytest.raises(FinalSettlementAuthorizationError):
+            service.record_late_charge_reduction(PROPERTY, late_charge_reduction(), actor=actor)
+    for actor in (
+        person(),
+        person("final_settlements.prepare"),
+        person("late_payment.charge_correction"),
+    ):
+        with pytest.raises(FinalSettlementAuthorizationError):
+            service.confirm_late_charge_reduction(PROPERTY, DRAFT, actor=actor)
+    with pytest.raises(FinalSettlementInvalidError):
+        service.confirm_late_charge_reduction(
+            PROPERTY, UUID(int=0), actor=person("financial.approve")
+        )
+    with pytest.raises(FinalSettlementInvalidError):
+        service.record_late_charge_reduction(
+            PROPERTY,
+            reduction(),  # type: ignore[arg-type]
+            actor=person("final_settlements.prepare"),
+        )
+
+
+def test_late_charge_reduction_record_and_confirm_send_the_stored_reduction(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Sub-slice 10c-3a: the recorder sends the Charge and the amount; the confirm maps a changed
+    Charge to a stale draft (P5S02) and keeps the Final Settlement mapping for the rest."""
+    calls: list[tuple[object, ...]] = []
+
+    class Connection:
+        read_only: bool | None = None
+
+        def __enter__(self) -> "Connection":
+            return self
+
+        def __exit__(self, *args: object) -> None:
+            return None
+
+        def execute(self, sql: str, parameters: tuple[object, ...] = ()) -> "Connection":
+            calls.append((sql, parameters))
+            return self
+
+        def fetchone(self) -> tuple[dict[str, object]]:
+            return ({"draft_id": str(DRAFT)},)
+
+    monkeypatch.setattr(psycopg, "connect", lambda url, **kwargs: Connection())
+    service = SettlementCorrectionService("financial-url")
+    assert service.record_late_charge_reduction(
+        PROPERTY, late_charge_reduction(), actor=person("final_settlements.prepare")
+    ) == {"draft_id": str(DRAFT)}
+    sql, parameters = calls[-1]
+    assert sql == ("SELECT app.record_settlement_late_charge_reduction_draft(%s,%s,%s,%s,%s,%s,%s)")
+    assert isinstance(parameters, tuple)
+    assert parameters[:4] == (
+        PROPERTY,
+        HUMAN,
+        settlement_correction_draft_id(PROPERTY, HUMAN, KEY),
+        SETTLEMENT,
+    )
+    stored = parameters[4]
+    assert isinstance(stored, Jsonb)
+    assert stored.obj == {"late_payment_charge_id": str(CHARGE), "amount_usd_cents": 1_000}
+    assert parameters[5:] == (
+        "The Late-payment Charge used the wrong rate",
+        "final_settlements.prepare",
+    )
+    assert service.confirm_late_charge_reduction(
+        PROPERTY, DRAFT, actor=person("financial.approve")
+    ) == {"draft_id": str(DRAFT)}
+    assert calls[-1] == (
+        "SELECT app.confirm_settlement_late_charge_reduction(%s,%s,%s,%s)",
+        (PROPERTY, HUMAN, DRAFT, "financial.approve"),
+    )
+
+    class Failure(psycopg.Error):
+        pass
+
+    for sqlstate, error in (
+        ("P5S02", FinalSettlementStaleDraftError),
+        ("55000", FinalSettlementConflictError),
+        ("P0002", FinalSettlementNotFoundError),
+        ("42501", FinalSettlementAuthorizationError),
+    ):
+        failure = Failure("Synthetic failure")
+        failure.sqlstate = sqlstate
+
+        def refuse(*args: object, failure: Failure = failure, **kwargs: object) -> None:
+            raise failure
+
+        monkeypatch.setattr(psycopg, "connect", refuse)
+        with pytest.raises(error) as refused:
+            service.confirm_late_charge_reduction(
+                PROPERTY, DRAFT, actor=person("financial.approve")
+            )
+        assert type(refused.value) is error and refused.value.__cause__ is failure

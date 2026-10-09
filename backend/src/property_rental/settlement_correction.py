@@ -36,6 +36,10 @@ a new Refund, or stays as that Customer's Credit. Such a Refund is never correct
 Sub-slice 10c-2b-3: the ``HELD_VALUE_REFUND`` variant, a later correction that refunds value an
 earlier return-only ``REFUND_RETURN`` correction left (a Credit, or a Deposit on the DL-032 path),
 after the shared DL-032 step has let that value pay the open debt first.
+
+Sub-slice 10c-3a: the ``CHARGE_REDUCTION`` variant also reduces an unpaid Late-payment Charge of
+the Settlement's Lease within its unpaid rest, through a linked Late-payment Charge correction
+(owner answer to Q-2026-10-07-38).
 """
 
 from __future__ import annotations
@@ -220,6 +224,42 @@ class RecordChargeReductionCorrectionCommand:
         return {
             "invoice_id": str(self.invoice_id),
             "invoice_line_id": str(self.invoice_line_id),
+            "amount_usd_cents": self.amount_usd_cents,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class RecordLateChargeReductionCorrectionCommand:
+    """A wrong Late-payment Charge still unpaid after closure (V1-056 sub-slice 10c-3a); the
+    database checks it against current state.
+
+    The Late-payment Charge correction reduces a Charge of an Invoice of the Settlement's Lease by
+    at most its unpaid rest. The reason is at most 500 characters, because the Charge correction
+    keeps it.
+    """
+
+    idempotency_key: UUID
+    settlement_id: UUID
+    late_payment_charge_id: UUID
+    amount_usd_cents: int
+    reason: str
+
+    def __post_init__(self) -> None:
+        _uuid(self.idempotency_key, "idempotency_key")
+        _uuid(self.settlement_id, "settlement_id")
+        _uuid(self.late_payment_charge_id, "late_payment_charge_id")
+        if (
+            type(self.amount_usd_cents) is not int
+            or not 1 <= self.amount_usd_cents <= MAX_USD_CENTS
+        ):
+            raise FinalSettlementInvalidError(
+                "amount_usd_cents must be a positive whole number of cents"
+            )
+        _text(self.reason, "reason", 500)
+
+    def reduction(self) -> dict[str, object]:
+        return {
+            "late_payment_charge_id": str(self.late_payment_charge_id),
             "amount_usd_cents": self.amount_usd_cents,
         }
 
@@ -627,6 +667,59 @@ class SettlementCorrectionService:
         _uuid(draft_id, "draft_id")
         return FinalSettlementService(self.financial_database_url)._call(
             "SELECT app.confirm_settlement_charge_reduction(%s,%s,%s,%s)",
+            (property_id, actor_id, draft_id, FINANCIAL_APPROVE_CAPABILITY),
+            stale=CHARGE_REDUCTION_CONFIRM_STALE_STATES,
+        )
+
+    def record_late_charge_reduction(
+        self,
+        property_id: UUID,
+        command: RecordLateChargeReductionCorrectionCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        """Record a Late-payment Charge reduction correction draft; no effect until confirmed."""
+        actor_id = FinalSettlementService._authorize(
+            actor, property_id, FINAL_SETTLEMENTS_PREPARE_CAPABILITY
+        )
+        if not isinstance(command, RecordLateChargeReductionCorrectionCommand):
+            raise FinalSettlementInvalidError(
+                "Late-payment Charge reduction correction command is invalid"
+            )
+        request = RecordLateChargeReductionCorrectionCommand(
+            command.idempotency_key,
+            command.settlement_id,
+            command.late_payment_charge_id,
+            command.amount_usd_cents,
+            command.reason,
+        )
+        return FinalSettlementService(self.financial_database_url)._call(
+            "SELECT app.record_settlement_late_charge_reduction_draft(%s,%s,%s,%s,%s,%s,%s)",
+            (
+                property_id,
+                actor_id,
+                settlement_correction_draft_id(property_id, actor_id, request.idempotency_key),
+                request.settlement_id,
+                Jsonb(request.reduction()),
+                request.reason,
+                FINAL_SETTLEMENTS_PREPARE_CAPABILITY,
+            ),
+        )
+
+    def confirm_late_charge_reduction(
+        self, property_id: UUID, draft_id: UUID, *, actor: AuthenticatedActor
+    ) -> dict[str, object]:
+        """Confirm a pending Late-payment Charge reduction correction (financial.approve only).
+
+        A draft whose Charge changed since it was recorded is stale and stays pending; an exact
+        repeat by the same approver writes nothing and returns the result again.
+        """
+        actor_id = FinalSettlementService._authorize(
+            actor, property_id, FINANCIAL_APPROVE_CAPABILITY
+        )
+        _uuid(draft_id, "draft_id")
+        return FinalSettlementService(self.financial_database_url)._call(
+            "SELECT app.confirm_settlement_late_charge_reduction(%s,%s,%s,%s)",
             (property_id, actor_id, draft_id, FINANCIAL_APPROVE_CAPABILITY),
             stale=CHARGE_REDUCTION_CONFIRM_STALE_STATES,
         )

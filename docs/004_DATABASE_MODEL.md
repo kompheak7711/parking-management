@@ -2355,6 +2355,15 @@ held-value corrections), and the Credit or the Deposit must still hold value; th
 Deposit's owner, and the confirm's audit event names the Deposit Refund's recipient and lists every
 Deposit balance the step settled.
 
+As built in V1-056 sub-slice 10c-3a (migration `20261115_111`; owner answer to Q-2026-10-07-38): the
+`CHARGE_REDUCTION` variant also reduces an unpaid Late-payment Charge of an Invoice of the
+Settlement's Lease (draft `target_kind` `LATE_PAYMENT_CHARGE`, its own recorder and confirm). Its
+effect is one Late-payment Charge correction (`late_payment_charge_correction_id`): `REDUCTION` of the
+amount, or `CHARGE_REVERSAL` when the amount is the whole current obligation, with authorization
+reference `financial.approve`, the draft's reason and the correction as its correlation. At most the
+unpaid rest (the current obligation less the active applications) is reduced; a Charge that a
+Deposit application paid, a reversed Charge and a Charge on a VOID Invoice are refused.
+
 ## DB-SETTLE-007 — `settlement_pet_classifications`
 
 Added in V1-056 sub-slice 10c-2a-5 (migration `20261109_105`; owner answer to

@@ -39251,6 +39251,70 @@
       "test_path": "backend/tests/test_settlement_held_value_refund_migration.py",
       "status": "implemented",
       "notes": "A HELD_VALUE_REFUND correction of a Pet Deposit whose Settlement Refund went to the other signed Signer records the Deposit's owner on its draft and the new Refund's recipient (the Primary Tenant) on its audit event, not the earlier Refund's recipient; a later Refund to the Signer with the agreement is named on the audit event while the draft names the Deposit's owner (V1-056 sub-slice 10c-2b-3, review rounds 1 and 2)."
+    },
+    {
+      "test_id": "test_an_unpaid_late_payment_charge_is_reduced_then_reversed_after_closure",
+      "upstream_ids": ["BR-SETTLE-013", "BR-LATE-005", "BR-AUTH-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_late_charge_reduction_migration.py",
+      "status": "implemented",
+      "notes": "After closure an unpaid Late-payment Charge is reduced by a CHARGE_REDUCTION correction: the draft has no effect, Staff cannot confirm, the approver's confirm writes one linked REDUCTION with its audit and replays; a correction of the whole rest writes the CHARGE_REVERSAL and the Charge is then terminal; the Settlement row is unchanged and the ledger reconciles (V1-056 sub-slice 10c-3a, owner answer to Q-2026-10-07-38)."
+    },
+    {
+      "test_id": "test_a_partly_paid_charge_is_reduced_only_within_its_unpaid_rest",
+      "upstream_ids": ["BR-SETTLE-013", "BR-LATE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_late_charge_reduction_migration.py",
+      "status": "implemented",
+      "notes": "A Late-payment Charge partly paid after closure is reduced only within its unpaid rest: more is refused and writes nothing, a draft whose Charge changed is stale and stays pending after first waiting for the Lease row and the Charge row another session holds (the confirm locks both before its stale check), and the whole unpaid rest is a REDUCTION that keeps the paid part (V1-056 sub-slice 10c-3a)."
+    },
+    {
+      "test_id": "test_a_charge_a_deposit_paid_or_of_another_lease_is_refused",
+      "upstream_ids": ["BR-SETTLE-013", "BR-LATE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_late_charge_reduction_migration.py",
+      "status": "implemented",
+      "notes": "A Late-payment Charge that the Pet Deposit paid at a real closure is not reduced by a CHARGE_REDUCTION correction (8a-1; the paid case is 10c-3b), and a Charge of another Lease is not found; nothing is written (V1-056 sub-slice 10c-3a)."
+    },
+    {
+      "test_id": "test_the_late_charge_reduction_guards_and_the_two_confirms_take_only_their_own_drafts",
+      "upstream_ids": ["BR-SETTLE-013", "BR-AUTH-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_late_charge_reduction_migration.py",
+      "status": "implemented",
+      "notes": "The Late-payment Charge reduction recorder and confirm refuse malformed input, any other authorization reference, a reused key, a service identity and a confirm outside READ COMMITTED, and an exact repeat replays; the Invoice-line confirm refuses a Charge draft and the Charge confirm an Invoice-line draft, pending and on the replay path; nothing of a refused call is written (V1-056 sub-slice 10c-3a)."
+    },
+    {
+      "test_id": "test_late_charge_reduction_functions_are_least_privilege_and_forward_only",
+      "upstream_ids": ["BR-SETTLE-013", "BR-AUTH-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_late_charge_reduction_migration.py",
+      "status": "implemented",
+      "notes": "Only the financial role records and confirms a Late-payment Charge reduction correction; the internal functions have no grant; no new function has a time limit; the migration adds only its functions, patches only the Invoice-line confirm and is forward-only (V1-056 sub-slice 10c-3a)."
+    },
+    {
+      "test_id": "test_the_late_charge_reduction_command_refuses_malformed_input",
+      "upstream_ids": ["BR-SETTLE-013"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "The Late-payment Charge reduction command takes whole positive cents within the cap and a reason that fits the Charge correction (V1-056 sub-slice 10c-3a)."
+    },
+    {
+      "test_id": "test_a_late_charge_reduction_is_recorded_by_staff_and_confirmed_only_by_an_approver",
+      "upstream_ids": ["BR-AUTH-010", "BR-SETTLE-013"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "Only final_settlements.prepare records and only financial.approve confirms a Late-payment Charge reduction correction, checked before any connection (V1-056 sub-slice 10c-3a)."
+    },
+    {
+      "test_id": "test_late_charge_reduction_record_and_confirm_send_the_stored_reduction",
+      "upstream_ids": ["BR-SETTLE-013"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "The Late-payment Charge reduction service sends the stored reduction, confirms under financial.approve and maps a changed Charge to a stale draft (V1-056 sub-slice 10c-3a)."
     }
   ]
 }
