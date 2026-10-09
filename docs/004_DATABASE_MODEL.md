@@ -1539,7 +1539,11 @@ Append-only Final Settlement financial event: `id uuid PK`, `deposit_id uuid NOT
   reversed, DB-DEP-006; and by sub-slice 10c-2a-3, owner answer to Q-2026-10-07-46: an Invoice
   Adjustment linked to a post-settlement correction of its Invoice's own Settlement, confirmed
   in the same transaction by that correction's approver under `financial.approve`, passes; every
-  unlinked Adjustment stays refused). The writer refuses an unknown target, and the writer and the
+  unlinked Adjustment stays refused; and by sub-slice 10c-3b-2, owner answer 1 to
+  Q-2026-10-09-66: a Late-payment Charge correction linked to a post-settlement correction of its
+  Charge's own Settlement, confirmed in the same transaction by that correction's approver under
+  `financial.approve`, passes the same way; every unlinked Charge correction stays refused). The
+  writer refuses an unknown target, and the writer and the
   record's trigger refuse an approver who is not a person. The Customer's choice and the
   staff reason for the remaining Pet Deposit (`PET_REMAINDER_EXPLICIT`, BR-SETTLE-017,
   BR-DEP-027, DL-013) are checked by the Settlement draft and its confirmation (V1-056
@@ -1590,8 +1594,10 @@ Append-only: `id uuid PK`, `deposit_application_id uuid NOT NULL UNIQUE FK`, `re
   application does; the reason follows the application's rule (22023 otherwise). At commit a
   deferred trigger refreshes the reversed line's Invoice status and version, as the application's
   own trigger does. One reversal per application: a partial
-  release reverses the whole application, and the rest is applied again only as a Deposit step of
-  the correction's plan, through the shared DL-032 step (sub-slice 10c-2a-2).
+  release reverses the whole application, and the rest is a plain open obligation that only the
+  correction's plan pays again, through the shared DL-032 step (sub-slice 10c-2a-2): by the
+  Customer's Credit first when that Customer has Credit (Credit before Deposits), otherwise by a
+  Deposit step.
   Once every Deposit application of a Deposit is reversed, `app.deposit_has_active_application`
   is false, so a receipt reversal draft of that Deposit is no longer held back by it (still a
   draft confirmed by `financial.approve`, 8r).
@@ -1600,8 +1606,10 @@ Append-only: `id uuid PK`, `deposit_application_id uuid NOT NULL UNIQUE FK`, `re
   refusal of changes to a Deposit-paid obligation); the latest event time of an allocation target
   counts the reversal. The Customer Ledger shows it as `DEPOSIT_APPLICATION_REVERSED`
   (DB-DER-010), and the Deposit history reads it through the bounded
-  `app.deposit_application_reversal_history(property, deposit)` (runtime EXECUTE only). No writer
-  exists yet: the correction writers (10c-2a-3, 10e) write it.
+  `app.deposit_application_reversal_history(property, deposit)` (runtime EXECUTE only). Writers:
+  the Invoice-line `REFUND` confirm (sub-slice 10c-2a-3), the pet classification correction
+  confirm (sub-slice 10c-2a-5) and the Late-payment Charge `REFUND` confirm (sub-slice 10c-3b-2);
+  later correction writers (10e) will write it too.
 
 ## DB-DEP-007 — `deposit_receipt_reversals`
 
@@ -2402,7 +2410,19 @@ Credit Refund per released source (`refund_id`, with its `settlement_correction_
 row). Released Payment value becomes Customer Credit of the Charge's Customer (BR-CREDIT-014);
 released Credit value returns to its Credit. These Credits have no link of their own: the release
 rows of `invoice_credit_excess_releases` name the Charge correction and the Credit (DB-INV-003). A
-Charge that a Deposit application paid is refused until sub-slice 10c-3b-2.
+Charge that a Deposit application paid was refused until sub-slice 10c-3b-2.
+
+As built in V1-056 sub-slice 10c-3b-2 (migration `20261118_114`; owner answer 1 to Q-2026-10-09-66
+and the owner answer to Q-2026-10-07-46): the Late-payment Charge `REFUND` also releases Deposit
+applications on the Charge, newest first with the Payment allocations and Credit applications. A
+released Deposit application is reversed whole by a Deposit application reversal (DB-DEP-006)
+linked as an effect (`deposit_application_reversal_id`) in the release order, before the Charge
+correction; its value goes back to its Deposit, never to Customer Credit, and only the shared
+step's Deposit applications and Deposit Refunds (`deposit_application_id`, `refund_id`) apply or
+refund it in the DL-032 order. A Deposit application the release does not reach stays and still
+pays the Charge; the correction's own linked Charge correction passes the 8a-1 refusal through the
+internal `app.settlement_correction_charge_correction_allowed` (owner answer to Q-2026-10-07-46).
+No new table or column.
 
 ## DB-SETTLE-007 — `settlement_pet_classifications`
 

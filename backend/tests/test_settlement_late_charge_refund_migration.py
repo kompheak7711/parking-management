@@ -8,7 +8,7 @@ answer 2), writes one linked Late-payment Charge correction, re-posts each sourc
 makes released Payment value Credit of the Charge's Customer, lets released Credit first pay its own
 Customer's open debt on the Lease (Q-42 answer 2) and refunds the rest. The release record names the
 Charge correction instead of an Adjustment (owner answer 2 to Q-2026-10-09-66). A Charge a Deposit
-application paid is refused until sub-slice 10c-3b-2.
+application paid is corrected since sub-slice 10c-3b-2 (its own module).
 """
 
 from __future__ import annotations
@@ -655,7 +655,8 @@ def test_the_refund_is_refused_for_unpaid_too_large_deposit_paid_or_other_lease_
     """Refused at record and nothing written: a Refund of an unpaid Charge (that is a
     CHARGE_REDUCTION), a Refund within the unpaid rest of a partly paid Charge, more than the
     Charge, an inactive Refund method, a Charge of another Lease (P0002) and, on a really closed
-    Settlement whose Pet Deposit paid the Charge, a Deposit-paid Charge (until sub-slice 10c-3b-2).
+    Settlement whose Pet Deposit paid the Charge, a Deposit-paid Charge whose plan leaves the
+    returned Deposit money unused (since sub-slice 10c-3b-2).
     A draft whose Charge changes (another Payment) is stale and stays pending, and it first waits
     for the Lease row or the Charge row another session holds."""
     url = migrated_database_url
@@ -725,9 +726,11 @@ def test_the_refund_is_refused_for_unpaid_too_large_deposit_paid_or_other_lease_
     count = drafts(url)
     with pytest.raises(FinalSettlementConflictError) as deposit_paid:
         record(deposit_case, command(deposit_case, 1_000))
+    # Sub-slice 10c-3b-2 releases the Deposit application, so the Pet Deposit holds the money again
+    # and a plan that leaves it unused is refused (BR-SETTLE-008; docs/010).
     assert cause(deposit_paid) == (
         "55000",
-        "A Deposit application paid this obligation at Final Settlement",
+        "Every remaining Deposit balance must be applied or refunded",
     )
     assert drafts(url) == count
     assert charge_corrections(url, deposit_case["charge"]) == 0

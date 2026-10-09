@@ -39418,7 +39418,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_late_charge_refund_migration.py",
       "status": "implemented",
-      "notes": "A Late-payment Charge Refund correction is refused at record and writes nothing for an unpaid Charge or an amount within the unpaid rest (a charge reduction), more than the Charge, an inactive Refund method, a Charge of another Lease (P0002) and a Charge a Deposit application paid on a really closed Settlement (until sub-slice 10c-3b-2); a draft whose Charge changed is stale and stays pending after first waiting for the Lease row and the Charge row another session holds (V1-056 sub-slice 10c-3b-1)."
+      "notes": "A Late-payment Charge Refund correction is refused at record and writes nothing for an unpaid Charge or an amount within the unpaid rest (a charge reduction), more than the Charge, an inactive Refund method, a Charge of another Lease (P0002) and, since sub-slice 10c-3b-2, a Charge a Deposit application paid on a really closed Settlement whose plan leaves the returned Deposit money unused; a draft whose Charge changed is stale and stays pending after first waiting for the Lease row and the Charge row another session holds (V1-056 sub-slice 10c-3b-1)."
     },
     {
       "test_id": "test_the_late_charge_refund_guards_and_the_two_refund_confirms_take_only_their_own_drafts",
@@ -39467,6 +39467,46 @@
       "test_path": "backend/tests/test_settlement_correction.py",
       "status": "implemented",
       "notes": "The Late-payment Charge Refund recorder sends the Charge, the amount, the Refund method, the note and the plan; the confirm maps a changed source to a stale draft and keeps the Final Settlement error mapping (V1-056 sub-slice 10c-3b-1)."
+    },
+    {
+      "test_id": "test_a_deposit_paid_charge_refund_gives_the_deposit_its_value_and_the_step_pays_again",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-008", "BR-LATE-005", "DL-032", "BR-AUTH-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_late_charge_deposit_refund_migration.py",
+      "status": "implemented",
+      "notes": "On a really closed Settlement whose remaining Pet Deposit paid the whole Late-payment Charge, a REFUND correction reverses that Deposit application whole as a linked Deposit application reversal (the draft keeps the whole application beside the released part) and reduces the Charge; the value goes back to the Pet Deposit, never to Customer Credit; while the Rent stays open an empty plan and a plan with a Deposit Refund are refused and write nothing, and the plan that pays the Charge and part of the Rent again from the Pet Deposit is confirmed with no Refund; the confirm waits for the Deposit row, an exact repeat replays, the confirmed audit lists the reversal and the Settlement row is unchanged (V1-056 sub-slice 10c-3b-2, owner answer 1 to Q-2026-10-09-66)."
+    },
+    {
+      "test_id": "test_an_older_deposit_application_stays_and_only_the_linked_charge_correction_passes",
+      "upstream_ids": ["BR-SETTLE-013", "BR-LATE-005", "BR-AUTH-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_late_charge_deposit_refund_migration.py",
+      "status": "implemented",
+      "notes": "The Q-2026-10-07-46 answer for a Late-payment Charge: the charge reduction form and the one-call Charge correction still refuse a Deposit-paid Charge after closure; a REFUND correction that releases only a newer Payment allocation leaves the older Deposit application on the Charge, and its linked Charge correction passes the 8a-1 refusal; the allow function answers false for that Charge correction outside its correction's transaction and for no actor (V1-056 sub-slice 10c-3b-2, owner answer 1 to Q-2026-10-09-66)."
+    },
+    {
+      "test_id": "test_a_mixed_charge_is_released_across_a_payment_and_a_deposit_and_credit_pays_first",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-008", "BR-CREDIT-014", "BR-REFUND-014", "DL-032"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_late_charge_deposit_refund_migration.py",
+      "status": "implemented",
+      "notes": "A Late-payment Charge paid by a Deposit application at closure and a newer Payment after it is released newest first across both kinds; a plan that lets the returned Pet Deposit money pay the Customer's debt while that Customer's released Credit is unused is refused; the released Credit pays the Charge's rest and the Customer's other debt first, then the Pet Deposit money and the Credit left are refunded to the Primary Tenant (V1-056 sub-slice 10c-3b-2, owner answers 1 and 2 to Q-2026-10-07-42 and answer 2 to Q-2026-10-07-41)."
+    },
+    {
+      "test_id": "test_a_linked_charge_correction_passes_8a_1_but_no_charge_is_paid_more_than_its_new_amount",
+      "upstream_ids": ["BR-SETTLE-013", "BR-LATE-005", "BR-AUTH-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_late_charge_deposit_refund_migration.py",
+      "status": "implemented",
+      "notes": "Inside one correction of the closed Settlement, a Late-payment Charge correction linked to it and written by its approver passes the 8a-1 refusal, but a reduction below the Deposit application that still pays the Charge is refused at commit by the Charge correction's own deferred check, so no Charge is paid more than its new amount; the same row by another actor stays refused (P4603); nothing is written (V1-056 sub-slice 10c-3b-2, owner answer to Q-2026-10-07-46)."
+    },
+    {
+      "test_id": "test_late_charge_deposit_refund_is_least_privilege_and_forward_only",
+      "upstream_ids": ["BR-SETTLE-013", "BR-AUTH-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_late_charge_deposit_refund_migration.py",
+      "status": "implemented",
+      "notes": "No role calls the new allow function; no new or patched function has a time limit; the migration adds only that function and changes only the three patched functions, each exactly by its replacements with privileges, owner and settings kept, and no table or trigger; it is forward-only (V1-056 sub-slice 10c-3b-2)."
     }
   ]
 }
