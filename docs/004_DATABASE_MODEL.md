@@ -1680,6 +1680,13 @@ text NOT NULL`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`,
 `authorization_reference text NOT NULL`. It restores the disposition's derived held
 balance effect and never rewrites the original event.
 
+As built in V1-056 sub-slice 10d: after the Lease's Final Settlement is closed, a reversal is
+also written by a `FORFEITURE_REVERSAL` post-settlement correction (DB-SETTLE-005 link
+`deposit_disposition_reversal_id`), with the correction's approver as actor and `deposits.correct`
+as the reference, as the 6b draft confirm writes it; the authority is the linked correction
+(`final_settlements.prepare` prepares, `financial.approve` confirms). Until sub-slice 10h the 6b
+draft can still reverse a closed Settlement's forfeiture without the correction.
+
 ---
 
 # 12. Move-out, Final Settlement, and Refund Tables
@@ -2423,6 +2430,22 @@ refund it in the DL-032 order. A Deposit application the release does not reach 
 pays the Charge; the correction's own linked Charge correction passes the 8a-1 refusal through the
 internal `app.settlement_correction_charge_correction_allowed` (owner answer to Q-2026-10-07-46).
 No new table or column.
+
+As built in V1-056 sub-slice 10d (migration `20261119_115`; owner answer 4 to Q-2026-10-06-36,
+answer 2 to Q-2026-10-10-71): the variant `FORFEITURE_REVERSAL` reverses a confirmed Lease Deposit
+forfeiture (DB-DEP-008) of a Deposit of the Settlement's Lease after closure. Its draft names the
+forfeiture, an evidence reference, the correction's Refund method and reference note and the DL-032
+plan, and records the Deposit, its owner and the forfeited amount. Its effects are, in this order:
+the forfeiture reversal (`deposit_disposition_reversal_id`), written through the existing reversal
+function with the approver as actor and `deposits.correct`, as the 6b confirm writes it; then the
+shared step's Credit applications, Deposit applications and Deposit Refund (with its
+`settlement_correction_refund_details` row). The reversal puts the forfeited money back in the
+Deposit on the DL-032 path, so each Customer's Credit first pays that Customer's own open debt, the
+Deposit pays the Lease's open debt in the DL-032 order and only the rest is refunded
+(BR-SETTLE-008). A forfeiture already reversed, or one whose Deposit has another forfeiture that
+stays active, is refused. The reversal row and its `deposit.disposition.reversed` audit event are
+stamped with the confirm's statement time, so they are dated just before the correction's decision
+and header that link them; read them through the link, not by time. No new table or column.
 
 ## DB-SETTLE-007 — `settlement_pet_classifications`
 

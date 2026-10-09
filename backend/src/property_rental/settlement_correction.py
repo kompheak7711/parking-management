@@ -91,6 +91,8 @@ PET_CLASSIFICATION_CONFIRM_STALE_STATES: Final = frozenset({"P5S02"})
 REFUND_RETURN_CONFIRM_STALE_STATES: Final = frozenset({"P5S02"})
 # A held-value Refund correction whose earlier correction, Credit or Deposit changed is stale.
 HELD_VALUE_REFUND_CONFIRM_STALE_STATES: Final = frozenset({"P5S02"})
+# A forfeiture reversal correction whose forfeiture, Deposit or Settlement sources changed is stale.
+FORFEITURE_REVERSAL_CONFIRM_STALE_STATES: Final = frozenset({"P5S02"})
 
 
 def settlement_correction_draft_id(
@@ -625,6 +627,65 @@ class RecordHeldValueRefundCorrectionCommand:
 
 
 @dataclass(frozen=True, slots=True)
+class RecordForfeitureReversalCorrectionCommand:
+    """The reversal of a confirmed Lease Deposit forfeiture after closure (V1-056 sub-slice 10d);
+    the database checks it against current state.
+
+    ``deposit_disposition_id`` names the forfeiture and ``evidence_reference`` the evidence for
+    its reversal. The Refund method and reference note of the correction are required
+    (BR-REFUND-014). ``steps`` and ``pet_remainder`` are the DL-032 plan: each Customer's Credit
+    first pays that Customer's own open debt, the Deposit pays the Lease's open debt in the DL-032
+    order and only the rest is refunded; staff choose every step.
+    """
+
+    idempotency_key: UUID
+    settlement_id: UUID
+    deposit_disposition_id: UUID
+    reason: str
+    evidence_reference: str
+    refund_method_id: UUID
+    reference_note: str
+    steps: tuple[SettlementStep, ...] = ()
+    pet_remainder: PetRemainderDecision | None = None
+
+    def __post_init__(self) -> None:
+        _uuid(self.idempotency_key, "idempotency_key")
+        _uuid(self.settlement_id, "settlement_id")
+        _uuid(self.deposit_disposition_id, "deposit_disposition_id")
+        _text(self.reason, "reason", 500)
+        _text(self.evidence_reference, "evidence_reference", 500)
+        _uuid(self.refund_method_id, "refund_method_id")
+        _text(self.reference_note, "reference_note", 500)
+        if not isinstance(self.steps, tuple) or len(self.steps) > MAX_SETTLEMENT_STEPS:
+            raise FinalSettlementInvalidError(
+                f"steps must be a tuple of at most {MAX_SETTLEMENT_STEPS} steps"
+            )
+        for step in self.steps:
+            if not isinstance(
+                step, (SettlementCreditStep, SettlementDepositStep, SettlementDepositRefund)
+            ):
+                raise FinalSettlementInvalidError("Settlement step is invalid")
+        if self.pet_remainder is not None and not isinstance(
+            self.pet_remainder, PetRemainderDecision
+        ):
+            raise FinalSettlementInvalidError("Pet Deposit remainder decision is invalid")
+
+    def forfeiture_reversal(self) -> dict[str, object]:
+        return {
+            "deposit_disposition_id": str(self.deposit_disposition_id),
+            "evidence_reference": self.evidence_reference,
+            "refund_method_id": str(self.refund_method_id),
+            "reference_note": self.reference_note,
+            "plan": {
+                "steps": [step.payload() for step in self.steps],
+                "pet_remainder": None
+                if self.pet_remainder is None
+                else self.pet_remainder.payload(),
+            },
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class SettlementCorrectionService:
     """Commands under the financial role; capabilities are checked before any connection."""
 
@@ -1082,4 +1143,60 @@ class SettlementCorrectionService:
             "SELECT app.confirm_settlement_held_value_refund(%s,%s,%s,%s)",
             (property_id, actor_id, draft_id, FINANCIAL_APPROVE_CAPABILITY),
             stale=HELD_VALUE_REFUND_CONFIRM_STALE_STATES,
+        )
+
+    def record_forfeiture_reversal(
+        self,
+        property_id: UUID,
+        command: RecordForfeitureReversalCorrectionCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        """Record a forfeiture reversal correction draft; it has no effect until confirmed."""
+        actor_id = FinalSettlementService._authorize(
+            actor, property_id, FINAL_SETTLEMENTS_PREPARE_CAPABILITY
+        )
+        if not isinstance(command, RecordForfeitureReversalCorrectionCommand):
+            raise FinalSettlementInvalidError("Forfeiture reversal correction command is invalid")
+        request = RecordForfeitureReversalCorrectionCommand(
+            command.idempotency_key,
+            command.settlement_id,
+            command.deposit_disposition_id,
+            command.reason,
+            command.evidence_reference,
+            command.refund_method_id,
+            command.reference_note,
+            command.steps,
+            command.pet_remainder,
+        )
+        return FinalSettlementService(self.financial_database_url)._call(
+            "SELECT app.record_settlement_forfeiture_reversal_draft(%s,%s,%s,%s,%s,%s,%s)",
+            (
+                property_id,
+                actor_id,
+                settlement_correction_draft_id(property_id, actor_id, request.idempotency_key),
+                request.settlement_id,
+                Jsonb(request.forfeiture_reversal()),
+                request.reason,
+                FINAL_SETTLEMENTS_PREPARE_CAPABILITY,
+            ),
+        )
+
+    def confirm_forfeiture_reversal(
+        self, property_id: UUID, draft_id: UUID, *, actor: AuthenticatedActor
+    ) -> dict[str, object]:
+        """Confirm a pending forfeiture reversal correction (financial.approve only).
+
+        A draft whose forfeiture, Deposit or Settlement sources changed since it was recorded is
+        stale and stays pending; an inactive Refund method or a reused Customer choice is a
+        conflict; an exact repeat by the same approver writes nothing and returns the result again.
+        """
+        actor_id = FinalSettlementService._authorize(
+            actor, property_id, FINANCIAL_APPROVE_CAPABILITY
+        )
+        _uuid(draft_id, "draft_id")
+        return FinalSettlementService(self.financial_database_url)._call(
+            "SELECT app.confirm_settlement_forfeiture_reversal(%s,%s,%s,%s)",
+            (property_id, actor_id, draft_id, FINANCIAL_APPROVE_CAPABILITY),
+            stale=FORFEITURE_REVERSAL_CONFIRM_STALE_STATES,
         )

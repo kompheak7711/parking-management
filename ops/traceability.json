@@ -39507,6 +39507,78 @@
       "test_path": "backend/tests/test_settlement_late_charge_deposit_refund_migration.py",
       "status": "implemented",
       "notes": "No role calls the new allow function; no new or patched function has a time limit; the migration adds only that function and changes only the three patched functions, each exactly by its replacements with privileges, owner and settings kept, and no table or trigger; it is forward-only (V1-056 sub-slice 10c-3b-2)."
+    },
+    {
+      "test_id": "test_forfeiture_reversal_correction_commands_are_validated",
+      "upstream_ids": ["BR-SETTLE-013", "BR-REFUND-014"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "A forfeiture reversal correction command needs the forfeiture, a reason, an evidence reference, the Refund method and reference note and a tuple of typed plan steps (V1-056 sub-slice 10d)."
+    },
+    {
+      "test_id": "test_forfeiture_reversal_correction_record_and_confirm_send_the_stored_correction",
+      "upstream_ids": ["BR-SETTLE-013", "BR-AUTH-010"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "The forfeiture reversal correction service sends the forfeiture, the evidence reference, the Refund method and note and the plan; only final_settlements.prepare records and only financial.approve confirms (V1-056 sub-slice 10d)."
+    },
+    {
+      "test_id": "test_forfeiture_reversal_correction_confirm_maps_database_refusals",
+      "upstream_ids": ["BR-SETTLE-013"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "The forfeiture reversal correction confirm reports a changed source as stale and keeps the Final Settlement error mapping for the other refusals (V1-056 sub-slice 10d)."
+    },
+    {
+      "test_id": "test_a_kept_deposit_pays_the_open_debt_first_and_only_the_rest_is_refunded",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-008", "BR-DEP-019", "BR-DEP-023", "BR-DEP-026", "DL-032", "BR-REFUND-014", "BR-AUTH-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_forfeiture_reversal_migration.py",
+      "status": "implemented",
+      "notes": "On a really closed Settlement whose Security Deposit was kept, a plan that leaves the reversed money unused or refunds it while 4,600 of debt stays open is refused with nothing written; Staff cannot confirm; the approver's confirm reverses the forfeiture (linked, the approver and deposits.correct), the Deposit pays the open debt and only the rest is refunded with the draft's method and note; the Deposit is back on the DL-032 path, the Settlement row is unchanged, a repeat replays without the decision's transaction id, another approver finds the draft decided, the 6b draft and a second correction of the same forfeiture are refused and the ledger reconciles (V1-056 sub-slice 10d, owner answer 4 to Q-2026-10-06-36)."
+    },
+    {
+      "test_id": "test_with_no_open_debt_the_whole_deposit_is_refunded_only_to_a_signer",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-008", "BR-REFUND-015"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_forfeiture_reversal_migration.py",
+      "status": "implemented",
+      "notes": "With no open debt the whole reversed forfeiture is refunded to the Primary Tenant; a recipient who is not a Signer of the Lease and an agreement for the Primary Tenant are refused (V1-056 sub-slice 10d; owner answer 1 to Q-2026-10-10-71: the positive agreed-Signer path is the shared step's test)."
+    },
+    {
+      "test_id": "test_credit_pays_its_customer_first_and_debt_can_take_the_whole_deposit",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-008", "BR-SETTLE-016", "BR-CREDIT-006", "DL-032"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_forfeiture_reversal_migration.py",
+      "status": "implemented",
+      "notes": "A plan whose Deposit pays before the Customer's own Credit is refused; with the Credit first the reversed Deposit pays open debt, nothing is refunded and the rest of the debt stays on the Primary Tenant's ledger (V1-056 sub-slice 10d, owner answer 1 to Q-2026-10-07-42)."
+    },
+    {
+      "test_id": "test_a_forfeiture_reversal_refuses_other_forfeitures_waiting_drafts_and_stale_drafts",
+      "upstream_ids": ["BR-SETTLE-013", "BR-REFUND-014", "BR-AUTH-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_forfeiture_reversal_migration.py",
+      "status": "implemented",
+      "notes": "An open Settlement, another Lease's, a Reservation or an unknown forfeiture, a waiting 6b reversal draft, an inactive Refund method and a Deposit Refund step with another method or note are refused with nothing written; a method deactivated before the confirm is refused there and the draft stays pending; malformed input, wrong authorizations, a reused key, a service identity and REPEATABLE READ are refused; a draft made stale by a later 6b draft stays pending; the confirm holds the Lease row and the Deposit row until it commits (V1-056 sub-slice 10d)."
+    },
+    {
+      "test_id": "test_a_second_active_forfeiture_of_the_deposit_refuses_its_reversal",
+      "upstream_ids": ["BR-SETTLE-013", "BR-DEP-022", "DL-032"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_forfeiture_reversal_migration.py",
+      "status": "implemented",
+      "notes": "A kept Pet Deposit with two active forfeitures (pet noncompliance; a one-call return between them) refuses the reversal of either, with nothing written; a correction draft for the Security Deposit's forfeiture is stale (P5S02) after the 6b draft reverses that forfeiture first, stays pending and writes nothing (V1-056 sub-slice 10d, owner answer 2 to Q-2026-10-10-71)."
+    },
+    {
+      "test_id": "test_forfeiture_reversal_records_are_least_privilege_and_forward_only",
+      "upstream_ids": ["BR-SETTLE-013", "BR-AUTH-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_forfeiture_reversal_migration.py",
+      "status": "implemented",
+      "notes": "Only the financial role records and confirms; no role calls the internal functions; each new function is SECURITY DEFINER with the fixed search path; the migration adds only its functions, changes no committed function, table or trigger and is forward-only (V1-056 sub-slice 10d)."
     }
   ]
 }

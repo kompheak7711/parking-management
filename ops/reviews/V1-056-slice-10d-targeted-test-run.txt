@@ -1,0 +1,76 @@
+ Network prm-database-test-10864_default Creating 
+ Volume prm-database-test-10864_postgres_data Creating 
+ Volume prm-database-test-10864_postgres_data Creating 
+ Network prm-database-test-10864_default Creating 
+ Volume prm-database-test-10864_postgres_data Created 
+ Volume prm-database-test-10864_postgres_data Created 
+ Network prm-database-test-10864_default Created 
+ Network prm-database-test-10864_default Created 
+ Container prm-database-test-10864-postgres-1 Creating 
+ Container prm-database-test-10864-postgres-1 Created 
+ Container prm-database-test-10864-postgres-1 Starting 
+ Container prm-database-test-10864-postgres-1 Started 
+ Container prm-database-test-10864-postgres-1 Waiting 
+ Container prm-database-test-10864-postgres-1 Healthy 
+============================= test session starts ==============================
+collected 6 items
+
+tests/test_settlement_forfeiture_reversal_migration.py ..F.F.            [100%]
+
+=================================== FAILURES ===================================
+___ test_credit_pays_its_customer_first_and_debt_can_take_the_whole_deposit ____
+src/property_rental/credit.py:300: in _query
+    row = retry_lock_not_available(lambda: self._attempt(sql, parameters, mutation))
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/property_rental/lock_retry.py:34: in retry_lock_not_available
+    return attempt()
+           ^^^^^^^^^
+src/property_rental/credit.py:300: in <lambda>
+    row = retry_lock_not_available(lambda: self._attempt(sql, parameters, mutation))
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/property_rental/credit.py:293: in _attempt
+    return connection.execute(sql, parameters).fetchone()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/psycopg/connection.py:300: in execute
+    raise ex.with_traceback(None)
+E   psycopg.errors.CheckViolation: Applicable obligations must be handled before excess disposition
+E   CONTEXT:  PL/pgSQL function app.assert_payment_excess_eligible(uuid) line 42 at RAISE
+E   SQL statement "SELECT app.assert_payment_excess_eligible(v_payment.id)"
+E   PL/pgSQL function app.validate_credit_recognition() line 29 at PERFORM
+E   SQL statement "INSERT INTO app.customer_credits(id,customer_id,source_payment_id,recognized_usd_cents,
+E                   customer_authorization_reference,recognized_at,recognized_by,reason,authorization_reference)
+E               VALUES(v_id,v_payment.payer_customer_id,p_payment_id,p_amount,p_payer_authorization,
+E                   clock_timestamp(),p_actor_id,p_reason,'credits.recognize')"
+E   PL/pgSQL function app.recognize_customer_credit(uuid,uuid,uuid,uuid,bigint,text,text) line 15 at SQL statement
+
+The above exception was the direct cause of the following exception:
+tests/test_settlement_forfeiture_reversal_migration.py:453: in test_credit_pays_its_customer_first_and_debt_can_take_the_whole_deposit
+    credit = new_credit(url, case, 300)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_settlement_correction_plan_migration.py:181: in new_credit
+    return credit_id(recognize(case["prop"], payment, case["human"], amount))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_credit_migration.py:62: in recognize
+    return service().recognize(
+src/property_rental/credit.py:396: in recognize
+    return self._query(
+src/property_rental/credit.py:333: in _query
+    raise CreditUnavailableError(
+E   property_rental.credit.CreditUnavailableError: Credit outcome unresolved; preserve and replay the original command
+_____ test_a_second_active_forfeiture_of_the_deposit_refuses_its_reversal ______
+tests/test_settlement_forfeiture_reversal_migration.py:767: in test_a_second_active_forfeiture_of_the_deposit_refuses_its_reversal
+    reversal_command(
+tests/test_settlement_forfeiture_reversal_migration.py:178: in reversal_command
+    case["disposition"],
+    ^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'disposition'
+=============================== warnings summary ===============================
+.venv/lib/python3.11/site-packages/fastapi/testclient.py:1
+  /Users/sokompheak/Development/property-rental-management/backend/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_settlement_forfeiture_reversal_migration.py::test_credit_pays_its_customer_first_and_debt_can_take_the_whole_deposit
+FAILED tests/test_settlement_forfeiture_reversal_migration.py::test_a_second_active_forfeiture_of_the_deposit_refuses_its_reversal
+==================== 2 failed, 4 passed, 1 warning in 9.38s ====================

@@ -196,3 +196,23 @@ Static checks each in its own call: lint, format and type check clean.
 | U4 | backend unit, full (under `caffeinate -dims`) | 3679 passed, 1846 skipped, 1 warning (Starlette) | round-3 text fixes | `V1-056-slice-10c-3b-2-unit-test-run-4.txt` |
 
 Secret check of U4: none found. Committed next (commit hash in ops/NOW.md).
+
+## Owner answers to the report (2026-10-10; Q-2026-10-10-69, docs/010)
+
+- Round 3 N3: the owner confirmed the reading: P2 counts as the full PostgreSQL run before round 3.
+- Security N1 and N2: choice (4) accepted; the optional hardening stays on the slice 12 list, and
+  any sub-slice that adds a new writer that links an Adjustment or a Charge correction does it
+  first.
+- Round 3 N5: the owner asked whether the unpaid rest of a partly Deposit-paid Charge can still be
+  reduced after closure; no path reduces only that rest (Q-2026-10-10-70, for the owner before
+  10h).
+- Changed committed test, compared with its version at 0139619 (owner answer 5; read-only,
+  2026-10-10). Round 1 compared it with HEAD 2b5f7c9; `git log 0139619..4710bdf` shows that only
+  cc01b84 changed `backend/tests/test_settlement_late_charge_refund_migration.py`, so HEAD and
+  0139619 held the same version. `git diff 0139619 4710bdf` on that file: in
+  `test_the_refund_is_refused_for_unpaid_too_large_deposit_paid_or_other_lease_charges` one
+  expected message changes from "A Deposit application paid this obligation at Final Settlement"
+  to "Every remaining Deposit balance must be applied or refunded", with a two-line comment; the
+  test docstring and the module docstring change their text. The SQLSTATE 55000, the unchanged
+  draft count and the zero Charge corrections are still asserted, and no other line changes.
+  Result: not weakened.

@@ -1586,3 +1586,55 @@ Found while reading the code for 10c-3b-1, before any code. The shared plan chec
 **Recommendation:** one exact-text patch: the overlay also accepts an allocation on a Late-payment Charge of an Invoice of this Lease, as Credit of the Charge's Customer (BR-CREDIT-014). Who gets the money and the order it is used in do not change. List it in the plan's as-built line, docs/010, the review record and the least-privilege test's changed-function list; the reviewers check it.
 
 **Owner answer (2026-10-09, in the session).** Patch it (the recommendation). Recorded in docs/010.
+
+## Q-2026-10-10-69 — Sub-slice 10c-3b-2 report: six owner items (ANSWERED 2026-10-10; answers in docs/010)
+
+The 10c-3b-2 report (cc01b84, record ops/reviews/V1-056-slice-10c-3b-2-late-charge-deposit-refund.md) left these items for the owner.
+
+**Owner answer (2026-10-10).**
+
+1. The reading of the standing round-3 rule is right: P2 ran after the last code and test change, and only text changed after it, so P2 counts as the full PostgreSQL run before round 3.
+2. Choice (4) is accepted: a partly released Deposit application is reversed whole, and the Customer's own Credit pays the rest first (Credit before Deposits).
+3. The optional allow-function hardening stays on the slice 12 list. Also in the plan: any sub-slice that adds a new writer that links an Adjustment or a Charge correction must do this hardening first.
+4. Report whether staff can still reduce the unpaid rest of a partly Deposit-paid Charge after closure (for example through a `REFUND` correction that ends with nothing refunded). If there is no path at all, write it here with a recommendation for the owner to answer before 10h; do not stop for it.
+5. If the independent reviewer did not already compare the changed 10c-3b-1 test with its version at 0139619, do that first, read-only, and record the result in the 10c-3b-2 review record; if it was weakened, stop.
+6. The 10d design is accepted, with its three points; the plan's 10h entry must close the 6b reversal draft after closure.
+
+**Implementer notes (2026-10-10).**
+
+- Answer 5: round 1 compared the test with HEAD (2b5f7c9), not with 0139619. Read-only check: only cc01b84 changed `backend/tests/test_settlement_late_charge_refund_migration.py` after 0139619 (`git log 0139619..4710bdf`), so HEAD and 0139619 hold the same version. The diff against 0139619 changes one expected message (`"A Deposit application paid this obligation at Final Settlement"` to `"Every remaining Deposit balance must be applied or refunded"`), adds a two-line comment and changes two docstrings; the SQLSTATE 55000, the unchanged draft count and the zero Charge corrections are still asserted. Not weakened. Recorded in the review record.
+- Answer 4: no path reduces only that unpaid rest; see Q-2026-10-10-70.
+- Answers 3 and 6: written in the plan (slice 12 item; 10h entry).
+
+## Q-2026-10-10-70 — The unpaid rest of a partly Deposit-paid Charge or Invoice line cannot be reduced on its own after closure (not blocking; the owner answers before 10h)
+
+Owner answer 4 to Q-2026-10-10-69 asked whether staff can still reduce the unpaid rest of a partly Deposit-paid Charge after closure. Read from the code at head `20261118_114`:
+
+- `CHARGE_REDUCTION` (the 10c-3a Charge form, migration `20261115_111`, and the 10c-1a Invoice-line form, migration `20261103_99`) refuses any obligation a Deposit application paid that is not reversed (55000, "A Deposit application paid this obligation at Final Settlement").
+- `REFUND` (10c-3b-1 and 10c-3b-2 for a Charge, 10c-1b and 10c-2a-3 for a line) refuses an amount that releases no paid value (55000, "The Refund correction releases no paid value; an unpaid charge is removed by a charge reduction"). So its amount must be at least the unpaid rest plus 1 cent of paid value.
+- Such a `REFUND` reverses the Deposit application whole, reduces the obligation by the whole amount, and the shared step pays the new rest again from the Deposit. The extra paid part (at least 1 cent) leaves the obligation for good: it pays other open debt on the Lease or is refunded. A correction "that ends with nothing refunded" is possible only when other open debt takes that part; it still removes real debt from the corrected obligation.
+- No other correction kind changes the amount of such an obligation, and the one-call writers are refused after closure (8e-1).
+
+So there is no path that reduces only the unpaid rest. Example: a Charge of 3,000 that the Pet Deposit paid 2,000 of at closure, 1,000 unpaid and wrong. A `REFUND` of 1,000 is refused (no paid value); a `REFUND` of 1,001 also removes 1 cent that was rightly owed. The same holds for an Invoice line (choice (4) of sub-slice 10c-2a-3).
+
+**Options:**
+- (a) A small relaxing sub-slice before 10h: `CHARGE_REDUCTION` (both forms) accepts an obligation that a Deposit application partly paid, within its unpaid rest (the current obligation less every active application, Deposit applications not reversed included). The Deposit application stays as it is; nothing is released and no money moves. The linked Adjustment or Charge correction passes the 8a-1 refusal through the existing allow functions (the Q-46 answer). The row's own deferred checks already refuse a result below the active applications. Under owner answer 3 to Q-2026-10-10-69 that sub-slice first adds the allow-function hardening (the correction's draft must name this obligation, and the row's correlation must be the correction), because it makes a second writer rely on them.
+- (b) Keep it as a known limit: staff use a `REFUND` of the unpaid rest plus the smallest paid part and record the 1 cent difference with an `EXTRA_CHARGE`. The record then shows a Refund and a new charge for what was only a wrong unpaid amount.
+
+**Recommendation: (a).** It removes only the wrong unpaid amount, moves no money, keeps every Deposit rule and uses the Q-46 path the owner already approved. It is a relaxing change of two committed forms, so it needs the owner.
+
+Not blocking 10d: 10d does not change these forms.
+
+## Q-2026-10-10-71 — Sub-slice 10d before code: the agreed-Signer test and a Deposit with a second forfeiture (ANSWERED 2026-10-10 in the session)
+
+Found while reading the code for 10d, before any code.
+
+1. The 10d design lists a test of a Deposit Refund to another signed Signer with the written agreement. No test fixture has a kept (forfeited) Deposit on a Lease with a second signed Signer: `leaving_case` has one Signer, `two_signer_case` has no forfeiture ground, and Signers cannot be added after signing. The agreed-Signer Deposit Refund is written by the shared step, which is already tested on `two_signer_case` (`test_settlement_correction_plan_migration.py`).
+2. A Deposit can hold two Lease forfeitures (only in the open Q-2026-10-09-61 case: a kept Pet Deposit gets a returned Pet Refund-review Refund before closure and is forfeited again). Reversing one leaves the Deposit kept (path `KEPT`), so the step cannot use that money.
+
+**Owner answer (2026-10-10, in the session).**
+
+1. Negative checks now: on the real kept-Deposit path, a recipient who is not a Signer is refused and an agreement for the Primary Tenant is refused; the positive agreed-Signer path stays covered by the shared-step test. Add the positive agreed-Signer Refund test on a kept Deposit to the plan's real-path task before 10h, next to the real-path Q-65 test, and build the two-Signer fixture there.
+2. Refuse (55000): the recorder and the confirm refuse a reversal while another forfeiture of the same Deposit stays active (the reversal would not put the Deposit on the DL-032 path). Decided with Q-2026-10-09-61 before 10h.
+
+Recorded in docs/010 and the plan.
