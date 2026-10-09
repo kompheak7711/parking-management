@@ -40,6 +40,12 @@ after the shared DL-032 step has let that value pay the open debt first.
 Sub-slice 10c-3a: the ``CHARGE_REDUCTION`` variant also reduces an unpaid Late-payment Charge of
 the Settlement's Lease within its unpaid rest, through a linked Late-payment Charge correction
 (owner answer to Q-2026-10-07-38).
+
+Sub-slice 10c-3b-1: the ``REFUND`` variant also takes a Late-payment Charge that Payments or Credits
+paid (owner answer to Q-2026-10-07-38 (b)). A linked Late-payment Charge correction removes the
+amount; the paid part is released newest first; released Payment value becomes Customer Credit of
+the Charge's Customer (BR-CREDIT-014), which first pays that Customer's open debt on the Lease
+through the shared DL-032 step, and only the rest is refunded.
 """
 
 from __future__ import annotations
@@ -330,6 +336,71 @@ class RecordRefundCorrectionCommand:
         return {
             "invoice_id": str(self.invoice_id),
             "invoice_line_id": str(self.invoice_line_id),
+            "amount_usd_cents": self.amount_usd_cents,
+            "refund_method_id": str(self.refund_method_id),
+            "reference_note": self.reference_note,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class RecordLateChargeRefundCorrectionCommand:
+    """A wrong Late-payment Charge that was paid (V1-056 sub-slice 10c-3b-1); the database checks
+    it against current state.
+
+    The Late-payment Charge correction removes ``amount_usd_cents`` from a Charge of an Invoice of
+    the Settlement's Lease, at most its current obligation, and must release paid value. Every
+    Refund of the correction records the Refund method and the reference note (BR-REFUND-014). The
+    reason is at most 500 characters, because the Charge correction keeps it. ``steps`` and
+    ``pet_remainder`` are the DL-032 plan for the released value, as for an Invoice line.
+    """
+
+    idempotency_key: UUID
+    settlement_id: UUID
+    late_payment_charge_id: UUID
+    amount_usd_cents: int
+    refund_method_id: UUID
+    reference_note: str
+    reason: str
+    steps: tuple[SettlementStep, ...] = ()
+    pet_remainder: PetRemainderDecision | None = None
+
+    def __post_init__(self) -> None:
+        _uuid(self.idempotency_key, "idempotency_key")
+        _uuid(self.settlement_id, "settlement_id")
+        _uuid(self.late_payment_charge_id, "late_payment_charge_id")
+        if (
+            type(self.amount_usd_cents) is not int
+            or not 1 <= self.amount_usd_cents <= MAX_USD_CENTS
+        ):
+            raise FinalSettlementInvalidError(
+                "amount_usd_cents must be a positive whole number of cents"
+            )
+        _uuid(self.refund_method_id, "refund_method_id")
+        _text(self.reference_note, "reference_note", 500)
+        _text(self.reason, "reason", 500)
+        if not isinstance(self.steps, tuple) or len(self.steps) > MAX_SETTLEMENT_STEPS:
+            raise FinalSettlementInvalidError(
+                f"steps must be a tuple of at most {MAX_SETTLEMENT_STEPS} steps"
+            )
+        for step in self.steps:
+            if not isinstance(
+                step, (SettlementCreditStep, SettlementDepositStep, SettlementDepositRefund)
+            ):
+                raise FinalSettlementInvalidError("Settlement step is invalid")
+        if self.pet_remainder is not None and not isinstance(
+            self.pet_remainder, PetRemainderDecision
+        ):
+            raise FinalSettlementInvalidError("Pet Deposit remainder decision is invalid")
+
+    def plan(self) -> dict[str, object]:
+        return {
+            "steps": [step.payload() for step in self.steps],
+            "pet_remainder": None if self.pet_remainder is None else self.pet_remainder.payload(),
+        }
+
+    def refund(self) -> dict[str, object]:
+        return {
+            "late_payment_charge_id": str(self.late_payment_charge_id),
             "amount_usd_cents": self.amount_usd_cents,
             "refund_method_id": str(self.refund_method_id),
             "reference_note": self.reference_note,
@@ -780,6 +851,64 @@ class SettlementCorrectionService:
         _uuid(draft_id, "draft_id")
         return FinalSettlementService(self.financial_database_url)._call(
             "SELECT app.confirm_settlement_refund(%s,%s,%s,%s)",
+            (property_id, actor_id, draft_id, FINANCIAL_APPROVE_CAPABILITY),
+            stale=REFUND_CONFIRM_STALE_STATES,
+        )
+
+    def record_late_charge_refund(
+        self,
+        property_id: UUID,
+        command: RecordLateChargeRefundCorrectionCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        """Record a Late-payment Charge Refund correction draft; no effect until confirmed."""
+        actor_id = FinalSettlementService._authorize(
+            actor, property_id, FINAL_SETTLEMENTS_PREPARE_CAPABILITY
+        )
+        if not isinstance(command, RecordLateChargeRefundCorrectionCommand):
+            raise FinalSettlementInvalidError(
+                "Late-payment Charge Refund correction command is invalid"
+            )
+        request = RecordLateChargeRefundCorrectionCommand(
+            command.idempotency_key,
+            command.settlement_id,
+            command.late_payment_charge_id,
+            command.amount_usd_cents,
+            command.refund_method_id,
+            command.reference_note,
+            command.reason,
+            command.steps,
+            command.pet_remainder,
+        )
+        return FinalSettlementService(self.financial_database_url)._call(
+            "SELECT app.record_settlement_late_charge_refund_draft(%s,%s,%s,%s,%s,%s,%s)",
+            (
+                property_id,
+                actor_id,
+                settlement_correction_draft_id(property_id, actor_id, request.idempotency_key),
+                request.settlement_id,
+                Jsonb({**request.refund(), "plan": request.plan()}),
+                request.reason,
+                FINAL_SETTLEMENTS_PREPARE_CAPABILITY,
+            ),
+        )
+
+    def confirm_late_charge_refund(
+        self, property_id: UUID, draft_id: UUID, *, actor: AuthenticatedActor
+    ) -> dict[str, object]:
+        """Confirm a pending Late-payment Charge Refund correction (financial.approve only).
+
+        A draft whose Charge or paying sources changed since it was recorded is stale and stays
+        pending; an inactive Refund method is a conflict; an exact repeat by the same approver
+        writes nothing and returns the result again, rebuilt from the stored records.
+        """
+        actor_id = FinalSettlementService._authorize(
+            actor, property_id, FINANCIAL_APPROVE_CAPABILITY
+        )
+        _uuid(draft_id, "draft_id")
+        return FinalSettlementService(self.financial_database_url)._call(
+            "SELECT app.confirm_settlement_late_charge_refund(%s,%s,%s,%s)",
             (property_id, actor_id, draft_id, FINANCIAL_APPROVE_CAPABILITY),
             stale=REFUND_CONFIRM_STALE_STATES,
         )

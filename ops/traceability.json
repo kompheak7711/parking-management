@@ -39371,6 +39371,102 @@
       "test_path": "backend/tests/test_settlement_held_deposit_limit_migration.py",
       "status": "implemented",
       "notes": "Only the financial role records and confirms a held-value Refund correction and no role calls the plan check or the step; the migration changes only the four patched functions, each exactly by its replacements with privileges, owner and settings kept, and is forward-only (V1-056 sub-slice 10c-2b-4)."
+    },
+    {
+      "test_id": "test_a_paid_charge_is_partly_refunded_and_its_rest_stays_paid_after_closure",
+      "upstream_ids": ["BR-SETTLE-013", "BR-LATE-005", "BR-CREDIT-014", "BR-REFUND-014", "BR-AUTH-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_late_charge_refund_migration.py",
+      "status": "implemented",
+      "notes": "On a really closed Settlement, a Late-payment Charge paid by the Customer's Payment after closure is fixed by a REFUND correction: the draft has no effect and Staff cannot confirm it; the approver's confirm reverses the allocation, writes one linked REDUCTION, re-posts the unreleased rest to the Charge, recognizes the released value as the Charge Customer's Credit through a release row that names the Charge correction (no Adjustment) and refunds it with the draft's method and note; every record is a linked effect in order, the re-post's audit carries the release reason, an exact repeat replays, the Charge stays fully paid at its new amount and the Settlement row is unchanged (V1-056 sub-slice 10c-3b-1, owner answer to Q-2026-10-07-38 (b))."
+    },
+    {
+      "test_id": "test_released_credit_first_pays_its_customer_s_other_debt_and_only_the_rest_is_refunded",
+      "upstream_ids": ["BR-SETTLE-013", "BR-CREDIT-006", "BR-CREDIT-008", "DL-032"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_late_charge_refund_migration.py",
+      "status": "implemented",
+      "notes": "Credit a Late-payment Charge Refund releases pays its own Customer's other open debt on the Lease before any Refund: a draft that leaves the debt open is refused and writes nothing; with the Credit step the correction pays the debt and refunds only the rest; another Signer's debt that no step names stays open (V1-056 sub-slice 10c-3b-1, owner answer 2 to Q-2026-10-07-42)."
+    },
+    {
+      "test_id": "test_a_third_party_payer_s_released_value_goes_to_the_charge_s_customer",
+      "upstream_ids": ["BR-CREDIT-014", "BR-SETTLE-013"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_late_charge_refund_migration.py",
+      "status": "implemented",
+      "notes": "When a third party identified for the Lease paid the Charge, the released value becomes Credit of the Charge's Customer and is refunded to that Customer, not the payer; the rest stays allocated from the payer's Payment; the one-call reversal of that Credit back onto the payer's Payment is refused (P4904, sub-slice 8g) (V1-056 sub-slice 10c-3b-1, owner answer to Q-2026-10-07-38)."
+    },
+    {
+      "test_id": "test_credit_value_returns_to_its_credit_and_the_whole_charge_is_then_reversed",
+      "upstream_ids": ["BR-CREDIT-008", "BR-LATE-005", "BR-SETTLE-013"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_late_charge_refund_migration.py",
+      "status": "implemented",
+      "notes": "A Charge Refund releases the newest source first: value of a Credit application goes back to its own Credit (no new Credit), its rest is re-posted as an ordinary Credit application with the release reason in its audit, and the Refund comes from that Credit; a Refund of the whole current obligation is the CHARGE_REVERSAL, releasing newest first across Credit applications and Payment allocations, after which the Charge is terminal (V1-056 sub-slice 10c-3b-1, owner answer 2 to Q-2026-10-07-41)."
+    },
+    {
+      "test_id": "test_a_settlement_credit_application_on_the_charge_is_released_only_through_the_correction",
+      "upstream_ids": ["BR-SETTLE-013", "BR-CREDIT-008", "BR-CREDIT-014", "BR-AUTH-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_late_charge_refund_migration.py",
+      "status": "implemented",
+      "notes": "A Settlement Credit application that paid the Charge at closure is released newest first after a later Payment allocation; its reversal passes the 8e-2 refusal only because it is linked to the correction, its rest is re-posted as an ordinary Credit application whose one-call reversal stays refused (P5S01, the 10c-1b remainder refusal), the released value goes back to its Credit and both releases are refunded to the Charge's Customer (V1-056 sub-slice 10c-3b-1, review round 1)."
+    },
+    {
+      "test_id": "test_the_refund_is_refused_for_unpaid_too_large_deposit_paid_or_other_lease_charges",
+      "upstream_ids": ["BR-SETTLE-013", "BR-LATE-005", "BR-REFUND-014"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_late_charge_refund_migration.py",
+      "status": "implemented",
+      "notes": "A Late-payment Charge Refund correction is refused at record and writes nothing for an unpaid Charge or an amount within the unpaid rest (a charge reduction), more than the Charge, an inactive Refund method, a Charge of another Lease (P0002) and a Charge a Deposit application paid on a really closed Settlement (until sub-slice 10c-3b-2); a draft whose Charge changed is stale and stays pending after first waiting for the Lease row and the Charge row another session holds (V1-056 sub-slice 10c-3b-1)."
+    },
+    {
+      "test_id": "test_the_late_charge_refund_guards_and_the_two_refund_confirms_take_only_their_own_drafts",
+      "upstream_ids": ["BR-AUTH-010", "BR-SETTLE-013"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_late_charge_refund_migration.py",
+      "status": "implemented",
+      "notes": "The Late-payment Charge Refund correction's database guards: malformed input 22023, the recorder only under final_settlements.prepare and the confirm only under financial.approve (42501), a reused key P5205 and an exact repeat replays, a service identity cannot confirm (P4506), the confirm only at READ COMMITTED; the lock function takes the draft's Charge and its source Invoice FOR UPDATE; the Invoice-line REFUND confirm refuses a Charge draft and the Charge confirm an Invoice-line draft, pending and on the replay path (V1-056 sub-slice 10c-3b-1)."
+    },
+    {
+      "test_id": "test_the_relaxed_release_record_keeps_exactly_one_link_and_its_rules",
+      "upstream_ids": ["BR-CREDIT-014", "BR-SETTLE-013"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_late_charge_refund_migration.py",
+      "status": "implemented",
+      "notes": "The relaxed release record names exactly one of an Adjustment or a Late-payment Charge correction, each with its own reason (both checks also shown by their exact definitions); a Charge release must match a reversed source on that Charge with the same reason and at most what it applied; the table stays append-only and no application role may write it (V1-056 sub-slice 10c-3b-1, owner answer 2 to Q-2026-10-09-66)."
+    },
+    {
+      "test_id": "test_late_charge_refund_functions_are_least_privilege_and_forward_only",
+      "upstream_ids": ["BR-SETTLE-013", "BR-AUTH-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_late_charge_refund_migration.py",
+      "status": "implemented",
+      "notes": "Only the financial role records and confirms a Late-payment Charge Refund correction and no role calls its internal functions; no new function has a time limit; the migration changes only the nine patched functions, each exactly by its replacements with privileges, owner and settings kept, and on the release table only the new link, its index, the one-link check and the reason check, with no grant change; it is forward-only (V1-056 sub-slice 10c-3b-1)."
+    },
+    {
+      "test_id": "test_the_late_charge_refund_command_refuses_malformed_input",
+      "upstream_ids": ["BR-SETTLE-013", "BR-REFUND-014"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "The Late-payment Charge Refund correction command refuses malformed input: money outside whole positive cents within the cap, a missing Refund method, a bad reference note or reason, a plan not in the Final Settlement format (V1-056 sub-slice 10c-3b-1)."
+    },
+    {
+      "test_id": "test_a_late_charge_refund_is_recorded_by_staff_and_confirmed_only_by_an_approver",
+      "upstream_ids": ["BR-AUTH-010", "BR-SETTLE-013"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "Only final_settlements.prepare records and only financial.approve confirms a Late-payment Charge Refund correction, checked before any connection (V1-056 sub-slice 10c-3b-1)."
+    },
+    {
+      "test_id": "test_late_charge_refund_record_and_confirm_send_the_stored_refund",
+      "upstream_ids": ["BR-SETTLE-013", "BR-REFUND-014"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "The Late-payment Charge Refund recorder sends the Charge, the amount, the Refund method, the note and the plan; the confirm maps a changed source to a stale draft and keeps the Final Settlement error mapping (V1-056 sub-slice 10c-3b-1)."
     }
   ]
 }

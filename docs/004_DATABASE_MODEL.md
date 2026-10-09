@@ -914,6 +914,19 @@ recognition skips the open-Invoice excess eligibility check only for such a link
 Original allocations, Payments, receipts, late-payment decisions and Charges and Rent
 nonpayment records are never edited.
 
+Relaxed in V1-056 sub-slice 10c-3b-1 (migration `20261117_113`; owner answer 2 to
+Q-2026-10-09-66): a release row names exactly one of `invoice_adjustment_id` (now nullable) or
+the new nullable `late_payment_charge_correction_id` (FK to `late_payment_charge_corrections`, ON
+DELETE RESTRICT, indexed); the check `invoice_credit_excess_release_one_link` requires exactly one
+(`num_nonnulls(...)=1`), and the reason is "Invoice adjustment credit excess" with an Adjustment
+link or "Late-payment Charge correction credit excess" with a Charge correction link. A Charge
+correction release is written only by a post-settlement `REFUND` correction of a Late-payment
+Charge: its reversed allocation or Credit application targets that Charge with the same reason, the
+release is at most what it applied, and released Payment value becomes Credit of the Charge's
+Customer (BR-CREDIT-014; recognition finds that Customer through the Charge correction). Every
+existing row keeps its Adjustment. The table stays append-only; the runtime and financial roles
+keep their read grant and no role writes it.
+
 ## DB-INV-004 — `invoice_void_events`
 
 Append-only: `id uuid PK`, `invoice_id uuid NOT NULL UNIQUE FK`, `reason text NOT NULL`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`, `authorization_reference text NOT NULL`. The posting transaction verifies all active financial dependencies have been explicitly resolved and sets Invoice status VOID without deleting source records.
@@ -2375,6 +2388,21 @@ amount, or `CHARGE_REVERSAL` when the amount is the whole current obligation, wi
 reference `financial.approve`, the draft's reason and the correction as its correlation. At most the
 unpaid rest (the current obligation less the active applications) is reduced; a Charge that a
 Deposit application paid, a reversed Charge and a Charge on a VOID Invoice are refused.
+
+As built in V1-056 sub-slice 10c-3b-1 (migration `20261117_113`; owner answer to Q-2026-10-07-38
+(b), owner answer 2 to Q-2026-10-09-66): the `REFUND` variant also takes a paid Late-payment Charge
+(draft `target_kind` `LATE_PAYMENT_CHARGE`, its own recorder and confirm; the draft's `refund`
+object also stores the Charge's source Invoice). Its effects are, in this order: each released
+Payment allocation reversal (`payment_allocation_reversal_id`) and Credit application reversal
+(`credit_application_reversal_id`), whole sources, newest first; one Late-payment Charge correction
+(`late_payment_charge_correction_id`, `REDUCTION`, or `CHARGE_REVERSAL` for the whole current
+obligation, authorization `financial.approve`); each re-posted rest on the same Charge
+(`payment_allocation_id`, `customer_credit_application_id`); the shared step's records; and one
+Credit Refund per released source (`refund_id`, with its `settlement_correction_refund_details`
+row). Released Payment value becomes Customer Credit of the Charge's Customer (BR-CREDIT-014);
+released Credit value returns to its Credit. These Credits have no link of their own: the release
+rows of `invoice_credit_excess_releases` name the Charge correction and the Credit (DB-INV-003). A
+Charge that a Deposit application paid is refused until sub-slice 10c-3b-2.
 
 ## DB-SETTLE-007 — `settlement_pet_classifications`
 

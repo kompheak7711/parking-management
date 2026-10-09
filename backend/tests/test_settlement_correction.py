@@ -28,6 +28,7 @@ from property_rental.settlement_correction import (
     RecordExtraChargeCorrectionCommand,
     RecordHeldValueRefundCorrectionCommand,
     RecordLateChargeReductionCorrectionCommand,
+    RecordLateChargeRefundCorrectionCommand,
     RecordPetClassificationCorrectionCommand,
     RecordRefundCorrectionCommand,
     RecordRefundReturnCorrectionCommand,
@@ -1264,4 +1265,147 @@ def test_late_charge_reduction_record_and_confirm_send_the_stored_reduction(
             service.confirm_late_charge_reduction(
                 PROPERTY, DRAFT, actor=person("financial.approve")
             )
+        assert type(refused.value) is error and refused.value.__cause__ is failure
+
+
+def late_charge_refund(**changes: Any) -> RecordLateChargeRefundCorrectionCommand:
+    base = RecordLateChargeRefundCorrectionCommand(
+        KEY,
+        SETTLEMENT,
+        CHARGE,
+        3_000,
+        METHOD,
+        "Cash handed over at the front desk",
+        "The Late-payment Charge used the wrong rate and was paid",
+    )
+    return replace(base, **changes)
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"idempotency_key": UUID(int=0)},
+        {"settlement_id": "not-a-uuid"},
+        {"late_payment_charge_id": UUID(int=0)},
+        {"amount_usd_cents": 0},
+        {"amount_usd_cents": 10.0},
+        {"amount_usd_cents": True},
+        {"amount_usd_cents": 9_000_000_000_000_001},
+        {"refund_method_id": None},
+        {"reference_note": " padded"},
+        {"reference_note": "x" * 501},
+        {"reason": "x" * 501},
+        {"steps": [object()]},
+        {"steps": (object(),)},
+        {"pet_remainder": "STAFF"},
+    ],
+)
+def test_the_late_charge_refund_command_refuses_malformed_input(changes: dict[str, Any]) -> None:
+    """Sub-slice 10c-3b-1: money in whole positive cents within the cap; a Refund method and a
+    reference note (BR-REFUND-014); the reason fits the Charge correction (500); the plan in the
+    Final Settlement format."""
+    with pytest.raises(FinalSettlementInvalidError):
+        late_charge_refund(**changes)
+
+
+def test_a_late_charge_refund_is_recorded_by_staff_and_confirmed_only_by_an_approver(
+    no_connection: None,
+) -> None:
+    """BR-AUTH-010 (sub-slice 10c-3b-1): final_settlements.prepare records a Late-payment Charge
+    Refund and only financial.approve confirms it, before any connection; the Refund capability
+    alone does neither."""
+    service = SettlementCorrectionService("unused")
+    for actor in (person(), person("financial.approve"), person("refunds.create")):
+        with pytest.raises(FinalSettlementAuthorizationError):
+            service.record_late_charge_refund(PROPERTY, late_charge_refund(), actor=actor)
+    for actor in (person(), person("final_settlements.prepare"), person("refunds.create")):
+        with pytest.raises(FinalSettlementAuthorizationError):
+            service.confirm_late_charge_refund(PROPERTY, DRAFT, actor=actor)
+    with pytest.raises(FinalSettlementInvalidError):
+        service.confirm_late_charge_refund(PROPERTY, UUID(int=0), actor=person("financial.approve"))
+    with pytest.raises(FinalSettlementInvalidError):
+        service.record_late_charge_refund(
+            PROPERTY,
+            refund(),  # type: ignore[arg-type]
+            actor=person("final_settlements.prepare"),
+        )
+
+
+def test_late_charge_refund_record_and_confirm_send_the_stored_refund(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Sub-slice 10c-3b-1: the recorder sends the Charge, the amount, the Refund method, the note
+    and the plan; the confirm maps a changed Charge or source to a stale draft (P5S02) and keeps the
+    Final Settlement mapping for the rest."""
+    calls: list[tuple[object, ...]] = []
+
+    class Connection:
+        read_only: bool | None = None
+
+        def __enter__(self) -> "Connection":
+            return self
+
+        def __exit__(self, *args: object) -> None:
+            return None
+
+        def execute(self, sql: str, parameters: tuple[object, ...] = ()) -> "Connection":
+            calls.append((sql, parameters))
+            return self
+
+        def fetchone(self) -> tuple[dict[str, object]]:
+            return ({"draft_id": str(DRAFT)},)
+
+    monkeypatch.setattr(psycopg, "connect", lambda url, **kwargs: Connection())
+    service = SettlementCorrectionService("financial-url")
+    assert service.record_late_charge_refund(
+        PROPERTY, late_charge_refund(), actor=person("final_settlements.prepare")
+    ) == {"draft_id": str(DRAFT)}
+    sql, parameters = calls[-1]
+    assert sql == "SELECT app.record_settlement_late_charge_refund_draft(%s,%s,%s,%s,%s,%s,%s)"
+    assert isinstance(parameters, tuple)
+    assert parameters[:4] == (
+        PROPERTY,
+        HUMAN,
+        settlement_correction_draft_id(PROPERTY, HUMAN, KEY),
+        SETTLEMENT,
+    )
+    stored = parameters[4]
+    assert isinstance(stored, Jsonb)
+    assert stored.obj == {
+        "late_payment_charge_id": str(CHARGE),
+        "amount_usd_cents": 3_000,
+        "refund_method_id": str(METHOD),
+        "reference_note": "Cash handed over at the front desk",
+        "plan": {"steps": [], "pet_remainder": None},
+    }
+    assert parameters[5:] == (
+        "The Late-payment Charge used the wrong rate and was paid",
+        "final_settlements.prepare",
+    )
+    assert service.confirm_late_charge_refund(
+        PROPERTY, DRAFT, actor=person("financial.approve")
+    ) == {"draft_id": str(DRAFT)}
+    assert calls[-1] == (
+        "SELECT app.confirm_settlement_late_charge_refund(%s,%s,%s,%s)",
+        (PROPERTY, HUMAN, DRAFT, "financial.approve"),
+    )
+
+    class Failure(psycopg.Error):
+        pass
+
+    for sqlstate, error in (
+        ("P5S02", FinalSettlementStaleDraftError),
+        ("55000", FinalSettlementConflictError),
+        ("P0002", FinalSettlementNotFoundError),
+        ("42501", FinalSettlementAuthorizationError),
+    ):
+        failure = Failure("Synthetic failure")
+        failure.sqlstate = sqlstate
+
+        def refuse(*args: object, failure: Failure = failure, **kwargs: object) -> None:
+            raise failure
+
+        monkeypatch.setattr(psycopg, "connect", refuse)
+        with pytest.raises(error) as refused:
+            service.confirm_late_charge_refund(PROPERTY, DRAFT, actor=person("financial.approve"))
         assert type(refused.value) is error and refused.value.__cause__ is failure

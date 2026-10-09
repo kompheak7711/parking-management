@@ -1578,3 +1578,11 @@ Until you answer: no change, no run, no commit. 10c-3b is not started.
 4. After 10c-2b-4 is committed, write the 10c-3b pre-code design in the plan and commit it. No code. Then stop and report. A design question goes to this file with a recommendation. The owner starts a fresh session to build 10c-3b.
 
 Recorded in docs/010.
+
+## Q-2026-10-09-68 — Sub-slice 10c-3b-1 before code: the shared plan check refuses a released Charge allocation (ANSWERED 2026-10-09 in the session: patch it)
+
+Found while reading the code for 10c-3b-1, before any code. The shared plan check `app.settlement_correction_plan_result` accepts a released Payment allocation in its Credit overlay only when the allocation is on an Invoice of the Lease (it joins `allocation.invoice_id`). A Late-payment Charge allocation has no Invoice (`invoice_id` is NULL), so every Charge `REFUND` with released Payment value would be refused (55000, "The overlay names a Customer Credit outside this Final Settlement"). The 10c-3b design lists the patched readers and does not list this one.
+
+**Recommendation:** one exact-text patch: the overlay also accepts an allocation on a Late-payment Charge of an Invoice of this Lease, as Credit of the Charge's Customer (BR-CREDIT-014). Who gets the money and the order it is used in do not change. List it in the plan's as-built line, docs/010, the review record and the least-privilege test's changed-function list; the reviewers check it.
+
+**Owner answer (2026-10-09, in the session).** Patch it (the recommendation). Recorded in docs/010.

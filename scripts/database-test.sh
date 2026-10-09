@@ -217,6 +217,7 @@ database_test_suites='
   tests/test_settlement_held_value_refund_migration.py
   tests/test_settlement_late_charge_reduction_migration.py
   tests/test_settlement_held_deposit_limit_migration.py
+  tests/test_settlement_late_charge_refund_migration.py
 '
 
 for database_test_file in $database_test_suites; do
