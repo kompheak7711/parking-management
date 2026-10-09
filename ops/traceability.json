@@ -39155,6 +39155,102 @@
       "test_path": "backend/tests/test_settlement_pet_refund_return_migration.py",
       "status": "implemented",
       "notes": "A REPEATABLE READ transaction whose snapshot predates the closure fails with 40001 on the Pet Deposit's serialization guard when it tries the one-call return of a Pet Refund-review Refund or the reversal of its older return after closure; it checks the fail-closed claim of the migration comment, the guard predates the migration (V1-056 sub-slice 10c-2b-2b, security review round 1)."
+    },
+    {
+      "test_id": "test_a_held_credit_first_pays_its_customer_s_debt_and_only_the_rest_is_refunded",
+      "upstream_ids": ["BR-SETTLE-013", "BR-CREDIT-006", "BR-CREDIT-008", "BR-REFUND-014", "DL-032", "BR-AUTH-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_held_value_refund_migration.py",
+      "status": "implemented",
+      "notes": "A Credit left by a return-only REFUND_RETURN correction is refunded by a later HELD_VALUE_REFUND correction only after it pays its own Customer's open debt on the Lease (no plan refused), at most what the earlier correction left, a cap this correction's own step application does not lower (owner answer 2 to Q-2026-10-09-63); Staff cannot confirm; a second one is refused when nothing is left; the Settlement row is unchanged and the ledger reconciles (V1-056 sub-slice 10c-2b-3, owner answers 1, 2 and 4 to Q-2026-10-08-55)."
+    },
+    {
+      "test_id": "test_held_deposit_money_is_refunded_by_a_later_correction",
+      "upstream_ids": ["BR-SETTLE-008", "BR-SETTLE-013", "BR-REFUND-015", "DL-032"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_held_value_refund_migration.py",
+      "status": "implemented",
+      "notes": "Pet Deposit money held after a return-only correction of the Settlement's Pet Deposit Refund is refunded by a HELD_VALUE_REFUND correction through the plan's Deposit Refund step (no plan refused); the earlier correction is then refused (nothing left), also after a second return-only correction brings back more money, with no money or record changed; a correction linked to the second one lets the Pet Deposit pay a new charge, and the audit names the Deposit's owner and every Deposit balance settled (V1-056 sub-slice 10c-2b-3, owner answer 3 to Q-2026-10-07-42, owner answer 1 to Q-2026-10-09-63)."
+    },
+    {
+      "test_id": "test_a_held_value_refund_refuses_a_correction_that_left_nothing_and_a_stale_draft_waits",
+      "upstream_ids": ["BR-SETTLE-013", "BR-AUTH-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_held_value_refund_migration.py",
+      "status": "implemented",
+      "notes": "A HELD_VALUE_REFUND correction names only a confirmed return-only REFUND_RETURN correction of the same Settlement (one that paid a new Refund is refused, an unknown one and another Settlement's are not found); the database guards (malformed input, authorization references, a reused key and the replay, a service identity, READ COMMITTED) write nothing; the confirm holds the Lease row and the Credit row and takes the Credit before its stale check; of two drafts on the same earlier correction the second is stale after the first and stays pending (V1-056 sub-slice 10c-2b-3)."
+    },
+    {
+      "test_id": "test_a_held_third_party_credit_is_refunded_to_its_customer_within_what_was_left",
+      "upstream_ids": ["BR-CREDIT-014", "BR-SETTLE-013", "BR-REFUND-014"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_held_value_refund_migration.py",
+      "status": "implemented",
+      "notes": "Held value of a correction's Credit Refund released from a third-party Payment is refunded to the Invoice Customer, not the payer, through the relaxed Credit Refund check that counts what the earlier return-only correction left and refuses a linked Refund of 1 cent more although the Credit holds more from a second return-only correction (V1-056 sub-slice 10c-2b-3, owner answer 1 to Q-2026-10-09-63)."
+    },
+    {
+      "test_id": "test_held_pet_deposit_money_off_the_dl032_path_waits_for_the_owner",
+      "upstream_ids": ["BR-DEP-022", "DL-032", "BR-SETTLE-013"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_held_value_refund_migration.py",
+      "status": "implemented",
+      "notes": "A kept Pet Deposit (BR-DEP-022 termination) that holds a returned Pet Refund-review Refund is not refunded by a HELD_VALUE_REFUND correction (55000, only on the DL-032 path) and no draft is recorded, while Q-2026-10-09-61 is open (V1-056 sub-slice 10c-2b-3)."
+    },
+    {
+      "test_id": "test_held_value_refund_records_are_least_privilege_and_forward_only",
+      "upstream_ids": ["BR-SETTLE-013", "BR-AUTH-010"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_settlement_held_value_refund_migration.py",
+      "status": "implemented",
+      "notes": "Only the financial role records and confirms a HELD_VALUE_REFUND correction; no role calls its internal functions; the migration adds only its functions, changes only the two patched functions (each new body exactly the old one with its replacements, privileges, owner, SECURITY DEFINER and settings kept) and is forward-only (V1-056 sub-slice 10c-2b-3)."
+    },
+    {
+      "test_id": "test_held_value_refund_correction_commands_are_validated",
+      "upstream_ids": ["BR-SETTLE-013", "BR-REFUND-014"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "A held-value Refund correction command needs the earlier correction, a reason, the new Refund's method and reference note and a tuple of typed plan steps (V1-056 sub-slice 10c-2b-3)."
+    },
+    {
+      "test_id": "test_held_value_refund_correction_record_and_confirm_send_the_stored_correction",
+      "upstream_ids": ["BR-SETTLE-013", "BR-AUTH-010"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "The held-value Refund correction service sends the earlier correction, the new Refund and the plan; only final_settlements.prepare records and only financial.approve confirms (V1-056 sub-slice 10c-2b-3)."
+    },
+    {
+      "test_id": "test_held_value_refund_correction_confirm_maps_database_refusals",
+      "upstream_ids": ["BR-SETTLE-013"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "The held-value Refund correction confirm reports a changed source as stale and keeps the Final Settlement error mapping for the other refusals (V1-056 sub-slice 10c-2b-3)."
+    },
+    {
+      "test_id": "test_what_an_earlier_correction_left_caps_the_refund_after_its_own_step_paid_debt",
+      "upstream_ids": ["BR-SETTLE-013", "BR-CREDIT-006", "BR-CREDIT-008", "BR-REFUND-014", "DL-032"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_held_value_refund_migration.py",
+      "status": "implemented",
+      "notes": "A return-only REFUND_RETURN correction whose own step paid part of the returned Credit to the Customer's debt leaves only the rest; a HELD_VALUE_REFUND correction linked to it refunds at most that rest although the Credit holds more from a second return-only correction, the first is then refused (nothing left) and the second one's value is refunded (V1-056 sub-slice 10c-2b-3, owner answer 1 to Q-2026-10-09-63)."
+    },
+    {
+      "test_id": "test_a_credit_return_while_a_deposit_holds_money_is_refunded_with_that_money",
+      "upstream_ids": ["BR-SETTLE-008", "BR-SETTLE-013", "BR-CREDIT-008", "BR-REFUND-014", "DL-032"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_held_value_refund_migration.py",
+      "status": "implemented",
+      "notes": "A Credit return-only correction recorded while a Deposit holds returned money is refunded by a HELD_VALUE_REFUND correction that also refunds the held Deposit money (its audit lists that Deposit balance); an ordinary Credit Refund lowers only the Credit's available value, which caps the Refund; a Credit correction whose Credit holds nothing is refused even with a Deposit Refund step, and no record is written (V1-056 sub-slice 10c-2b-3, owner answer 2 to Q-2026-10-08-59, owner answers 1 and 2 to Q-2026-10-09-63)."
+    },
+    {
+      "test_id": "test_a_deposit_correction_audit_names_the_refund_recipient",
+      "upstream_ids": ["BR-REFUND-015", "BR-SETTLE-013", "DL-032"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_held_value_refund_migration.py",
+      "status": "implemented",
+      "notes": "A HELD_VALUE_REFUND correction of a Pet Deposit whose Settlement Refund went to the other signed Signer records the Deposit's owner on its draft and the new Refund's recipient (the Primary Tenant) on its audit event, not the earlier Refund's recipient; a later Refund to the Signer with the agreement is named on the audit event while the draft names the Deposit's owner (V1-056 sub-slice 10c-2b-3, review rounds 1 and 2)."
     }
   ]
 }

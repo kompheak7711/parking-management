@@ -2337,6 +2337,24 @@ the Settlement's Lease, paid while the Lease was signed. The return gives the am
 Pet Deposit; return only, the Pet Deposit keeps holding it; with a new Refund the step runs as for
 a Settlement Deposit Refund, only on the DL-032 path.
 
+As built in V1-056 sub-slice 10c-2b-3 (migration `20261114_110`; owner answer 3 to Q-2026-10-07-42,
+answers 1, 2 and 4 to Q-2026-10-08-55): the variant `HELD_VALUE_REFUND` refunds value that an
+earlier return-only `REFUND_RETURN` correction of the same Settlement left; its draft names that
+correction (`held_from_settlement_correction_id`, also in the confirm's audit event) and the new
+Refund's method and reference note. A held Credit first pays its own Customer's open debt on the
+Lease through the shared step; the new Refund is what is left in the Credit after the step, at most
+what the earlier correction left (its return less the Credit applications its own step and the
+linked held-value corrections wrote from that Credit, and less their Refunds from it, without
+this correction's own records), to the Credit's Customer; the relaxed Credit Refund check counts that value for a Customer who did not
+make the Payment. A held Deposit (only on the DL-032 path) first pays the Lease's open debt in the
+DL-032 order and the plan's Deposit Refund steps refund the rest. Its effects are the step's Credit
+and Deposit applications and its Refunds (DB-SETTLE-005); no new table or column. Owner answer 1 to
+Q-2026-10-09-63: an earlier correction is named only while it still has value left (for a Deposit,
+its return less the Deposit applications and Refunds from that Deposit written by the linked
+held-value corrections), and the Credit or the Deposit must still hold value; the draft records the
+Deposit's owner, and the confirm's audit event names the Deposit Refund's recipient and lists every
+Deposit balance the step settled.
+
 ## DB-SETTLE-007 — `settlement_pet_classifications`
 
 Added in V1-056 sub-slice 10c-2a-5 (migration `20261109_105`; owner answer to

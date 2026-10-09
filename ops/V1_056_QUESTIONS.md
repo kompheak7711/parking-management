@@ -1440,3 +1440,52 @@ Until you answer, no further 10c-2b-2b change, no run and no commit. 10c-2b-3 wa
 - Slice 12: add `test_usd_refund_blocks_source_reversal_until_full_verified_return` to the `LockNotAvailable` robustness item, next to `test_usd_refund_khr_origin_uses_recorded_usd_without_repricing`. Look for the cause in the lock code too, not only in the two tests. If the fix needs a product code change, ask the owner first.
 
 Also answered with it (2026-10-09): the return refusals after closure keep P5S01 and 409 for both return routes (a business-state refusal; the 11c plan answers those with 409). The 11c plan gets a note to check the 10c-2b-1 refusal (P5202, 422) and move it to 409, so both routes answer the same way; not changed now. Recorded in docs/010 and the plan.
+
+## Q-2026-10-09-63 — Sub-slice 10c-2b-3 stopped after review round 1: what "linked to that correction" limits in the refund-only form (ANSWERED 2026-10-09: point 1 (a), point 2 keep as built; answers in docs/010)
+
+10c-2b-2b is committed (b4cf091; NOW.md ab434af). 10c-2b-3 (`HELD_VALUE_REFUND`, migration `20261114_110`) is built and green but not committed: U1 3652 passed, P1 1980 passed (targeted T1 failed once on a test that counted drafts of the whole shared database; corrected once). Record: ops/reviews/V1-056-slice-10c-2b-3-held-value-refund.md. Review round 1: no blocker; independent 4 should-fix, security 2 should-fix (they overlap), and notes. Most of them are missing tests that I can add. Two points decide what the code must do, so they need you.
+
+**What the correction does (your answers to Q-42 and Q-55).** A later correction names an earlier return-only `REFUND_RETURN` correction and refunds the value it left. A held Credit first pays its own Customer's open debt on this Lease, and only the rest is refunded to that Customer. Held Deposit money first pays this Lease's open debt in the DL-032 order, and the rest is refunded. The shared step must apply or refund every held DL-032 Deposit balance in the same correction (BR-SETTLE-008).
+
+**Point 1: the Deposit form and the link.**
+- Built: a Deposit correction checks only that the Deposit is on the DL-032 path and holds money. It does not check how much of that money came from the named earlier correction.
+- So the same earlier correction can be named again after its own money is gone. Example: earlier correction E returns 2,000 to the Pet Deposit; correction H1, linked to E, refunds those 2,000; a second return-only correction E2 returns 1,000 more; a new correction linked to E refunds those 1,000 too. No money is overpaid (each Refund is capped by what the Deposit holds), but the record shows 3,000 refunded against E, which returned only 2,000.
+- Options:
+  - (a) Each held-value correction may name an earlier correction only while that correction still has value left. For a Deposit: what it returned, less the Deposit applications and Refunds from that Deposit written by the held-value corrections linked to it. For a Credit: what it left, and the Credit must still hold some of it. The step still settles every held DL-032 balance (BR-SETTLE-008), and the audit event lists every Deposit balance it settled.
+  - (b) Pooling: the link only says which correction triggered the payout. One held-value correction may refund all held money of a Deposit, whichever earlier corrections returned it. Then the docs must say so, and no further check is added.
+- **Recommendation: (a)**, because it keeps the record true to your words "linked to that correction", while the money rules stay as they are.
+
+**Point 2: the Credit form, when other paths use the Credit.**
+- Built (docs/010 choice (1)): what E left in a Credit is E's return, less the Credit applications from that Credit written by E's own step and by the linked held-value corrections, and less their Refunds from it. Value the Customer uses through the ordinary paths (a one-call Credit application, an ordinary Credit Refund draft) does not lower what E left; it only lowers the Credit's available value, which also caps the new Refund.
+- The new Refund is what is left in the Credit after this correction's own step, at most what E left. A Credit that held other value may therefore pay the debt from that other value and refund all that E left. This is the rule of choice (1) of 10c-2b-1, which you kept.
+- Options:
+  - (a) Keep as built. The ordinary Credit paths stay as they are (your answer 2 to Q-55), and the available-value cap prevents any overpayment.
+  - (b) Stricter: the new Refund is at most what E left less this correction's own step applications from that Credit.
+- **Recommendation: (a)**, as for 10c-2b-1.
+
+**What I fix after your answers, with no rule change** (then the static checks, the migration check, the runs and review round 2):
+- Tests:
+  - the cap where the Credit holds more than E left (two return-only corrections of the same Refund), also on the third-party Credit, so that the relaxed check refuses anything above what was left;
+  - E's own step paying part of the Credit to debt;
+  - a return-only correction of another Settlement named in this Settlement's draft (P0002);
+  - database-level guards: authorization 42501, a non-human approver, REPEATABLE READ 55000, malformed input 22023, key reuse P5205 and the record replay;
+  - a NOWAIT check that the confirm holds the Lease row and the Credit row;
+  - the Q-59 answer 2 path: a Credit return-only correction while a Deposit holds returned money, then a held-value correction that refunds both.
+- Code:
+  - the audit event's `customer_id` for a Deposit correction (today the earlier Refund's recipient, not the plan step's);
+  - a Credit correction whose Credit no longer holds anything is refused, even when it has other steps;
+  - the gate of point 1, if you choose (a).
+- Docs: the plan's "as built" line (the left value also subtracts the linked corrections' Credit applications; only the Credit form has the record-time "writes nothing" check), and docs/010 choices (2) and (4) reworded. Choice (2) applies to the Credit form too. Choice (4) is untrue until the point 1 gate exists.
+
+**For the notes, no answer needed:**
+- The future `RETURN_REVERSAL` (Q-2026-10-08-57) must make the left value subtract reversed returns.
+- The new Refund's method and note are required even when the plan pays everything to debt and no Refund is written. This is the same as the `REFUND` correction.
+
+Until you answer, no further 10c-2b-3 change, no run and no commit. All 10c-2b-3 files are in the working tree.
+
+**Owner answer (2026-10-09).**
+
+1. Yes, option (a). A Deposit correction may name an earlier correction only while that correction still has value left. Write in docs/010 how the value left is counted. Add a test: naming the same correction again after its value is gone is refused, and no money or record changes.
+2. Yes, keep it as built, as approved for 10c-2b-1. Credit spent through the ordinary Credit paths lowers only the Credit's available value. The available value still caps every Refund. Write it in docs/010 as a known limit: the value an earlier correction left can be more than the Customer can still get back.
+
+Recorded in docs/010. Next: the round 1 fixes (the listed tests, the audit `customer_id` of a Deposit correction, a Credit correction whose Credit is empty), the static checks, the runs, review rounds 2 and 3 under the standing rule, then the commit.
