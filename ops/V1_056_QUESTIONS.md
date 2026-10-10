@@ -1763,3 +1763,34 @@ Until you answer, no change and no run. 10e-1b waits for Q-2026-10-10-72 anyway.
 2. `payments.reverse` as the eighth preparer capability: accepted. The bound of the two draft reads may go from 7 to 8. The two changed expectations in `test_lease_deposit_forfeiture.py` keep their names. The independent reviewer compares them with HEAD and confirms that only the capability count changed.
 
 Recorded in docs/010.
+
+Done: round 3 had no blocker and no should-fix; 10e-1a committed as ee8397c.
+
+## Q-2026-10-10-75 — Sub-slice 10c-2b-5 stopped before code: two points of pay back (blocks 10c-2b-5)
+
+10e-1a is committed (ee8397c). The 10c-2b-5 pre-code design is in the plan (10c-2b-5 entry, "10c-2b-5 pre-code design"). It builds your pay-back answer to Q-2026-10-09-61 and answer (a) to Q-2026-10-10-73. Two points are not clear enough to build. There is no 10c-2b-5 code and no run.
+
+**1. Where the returned money counts as DL-032 money.**
+
+Example. A Pet Deposit of $200. While the Lease is signed the Customer gets a $200 Pet Refund-review Refund (the pet left). Later the Lease is terminated for pet noncompliance (BR-DEP-022), the Final Settlement closes and the Pet Deposit is empty. After closure the bank sends the $200 Refund back, so the Pet Deposit holds $200 again.
+
+- (A) The $200 is DL-032 money everywhere, before and after closure. The system shows the Pet Deposit on the DL-032 path for that money, although its forfeiture stays. Before closure the Settlement must apply it to open debt or refund it. After closure the returned-Refund correction with a new Refund and the refund-only correction pay the open debt first and refund the rest; and any later correction that runs the shared DL-032 step must also use it (BR-SETTLE-008), as it must today for money a return-only correction left in a Settlement Deposit. Small change: the Deposit path, the forfeiture amount and one exception in the returned-Refund correction.
+- (B) Only where the plan names it: before closure the Settlement preview, plan check and confirm; after closure only the returned-Refund correction with a new Refund and the refund-only correction. Other corrections leave the $200 alone; it stays in the Pet Deposit until one of those two corrections refunds it. About nine functions get their own exception.
+
+Recommendation: (A). It is what "the Customer's money, treated as DL-032 value" means, it treats this money like all other DL-032 money, and it is much less code. It differs from the plan text only after closure, for corrections that run the shared step.
+
+**2. Which returned amount is the Customer's.**
+
+Example. A Pet Deposit of $500. While the Lease is signed the Customer gets a $300 Pet Refund-review Refund, so the Pet Deposit holds $200. Later the Lease is terminated for pet noncompliance.
+
+- Case X: the $300 came back before the termination. At the termination the Pet Deposit holds $500.
+- Case Y: the $300 comes back after the termination. At the termination the Pet Deposit holds $200.
+
+The plan text says "the returned amount of a pre-termination Pet Refund-review Refund", which covers both cases. The pay-back option you chose said "it had already left the Pet Deposit before the termination; BR-DEP-022 keeps only what the Deposit held at the termination", which covers only case Y.
+
+- (a) Only money returned after the termination is paid back. Case Y: $300 paid back, $200 forfeited. Case X: all $500 forfeited.
+- (b) Any return of a Refund paid before the termination is paid back. Case X: $300 paid back, $200 forfeited, the same as case Y.
+
+Recommendation: (a), because BR-DEP-022 keeps what the Deposit held at the termination, as the option you chose said.
+
+Until you answer, no 10c-2b-5 code. In the plan order, 10e-3 comes after 10c-2b-5 and also reuses the 10e-1c charge (waiting for Q-72). 10c-2a-7, 10c-3c-1 and 10c-3c-2 depend on neither question, but the plan puts them after 10e-3; I do not start them without your word.
