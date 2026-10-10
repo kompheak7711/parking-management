@@ -1662,7 +1662,7 @@ Found while reading the code for 10d, before any code.
 
 Recorded in docs/010 and the plan.
 
-## Q-2026-10-10-72 — Sub-slice 10e design: three cases a returned Payment cannot handle under the current rules (blocks 10e-1b and 10e-1c; not 10e-1a)
+## Q-2026-10-10-72 — Sub-slice 10e design: three cases a returned Payment cannot handle under the current rules (blocks 10e-1b and 10e-1c; not 10e-1a) (point 1 ANSWERED 2026-10-10: (a); points 2 and 3 OPEN; answer in docs/010)
 
 The 10e pre-code design is in the plan (10e entry). It splits 10e into 10e-1a (`PAYMENT_RETURN` when no closed Final Settlement relied on the Payment's records), 10e-1b (the `RETURNED_PAYMENT` correction) and 10e-1c (a Refund already paid from the returned value). Your answers 2, 3 and 5 to Q-2026-10-06-37 decide 10e-1a completely, so it goes ahead under the standing rules, as 10a did while Q-2026-10-06-37 was open. These three cases are not decided.
 
@@ -1689,7 +1689,15 @@ The 10e pre-code design is in the plan (10e entry). It splits 10e into 10e-1a (`
 
 **What goes ahead.** 10e-1a (no closed Settlement relied on; it refuses the cases above). 10e-1b waits for points 2 and 3, and 10e-1c for point 1.
 
-## Q-2026-10-10-73 — Pay back (Q-2026-10-09-61): may the returned amount still be forfeited? (not blocking 10e; the owner answers before sub-slice 10c-2b-5)
+**Owner answer (2026-10-10).**
+
+- Point 1 (a Refund already paid out from the bounced Payment's value): the Customer owes that amount back as an `EXTRA_CHARGE`, the same rule as the answer to Q-2026-10-08-57. Use the new correction kind recommended in option (a), so that no Deposit shows a negative balance.
+- Points 2 and 3: not decided yet. After 10e-1a is committed, write each case in simple words, with a small example in dollars, the options and the recommendation, here and in the report.
+- Do not start 10e-1b or 10e-1c until points 2 and 3 are answered. Continue with the next sub-slices before 10h that Q-72 does not block, starting with 10c-2b-5.
+
+Recorded in docs/010 and the plan (order of the remaining slice 10 work).
+
+## Q-2026-10-10-73 — Pay back (Q-2026-10-09-61): may the returned amount still be forfeited? (not blocking 10e; the owner answers before sub-slice 10c-2b-5) (ANSWERED 2026-10-10: (a); answer in docs/010)
 
 Your answer to Q-2026-10-09-61 makes the returned money of a pre-termination Pet Refund-review Refund the Customer's money, before and after closure. Today a Lease Deposit forfeiture always takes the whole held amount (migration `20261018_83`), and before closure nothing stops a forfeiture draft of a Pet Deposit that holds such returned money: a `KEPT` Pet Deposit can be forfeited a second time, and a Pet Deposit that holds the returned money and its own rest can be forfeited whole. Both would keep the Customer's money.
 
@@ -1697,3 +1705,34 @@ Your answer to Q-2026-10-09-61 makes the returned money of a pre-termination Pet
 - (b) Leave the forfeiture as it is: staff decide; the Settlement preview only stops requiring a forfeiture of that amount.
 
 **Recommendation: (a)**, because it is what "the Customer's money" means for the forfeiture, and the forfeiture is the only path that could still take it.
+
+**Owner answer (2026-10-10).** Yes, (a). Under pay back, a forfeiture leaves out the returned amount, because that money is the Customer's. Also: keep the 10d refusal as a guard, as recommended under Q-2026-10-09-61.
+
+Recorded in docs/010; built in sub-slice 10c-2b-5.
+
+## Q-2026-10-10-74 — Sub-slice 10e-1a stopped after review round 2: three should-fix findings, all tests (blocks the 10e-1a commit) (ANSWERED 2026-10-10: (a), owner exception; answer in docs/010)
+
+10e-1a (`PAYMENT_RETURN` when no closed Final Settlement relied on the Payment's records, migration `20261120_116`) is built and green but not committed: U3 3725 passed, full PostgreSQL P2 2024 passed (record: ops/reviews/V1-056-slice-10e-1a-payment-return.md). Review round 1 (independent 3 should-fix, security 1 should-fix) was fixed or answered. Review round 2: no blocker; independent 2 should-fix, security 1 should-fix; all three are missing or weak tests, no code fault. The standing rule allows round 3 only with at most two should-fix findings, so I stopped. All files are in the working tree.
+
+**The three findings:**
+1. No test proves the new relied-on branches for a Credit whose Settlement or correction use was later reversed or released (independent SF-1). Proposed: a real-path test of the round-1 example: a Credit applied before closure by an ordinary application, released by a `REFUND` correction after closure, its Refund brought back by a `REFUND_RETURN` (the value held on the Credit); the Credit's Payment shows that relied-on record and its return is refused.
+2. The recorder's READ COMMITTED test would pass without the guard, because the Payment already has a waiting draft (independent SF-2). Proposed: use a Payment with no waiting draft and assert the guard's own message.
+3. No test proves that the relaxed slice 7 and 8g refusals open only for the returned Payment within the same transaction (security S1). Proposed: one financial-role transaction that confirms the return of one Payment, then tries the direct reversal of another Payment's other-Customer Credit and the one-call reversal of another Payment's moved allocation (both P4904), then rolls back.
+
+**Text fixes I would make with them (no rule change):** the lock comment, docs/004, docs/010 and the plan state the lock order exactly (a Charge lock also takes its Invoice), or the confirm takes the Charges first and then every Invoice in one id order (independent N-1; the second is a small code change that removes a possible deadlock between two returns, answered as a conflict today); docs/010 choice (4), the plan's preview line, the docs/010 refusal list and the migration docstring match the as-built behaviour (N-2, N-4); the round-1 overstatements of the recorder test (SF-2).
+
+**Options:**
+- (a) Owner exception, as for Q-2026-10-05-31 and Q-2026-10-07-43: I add the three tests and the text fixes, take the lock-order code change of N-1, run the static checks, one full unit run and one full PostgreSQL run, then one round 3 (independent and security) that must have no should-fix; then commit.
+- (b) As (a), but keep the lock order as it is and only reword the comment and the docs (no code change; the deadlock stays a rare conflict).
+- (c) Commit as it is, with the three tests as slice 12 items.
+
+**Recommendation: (a).** All three are test gaps on rules you set (the relied-on rule of Q-2026-10-06-37 answer 5 and the scope of the relaxed refusals), and the N-1 change is small and removes a known deadlock.
+
+Until you answer, no change and no run. 10e-1b waits for Q-2026-10-10-72 anyway.
+
+**Owner answer (2026-10-10).**
+
+1. Option (a), an owner exception as in Q-2026-10-05-31 and Q-2026-10-07-43. Add the three tests, make the small lock-order change, and fix the text. Then run the static checks, the migration-only check, one full unit run and one full PostgreSQL run. Then do review round 3. Commit 10e-1a only if the runs are green and round 3 has no blocker and no should-fix. If round 3 finds anything, stop.
+2. `payments.reverse` as the eighth preparer capability: accepted. The bound of the two draft reads may go from 7 to 8. The two changed expectations in `test_lease_deposit_forfeiture.py` keep their names. The independent reviewer compares them with HEAD and confirms that only the capability count changed.
+
+Recorded in docs/010.

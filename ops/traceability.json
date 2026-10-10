@@ -39579,6 +39579,142 @@
       "test_path": "backend/tests/test_settlement_forfeiture_reversal_migration.py",
       "status": "implemented",
       "notes": "Only the financial role records and confirms; no role calls the internal functions; each new function is SECURITY DEFINER with the fixed search path; the migration adds only its functions, changes no committed function, table or trigger and is forward-only (V1-056 sub-slice 10d)."
+    },
+    {
+      "test_id": "test_payment_return_record_and_confirm_refuse_missing_capability_before_any_connection",
+      "upstream_ids": ["BR-AUTH-010", "DB-PAY-009"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_return.py",
+      "status": "implemented",
+      "notes": "Only a payments.reverse holder records a returned-Payment draft and only a financial.approve holder confirms it; both are checked before any database connection (V1-056 sub-slice 10e-1a, owner answer 3 to Q-2026-10-06-37)."
+    },
+    {
+      "test_id": "test_payment_return_invalid_input_is_refused_before_any_connection",
+      "upstream_ids": ["DB-PAY-009", "BR-AUTH-010"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_return.py",
+      "status": "implemented",
+      "notes": "Zero or non-UUID identities, untrimmed or oversized reasons and evidence references are refused before any connection; the limits are inclusive (V1-056 sub-slice 10e-1a)."
+    },
+    {
+      "test_id": "test_payment_return_database_failures_map_to_stable_errors",
+      "upstream_ids": ["DB-PAY-009", "BR-AUTH-010"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_return.py",
+      "status": "implemented",
+      "notes": "Each database refusal maps to a stable service error (not found, not authorized, invalid, reused key, stale draft, conflict, unavailable) without the private diagnostic (V1-056 sub-slice 10e-1a)."
+    },
+    {
+      "test_id": "test_payment_return_business_state_refusals_are_conflicts",
+      "upstream_ids": ["DB-PAY-009"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_return.py",
+      "status": "implemented",
+      "notes": "A reused key and a stale draft are conflicts, as other business-state refusals (owner answer for slice 11c; V1-056 sub-slice 10e-1a)."
+    },
+    {
+      "test_id": "test_payment_return_draft_id_is_scoped_to_property_preparer_and_key",
+      "upstream_ids": ["DB-PAY-009", "BR-AUTH-010"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_return.py",
+      "status": "implemented",
+      "notes": "The draft id is stable for one preparer's command key in one Property and differs for another Property, preparer or key (V1-056 sub-slice 10e-1a)."
+    },
+    {
+      "test_id": "test_payment_return_drafts_are_prepared_only_under_the_payment_reversal_capability",
+      "upstream_ids": ["BR-AUTH-010", "DB-PAY-009"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_return.py",
+      "status": "implemented",
+      "notes": "The PAYMENT_RETURN draft kind is prepared only under payments.reverse (owner answer 3 to Q-2026-10-06-37; V1-056 sub-slice 10e-1a)."
+    },
+    {
+      "test_id": "test_a_returned_payment_reverses_its_credit_applications_credits_and_payment",
+      "upstream_ids": ["DB-PAY-009", "DB-PAY-006", "BR-AUTH-010", "BR-SETTLE-016"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_return_migration.py",
+      "status": "implemented",
+      "notes": "The draft lists the Payment's Credit and its application; nothing changes until a financial.approve holder confirms (Staff cannot, in the service or the database); the confirm reverses the application, the Credit and the Payment, the debt is back on the line to the cent, the Payment row and Receipt are unchanged, one return row and one audit event, replay, no transaction id, ledger reconciled (V1-056 sub-slice 10e-1a)."
+    },
+    {
+      "test_id": "test_a_returned_third_party_payment_ends_the_8g_lasting_block",
+      "upstream_ids": ["BR-CREDIT-014", "DB-PAY-009", "BR-SETTLE-016"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_return_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer 5 to Q-2026-10-06-36: a third-party Payment whose adjustment Credit was released to the Invoice Customer, who applied 2,000 of it to another Invoice, is returned; the Credit application, the Credit, the re-posted allocation and the Payment are reversed and both Invoices owe again (75,000 and the full other Invoice); outside a return the sub-slice 8g refusal (P4904) still holds (V1-056 sub-slice 10e-1a)."
+    },
+    {
+      "test_id": "test_a_returned_moved_payment_ends_the_slice_7_lasting_block",
+      "upstream_ids": ["BR-PAY-042", "DB-PAY-009", "BR-SETTLE-016"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_return_migration.py",
+      "status": "implemented",
+      "notes": "A moved Payment with a moved-value Credit of the correct Invoice's Customer is returned: the WRONG_UNIT_MOVE allocation and the Credit are reversed, both Invoices owe again, the move record is unchanged (owner answer 5 to Q-2026-10-06-36; V1-056 sub-slice 10e-1a)."
+    },
+    {
+      "test_id": "test_a_returned_payment_reverses_its_deposit_receipt",
+      "upstream_ids": ["DB-PAY-009", "DB-PAY-006"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_return_migration.py",
+      "status": "implemented",
+      "notes": "The returned Payment's Deposit receipt is reversed through the existing receipt reversal (deposits.correct, command record, audit event); the Deposit keeps the receipt another Payment funded (V1-056 sub-slice 10e-1a)."
+    },
+    {
+      "test_id": "test_a_closed_settlement_s_records_are_refused_and_a_later_payment_is_returned",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-016", "DB-PAY-009"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_return_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer 5 to Q-2026-10-06-37: a Payment whose only record is an allocation made before the closure, one whose Credit a Final Settlement Credit application used, and one whose Deposit receipt the Settlement relied on are refused, each with its kind of relied-on record; a draft recorded before the closure is stale after it and stays pending; a Payment made after the closure is returned, the debt is owed again and the closed Settlement row is unchanged (V1-056 sub-slice 10e-1a)."
+    },
+    {
+      "test_id": "test_each_refusal_of_the_source_state_is_checked",
+      "upstream_ids": ["DB-PAY-009", "BR-SETTLE-013"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_return_migration.py",
+      "status": "implemented",
+      "notes": "Each refusal of the return on its source state, with its SQLSTATE and message: an unknown or reversed Payment, a relied-on record, a Refund of the Payment, of one of its Credits or of a Deposit it funded that is not fully returned, an active forfeiture or Deposit application, a waiting draft (V1-056 sub-slice 10e-1a, Q-2026-10-10-72 points 1 and 2)."
+    },
+    {
+      "test_id": "test_a_late_charge_allocation_is_returned_and_a_correction_s_records_are_refused",
+      "upstream_ids": ["BR-SETTLE-013", "BR-LATE-005", "DB-PAY-009"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_return_migration.py",
+      "status": "implemented",
+      "notes": "After closure a Payment allocated to the Late-payment Charge is returned and the Charge is owed again; a Payment whose Charge allocation a REFUND correction released and re-posted is relied on by that correction (the linked re-posted allocation and the released Credit) and is refused (V1-056 sub-slice 10e-1a, review round 1)."
+    },
+    {
+      "test_id": "test_refusals_stale_drafts_withdrawal_and_reads",
+      "upstream_ids": ["DB-PAY-009", "BR-AUTH-010", "BR-CREDIT-014"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_return_migration.py",
+      "status": "implemented",
+      "notes": "A Refund paid from the Payment's Credit, a waiting draft and a reused key are refused; a draft whose sources changed is stale and stays pending with nothing written; the recorder outside READ COMMITTED is refused by its own guard (its message, on a Payment with no waiting draft, no draft written; review round 2) and so is the confirm; the preparer withdraws under payments.reverse; an approver reads the draft with all eight preparer capabilities (V1-056 sub-slice 10e-1a, Q-2026-10-10-72)."
+    },
+    {
+      "test_id": "test_payment_return_records_are_least_privilege_and_forward_only",
+      "upstream_ids": ["DB-PAY-009", "BR-AUTH-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_return_migration.py",
+      "status": "implemented",
+      "notes": "Only the financial role records and confirms; no role calls the internal functions or touches app.payment_returns, which is append-only and needs its draft confirmed in the same transaction; the migration adds its table, triggers and functions, relaxes only the five listed functions without changing their privileges, and is forward-only (V1-056 sub-slice 10e-1a)."
+    },
+    {
+      "test_id": "test_a_credit_a_correction_left_held_keeps_its_payment_for_that_correction",
+      "upstream_ids": ["BR-SETTLE-013", "DB-PAY-009", "BR-CREDIT-014"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_return_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer 5 to Q-2026-10-06-37 on the real path: a Credit applied before the real closure, released whole by a REFUND correction and refunded, its Refund brought back whole by a return-only REFUND_RETURN, holds 400 again; its Payment has no active allocation or Credit application and nothing refunded, only the review-round-1 Credit records are relied on (CUSTOMER_CREDIT of that Settlement), nothing else would refuse, and its return is refused (V1-056 sub-slice 10e-1a, review round 2)."
+    },
+    {
+      "test_id": "test_the_relaxed_refusals_open_only_for_the_payment_returned_in_the_transaction",
+      "upstream_ids": ["BR-PAY-042", "BR-CREDIT-014", "DB-PAY-009"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_return_migration.py",
+      "status": "implemented",
+      "notes": "In one financial-role transaction that confirms the return of a third-party Payment, the one-call reversal of another third-party Payment's released Credit, of a moved Payment's moved-value Credit and of its moved allocation is still refused (P4904, each with its message); the transaction rolls back and nothing stays (V1-056 sub-slice 10e-1a, review round 2)."
     }
   ]
 }
