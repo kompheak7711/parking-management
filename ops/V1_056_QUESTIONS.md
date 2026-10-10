@@ -1697,6 +1697,33 @@ The 10e pre-code design is in the plan (10e entry). It splits 10e into 10e-1a (`
 
 Recorded in docs/010 and the plan (order of the remaining slice 10 work).
 
+**Points 2 and 3 in simple words (written 2026-10-10 after the 10e-1a commit ee8397c; still open).**
+
+*Point 2: a forfeited Deposit paid by a Payment that later bounces.*
+
+Example. A Customer pays a $500 Security Deposit by bank transfer. The Customer leaves early, so the Property keeps the $500 (a forfeiture, BR-DEP-023). The Final Settlement closes. A week later the bank says the $500 transfer bounced. The records now show that the Property kept $500 that never arrived.
+
+What exists today. Before closure, staff first reverse the forfeiture with the forfeiture reversal draft (6b) and then return the Payment (10e-1a refuses until then, with that message). After closure, nothing can return this Payment, and 10h will also refuse the 6b draft.
+
+- (a) The `RETURNED_PAYMENT` correction of that Settlement does it in one step: it reverses the forfeiture (a linked record, as 10d does), then the $500 receipt, then the Payment. The Deposit ends at $0, so there is nothing to apply or refund. The history keeps the forfeiture and its reversal. Afterwards the Customer does not owe the $500, because a forfeiture keeps only money the Deposit really held, and no rule makes an unpaid Deposit a debt. If the Deposit would still hold money afterwards (for example a returned Pet Refund-review Refund), the correction is refused.
+- (b) Refused after closure (a known limit). The records keep showing a $500 forfeiture of money that never arrived; staff record the loss outside the system.
+- (c) As (a), and in the same correction an `EXTRA_CHARGE` of the forfeited $500 to the Deposit owner, because the signed Lease said the Deposit is kept. This is a new charge rule; I do not recommend adding it unless you want it.
+
+Recommendation: (a). It keeps every balance true and adds no new charge.
+
+*Point 3: one Payment used by two closed Final Settlements.*
+
+Example. One Customer rents Unit 101 (Lease A) and Unit 102 (Lease B). One bank transfer of $1,000 pays $600 of Lease A's last Rent and $400 of Lease B's last Rent. Both Leases end and both Final Settlements close. Then the bank says the $1,000 transfer bounced.
+
+Why it is hard. A Payment can be reversed only when all its uses are reversed in the same step. Each correction belongs to one Settlement, and one confirm writes one correction. So one correction cannot undo both the $600 on Lease A and the $400 on Lease B. (If only Lease A is settled and Lease B is still open, 10e-1b can do it: the $400 on the open Lease is reversed in the same step without a correction.)
+
+- (a) Refuse it (a known limit, with a test). The system says that two closed Final Settlements used this Payment. The $1,000 stays shown as paid, and staff record the loss outside the system.
+- (b) One correction draft that writes one correction record per Settlement in one confirm (here two: $600 of debt comes back on Lease A and $400 on Lease B, both on the Customer's ledger). It changes the correction record rules (DB-SETTLE-003 and the 10a header rules) and needs its own sub-slice.
+
+Recommendation: (a) now. It needs one Customer with two settled Leases paid by one transfer that bounces afterwards, which should be rare in V1. Choose (b) if you expect such Payments; (b) can replace (a) later without changing any record already written.
+
+*One detail of point 1 to confirm with these answers.* An `EXTRA_CHARGE` exists only inside a correction of a closed Settlement. Option (a) of point 1 says that with no closed Settlement the charge is an ordinary Miscellaneous one-time charge on the Lease the value came from, issued in the same confirm, and that a returned Payment whose Refund has no Lease to charge on is refused (a known limit). Please confirm this part too; 10e-1c waits for points 2 and 3 anyway.
+
 ## Q-2026-10-10-73 — Pay back (Q-2026-10-09-61): may the returned amount still be forfeited? (not blocking 10e; the owner answers before sub-slice 10c-2b-5) (ANSWERED 2026-10-10: (a); answer in docs/010)
 
 Your answer to Q-2026-10-09-61 makes the returned money of a pre-termination Pet Refund-review Refund the Customer's money, before and after closure. Today a Lease Deposit forfeiture always takes the whole held amount (migration `20261018_83`), and before closure nothing stops a forfeiture draft of a Pet Deposit that holds such returned money: a `KEPT` Pet Deposit can be forfeited a second time, and a Pet Deposit that holds the returned money and its own rest can be forfeited whole. Both would keep the Customer's money.
