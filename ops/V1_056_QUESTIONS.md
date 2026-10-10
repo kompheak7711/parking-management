@@ -1158,7 +1158,7 @@ Recorded in docs/010.
 
 Recorded in docs/010.
 
-## Q-2026-10-08-53 — A Damage line billed from an inspection superseded before closure has no pet classification fix after closure (not blocking; the owner answers before 10h)
+## Q-2026-10-08-53 — A Damage line billed from an inspection superseded before closure has no pet classification fix after closure (not blocking; the owner answers before 10h) (ANSWERED 2026-10-10: (a); sub-slice 10c-2a-7 before 10h; answer in docs/010)
 
 Found in sub-slice 10c-2a-5 review rounds 1 and 2 (security note N2, independent note N2). Owner answer 4 to Q-2026-10-08-52: not a stop; the case is written here with a recommended fix path and placed in the plan before 10h.
 
@@ -1179,6 +1179,10 @@ Example: inspection A has a pet finding, billed as a 12,500 Damage line. Before 
 **Recommendation: (a)**, in a small relaxing sub-slice before 10h. The classification record is already the source of truth after closure; (a) only lets staff use it for these lines, under the same `financial.approve` confirm. The "Also" point (b), for the time before closure, stays open for a later decision.
 
 Until the owner answers, nothing changes; 10c-2a-5 keeps refusing such a line.
+
+**Owner answer (2026-10-10).** Yes, the recommendation (a). A small relaxing sub-slice lets the pet classification correction accept a line billed from an inspection superseded before closure. It allows only the change to pet damage.
+
+Recorded in docs/010; the plan names it sub-slice 10c-2a-7 (before 10h; order in the plan's "Owner answers of 2026-10-10" line).
 
 ## Q-2026-10-08-54 — Sub-slice 10c-2a-6 stopped before code: the Customer choice re-check in the shared step refuses one committed test (ANSWERED 2026-10-08: (a); answer in docs/010)
 
@@ -1282,7 +1286,7 @@ Also answered with the 10c-2b-1 report: docs/010 choice (1) is kept as built (th
 
 Recorded in docs/010. Next: 10c-2b-2, then 10c-2b-3.
 
-## Q-2026-10-08-57 — The fix path for a return recorded by mistake (docs/010 choice (6) of sub-slice 10c-2b-1; not blocking; the owner answers before 10h, with Q-2026-10-08-53)
+## Q-2026-10-08-57 — The fix path for a return recorded by mistake (docs/010 choice (6) of sub-slice 10c-2b-1; not blocking; the owner answers before 10h, with Q-2026-10-08-53) (ANSWERED 2026-10-10: (a); sub-slice 10e-3 before 10h; answer in docs/010)
 
 **The gap.** A `REFUND_RETURN` correction records that a Refund's money came back (a verified return, DB-REFUND-002). That return can never be reversed: the one-call reversal is refused for a correction's Refund and for a Settlement Deposit Refund, and the Refund correction check accepts no reversal row. If the money did not really come back (for example, the bank later takes the returned transfer back), the records show value in the Credit or the Deposit that the Property does not hold. By then the same correction may have used that value: its DL-032 step may have paid the Customer's debt (Settlement Credit applications or Deposit applications linked to the correction), and a new Refund may have paid it out again.
 
@@ -1291,6 +1295,10 @@ Recorded in docs/010. Next: 10c-2b-2, then 10c-2b-3.
 - (b) No reversal: a return recorded by mistake is fixed only with an `EXTRA_CHARGE` correction to the Customer for the amount; the return record stays, so the history shows a return that did not happen.
 
 **Recommendation: (a)**, because it keeps the history true (the wrong return is reversed by a linked record, not hidden behind a charge) and puts the debt back where it was. It is added to the plan before 10h.
+
+**Owner answer (2026-10-10).** Yes, the recommendation (a). A `RETURN_REVERSAL` correction undoes what the wrong return paid and reverses the return. Any part that was already refunded again becomes an `EXTRA_CHARGE`.
+
+Recorded in docs/010; the plan names it sub-slice 10e-3 (after 10e and the sub-slice for Q-2026-10-09-61, before 10h).
 
 ## Q-2026-10-08-58 — Sub-slice 10c-2b-2a stopped before its first run: the lint correction allowance for one cause is used up (a docstring line I re-wrapped twice) (ANSWERED 2026-10-08: (a), owner exception; answer in docs/010)
 
@@ -1370,7 +1378,7 @@ Further owner instructions given with this answer (2026-10-09):
 
 Recorded in docs/010.
 
-## Q-2026-10-09-61 — A returned Pet Refund-review Refund whose Pet Deposit is not on the DL-032 path has no way out after closure (not blocking 10c-2b-2b; blocks only that case in 10c-2b-3) (OPEN: the owner answers before 10h, with Q-2026-10-08-53 and Q-2026-10-08-57; no correction that links a forfeiture until then)
+## Q-2026-10-09-61 — A returned Pet Refund-review Refund whose Pet Deposit is not on the DL-032 path has no way out after closure (not blocking 10c-2b-2b; blocks only that case in 10c-2b-3) (ANSWERED 2026-10-10: pay back, before and after closure; sub-slice 10c-2b-5 before 10h; answer in docs/010; follow-up Q-2026-10-10-73)
 
 Found while building 10c-2b-2b (the reviewer check of your answer to Q-2026-10-08-58: a returned Deposit Refund off the DL-032 path must still have a way to be refunded again).
 
@@ -1414,6 +1422,17 @@ Found while building 10c-2b-2b (the reviewer check of your answer to Q-2026-10-0
 - Before closure: today the Settlement would force a forfeiture of that money for a `NOTHING_HELD` Pet Deposit (it becomes `FORFEITURE_REQUIRED`), and for a `KEPT` one it would leave it held. Option pay back needs the Settlement to treat the returned amount of a pre-termination DL-053 Refund as DL-032 value in both cases: no forfeiture required for it, it first pays the open debt, and the rest is refunded by the Settlement's own Deposit Refund step.
 
 **Recommendation: pay back.** The DL-053 Refund was a valid Refund of money that already belonged to the Customer before the termination ground existed; the bank return only means the Customer did not receive it. BR-DEP-022 makes the Deposit non-refundable at the termination, that is, the money it held then. Keeping the returned money would forfeit money that was not in the Deposit at the termination, only because of a failed payment. Paying the open debt first follows your answer 3 to Q-2026-10-08-55 for every returned Deposit Refund. The cost is one exception to the DL-032-only rule, for the returned amount of a pre-termination DL-053 Refund only, and the matching change to the Settlement preview before closure. If the signed Lease says that such money is kept too, choose keep.
+
+**Owner answer (2026-10-10).** Pay back, as the option above describes it, both before and after closure. The returned money had already left the Pet Deposit before the termination, so it is the Customer's money. With this answer, check whether the 10d refusal of a reversal while another forfeiture of the same Deposit is active is still needed, and report it.
+
+Recorded in docs/010; the plan names the work sub-slice 10c-2b-5 (after 10e and 10e-2, before 10h).
+
+**Implementer note on the 10d refusal (2026-10-10, read from the code at head `20261119_115`).**
+
+- A Lease Deposit forfeiture always takes the whole held amount (migration `20261018_83`: the draft stores `app.deposit_held_value_at`, and the confirm refuses a stale amount). So a Deposit gets a second active forfeiture only when it holds money again while its first forfeiture stays active.
+- Only two things could add money to a forfeited Deposit: a new Deposit receipt, or the return of a Refund paid from it. The only Deposit receipt writer the application roles may run is `app.create_reservation` (the Reservation's Security Deposit, before any Lease), so no receipt reaches a forfeited Deposit. A kept Deposit pays no Settlement Refund, and after closure a forfeiture is refused unless linked (10c-2b-2a). That leaves the returned Pet Refund-review Refund on a `KEPT` Pet Deposit before closure (this question), as Q-2026-10-10-71 found.
+- With pay back, that returned money is the Customer's and must not be forfeited. If sub-slice 10c-2b-5 also makes the forfeiture leave the returned amount out (Q-2026-10-10-73), no Deposit can get a second active forfeiture, and the 10d refusal can no longer be reached.
+- Recommendation: keep the 10d refusal as it is. It is still needed until 10c-2b-5 is built, it costs nothing afterwards, and removing it would be a relaxing change with no use. 10c-2b-5 adds a test that a second forfeiture of the returned amount is refused, so the refusal stays a guard only.
 
 ## Q-2026-10-09-62 — Sub-slice 10c-2b-2b stopped before review round 3: the known lock failure in a test outside 10c-2b-2b (ANSWERED 2026-10-09: option (a); answer in docs/010)
 
@@ -1606,7 +1625,7 @@ The 10c-3b-2 report (cc01b84, record ops/reviews/V1-056-slice-10c-3b-2-late-char
 - Answer 4: no path reduces only that unpaid rest; see Q-2026-10-10-70.
 - Answers 3 and 6: written in the plan (slice 12 item; 10h entry).
 
-## Q-2026-10-10-70 — The unpaid rest of a partly Deposit-paid Charge or Invoice line cannot be reduced on its own after closure (not blocking; the owner answers before 10h)
+## Q-2026-10-10-70 — The unpaid rest of a partly Deposit-paid Charge or Invoice line cannot be reduced on its own after closure (not blocking; the owner answers before 10h) (ANSWERED 2026-10-10: (a), after the allow-function hardening; sub-slices 10c-3c-1 and 10c-3c-2 before 10h; answer in docs/010)
 
 Owner answer 4 to Q-2026-10-10-69 asked whether staff can still reduce the unpaid rest of a partly Deposit-paid Charge after closure. Read from the code at head `20261118_114`:
 
@@ -1625,6 +1644,10 @@ So there is no path that reduces only the unpaid rest. Example: a Charge of 3,00
 
 Not blocking 10d: 10d does not change these forms.
 
+**Owner answer (2026-10-10).** Yes, option (a). A small relaxing sub-slice lets `CHARGE_REDUCTION` reduce a partly Deposit-paid obligation within its unpaid rest. Do the hardening from answer 3 to Q-2026-10-10-69 first.
+
+Recorded in docs/010; the plan names the work sub-slices 10c-3c-1 (the allow-function hardening) and 10c-3c-2 (the reduction within the unpaid rest), in that order, before 10h.
+
 ## Q-2026-10-10-71 — Sub-slice 10d before code: the agreed-Signer test and a Deposit with a second forfeiture (ANSWERED 2026-10-10 in the session)
 
 Found while reading the code for 10d, before any code.
@@ -1638,3 +1661,39 @@ Found while reading the code for 10d, before any code.
 2. Refuse (55000): the recorder and the confirm refuse a reversal while another forfeiture of the same Deposit stays active (the reversal would not put the Deposit on the DL-032 path). Decided with Q-2026-10-09-61 before 10h.
 
 Recorded in docs/010 and the plan.
+
+## Q-2026-10-10-72 — Sub-slice 10e design: three cases a returned Payment cannot handle under the current rules (blocks 10e-1b and 10e-1c; not 10e-1a)
+
+The 10e pre-code design is in the plan (10e entry). It splits 10e into 10e-1a (`PAYMENT_RETURN` when no closed Final Settlement relied on the Payment's records), 10e-1b (the `RETURNED_PAYMENT` correction) and 10e-1c (a Refund already paid from the returned value). Your answers 2, 3 and 5 to Q-2026-10-06-37 decide 10e-1a completely, so it goes ahead under the standing rules, as 10a did while Q-2026-10-06-37 was open. These three cases are not decided.
+
+**What exists (read from the code at head `20261119_115`).** A Payment reversal (DB-PAY-006) needs every allocation, every Credit recognized from the Payment and every Deposit receipt reversed first, and every Refund paid from the Payment fully returned. A Credit reversal needs the whole Credit still available (nothing applied or refunded). A Deposit receipt reversal is refused while the Deposit has an active forfeiture or a Refund that is not fully returned. These checks keep every balance at zero or above; none of them can be met while money paid out from the returned value is still out.
+
+**1. A Refund already paid from the returned value.** Your rule (answer 1 to Q-2026-10-06-36): "a Settlement Refund already paid from a Deposit that the returned Payment funded cannot be undone ... it becomes an `EXTRA_CHARGE` to the Deposit owner in the same correction". The same happens for a Refund of a Credit the Payment funded (for example the 8g case: a third-party Payment's adjustment Credit refunded to the Invoice Customer) and for a Refund of the Payment itself. The charge alone does not let the records balance: the Refund still counts as money taken from the Deposit, the Credit or the Payment, so the receipt, the Credit and the Payment cannot be reversed (the Deposit would show a negative balance). Example: a Security Deposit of 1,000 funded by one Payment; the Settlement applied 600 to debt and refunded 400; then the Payment bounces. After the 600 is reversed, the Deposit holds 600, but its receipt is 1,000.
+- (a) A new Refund correction kind, for example `RECOVERED_BY_CHARGE` (DB-REFUND-002 amendment): a linked row on the Refund for its unreturned amount that gives that amount back to the Refund's source on paper (the Deposit, the Credit or the Payment), so the reversals can run; in the same transaction a linked charge of the same amount to the person who owes it (the Deposit owner for a Deposit Refund, as you said; the Credit's Customer for a Credit Refund; the payer for a Payment Refund). The Refund itself stays: the money really left. With a closed Settlement the charge is the `EXTRA_CHARGE` (10b rules: Due Date, no Late-payment Charge). With no closed Settlement it is an ordinary Miscellaneous one-time charge on the Lease the value came from, issued in the same confirm; a returned Payment whose Refund has no Lease to charge on is refused (a known limit).
+- (b) The same as (a) with a closed Settlement only; with no closed Settlement the `PAYMENT_RETURN` is refused while such a Refund is out (a known limit: that Payment cannot be returned in the system).
+- (c) No new kind: a returned Payment is refused while any Refund paid from its value is not fully returned (a known limit in both cases; the loss is recorded outside the system).
+
+**Recommendation: (a).** It keeps every balance true, follows your charge rule, and gives the same fix with or without a Settlement. It changes docs/004 (DB-REFUND-002) and is built in 10e-1c. Until then 10e-1a refuses such a Payment (55000).
+
+**2. A kept (forfeited) Deposit that the returned Payment funded.** The Property kept money that never really arrived. Before closure, staff can first reverse the forfeiture with the 6b draft, then return the Payment; 10e-1a refuses until then (55000, with that message). After closure the 6b draft will be refused (10h), and a forfeiture reversal after closure runs only inside a correction (your answer 4 to Q-2026-10-06-36).
+- (a) The `RETURNED_PAYMENT` correction reverses that forfeiture as a linked record (DB-SETTLE-005 `deposit_disposition_reversal_id`, through the existing reversal function as 10d does) and then the receipt. Because every Deposit has exactly one receipt today (only `app.create_reservation` writes receipts), the Deposit is then empty, so the DL-032 step has nothing to apply or refund. A Deposit that would still hold money afterwards (a second receipt, or a returned Refund it holds) is refused (55000).
+- (b) Refused after closure (a known limit).
+
+**Recommendation: (a)**, built in 10e-1b.
+
+**3. A Payment whose records two closed Final Settlements relied on.** Your condition (answer 5 to Q-2026-10-06-37): a returned Payment may not change a record that another Lease's closed Settlement relied on unless that change is also a confirmed correction of that Settlement. One correction belongs to one Settlement and one draft (the correction header's `correlation_id` is its draft, unique), and a correction writer is the only statement of its transaction, so one confirm cannot write a correction of two Settlements today.
+- (a) Refuse (55000) a `RETURNED_PAYMENT` correction or a `PAYMENT_RETURN` draft whose Payment has records relied on by a closed Settlement other than the correction's own (a known limit in docs/010). It needs one Customer with two settled Leases paid by one Payment that later bounces.
+- (b) A multi-Settlement correction: one draft that writes one correction header per Settlement in one confirm (a change to DB-SETTLE-003 and to the 10a header rules).
+
+**Recommendation: (a)**, with the refusal tested (your "Test it"); (b) only if you expect such Payments.
+
+**What goes ahead.** 10e-1a (no closed Settlement relied on; it refuses the cases above). 10e-1b waits for points 2 and 3, and 10e-1c for point 1.
+
+## Q-2026-10-10-73 — Pay back (Q-2026-10-09-61): may the returned amount still be forfeited? (not blocking 10e; the owner answers before sub-slice 10c-2b-5)
+
+Your answer to Q-2026-10-09-61 makes the returned money of a pre-termination Pet Refund-review Refund the Customer's money, before and after closure. Today a Lease Deposit forfeiture always takes the whole held amount (migration `20261018_83`), and before closure nothing stops a forfeiture draft of a Pet Deposit that holds such returned money: a `KEPT` Pet Deposit can be forfeited a second time, and a Pet Deposit that holds the returned money and its own rest can be forfeited whole. Both would keep the Customer's money.
+
+- (a) Approved with pay back: sub-slice 10c-2b-5 makes a Lease Deposit forfeiture leave out the returned amount of a pre-termination Pet Refund-review Refund that the Deposit still holds: the draft forfeits only the rest, and is refused (22023, "The Deposit holds nothing to forfeit") when the returned amount is all it holds. A tightening of the forfeiture draft, with tests; it also makes the 10d refusal (another active forfeiture) unreachable, which stays as a guard (implementer note under Q-2026-10-09-61).
+- (b) Leave the forfeiture as it is: staff decide; the Settlement preview only stops requiring a forfeiture of that amount.
+
+**Recommendation: (a)**, because it is what "the Customer's money" means for the forfeiture, and the forfeiture is the only path that could still take it.
