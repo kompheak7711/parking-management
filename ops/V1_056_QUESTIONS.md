@@ -1662,7 +1662,7 @@ Found while reading the code for 10d, before any code.
 
 Recorded in docs/010 and the plan.
 
-## Q-2026-10-10-72 — Sub-slice 10e design: three cases a returned Payment cannot handle under the current rules (blocks 10e-1b and 10e-1c; not 10e-1a) (point 1 ANSWERED 2026-10-10: (a); points 2 and 3 OPEN; answer in docs/010)
+## Q-2026-10-10-72 — Sub-slice 10e design: three cases a returned Payment cannot handle under the current rules (blocks 10e-1b and 10e-1c; not 10e-1a) (ANSWERED 2026-10-10: point 1 (a), its detail confirmed; points 2 and 3 (a); answers in docs/010)
 
 The 10e pre-code design is in the plan (10e entry). It splits 10e into 10e-1a (`PAYMENT_RETURN` when no closed Final Settlement relied on the Payment's records), 10e-1b (the `RETURNED_PAYMENT` correction) and 10e-1c (a Refund already paid from the returned value). Your answers 2, 3 and 5 to Q-2026-10-06-37 decide 10e-1a completely, so it goes ahead under the standing rules, as 10a did while Q-2026-10-06-37 was open. These three cases are not decided.
 
@@ -1724,6 +1724,14 @@ Recommendation: (a) now. It needs one Customer with two settled Leases paid by o
 
 *One detail of point 1 to confirm with these answers.* An `EXTRA_CHARGE` exists only inside a correction of a closed Settlement. Option (a) of point 1 says that with no closed Settlement the charge is an ordinary Miscellaneous one-time charge on the Lease the value came from, issued in the same confirm, and that a returned Payment whose Refund has no Lease to charge on is refused (a known limit). Please confirm this part too; 10e-1c waits for points 2 and 3 anyway.
 
+**Owner answer to points 2 and 3 and the point 1 detail (2026-10-10, fresh session).**
+
+- Point 2 (a kept Deposit paid by a Payment that later bounces): option (a). One `RETURNED_PAYMENT` correction reverses the forfeiture, then the receipt, then the Payment. The Customer does not owe the Deposit amount, because no rule makes an unpaid Deposit a debt. No new charge rule is added.
+- Point 3 (one Payment used by two closed Final Settlements): option (a). Refuse it, write it in docs/010 as a known limit, and add a test. Option (b) (one draft that writes one correction per Settlement) goes into the plan as possible later work.
+- Point 1 detail: confirmed. With no closed Settlement, the charge is an ordinary one-time Miscellaneous charge on the Lease the money came from. `EXTRA_CHARGE` is used only inside a correction of a closed Settlement.
+
+Recorded in docs/010 and the plan. 10e-1b (points 2 and 3) and 10e-1c (point 1) may now be built.
+
 ## Q-2026-10-10-73 — Pay back (Q-2026-10-09-61): may the returned amount still be forfeited? (not blocking 10e; the owner answers before sub-slice 10c-2b-5) (ANSWERED 2026-10-10: (a); answer in docs/010)
 
 Your answer to Q-2026-10-09-61 makes the returned money of a pre-termination Pet Refund-review Refund the Customer's money, before and after closure. Today a Lease Deposit forfeiture always takes the whole held amount (migration `20261018_83`), and before closure nothing stops a forfeiture draft of a Pet Deposit that holds such returned money: a `KEPT` Pet Deposit can be forfeited a second time, and a Pet Deposit that holds the returned money and its own rest can be forfeited whole. Both would keep the Customer's money.
@@ -1766,7 +1774,7 @@ Recorded in docs/010.
 
 Done: round 3 had no blocker and no should-fix; 10e-1a committed as ee8397c.
 
-## Q-2026-10-10-75 — Sub-slice 10c-2b-5 stopped before code: two points of pay back (blocks 10c-2b-5)
+## Q-2026-10-10-75 — Sub-slice 10c-2b-5 stopped before code: two points of pay back (blocks 10c-2b-5) (ANSWERED 2026-10-10: point 1 (A); point 2 (b); follow-up Q-2026-10-10-76 blocks 10c-2b-5; answers in docs/010)
 
 10e-1a is committed (ee8397c). The 10c-2b-5 pre-code design is in the plan (10c-2b-5 entry, "10c-2b-5 pre-code design"). It builds your pay-back answer to Q-2026-10-09-61 and answer (a) to Q-2026-10-10-73. Two points are not clear enough to build. There is no 10c-2b-5 code and no run.
 
@@ -1794,3 +1802,34 @@ The plan text says "the returned amount of a pre-termination Pet Refund-review R
 Recommendation: (a), because BR-DEP-022 keeps what the Deposit held at the termination, as the option you chose said.
 
 Until you answer, no 10c-2b-5 code. In the plan order, 10e-3 comes after 10c-2b-5 and also reuses the 10e-1c charge (waiting for Q-72). 10c-2a-7, 10c-3c-1 and 10c-3c-2 depend on neither question, but the plan puts them after 10e-3; I do not start them without your word.
+
+**Owner answer (2026-10-10, fresh session).**
+
+1. Point 1: option (A). Returned money under pay back is DL-032 money everywhere, also after closure.
+2. Point 2: option (b). Any returned Refund that was paid before the termination is paid back, also when it came back before the termination. This follows the Q-73 answer: returned money is the Customer's, so a forfeiture leaves it out. "BR-DEP-022 keeps only what the Deposit held at the termination" is read as not including returned Refund money. If (b) conflicts with another rule or needs a tightening, write it here with a recommendation and stop.
+3. From now on, if one sub-slice waits for an owner answer, the next sub-slice that does not depend on that answer may be built without asking; the report says so.
+
+Recorded in docs/010. Implementer note: answer (b) leaves one rule open, because a Pet Refund-review Refund may be paid again after a return before the termination; see Q-2026-10-10-76. 10c-2b-5 waits for it.
+
+## Q-2026-10-10-76 — Pay back under answer (b) to Q-75: which money a later Pet Refund-review Refund pays (blocks 10c-2b-5)
+
+Your answer (b) to Q-2026-10-10-75 point 2 makes the returned money of any Pet Refund-review Refund paid before the termination the Customer's, also when it came back before the termination. A forfeiture leaves it out (Q-73 (a)), and it is DL-032 money everywhere (Q-75 point 1 (A)).
+
+**What the code allows (read at head `20261120_116`).** While the Lease is signed, a Pet Refund-review Refund can be paid again and again from the same review, for any amount up to what the Pet Deposit holds (`app.pet_refund_qualification` and `app.assert_pet_refund_source`: no limit of one Refund per review or per Deposit). So after a return before the termination, staff can pay the returned money out again with a new Pet Refund-review Refund. Under option (a) of Q-75 this could not matter, because no Pet Refund-review Refund is paid after the termination.
+
+**What is missing.** At the termination the system must know how much of the money the Pet Deposit holds is still returned money (paid back) and how much is its own money (forfeited under BR-DEP-022). No rule says which money a later Pet Refund-review Refund pays out: the returned money or the Deposit's own rest.
+
+**Example.** A Pet Deposit of $500. While the Lease is signed:
+1. A $300 Pet Refund-review Refund is paid. The Pet Deposit holds $200.
+2. The $300 comes back (the bank account was closed). The Pet Deposit holds $500: $200 of its own and $300 returned.
+3. Staff pay a new Pet Refund-review Refund of $300 to the Customer's new account. The Pet Deposit holds $200.
+
+Later the Lease is terminated for pet noncompliance.
+
+**Options:**
+- (a) A later Pet Refund-review Refund pays the returned money first. In the example the $300 Refund of step 3 pays out the returned $300 again; at the termination the $200 held is the Deposit's own money and is forfeited. With a $100 Refund in step 3, $200 is paid back and $200 is forfeited. The Customer ends with the same money as if the first Refund had arrived. It needs a running count over the Pet Deposit's history (returns add returned money; a return reversal and a later Pet Refund-review Refund take it out first).
+- (b) A later Pet Refund-review Refund pays the Deposit's own money first. In the example the $300 Refund of step 3 pays the own $200 and $100 of the returned money; at the termination the $200 held is returned money and is paid back; nothing is forfeited. With a $100 Refund in step 3, $300 is paid back and $100 is forfeited. This is the simple count of the 10c-2b-5 design (the smaller of what the Deposit holds and the returned amount, less return reversals), with "after the termination" removed. The Customer ends with $200 more than if the first Refund had arrived.
+
+**Recommendation: (a)**, because the bank return then changes nothing for the Customer or the Property: the new Refund pays out again exactly the money that came back, and BR-DEP-022 keeps the same own money as without the return. With (b), a bounce followed by a new Refund would also pay back own money that BR-DEP-022 keeps. Neither option needs another tightening: the forfeiture leaving out returned money is your Q-73 answer, extended by your Q-75 answer (b).
+
+**What goes ahead.** 10c-2b-5 waits for this answer (no code, no run). Under your new instruction, the sub-slices that do not depend on it go ahead: 10e-1b, 10e-1c and 10e-2 come before 10c-2b-5 in the plan order anyway. 10e-3 comes after 10c-2b-5 and undoes what a pay-back Refund paid, so it waits too; after 10e-2 the next independent sub-slices are 10c-2a-7, 10c-3c-1, 10c-3c-2, 10f, 10g and the real-path tests.
