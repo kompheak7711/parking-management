@@ -2006,3 +2006,22 @@ Recommendation: (a), because it needs no new kind of receipt and gives every cas
 Recommendation: (a). Whether the Property still keeps a Deposit is a separate decision with its own rule (BR-DEP-019, BR-DEP-023), and 10d already records it; (b) would undo a forfeiture as a side effect of a receipt fix.
 
 **What goes ahead.** 10e-2 waits (no code). The next sub-slice that depends on none of the open answers is 10c-2b-5 (its design is in the plan; Q-76 is answered), then 10e-3, 10c-2a-7, 10c-3c-1, 10c-3c-2, 10f and 10g; 10e-4 waits for Q-82.
+
+## Q-2026-10-11-84 — Sub-slice 10c-2b-5 stopped before code: a committed test fixture changes, not only a refusal (blocks 10c-2b-5, and 10e-3 after it)
+
+The 10c-2b-5 design is in the plan (pay back, design (A), with your answers (b) to Q-2026-10-10-75 point 2 and (a) to Q-2026-10-10-76). A read-only check of every backend test before code found a change the standing rule does not cover. There is no code and no run.
+
+**The fixture.** The committed fixture `reviewed_case(pet_noncompliance=True)` (sub-slice 10c-2b-2b) builds: a Pet Deposit of $200.00; a Pet Refund-review Refund of $150.00 while the Lease is signed; $30.00 of it comes back before the termination (a verified return); the Lease is terminated for pet noncompliance (BR-DEP-022); both Deposits are forfeited in full ($80.00 of the Pet Deposit); the Final Settlement closes with no step. Two committed tests use it: `test_a_returned_pet_refund_off_the_dl032_path_is_only_held` (10c-2b-2b) and `test_held_pet_deposit_money_off_the_dl032_path_waits_for_the_owner` (10c-2b-3).
+
+**What your answers change in it.** The $30.00 returned before the termination is now the Customer's pay-back money (Q-75 (b), Q-76 (a)). So the forfeiture takes only $50.00 (Q-73 (a)), the Pet Deposit keeps $30.00 on the DL-032 path, and the Settlement must refund or apply it (BR-SETTLE-008). The fixture's Settlement with no step is then refused, so both tests fail inside the fixture before they reach their own assertions.
+
+**The two tests' own assertions** (the refusal "A returned Deposit pays debt or is refunded again only on the DL-032 path" for the kept Pet Deposit after closure) are exactly the refusal your pay-back answer ends. The standing rule lets me change those assertions to the new result (the return with a new Refund, and the held-value Refund, are accepted and pay back the returned money); both names would then say the wrong thing ("is only held", "waits for the owner"), so each is renamed with its traceability entry, and the report names them.
+
+**Options for the fixture:**
+- (a) In the `pet_noncompliance` branch only, the Settlement refunds the Pet Deposit's $30.00 pay-back money to the Customer (one Deposit Refund step), and the docstring says so. The forfeiture amounts follow the new rule ($50.00 of the Pet Deposit, the Security Deposit unchanged). Every other use of the fixture is unchanged (no ground, so no pay-back).
+- (b) Remove the early $30.00 return from the `pet_noncompliance` branch, so the Settlement still closes with no step; the forfeiture is then $50.00 for another reason (the $150.00 Refund is not returned at all). This changes more of the fixture's history than (a).
+- (c) Keep the fixture and leave 10c-2b-5 unbuilt (the pay-back gap stays).
+
+**Recommendation: (a).** It is the smallest change and shows your rule on the fixture itself: the Customer gets back the $30.00 that came back before the termination, and the Property keeps the rest of the Pet Deposit.
+
+**What goes ahead.** 10c-2b-5 waits, and 10e-3 after it (it undoes what a pay-back Refund paid). 10e-2 waits for Q-83 and 10e-4 for Q-82. The next sub-slice that depends on no open answer is 10c-2a-7 (your answers to Q-2026-10-08-53 and Q-2026-10-11-80), then 10c-3c-1, 10c-3c-2, 10f and 10g.
