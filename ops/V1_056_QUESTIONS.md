@@ -1811,7 +1811,7 @@ Until you answer, no 10c-2b-5 code. In the plan order, 10e-3 comes after 10c-2b-
 
 Recorded in docs/010. Implementer note: answer (b) leaves one rule open, because a Pet Refund-review Refund may be paid again after a return before the termination; see Q-2026-10-10-76. 10c-2b-5 waits for it.
 
-## Q-2026-10-10-76 — Pay back under answer (b) to Q-75: which money a later Pet Refund-review Refund pays (blocks 10c-2b-5)
+## Q-2026-10-10-76 — Pay back under answer (b) to Q-75: which money a later Pet Refund-review Refund pays (blocks 10c-2b-5) (ANSWERED 2026-10-11: (a); answer in docs/010)
 
 Your answer (b) to Q-2026-10-10-75 point 2 makes the returned money of any Pet Refund-review Refund paid before the termination the Customer's, also when it came back before the termination. A forfeiture leaves it out (Q-73 (a)), and it is DL-032 money everywhere (Q-75 point 1 (A)).
 
@@ -1833,6 +1833,10 @@ Later the Lease is terminated for pet noncompliance.
 **Recommendation: (a)**, because the bank return then changes nothing for the Customer or the Property: the new Refund pays out again exactly the money that came back, and BR-DEP-022 keeps the same own money as without the return. With (b), a bounce followed by a new Refund would also pay back own money that BR-DEP-022 keeps. Neither option needs another tightening: the forfeiture leaving out returned money is your Q-73 answer, extended by your Q-75 answer (b).
 
 **What goes ahead.** 10c-2b-5 waits for this answer (no code, no run). Under your new instruction, the sub-slices that do not depend on it go ahead: 10e-1b, 10e-1c and 10e-2 come before 10c-2b-5 in the plan order anyway. 10e-3 comes after 10c-2b-5 and undoes what a pay-back Refund paid, so it waits too; after 10e-2 the next independent sub-slices are 10c-2a-7, 10c-3c-1, 10c-3c-2, 10f, 10g and the real-path tests.
+
+**Owner answer (2026-10-11).** (a). A new Pet Refund-review Refund pays the returned money first, then the Deposit's own money. A bank return then changes nothing for either side. In the example the Customer ends with $300 and the termination keeps $200.
+
+Recorded in docs/010. 10c-2b-5 may now be built in the plan order (after 10e-2); its pay-back value becomes the running count of option (a): a verified return of a Pet Refund-review Refund paid before the termination adds returned money, and a return reversal or a later Pet Refund-review Refund takes it out first.
 
 ## Q-2026-10-10-77 — Sub-slice 10e-1b review round 1: the example in Q-72 point 2 does not happen (ANSWERED 2026-10-10: keep the amount check; answer in docs/010)
 
@@ -1884,7 +1888,7 @@ Also answered (10e-1b report, see Q-2026-10-11-79 for the follow-up): the three 
 
 Recorded in docs/010.
 
-## Q-2026-10-11-79 — Sub-slice 10e-1c: a returned Payment must stop refusing a Refund that is out, and three committed test assertions say it refuses (blocks 10e-1c and so 10e-2)
+## Q-2026-10-11-79 — Sub-slice 10e-1c: a returned Payment must stop refusing a Refund that is out, and three committed test assertions say it refuses (blocks 10e-1c and so 10e-2) (ANSWERED 2026-10-11: (a); answer in docs/010)
 
 Your answer to Q-78 makes every bounced Payment returnable: the person who received a Refund paid from its value is charged back. With a closed Final Settlement that happens inside the `RETURNED_PAYMENT` correction (10e-1b); with no closed Settlement in the `PAYMENT_RETURN` draft (10e-1a). Today both refuse such a Payment (55000, "A Refund paid from this Payment's value is not fully returned"), as planned "until 10e-1c". Three committed test assertions check that refusal:
 
@@ -1901,7 +1905,16 @@ Recommendation: (a). It is what your Q-72 point 1 and Q-78 answers describe, the
 
 What goes ahead while this waits: 10e-1c and 10e-2 (it recovers a Settlement Refund already paid from the corrected Deposit with the 10e-1c charge) wait, with the helper split before 10e-2; 10c-2b-5 and 10e-3 wait for Q-2026-10-10-76. The next sub-slices that depend on neither answer: 10c-2a-7, 10c-3c-1, 10c-3c-2, 10f, 10g and the two real-path tests.
 
-## Q-2026-10-11-80 — Sub-slices 10c-2a-7 and 10c-3c-2: each one turns a committed refusal test into an allowed case (blocks those two sub-slices only)
+**Owner answer (2026-10-11).**
+
+1. (a). Ending the "Refund not fully returned" refusal follows from the Q-78 answer. Change only the three assertions named above: two in the 10e-1a tests and one in the 10e-1b test. Each changed assertion must now check the new result exactly: who is charged, on which Lease or with no Lease, and the amount. Add a docs/010 note.
+2. Keep each test's name unless the name would then say the wrong thing. In that case rename it and update ops/traceability.json in the same commit. The independent reviewer compares each changed test with HEAD and confirms nothing else got weaker.
+3. The receipt reversal check of the 10e-1b report is accepted. Add the "Deposit belongs to this Property" check in 10e-1c, as proposed. Also add the test that the direct path (the correction's own receipt reversal) is refused in a bad state in 10e-1c, not in slice 12, because it is cheap and it is on a money path.
+4. New standing rule: when an owner answer ends a refusal, and a committed test asserts that refusal, the implementer may change that assertion to the new expected result without asking. The report names each such test, and the independent reviewer compares it with HEAD. Any other change to a committed test still needs the owner.
+
+Recorded in docs/010; the standing rule is also in ops/V1_055_RUN_RULES.md.
+
+## Q-2026-10-11-80 — Sub-slices 10c-2a-7 and 10c-3c-2: each one turns a committed refusal test into an allowed case (blocks those two sub-slices only) (ANSWERED 2026-10-11: (a); answer in docs/010)
 
 Your instruction of 2026-10-11: stop and ask before a committed test changes. A read-only check before code found that two of the next sub-slices you approved change one committed test each, because the test asserts exactly the refusal the sub-slice removes. There is no code for either.
 
@@ -1915,3 +1928,7 @@ Your instruction of 2026-10-11: stop and ask before a committed test changes. A 
 Recommendation: (a), because each test asserts the gap you decided to close (both test names already say "not eligible" and "yet", written before your answers).
 
 What goes ahead while this waits: 10c-3c-1 (the allow-function hardening; its pre-code check looks for committed tests it would change first), 10f and 10g pre-code designs, and the two real-path tests (tests only).
+
+**Owner answer (2026-10-11).** (a). Ending these two refusals follows from the Q-53 and Q-70 answers. Change only the expectations of `test_a_line_billed_from_an_inspection_superseded_before_closure_is_not_eligible` (10c-2a-7) and `test_an_invoice_paid_by_a_deposit_application_takes_no_charge_reduction_yet` (10c-3c-2). Keep the tests that show the limits still hold: a correction that is not to-pet on such a line is still refused, and a reduction larger than the unpaid rest is still refused. Keep each test's name unless the name would then say the wrong thing; in that case rename it and update ops/traceability.json in the same commit. The independent reviewer compares each changed test with HEAD and confirms nothing else got weaker.
+
+Recorded in docs/010. Implementer note: both names say the old result ("is not eligible", "takes no charge reduction yet"), so each sub-slice renames its test and updates its traceability entry in the same commit.
