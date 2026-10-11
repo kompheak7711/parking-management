@@ -222,6 +222,7 @@ database_test_suites='
   tests/test_settlement_forfeiture_reversal_migration.py
   tests/test_payment_return_migration.py
   tests/test_settlement_returned_payment_migration.py
+  tests/test_settlement_real_path_migration.py
 '
 
 for database_test_file in $database_test_suites; do

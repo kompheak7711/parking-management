@@ -39811,6 +39811,30 @@
       "test_path": "backend/tests/test_settlement_returned_payment_migration.py",
       "status": "implemented",
       "notes": "Only the financial role records and confirms; no role calls the internal functions; each new function is SECURITY DEFINER with the fixed search path; the migration adds only its functions, changes only app.validate_payment_return and the correction lock function (privileges and settings kept) and is forward-only (V1-056 sub-slice 10e-1b)."
+    },
+    {
+      "test_id": "test_the_q65_case_is_settled_security_first_on_the_real_path",
+      "upstream_ids": ["BR-SETTLE-008", "BR-SETTLE-013", "DL-032"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_real_path_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer 2 to Q-2026-10-09-67: the Q-65 state reached on the real path (a Settlement that refunds part of both Deposits, two return-only corrections, a later inspection's pet damage and other debt as EXTRA_CHARGE corrections, no Credit); settled Security Deposit correction first through real HELD_VALUE_REFUND corrections, an early Refund refused; it ends in the DL-032 order on the real balances and records (V1-056 real-path task before 10h)."
+    },
+    {
+      "test_id": "test_the_q65_case_is_settled_pet_first_on_the_real_path",
+      "upstream_ids": ["BR-SETTLE-008", "BR-SETTLE-013", "DL-032"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_real_path_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer 2 to Q-2026-10-09-67: the same real-path Q-65 state settled Pet Deposit correction first; an early Refund and a Pet remainder step before the Security Deposit are refused; it ends in the DL-032 order on the real balances and records (V1-056 real-path task before 10h)."
+    },
+    {
+      "test_id": "test_a_kept_deposit_is_refunded_to_the_agreed_second_signer_on_the_real_path",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-008", "BR-REFUND-015", "BR-DEP-023", "DL-032"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_real_path_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer 1 to Q-2026-10-10-71: a real two-Signer Lease (second Signer added and signed before signing), voluntary early leaving, the Security Deposit kept and the Settlement really closed; without the written agreement a Refund to the second Signer is refused (22023); a FORFEITURE_REVERSAL refunds the 10,000 to the second Signer with the agreement of all Signers, recorded with the method, note and agreement and booked once on the Primary Tenant's ledger with the Signer as paid-to; the Deposit is back on the DL-032 path (V1-056 real-path task before 10h, review round 1)."
     }
   ]
 }
