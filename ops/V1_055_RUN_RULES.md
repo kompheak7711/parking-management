@@ -14,7 +14,7 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md. Nothing else 
 - Additive or relaxing migrations only.
 - Never edit the first 1,598 traceability entries or any guard hash. Append only.
 - Narrow a historical test only by changing the one expectation, keeping the test name, with a short comment and a docs/010 note.
-- When an owner answer ends a refusal and a committed test asserts that refusal, change that assertion to the new expected result without asking; name each such test in the report; the independent reviewer compares it with HEAD. Any other change to a committed test still needs the owner (owner, 2026-10-11).
+- When an owner answer changes a result and a committed test or fixture expects the old result, update it to the new result without asking. Change only the affected case or branch; name each change in the report; the independent reviewer compares it with HEAD and confirms nothing else got weaker. A change that removes a check, or that the answer does not cover, still needs the owner (owner, 2026-10-11; replaces the rule of the Q-2026-10-11-79 answer).
 
 ## Business rules
 - Money in integer cents. Dates in Asia/Phnom_Penh. Nothing automatic.

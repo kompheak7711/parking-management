@@ -1962,7 +1962,7 @@ Until you answer, the three cases stay refused (a test shows each), and 10e-1c c
 
 Recorded in docs/010 and the plan: points 1 and 2 are tested in `test_the_refused_cases_on_real_sources` (sub-slice 10e-1c); the Reservation outcome recovery is in the plan's possible later work; point 3 is sub-slice 10e-4, after 10e-3. The 10e-1c design charges the person who received the refund money (your Q-2026-10-11-78 rule), which can differ from "the Customer whose debt the Payment paid", so Q-2026-10-11-82 asks before 10e-4 is built.
 
-## Q-2026-10-11-82 — Sub-slice 10e-4 (Q-81 point 3): who is charged when the person refunded is not the Customer whose debt the Payment paid (blocks 10e-4 only)
+## Q-2026-10-11-82 — Sub-slice 10e-4 (Q-81 point 3): who is charged when the person refunded is not the Customer whose debt the Payment paid (blocks 10e-4 only) (ANSWERED 2026-10-11: (a) with one addition; answer in docs/010)
 
 Your answer to Q-2026-10-11-81 point 3: option (c), "the charge is the exact amount, billed to the Customer whose debt the Payment paid. If your design differs, ask me."
 
@@ -1979,7 +1979,11 @@ When the Payment paid nobody's debt (all of it was unallocated and part of it wa
 
 **What goes ahead.** Only 10e-4 waits. 10e-2, 10c-2b-5, 10e-3, 10c-2a-7, 10c-3c-1, 10c-3c-2, 10f and 10g do not depend on this answer. Until 10e-4 is built, such a Payment stays refused (tested).
 
-## Q-2026-10-11-83 — Sub-slice 10e-2 stopped before code: three points of the Deposit receipt correction (blocks 10e-2 only)
+**Owner answer (2026-10-11).** Keep the design, with one addition. Use the same rule as Q-78: when the bounced money was refunded to someone, the person who received the Refund pays it back. When no one was refunded, the Customer whose debt the Payment paid is charged. The charge is the exact amount. Add a test for each case.
+
+Recorded in docs/010. Implementer reading, stated in the 10e-4 design and report: in the second case the correction reverses the Payment's allocation, so the debt comes back on its obligation and stays with the Customer whose debt the Payment paid (BR-SETTLE-016), for the exact amount; no second charge is written, because that would bill the same debt twice. 10e-4 is built in the plan order (after 10e-3).
+
+## Q-2026-10-11-83 — Sub-slice 10e-2 stopped before code: three points of the Deposit receipt correction (blocks 10e-2 only) (ANSWERED 2026-10-11: point 1 no amendment, the freed value stays with the Payment; point 2 a new receipt writer; point 3 (a); answer in docs/010)
 
 10e-1c is committed (2eb7389). The 10e-2 pre-code design is in the plan (10e-2 entry). Your answer (a) to Q-2026-10-08-56: a Deposit receipt that is wrong while its Payment is real is fixed after closure by a `DEPOSIT_RECEIPT_CORRECTION`; it reverses the Deposit's applications and the receipt; a Refund already paid from that Deposit is charged back (the Q-78 rule: the person who received it); "the freed Payment value becomes the payer's Customer Credit, which first pays that Customer's open debt on the Lease through the shared step, and only the rest is refunded or kept as Credit". There is no 10e-2 code and no run.
 
@@ -2007,7 +2011,16 @@ Recommendation: (a). Whether the Property still keeps a Deposit is a separate de
 
 **What goes ahead.** 10e-2 waits (no code). The next sub-slice that depends on none of the open answers is 10c-2b-5 (its design is in the plan; Q-76 is answered), then 10e-3, 10c-2a-7, 10c-3c-1, 10c-3c-2, 10f and 10g; 10e-4 waits for Q-82.
 
-## Q-2026-10-11-84 — Sub-slice 10c-2b-5 stopped before code: a committed test fixture changes, not only a refusal (blocks 10c-2b-5, and 10e-3 after it)
+**Owner answer (2026-10-11).**
+
+1. Point 1: do not amend BR-CREDIT-002. Money freed by the correction becomes Credit only with the payer's authorization, as the rule says. Until then it stays with the Payment, the way an overpayment works today.
+2. Point 2: add a new function that writes the right receipt, so the correction can move the money straight to the right Deposit, or record the right amount, without a Credit step. New functions only, no tightening.
+3. Point 3: a Deposit the Property kept: yes, refuse until a `FORFEITURE_REVERSAL` runs first (option (a)).
+4. If point 1 or point 2 turns out much bigger than the plan expects, or conflicts with another rule, write it in this file with a recommendation and stop that sub-slice.
+
+Recorded in docs/010. The 10e-2 design in the plan is rewritten to these answers before code.
+
+## Q-2026-10-11-84 — Sub-slice 10c-2b-5 stopped before code: a committed test fixture changes, not only a refusal (blocks 10c-2b-5, and 10e-3 after it) (ANSWERED 2026-10-11: (a); answer in docs/010)
 
 The 10c-2b-5 design is in the plan (pay back, design (A), with your answers (b) to Q-2026-10-10-75 point 2 and (a) to Q-2026-10-10-76). A read-only check of every backend test before code found a change the standing rule does not cover. There is no code and no run.
 
@@ -2026,7 +2039,11 @@ The 10c-2b-5 design is in the plan (pay back, design (A), with your answers (b) 
 
 **What goes ahead.** 10c-2b-5 waits, and 10e-3 after it (it undoes what a pay-back Refund paid). 10e-2 waits for Q-83 and 10e-4 for Q-82. The next sub-slice that depends on no open answer is 10c-2a-7 (your answers to Q-2026-10-08-53 and Q-2026-10-11-80), then 10c-3c-1, 10c-3c-2, 10f and 10g.
 
-## Q-2026-10-11-85 — Sub-slice 10c-2a-7 before code: the committed test needs a DL-032 plan, not only a new expectation (blocks 10c-2a-7 only)
+**Owner answer (2026-10-11).** Yes, (a). In the `pet_noncompliance=True` branch of `reviewed_case` only, the Settlement refunds the $30.00 that came back before the termination, and the forfeiture becomes $50.00. This follows the Q-75 and Q-76 answers. Assert both amounts exactly.
+
+Recorded in docs/010.
+
+## Q-2026-10-11-85 — Sub-slice 10c-2a-7 before code: the committed test needs a DL-032 plan, not only a new expectation (blocks 10c-2a-7 only) (ANSWERED 2026-10-11: (a); answer in docs/010)
 
 Your answer (a) to Q-2026-10-11-80: in `test_a_line_billed_from_an_inspection_superseded_before_closure_is_not_eligible` change only the expectation: "the correction is recorded and confirmed, and the test checks the result to the cent". A read-only check before code found that this needs more than the expectation. There is no code and no run.
 
@@ -2040,3 +2057,33 @@ Your answer (a) to Q-2026-10-11-80: in `test_a_line_billed_from_an_inspection_su
 **Recommendation: (a)**, the smallest change that still records and confirms the correction as your answer says. The new tests of 10c-2a-7 (to pet damage with and without Pet Deposit money on the DL-032 path, the other direction still refused, the evidence naming the new inspection's finding) are built on the real-closure fixture.
 
 **What goes ahead.** 10c-2a-7 waits. The next sub-slices that depend on no open answer are 10c-3c-1 (the allow-function hardening; its pre-code check looks for committed tests it would change first), 10c-3c-2 after it, 10f and 10g.
+
+**Owner answer (2026-10-11).** Yes, (a). Keep the setup and add the full DL-032 steps the correction needs. Keep a test that a correction that is not to-pet on such a line is still refused.
+
+Recorded in docs/010.
+
+**Owner standing rule (2026-10-11, replaces the rule of the Q-2026-10-11-79 answer).** When one of the owner's answers changes a result, and a committed test or fixture expects the old result, the implementer may update it to the new result without asking. Change only the affected case or branch. Name each change in the report. The independent reviewer compares it with HEAD and confirms nothing else got weaker. A change that removes a check, or that the answer does not cover, still needs the owner's OK. Also in docs/010 and ops/V1_055_RUN_RULES.md.
+
+## Q-2026-10-11-86 — Sub-slice 10e-2 stopped before code: the "right receipt" function is much bigger than planned and conflicts with two receipt rules (blocks 10e-2 only)
+
+Your answer to Q-2026-10-11-83 point 2: a new function writes the right receipt, so the correction moves the money straight to the right Deposit, or records the right amount; new functions only, no tightening. You also said: if it turns out much bigger than the plan expects, or conflicts with another rule, write it here and stop. A read-only check before code (head `20261122_118`, read from a throwaway database's catalog) found both. There is no 10e-2 code and no run.
+
+**What the database allows today.**
+
+1. A Deposit takes at most one receipt from each Payment: the key `UNIQUE (deposit_id, payment_id)` (DB-DEP-002). A reversed receipt still counts. So the correction cannot reverse the $1,000 receipt and write an $800 receipt into the same Deposit from the same Payment. Changing this needs a change to the table key, not only a new function.
+2. A Security Deposit's first receipt must equal the amount its Reservation accepted, and all its receipts together may not pass the required amount (the receipt check). A $1,000 receipt was only possible because the agreed Security Deposit was $1,000. So "$800 was the Security Deposit" means the agreed amount was wrong too: the fix also needs a required-amount decrease (DB-DEP-003; today the one-call `deposits.manage` command, with no closure check) and a receipt that differs from the accepted amount, which the receipt check refuses. Changing this needs a patch of the receipt check, not only a new function.
+3. No function writes a Pet Deposit receipt today. Only the Reservation writes receipts, and only for a Security Deposit; `app.create_pet_deposit` creates a Pet Deposit with no money. Moving money into the Pet Deposit would be the first Pet Deposit receipt writer in the system.
+4. Your Q-83 example ($1,000 recorded as Security Deposit, really $800 Security Deposit and $200 Pet Deposit) needs all three. Only a whole receipt that belongs whole in another Deposit of the same Lease needs none of points 1 and 2, but still point 3 when that Deposit is the Pet Deposit (a Lease has one Security Deposit).
+5. The DL-032 plan is checked when the draft is recorded, before anything is written; a new receipt's money also needs its own overlay key in the plan, a DB-SETTLE-005 link and its own closure checks.
+
+Your point 1 (the freed value stays with the Payment until the payer authorizes Credit) is small and has no conflict: the correction leaves the value unallocated; after the payer's written authorization, staff recognize the Credit the normal way (`app.recognize_customer_credit`; no closure check refuses it), and the next correction that runs the shared DL-032 step uses that Credit first (your answer to Q-2026-10-07-42).
+
+**Options.**
+
+- (a) Build 10e-2 now without a new receipt: as linked records, the correction reverses the Deposit's applications newest first (the debt comes back on its obligations and stays with their Customers, BR-SETTLE-016), recovers each Refund paid from the Deposit by a charge to the person who received it (the 10e-1c writer), and reverses the whole receipt; the freed value stays unallocated with the Payment (your point 1); a Deposit the Property kept is refused until a `FORFEITURE_REVERSAL` runs (your point 3). The right receipt becomes a later sub-slice 10e-2b, built after your word on the three rule points: (i) replace the one-receipt-per-Payment key by a check that a Deposit has at most one active receipt from a Payment; (ii) let a correction receipt differ from the accepted amount, with a required-amount decrease in the same correction; (iii) the first Pet Deposit receipt writer, inside a correction only.
+- (b) Build all of it now as one larger sub-slice, with the three changes (i) to (iii) approved by you now.
+- (c) Build (a) and keep the right receipt as a known limit: after the correction the money stays with the Payment until the payer authorizes Credit or it is refunded.
+
+**Recommendation: (a).** It gives every wrong receipt a true fix now (the debt comes back to its Customers, the Refund is charged back, the money comes back to the Payment), keeps BR-CREDIT-002 as you said, and keeps the three receipt-rule changes for a separate decision, because (i) and (ii) also change what a Reservation and a Pet Deposit accept before closure.
+
+**What goes ahead.** 10e-2 waits (no code). The next sub-slice that depends on no open answer is 10c-2b-5 (your answer (a) to Q-2026-10-11-84), then 10e-3, 10e-4 (your answer to Q-2026-10-11-82), 10c-2a-7, 10c-3c-1, 10c-3c-2, 10f and 10g.
