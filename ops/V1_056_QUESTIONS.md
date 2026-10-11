@@ -1978,3 +1978,31 @@ When the Payment paid nobody's debt (all of it was unallocated and part of it wa
 **Recommendation: (a)**, because B received the $300, and it keeps one rule for every returned Payment (10e-1c and 10e-4).
 
 **What goes ahead.** Only 10e-4 waits. 10e-2, 10c-2b-5, 10e-3, 10c-2a-7, 10c-3c-1, 10c-3c-2, 10f and 10g do not depend on this answer. Until 10e-4 is built, such a Payment stays refused (tested).
+
+## Q-2026-10-11-83 — Sub-slice 10e-2 stopped before code: three points of the Deposit receipt correction (blocks 10e-2 only)
+
+10e-1c is committed (2eb7389). The 10e-2 pre-code design is in the plan (10e-2 entry). Your answer (a) to Q-2026-10-08-56: a Deposit receipt that is wrong while its Payment is real is fixed after closure by a `DEPOSIT_RECEIPT_CORRECTION`; it reverses the Deposit's applications and the receipt; a Refund already paid from that Deposit is charged back (the Q-78 rule: the person who received it); "the freed Payment value becomes the payer's Customer Credit, which first pays that Customer's open debt on the Lease through the shared step, and only the rest is refunded or kept as Credit". There is no 10e-2 code and no run.
+
+**What the code allows (read at head `20261122_118`).** Only the Reservation writes a Deposit receipt, so every Deposit has one receipt from one Payment. Nothing can write a new receipt into another Deposit or for another amount, and a receipt reversal always takes the whole receipt. After closure, Customer Credit pays debt before any Deposit money (your answer to Q-2026-10-07-42).
+
+*1. The Credit needs your word under BR-CREDIT-002.* BR-CREDIT-002 says unallocated Payment value becomes Customer Credit only after the payer authorizes it, never automatically. The only exception today is a credit Adjustment's release (BR-CREDIT-014). Your Q-56 answer makes the freed value Credit at once.
+- (a) Amend BR-CREDIT-002 (and BR-CREDIT-003) for this case, like BR-CREDIT-014: the freed value of a confirmed `DEPOSIT_RECEIPT_CORRECTION` becomes the payer's Credit at once, identified by the correction and the reversed receipt; the `financial.approve` confirm is the authorization.
+- (b) The payer's written authorization is an input of the draft (an authorization reference, as a normal Credit needs); without it the freed value is refunded to the payer in the same correction, after the payer's own open debt on the Lease is paid (which itself needs a Credit, so in practice (b) needs the authorization every time).
+- (c) The freed value stays unallocated on the Payment (no Credit); it pays no debt in the correction; staff deal with it later (after closure today only a Refund can move it).
+
+Recommendation: (a). It is what your Q-56 answer describes, and the correction already carries a reason, evidence and a `financial.approve` confirm.
+
+*2. "The wrong Deposit" and "the wrong amount".* Example: a Payment of $1,000 was recorded as a $1,000 Security Deposit receipt, but $800 was the Security Deposit and $200 was the Pet Deposit (or $200 was Rent). The Settlement applied $600 of the Security Deposit to debt and refunded $400. Because no function can write a new receipt, the correction cannot move $200 into the Pet Deposit or keep $800 in the Security Deposit.
+- (a) As your Q-56 answer reads: the whole $1,000 receipt is reversed; the $600 of debt comes back; the $400 Refund is charged back to the person who received it; the $1,000 becomes the payer's Credit, which pays the $600 and the $400 charge first; nothing is left. In every case the Deposit ends at $0 and the value works as Credit. After closure a Deposit has no further role, so the only difference is the DL-032 order: money that should have been Pet Deposit pays pet damage only if the Credit reaches it in Credit order.
+- (b) A correction that also writes a new receipt (into the right Deposit, or for the right amount): a new receipt writer after closure and a new DB-SETTLE-005 link; then the shared step applies that Deposit in its DL-032 place. A larger sub-slice.
+- (c) Only the "not a Deposit at all" case (for example meant for Rent) is built; a receipt in the wrong Deposit or for the wrong amount is refused (a known limit).
+
+Recommendation: (a), because it needs no new kind of receipt and gives every case a fix; the result for the Customer is the same total.
+
+*3. A Deposit the Property kept (an active forfeiture).* Example: the $1,000 Security Deposit was kept because the Customer left early; later staff find that the $1,000 receipt was really Rent.
+- (a) Refuse (55000) while the Deposit has an active forfeiture: staff first undo the forfeiture with the `FORFEITURE_REVERSAL` correction (10d, which already exists, with its own reason and the DL-032 step), then record the receipt correction.
+- (b) The receipt correction reverses the forfeiture itself, as a linked record (as the `RETURNED_PAYMENT` correction does for a bounced Payment, Q-72 point 2).
+
+Recommendation: (a). Whether the Property still keeps a Deposit is a separate decision with its own rule (BR-DEP-019, BR-DEP-023), and 10d already records it; (b) would undo a forfeiture as a side effect of a receipt fix.
+
+**What goes ahead.** 10e-2 waits (no code). The next sub-slice that depends on none of the open answers is 10c-2b-5 (its design is in the plan; Q-76 is answered), then 10e-3, 10c-2a-7, 10c-3c-1, 10c-3c-2, 10f and 10g; 10e-4 waits for Q-82.
