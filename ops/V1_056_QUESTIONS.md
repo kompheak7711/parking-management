@@ -1847,7 +1847,7 @@ Recommendation: (a), because the money really is gone once the bounced Payment's
 
 Recorded in docs/010.
 
-## Q-2026-10-11-78 — Sub-slice 10e-1c before code: who is charged for a Refund already paid from a bounced Payment, and on which Lease (blocks 10e-1c and so 10e-2)
+## Q-2026-10-11-78 — Sub-slice 10e-1c before code: who is charged for a Refund already paid from a bounced Payment, and on which Lease (blocks 10e-1c and so 10e-2) (ANSWERED 2026-10-11: A, B and C as recommended; answer in docs/010)
 
 10e-1b is committed (73cd53b). The 10e-1c pre-code design is in the plan (10e-1c entry). Your answer to Q-2026-10-10-72 point 1 (option (a), its detail confirmed): money already refunded from a bounced Payment's value is owed back; a new Refund correction kind gives that amount back to the Refund's source on paper, and a charge of the same amount goes to the person who owes it, "on the Lease the money came from"; with a closed Final Settlement it is the `EXTRA_CHARGE`; "a returned Payment whose Refund has no Lease to charge on is refused (a known limit)".
 
@@ -1871,3 +1871,32 @@ Recorded in docs/010.
   Recommendation: (a), because the Signer received the money (BR-SETTLE-016: a Signer's own debt stays on that Signer's ledger).
 
 **What goes ahead while this waits.** 10e-1c and 10e-2 (it reuses the 10e-1c charge) wait; 10c-2b-5 waits for Q-2026-10-10-76; 10e-3 comes after both. The next sub-slice that depends on neither answer is 10c-2a-7 (a pet classification fix for a Damage line billed from an inspection superseded before closure), then 10c-3c-1, 10c-3c-2, 10f, 10g and the real-path tests.
+
+**Owner answer (2026-10-11).** The three recommendations are accepted. One plain rule covers all three: the person who received the refund money pays it back.
+
+- A: for a Credit Refund, charge on the Lease where the money was used.
+- B: when there is no Lease, or the person is not a Customer of that Lease, create a one-time Miscellaneous charge with no Lease; do not refuse. This replaces the earlier "refused" detail of Q-2026-10-10-72 point 1.
+- C: when a second Signer received the money, charge that Signer directly.
+
+Limits: use only charge types and records that already exist; if B needs a new Invoice type, a new charge rule, or a new Customer record for a person who is not yet a Customer, stop and ask first. The charge is the exact amount that was paid out, with no fee and nothing extra. Inside a closed-Settlement correction it is an `EXTRA_CHARGE` in the draft, confirmed with `financial.approve`, as in Q-72 point 1. An unpaid charge stays open; no write-off.
+
+Also answered (10e-1b report, see Q-2026-10-11-79 for the follow-up): the three 10e-1b design choices are accepted; the next report confirms that the correction's own receipt reversal makes the same checks as the receipt reversal function (permission, amount and state), names the test that proves it, and adds a missing check in the next sub-slice that touches that code or puts it on the slice 12 list if it is only hardening. Before 10e-2 the shared helper is split, with the 10e-1a tests unchanged; if a committed test must change, stop and ask.
+
+Recorded in docs/010.
+
+## Q-2026-10-11-79 — Sub-slice 10e-1c: a returned Payment must stop refusing a Refund that is out, and three committed test assertions say it refuses (blocks 10e-1c and so 10e-2)
+
+Your answer to Q-78 makes every bounced Payment returnable: the person who received a Refund paid from its value is charged back. With a closed Final Settlement that happens inside the `RETURNED_PAYMENT` correction (10e-1b); with no closed Settlement in the `PAYMENT_RETURN` draft (10e-1a). Today both refuse such a Payment (55000, "A Refund paid from this Payment's value is not fully returned"), as planned "until 10e-1c". Three committed test assertions check that refusal:
+
+- 10e-1a, `test_each_refusal_of_the_source_state_is_checked`: calls the refusal function with a Refund of the Payment, of a Credit and of a Deposit that is out, and expects 55000 each time.
+- 10e-1a, `test_refusals_stale_drafts_withdrawal_and_reads`: refunds 30.00 of a third-party Payment's released Credit to the Invoice Customer and expects the return draft to be refused.
+- 10e-1b (committed 73cd53b), `test_refusals_stale_drafts_and_a_deposit_that_would_still_hold_money`: the Pet Deposit's Payment, from which the Settlement refunded 54.00, is refused with that message.
+
+You asked to stop before changing a committed test. There is no 10e-1c code.
+
+- (a) Change only those assertions (names kept, a comment, a docs/010 note): the Refund cases are no longer refused; instead the confirm recovers the Refund by a charge of the same amount to the person who received it (your answers to Q-72 point 1 and Q-78). In the 10e-1b test the Pet Deposit's Payment is then recorded and a new 10e-1c test confirms it (54.00 charged back as an `EXTRA_CHARGE`); in the 10e-1a test the 30.00 is charged to the Invoice Customer on that Invoice's Lease.
+- (b) Keep the three assertions unchanged and add a separate action for a return with recovery (for example an input flag "recover refunds" on the same draft): without it the refusal stays; with it the charges are written. Staff then choose the action, and a Payment with a Refund out is refused until they use the other one.
+
+Recommendation: (a). It is what your Q-72 point 1 and Q-78 answers describe, the refusal was planned to end in 10e-1c, and (b) adds a second path for the same business case.
+
+What goes ahead while this waits: 10e-1c and 10e-2 (it recovers a Settlement Refund already paid from the corrected Deposit with the 10e-1c charge) wait, with the helper split before 10e-2; 10c-2b-5 and 10e-3 wait for Q-2026-10-10-76. The next sub-slices that depend on neither answer: 10c-2a-7, 10c-3c-1, 10c-3c-2, 10f, 10g and the two real-path tests.
