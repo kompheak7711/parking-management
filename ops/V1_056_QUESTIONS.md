@@ -1846,3 +1846,28 @@ Recommendation: (a), because the money really is gone once the bounced Payment's
 **Owner answer (2026-10-10).** (a): keep the amount check, correct the example in the docs, and add a test of a fully returned Refund on a funded Deposit. Then the round-1 fixes for SF-1 and SF-2; each note is fixed, answered in writing or put on the slice 12 list; then the runs and round 2 under the takeover rules and the standing round-3 rule.
 
 Recorded in docs/010.
+
+## Q-2026-10-11-78 — Sub-slice 10e-1c before code: who is charged for a Refund already paid from a bounced Payment, and on which Lease (blocks 10e-1c and so 10e-2)
+
+10e-1b is committed (73cd53b). The 10e-1c pre-code design is in the plan (10e-1c entry). Your answer to Q-2026-10-10-72 point 1 (option (a), its detail confirmed): money already refunded from a bounced Payment's value is owed back; a new Refund correction kind gives that amount back to the Refund's source on paper, and a charge of the same amount goes to the person who owes it, "on the Lease the money came from"; with a closed Final Settlement it is the `EXTRA_CHARGE`; "a returned Payment whose Refund has no Lease to charge on is refused (a known limit)".
+
+**What the code allows (read at head `20261121_117`).** An Invoice that names a Lease must belong to a signed Customer of that Lease. A one-time charge that names a Lease may only bill the Primary Tenant. A Miscellaneous one-time charge with no Lease may bill any Customer (it already exists). A third-party payer is never a signed Customer of the Lease.
+
+**The three kinds of Refund paid from a bounced Payment's value, and the open points.**
+
+*1. A Deposit Refund* (the Deposit the Payment funded: the Settlement's or a correction's Deposit Refund, or a Pet Refund-review Refund, possibly paid to an agreed Signer). Clear: charge the Deposit owner (your rule) on the Deposit's Lease. Example: Security Deposit $1,000 from one Payment; the Settlement applied $600 and refunded $400; the Payment bounces: $600 of debt comes back and the $400 Refund is recovered by a $400 charge to the Deposit owner. Open only for a Reservation Deposit that never became a Lease's (no Lease).
+
+*2. A Credit Refund* (a Credit recognized from the Payment, or released from one of its allocations by a credit Adjustment). The person who owes is the Credit's Customer. Which Lease is "the Lease the money came from" is not written. Example: a $500 Payment pays an Invoice of Lease A in full; a $100 credit Adjustment releases $100 as Credit, which is refunded; the Payment bounces. The $100 came from Lease A's Invoice.
+
+*3. A Payment Refund* (unallocated value of the Payment refunded to the payer). The person who owes is the payer. A Payment of a normal Customer often names no Lease; a third-party Payment names a Lease, but the payer is not its Customer. Example: a Customer pays $1,200 for an $1,000 Invoice; $200 is refunded; the Payment bounces.
+
+**Options.**
+
+- Point A (Credit Refund, which Lease): (a) the Lease of the Invoice or Late-payment Charge whose allocation the credit Adjustment released into that Credit; for a Credit recognized from unallocated value, the Lease the Payment names. (b) Always the Lease the Payment names.
+  Recommendation: (a), because that is where the money was used.
+- Point B (no Lease, or the person who owes is not a signed Customer of that Lease: a Payment Refund of a payer with no named Lease, any third-party payer, a Reservation Deposit, a Credit with no Lease under A): (a) refused, the known limit you confirmed; such a Payment cannot be returned in the system while its Refund is out. (b) A Miscellaneous one-time charge with no Lease to that person, the existing no-Lease charge; nothing is refused.
+  Recommendation: (b), because it keeps every bounced Payment returnable with true records, using a charge form that already exists. It changes the confirmed "refused" detail, so it needs your word.
+- Point C (an ordinary charge on a Lease to a Signer who is not the Primary Tenant, for example a Credit Refund paid to a second Signer): (a) charge that Signer on the Lease (a relaxing exception to "Lease one-time charges bill only the Primary Tenant", for this writer only; the `EXTRA_CHARGE` already bills a Signer's own debt to that Signer). (b) Charge the Primary Tenant.
+  Recommendation: (a), because the Signer received the money (BR-SETTLE-016: a Signer's own debt stays on that Signer's ledger).
+
+**What goes ahead while this waits.** 10e-1c and 10e-2 (it reuses the 10e-1c charge) wait; 10c-2b-5 waits for Q-2026-10-10-76; 10e-3 comes after both. The next sub-slice that depends on neither answer is 10c-2a-7 (a pet classification fix for a Damage line billed from an inspection superseded before closure), then 10c-3c-1, 10c-3c-2, 10f, 10g and the real-path tests.
