@@ -744,12 +744,12 @@ def test_refusals_stale_drafts_and_a_deposit_that_would_still_hold_money(
     migrated_database_url: str,
 ) -> None:
     """Refused with nothing written: a Payment this Settlement did not rely on (the PAYMENT_RETURN
-    draft returns it); an unknown Payment (not found); a Settlement that is not closed; the Pet
-    Deposit's Payment, from which the Settlement refunded 5,400 (Q-2026-10-10-72 point 1, until
-    10e-1c); a second draft while one waits; a reused draft id; a recorder outside READ
-    COMMITTED. A draft whose Payment changed after it was recorded is stale and stays pending. A
-    funded Deposit that would still hold money after the return is refused (the check, read as
-    the owner on a changed source)."""
+    draft returns it); an unknown Payment (not found); a Settlement that is not closed; a second
+    draft while one waits; a reused draft id; a recorder outside READ COMMITTED. The Pet
+    Deposit's Payment, from which the Settlement refunded 5,400, is recorded with its recovery
+    planned (sub-slice 10e-1c). A draft whose Payment changed after it was recorded is stale and
+    stays pending. A funded Deposit that would still hold money after the return is refused (the
+    check, read as the owner on a changed source)."""
     url = migrated_database_url
     case = closed_case(url)
     prop, human = case["prop"], case["human"]
@@ -764,9 +764,25 @@ def test_refusals_stale_drafts_and_a_deposit_that_would_still_hold_money(
     with pytest.raises(FinalSettlementNotFoundError) as unknown:
         record(case, command(case, uuid4()))
     assert cause(unknown) == ("P0002", "Payment was not found")
-    with pytest.raises(FinalSettlementConflictError) as refunded:
-        record(case, command(case, receipt_payment(url, case["pet"])))
-    assert cause(refunded) == ("55000", NOT_RETURNED)
+    # Sub-slice 10e-1c (owner answer (a) to Q-2026-10-11-79; changed expectation, was the 55000
+    # refusal NOT_RETURNED): the Pet Deposit's Payment is recorded; its draft plans to charge the
+    # 5,400 the Settlement refunded to the Deposit owner, on this Lease, inside this correction
+    # (an EXTRA_CHARGE); the confirm is checked in test_payment_return_recovery_migration.py.
+    pet_draft = record(case, command(case, receipt_payment(url, case["pet"])))
+    [planned] = payload(url, pet_draft)["source"]["recoveries"]
+    assert (
+        planned["recipient_customer_id"],
+        planned["lease_id"],
+        planned["amount_usd_cents"],
+        planned["charge"],
+        planned["closed_final_settlement_id"],
+    ) == (
+        str(case["customer"]),
+        str(case["lease"]),
+        5_400,
+        "CLOSED_SETTLEMENT_LEASE",
+        str(case["settlement"]),
+    )
     open_case = leaving_case(url)
     with pytest.raises(FinalSettlementConflictError) as not_closed:
         record(open_case, command(open_case, credit_payment(url, open_case["credit"])))

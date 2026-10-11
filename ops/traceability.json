@@ -39674,7 +39674,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_payment_return_migration.py",
       "status": "implemented",
-      "notes": "Each refusal of the return on its source state, with its SQLSTATE and message: an unknown or reversed Payment, a relied-on record, a Refund of the Payment, of one of its Credits or of a Deposit it funded that is not fully returned, an active forfeiture or Deposit application, a waiting draft (V1-056 sub-slice 10e-1a, Q-2026-10-10-72 points 1 and 2)."
+      "notes": "Each refusal of the return on its source state, with its SQLSTATE and message: an unknown or reversed Payment, a relied-on record, an active forfeiture or Deposit application, a waiting draft; since sub-slice 10e-1c (owner answer (a) to Q-2026-10-11-79), a real Refund of the Payment (300, no Lease), of its released Credit (3,000, the Invoice Customer on the Invoice's Lease) and of the Pet Deposit it funded (15,000, the Customer on the Lease) passes, and the source plans each recovery exactly: kind, source, who is charged, the Lease or none, the amount and the charge form (V1-056 sub-slice 10e-1a, Q-2026-10-10-72 points 1 and 2)."
     },
     {
       "test_id": "test_a_late_charge_allocation_is_returned_and_a_correction_s_records_are_refused",
@@ -39690,7 +39690,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_payment_return_migration.py",
       "status": "implemented",
-      "notes": "A Refund paid from the Payment's Credit, a waiting draft and a reused key are refused; a draft whose sources changed is stale and stays pending with nothing written; the recorder outside READ COMMITTED is refused by its own guard (its message, on a Payment with no waiting draft, no draft written; review round 2) and so is the confirm; the preparer withdraws under payments.reverse; an approver reads the draft with all eight preparer capabilities (V1-056 sub-slice 10e-1a, Q-2026-10-10-72)."
+      "notes": "A Refund of 30.00 paid from the Payment's Credit is recovered by a charge of 30.00 to the Invoice Customer who received it, on the Lease of the Invoice whose release created the Credit, issued and unpaid (sub-slice 10e-1c, owner answer (a) to Q-2026-10-11-79); a waiting draft and a reused key are refused; a draft whose sources changed is stale and stays pending with nothing written; the recorder outside READ COMMITTED is refused by its own guard (its message, on a Payment with no waiting draft, no draft written; review round 2) and so is the confirm; the preparer withdraws under payments.reverse; an approver reads the draft with all eight preparer capabilities (V1-056 sub-slice 10e-1a, Q-2026-10-10-72)."
     },
     {
       "test_id": "test_payment_return_records_are_least_privilege_and_forward_only",
@@ -39794,7 +39794,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_returned_payment_migration.py",
       "status": "implemented",
-      "notes": "Refused with nothing written: a Payment the Settlement did not rely on, an unknown Payment, an open Settlement, a Payment whose Deposit's Settlement Refund is out (Q-2026-10-10-72 point 1, until 10e-1c), a second waiting draft, a reused id and a recorder outside READ COMMITTED; a funded Deposit that would still hold money is refused; a draft whose Payment changed is stale and stays pending (V1-056 sub-slice 10e-1b)."
+      "notes": "Refused with nothing written: a Payment the Settlement did not rely on, an unknown Payment, an open Settlement, a second waiting draft, a reused id and a recorder outside READ COMMITTED; a funded Deposit that would still hold money is refused; a draft whose Payment changed is stale and stays pending; the Pet Deposit's Payment, from which the Settlement refunded 5,400, is recorded with the recovery of the 5,400 planned for the Deposit owner on this Lease inside the correction (sub-slice 10e-1c, owner answer (a) to Q-2026-10-11-79) (V1-056 sub-slice 10e-1b)."
     },
     {
       "test_id": "test_the_payment_return_row_names_only_its_own_correction",
@@ -39835,6 +39835,110 @@
       "test_path": "backend/tests/test_settlement_real_path_migration.py",
       "status": "implemented",
       "notes": "Owner answer 1 to Q-2026-10-10-71: a real two-Signer Lease (second Signer added and signed before signing), voluntary early leaving, the Security Deposit kept and the Settlement really closed; without the written agreement a Refund to the second Signer is refused (22023); a FORFEITURE_REVERSAL refunds the 10,000 to the second Signer with the agreement of all Signers, recorded with the method, note and agreement and booked once on the Primary Tenant's ledger with the Signer as paid-to; the Deposit is back on the DL-032 path (V1-056 real-path task before 10h, review round 1)."
+    },
+    {
+      "test_id": "test_a_settlement_refund_paid_from_a_bounced_payment_is_charged_back_as_an_extra_charge",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-016", "DB-REFUND-002", "DB-PAY-009", "DB-SETTLE-005", "BR-AUTH-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_return_recovery_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer (a) to Q-2026-10-10-72 point 1 on a real closure: the Pet Deposit's Payment bounces after the Settlement applied 14,600 and refunded 5,400; the RETURNED_PAYMENT correction reverses the Deposit applications (the debt comes back), recovers the 5,400 Refund by a RECOVERED_BY_CHARGE row and an EXTRA_CHARGE of 5,400 to the Deposit owner on the Lease (linked, issued, Property Due Date days), reverses the receipt and the Payment; the Refund stays with net 0; the Settlement row is unchanged; the ledger reconciles (V1-056 sub-slice 10e-1c)."
+    },
+    {
+      "test_id": "test_a_kept_deposit_refunded_to_the_agreed_signer_is_charged_to_that_signer",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-016", "BR-REFUND-015", "DB-REFUND-002"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_return_recovery_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer C to Q-2026-10-11-78: a FORFEITURE_REVERSAL Refund paid to the agreed second Signer on a real two-Signer Lease; the Reservation Payment bounces; the correction charges the 10,000 to the second Signer as an EXTRA_CHARGE on the Lease; the Deposit ends at 0; both ledgers reconcile (V1-056 sub-slice 10e-1c)."
+    },
+    {
+      "test_id": "test_a_pet_refund_on_a_signed_lease_is_charged_on_the_lease_when_its_payment_bounces",
+      "upstream_ids": ["DB-PAY-009", "DB-REFUND-002", "BR-SETTLE-016"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_return_recovery_migration.py",
+      "status": "implemented",
+      "notes": "With no closed Settlement: a Pet Refund-review Refund of 15,000 from a Pet Deposit one Payment funded; the PAYMENT_RETURN draft plans the recovery and the confirm charges the 15,000 to the Customer on the Lease (an ordinary Miscellaneous one-time charge, issued); the receipt reversal is dated after the recovery; the Deposit ends at 0 (V1-056 sub-slice 10e-1c)."
+    },
+    {
+      "test_id": "test_a_payment_refund_with_no_lease_is_charged_with_no_lease",
+      "upstream_ids": ["DB-PAY-009", "DB-REFUND-002"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_return_recovery_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer B to Q-2026-10-11-78: a Payment that names no Lease, 300 refunded to the payer and 100 of it verified returned; the return charges the 200 still out (the net amount, not the original) to the payer as a Miscellaneous one-time charge with no Lease and reverses the Payment; the Refund's corrections read with exactly the keys the staff screens accept (V1-056 sub-slice 10e-1c, review round 1)."
+    },
+    {
+      "test_id": "test_a_recovered_credit_refund_shows_in_the_credit_history",
+      "upstream_ids": ["BR-CREDIT-014", "DB-REFUND-002", "DB-PAY-009"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_return_recovery_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer A to Q-2026-10-11-78: a third-party Payment's released Credit refunded 3,000 to the Invoice Customer; the charge goes to that Customer on the released Invoice's Lease; the Credit history shows REFUND_RECOVERED_BY_CHARGE (+3,000) and the Credit ledger cursor accepts it; the ledger reconciles (V1-056 sub-slice 10e-1c)."
+    },
+    {
+      "test_id": "test_the_cases_a_return_still_refuses",
+      "upstream_ids": ["DB-PAY-009", "BR-SETTLE-013"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_return_recovery_migration.py",
+      "status": "implemented",
+      "notes": "Refused (55000): a Reservation outcome Refund (Q-2026-10-11-81), a Refund of a Deposit another Payment also funded, a charge on a Lease whose closed Final Settlement the return cannot correct (the PAYMENT_RETURN draft: any; a correction: another Settlement's); the own Settlement's Lease, an open Lease and no Lease pass (V1-056 sub-slice 10e-1c)."
+    },
+    {
+      "test_id": "test_a_recovery_is_written_only_inside_the_return_of_its_payment",
+      "upstream_ids": ["DB-REFUND-002"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_return_recovery_migration.py",
+      "status": "implemented",
+      "notes": "A RECOVERED_BY_CHARGE row outside a confirmed return of the Refund's Payment is refused (23514) even naming a charge of the right Customer and amount, also inside the confirmed return of another Payment of the same payer (owner transaction, with a refund-recovery charge); the kind needs its charge and the other kinds take none (a VALUE_CORRECTION with valid return evidence that names a charge is refused by the refund_recovery_obligation_shape check); nothing is written (V1-056 sub-slice 10e-1c, review round 1)."
+    },
+    {
+      "test_id": "test_the_direct_receipt_reversal_path_is_refused_in_a_bad_state",
+      "upstream_ids": ["DB-DEP-007", "BR-SETTLE-013"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_return_recovery_migration.py",
+      "status": "implemented",
+      "notes": "Owner check of 2026-10-11: the shared receipt reversal writer of the returns refuses a Deposit of another Property (P0002, the explicit check), a blank reason (22023), a Deposit with a waiting Final Settlement draft (55000) and a closed Settlement's receipt without a linked correction (P5S01); nothing is written (V1-056 sub-slice 10e-1c)."
+    },
+    {
+      "test_id": "test_the_credit_ledger_cursor_accepts_a_recovered_refund_event",
+      "upstream_ids": ["DB-REFUND-002"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_return_recovery_migration.py",
+      "status": "implemented",
+      "notes": "The Credit ledger cursor accepts the REFUND_RECOVERED_BY_CHARGE event family (V1-056 sub-slice 10e-1c)."
+    },
+    {
+      "test_id": "test_refund_recoveries_are_least_privilege_and_forward_only",
+      "upstream_ids": ["DB-REFUND-002", "DB-PAY-009"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_return_recovery_migration.py",
+      "status": "implemented",
+      "notes": "No role calls the new internal functions and their only privilege entry is the owner's; the refund correction table gains the RECOVERED_BY_CHARGE kind and its charge column checks; the migration adds the listed functions, changes only the listed ones exactly as its patches say (privileges and settings kept; the EXTRA_CHARGE writes moved unchanged into the shared helper) and is forward-only (V1-056 sub-slice 10e-1c, review round 1)."
+    },
+    {
+      "test_id": "test_a_third_party_payer_who_is_not_a_signed_customer_is_charged_with_no_lease",
+      "upstream_ids": ["DB-PAY-009", "DB-REFUND-002", "BR-SETTLE-016"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_return_recovery_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer B to Q-2026-10-11-78: a third party's Payment names a Lease whose signed Customer the payer is not; 3,000 of it refunded to the payer; the return charges the 3,000 to the payer with no Lease and reverses the allocation (the Invoice owes 80,000 again) and the Payment; both ledgers reconcile (V1-056 sub-slice 10e-1c, review round 1)."
+    },
+    {
+      "test_id": "test_the_refused_cases_on_real_sources",
+      "upstream_ids": ["DB-PAY-009", "BR-SETTLE-013"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_return_recovery_migration.py",
+      "status": "implemented",
+      "notes": "Each remaining refusal on a real source, with no return and no draft written: a cancelled Reservation's Deposit Refund, a Pet Refund-review Refund of a Deposit two Payments funded, and a Payment naming a Lease whose closed Final Settlement did not rely on it (refused by the PAYMENT_RETURN draft and by that Settlement's correction) (V1-056 sub-slice 10e-1c, review round 1, Q-2026-10-11-81)."
+    },
+    {
+      "test_id": "test_a_pet_refund_paid_to_an_agreed_signer_is_charged_to_that_signer_on_the_open_lease",
+      "upstream_ids": ["DB-PAY-009", "DB-REFUND-002", "BR-REFUND-015", "BR-SETTLE-016"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_return_recovery_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer C to Q-2026-10-11-78 with no closed Settlement: a Pet Refund-review Refund of 12,000 paid to the agreed second Signer of a signed Lease; the Payment bounces; the PAYMENT_RETURN charges the 12,000 to that Signer (not the Primary Tenant) as an ordinary Miscellaneous one-time charge on the Lease, issued; the Deposit ends at 0; both ledgers reconcile (V1-056 sub-slice 10e-1c, owner check of the three charge cases)."
     }
   ]
 }

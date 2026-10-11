@@ -1349,6 +1349,40 @@ BEFORE INSERT check of this table accepts a `PAYMENT_RETURN` draft with no corre
 locks the Payment, its Credits, the targets of its active records (also outside the Lease) and its
 funded Deposits in its id-ordered passes.
 
+As built in V1-056 sub-slice 10e-1c (migration `20261122_118`; owner answer (a) to Q-2026-10-10-72
+point 1, answers A, B and C to Q-2026-10-11-78, answer (a) to Q-2026-10-11-79): a Refund paid from
+the returned Payment's value (a Refund of the Payment, of one of its Credits or of a Deposit it
+funded) no longer blocks the return. The source of both returns gains `recoveries`
+(`app.payment_return_recoveries`): every such Refund whose net value is above 0, with its recipient,
+its net amount, the Lease its charge goes on and the charge form. The Lease is the Lease the money
+came from when the recipient is its signed Customer (a Deposit Refund: the Deposit's Lease; a
+Credit Refund: the Lease of the Invoice or Late-payment Charge whose release created the Credit,
+none when that Invoice has no Lease, else the Lease the Payment names; a Payment Refund: the Lease
+the Payment names), otherwise none. Both confirms write, right after this row and before the
+reversals that need the value back, one charge and one `RECOVERED_BY_CHARGE` Refund correction
+(DB-REFUND-002) per planned Refund, each dated after every event of its Refund and source: the
+charge goes to the person who received the refund money for the exact net amount, a Miscellaneous
+one-time charge (`authorized_nonrecurring_obligations`, `source_reference`
+`refund-recovery:<refund id>`, `financial.approve`) and its Invoice, issued in the same call with
+the Property's one-time charge Due Date days; on the Lease above (a second Signer is charged
+directly, owner answer C) or with no Lease (owner answer B). Inside the `RETURNED_PAYMENT`
+correction every record is linked (DB-SETTLE-005) before it is written, and a charge on the
+Settlement's own Lease is that correction's `EXTRA_CHARGE`. The `PAYMENT_RETURN` confirm reverses
+the receipt of a Deposit whose Refund it recovered through the shared receipt writer (DB-DEP-007),
+dated after the recovery. Refused (55000) by the recorders, the confirms and the writer: a Reservation
+outcome Refund (known limit, owner answer 1 to Q-2026-10-11-81); a Refund of a Deposit that also
+holds another Payment's receipt (a guard, owner answer 2); a charge on a Lease whose closed Final
+Settlement this return cannot correct (the `PAYMENT_RETURN` draft: any closed Settlement; a
+correction: another Settlement's; owner answer 3 to Q-2026-10-11-81 ends this for a Payment used
+on that Lease, sub-slice 10e-4); a source whose Refunds out differ from the planned recoveries.
+Both confirms take the one-time charge recorder's Lease key lock for every Lease a recovery charge
+goes on, in one id-ordered pass before any row lock (the correction also for its own Lease). The
+`RETURNED_PAYMENT` write helper now runs the correction's source, digest (P5S02) and refusal check
+itself. A waiting draft that names a recovered Refund counts as a waiting draft. The results list
+the written recoveries (`recoveries`: the Refund, the person charged, the Lease or none, the amount,
+the charge form `EXTRA_CHARGE`, `LEASE` or `NO_LEASE`, the obligation and the Invoice). Drafts
+recorded before revision 118 are stale (their source gained `recoveries`) and are recorded again.
+
 ## DB-CREDIT-001 — `customer_credits`
 
 Append-only Credit recognition event: `id uuid PK`, `customer_id uuid NOT NULL FK`, `source_payment_id uuid NOT NULL FK`, `recognized_usd_cents bigint NOT NULL CHECK (>0)`, `customer_authorization_reference text NOT NULL`, `recognized_at timestamptz NOT NULL`, `recognized_by uuid NOT NULL`, `reason text NOT NULL`. Credit must belong to the payer Customer and cannot exceed unallocated, undisposed Payment value. Credit balance is derived. For a KHR-origin Payment, the source FK preserves original KHR amount, selected exchange record, USD recognition basis, and channel transaction facts without creating a KHR Credit balance.
@@ -1721,6 +1755,14 @@ itself, linked (DB-SETTLE-005 `deposit_receipt_reversal_id`), with the approver 
 time after the Deposit application reversals; the BEFORE INSERT check of this table still runs.
 The audit event keeps the statement time, so it is dated before its row: read it through the link,
 not by time.
+
+Since V1-056 sub-slice 10e-1c (migration `20261122_118`): that receipt reversal is written by the
+shared internal writer `app.write_payment_return_receipt_reversal` (the same records, command record
+and audit event), which also checks that the receipt's Deposit belongs to the return's Property
+(P0002) and that the reason is not blank (22023); the state checks stay the BEFORE INSERT check of
+this table (owner check of 2026-10-11). The `PAYMENT_RETURN` confirm (DB-PAY-009) uses the same
+writer for the receipt of a Deposit whose Refund it recovered, so the reversal is dated after the
+recovery; its other receipts still go through the receipt reversal function.
 
 As built in V1-056 sub-slice 8a-2 (migration `20261023_88`, owner answer 2 to
 Q-2026-10-05-23, an approved tightening): the other direction too. While a receipt
@@ -2796,6 +2838,27 @@ refuses every row for it (P5S01) except the verified return of its own `REFUND_R
 correction. So a return recorded with one call before closure is never reversed after closure,
 also when a return-only correction leaves the Pet Deposit holding money (owner instruction of
 2026-10-09). Before closure both one-call paths work as before.
+
+Amended and built in V1-056 sub-slice 10e-1c (migration `20261122_118`; owner answer (a) to
+Q-2026-10-10-72 point 1, a relaxing change): `correction_kind` also accepts `RECOVERED_BY_CHARGE`,
+and the nullable unique column `recovery_obligation_id uuid FK authorized_nonrecurring_obligations`
+names the charge that recovers the Refund (required exactly for that kind, CHECK
+`refund_recovery_obligation_shape`). Such a row gives the Refund's whole net amount back to its
+source on paper (the Payment, the Credit or the Deposit), so the returned Payment's reversals can
+run; the Refund itself stays, because the money really left; no verified-return fields, no
+reversed correction, `authorization_reference` `financial.approve`. The BEFORE INSERT check
+(`app.refund_recovery_allowed`) accepts it only inside the confirmed return of the Refund's own
+source Payment (directly, through one of its Credits, or through a receipt of the Refund's Deposit
+not yet reversed) in this transaction, written by that return's approver, naming a charge created
+in this transaction by that approver with `source_reference` `refund-recovery:<refund id>`, of the
+same amount, to the Refund's recipient; for a Refund of a closed Final Settlement (its Deposit's
+Lease, or paid by a correction) only when a correction of that Settlement links the row; otherwise
+23514. Its audit action is `refund.recovered_by_charge`; the Customer Ledger shows it as
+`REFUND_CORRECTED` (the readers of a source balance sum its effect with no change) and the Credit
+history as `REFUND_RECOVERED_BY_CHARGE`. The Refund resource and the financial action context leave
+the new column out, so their shape is unchanged (the staff screens accept exactly the existing keys);
+the return results name the charge. No row reverses a recovery: a recovered Refund whose money later
+comes back cannot take a verified return (its net is 0; a known limit).
 
 ---
 

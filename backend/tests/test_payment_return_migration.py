@@ -25,6 +25,7 @@ from alembic.config import Config
 from alembic.script import ScriptDirectory
 from psycopg.types.json import Jsonb
 
+from payment_test_support import seed_payment
 from property_rental.final_settlement import SettlementCreditStep, SettlementDepositStep
 from property_rental.financial_draft import FinancialDraftService
 from property_rental.identity import AuthenticatedActor
@@ -38,7 +39,8 @@ from property_rental.payment_return import (
     RecordPaymentReturnCommand,
     payment_return_draft_id,
 )
-from refund_test_support import cash
+from property_rental.refund import CreateUsdRefundCommand
+from refund_test_support import cash, create_pet_refund, create_usd_refund
 from test_credit_application_migration import designated as credit_designated
 from test_credit_application_migration import source as credit_source
 from test_credit_customer_credit_reversal_migration import MOVED_REFUSED, REFUSED, direct_reversal
@@ -77,7 +79,13 @@ from test_one_time_charges_migration import draft_and_issue, invoices
 from test_one_time_charges_migration import staff as invoice_staff
 from test_payment_move_migration import person, rows, value
 from test_payment_reversal_context_migration import deposit_source
-from test_reservation_migration import migrated_database_url  # noqa: F401
+from test_pet_refund_migration import command as pet_refund_command
+from test_pet_refund_migration import qualified
+from test_refund_service_migration import service as refund_service
+from test_reservation_migration import (
+    migrated_database_url,  # noqa: F401
+    setup_reservation_sources,
+)
 from test_settlement_correction_migration import approver as correction_approver
 from test_settlement_late_charge_reduction_migration import unpaid
 from test_settlement_late_charge_refund_migration import command as charge_refund
@@ -540,28 +548,44 @@ def test_a_closed_settlement_s_records_are_refused_and_a_later_payment_is_return
 def test_refusals_stale_drafts_withdrawal_and_reads(
     migrated_database_url: str,  # noqa: F811
 ) -> None:
-    """A Refund paid from the Payment's value, a waiting draft and a reused key are refused; a draft
-    whose sources changed is stale and stays pending; a confirm outside READ COMMITTED is refused;
-    the preparer may withdraw; an approver reads the drafts of all eight preparer capabilities."""
+    """A Refund paid from the Payment's value is recovered by a charge (sub-slice 10e-1c); a
+    waiting draft and a reused key are refused; a draft whose sources changed is stale and stays
+    pending; a confirm outside READ COMMITTED is refused; the preparer may withdraw; an approver
+    reads the drafts of all eight preparer capabilities."""
     url = migrated_database_url
-    # Q-2026-10-10-72 point 1: a Refund of the Payment's Credit that is not returned.
+    # Q-2026-10-10-72 point 1: a Refund of the Payment's Credit that is not returned. Sub-slice
+    # 10e-1c (owner answer (a) to Q-2026-10-11-79; changed expectation, was the 55000 refusal
+    # with no draft written): the return is recorded and confirmed, and the 30.00 is charged to
+    # the Invoice Customer who received it, on the Lease of the Invoice whose release created the
+    # Credit (owner answer A to Q-2026-10-11-78), issued and unpaid.
     case, credit, _ = third_party_credit(url)
     choice = cash(refunds(), case.prop, refund_staff(case))
     refund_draft = refunds().record_credit_customer_draft(
         case.prop, credit_customer_refund(credit, 3_000), choice, actor=refund_staff(case)
     )
     refunds().confirm_draft(case.prop, draft_id(refund_draft), actor=approving(case))
-    with pytest.raises(PaymentReturnConflictError):
-        returns().record(case.prop, request(case.payment), actor=preparer(case.human, case.prop))
-    assert (
-        value(
-            url,
-            "SELECT count(*) FROM app.financial_drafts WHERE kind='PAYMENT_RETURN' "
-            "AND payload->>'payment_id'=%s",
-            str(case.payment),
-        )
-        == 0
+    recovering = returns().record(
+        case.prop, request(case.payment), actor=preparer(case.human, case.prop)
     )
+    [(invoice_customer, invoice_lease)] = rows(
+        url, "SELECT customer_id,lease_id FROM app.invoices WHERE id=%s", case.invoice_wrong
+    )
+    recovered = returns().confirm(
+        case.prop, draft_id(recovering), actor=approver(case.human, case.prop)
+    )
+    [charged] = cast(list[dict[str, Any]], recovered["recoveries"])
+    assert (
+        charged["customer_id"],
+        charged["lease_id"],
+        charged["amount_usd_cents"],
+        charged["charge"],
+    ) == (str(invoice_customer), str(invoice_lease), 3_000, "LEASE")
+    assert rows(
+        url,
+        "SELECT customer_id,lease_id,status,original_total_usd_cents FROM app.invoices WHERE id=%s",
+        UUID(str(charged["invoice_id"])),
+    ) == [(invoice_customer, invoice_lease, "UNPAID", 3_000)]
+    assert status(url, case.payment) == "REVERSED"
 
     human, prop, credit, invoice, line, payment = credit_source(url)
     first = request(payment)
@@ -656,10 +680,11 @@ def test_each_refusal_of_the_source_state_is_checked(
     migrated_database_url: str,  # noqa: F811
 ) -> None:
     """Each case the return refuses, on the source state the recorder and the confirm read: an
-    unknown or reversed Payment, a record a closed Final Settlement relied on, a Refund of the
-    Payment, of one of its Credits or of a Deposit it funded that is not fully returned
-    (Q-2026-10-10-72 point 1), a Deposit with an active forfeiture (point 2) or Deposit
-    application, and a waiting draft."""
+    unknown or reversed Payment, a record a closed Final Settlement relied on, a Deposit with an
+    active forfeiture (Q-2026-10-10-72 point 2) or Deposit application, and a waiting draft. A
+    Refund of the Payment, of one of its Credits or of a Deposit it funded that is not fully
+    returned is no longer refused (sub-slice 10e-1c, Q-2026-10-11-79): the source names its
+    recovery charge."""
     url = migrated_database_url
     deposit = {"active_forfeiture": False, "unresolved_refund": False, "active_application": False}
     base: dict[str, Any] = {
@@ -671,7 +696,82 @@ def test_each_refusal_of_the_source_state_is_checked(
     }
     with psycopg.connect(url) as connection:
         connection.execute("SELECT app.assert_payment_return_allowed(%s)", (Jsonb(base),))
-    refund = "A Refund paid from this Payment's value is not fully returned"
+    # Sub-slice 10e-1c (owner answer (a) to Q-2026-10-11-79; changed expectation, was the 55000
+    # refusal "A Refund paid from this Payment's value is not fully returned"): on real sources
+    # (review round 1), a Refund of the Payment, of its released Credit and of the Pet Deposit it
+    # funded each passes the check, and the source plans its recovery exactly: the Refund's kind
+    # and source, who is charged (its recipient), on which Lease or with no Lease, the net amount
+    # and the charge form. The written charges are checked in
+    # test_refusals_stale_drafts_withdrawal_and_reads and test_payment_return_recovery_migration.py.
+    with psycopg.connect(url) as connection:
+        human, prop, _, payer = setup_reservation_sources(connection)
+        payment = seed_payment(
+            connection, actor_id=human, property_id=prop, customer_id=payer, amount=900
+        )
+    create_usd_refund(
+        refund_service(),
+        prop,
+        CreateUsdRefundCommand(uuid4(), "PAYMENT", payment, 300, "Return the unused part"),
+        actor=credit_actor(human, prop, "refunds.create"),
+    )
+    case, credit, _ = third_party_credit(url)
+    refund_draft = refunds().record_credit_customer_draft(
+        case.prop,
+        credit_customer_refund(credit, 3_000),
+        cash(refunds(), case.prop, refund_staff(case)),
+        actor=refund_staff(case),
+    )
+    refunds().confirm_draft(case.prop, draft_id(refund_draft), actor=approving(case))
+    [(invoice_customer, invoice_lease)] = rows(
+        url, "SELECT customer_id,lease_id FROM app.invoices WHERE id=%s", case.invoice_wrong
+    )
+    pet_human, pet_prop, pet_customer, pet_lease, pet, review = qualified(url)
+    create_pet_refund(
+        refund_service(),
+        pet_prop,
+        pet_refund_command(pet, review, 15_000),
+        actor=credit_actor(pet_human, pet_prop, "refunds.create"),
+    )
+    pet_payment = value(url, "SELECT payment_id FROM app.deposit_receipts WHERE deposit_id=%s", pet)
+    for source_property, refunded_payment, expected in (
+        (prop, payment, ("PAYMENT", payment, payer, None, 300, "NO_LEASE")),
+        (
+            case.prop,
+            case.payment,
+            ("CREDIT", credit, invoice_customer, invoice_lease, 3_000, "LEASE"),
+        ),
+        (pet_prop, pet_payment, ("DEPOSIT", pet, pet_customer, pet_lease, 15_000, "LEASE")),
+    ):
+        with psycopg.connect(url) as connection:
+            found = connection.execute(
+                "SELECT app.payment_return_source(%s,%s,NULL)", (source_property, refunded_payment)
+            ).fetchone()
+            assert found is not None
+            source = cast(dict[str, Any], found[0])
+            [recovery] = source["recoveries"]
+            kind, source_id, recipient, charge_lease, amount, charge_form = expected
+            assert (
+                recovery["source_kind"],
+                recovery["source_id"],
+                recovery["recipient_customer_id"],
+                recovery["lease_id"],
+                recovery["amount_usd_cents"],
+                recovery["charge"],
+                recovery["closed_final_settlement_id"],
+                recovery["reservation_outcome"],
+                recovery["shared_deposit"],
+            ) == (
+                kind,
+                str(source_id),
+                str(recipient),
+                None if charge_lease is None else str(charge_lease),
+                amount,
+                charge_form,
+                None,
+                False,
+                False,
+            ), kind
+            connection.execute("SELECT app.assert_payment_return_allowed(%s)", (Jsonb(source),))
     for change, sqlstate, message in (
         ({"payment": None}, "P4901", "Payment not found"),
         (
@@ -680,9 +780,6 @@ def test_each_refusal_of_the_source_state_is_checked(
             "Only a received Payment can be returned",
         ),
         ({"relied_on": [{"kind": "PAYMENT_ALLOCATION"}]}, "55000", RELIED_ON),
-        ({"payment": {"status": "RECEIVED", "refunded_usd_cents": 100}}, "55000", refund),
-        ({"credits": [{"refunded_usd_cents": 100}]}, "55000", refund),
-        ({"deposits": [{**deposit, "unresolved_refund": True}]}, "55000", refund),
         (
             {"deposits": [{**deposit, "active_forfeiture": True}]},
             "55000",

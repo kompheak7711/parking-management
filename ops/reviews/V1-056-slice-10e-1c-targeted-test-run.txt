@@ -1,0 +1,89 @@
+ Network prm-targeted-test-971_default Creating 
+ Volume prm-targeted-test-971_postgres_data Creating 
+ Volume prm-targeted-test-971_postgres_data Creating 
+ Network prm-targeted-test-971_default Creating 
+ Volume prm-targeted-test-971_postgres_data Created 
+ Volume prm-targeted-test-971_postgres_data Created 
+ Network prm-targeted-test-971_default Created 
+ Network prm-targeted-test-971_default Created 
+ Container prm-targeted-test-971-postgres-1 Creating 
+ Container prm-targeted-test-971-postgres-1 Created 
+ Container prm-targeted-test-971-postgres-1 Starting 
+ Container prm-targeted-test-971-postgres-1 Started 
+ Container prm-targeted-test-971-postgres-1 Waiting 
+ Container prm-targeted-test-971-postgres-1 Healthy 
+============================= test session starts ==============================
+collected 36 items
+
+tests/test_payment_return_recovery_migration.py ...F..FF..               [ 27%]
+tests/test_payment_return_migration.py ...........                       [ 58%]
+tests/test_settlement_returned_payment_migration.py .........            [ 83%]
+tests/test_settlement_extra_charge_migration.py ......                   [100%]
+
+=================================== FAILURES ===================================
+_________ test_a_payment_refund_with_no_lease_is_charged_with_no_lease _________
+src/property_rental/payment_return.py:137: in _call
+    row = connection.execute(sql, parameters).fetchone()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/psycopg/connection.py:300: in execute
+    raise ex.with_traceback(None)
+E   psycopg.errors.CheckViolation: Refund correction must continue exact source history
+E   CONTEXT:  PL/pgSQL function app.validate_general_refund_correction() line 69 at RAISE
+E   SQL statement "INSERT INTO app.refund_corrections(id,refund_id,correction_kind,reverses_correction_id,
+E                   source_balance_effect_usd_cents,source_balance_effect_original_minor,
+E                   previous_net_refund_usd_cents,resulting_net_refund_usd_cents,reason,evidence_reference,
+E                   occurred_at,actor_id,authorization_reference,recovery_obligation_id)
+E               VALUES (v_row,v_refund.id,'RECOVERED_BY_CHARGE',NULL,v_net,v_net,v_net,0,p_reason,
+E                   p_evidence,v_at,p_actor,'financial.approve',(v_charge->>'obligation_id')::uuid)"
+E   PL/pgSQL function app.write_payment_return_recoveries(uuid,uuid,uuid,uuid,uuid,jsonb,text,text,timestamp with time zone,jsonb) line 52 at SQL statement
+E   PL/pgSQL function app.confirm_payment_return(uuid,uuid,uuid,text) line 101 at assignment
+
+The above exception was the direct cause of the following exception:
+tests/test_payment_return_recovery_migration.py:352: in test_a_payment_refund_with_no_lease_is_charged_with_no_lease
+    result = returns().confirm(prop, draft_id(draft), actor=return_approver(human, prop))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/property_rental/payment_return.py:213: in confirm
+    return self._call(
+src/property_rental/payment_return.py:168: in _call
+    raise PaymentReturnConflictError(
+E   property_rental.payment_return.PaymentReturnConflictError: Payment return conflicts with the current state
+_______ test_a_recovery_is_written_only_inside_the_return_of_its_payment _______
+tests/test_payment_return_recovery_migration.py:484: in test_a_recovery_is_written_only_inside_the_return_of_its_payment
+    connection.execute(
+.venv/lib/python3.11/site-packages/psycopg/connection.py:300: in execute
+    raise ex.with_traceback(None)
+E   psycopg.errors.UndefinedFunction: function app.record_one_time_charge(uuid, uuid, uuid, unknown, uuid, unknown, unknown, unknown, unknown, unknown) does not exist
+E   LINE 1: SELECT app.record_one_time_charge($1,$2,$3,'MISCELLANEOUS_CH...
+E                  ^
+E   HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+_______ test_the_direct_receipt_reversal_path_is_refused_in_a_bad_state ________
+src/property_rental/final_settlement.py:339: in _call
+    row = connection.execute(sql, parameters).fetchone()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/psycopg/connection.py:300: in execute
+    raise ex.with_traceback(None)
+E   psycopg.errors.InvalidParameterValue: The remaining Pet Deposit needs the Customer's choice or the staff reason
+E   CONTEXT:  PL/pgSQL function app.final_settlement_plan_result(uuid,uuid,uuid,jsonb) line 206 at RAISE
+E   PL/pgSQL function app.record_final_settlement_draft(uuid,uuid,uuid,uuid,jsonb,text,text) line 44 at assignment
+
+The above exception was the direct cause of the following exception:
+tests/test_payment_return_recovery_migration.py:527: in test_the_direct_receipt_reversal_path_is_refused_in_a_bad_state
+    record_settlement(case, normal_plan(case))
+tests/test_final_settlement_draft_migration.py:242: in record
+    return settlements().record_draft(
+src/property_rental/final_settlement.py:400: in record_draft
+    return self._call(
+src/property_rental/final_settlement.py:354: in _call
+    raise FinalSettlementInvalidError("Final Settlement command is invalid") from exc
+E   property_rental.final_settlement.FinalSettlementInvalidError: Final Settlement command is invalid
+=============================== warnings summary ===============================
+.venv/lib/python3.11/site-packages/fastapi/testclient.py:1
+  /Users/sokompheak/Development/property-rental-management/backend/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_payment_return_recovery_migration.py::test_a_payment_refund_with_no_lease_is_charged_with_no_lease
+FAILED tests/test_payment_return_recovery_migration.py::test_a_recovery_is_written_only_inside_the_return_of_its_payment
+FAILED tests/test_payment_return_recovery_migration.py::test_the_direct_receipt_reversal_path_is_refused_in_a_bad_state
+=================== 3 failed, 33 passed, 1 warning in 27.98s ===================

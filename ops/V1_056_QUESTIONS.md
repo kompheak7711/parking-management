@@ -1932,3 +1932,49 @@ What goes ahead while this waits: 10c-3c-1 (the allow-function hardening; its pr
 **Owner answer (2026-10-11).** (a). Ending these two refusals follows from the Q-53 and Q-70 answers. Change only the expectations of `test_a_line_billed_from_an_inspection_superseded_before_closure_is_not_eligible` (10c-2a-7) and `test_an_invoice_paid_by_a_deposit_application_takes_no_charge_reduction_yet` (10c-3c-2). Keep the tests that show the limits still hold: a correction that is not to-pet on such a line is still refused, and a reduction larger than the unpaid rest is still refused. Keep each test's name unless the name would then say the wrong thing; in that case rename it and update ops/traceability.json in the same commit. The independent reviewer compares each changed test with HEAD and confirms nothing else got weaker.
 
 Recorded in docs/010. Implementer note: both names say the old result ("is not eligible", "takes no charge reduction yet"), so each sub-slice renames its test and updates its traceability entry in the same commit.
+
+## Q-2026-10-11-81 — Sub-slice 10e-1c: three returned Payments that are still refused (not blocking 10e-1c; the owner answers before 10h) (ANSWERED 2026-10-11: 1 (a), 2 (a), 3 (c); follow-up Q-2026-10-11-82 blocks sub-slice 10e-4; answers in docs/010)
+
+10e-1c is built in the working tree (not committed; record ops/reviews/V1-056-slice-10e-1c-payment-return-recovery.md). It recovers every Refund paid from a bounced Payment by a charge to the person who received it, as your Q-78 answers say. Three cases still refuse the return (55000), as they did before 10e-1c. Your answer B said "nothing is refused", so each needs your word.
+
+*1. A Reservation Deposit Refund of a cancelled Reservation.* Example: a Reservation's $100 Security Deposit is paid by bank transfer; the Property cancels and refunds the $100; then the transfer bounces. This Refund belongs to the Reservation's own outcome records, which are corrected only through the Reservation path (its outcome must stay complete), not through a Refund correction.
+- (a) Keep it refused (a known limit); staff record the loss outside the system.
+- (b) A later small sub-slice: recover it through the Reservation outcome path, with a no-Lease charge to the person refunded (your answer B).
+Recommendation: (a) now, (b) only if you expect it; it needs a cancelled Reservation whose refunded deposit transfer bounces.
+
+*2. A Refund of a Deposit that two Payments funded.* Today every Deposit has one receipt (only the Reservation writes receipts), so this cannot happen in normal use; it is a guard: the system cannot tell which Payment the Refund came from.
+- (a) Keep the refusal as a guard. (b) Charge the whole Refund to the recipient anyway.
+Recommendation: (a).
+
+*3. A Payment whose money was used on a Lease whose Final Settlement is closed, although that Settlement did not rely on the Payment.* Example: after closure the Customer sends $900 naming the closed Lease; $300 is refunded to them; then the transfer bounces. The charge belongs on that Lease, but only a correction of its Settlement may write there, and that correction refuses the Payment because the Settlement did not rely on it. So the Payment cannot be returned at all.
+- (a) Keep it refused (the plan's choice; a known limit).
+- (b) Charge it with no Lease (as answer B does when there is no Lease).
+- (c) Let the RETURNED_PAYMENT correction of that Settlement also take such a Payment, so the charge is an EXTRA_CHARGE on that Lease.
+Recommendation: (c), because it keeps "on the Lease where the money was used" and changes that Settlement only through a correction (BR-SETTLE-013). It is a relaxing change to the correction's "did not rely on" refusal, for this case only.
+
+Until you answer, the three cases stay refused (a test shows each), and 10e-1c continues: its commit does not depend on these answers.
+
+**Owner answer (2026-10-11).**
+
+1. Cancelled Reservation Deposit Refund: keep the refusal. Record it in docs/010 as a known limit, with a test, and add it to the later-work list.
+2. Deposit funded by two Payments: keep the refusal as a guard, with a test.
+3. Payment used on a Lease whose closed Settlement did not rely on it: option (c). That Settlement's correction takes the Payment, and the charge is an `EXTRA_CHARGE` on that Lease. The charge is the exact amount, billed to the Customer whose debt the Payment paid. If the design differs, ask first. Add it to the plan as a sub-slice before 10h, where it fits best.
+
+Recorded in docs/010 and the plan: points 1 and 2 are tested in `test_the_refused_cases_on_real_sources` (sub-slice 10e-1c); the Reservation outcome recovery is in the plan's possible later work; point 3 is sub-slice 10e-4, after 10e-3. The 10e-1c design charges the person who received the refund money (your Q-2026-10-11-78 rule), which can differ from "the Customer whose debt the Payment paid", so Q-2026-10-11-82 asks before 10e-4 is built.
+
+## Q-2026-10-11-82 — Sub-slice 10e-4 (Q-81 point 3): who is charged when the person refunded is not the Customer whose debt the Payment paid (blocks 10e-4 only)
+
+Your answer to Q-2026-10-11-81 point 3: option (c), "the charge is the exact amount, billed to the Customer whose debt the Payment paid. If your design differs, ask me."
+
+**What the design does.** Sub-slice 10e-1c follows your Q-2026-10-11-78 rule: "the person who received the refund money pays it back". 10e-4 would reuse it. In your Q-81 example both rules give the same person: the Customer sends $900 naming the closed Lease, $300 is refunded to that Customer, the transfer bounces; the correction of that Lease's Settlement charges $300 to that Customer as an `EXTRA_CHARGE` on the Lease.
+
+**Where the two rules differ.** Example: Lease L is closed and has two signed Customers, A (Primary Tenant) and B. After closure B sends $900 naming L. $600 of it pays A's $600 `EXTRA_CHARGE` Invoice; the $300 left is refunded to B. Then the transfer bounces. The correction reverses the $600 allocation, so A owes the $600 again (no new charge is needed for that part). For the $300 Refund:
+
+- (a) Charge B, who received the $300, as an `EXTRA_CHARGE` on L. This is the rule 10e-1c uses for every returned Payment.
+- (b) Charge A, whose debt the Payment paid, as an `EXTRA_CHARGE` on L.
+
+When the Payment paid nobody's debt (all of it was unallocated and part of it was refunded), (b) has no Customer, so the person refunded is charged as in (a). Both options charge the exact net amount still out, with no fee.
+
+**Recommendation: (a)**, because B received the $300, and it keeps one rule for every returned Payment (10e-1c and 10e-4).
+
+**What goes ahead.** Only 10e-4 waits. 10e-2, 10c-2b-5, 10e-3, 10c-2a-7, 10c-3c-1, 10c-3c-2, 10f and 10g do not depend on this answer. Until 10e-4 is built, such a Payment stays refused (tested).

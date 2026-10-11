@@ -236,6 +236,8 @@ CREDIT_EVENT_KINDS = frozenset(
         "REFUND",
         "REFUND_VALUE_CORRECTION",
         "REFUND_CORRECTION_REVERSAL",
+        # V1-056 sub-slice 10e-1c: a Refund recovered by a charge after its Payment was returned.
+        "REFUND_RECOVERED_BY_CHARGE",
     }
 )
 
