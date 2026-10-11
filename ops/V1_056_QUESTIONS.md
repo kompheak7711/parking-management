@@ -2025,3 +2025,18 @@ The 10c-2b-5 design is in the plan (pay back, design (A), with your answers (b) 
 **Recommendation: (a).** It is the smallest change and shows your rule on the fixture itself: the Customer gets back the $30.00 that came back before the termination, and the Property keeps the rest of the Pet Deposit.
 
 **What goes ahead.** 10c-2b-5 waits, and 10e-3 after it (it undoes what a pay-back Refund paid). 10e-2 waits for Q-83 and 10e-4 for Q-82. The next sub-slice that depends on no open answer is 10c-2a-7 (your answers to Q-2026-10-08-53 and Q-2026-10-11-80), then 10c-3c-1, 10c-3c-2, 10f and 10g.
+
+## Q-2026-10-11-85 — Sub-slice 10c-2a-7 before code: the committed test needs a DL-032 plan, not only a new expectation (blocks 10c-2a-7 only)
+
+Your answer (a) to Q-2026-10-11-80: in `test_a_line_billed_from_an_inspection_superseded_before_closure_is_not_eligible` change only the expectation: "the correction is recorded and confirmed, and the test checks the result to the cent". A read-only check before code found that this needs more than the expectation. There is no code and no run.
+
+**Why.** The test closes the Final Settlement by hand (the owner closure helper of sub-slice 8e-1), not by the real confirm. So at closure the Security Deposit still holds $100.00, the Pet Deposit $200.00 and the Customer has $4.00 of Credit, while the two Damage lines ($125.00 each) are unpaid. Every post-settlement correction runs the shared DL-032 step, which refuses a plan that leaves Deposit money unused while debt is open (55000, "Every remaining Deposit balance must be applied or refunded") and requires the Customer's Credit first. The test's correction has no steps, so after 10c-2a-7 it is refused with that message instead of being recorded.
+
+**Options:**
+- (a) Keep the test's setup and its correction, and add the steps the DL-032 plan check requires to its command (the Credit first, the Pet Deposit on the line now pet damage, the Security Deposit on the other line, the remaining Pet Deposit with its decision, then a Refund of what is left), so the correction is recorded and confirmed; the test then checks every amount to the cent and that the line reads as pet damage. Only the correction call and the expectation change; the name changes (it would say the wrong thing) with its traceability entry.
+- (b) Move the case to the real-closure fixture (the 8e-3 confirm, Deposits used at closure) with the inspection superseded before the confirm; the correction then needs no or few steps. This replaces the test's setup.
+- (c) Keep the committed test as it is and test the new rule only in new tests; the committed test then fails (its refusal ends), so (c) is not possible without changing it.
+
+**Recommendation: (a)**, the smallest change that still records and confirms the correction as your answer says. The new tests of 10c-2a-7 (to pet damage with and without Pet Deposit money on the DL-032 path, the other direction still refused, the evidence naming the new inspection's finding) are built on the real-closure fixture.
+
+**What goes ahead.** 10c-2a-7 waits. The next sub-slices that depend on no open answer are 10c-3c-1 (the allow-function hardening; its pre-code check looks for committed tests it would change first), 10c-3c-2 after it, 10f and 10g.
