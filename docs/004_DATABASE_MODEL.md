@@ -1540,6 +1540,10 @@ As built in V1-056 sub-slice 10c-2b-2a (migration `20261112_108`): once the gove
 Settlement is closed, a row is refused (P5S01) unless a correction of that Settlement links it
 (none can yet), and the Lease forfeiture draft is refused at record; see DB-DEP-007.
 
+As built in V1-056 sub-slice 10c-2b-6 (migration `20261125_121`): a Lease row is also refused
+(23514) above the held value less the Pet Deposit's pay-back value, so no writer forfeits returned
+Pet Refund-review money; see the 10c-2b-5 and 10c-2b-6 bullets under DB-DEP-005.
+
 ### Lease Deposit command admission (V1-055)
 
 The existing Lease Deposit disposition command serializes its Property, actor,
@@ -1708,6 +1712,16 @@ Append-only Final Settlement financial event: `id uuid PK`, `deposit_id uuid NOT
   Pet Deposit receipt writer such as the proposed 10e-2b, which would make a
   `RECOVERED_BY_CHARGE` row on a Pet Deposit possible) must keep it, or the count would class
   that money as pay-back money.
+- As built in V1-056 sub-slice 10c-2b-6 (migration `20261125_121`; owner answer (a) to
+  Q-2026-10-10-73 and owner answer 4 of 2026-10-12, an approved tightening): the Lease Deposit
+  disposition insert check `app.validate_lease_deposit_disposition()` (DB-DEP-004) takes the
+  same pay-back limit as the forfeiture source, so no writer, the owner-only one-call disposition
+  included, forfeits returned pay-back money. After the held-value check (unchanged, still first:
+  23514, "Lease Deposit disposition exceeds held refundable value") it refuses an amount above the
+  held value less `app.lease_deposit_payback_value(deposit)` (23514, "Lease Deposit disposition
+  would forfeit returned pay-back money"). The sentence above that the disposition insert check
+  is unchanged held until this sub-slice. Only the check is patched in place; the forfeiture draft
+  path is unchanged, because its source already takes exactly that amount.
 - As built in V1-056 sub-slice 10c-2a-2 (migration `20261106_102`; owner answer 1 to
   Q-2026-10-07-41): after closure a Deposit application is still refused unless it is linked
   (DB-SETTLE-005 `deposit_application_id`, written first) to a post-settlement correction of its

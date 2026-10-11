@@ -86,7 +86,6 @@ from test_invoice_migration import (
 from test_migrations import _temporary_migration_database
 from test_move_in_migration import migrated_database_url as migrated_database_url
 from test_pet_refund_migration import command as pet_command
-from test_refund_service_migration import refund_id, returned
 from test_refund_service_migration import service as refunds
 from test_reservation_deposit_draft_migration import cancel_by_staff
 from test_reservation_deposit_draft_migration import drafts as reservation_drafts
@@ -774,12 +773,13 @@ def test_a_forfeiture_reversal_refuses_other_forfeitures_waiting_drafts_and_stal
 
 
 def twice_forfeited_case(url: str) -> dict[str, Any]:
-    """The Q-2026-10-09-61 shape before closure: a Pet Refund-review Refund pays 15,000 while the
-    Lease is signed; the Lease is terminated for pet noncompliance (BR-DEP-022); both Deposits are
-    forfeited (the Pet Deposit's 5,000); then 2,000 of the Pet Refund comes back with the one-call
-    return, so the kept Pet Deposit holds 2,000 again, and that money is forfeited too (since
-    sub-slice 10c-2b-5 the draft refuses it as pay-back money, so the owner's one-call disposition
-    writes it). The Settlement closes with no step. A correction approver is ready."""
+    """A kept Pet Deposit with two active forfeitures before closure: a Pet Refund-review Refund
+    pays 13,000 of the 20,000 Pet Deposit while the Lease is signed; the Lease is terminated for
+    pet noncompliance (BR-DEP-022); the Security Deposit is forfeited through the draft; the owner's
+    one-call disposition forfeits 5,000 of the Pet Deposit's own 7,000, then the forfeiture draft
+    forfeits the remaining 2,000 (since sub-slice 10c-2b-6 no forfeiture may take returned pay-back
+    money, so both forfeitures take the Deposit's own money). The Settlement closes with no step.
+    A correction approver is ready."""
     source = signed_with_initial(url, this_month(url))
     human, prop, lease = source["actor"], source["property"], source["lease"]
     customer, day = source["customer"], source["today"]
@@ -799,13 +799,11 @@ def twice_forfeited_case(url: str) -> dict[str, Any]:
         "Qualified Pet exception",
     )
     deposits.qualify_pet_refund_review(review, actor=who)
-    review_refund = refund_id(
-        create_pet_refund(
-            refunds(),
-            prop,
-            pet_command(pet, review.review_id, 15_000),
-            actor=refund_actor(human, prop, "refunds.create"),
-        )
+    create_pet_refund(
+        refunds(),
+        prop,
+        pet_command(pet, review.review_id, 13_000),
+        actor=refund_actor(human, prop, "refunds.create"),
     )
     rent, owed = rent_line(url, source["invoice"])
     pay(url, prop, human, customer, source["invoice"], rent, owed)
@@ -821,24 +819,13 @@ def twice_forfeited_case(url: str) -> dict[str, Any]:
         "settlement": start(prop, human, lease),
         "cash": UUID(str(one(url, "SELECT id FROM app.refund_methods WHERE code='CASH'")[0])),
     }
-    for deposit in (case["security"], pet):
-        forfeit_through_draft(deposits, deposit)
-    refunds().verify_usd_return(
-        prop, review_refund, returned(2_000), actor=refund_actor(human, prop, "refunds.correct")
-    )
-    assert held(url, pet) == 2_000
-    # Sub-slice 10c-2b-5 (owner answers to Q-2026-10-09-61, Q-2026-10-10-73 (a), Q-2026-10-10-75 and
-    # Q-2026-10-10-76): the 2,000 that came back is the Customer's pay-back money, so the forfeiture
-    # draft now refuses it (22023). The second active forfeiture this guard test needs is written
-    # with the owner's one-call disposition, a state no draft path reaches any more.
-    with pytest.raises(LeaseDepositForfeitureInvalidError) as payback:
-        forfeit_through_draft(deposits, pet)
-    error = payback.value.__cause__
-    assert isinstance(error, psycopg.Error)
-    assert (error.sqlstate, error.diag.message_primary) == (
-        "22023",
-        "The Deposit holds nothing to forfeit",
-    )
+    forfeit_through_draft(deposits, case["security"])
+    # Sub-slice 10c-2b-6 (owner answer 4 of 2026-10-12, owner standing rule of 2026-10-11): no
+    # forfeiture may take returned pay-back money, so the two active forfeitures this guard test
+    # needs both take the Pet Deposit's own money: the owner's one-call disposition forfeits 5,000
+    # of the 7,000 it holds, then the forfeiture draft forfeits the remaining 2,000. (The refusals
+    # of a forfeiture of returned money are tested in test_pet_deposit_payback_limit_migration.py.)
+    assert held(url, pet) == 7_000
     record_disposition_as_owner(
         deposits,
         RecordDepositDispositionCommand(
@@ -846,13 +833,15 @@ def twice_forfeited_case(url: str) -> dict[str, Any]:
             uuid4(),
             pet,
             lease,
-            2_000,
+            5_000,
             day,
             "Approved BR-DEP-022 source",
             context=disposition_context(url, pet),
         ),
         actor=who,
     )
+    assert held(url, pet) == 2_000
+    forfeit_through_draft(deposits, pet)
     assert (held(url, case["security"]), held(url, pet)) == (0, 0)
     confirm_settlement(case, record_settlement(case, ()))
     case["person"] = approver(url)

@@ -39570,7 +39570,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_forfeiture_reversal_migration.py",
       "status": "implemented",
-      "notes": "A kept Pet Deposit with two active forfeitures (pet noncompliance; a one-call return between them) refuses the reversal of either, with nothing written; a correction draft for the Security Deposit's forfeiture is stale (P5S02) after the 6b draft reverses that forfeiture first, stays pending and writes nothing (V1-056 sub-slice 10d, owner answer 2 to Q-2026-10-10-71; since sub-slice 10c-2b-5 the fixture's second forfeiture is refused as a draft (22023, pay-back money, checked) and written with the owner's one-call disposition)."
+      "notes": "A kept Pet Deposit with two active forfeitures (pet noncompliance; until sub-slice 10c-2b-6 a one-call return between them) refuses the reversal of either, with nothing written; a correction draft for the Security Deposit's forfeiture is stale (P5S02) after the 6b draft reverses that forfeiture first, stays pending and writes nothing (V1-056 sub-slice 10d, owner answer 2 to Q-2026-10-10-71; from sub-slice 10c-2b-5 until 10c-2b-6 the fixture's second forfeiture was refused as a draft (22023, pay-back money, checked) and written with the owner's one-call disposition; since sub-slice 10c-2b-6 (owner answer 4 of 2026-10-12) both forfeitures take the Pet Deposit's own money, 5,000 by the owner's one-call disposition and then 2,000 by the draft, with no return, and the 22023 check moved to test_pet_deposit_payback_limit_migration.py)."
     },
     {
       "test_id": "test_forfeiture_reversal_records_are_least_privilege_and_forward_only",
@@ -40075,6 +40075,30 @@
       "test_path": "backend/tests/test_settlement_correction.py",
       "status": "implemented",
       "notes": "A stale Deposit receipt correction (P5S02) stays pending; every other database refusal keeps the Final Settlement error mapping (V1-056 sub-slice 10e-2)."
+    },
+    {
+      "test_id": "test_returned_money_in_a_kept_pet_deposit_is_never_forfeited",
+      "upstream_ids": ["BR-DEP-022", "DL-032"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_pet_deposit_payback_limit_migration.py",
+      "status": "implemented",
+      "notes": "The Q-2026-10-09-61 shape: 2,000 of a Pet Refund-review Refund returned to a kept Pet Deposit after both forfeitures is pay-back money; the forfeiture draft refuses it (22023) and the owner's one-call disposition is refused for all of it and for 1 cent (23514), nothing written, the Deposit stays on the DL-032 path (V1-056 sub-slice 10c-2b-6, owner answer 4 of 2026-10-12)."
+    },
+    {
+      "test_id": "test_a_forfeiture_takes_at_most_the_money_beyond_the_payback_value",
+      "upstream_ids": ["BR-DEP-022", "DL-032"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_pet_deposit_payback_limit_migration.py",
+      "status": "implemented",
+      "notes": "A Pet Deposit holding 8,000 with 3,000 of pay-back money: 8,001 keeps the held-value refusal, 5,001 is refused as pay-back money (23514) with nothing written, exactly 5,000 is forfeited by the one-call disposition, then the Deposit is on the DL-032 path with its 3,000 and a draft is refused (22023); the Security Deposit's draft still forfeits its whole held value (V1-056 sub-slice 10c-2b-6)."
+    },
+    {
+      "test_id": "test_the_payback_limit_migration_changes_only_the_disposition_check",
+      "upstream_ids": ["BR-DEP-022"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_pet_deposit_payback_limit_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20261125_121 patches only the Lease Deposit disposition insert check, exactly by its listed replacement, keeping owner, SECURITY DEFINER, settings and privileges; no function, table or trigger is added; forward-only (V1-056 sub-slice 10c-2b-6)."
     }
   ]
 }
