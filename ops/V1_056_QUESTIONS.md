@@ -1900,3 +1900,18 @@ You asked to stop before changing a committed test. There is no 10e-1c code.
 Recommendation: (a). It is what your Q-72 point 1 and Q-78 answers describe, the refusal was planned to end in 10e-1c, and (b) adds a second path for the same business case.
 
 What goes ahead while this waits: 10e-1c and 10e-2 (it recovers a Settlement Refund already paid from the corrected Deposit with the 10e-1c charge) wait, with the helper split before 10e-2; 10c-2b-5 and 10e-3 wait for Q-2026-10-10-76. The next sub-slices that depend on neither answer: 10c-2a-7, 10c-3c-1, 10c-3c-2, 10f, 10g and the two real-path tests.
+
+## Q-2026-10-11-80 — Sub-slices 10c-2a-7 and 10c-3c-2: each one turns a committed refusal test into an allowed case (blocks those two sub-slices only)
+
+Your instruction of 2026-10-11: stop and ask before a committed test changes. A read-only check before code found that two of the next sub-slices you approved change one committed test each, because the test asserts exactly the refusal the sub-slice removes. There is no code for either.
+
+*1. 10c-2a-7* (your answer (a) to Q-2026-10-08-53: a Damage line billed from an inspection superseded before closure may be set to pet damage). The committed 10c-2a-5 test `test_a_line_billed_from_an_inspection_superseded_before_closure_is_not_eligible` records exactly that to-pet correction and expects it refused ("A pet classification correction corrects only a Damage line billed from a finding of a current inspection") with no draft written. After 10c-2a-7 that correction is allowed.
+
+*2. 10c-3c-2* (your answer (a) to Q-2026-10-10-70: `CHARGE_REDUCTION` may reduce a partly Deposit-paid obligation within its unpaid rest). The committed 10c-1a test `test_an_invoice_paid_by_a_deposit_application_takes_no_charge_reduction_yet` reduces by 5.00 a 125.00 Damage line of which the Pet Deposit paid 10.00 (115.00 unpaid) and expects the refusal "A Deposit application paid this obligation at Final Settlement". After 10c-3c-2 that reduction is allowed. (The 10c-3a test `test_a_charge_a_deposit_paid_or_of_another_lease_is_refused` reduces a Charge the Pet Deposit paid in full; it stays refused, and the build keeps that refusal's message for an obligation with no unpaid rest, so that test does not change.)
+
+- (a) In each test change only the expectation (name kept, a comment, a docs/010 note): the correction is recorded and confirmed, and the test checks the result to the cent (the line reads as pet damage; the line owes 110.00 with the 10.00 Deposit application unchanged). The refusal each test protected is still tested by the remaining cases (a line of an inspection superseded before closure still cannot be set to not pet damage; a reduction above the unpaid rest and a fully Deposit-paid Charge stay refused).
+- (b) Keep both tests unchanged and leave the two sub-slices unbuilt (the two known limits stay).
+
+Recommendation: (a), because each test asserts the gap you decided to close (both test names already say "not eligible" and "yet", written before your answers).
+
+What goes ahead while this waits: 10c-3c-1 (the allow-function hardening; its pre-code check looks for committed tests it would change first), 10f and 10g pre-code designs, and the two real-path tests (tests only).
