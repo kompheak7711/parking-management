@@ -2064,7 +2064,7 @@ Recorded in docs/010.
 
 **Owner standing rule (2026-10-11, replaces the rule of the Q-2026-10-11-79 answer).** When one of the owner's answers changes a result, and a committed test or fixture expects the old result, the implementer may update it to the new result without asking. Change only the affected case or branch. Name each change in the report. The independent reviewer compares it with HEAD and confirms nothing else got weaker. A change that removes a check, or that the answer does not cover, still needs the owner's OK. Also in docs/010 and ops/V1_055_RUN_RULES.md.
 
-## Q-2026-10-11-86 — Sub-slice 10e-2 stopped before code: the "right receipt" function is much bigger than planned and conflicts with two receipt rules (blocks 10e-2 only)
+## Q-2026-10-11-86 — Sub-slice 10e-2 stopped before code: the "right receipt" function is much bigger than planned and conflicts with two receipt rules (blocks 10e-2 only) (ANSWERED 2026-10-12: (a); the right receipt is sub-slice 10e-2b, which waits for Q-2026-10-12-87; answer in docs/010)
 
 Your answer to Q-2026-10-11-83 point 2: a new function writes the right receipt, so the correction moves the money straight to the right Deposit, or records the right amount; new functions only, no tightening. You also said: if it turns out much bigger than the plan expects, or conflicts with another rule, write it here and stop. A read-only check before code (head `20261122_118`, read from a throwaway database's catalog) found both. There is no 10e-2 code and no run.
 
@@ -2087,3 +2087,60 @@ Your point 1 (the freed value stays with the Payment until the payer authorizes 
 **Recommendation: (a).** It gives every wrong receipt a true fix now (the debt comes back to its Customers, the Refund is charged back, the money comes back to the Payment), keeps BR-CREDIT-002 as you said, and keeps the three receipt-rule changes for a separate decision, because (i) and (ii) also change what a Reservation and a Pet Deposit accept before closure.
 
 **What goes ahead.** 10e-2 waits (no code). The next sub-slice that depends on no open answer is 10c-2b-5 (your answer (a) to Q-2026-10-11-84), then 10e-3, 10e-4 (your answer to Q-2026-10-11-82), 10c-2a-7, 10c-3c-1, 10c-3c-2, 10f and 10g.
+
+**Owner answer (2026-10-12).**
+
+1. Option (a). Build 10e-2 now without the new receipt: the correction reverses the wrong receipt, and the freed money stays with the Payment. The right receipt becomes a later sub-slice, 10e-2b. The gap must still close before V1-056 ends, as said in Q-2026-10-08-56.
+2. For 10e-2b, the three receipt rules are written as one new question in simple words, each with a short dollar example, the options and a recommendation: Q-2026-10-12-87.
+3. The `twice_forfeited_case` fixture change (sub-slice 10c-2b-5): confirmed.
+4. The slice 12 tightening (the pay-back limit in the forfeiture's insert check): yes. Returned money is the Customer's, so no path may forfeit it, including the owner-only one-call disposition. Build it as a small sub-slice before 10h, where it fits best. When it lands, change `twice_forfeited_case` so its second forfeiture uses the Deposit's own money, under the standing rule. If that is not possible, tell the owner.
+
+Recorded in docs/010. Placement (implementer): the tightening is sub-slice 10c-2b-6, right after 10e-2 and before 10e-3, because it is small, depends on no open answer, and the 10e-3 and 10h pre-code designs check the invariant it enforces (no money other than pay-back money may be forfeited from a Pet Deposit with the BR-DEP-022 ground).
+
+## Q-2026-10-12-87 — Sub-slice 10e-2b (the right receipt): three receipt rules stand in the way (blocks 10e-2b only)
+
+Your answer to Q-2026-10-11-83 point 2: a new function writes the right receipt, so a `DEPOSIT_RECEIPT_CORRECTION` moves the money straight to the right Deposit, or records the right amount. Your answer (a) to Q-2026-10-11-86 builds 10e-2 first without it: the wrong receipt is reversed and the money stays with the Payment. 10e-2b then writes the right receipt in the same kind of correction. Three rules of the receipt table stop that today (read at head `20261123_119`). Each needs your word. There is no 10e-2b code.
+
+All three examples start the same way: a Payment of $1,000 was recorded as a $1,000 Security Deposit receipt. After closure staff find that the receipt was wrong.
+
+**Rule 1. A Deposit takes only one receipt from each Payment, even after a reversal.**
+
+The table key `UNIQUE (deposit_id, payment_id)` (DB-DEP-002) counts every receipt, also a reversed one.
+
+Example: really $800 was the Security Deposit and $200 was Rent. The correction reverses the $1,000 receipt and must write an $800 receipt into the same Security Deposit from the same Payment. The key refuses it, because the reversed $1,000 receipt still counts.
+
+- (a) Replace the key by a check in the receipt's insert trigger: a Deposit holds at most one active (not reversed) receipt from a Payment. A reversed receipt no longer blocks a new one. Before closure nothing changes in practice, because only the Reservation writes a receipt, once. A relaxing change.
+- (b) Keep the key, and give only a correction receipt its own key (a new column naming the correction). The same result with more columns.
+- (c) Keep the key. The right amount in the same Deposit cannot be recorded (a known limit); only a receipt that belongs whole in another Deposit works.
+
+**Recommendation: (a)**, the smallest change; the history keeps both receipts and the reversal.
+
+**Rule 2. A Security Deposit's first receipt must equal the amount its Reservation accepted.**
+
+The receipt check counts only active receipts. After the $1,000 receipt is reversed, the next receipt is the "first" again, so it must equal the accepted $1,000. All active receipts together must also stay within the Deposit's required amount.
+
+Example A (the agreed amount was right): the agreed Security Deposit was $1,000, but $200 of the Payment was Rent. The right receipt is $800. The check refuses it, because $800 is not the accepted $1,000.
+
+Example B (the agreed amount was wrong): the agreed Security Deposit should have been $800, and $200 was Rent. The right receipt is $800 and the required amount should be $800, not $1,000.
+
+- (a) Inside a correction only, a receipt may differ from the accepted amount (never above the required amount). The required amount stays as agreed, so in Example B the Deposit shows a $200 shortfall. Outside a correction the rule stays.
+- (b) As (a), and the correction may also lower the required amount when the evidence shows the agreed amount was wrong (a required-amount record, DB-DEP-003, linked to the correction). In Example B the Deposit then shows no shortfall.
+- (c) Keep the rule: a correction may only write a receipt that equals the accepted amount, so only a whole receipt can move to another Deposit. Examples A and B stay with the money on the Payment (a known limit).
+
+**Recommendation: (a).** After closure the required amount moves no money (only the receipt check, the termination readiness check and the move-in read it), so the receipt is what matters. Choose (b) if you want the record to show the corrected agreed amount too.
+
+**Rule 3. No function writes a Pet Deposit receipt today.**
+
+Only the Reservation writes receipts, and only for its Security Deposit. `app.create_pet_deposit` creates a Pet Deposit with no money. (In the tests a Pet Deposit gets its money by a direct database insert.) Moving money into the Pet Deposit would be the first Pet Deposit receipt writer in the system.
+
+Example: really $800 was the Security Deposit and $200 was the Pet Deposit. The correction reverses the $1,000 receipt, writes an $800 Security Deposit receipt (rules 1 and 2) and must write a $200 Pet Deposit receipt.
+
+- (a) A Pet Deposit receipt writer inside a correction only. The receipt stays within the Pet Deposit's approved amount (the existing check). It is refused while the Pet Deposit has an active forfeiture, because only pay-back money may reach a forfeited Pet Deposit (the sub-slice 10c-2b-5 rule). The correction's DL-032 step then uses the $200 in its DL-032 place (pet damage first).
+- (b) A general Pet Deposit receipt writer, also before closure for normal intake, with its own route and screen. A bigger feature that the V1-056 plan does not have.
+- (c) No Pet Deposit receipt. Money meant for the Pet Deposit stays with the Payment after 10e-2 (a known limit).
+
+**Recommendation: (a).** It fixes the case your Q-83 example names and adds nothing outside a correction.
+
+**What 10e-2b then builds (no rule question).** Under the recommendations: the new receipt is written inside the `DEPOSIT_RECEIPT_CORRECTION`, linked to it (a new DB-SETTLE-005 link), after the wrong receipt's reversal; the draft's DL-032 plan names the new receipt's money; the correction's step then applies it to the Lease's open debt in the DL-032 order and refunds the rest. The money comes from the same Payment's freed value, so the Payment never gives more than it received.
+
+**What goes ahead.** Only 10e-2b waits. The plan order is 10e-2 (now), 10c-2b-6 (the forfeiture tightening), 10e-3, 10e-4, 10c-2a-7, 10c-3c-1, 10c-3c-2, 10f, 10g, then 10e-2b after your answer, then 10h.
