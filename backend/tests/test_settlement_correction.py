@@ -25,6 +25,7 @@ from property_rental.identity import AuthenticatedActor, CapabilityGrant
 from property_rental.settlement_correction import (
     ExtraChargeCategory,
     RecordChargeReductionCorrectionCommand,
+    RecordDepositReceiptCorrectionCommand,
     RecordExtraChargeCorrectionCommand,
     RecordForfeitureReversalCorrectionCommand,
     RecordHeldValueRefundCorrectionCommand,
@@ -1712,6 +1713,158 @@ def test_returned_payment_correction_confirm_maps_database_refusals(
     monkeypatch.setattr(psycopg, "connect", connect)
     with pytest.raises(confirm_error) as refused:
         SettlementCorrectionService("unused").confirm_returned_payment(
+            PROPERTY, DRAFT, actor=person("financial.approve")
+        )
+    assert type(refused.value) is confirm_error and refused.value.__cause__ is failure
+
+
+RECEIPT = UUID(int=94)
+
+
+def deposit_receipt_correction(**changes: Any) -> RecordDepositReceiptCorrectionCommand:
+    return replace(
+        RecordDepositReceiptCorrectionCommand(
+            KEY,
+            SETTLEMENT,
+            RECEIPT,
+            "The receipt was meant for Rent",
+            "Bank statement line 5120",
+        ),
+        **changes,
+    )
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"idempotency_key": UUID(int=0)},
+        {"settlement_id": "not-a-uuid"},
+        {"deposit_receipt_id": UUID(int=0)},
+        {"deposit_receipt_id": "not-a-uuid"},
+        {"reason": ""},
+        {"reason": " padded"},
+        {"reason": "x" * 501},
+        {"evidence_reference": ""},
+        {"evidence_reference": " padded"},
+        {"evidence_reference": "x" * 501},
+    ],
+)
+def test_deposit_receipt_correction_commands_are_validated(changes: dict[str, Any]) -> None:
+    """V1-056 sub-slice 10e-2: the receipt, a reason and the evidence reference (each 1 to 500
+    trimmed characters); there is no DL-032 plan."""
+    with pytest.raises(FinalSettlementInvalidError):
+        deposit_receipt_correction(**changes)
+    assert (
+        deposit_receipt_correction(reason="x" * 500, evidence_reference="y" * 500).reason
+        == "x" * 500
+    )
+
+
+def test_deposit_receipt_correction_record_and_confirm_send_the_stored_correction(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The record call carries the receipt and the evidence reference; only
+    final_settlements.prepare records and only financial.approve confirms, both before any
+    connection."""
+    calls: list[tuple[object, ...]] = []
+
+    class Connection:
+        read_only: bool | None = None
+
+        def __enter__(self) -> "Connection":
+            return self
+
+        def __exit__(self, *args: object) -> None:
+            return None
+
+        def execute(self, sql: str, parameters: tuple[object, ...] = ()) -> "Connection":
+            calls.append((sql, parameters))
+            return self
+
+        def fetchone(self) -> tuple[dict[str, object]]:
+            return ({"draft_id": str(DRAFT)},)
+
+    def connect(url: str, **kwargs: object) -> Connection:
+        calls.append(("connect", url))
+        return Connection()
+
+    monkeypatch.setattr(psycopg, "connect", connect)
+    service = SettlementCorrectionService("financial-url")
+    with pytest.raises(FinalSettlementAuthorizationError):
+        service.record_deposit_receipt_correction(
+            PROPERTY, deposit_receipt_correction(), actor=person("financial.approve")
+        )
+    with pytest.raises(FinalSettlementAuthorizationError):
+        service.confirm_deposit_receipt_correction(
+            PROPERTY, DRAFT, actor=person("final_settlements.prepare")
+        )
+    wrong_kind: Any = returned_payment()
+    with pytest.raises(FinalSettlementInvalidError):
+        service.record_deposit_receipt_correction(
+            PROPERTY, wrong_kind, actor=person("final_settlements.prepare")
+        )
+    assert calls == []
+    assert service.record_deposit_receipt_correction(
+        PROPERTY, deposit_receipt_correction(), actor=person("final_settlements.prepare")
+    ) == {"draft_id": str(DRAFT)}
+    sql, parameters = calls[-1]
+    assert sql == (
+        "SELECT app.record_settlement_deposit_receipt_correction_draft(%s,%s,%s,%s,%s,%s,%s)"
+    )
+    assert isinstance(parameters, tuple)
+    assert parameters[:4] == (
+        PROPERTY,
+        HUMAN,
+        settlement_correction_draft_id(PROPERTY, HUMAN, KEY),
+        SETTLEMENT,
+    )
+    stored = parameters[4]
+    assert isinstance(stored, Jsonb)
+    assert stored.obj == {
+        "deposit_receipt_id": str(RECEIPT),
+        "evidence_reference": "Bank statement line 5120",
+    }
+    assert parameters[5:] == ("The receipt was meant for Rent", "final_settlements.prepare")
+    calls.clear()
+    assert service.confirm_deposit_receipt_correction(
+        PROPERTY, DRAFT, actor=person("financial.approve")
+    ) == {"draft_id": str(DRAFT)}
+    assert calls[-1] == (
+        "SELECT app.confirm_settlement_deposit_receipt_correction(%s,%s,%s,%s)",
+        (PROPERTY, HUMAN, DRAFT, "financial.approve"),
+    )
+
+
+@pytest.mark.parametrize(
+    ("sqlstate", "confirm_error"),
+    [
+        ("P5S02", FinalSettlementStaleDraftError),
+        ("55000", FinalSettlementConflictError),
+        ("42501", FinalSettlementAuthorizationError),
+        ("P0002", FinalSettlementNotFoundError),
+        ("22023", FinalSettlementInvalidError),
+        ("P5205", FinalSettlementKeyReused),
+        (None, FinalSettlementUnavailableError),
+    ],
+)
+def test_deposit_receipt_correction_confirm_maps_database_refusals(
+    monkeypatch: pytest.MonkeyPatch, sqlstate: str | None, confirm_error: type[Exception]
+) -> None:
+    """A draft whose receipt, Deposit, Deposit applications or Refunds changed is stale and stays
+    pending; other refusals keep the Final Settlement error mapping."""
+
+    class Failure(psycopg.Error):
+        pass
+
+    failure = Failure("Synthetic failure")
+    failure.sqlstate = sqlstate
+
+    def connect(*args: object, **kwargs: object) -> None:
+        raise failure
+
+    monkeypatch.setattr(psycopg, "connect", connect)
+    with pytest.raises(confirm_error) as refused:
+        SettlementCorrectionService("unused").confirm_deposit_receipt_correction(
             PROPERTY, DRAFT, actor=person("financial.approve")
         )
     assert type(refused.value) is confirm_error and refused.value.__cause__ is failure

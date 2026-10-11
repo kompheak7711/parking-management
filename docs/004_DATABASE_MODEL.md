@@ -1755,7 +1755,9 @@ Append-only: `id uuid PK`, `deposit_application_id uuid NOT NULL UNIQUE FK`, `re
   confirm (sub-slice 10c-2a-5) and the Late-payment Charge `REFUND` confirm (sub-slice 10c-3b-2);
   later correction writers (10e) will write it too. Since sub-slice 10e-1b the `RETURNED_PAYMENT`
   correction also writes it for every Deposit application of a Deposit the returned Payment funded
-  (DB-PAY-009).
+  (DB-PAY-009). Since sub-slice 10e-2 both the `RETURNED_PAYMENT` and the
+  `DEPOSIT_RECEIPT_CORRECTION` corrections write it through the shared internal writer
+  `app.write_correction_deposit_application_reversals` (the same rows, newest first).
 
 ## DB-DEP-007 — `deposit_receipt_reversals`
 
@@ -1814,7 +1816,8 @@ Settlement is closed, the receipt reversal draft of that Lease's Deposit is refu
 a receipt reversal row is refused at insert (P5S01, a conflict) unless it is linked to a correction
 of that Settlement confirmed in the same transaction. A receipt whose Payment bounced is fixed by
 `RETURNED_PAYMENT` (10e); a receipt that is wrong while its Payment is real by
-`DEPOSIT_RECEIPT_CORRECTION` (10e-2); until those exist such a receipt has no fix after closure.
+`DEPOSIT_RECEIPT_CORRECTION` (10e-2); until those exist such a receipt has no fix after closure
+(both exist since sub-slices 10e-1b and 10e-2; the right receipt waits for sub-slice 10e-2b).
 After review round 1 (owner answers 1 and 4 to Q-2026-10-08-59, approved tightenings): a receipt
 reversal draft is recorded only at READ COMMITTED (55000); and once a Lease's Final Settlement is
 closed, a Lease Deposit forfeiture draft is refused at record and a `deposit_dispositions` row at
@@ -1824,6 +1827,24 @@ As built in V1-056 sub-slice 10c-2b-2b (migration `20261113_109`; owner answer t
 Q-2026-10-08-60, an approved tightening): a Lease Deposit forfeiture draft is recorded only at
 READ COMMITTED (55000), so its closure read sees every committed closure; an exact repeat of an
 earlier request replays its draft before this check, as the receipt reversal recorder does.
+
+As built in V1-056 sub-slice 10e-2 (migration `20261124_120`; owner answer (a) to Q-2026-10-08-56,
+answers 1 and 3 to Q-2026-10-11-83, answer (a) to Q-2026-10-11-86): a Lease Deposit receipt that
+is wrong while its Payment is real is fixed after closure by the `DEPOSIT_RECEIPT_CORRECTION`
+variant of the `SETTLEMENT_CORRECTION` draft (`final_settlements.prepare` records,
+`financial.approve` confirms). As linked records it recovers each Refund paid from the Deposit that
+is not fully returned (a `RECOVERED_BY_CHARGE` row of DB-REFUND-002 and a charge of the exact net
+amount to the person who received it, whose recovery check now also accepts this correction),
+reverses the Deposit's applications newest first and then writes this table's row through the
+shared writer `app.write_payment_return_receipt_reversal`; the Deposit ends empty. The freed amount
+stays unallocated with the Payment (BR-CREDIT-002: Credit only with the payer's authorization);
+there is no Payment reversal and no DL-032 step. Refused (55000): a receipt already reversed, of a
+Deposit of another Lease, or of a Deposit with an active forfeiture (a `FORFEITURE_REVERSAL` first),
+a Payment that is not RECEIVED (a guard), a Deposit application of another Final Settlement (a
+guard), the 10e-1c recovery refusals, a Refund of the Deposit with no planned recovery, a Deposit
+that would not end empty, and a waiting draft naming the receipt, the Deposit, its Payment or a
+recovered Refund. **Known gap until sub-slice 10e-2b
+(Q-2026-10-12-87):** no correction yet writes the right receipt (the right Deposit or amount).
 
 As built in V1-056 sub-slice 8c (migration `20261025_90`, owner answer 4 to Q-2026-10-05-23):
 both directions also see the Final Settlement draft. A pending `FINAL_SETTLEMENT` draft whose
@@ -2892,7 +2913,10 @@ not yet reversed) in this transaction, written by that return's approver, naming
 in this transaction by that approver with `source_reference` `refund-recovery:<refund id>`, of the
 same amount, to the Refund's recipient; for a Refund of a closed Final Settlement (its Deposit's
 Lease, or paid by a correction) only when a correction of that Settlement links the row; otherwise
-23514. Its audit action is `refund.recovered_by_charge`; the Customer Ledger shows it as
+23514. Since sub-slice 10e-2 (migration `20261124_120`) it also accepts the row, with the same
+charge conditions, inside a `DEPOSIT_RECEIPT_CORRECTION` confirmed by the same approver in this
+transaction that links the row and whose receipt, not yet reversed, is in the Refund's Deposit.
+Its audit action is `refund.recovered_by_charge`; the Customer Ledger shows it as
 `REFUND_CORRECTED` (the readers of a source balance sum its effect with no change) and the Credit
 history as `REFUND_RECOVERED_BY_CHARGE`. The Refund resource and the financial action context leave
 the new column out, so their shape is unchanged (the staff screens accept exactly the existing keys);

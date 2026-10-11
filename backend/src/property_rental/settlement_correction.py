@@ -46,6 +46,12 @@ paid (owner answer to Q-2026-10-07-38 (b)). A linked Late-payment Charge correct
 amount; the paid part is released newest first; released Payment value becomes Customer Credit of
 the Charge's Customer (BR-CREDIT-014), which first pays that Customer's open debt on the Lease
 through the shared DL-032 step, and only the rest is refunded.
+
+Sub-slice 10e-2: the ``DEPOSIT_RECEIPT_CORRECTION`` variant, a Lease Deposit receipt that is wrong
+while its Payment is real (owner answers to Q-2026-10-08-56, Q-2026-10-11-83 and Q-2026-10-11-86).
+The confirmation recovers each Refund paid from the Deposit by a charge to the person who received
+it, reverses the Deposit's applications and the whole receipt; the freed amount stays unallocated
+with the Payment until the payer authorizes Credit (BR-CREDIT-002).
 """
 
 from __future__ import annotations
@@ -95,6 +101,8 @@ HELD_VALUE_REFUND_CONFIRM_STALE_STATES: Final = frozenset({"P5S02"})
 FORFEITURE_REVERSAL_CONFIRM_STALE_STATES: Final = frozenset({"P5S02"})
 # A returned-Payment correction whose Payment, Credits, Deposits or their records changed is stale.
 RETURNED_PAYMENT_CONFIRM_STALE_STATES: Final = frozenset({"P5S02"})
+# A Deposit receipt correction whose receipt, Deposit, its records or Refunds changed is stale.
+DEPOSIT_RECEIPT_CORRECTION_CONFIRM_STALE_STATES: Final = frozenset({"P5S02"})
 
 
 def settlement_correction_draft_id(
@@ -719,6 +727,37 @@ class RecordReturnedPaymentCorrectionCommand:
 
 
 @dataclass(frozen=True, slots=True)
+class RecordDepositReceiptCorrectionCommand:
+    """A Lease Deposit receipt that is wrong while its Payment is real, after closure (V1-056
+    sub-slice 10e-2); the database checks it against current state.
+
+    ``deposit_receipt_id`` names the wrong receipt and ``evidence_reference`` the evidence. The
+    confirmation recovers each Refund paid from the Deposit by a charge to the person who received
+    it, reverses the Deposit's applications and the whole receipt, each linked to the correction;
+    the freed amount stays unallocated with the Payment; there is no DL-032 plan.
+    """
+
+    idempotency_key: UUID
+    settlement_id: UUID
+    deposit_receipt_id: UUID
+    reason: str
+    evidence_reference: str
+
+    def __post_init__(self) -> None:
+        _uuid(self.idempotency_key, "idempotency_key")
+        _uuid(self.settlement_id, "settlement_id")
+        _uuid(self.deposit_receipt_id, "deposit_receipt_id")
+        _text(self.reason, "reason", 500)
+        _text(self.evidence_reference, "evidence_reference", 500)
+
+    def deposit_receipt_correction(self) -> dict[str, object]:
+        return {
+            "deposit_receipt_id": str(self.deposit_receipt_id),
+            "evidence_reference": self.evidence_reference,
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class SettlementCorrectionService:
     """Commands under the financial role; capabilities are checked before any connection."""
 
@@ -1285,4 +1324,57 @@ class SettlementCorrectionService:
             "SELECT app.confirm_settlement_returned_payment(%s,%s,%s,%s)",
             (property_id, actor_id, draft_id, FINANCIAL_APPROVE_CAPABILITY),
             stale=RETURNED_PAYMENT_CONFIRM_STALE_STATES,
+        )
+
+    def record_deposit_receipt_correction(
+        self,
+        property_id: UUID,
+        command: RecordDepositReceiptCorrectionCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        """Record a Deposit receipt correction draft; it has no effect until confirmed."""
+        actor_id = FinalSettlementService._authorize(
+            actor, property_id, FINAL_SETTLEMENTS_PREPARE_CAPABILITY
+        )
+        if not isinstance(command, RecordDepositReceiptCorrectionCommand):
+            raise FinalSettlementInvalidError("Deposit receipt correction command is invalid")
+        request = RecordDepositReceiptCorrectionCommand(
+            command.idempotency_key,
+            command.settlement_id,
+            command.deposit_receipt_id,
+            command.reason,
+            command.evidence_reference,
+        )
+        return FinalSettlementService(self.financial_database_url)._call(
+            "SELECT app.record_settlement_deposit_receipt_correction_draft(%s,%s,%s,%s,%s,%s,%s)",
+            (
+                property_id,
+                actor_id,
+                settlement_correction_draft_id(property_id, actor_id, request.idempotency_key),
+                request.settlement_id,
+                Jsonb(request.deposit_receipt_correction()),
+                request.reason,
+                FINAL_SETTLEMENTS_PREPARE_CAPABILITY,
+            ),
+        )
+
+    def confirm_deposit_receipt_correction(
+        self, property_id: UUID, draft_id: UUID, *, actor: AuthenticatedActor
+    ) -> dict[str, object]:
+        """Confirm a pending Deposit receipt correction (financial.approve only).
+
+        A draft whose receipt, Deposit, Deposit applications or Refunds changed since it was
+        recorded is stale and stays pending; a kept Deposit, a receipt of another Lease or a
+        waiting draft is a conflict; an exact repeat by the same approver writes nothing and
+        returns the result again.
+        """
+        actor_id = FinalSettlementService._authorize(
+            actor, property_id, FINANCIAL_APPROVE_CAPABILITY
+        )
+        _uuid(draft_id, "draft_id")
+        return FinalSettlementService(self.financial_database_url)._call(
+            "SELECT app.confirm_settlement_deposit_receipt_correction(%s,%s,%s,%s)",
+            (property_id, actor_id, draft_id, FINANCIAL_APPROVE_CAPABILITY),
+            stale=DEPOSIT_RECEIPT_CORRECTION_CONFIRM_STALE_STATES,
         )

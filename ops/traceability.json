@@ -39995,6 +39995,86 @@
       "test_path": "backend/tests/test_settlement_pet_payback_migration.py",
       "status": "implemented",
       "notes": "No role calls the three new internal functions and their only privilege entry is the owner's; the migration adds only them and patches the Deposit path, the forfeiture source and the returned-Refund plan exactly as its replacements say (owner, SECURITY DEFINER, settings and privileges kept); it is forward-only (V1-056 sub-slice 10c-2b-5)."
+    },
+    {
+      "test_id": "test_a_wrong_pet_deposit_receipt_is_reversed_and_its_refund_charged_back",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-016", "BR-CREDIT-002", "BR-AUTH-010", "DB-DEP-007", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_receipt_correction_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer (a) to Q-2026-10-11-86 on the real 8c closure: the Pet Deposit's 20,000 receipt was wrong; the DEPOSIT_RECEIPT_CORRECTION recovers the 5,400 Settlement Refund by a 5,400 EXTRA_CHARGE to the Deposit owner on the Lease (worded for a corrected Deposit receipt), reverses the 12,500 and 2,100 Deposit applications (debt back on its lines) and the whole receipt (Pet Deposit 0), each linked; the Payment stays RECEIVED with 20,000 more available and no Credit; the recovery check is false outside its transaction; replay writes nothing; the Settlement row is unchanged and the ledger reconciles (V1-056 sub-slice 10e-2)."
+    },
+    {
+      "test_id": "test_a_wrong_security_deposit_receipt_frees_the_payment_value_for_the_debt",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-016", "BR-CREDIT-002", "DB-DEP-007"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_receipt_correction_migration.py",
+      "status": "implemented",
+      "notes": "The direct receipt reversal stays refused after closure (P5S01); the correction reverses the Security Deposit's 10,000 application and then the receipt with no recovery; the 10,000 is owed again by the same Customer and stays available on the Payment, which staff then allocate to the debt that came back (V1-056 sub-slice 10e-2)."
+    },
+    {
+      "test_id": "test_a_kept_deposit_is_refused_until_a_forfeiture_reversal_runs",
+      "upstream_ids": ["BR-SETTLE-013", "BR-DEP-019", "BR-DEP-023", "DL-032"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_receipt_correction_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer (a) to Q-2026-10-11-83 point 3: a kept Security Deposit's receipt correction is refused (55000) with nothing written; after a FORFEITURE_REVERSAL correction (4,600 applied, 5,400 refunded) the receipt correction recovers the 5,400 by an EXTRA_CHARGE to the Customer, reverses the 4,600 application and the receipt (V1-056 sub-slice 10e-2)."
+    },
+    {
+      "test_id": "test_a_deposit_refunded_to_the_agreed_signer_is_charged_to_that_signer",
+      "upstream_ids": ["BR-SETTLE-013", "BR-REFUND-015", "BR-SETTLE-016"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_receipt_correction_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer C to Q-2026-10-11-78 on the real two-Signer closure: after a FORFEITURE_REVERSAL refunded the kept 10,000 Security Deposit to the agreed second Signer, its receipt correction charges the 10,000 to that Signer as an EXTRA_CHARGE on the Lease and reverses the receipt; both ledgers reconcile (V1-056 sub-slice 10e-2)."
+    },
+    {
+      "test_id": "test_refusals_waiting_and_stale_drafts",
+      "upstream_ids": ["BR-SETTLE-013", "BR-AUTH-010", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_receipt_correction_migration.py",
+      "status": "implemented",
+      "notes": "An unknown receipt (P0002), an open Settlement (55000), a reused draft id (P5205), a second waiting draft (55000), a recorder outside READ COMMITTED and Staff confirming are refused with nothing written; each refusal of the check is shown on the real source with one fact changed (receipt missing or reversed, another Lease, Payment not received, kept, another Settlement's application, the three recovery refusals, no planned recovery, money still held); a draft whose Settlement Refund came back afterwards is stale and stays pending (V1-056 sub-slice 10e-2)."
+    },
+    {
+      "test_id": "test_deposit_receipt_corrections_are_least_privilege_and_forward_only",
+      "upstream_ids": ["BR-AUTH-010", "BR-SETTLE-013"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_receipt_correction_migration.py",
+      "status": "implemented",
+      "notes": "Only the financial role records and confirms; no role calls the six internal functions; each new function is SECURITY DEFINER with the fixed search path; the migration adds only its functions and changes only the returned-Payment helper, the recovery check, the recovery writer and the correction lock function (privileges and settings kept), each new definition being exactly the old one with the module's replacement pairs (review round 1); it is forward-only (V1-056 sub-slice 10e-2)."
+    },
+    {
+      "test_id": "test_the_database_guards_of_the_receipt_correction",
+      "upstream_ids": ["BR-AUTH-010", "BR-SETTLE-013", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_receipt_correction_migration.py",
+      "status": "implemented",
+      "notes": "Malformed input (22023), the recorder's and the confirm's authorization strings (42501), a service identity that is not a person (P4506) and a confirm outside READ COMMITTED (55000) are refused with nothing written; an exact repeat replays and a reused key is P5205; the decided draft's replay hides the decision's transaction id and another approver finds it decided (55000); inside a confirm's own transaction a second statement finds the recovery check false (V1-056 sub-slice 10e-2, review round 1)."
+    },
+    {
+      "test_id": "test_deposit_receipt_correction_commands_are_validated",
+      "upstream_ids": ["BR-SETTLE-013", "DB-DEP-007"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "A Deposit receipt correction names the receipt, a reason and an evidence reference, each 1 to 500 trimmed characters, inclusive; zero or non-UUID identities are refused (V1-056 sub-slice 10e-2)."
+    },
+    {
+      "test_id": "test_deposit_receipt_correction_record_and_confirm_send_the_stored_correction",
+      "upstream_ids": ["BR-SETTLE-013", "BR-AUTH-010"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "The record call carries the receipt and the evidence reference; only final_settlements.prepare records and only financial.approve confirms, both before any connection; another command kind is refused (V1-056 sub-slice 10e-2)."
+    },
+    {
+      "test_id": "test_deposit_receipt_correction_confirm_maps_database_refusals",
+      "upstream_ids": ["BR-SETTLE-013", "DB-DEP-007"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "A stale Deposit receipt correction (P5S02) stays pending; every other database refusal keeps the Final Settlement error mapping (V1-056 sub-slice 10e-2)."
     }
   ]
 }
