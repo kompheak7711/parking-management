@@ -2154,3 +2154,33 @@ Example: really $800 was the Security Deposit and $200 was the Pet Deposit. The 
 5. Order: 10c-2b-6, 10e-2b, 10e-3, 10e-4, 10c-2a-7, 10c-3c-1, 10c-3c-2, 10f, 10g, then 10h. 10e-2b moves up, because 10e-2 alone leaves a wrong receipt only half fixed. 10c-3c-1 is the hardening from answer 3 to Q-2026-10-10-69.
 
 Recorded in docs/010.
+
+## Q-2026-10-12-88 — Sub-slice 10e-2b: a right receipt into a Deposit that the termination says the Property keeps (blocks only that case of 10e-2b)
+
+The 10e-2b design is in the plan (your answers (a), (a), (a) to Q-2026-10-12-87). After the wrong receipt is reversed, the correction writes the right receipt, and the correction's DL-032 step pays debt with that money and refunds the rest. A read-only check before code found one case your rules do not settle: the right receipt goes into a Deposit whose termination ground says the Property keeps it (for example BR-DEP-023, voluntary early leaving, for the Security Deposit; BR-DEP-022, pet noncompliance, for both Deposits). There is no 10e-2b code.
+
+Today such a Deposit follows one of three paths:
+- it was empty at closure, so nothing was forfeited (`NOTHING_HELD`); new money in it would have to be forfeited (`FORFEITURE_REQUIRED`), and no correction writes a forfeiture yet;
+- it is still forfeited (`KEPT`): 10e-2 refuses it until a `FORFEITURE_REVERSAL` runs (your Q-83 point 3), and your rule 3 refuses a Pet Deposit receipt into it;
+- its forfeiture was reversed by a `FORFEITURE_REVERSAL` correction (`DL_032`): new money in it is applied to debt and refunded, like any DL-032 money.
+
+**Point 1. The Deposit was empty at closure and never forfeited.**
+
+Example: the Lease ended for pet noncompliance (BR-DEP-022: the Property keeps both Deposits). A $1,000 Payment was recorded as the Security Deposit receipt, but really $800 was the Security Deposit and $200 the Pet Deposit. At closure the Pet Deposit was empty (no function writes a Pet Deposit receipt today), so nothing of it was forfeited. The right $200 Pet Deposit receipt should be kept by the Property. (The $800 is point 2.)
+
+- (a) Refuse the right receipt into such a Deposit. The money stays with the Payment, as after 10e-2 (a known limit).
+- (b) The same correction also forfeits the right receipt's money, on the termination's ground, as a linked record (the slice 6 forfeiture rules; a linked forfeiture already passes the closed-Settlement check since sub-slice 10c-2b-2a).
+
+**Recommendation: (b).** It finishes the fix and keeps the Property's right under the termination rule.
+
+**Point 2. The Deposit's forfeiture was reversed first, because Q-83 point 3 requires that before a receipt correction.**
+
+Example: the Lease ended early by the Customer's choice. The $1,000 Security Deposit was kept. Really the Security Deposit was $800 and $200 was Rent. Staff first reverse the forfeiture (`FORFEITURE_REVERSAL`), then correct the receipt to $800. Today the $800 would follow DL-032: applied to debt and the rest refunded, so the Property no longer keeps it.
+
+- (a) The right receipt follows DL-032, as the reversed path says today.
+- (b) The same correction forfeits the right receipt's money again, on the same ground.
+- (c) Staff choose (a) or (b) in the draft, with a reason, and the approver confirms it.
+
+**Recommendation: (c).** A reversal is sometimes needed only to unlock the receipt correction, and sometimes because the forfeiture itself was wrong; staff know which, and the approver checks it.
+
+**What goes ahead.** Nothing else in 10e-2b depends on this question. I will build 10e-2b in a fresh session, refusing a right receipt into a Deposit with a forfeiture ground until you answer (a refusal can later be lifted by a relaxing change). Your answer is then built as a small sub-slice 10e-2c right after 10e-2b, or inside 10e-2b if it arrives first.
