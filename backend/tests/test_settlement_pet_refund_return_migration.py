@@ -29,7 +29,6 @@ from property_rental.deposit import (
     QualifyPetDepositRefundReviewCommand,
     RecordPetDepartureCommand,
 )
-from property_rental.final_settlement import FinalSettlementConflictError
 from property_rental.lease_deposit_forfeiture import LeaseDepositForfeitureConflictError
 from property_rental.refund import RefundConflictError, ReverseRefundCorrectionCommand
 from refund_test_support import create_pet_refund
@@ -89,9 +88,11 @@ def reviewed_case(
     while the Lease is signed and 3,000 of it comes back with the one-call return. The Initial Rent
     is paid, the Lease is terminated with no forfeiture ground, and the Final Settlement refunds
     the Security Deposit (10,000) and the Pet Deposit's 8,000 and closes. With pet_noncompliance
-    the Lease is terminated for pet noncompliance after three warnings (BR-DEP-022): both
-    Deposits are forfeited and the Settlement closes with no step. before_close runs just before
-    the Settlement is confirmed. A correction approver is ready."""
+    the Lease is terminated for pet noncompliance after three warnings (BR-DEP-022): the 3,000
+    that came back before the termination is the Customer's pay-back money (owner answer (a) to
+    Q-2026-10-11-84, sub-slice 10c-2b-5), so the forfeitures take the Security Deposit's 10,000
+    and the Pet Deposit's 5,000 and the Settlement refunds the 3,000 to the Customer. before_close
+    runs just before the Settlement is confirmed. A correction approver is ready."""
     source = signed_with_initial(url, this_month(url))
     human, prop, lease = source["actor"], source["property"], source["lease"]
     customer, day = source["customer"], source["today"]
@@ -155,7 +156,17 @@ def reviewed_case(
     if pet_noncompliance:
         for deposit in (case["security"], pet):
             forfeit_through_draft(deposits, deposit)
-        draft = record_settlement(case, ())
+        # Owner answer (a) to Q-2026-10-11-84: the forfeiture leaves out the 3,000 returned
+        # before the termination, and the Settlement refunds it.
+        with psycopg.connect(url) as connection:
+            forfeited = connection.execute(
+                "SELECT deposit_id,amount_usd_cents FROM app.deposit_dispositions "
+                "WHERE deposit_id IN (%s,%s)",
+                (case["security"], pet),
+            ).fetchall()
+        assert sorted(forfeited) == sorted([(case["security"], 10_000), (pet, 5_000)])
+        assert (held(url, case["security"]), held(url, pet)) == (0, 3_000)
+        draft = record_settlement(case, (settlement_refund(case, "pet", 3_000),))
     else:
         draft = record_settlement(
             case,
@@ -169,6 +180,17 @@ def reviewed_case(
         "SELECT closed_at IS NOT NULL FROM app.final_settlements WHERE id=%s",
         case["settlement"],
     ) == (True,)
+    if pet_noncompliance:
+        assert one(
+            url,
+            "SELECT refund.usd_accounting_value_cents,refund.recipient_customer_id "
+            "FROM app.final_settlement_refund_details detail "
+            "JOIN app.refunds refund ON refund.id=detail.refund_id "
+            "WHERE detail.final_settlement_id=%s AND detail.deposit_id=%s",
+            case["settlement"],
+            pet,
+        ) == (3_000, customer)
+        assert held(url, pet) == 0
     case["person"] = approver(url)
     return case
 
@@ -311,35 +333,39 @@ def test_a_pet_refund_review_refund_is_returned_through_a_correction(
         assert_reconciled(connection, customer)
 
 
-def test_a_returned_pet_refund_off_the_dl032_path_is_only_held(migrated_database_url: str) -> None:
-    """Review round 1 (Q-2026-10-09-61): after a pet noncompliance termination (BR-DEP-022) both
-    Deposits are forfeited before closure, so the Pet Deposit is kept. Its Pet Refund-review
-    Refund's return with a new Refund is refused at record (55000, only on the DL-032 path) and no
-    draft is recorded; the return-only form is accepted and the kept Pet Deposit holds 2,000, which
-    cannot be forfeited after closure either (P5S01): that money waits for the owner's answer."""
+def test_a_returned_pet_refund_after_a_pet_noncompliance_termination_is_paid_back(
+    migrated_database_url: str,
+) -> None:
+    """Review round 1 (Q-2026-10-09-61), changed by the owner's pay-back answers (Q-2026-10-09-61,
+    Q-2026-10-10-75 (A), sub-slice 10c-2b-5; renamed, it was "is only held"): after a pet
+    noncompliance termination (BR-DEP-022) the Pet Deposit is kept. Its Pet Refund-review Refund's
+    return of 2,000 with a new Refund is accepted and, with no open debt, refunds the 2,000 to the
+    Customer; a return-only correction of 2,000 more leaves the Pet Deposit holding 2,000 of
+    pay-back money, on the DL-032 path although its forfeiture stays, and a forfeiture after
+    closure still cannot take it (P5S01)."""
     url = migrated_database_url
     case = reviewed_case(url, pet_noncompliance=True)
     review_refund, pet = case["review_refund"], case["pet"]
     path = "SELECT app.lease_deposit_settlement_path(%s,%s)->>'path'"
-    drafts = (
-        "SELECT count(*) FROM app.financial_drafts WHERE kind='SETTLEMENT_CORRECTION' "
-        "AND payload->>'final_settlement_id'=%s"
-    )
     assert held(url, pet) == 0
     assert one(url, path, case["prop"], pet) == ("KEPT",)
-    with pytest.raises(FinalSettlementConflictError) as refunded:
+    paid_back = confirm(
+        case,
         record(
             case,
             return_command(case, review_refund, 2_000, settlement_refund(case, "pet", 2_000)),
-        )
-    assert cause(refunded) == (
-        "55000",
-        "A returned Deposit pays debt or is refunded again only on the DL-032 path",
+        ),
     )
-    assert one(url, drafts, str(case["settlement"])) == (0,)
+    [paid] = paid_back["refunds"]
+    assert (
+        paid["source_deposit_id"],
+        paid["recipient_customer_id"],
+        paid["amount_usd_cents"],
+    ) == (str(pet), str(case["customer"]), 2_000)
+    assert (held(url, pet), net(url, review_refund)) == (0, 10_000)
     confirm(case, record(case, return_command(case, review_refund, 2_000, new=False)))
-    assert (held(url, pet), net(url, review_refund)) == (2_000, 10_000)
-    assert one(url, path, case["prop"], pet) == ("KEPT",)
+    assert (held(url, pet), net(url, review_refund)) == (2_000, 8_000)
+    assert one(url, path, case["prop"], pet) == ("DL_032",)
     with pytest.raises(LeaseDepositForfeitureConflictError) as forfeited:
         forfeit_through_draft(
             PostgresDepositService(financial_database_url(), case["prop"], case["human"]), pet

@@ -1680,6 +1680,34 @@ Append-only Final Settlement financial event: `id uuid PK`, `deposit_id uuid NOT
   be applied (a relaxing change). The termination record lookup is the shared
   `app.lease_termination_forfeiture_rule(property, lease, deposit type)`;
   `app.lease_deposit_kept_rule` keeps its result and errors and delegates to it.
+- As built in V1-056 sub-slice 10c-2b-5 (migration `20261123_119`; owner answer pay back to
+  Q-2026-10-09-61, (a) to Q-2026-10-10-73, (A) and (b) to Q-2026-10-10-75, (a) to
+  Q-2026-10-10-76): money of a Pet Refund-review Refund (DL-053) that comes back to the Pet
+  Deposit is the Customer's pay-back money, whether the return was verified before or after the
+  termination. The internal `app.lease_deposit_payback_count(deposit)` is a running count over
+  the Pet Deposit's history: a verified return of a Pet Refund-review Refund adds what came back;
+  a reversal of such a return and every Pet Refund-review Refund take it out first (never below
+  0); a Settlement or correction Refund, its return and a `RECOVERED_BY_CHARGE` recovery do not
+  count. `app.lease_deposit_payback_value(deposit)` is the smaller of that count and what the
+  Deposit holds (0 for a Security Deposit, never NULL). The path gains the key
+  `payback_usd_cents` (so the Settlement preview shows it), and a Deposit with a forfeiture
+  ground whose held money is above 0 and all pay-back money is `DL_032`, also while its
+  forfeiture stays active; `FORFEITURE_REQUIRED` only while it holds money beyond the pay-back
+  value. Every reader of the path then applies and refunds that money as DL-032 value before and
+  after closure (BR-SETTLE-008), with no change of its own. Approved tightening (Q-73 (a)): the
+  Lease forfeiture source `app.lease_deposit_forfeiture_source` forfeits only the held money
+  beyond the pay-back value and refuses (22023, "The Deposit holds nothing to forfeit") when
+  nothing is beyond it; the disposition insert check is unchanged (up to the held value), and the
+  one-call disposition stays owner-only (slice 6). None of the three new functions has a grant.
+  `payback_usd_cents` changes the path only for a Deposit with a forfeiture ground; for a Pet
+  Deposit with no ground or with every forfeiture reversed it is shown but has no effect (the
+  path is `DL_032` anyway). Invariant the rule rests on: no money other than pay-back money
+  reaches a Pet Deposit with an active forfeiture (today only returns of pay-back Refunds,
+  reversals of applications of DL-032 money and forfeiture reversals can add money there); a
+  later writer that adds other money to such a Deposit (for example sub-slices 10e-3, 10h and a
+  Pet Deposit receipt writer such as the proposed 10e-2b, which would make a
+  `RECOVERED_BY_CHARGE` row on a Pet Deposit possible) must keep it, or the count would class
+  that money as pay-back money.
 - As built in V1-056 sub-slice 10c-2a-2 (migration `20261106_102`; owner answer 1 to
   Q-2026-10-07-41): after closure a Deposit application is still refused unless it is linked
   (DB-SETTLE-005 `deposit_application_id`, written first) to a post-settlement correction of its
@@ -2082,7 +2110,9 @@ not billed again (`VOIDED_CHARGE_NOT_BILLED_AGAIN`, with its amount), so the app
 A VOIDed cleaning charge is listed there and still blocks through `CLEANING_CHARGE_MISSING`,
 because the cleaning charge is required (BR-MOVEOUT-013) and a VOID lets it be billed again.
 A Deposit counts as having a reversed forfeiture only through a disposition of its own Lease
-(`governing_lease_id`); any active disposition still makes it `KEPT`.
+(`governing_lease_id`); any active disposition still makes it `KEPT` (as amended by sub-slice
+10c-2b-5: except when the Deposit holds money and every cent of it is pay-back money, which
+follows `DL_032`).
 
 As built in V1-056 sub-slice 8c (migration `20261025_90`): `information` also lists each
 one-time charge that a draft correction replaced (`CHARGE_REPLACED_BY_DRAFT_CORRECTION`, with its
@@ -2500,6 +2530,15 @@ Q-2026-10-08-55): `REFUND_RETURN` also returns a Pet Refund-review Refund (DL-05
 the Settlement's Lease, paid while the Lease was signed. The return gives the amount back to the
 Pet Deposit; return only, the Pet Deposit keeps holding it; with a new Refund the step runs as for
 a Settlement Deposit Refund, only on the DL-032 path.
+
+As built in V1-056 sub-slice 10c-2b-5 (migration `20261123_119`; owner answer (A) to
+Q-2026-10-10-75 point 1): the returned-Refund plan checks the Deposit's path before the return is
+written, so it also accepts a Pet Deposit whose held money after this return would be all
+pay-back money (`app.lease_deposit_payback_after_return(deposit, refund, returned amount)`: the
+count rises only when the returned Refund is a Pet Refund-review Refund). After a pet
+noncompliance termination such money first pays the Lease's open debt in the DL-032 order and the
+rest is refunded; a return-only correction leaves it held on the DL-032 path, and the
+`HELD_VALUE_REFUND` form refunds it.
 
 As built in V1-056 sub-slice 10c-2b-3 (migration `20261114_110`; owner answer 3 to Q-2026-10-07-42,
 answers 1, 2 and 4 to Q-2026-10-08-55): the variant `HELD_VALUE_REFUND` refunds value that an

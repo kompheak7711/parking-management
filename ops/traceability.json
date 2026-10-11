@@ -39141,12 +39141,12 @@
       "notes": "A returned-Refund correction command refuses an aware return date at the edge of the date range, or one whose tzinfo raises, as invalid input (V1-056 sub-slice 10c-2b-2b, 10c-2b-1 review round 3 note)."
     },
     {
-      "test_id": "test_a_returned_pet_refund_off_the_dl032_path_is_only_held",
+      "test_id": "test_a_returned_pet_refund_after_a_pet_noncompliance_termination_is_paid_back",
       "upstream_ids": ["BR-SETTLE-013", "BR-DEP-022", "DL-032", "DL-053"],
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_pet_refund_return_migration.py",
       "status": "implemented",
-      "notes": "After a pet noncompliance termination (BR-DEP-022) the kept Pet Deposit's Pet Refund-review Refund is not returned with a new Refund (55000, only on the DL-032 path) and no draft is recorded; the return-only form is accepted and the kept Pet Deposit holds the money, which a forfeiture after closure cannot take either (P5S01) (V1-056 sub-slice 10c-2b-2b, review round 1, Q-2026-10-09-61)."
+      "notes": "After a pet noncompliance termination (BR-DEP-022) the kept Pet Deposit's Pet Refund-review Refund returned with a new Refund is accepted and refunds the returned 2,000 to the Customer; a return-only correction leaves 2,000 of pay-back money held on the DL-032 path, which a forfeiture after closure cannot take (P5S01) (V1-056 sub-slice 10c-2b-2b, review round 1; changed and renamed in sub-slice 10c-2b-5 by the owner's pay-back answers to Q-2026-10-09-61, Q-2026-10-10-75 and Q-2026-10-11-84, it was test_a_returned_pet_refund_off_the_dl032_path_is_only_held)."
     },
     {
       "test_id": "test_a_stale_repeatable_read_one_call_correction_fails_on_the_deposit_guard",
@@ -39189,12 +39189,12 @@
       "notes": "Held value of a correction's Credit Refund released from a third-party Payment is refunded to the Invoice Customer, not the payer, through the relaxed Credit Refund check that counts what the earlier return-only correction left and refuses a linked Refund of 1 cent more although the Credit holds more from a second return-only correction (V1-056 sub-slice 10c-2b-3, owner answer 1 to Q-2026-10-09-63)."
     },
     {
-      "test_id": "test_held_pet_deposit_money_off_the_dl032_path_waits_for_the_owner",
+      "test_id": "test_held_pet_deposit_money_after_a_pet_noncompliance_termination_is_paid_back",
       "upstream_ids": ["BR-DEP-022", "DL-032", "BR-SETTLE-013"],
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_held_value_refund_migration.py",
       "status": "implemented",
-      "notes": "A kept Pet Deposit (BR-DEP-022 termination) that holds a returned Pet Refund-review Refund is not refunded by a HELD_VALUE_REFUND correction (55000, only on the DL-032 path) and no draft is recorded, while Q-2026-10-09-61 is open (V1-056 sub-slice 10c-2b-3)."
+      "notes": "A kept Pet Deposit (BR-DEP-022 termination) that holds a returned Pet Refund-review Refund (all pay-back money) is refunded by a HELD_VALUE_REFUND correction, recorded and confirmed, 2,000 to the Customer (V1-056 sub-slice 10c-2b-3; changed and renamed in sub-slice 10c-2b-5 by the owner's pay-back answers to Q-2026-10-09-61 and Q-2026-10-10-75, it was test_held_pet_deposit_money_off_the_dl032_path_waits_for_the_owner)."
     },
     {
       "test_id": "test_held_value_refund_records_are_least_privilege_and_forward_only",
@@ -39570,7 +39570,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_forfeiture_reversal_migration.py",
       "status": "implemented",
-      "notes": "A kept Pet Deposit with two active forfeitures (pet noncompliance; a one-call return between them) refuses the reversal of either, with nothing written; a correction draft for the Security Deposit's forfeiture is stale (P5S02) after the 6b draft reverses that forfeiture first, stays pending and writes nothing (V1-056 sub-slice 10d, owner answer 2 to Q-2026-10-10-71)."
+      "notes": "A kept Pet Deposit with two active forfeitures (pet noncompliance; a one-call return between them) refuses the reversal of either, with nothing written; a correction draft for the Security Deposit's forfeiture is stale (P5S02) after the 6b draft reverses that forfeiture first, stays pending and writes nothing (V1-056 sub-slice 10d, owner answer 2 to Q-2026-10-10-71; since sub-slice 10c-2b-5 the fixture's second forfeiture is refused as a draft (22023, pay-back money, checked) and written with the owner's one-call disposition)."
     },
     {
       "test_id": "test_forfeiture_reversal_records_are_least_privilege_and_forward_only",
@@ -39939,6 +39939,62 @@
       "test_path": "backend/tests/test_payment_return_recovery_migration.py",
       "status": "implemented",
       "notes": "Owner answer C to Q-2026-10-11-78 with no closed Settlement: a Pet Refund-review Refund of 12,000 paid to the agreed second Signer of a signed Lease; the Payment bounces; the PAYMENT_RETURN charges the 12,000 to that Signer (not the Primary Tenant) as an ordinary Miscellaneous one-time charge on the Lease, issued; the Deposit ends at 0; both ledgers reconcile (V1-056 sub-slice 10e-1c, owner check of the three charge cases)."
+    },
+    {
+      "test_id": "test_the_payback_value_is_a_running_count",
+      "upstream_ids": ["BR-DEP-022", "DL-053", "DL-032"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_pet_payback_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer (a) to Q-2026-10-10-76 on a 50,000 Pet Deposit after a pet noncompliance termination: a 30,000 Refund returned and paid again leaves no pay-back money and 20,000 forfeited; with a 10,000 second Refund 20,000 is pay-back money and 20,000 is forfeited, the rest on the DL-032 path; a reversed return pays nothing back; the Security Deposit has no pay-back value and is forfeited whole; a second forfeiture is refused (22023) (V1-056 sub-slice 10c-2b-5, owner answer (a) to Q-2026-10-10-73)."
+    },
+    {
+      "test_id": "test_returned_money_alone_pays_the_debt_and_is_refunded_by_the_final_settlement",
+      "upstream_ids": ["BR-DEP-022", "BR-SETTLE-008", "DL-032", "DL-053"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_pet_payback_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer (A) to Q-2026-10-10-75 before closure: a Pet Deposit refunded whole while the Lease was signed gets 5,000 back after the pet noncompliance termination; it is on the DL-032 path with 5,000 of pay-back money (preview included), its forfeiture is refused, a Settlement that leaves it unused is refused (55000), and the Settlement applies 1,000 to the unpaid Rent and refunds 4,000 to the Customer, or with no debt refunds the whole 5,000 (V1-056 sub-slice 10c-2b-5, review round 1)."
+    },
+    {
+      "test_id": "test_the_forfeiture_leaves_money_returned_before_the_termination_for_the_settlement",
+      "upstream_ids": ["BR-DEP-022", "BR-SETTLE-008", "DL-032", "DL-053"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_pet_payback_migration.py",
+      "status": "implemented",
+      "notes": "Owner answers (b) to Q-2026-10-10-75 and (a) to Q-2026-10-10-73: 3,000 returned before the termination stays out of the Pet Deposit forfeiture (5,000 forfeited of 8,000 held); the kept Pet Deposit follows DL-032 for the 3,000, which pays 1,000 of unpaid Rent and refunds 2,000; a second forfeiture is refused (22023), so the 10d guard on another active forfeiture is not reached (V1-056 sub-slice 10c-2b-5)."
+    },
+    {
+      "test_id": "test_after_closure_returned_money_first_pays_the_open_debt",
+      "upstream_ids": ["BR-DEP-022", "BR-SETTLE-013", "BR-SETTLE-016", "DL-032", "DL-053"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_pet_payback_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer (A) to Q-2026-10-10-75 after closure: a Settlement closed with 1,000 of Rent unpaid and an empty Pet Deposit; a REFUND_RETURN of 5,000 with a new Refund pays the 1,000 first and refunds 4,000; a return-only correction of 2,000 leaves pay-back money on the DL-032 path and a HELD_VALUE_REFUND pays it back; the Settlement row is unchanged and the ledger reconciles (V1-056 sub-slice 10c-2b-5)."
+    },
+    {
+      "test_id": "test_after_closure_a_kept_pet_deposit_pays_returned_money_to_the_open_debt_first",
+      "upstream_ids": ["BR-DEP-022", "BR-SETTLE-013", "BR-SETTLE-016", "DL-032", "DL-053"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_pet_payback_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer (A) to Q-2026-10-10-75 for a kept Pet Deposit after closure: the forfeiture took the 5,000 held and the Settlement closed with 1,000 of Rent unpaid; 3,000 of the Pet Refund-review Refund comes back with a new Refund, pays the 1,000 first and refunds 2,000 while the forfeiture stays; the Settlement row is unchanged and the ledger reconciles (V1-056 sub-slice 10c-2b-5, review round 1)."
+    },
+    {
+      "test_id": "test_a_kept_pet_deposit_holding_its_own_money_is_not_paid_back",
+      "upstream_ids": ["BR-DEP-022", "BR-DEP-026", "BR-SETTLE-013", "DL-032"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_pet_payback_migration.py",
+      "status": "implemented",
+      "notes": "A kept Pet Deposit holding 1,000 of its own money with 3,000 of pay-back money (a state built with the owner's one-call disposition) is not paid back after closure: a return with a new Refund and a held-value Refund are refused (55000, only on the DL-032 path) with no draft recorded; the pay-back exception is false for a returned amount of 0 or none and for a Security Deposit (V1-056 sub-slice 10c-2b-5, review round 1)."
+    },
+    {
+      "test_id": "test_the_payback_migration_is_least_privilege_and_forward_only",
+      "upstream_ids": ["BR-DEP-022", "DL-032"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_pet_payback_migration.py",
+      "status": "implemented",
+      "notes": "No role calls the three new internal functions and their only privilege entry is the owner's; the migration adds only them and patches the Deposit path, the forfeiture source and the returned-Refund plan exactly as its replacements say (owner, SECURITY DEFINER, settings and privileges kept); it is forward-only (V1-056 sub-slice 10c-2b-5)."
     }
   ]
 }

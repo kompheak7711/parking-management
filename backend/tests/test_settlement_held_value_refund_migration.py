@@ -742,29 +742,28 @@ def test_a_deposit_correction_audit_names_the_refund_recipient(
     assert held(url, pet) == 0
 
 
-def test_held_pet_deposit_money_off_the_dl032_path_waits_for_the_owner(
+def test_held_pet_deposit_money_after_a_pet_noncompliance_termination_is_paid_back(
     migrated_database_url: str,
 ) -> None:
-    """Q-2026-10-09-61 is open: after a pet noncompliance termination (BR-DEP-022) the kept Pet
-    Deposit holds a returned Pet Refund-review Refund (2,000); a held-value Refund of it is refused
-    (55000, only on the DL-032 path) and no draft is recorded."""
+    """Changed by the owner's pay-back answers (Q-2026-10-09-61, Q-2026-10-10-75 (A), sub-slice
+    10c-2b-5; renamed, it was "waits for the owner"): after a pet noncompliance termination
+    (BR-DEP-022) the kept Pet Deposit holds a returned Pet Refund-review Refund (2,000), all
+    pay-back money; a held-value Refund of it is recorded and confirmed and, with no open debt,
+    refunds the 2,000 to the Customer."""
     url = migrated_database_url
     case = reviewed_case(url, pet_noncompliance=True)
     earlier = return_only(case, case["review_refund"], 2_000)
     assert held(url, case["pet"]) == 2_000
-    with pytest.raises(FinalSettlementConflictError) as refused:
-        record_held(case, held_command(case, earlier, settlement_refund(case, "pet", 2_000)))
-    assert cause(refused) == (
-        "55000",
-        "A returned Deposit pays debt or is refunded again only on the DL-032 path",
+    result = confirm_held(
+        case, record_held(case, held_command(case, earlier, settlement_refund(case, "pet", 2_000)))
     )
-    assert one(
-        url,
-        "SELECT count(*) FROM app.financial_drafts WHERE payload->>'variant'='HELD_VALUE_REFUND' "
-        "AND payload->>'final_settlement_id'=%s",
-        str(case["settlement"]),
-    ) == (0,)
-    assert held(url, case["pet"]) == 2_000
+    [paid] = result["refunds"]
+    assert (
+        paid["source_deposit_id"],
+        paid["recipient_customer_id"],
+        paid["amount_usd_cents"],
+    ) == (str(case["pet"]), str(case["customer"]), 2_000)
+    assert held(url, case["pet"]) == 0
 
 
 def test_held_value_refund_records_are_least_privilege_and_forward_only(
