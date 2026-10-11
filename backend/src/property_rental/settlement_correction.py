@@ -93,6 +93,8 @@ REFUND_RETURN_CONFIRM_STALE_STATES: Final = frozenset({"P5S02"})
 HELD_VALUE_REFUND_CONFIRM_STALE_STATES: Final = frozenset({"P5S02"})
 # A forfeiture reversal correction whose forfeiture, Deposit or Settlement sources changed is stale.
 FORFEITURE_REVERSAL_CONFIRM_STALE_STATES: Final = frozenset({"P5S02"})
+# A returned-Payment correction whose Payment, Credits, Deposits or their records changed is stale.
+RETURNED_PAYMENT_CONFIRM_STALE_STATES: Final = frozenset({"P5S02"})
 
 
 def settlement_correction_draft_id(
@@ -686,6 +688,37 @@ class RecordForfeitureReversalCorrectionCommand:
 
 
 @dataclass(frozen=True, slots=True)
+class RecordReturnedPaymentCorrectionCommand:
+    """A returned (bounced) Payment whose records a closed Final Settlement relied on (V1-056
+    sub-slice 10e-1b); the database checks it against current state.
+
+    ``payment_id`` names the Payment and ``evidence_reference`` the bank's return notice. The
+    confirmation reverses the Payment's Credit applications, Credits, allocations, the forfeitures,
+    Deposit applications and receipts of the Deposits it funded, and the Payment itself, each
+    linked to the correction; there is no DL-032 plan.
+    """
+
+    idempotency_key: UUID
+    settlement_id: UUID
+    payment_id: UUID
+    reason: str
+    evidence_reference: str
+
+    def __post_init__(self) -> None:
+        _uuid(self.idempotency_key, "idempotency_key")
+        _uuid(self.settlement_id, "settlement_id")
+        _uuid(self.payment_id, "payment_id")
+        _text(self.reason, "reason", 500)
+        _text(self.evidence_reference, "evidence_reference", 500)
+
+    def returned_payment(self) -> dict[str, object]:
+        return {
+            "payment_id": str(self.payment_id),
+            "evidence_reference": self.evidence_reference,
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class SettlementCorrectionService:
     """Commands under the financial role; capabilities are checked before any connection."""
 
@@ -1199,4 +1232,57 @@ class SettlementCorrectionService:
             "SELECT app.confirm_settlement_forfeiture_reversal(%s,%s,%s,%s)",
             (property_id, actor_id, draft_id, FINANCIAL_APPROVE_CAPABILITY),
             stale=FORFEITURE_REVERSAL_CONFIRM_STALE_STATES,
+        )
+
+    def record_returned_payment(
+        self,
+        property_id: UUID,
+        command: RecordReturnedPaymentCorrectionCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        """Record a returned-Payment correction draft; it has no effect until confirmed."""
+        actor_id = FinalSettlementService._authorize(
+            actor, property_id, FINAL_SETTLEMENTS_PREPARE_CAPABILITY
+        )
+        if not isinstance(command, RecordReturnedPaymentCorrectionCommand):
+            raise FinalSettlementInvalidError("Returned-Payment correction command is invalid")
+        request = RecordReturnedPaymentCorrectionCommand(
+            command.idempotency_key,
+            command.settlement_id,
+            command.payment_id,
+            command.reason,
+            command.evidence_reference,
+        )
+        return FinalSettlementService(self.financial_database_url)._call(
+            "SELECT app.record_settlement_returned_payment_draft(%s,%s,%s,%s,%s,%s,%s)",
+            (
+                property_id,
+                actor_id,
+                settlement_correction_draft_id(property_id, actor_id, request.idempotency_key),
+                request.settlement_id,
+                Jsonb(request.returned_payment()),
+                request.reason,
+                FINAL_SETTLEMENTS_PREPARE_CAPABILITY,
+            ),
+        )
+
+    def confirm_returned_payment(
+        self, property_id: UUID, draft_id: UUID, *, actor: AuthenticatedActor
+    ) -> dict[str, object]:
+        """Confirm a pending returned-Payment correction (financial.approve only).
+
+        A draft whose Payment, Credits, Deposits or their records changed since it was recorded is
+        stale and stays pending; a Payment another closed Final Settlement relied on, a Refund not
+        fully returned or a waiting draft is a conflict; an exact repeat by the same approver
+        writes nothing and returns the result again.
+        """
+        actor_id = FinalSettlementService._authorize(
+            actor, property_id, FINANCIAL_APPROVE_CAPABILITY
+        )
+        _uuid(draft_id, "draft_id")
+        return FinalSettlementService(self.financial_database_url)._call(
+            "SELECT app.confirm_settlement_returned_payment(%s,%s,%s,%s)",
+            (property_id, actor_id, draft_id, FINANCIAL_APPROVE_CAPABILITY),
+            stale=RETURNED_PAYMENT_CONFIRM_STALE_STATES,
         )

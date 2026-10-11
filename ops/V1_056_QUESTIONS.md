@@ -1833,3 +1833,16 @@ Later the Lease is terminated for pet noncompliance.
 **Recommendation: (a)**, because the bank return then changes nothing for the Customer or the Property: the new Refund pays out again exactly the money that came back, and BR-DEP-022 keeps the same own money as without the return. With (b), a bounce followed by a new Refund would also pay back own money that BR-DEP-022 keeps. Neither option needs another tightening: the forfeiture leaving out returned money is your Q-73 answer, extended by your Q-75 answer (b).
 
 **What goes ahead.** 10c-2b-5 waits for this answer (no code, no run). Under your new instruction, the sub-slices that do not depend on it go ahead: 10e-1b, 10e-1c and 10e-2 come before 10c-2b-5 in the plan order anyway. 10e-3 comes after 10c-2b-5 and undoes what a pay-back Refund paid, so it waits too; after 10e-2 the next independent sub-slices are 10c-2a-7, 10c-3c-1, 10c-3c-2, 10f, 10g and the real-path tests.
+
+## Q-2026-10-10-77 — Sub-slice 10e-1b review round 1: the example in Q-72 point 2 does not happen (ANSWERED 2026-10-10: keep the amount check; answer in docs/010)
+
+The independent reviewer of 10e-1b round 1 (SF-3) found that the written option (a) of Q-2026-10-10-72 point 2 says a Deposit that would still hold money after the return is refused, "for example a returned Pet Refund-review Refund". That example does not happen: a Refund that was paid and then fully returned cancels out, so the Deposit holds exactly the receipt again and the receipt reversal leaves it at $0. The code checks the amount (held value plus the active Deposit applications and forfeitures must equal the Payment's active receipts in that Deposit), so it accepts this case.
+
+- (a) Keep the amount check, correct the example in the docs and add a test of a fully returned Refund on a funded Deposit.
+- (b) Refuse any funded Deposit that has a returned Refund (stricter; the text word for word).
+
+Recommendation: (a), because the money really is gone once the bounced Payment's receipt is reversed, and refusing would leave such a Payment with no fix.
+
+**Owner answer (2026-10-10).** (a): keep the amount check, correct the example in the docs, and add a test of a fully returned Refund on a funded Deposit. Then the round-1 fixes for SF-1 and SF-2; each note is fixed, answered in writing or put on the slice 12 list; then the runs and round 2 under the takeover rules and the standing round-3 rule.
+
+Recorded in docs/010.

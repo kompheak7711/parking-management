@@ -1308,6 +1308,47 @@ then every Invoice in id order, the Invoice targets and the Charges' source Invo
 review round 2, owner answer to Q-2026-10-10-74). Known limit: a draft larger than the 16,000-byte
 draft limit (a Payment with very many records) is refused (22023).
 
+As built in V1-056 sub-slice 10e-1b (migration `20261121_117`; owner answers (a) to Q-2026-10-10-72
+points 2 and 3): the `RETURNED_PAYMENT` variant of the `SETTLEMENT_CORRECTION` draft returns a
+Payment whose records the closed Settlement relied on. Staff record it under
+`final_settlements.prepare` (`app.record_settlement_returned_payment_draft`; the Payment and an
+evidence reference of 1 to 500 characters, a reason of 1 to 500; READ COMMITTED; the same
+one-waiting-draft lock per Payment as the `PAYMENT_RETURN` recorder); the payload stores the
+sub-slice 10e-1a source plus the Settlement and the active Deposit applications and forfeitures of
+every Deposit the Payment funded. A `financial.approve` holder (a person, at READ COMMITTED)
+confirms it (`app.confirm_settlement_returned_payment`): the decision and the correction header,
+then this row with `settlement_correction_id`, then, each linked to the correction
+(DB-SETTLE-005) before it is written, the Credit application reversals (a Final Settlement or
+correction Credit application passes the sub-slice 8e-2 refusals by the link), the Credit
+reversals, the allocation reversals, the reversals of the funded Deposits' forfeitures (through
+the existing reversal function, `deposits.correct`, the draft's evidence reference), their Deposit
+application reversals (DB-DEP-006, `financial.approve`), their receipt reversals and the Payment
+reversal, each with the draft's reason and the approver as actor, and one
+`final_settlement.correction.confirmed` audit event. Every reversal except the forfeiture reversal
+gets a strictly increasing instant after the correction header, and the Payment reversal is last;
+the forfeiture reversal keeps the reversal function's statement time, so it is dated before the
+header (as in sub-slice 10d) and before the Deposit application reversals. The receipt reversal is
+written by the correction itself, with the same `deposits.correct`, command record and
+`deposit.receipt.reversed` audit event as the receipt reversal function, because that function
+stamps the statement time, which would date it before the Deposit application reversals. Each
+funded Deposit ends empty, so there is no DL-032 step, and no charge is made for a kept Deposit's
+amount. The receipt reversal's audit event keeps the statement time, so it is dated before its
+row; read it through the correction's link, not by time. Refused (55000): a Payment that is not
+RECEIVED; a Payment this Settlement did not rely on (the correction of the closed
+Settlement that did, or else the `PAYMENT_RETURN` draft, returns it); a record that another closed
+Final Settlement also relied on (a known limit: one correction belongs to one Settlement); a Refund
+paid from the Payment's value that is not fully returned (until sub-slice 10e-1c); a funded
+Deposit's forfeiture governed by another Lease; a funded Deposit's application of another Final
+Settlement; a funded Deposit that would still hold money after the return (its held value plus its
+active Deposit applications and forfeitures differs from the Payment's active receipts in it; a
+Refund paid and fully returned cancels out, owner answer to Q-2026-10-10-77); a waiting draft that
+names the Payment or one of its records. A draft whose sources changed is stale (P5S02) and stays
+pending. The
+BEFORE INSERT check of this table accepts a `PAYMENT_RETURN` draft with no correction or a
+`RETURNED_PAYMENT` correction draft with the correction it confirms. The correction lock function
+locks the Payment, its Credits, the targets of its active records (also outside the Lease) and its
+funded Deposits in its id-ordered passes.
+
 ## DB-CREDIT-001 — `customer_credits`
 
 Append-only Credit recognition event: `id uuid PK`, `customer_id uuid NOT NULL FK`, `source_payment_id uuid NOT NULL FK`, `recognized_usd_cents bigint NOT NULL CHECK (>0)`, `customer_authorization_reference text NOT NULL`, `recognized_at timestamptz NOT NULL`, `recognized_by uuid NOT NULL`, `reason text NOT NULL`. Credit must belong to the payer Customer and cannot exceed unallocated, undisposed Payment value. Credit balance is derived. For a KHR-origin Payment, the source FK preserves original KHR amount, selected exchange record, USD recognition basis, and channel transaction facts without creating a KHR Credit balance.
@@ -1650,7 +1691,9 @@ Append-only: `id uuid PK`, `deposit_application_id uuid NOT NULL UNIQUE FK`, `re
   `app.deposit_application_reversal_history(property, deposit)` (runtime EXECUTE only). Writers:
   the Invoice-line `REFUND` confirm (sub-slice 10c-2a-3), the pet classification correction
   confirm (sub-slice 10c-2a-5) and the Late-payment Charge `REFUND` confirm (sub-slice 10c-3b-2);
-  later correction writers (10e) will write it too.
+  later correction writers (10e) will write it too. Since sub-slice 10e-1b the `RETURNED_PAYMENT`
+  correction also writes it for every Deposit application of a Deposit the returned Payment funded
+  (DB-PAY-009).
 
 ## DB-DEP-007 — `deposit_receipt_reversals`
 
@@ -1670,6 +1713,14 @@ while a `REFUND` or `DEPOSIT_FORFEITURE` draft for that Deposit is pending (its 
 names the Deposit or its Reservation); the Final Settlement drafts (V1-056 8c, 8e) must
 extend this check. The row names the approver with the `deposits.correct` reference;
 the draft decision records `financial.approve`.
+
+Since V1-056 sub-slice 10e-1b (migration `20261121_117`, DB-PAY-009): the `RETURNED_PAYMENT`
+post-settlement correction writes the receipt reversal of every receipt of the returned Payment
+itself, linked (DB-SETTLE-005 `deposit_receipt_reversal_id`), with the approver as actor,
+`deposits.correct`, the same command record and `deposit.receipt.reversed` audit event, and a
+time after the Deposit application reversals; the BEFORE INSERT check of this table still runs.
+The audit event keeps the statement time, so it is dated before its row: read it through the link,
+not by time.
 
 As built in V1-056 sub-slice 8a-2 (migration `20261023_88`, owner answer 2 to
 Q-2026-10-05-23, an approved tightening): the other direction too. While a receipt
@@ -1726,7 +1777,9 @@ also written by a `FORFEITURE_REVERSAL` post-settlement correction (DB-SETTLE-00
 `deposit_disposition_reversal_id`), with the correction's approver as actor and `deposits.correct`
 as the reference, as the 6b draft confirm writes it; the authority is the linked correction
 (`final_settlements.prepare` prepares, `financial.approve` confirms). Until sub-slice 10h the 6b
-draft can still reverse a closed Settlement's forfeiture without the correction.
+draft can still reverse a closed Settlement's forfeiture without the correction. Since sub-slice
+10e-1b the `RETURNED_PAYMENT` correction writes it the same way for every active forfeiture of a
+Deposit the returned Payment funded (owner answer (a) to Q-2026-10-10-72 point 2; DB-PAY-009).
 
 ---
 
