@@ -52,6 +52,10 @@ while its Payment is real (owner answers to Q-2026-10-08-56, Q-2026-10-11-83 and
 The confirmation recovers each Refund paid from the Deposit by a charge to the person who received
 it, reverses the Deposit's applications and the whole receipt; the freed amount stays unallocated
 with the Payment until the payer authorizes Credit (BR-CREDIT-002).
+
+Sub-slice 10e-2b: the same correction may then write the right receipt of the Payment's freed
+value, into the right Deposit or for the right amount (owner answers to Q-2026-10-12-87), and its
+shared DL-032 step applies that money to the Lease's open debt and refunds the rest.
 """
 
 from __future__ import annotations
@@ -735,6 +739,12 @@ class RecordDepositReceiptCorrectionCommand:
     confirmation recovers each Refund paid from the Deposit by a charge to the person who received
     it, reverses the Deposit's applications and the whole receipt, each linked to the correction;
     the freed amount stays unallocated with the Payment; there is no DL-032 plan.
+
+    ``receipts`` (sub-slice 10e-2b) are the right receipts of the same Payment's freed value, one
+    or two, into distinct Deposits of the Settlement's Lease, together at most the corrected
+    receipt; with them ``steps`` and ``pet_remainder`` are the DL-032 plan for their money, in the
+    Final Settlement plan format: the Customer's Credit first, the Deposits in the DL-032 order,
+    only the rest refunded. Without receipts there is no plan.
     """
 
     idempotency_key: UUID
@@ -742,6 +752,9 @@ class RecordDepositReceiptCorrectionCommand:
     deposit_receipt_id: UUID
     reason: str
     evidence_reference: str
+    receipts: tuple[CorrectionDepositReceipt, ...] = ()
+    steps: tuple[SettlementStep, ...] = ()
+    pet_remainder: PetRemainderDecision | None = None
 
     def __post_init__(self) -> None:
         _uuid(self.idempotency_key, "idempotency_key")
@@ -749,12 +762,65 @@ class RecordDepositReceiptCorrectionCommand:
         _uuid(self.deposit_receipt_id, "deposit_receipt_id")
         _text(self.reason, "reason", 500)
         _text(self.evidence_reference, "evidence_reference", 500)
+        if not isinstance(self.receipts, tuple) or len(self.receipts) > 2:
+            raise FinalSettlementInvalidError("receipts must be a tuple of at most 2 receipts")
+        for receipt in self.receipts:
+            if not isinstance(receipt, CorrectionDepositReceipt):
+                raise FinalSettlementInvalidError("Deposit receipt is invalid")
+        if len({receipt.deposit_id for receipt in self.receipts}) != len(self.receipts):
+            raise FinalSettlementInvalidError("Each new receipt goes into a different Deposit")
+        if not isinstance(self.steps, tuple) or len(self.steps) > MAX_SETTLEMENT_STEPS:
+            raise FinalSettlementInvalidError(
+                f"steps must be a tuple of at most {MAX_SETTLEMENT_STEPS} steps"
+            )
+        for step in self.steps:
+            if not isinstance(
+                step, (SettlementCreditStep, SettlementDepositStep, SettlementDepositRefund)
+            ):
+                raise FinalSettlementInvalidError("Settlement step is invalid")
+        if self.pet_remainder is not None and not isinstance(
+            self.pet_remainder, PetRemainderDecision
+        ):
+            raise FinalSettlementInvalidError("Pet Deposit remainder decision is invalid")
+        if not self.receipts and (self.steps or self.pet_remainder is not None):
+            raise FinalSettlementInvalidError("A DL-032 plan needs a new receipt")
 
     def deposit_receipt_correction(self) -> dict[str, object]:
-        return {
+        found: dict[str, object] = {
             "deposit_receipt_id": str(self.deposit_receipt_id),
             "evidence_reference": self.evidence_reference,
         }
+        if self.receipts:
+            found["receipts"] = [receipt.payload() for receipt in self.receipts]
+            found["plan"] = {
+                "steps": [step.payload() for step in self.steps],
+                "pet_remainder": (
+                    None if self.pet_remainder is None else self.pet_remainder.payload()
+                ),
+            }
+        return found
+
+
+@dataclass(frozen=True, slots=True)
+class CorrectionDepositReceipt:
+    """A right receipt of a Deposit receipt correction (sub-slice 10e-2b): the Deposit of the
+    Settlement's Lease and the amount of the corrected receipt's Payment it takes."""
+
+    deposit_id: UUID
+    amount_usd_cents: int
+
+    def __post_init__(self) -> None:
+        _uuid(self.deposit_id, "deposit_id")
+        if (
+            type(self.amount_usd_cents) is not int
+            or not 1 <= self.amount_usd_cents <= MAX_USD_CENTS
+        ):
+            raise FinalSettlementInvalidError(
+                "amount_usd_cents must be a positive whole number of cents"
+            )
+
+    def payload(self) -> dict[str, object]:
+        return {"deposit_id": str(self.deposit_id), "amount_usd_cents": self.amount_usd_cents}
 
 
 @dataclass(frozen=True, slots=True)
@@ -1345,6 +1411,9 @@ class SettlementCorrectionService:
             command.deposit_receipt_id,
             command.reason,
             command.evidence_reference,
+            command.receipts,
+            command.steps,
+            command.pet_remainder,
         )
         return FinalSettlementService(self.financial_database_url)._call(
             "SELECT app.record_settlement_deposit_receipt_correction_draft(%s,%s,%s,%s,%s,%s,%s)",

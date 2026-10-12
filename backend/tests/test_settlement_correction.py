@@ -20,9 +20,15 @@ from property_rental.final_settlement import (
     FinalSettlementNotFoundError,
     FinalSettlementStaleDraftError,
     FinalSettlementUnavailableError,
+    PetRemainderBasis,
+    PetRemainderDecision,
+    SettlementDepositStep,
+    SettlementDepositStepKind,
+    SettlementTargetKind,
 )
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
 from property_rental.settlement_correction import (
+    CorrectionDepositReceipt,
     ExtraChargeCategory,
     RecordChargeReductionCorrectionCommand,
     RecordDepositReceiptCorrectionCommand,
@@ -1868,3 +1874,112 @@ def test_deposit_receipt_correction_confirm_maps_database_refusals(
             PROPERTY, DRAFT, actor=person("financial.approve")
         )
     assert type(refused.value) is confirm_error and refused.value.__cause__ is failure
+
+
+NEW_DEPOSIT = UUID(int=95)
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"receipts": [CorrectionDepositReceipt(NEW_DEPOSIT, 800)]},
+        {
+            "receipts": (
+                CorrectionDepositReceipt(NEW_DEPOSIT, 800),
+                CorrectionDepositReceipt(NEW_DEPOSIT, 200),
+            )
+        },
+        {
+            "receipts": (
+                CorrectionDepositReceipt(NEW_DEPOSIT, 800),
+                CorrectionDepositReceipt(UUID(int=96), 100),
+                CorrectionDepositReceipt(UUID(int=97), 100),
+            )
+        },
+        {"receipts": ({"deposit_id": str(NEW_DEPOSIT), "amount_usd_cents": 800},)},
+        {
+            "steps": (
+                SettlementDepositStep(
+                    SettlementDepositStepKind.SECURITY_DEPOSIT,
+                    NEW_DEPOSIT,
+                    SettlementTargetKind.INVOICE_LINE,
+                    LINE,
+                    800,
+                ),
+            )
+        },
+        {"pet_remainder": PetRemainderDecision(PetRemainderBasis.STAFF_REASON, "Will not pay")},
+        {"receipts": (CorrectionDepositReceipt(NEW_DEPOSIT, 800),), "steps": ("step",)},
+    ],
+)
+def test_deposit_receipt_correction_receipts_are_validated(changes: dict[str, Any]) -> None:
+    """V1-056 sub-slice 10e-2b: one or two right receipts into distinct Deposits; a DL-032 plan
+    only with a new receipt."""
+    with pytest.raises(FinalSettlementInvalidError):
+        deposit_receipt_correction(**changes)
+
+
+@pytest.mark.parametrize(
+    "receipt",
+    [
+        {"deposit_id": UUID(int=0), "amount_usd_cents": 800},
+        {"deposit_id": "not-a-uuid", "amount_usd_cents": 800},
+        {"deposit_id": NEW_DEPOSIT, "amount_usd_cents": 0},
+        {"deposit_id": NEW_DEPOSIT, "amount_usd_cents": 8.5},
+        {"deposit_id": NEW_DEPOSIT, "amount_usd_cents": True},
+    ],
+)
+def test_a_right_receipt_is_validated(receipt: dict[str, Any]) -> None:
+    with pytest.raises(FinalSettlementInvalidError):
+        CorrectionDepositReceipt(**receipt)
+
+
+def test_deposit_receipt_correction_with_receipts_sends_them_and_the_plan(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """With right receipts the record call carries them and the DL-032 plan (sub-slice 10e-2b);
+    without, the stored correction is unchanged (sub-slice 10e-2)."""
+    calls: list[tuple[object, ...]] = []
+
+    class Connection:
+        read_only: bool | None = None
+
+        def __enter__(self) -> "Connection":
+            return self
+
+        def __exit__(self, *args: object) -> None:
+            return None
+
+        def execute(self, sql: str, parameters: tuple[object, ...] = ()) -> "Connection":
+            calls.append((sql, parameters))
+            return self
+
+        def fetchone(self) -> tuple[dict[str, object]]:
+            return ({"draft_id": str(DRAFT)},)
+
+    monkeypatch.setattr(psycopg, "connect", lambda url, **kwargs: Connection())
+    step = SettlementDepositStep(
+        SettlementDepositStepKind.PET_DEPOSIT_REMAINDER,
+        NEW_DEPOSIT,
+        SettlementTargetKind.INVOICE_LINE,
+        LINE,
+        200,
+    )
+    remainder = PetRemainderDecision(PetRemainderBasis.STAFF_REASON, "The Customer will not pay")
+    SettlementCorrectionService("financial-url").record_deposit_receipt_correction(
+        PROPERTY,
+        deposit_receipt_correction(
+            receipts=(CorrectionDepositReceipt(NEW_DEPOSIT, 200),),
+            steps=(step,),
+            pet_remainder=remainder,
+        ),
+        actor=person("final_settlements.prepare"),
+    )
+    stored = calls[-1][1]
+    assert isinstance(stored, tuple) and isinstance(stored[4], Jsonb)
+    assert stored[4].obj == {
+        "deposit_receipt_id": str(RECEIPT),
+        "evidence_reference": "Bank statement line 5120",
+        "receipts": [{"deposit_id": str(NEW_DEPOSIT), "amount_usd_cents": 200}],
+        "plan": {"steps": [step.payload()], "pet_remainder": remainder.payload()},
+    }

@@ -1528,6 +1528,22 @@ Constraints:
 
 Append-only: `id uuid PK`, `deposit_id uuid NOT NULL FK`, `payment_id uuid NOT NULL FK`, `amount_usd_cents bigint NOT NULL CHECK (>0)`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`, `UNIQUE (deposit_id, payment_id)`. The transaction prevents total allocations, active Deposit receipts, Credit recognition, and Refund commitments from exceeding Payment USD accounting value. This is not an Invoice Payment Allocation.
 
+As built in V1-056 sub-slice 10e-2b-1 (migration `20261126_122`; owner answers (a), (a), (a) to
+Q-2026-10-12-87): the key `UNIQUE (deposit_id, payment_id)` is replaced by a check in the insert
+trigger `app.validate_deposit_receipt`: a Deposit holds at most one active (not reversed) receipt
+from each Payment (23505); a reversed receipt stays in the history and no longer blocks a new one.
+The check relies on the Deposit row lock (READ COMMITTED; a REPEATABLE READ writer fails on the
+Deposit's serialization guard). A Security Deposit's first active receipt may differ from the
+accepted amount only when a correction of the Lease's closed Final Settlement, confirmed in the
+same transaction, links it (DB-SETTLE-005 `deposit_receipt_id`); all active receipts stay within
+the required amount, which does not change. Writers: `app.create_reservation` (a new Security
+Deposit) and the internal `app.write_correction_deposit_receipt`, called only by a
+`DEPOSIT_RECEIPT_CORRECTION` confirm for a receipt its draft names, from the corrected receipt's
+Payment; it is the only Pet Deposit receipt writer and writes a `deposit.receipt.recorded` Deposit
+audit event (stamped with the statement time, so dated just before its receipt row, as the
+reversal event under DB-DEP-007). A Deposit the Property keeps (an active forfeiture) takes no
+new receipt; see DB-DEP-007.
+
 ## DB-DEP-003 — `deposit_required_amount_adjustments`
 
 Append-only: `id uuid PK`, `deposit_id uuid NOT NULL FK`, `adjustment_type text NOT NULL CHECK IN ('INCREASE','DECREASE')`, `amount_usd_cents bigint NOT NULL CHECK (>0)`, `effective_date date NOT NULL`, `reason text NOT NULL`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`, `authorization_reference text NOT NULL`. Resulting required amount may not be negative. This table records only a valid governing Lease-term correction; it creates no right to change a Deposit.
@@ -1852,7 +1868,8 @@ amount to the person who received it, whose recovery check now also accepts this
 reverses the Deposit's applications newest first and then writes this table's row through the
 shared writer `app.write_payment_return_receipt_reversal`; the Deposit ends empty. The freed amount
 stays unallocated with the Payment (BR-CREDIT-002: Credit only with the payer's authorization);
-there is no Payment reversal and no DL-032 step. Refused (55000): a receipt already reversed, of a
+there is no Payment reversal and no DL-032 step (without right receipts; see the sub-slice 10e-2b-1
+paragraph under DB-SETTLE-005). Refused (55000): a receipt already reversed, of a
 Deposit of another Lease, or of a Deposit with an active forfeiture (a `FORFEITURE_REVERSAL` first),
 a Payment that is not RECEIVED (a guard), a Deposit application of another Final Settlement (a
 guard), the 10e-1c recovery refusals, a Refund of the Deposit with no planned recovery, a Deposit
@@ -2656,6 +2673,24 @@ Deposit pays the Lease's open debt in the DL-032 order and only the rest is refu
 stays active, is refused. The reversal row and its `deposit.disposition.reversed` audit event are
 stamped with the confirm's statement time, so they are dated just before the correction's decision
 and header that link them; read them through the link, not by time. No new table or column.
+
+As built in V1-056 sub-slice 10e-2b-1 (migration `20261126_122`; owner answers (a), (a), (a) to
+Q-2026-10-12-87): the effects gain the link `deposit_receipt_id` (DB-DEP-002; deferrable, unique;
+the one-link check and the two link functions rebuilt). After its 10e-2 writes (recoveries,
+application reversals, the wrong receipt's reversal), a `DEPOSIT_RECEIPT_CORRECTION` whose draft
+names right receipts (one or two, distinct Deposits of the Settlement's Lease, together at most the
+corrected receipt) writes each, linked, from the same Payment's freed value, then runs the shared
+DL-032 step with the draft's plan. The recorder checks that plan with an overlay of the
+correction's effect: each obligation whose Deposit applications are reversed at its open amount
+plus those applications, and `deposits_after`, each named Deposit's held value after the
+correction (absolute; above 0 only for a Deposit on the DL-032 path); the confirm-time step checks
+the recorded result on the real state. Refused (55000 unless named): an unknown Deposit (P0002), a
+Deposit of another Lease, a kept Deposit, a Deposit with a forfeiture ground (until sub-slice
+10e-2c, Q-2026-10-12-88), more than the corrected receipt frees, a Payment that cannot fund the
+Deposit, another active receipt of the Payment in it, more than its required amount takes, a
+correction that also charges a recovered Refund on this Lease (until sub-slice 10e-2b-2), a plan
+that leaves new money unused. The money the receipts do not take stays unallocated with the
+Payment (BR-CREDIT-002).
 
 ## DB-SETTLE-007 — `settlement_pet_classifications`
 

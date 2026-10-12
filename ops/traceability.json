@@ -40099,6 +40099,70 @@
       "test_path": "backend/tests/test_pet_deposit_payback_limit_migration.py",
       "status": "implemented",
       "notes": "Migration 20261125_121 patches only the Lease Deposit disposition insert check, exactly by its listed replacement, keeping owner, SECURITY DEFINER, settings and privileges; no function, table or trigger is added; forward-only (V1-056 sub-slice 10c-2b-6)."
+    },
+    {
+      "test_id": "test_a_security_deposit_receipt_for_the_wrong_amount_is_written_again_and_applied",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-008", "BR-SETTLE-016", "BR-CREDIT-002", "DL-032", "DB-DEP-002", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_receipt_rewrite_migration.py",
+      "status": "implemented",
+      "notes": "Owner rules 1 and 2 of Q-2026-10-12-87: the 10,000 Security Deposit receipt really 8,000; the correction reverses the 10,000 application and the receipt, writes an 8,000 receipt from the same Payment into the same Deposit (different from the accepted amount; the required amount unchanged), with its own Deposit audit event, and its DL-032 step applies it to the debt that came back; 2,000 stays owed and 2,000 unallocated with the Payment; the draft's overlay and result are checked exactly; outside a correction a second active receipt of that Payment is refused (23505) (V1-056 sub-slice 10e-2b-1)."
+    },
+    {
+      "test_id": "test_a_pet_deposit_receipt_and_then_a_split_security_receipt_are_written",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-008", "DL-032", "DB-DEP-002", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_receipt_rewrite_migration.py",
+      "status": "implemented",
+      "notes": "Owner rule 3: after the Pet Deposit's 5,400 Settlement Refund came back (return-only), its 20,000 receipt really 18,000 is written again (the overlay's held value after the correction is 18,000, not the 5,400 held), pays pet damage first, the other line by the staff decision and refunds 3,400; then the Security Deposit's 10,000 receipt really 8,000 Security Deposit and 2,000 Pet Deposit, two receipts from one Payment in one correction, in the DL-032 order (V1-056 sub-slice 10e-2b-1)."
+    },
+    {
+      "test_id": "test_the_refusals_of_a_right_receipt",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-008", "DB-DEP-002", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_receipt_rewrite_migration.py",
+      "status": "implemented",
+      "notes": "Real refusals with nothing written: no room under the Pet Deposit's required amount, more than the receipt frees, new money left unused, a Refund charged back on this Lease (until sub-slice 10e-2b-2), an unknown Deposit (P0002), the internal writer outside its correction; the other refusals on a changed target; a draft stale after an EXTRA_CHARGE changed the open debt stays pending; outside a correction a receipt that differs from the accepted amount is refused (23514) (V1-056 sub-slice 10e-2b-1)."
+    },
+    {
+      "test_id": "test_a_right_receipt_into_a_deposit_with_a_forfeiture_ground_waits_for_10e_2c",
+      "upstream_ids": ["BR-SETTLE-013", "BR-DEP-023", "DB-DEP-002"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_receipt_rewrite_migration.py",
+      "status": "implemented",
+      "notes": "On a real kept Security Deposit (voluntary early leaving): a new receipt into it is refused while kept, and the plan check refuses a held value for a Deposit off the DL-032 path; after a FORFEITURE_REVERSAL correction a new receipt into it is refused until sub-slice 10e-2c (Q-2026-10-12-88); nothing written (V1-056 sub-slice 10e-2b-1)."
+    },
+    {
+      "test_id": "test_right_receipts_are_least_privilege_and_forward_only",
+      "upstream_ids": ["BR-AUTH-010", "DB-DEP-002", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_receipt_rewrite_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20261126_122 adds only its four internal functions (no grant, SECURITY DEFINER, fixed search path), replaces the receipt key by the check, adds the deposit_receipt_id link, changes only the listed functions with privileges and settings kept, each patched body exactly the old one with its replacements; forward-only (V1-056 sub-slice 10e-2b-1)."
+    },
+    {
+      "test_id": "test_deposit_receipt_correction_receipts_are_validated",
+      "upstream_ids": ["BR-SETTLE-013", "DB-DEP-002"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "A Deposit receipt correction takes at most two right receipts, a tuple of receipt objects into distinct Deposits; a DL-032 plan only with a new receipt (V1-056 sub-slice 10e-2b-1)."
+    },
+    {
+      "test_id": "test_a_right_receipt_is_validated",
+      "upstream_ids": ["BR-SETTLE-013", "DB-DEP-002"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "A right receipt names a non-zero Deposit UUID and a positive whole number of cents (no float, no bool) (V1-056 sub-slice 10e-2b-1)."
+    },
+    {
+      "test_id": "test_deposit_receipt_correction_with_receipts_sends_them_and_the_plan",
+      "upstream_ids": ["BR-SETTLE-013", "DL-032"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "With right receipts the record call carries them and the DL-032 plan in the stored correction (V1-056 sub-slice 10e-2b-1)."
     }
   ]
 }

@@ -2155,7 +2155,7 @@ Example: really $800 was the Security Deposit and $200 was the Pet Deposit. The 
 
 Recorded in docs/010.
 
-## Q-2026-10-12-88 — Sub-slice 10e-2b: a right receipt into a Deposit that the termination says the Property keeps (blocks only that case of 10e-2b)
+## Q-2026-10-12-88 — Sub-slice 10e-2b: a right receipt into a Deposit that the termination says the Property keeps (blocks only that case of 10e-2b) (ANSWERED 2026-10-12: point 1 (b), point 2 (c); built as sub-slice 10e-2c after 10e-2b; answer in docs/010)
 
 The 10e-2b design is in the plan (your answers (a), (a), (a) to Q-2026-10-12-87). After the wrong receipt is reversed, the correction writes the right receipt, and the correction's DL-032 step pays debt with that money and refunds the rest. A read-only check before code found one case your rules do not settle: the right receipt goes into a Deposit whose termination ground says the Property keeps it (for example BR-DEP-023, voluntary early leaving, for the Security Deposit; BR-DEP-022, pet noncompliance, for both Deposits). There is no 10e-2b code.
 
@@ -2184,3 +2184,13 @@ Example: the Lease ended early by the Customer's choice. The $1,000 Security Dep
 **Recommendation: (c).** A reversal is sometimes needed only to unlock the receipt correction, and sometimes because the forfeiture itself was wrong; staff know which, and the approver checks it.
 
 **What goes ahead.** Nothing else in 10e-2b depends on this question. I will build 10e-2b in a fresh session, refusing a right receipt into a Deposit with a forfeiture ground until you answer (a refusal can later be lifted by a relaxing change). Your answer is then built as a small sub-slice 10e-2c right after 10e-2b, or inside 10e-2b if it arrives first.
+
+**Owner answer (2026-10-12).**
+
+1. Point 1 (the Deposit was empty at closure and never forfeited): option (b). The same correction forfeits the new money, because the termination ground says the Property keeps that Deposit.
+2. Point 2 (the forfeiture was reversed first, as Q-83 point 3 requires): option (c). In the draft, staff choose, with a reason, whether the new money follows the normal debt-then-refund order or is forfeited again. The `financial.approve` approver confirms.
+3. Build 10e-2b as designed, with the Q-88 case refused. Then add this answer as the small sub-slice 10e-2c.
+4. The draft must show the exact amount and the person for each placeholder charge line, so the approver confirms real numbers. The test must prove that the real charges at confirm match the placeholders exactly.
+5. 10e-2b is large. If it looks too big for one session, split it into smaller sub-slices that each end in a commit; say so in the report.
+
+Recorded in docs/010.
