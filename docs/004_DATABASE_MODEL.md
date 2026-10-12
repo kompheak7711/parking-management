@@ -2633,6 +2633,34 @@ Deposit keeps such money and pet damage stays open after its step, no Security D
 that pet damage (DL-032, pet damage first). The draft's `plan_overlay` records the limit (`held_left`, a Deposit id to cents),
 the shared step checks it, and a draft without it is stale at the confirm. No new table or column.
 
+As built in V1-056 sub-slice 10e-3 (migration `20261129_125`; owner answer (a) to
+Q-2026-10-08-57 and the Q-2026-10-11-78 rule): the variant `RETURN_REVERSAL` (recorder
+`app.record_settlement_return_reversal_draft` under `final_settlements.prepare`, confirm
+`app.confirm_settlement_return_reversal` under `financial.approve`, a person, READ COMMITTED only)
+reverses a return that an earlier `REFUND_RETURN` correction of the same closed Final Settlement
+recorded by mistake. The draft names that correction (`held_from_settlement_correction_id`) and
+stores what the confirm will undo (`source`), so the approver sees each reversal and each charge
+with its person and exact amount; one draft of a return waits at a time. The confirm undoes the
+uses of the returned Refund's own source (its Credit, or its Deposit) by that correction and by
+every `HELD_VALUE_REFUND` that names it: their active Credit applications from that Credit and
+Deposit applications from that Deposit are reversed, newest first (links
+`credit_application_reversal_id`, `deposit_application_reversal_id`); each of their Refunds from
+that source with a net value is recovered by a charge of the exact net amount to the person who
+received it and a `RECOVERED_BY_CHARGE` row (the sub-slice 10e-1c writer; an `EXTRA_CHARGE` on the
+Lease when that person is its signed Customer, else a no-Lease charge); then the return is reversed
+by a DB-REFUND-002 `CORRECTION_REVERSAL` row (link `refund_correction_id`). Records those
+corrections wrote from any other Credit or Deposit stay. No DL-032 step: the debt that comes back
+stays with its Customers (BR-SETTLE-016). Refused (55000): a return already reversed; a Refund to
+recover that has its own return (reverse that return first); a Refund to recover paid to someone
+other than the Deposit's own Customer (Q-2026-10-12-94, until the owner answers); uses to undo that
+are more than the returned amount (a `REFUND_RETURN` with a new Refund also paid out money its
+source already held; Q-2026-10-12-95, until the owner answers); a returned value another path used
+(the source's value plus the undone uses is below the returned amount). The confirm also checks
+that the stored draft names exactly what its source reads. A
+reversed return leaves its earlier correction nothing (`app.settlement_held_deposit_value`,
+`app.settlement_held_credit_value`), so a `HELD_VALUE_REFUND` naming it is then refused. No new
+table or column.
+
 As built in V1-056 sub-slice 10c-3a (migration `20261115_111`; owner answer to Q-2026-10-07-38): the
 `CHARGE_REDUCTION` variant also reduces an unpaid Late-payment Charge of an Invoice of the
 Settlement's Lease (draft `target_kind` `LATE_PAYMENT_CHARGE`, its own recorder and confirm). Its
@@ -2998,7 +3026,8 @@ correction. The one-call verified return and the one-call reversal refuse it (P5
 (`app.settlement_refund_return_allowed`): a `VALUE_CORRECTION` under `financial.approve`, linked
 to a correction of the Refund's own Final Settlement confirmed in this transaction, written by
 that correction's approver, with the amount, return date, return method reference and evidence
-its draft names, one return per correction. No row reverses such a return.
+its draft names, one return per correction. No one-call row reverses such a return; since sub-slice
+10e-3 only a `RETURN_REVERSAL` correction does (below).
 
 As built in V1-056 sub-slice 10c-2b-2a (migration `20261112_108`): the same pass applies to a
 Final Settlement Deposit Refund (8d) and a correction's Deposit Refund, whose one-call
@@ -3039,6 +3068,18 @@ history as `REFUND_RECOVERED_BY_CHARGE`. The Refund resource and the financial a
 the new column out, so their shape is unchanged (the staff screens accept exactly the existing keys);
 the return results name the charge. No row reverses a recovery: a recovered Refund whose money later
 comes back cannot take a verified return (its net is 0; a known limit).
+
+Since sub-slice 10e-3 (migration `20261129_125`): the recovery check also accepts the row, with the
+same charge conditions, inside a `RETURN_REVERSAL` correction confirmed by the same approver in
+this transaction that links the row, for a Refund that the reversed return's correction or a
+`HELD_VALUE_REFUND` naming it paid from the returned Refund's own Credit or Deposit and that the
+draft's recorded recoveries name with the Deposit's own Customer as recipient. The general
+check accepts a `CORRECTION_REVERSAL` row of a correction's return only inside its
+`RETURN_REVERSAL` correction (`app.settlement_return_reversal_allowed`: the whole amount, the
+draft's reason and evidence, `refunds.corrections.reverse`, the approver as actor, linked to that
+correction of the Refund's own Settlement, confirmed in this transaction); a one-call reversal stays
+refused. Its reversal branch now reads every Deposit Refund's source by `source_deposit_id` (the
+Deposit's held value, no Payment status), so an over-reversal of any Deposit Refund is refused.
 
 ---
 

@@ -1,0 +1,56 @@
+ Network prm-database-targeted-test-75348_default Creating 
+ Volume prm-database-targeted-test-75348_postgres_data Creating 
+ Volume prm-database-targeted-test-75348_postgres_data Creating 
+ Network prm-database-targeted-test-75348_default Creating 
+ Volume prm-database-targeted-test-75348_postgres_data Created 
+ Volume prm-database-targeted-test-75348_postgres_data Created 
+ Network prm-database-targeted-test-75348_default Created 
+ Network prm-database-targeted-test-75348_default Created 
+ Container prm-database-targeted-test-75348-postgres-1 Creating 
+ Container prm-database-targeted-test-75348-postgres-1 Created 
+ Container prm-database-targeted-test-75348-postgres-1 Starting 
+ Container prm-database-targeted-test-75348-postgres-1 Started 
+ Container prm-database-targeted-test-75348-postgres-1 Waiting 
+ Container prm-database-targeted-test-75348-postgres-1 Healthy 
+============================= test session starts ==============================
+collected 85 items
+
+tests/test_settlement_return_reversal_migration.py ...F..                [  7%]
+tests/test_settlement_refund_return_migration.py ......                  [ 14%]
+tests/test_settlement_held_value_refund_migration.py .........           [ 24%]
+tests/test_settlement_deposit_refund_return_migration.py ..........      [ 36%]
+tests/test_settlement_pet_refund_return_migration.py ......              [ 43%]
+tests/test_payment_return_recovery_migration.py .............            [ 58%]
+tests/test_refund_migration.py ...................................       [100%]
+
+=================================== FAILURES ===================================
+___ test_a_held_value_refund_is_charged_back_and_an_agreed_signer_case_waits ___
+src/property_rental/final_settlement.py:339: in _call
+    row = connection.execute(sql, parameters).fetchone()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/psycopg/connection.py:300: in execute
+    raise ex.with_traceback(None)
+E   psycopg.errors.ObjectNotInPrerequisiteState: No Deposit Refund while the Lease still has open debt that the Deposit could pay
+E   CONTEXT:  PL/pgSQL function app.settlement_correction_plan_result(uuid,uuid,uuid,jsonb,jsonb) line 525 at RAISE
+E   PL/pgSQL function app.record_settlement_held_value_refund_draft(uuid,uuid,uuid,uuid,jsonb,text,text) line 80 at assignment
+
+The above exception was the direct cause of the following exception:
+tests/test_settlement_return_reversal_migration.py:420: in test_a_held_value_refund_is_charged_back_and_an_agreed_signer_case_waits
+    confirm_held(case, record_held(case, held_command(case, later, to_signer)))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_settlement_held_value_refund_migration.py:156: in record_held
+    found = corrections().record_held_value_refund(
+src/property_rental/settlement_correction.py:1334: in record_held_value_refund
+    return FinalSettlementService(self.financial_database_url)._call(
+src/property_rental/final_settlement.py:362: in _call
+    raise FinalSettlementConflictError(
+E   property_rental.final_settlement.FinalSettlementConflictError: Final Settlement conflicts with the current state
+=============================== warnings summary ===============================
+.venv/lib/python3.11/site-packages/fastapi/testclient.py:1
+  /Users/sokompheak/Development/property-rental-management/backend/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_settlement_return_reversal_migration.py::test_a_held_value_refund_is_charged_back_and_an_agreed_signer_case_waits
+=================== 1 failed, 84 passed, 1 warning in 50.89s ===================

@@ -56,6 +56,12 @@ with the Payment until the payer authorizes Credit (BR-CREDIT-002).
 Sub-slice 10e-2b: the same correction may then write the right receipt of the Payment's freed
 value, into the right Deposit or for the right amount (owner answers to Q-2026-10-12-87), and its
 shared DL-032 step applies that money to the Lease's open debt and refunds the rest.
+
+Sub-slice 10e-3: the ``RETURN_REVERSAL`` variant, the reversal of a return that an earlier
+``REFUND_RETURN`` correction recorded by mistake (owner answer to Q-2026-10-08-57). The
+confirmation undoes the uses of the returned Refund's own Credit or Deposit by that correction and
+the held-value corrections naming it, recovers each of their Refunds from that source by a charge
+to the person who received it, then reverses the return.
 """
 
 from __future__ import annotations
@@ -108,6 +114,8 @@ FORFEITURE_REVERSAL_CONFIRM_STALE_STATES: Final = frozenset({"P5S02"})
 RETURNED_PAYMENT_CONFIRM_STALE_STATES: Final = frozenset({"P5S02"})
 # A Deposit receipt correction whose receipt, Deposit, its records or Refunds changed is stale.
 DEPOSIT_RECEIPT_CORRECTION_CONFIRM_STALE_STATES: Final = frozenset({"P5S02"})
+# A return reversal whose earlier correction, source or records to undo changed is stale.
+RETURN_REVERSAL_CONFIRM_STALE_STATES: Final = frozenset({"P5S02"})
 # The staff's choice for a right receipt into a Deposit whose forfeiture was reversed (10e-2c).
 RECEIPT_OUTCOMES: Final = frozenset({"DL_032", "FORFEIT"})
 
@@ -864,6 +872,38 @@ class CorrectionDepositReceipt:
 
 
 @dataclass(frozen=True, slots=True)
+class RecordReturnReversalCorrectionCommand:
+    """The reversal of a return recorded by mistake by an earlier ``REFUND_RETURN`` correction of a
+    closed Final Settlement (V1-056 sub-slice 10e-3); the database checks it against current state.
+
+    ``earlier_correction_id`` names that correction and ``evidence_reference`` the evidence that
+    the return never happened. The confirmation undoes the uses of the returned Refund's own Credit
+    or Deposit by that correction and the held-value corrections naming it, recovers each of their
+    Refunds from that source by a charge to the person who received it, then reverses the return,
+    each linked to the correction; there is no DL-032 plan.
+    """
+
+    idempotency_key: UUID
+    settlement_id: UUID
+    earlier_correction_id: UUID
+    reason: str
+    evidence_reference: str
+
+    def __post_init__(self) -> None:
+        _uuid(self.idempotency_key, "idempotency_key")
+        _uuid(self.settlement_id, "settlement_id")
+        _uuid(self.earlier_correction_id, "earlier_correction_id")
+        _text(self.reason, "reason", 500)
+        _text(self.evidence_reference, "evidence_reference", 500)
+
+    def return_reversal(self) -> dict[str, object]:
+        return {
+            "settlement_correction_id": str(self.earlier_correction_id),
+            "evidence_reference": self.evidence_reference,
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class SettlementCorrectionService:
     """Commands under the financial role; capabilities are checked before any connection."""
 
@@ -1486,4 +1526,57 @@ class SettlementCorrectionService:
             "SELECT app.confirm_settlement_deposit_receipt_correction(%s,%s,%s,%s)",
             (property_id, actor_id, draft_id, FINANCIAL_APPROVE_CAPABILITY),
             stale=DEPOSIT_RECEIPT_CORRECTION_CONFIRM_STALE_STATES,
+        )
+
+    def record_return_reversal(
+        self,
+        property_id: UUID,
+        command: RecordReturnReversalCorrectionCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        """Record a return reversal correction draft; it has no effect until confirmed."""
+        actor_id = FinalSettlementService._authorize(
+            actor, property_id, FINAL_SETTLEMENTS_PREPARE_CAPABILITY
+        )
+        if not isinstance(command, RecordReturnReversalCorrectionCommand):
+            raise FinalSettlementInvalidError("Return reversal correction command is invalid")
+        request = RecordReturnReversalCorrectionCommand(
+            command.idempotency_key,
+            command.settlement_id,
+            command.earlier_correction_id,
+            command.reason,
+            command.evidence_reference,
+        )
+        return FinalSettlementService(self.financial_database_url)._call(
+            "SELECT app.record_settlement_return_reversal_draft(%s,%s,%s,%s,%s,%s,%s)",
+            (
+                property_id,
+                actor_id,
+                settlement_correction_draft_id(property_id, actor_id, request.idempotency_key),
+                request.settlement_id,
+                Jsonb(request.return_reversal()),
+                request.reason,
+                FINAL_SETTLEMENTS_PREPARE_CAPABILITY,
+            ),
+        )
+
+    def confirm_return_reversal(
+        self, property_id: UUID, draft_id: UUID, *, actor: AuthenticatedActor
+    ) -> dict[str, object]:
+        """Confirm a pending return reversal correction (financial.approve only).
+
+        A draft whose earlier correction, returned Credit or Deposit, or records to undo changed
+        since it was recorded is stale and stays pending; a return already reversed, a value no
+        longer available or a Refund with its own return is a conflict; an exact repeat by the same
+        approver writes nothing and returns the result again.
+        """
+        actor_id = FinalSettlementService._authorize(
+            actor, property_id, FINANCIAL_APPROVE_CAPABILITY
+        )
+        _uuid(draft_id, "draft_id")
+        return FinalSettlementService(self.financial_database_url)._call(
+            "SELECT app.confirm_settlement_return_reversal(%s,%s,%s,%s)",
+            (property_id, actor_id, draft_id, FINANCIAL_APPROVE_CAPABILITY),
+            stale=RETURN_REVERSAL_CONFIRM_STALE_STATES,
         )

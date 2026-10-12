@@ -2232,7 +2232,7 @@ The 10e-2b-2 report counted two lint causes: A (four long lines in the new test 
 
 **Owner ruling (2026-10-12).** Causes A and B are the same cause, so that was one correction past the limit of 2. No harm came of it, so the commit stays. From now on, the same kind of error is the same cause, even when it shows up on different lines. Added to ops/V1_055_RUN_RULES.md (Verification). Recorded in docs/010.
 
-## Q-2026-10-12-92 — Nothing in the app records Pet Deposit money before closure: where should it be built? (blocks nothing in slice 10; owner asked, 2026-10-12)
+## Q-2026-10-12-92 — Nothing in the app records Pet Deposit money before closure: where should it be built? (blocks nothing in slice 10; owner asked, 2026-10-12) (ANSWERED 2026-10-12: (a), both Deposit types, sub-slice 10e-2b-4; answer in docs/010)
 
 Your question: how does a real Customer's Pet Deposit get its money before closure today?
 
@@ -2255,7 +2255,15 @@ Your question: how does a real Customer's Pet Deposit get its money before closu
 
 **What goes ahead.** Nothing in the slice 10 order waits for this answer. Nothing is built for it before you answer.
 
-## Q-2026-10-12-93 — Sub-slice 10e-2c: a forfeited right receipt into a Pet Deposit that has returned pay-back money (blocks only that case; refused until answered)
+**Owner answer (2026-10-12).** Yes to the new sub-slice 10e-2b-4, "Deposit receipt before closure", for both Deposit types, after 10e-2b-3 and before 10h. The routes and the screen come in slice 11.
+
+1. Capability: use the same capability that staff use today to put a Payment on an Invoice (`payments.allocate`). A Deposit receipt is the same kind of work: deciding where received money goes.
+2. No draft and no `financial.approve`. Money coming in is recorded directly, like a Payment. A mistake is fixed with the existing receipt reversal before closure, or with the receipt correction after closure.
+3. Also cover the walk-in Lease, which gets no Security Deposit today, and a second Security Deposit receipt. Follow docs/002 for amounts and timing. If a rule is missing, for example the Security Deposit amount on a walk-in Lease, write it in this file with a recommendation, and ask the owner before building that part.
+
+Order (owner, 2026-10-12): 10e-3, 10e-4, 10c-2a-7, 10c-3c-1, 10c-3c-2, 10f, 10g, 10e-2b-3, 10e-2b-4, then 10h. Recorded in docs/010.
+
+## Q-2026-10-12-93 — Sub-slice 10e-2c: a forfeited right receipt into a Pet Deposit that has returned pay-back money (blocks only that case; refused until answered) (ANSWERED 2026-10-12: (a); answer in docs/010)
 
 Your answers to Q-2026-10-12-88: a right receipt into a Deposit with a forfeiture ground is forfeited in the same correction (point 1), or forfeited again when staff choose it (point 2). A read-only check before code (head `20261127_123`) found one case where two of your rules meet.
 
@@ -2269,3 +2277,36 @@ Example: a Pet Deposit had a $150 Pet Refund-review Refund, and $30 of it came b
 **Recommendation: (a).** It follows both rules as they stand and needs no table change. Until you answer, 10e-2c refuses the case (55000, "A forfeiture in a receipt correction takes only the new receipt's money"), and it also refuses a forfeited receipt into a Deposit that still holds other money (no fixture or real path reaches that today). A refusal can later be lifted by a relaxing change.
 
 **What goes ahead.** Everything else in 10e-2c, and the rest of the order.
+
+**Owner answer (2026-10-12).** Option (a). Forfeit only the money beyond the returned amount. This is the same rule as the owner answers to Q-2026-10-10-73 and Q-2026-10-10-76: returned money belongs to the Customer. Build it where it fits best before 10h.
+
+Recorded in docs/010.
+
+## Q-2026-10-12-94 — Sub-slice 10e-3 (`RETURN_REVERSAL`): who pays back a Deposit Refund that was paid to an agreed Signer? (blocks only that case; refused until answered)
+
+Your answer (a) to Q-2026-10-08-57: a return recorded by mistake is reversed by a `RETURN_REVERSAL` correction, and "any part already refunded again becomes an `EXTRA_CHARGE` to that Customer". The plan wrote this, before your Q-78 answer, as "the Deposit owner for a Deposit Refund". Your later answer to Q-2026-10-11-78 says: "the person who received the refund money pays it back". Sub-slices 10e-1c and 10e-2 follow Q-78. The 10e-3 design is in the plan (10e-3 pre-code design); 10e-3 is built with this case refused (below).
+
+The two texts give a different person in one case only: a Deposit Refund paid, with the written agreement of all Signers, to a Signer who is not the Deposit's own Customer (BR-REFUND-015).
+
+Example: a Lease with two Signers, A (the Primary Tenant, the Deposit's Customer) and B. After closure the Settlement's Security Deposit Refund of $1,000 to A is recorded as returned (a `REFUND_RETURN`), and a new Deposit Refund of $1,000 is paid to B with every Signer's written agreement. Later staff find the return never happened, so A really kept the first $1,000. The `RETURN_REVERSAL` reverses the mistaken return, and the $1,000 that B received must be charged back to someone.
+
+- (a) The person who received the money: B is charged $1,000 (an `EXTRA_CHARGE` on the Lease, B is its signed Customer). The same rule as Q-78, 10e-1c and 10e-2.
+- (b) The Deposit's own Customer: A is charged $1,000, as the plan text reads; A and B settle it between themselves.
+
+**Recommendation: (a)**, because B holds the money, and it keeps one rule for every correction that recovers a Refund.
+
+**What goes ahead.** 10e-3 is built now with every other case. Until you answer, a `RETURN_REVERSAL` that would recover a Refund paid to someone other than the Deposit's own Customer is refused (55000, a conflict); a relaxing change lifts it later. A Credit Refund always goes to the Credit's own Customer, so it is not affected.
+
+## Q-2026-10-12-95 — Sub-slice 10e-3 (`RETURN_REVERSAL`): a mistaken return whose correction also paid out money the Deposit already held (blocks only that case; refused until answered)
+
+Found by the independent review of 10e-3 (round 1). A `REFUND_RETURN` that pays a new Refund must apply or refund every Deposit balance (BR-SETTLE-008). So when the Deposit already held money from an earlier return-only correction, that correction's Refund pays out more than its own return brought back.
+
+Example: after closure, $1,000 of the Settlement's Pet Deposit Refund comes back (a return-only correction, X1); the Pet Deposit holds $1,000. Later $500 more comes back (X2) with a new Refund; with no open debt X2 refunds all $1,500 the Pet Deposit holds. Then staff find that X2's $500 return never happened. Reversing X2 as designed, without the refusal, would charge the Customer back the whole $1,500 and leave X1's $1,000 held in the Pet Deposit again, so the Customer owes $1,500 while the Pet Deposit holds $1,000 that X1's later held-value Refund could pay back.
+
+- (a) Charge back only the part above what the Deposit held before X2's return ($500): the reversal recovers the new Refund only up to the returned amount and leaves the rest of that Refund standing (it paid X1's money, which was the Customer's anyway). X1's held value is then counted as used by that Refund, so nothing stays held. A new rule for splitting one Refund between two returns.
+- (b) Undo everything X2 did (as designed, without the refusal): charge back $1,500 and hold X1's $1,000 again; staff then refund or apply it through a `HELD_VALUE_REFUND` naming X1.
+- (c) Keep it refused (a known limit): staff fix such a case by hand outside the system.
+
+**Recommendation: (a)**, because only the money the mistaken return brought back was paid out by mistake; the Customer was owed X1's $1,000 in any case. It needs a small extra rule in the reversal (and in X1's left value). Until you answer, 10e-3 refuses the case (55000, "The correction to reverse also used money its return did not bring back; reversing it waits for the owner"); a relaxing change lifts it.
+
+**What goes ahead.** Everything else in 10e-3, and the rest of the order. The same refusal also covers a Credit return whose correction applied or refunded more of the Credit than its return brought back.

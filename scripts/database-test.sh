@@ -230,6 +230,7 @@ database_test_suites='
   tests/test_settlement_deposit_receipt_rewrite_migration.py
   tests/test_settlement_deposit_receipt_recovery_line_migration.py
   tests/test_settlement_deposit_receipt_forfeiture_migration.py
+  tests/test_settlement_return_reversal_migration.py
 '
 
 for database_test_file in $database_test_suites; do

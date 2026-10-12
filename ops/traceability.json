@@ -40259,6 +40259,86 @@
       "test_path": "backend/tests/test_settlement_correction.py",
       "status": "implemented",
       "notes": "A right receipt's payload names the choice and its reason only when staff made one; otherwise it is the sub-slice 10e-2b payload (V1-056 sub-slice 10e-2c)."
+    },
+    {
+      "test_id": "test_a_mistaken_credit_return_is_reversed_and_its_new_refund_is_charged_back",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-016", "BR-CREDIT-008", "BR-AUTH-010", "DB-REFUND-002", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_migration.py",
+      "status": "implemented",
+      "notes": "A 2,000 Credit return that paid a 1,500 charge and refunded 500 is reversed after a later return of part of the 500 is reversed first: the 1,500 Credit application is undone (owed again), the 500 is charged back to the Customer by an EXTRA_CHARGE, the return is reversed (net 2,000 again, the Credit empty); the draft shows each undo and charge; the Settlement row is unchanged; replay; a second reversal refused (V1-056 sub-slice 10e-3)."
+    },
+    {
+      "test_id": "test_a_mistaken_deposit_return_undoes_only_the_returned_deposit_s_uses",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-016", "DL-032", "BR-AUTH-010", "DB-REFUND-002", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_migration.py",
+      "status": "implemented",
+      "notes": "The reversal of a 5,400 Pet Deposit Refund return that paid 300 from the Customer's other Credit, 1,200 from the Pet Deposit and refunded 4,200 undoes only the 1,200 Pet Deposit application and charges the 4,200 back; the 300 stays; the Pet Deposit ends empty; a reversal row outside a correction is refused, and inside it a reversal row written before the undo is refused because the Pet Deposit does not hold the returned amount (V1-056 sub-slice 10e-3)."
+    },
+    {
+      "test_id": "test_a_mistaken_pay_back_return_into_a_kept_pet_deposit_is_reversed",
+      "upstream_ids": ["BR-SETTLE-013", "BR-DEP-022", "DL-032", "DB-REFUND-002"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_migration.py",
+      "status": "implemented",
+      "notes": "A 3,000 pay-back return into a kept Pet Deposit that paid 1,000 of Rent and refunded 2,000 is reversed: the 1,000 is owed again, the 2,000 is charged back, the Pet Deposit stays kept and empty with no pay-back money, the forfeiture unchanged (V1-056 sub-slice 10e-3)."
+    },
+    {
+      "test_id": "test_a_held_value_refund_is_charged_back_and_an_agreed_signer_case_waits",
+      "upstream_ids": ["BR-SETTLE-013", "BR-REFUND-015", "DB-REFUND-002", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_migration.py",
+      "status": "implemented",
+      "notes": "On a two-Signer Lease a held-value Refund of a mistaken return paid to the Primary Tenant is charged back to the Primary Tenant and the return reversed; nothing is then left for a held-value Refund naming it; a reversal that would charge back a Deposit Refund paid to the agreed second Signer is refused until the owner answers Q-2026-10-12-94 (V1-056 sub-slice 10e-3)."
+    },
+    {
+      "test_id": "test_the_refusals_of_a_return_reversal",
+      "upstream_ids": ["BR-SETTLE-013", "BR-AUTH-010", "DB-REFUND-002"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_migration.py",
+      "status": "implemented",
+      "notes": "An unknown correction or one of another variant is not found; a returned value another path used is refused until that use is undone; one draft waits at a time and an exact repeat replays; a reused draft identity, Staff confirming, a hand-built reversal row that differs from the draft and a recovery of a Refund the reversed correction did not pay are refused; a draft whose source changed is stale and stays pending (V1-056 sub-slice 10e-3)."
+    },
+    {
+      "test_id": "test_the_database_guards_and_the_refusal_of_uses_beyond_the_return",
+      "upstream_ids": ["BR-SETTLE-013", "BR-AUTH-010", "DB-REFUND-002"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_migration.py",
+      "status": "implemented",
+      "notes": "Malformed input 22023; the recorder takes only final_settlements.prepare and the confirm only financial.approve (42501); a service identity cannot confirm (P4506); the confirm runs only at READ COMMITTED; a return of another closed Settlement is not found; a reversal whose uses to undo are more than its return brought back is refused until the owner answers Q-2026-10-12-95 (V1-056 sub-slice 10e-3)."
+    },
+    {
+      "test_id": "test_return_reversal_records_are_least_privilege_and_forward_only",
+      "upstream_ids": ["BR-SETTLE-013", "BR-AUTH-010", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_migration.py",
+      "status": "implemented",
+      "notes": "No role calls the internal functions; only the financial role calls the recorder and the confirm; each new function is SECURITY DEFINER with the fixed search path; the migration adds only its functions and changes only the six patched functions, privileges and settings kept, each patched body exactly the old one with its replacements; no constraint or trigger changes; forward-only (V1-056 sub-slice 10e-3)."
+    },
+    {
+      "test_id": "test_return_reversal_correction_commands_are_validated",
+      "upstream_ids": ["BR-SETTLE-013"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "The return reversal command needs the earlier correction, a reason and the evidence reference, each 1 to 500 trimmed characters (V1-056 sub-slice 10e-3)."
+    },
+    {
+      "test_id": "test_return_reversal_correction_record_and_confirm_send_the_stored_correction",
+      "upstream_ids": ["BR-SETTLE-013", "BR-AUTH-010"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "Only final_settlements.prepare records and only financial.approve confirms, both before any connection; the record call carries the earlier correction and the evidence reference (V1-056 sub-slice 10e-3)."
+    },
+    {
+      "test_id": "test_return_reversal_correction_confirm_maps_database_refusals",
+      "upstream_ids": ["BR-SETTLE-013"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "A stale return reversal draft stays pending (P5S02); other refusals keep the Final Settlement error mapping (V1-056 sub-slice 10e-3)."
     }
   ]
 }
