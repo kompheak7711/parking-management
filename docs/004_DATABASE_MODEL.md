@@ -2721,6 +2721,49 @@ requires the source to hold the returned amount. The source still names `deposit
 each recovery; no check reads it since migration 126. A draft recorded before migration 126 becomes stale at its confirm (P5S02), because its
 source shape changed.
 
+Since V1-056 sub-slice 10e-3c (migration `20261202_128`; owner answer (a) to Q-2026-10-12-96), the
+second refusal is gone. When the uses are more than the returned amount and the Refunds paid out
+less than it, each Refund is charged back whole (its share is its whole net) and the rest of the
+returned amount (that amount less the Refunds' nets) paid debt. The source then lists, newest
+first, only the applications whose newer applications sum to less than that rest, each reversed
+whole, and names in `reapply` the part of the last of them that was not returned money: its source
+(`source_kind` `CREDIT` or `DEPOSIT`, `customer_credit_id` or `deposit_id`), the reversed
+application (`application_id`, `reversed_usd_cents`), its obligation (`target_kind`, `target_id`; a
+Credit application's one detail names its line), its stage (`application_stage`) or Customer
+designation (`customer_designation`) and `amount_usd_cents`. `reapply` is a list with at most one
+entry, empty in every other case (every listed application is reversed, as before). The recorder
+stores a one-step `plan` built from it in the step format of the shared DL-032 step (the internal
+`app.settlement_return_reversal_reapply_steps`, no grant; `{"steps": []}` when nothing is applied
+again). Right after the `CORRECTION_REVERSAL` row (the source then holds the part) the confirm
+applies the part again to the same obligation from the same source, linked before it is written: a
+Credit through the Settlement Credit writer reading that step (link
+`customer_credit_application_id`; the writer's basis rules apply), a Deposit through the Deposit
+application writer with the reversed application's stage and target, numbered after the
+Settlement's highest application number (link `deposit_application_id`; its check reads the same
+step). The Refunds charged back and the debt owed again add up to the returned amount. The result
+and the audit event name the part applied again (`reapplied`; a replay of an earlier confirmation
+also returns `reapplied: []`), and the audit event is dated at the latest record. Refused (55000,
+fail closed): a `reapply` that is not a list, has more than one entry, has an entry when the
+Refunds covered the returned amount or the uses were within it, or whose entry is not a listed
+application of the returned Refund's own Credit or Deposit with the same Credit or Deposit, the
+same obligation kind and, for a Late-payment Charge or a Deposit's line, the same target (the
+source lists a Credit application's Invoice, not its line), is 0 or is not below that application's
+amount ("The part of a return reversal applied again is invalid"); a
+reversal that would bring back more than the returned amount, or, with uses beyond it, less ("A
+return reversal brings back only the returned amount"); the source-value check also requires the
+source to hold the part after the return is reversed. The confirm accepts only a draft whose plan is
+the one built from its source, whose payload has exactly the recorder's keys and whose Lease is the
+Settlement's (P0002 otherwise).
+No new table, column, constraint or trigger. A draft recorded before migration 128 becomes stale at
+its confirm (P5S02, its source gained `reapply`); it also keeps a new draft of the same earlier
+correction waiting, so staff reject it and record it again. Known limits (the confirm refuses, no
+money moves; the reversal then waits until the state allows it): a Credit part on an Invoice with
+Rent or Service lines and no Customer designation follows the Rent-first proposal for its amount
+and is refused (23514) when an earlier line of that Invoice became open again since; a Deposit part
+is refused when the Deposit's path is no longer DL-032 (for example a later forfeiture) or the line
+is no longer pet damage for the first Pet Deposit stage; a Credit part is refused when the Credit's
+Payment is no longer received.
+
 As built in V1-056 sub-slice 10c-3a (migration `20261115_111`; owner answer to Q-2026-10-07-38): the
 `CHARGE_REDUCTION` variant also reduces an unpaid Late-payment Charge of an Invoice of the
 Settlement's Lease (draft `target_kind` `LATE_PAYMENT_CHARGE`, its own recorder and confirm). Its

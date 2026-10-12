@@ -1,0 +1,242 @@
+ Volume prm-database-targeted-test-95483_postgres_data Creating 
+ Volume prm-database-targeted-test-95483_postgres_data Creating 
+ Network prm-database-targeted-test-95483_default Creating 
+ Network prm-database-targeted-test-95483_default Creating 
+ Volume prm-database-targeted-test-95483_postgres_data Created 
+ Volume prm-database-targeted-test-95483_postgres_data Created 
+ Network prm-database-targeted-test-95483_default Created 
+ Network prm-database-targeted-test-95483_default Created 
+ Container prm-database-targeted-test-95483-postgres-1 Creating 
+ Container prm-database-targeted-test-95483-postgres-1 Created 
+ Container prm-database-targeted-test-95483-postgres-1 Starting 
+ Container prm-database-targeted-test-95483-postgres-1 Started 
+ Container prm-database-targeted-test-95483-postgres-1 Waiting 
+ Container prm-database-targeted-test-95483-postgres-1 Healthy 
+============================= test session starts ==============================
+collected 26 items
+
+tests/test_settlement_return_reversal_migration.py ............FF....    [ 69%]
+tests/test_returned_payment_after_closure_migration.py FFFFFF..          [100%]
+
+=================================== FAILURES ===================================
+_ test_a_reversal_keeps_the_applications_when_its_refund_paid_out_the_returned_money _
+src/property_rental/lease.py:496: in _execute
+    row = connection.execute(query, parameters).fetchone()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/psycopg/connection.py:300: in execute
+    raise ex.with_traceback(None)
+E   psycopg.errors.InvalidParameterValue: Signature evidence is invalid
+E   CONTEXT:  PL/pgSQL function app.record_lease_signature(uuid,uuid,text,uuid,uuid,uuid,integer,timestamp with time zone,text,uuid) line 17 at RAISE
+
+The above exception was the direct cause of the following exception:
+tests/test_settlement_return_reversal_migration.py:1281: in test_a_reversal_keeps_the_applications_when_its_refund_paid_out_the_returned_money
+    case = refunded_case(url)
+           ^^^^^^^^^^^^^^^^^^
+tests/test_settlement_refund_return_migration.py:223: in refunded_case
+    case = {**closed_case(url), "url": url}
+              ^^^^^^^^^^^^^^^^
+tests/test_settlement_correction_plan_migration.py:150: in closed_case
+    case = leaving_case(url, start_offset=this_month(url))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_final_settlement_draft_migration.py:148: in leaving_case
+    source = signed_with_initial(url, start_offset)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_unpaid_initial_termination_migration.py:95: in signed_with_initial
+    leases.record_signature(
+src/property_rental/lease.py:637: in record_signature
+    return self._execute(
+src/property_rental/lease.py:507: in _execute
+    raise LeaseCommandInvalidError("Lease command is invalid") from exc
+E   property_rental.lease.LeaseCommandInvalidError: Lease command is invalid
+_ test_the_rest_of_a_partly_charged_back_refund_is_charged_back_when_its_payment_bounces _
+src/property_rental/lease.py:496: in _execute
+    row = connection.execute(query, parameters).fetchone()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/psycopg/connection.py:300: in execute
+    raise ex.with_traceback(None)
+E   psycopg.errors.InvalidParameterValue: Signature evidence is invalid
+E   CONTEXT:  PL/pgSQL function app.record_lease_signature(uuid,uuid,text,uuid,uuid,uuid,integer,timestamp with time zone,text,uuid) line 17 at RAISE
+
+The above exception was the direct cause of the following exception:
+tests/test_settlement_return_reversal_migration.py:1342: in test_the_rest_of_a_partly_charged_back_refund_is_charged_back_when_its_payment_bounces
+    case = refunded_case(url)
+           ^^^^^^^^^^^^^^^^^^
+tests/test_settlement_refund_return_migration.py:223: in refunded_case
+    case = {**closed_case(url), "url": url}
+              ^^^^^^^^^^^^^^^^
+tests/test_settlement_correction_plan_migration.py:150: in closed_case
+    case = leaving_case(url, start_offset=this_month(url))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_final_settlement_draft_migration.py:148: in leaving_case
+    source = signed_with_initial(url, start_offset)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_unpaid_initial_termination_migration.py:95: in signed_with_initial
+    leases.record_signature(
+src/property_rental/lease.py:637: in record_signature
+    return self._execute(
+src/property_rental/lease.py:507: in _execute
+    raise LeaseCommandInvalidError("Lease command is invalid") from exc
+E   property_rental.lease.LeaseCommandInvalidError: Lease command is invalid
+_ test_the_q81_payment_is_returned_through_the_correction_of_the_closed_settlement _
+src/property_rental/lease.py:496: in _execute
+    row = connection.execute(query, parameters).fetchone()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/psycopg/connection.py:300: in execute
+    raise ex.with_traceback(None)
+E   psycopg.errors.InvalidParameterValue: Signature evidence is invalid
+E   CONTEXT:  PL/pgSQL function app.record_lease_signature(uuid,uuid,text,uuid,uuid,uuid,integer,timestamp with time zone,text,uuid) line 17 at RAISE
+
+The above exception was the direct cause of the following exception:
+tests/test_returned_payment_after_closure_migration.py:160: in test_the_q81_payment_is_returned_through_the_correction_of_the_closed_settlement
+    case = closed_case(url)
+           ^^^^^^^^^^^^^^^^
+tests/test_settlement_returned_payment_migration.py:138: in closed_case
+    case = {**leaving_case(url, start_offset=this_month(url)), "url": url}
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_final_settlement_draft_migration.py:148: in leaving_case
+    source = signed_with_initial(url, start_offset)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_unpaid_initial_termination_migration.py:95: in signed_with_initial
+    leases.record_signature(
+src/property_rental/lease.py:637: in record_signature
+    return self._execute(
+src/property_rental/lease.py:507: in _execute
+    raise LeaseCommandInvalidError("Lease command is invalid") from exc
+E   property_rental.lease.LeaseCommandInvalidError: Lease command is invalid
+---------------------------- Captured stderr setup -----------------------------
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+_ test_a_signers_payment_of_the_primary_tenants_charge_is_returned_and_the_signer_pays_back _
+src/property_rental/lease.py:496: in _execute
+    row = connection.execute(query, parameters).fetchone()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/psycopg/connection.py:300: in execute
+    raise ex.with_traceback(None)
+E   psycopg.errors.InvalidParameterValue: Signature evidence is invalid
+E   CONTEXT:  PL/pgSQL function app.record_lease_signature(uuid,uuid,text,uuid,uuid,uuid,integer,timestamp with time zone,text,uuid) line 17 at RAISE
+
+The above exception was the direct cause of the following exception:
+tests/test_returned_payment_after_closure_migration.py:224: in test_a_signers_payment_of_the_primary_tenants_charge_is_returned_and_the_signer_pays_back
+    case = two_signer_kept_case(url)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_settlement_real_path_migration.py:340: in two_signer_kept_case
+    leases.record_signature(
+src/property_rental/lease.py:637: in record_signature
+    return self._execute(
+src/property_rental/lease.py:507: in _execute
+    raise LeaseCommandInvalidError("Lease command is invalid") from exc
+E   property_rental.lease.LeaseCommandInvalidError: Lease command is invalid
+___ test_with_nothing_refunded_the_debt_comes_back_and_no_charge_is_written ____
+src/property_rental/lease.py:496: in _execute
+    row = connection.execute(query, parameters).fetchone()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/psycopg/connection.py:300: in execute
+    raise ex.with_traceback(None)
+E   psycopg.errors.InvalidParameterValue: Signature evidence is invalid
+E   CONTEXT:  PL/pgSQL function app.record_lease_signature(uuid,uuid,text,uuid,uuid,uuid,integer,timestamp with time zone,text,uuid) line 17 at RAISE
+
+The above exception was the direct cause of the following exception:
+tests/test_returned_payment_after_closure_migration.py:276: in test_with_nothing_refunded_the_debt_comes_back_and_no_charge_is_written
+    case = two_signer_kept_case(url)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_settlement_real_path_migration.py:340: in two_signer_kept_case
+    leases.record_signature(
+src/property_rental/lease.py:637: in record_signature
+    return self._execute(
+src/property_rental/lease.py:507: in _execute
+    raise LeaseCommandInvalidError("Lease command is invalid") from exc
+E   property_rental.lease.LeaseCommandInvalidError: Lease command is invalid
+_ test_a_payment_allocated_on_the_lease_after_closure_is_returned_and_a_reversed_one_is_not _
+src/property_rental/lease.py:496: in _execute
+    row = connection.execute(query, parameters).fetchone()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/psycopg/connection.py:300: in execute
+    raise ex.with_traceback(None)
+E   psycopg.errors.InvalidParameterValue: Signature evidence is invalid
+E   CONTEXT:  PL/pgSQL function app.record_lease_signature(uuid,uuid,text,uuid,uuid,uuid,integer,timestamp with time zone,text,uuid) line 17 at RAISE
+
+The above exception was the direct cause of the following exception:
+tests/test_returned_payment_after_closure_migration.py:308: in test_a_payment_allocated_on_the_lease_after_closure_is_returned_and_a_reversed_one_is_not
+    case = closed_case(url)
+           ^^^^^^^^^^^^^^^^
+tests/test_settlement_returned_payment_migration.py:138: in closed_case
+    case = {**leaving_case(url, start_offset=this_month(url)), "url": url}
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_final_settlement_draft_migration.py:148: in leaving_case
+    source = signed_with_initial(url, start_offset)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_unpaid_initial_termination_migration.py:95: in signed_with_initial
+    leases.record_signature(
+src/property_rental/lease.py:637: in record_signature
+    return self._execute(
+src/property_rental/lease.py:507: in _execute
+    raise LeaseCommandInvalidError("Lease command is invalid") from exc
+E   property_rental.lease.LeaseCommandInvalidError: Lease command is invalid
+_ test_a_credit_applied_on_the_lease_after_closure_is_returned_through_the_correction _
+src/property_rental/lease.py:496: in _execute
+    row = connection.execute(query, parameters).fetchone()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/psycopg/connection.py:300: in execute
+    raise ex.with_traceback(None)
+E   psycopg.errors.InvalidParameterValue: Signature evidence is invalid
+E   CONTEXT:  PL/pgSQL function app.record_lease_signature(uuid,uuid,text,uuid,uuid,uuid,integer,timestamp with time zone,text,uuid) line 17 at RAISE
+
+The above exception was the direct cause of the following exception:
+tests/test_returned_payment_after_closure_migration.py:347: in test_a_credit_applied_on_the_lease_after_closure_is_returned_through_the_correction
+    case = closed_case(url)
+           ^^^^^^^^^^^^^^^^
+tests/test_settlement_returned_payment_migration.py:138: in closed_case
+    case = {**leaving_case(url, start_offset=this_month(url)), "url": url}
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_final_settlement_draft_migration.py:148: in leaving_case
+    source = signed_with_initial(url, start_offset)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_unpaid_initial_termination_migration.py:95: in signed_with_initial
+    leases.record_signature(
+src/property_rental/lease.py:637: in record_signature
+    return self._execute(
+src/property_rental/lease.py:507: in _execute
+    raise LeaseCommandInvalidError("Lease command is invalid") from exc
+E   property_rental.lease.LeaseCommandInvalidError: Lease command is invalid
+__________ test_a_payment_used_only_on_another_lease_is_still_refused __________
+src/property_rental/lease.py:496: in _execute
+    row = connection.execute(query, parameters).fetchone()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/psycopg/connection.py:300: in execute
+    raise ex.with_traceback(None)
+E   psycopg.errors.InvalidParameterValue: Signature evidence is invalid
+E   CONTEXT:  PL/pgSQL function app.record_lease_signature(uuid,uuid,text,uuid,uuid,uuid,integer,timestamp with time zone,text,uuid) line 17 at RAISE
+
+The above exception was the direct cause of the following exception:
+tests/test_returned_payment_after_closure_migration.py:377: in test_a_payment_used_only_on_another_lease_is_still_refused
+    case = closed_case(url)
+           ^^^^^^^^^^^^^^^^
+tests/test_settlement_returned_payment_migration.py:138: in closed_case
+    case = {**leaving_case(url, start_offset=this_month(url)), "url": url}
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_final_settlement_draft_migration.py:148: in leaving_case
+    source = signed_with_initial(url, start_offset)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_unpaid_initial_termination_migration.py:95: in signed_with_initial
+    leases.record_signature(
+src/property_rental/lease.py:637: in record_signature
+    return self._execute(
+src/property_rental/lease.py:507: in _execute
+    raise LeaseCommandInvalidError("Lease command is invalid") from exc
+E   property_rental.lease.LeaseCommandInvalidError: Lease command is invalid
+=============================== warnings summary ===============================
+.venv/lib/python3.11/site-packages/fastapi/testclient.py:1
+  /Users/sokompheak/Development/property-rental-management/backend/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_settlement_return_reversal_migration.py::test_a_reversal_keeps_the_applications_when_its_refund_paid_out_the_returned_money
+FAILED tests/test_settlement_return_reversal_migration.py::test_the_rest_of_a_partly_charged_back_refund_is_charged_back_when_its_payment_bounces
+FAILED tests/test_returned_payment_after_closure_migration.py::test_the_q81_payment_is_returned_through_the_correction_of_the_closed_settlement
+FAILED tests/test_returned_payment_after_closure_migration.py::test_a_signers_payment_of_the_primary_tenants_charge_is_returned_and_the_signer_pays_back
+FAILED tests/test_returned_payment_after_closure_migration.py::test_with_nothing_refunded_the_debt_comes_back_and_no_charge_is_written
+FAILED tests/test_returned_payment_after_closure_migration.py::test_a_payment_allocated_on_the_lease_after_closure_is_returned_and_a_reversed_one_is_not
+FAILED tests/test_returned_payment_after_closure_migration.py::test_a_credit_applied_on_the_lease_after_closure_is_returned_through_the_correction
+FAILED tests/test_returned_payment_after_closure_migration.py::test_a_payment_used_only_on_another_lease_is_still_refused
+=================== 8 failed, 18 passed, 1 warning in 25.95s ===================

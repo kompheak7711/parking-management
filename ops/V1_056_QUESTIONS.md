@@ -2363,7 +2363,7 @@ Recorded in docs/010 and the plan as sub-slice 10e-3d, right after 10e-3c and be
 
 Also answered with the 10e-3b report (2026-10-13): the two committed 10e-2 assertions that review round 2 made stricter (`test_settlement_deposit_receipt_correction_migration.py`, the recovery check after the commit and inside the receipt's confirm) are accepted. New standing rule (ops/V1_055_RUN_RULES.md): a change that makes a committed test stricter, found by a reviewer, is allowed without asking; each one is named in the report.
 
-## Q-2026-10-13-98 — Sub-slice 10e-4: a Payment that names no Lease, used on a closed Lease, with part refunded: which charge? (blocks nothing; please confirm)
+## Q-2026-10-13-98 — Sub-slice 10e-4: a Payment that names no Lease, used on a closed Lease, with part refunded: which charge? (blocks nothing; please confirm) (ANSWERED 2026-10-13: (a); answer in docs/010)
 
 Your answer (c) to Q-2026-10-11-81 point 3: "That Settlement's correction takes the Payment, and the charge is an `EXTRA_CHARGE` on that Lease." Your answer to Q-2026-10-11-82: "Keep the design": the person who received the Refund pays it back. Sub-slice 10e-4 is built that way and keeps the Q-2026-10-11-78 rules for where a recovery charge goes: a Payment Refund is charged on the Lease the Payment names (answer A), and with no Lease it is a Miscellaneous charge with no Lease (answer B).
 
@@ -2375,3 +2375,32 @@ Your answer (c) to Q-2026-10-11-81 point 3: "That Settlement's correction takes 
 **Recommendation: (a)**, because the $300 that came back to the Customer was never used on the Lease, and it keeps one rule for every returned Payment. The amount and the person are the same either way; only where the charge shows differs.
 
 **What goes ahead.** Everything. 10e-4 is committed with (a).
+
+**Owner answer (2026-10-13).** Option (a). Keep it as is. A Refund paid from a Payment that names no Lease gets a charge with no Lease. This follows the Q-78 rules and matches the ordinary Payment return.
+
+Recorded in docs/010. Nothing changes.
+
+Also answered with the 10e-4 report (2026-10-13): (1) the ordinary `PAYMENT_RETURN` draft that still returns a Payment whose only use on a closed Lease is an allocation (or a Credit application) with nothing refunded is named in the plan's 10h entry; the owner decides it with 10h. (2) The two known limits of a Payment used on two closed Leases are in the plan's slice 12 list; the owner decides both before go-live. (3) The short script used for one batch of `ops/traceability.json` edits in 10e-4 is accepted this time (the result is identical and was checked); documents keep being edited with the Edit tool, and a script needed again is named in the report. (4) The owner asked whether an independent reviewer compared the two changed 10e-1c tests of `test_payment_return_recovery_migration.py` with HEAD: the 10e-4 review record (round 3) shows it did and found nothing weaker, so no new review was needed before 10e-3c.
+
+## Q-2026-10-13-99 — Sub-slice 10e-3c stopped before review round 3: a targeted run failed for a cause outside the sub-slice (the host and Docker clocks) (blocks 10e-3c; recommendation (a)) (ANSWERED 2026-10-13: (a) with steps; answer in docs/010)
+
+**What happened.** 10e-3c is built and was green: P1 (2110 passed) and P2 (2111 passed) full PostgreSQL runs, U1 and U2 full unit runs. Review round 2 had no blocker and one should-fix (a test of the audit event), so under your standing rule one round 3 is allowed after one full unit run and one full PostgreSQL run. After the round 2 fixes the migration-only check passed (M6), then the targeted run T3 of the two affected modules gave 18 passed and 8 failed.
+
+**The cause is outside the sub-slice.** All 8 failures are the same error in the shared Lease fixtures, before any 10e-3c code runs: `Signature evidence is invalid` from `app.record_lease_signature`, which refuses a signature time later than the database's `statement_timestamp()`. The fixtures take the signature time from the Mac's clock (`datetime.now(UTC)`) and the database runs in the Docker VM, so the Mac's clock was ahead of the VM's clock during the run. This is cause C of sub-slice 10c-2a-3 (2026-10-08: "host clock ahead of the Docker VM clock while the display slept"). The first 18 tests of the same run passed, and the same tests passed in T2, P1 and P2. A read-only check right after the run found the two clocks in step again (the VM time fell inside the Mac's measuring window, three times). The run used `caffeinate -i`, which keeps the Mac awake but lets the display sleep.
+
+**Run rules.** No retry; a test that passed before and fails for a cause outside the sub-slice is a stop condition. So I stopped: no rerun, no round 3, no commit. All 10e-3c files are in the working tree.
+
+**Options:**
+- (a) One owner-approved rerun of T3 with `caffeinate -d -i` (the display also stays awake), then U3 and P3 the same way, then review round 3 under your standing rule, then the commit.
+- (b) As (a), but skip T3 and go straight to U3 and P3.
+- (c) Stop 10e-3c here and investigate the clock first.
+
+**Recommendation: (a)**, because the cause is known, the failures are in fixture set-up and not in 10e-3c, and a short targeted run shows quickly whether the clocks are in step before the long runs.
+
+Also for your decision: run M3' (sub-slice 10e-3c) repeated an unchanged migration-only check only to read its error text, because M3 printed only its last lines. It is listed in the review record. Every later check saved its whole output to a file first.
+
+**Owner answer (2026-10-13).** Option (a), with these steps: (1) before the rerun, check that the Mac clock and the Docker clock are in step, with a Docker image already on the Mac (such as the database image); pull no new image and download nothing else without asking (the alpine image pulled for the earlier check may stay); (2) if the clocks are not in step, stop and tell the owner; (3) rerun T3 once under `caffeinate -dims`, and from now on use `caffeinate -dims` for every targeted and full run (the form in the allow rules); (4) if T3 fails again for the same clock cause, stop and tell the owner, no further rerun; (5) then U3, the migration-only check, the read-only search for affected tests and P3, all under `caffeinate -dims`; (6) then review round 3, the independent reviewer comparing each changed committed test with HEAD, as in 10e-4; (7) then commit 10e-3c with the answers already recorded.
+
+Also answered (2026-10-13): run M3' is accepted, because it changed nothing; next time the full output is saved in `~/Development/prm-run-logs/` and read without a rerun. Lesson added to the run rules: a CASE inside a PL/pgSQL IF condition goes in parentheses (the same error happened in 10e-3b). The re-applied Deposit application numbered after the Settlement's highest application number is accepted (a new record); the 10e-3c design text says the same. The untested refusal of a Credit part on a Rent or Service Invoice with no designation: no existing real-path fixture reaches it (the only Rent and Service proposal test builds its correction by hand), so it is on the slice 12 list. The two Q-98 edits checked with one `git diff --stat` are accepted; each edit is checked on its own.
+
+Recorded in docs/010.

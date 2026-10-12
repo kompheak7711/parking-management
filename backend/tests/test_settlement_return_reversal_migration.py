@@ -11,15 +11,19 @@ financial.approve confirms it (BR-SETTLE-013, BR-AUTH-010).
 Sub-slice 10e-3b: a Deposit Refund paid to an agreed Signer is charged back to that Signer (owner
 answer (a) to Q-2026-10-12-94); when the uses are more than the returned amount, only the returned
 amount is charged back, the oldest Refund first, and every application stays (owner answer (a) to
-Q-2026-10-12-95); when the Refunds paid out less than the returned amount, the reversal waits for
-the owner (Q-2026-10-12-96).
+Q-2026-10-12-95). Sub-slice 10e-3c (owner answer (a) to Q-2026-10-12-96): when the Refunds paid out
+less than the returned amount, each is charged back whole, the newest applications are reversed
+whole until the rest of the returned amount is reached, and the part of the last of them that was
+not returned money is applied again to the same obligation from the same Credit or Deposit, so
+only the mistaken amount comes back.
 """
 
 from __future__ import annotations
 
 from dataclasses import replace
+from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 from uuid import UUID, uuid4
 
 import psycopg
@@ -51,7 +55,14 @@ from test_move_in_migration import migrated_database_url as migrated_database_ur
 from test_settlement_correction_migration import approver, settlement_row
 from test_settlement_correction_plan_migration import closed_case
 from test_settlement_deposit_refund_return_migration import pet_refund
-from test_settlement_extra_charge_migration import approving, cause, corrections, state
+from test_settlement_extra_charge_migration import (
+    approving,
+    cause,
+    corrections,
+    extra_charge,
+    state,
+)
+from test_settlement_extra_charge_migration import record as record_extra_charge
 from test_settlement_held_value_refund_migration import (
     DEPOSIT_EMPTY,
     NOTHING_LEFT,
@@ -128,10 +139,17 @@ PAYBACK_PATCHED = {
     "app.refund_recovery_allowed(app.refund_corrections)",
 }
 STALE_RECOVERY = "The Refund to recover changed; the draft is stale"
-PAID_DEBT = (
-    "The returned money also paid debt beyond what its Refunds paid out; "
-    "reversing it waits for the owner"
-)
+REAPPLY_REVISION = "20261202_128"
+REAPPLY_INTERNAL = ("app.settlement_return_reversal_reapply_steps(jsonb)",)
+REAPPLY_PATCHED = {
+    "app.settlement_return_reversal_source_state(uuid,uuid)",
+    "app.assert_settlement_return_reversal_allowed(jsonb)",
+    RECORD,
+    CONFIRM,
+    "app.settlement_return_reversal_result(uuid)",
+}
+REAPPLY_INVALID = "The part of a return reversal applied again is invalid"
+ONLY_RETURNED = "A return reversal brings back only the returned amount"
 RECOVERED_ONLY = "A Refund is recovered by a charge only inside the return of its Payment"
 REVERSE_RETURN = (
     "INSERT INTO app.refund_corrections(id,refund_id,correction_kind,reverses_correction_id,"
@@ -251,11 +269,17 @@ def test_a_mistaken_credit_return_is_reversed_and_its_new_refund_is_charged_back
     draft = record_reversal(case, reversal_command(case, earlier))
     source = draft_source(url, draft)
     assert [item["amount_usd_cents"] for item in source["credit_applications"]] == [1_500]
+    # Sub-slice 10e-3c review round 1: uses within the returned amount apply nothing again.
+    assert (
+        source["reapply"],
+        one(url, "SELECT payload->'plan' FROM app.financial_drafts WHERE id=%s", draft)[0],
+    ) == ([], {"steps": []})
     assert [
         (item["refund_id"], item["recipient_customer_id"], item["amount_usd_cents"], item["charge"])
         for item in source["recoveries"]
     ] == [(again["id"], str(customer), 500, "CLOSED_SETTLEMENT_LEASE")]
     result = confirm_reversal(case, draft)
+    assert result["reapplied"] == []
     [undone] = result["credit_application_reversals"]
     assert (undone["customer_credit_id"], undone["invoice_id"], undone["amount_usd_cents"]) == (
         str(credit),
@@ -349,8 +373,13 @@ def test_a_mistaken_deposit_return_undoes_only_the_returned_deposit_s_uses(
         "23514",
         "Returned Refund value is no longer available to reverse",
     )
+    # Sub-slice 10e-3c review round 1: uses within the returned amount apply nothing again.
+    assert (
+        draft_source(url, draft)["reapply"],
+        one(url, "SELECT payload->'plan' FROM app.financial_drafts WHERE id=%s", draft)[0],
+    ) == ([], {"steps": []})
     result = confirm_reversal(case, draft)
-    assert result["credit_application_reversals"] == []
+    assert (result["credit_application_reversals"], result["reapplied"]) == ([], [])
     [undone] = result["deposit_application_reversals"]
     assert (undone["deposit_id"], undone["amount_usd_cents"]) == (str(pet), 1_200)
     [recovery] = result["recoveries"]
@@ -863,36 +892,381 @@ def test_return_reversal_records_are_least_privilege_and_forward_only(
         assert after_functions[function][0] == body, function
 
 
-def test_returned_money_that_also_paid_debt_beyond_its_refunds_waits_for_the_owner(
+def linked(url: str, result: dict[str, Any], link: str, record: object) -> int:
+    """How often the reversal's correction links the record under that link."""
+    return int(
+        one(
+            url,
+            f"SELECT count(*) FROM app.settlement_correction_effects WHERE {link}=%s "
+            "AND settlement_correction_id=%s",
+            record,
+            correction_of(result),
+        )[0]
+    )
+
+
+def audit_of(url: str, result: dict[str, Any]) -> tuple[Any, ...]:
+    """The confirmed correction's audit event: its time and the part applied again."""
+    return one(
+        url,
+        "SELECT occurred_at,resulting_state->'reapplied' FROM app.audit_events "
+        "WHERE action='final_settlement.correction.confirmed' AND entity_id=%s",
+        correction_of(result),
+    )
+
+
+def test_returned_money_that_also_paid_debt_is_reversed_and_its_rest_applied_again(
     migrated_database_url: str,
 ) -> None:
-    """Q-2026-10-12-96 (sub-slice 10e-3b), the Credit form: 300 of a correction's Credit Refund
-    came back return only, then 1,700 more with a new Refund; the Credit, now 2,000, pays the
-    1,500 charge and refunds 500. The new Refund paid out only 500 of the mistaken 1,700, so the
-    rest paid debt; the reversal of that return is refused until the owner answers, and nothing is
-    written."""
+    """Owner answer (a) to Q-2026-10-12-96 (sub-slice 10e-3c; the 10e-3b refusal ended), the
+    owner's Credit example ($300, $1,700, $1,500, $500) at 1/100 scale, 300 cents for $300: 300
+    of a correction's 2,000 Credit Refund came back return only, then 1,700 more with a new Refund;
+    the Credit, now 2,000, pays the 1,500 charge and refunds 500. Staff find the 1,700 return never
+    happened. The reversal charges the 500 Refund back, reverses the 1,500 Credit application whole
+    and applies 300 of the same Credit to the same charge again, so the Customer owes the 500 and
+    1,200 of the charge: exactly the mistaken 1,700. The draft names the part applied again and its
+    one-step plan;
+    each record is linked; the Settlement row is unchanged; a repeat replays; the ledger
+    reconciles."""
     url = migrated_database_url
     case = refunded_case(url)
-    refund, credit = case["refund"], case["refund_credit"]
+    refund, credit, customer = case["refund"], case["refund_credit"], case["customer"]
     return_only(case, refund, 300)
-    charge_line = unpaid_charge(url, case, case["person"])[1]
+    charge_invoice, charge_line = unpaid_charge(url, case, case["person"])
     pays_debt = SettlementCreditStep(credit, LINE, charge_line, 1_500)
     later = confirm(case, record(case, return_command(case, refund, 1_700, pays_debt)))
     [again] = later["refunds"]
+    [paid_debt] = later["credit_applications"]
     assert (
         again["amount_usd_cents"],
         available(url, credit),
         outstanding(url, charge_line),
     ) == (500, 0, 0)
-    before = one(url, "SELECT count(*) FROM app.financial_drafts")
-    with pytest.raises(FinalSettlementConflictError) as paid_debt:
-        record_reversal(case, reversal_command(case, correction_of(later)))
-    assert cause(paid_debt) == ("55000", PAID_DEBT)
+    before = settlement_row(url, case["settlement"])
+    draft = record_reversal(case, reversal_command(case, correction_of(later)))
+    source = draft_source(url, draft)
     assert (
-        one(url, "SELECT count(*) FROM app.financial_drafts"),
+        [item["id"] for item in source["credit_applications"]],
+        source["uses"],
+        [(item["refund_id"], item["amount_usd_cents"]) for item in source["recoveries"]],
+    ) == (
+        [paid_debt["id"]],
+        {"applied_usd_cents": 1_500, "refunded_usd_cents": 500, "returned_refunds": 0},
+        [(again["id"], 500)],
+    )
+    [reapply] = source["reapply"]
+    assert (
+        reapply["source_kind"],
+        reapply["application_id"],
+        reapply["customer_credit_id"],
+        reapply["target_kind"],
+        reapply["target_id"],
+        reapply["reversed_usd_cents"],
+        reapply["amount_usd_cents"],
+    ) == ("CREDIT", paid_debt["id"], str(credit), "INVOICE_LINE", str(charge_line), 1_500, 300)
+    assert one(url, "SELECT payload->'plan' FROM app.financial_drafts WHERE id=%s", draft)[0] == {
+        "steps": [
+            {
+                "kind": "CUSTOMER_CREDIT",
+                "customer_credit_id": str(credit),
+                "target_kind": "INVOICE_LINE",
+                "target_id": str(charge_line),
+                "amount_usd_cents": 300,
+            }
+        ]
+    }
+    # Review round 1 (security): a draft with the real source and digest but another plan, or
+    # with a plan overlay that could map the step's line, is refused and stays pending.
+    stored = one(url, "SELECT payload,source_revision FROM app.financial_drafts WHERE id=%s", draft)
+    payload = cast(dict[str, Any], stored[0])
+    [step] = payload["plan"]["steps"]
+    for crafted_payload in (
+        {**payload, "plan": {"steps": [{**step, "amount_usd_cents": 301}]}},
+        {**payload, "plan": {"steps": []}},
+        {**payload, "plan_overlay": {"new_obligations": {}}},
+        # Review round 2 (security): another Lease.
+        {**payload, "lease_id": str(uuid4())},
+    ):
+        crafted = uuid4()
+        with psycopg.connect(url) as connection:
+            connection.execute(
+                "SELECT app.insert_financial_draft(%s,%s,%s,'SETTLEMENT_CORRECTION',"
+                "'final_settlements.prepare',%s,%s,%s)",
+                (case["prop"], case["human"], crafted, Jsonb(crafted_payload), stored[1], REASON),
+            )
+        with pytest.raises(FinalSettlementNotFoundError) as refused:
+            confirm_reversal(case, crafted)
+        assert cause(refused) == ("P0002", "Post-settlement correction draft was not found")
+        assert state(url, crafted) == "PENDING"
+    assert (available(url, credit), outstanding(url, charge_line)) == (0, 0)
+    net_before = net(url, refund)
+    result = confirm_reversal(case, draft)
+    [undone] = result["credit_application_reversals"]
+    [recovery] = result["recoveries"]
+    [restored] = result["reapplied"]
+    assert (undone["credit_application_id"], undone["amount_usd_cents"]) == (paid_debt["id"], 1_500)
+    assert (
+        recovery["refund_id"],
+        recovery["customer_id"],
+        recovery["amount_usd_cents"],
+        recovery["charge"],
+    ) == (again["id"], str(customer), 500, "EXTRA_CHARGE")
+    assert (
+        restored["source_kind"],
+        restored["customer_credit_id"],
+        restored["invoice_id"],
+        restored["invoice_line_id"],
+        restored["amount_usd_cents"],
+    ) == ("CREDIT", str(credit), str(charge_invoice), str(charge_line), 300)
+    assert datetime.fromisoformat(restored["occurred_at"]) > datetime.fromisoformat(
+        result["return_reversal"]["occurred_at"]
+    )
+    assert result["return_reversal"]["amount_usd_cents"] == 1_700
+    # Review round 2: the audit event is dated at the part applied again and names it.
+    assert audit_of(url, result) == (
+        datetime.fromisoformat(restored["occurred_at"]),
+        result["reapplied"],
+    )
+    assert (
+        linked(url, result, "credit_application_reversal_id", undone["id"]),
+        linked(url, result, "customer_credit_application_id", restored["id"]),
+        linked(url, result, "refund_correction_id", result["return_reversal"]["id"]),
+    ) == (1, 1, 1)
+    assert (
+        net(url, refund),
         net(url, again["id"]),
+        available(url, credit),
         outstanding(url, charge_line),
-    ) == (before, 500, 0)
+        charge_open(url, recovery),
+    ) == (net_before + 1_700, 0, 0, 1_200, 500)
+    assert outstanding(url, charge_line) + charge_open(url, recovery) == 1_700
+    assert settlement_row(url, case["settlement"]) == before
+    assert confirm_reversal(case, draft) == result
+    with psycopg.connect(url) as connection:
+        assert_reconciled(connection, customer)
+
+
+def test_a_mistaken_deposit_return_that_paid_debt_applies_its_rest_again(
+    migrated_database_url: str,
+) -> None:
+    """Sub-slice 10e-3c, the Deposit form of the owner's example: 300 of the Settlement's Pet
+    Deposit Refund came back return only; after a 1,500 charge, 1,700 more comes back with a new
+    Refund: the Customer's other Credit pays 300 of the charge, the Pet Deposit (now 2,000) pays
+    1,200 and refunds 800. The reversal charges the 800 back, reverses the 1,200 Pet Deposit
+    application and applies 300 of the Pet Deposit to the same line again, with the same stage, so
+    the Customer owes the 800 and 900 of the charge: exactly the mistaken 1,700. The 300 from the
+    other Credit stays. The re-applied application cannot be written outside a correction."""
+    url = migrated_database_url
+    case = {**closed_case(url), "url": url}
+    refund, pet, customer = pet_refund(case), case["pet"], case["customer"]
+    return_only(case, refund, 300)
+    _, charge_line = unpaid_charge(url, case, case["person"])
+    later = confirm(
+        case,
+        record(
+            case,
+            return_command(
+                case,
+                refund,
+                1_700,
+                SettlementCreditStep(case["new_credit"], LINE, charge_line, 300),
+                SettlementDepositStep(PET_REST, pet, LINE, charge_line, 1_200),
+                settlement_refund(case, "pet", 800),
+                pet_remainder=STAFF,
+            ),
+        ),
+    )
+    [paid] = later["refunds"]
+    [paid_debt] = later["deposit_applications"]
+    assert (held(url, pet), outstanding(url, charge_line), paid["amount_usd_cents"]) == (0, 0, 800)
+    draft = record_reversal(case, reversal_command(case, correction_of(later)))
+    [reapply] = draft_source(url, draft)["reapply"]
+    assert (
+        reapply["source_kind"],
+        reapply["application_id"],
+        reapply["deposit_id"],
+        reapply["application_stage"],
+        reapply["target_id"],
+        reapply["amount_usd_cents"],
+    ) == ("DEPOSIT", paid_debt["id"], str(pet), "PET_REMAINDER_EXPLICIT", str(charge_line), 300)
+    assert one(url, "SELECT payload->'plan' FROM app.financial_drafts WHERE id=%s", draft)[0] == {
+        "steps": [
+            {
+                "kind": "PET_DEPOSIT_REMAINDER",
+                "deposit_id": str(pet),
+                "target_kind": "INVOICE_LINE",
+                "target_id": str(charge_line),
+                "amount_usd_cents": 300,
+            }
+        ]
+    }
+    net_before = net(url, refund)
+    result = confirm_reversal(case, draft)
+    [undone] = result["deposit_application_reversals"]
+    [recovery] = result["recoveries"]
+    [restored] = result["reapplied"]
+    assert (undone["deposit_application_id"], undone["amount_usd_cents"]) == (
+        paid_debt["id"],
+        1_200,
+    )
+    assert (recovery["refund_id"], recovery["customer_id"], recovery["amount_usd_cents"]) == (
+        paid["id"],
+        str(customer),
+        800,
+    )
+    assert (
+        restored["source_kind"],
+        restored["deposit_id"],
+        restored["application_stage"],
+        restored["invoice_line_id"],
+        restored["amount_usd_cents"],
+    ) == ("DEPOSIT", str(pet), "PET_REMAINDER_EXPLICIT", str(charge_line), 300)
+    assert datetime.fromisoformat(restored["occurred_at"]) > datetime.fromisoformat(
+        result["return_reversal"]["occurred_at"]
+    )
+    assert linked(url, result, "deposit_application_id", restored["id"]) == 1
+    assert audit_of(url, result) == (
+        datetime.fromisoformat(restored["occurred_at"]),
+        result["reapplied"],
+    )
+    assert one(
+        url,
+        "SELECT (SELECT application_order FROM app.deposit_applications WHERE id=%s)"
+        ">(SELECT max(application_order) FROM app.deposit_applications "
+        "WHERE final_settlement_id=%s AND id<>%s)",
+        restored["id"],
+        case["settlement"],
+        restored["id"],
+    ) == (True,)
+    assert (
+        held(url, pet),
+        net(url, refund),
+        net(url, paid["id"]),
+        available(url, case["new_credit"]),
+        outstanding(url, charge_line),
+        charge_open(url, recovery),
+    ) == (0, net_before + 1_700, 0, 0, 900, 800)
+    with pytest.raises(psycopg.Error) as outside, psycopg.connect(url) as connection:
+        connection.execute(
+            "SELECT app.post_deposit_application(%s,%s,%s,%s,%s,'PET_REMAINDER_EXPLICIT',"
+            "'INVOICE_LINE',%s,1,99,%s)",
+            (case["prop"], case["person"], case["settlement"], uuid4(), pet, charge_line, REASON),
+        )
+    assert (outside.value.sqlstate, outside.value.diag.message_primary) == (
+        "55000",
+        "A closed Final Settlement takes no new Deposit application",
+    )
+    with psycopg.connect(url) as connection:
+        assert_reconciled(connection, customer)
+
+
+def charge(case: dict[str, Any], amount: int, description: str) -> UUID:
+    """An unpaid charge of that amount issued after closure by an EXTRA_CHARGE correction; its
+    line."""
+    draft = record_extra_charge(
+        case,
+        extra_charge(case["settlement"], amount_usd_cents=amount, description=description),
+    )
+    result = corrections().confirm_extra_charge(
+        case["prop"], draft, actor=approving(case["person"], case["prop"])
+    )
+    invoice = result["invoice"]
+    assert isinstance(invoice, dict)
+    found = one(case["url"], "SELECT id FROM app.invoice_lines WHERE invoice_id=%s", invoice["id"])
+    line = UUID(str(found[0]))
+    assert outstanding(case["url"], line) == amount
+    return line
+
+
+@pytest.mark.parametrize(
+    ("first", "mistaken", "reversed_lines", "reapplied_line", "reapplied", "owed"),
+    [
+        # The newest application reversed whole, the older one reversed and 300 applied again.
+        (300, 1_700, ("second", "first"), "first", 300, {"first": 300, "second": 900}),
+        # The newest application reversed and 100 applied again; the older one stays paid.
+        (700, 1_300, ("second",), "second", 100, {"first": 0, "second": 800}),
+        # Review round 1: the rest is exactly the newest application; nothing applied again.
+        (600, 1_400, ("second",), None, 0, {"first": 0, "second": 900}),
+    ],
+)
+def test_the_newest_applications_are_reversed_until_the_rest_of_the_returned_amount(
+    migrated_database_url: str,
+    first: int,
+    mistaken: int,
+    reversed_lines: tuple[str, ...],
+    reapplied_line: str | None,
+    reapplied: int,
+    owed: dict[str, int],
+) -> None:
+    """Sub-slice 10e-3c with two applications: a return only, then the mistaken return with a new
+    Refund; the Credit (2,000) pays a 600 charge, then a 900 charge, and refunds 500. The reversal
+    charges the 500 back and reverses the newest applications whole until the rest of the
+    mistaken amount (that amount less the 500) is reached; the part of the last one beyond the rest
+    is applied again to its own line. An older application the rest does not reach stays. The
+    Refund charged back and the debt owed again add up to the mistaken amount."""
+    url = migrated_database_url
+    case = refunded_case(url)
+    refund, credit, customer = case["refund"], case["refund_credit"], case["customer"]
+    return_only(case, refund, first)
+    lines = {
+        "first": charge(case, 600, "Replacement key card"),
+        "second": charge(case, 900, "Replacement parking remote"),
+    }
+    later = confirm(
+        case,
+        record(
+            case,
+            return_command(
+                case,
+                refund,
+                mistaken,
+                SettlementCreditStep(credit, LINE, lines["first"], 600),
+                SettlementCreditStep(credit, LINE, lines["second"], 900),
+            ),
+        ),
+    )
+    [again] = later["refunds"]
+    applications = {
+        name: next(
+            item["id"]
+            for item in later["credit_applications"]
+            if one(
+                url,
+                "SELECT invoice_line_id FROM app.customer_credit_application_details "
+                "WHERE customer_credit_application_id=%s",
+                item["id"],
+            )[0]
+            == line
+        )
+        for name, line in lines.items()
+    }
+    assert (again["amount_usd_cents"], available(url, credit)) == (500, 0)
+    draft = record_reversal(case, reversal_command(case, correction_of(later)))
+    result = confirm_reversal(case, draft)
+    assert [item["credit_application_id"] for item in result["credit_application_reversals"]] == [
+        applications[name] for name in reversed_lines
+    ]
+    [recovery] = result["recoveries"]
+    if reapplied_line is None:
+        assert (draft_source(url, draft)["reapply"], result["reapplied"]) == ([], [])
+        assert one(url, "SELECT payload->'plan' FROM app.financial_drafts WHERE id=%s", draft)[
+            0
+        ] == {"steps": []}
+    else:
+        [restored] = result["reapplied"]
+        assert (restored["invoice_line_id"], restored["amount_usd_cents"]) == (
+            str(lines[reapplied_line]),
+            reapplied,
+        )
+    assert {name: outstanding(url, line) for name, line in lines.items()} == owed
+    assert (recovery["amount_usd_cents"], available(url, credit), net(url, refund)) == (
+        500,
+        0,
+        2_000 - first,
+    )
+    assert sum(owed.values()) + charge_open(url, recovery) == mistaken
+    with psycopg.connect(url) as connection:
+        assert_reconciled(connection, customer)
 
 
 def test_a_reversal_keeps_the_applications_when_its_refund_paid_out_the_returned_money(
@@ -931,7 +1305,14 @@ def test_a_reversal_keeps_the_applications_when_its_refund_paid_out_the_returned
         {"applied_usd_cents": 1_500, "refunded_usd_cents": 200, "returned_refunds": 0},
         [(again["id"], 200, 200)],
     )
+    # Sub-slice 10e-3c review round 1: Refunds that paid out the returned amount apply nothing
+    # again.
+    assert (
+        source["reapply"],
+        one(url, "SELECT payload->'plan' FROM app.financial_drafts WHERE id=%s", draft)[0],
+    ) == ([], {"steps": []})
     result = confirm_reversal(case, draft)
+    assert result["reapplied"] == []
     [recovery] = result["recoveries"]
     assert (
         result["credit_application_reversals"],
@@ -988,9 +1369,10 @@ def test_the_rest_of_a_partly_charged_back_refund_is_charged_back_when_its_payme
 
 def test_the_shared_path_refusals_fail_closed(migrated_database_url: str) -> None:
     """Review round 1 (sub-slice 10e-3b), on the refusal function: on the shared path a Refund of
-    the uses with its own return (also one returned in full, so not listed) is refused; Refunds
-    that paid out less than the returned amount wait for the owner (Q-2026-10-12-96); missing
-    totals are refused."""
+    the uses with its own return (also one returned in full, so not listed) is refused; missing
+    totals are refused. Sub-slice 10e-3c (owner answer (a) to Q-2026-10-12-96): Refunds that paid
+    out less than the returned amount no longer wait for the owner (the source names the part
+    applied again, here none)."""
     url = migrated_database_url
     shared: dict[str, Any] = {
         "earlier": {"amount_usd_cents": 500, "reversed": False},
@@ -999,14 +1381,14 @@ def test_the_shared_path_refusals_fail_closed(migrated_database_url: str) -> Non
         "recoveries": [{"amount_usd_cents": 500, "returns": 0}],
         "source": {"value_usd_cents": 0},
         "uses": {"applied_usd_cents": 0, "refunded_usd_cents": 1_500, "returned_refunds": 0},
+        "reapply": [],
     }
     check = "SELECT app.assert_settlement_return_reversal_allowed(%s)"
     with psycopg.connect(url) as connection:
         connection.execute(check, (Jsonb(shared),))
-    for changed, message in (
-        ({"returned_refunds": 1}, OWN_RETURN),
-        ({"applied_usd_cents": 1_100, "refunded_usd_cents": 400}, PAID_DEBT),
-    ):
+        ended = {**shared["uses"], "applied_usd_cents": 1_100, "refunded_usd_cents": 400}
+        connection.execute(check, (Jsonb({**shared, "uses": ended}),))
+    for changed, message in (({"returned_refunds": 1}, OWN_RETURN),):
         source = {**shared, "uses": {**shared["uses"], **changed}}
         with pytest.raises(psycopg.Error) as refused, psycopg.connect(url) as connection:
             connection.execute(check, (Jsonb(source),))
@@ -1098,6 +1480,206 @@ def test_the_return_reversal_payback_rules_are_least_privilege_and_forward_only(
     for name in PAYBACK_PATCHED:
         assert after_functions[name][1:] == before_functions[name][1:], name
     assert {function for function, _ in revision.module.PATCHES} == PAYBACK_PATCHED
+    for function, replacements in revision.module.PATCHES:
+        body = str(before_functions[function][0])
+        for anchor, replacement in replacements:
+            assert body.count(anchor) == 1, function
+            body = body.replace(anchor, replacement)
+        assert after_functions[function][0] == body, function
+
+
+def test_the_part_applied_again_fails_closed(migrated_database_url: str) -> None:
+    """Sub-slice 10e-3c, on the refusal function with built sources of the owner's Credit example
+    (1,700 returned; the 500 Refund and 1,200 of the 1,500 application come back; 300 applied
+    again): it passes; the part applied again must be a list, with an entry only when the
+    Refunds paid out less than the returned amount and at most one, from a listed application of
+    the returned Refund's own Credit and of the same obligation, above 0 and below that
+    application's amount; the reversal brings back exactly the returned amount when the uses are
+    more than it; the source must still hold the part after the return is reversed; a Refund of
+    the uses with its own return is still refused. The plan built from the part is one Customer
+    Credit step, or none."""
+    url = migrated_database_url
+    application, credit = str(uuid4()), str(uuid4())
+    entry = {
+        "source_kind": "CREDIT",
+        "application_id": application,
+        "amount_usd_cents": 300,
+        "customer_credit_id": credit,
+        "target_kind": "INVOICE_LINE",
+        "target_id": str(uuid4()),
+        "customer_designation": None,
+    }
+    partial: dict[str, Any] = {
+        "earlier": {
+            "amount_usd_cents": 1_700,
+            "reversed": False,
+            "customer_credit_id": credit,
+            "deposit_id": None,
+        },
+        "credit_applications": [
+            {
+                "id": application,
+                "customer_credit_id": credit,
+                "late_payment_charge_id": None,
+                "amount_usd_cents": 1_500,
+            }
+        ],
+        "deposit_applications": [],
+        "recoveries": [{"amount_usd_cents": 500, "returns": 0}],
+        "source": {"value_usd_cents": 0},
+        "uses": {"applied_usd_cents": 1_500, "refunded_usd_cents": 500, "returned_refunds": 0},
+        "reapply": [entry],
+    }
+    check = "SELECT app.assert_settlement_return_reversal_allowed(%s)"
+    with psycopg.connect(url) as connection:
+        connection.execute(check, (Jsonb(partial),))
+        assert connection.execute(
+            "SELECT app.settlement_return_reversal_reapply_steps(%s)", (Jsonb(partial),)
+        ).fetchone() == (
+            [
+                {
+                    "kind": "CUSTOMER_CREDIT",
+                    "customer_credit_id": entry["customer_credit_id"],
+                    "target_kind": "INVOICE_LINE",
+                    "target_id": entry["target_id"],
+                    "amount_usd_cents": 300,
+                }
+            ],
+        )
+        assert connection.execute(
+            "SELECT app.settlement_return_reversal_reapply_steps(%s)",
+            (Jsonb({**partial, "reapply": []}),),
+        ).fetchone() == ([],)
+    within = {"applied_usd_cents": 1_500, "refunded_usd_cents": 0, "returned_refunds": 0}
+    for source, message in (
+        ({**partial, "reapply": None}, REAPPLY_INVALID),
+        ({**partial, "reapply": {}}, REAPPLY_INVALID),
+        ({key: item for key, item in partial.items() if key != "reapply"}, REAPPLY_INVALID),
+        ({**partial, "reapply": [entry, entry]}, REAPPLY_INVALID),
+        ({**partial, "reapply": [{**entry, "amount_usd_cents": 0}]}, REAPPLY_INVALID),
+        ({**partial, "reapply": [{**entry, "amount_usd_cents": 1_500}]}, REAPPLY_INVALID),
+        ({**partial, "reapply": [{**entry, "application_id": str(uuid4())}]}, REAPPLY_INVALID),
+        ({**partial, "reapply": [{**entry, "source_kind": "DEPOSIT"}]}, REAPPLY_INVALID),
+        ({**partial, "reapply": [{**entry, "customer_credit_id": str(uuid4())}]}, REAPPLY_INVALID),
+        (
+            {**partial, "reapply": [{**entry, "target_kind": "LATE_PAYMENT_CHARGE"}]},
+            REAPPLY_INVALID,
+        ),
+        (
+            {**partial, "earlier": {**partial["earlier"], "customer_credit_id": str(uuid4())}},
+            REAPPLY_INVALID,
+        ),
+        ({**partial, "uses": within, "recoveries": []}, REAPPLY_INVALID),
+        ({**partial, "reapply": [{**entry, "amount_usd_cents": 200}]}, ONLY_RETURNED),
+        ({**partial, "reapply": []}, ONLY_RETURNED),
+        ({**partial, "recoveries": [{"amount_usd_cents": 400, "returns": 0}]}, ONLY_RETURNED),
+        ({**partial, "source": {}}, NOT_AVAILABLE),
+        ({**partial, "source": {"value_usd_cents": -1}}, NOT_AVAILABLE),
+        ({**partial, "uses": {**partial["uses"], "returned_refunds": 1}}, OWN_RETURN),
+    ):
+        with pytest.raises(psycopg.Error) as refused, psycopg.connect(url) as connection:
+            connection.execute(check, (Jsonb(source),))
+        assert (refused.value.sqlstate, refused.value.diag.message_primary) == (
+            "55000",
+            message,
+        ), source
+    # Review round 2: the Deposit form of the same source, and an entry when the Refunds covered
+    # the returned amount.
+    deposit_application, deposit, line = str(uuid4()), str(uuid4()), str(uuid4())
+    deposit_entry = {
+        "source_kind": "DEPOSIT",
+        "application_id": deposit_application,
+        "amount_usd_cents": 300,
+        "customer_credit_id": None,
+        "deposit_id": deposit,
+        "application_stage": "PET_REMAINDER_EXPLICIT",
+        "target_kind": "INVOICE_LINE",
+        "target_id": line,
+    }
+    deposit_source = {
+        **partial,
+        "earlier": {**partial["earlier"], "customer_credit_id": None, "deposit_id": deposit},
+        "credit_applications": [],
+        "deposit_applications": [
+            {
+                "id": deposit_application,
+                "deposit_id": deposit,
+                "invoice_line_id": line,
+                "late_payment_charge_id": None,
+                "amount_usd_cents": 1_500,
+            }
+        ],
+        "reapply": [deposit_entry],
+    }
+    with psycopg.connect(url) as connection:
+        connection.execute(check, (Jsonb(deposit_source),))
+        assert connection.execute(
+            "SELECT app.settlement_return_reversal_reapply_steps(%s)", (Jsonb(deposit_source),)
+        ).fetchone() == (
+            [
+                {
+                    "kind": "PET_DEPOSIT_REMAINDER",
+                    "deposit_id": deposit,
+                    "target_kind": "INVOICE_LINE",
+                    "target_id": line,
+                    "amount_usd_cents": 300,
+                }
+            ],
+        )
+    covered = {"applied_usd_cents": 1_500, "refunded_usd_cents": 1_700, "returned_refunds": 0}
+    for source in (
+        {**deposit_source, "reapply": [{**deposit_entry, "deposit_id": str(uuid4())}]},
+        {**deposit_source, "reapply": [{**deposit_entry, "target_id": str(uuid4())}]},
+        {**deposit_source, "reapply": [{**deposit_entry, "target_kind": "LATE_PAYMENT_CHARGE"}]},
+        {**deposit_source, "uses": covered},
+    ):
+        with pytest.raises(psycopg.Error) as refused, psycopg.connect(url) as connection:
+            connection.execute(check, (Jsonb(source),))
+        assert (refused.value.sqlstate, refused.value.diag.message_primary) == (
+            "55000",
+            REAPPLY_INVALID,
+        ), source
+
+
+def test_the_part_applied_again_is_least_privilege_and_forward_only(
+    migrated_database_url: str,
+) -> None:
+    """Sub-slice 10e-3c: no role calls the new internal plan function, SECURITY DEFINER with the
+    fixed search path; migration 128 adds only that function, changes only the five listed
+    functions (privileges and settings kept; each patched body is exactly the old one with the
+    module's replacements), no constraint and no trigger, and is forward-only."""
+    url = migrated_database_url
+    with psycopg.connect(url) as connection:
+        for function in REAPPLY_INTERNAL:
+            for role in ("prm_runtime", "prm_financial", "prm_bootstrap", "public"):
+                assert connection.execute(
+                    "SELECT has_function_privilege(%s,%s,'EXECUTE')", (role, function)
+                ).fetchone() == (False,), (function, role)
+            assert connection.execute(
+                "SELECT p.prosecdef,p.proconfig[1] FROM pg_catalog.pg_proc p "
+                "WHERE p.oid=CAST(%s AS regprocedure)",
+                (function,),
+            ).fetchone() == (True, "search_path=pg_catalog"), function
+    config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
+    scripts = ScriptDirectory.from_config(config)
+    revision = scripts.get_revision(REAPPLY_REVISION)
+    assert revision is not None and revision.down_revision == "20261201_127"
+    with pytest.raises(RuntimeError, match="forward-only"):
+        revision.module.downgrade()
+    with _temporary_migration_database("settlement_return_reversal_reapply") as temporary:
+        alembic_command.upgrade(config, "20261201_127")
+        before_functions, before_constraints, before_triggers = app_catalog(temporary)
+        alembic_command.upgrade(config, REAPPLY_REVISION)
+        after_functions, after_constraints, after_triggers = app_catalog(temporary)
+    assert (after_triggers, after_constraints) == (before_triggers, before_constraints)
+    assert set(after_functions) - set(before_functions) == set(REAPPLY_INTERNAL)
+    assert set(before_functions) <= set(after_functions)
+    assert {
+        name for name in before_functions if after_functions[name] != before_functions[name]
+    } == REAPPLY_PATCHED
+    for name in REAPPLY_PATCHED:
+        assert after_functions[name][1:] == before_functions[name][1:], name
+    assert {function for function, _ in revision.module.PATCHES} == REAPPLY_PATCHED
     for function, replacements in revision.module.PATCHES:
         body = str(before_functions[function][0])
         for anchor, replacement in replacements:

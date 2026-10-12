@@ -882,7 +882,10 @@ class RecordReturnReversalCorrectionCommand:
     the return never happened. The confirmation undoes the uses of the returned Refund's own Credit
     or Deposit by that correction and the held-value corrections naming it, recovers each of their
     Refunds from that source by a charge to the person who received it, then reverses the return,
-    each linked to the correction; there is no DL-032 plan.
+    each linked to the correction; staff enter no DL-032 step. Only the mistaken amount comes back
+    (sub-slices 10e-3b and 10e-3c): when the Refunds paid out less than the returned amount, the
+    newest applications are undone until the rest of it is reached, and the part of the last one
+    that was not returned money is applied again to the same obligation from the same source.
     """
 
     idempotency_key: UUID
@@ -1570,8 +1573,12 @@ class SettlementCorrectionService:
 
         A draft whose earlier correction, returned Credit or Deposit, or records to undo changed
         since it was recorded is stale and stays pending; a return already reversed, a value no
-        longer available or a Refund with its own return is a conflict; an exact repeat by the same
-        approver writes nothing and returns the result again.
+        longer available or a Refund with its own return is a conflict; a draft whose stored plan
+        or keys differ from what its source gives is not found; an exact repeat by the same
+        approver writes nothing and returns the result again. When part of an application is
+        applied again (sub-slice 10e-3c), the existing Credit and Deposit application checks
+        still apply, so a state they refuse (for example a Rent-first proposal that no longer
+        gives the line) refuses the confirmation.
         """
         actor_id = FinalSettlementService._authorize(
             actor, property_id, FINANCIAL_APPROVE_CAPABILITY

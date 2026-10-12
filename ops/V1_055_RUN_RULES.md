@@ -33,6 +33,7 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md. Nothing else 
 - Run every lint, format and type check in its own tool call: one tool, one command. Never join two of them with `&&`, `;`, `||` or a pipe, not even on one file and not even after a quick fix (owner, 2026-10-06; it happened in 8e-2 and 8f).
 - If any code, migration or test file changes after the last full PostgreSQL run of a sub-slice, run the full PostgreSQL run again before the commit. Only text-only changes may skip it, as in the owner answers to Q-2026-10-07-44 and Q-2026-10-09-67 (owner, 2026-10-09; the VOLATILE change of 10c-3b-1 came after its full run and is covered by the first full run of 10c-3b-2).
 - Before any run output goes into a repo file, check it for passwords and other secrets, also from a throwaway test database (owner, 2026-10-09).
+- Lesson: put a CASE inside a PL/pgSQL IF condition in parentheses; otherwise the IF ends at the CASE's first THEN (owner, 2026-10-13; it broke 10e-3b and 10e-3c).
 
 ## Commits
 - One local checkpoint commit per sub-slice, explicit paths, secret and diff scan.

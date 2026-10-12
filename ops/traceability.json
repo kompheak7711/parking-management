@@ -40266,7 +40266,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_return_reversal_migration.py",
       "status": "implemented",
-      "notes": "A 2,000 Credit return that paid a 1,500 charge and refunded 500 is reversed after a later return of part of the 500 is reversed first: the 1,500 Credit application is undone (owed again), the 500 is charged back to the Customer by an EXTRA_CHARGE, the return is reversed (net 2,000 again, the Credit empty); the draft shows each undo and charge; the Settlement row is unchanged; replay; a second reversal refused (V1-056 sub-slice 10e-3)."
+      "notes": "A 2,000 Credit return that paid a 1,500 charge and refunded 500 is reversed after a later return of part of the 500 is reversed first: the 1,500 Credit application is undone (owed again), the 500 is charged back to the Customer by an EXTRA_CHARGE, the return is reversed (net 2,000 again, the Credit empty); the draft shows each undo and charge; the Settlement row is unchanged; replay; a second reversal refused (V1-056 sub-slice 10e-3). Sub-slice 10e-3c review round 1 (stricter): nothing is applied again (no part in the source, an empty plan, no re-applied record)."
     },
     {
       "test_id": "test_a_mistaken_deposit_return_undoes_only_the_returned_deposit_s_uses",
@@ -40274,7 +40274,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_return_reversal_migration.py",
       "status": "implemented",
-      "notes": "The reversal of a 5,400 Pet Deposit Refund return that paid 300 from the Customer's other Credit, 1,200 from the Pet Deposit and refunded 4,200 undoes only the 1,200 Pet Deposit application and charges the 4,200 back; the 300 stays; the Pet Deposit ends empty; a reversal row outside a correction is refused, and inside it a reversal row written before the undo is refused because the Pet Deposit does not hold the returned amount (V1-056 sub-slice 10e-3)."
+      "notes": "The reversal of a 5,400 Pet Deposit Refund return that paid 300 from the Customer's other Credit, 1,200 from the Pet Deposit and refunded 4,200 undoes only the 1,200 Pet Deposit application and charges the 4,200 back; the 300 stays; the Pet Deposit ends empty; a reversal row outside a correction is refused, and inside it a reversal row written before the undo is refused because the Pet Deposit does not hold the returned amount (V1-056 sub-slice 10e-3). Sub-slice 10e-3c review round 1 (stricter): nothing is applied again (no part in the source, an empty plan, no re-applied record)."
     },
     {
       "test_id": "test_a_mistaken_pay_back_return_into_a_kept_pet_deposit_is_reversed",
@@ -40341,12 +40341,12 @@
       "notes": "A stale return reversal draft stays pending (P5S02); other refusals keep the Final Settlement error mapping (V1-056 sub-slice 10e-3)."
     },
     {
-      "test_id": "test_returned_money_that_also_paid_debt_beyond_its_refunds_waits_for_the_owner",
-      "upstream_ids": ["BR-SETTLE-013", "DL-032", "DB-REFUND-002"],
+      "test_id": "test_returned_money_that_also_paid_debt_is_reversed_and_its_rest_applied_again",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-016", "DL-032", "DB-REFUND-002", "DB-SETTLE-005"],
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_return_reversal_migration.py",
       "status": "implemented",
-      "notes": "Credit form on the real path: 300 returned only, then 1,700 with a new Refund after a 1,500 Credit application; the new Refund paid out only 500 of the mistaken 1,700, so the reversal is refused until the owner answers Q-2026-10-12-96 and nothing is written (V1-056 sub-slice 10e-3b)."
+      "notes": "Credit form on the real path, the owner's Q-2026-10-12-96 example: 300 returned only, then 1,700 with a new Refund after a 1,500 Credit application and a 500 Refund; the reversal charges the 500 back, reverses the 1,500 application whole and applies 300 of the same Credit to the same line again (one-step plan in the draft, linked, after the return reversal), so 500 and 1,200 are owed again, exactly the mistaken 1,700; drafts with the real source and digest but another plan, no step, a plan overlay or another Lease are refused (P0002) and stay pending (review rounds 1 and 2); the audit event is dated at the part applied again and names it (review round 2); the Settlement row is unchanged, a repeat replays and the ledger reconciles (V1-056 sub-slice 10e-3b; changed and renamed in sub-slice 10e-3c under owner answer (a) to Q-2026-10-12-96, which ends the refusal)."
     },
     {
       "test_id": "test_a_reversal_keeps_the_applications_when_its_refund_paid_out_the_returned_money",
@@ -40354,7 +40354,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_return_reversal_migration.py",
       "status": "implemented",
-      "notes": "Credit form on the real path: 1,800 returned only, then 200 with a new Refund after a 1,500 charge; the reversal of the 200 return charges back only the 200 Refund by an EXTRA_CHARGE, keeps the 1,500 Credit application and leaves the Credit at 300; the ledger reconciles (V1-056 sub-slice 10e-3b, review round 1)."
+      "notes": "Credit form on the real path: 1,800 returned only, then 200 with a new Refund after a 1,500 charge; the reversal of the 200 return charges back only the 200 Refund by an EXTRA_CHARGE, keeps the 1,500 Credit application and leaves the Credit at 300; the ledger reconciles (V1-056 sub-slice 10e-3b, review round 1). Sub-slice 10e-3c review round 1 (stricter): nothing is applied again (no part in the source, an empty plan, no re-applied record)."
     },
     {
       "test_id": "test_the_rest_of_a_partly_charged_back_refund_is_charged_back_when_its_payment_bounces",
@@ -40370,7 +40370,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_return_reversal_migration.py",
       "status": "implemented",
-      "notes": "The refusal function on built sources: the shared path passes; a Refund of the uses with its own return and Refunds that paid out less than the returned amount (Q-2026-10-12-96) are refused; missing totals are refused with their own message (V1-056 sub-slice 10e-3b, review rounds 1 and 2)."
+      "notes": "The refusal function on built sources: the shared path passes; a Refund of the uses with its own return is refused; missing totals are refused with their own message (V1-056 sub-slice 10e-3b, review rounds 1 and 2). Sub-slice 10e-3c (owner answer (a) to Q-2026-10-12-96): Refunds that paid out less than the returned amount now pass (the built source names no part applied again)."
     },
     {
       "test_id": "test_the_return_reversal_payback_rules_are_least_privilege_and_forward_only",
@@ -40443,6 +40443,38 @@
       "test_path": "backend/tests/test_returned_payment_after_closure_migration.py",
       "status": "implemented",
       "notes": "Migration 127 adds no function, constraint or trigger and changes only the three listed internal functions, each patched body exactly the old one with its replacements, privileges and settings kept; no role calls them; forward-only (V1-056 sub-slice 10e-4)."
+    },
+    {
+      "test_id": "test_a_mistaken_deposit_return_that_paid_debt_applies_its_rest_again",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-016", "DL-032", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_migration.py",
+      "status": "implemented",
+      "notes": "Deposit form of the owner's Q-2026-10-12-96 example on the real path: 300 of the Pet Deposit Refund returned only, then 1,700 with a new Refund (the other Credit pays 300, the Pet Deposit 1,200, 800 refunded); the reversal charges the 800 back, reverses the 1,200 application and applies 300 of the Pet Deposit to the same line again with the same stage (one Pet Deposit remainder step in the draft's plan), after the return reversal, numbered after the Settlement's last application and linked, the audit event dated at it (review round 2), so 800 and 900 are owed again; the other Credit's 300 stays; a Deposit application outside a correction is refused after closure; the ledger reconciles (V1-056 sub-slice 10e-3c)."
+    },
+    {
+      "test_id": "test_the_newest_applications_are_reversed_until_the_rest_of_the_returned_amount",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-016", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_migration.py",
+      "status": "implemented",
+      "notes": "Two Credit applications (600, then 900) and a 500 Refund on the real path: with 1,700 mistaken the newest is reversed whole and 300 of the older one is applied again; with 1,300 mistaken the newest is reversed and 100 of it applied again while the older one stays paid; with 1,400 mistaken (the rest is exactly the newest) the newest is reversed and nothing is applied again (empty part and plan; review round 1); in each the Refund charged back and the debt owed again add up to the mistaken amount and the ledger reconciles (V1-056 sub-slice 10e-3c)."
+    },
+    {
+      "test_id": "test_the_part_applied_again_fails_closed",
+      "upstream_ids": ["BR-SETTLE-013", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_migration.py",
+      "status": "implemented",
+      "notes": "The refusal function on built sources of the owner's example passes; a part applied again that is missing, not a list, more than one entry, 0, the whole application, not a listed application, of the other source, of another Credit, of another obligation kind, not of the returned Refund's own Credit, or present when the uses are within the returned amount is refused; a reversal that would bring back more or, with uses beyond the returned amount, less than the returned amount, a source that would not hold the part after the return reversal (or has no value) and a Refund with its own return are refused (review round 1); the Deposit form passes, and a part of another Deposit, another line or another obligation kind, or present when the Refunds covered the returned amount, is refused (review round 2); the one-step plan function gives one Customer Credit step or none (V1-056 sub-slice 10e-3c)."
+    },
+    {
+      "test_id": "test_the_part_applied_again_is_least_privilege_and_forward_only",
+      "upstream_ids": ["BR-SETTLE-013", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_migration.py",
+      "status": "implemented",
+      "notes": "Migration 128 adds only the internal plan function (no role calls it; SECURITY DEFINER, fixed search path), changes only the five listed functions, each patched body exactly the old one with its replacements, privileges and settings kept, adds no constraint or trigger, and is forward-only (V1-056 sub-slice 10e-3c)."
     }
   ]
 }
