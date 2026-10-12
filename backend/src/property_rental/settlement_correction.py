@@ -724,7 +724,9 @@ class RecordForfeitureReversalCorrectionCommand:
 @dataclass(frozen=True, slots=True)
 class RecordReturnedPaymentCorrectionCommand:
     """A returned (bounced) Payment whose records a closed Final Settlement relied on (V1-056
-    sub-slice 10e-1b); the database checks it against current state.
+    sub-slice 10e-1b), or that names that Settlement's Lease, or whose money or a Refund of whose
+    value is on that Lease after closure (sub-slice 10e-4); the database checks it against current
+    state.
 
     ``payment_id`` names the Payment and ``evidence_reference`` the bank's return notice. The
     confirmation reverses the Payment's Credit applications, Credits, allocations, the forfeitures,

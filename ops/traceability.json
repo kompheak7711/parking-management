@@ -39882,7 +39882,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_payment_return_recovery_migration.py",
       "status": "implemented",
-      "notes": "Refused (55000): a Reservation outcome Refund (Q-2026-10-11-81), a Refund of a Deposit another Payment also funded, a charge on a Lease whose closed Final Settlement the return cannot correct (the PAYMENT_RETURN draft: any; a correction: another Settlement's); the own Settlement's Lease, an open Lease and no Lease pass (V1-056 sub-slice 10e-1c)."
+      "notes": "Refused (55000): a Reservation outcome Refund (Q-2026-10-11-81), a Refund of a Deposit another Payment also funded, a charge on a Lease whose closed Final Settlement the return cannot correct (the PAYMENT_RETURN draft: any, with a message that names the correction since sub-slice 10e-4; a correction: another Settlement's); the own Settlement's Lease, an open Lease and no Lease pass (V1-056 sub-slice 10e-1c)."
     },
     {
       "test_id": "test_a_recovery_is_written_only_inside_the_return_of_its_payment",
@@ -39930,7 +39930,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_payment_return_recovery_migration.py",
       "status": "implemented",
-      "notes": "Each remaining refusal on a real source, with no return and no draft written: a cancelled Reservation's Deposit Refund, a Pet Refund-review Refund of a Deposit two Payments funded, and a Payment naming a Lease whose closed Final Settlement did not rely on it (refused by the PAYMENT_RETURN draft and by that Settlement's correction) (V1-056 sub-slice 10e-1c, review round 1, Q-2026-10-11-81)."
+      "notes": "Each remaining refusal on a real source, with no return written and no draft for a refused case: a cancelled Reservation's Deposit Refund, a Pet Refund-review Refund of a Deposit two Payments funded, and a Payment naming a Lease whose closed Final Settlement did not rely on it (refused by the PAYMENT_RETURN draft, which names the correction; since sub-slice 10e-4, owner answer (c) to Q-2026-10-11-81, recorded by that Settlement's correction with its Refund planned as an EXTRA_CHARGE on the Lease) (V1-056 sub-slice 10e-1c, review round 1, Q-2026-10-11-81)."
     },
     {
       "test_id": "test_a_pet_refund_paid_to_an_agreed_signer_is_charged_to_that_signer_on_the_open_lease",
@@ -40379,6 +40379,70 @@
       "test_path": "backend/tests/test_settlement_return_reversal_migration.py",
       "status": "implemented",
       "notes": "No role calls the two new internal functions (the recovery amount and the recovery charge reference; SECURITY DEFINER, fixed search path); migration 126 adds only them and changes only the six listed functions, each patched body exactly the old one with its replacements, privileges and settings kept; no constraint or trigger changes; forward-only (V1-056 sub-slice 10e-3b)."
+    },
+    {
+      "test_id": "test_the_q81_payment_is_returned_through_the_correction_of_the_closed_settlement",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-016", "DB-PAY-009", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_returned_payment_after_closure_migration.py",
+      "status": "implemented",
+      "notes": "The owner's Q-2026-10-11-81 example to the cent ($900, 90,000 cents): a $900 Payment naming the closed Lease after closure, $300 refunded, the transfer bounces; the PAYMENT_RETURN draft refuses it and names the correction; the RETURNED_PAYMENT correction of that Settlement records it and charges the $300 back to the Customer by a linked EXTRA_CHARGE on that Lease; the Payment is reversed and the return names the correction; the Settlement row is unchanged and the ledger reconciles (V1-056 sub-slice 10e-4)."
+    },
+    {
+      "test_id": "test_a_signers_payment_of_the_primary_tenants_charge_is_returned_and_the_signer_pays_back",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-016", "DB-PAY-009"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_returned_payment_after_closure_migration.py",
+      "status": "implemented",
+      "notes": "The owner's Q-2026-10-11-82 case on a really closed two-Signer Lease: the second Signer's $900 Payment pays $600 of the Primary Tenant's EXTRA_CHARGE and $300 is refunded to the Signer; on its return the Primary Tenant owes the $600 again and the Signer is charged $300 by an EXTRA_CHARGE on the Lease, each record linked; both ledgers reconcile (V1-056 sub-slice 10e-4)."
+    },
+    {
+      "test_id": "test_with_nothing_refunded_the_debt_comes_back_and_no_charge_is_written",
+      "upstream_ids": ["BR-SETTLE-016", "DB-PAY-009"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_returned_payment_after_closure_migration.py",
+      "status": "implemented",
+      "notes": "The second case of the owner answer to Q-2026-10-11-82: with nothing refunded the correction reverses the allocation, so the Customer whose debt the Payment paid owes the $600 again; no recovery and no new Invoice; the Settlement row is unchanged (V1-056 sub-slice 10e-4)."
+    },
+    {
+      "test_id": "test_a_payment_used_only_on_another_lease_is_still_refused",
+      "upstream_ids": ["BR-SETTLE-013", "DB-PAY-009"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_returned_payment_after_closure_migration.py",
+      "status": "implemented",
+      "notes": "A Payment that pays an Invoice of another, open Lease is not used on the closed Lease: the correction still refuses it (55000) and writes nothing (V1-056 sub-slice 10e-4)."
+    },
+    {
+      "test_id": "test_a_payment_allocated_on_the_lease_after_closure_is_returned_and_a_reversed_one_is_not",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-016", "DB-PAY-009"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_returned_payment_after_closure_migration.py",
+      "status": "implemented",
+      "notes": "The allocation branch of used_on_lease: a Customer Payment naming no Lease, allocated after closure to the closed Lease's EXTRA_CHARGE Invoice, is returned by the correction (allocation and Payment reversals linked, the 40,000 owed again); a second such Payment whose allocation was reversed first is refused and nothing is written (V1-056 sub-slice 10e-4, review round 1)."
+    },
+    {
+      "test_id": "test_a_credit_applied_on_the_lease_after_closure_is_returned_through_the_correction",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-016", "DB-PAY-009"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_returned_payment_after_closure_migration.py",
+      "status": "implemented",
+      "notes": "The Credit-application branch of used_on_lease: a Customer Payment's 25,000 Credit applied after closure to the closed Lease's EXTRA_CHARGE is returned by the correction (Credit application, Credit and Payment reversals linked, the 25,000 owed again); the Settlement row is unchanged and the ledger reconciles (V1-056 sub-slice 10e-4, review round 1)."
+    },
+    {
+      "test_id": "test_the_refusal_lets_through_only_a_payment_used_on_this_lease",
+      "upstream_ids": ["BR-SETTLE-013", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_returned_payment_after_closure_migration.py",
+      "status": "implemented",
+      "notes": "The correction's check on built sources: it passes with used_on_lease true or a recovery on this Settlement's Lease; false, missing, null or non-boolean used_on_lease and a recovery on another closed Settlement's Lease are refused; a source without a reliance list is refused (fail closed); another Settlement's reliance is refused first (V1-056 sub-slice 10e-4, review round 1)."
+    },
+    {
+      "test_id": "test_returned_payment_after_closure_is_least_privilege_and_forward_only",
+      "upstream_ids": ["BR-SETTLE-013", "DB-PAY-009"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_returned_payment_after_closure_migration.py",
+      "status": "implemented",
+      "notes": "Migration 127 adds no function, constraint or trigger and changes only the three listed internal functions, each patched body exactly the old one with its replacements, privileges and settings kept; no role calls them; forward-only (V1-056 sub-slice 10e-4)."
     }
   ]
 }

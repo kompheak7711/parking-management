@@ -2319,7 +2319,7 @@ Example: after closure, $1,000 of the Settlement's Pet Deposit Refund comes back
 
 Recorded in docs/010 and the plan. Built in sub-slice 10e-3b (after 10e-3, before 10e-4), for the Deposit and the Credit form: when the uses are more than the returned amount, the Refunds paid out the returned money first (the oldest Refund first), so each is charged back only for its share of the returned amount, and every Deposit or Credit application stays. In the example the reversal charges back $500, the $1,000 rest of the new Refund stays paid, and the Pet Deposit holds nothing, so a held-value Refund naming X1 is refused. Implementer's reading: X1's own left value (the label `app.settlement_held_deposit_value` reads) is not changed; the Deposit holds nothing, so nothing stays held (the 10e-3 round 2 note: a left value is a label that the holdings cap). One case is not built: the Refunds paid out less than the returned amount, so the rest of the returned money paid debt; it stays refused until the owner answers Q-2026-10-12-96.
 
-## Q-2026-10-12-96 — Sub-slice 10e-3b (your Q-95 answer): the new Refunds paid out less than the mistaken return, so part of an application must come back (blocks only that case; refused until answered)
+## Q-2026-10-12-96 — Sub-slice 10e-3b (your Q-95 answer): the new Refunds paid out less than the mistaken return, so part of an application must come back (blocks only that case; refused until answered) (ANSWERED 2026-10-13: (a), sub-slice 10e-3c before 10h; answer in docs/010)
 
 Your answer (a) to Q-2026-10-12-95: charge back only the mistaken amount; a new Refund pays the returned money first. Sub-slice 10e-3b builds it when the Refunds paid out at least the returned amount: only the returned amount is charged back (the oldest Refund first), and every Deposit or Credit application stays.
 
@@ -2336,7 +2336,11 @@ Your answer (a) to Q-2026-10-12-95: charge back only the mistaken amount; a new 
 
 **What goes ahead.** Everything else in 10e-3b, and the rest of the order. Until you answer, a `RETURN_REVERSAL` whose Refunds paid out less than its returned amount while its uses are more than that amount is refused (55000, "The returned money also paid debt beyond what its Refunds paid out; reversing it waits for the owner").
 
-## Q-2026-10-12-97 — Sub-slice 10e-3b (your Q-95 answer): should the left value of the earlier return-only correction also count the money that stays paid? (blocks nothing; please confirm or choose)
+**Owner answer (2026-10-13).** Option (a). Undo the newest debt payments first, then put back the part that was not mistaken money, so only the mistaken amount comes back. Build it as the small sub-slice 10e-3c before 10h.
+
+Recorded in docs/010 and the plan. Placement (implementer, "before 10h"): 10e-3c comes right after 10e-4 and before 10c-2a-7, next to the Q-97 fix (sub-slice 10e-3d), because both change the 10e-3 and 10e-3b return reversal functions. In the example the reversal charges back the $500 Refund, reverses the $1,500 Credit application whole and applies $300 of the same Credit to the same charge again in the same correction (a new linked Credit application), so the Customer owes the $500 and $1,200 of the charge again: exactly the mistaken $1,700 (amounts in dollars, as in your example).
+
+## Q-2026-10-12-97 — Sub-slice 10e-3b (your Q-95 answer): should the left value of the earlier return-only correction also count the money that stays paid? (blocks nothing; please confirm or choose) (ANSWERED 2026-10-13: (a), one fix for every case before 10h, sub-slice 10e-3d; answer in docs/010)
 
 Option (a) of Q-2026-10-12-95 said: "X1's held value is then counted as used by that Refund, so nothing stays held", and estimated "a small extra rule in the reversal (and in X1's left value)". Sub-slice 10e-3b builds the money part. After the reversal the Pet Deposit holds nothing, so a held-value Refund naming X1 is refused ("The Deposit holds no returned money to refund"). It does not change X1's left value: the label (`app.settlement_held_deposit_value`) still says X1 has $1,000 left. The independent review of 10e-3b found this difference from the option text.
 
@@ -2352,3 +2356,22 @@ Option (a) of Q-2026-10-12-95 said: "X1's held value is then counted as used by 
 **Recommendation: (a)**, because it makes every left value true, not only after a reversal, and then a held-value Refund naming X1 is refused after X2's sweep, so X1's reversal cannot reach X3's money. Committed tests that read a left value after such a sweep may change; the pre-code check will name them.
 
 **What goes ahead.** 10e-3b is committed as built. Nothing else waits for this answer.
+
+**Owner answer (2026-10-13).** Option (a). One fix for every case, before 10h, so a later reversal always charges the right person.
+
+Recorded in docs/010 and the plan as sub-slice 10e-3d, right after 10e-3c and before 10c-2a-7. Its pre-code check names every committed test that reads a left value after such a sweep; a test whose expectation changes under this answer is changed in the affected case only (owner standing rule of 2026-10-11) and named in the report.
+
+Also answered with the 10e-3b report (2026-10-13): the two committed 10e-2 assertions that review round 2 made stricter (`test_settlement_deposit_receipt_correction_migration.py`, the recovery check after the commit and inside the receipt's confirm) are accepted. New standing rule (ops/V1_055_RUN_RULES.md): a change that makes a committed test stricter, found by a reviewer, is allowed without asking; each one is named in the report.
+
+## Q-2026-10-13-98 — Sub-slice 10e-4: a Payment that names no Lease, used on a closed Lease, with part refunded: which charge? (blocks nothing; please confirm)
+
+Your answer (c) to Q-2026-10-11-81 point 3: "That Settlement's correction takes the Payment, and the charge is an `EXTRA_CHARGE` on that Lease." Your answer to Q-2026-10-11-82: "Keep the design": the person who received the Refund pays it back. Sub-slice 10e-4 is built that way and keeps the Q-2026-10-11-78 rules for where a recovery charge goes: a Payment Refund is charged on the Lease the Payment names (answer A), and with no Lease it is a Miscellaneous charge with no Lease (answer B).
+
+**The case the review found.** After closure the Customer sends $900 that names no Lease. Staff put $600 of it on the closed Lease's `EXTRA_CHARGE` Invoice and refund the other $300 to the Customer. Then the transfer bounces. The correction of that Settlement takes the Payment (its money was used on the Lease): the $600 comes back as debt on that Invoice. The $300 Refund is charged back to the Customer as a Miscellaneous charge with no Lease, not as an `EXTRA_CHARGE` on the closed Lease, because the Payment named no Lease. Your Q-81 example (the Payment names the Lease) gets the `EXTRA_CHARGE`, as you said.
+
+- (a) Keep it: the Q-78 rules decide where the charge goes; a Payment that names no Lease gets a no-Lease charge. Nothing changes.
+- (b) Inside such a correction, charge a Payment Refund on the closed Lease (an `EXTRA_CHARGE`) whenever the Payment's money was used there and the person refunded is a signed Customer of that Lease. A small relaxing change to the recovery rules, with a test.
+
+**Recommendation: (a)**, because the $300 that came back to the Customer was never used on the Lease, and it keeps one rule for every returned Payment. The amount and the person are the same either way; only where the charge shows differs.
+
+**What goes ahead.** Everything. 10e-4 is committed with (a).

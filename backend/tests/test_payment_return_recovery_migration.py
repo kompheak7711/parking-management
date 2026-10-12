@@ -29,7 +29,6 @@ from psycopg.types.json import Jsonb
 from payment_test_support import seed_payment
 from property_rental.credit import CreditLedgerPage
 from property_rental.deposit import QualifyPetDepositRefundReviewCommand, RecordPetDepartureCommand
-from property_rental.final_settlement import FinalSettlementConflictError
 from property_rental.payment_return import PaymentReturnConflictError
 from property_rental.refund import CreateUsdRefundCommand, SignerRecipient
 from refund_test_support import cash, create_pet_refund, create_usd_refund
@@ -59,7 +58,6 @@ from test_reservation_lifecycle_migration import active_reservation, cancel
 from test_reservation_migration import setup_reservation_sources
 from test_settlement_correction_migration import settlement_row
 from test_settlement_deposit_refund_return_migration import pet_refund
-from test_settlement_extra_charge_migration import cause
 from test_settlement_forfeiture_reversal_migration import (
     confirm_reversal,
     record_reversal,
@@ -68,7 +66,6 @@ from test_settlement_forfeiture_reversal_migration import (
 from test_settlement_real_path_migration import AGREEMENT, two_signer_kept_case
 from test_settlement_refund_return_migration import net
 from test_settlement_returned_payment_migration import (
-    NOT_RELIED,
     closed_case,
     command,
     confirm,
@@ -137,6 +134,12 @@ SHARED = (
 CLOSED = (
     "A Refund paid from this Payment's value would be charged on a Lease whose closed Final "
     "Settlement this return cannot correct"
+)
+# Sub-slice 10e-4 (owner answer (c) to Q-2026-10-11-81): the PAYMENT_RETURN draft names the
+# correction that returns such a Payment.
+NAMES_CORRECTION = (
+    "A Refund paid from this Payment's value would be charged on a Lease whose Final Settlement "
+    "is closed; return the Payment through a returned-Payment correction of that Final Settlement"
 )
 ONLY_INSIDE = "A Refund is recovered by a charge only inside the return of its Payment"
 DEPENDENT = "Deposit receipt has active dependent financial history"
@@ -559,9 +562,10 @@ def test_a_recovered_credit_refund_shows_in_the_credit_history(
 def test_the_cases_a_return_still_refuses(migrated_database_url: str) -> None:
     """The recoveries a return may not write (55000): a Reservation outcome Refund
     (Q-2026-10-11-81), a Refund of a Deposit another Payment also funded, and a charge on a Lease
-    whose closed Final Settlement the return cannot correct (the PAYMENT_RETURN draft: any; a
-    correction: another Settlement's). A charge on the correction's own Settlement's Lease, on an
-    open Lease or with no Lease passes. The PAYMENT_RETURN check refuses the same."""
+    whose closed Final Settlement the return cannot correct (the PAYMENT_RETURN draft: any, with a
+    message that names the correction since sub-slice 10e-4; a correction: another Settlement's).
+    A charge on the correction's own Settlement's Lease, on an open Lease or with no Lease passes.
+    The PAYMENT_RETURN check refuses the same."""
     url = migrated_database_url
     settlement, other = str(uuid4()), str(uuid4())
     base = {
@@ -589,7 +593,9 @@ def test_the_cases_a_return_still_refuses(migrated_database_url: str) -> None:
     closed = {"charge": "CLOSED_SETTLEMENT_LEASE", "closed_final_settlement_id": settlement}
     assert check({"reservation_outcome": True}, None) == ("55000", RESERVATION)
     assert check({"shared_deposit": True}, None) == ("55000", SHARED)
-    assert check(closed, None) == ("55000", CLOSED)
+    # Sub-slice 10e-4 (owner answer (c) to Q-2026-10-11-81; changed expectation, was CLOSED): the
+    # PAYMENT_RETURN draft's message names the correction.
+    assert check(closed, None) == ("55000", NAMES_CORRECTION)
     assert check(closed, other) == ("55000", CLOSED)
     assert check(closed, settlement) == (None, None)
     assert check({}, None) == (None, None)
@@ -605,7 +611,11 @@ def test_the_cases_a_return_still_refuses(migrated_database_url: str) -> None:
     with psycopg.connect(url) as connection:
         with pytest.raises(psycopg.Error) as refused:
             connection.execute("SELECT app.assert_payment_return_allowed(%s)", (Jsonb(source),))
-    assert (refused.value.sqlstate, refused.value.diag.message_primary) == ("55000", CLOSED)
+    # Sub-slice 10e-4: changed expectation, was CLOSED.
+    assert (refused.value.sqlstate, refused.value.diag.message_primary) == (
+        "55000",
+        NAMES_CORRECTION,
+    )
     # The cross-check (review round 1): a Refund out with no planned recovery is refused.
     for missed in (
         {"payment": {"status": "RECEIVED", "refunded_usd_cents": 100}, "recoveries": []},
@@ -634,12 +644,14 @@ def test_the_cases_a_return_still_refuses(migrated_database_url: str) -> None:
 
 
 def test_the_refused_cases_on_real_sources(migrated_database_url: str) -> None:
-    """Review round 1: each refusal on a real source, with nothing written. (1) A cancelled
-    Reservation's Deposit Refund (the Reservation outcome path, Q-2026-10-11-81). (2) A Pet
-    Refund-review Refund of a Deposit two Payments funded. (3) A Payment that names a Lease whose
-    Final Settlement is closed, refunded in part to its signed Customer after closure: the
-    PAYMENT_RETURN draft refuses it, and the correction of that Settlement refuses it because the
-    Settlement did not rely on the Payment (a known limit, Q-2026-10-11-81)."""
+    """Review round 1: each refusal on a real source, with nothing written for a refused case.
+    (1) A cancelled Reservation's Deposit Refund (the Reservation outcome path, Q-2026-10-11-81).
+    (2) A Pet Refund-review Refund of a Deposit two Payments funded. (3) A Payment that names a
+    Lease whose Final Settlement is closed, refunded in part to its signed Customer after closure:
+    the PAYMENT_RETURN draft refuses it and names the correction; since sub-slice 10e-4 (owner
+    answer (c) to Q-2026-10-11-81) the correction of that Settlement records it, although the
+    Settlement did not rely on the Payment (its confirm is checked in
+    test_returned_payment_after_closure_migration.py)."""
     url = migrated_database_url
     with psycopg.connect(url) as setup:
         human, prop, _, _, reservation = active_reservation(setup)
@@ -710,10 +722,21 @@ def test_the_refused_cases_on_real_sources(migrated_database_url: str) -> None:
         CreateUsdRefundCommand(uuid4(), "PAYMENT", late, 300, "Return the unused part"),
         actor=actor(case["human"], case["prop"], "refunds.create"),
     )
-    assert return_refused(case["prop"], case["human"], late) == ("55000", CLOSED)
-    with pytest.raises(FinalSettlementConflictError) as unrelied:
-        record(case, command(case, late))
-    assert cause(unrelied) == ("55000", NOT_RELIED)
+    # Sub-slice 10e-4 (owner answer (c) to Q-2026-10-11-81; changed expectations, were CLOSED and
+    # the correction's NOT_RELIED refusal): the PAYMENT_RETURN draft names the correction, and the
+    # correction records the Payment, its 300 Refund planned as an EXTRA_CHARGE on this Lease.
+    assert return_refused(case["prop"], case["human"], late) == ("55000", NAMES_CORRECTION)
+    draft = record(case, command(case, late))
+    [plan] = payload(url, draft)["source"]["recoveries"]
+    assert planned(plan) == (
+        "PAYMENT",
+        str(case["customer"]),
+        str(case["lease"]),
+        300,
+        "CLOSED_SETTLEMENT_LEASE",
+        False,
+        False,
+    )
     assert one(
         url,
         "SELECT count(*) FROM app.payment_returns WHERE payment_id IN (%s,%s,%s)",
@@ -724,11 +747,16 @@ def test_the_refused_cases_on_real_sources(migrated_database_url: str) -> None:
     assert one(
         url,
         "SELECT count(*) FROM app.financial_drafts WHERE kind IN ('PAYMENT_RETURN',"
-        "'SETTLEMENT_CORRECTION') AND payload->>'payment_id' IN (%s,%s,%s)",
+        "'SETTLEMENT_CORRECTION') AND payload->>'payment_id' IN (%s,%s)",
         str(reservation_payment),
         str(shared_payment),
-        str(late),
     ) == (0,)
+    assert one(
+        url,
+        "SELECT count(*),min(id::text) FROM app.financial_drafts WHERE kind IN "
+        "('PAYMENT_RETURN','SETTLEMENT_CORRECTION') AND payload->>'payment_id'=%s",
+        str(late),
+    ) == (1, str(draft))
 
 
 def test_a_recovery_is_written_only_inside_the_return_of_its_payment(

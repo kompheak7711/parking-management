@@ -1335,7 +1335,8 @@ funded Deposit ends empty, so there is no DL-032 step, and no charge is made for
 amount. The receipt reversal's audit event keeps the statement time, so it is dated before its
 row; read it through the correction's link, not by time. Refused (55000): a Payment that is not
 RECEIVED; a Payment this Settlement did not rely on (the correction of the closed
-Settlement that did, or else the `PAYMENT_RETURN` draft, returns it); a record that another closed
+Settlement that did, or else the `PAYMENT_RETURN` draft, returns it; since sub-slice 10e-4 this
+correction also takes a Payment used on its Lease, below); a record that another closed
 Final Settlement also relied on (a known limit: one correction belongs to one Settlement); a Refund
 paid from the Payment's value that is not fully returned (until sub-slice 10e-1c); a funded
 Deposit's forfeiture governed by another Lease; a funded Deposit's application of another Final
@@ -1373,8 +1374,9 @@ dated after the recovery. Refused (55000) by the recorders, the confirms and the
 outcome Refund (known limit, owner answer 1 to Q-2026-10-11-81); a Refund of a Deposit that also
 holds another Payment's receipt (a guard, owner answer 2); a charge on a Lease whose closed Final
 Settlement this return cannot correct (the `PAYMENT_RETURN` draft: any closed Settlement; a
-correction: another Settlement's; owner answer 3 to Q-2026-10-11-81 ends this for a Payment used
-on that Lease, sub-slice 10e-4); a source whose Refunds out differ from the planned recoveries.
+correction: another Settlement's; this refusal stays; owner answer 3 to Q-2026-10-11-81 ends
+instead the correction's "did not rely on" refusal for a Payment used on that Lease, sub-slice
+10e-4, below); a source whose Refunds out differ from the planned recoveries.
 Both confirms take the one-time charge recorder's Lease key lock for every Lease a recovery charge
 goes on, in one id-ordered pass before any row lock (the correction also for its own Lease). The
 `RETURNED_PAYMENT` write helper now runs the correction's source, digest (P5S02) and refusal check
@@ -1382,6 +1384,41 @@ itself. A waiting draft that names a recovered Refund counts as a waiting draft.
 the written recoveries (`recoveries`: the Refund, the person charged, the Lease or none, the amount,
 the charge form `EXTRA_CHARGE`, `LEASE` or `NO_LEASE`, the obligation and the Invoice). Drafts
 recorded before revision 118 are stale (their source gained `recoveries`) and are recorded again.
+
+As built in V1-056 sub-slice 10e-4 (migration `20261201_127`; owner answer (c) to Q-2026-10-11-81
+point 3 and the owner answer to Q-2026-10-11-82): the `RETURNED_PAYMENT` correction also returns a
+Payment that no closed Final Settlement relied on, when the Payment names the correction's Lease or
+its money is used there: an active allocation of the Payment, or an active application of one of
+its Credits that is not reversed, is on an Invoice of that Lease or a Late-payment Charge of such
+an Invoice (since the Settlement did not rely on them, such uses came after closure), or a Refund
+paid from its value is charged back on that Lease (`closed_final_settlement_id` of a recovery is
+this Settlement). The way in through the named Lease has no time or use condition: a Payment that
+names the Lease and was never used there also passes. The correction's source gains
+`used_on_lease`; in this branch only a JSON `true` counts, a source without a `relied_on` key is
+refused (55000), and a `relied_on` that is not a list cannot be read (22023), so both fail closed.
+Nothing else changes: the records are reversed and linked as in 10e-1b, the debt comes back on its
+obligations and stays with their Customers (BR-SETTLE-016), and each Refund out is charged back to
+the person who received it by the 10e-1c rules unchanged: the charge goes on the Lease the money
+came from (a Payment Refund: the Lease the Payment names; a Credit Refund: the Lease of the Invoice
+whose release created the Credit, else the Lease the Payment names) when the recipient is its
+signed Customer, an `EXTRA_CHARGE` when that Lease is this Settlement's, otherwise an ordinary
+charge on that Lease or a charge with no Lease. So a Payment that names no Lease, used on this
+Lease through an allocation, whose rest was refunded to the payer, gets a no-Lease charge
+(Q-2026-10-13-98 asks the owner to confirm). With nothing refunded no charge is written. A Payment
+whose records another closed Settlement relied on, and a recovery charged on another closed
+Settlement's Lease, stay refused (the known limit of one correction per Settlement). The
+`PAYMENT_RETURN` draft keeps refusing a Payment whose Refund would be charged on a closed
+Settlement's Lease; its message now names the returned-Payment correction (the service still
+reports the generic conflict until slice 11c). It still returns a Payment whose only use on a
+closed Lease is an allocation or Credit application with nothing refunded (no closed Settlement
+relied on it); the correction can return the same Payment with the records linked. Known limits: a
+Payment used after closure on two closed Leases can be returned by either Settlement's correction
+(unless a recovery is charged on one of those Leases; then only that Settlement's correction can),
+which reverses and links the other Lease's records too (nothing either Settlement relied on
+changes); a Payment with recoveries on two closed Settlements' Leases is refused by every
+correction, although the `PAYMENT_RETURN` message points to a correction. Drafts of this variant
+recorded before revision 127 are stale (their source gained `used_on_lease`) and are recorded
+again.
 
 ## DB-CREDIT-001 — `customer_credits`
 
