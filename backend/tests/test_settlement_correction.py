@@ -1997,3 +1997,39 @@ def test_deposit_receipt_correction_with_receipts_sends_them_and_the_plan(
         "receipts": [{"deposit_id": str(NEW_DEPOSIT), "amount_usd_cents": 200}],
         "plan": {"steps": [step.payload()], "pet_remainder": remainder.payload()},
     }
+
+
+@pytest.mark.parametrize(
+    ("outcome", "outcome_reason"),
+    [
+        ("DL_032", None),
+        (None, "The Security Deposit was really 8,000"),
+        ("KEEP", "The Security Deposit was really 8,000"),
+        ("FORFEIT", ""),
+        ("FORFEIT", " The Security Deposit was really 8,000"),
+        ("FORFEIT", "x" * 501),
+        (1, "The Security Deposit was really 8,000"),
+    ],
+)
+def test_a_right_receipt_choice_comes_with_its_reason(
+    outcome: str | None, outcome_reason: str | None
+) -> None:
+    """V1-056 sub-slice 10e-2c (owner answer 2 to Q-2026-10-12-88): the staff's choice for a
+    reversed Deposit is DL_032 or FORFEIT, always with a trimmed reason of 1 to 500 characters."""
+    with pytest.raises(FinalSettlementInvalidError):
+        CorrectionDepositReceipt(NEW_DEPOSIT, 800, outcome, outcome_reason)
+
+
+def test_a_right_receipt_carries_the_choice_only_when_made() -> None:
+    """V1-056 sub-slice 10e-2c: the payload names the choice and its reason only when staff made
+    one (a Deposit whose forfeiture was reversed); otherwise it is the 10e-2b payload."""
+    assert CorrectionDepositReceipt(NEW_DEPOSIT, 800).payload() == {
+        "deposit_id": str(NEW_DEPOSIT),
+        "amount_usd_cents": 800,
+    }
+    assert CorrectionDepositReceipt(NEW_DEPOSIT, 800, "FORFEIT", "Kept again").payload() == {
+        "deposit_id": str(NEW_DEPOSIT),
+        "amount_usd_cents": 800,
+        "outcome": "FORFEIT",
+        "outcome_reason": "Kept again",
+    }

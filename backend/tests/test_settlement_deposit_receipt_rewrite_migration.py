@@ -9,7 +9,8 @@ step applies it in the DL-032 order and refunds the rest. Rule 1: a Deposit hold
 active receipt from each Payment. Rule 2: inside such a correction a Security Deposit's first
 active receipt may differ from the accepted amount, never above the required amount. Rule 3: the
 first Pet Deposit receipt writer, inside a correction only, refused while the Pet Deposit is kept.
-A Deposit with a forfeiture ground waits for sub-slice 10e-2c (Q-2026-10-12-88). A correction that
+A Deposit with a forfeiture ground follows sub-slice 10e-2c (Q-2026-10-12-88; its tests:
+test_settlement_deposit_receipt_forfeiture_migration.py). A correction that
 charges a Refund back on this Lease names that charge as a placeholder line since sub-slice
 10e-2b-2 (its tests: test_settlement_deposit_receipt_recovery_line_migration.py).
 """
@@ -117,7 +118,11 @@ ACCEPTED = "Deposit receipt does not preserve the accepted or required amount"
 TARGET_NOT_FOUND = "The Deposit of a new receipt was not found"
 OTHER_LEASE = "A new receipt goes only into a Deposit of this Final Settlement's Lease"
 KEPT = "A new receipt cannot go into a Deposit the Property keeps"
-GROUND = "A new receipt into a Deposit with a forfeiture ground is not supported yet"
+# Sub-slice 10e-2c (owner answer 2 to Q-2026-10-12-88) ends the "not supported yet" refusal.
+NEEDS_CHOICE = (
+    "A new receipt into a Deposit whose forfeiture was reversed needs a choice: "
+    "DL-032 or a forfeiture again"
+)
 TAKES_MORE = "The new receipts take more than the corrected receipt frees"
 CANNOT_FUND = "The corrected receipt's Payment cannot fund this Deposit"
 ALREADY_ACTIVE = "The Deposit already holds an active receipt from this Payment"
@@ -460,7 +465,9 @@ def test_the_refusals_of_a_right_receipt(migrated_database_url: str) -> None:
         ({"found": False}, ("P0002", TARGET_NOT_FOUND)),
         ({"lease_id": str(uuid4())}, ("55000", OTHER_LEASE)),
         ({"path": {**target["path"], "forfeiture": "ACTIVE"}}, ("55000", KEPT)),
-        ({"path": {**target["path"], "ground": "BR-DEP-023"}}, ("55000", GROUND)),
+        # Sub-slice 10e-2c (owner answer 1 to Q-2026-10-12-88): a ground with no forfeiture now
+        # passes; the correction forfeits the new money.
+        ({"path": {**target["path"], "ground": "BR-DEP-023"}}, (None, None)),
         ({"amount_usd_cents": 10_001}, ("55000", TAKES_MORE)),
         ({"payment_funds": False}, ("55000", CANNOT_FUND)),
         ({"payment_receipt_active": True}, ("55000", ALREADY_ACTIVE)),
@@ -514,8 +521,8 @@ def test_a_right_receipt_into_a_deposit_with_a_forfeiture_ground_waits_for_10e_2
     kept (voluntary early leaving, BR-DEP-023), the Pet Deposit's receipt correction may not move
     money into it, and the plan check refuses a held value for it after the correction.
     Q-2026-10-12-88 point 2: once a FORFEITURE_REVERSAL correction puts it back on the DL-032 path
-    (Q-2026-10-11-83 point 3), a right receipt into it is refused until sub-slice 10e-2c builds the
-    owner's answer. Nothing is written."""
+    (Q-2026-10-11-83 point 3), a right receipt into it needs the staff's choice (sub-slice 10e-2c,
+    point 2 (c)); without one it is refused. Nothing is written."""
     url = migrated_database_url
     case = kept_case(url)
     security, pet, other_line = case["security"], case["pet"], case["other_line"]
@@ -573,7 +580,7 @@ def test_a_right_receipt_into_a_deposit_with_a_forfeiture_ground_waits_for_10e_2
                 steps=(SettlementDepositStep(SECURITY, security, LINE, other_line, 8_000),),
             ),
         )
-    assert cause(ground) == ("55000", GROUND)
+    assert cause(ground) == ("55000", NEEDS_CHOICE)
     assert counts(url) == before
 
 

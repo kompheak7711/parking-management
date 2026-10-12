@@ -108,6 +108,8 @@ FORFEITURE_REVERSAL_CONFIRM_STALE_STATES: Final = frozenset({"P5S02"})
 RETURNED_PAYMENT_CONFIRM_STALE_STATES: Final = frozenset({"P5S02"})
 # A Deposit receipt correction whose receipt, Deposit, its records or Refunds changed is stale.
 DEPOSIT_RECEIPT_CORRECTION_CONFIRM_STALE_STATES: Final = frozenset({"P5S02"})
+# The staff's choice for a right receipt into a Deposit whose forfeiture was reversed (10e-2c).
+RECEIPT_OUTCOMES: Final = frozenset({"DL_032", "FORFEIT"})
 
 
 def settlement_correction_draft_id(
@@ -759,7 +761,9 @@ class RecordDepositReceiptCorrectionCommand:
     only the rest refunded. Without receipts there is no plan. A recovery charge on the Lease is
     named in the plan by its placeholder line id (``deposit_receipt_recovery_line_id``; sub-slice
     10e-2b-2). A receipt correction must change the Deposit or the amount (owner answer 1 to
-    Q-2026-10-12-89).
+    Q-2026-10-12-89). A right receipt into a Deposit with a forfeiture ground is forfeited in the
+    same correction, or for a Deposit whose forfeiture was reversed as the receipt's ``outcome``
+    chooses; forfeited money is not in the plan (sub-slice 10e-2c).
     """
 
     idempotency_key: UUID
@@ -819,10 +823,18 @@ class RecordDepositReceiptCorrectionCommand:
 @dataclass(frozen=True, slots=True)
 class CorrectionDepositReceipt:
     """A right receipt of a Deposit receipt correction (sub-slice 10e-2b): the Deposit of the
-    Settlement's Lease and the amount of the corrected receipt's Payment it takes."""
+    Settlement's Lease and the amount of the corrected receipt's Payment it takes.
+
+    ``outcome`` and ``outcome_reason`` (sub-slice 10e-2c, owner answer 2 to Q-2026-10-12-88; both
+    or neither) are the staff's choice for a Deposit with a forfeiture ground whose forfeiture was
+    reversed: ``DL_032`` (the plan applies the money and refunds the rest) or ``FORFEIT``
+    (forfeited again on the same ground). A Deposit with a ground that was never forfeited is
+    forfeited without a choice; any other Deposit takes none. The database checks both."""
 
     deposit_id: UUID
     amount_usd_cents: int
+    outcome: str | None = None
+    outcome_reason: str | None = None
 
     def __post_init__(self) -> None:
         _uuid(self.deposit_id, "deposit_id")
@@ -833,9 +845,22 @@ class CorrectionDepositReceipt:
             raise FinalSettlementInvalidError(
                 "amount_usd_cents must be a positive whole number of cents"
             )
+        if (self.outcome is None) != (self.outcome_reason is None):
+            raise FinalSettlementInvalidError("outcome and outcome_reason go together")
+        if self.outcome is not None:
+            if self.outcome not in RECEIPT_OUTCOMES:
+                raise FinalSettlementInvalidError("outcome must be DL_032 or FORFEIT")
+            _text(self.outcome_reason, "outcome_reason", 500)
 
     def payload(self) -> dict[str, object]:
-        return {"deposit_id": str(self.deposit_id), "amount_usd_cents": self.amount_usd_cents}
+        found: dict[str, object] = {
+            "deposit_id": str(self.deposit_id),
+            "amount_usd_cents": self.amount_usd_cents,
+        }
+        if self.outcome is not None:
+            found["outcome"] = self.outcome
+            found["outcome_reason"] = self.outcome_reason
+        return found
 
 
 @dataclass(frozen=True, slots=True)

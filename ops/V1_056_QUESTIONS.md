@@ -2205,7 +2205,7 @@ Implementer (read only, head `20261126_122`): point 1 is small and is built in s
 
 Recorded in docs/010.
 
-## Q-2026-10-12-90 — Sub-slice 10e-2b-3 (Pet Deposit receipts need a correction link): how do the test fixtures give a Pet Deposit its money? (blocks 10e-2b-3 only)
+## Q-2026-10-12-90 — Sub-slice 10e-2b-3 (Pet Deposit receipts need a correction link): how do the test fixtures give a Pet Deposit its money? (blocks 10e-2b-3 only) (ANSWERED 2026-10-12: (a); built as sub-slice 10e-2b-3 before 10h; answer in docs/010)
 
 Your answer 2 to Q-2026-10-12-89: the receipt table must require a correction link for a Pet Deposit receipt. A read-only check before code (head `20261126_122`) found that this is not small. There is no 10e-2b-3 code.
 
@@ -2221,3 +2221,51 @@ Example: a Lease has a $200.00 Pet Deposit. The fixture inserts a $200.00 receip
 **Recommendation: (a).** The risk the 10e-2b-1 reviewers named is a Pet Deposit receipt after closure that skips the correction and its DL-032 step. (a) closes exactly that at the table, for every writer, and changes no fixture. Choose (c) if Pet Deposit intake before closure must also go through a checked function.
 
 **What goes ahead.** Only 10e-2b-3 waits. Sub-slice 10e-2b-2 (with your answer 1, the refusal of the same receipt again) is built now, then 10e-2c, 10e-3, 10e-4, 10c-2a-7, 10c-3c-1, 10c-3c-2, 10f and 10g; 10e-2b-3 is built as soon as you answer, before 10h.
+
+**Owner answer (2026-10-12).** Option (a). The Pet Deposit receipt rule applies once the Lease's Final Settlement is closed. Build it as sub-slice 10e-2b-3, before 10h.
+
+Order (owner, 2026-10-12): 10e-2c, 10e-3, 10e-4, 10c-2a-7, 10c-3c-1, 10c-3c-2, 10f, 10g, 10e-2b-3, then 10h. Recorded in docs/010.
+
+## Q-2026-10-12-91 — Owner ruling on the lint allowance of sub-slice 10e-2b-2 (ANSWERED 2026-10-12; recorded in the run rules)
+
+The 10e-2b-2 report counted two lint causes: A (four long lines in the new test module) with 1 correction, and B (two later lines left long by the docstring rewrap) with 2 corrections.
+
+**Owner ruling (2026-10-12).** Causes A and B are the same cause, so that was one correction past the limit of 2. No harm came of it, so the commit stays. From now on, the same kind of error is the same cause, even when it shows up on different lines. Added to ops/V1_055_RUN_RULES.md (Verification). Recorded in docs/010.
+
+## Q-2026-10-12-92 — Nothing in the app records Pet Deposit money before closure: where should it be built? (blocks nothing in slice 10; owner asked, 2026-10-12)
+
+Your question: how does a real Customer's Pet Deposit get its money before closure today?
+
+**Plain answer: it cannot.** Read only, head `20261127_123`:
+- Staff can create the Pet Deposit liability: `POST /leases/{lease_id}/pet-deposits` (`deposits.manage`, `app.create_pet_deposit_v2`) writes the Deposit row with its required amount. It records no money.
+- Only two functions write a Deposit receipt: `app.create_reservation` (a Reservation's Security Deposit, at the accepted amount) and the 10e-2b-1 correction writer `app.write_correction_deposit_receipt` (inside a confirmed `DEPOSIT_RECEIPT_CORRECTION` after closure only). Neither writes a Pet Deposit receipt before closure.
+- docs/005 API-040 names `POST /leases/{id}/pet-deposit-receipts`, `POST /leases/{id}/security-deposit-receipts` and `POST /deposits/{id}/receipts`. None of them is built, in the backend or the frontend.
+- So a real Pet Deposit always holds $0 until closure. The PostgreSQL fixtures put the money in by a direct database-owner insert, which no app role can do.
+
+**The same gap on the Security Deposit side (found by the same check).** A walk-in Lease (DL-066) gets no Security Deposit at all: the signing only links a Reservation's Deposit. A second Security Deposit receipt (for example the rest above the Reservation's accepted amount, which the receipt check allows up to the required amount) has no writer either.
+
+**Effect today.** A Customer who pays a Pet Deposit cannot have it recorded as a Deposit; staff can only leave it as an unallocated Payment (or Credit with the payer's authorization). At closure the Pet Deposit is empty, so the pet damage and pet noncompliance rules (BR-DEP-022, BR-DEP-027, DL-032) never see that money.
+
+**Options:**
+- (a) A new sub-slice **10e-2b-4 — Deposit receipt before closure**, right after 10e-2b-3 and before 10h: one internal database function that records a Deposit receipt from a RECEIVED Payment's available value (the existing receipt and source checks: within the required amount, the payer is the Deposit's Customer or the Lease for a third-party Payment, the Pet Deposit's approval time), with evidence and a reason, under the existing capability `deposits.manage`; refused once the Lease's Final Settlement is closed (then only the correction, 10e-2b-3); audit event, idempotency and replay as the other Deposit commands. API-040 routes and the staff screen in slice 11 (with the other Deposit routes). Pet Deposit only, or also the Security Deposit cases above, as you decide.
+- (b) Only the API-040 routes and screens in slice 11, with their database function built there.
+- (c) Leave it out of V1-056 (a known gap, recorded in docs/010), and plan it as later work.
+
+**Recommendation: (a), for both Deposit types.** It is the missing half of rule 3 of Q-2026-10-12-87 and of 10e-2b-3 (the door before closure, next to the correction door after closure), it needs no new capability (`deposits.manage` already creates the Pet Deposit), and the Final Settlement rules of V1-056 only work on real money if the money can be recorded. Please confirm the capability (`deposits.manage` or a payments capability), and whether a Deposit receipt needs a draft and `financial.approve` (today the Reservation receipt does not).
+
+**What goes ahead.** Nothing in the slice 10 order waits for this answer. Nothing is built for it before you answer.
+
+## Q-2026-10-12-93 — Sub-slice 10e-2c: a forfeited right receipt into a Pet Deposit that has returned pay-back money (blocks only that case; refused until answered)
+
+Your answers to Q-2026-10-12-88: a right receipt into a Deposit with a forfeiture ground is forfeited in the same correction (point 1), or forfeited again when staff choose it (point 2). A read-only check before code (head `20261127_123`) found one case where two of your rules meet.
+
+Your answer (a) to Q-2026-10-10-76 (the running count) and sub-slice 10c-2b-6: returned Pet Refund-review money is the Customer's pay-back money; while a Pet Deposit holds money, up to that returned amount counts as pay-back money, and no forfeiture may take it (a table rule since 10c-2b-6).
+
+Example: a Pet Deposit had a $150 Pet Refund-review Refund, and $30 of it came back before the Lease ended for pet noncompliance. After closure, a receipt correction puts a right $200 receipt into that Pet Deposit. Your Q-88 answer says the $200 is forfeited; the running count says $30 of the money the Pet Deposit now holds is pay-back money, so the table refuses a $200 forfeiture and allows only $170.
+
+- (a) Forfeit only the money beyond the pay-back count ($170); the rest ($30) follows DL-032 in the same correction's plan (applied to debt, then refunded).
+- (b) Refuse such a correction (a known limit); the money stays with the Payment.
+
+**Recommendation: (a).** It follows both rules as they stand and needs no table change. Until you answer, 10e-2c refuses the case (55000, "A forfeiture in a receipt correction takes only the new receipt's money"), and it also refuses a forfeited receipt into a Deposit that still holds other money (no fixture or real path reaches that today). A refusal can later be lifted by a relaxing change.
+
+**What goes ahead.** Everything else in 10e-2c, and the rest of the order.

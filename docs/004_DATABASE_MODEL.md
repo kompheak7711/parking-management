@@ -1564,6 +1564,13 @@ As built in V1-056 sub-slice 10c-2b-6 (migration `20261125_121`): a Lease row is
 (23514) above the held value less the Pet Deposit's pay-back value, so no writer forfeits returned
 Pet Refund-review money; see the 10c-2b-5 and 10c-2b-6 bullets under DB-DEP-005.
 
+As built in V1-056 sub-slice 10e-2c (migration `20261128_124`): the first correction that links a
+row is a `DEPOSIT_RECEIPT_CORRECTION` forfeiting a right receipt's money on the termination's
+ground (DB-SETTLE-005 `deposit_disposition_id`), through the internal
+`app.write_correction_deposit_forfeiture`; the row's `occurred_at` is after the new receipt (its
+disposition context keeps the default `recorded_at`, the start of the confirm's statement), and
+every insert check above runs; see the 10e-2c note under DB-SETTLE-005.
+
 ### Lease Deposit command admission (V1-055)
 
 The existing Lease Deposit disposition command serializes its Property, actor,
@@ -2724,6 +2731,34 @@ correction that writes the same receipt again into the same Deposit (the same Pa
 it must change the Deposit or the amount. The receipt writer `app.write_correction_deposit_receipt`
 also requires its correction's decision confirmed in the same transaction by the same approver
 under `financial.approve` (hardening, 10e-2b-1 review round 2). No table or column changes.
+
+As built in V1-056 sub-slice 10e-2c (migration `20261128_124`; owner answers to Q-2026-10-12-88,
+point 1 (b) and point 2 (c)): the effects gain the link `deposit_disposition_id` (DB-DEP-004 Lease
+forfeiture; deferrable, unique; the one-link check and the two link functions rebuilt), so the
+closed-Settlement check of the forfeiture insert (sub-slice 10c-2b-2a) passes a forfeiture that a
+correction confirmed in the same transaction links. A right receipt into a Deposit whose
+termination ground says the Property keeps it is no longer refused: when that Deposit was never
+forfeited, the same correction forfeits the receipt's money on the ground (staff choose nothing);
+when its forfeiture was reversed first, each right receipt item carries the staff's choice
+`outcome` (`DL_032`, the 10e-2b path, or `FORFEIT`, forfeited again) with `outcome_reason` (1 to
+500 characters; both or neither); any other Deposit takes no choice (55000). The draft stores the
+forfeitures as `deposit_receipt_forfeitures` (Deposit, type, amount, ground rule, reason, basis
+`TERMINATION_GROUND` or `STAFF_CHOICE`; only when there is one) and `deposits_after` leaves their
+money out of the plan. The confirm computes the forfeitures again under the locks (P5S02 when they
+differ, the draft stays pending) and, after the right receipts and before the shared DL-032 step,
+writes each through the internal `app.write_correction_deposit_forfeiture` (no grant): only a
+forfeiture its correction's draft names, only inside that correction's confirm; linked first, then
+its disposition context and the forfeiture row (authorization reference `deposits.dispose` as the
+tables require, the termination date as effective date, `occurred_at` after the receipt, the
+approver as actor), a `deposit.disposition.recorded` Deposit audit event under `financial.approve`
+correlated with the correction, and its Deposit command record; every Lease forfeiture insert
+check runs. The context's expected Deposit state version is read just before the insert, so its
+P5801 check cannot fire on this path; staleness is held by the source digest, the forfeiture
+recompute and the writer's exact held-value check. A changed pay-back count, held value or kept
+state usually meets the targets check first (55000; the draft stays pending as well).
+Refused (55000) until the owner answers Q-2026-10-12-93: a forfeiture that would take other money
+than the new receipt's (the Deposit would hold other money afterwards, or has a pay-back count).
+The result gains `deposit_disposition_ids`.
 
 ## DB-SETTLE-007 — `settlement_pet_classifications`
 

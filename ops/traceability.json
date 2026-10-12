@@ -40130,7 +40130,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_deposit_receipt_rewrite_migration.py",
       "status": "implemented",
-      "notes": "On a real kept Security Deposit (voluntary early leaving): a new receipt into it is refused while kept, and the plan check refuses a held value for a Deposit off the DL-032 path; after a FORFEITURE_REVERSAL correction a new receipt into it is refused until sub-slice 10e-2c (Q-2026-10-12-88); nothing written (V1-056 sub-slice 10e-2b-1)."
+      "notes": "On a real kept Security Deposit (voluntary early leaving): a new receipt into it is refused while kept, and the plan check refuses a held value for a Deposit off the DL-032 path; after a FORFEITURE_REVERSAL correction a new receipt into it needs the staff's choice and without one is refused (sub-slice 10e-2c, owner answer 2 to Q-2026-10-12-88); nothing written (V1-056 sub-slice 10e-2b-1)."
     },
     {
       "test_id": "test_right_receipts_are_least_privilege_and_forward_only",
@@ -40203,6 +40203,62 @@
       "test_path": "backend/tests/test_settlement_correction.py",
       "status": "implemented",
       "notes": "The service's placeholder line id of a recovery charge is md5('deposit-receipt-recovery:' || draft || ':' || refund) as a UUID, the id the database records (V1-056 sub-slice 10e-2b-2)."
+    },
+    {
+      "test_id": "test_point_1_forfeits_a_right_receipt_into_an_empty_kept_deposit",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-008", "BR-DEP-022", "BR-DEP-019", "DL-032", "BR-AUTH-010", "DB-SETTLE-005", "DB-DEP-002", "DB-DEP-004"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_receipt_forfeiture_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer 1 to Q-2026-10-12-88, the owner's example in cents after a real pet noncompliance closure with an empty Pet Deposit: after a FORFEITURE_REVERSAL of the kept Security Deposit, the receipt correction writes 8,000 Security (DL_032, paying the 10,000 recovery charge's placeholder line, 2,000 owed) and 2,000 Pet Deposit, forfeited in the same correction on BR-DEP-022 (linked, dated after its receipt, audit event and command record); a choice on the never-forfeited Pet Deposit and a missing choice on the reversed Security Deposit are refused; the forfeiture writer refuses an unnamed amount inside the confirm and the named one after the commit (V1-056 sub-slice 10e-2c)."
+    },
+    {
+      "test_id": "test_point_2_forfeits_a_right_receipt_again_when_staff_choose_it",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-008", "BR-DEP-023", "BR-DEP-026", "BR-AUTH-010", "DB-DEP-004"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_receipt_forfeiture_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer 2 to Q-2026-10-12-88 (FORFEIT) on a real voluntary early-leaving closure: after a FORFEITURE_REVERSAL (4,600 applied, 5,400 refunded) the 10,000 receipt is really 8,000; without a choice refused; with FORFEIT the 8,000 is kept again on BR-DEP-023 with the staff reason, the 4,600 and the 5,400 recovery charge owed, 2,000 left with the Payment (V1-056 sub-slice 10e-2c)."
+    },
+    {
+      "test_id": "test_point_2_dl032_takes_the_joint_signer_path_in_full",
+      "upstream_ids": ["BR-SETTLE-013", "DL-032", "BR-CREDIT-008", "BR-REFUND-015", "BR-SETTLE-016"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_receipt_forfeiture_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer 2 to Q-2026-10-12-88 (DL_032) on the real two-Signer closure, the full path the sub-slice 10e-2b-2 review asked for: the 10,000 recovery charge to the second Signer is a placeholder line; that Signer's 300 Credit and the new 1,000 Security receipt pay it, 8,700 owed by that Signer, nothing forfeited, 9,000 left with the Payment (V1-056 sub-slice 10e-2c)."
+    },
+    {
+      "test_id": "test_the_outcome_input_and_the_new_money_refusals",
+      "upstream_ids": ["BR-SETTLE-013", "BR-AUTH-010", "DB-DEP-004"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_receipt_forfeiture_migration.py",
+      "status": "implemented",
+      "notes": "A choice on a Deposit without a ground is refused at record; the input refuses a choice without its reason, an unknown choice and a bad reason (22023) and keeps a valid one; on changed targets a choice on a never-forfeited Deposit is refused, a reversed Deposit needs a choice, and a forfeiture that would take other money (pay-back count or other held money) is refused (Q-2026-10-12-93); the forfeiture list names each forfeited receipt with its basis and reason (V1-056 sub-slice 10e-2c)."
+    },
+    {
+      "test_id": "test_receipt_forfeitures_are_least_privilege_and_forward_only",
+      "upstream_ids": ["BR-SETTLE-013", "BR-AUTH-010", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_receipt_forfeiture_migration.py",
+      "status": "implemented",
+      "notes": "No role calls the two new internal functions; each is SECURITY DEFINER with the fixed search path; the migration adds only the deposit_disposition_id link (key, unique key, the one-link check rebuilt) and changes only the seven patched and two rebuilt functions, privileges and settings kept, each patched body exactly the old one with its replacements; forward-only (V1-056 sub-slice 10e-2c)."
+    },
+    {
+      "test_id": "test_a_right_receipt_choice_comes_with_its_reason",
+      "upstream_ids": ["BR-SETTLE-013", "BR-AUTH-010"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "The staff's choice for a reversed Deposit is DL_032 or FORFEIT, always with a trimmed reason of 1 to 500 characters (V1-056 sub-slice 10e-2c)."
+    },
+    {
+      "test_id": "test_a_right_receipt_carries_the_choice_only_when_made",
+      "upstream_ids": ["BR-SETTLE-013"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "A right receipt's payload names the choice and its reason only when staff made one; otherwise it is the sub-slice 10e-2b payload (V1-056 sub-slice 10e-2c)."
     }
   ]
 }
