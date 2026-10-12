@@ -1,0 +1,199 @@
+ Volume prm-database-targeted-test-15320_postgres_data Creating 
+ Network prm-database-targeted-test-15320_default Creating 
+ Volume prm-database-targeted-test-15320_postgres_data Creating 
+ Network prm-database-targeted-test-15320_default Creating 
+ Volume prm-database-targeted-test-15320_postgres_data Created 
+ Volume prm-database-targeted-test-15320_postgres_data Created 
+ Network prm-database-targeted-test-15320_default Created 
+ Network prm-database-targeted-test-15320_default Created 
+ Container prm-database-targeted-test-15320-postgres-1 Creating 
+ Container prm-database-targeted-test-15320-postgres-1 Created 
+ Container prm-database-targeted-test-15320-postgres-1 Starting 
+ Container prm-database-targeted-test-15320-postgres-1 Started 
+ Container prm-database-targeted-test-15320-postgres-1 Waiting 
+ Container prm-database-targeted-test-15320-postgres-1 Healthy 
+============================= test session starts ==============================
+collected 15 items
+
+tests/test_settlement_deposit_receipt_recovery_line_migration.py FF.     [ 20%]
+tests/test_settlement_deposit_receipt_rewrite_migration.py .....         [ 53%]
+tests/test_settlement_deposit_receipt_correction_migration.py .......    [100%]
+
+=================================== FAILURES ===================================
+_ test_a_pet_receipt_correction_pays_the_recovery_charge_its_placeholder_line_names _
+src/property_rental/final_settlement.py:339: in _call
+    row = connection.execute(sql, parameters).fetchone()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/psycopg/connection.py:300: in execute
+    raise ex.with_traceback(None)
+E   psycopg.errors.CheckViolation: A post-settlement correction Credit application must be a Credit step of its correction
+E   CONTEXT:  PL/pgSQL function app.assert_settlement_correction_credit_application(app.customer_credit_applications) line 57 at RAISE
+E   SQL statement "SELECT app.assert_settlement_correction_credit_application(NEW)"
+E   PL/pgSQL function app.assert_final_settlement_credit_application_source() line 12 at PERFORM
+E   SQL statement "INSERT INTO app.customer_credit_applications(id,customer_credit_id,target_kind,invoice_id,
+E                   late_payment_charge_id,final_settlement_id,amount_usd_cents,within_invoice_basis,
+E                   customer_designation_reference,proposal_generated_at,proposal_trace,occurred_at,actor_id,
+E                   authorization_reference)
+E               VALUES(v_id,v_credit,CASE WHEN v_invoice IS NULL THEN 'LATE_PAYMENT_CHARGE' ELSE 'INVOICE' END,
+E                   v_invoice,v_charge,p_settlement,v_amount,v_basis,v_reference,
+E                   CASE WHEN v_proposal IS NOT NULL THEN v_at END,v_proposal,v_at,p_actor,'financial.approve')"
+E   PL/pgSQL function app.post_final_settlement_credit_application(uuid,uuid,uuid,uuid,integer) line 102 at SQL statement
+E   PL/pgSQL function app.post_settlement_correction_plan(uuid,uuid,uuid) line 128 at assignment
+E   SQL statement "SELECT app.post_settlement_correction_plan(p_property,p_approver,p_draft)"
+E   PL/pgSQL function app.post_settlement_deposit_receipt_correction(uuid,uuid,uuid,uuid,uuid,text) line 57 at PERFORM
+E   PL/pgSQL function app.confirm_settlement_deposit_receipt_correction(uuid,uuid,uuid,text) line 85 at assignment
+
+The above exception was the direct cause of the following exception:
+tests/test_settlement_deposit_receipt_recovery_line_migration.py:166: in test_a_pet_receipt_correction_pays_the_recovery_charge_its_placeholder_line_names
+    result = confirm(case, draft)
+             ^^^^^^^^^^^^^^^^^^^^
+tests/test_settlement_deposit_receipt_correction_migration.py:148: in confirm
+    return corrections().confirm_deposit_receipt_correction(
+src/property_rental/settlement_correction.py:1460: in confirm_deposit_receipt_correction
+    return FinalSettlementService(self.financial_database_url)._call(
+src/property_rental/final_settlement.py:354: in _call
+    raise FinalSettlementInvalidError("Final Settlement command is invalid") from exc
+E   property_rental.final_settlement.FinalSettlementInvalidError: Final Settlement command is invalid
+---------------------------- Captured stderr setup -----------------------------
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260813_01, Add the smallest useful Phase 1C schema baseline.
+INFO  [alembic.runtime.migration] Running upgrade 20260813_01 -> 20260817_02, Add bounded DB-AUTH-001 local human-account storage.
+INFO  [alembic.runtime.migration] Running upgrade 20260817_02 -> 20260817_03, Add bounded DB-AUTH-002 password-credential storage.
+INFO  [alembic.runtime.migration] Running upgrade 20260817_03 -> 20260817_04, Add bounded DB-AUTH-003 recovery-code verifier persistence.
+INFO  [alembic.runtime.migration] Running upgrade 20260817_04 -> 20260818_05, Add the bounded DB-AUTH-005 initial Owner bootstrap closure guard.
+INFO  [alembic.runtime.migration] Running upgrade 20260818_05 -> 20260819_06, Add bounded DB-AUTH-003 protected TOTP enrollment persistence.
+INFO  [alembic.runtime.migration] Running upgrade 20260819_06 -> 20260819_07, Add bounded DB-AUTH-004 browser-session persistence.
+INFO  [alembic.runtime.migration] Running upgrade 20260819_07 -> 20260819_08, Add bounded DB-AUTH-005 account-recovery audit persistence.
+INFO  [alembic.runtime.migration] Running upgrade 20260819_08 -> 20260820_09, Add the atomic least-privilege protected initial Owner bootstrap operation.
+INFO  [alembic.runtime.migration] Running upgrade 20260820_09 -> 20260823_10, Add immutable append-only audit event storage.
+INFO  [alembic.runtime.migration] Running upgrade 20260823_10 -> 20260823_11, Add the single-Property identity and versioned configuration.
+INFO  [alembic.runtime.migration] Running upgrade 20260823_11 -> 20260823_12, Complete Property source fields and configured Payment Methods.
+INFO  [alembic.runtime.migration] Running upgrade 20260823_12 -> 20260823_13, Add stable, Property-scoped Unit identity and persistence.
+INFO  [alembic.runtime.migration] Running upgrade 20260823_13 -> 20260824_14, Add the version-checked Unit source-data update boundary.
+INFO  [alembic.runtime.migration] Running upgrade 20260824_14 -> 20260824_15, Add canonical Customer identity and audited contact-history persistence.
+INFO  [alembic.runtime.migration] Running upgrade 20260824_15 -> 20260824_16, Add history-safe Customer deactivation without deleting identity.
+INFO  [alembic.runtime.migration] Running upgrade 20260824_16 -> 20260825_17, Add effective-dated configuration and append-preserved rate history.
+INFO  [alembic.runtime.migration] Running upgrade 20260825_17 -> 20260825_18, Add atomic idempotent commands for configuration APIs.
+INFO  [alembic.runtime.migration] Running upgrade 20260825_18 -> 20260825_19, Add protected Reservation and reservation-deposit persistence.
+INFO  [alembic.runtime.migration] Running upgrade 20260825_19 -> 20260825_20, Add transactional Reservation lifecycle and Unit availability services.
+INFO  [alembic.runtime.migration] Running upgrade 20260825_20 -> 20260825_21, Add transactional Reservation cancellation Deposit outcomes.
+INFO  [alembic.runtime.migration] Running upgrade 20260825_21 -> 20260826_22, Add durable singleton Reservation expiration-run state.
+INFO  [alembic.runtime.migration] Running upgrade 20260826_22 -> 20260826_23, Add protected Lease, signer, and occupancy persistence.
+INFO  [alembic.runtime.migration] Running upgrade 20260826_23 -> 20260826_24, Add protected Lease lifecycle command services.
+INFO  [alembic.runtime.migration] Running upgrade 20260826_24 -> 20260826_25, Add atomic Reservation-to-Lease move-in orchestration.
+INFO  [alembic.runtime.migration] Running upgrade 20260826_25 -> 20260826_26, Add the bounded API-facing Lease draft update command.
+INFO  [alembic.runtime.migration] Running upgrade 20260826_26 -> 20260826_27, Add protected Security and Pet Deposit domain persistence.
+INFO  [alembic.runtime.migration] Running upgrade 20260826_27 -> 20260826_28, Split active-Lease Pet Deposit departure and qualification commands.
+INFO  [alembic.runtime.migration] Running upgrade 20260826_28 -> 20260827_29, Add protected Invoice, adjustment, late-charge, and billing-run persistence.
+INFO  [alembic.runtime.migration] Running upgrade 20260827_29 -> 20260828_30, Add transactional Rent proration and fixed-Service billing.
+INFO  [alembic.runtime.migration] Running upgrade 20260828_30 -> 20260828_31, Add protected Utility Meter, Reading, replacement, and correction persistence.
+INFO  [alembic.runtime.migration] Running upgrade 20260828_31 -> 20260828_32, Add Utility consumption and confirmed broken-Meter calculation services.
+INFO  [alembic.runtime.migration] Running upgrade 20260828_32 -> 20260829_33, Apply forward-only corrections to the published V1-042 Utility schema.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_33 -> 20260829_34, Add the least-privilege V1-043 Utility resource command boundary.
+INFO  [alembic.runtime.migration] Running upgrade 20260829_34 -> 20260831_35, Activate idempotent scheduled Rent, Service, and Utility billing runs.
+INFO  [alembic.runtime.migration] Running upgrade 20260831_35 -> 20260831_36, Add the bounded human Invoice lifecycle command boundary.
+INFO  [alembic.runtime.migration] Running upgrade 20260831_36 -> 20260831_37, Add the bounded late-payment Decision, Charge, and correction API boundary.
+INFO  [alembic.runtime.migration] Running upgrade 20260831_37 -> 20260905_38, Persist immutable Payment facts, confirmed FX and explicit reversals.
+INFO  [alembic.runtime.migration] Running upgrade 20260905_38 -> 20260905_39, Add explicit Payment allocation events and authoritative application projections.
+INFO  [alembic.runtime.migration] Running upgrade 20260905_39 -> 20260906_40, Immutable Payment Receipt identities and append-only authorized reprints.
+INFO  [alembic.runtime.migration] Running upgrade 20260906_40 -> 20260906_41, Customer Credit recognition and permanent source history.
+INFO  [alembic.runtime.migration] Running upgrade 20260906_41 -> 20260906_42, Explicit USD Payment confirmation with immutable received facts and exact replay.
+INFO  [alembic.runtime.migration] Running upgrade 20260906_42 -> 20260906_43, Atomic incoming KHR confirmation using preserved reference and channel evidence.
+INFO  [alembic.runtime.migration] Running upgrade 20260906_43 -> 20260907_44, Expose only original receipt facts, never private confirmation command identity.
+INFO  [alembic.runtime.migration] Running upgrade 20260907_44 -> 20260907_45, Narrow runtime Credit/Refund scope and immutable source-audit reads.
+INFO  [alembic.runtime.migration] Running upgrade 20260907_45 -> 20260908_46, Narrow, coherent and paginated Payment reversal context; no write changes.
+INFO  [alembic.runtime.migration] Running upgrade 20260908_46 -> 20260908_47, Selected financial action facts and bounded details without financial writes.
+INFO  [alembic.runtime.migration] Running upgrade 20260908_47 -> 20260909_48, Read-only Customer financial chronology over retained authoritative facts.
+INFO  [alembic.runtime.migration] Running upgrade 20260909_48 -> 20260909_49, Narrow, coherent Customer ledger reads; no grants or writes to financial sources.
+INFO  [alembic.runtime.migration] Running upgrade 20260909_49 -> 20260910_50, Add separate immutable Lease warnings and Rent nonpayment workflows.
+INFO  [alembic.runtime.migration] Running upgrade 20260910_50 -> 20260910_51, Add narrow enforcement discovery and explicitly scoped read-only evaluation.
+INFO  [alembic.runtime.migration] Running upgrade 20260910_51 -> 20260911_52, Add immutable approved notice context without changing tenancy or finances.
+INFO  [alembic.runtime.migration] Running upgrade 20260911_52 -> 20260914_53, Align recurring final-month generation with existing approved source coverage.
+INFO  [alembic.runtime.migration] Running upgrade 20260914_53 -> 20260914_54, Bind fresh termination to explicit signed authority and real prerequisite sources.
+INFO  [alembic.runtime.migration] Running upgrade 20260914_54 -> 20260914_55, Project current termination Deposit consequences without financial mutations.
+INFO  [alembic.runtime.migration] Running upgrade 20260914_55 -> 20260914_56, Serialize Lease Deposit commands and preserve financial/audit admission.
+INFO  [alembic.runtime.migration] Running upgrade 20260914_56 -> 20260914_57, Expose a read-only revision over existing immutable Deposit financial history.
+INFO  [alembic.runtime.migration] Running upgrade 20260914_57 -> 20260914_58, Require original approved source and a current financial observation for disposition.
+INFO  [alembic.runtime.migration] Running upgrade 20260914_58 -> 20260914_59, Read original Invoice coverage and current positions without approving corrections.
+INFO  [alembic.runtime.migration] Running upgrade 20260914_59 -> 20260915_60, Add immutable operational inspection evidence without posting financial effects.
+INFO  [alembic.runtime.migration] Running upgrade 20260915_60 -> 20260915_61, Add explicit physical-departure evidence under existing financial source guards.
+INFO  [alembic.runtime.migration] Running upgrade 20260915_61 -> 20260917_63, Record final Utility inputs for a physical departure without creating readings or charges.
+INFO  [alembic.runtime.migration] Running upgrade 20260917_63 -> 20261001_64, Bill Initial Rent from the signed Lease Start Date with a proposed or authorized Due Date.
+INFO  [alembic.runtime.migration] Running upgrade 20261001_64 -> 20261002_65, Record manual one-time Damage and Miscellaneous charges with an issue-time Due Date.
+INFO  [alembic.runtime.migration] Running upgrade 20261002_65 -> 20261003_66, Reject a debit Adjustment once its Invoice line has no remaining balance (BR-INV-044).
+INFO  [alembic.runtime.migration] Running upgrade 20261003_66 -> 20261003_67, Record credit Adjustment excess as Customer Credit through append-only reversals (BR-INV-044).
+INFO  [alembic.runtime.migration] Running upgrade 20261003_67 -> 20261004_68, Rent nonpayment counts from the 1st for recurring Rent only; Initial Rent gets an alert, no late fee.
+INFO  [alembic.runtime.migration] Running upgrade 20261004_68 -> 20261005_69, Complete the Reservation and occupy the Unit at Lease signing; move-in only starts Occupancy.
+INFO  [alembic.runtime.migration] Running upgrade 20261005_69 -> 20261005_70, Explicit termination paths for an unpaid Initial obligation (BR-LEASE-005, DL-064).
+INFO  [alembic.runtime.migration] Running upgrade 20261005_70 -> 20261006_71, Record a Utility baseline Reading event per Lease and make it the Customer's responsibility boundary.
+INFO  [alembic.runtime.migration] Running upgrade 20261006_71 -> 20261007_72, Create the final Utility Invoice at move-out and the explicit NOT_MOVED_IN catch-up Invoice.
+INFO  [alembic.runtime.migration] Running upgrade 20261007_72 -> 20261008_73, Let Utility runs of overlapping dates coexist, list unbilled periods and catch them up.
+INFO  [alembic.runtime.migration] Running upgrade 20261008_73 -> 20261009_74, Record the real capability of an Initial Rent Due Date override and retire the old sign grant.
+INFO  [alembic.runtime.migration] Running upgrade 20261009_74 -> 20261010_75, Bounded read of restricted Lease timeline events (DL-067, slice 9f-5).
+INFO  [alembic.runtime.migration] Running upgrade 20261010_75 -> 20261011_76, Require a Lease End Date on the last day of a calendar month (BR-LEASE-031, DL-069).
+INFO  [alembic.runtime.migration] Running upgrade 20261011_76 -> 20261012_77, Financial drafts: prepare first, confirm only under financial.approve (BR-AUTH-010, DL-069).
+INFO  [alembic.runtime.migration] Running upgrade 20261012_77 -> 20261013_78, Refund methods and Refund drafts (BR-REFUND-014, BR-AUTH-010, DL-069; V1-056 slice 3a).
+INFO  [alembic.runtime.migration] Running upgrade 20261013_78 -> 20261014_79, Deposit Refund to another Lease Signer with a written agreement (BR-REFUND-015; V1-056 slice 3a-2).
+INFO  [alembic.runtime.migration] Running upgrade 20261014_79 -> 20261015_80, Reservation Deposit Refunds and forfeitures as drafts (BR-AUTH-010, BR-RES-016, BR-RES-021, BR-RES-022; V1-056 slice 3b).
+INFO  [alembic.runtime.migration] Running upgrade 20261015_80 -> 20261016_81, Unit cleaning rate history and the move-out Unit cleaning charge (BR-UNIT-014, BR-MOVEOUT-013).
+INFO  [alembic.runtime.migration] Running upgrade 20261016_81 -> 20261017_82, Hand-back month Rent Invoices (BR-RENT-030, BR-RENT-026, BR-LEASE-021; owner answers Q-2026-10-04-8 and -9).
+INFO  [alembic.runtime.migration] Running upgrade 20261017_82 -> 20261018_83, Lease Deposit forfeiture drafts (BR-DEP-018, 019, 022, 023, 026; BR-AUTH-010; V1-056 slice 6).
+INFO  [alembic.runtime.migration] Running upgrade 20261018_83 -> 20261019_84, Lease Deposit forfeiture reversal drafts (BR-AUTH-010, BR-DEP-019; V1-056 sub-slice 6b).
+INFO  [alembic.runtime.migration] Running upgrade 20261019_84 -> 20261020_85, Wrong-Unit Payment move drafts (BR-PAY-042, BR-AUTH-010; V1-056 slice 7).
+INFO  [alembic.runtime.migration] Running upgrade 20261020_85 -> 20261021_86, Final Settlement record and Deposit application record (V1-056 sub-slice 8a-1).
+INFO  [alembic.runtime.migration] Running upgrade 20261021_86 -> 20261022_87, Deposit receipt reversal drafts (BR-AUTH-010; V1-056 sub-slice 8r).
+INFO  [alembic.runtime.migration] Running upgrade 20261022_87 -> 20261023_88, Customer Ledger events for Deposit applications; confirmations wait for a receipt reversal draft.
+INFO  [alembic.runtime.migration] Running upgrade 20261023_88 -> 20261024_89, Final Settlement preview (V1-056 sub-slice 8b).
+INFO  [alembic.runtime.migration] Running upgrade 20261024_89 -> 20261025_90, Final Settlement drafts (V1-056 sub-slice 8c).
+INFO  [alembic.runtime.migration] Running upgrade 20261025_90 -> 20261026_91, Final Settlement Deposit Refunds (V1-056 sub-slice 8d).
+INFO  [alembic.runtime.migration] Running upgrade 20261026_91 -> 20261027_92, Refusals after a Final Settlement closes (V1-056 sub-slice 8e-1).
+INFO  [alembic.runtime.migration] Running upgrade 20261027_92 -> 20261028_93, Final Settlement Credit applications (V1-056 sub-slice 8e-2).
+INFO  [alembic.runtime.migration] Running upgrade 20261028_93 -> 20261029_94, Final Settlement confirm and close (V1-056 sub-slice 8e-3).
+INFO  [alembic.runtime.migration] Running upgrade 20261029_94 -> 20261030_95, Credit Refund to the Invoice Customer who is not the payer (V1-056 sub-slice 8f).
+INFO  [alembic.runtime.migration] Running upgrade 20261030_95 -> 20261031_96, Refuse the one-call reversal of a Credit released to another Customer (V1-056 sub-slice 8g).
+INFO  [alembic.runtime.migration] Running upgrade 20261031_96 -> 20261101_97, Post-settlement correction record (V1-056 sub-slice 10a).
+INFO  [alembic.runtime.migration] Running upgrade 20261101_97 -> 20261102_98, Post-settlement correction: extra charge (V1-056 sub-slice 10b).
+INFO  [alembic.runtime.migration] Running upgrade 20261102_98 -> 20261103_99, Post-settlement correction: charge reduction (V1-056 sub-slice 10c-1a).
+INFO  [alembic.runtime.migration] Running upgrade 20261103_99 -> 20261104_100, Post-settlement correction: Refund of a paid wrong charge (V1-056 sub-slice 10c-1b).
+INFO  [alembic.runtime.migration] Running upgrade 20261104_100 -> 20261105_101, Deposit application reversals (V1-056 sub-slice 10c-2a-1).
+INFO  [alembic.runtime.migration] Running upgrade 20261105_101 -> 20261106_102, Post-settlement correction: the shared DL-032 step after closure (V1-056 sub-slice 10c-2a-2).
+INFO  [alembic.runtime.migration] Running upgrade 20261106_102 -> 20261107_103, Post-settlement correction: Refund of a Deposit-paid charge (V1-056 sub-slice 10c-2a-3).
+INFO  [alembic.runtime.migration] Running upgrade 20261107_103 -> 20261108_104, Move-out inspection supersede refused after closure (V1-056 sub-slice 10c-2a-4).
+INFO  [alembic.runtime.migration] Running upgrade 20261108_104 -> 20261109_105, Post-settlement correction: pet classification of a Damage line (V1-056 sub-slice 10c-2a-5).
+INFO  [alembic.runtime.migration] Running upgrade 20261109_105 -> 20261110_106, Post-settlement correction: the Customer choice checked again in the shared step (V1-056 sub-slice 10c-2a-6).
+INFO  [alembic.runtime.migration] Running upgrade 20261110_106 -> 20261111_107, Post-settlement correction: a returned Credit Refund of a correction (V1-056 sub-slice 10c-2b-1).
+INFO  [alembic.runtime.migration] Running upgrade 20261111_107 -> 20261112_108, Post-settlement correction: a returned Deposit Refund (V1-056 sub-slice 10c-2b-2a).
+INFO  [alembic.runtime.migration] Running upgrade 20261112_108 -> 20261113_109, Post-settlement correction: a returned Pet Refund-review Refund (V1-056 sub-slice 10c-2b-2b).
+INFO  [alembic.runtime.migration] Running upgrade 20261113_109 -> 20261114_110, Post-settlement correction: the refund-only form HELD_VALUE_REFUND (V1-056 sub-slice 10c-2b-3).
+INFO  [alembic.runtime.migration] Running upgrade 20261114_110 -> 20261115_111, Post-settlement correction: CHARGE_REDUCTION of an unpaid Late-payment Charge (V1-056 sub-slice 10c-3a).
+INFO  [alembic.runtime.migration] Running upgrade 20261115_111 -> 20261116_112, Post-settlement correction: the stricter Deposit count of HELD_VALUE_REFUND (V1-056 sub-slice 10c-2b-4).
+INFO  [alembic.runtime.migration] Running upgrade 20261116_112 -> 20261117_113, Post-settlement correction: REFUND of a paid Late-payment Charge (V1-056 sub-slice 10c-3b-1).
+INFO  [alembic.runtime.migration] Running upgrade 20261117_113 -> 20261118_114, Post-settlement correction: REFUND of a Deposit-paid Late-payment Charge (V1-056 sub-slice 10c-3b-2).
+INFO  [alembic.runtime.migration] Running upgrade 20261118_114 -> 20261119_115, Post-settlement correction: FORFEITURE_REVERSAL (V1-056 sub-slice 10d).
+INFO  [alembic.runtime.migration] Running upgrade 20261119_115 -> 20261120_116, Returned Payment with no closed Final Settlement relied on (V1-056 sub-slice 10e-1a).
+INFO  [alembic.runtime.migration] Running upgrade 20261120_116 -> 20261121_117, Post-settlement correction: RETURNED_PAYMENT (V1-056 sub-slice 10e-1b).
+INFO  [alembic.runtime.migration] Running upgrade 20261121_117 -> 20261122_118, Returned Payment: a Refund already paid from its value (V1-056 sub-slice 10e-1c).
+INFO  [alembic.runtime.migration] Running upgrade 20261122_118 -> 20261123_119, Pay back returned Pet Refund-review money after a pet noncompliance termination (V1-056 sub-slice 10c-2b-5).
+INFO  [alembic.runtime.migration] Running upgrade 20261123_119 -> 20261124_120, Correct a wrong Lease Deposit receipt after closure (V1-056 sub-slice 10e-2).
+INFO  [alembic.runtime.migration] Running upgrade 20261124_120 -> 20261125_121, Keep returned pay-back money out of every Lease Deposit forfeiture (V1-056 sub-slice 10c-2b-6).
+INFO  [alembic.runtime.migration] Running upgrade 20261125_121 -> 20261126_122, The right receipt inside a Deposit receipt correction (V1-056 sub-slice 10e-2b-1).
+INFO  [alembic.runtime.migration] Running upgrade 20261126_122 -> 20261127_123, Recovery charges as placeholder lines in a Deposit receipt correction's plan (V1-056
+sub-slice 10e-2b-2).
+__ test_the_same_receipt_again_and_a_receipt_outside_its_confirm_are_refused ___
+tests/test_settlement_deposit_receipt_recovery_line_migration.py:313: in test_the_same_receipt_again_and_a_receipt_outside_its_confirm_are_refused
+    assert (state(url, draft), counts(url)) == ("PENDING", before)
+E   AssertionError: assert ('PENDING', (4, 0, 0, 0, 0)) == ('PENDING', (3, 0, 0, 0, 0))
+E     
+E     At index 1 diff: (4, 0, 0, 0, 0) != (3, 0, 0, 0, 0)
+E     Use -v to get more diff
+=============================== warnings summary ===============================
+.venv/lib/python3.11/site-packages/fastapi/testclient.py:1
+  /Users/sokompheak/Development/property-rental-management/backend/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_settlement_deposit_receipt_recovery_line_migration.py::test_a_pet_receipt_correction_pays_the_recovery_charge_its_placeholder_line_names
+FAILED tests/test_settlement_deposit_receipt_recovery_line_migration.py::test_the_same_receipt_again_and_a_receipt_outside_its_confirm_are_refused
+=================== 2 failed, 13 passed, 1 warning in 17.60s ===================

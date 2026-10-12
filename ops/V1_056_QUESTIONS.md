@@ -2194,3 +2194,30 @@ Example: the Lease ended early by the Customer's choice. The $1,000 Security Dep
 5. 10e-2b is large. If it looks too big for one session, split it into smaller sub-slices that each end in a commit; say so in the report.
 
 Recorded in docs/010.
+
+## Q-2026-10-12-89 — Owner answers to the two points of the sub-slice 10e-2b-1 report (ANSWERED 2026-10-12; point 2 continues in Q-2026-10-12-90)
+
+1. A correction that writes the same receipt again into the same Deposit (same Payment, same amount): refuse it. A receipt correction must change the Deposit or the amount. If the receipt is right, a change to how the Deposit paid the Lease's debt belongs to another correction kind, not this one. This is a tightening, and the owner approves it.
+2. Pet Deposit receipts: yes, the table must require a correction link. This is a tightening, and the owner approves it.
+3. Build both in 10e-2b-2, which already touches this code. If either one is not small, put it in its own small sub-slice before 10h and tell the owner.
+
+Implementer (read only, head `20261126_122`): point 1 is small and is built in sub-slice 10e-2b-2. Point 2 is not small (Q-2026-10-12-90 below); it becomes sub-slice 10e-2b-3 before 10h and waits for that answer.
+
+Recorded in docs/010.
+
+## Q-2026-10-12-90 — Sub-slice 10e-2b-3 (Pet Deposit receipts need a correction link): how do the test fixtures give a Pet Deposit its money? (blocks 10e-2b-3 only)
+
+Your answer 2 to Q-2026-10-12-89: the receipt table must require a correction link for a Pet Deposit receipt. A read-only check before code (head `20261126_122`) found that this is not small. There is no 10e-2b-3 code.
+
+**What exists.** Only two functions write a Deposit receipt: the Reservation (a Security Deposit only) and the 10e-2b-1 correction writer (inside a correction only). No function writes a Pet Deposit receipt outside a correction. So the committed PostgreSQL fixtures give a Pet Deposit its money by a direct database insert, before the Lease ends: the Pet Deposit helper of the Final Settlement fixtures in `test_final_settlement_migration.py` (34 modules import these fixtures), `seed_pet_deposit` in `test_deposit_api_migration.py`, `joint_qualified` in `test_refund_signer_recipient_migration.py`, and the pet noncompliance test in `test_lease_deposit_forfeiture_migration.py`, among others. No runtime or financial role may insert a receipt; only the database owner can, as the fixtures do.
+
+Example: a Lease has a $200.00 Pet Deposit. The fixture inserts a $200.00 receipt before move-in, then the Lease ends for pet noncompliance and the Final Settlement keeps the money. With a correction link required for every Pet Deposit receipt, that first insert is refused, so the fixture cannot build the Lease at all, and most slice 8 to 10 tests fail before their own assertions. Your answer does not say how a fixture then gets Pet Deposit money, and the standing rule for fixtures covers only a changed result, not a fixture that can no longer be built.
+
+**Options:**
+- (a) The table rule applies once the Lease's Final Settlement is closed: from then on, every Pet Deposit receipt of that Lease must be linked to a correction of that Settlement confirmed in the same transaction (the same check owner rule 2 uses for a Security Deposit receipt). Before closure nothing changes: the only way in is the database owner's insert, as today. No committed test changes.
+- (b) The rule applies to every Pet Deposit receipt, and the fixtures turn off only that one new check (a named trigger) for the one insert that seeds Pet Deposit money; every other receipt check still runs. This changes the shared fixtures of more than 34 modules and turns a check off inside tests.
+- (c) The rule applies to every Pet Deposit receipt, and V1-056 adds a real Pet Deposit intake writer before closure (option (b) of Q-87 rule 3: its own function, capability, route and screen); the fixtures use it. A bigger feature that the V1-056 plan does not have, and a new capability.
+
+**Recommendation: (a).** The risk the 10e-2b-1 reviewers named is a Pet Deposit receipt after closure that skips the correction and its DL-032 step. (a) closes exactly that at the table, for every writer, and changes no fixture. Choose (c) if Pet Deposit intake before closure must also go through a checked function.
+
+**What goes ahead.** Only 10e-2b-3 waits. Sub-slice 10e-2b-2 (with your answer 1, the refusal of the same receipt again) is built now, then 10e-2c, 10e-3, 10e-4, 10c-2a-7, 10c-3c-1, 10c-3c-2, 10f and 10g; 10e-2b-3 is built as soon as you answer, before 10h.

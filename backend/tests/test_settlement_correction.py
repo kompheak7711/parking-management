@@ -42,6 +42,7 @@ from property_rental.settlement_correction import (
     RecordRefundReturnCorrectionCommand,
     RecordReturnedPaymentCorrectionCommand,
     SettlementCorrectionService,
+    deposit_receipt_recovery_line_id,
     settlement_correction_draft_id,
 )
 
@@ -1917,6 +1918,19 @@ def test_deposit_receipt_correction_receipts_are_validated(changes: dict[str, An
     only with a new receipt."""
     with pytest.raises(FinalSettlementInvalidError):
         deposit_receipt_correction(**changes)
+
+
+def test_a_recovery_charge_placeholder_line_id_is_fixed_by_the_draft_and_the_refund() -> None:
+    """V1-056 sub-slice 10e-2b-2: the placeholder line id of a recovery charge is the database's
+    md5('deposit-receipt-recovery:' || draft || ':' || refund) as a UUID (the PostgreSQL test
+    compares it with the recorded draft); another draft or Refund gives another id."""
+    draft, refund = UUID(int=1), UUID(int=2)
+    assert deposit_receipt_recovery_line_id(draft, refund) == UUID(
+        "db1b29b1-138c-11ba-1746-e8c5b7d64f78"
+    )
+    assert deposit_receipt_recovery_line_id(refund, draft) != deposit_receipt_recovery_line_id(
+        draft, refund
+    )
 
 
 @pytest.mark.parametrize(

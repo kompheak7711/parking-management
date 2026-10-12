@@ -1542,7 +1542,11 @@ Deposit) and the internal `app.write_correction_deposit_receipt`, called only by
 Payment; it is the only Pet Deposit receipt writer and writes a `deposit.receipt.recorded` Deposit
 audit event (stamped with the statement time, so dated just before its receipt row, as the
 reversal event under DB-DEP-007). A Deposit the Property keeps (an active forfeiture) takes no
-new receipt; see DB-DEP-007.
+new receipt; see DB-DEP-007. Since sub-slice 10e-2b-2 (migration `20261127_123`) the writer also
+requires its correction's decision confirmed in the same transaction by the same approver under
+`financial.approve` (review-driven hardening of an internal function), and a correction that
+writes the same receipt again into the same Deposit (the same Payment and amount) is refused
+(owner answer 1 to Q-2026-10-12-89); see DB-SETTLE-005.
 
 ## DB-DEP-003 — `deposit_required_amount_adjustments`
 
@@ -2691,6 +2695,35 @@ Deposit, another active receipt of the Payment in it, more than its required amo
 correction that also charges a recovered Refund on this Lease (until sub-slice 10e-2b-2), a plan
 that leaves new money unused. The money the receipts do not take stays unallocated with the
 Payment (BR-CREDIT-002).
+
+As built in V1-056 sub-slice 10e-2b-2 (migration `20261127_123`; the owner instruction of
+2026-10-12 with the answers to Q-2026-10-12-88; owner answer 1 to Q-2026-10-12-89): a
+`DEPOSIT_RECEIPT_CORRECTION` with right receipts may also charge back a Refund paid from the
+corrected receipt's Deposit on this Lease. The recorder names each such recovery charge as a
+placeholder line (`md5('deposit-receipt-recovery:' || draft || ':' || refund)::uuid`; the service
+helper `deposit_receipt_recovery_line_id` computes the same id) in the plan overlay key
+`new_obligations`: the line id to `{refund_id, customer_id, lease_id, amount_usd_cents}`, so the
+draft shows the person and the exact amount and the plan may pay it. The shared plan check accepts
+that key (each id a UUID string, the amount above 0 within the overlay limit, else 22023; another
+Lease or an existing obligation 55000), counts each placeholder as open debt of its Customer
+(never pet damage; no Rent-first proposal, as the real one-line Miscellaneous Invoice has none),
+and counts the Credit of a placeholder Customer whom the preview does not name yet (a signed
+Signer on no issued Invoice of the Lease) as the preview reads it once the charge's Invoice names
+that Customer. At the confirm the shared step first runs the internal
+`app.assert_settlement_correction_placeholder_lines` (P5S02, the draft stays pending): each
+placeholder is a real recovery charge linked to the correction (its `RECOVERED_BY_CHARGE` row of
+DB-REFUND-002) with the same Customer, Lease and amount, each names a distinct Refund, and every
+recovery charge of the correction on the Lease has its placeholder; on the real path the source
+digest and the recovery writer's own P5S02 check fire first. Then every step on a placeholder pays
+the real line through the internal `app.settlement_correction_line_id` (the step's plan check,
+its Deposit applications, the Credit step writer and the three checks that match a correction's
+Credit or Deposit application with its plan step); any other target is unchanged. The plan lock
+pass skips a placeholder line: it is written in the same transaction. The 10e-2b-1 refusal of such
+a correction is lifted. Refused (55000, an approved tightening, also at the confirm): a receipt
+correction that writes the same receipt again into the same Deposit (the same Payment and amount);
+it must change the Deposit or the amount. The receipt writer `app.write_correction_deposit_receipt`
+also requires its correction's decision confirmed in the same transaction by the same approver
+under `financial.approve` (hardening, 10e-2b-1 review round 2). No table or column changes.
 
 ## DB-SETTLE-007 — `settlement_pet_classifications`
 

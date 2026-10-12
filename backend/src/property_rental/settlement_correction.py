@@ -60,6 +60,7 @@ shared DL-032 step applies that money to the Lease's open debt and refunds the r
 
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from enum import StrEnum
@@ -117,6 +118,17 @@ def settlement_correction_draft_id(
         SETTLEMENT_CORRECTION_DRAFT_NAMESPACE,
         f"settlement-correction-draft:{property_id}:{actor_id}:{idempotency_key}",
     )
+
+
+def deposit_receipt_recovery_line_id(draft_id: UUID, refund_id: UUID) -> UUID:
+    """The placeholder line id under which a Deposit receipt correction's DL-032 plan names the
+    recovery charge of one Refund on the Settlement's Lease (sub-slice 10e-2b-2). The draft shows
+    each placeholder's Customer and exact amount; the confirm checks that the real charge equals
+    it and the steps on it pay the real charge line."""
+    digest = hashlib.md5(
+        f"deposit-receipt-recovery:{draft_id}:{refund_id}".encode(), usedforsecurity=False
+    )
+    return UUID(digest.hexdigest())
 
 
 def _uuid(value: object, name: str) -> UUID:
@@ -744,7 +756,10 @@ class RecordDepositReceiptCorrectionCommand:
     or two, into distinct Deposits of the Settlement's Lease, together at most the corrected
     receipt; with them ``steps`` and ``pet_remainder`` are the DL-032 plan for their money, in the
     Final Settlement plan format: the Customer's Credit first, the Deposits in the DL-032 order,
-    only the rest refunded. Without receipts there is no plan.
+    only the rest refunded. Without receipts there is no plan. A recovery charge on the Lease is
+    named in the plan by its placeholder line id (``deposit_receipt_recovery_line_id``; sub-slice
+    10e-2b-2). A receipt correction must change the Deposit or the amount (owner answer 1 to
+    Q-2026-10-12-89).
     """
 
     idempotency_key: UUID

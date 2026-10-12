@@ -40122,7 +40122,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_deposit_receipt_rewrite_migration.py",
       "status": "implemented",
-      "notes": "Real refusals with nothing written: no room under the Pet Deposit's required amount, more than the receipt frees, new money left unused, a Refund charged back on this Lease (until sub-slice 10e-2b-2), an unknown Deposit (P0002), the internal writer outside its correction; the other refusals on a changed target; a draft stale after an EXTRA_CHARGE changed the open debt stays pending; outside a correction a receipt that differs from the accepted amount is refused (23514) (V1-056 sub-slice 10e-2b-1)."
+      "notes": "Real refusals with nothing written: no room under the Pet Deposit's required amount, more than the receipt frees, new money left unused (also when a Refund is charged back on this Lease, refused as such until sub-slice 10e-2b-2 named that charge as a placeholder line), an unknown Deposit (P0002), the internal writer outside its correction; the other refusals on a changed target; a draft stale after an EXTRA_CHARGE changed the open debt stays pending; outside a correction a receipt that differs from the accepted amount is refused (23514) (V1-056 sub-slice 10e-2b-1)."
     },
     {
       "test_id": "test_a_right_receipt_into_a_deposit_with_a_forfeiture_ground_waits_for_10e_2c",
@@ -40163,6 +40163,46 @@
       "test_path": "backend/tests/test_settlement_correction.py",
       "status": "implemented",
       "notes": "With right receipts the record call carries them and the DL-032 plan in the stored correction (V1-056 sub-slice 10e-2b-1)."
+    },
+    {
+      "test_id": "test_a_pet_receipt_correction_pays_the_recovery_charge_its_placeholder_line_names",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-008", "BR-SETTLE-016", "DL-032", "BR-CREDIT-008", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_receipt_recovery_line_migration.py",
+      "status": "implemented",
+      "notes": "A Pet Deposit receipt correction whose 5,400 Settlement Refund is charged back on this Lease: the draft shows the placeholder line with its Refund, Customer, Lease and exact amount; the plan pays it by the Customer's Credit first and the new Pet Deposit money after pet damage and the other line; at the confirm the real charge equals the placeholder to the cent and both steps pay the real line; the exact check refuses a changed amount, Customer, Lease or Refund, a missing placeholder and a second one (P5S02) (V1-056 sub-slice 10e-2b-2)."
+    },
+    {
+      "test_id": "test_a_signer_outside_the_preview_keeps_the_credit_first_rule_on_a_placeholder_line",
+      "upstream_ids": ["BR-SETTLE-013", "BR-CREDIT-008", "DL-032", "BR-REFUND-015"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_receipt_recovery_line_migration.py",
+      "status": "implemented",
+      "notes": "On the real two-Signer closure, a second Signer on no Invoice of the Lease who received a Deposit Refund and holds Credit: with the recovery charge as a placeholder line the plan check refuses a plan that skips that Credit and gives exactly the result the same plan gives on the real charge line after it is written (V1-056 sub-slice 10e-2b-2, review round 1)."
+    },
+    {
+      "test_id": "test_the_same_receipt_again_and_a_receipt_outside_its_confirm_are_refused",
+      "upstream_ids": ["BR-SETTLE-013", "BR-AUTH-010", "DB-DEP-002"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_receipt_recovery_line_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer 1 to Q-2026-10-12-89: the same receipt again into the same Deposit is refused with nothing written; the plan check refuses a malformed placeholder line (22023) and one on another Lease (55000); inside the confirm's transaction the receipt writer refuses another amount, Deposit or Payment than the draft names, and after the commit even the named receipt (V1-056 sub-slice 10e-2b-2)."
+    },
+    {
+      "test_id": "test_recovery_lines_are_least_privilege_and_forward_only",
+      "upstream_ids": ["BR-SETTLE-013", "BR-AUTH-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_receipt_recovery_line_migration.py",
+      "status": "implemented",
+      "notes": "No role calls the three new internal functions; each is SECURITY DEFINER with the fixed search path; the migration changes no table, column, constraint or trigger and only the nine listed functions, privileges and settings kept, each patched body exactly the old one with its replacements; forward-only (V1-056 sub-slice 10e-2b-2)."
+    },
+    {
+      "test_id": "test_a_recovery_charge_placeholder_line_id_is_fixed_by_the_draft_and_the_refund",
+      "upstream_ids": ["BR-SETTLE-013", "DL-032"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_settlement_correction.py",
+      "status": "implemented",
+      "notes": "The service's placeholder line id of a recovery charge is md5('deposit-receipt-recovery:' || draft || ':' || refund) as a UUID, the id the database records (V1-056 sub-slice 10e-2b-2)."
     }
   ]
 }

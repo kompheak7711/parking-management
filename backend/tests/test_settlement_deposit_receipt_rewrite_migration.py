@@ -9,8 +9,9 @@ step applies it in the DL-032 order and refunds the rest. Rule 1: a Deposit hold
 active receipt from each Payment. Rule 2: inside such a correction a Security Deposit's first
 active receipt may differ from the accepted amount, never above the required amount. Rule 3: the
 first Pet Deposit receipt writer, inside a correction only, refused while the Pet Deposit is kept.
-A Deposit with a forfeiture ground waits for sub-slice 10e-2c (Q-2026-10-12-88) and a correction
-that charges a Refund back on this Lease for sub-slice 10e-2b-2.
+A Deposit with a forfeiture ground waits for sub-slice 10e-2c (Q-2026-10-12-88). A correction that
+charges a Refund back on this Lease names that charge as a placeholder line since sub-slice
+10e-2b-2 (its tests: test_settlement_deposit_receipt_recovery_line_migration.py).
 """
 
 from __future__ import annotations
@@ -121,9 +122,6 @@ TAKES_MORE = "The new receipts take more than the corrected receipt frees"
 CANNOT_FUND = "The corrected receipt's Payment cannot fund this Deposit"
 ALREADY_ACTIVE = "The Deposit already holds an active receipt from this Payment"
 EXCEEDS = "A new receipt would exceed the Deposit's required amount"
-RECOVERY_HERE = (
-    "A new receipt in a correction that charges a Refund back on this Lease is not supported yet"
-)
 UNUSED = "Every remaining Deposit balance must be applied or refunded"
 NOT_NAMED = "The new receipt is not one the correction's draft names"
 NOT_DL032 = "Only a Deposit that follows DL-032 and holds money may be applied"
@@ -372,8 +370,9 @@ def test_a_pet_deposit_receipt_and_then_a_split_security_receipt_are_written(
 def test_the_refusals_of_a_right_receipt(migrated_database_url: str) -> None:
     """The real refusals (each writes nothing): the Pet Deposit has no room under its required
     amount; more than the corrected receipt frees; a plan that leaves new money unused (the shared
-    check); a correction that charges the Pet Deposit's 5,400 Settlement Refund back on this Lease
-    (sub-slice 10e-2b-2). Every other refusal on a changed target. A recorded draft is stale at
+    check), also in a correction that charges the Pet Deposit's 5,400 Settlement Refund back on this
+    Lease (refused as such until sub-slice 10e-2b-2 named that charge as a placeholder line). Every
+    other refusal on a changed target. A recorded draft is stale at
     its confirm when the Lease's open debt changed (the shared step compares the recorded result)
     and stays pending. After a correction without a new receipt the Security Deposit holds no
     receipt, and outside a correction a receipt that differs from the accepted amount is still
@@ -415,7 +414,7 @@ def test_the_refusals_of_a_right_receipt(migrated_database_url: str) -> None:
         receipt=receipt_of(url, pet),
         receipts=(CorrectionDepositReceipt(pet, 18_000),),
         steps=(SettlementDepositStep(PET_FIRST, pet, LINE, pet_line, 12_500),),
-    ) == ("55000", RECOVERY_HERE)
+    ) == ("55000", UNUSED)  # 10e-2b-2: the recovery charge is a placeholder line, 5,500 unused
     with pytest.raises(FinalSettlementNotFoundError) as missing:
         record(
             case,
@@ -468,9 +467,10 @@ def test_the_refusals_of_a_right_receipt(migrated_database_url: str) -> None:
         ({"room_usd_cents": 7_999}, ("55000", EXCEEDS)),
     ):
         assert targets_check(url, case, source, [{**target, **change}]) == refusal, change
+    # Sub-slice 10e-2b-2: a recovery charge on this Lease no longer refuses a new receipt.
     assert targets_check(
         url, case, {**source, "recoveries": [{"lease_id": str(case["lease"])}]}, targets
-    ) == ("55000", RECOVERY_HERE)
+    ) == (None, None)
 
     draft = record(
         case,
