@@ -6,8 +6,13 @@ recorded by mistake. It undoes the uses of the returned Refund's own Credit or D
 correction and by the HELD_VALUE_REFUND corrections naming it (the debt comes back and stays with
 its Customers, BR-SETTLE-016), charges each of their Refunds from that source back to the person
 who received it, then reverses the return. Staff prepare it under final_settlements.prepare; only
-financial.approve confirms it (BR-SETTLE-013, BR-AUTH-010). A Deposit Refund paid to an agreed
-Signer is refused until the owner answers Q-2026-10-12-94.
+financial.approve confirms it (BR-SETTLE-013, BR-AUTH-010).
+
+Sub-slice 10e-3b: a Deposit Refund paid to an agreed Signer is charged back to that Signer (owner
+answer (a) to Q-2026-10-12-94); when the uses are more than the returned amount, only the returned
+amount is charged back, the oldest Refund first, and every application stays (owner answer (a) to
+Q-2026-10-12-95); when the Refunds paid out less than the returned amount, the reversal waits for
+the owner (Q-2026-10-12-96).
 """
 
 from __future__ import annotations
@@ -48,6 +53,7 @@ from test_settlement_correction_plan_migration import closed_case
 from test_settlement_deposit_refund_return_migration import pet_refund
 from test_settlement_extra_charge_migration import approving, cause, corrections, state
 from test_settlement_held_value_refund_migration import (
+    DEPOSIT_EMPTY,
     NOTHING_LEFT,
     confirm_held,
     deposit_left,
@@ -72,6 +78,10 @@ from test_settlement_refund_return_migration import (
     refunded_case,
     return_command,
 )
+from test_settlement_returned_payment_migration import command as returned_command
+from test_settlement_returned_payment_migration import confirm as confirm_returned
+from test_settlement_returned_payment_migration import receipt_payment
+from test_settlement_returned_payment_migration import record as record_returned
 
 REVISION = "20261129_125"
 REASON = "The return was recorded by mistake"
@@ -101,13 +111,28 @@ PATCHED = {
 NOT_FOUND = "The returned-Refund correction to reverse was not found"
 ALREADY = "The return of this correction is already reversed"
 OWN_RETURN = "A Refund paid from the returned value has its own return; reverse that return first"
-AGREED_SIGNER = "Who pays back a Deposit Refund paid to an agreed Signer is not decided yet"
 NOT_AVAILABLE = "The returned value is no longer available; undo its other use first"
 WAITING = "A return reversal draft of this correction is already waiting"
-MORE_THAN_RETURNED = (
-    "The correction to reverse also used money its return did not bring back; "
+PAYBACK_REVISION = "20261130_126"
+PAYBACK_INTERNAL = (
+    "app.settlement_return_reversal_recovery_amount(app.refund_corrections)",
+    "app.refund_recovery_source_reference(uuid,timestamp with time zone)",
+)
+PAYBACK_PATCHED = {
+    "app.settlement_return_reversal_source_state(uuid,uuid)",
+    "app.assert_settlement_return_reversal_allowed(jsonb)",
+    "app.settlement_return_reversal_refund(uuid,uuid)",
+    "app.validate_general_refund_correction()",
+    "app.write_payment_return_recoveries("
+    "uuid,uuid,uuid,uuid,uuid,jsonb,text,text,timestamp with time zone,jsonb)",
+    "app.refund_recovery_allowed(app.refund_corrections)",
+}
+STALE_RECOVERY = "The Refund to recover changed; the draft is stale"
+PAID_DEBT = (
+    "The returned money also paid debt beyond what its Refunds paid out; "
     "reversing it waits for the owner"
 )
+RECOVERED_ONLY = "A Refund is recovered by a charge only inside the return of its Payment"
 REVERSE_RETURN = (
     "INSERT INTO app.refund_corrections(id,refund_id,correction_kind,reverses_correction_id,"
     "source_balance_effect_usd_cents,source_balance_effect_original_minor,"
@@ -400,16 +425,17 @@ def test_a_mistaken_pay_back_return_into_a_kept_pet_deposit_is_reversed(
         assert_reconciled(connection, case["customer"])
 
 
-def test_a_held_value_refund_is_charged_back_and_an_agreed_signer_case_waits(
+def test_a_held_value_refund_is_charged_back_and_an_agreed_signer_pays_back_their_refund(
     migrated_database_url: str,
 ) -> None:
     """Two Signers; the Settlement refunded the Pet Deposit's rest (17,900) to the second Signer
     with the written agreement of all Signers. 1,000 is recorded as returned (return only) and a
     HELD_VALUE_REFUND pays it to the Primary Tenant, the Deposit's own Customer; a later 500
     return is refunded again to the second Signer with the agreement. The reversal of the later
-    return is refused (Q-2026-10-12-94, until the owner answers). The reversal of the first return
-    charges its 1,000 back to the Primary Tenant and reverses it; nothing is then left for a
-    held-value Refund naming it."""
+    return charges its 500 back to the second Signer, who received it, by an EXTRA_CHARGE on the
+    Lease (owner answer (a) to Q-2026-10-12-94, sub-slice 10e-3b). The reversal of the first
+    return charges its 1,000 back to the Primary Tenant and reverses it; nothing is then left for
+    a held-value Refund naming it."""
     url = migrated_database_url
     case = {**two_signer_case(url), "url": url}
     agreement = "All Signers agreed in writing on 2026-10-12 that the Signer receives the Refund"
@@ -440,10 +466,23 @@ def test_a_held_value_refund_is_charged_back_and_an_agreed_signer_case_waits(
     to_signer = settlement_refund(
         case, "pet", 500, recipient_customer_id=co_signer, signer_agreement=agreement
     )
-    confirm_held(case, record_held(case, held_command(case, later, to_signer)))
-    with pytest.raises(FinalSettlementConflictError) as waits:
-        record_reversal(case, reversal_command(case, later))
-    assert cause(waits) == ("55000", AGREED_SIGNER)
+    [to_co_signer] = confirm_held(case, record_held(case, held_command(case, later, to_signer)))[
+        "refunds"
+    ]
+    undone_later = confirm_reversal(case, record_reversal(case, reversal_command(case, later)))
+    [signer_recovery] = undone_later["recoveries"]
+    assert (
+        signer_recovery["refund_id"],
+        signer_recovery["customer_id"],
+        signer_recovery["lease_id"],
+        signer_recovery["amount_usd_cents"],
+        signer_recovery["charge"],
+    ) == (to_co_signer["id"], str(co_signer), str(lease_of(case)), 500, "EXTRA_CHARGE")
+    assert (
+        charge_open(url, signer_recovery),
+        net(url, to_co_signer["id"]),
+        held(url, pet),
+    ) == (500, 0, 0)
     result = confirm_reversal(case, record_reversal(case, reversal_command(case, earlier)))
     [recovery] = result["recoveries"]
     assert (
@@ -455,7 +494,7 @@ def test_a_held_value_refund_is_charged_back_and_an_agreed_signer_case_waits(
     ) == (paid["id"], str(tenant), str(lease_of(case)), 1_000, "EXTRA_CHARGE")
     assert (held(url, pet), net(url, pet_refund(case)), deposit_left(url, earlier, pet)) == (
         0,
-        17_400,
+        17_900,
         0,
     )
     with pytest.raises(FinalSettlementConflictError) as nothing:
@@ -560,7 +599,7 @@ def test_the_refusals_of_a_return_reversal(migrated_database_url: str) -> None:
     assert (state(url, draft), net(url, refund), available(url, credit)) == ("PENDING", 1_200, 700)
 
 
-def test_the_database_guards_and_the_refusal_of_uses_beyond_the_return(
+def test_the_database_guards_and_a_reversal_of_uses_beyond_the_return(
     migrated_database_url: str,
 ) -> None:
     """Review round 1: malformed input 22023; the recorder takes only final_settlements.prepare
@@ -568,8 +607,10 @@ def test_the_database_guards_and_the_refusal_of_uses_beyond_the_return(
     confirm (P4506); the confirm runs only at READ COMMITTED (55000); a return of another closed
     Settlement is not found; no refusal writes anything. Q-2026-10-12-95: 1,000 of the Pet Deposit
     Refund came back return only, then 500 more with a new Refund, which refunds all 1,500 the Pet
-    Deposit holds; the reversal of the 500 return is refused until the owner answers, because it
-    would charge back more than that return brought back."""
+    Deposit holds. The reversal of the 500 return charges back only the 500 (owner answer (a),
+    sub-slice 10e-3b): the new Refund paid out the returned money first, its 1,000 rest stays paid
+    and the Pet Deposit holds nothing, so a held-value Refund naming the first return is refused;
+    a hand-built recovery of another share is refused inside the draft's own correction."""
     url = migrated_database_url
     case = refunded_case(url)
     prop, human = case["prop"], case["human"]
@@ -630,14 +671,108 @@ def test_the_database_guards_and_the_refusal_of_uses_beyond_the_return(
     )
     assert (state(url, draft), net(url, case["refund"])) == ("PENDING", 1_200)
     pet = case["pet"]
-    return_only(case, pet_refund(case), 1_000)
+    first_return = return_only(case, pet_refund(case), 1_000)
+    settled_net = net(url, pet_refund(case))
     refund_all = settlement_refund(case, "pet", 1_500)
     mixed = confirm(case, record(case, return_command(case, pet_refund(case), 500, refund_all)))
     [paid] = mixed["refunds"]
     assert (paid["amount_usd_cents"], held(url, pet)) == (1_500, 0)
-    with pytest.raises(FinalSettlementConflictError) as beyond:
-        record_reversal(case, reversal_command(case, correction_of(mixed)))
-    assert cause(beyond) == ("55000", MORE_THAN_RETURNED)
+    shared = record_reversal(case, reversal_command(case, correction_of(mixed)))
+    source = draft_source(url, shared)
+    [planned] = source["recoveries"]
+    assert (
+        planned["refund_id"],
+        planned["amount_usd_cents"],
+        planned["net_usd_cents"],
+        source["deposit_applications"],
+        source["uses"],
+    ) == (
+        paid["id"],
+        500,
+        1_500,
+        [],
+        {"applied_usd_cents": 0, "refunded_usd_cents": 1_500, "returned_refunds": 0},
+    )
+    # Review round 1: the writer takes a share only inside a RETURN_REVERSAL; for any other
+    # caller an entry whose amount is not the whole net is stale.
+    with pytest.raises(psycopg.Error) as other_caller, psycopg.connect(url) as connection:
+        found = connection.execute(BEGIN, (case["prop"], case["person"], shared)).fetchone()
+        assert found is not None
+        connection.execute(
+            RECOVER,
+            (
+                case["prop"],
+                case["person"],
+                shared,
+                found[0],
+                Jsonb([planned]),
+                REASON,
+                EVIDENCE,
+                Jsonb({"variant": "DEPOSIT_RECEIPT_CORRECTION"}),
+            ),
+        )
+    assert (other_caller.value.sqlstate, other_caller.value.diag.message_primary) == (
+        "P5S02",
+        STALE_RECOVERY,
+    )
+    with pytest.raises(psycopg.Error) as other_share, psycopg.connect(url) as connection:
+        found = connection.execute(BEGIN, (case["prop"], case["person"], shared)).fetchone()
+        assert found is not None
+        connection.execute(
+            RECOVER,
+            (
+                case["prop"],
+                case["person"],
+                shared,
+                found[0],
+                Jsonb([{**planned, "amount_usd_cents": 400}]),
+                REASON,
+                EVIDENCE,
+                Jsonb({"variant": "RETURN_REVERSAL"}),
+            ),
+        )
+    assert (other_share.value.sqlstate, other_share.value.diag.message_primary) == (
+        "23514",
+        RECOVERED_ONLY,
+    )
+    # Review round 2: inside the draft's own correction the recorded share passes once (rolled
+    # back here), and the same share a second time is refused.
+    with psycopg.connect(url) as connection:
+        found = connection.execute(BEGIN, (case["prop"], case["person"], shared)).fetchone()
+        assert found is not None
+        reversal_call = (case["prop"], case["person"], shared, found[0])
+        tail = (REASON, EVIDENCE, Jsonb({"variant": "RETURN_REVERSAL"}))
+        connection.execute(RECOVER, (*reversal_call, Jsonb([planned]), *tail))
+        assert connection.execute(
+            "SELECT app.refund_net_value_at(%s,'infinity')", (paid["id"],)
+        ).fetchone() == (1_000,)
+        again_entry = Jsonb([{**planned, "net_usd_cents": 1_000}])
+        with pytest.raises(psycopg.Error) as twice_shared:
+            connection.execute(RECOVER, (*reversal_call, again_entry, *tail))
+        assert (twice_shared.value.sqlstate, twice_shared.value.diag.message_primary) == (
+            "23514",
+            RECOVERED_ONLY,
+        )
+        connection.rollback()
+    result = confirm_reversal(case, shared)
+    [recovery] = result["recoveries"]
+    assert (
+        recovery["refund_id"],
+        recovery["customer_id"],
+        recovery["amount_usd_cents"],
+        recovery["charge"],
+    ) == (paid["id"], paid["recipient_customer_id"], 500, "EXTRA_CHARGE")
+    assert (
+        net(url, paid["id"]),
+        net(url, pet_refund(case)),
+        held(url, pet),
+        charge_open(url, recovery),
+    ) == (1_000, settled_net, 0, 500)
+    with psycopg.connect(url) as connection:
+        assert_reconciled(connection, UUID(str(paid["recipient_customer_id"])))
+    with pytest.raises(FinalSettlementConflictError) as emptied:
+        record_held(case, held_command(case, first_return, settlement_refund(case, "pet", 1_000)))
+    assert cause(emptied) == ("55000", DEPOSIT_EMPTY)
 
 
 def rows(database: str, statement: str) -> list[tuple[Any, ...]]:
@@ -720,6 +855,249 @@ def test_return_reversal_records_are_least_privilege_and_forward_only(
     for name in PATCHED:
         assert after_functions[name][1:] == before_functions[name][1:], name
     assert {function for function, _ in revision.module.PATCHES} == PATCHED
+    for function, replacements in revision.module.PATCHES:
+        body = str(before_functions[function][0])
+        for anchor, replacement in replacements:
+            assert body.count(anchor) == 1, function
+            body = body.replace(anchor, replacement)
+        assert after_functions[function][0] == body, function
+
+
+def test_returned_money_that_also_paid_debt_beyond_its_refunds_waits_for_the_owner(
+    migrated_database_url: str,
+) -> None:
+    """Q-2026-10-12-96 (sub-slice 10e-3b), the Credit form: 300 of a correction's Credit Refund
+    came back return only, then 1,700 more with a new Refund; the Credit, now 2,000, pays the
+    1,500 charge and refunds 500. The new Refund paid out only 500 of the mistaken 1,700, so the
+    rest paid debt; the reversal of that return is refused until the owner answers, and nothing is
+    written."""
+    url = migrated_database_url
+    case = refunded_case(url)
+    refund, credit = case["refund"], case["refund_credit"]
+    return_only(case, refund, 300)
+    charge_line = unpaid_charge(url, case, case["person"])[1]
+    pays_debt = SettlementCreditStep(credit, LINE, charge_line, 1_500)
+    later = confirm(case, record(case, return_command(case, refund, 1_700, pays_debt)))
+    [again] = later["refunds"]
+    assert (
+        again["amount_usd_cents"],
+        available(url, credit),
+        outstanding(url, charge_line),
+    ) == (500, 0, 0)
+    before = one(url, "SELECT count(*) FROM app.financial_drafts")
+    with pytest.raises(FinalSettlementConflictError) as paid_debt:
+        record_reversal(case, reversal_command(case, correction_of(later)))
+    assert cause(paid_debt) == ("55000", PAID_DEBT)
+    assert (
+        one(url, "SELECT count(*) FROM app.financial_drafts"),
+        net(url, again["id"]),
+        outstanding(url, charge_line),
+    ) == (before, 500, 0)
+
+
+def test_a_reversal_keeps_the_applications_when_its_refund_paid_out_the_returned_money(
+    migrated_database_url: str,
+) -> None:
+    """Owner answer (a) to Q-2026-10-12-95 (sub-slice 10e-3b, review round 1), the Credit form
+    with an application: 1,800 of a correction's 2,000 Credit Refund came back return only; after
+    a 1,500 charge, the other 200 comes back with a new Refund, and the Credit (2,000) pays the
+    charge, refunds 200 and keeps 300. Reversing the 200 return charges back only the 200 Refund,
+    which paid out the returned money first; the 1,500 application, paid from the Credit's other
+    money, stays, and the Credit keeps its 300."""
+    url = migrated_database_url
+    case = refunded_case(url)
+    refund, credit, customer = case["refund"], case["refund_credit"], case["customer"]
+    return_only(case, refund, 1_800)
+    charge_line = unpaid_charge(url, case, case["person"])[1]
+    pays_debt = SettlementCreditStep(credit, LINE, charge_line, 1_500)
+    later = confirm(case, record(case, return_command(case, refund, 200, pays_debt)))
+    [again] = later["refunds"]
+    assert (
+        again["amount_usd_cents"],
+        available(url, credit),
+        outstanding(url, charge_line),
+    ) == (200, 300, 0)
+    draft = record_reversal(case, reversal_command(case, correction_of(later)))
+    source = draft_source(url, draft)
+    assert (
+        source["credit_applications"],
+        source["uses"],
+        [
+            (item["refund_id"], item["amount_usd_cents"], item["net_usd_cents"])
+            for item in source["recoveries"]
+        ],
+    ) == (
+        [],
+        {"applied_usd_cents": 1_500, "refunded_usd_cents": 200, "returned_refunds": 0},
+        [(again["id"], 200, 200)],
+    )
+    result = confirm_reversal(case, draft)
+    [recovery] = result["recoveries"]
+    assert (
+        result["credit_application_reversals"],
+        recovery["refund_id"],
+        recovery["customer_id"],
+        recovery["amount_usd_cents"],
+        recovery["charge"],
+    ) == ([], again["id"], str(customer), 200, "EXTRA_CHARGE")
+    assert (
+        net(url, again["id"]),
+        net(url, refund),
+        available(url, credit),
+        outstanding(url, charge_line),
+        charge_open(url, recovery),
+    ) == (0, 200, 300, 0, 200)
+    with psycopg.connect(url) as connection:
+        assert_reconciled(connection, customer)
+
+
+def test_the_rest_of_a_partly_charged_back_refund_is_charged_back_when_its_payment_bounces(
+    migrated_database_url: str,
+) -> None:
+    """Review round 1 (sub-slice 10e-3b): a reversal charged back only 500 of a 1,500 Pet
+    Deposit Refund; then the Payment that funded the Pet Deposit bounces. Its RETURNED_PAYMENT
+    correction charges the Refund's 1,000 rest back to the person who received it, under its own
+    charge reference (the first recovery keeps the plain one), and the Pet Deposit ends empty."""
+    url = migrated_database_url
+    case = refunded_case(url)
+    pet = case["pet"]
+    return_only(case, pet_refund(case), 1_000)
+    refund_all = settlement_refund(case, "pet", 1_500)
+    mixed = confirm(case, record(case, return_command(case, pet_refund(case), 500, refund_all)))
+    [paid] = mixed["refunds"]
+    confirm_reversal(case, record_reversal(case, reversal_command(case, correction_of(mixed))))
+    assert net(url, paid["id"]) == 1_000
+    payment = receipt_payment(url, pet)
+    returned = confirm_returned(case, record_returned(case, returned_command(case, payment)))
+    [rest] = [item for item in returned["recoveries"] if item["refund_id"] == paid["id"]]
+    assert (rest["customer_id"], rest["amount_usd_cents"], rest["charge"]) == (
+        paid["recipient_customer_id"],
+        1_000,
+        "EXTRA_CHARGE",
+    )
+    assert (net(url, paid["id"]), held(url, pet)) == (0, 0)
+    assert one(
+        url,
+        "SELECT array_agg(source_reference ORDER BY source_reference) "
+        "FROM app.authorized_nonrecurring_obligations WHERE source_reference LIKE %s",
+        f"refund-recovery:{paid['id']}%",
+    )[0] == [f"refund-recovery:{paid['id']}", f"refund-recovery:{paid['id']}:2"]
+    with psycopg.connect(url) as connection:
+        assert_reconciled(connection, UUID(str(paid["recipient_customer_id"])))
+
+
+def test_the_shared_path_refusals_fail_closed(migrated_database_url: str) -> None:
+    """Review round 1 (sub-slice 10e-3b), on the refusal function: on the shared path a Refund of
+    the uses with its own return (also one returned in full, so not listed) is refused; Refunds
+    that paid out less than the returned amount wait for the owner (Q-2026-10-12-96); missing
+    totals are refused."""
+    url = migrated_database_url
+    shared: dict[str, Any] = {
+        "earlier": {"amount_usd_cents": 500, "reversed": False},
+        "credit_applications": [],
+        "deposit_applications": [],
+        "recoveries": [{"amount_usd_cents": 500, "returns": 0}],
+        "source": {"value_usd_cents": 0},
+        "uses": {"applied_usd_cents": 0, "refunded_usd_cents": 1_500, "returned_refunds": 0},
+    }
+    check = "SELECT app.assert_settlement_return_reversal_allowed(%s)"
+    with psycopg.connect(url) as connection:
+        connection.execute(check, (Jsonb(shared),))
+    for changed, message in (
+        ({"returned_refunds": 1}, OWN_RETURN),
+        ({"applied_usd_cents": 1_100, "refunded_usd_cents": 400}, PAID_DEBT),
+    ):
+        source = {**shared, "uses": {**shared["uses"], **changed}}
+        with pytest.raises(psycopg.Error) as refused, psycopg.connect(url) as connection:
+            connection.execute(check, (Jsonb(source),))
+        assert (refused.value.sqlstate, refused.value.diag.message_primary) == (
+            "55000",
+            message,
+        ), changed
+    missing = {key: item for key, item in shared.items() if key != "uses"}
+    with pytest.raises(psycopg.Error) as closed, psycopg.connect(url) as connection:
+        connection.execute(check, (Jsonb(missing),))
+    assert (closed.value.sqlstate, closed.value.diag.message_primary) == (
+        "55000",
+        "The return reversal source is incomplete",
+    )
+
+
+def app_catalog(database: str) -> tuple[dict[str, tuple[object, ...]], set[str], set[str]]:
+    """Every app function (definition, privileges, owner, definer, settings), constraint and
+    trigger."""
+    functions = {
+        str(row[0]): tuple(row[1:])
+        for row in rows(
+            database,
+            "SELECT p.oid::regprocedure::text,pg_catalog.pg_get_functiondef(p.oid),"
+            "p.proacl::text,p.proowner,p.prosecdef,p.proconfig::text "
+            "FROM pg_catalog.pg_proc p JOIN pg_catalog.pg_namespace n "
+            "ON n.oid=p.pronamespace WHERE n.nspname='app' AND p.prokind='f'",
+        )
+    }
+    constraints = {
+        ":".join(str(item) for item in row)
+        for row in rows(
+            database,
+            "SELECT c.conrelid::regclass::text,c.conname,"
+            "pg_catalog.pg_get_constraintdef(c.oid) "
+            "FROM pg_catalog.pg_constraint c JOIN pg_catalog.pg_namespace n "
+            "ON n.oid=c.connamespace WHERE n.nspname='app'",
+        )
+    }
+    triggers = {
+        ":".join(str(item) for item in row)
+        for row in rows(
+            database,
+            "SELECT t.tgrelid::regclass::text,t.tgname FROM pg_catalog.pg_trigger t "
+            "JOIN pg_catalog.pg_class c ON c.oid=t.tgrelid "
+            "JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace "
+            "WHERE n.nspname='app' AND NOT t.tgisinternal",
+        )
+    }
+    return functions, constraints, triggers
+
+
+def test_the_return_reversal_payback_rules_are_least_privilege_and_forward_only(
+    migrated_database_url: str,
+) -> None:
+    """Sub-slice 10e-3b: no role calls the two new internal functions, each SECURITY DEFINER with
+    the fixed search path; migration 126 adds only those functions, changes only the six listed
+    functions (privileges and settings kept; each patched body is exactly the old one with the
+    module's replacements), no constraint and no trigger, and is forward-only."""
+    url = migrated_database_url
+    with psycopg.connect(url) as connection:
+        for function in PAYBACK_INTERNAL:
+            for role in ("prm_runtime", "prm_financial", "prm_bootstrap", "public"):
+                assert connection.execute(
+                    "SELECT has_function_privilege(%s,%s,'EXECUTE')", (role, function)
+                ).fetchone() == (False,), (function, role)
+            assert connection.execute(
+                "SELECT p.prosecdef,p.proconfig[1] FROM pg_catalog.pg_proc p "
+                "WHERE p.oid=CAST(%s AS regprocedure)",
+                (function,),
+            ).fetchone() == (True, "search_path=pg_catalog"), function
+    config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
+    scripts = ScriptDirectory.from_config(config)
+    revision = scripts.get_revision(PAYBACK_REVISION)
+    assert revision is not None and revision.down_revision == REVISION
+    with pytest.raises(RuntimeError, match="forward-only"):
+        revision.module.downgrade()
+    with _temporary_migration_database("settlement_return_reversal_payback") as temporary:
+        alembic_command.upgrade(config, REVISION)
+        before_functions, before_constraints, before_triggers = app_catalog(temporary)
+        alembic_command.upgrade(config, PAYBACK_REVISION)
+        after_functions, after_constraints, after_triggers = app_catalog(temporary)
+    assert (after_triggers, after_constraints) == (before_triggers, before_constraints)
+    assert set(after_functions) - set(before_functions) == set(PAYBACK_INTERNAL)
+    assert set(before_functions) <= set(after_functions)
+    assert {
+        name for name in before_functions if after_functions[name] != before_functions[name]
+    } == PAYBACK_PATCHED
+    for name in PAYBACK_PATCHED:
+        assert after_functions[name][1:] == before_functions[name][1:], name
+    assert {function for function, _ in revision.module.PATCHES} == PAYBACK_PATCHED
     for function, replacements in revision.module.PATCHES:
         body = str(before_functions[function][0])
         for anchor, replacement in replacements:

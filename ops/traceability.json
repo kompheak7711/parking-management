@@ -40285,12 +40285,12 @@
       "notes": "A 3,000 pay-back return into a kept Pet Deposit that paid 1,000 of Rent and refunded 2,000 is reversed: the 1,000 is owed again, the 2,000 is charged back, the Pet Deposit stays kept and empty with no pay-back money, the forfeiture unchanged (V1-056 sub-slice 10e-3)."
     },
     {
-      "test_id": "test_a_held_value_refund_is_charged_back_and_an_agreed_signer_case_waits",
+      "test_id": "test_a_held_value_refund_is_charged_back_and_an_agreed_signer_pays_back_their_refund",
       "upstream_ids": ["BR-SETTLE-013", "BR-REFUND-015", "DB-REFUND-002", "DB-SETTLE-005"],
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_return_reversal_migration.py",
       "status": "implemented",
-      "notes": "On a two-Signer Lease a held-value Refund of a mistaken return paid to the Primary Tenant is charged back to the Primary Tenant and the return reversed; nothing is then left for a held-value Refund naming it; a reversal that would charge back a Deposit Refund paid to the agreed second Signer is refused until the owner answers Q-2026-10-12-94 (V1-056 sub-slice 10e-3)."
+      "notes": "On a two-Signer Lease a held-value Refund of a mistaken return paid to the Primary Tenant is charged back to the Primary Tenant and the return reversed; nothing is then left for a held-value Refund naming it; a Deposit Refund paid to the agreed second Signer is charged back to that Signer by an EXTRA_CHARGE on the Lease (V1-056 sub-slice 10e-3; renamed and changed in sub-slice 10e-3b under owner answer (a) to Q-2026-10-12-94, which ended the earlier refusal)."
     },
     {
       "test_id": "test_the_refusals_of_a_return_reversal",
@@ -40301,12 +40301,12 @@
       "notes": "An unknown correction or one of another variant is not found; a returned value another path used is refused until that use is undone; one draft waits at a time and an exact repeat replays; a reused draft identity, Staff confirming, a hand-built reversal row that differs from the draft and a recovery of a Refund the reversed correction did not pay are refused; a draft whose source changed is stale and stays pending (V1-056 sub-slice 10e-3)."
     },
     {
-      "test_id": "test_the_database_guards_and_the_refusal_of_uses_beyond_the_return",
-      "upstream_ids": ["BR-SETTLE-013", "BR-AUTH-010", "DB-REFUND-002"],
+      "test_id": "test_the_database_guards_and_a_reversal_of_uses_beyond_the_return",
+      "upstream_ids": ["BR-SETTLE-013", "BR-AUTH-010", "BR-SETTLE-016", "DB-REFUND-002"],
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_return_reversal_migration.py",
       "status": "implemented",
-      "notes": "Malformed input 22023; the recorder takes only final_settlements.prepare and the confirm only financial.approve (42501); a service identity cannot confirm (P4506); the confirm runs only at READ COMMITTED; a return of another closed Settlement is not found; a reversal whose uses to undo are more than its return brought back is refused until the owner answers Q-2026-10-12-95 (V1-056 sub-slice 10e-3)."
+      "notes": "Malformed input 22023; the recorder takes only final_settlements.prepare and the confirm only financial.approve (42501); a service identity cannot confirm (P4506); the confirm runs only at READ COMMITTED; a return of another closed Settlement is not found; a reversal whose uses are more than its return brought back charges back only the returned 500 of the new 1,500 Refund, whose 1,000 rest stays paid, the Pet Deposit then holds nothing, the recipient's ledger reconciles and a held-value Refund naming the first return is refused; a share outside a RETURN_REVERSAL caller is stale, a hand-built recovery of another share is refused, and inside the draft's own correction the recorded share passes once and is refused a second time (V1-056 sub-slice 10e-3; renamed and changed in sub-slice 10e-3b under owner answer (a) to Q-2026-10-12-95, which ended the earlier refusal)."
     },
     {
       "test_id": "test_return_reversal_records_are_least_privilege_and_forward_only",
@@ -40339,6 +40339,46 @@
       "test_path": "backend/tests/test_settlement_correction.py",
       "status": "implemented",
       "notes": "A stale return reversal draft stays pending (P5S02); other refusals keep the Final Settlement error mapping (V1-056 sub-slice 10e-3)."
+    },
+    {
+      "test_id": "test_returned_money_that_also_paid_debt_beyond_its_refunds_waits_for_the_owner",
+      "upstream_ids": ["BR-SETTLE-013", "DL-032", "DB-REFUND-002"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_migration.py",
+      "status": "implemented",
+      "notes": "Credit form on the real path: 300 returned only, then 1,700 with a new Refund after a 1,500 Credit application; the new Refund paid out only 500 of the mistaken 1,700, so the reversal is refused until the owner answers Q-2026-10-12-96 and nothing is written (V1-056 sub-slice 10e-3b)."
+    },
+    {
+      "test_id": "test_a_reversal_keeps_the_applications_when_its_refund_paid_out_the_returned_money",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-016", "DB-REFUND-002", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_migration.py",
+      "status": "implemented",
+      "notes": "Credit form on the real path: 1,800 returned only, then 200 with a new Refund after a 1,500 charge; the reversal of the 200 return charges back only the 200 Refund by an EXTRA_CHARGE, keeps the 1,500 Credit application and leaves the Credit at 300; the ledger reconciles (V1-056 sub-slice 10e-3b, review round 1)."
+    },
+    {
+      "test_id": "test_the_rest_of_a_partly_charged_back_refund_is_charged_back_when_its_payment_bounces",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-016", "DB-REFUND-002"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_migration.py",
+      "status": "implemented",
+      "notes": "After a reversal charged back 500 of a 1,500 Pet Deposit Refund, the Pet Deposit's Payment bounces; the RETURNED_PAYMENT correction charges the 1,000 rest back to its recipient under the numbered reference refund-recovery:<Refund>:2, the Pet Deposit ends empty and the ledger reconciles (V1-056 sub-slice 10e-3b, review round 1)."
+    },
+    {
+      "test_id": "test_the_shared_path_refusals_fail_closed",
+      "upstream_ids": ["BR-SETTLE-013", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_migration.py",
+      "status": "implemented",
+      "notes": "The refusal function on built sources: the shared path passes; a Refund of the uses with its own return and Refunds that paid out less than the returned amount (Q-2026-10-12-96) are refused; missing totals are refused with their own message (V1-056 sub-slice 10e-3b, review rounds 1 and 2)."
+    },
+    {
+      "test_id": "test_the_return_reversal_payback_rules_are_least_privilege_and_forward_only",
+      "upstream_ids": ["BR-SETTLE-013", "DB-REFUND-002"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_migration.py",
+      "status": "implemented",
+      "notes": "No role calls the two new internal functions (the recovery amount and the recovery charge reference; SECURITY DEFINER, fixed search path); migration 126 adds only them and changes only the six listed functions, each patched body exactly the old one with its replacements, privileges and settings kept; no constraint or trigger changes; forward-only (V1-056 sub-slice 10e-3b)."
     }
   ]
 }

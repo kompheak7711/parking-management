@@ -2661,6 +2661,29 @@ reversed return leaves its earlier correction nothing (`app.settlement_held_depo
 `app.settlement_held_credit_value`), so a `HELD_VALUE_REFUND` naming it is then refused. No new
 table or column.
 
+Since V1-056 sub-slice 10e-3b (migration `20261130_126`; owner answers (a) to Q-2026-10-12-94 and
+(a) to Q-2026-10-12-95), two of the refusals above are gone. A Refund to recover paid to an agreed
+Signer who is not the Deposit's own Customer is charged back to that Signer, who received it. Uses
+to undo that are more than the returned amount are no longer refused when the Refunds paid out at
+least the returned amount: the Refunds paid out the returned money first, so the source state
+shares the returned amount over them, the oldest first (`amount_usd_cents` is the share,
+`net_usd_cents` the Refund's net), and the rest of each Refund stays paid. A Refund with no share
+is not recovered, and every Credit or Deposit application stays (both application lists are
+empty). The source names the totals (`uses`: `applied_usd_cents`, `refunded_usd_cents`,
+`returned_refunds`). After such a reversal the Deposit or Credit holds what it held before it,
+which is nothing for a Deposit, because the step of the reversed correction swept it; the left
+value of an earlier return-only correction is not changed (a label that the holdings cap;
+Q-2026-10-12-97). On that shared path, the reversal is still refused (55000) in two cases. First,
+when a Refund of the uses has its own return, also one returned in full ("A Refund paid from the
+returned value has its own return; reverse that return first"). Second, when the Refunds paid out
+less than the returned amount, so the rest of it paid debt ("The returned money also paid debt
+beyond what its Refunds paid out; reversing it waits for the owner"; Q-2026-10-12-96). Missing
+totals are refused too ("The return reversal source is incomplete"). On the shared path the
+source-value check always passes; the general check of the `CORRECTION_REVERSAL` row still
+requires the source to hold the returned amount. The source still names `deposit_customer` for
+each recovery; no check reads it since migration 126. A draft recorded before migration 126 becomes stale at its confirm (P5S02), because its
+source shape changed.
+
 As built in V1-056 sub-slice 10c-3a (migration `20261115_111`; owner answer to Q-2026-10-07-38): the
 `CHARGE_REDUCTION` variant also reduces an unpaid Late-payment Charge of an Invoice of the
 Settlement's Lease (draft `target_kind` `LATE_PAYMENT_CHARGE`, its own recorder and confirm). Its
@@ -3080,6 +3103,25 @@ draft's reason and evidence, `refunds.corrections.reverse`, the approver as acto
 correction of the Refund's own Settlement, confirmed in this transaction); a one-call reversal stays
 refused. Its reversal branch now reads every Deposit Refund's source by `source_deposit_id` (the
 Deposit's held value, no Payment status), so an over-reversal of any Deposit Refund is refused.
+
+Since sub-slice 10e-3b (migration `20261130_126`; owner answers (a) to Q-2026-10-12-94 and (a) to
+Q-2026-10-12-95): the recovery check's recorded recipient is the Refund's own recipient (an agreed
+second Signer too), not only the Deposit's own Customer. Inside a `RETURN_REVERSAL` a
+`RECOVERED_BY_CHARGE` row recovers exactly the amount the draft recorded for that Refund (the
+internal `app.settlement_return_reversal_recovery_amount`, no grant; the draft must be confirmed in
+this transaction by the correction's approver, who is the row's actor; a second recovery of the
+same Refund in the same correction, or a draft that names the Refund more than once, is refused),
+which can be a share below the net; the row's
+resulting net is then the net less the share, so a partly recovered Refund keeps a net. Every other
+recovery is still the whole net. The recovery writer takes an entry's `net_usd_cents` only inside a
+`RETURN_REVERSAL`; for any other caller an entry whose amount is not the whole net is stale (P5S02).
+Each recovery charge has its own source reference (the internal
+`app.refund_recovery_source_reference`, no grant): the first is `refund-recovery:<Refund>` as
+before, a later one adds its number (`:2`, ...; it counts the recoveries dated before the row, so
+the check gives the same answer before and after the row is written), so the rest of a partly
+recovered Refund can be
+charged back by a later correction (for example the return of the Payment that funded its
+Deposit) without breaking the obligation key (Customer, category and reference).
 
 ---
 

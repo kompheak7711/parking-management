@@ -2282,7 +2282,7 @@ Example: a Pet Deposit had a $150 Pet Refund-review Refund, and $30 of it came b
 
 Recorded in docs/010.
 
-## Q-2026-10-12-94 — Sub-slice 10e-3 (`RETURN_REVERSAL`): who pays back a Deposit Refund that was paid to an agreed Signer? (blocks only that case; refused until answered)
+## Q-2026-10-12-94 — Sub-slice 10e-3 (`RETURN_REVERSAL`): who pays back a Deposit Refund that was paid to an agreed Signer? (blocks only that case; refused until answered) (ANSWERED 2026-10-12: (a); built in sub-slice 10e-3b; answer in docs/010)
 
 Your answer (a) to Q-2026-10-08-57: a return recorded by mistake is reversed by a `RETURN_REVERSAL` correction, and "any part already refunded again becomes an `EXTRA_CHARGE` to that Customer". The plan wrote this, before your Q-78 answer, as "the Deposit owner for a Deposit Refund". Your later answer to Q-2026-10-11-78 says: "the person who received the refund money pays it back". Sub-slices 10e-1c and 10e-2 follow Q-78. The 10e-3 design is in the plan (10e-3 pre-code design); 10e-3 is built with this case refused (below).
 
@@ -2297,7 +2297,11 @@ Example: a Lease with two Signers, A (the Primary Tenant, the Deposit's Customer
 
 **What goes ahead.** 10e-3 is built now with every other case. Until you answer, a `RETURN_REVERSAL` that would recover a Refund paid to someone other than the Deposit's own Customer is refused (55000, a conflict); a relaxing change lifts it later. A Credit Refund always goes to the Credit's own Customer, so it is not affected.
 
-## Q-2026-10-12-95 — Sub-slice 10e-3 (`RETURN_REVERSAL`): a mistaken return whose correction also paid out money the Deposit already held (blocks only that case; refused until answered)
+**Owner answer (2026-10-12).** (a). The person who received the Refund pays it back. When a Deposit Refund was paid to an agreed second Signer, that second Signer is charged, not the Deposit owner. This follows the Q-2026-10-11-78 rule. The older plan text ("the Deposit owner for a Deposit Refund") is updated to match.
+
+Recorded in docs/010 and the plan. Built in sub-slice 10e-3b (after 10e-3, before 10e-4): the refusal is removed; the charge goes to the person who received the Refund, an `EXTRA_CHARGE` on the Lease when that person is its signed Customer, else a no-Lease charge (the sub-slice 10e-1c writer).
+
+## Q-2026-10-12-95 — Sub-slice 10e-3 (`RETURN_REVERSAL`): a mistaken return whose correction also paid out money the Deposit already held (blocks only that case; refused until answered) (ANSWERED 2026-10-12: (a); built in sub-slice 10e-3b except one case, see Q-2026-10-12-96; answer in docs/010)
 
 Found by the independent review of 10e-3 (round 1). A `REFUND_RETURN` that pays a new Refund must apply or refund every Deposit balance (BR-SETTLE-008). So when the Deposit already held money from an earlier return-only correction, that correction's Refund pays out more than its own return brought back.
 
@@ -2310,3 +2314,41 @@ Example: after closure, $1,000 of the Settlement's Pet Deposit Refund comes back
 **Recommendation: (a)**, because only the money the mistaken return brought back was paid out by mistake; the Customer was owed X1's $1,000 in any case. It needs a small extra rule in the reversal (and in X1's left value). Until you answer, 10e-3 refuses the case (55000, "The correction to reverse also used money its return did not bring back; reversing it waits for the owner"); a relaxing change lifts it.
 
 **What goes ahead.** Everything else in 10e-3, and the rest of the order. The same refusal also covers a Credit return whose correction applied or refunded more of the Credit than its return brought back.
+
+**Owner answer (2026-10-12).** (a). Charge back only the mistaken amount. The part of the new Refund that paid out money the Deposit really held stays paid. This follows the owner answer to Q-2026-10-10-76: a new Refund pays the returned money first.
+
+Recorded in docs/010 and the plan. Built in sub-slice 10e-3b (after 10e-3, before 10e-4), for the Deposit and the Credit form: when the uses are more than the returned amount, the Refunds paid out the returned money first (the oldest Refund first), so each is charged back only for its share of the returned amount, and every Deposit or Credit application stays. In the example the reversal charges back $500, the $1,000 rest of the new Refund stays paid, and the Pet Deposit holds nothing, so a held-value Refund naming X1 is refused. Implementer's reading: X1's own left value (the label `app.settlement_held_deposit_value` reads) is not changed; the Deposit holds nothing, so nothing stays held (the 10e-3 round 2 note: a left value is a label that the holdings cap). One case is not built: the Refunds paid out less than the returned amount, so the rest of the returned money paid debt; it stays refused until the owner answers Q-2026-10-12-96.
+
+## Q-2026-10-12-96 — Sub-slice 10e-3b (your Q-95 answer): the new Refunds paid out less than the mistaken return, so part of an application must come back (blocks only that case; refused until answered)
+
+Your answer (a) to Q-2026-10-12-95: charge back only the mistaken amount; a new Refund pays the returned money first. Sub-slice 10e-3b builds it when the Refunds paid out at least the returned amount: only the returned amount is charged back (the oldest Refund first), and every Deposit or Credit application stays.
+
+**The case that is left.** The Refunds paid out less than the returned amount, so the rest of the returned money paid debt. Example (Credit form): after closure $300 of a correction's Credit Refund comes back (return only, X1); the Credit holds $300. Later $1,700 more comes back (X2) with a new Refund: the Credit, now $2,000, pays the Customer's $1,500 charge and refunds $500. Then staff find that X2's return never happened. Of the mistaken $1,700, the new Refund paid out $500 (charged back) and $1,200 paid the charge. So $1,200 of the $1,500 application must come back as debt, while X1's $300 stays applied. The same can happen with a Deposit.
+
+**What the code allows.** A Deposit application and a Credit application are reversed only whole. A Credit application's unreleased rest is re-posted only by the `REFUND` correction paths (migration 67); nothing re-applies the rest of a Deposit application.
+
+**Options:**
+- (a) Reverse the newest applications whole until the rest of the returned amount is reached; the part of the last one that was not returned money (here $300) is applied again to the same obligation from the same Credit or Deposit, in the same correction (a new linked application). The Customer owes the $500 charge and $1,200 of the debt again: exactly the mistaken amount. It needs a small new writer for that re-applied part.
+- (b) Reverse the newest applications whole; the extra part ($300) stays in the Credit or Deposit as held DL-032 money. The Customer owes the $500 charge and $1,500 of debt again, and the Credit holds $300 that the next correction must apply or refund (for example a held-value Refund naming X1). No new writer.
+- (c) Keep it refused (a known limit); staff fix such a case by hand outside the system.
+
+**Recommendation: (a)**, because it charges back exactly the mistaken amount, as your Q-95 answer says. It would be a small sub-slice 10e-3c before 10h.
+
+**What goes ahead.** Everything else in 10e-3b, and the rest of the order. Until you answer, a `RETURN_REVERSAL` whose Refunds paid out less than its returned amount while its uses are more than that amount is refused (55000, "The returned money also paid debt beyond what its Refunds paid out; reversing it waits for the owner").
+
+## Q-2026-10-12-97 — Sub-slice 10e-3b (your Q-95 answer): should the left value of the earlier return-only correction also count the money that stays paid? (blocks nothing; please confirm or choose)
+
+Option (a) of Q-2026-10-12-95 said: "X1's held value is then counted as used by that Refund, so nothing stays held", and estimated "a small extra rule in the reversal (and in X1's left value)". Sub-slice 10e-3b builds the money part. After the reversal the Pet Deposit holds nothing, so a held-value Refund naming X1 is refused ("The Deposit holds no returned money to refund"). It does not change X1's left value: the label (`app.settlement_held_deposit_value`) still says X1 has $1,000 left. The independent review of 10e-3b found this difference from the option text.
+
+**Why it was not built.** The label was already wrong before the reversal. X2's correction swept the Pet Deposit, so X2's new Refund paid out X1's $1,000 as soon as X2 was confirmed. The left value counts only the uses by held-value Refunds that name X1 (a known 10e-3 note). A rule only inside the reversal would fix one case of a wider gap.
+
+**Effect (corrected after review round 2).** If money later comes back into the same Pet Deposit through another return-only correction X3, a held-value Refund naming X1 (F3) can pay out X3's money. X3 then cannot be reversed ("The returned value is no longer available"). X1 can still be reversed, and its reversal charges back F3, the Refund that paid out X3's money, while the rest of X2's Refund (which paid out X1's money) stays paid. When F3 went to another person (for example an agreed Signer), the wrong person is charged for X1's mistake. The total amount charged is right; the person can be wrong.
+
+**Options:**
+- (a) One rule for every case, as a small sub-slice before 10h: when a later correction's DL-032 step uses the source, that use counts against the held money of the earlier return-only corrections, oldest return first, so their left values go down. This covers the reversal case too.
+- (b) Only for the reversal: X1's left value goes down by the part of the reversed correction's Refunds that stays paid.
+- (c) Keep the label as it is (a known limit; what the source holds still caps every payment).
+
+**Recommendation: (a)**, because it makes every left value true, not only after a reversal, and then a held-value Refund naming X1 is refused after X2's sweep, so X1's reversal cannot reach X3's money. Committed tests that read a left value after such a sweep may change; the pre-code check will name them.
+
+**What goes ahead.** 10e-3b is committed as built. Nothing else waits for this answer.
