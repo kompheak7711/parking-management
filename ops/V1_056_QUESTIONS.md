@@ -2565,7 +2565,7 @@ Also answered (2026-10-13):
 
 Recorded in docs/010.
 
-## Q-2026-10-13-106 — Sub-slice 10e-3e (your Q-104 answer): how the put-back Credit payment is labelled in the records (blocks only 10e-3e; the 10e-3d-2a refusal stays until answered)
+## Q-2026-10-13-106 — Sub-slice 10e-3e (your Q-104 answer): how the put-back Credit payment is labelled in the records (blocks only 10e-3e; the 10e-3d-2a refusal stays until answered) (ANSWERED 2026-10-13: (a), a new label written only by a correction's put-back; answer in docs/010)
 
 10e-3d-2a is committed (db910ec). Your Q-104 answer: a Credit put-back on an invoice with Rent or Service lines goes back on its own line, even where the Rent-first rule would choose another line; only for a put-back linked to the correction, on the same line, never more than the amount reversed there; the 10e-3c put-back too.
 
@@ -2588,7 +2588,9 @@ So a put-back on its own line cannot be written today with any of the four label
 
 **What goes ahead.** 10e-3d-2b, 10e-3d-2c, 10e-3d-2d and the rest of the order do not depend on this answer; their put-backs on such an invoice stay refused with the 10e-3d-2a message until 10e-3e is built. 10e-3e is built right after your answer, still before 10h.
 
-## Q-2026-10-13-107 — Sub-slice 10e-3d-2b: the mistaken money sat in a payment that a later Refund correction or pet-damage reclassification changed (blocks only 10e-3d-2b-2; refused until answered)
+**Owner answer (2026-10-13).** Option (a): a new label "put back by a correction", with the small screen change. Only a correction's put-back may write this label. Staff must not be able to choose it for an ordinary Credit payment; the screen only shows it. Recorded in docs/010.
+
+## Q-2026-10-13-107 — Sub-slice 10e-3d-2b: the mistaken money sat in a payment that a later Refund correction or pet-damage reclassification changed (blocks only 10e-3d-2b-2; refused until answered) (ANSWERED 2026-10-13: (a), the order of the Q-100 answer; answer in docs/010)
 
 The 10e-3d-2b design is in the plan (10e-3d entry, "10e-3d-2b pre-code design"). Sub-slice 10e-3d-2b-1 follows a payment that a later return reversal changed: that reversal took out exactly its own return's money and put the rest back, so the mistaken money of another return is in the put-back, unchanged, and no new rule is needed. Two other kinds of correction can change such a payment and pay the money out again in a different form, and there it is not written which part of the money went where.
 
@@ -2605,3 +2607,24 @@ Then E's return turns out to be a mistake. Its 1,000 now sits partly in Q's Refu
 **Recommendation: (a)**, because it is the same order you already chose for the money a correction pays out (Q-100: Refunds first, the oldest first, then payments, the newest first), so one rule covers every correction, and the person who received money pays back exactly the part that reached them.
 
 **What goes ahead.** 10e-3d-2b-1 (a payment a return reversal changed, and the own payments placed by the same count) does not depend on this answer and is built next; until then, and for these two kinds until you answer, such a reversal stays refused with its own message ("A later correction changed a payment made with this return's money; reversing it waits for sub-slice 10e-3d-2b").
+
+**Owner answer (2026-10-13).** Option (a): the same order as the Q-2026-10-13-100 answer (what the changing correction took back out of the payment pays out first on its Refunds, the oldest first, then on its payments, the newest first; the mistaken money keeps its place in that stream). Recorded in docs/010; built as sub-slice 10e-3d-2b-2.
+
+## Q-2026-10-13-108 — Sub-slice 10e-3d-2b-1a stopped before its commit: the auto-mode checker blocked the round 3 security review (blocks the 10e-3d-2b-1a commit; recommendation (a)) (ANSWERED 2026-10-13: (a), then the review in the main session; answer in docs/010)
+
+**Where it stands.** 10e-3d-2b-1a (migration `20261205_131`: a return's money on a payment a later return reversal changed follows to that reversal's put-back) is built and green: P4 2137 passed (P3 had one `Signature evidence is invalid` failure in a Lease fixture; the clock check K1 was in step, and P4 was the one allowed rerun), U3 3802 passed. Review round 1: security clean, independent one should-fix (a test), fixed. Review round 2: security clean, independent one should-fix (a test), fixed under your new round-3 rule. Review round 3: the independent reviewer is clean (0 blockers, 0 should-fix). Nothing is committed; every file is in the working tree. Record: ops/reviews/V1-056-slice-10e-3d-2b-1a-return-reversal-successor.md.
+
+**What was blocked.** Starting the fresh read-only security reviewer for round 3 (a subagent told to write no file and run nothing, the same kind of reviewer that ran rounds 1 and 2 of this sub-slice and every earlier round). The auto-mode checker refused it with "Auto-Mode Bypass". Under the run rules I did not repeat it or try another way.
+
+**Why it is safe.** The reviewer only reads the repository (git diff, cat, sed, grep) and reports; it writes nothing, runs nothing and touches no database or service. Since security round 2 (clean), only one test and text changed; the migration did not change.
+
+**Options.**
+- (a) You allow the round 3 security review (or run `/security-review` yourself); if it is clean, I commit 10e-3d-2b-1a.
+- (b) You accept security rounds 1 and 2 (both clean, on the same migration) and the clean independent round 3 as enough, and I commit 10e-3d-2b-1a.
+- (c) Leave it uncommitted.
+
+**Recommendation: (a)**, because the takeover rules give every slice 10 sub-slice a security review before its commit, and round 3 must be clean in both reviews.
+
+**What goes ahead.** Nothing: the next sub-slice (10e-3d-2b-1b) changes the same source function, and I will not build on uncommitted work. Q-2026-10-13-106 and Q-2026-10-13-107 are open too.
+
+**Owner answer (2026-10-13).** Option (a): start the round 3 security reviewer once more, read-only, with the same task as in rounds 1 and 2; if the checker blocks it again, do not retry and do not try another way. The checker blocked it again ("Data Exfiltration"). The owner then said: do not start a reviewer agent again; do the round 3 security review in the main session, read-only, on `git diff HEAD` (the uncommitted 10e-3d-2b-1a work) with the checklist of rounds 1 and 2, check the run outputs only with the standard secret scan, write the result in the review record with a note that the checker blocked the reviewer twice; stop on a blocker or a should-fix; if clean, record the answers to Q-106 and Q-107 and the new run rule, commit 10e-3d-2b-1a, then stop (context above 45%). Result: clean (0 blockers, 0 should-fix; the review record lists the checks and three notes). New run rule (ops/V1_055_RUN_RULES.md): when a reviewer gives a test set-up, it is written in the review record so a later session can use it. Recorded in docs/010.

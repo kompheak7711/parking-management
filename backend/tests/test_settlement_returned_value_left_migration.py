@@ -165,8 +165,10 @@ def test_a_part_applied_again_counts_against_the_return_whose_money_it_is(
     1,700 with a new Refund, and the Credit pays 1,500 of a charge and refunds 500: X2's own 1,700
     first, then X1's 300, so X1 has nothing left and a held-value Refund naming it is refused. X2's
     reversal applies 300 again (sub-slice 10e-3c); that part is X1's money, which X2 already used,
-    so the count does not change: X1 still has nothing left. Sub-slice 10e-3d-2a: X1's money sat
-    in the application X2's reversal changed, so X1's reversal waits for sub-slice 10e-3d-2b."""
+    so the count does not change: X1 still has nothing left. Sub-slice 10e-3d-2b-1a (owner answer
+    (a) to Q-2026-10-13-100 point 1): X1's money sat in the application X2's reversal changed, and
+    X2's reversal put exactly that 300 back, so X1's reversal reverses that put-back whole and the
+    charge owes all 1,500 again (before, X1's reversal waited for sub-slice 10e-3d-2b)."""
     url = migrated_database_url
     case = refunded_case(url)
     refund, credit = case["refund"], case["refund_credit"]
@@ -197,11 +199,25 @@ def test_a_part_applied_again_counts_against_the_return_whose_money_it_is(
         str(second): (1_700, 1_700, 0, 0),
     }
     assert credit_left(url, first, credit) == 0
-    unchanged = (one(url, COUNTS), one(url, DRAFTS))
-    with pytest.raises(FinalSettlementConflictError) as swept:
-        record_reversal(case, reversal_command(case, first))
-    assert cause(swept) == ("55000", CHANGED)
-    assert (one(url, COUNTS), one(url, DRAFTS)) == unchanged
+    # Sub-slice 10e-3d-2b-1a: X1's part follows to the put-back of X2's reversal.
+    [put_back] = result["reapplied"]
+    draft = record_reversal(case, reversal_command(case, first))
+    [part] = draft_source(url, draft)["swept"]
+    assert (part["record_id"], part["amount_usd_cents"], part["part_usd_cents"]) == (
+        put_back["id"],
+        300,
+        300,
+    )
+    undone = confirm_reversal(case, draft)
+    assert [item["credit_application_id"] for item in undone["credit_application_reversals"]] == [
+        put_back["id"]
+    ]
+    assert undone["reapplied"] == []
+    assert (available(url, credit), outstanding(url, charge_line), net(url, refund)) == (
+        0,
+        1_500,
+        2_000,
+    )
 
 
 def test_released_money_and_ordinary_credit_spending_are_not_counted(

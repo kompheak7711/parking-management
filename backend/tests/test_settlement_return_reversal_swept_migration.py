@@ -204,8 +204,9 @@ def test_an_application_with_other_money_on_each_side_is_applied_again(
     and its step lets the Credit pay a 1,500 charge in full: X2's own 900 first, then X1's 300,
     then X1b's 300, all in that one application. X1's reversal reverses the application whole and
     applies 1,200 of the same Credit to the same charge again, so 300 of it is owed again and the
-    Credit ends empty. X1b's reversal then waits for sub-slice 10e-3d-2b (the application its
-    money paid was changed by X1's reversal) and writes nothing."""
+    Credit ends empty. Sub-slice 10e-3d-2b-1a (owner answer (a) to Q-2026-10-13-100 point 1):
+    X1b's 300 is in that 1,200 put-back, so X1b's reversal reverses the put-back whole and applies
+    900 again (before, it waited for sub-slice 10e-3d-2b): 600 of the charge is owed again."""
     url = migrated_database_url
     case = refunded_case(url)
     refund, credit = case["refund"], case["refund_credit"]
@@ -243,11 +244,25 @@ def test_an_application_with_other_money_on_each_side_is_applied_again(
         800,
         300,
     )
-    unchanged = (one(url, COUNTS), one(url, DRAFTS))
-    with pytest.raises(FinalSettlementConflictError) as changed:
-        record_reversal(case, reversal_command(case, later))
-    assert cause(changed) == ("55000", CHANGED)
-    assert (one(url, COUNTS), one(url, DRAFTS)) == unchanged
+    # Sub-slice 10e-3d-2b-1a: X1b's part follows to X1's put-back.
+    follow = record_reversal(case, reversal_command(case, later))
+    [moved] = draft_source(url, follow)["swept"]
+    assert (moved["record_id"], moved["amount_usd_cents"], moved["part_usd_cents"]) == (
+        again["id"],
+        1_200,
+        300,
+    )
+    second_result = confirm_reversal(case, follow)
+    assert [
+        (item["credit_application_id"], item["amount_usd_cents"])
+        for item in second_result["credit_application_reversals"]
+    ] == [(again["id"], 1_200)]
+    assert [item["amount_usd_cents"] for item in second_result["reapplied"]] == [900]
+    assert (available(url, credit), net(url, refund), outstanding(url, charge_line)) == (
+        0,
+        1_100,
+        600,
+    )
     with psycopg.connect(url) as connection:
         assert_reconciled(connection, case["customer"])
 

@@ -40490,7 +40490,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_returned_value_left_migration.py",
       "status": "implemented",
-      "notes": "The Q-96 case on the real path (Credit): after a 300 return-only correction, a 1,700 return with a new Refund pays 1,500 of a charge and refunds 500, taking its own 1,700 first and then the first return's 300, so the first has nothing left and a held-value Refund naming it is refused; after the later return's reversal applies 300 again, that part is the first return's money that the later correction already used, so the count does not change (the reversal pays out exactly what it brings back), nothing is left and the first return's reversal is refused with nothing written (V1-056 sub-slice 10e-3d-1, review rounds 1 and 2; since sub-slice 10e-3d-2a the refusal says the application its money paid was changed by a later correction and waits for sub-slice 10e-3d-2b)."
+      "notes": "The Q-96 case on the real path (Credit): after a 300 return-only correction, a 1,700 return with a new Refund pays 1,500 of a charge and refunds 500, taking its own 1,700 first and then the first return's 300, so the first has nothing left and a held-value Refund naming it is refused; after the later return's reversal applies 300 again, that part is the first return's money that the later correction already used, so the count does not change (the reversal pays out exactly what it brings back), nothing is left (V1-056 sub-slice 10e-3d-1, review rounds 1 and 2). Since sub-slice 10e-3d-2b-1a (owner answer (a) to Q-2026-10-13-100 point 1) the first return's 300 follows to the 300 the later return's reversal put back, and its reversal reverses that put-back whole, so the charge owes all 1,500 again (in 10e-3d-1 the reversal was refused; in 10e-3d-2a it waited for sub-slice 10e-3d-2b)."
     },
     {
       "test_id": "test_released_money_and_ordinary_credit_spending_are_not_counted",
@@ -40562,7 +40562,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_return_reversal_swept_migration.py",
       "status": "implemented",
-      "notes": "Credit form on the real path: two return-only corrections bring back 300 each, then a return-only correction of 900 lets the Credit pay a 1,500 charge, using its own 900 first, then the first 300, then the second 300, all in one application; the first return's reversal reverses that application whole and applies 1,200 of the same Credit to the same charge again (300 owed again, the Credit empty); the second return's reversal then waits for sub-slice 10e-3d-2b and writes nothing (V1-056 sub-slice 10e-3d-2a)."
+      "notes": "Credit form on the real path: two return-only corrections bring back 300 each, then a return-only correction of 900 lets the Credit pay a 1,500 charge, using its own 900 first, then the first 300, then the second 300, all in one application; the first return's reversal reverses that application whole and applies 1,200 of the same Credit to the same charge again (300 owed again, the Credit empty) (V1-056 sub-slice 10e-3d-2a); since sub-slice 10e-3d-2b-1a the second return's 300 follows to that 1,200 put-back, which its reversal reverses whole, applying 900 again (600 owed again; in 10e-3d-2a it waited for sub-slice 10e-3d-2b)."
     },
     {
       "test_id": "test_two_applications_are_each_applied_again",
@@ -40635,6 +40635,54 @@
       "test_path": "backend/tests/test_settlement_return_reversal_swept_migration.py",
       "status": "implemented",
       "notes": "Review round 2 on the real path (Credit): a later return-only correction paid a charge with its own money and part of E's; a held-value Refund naming E (its only own correction with records, so the flag stays false) paid a charge and refunded the last 100 with E's rest and a later return's money; E's reversal charges the Refund back, reverses both applications whole and applies again the other money of each (one own part and one part of another correction), so exactly E's 1,000 is owed again (V1-056 sub-slice 10e-3d-2a)."
+    },
+    {
+      "test_id": "test_a_part_follows_a_chain_of_put_backs",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-016", "BR-CREDIT-014", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_successor_migration.py",
+      "status": "implemented",
+      "notes": "Credit form on the real path: three returns of 300 and a later correction's own 600 paid one 1,500 charge; each return's reversal in turn follows its 300 through the put-backs of the earlier reversals (1,200, then 900), reverses the latest whole and puts the rest back, so each time exactly 300 is owed again and the Credit ends empty; review round 1: each followed part names the correction that wrote the payment holding it (V1-056 sub-slice 10e-3d-2b-1a)."
+    },
+    {
+      "test_id": "test_a_part_follows_to_the_second_put_back_of_a_reversal",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-016", "BR-CREDIT-014", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_successor_migration.py",
+      "status": "implemented",
+      "notes": "Review round 2 on the real path (Credit): a correction's two payments hold four returns' money; one return's reversal reverses both and puts back two parts in order; another return's 300 on the second payment follows to the second put-back (the n-th entry is the n-th payment written), which its reversal reverses whole and puts 300 back, so the second charge owes 1,200 and the Credit ends empty (V1-056 sub-slice 10e-3d-2b-1a)."
+    },
+    {
+      "test_id": "test_a_deposit_part_follows_to_its_put_back",
+      "upstream_ids": ["BR-SETTLE-008", "BR-SETTLE-013", "BR-SETTLE-016", "DL-032", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_successor_migration.py",
+      "status": "implemented",
+      "notes": "Deposit form on the real path: two Pet Deposit returns of 1,000; a correction's new Refund and Pet Deposit payment hold the first's money in both and the second's in the payment; the first's reversal charges 800 back and puts 1,000 back; the second's 1,000 follows to that put-back, which its reversal reverses whole with nothing put back (the successor then is none), so the charge owes 1,200 again and the Pet Deposit ends empty (V1-056 sub-slice 10e-3d-2b-1a)."
+    },
+    {
+      "test_id": "test_a_part_on_a_payment_a_refund_correction_changed_waits",
+      "upstream_ids": ["BR-SETTLE-013", "BR-CREDIT-014", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_successor_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 on the real path (Credit): a later correction's payment holds a return's 300; a Refund correction releases 300 of that payment (reversed, the rest written again, the 300 refunded), so the payment has no successor and the return's reversal is refused with the 10e-3d-2b message and writes nothing (Q-2026-10-13-107 decides that case; V1-056 sub-slice 10e-3d-2b-1a)."
+    },
+    {
+      "test_id": "test_the_successor_fails_closed",
+      "upstream_ids": ["BR-SETTLE-013", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_successor_migration.py",
+      "status": "implemented",
+      "notes": "An unknown kind, no application or an application that does not exist gives no successor (V1-056 sub-slice 10e-3d-2b-1a)."
+    },
+    {
+      "test_id": "test_the_successor_is_least_privilege_and_forward_only",
+      "upstream_ids": ["BR-SETTLE-013", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_successor_migration.py",
+      "status": "implemented",
+      "notes": "No role calls the successor, SECURITY DEFINER with the fixed search path; migration 131 adds only the successor, changes only the return reversal source exactly by its replacements, no constraint and no trigger, and is forward-only (V1-056 sub-slice 10e-3d-2b-1a)."
     }
   ]
 }

@@ -2852,6 +2852,31 @@ source lists as a swept part. Every `RETURN_REVERSAL` draft recorded before migr
 stale at its confirm (P5S02; its source gains four keys). No new table, column, constraint or
 trigger.
 
+As built in V1-056 sub-slice 10e-3d-2b-1a (migration `20261205_131`; owner answer (a) to
+Q-2026-10-13-100 point 1): a part of E's money on an application that a later `RETURN_REVERSAL`
+reversed and put back follows to that put-back. A return reversal's put-back is the reversed
+application less exactly its own return's part, so every other return's part is in it with the
+same amount. New internal `app.settlement_returned_value_successor(p_kind, p_application)`
+(STABLE, SECURITY DEFINER, `search_path=pg_catalog`, no grant): the application itself while it
+is active; after a `RETURN_REVERSAL` reversed it, the put-back that correction wrote for it (the
+n-th entry of the stored source's `reapply` is the n-th application linked to that correction),
+checked (the same Credit or Deposit, obligation and stage, the entry's amount, less than the
+reversed application) and followed again through later return reversals; NULL for any other
+change (a `REFUND` correction's release, a pet-damage reclassification, a reversal with nothing
+put back) or a put-back that does not check. `app.settlement_return_reversal_source_state` lists
+the part on the successor (its correction, id and amount), so the reversal reverses it whole and
+puts its rest back; a part with no successor, or more than it, stays open ("A later correction
+changed a payment made with this return's money; reversing it waits for sub-slice 10e-3d-2b").
+Review round 1: the reversing correction and the put-back must belong to the application's own
+Final Settlement, the stored source must list the application exactly once, and a Credit
+application must have exactly one detail on each side; a followed part names the correction that
+wrote the put-back (only a Refund part's correction is read by the recovery scope check, so
+nothing else reads it). Known limit (review rounds 1 and 2, for sub-slice 10e-3d-2b-1b): on the
+10e-3c pooled own path, when the reversed return's own correction also brought money back, its
+put-back is the payment less that return's part only in amount, and the check that a followed part
+is no more than the put-back is what keeps the result exact (else it stays open, fail closed). No
+check, writer, lock or grant changes; no new table, column, constraint or trigger.
+
 As built in V1-056 sub-slice 10c-3a (migration `20261115_111`; owner answer to Q-2026-10-07-38): the
 `CHARGE_REDUCTION` variant also reduces an unpaid Late-payment Charge of an Invoice of the
 Settlement's Lease (draft `target_kind` `LATE_PAYMENT_CHARGE`, its own recorder and confirm). Its
