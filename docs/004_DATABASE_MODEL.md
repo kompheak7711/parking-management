@@ -2875,7 +2875,41 @@ nothing else reads it). Known limit (review rounds 1 and 2, for sub-slice 10e-3d
 10e-3c pooled own path, when the reversed return's own correction also brought money back, its
 put-back is the payment less that return's part only in amount, and the check that a followed part
 is no more than the put-back is what keeps the result exact (else it stays open, fail closed). No
-check, writer, lock or grant changes; no new table, column, constraint or trigger.
+check, writer, lock or grant changes; no new table, column, constraint or trigger. (Sub-slice
+10e-3d-2b-1b closes this known limit: such a source takes the walk path below. Today no
+`REFUND_RETURN` or `HELD_VALUE_REFUND` writer links a record that brings money back, so the case
+is not reachable and the walk-path condition is defensive.)
+
+As built in V1-056 sub-slice 10e-3d-2b-1b (migration `20261206_132`; owner answer (a) to
+Q-2026-10-13-100 point 1): the own uses of E (E's own correction and the `HELD_VALUE_REFUND`
+corrections naming E) are placed by the walk, as the other corrections' uses are, when two or more
+of them paid out from the source, when an own application from it was reversed since (for example
+by another return's reversal), or when an own correction's draw starts after money it brought back
+(defensive, see above). On that walk path each own correction's take of E's money sits on its
+Refunds (the oldest first) and then on its applications (the newest first), after what it brought
+back; a reversed application is followed to its successor (a part with none, or more than it,
+stays open, for example after a `REFUND` correction's release: sub-slice 10e-3d-2b-2); a Refund
+part more than the Refund's net now (a part of it came back) stays open; on the walk path the
+pooled totals must still be there as numbers; the parts are listed, charged back and applied
+again exactly as the other corrections' parts, and the pooled own lists of sub-slices 10e-3b and
+10e-3c stay empty. Otherwise (at most one own correction paid out, none of its applications
+reversed, nothing brought back) the pooled own path is unchanged, because there it places E's
+money on the same records (a Refund whose net is below its amount there is refused on either
+path, with a different message). New
+internal `app.settlement_returned_value_parts(p_settlement, p_kind, p_source, p_earlier, p_swept)`
+(STABLE, SECURITY DEFINER, `search_path=pg_catalog`, no grant) gives the record parts of the
+other corrections' takes (`p_swept` true) or of the own takes (`p_swept` false);
+`app.settlement_returned_value_takes` now returns its rows with `p_swept` true (same signature,
+settings and privileges). The source gains `own_parts` and `own_open` (the shapes of `swept` and
+`swept_open`; JSON null on the pooled path). `app.assert_settlement_return_reversal_allowed`
+requires both keys, null or lists together; on the walk path it holds the own parts to the rules
+of the other corrections' parts, requires their total to be exactly the part of the returned money
+the own uses used, no record to be a part twice and every listed application, recovery and part
+applied again to belong to a part, refuses an own part not undone yet with the message of its
+kind, and skips the pooled-path checks (the Refund with its own return on the shared path, the one
+own part applied again, and the `shared_with_other_returns` flag, which now refuses only a
+pooled-path source). A `RETURN_REVERSAL` draft recorded before revision 132 is stale at its
+confirm (P5S02). No writer, lock or grant changes; no new table, column, constraint or trigger.
 
 As built in V1-056 sub-slice 10c-3a (migration `20261115_111`; owner answer to Q-2026-10-07-38): the
 `CHARGE_REDUCTION` variant also reduces an unpaid Late-payment Charge of an Invoice of the

@@ -473,6 +473,8 @@ def test_the_count_and_the_reversal_limit_fail_closed(migrated_database_url: str
         "swept_open": [],
         # 10e-3d-2a review round 2: the flag is required; no own correction took other money.
         "shared_with_other_returns": False,
+        "own_parts": None,
+        "own_open": None,
     }
     check = "SELECT app.assert_settlement_return_reversal_allowed(%s)"
     with psycopg.connect(url) as connection:

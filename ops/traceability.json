@@ -40605,12 +40605,12 @@
       "notes": "Review round 1 on the real path (Credit): a return-only correction brings back 1,700 and its own step pays a 1,500 charge (200 left); a later return-only correction of 300 pays 500 of a second charge with its own 300 and the first return's 200; the first return's reversal reverses its own 1,500 application whole (its own uses used 1,500 of its money, not 1,700) and the later 500 application whole, applying 300 again, so exactly 1,700 is owed again (V1-056 sub-slice 10e-3d-2a)."
     },
     {
-      "test_id": "test_own_corrections_that_also_took_another_return_s_money_wait",
+      "test_id": "test_own_corrections_that_also_took_another_return_s_money_are_undone_per_correction",
       "upstream_ids": ["BR-SETTLE-013", "DB-SETTLE-005"],
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_return_reversal_swept_migration.py",
       "status": "implemented",
-      "notes": "Review round 1 on the real path (Credit): a return-only correction's own step and a held-value Refund naming it both paid out from the Credit, and the held-value Refund also took an older return's money; the return's reversal waits for sub-slice 10e-3d-2b and writes nothing (V1-056 sub-slice 10e-3d-2a)."
+      "notes": "Review round 1 on the real path (Credit): a return-only correction's own step and a held-value Refund naming it both paid out from the Credit, and the held-value Refund also took an older return's money; the walk places the return's money per correction (its own 1,500 payment, the held-value Refund's 200), so the reversal reverses the payment whole and charges the 200 back while the older return's payment stays (V1-056 sub-slice 10e-3d-2a; allowed since sub-slice 10e-3d-2b-1b, renamed from test_own_corrections_that_also_took_another_return_s_money_wait)."
     },
     {
       "test_id": "test_a_part_applied_again_on_a_newer_rent_invoice_application_waits",
@@ -40683,6 +40683,62 @@
       "test_path": "backend/tests/test_settlement_return_reversal_successor_migration.py",
       "status": "implemented",
       "notes": "No role calls the successor, SECURITY DEFINER with the fixed search path; migration 131 adds only the successor, changes only the return reversal source exactly by its replacements, no constraint and no trigger, and is forward-only (V1-056 sub-slice 10e-3d-2b-1a)."
+    },
+    {
+      "test_id": "test_an_own_payment_follows_a_chain_of_put_backs",
+      "upstream_ids": ["BR-SETTLE-013", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_own_parts_migration.py",
+      "status": "implemented",
+      "notes": "On the real path (Credit): a return's own step paid a charge with its own money and two older returns' money in one payment; the two older returns' reversals each put the rest back; the return's own part follows through both put-backs and its reversal reverses the last one whole, so the whole charge is owed again and the Credit ends empty (V1-056 sub-slice 10e-3d-2b-1b)."
+    },
+    {
+      "test_id": "test_an_own_deposit_payment_follows_to_its_put_back",
+      "upstream_ids": ["BR-SETTLE-013", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_own_parts_migration.py",
+      "status": "implemented",
+      "notes": "On the real path (Pet Deposit): a return with a new Refund paid its own money through its Refund and part of a Deposit payment that also held an older return's money; the older return's reversal put the payment's rest back; the return's reversal charges its Refund back and follows its part to that put-back, reversed whole, so the debt is owed again and the Pet Deposit ends empty (V1-056 sub-slice 10e-3d-2b-1b)."
+    },
+    {
+      "test_id": "test_an_own_part_on_a_put_back_with_other_money_is_applied_again",
+      "upstream_ids": ["BR-SETTLE-013", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_own_parts_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 on the real path (Credit): an older return's reversal put back a payment holding the return's own money and another return's money; the return's reversal, with no active own payment left, reverses that put-back whole and applies the other return's money again, so only its own amount of the charge is owed again (V1-056 sub-slice 10e-3d-2b-1b)."
+    },
+    {
+      "test_id": "test_an_own_refund_returned_later_waits_for_that_return_s_reversal",
+      "upstream_ids": ["BR-SETTLE-013", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_own_parts_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 on the real path (Credit): on the walk path, part of a held-value Refund holding the return's money comes back later, so the return's part is more than the Refund's net and its reversal is refused, writing nothing; after that later return is reversed the reversal goes through (V1-056 sub-slice 10e-3d-2b-1b)."
+    },
+    {
+      "test_id": "test_an_own_payment_a_refund_correction_changed_waits",
+      "upstream_ids": ["BR-SETTLE-013", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_own_parts_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 on the real path (Credit): a Refund correction released part of the return's own payment, so the own part has no successor, the source lists it as open and the return's reversal is refused with the 10e-3d-2b message, writing nothing (Q-2026-10-13-107 decides that case; V1-056 sub-slice 10e-3d-2b-1b)."
+    },
+    {
+      "test_id": "test_the_own_parts_fail_closed",
+      "upstream_ids": ["BR-SETTLE-013", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_own_parts_migration.py",
+      "status": "implemented",
+      "notes": "On the refusal function with a built walk-path source: it passes, also with pooled totals, with pooled totals of 0 and with the shared flag; own parts that do not add up, a record that is a part twice, a zero part, own parts not listed exactly or a listed record not covered by a part, a missing or non-number total, or an unknown earlier amount make the source incomplete; an own part not undone yet has the message of its kind; both own keys are null or lists together, and a pooled source with the flag is refused (V1-056 sub-slice 10e-3d-2b-1b)."
+    },
+    {
+      "test_id": "test_the_own_parts_are_least_privilege_and_forward_only",
+      "upstream_ids": ["BR-SETTLE-013", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_own_parts_migration.py",
+      "status": "implemented",
+      "notes": "No role calls the parts function or the takes, each SECURITY DEFINER with the fixed search path; migration 132 adds only the parts function, replaces only the takes, changes only the source and the refusal function exactly by their replacements, no constraint and no trigger, and is forward-only (V1-056 sub-slice 10e-3d-2b-1b)."
     }
   ]
 }

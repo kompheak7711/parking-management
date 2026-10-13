@@ -503,15 +503,17 @@ def test_the_own_uses_and_another_correction_s_use_are_undone_together(
         assert_reconciled(connection, case["customer"])
 
 
-def test_own_corrections_that_also_took_another_return_s_money_wait(
+def test_own_corrections_that_also_took_another_return_s_money_are_undone_per_correction(
     migrated_database_url: str,
 ) -> None:
     """Review round 1: E0 brings back 300 (return only); E brings back 1,700 (return only) and its
     own step lets the Credit pay a 1,500 charge, so E keeps 200. A third party pays 1,200 of a
     second charge; a held-value Refund H names E: its step lets the Credit pay the other 300 and
-    it refunds E's 200, so H paid out E's 200 and E0's 300. E's reversal would undo E's and H's
-    uses over both at once while the walk takes them per correction, so it waits for sub-slice
-    10e-3d-2b and writes nothing."""
+    it refunds E's 200, so H paid out E's 200 and E0's 300. Sub-slice 10e-3d-2b-1b (owner answer
+    (a) to Q-2026-10-13-100 point 1; this reversal waited before): the walk places E's money per
+    correction, E's 1,500 on its own application and H's take of 200 on H's Refund, so E's
+    reversal reverses the 1,500 application whole and charges the 200 Refund back, while H's 300
+    payment, E0's money, stays: exactly 1,700 comes back."""
     url = migrated_database_url
     case = refunded_case(url)
     refund, credit = case["refund"], case["refund_credit"]
@@ -523,15 +525,57 @@ def test_own_corrections_that_also_took_another_return_s_money_wait(
     second_invoice, second_line = unpaid_charge(url, case, case["person"])
     third_party_payment(url, case, second_invoice, second_line, 1_200)
     pays_debt = SettlementCreditStep(credit, LINE, second_line, 300)
-    [paid] = confirm_held(case, record_held(case, held_command(case, earlier, pays_debt)))[
-        "refunds"
-    ]
+    holding = confirm_held(case, record_held(case, held_command(case, earlier, pays_debt)))
+    [paid] = holding["refunds"]
     assert (paid["amount_usd_cents"], available(url, credit)) == (200, 0)
-    unchanged = (one(url, COUNTS), one(url, DRAFTS))
-    with pytest.raises(FinalSettlementConflictError) as shared:
-        record_reversal(case, reversal_command(case, earlier))
-    assert cause(shared) == ("55000", SHARED)
-    assert (one(url, COUNTS), one(url, DRAFTS)) == unchanged
+    [paying] = one(
+        url,
+        "SELECT array_agg(id::text ORDER BY occurred_at,id) "
+        "FROM app.customer_credit_applications WHERE customer_credit_id=%s",
+        credit,
+    )
+    [own_payment, _] = paying
+    draft = record_reversal(case, reversal_command(case, earlier))
+    source = draft_source(url, draft)
+    assert (source["shared_with_other_returns"], source["swept"], source["own_open"]) == (
+        True,
+        [],
+        [],
+    )
+    assert sorted(
+        (
+            part["settlement_correction_id"],
+            part["record_kind"],
+            part["record_id"],
+            part["amount_usd_cents"],
+            part["part_usd_cents"],
+        )
+        for part in source["own_parts"]
+    ) == sorted(
+        [
+            (str(earlier), "CREDIT_APPLICATION", own_payment, 1_500, 1_500),
+            (str(correction_of(holding)), "REFUND", paid["id"], 200, 200),
+        ]
+    )
+    result = confirm_reversal(case, draft)
+    [undone] = result["credit_application_reversals"]
+    [recovery] = result["recoveries"]
+    assert (
+        undone["credit_application_id"],
+        undone["amount_usd_cents"],
+        recovery["refund_id"],
+        recovery["amount_usd_cents"],
+        result["reapplied"],
+    ) == (own_payment, 1_500, paid["id"], 200, [])
+    assert (
+        available(url, credit),
+        outstanding(url, first_line),
+        outstanding(url, second_line),
+        charge_open(url, recovery),
+        net(url, refund),
+    ) == (0, 1_500, 0, 200, 1_700)
+    with psycopg.connect(url) as connection:
+        assert_reconciled(connection, case["customer"])
 
 
 def test_an_own_part_and_another_correction_s_part_are_each_applied_again(
@@ -670,6 +714,8 @@ def test_a_part_applied_again_on_a_newer_rent_invoice_application_waits(
             ],
             "swept_open": [],
             "shared_with_other_returns": False,
+            "own_parts": None,
+            "own_open": None,
         }
 
     check = "SELECT app.assert_settlement_return_reversal_allowed(%s)"
@@ -746,6 +792,8 @@ def test_the_swept_parts_fail_closed(migrated_database_url: str) -> None:
         ],
         "swept_open": [],
         "shared_with_other_returns": False,
+        "own_parts": None,
+        "own_open": None,
     }
     check = "SELECT app.assert_settlement_return_reversal_allowed(%s)"
     with psycopg.connect(url) as connection:
