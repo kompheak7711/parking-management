@@ -2564,3 +2564,44 @@ Also answered (2026-10-13):
 - Order after the 10e-3d-2a commit: 10e-3d-2b, 10e-3d-2c, 10e-3d-2d, 10c-2a-7, 10c-3c-1, 10c-3c-2, 10f, 10g, 10e-2d (the Q-2026-10-12-93 answer), 10e-2b-3, 10e-2b-4, then 10h, with the Q-2026-10-13-104 answer where it fits best before 10h (sub-slice 10e-3e, see that question). A large sub-slice may be split into smaller ones that each end in a commit.
 
 Recorded in docs/010.
+
+## Q-2026-10-13-106 — Sub-slice 10e-3e (your Q-104 answer): how the put-back Credit payment is labelled in the records (blocks only 10e-3e; the 10e-3d-2a refusal stays until answered)
+
+10e-3d-2a is committed (db910ec). Your Q-104 answer: a Credit put-back on an invoice with Rent or Service lines goes back on its own line, even where the Rent-first rule would choose another line; only for a put-back linked to the correction, on the same line, never more than the amount reversed there; the 10e-3c put-back too.
+
+**What the code does today (read before design).** Every Credit payment records why it went to its line, and the app checks that label at the database and again on the staff screens:
+- "Rent then recurring services proposal": the database recomputes the Rent-first proposal at the moment of payment and refuses the payment if the stored proposal differs ("Credit proposal changed; obtain a fresh proposal").
+- "Customer designated": needs the Customer's own designation text.
+- "Other applicable obligation": refused on an invoice that has Rent or Service lines.
+- The staff screen check (`frontend/src/financialActionContext.ts`) accepts only these four labels and shows an error for any other.
+
+So a put-back on its own line cannot be written today with any of the four labels and stay true: it is not a fresh Rent-first proposal, the Customer did not designate it, and the other label is refused on such an invoice.
+
+**Example.** Rent 1,000 and Service 500 were paid from the Credit by the Rent-first proposal. The mistaken money covers the 1,000 Rent payment and 300 of the Service payment. The reversal undoes both and puts 200 back on the Service line. Rent-first would put the 200 on Rent.
+
+**Options.**
+- (a) A new label "Put back by a correction" for the put-back payment (on the payment and on its line). The record also names the reversed payment it restores. The database accepts the label only for a put-back of a return reversal: linked to that correction, on the line of a payment the same correction reversed, never more than that payment's amount on that line. The staff screens and their checks learn the new label (a small frontend change with tests; no new package). Readers see plainly that the payment is a put-back, not a Rent-first choice.
+- (b) Keep the four labels: the put-back copies the label of the payment it restores ("Rent then recurring services proposal"), with a record that names the reversed payment instead of a fresh proposal; the database check that recomputes the proposal is skipped only for such a put-back. No frontend change. But the record then says "Rent-first proposal" for a payment that does not follow today's Rent-first order, which a reader can misread.
+- (c) Keep the 10e-3d-2a refusal (a known limit).
+
+**Recommendation: (a)**, because each financial record must say truly why the money went where it did (AGENTS.md: auditable financial operations), and (a) is the only option where the label is true. It adds one database label value (a relaxing change of two checks) and a small screen change. BR-CREDIT-006 gets a note: a put-back of a return reversal is the exception your Q-104 answer allows.
+
+**What goes ahead.** 10e-3d-2b, 10e-3d-2c, 10e-3d-2d and the rest of the order do not depend on this answer; their put-backs on such an invoice stay refused with the 10e-3d-2a message until 10e-3e is built. 10e-3e is built right after your answer, still before 10h.
+
+## Q-2026-10-13-107 — Sub-slice 10e-3d-2b: the mistaken money sat in a payment that a later Refund correction or pet-damage reclassification changed (blocks only 10e-3d-2b-2; refused until answered)
+
+The 10e-3d-2b design is in the plan (10e-3d entry, "10e-3d-2b pre-code design"). Sub-slice 10e-3d-2b-1 follows a payment that a later return reversal changed: that reversal took out exactly its own return's money and put the rest back, so the mistaken money of another return is in the put-back, unchanged, and no new rule is needed. Two other kinds of correction can change such a payment and pay the money out again in a different form, and there it is not written which part of the money went where.
+
+**The case.** After closure, the Customer's Credit holds 1,000 that a return-only correction E brought back, plus 500 of other Credit. Another correction S lets the Credit pay a 1,500 charge (one payment of 1,500: 1,000 of E's money and 500 of the other money). Later:
+- a Refund correction Q finds the charge was 300 too high: it lowers the charge by 300, takes those 300 out of the payment (the payment is reversed and 1,200 is paid again on the charge), and refunds the 300 to the Customer;
+- or, for a Deposit, a pet-damage reclassification Q reverses the Deposit's payment of a line and pays the money out again by the DL-032 order (other lines, or a Refund).
+Then E's return turns out to be a mistake. Its 1,000 now sits partly in Q's Refund and partly in Q's new payment, and nothing says how much in each.
+
+**Options.**
+- (a) Use the order you chose in Q-2026-10-13-100 for any correction: the money Q took back out of the payment pays out first on Q's Refunds (the oldest first), then on Q's payments (the newest first), and the mistaken money keeps its place in that stream. Example: if E's 1,000 were the first 1,000 of S's payment, 300 of it is in Q's Refund (charged back to the Customer who received it) and 700 in the new 1,200 payment (700 of the charge owed again). If E's money were the last 1,000, all of it is in the new payment (1,000 of the charge owed again). Together always exactly the mistaken 1,000.
+- (b) Keep the mistaken money on the new payment first, as far as it fits, and in the Refund only for the rest. Example: all 1,000 in the new 1,200 payment (1,000 of the charge owed again), nothing charged back.
+- (c) Keep it refused (a known limit; staff fix it outside the system).
+
+**Recommendation: (a)**, because it is the same order you already chose for the money a correction pays out (Q-100: Refunds first, the oldest first, then payments, the newest first), so one rule covers every correction, and the person who received money pays back exactly the part that reached them.
+
+**What goes ahead.** 10e-3d-2b-1 (a payment a return reversal changed, and the own payments placed by the same count) does not depend on this answer and is built next; until then, and for these two kinds until you answer, such a reversal stays refused with its own message ("A later correction changed a payment made with this return's money; reversing it waits for sub-slice 10e-3d-2b").
