@@ -2485,3 +2485,30 @@ Nothing is committed; all files are in the working tree. Record: ops/reviews/V1-
 - Recommendation: (a). It closes the last case where a left value can point at someone else's money. It is built with 10e-3d-2.
 
 **Owner answer (2026-10-13).** Option (a). Add the two real-path tests: one that shows a correction's own return is used first (the X1 $300 and X2 $1,700 case from round 3), and one for a returned Payment whose correction reverses the Credit, plus a receipt correction after a return. Fix the plan and docs/010 so they describe the current state, and fix the wrong docs claim about "own return first". Then run the lint, format and type checks (each in its own call, formatter first), the targeted tests, U4, the migration-only check, the read-only search for affected tests and P4, all under `caffeinate -dims`. Then run review round 4: it must be clean, or stop. The independent reviewer compares each changed committed test with HEAD, including the two hand-built sources that gained `"left_usd_cents": 0`. Then commit 10e-3d-1. If P4 fails only in the known `LockNotAvailable` tests in `test_refund_migration.py`, rerun just those failing tests once under `caffeinate -dims`: if they pass, record it in the review record and continue; if they fail again, stop. Add `test_usd_refund_private_boundary_immutable_history_and_fresh_actor` to the `LockNotAvailable` item on the slice 12 list. Q-2026-10-13-100 is answered (both points (a); see that question). New run rule: when a reviewer asks for a test that the implementer thinks cannot be written on the real path, the independent reviewer confirms that before it is recorded as a limit instead.
+
+## Q-2026-10-13-103 — Sub-slice 10e-3d-2: three cases your Q-100 answer does not decide (blocks only 10e-3d-2c and 10e-3d-2d; refused until answered)
+
+10e-3d-1 is committed (2c4efc3). The 10e-3d-2 design is in the plan (10e-3d entry, "10e-3d-2 pre-code design"). Your Q-100 answer covers money that a later correction paid out through a Refund (charged back to the person who received it) or through a debt payment (the debt is owed again). Sub-slice 10e-3d-2a builds that, and 10e-3d-2b follows a payment that a later correction changed. Three other cases need you. Until then each stays refused with its own message.
+
+**Point 1: the returned money left the Credit or Deposit because a Payment bounced or a receipt was wrong.**
+- Example (Credit). A correction records that $300 of a $2,000 Credit Refund came back (X1). Then the Payment behind that Credit bounces. Its correction charges the Refund's receiver only $1,700 (the Refund less X1's $300) and removes the $300 with the Credit. Later staff find that X1's $300 never came back: the receiver still has the whole $2,000.
+- The Deposit form is the same: a receipt correction after X1 charges the Pet Deposit Refund's receiver $1,000 less than the Refund.
+- (a) X1's reversal charges the $300 to the person who received that Refund (a second charge-back of the same Refund). In total that person pays back the whole $2,000.
+- (b) X1's reversal stays refused (a known limit); staff fix it outside the system.
+- **Recommendation: (a)**, because it follows your Q-2026-10-11-78 rule: the person who received the refund money pays it back.
+
+**Point 2: the returned money was kept by a forfeiture of a correction.**
+- Example (Pet Deposit). X1 records $1,000 of the Pet Deposit Refund coming back. A later receipt correction (10e-2c) forfeits the Pet Deposit's money, X1's $1,000 included. Then X1 turns out to be a mistake: the Property kept $1,000 that never came back.
+- Your Q-2026-10-12-93 answer (sub-slice 10e-2d, in the order before 10h) stops a receipt correction from forfeiting returned money, and 10c-2b-6 already stops a forfeiture of returned pay-back money. After 10e-2d I expect no correction can forfeit returned money.
+- (a) Keep it refused now; after 10e-2d I check every forfeiture path. If none can take returned money, the refusal stays as a backstop and nothing more is built.
+- (b) Build it now: X1's reversal reverses that forfeiture and forfeits again only the part that was not X1's money (the Property keeps $1,000 less; nobody is charged).
+- **Recommendation: (a)**, because the case should disappear with 10e-2d, and (b) would build a path no one can reach.
+
+**Point 3: how the other Lease's history shows the correction (your Q-100 point 2 answer).**
+- Example. A Customer has two closed Leases, A and B. A correction of Lease A brings back $300 of Credit (X1). A correction of Lease B uses it to pay $300 of B's debt. X1 is then found to be a mistake: X1's reversal (a correction of A) must undo B's $300 payment, and B's history must show which correction undid it.
+- Today the closed Settlement of B refuses any change to its money unless a correction of B's own Settlement, confirmed in the same transaction, is linked.
+- (a) X1's reversal also writes a short companion correction of B's Settlement, in the same transaction. It names X1's reversal correction and carries the undone B records. B's correction list and Lease history show it, and the existing refusal stays unchanged.
+- (b) X1's reversal alone links the B records; B's refusal is widened to accept a correction of another Settlement of the same Customer. B's history shows the undo through the link to A's correction.
+- **Recommendation: (a)**, because B's own history then lists it as one of B's corrections, and the refusal that protects a closed Settlement does not get wider.
+
+**What goes ahead.** 10e-3d-2a and 10e-3d-2b do not depend on this answer and are built next, then 10c-2a-7 and the rest of the order.
