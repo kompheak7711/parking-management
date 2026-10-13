@@ -5,8 +5,10 @@ step uses a Credit or Deposit, that use counts against the held money of the ear
 corrections of that source (a correction's own return first, then the earlier correction it names,
 then the other returns, oldest first), so their left values go down. Only uses made by corrections
 count (ordinary Credit spending stays the known limit of owner answer 2 to Q-2026-10-09-63). A
-reversal of an earlier return takes only that return's own left value: when another correction
-paid out its money, the reversal waits for the owner (Q-2026-10-13-100).
+reversal of an earlier return takes only that return's own left value. Sub-slice 10e-3d-2a (owner
+answer (a) to Q-2026-10-13-100 point 1): when another correction paid out its money, the reversal
+also undoes that payout (a Refund part charged back, an application part owed again); a payout it
+cannot undo yet is refused with its own message.
 """
 
 from __future__ import annotations
@@ -82,7 +84,15 @@ PATCHED = {
     "app.settlement_return_reversal_source_state(uuid,uuid)",
     "app.assert_settlement_return_reversal_allowed(jsonb)",
 }
-SWEPT = "Another correction paid out this return's money; reversing it waits for the owner"
+# Sub-slice 10e-3d-2a: the payouts of returned money a reversal cannot undo yet.
+CHANGED = (
+    "A later correction changed a payment made with this return's money; "
+    "reversing it waits for sub-slice 10e-3d-2b"
+)
+REVERSED = (
+    "A Credit reversal or a Deposit receipt reversal paid out this return's money; "
+    "reversing it waits for sub-slice 10e-3d-2c"
+)
 INCOMPLETE = "The return reversal source is incomplete"
 DRAFTS = "SELECT count(*) FROM app.financial_drafts"
 
@@ -98,29 +108,30 @@ def counted(url: str, settlement: object, kind: str, source: object) -> dict[str
     return {str(row[0]): (int(row[1]), int(row[2]), int(row[3]), int(row[4])) for row in found}
 
 
-def test_a_sweep_counts_against_the_earlier_return_and_its_reversal_waits(
+def test_a_sweep_counts_against_the_earlier_return_and_its_reversal_charges_it_back(
     migrated_database_url: str,
 ) -> None:
     """The Q-97 case (Pet Deposit, at 1/100 scale): X1 brings back 1,000 (return only); X2 brings
     back 500 with a new Refund, which by BR-SETTLE-008 refunds all 1,500 the Pet Deposit holds:
     X2's own 500 first, then X1's 1,000. X1 then has nothing left, so a held-value Refund naming it
-    is refused, and its reversal is refused because another correction paid out its money
-    (Q-2026-10-13-100); neither writes anything. X2's own reversal is not blocked: its uses took
-    its own return first."""
+    is refused and writes nothing. Sub-slice 10e-3d-2a (owner answer (a) to Q-2026-10-13-100 point
+    1): X1's reversal charges the 1,000 of X2's Refund that was X1's money back to the person who
+    received it, so the Pet Deposit stays empty and X2's Refund keeps 500. X2's own reversal is
+    not blocked: its uses took its own return first."""
     url = migrated_database_url
     case = refunded_case(url)
     pet = case["pet"]
     first = return_only(case, pet_refund(case), 1_000)
     assert (held(url, pet), deposit_left(url, first, pet)) == (1_000, 1_000)
-    second = correction_of(
-        confirm(
+    paid_out = confirm(
+        case,
+        record(
             case,
-            record(
-                case,
-                return_command(case, pet_refund(case), 500, settlement_refund(case, "pet", 1_500)),
-            ),
-        )
+            return_command(case, pet_refund(case), 500, settlement_refund(case, "pet", 1_500)),
+        ),
     )
+    second = correction_of(paid_out)
+    [paid] = paid_out["refunds"]
     assert counted(url, case["settlement"], "DEPOSIT", pet) == {
         str(first): (1_000, 1_000, 1_000, 0),
         str(second): (500, 500, 0, 0),
@@ -134,11 +145,15 @@ def test_a_sweep_counts_against_the_earlier_return_and_its_reversal_waits(
     with pytest.raises(FinalSettlementConflictError) as nothing:
         record_held(case, held_command(case, first, settlement_refund(case, "pet", 1_000)))
     assert cause(nothing) == ("55000", NOTHING_LEFT)
-    drafts = one(url, DRAFTS)
-    with pytest.raises(FinalSettlementConflictError) as swept:
-        record_reversal(case, reversal_command(case, first))
-    assert cause(swept) == ("55000", SWEPT)
-    assert (one(url, COUNTS), one(url, DRAFTS)) == (before, drafts)
+    assert one(url, COUNTS) == before
+    result = confirm_reversal(case, record_reversal(case, reversal_command(case, first)))
+    [recovery] = result["recoveries"]
+    assert (recovery["refund_id"], recovery["customer_id"], recovery["amount_usd_cents"]) == (
+        paid["id"],
+        paid["recipient_customer_id"],
+        1_000,
+    )
+    assert (held(url, pet), net(url, paid["id"])) == (0, 500)
     own = record_reversal(case, reversal_command(case, second))
     assert draft_source(url, own)["swept_usd_cents"] == 0
 
@@ -150,8 +165,8 @@ def test_a_part_applied_again_counts_against_the_return_whose_money_it_is(
     1,700 with a new Refund, and the Credit pays 1,500 of a charge and refunds 500: X2's own 1,700
     first, then X1's 300, so X1 has nothing left and a held-value Refund naming it is refused. X2's
     reversal applies 300 again (sub-slice 10e-3c); that part is X1's money, which X2 already used,
-    so the count does not change: X1 still has nothing left and its reversal waits for the
-    owner."""
+    so the count does not change: X1 still has nothing left. Sub-slice 10e-3d-2a: X1's money sat
+    in the application X2's reversal changed, so X1's reversal waits for sub-slice 10e-3d-2b."""
     url = migrated_database_url
     case = refunded_case(url)
     refund, credit = case["refund"], case["refund_credit"]
@@ -185,7 +200,7 @@ def test_a_part_applied_again_counts_against_the_return_whose_money_it_is(
     unchanged = (one(url, COUNTS), one(url, DRAFTS))
     with pytest.raises(FinalSettlementConflictError) as swept:
         record_reversal(case, reversal_command(case, first))
-    assert cause(swept) == ("55000", SWEPT)
+    assert cause(swept) == ("55000", CHANGED)
     assert (one(url, COUNTS), one(url, DRAFTS)) == unchanged
 
 
@@ -335,9 +350,10 @@ def test_a_payment_return_and_a_receipt_correction_count_what_they_take_from_a_r
     20,000 receipt is found wrong, and its DEPOSIT_RECEIPT_CORRECTION brings back both Deposit
     applications (14,600) and charges the Refund's 4,400 rest back, but its receipt reversal pays
     out 20,000, so X1 has nothing left (without the receipt term its net draw would be 0 and X1
-    would keep 1,000 while the Pet Deposit holds nothing). In both cases X1's reversal is refused
-    because another correction paid out its money (Q-2026-10-13-100), and a held-value Refund
-    naming the Credit's X1 is refused; neither writes anything."""
+    would keep 1,000 while the Pet Deposit holds nothing). In both cases a Credit reversal or a
+    receipt reversal paid out X1's money, so X1's reversal waits for sub-slice 10e-3d-2c (owner
+    answer (a) to Q-2026-10-13-103 point 1), and a held-value Refund naming the Credit's X1 is
+    refused; neither writes anything."""
     url = migrated_database_url
     case = refunded_case(url)
     refund, credit = case["refund"], case["refund_credit"]
@@ -366,7 +382,7 @@ def test_a_payment_return_and_a_receipt_correction_count_what_they_take_from_a_r
     assert cause(nothing) == ("55000", NOTHING_LEFT)
     with pytest.raises(FinalSettlementConflictError) as swept:
         record_reversal(case, reversal_command(case, first))
-    assert cause(swept) == ("55000", SWEPT)
+    assert cause(swept) == ("55000", REVERSED)
     assert (one(url, COUNTS), one(url, DRAFTS)) == unchanged
     deposit_case = closed_case(url)
     pet, pet_paid = deposit_case["pet"], pet_refund(deposit_case)
@@ -398,15 +414,16 @@ def test_a_payment_return_and_a_receipt_correction_count_what_they_take_from_a_r
     unchanged = (one(url, COUNTS), one(url, DRAFTS))
     with pytest.raises(FinalSettlementConflictError) as paid_out:
         record_reversal(deposit_case, reversal_command(deposit_case, earlier))
-    assert cause(paid_out) == ("55000", SWEPT)
+    assert cause(paid_out) == ("55000", REVERSED)
     assert (one(url, COUNTS), one(url, DRAFTS)) == unchanged
 
 
 def test_the_count_and_the_reversal_limit_fail_closed(migrated_database_url: str) -> None:
     """The count refuses an unknown source kind or a missing Settlement or source (22023); the
     reversal check on a built source passes with no money swept and refuses money another
-    correction paid out, and a missing or malformed part; review round 2: it refuses a missing or
-    malformed left value and a reversal that would take more than the left value."""
+    correction paid out that the source does not list as parts (sub-slice 10e-3d-2a), and a
+    missing or malformed part; review round 2: it refuses a missing or malformed left value and a
+    reversal that would take more than the left value."""
     url = migrated_database_url
     with psycopg.connect(url) as connection:
         for arguments in (
@@ -434,6 +451,12 @@ def test_the_count_and_the_reversal_limit_fail_closed(migrated_database_url: str
         "reapply": [],
         "swept_usd_cents": 0,
         "left_usd_cents": 0,
+        # Sub-slice 10e-3d-2a: no part of the returned money paid out by another correction.
+        "swept_undone_usd_cents": 0,
+        "swept": [],
+        "swept_open": [],
+        # 10e-3d-2a review round 2: the flag is required; no own correction took other money.
+        "shared_with_other_returns": False,
     }
     check = "SELECT app.assert_settlement_return_reversal_allowed(%s)"
     with psycopg.connect(url) as connection:
@@ -450,8 +473,8 @@ def test_the_count_and_the_reversal_limit_fail_closed(migrated_database_url: str
     with psycopg.connect(url) as connection:
         connection.execute(check, (Jsonb({**taking, "left_usd_cents": 500}),))
     for built, message in (
-        ({**source, "swept_usd_cents": 1}, SWEPT),
-        ({**source, "swept_usd_cents": 500}, SWEPT),
+        ({**source, "swept_usd_cents": 1}, INCOMPLETE),
+        ({**source, "swept_usd_cents": 500}, INCOMPLETE),
         (missing, INCOMPLETE),
         ({**source, "swept_usd_cents": None}, INCOMPLETE),
         ({**source, "swept_usd_cents": "0"}, INCOMPLETE),

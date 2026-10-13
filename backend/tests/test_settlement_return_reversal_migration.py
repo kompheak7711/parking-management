@@ -1387,6 +1387,12 @@ def test_the_shared_path_refusals_fail_closed(migrated_database_url: str) -> Non
         # takes nothing beyond what it undoes.
         "swept_usd_cents": 0,
         "left_usd_cents": 0,
+        # Sub-slice 10e-3d-2a: no part of the returned money paid out by another correction.
+        "swept_undone_usd_cents": 0,
+        "swept": [],
+        "swept_open": [],
+        # 10e-3d-2a review round 2: the flag is required; no own correction took other money.
+        "shared_with_other_returns": False,
     }
     check = "SELECT app.assert_settlement_return_reversal_allowed(%s)"
     with psycopg.connect(url) as connection:
@@ -1538,6 +1544,12 @@ def test_the_part_applied_again_fails_closed(migrated_database_url: str) -> None
         # takes nothing beyond what it undoes.
         "swept_usd_cents": 0,
         "left_usd_cents": 0,
+        # Sub-slice 10e-3d-2a: no part of the returned money paid out by another correction.
+        "swept_undone_usd_cents": 0,
+        "swept": [],
+        "swept_open": [],
+        # 10e-3d-2a review round 2: the flag is required; no own correction took other money.
+        "shared_with_other_returns": False,
     }
     check = "SELECT app.assert_settlement_return_reversal_allowed(%s)"
     with psycopg.connect(url) as connection:

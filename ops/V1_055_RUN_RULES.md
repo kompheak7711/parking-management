@@ -17,6 +17,7 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md. Nothing else 
 - When an owner answer changes a result and a committed test or fixture expects the old result, update it to the new result without asking. Change only the affected case or branch; name each change in the report; the independent reviewer compares it with HEAD and confirms nothing else got weaker. A change that removes a check, or that the answer does not cover, still needs the owner (owner, 2026-10-11; replaces the rule of the Q-2026-10-11-79 answer).
 - A change that makes a committed test stricter, found by a reviewer, is allowed without asking. Name each one in the report (owner, 2026-10-13; the two 10e-2 assertions that 10e-3b review round 2 made stricter were accepted).
 - When a reviewer asks for a test and the implementer thinks it cannot be written on the real path, the independent reviewer confirms that before it is recorded as a limit instead (owner, 2026-10-13; 10e-3d-1 recorded "own return first" as unseen on the real path, and review round 3 showed a real-path case).
+- Before writing that a test cannot be built on the real path, try to build it, and ask the reviewer for a set-up in the same round (owner, 2026-10-13; it cost an extra review round in 10e-3d-1 and again in 10e-3d-2a).
 
 ## Business rules
 - Money in integer cents. Dates in Asia/Phnom_Penh. Nothing automatic.
@@ -38,6 +39,7 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md. Nothing else 
 - Never repeat a command that a guard hook or the auto-mode checker blocked (owner, 2026-10-13). One exception: if the guard hook blocks a scan only because of a word inside the search pattern, and the command reads only the staged diff or saved run outputs, remove that word and run the scan once more; name the word in the report. If anything else is blocked, stop and tell the owner.
 - Signature tests and the clock (owner, 2026-10-13): if a signature test fails with `Signature evidence is invalid`, first check the clocks as in check K1 of sub-slice 10e-3c (an image already on the Mac, `docker run --rm --pull=never --entrypoint date <image> +%s%6N` between two Mac readings). If they are in step, that run may be rerun once under `caffeinate -dims`. If they are not in step, or the rerun fails the same way, stop and tell the owner. Every targeted and full run uses `caffeinate -dims` (owner answer to Q-2026-10-13-99).
 - Lesson: put a CASE inside a PL/pgSQL IF condition in parentheses; otherwise the IF ends at the CASE's first THEN (owner, 2026-10-13; it broke 10e-3b and 10e-3c).
+- Review round 3 (owner, 2026-10-13; widens the standing round-3 rule of ops/V1_056_TAKEOVER.md section 4): if review round 2 has no blocker, and every should-fix is only a test, a text change, or a fail-closed check that adds a refusal, fix them and run round 3 without asking the owner, even when there are more than two. Round 3 must still be clean, or stop and tell the owner. Any other kind of should-fix beyond two still needs the owner's answer.
 
 ## Commits
 - One local checkpoint commit per sub-slice, explicit paths, secret and diff scan.

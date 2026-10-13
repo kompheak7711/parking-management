@@ -233,6 +233,7 @@ database_test_suites='
   tests/test_settlement_return_reversal_migration.py
   tests/test_returned_payment_after_closure_migration.py
   tests/test_settlement_returned_value_left_migration.py
+  tests/test_settlement_return_reversal_swept_migration.py
 '
 
 for database_test_file in $database_test_suites; do

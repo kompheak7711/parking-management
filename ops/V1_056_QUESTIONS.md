@@ -2486,7 +2486,7 @@ Nothing is committed; all files are in the working tree. Record: ops/reviews/V1-
 
 **Owner answer (2026-10-13).** Option (a). Add the two real-path tests: one that shows a correction's own return is used first (the X1 $300 and X2 $1,700 case from round 3), and one for a returned Payment whose correction reverses the Credit, plus a receipt correction after a return. Fix the plan and docs/010 so they describe the current state, and fix the wrong docs claim about "own return first". Then run the lint, format and type checks (each in its own call, formatter first), the targeted tests, U4, the migration-only check, the read-only search for affected tests and P4, all under `caffeinate -dims`. Then run review round 4: it must be clean, or stop. The independent reviewer compares each changed committed test with HEAD, including the two hand-built sources that gained `"left_usd_cents": 0`. Then commit 10e-3d-1. If P4 fails only in the known `LockNotAvailable` tests in `test_refund_migration.py`, rerun just those failing tests once under `caffeinate -dims`: if they pass, record it in the review record and continue; if they fail again, stop. Add `test_usd_refund_private_boundary_immutable_history_and_fresh_actor` to the `LockNotAvailable` item on the slice 12 list. Q-2026-10-13-100 is answered (both points (a); see that question). New run rule: when a reviewer asks for a test that the implementer thinks cannot be written on the real path, the independent reviewer confirms that before it is recorded as a limit instead.
 
-## Q-2026-10-13-103 — Sub-slice 10e-3d-2: three cases your Q-100 answer does not decide (blocks only 10e-3d-2c and 10e-3d-2d; refused until answered)
+## Q-2026-10-13-103 — Sub-slice 10e-3d-2: three cases your Q-100 answer does not decide (blocks only 10e-3d-2c and 10e-3d-2d; refused until answered) (ANSWERED 2026-10-13: points 1, 2 and 3 (a); answer in docs/010)
 
 10e-3d-1 is committed (2c4efc3). The 10e-3d-2 design is in the plan (10e-3d entry, "10e-3d-2 pre-code design"). Your Q-100 answer covers money that a later correction paid out through a Refund (charged back to the person who received it) or through a debt payment (the debt is owed again). Sub-slice 10e-3d-2a builds that, and 10e-3d-2b follows a payment that a later correction changed. Three other cases need you. Until then each stays refused with its own message.
 
@@ -2512,3 +2512,55 @@ Nothing is committed; all files are in the working tree. Record: ops/reviews/V1-
 - **Recommendation: (a)**, because B's own history then lists it as one of B's corrections, and the refusal that protects a closed Settlement does not get wider.
 
 **What goes ahead.** 10e-3d-2a and 10e-3d-2b do not depend on this answer and are built next, then 10c-2a-7 and the rest of the order.
+
+**Owner answer (2026-10-13).** Points 1, 2 and 3, each option (a), as recommended.
+- Point 1 (a): when a mistaken return's money left through a bounced Payment or a wrong receipt, charge the person who received that Refund. This is the same rule as the answers to Q-2026-10-11-78 and Q-2026-10-13-100: the person who received the money pays it back. If a case does not fit that rule, write it as a question and ask before building that part.
+- Point 2 (a): keep the case of money kept by a forfeiture refused. Sub-slice 10e-2d should make it unreachable; check every forfeiture path again when 10e-2d is built.
+- Point 3 (a): a companion correction on the other Lease's Settlement shows the undo. It is recorded and confirmed together with the reversal, in one step, so one never exists without the other.
+
+Recorded in docs/010. Order (owner, 2026-10-13): 10e-3d-2a, 10e-3d-2b, 10e-3d-2c, 10e-3d-2d, 10c-2a-7, 10c-3c-1, 10c-3c-2, 10f, 10g, 10e-2d, 10e-2b-3, 10e-2b-4, then 10h.
+
+## Q-2026-10-13-104 — Sub-slice 10e-3d-2a: putting back a part of a Credit payment on a Rent invoice (blocks only that case; refused until answered) (ANSWERED 2026-10-13: (b), its own small sub-slice before 10h; answer in docs/010)
+
+Your Q-100 answer: when a mistaken return's money paid a debt, that debt becomes owed again, and the part of the payment that was not the mistaken money is put back. Sub-slice 10e-3d-2a does this by reversing the whole payment and paying the rest again from the same Credit to the same line (as in your Q-96 answer).
+
+**The case.** The Customer's Credit paid two lines of one invoice that has Rent on it: first the Rent line, then a Service line (the Credit always pays Rent first, unless the Customer chose the line). The mistaken money paid all of the Rent payment and part of the Service payment. Example: Rent 1,000 and Service 500 paid from the Credit; the mistaken $1,300 covers the whole $1,000 Rent payment and $300 of the Service payment. The reversal undoes both payments and must put back the $200 of the Service payment that was not mistaken money. But the Credit's Rent-first rule now pays the Rent line first, so the $200 cannot go back on the Service line, and the reversal fails when it is confirmed.
+
+- (a) Put the $200 back by the Rent-first rule: it pays the Rent line. In total the Customer owes the same $1,300 again, but $800 of it is Rent and $500 is Service (instead of $1,000 Rent and $300 Service).
+- (b) Put the $200 back on the Service line, as an exception to the Rent-first rule for a correction's put-back part. The Customer owes $1,000 Rent and $300 Service again, exactly the debts the mistaken money paid.
+- (c) Keep it refused (a known limit); staff fix it outside the system.
+- **Recommendation: (b)**, because your Q-100 answer says the debt the mistaken money paid becomes owed again, and only (b) gives exactly that debt. A put-back part is not a new choice of where Credit goes; it restores a payment that existed.
+
+**What happens now.** 10e-3d-2a refuses this case before anything is written (55000, "A part applied again on an Invoice with Rent or Service lines would not follow the Rent-first order; reversing this return waits for the owner"). It can happen only when another correction's payments on one such invoice used the mistaken money (review round 2 note: also when an own payment of the reversed correction is newer than another correction's payment on that invoice). Nothing else in the order waits for this answer.
+
+**Owner answer (2026-10-13).** Option (b). When a put-back is a Credit part on an Invoice with Rent or Service lines, put it back on its own line, even where the Rent-first rule would choose another line today. A put-back restores what was there before the mistake; it is not a new allocation. Allow this only for a put-back linked to the correction, on the same line, and never more than the amount that was reversed there. Use the same answer for the 10e-3c put-back, so its known limit ends too. Keep the refusal in 10e-3d-2a as it is now, and build this answer as its own small sub-slice where it fits best before 10h.
+
+Recorded in docs/010 and the plan. Placement (implementer, "where it fits best before 10h"): sub-slice 10e-3e, right after the 10e-3d-2a commit and before 10e-3d-2b, because it ends the refusal 10e-3d-2a adds and the 10e-3c known limit, and the put-backs that 10e-3d-2b and 10e-3d-2c add then use the same path from the start.
+
+## Q-2026-10-13-105 — Sub-slice 10e-3d-2a stopped after review round 2: three should-fix findings (blocks the 10e-3d-2a commit; recommendation (a)) (ANSWERED 2026-10-13: (a), a one-time exception; answer in docs/010)
+
+**Where it stands.** 10e-3d-2a (migration `20261204_130`) is built and green: P1 2126 and P2 2129 full PostgreSQL runs passed, U1 and U2 full unit runs passed. Review round 1 found no blocker and five should-fix (fixed: the order of the parts put back, the Rent-invoice case of Q-2026-10-13-104 refused, a mixed own-use case refused until 10e-3d-2b, docs, one more real-path test). Review round 2: security found nothing to fix; the independent reviewer found three should-fix. Your standing rule allows round 3 only with at most two, so I stopped. Nothing is committed; all files are in the working tree. Record: ops/reviews/V1-056-slice-10e-3d-2a-return-reversal-swept.md. Correction allowance: test cause B is used up (2 of 2); lint cause A and cause C each used 1 of 2.
+
+**The three findings, in plain words.**
+1. I said a test of two Deposit put-backs at different DL-032 stages could not be built with today's test data. The reviewer showed it can: two different later corrections, one at each stage, both used the mistaken money. The code fix is already in; only the test is missing.
+2. I said a reversal that puts back both one of its own payments and another correction's payment could not happen. The reviewer showed it can: a held-value Refund that names the mistaken return pays a debt partly with another return's money. The code handles it; the test is missing.
+3. Text: docs/010 did not yet record the round 1 changes, and docs/004 counted three new keys instead of four. Both are fixed now (text only), and the review record exists.
+
+**Options:**
+- (a) Owner exception, as for Q-2026-10-13-101: add the two real-path tests (the reviewer's set-ups) and two small fail-closed hardenings the reviewers noted (the new `shared_with_other_returns` key must be present as true or false, as the other new keys must, with `false` added to the hand-built test sources; the confirm's put-back loop refuses an unknown source kind), fix the stale comments, then each lint, format and type check in its own call (formatter first), the targeted tests, U3, the migration-only check, the read-only search and P3, all under `caffeinate -dims`; then review round 3 (the independent reviewer compares each changed committed test with HEAD), which must be clean, or stop; then commit 10e-3d-2a.
+- (b) As (a), but without the two hardenings (they go on the slice 12 list).
+- (c) Keep 10e-3d-2a uncommitted and build 10e-3d-2b on top before reviewing again.
+
+**Recommendation: (a)**, because the two tests prove code that is already built and reviewed, the third finding is text and is done, and the two hardenings are small fail-closed checks of the same kind as the other new keys. No owner rule changes and no committed test result changes beyond the new key in the hand-built sources.
+
+**What goes ahead.** Nothing, because the next sub-slices (10e-3d-2b, 2c, 2d) change the same functions and I will not build on uncommitted work. Q-2026-10-13-104 waits too (it blocks only its own case). This session is at about 54% context, above your 45% line for a new sub-slice, so the fixes are for a fresh session.
+
+**Owner answer (2026-10-13).** Option (a), a one-time exception. Add the two real-path tests from round 2, using the reviewer's set-ups: the two-stage Deposit put-back, and one of the return's own payments put back together with another correction's. Add the two fail-closed checks: the `shared_with_other_returns` key must be present, and the put-back loop refuses an unknown source kind. Then run the lint, format and type checks (each in its own call, formatter first), the targeted tests, U3, the migration-only check, the read-only search for affected tests, and P3, all under `caffeinate -dims`. Then run review round 3. It must be clean, or stop. The independent reviewer compares each changed committed test with HEAD. Then commit 10e-3d-2a.
+
+Also answered (2026-10-13):
+- Round-3 rule, from now on: if round 2 has no blocker, and every should-fix is only a test, a text change, or a fail-closed check that adds a refusal, fix them and run round 3 without asking, even when there are more than two. Round 3 must still be clean, or stop. Any other kind of should-fix beyond two still needs the owner. Added to ops/V1_055_RUN_RULES.md.
+- Before writing that a test cannot be built on the real path, try to build it, and ask the reviewer for a set-up in the same round. This has now cost an extra round twice. Added to ops/V1_055_RUN_RULES.md next to the rule on such claims (implementer's placement, so a new session reads it).
+- The rename of `test_a_right_receipt_into_a_deposit_with_a_forfeiture_ground_waits_for_10e_2c` is still pending; it is done the next time that file is touched.
+- Order after the 10e-3d-2a commit: 10e-3d-2b, 10e-3d-2c, 10e-3d-2d, 10c-2a-7, 10c-3c-1, 10c-3c-2, 10f, 10g, 10e-2d (the Q-2026-10-12-93 answer), 10e-2b-3, 10e-2b-4, then 10h, with the Q-2026-10-13-104 answer where it fits best before 10h (sub-slice 10e-3e, see that question). A large sub-slice may be split into smaller ones that each end in a commit.
+
+Recorded in docs/010.

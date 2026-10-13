@@ -40477,12 +40477,12 @@
       "notes": "Migration 128 adds only the internal plan function (no role calls it; SECURITY DEFINER, fixed search path), changes only the five listed functions, each patched body exactly the old one with its replacements, privileges and settings kept, adds no constraint or trigger, and is forward-only (V1-056 sub-slice 10e-3c)."
     },
     {
-      "test_id": "test_a_sweep_counts_against_the_earlier_return_and_its_reversal_waits",
+      "test_id": "test_a_sweep_counts_against_the_earlier_return_and_its_reversal_charges_it_back",
       "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-008", "BR-SETTLE-016", "DL-032", "DB-SETTLE-005"],
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_returned_value_left_migration.py",
       "status": "implemented",
-      "notes": "The Q-97 case on the real path: a return-only correction brings back 1,000 to the Pet Deposit, a later return of 500 with a new Refund refunds all 1,500 (its own 500 first, then the first return's 1,000); the count shows the first return used and swept and nothing left, a held-value Refund naming it is refused, its reversal is refused because another correction paid out its money (Q-2026-10-13-100), neither writes anything, and the later return's own reversal is not blocked (V1-056 sub-slice 10e-3d-1, owner answer (a) to Q-2026-10-12-97)."
+      "notes": "The Q-97 case on the real path: a return-only correction brings back 1,000 to the Pet Deposit, a later return of 500 with a new Refund refunds all 1,500 (its own 500 first, then the first return's 1,000); the count shows the first return used and swept and nothing left, and a held-value Refund naming it is refused and writes nothing (V1-056 sub-slice 10e-3d-1, owner answer (a) to Q-2026-10-12-97). Renamed in sub-slice 10e-3d-2a (owner answer (a) to Q-2026-10-13-100 point 1): the first return's reversal charges the 1,000 of the later Refund back to its recipient, the Pet Deposit stays empty and the later Refund keeps 500, and the later return's own reversal is not blocked."
     },
     {
       "test_id": "test_a_part_applied_again_counts_against_the_return_whose_money_it_is",
@@ -40490,7 +40490,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_returned_value_left_migration.py",
       "status": "implemented",
-      "notes": "The Q-96 case on the real path (Credit): after a 300 return-only correction, a 1,700 return with a new Refund pays 1,500 of a charge and refunds 500, taking its own 1,700 first and then the first return's 300, so the first has nothing left and a held-value Refund naming it is refused; after the later return's reversal applies 300 again, that part is the first return's money that the later correction already used, so the count does not change (the reversal pays out exactly what it brings back), nothing is left and the first return's reversal is refused with nothing written (V1-056 sub-slice 10e-3d-1, review rounds 1 and 2)."
+      "notes": "The Q-96 case on the real path (Credit): after a 300 return-only correction, a 1,700 return with a new Refund pays 1,500 of a charge and refunds 500, taking its own 1,700 first and then the first return's 300, so the first has nothing left and a held-value Refund naming it is refused; after the later return's reversal applies 300 again, that part is the first return's money that the later correction already used, so the count does not change (the reversal pays out exactly what it brings back), nothing is left and the first return's reversal is refused with nothing written (V1-056 sub-slice 10e-3d-1, review rounds 1 and 2; since sub-slice 10e-3d-2a the refusal says the application its money paid was changed by a later correction and waits for sub-slice 10e-3d-2b)."
     },
     {
       "test_id": "test_released_money_and_ordinary_credit_spending_are_not_counted",
@@ -40514,7 +40514,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_returned_value_left_migration.py",
       "status": "implemented",
-      "notes": "The count refuses an unknown source kind and a missing Settlement, source or kind (22023); the reversal check on a built source passes with nothing swept and refuses money another correction paid out and a missing, null or text part; review round 2: it refuses a missing, null or text left value and a reversal that would take more than the left value, and passes one that takes exactly it (V1-056 sub-slice 10e-3d-1)."
+      "notes": "The count refuses an unknown source kind and a missing Settlement, source or kind (22023); the reversal check on a built source passes with nothing swept and refuses money another correction paid out that the source does not list as parts (since sub-slice 10e-3d-2a, as an incomplete source) and a missing, null or text part; review round 2: it refuses a missing, null or text left value and a reversal that would take more than the left value, and passes one that takes exactly it (V1-056 sub-slice 10e-3d-1)."
     },
     {
       "test_id": "test_a_reversal_takes_no_more_than_its_return_has_left",
@@ -40546,7 +40546,95 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_returned_value_left_migration.py",
       "status": "implemented",
-      "notes": "Review round 3 on the real path: a RETURNED_PAYMENT correction that reverses a Credit into which a return-only correction brought back 300 takes all the Credit holds, and a DEPOSIT_RECEIPT_CORRECTION whose receipt reversal pays out 20,000 after a return-only correction brought back 1,000 of the Pet Deposit Refund counts that as paid out; in both cases the earlier return has nothing left and its reversal is refused (another correction paid out its money), with nothing written (V1-056 sub-slice 10e-3d-1, owner answer (a) to Q-2026-10-13-102)."
+      "notes": "Review round 3 on the real path: a RETURNED_PAYMENT correction that reverses a Credit into which a return-only correction brought back 300 takes all the Credit holds, and a DEPOSIT_RECEIPT_CORRECTION whose receipt reversal pays out 20,000 after a return-only correction brought back 1,000 of the Pet Deposit Refund counts that as paid out; in both cases the earlier return has nothing left and its reversal is refused (another correction paid out its money; since sub-slice 10e-3d-2a, a Credit reversal or a Deposit receipt reversal paid it out and the reversal waits for sub-slice 10e-3d-2c), with nothing written (V1-056 sub-slice 10e-3d-1, owner answer (a) to Q-2026-10-13-102)."
+    },
+    {
+      "test_id": "test_the_owner_s_example_charges_back_the_refund_part_and_owes_the_debt_again",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-008", "BR-SETTLE-016", "BR-REFUND-015", "DL-032", "DB-SETTLE-005", "DB-REFUND-002"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_swept_migration.py",
+      "status": "implemented",
+      "notes": "The owner's Q-100 example on the real path (Pet Deposit): a return-only correction brings back 2,000; a later return of 500 with a new Refund lets the Customer's Credit pay 300 of a 1,500 charge and the Pet Deposit 1,200, and refunds 1,300, so its Refund paid out its own 500 and 800 of the first return's money and its application the other 1,200; the first return's reversal charges 800 back to the Refund's recipient and reverses the 1,200 application whole, exactly the mistaken 2,000, the Pet Deposit ends empty, every record is linked and the ledger reconciles (V1-056 sub-slice 10e-3d-2a, owner answer (a) to Q-2026-10-13-100 point 1)."
+    },
+    {
+      "test_id": "test_an_application_with_other_money_on_each_side_is_applied_again",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-016", "BR-CREDIT-014", "DL-032", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_swept_migration.py",
+      "status": "implemented",
+      "notes": "Credit form on the real path: two return-only corrections bring back 300 each, then a return-only correction of 900 lets the Credit pay a 1,500 charge, using its own 900 first, then the first 300, then the second 300, all in one application; the first return's reversal reverses that application whole and applies 1,200 of the same Credit to the same charge again (300 owed again, the Credit empty); the second return's reversal then waits for sub-slice 10e-3d-2b and writes nothing (V1-056 sub-slice 10e-3d-2a)."
+    },
+    {
+      "test_id": "test_two_applications_are_each_applied_again",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-016", "DL-032", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_swept_migration.py",
+      "status": "implemented",
+      "notes": "Deposit form on the real path: two return-only corrections bring back 1,000 each, then a return of 1,000 with a new Refund lets the Pet Deposit pay 1,350 of each of two charges and refund 300; the first return's money sits in both applications, so its reversal reverses both whole and applies 700 and 1,000 again, exactly 1,000 owed again and the Pet Deposit empty (V1-056 sub-slice 10e-3d-2a)."
+    },
+    {
+      "test_id": "test_a_refund_part_with_its_own_return_is_refused",
+      "upstream_ids": ["BR-SETTLE-013", "DB-REFUND-002"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_swept_migration.py",
+      "status": "implemented",
+      "notes": "When a Refund of another correction that paid out part of a return's money has its own return, the return's reversal is refused (reverse that return first) and writes nothing (V1-056 sub-slice 10e-3d-2a)."
+    },
+    {
+      "test_id": "test_the_swept_parts_fail_closed",
+      "upstream_ids": ["BR-SETTLE-013", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_swept_migration.py",
+      "status": "implemented",
+      "notes": "On the refusal function with a built source: the parts of the returned money another correction paid out must add up and be listed exactly (a Refund part as its recovery, no more than the Refund's net; an application part as a listed application with the rest applied again as one entry), else the source is incomplete; each part the reversal cannot undo yet has its own message (a changed payment, a Credit or receipt reversal, a forfeiture, any other), and review round 1: own corrections that also took another return's money wait for sub-slice 10e-3d-2b; review round 2: that flag must be there as true or false (V1-056 sub-slice 10e-3d-2a)."
+    },
+    {
+      "test_id": "test_the_swept_parts_are_least_privilege_and_forward_only",
+      "upstream_ids": ["BR-SETTLE-013", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_swept_migration.py",
+      "status": "implemented",
+      "notes": "No role calls the walk, the takes or the count, each SECURITY DEFINER with the fixed search path; migration 130 adds only the walk and the takes, replaces only the count, changes only the four listed functions exactly by its replacements, no constraint and no trigger, and is forward-only (V1-056 sub-slice 10e-3d-2a)."
+    },
+    {
+      "test_id": "test_the_own_uses_and_another_correction_s_use_are_undone_together",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-016", "BR-CREDIT-014", "DL-032", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_swept_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 on the real path (Credit): a return-only correction brings back 1,700 and its own step pays a 1,500 charge (200 left); a later return-only correction of 300 pays 500 of a second charge with its own 300 and the first return's 200; the first return's reversal reverses its own 1,500 application whole (its own uses used 1,500 of its money, not 1,700) and the later 500 application whole, applying 300 again, so exactly 1,700 is owed again (V1-056 sub-slice 10e-3d-2a)."
+    },
+    {
+      "test_id": "test_own_corrections_that_also_took_another_return_s_money_wait",
+      "upstream_ids": ["BR-SETTLE-013", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_swept_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 on the real path (Credit): a return-only correction's own step and a held-value Refund naming it both paid out from the Credit, and the held-value Refund also took an older return's money; the return's reversal waits for sub-slice 10e-3d-2b and writes nothing (V1-056 sub-slice 10e-3d-2a)."
+    },
+    {
+      "test_id": "test_a_part_applied_again_on_a_newer_rent_invoice_application_waits",
+      "upstream_ids": ["BR-SETTLE-013", "BR-CREDIT-014", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_swept_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1, on the refusal function with built sources on an Invoice with a Rent line: a Credit part applied again without a Customer designation on the newer of two reversed applications of that Invoice is refused and waits for the owner (Q-2026-10-13-104); the older one's part, or a designated part, passes (V1-056 sub-slice 10e-3d-2a)."
+    },
+    {
+      "test_id": "test_parts_applied_again_at_two_stages_follow_the_dl_032_order",
+      "upstream_ids": ["BR-SETTLE-008", "BR-SETTLE-013", "DL-032", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_swept_migration.py",
+      "status": "implemented",
+      "notes": "Review round 2 on the real path (Pet Deposit): a return-only Credit correction's step lets the Pet Deposit pay a charge at the remainder stage with an older return's money and part of E's, and a later pet-damage reclassification lets it pay at the pet-damage stage with E's rest and a newer return's money; E's reversal reverses both applications whole and applies again the other money at the pet-damage stage first, then at the remainder stage, so exactly E's 1,000 is owed again and the Pet Deposit ends empty (V1-056 sub-slice 10e-3d-2a)."
+    },
+    {
+      "test_id": "test_an_own_part_and_another_correction_s_part_are_each_applied_again",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-016", "BR-CREDIT-014", "BR-REFUND-015", "DL-032", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_swept_migration.py",
+      "status": "implemented",
+      "notes": "Review round 2 on the real path (Credit): a later return-only correction paid a charge with its own money and part of E's; a held-value Refund naming E (its only own correction with records, so the flag stays false) paid a charge and refunded the last 100 with E's rest and a later return's money; E's reversal charges the Refund back, reverses both applications whole and applies again the other money of each (one own part and one part of another correction), so exactly E's 1,000 is owed again (V1-056 sub-slice 10e-3d-2a)."
     }
   ]
 }

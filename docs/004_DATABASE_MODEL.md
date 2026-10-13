@@ -2797,14 +2797,12 @@ refuse its reversal). Only uses made by corrections of the Settlement count, and
 what the Credit or Deposit holds still caps every payout. Known limits (a left value can then be
 more than the source holds; payouts stay capped, and the holdings checks refuse): ordinary Credit
 spending (owner answer 2 to Q-2026-10-09-63); a correction of another Settlement (owner answer (a)
-to Q-2026-10-13-100 point 2: counted from sub-slice 10e-3d-2). Clipping a draw at 0 can leave a
+to Q-2026-10-13-100 point 2: counted from sub-slice 10e-3d-2d). Clipping a draw at 0 can leave a
 left value lower than the returned
 money the source still holds (the refusals then err on the safe side). A reversal of an earlier
 return takes only that return's own left value: the `RETURN_REVERSAL` source names the earlier
-correction's `swept_usd_cents`, and the check refuses any value other than 0 (55000, "Another
-correction paid out this return's money; reversing it waits for the owner", until sub-slice
-10e-3d-2 builds owner answer (a) to Q-2026-10-13-100 point 1) and a missing or non-number one ("The
-return reversal source is
+correction's `swept_usd_cents` (until sub-slice 10e-3d-2a the check refused any value other than 0;
+see the next paragraph) and refuses a missing or non-number one ("The return reversal source is
 incomplete"; a fractional number fails its cast, 22P02). The source also names the earlier
 correction's `left_usd_cents`, and the check refuses a reversal that would take more than it from
 the source (the returned amount and the part applied again less the applications and recoveries it
@@ -2814,6 +2812,45 @@ or non-number left value is an incomplete source (review round 2). Every `RETURN
 recorded before migration 129 is stale at its confirm (P5S02; its source gains two keys), and a
 `HELD_VALUE_REFUND` draft recorded before it is stale when its left value changed. No new table,
 column, constraint or trigger.
+
+Since V1-056 sub-slice 10e-3d-2a (migration `20261204_130`; owner answer (a) to Q-2026-10-13-100
+point 1): the count above is one internal walk, `app.settlement_returned_value_walk` (no grant),
+which `app.settlement_returned_value_left` (same results) and the new
+`app.settlement_returned_value_takes` (no grant) both read. For an earlier return-only correction E,
+the takes are the records of each other correction S (neither E nor one naming E) that paid out
+part of E's money: inside S the money S brought back pays out first, then S's Refunds from the
+source, the oldest first, then S's applications from it, the newest first, and E's part of S's
+draw falls on those records in that order. A `RETURN_REVERSAL` of E now undoes those parts too: a
+Refund part is charged back to the person who received that Refund (a share, as for the own
+uses), an application part reverses the application whole and applies the rest again to the same
+obligation from the same Credit or Deposit (one part applied again per such application; the
+confirm writes them in the source's order). The own uses are then undone against the part of E's
+money they used (E's used less its swept part). The source names `swept` (the parts undone),
+`swept_undone_usd_cents` and `swept_open`; the check refuses a source whose parts do not add up
+to `swept_usd_cents` or are not listed exactly as recoveries, reversed applications and parts
+applied again ("The return reversal source is incomplete"), and refuses each part it cannot undo
+yet with its own message: an application reversed since ("A later correction changed a payment
+made with this return's money; reversing it waits for sub-slice 10e-3d-2b"), the take of an S that
+also reversed the Credit or a Deposit receipt ("... waits for sub-slice 10e-3d-2c"), a forfeiture
+("A forfeiture kept this return's money; the return cannot be reversed"; owner answer (a) to
+Q-2026-10-13-103 point 2), and any other (a reversed return, a Refund part more than the Refund's
+net: "The returned value is no longer available; undo its other use first"). An S that also paid
+out through one of those kinds is not split (fail closed). Review round 1: the parts applied again
+are listed in the DL-032 stage order, then in the order their applications were first written; a
+Credit part applied again without a Customer designation on the newer of two reversed applications
+of an Invoice with Rent or Service lines is refused ("A part applied again on an Invoice with Rent
+or Service lines would not follow the Rent-first order; reversing this return waits for the
+owner", Q-2026-10-13-104); and when two or more own corrections paid out from the source and one of
+them also took another return's money (the source's `shared_with_other_returns`), the reversal
+waits for sub-slice 10e-3d-2b ("This return's own corrections also paid out another return's
+money; reversing it waits for sub-slice 10e-3d-2b"). Review round 2 (owner answer (a) to
+Q-2026-10-13-105): that flag must be there as true or false, as the other new keys must, else the
+source is incomplete; and the confirm's loop over the parts applied again refuses any source kind
+other than a Credit or a Deposit ("The return reversal source is incomplete"). The recovery
+scope check accepts a Refund of another correction of the same Settlement that the draft's
+source lists as a swept part. Every `RETURN_REVERSAL` draft recorded before migration 130 is
+stale at its confirm (P5S02; its source gains four keys). No new table, column, constraint or
+trigger.
 
 As built in V1-056 sub-slice 10c-3a (migration `20261115_111`; owner answer to Q-2026-10-07-38): the
 `CHARGE_REDUCTION` variant also reduces an unpaid Late-payment Charge of an Invoice of the
