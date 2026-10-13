@@ -10,7 +10,7 @@ second Signer with the written agreement of all Signers (BR-REFUND-015).
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from typing import Any, cast
 from uuid import UUID, uuid4
 
@@ -53,7 +53,7 @@ from test_final_settlement_draft_migration import refund as settlement_refund
 from test_final_settlement_migration import held, one, outstanding, start, today
 from test_final_settlement_preview_migration import path_of, pay, preview
 from test_invoice_migration import financial_database_url, runtime_database_url
-from test_lease_lifecycle_migration import actor, draft_command, signature_command
+from test_lease_lifecycle_migration import actor, database_now, draft_command, signature_command
 from test_move_in_migration import migrated_database_url as migrated_database_url
 from test_move_out_inspection_migration import actor as inspection_actor
 from test_move_out_inspection_migration import flow as inspection_flow
@@ -361,7 +361,7 @@ def two_signer_kept_case(url: str) -> dict[str, Any]:
             event_id=uuid4(),
             lease_id=draft.lease_id,
             expected_version=4,
-            signed_at=datetime.now(UTC),
+            signed_at=database_now(),
             reason="Every Lease Signer completed signing",
             authorization_reference=LEASE_SIGN_CAPABILITY,
             reservation_id=ids["reservation_id"],

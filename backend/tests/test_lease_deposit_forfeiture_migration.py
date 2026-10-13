@@ -2,7 +2,7 @@
 
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from threading import Barrier
 from typing import Any, cast
@@ -65,7 +65,7 @@ from test_hand_back_rent_migration import (
 )
 from test_hand_back_rent_migration import hand_back_database as hand_back_database
 from test_invoice_migration import create_recurring_rent_invoice, financial_database_url
-from test_lease_lifecycle_migration import actor, draft_command, signature_command
+from test_lease_lifecycle_migration import actor, database_now, draft_command, signature_command
 from test_migrations import _temporary_migration_database
 from test_move_in_migration import migrated_database_url as migrated_database_url
 from test_move_in_migration import runtime_database_url
@@ -137,7 +137,7 @@ def signed_with_initial_and_trash(url: str, start_offset: int) -> dict[str, Any]
             event_id=uuid4(),
             lease_id=draft.lease_id,
             expected_version=2,
-            signed_at=datetime.now(UTC),
+            signed_at=database_now(),
             reason="Lease signed",
             authorization_reference=LEASE_SIGN_CAPABILITY,
             reservation_id=ids["reservation_id"],

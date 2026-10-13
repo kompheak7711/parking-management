@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from dataclasses import replace
-from datetime import UTC, date, datetime
+from datetime import date
 from pathlib import Path
 from typing import cast
 from uuid import UUID, uuid4
@@ -34,6 +34,7 @@ from test_billing_service_migration import (
 )
 from test_lease_lifecycle_migration import (
     actor,
+    database_now,
     draft_command,
     migrated_database_url,  # noqa: F401
     runtime_database_url,
@@ -161,7 +162,7 @@ def test_signing_rejects_a_stored_end_date_that_is_not_a_month_end(
             event_id=uuid4(),
             lease_id=lease_id,
             expected_version=1,
-            signed_at=datetime.now(UTC),
+            signed_at=database_now(),
             reason="Sign the complete Lease",
             authorization_reference=LEASE_SIGN_CAPABILITY,
         )

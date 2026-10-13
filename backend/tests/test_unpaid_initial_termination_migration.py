@@ -1,6 +1,6 @@
 """Termination for an unpaid Initial obligation: never-moved-in and moved-in paths."""
 
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any, cast
 from uuid import UUID, uuid4
@@ -42,7 +42,7 @@ from property_rental.unpaid_initial_termination import (
 )
 from test_billing_service_migration import authenticated, financial_database_url, initial_command
 from test_invoice import mutation_headers
-from test_lease_lifecycle_migration import actor, draft_command, signature_command
+from test_lease_lifecycle_migration import actor, database_now, draft_command, signature_command
 from test_migrations import _temporary_migration_database
 from test_move_in_migration import migrated_database_url as migrated_database_url
 from test_move_in_migration import runtime_database_url
@@ -101,7 +101,7 @@ def signed_with_initial(url: str, start_offset: int) -> dict[str, Any]:
             event_id=uuid4(),
             lease_id=draft.lease_id,
             expected_version=2,
-            signed_at=datetime.now(UTC),
+            signed_at=database_now(),
             reason="Lease signed",
             authorization_reference=LEASE_SIGN_CAPABILITY,
             reservation_id=ids["reservation_id"],

@@ -1,6 +1,6 @@
 """Lease signing completes the Reservation and occupies the Unit; move-in starts Occupancy."""
 
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, timedelta
 from pathlib import Path
 from typing import Any, cast
 from uuid import UUID, uuid4
@@ -29,7 +29,7 @@ from property_rental.move_in import (
     RecordLeaseMoveInCommand,
 )
 from test_invoice_migration import create_recurring_rent_invoice
-from test_lease_lifecycle_migration import actor, draft_command, signature_command
+from test_lease_lifecycle_migration import actor, database_now, draft_command, signature_command
 from test_lease_migration import create_draft
 from test_lease_migration import sign_lease as legacy_sign
 from test_migrations import _temporary_migration_database
@@ -96,7 +96,7 @@ def signed(
         event_id=uuid4(),
         lease_id=draft.lease_id,
         expected_version=2,
-        signed_at=datetime.now(UTC),
+        signed_at=database_now(),
         reason="Lease signed",
         authorization_reference=LEASE_SIGN_CAPABILITY,
         reservation_id=reservation_id,

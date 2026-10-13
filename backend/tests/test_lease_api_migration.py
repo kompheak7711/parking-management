@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import os
-from datetime import UTC, datetime
 from pathlib import Path
 from uuid import UUID, uuid4
 
@@ -17,6 +16,7 @@ from payment_test_support import seed_deposit_payment
 from property_rental.app import create_app
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
 from property_rental.lease_api import PostgresLeaseResourceFlow
+from test_lease_lifecycle_migration import database_now
 from test_lease_migration import setup_sources
 from test_move_in_migration import setup_move_in
 
@@ -201,7 +201,7 @@ def test_http_create_update_sign_and_replay_use_runtime_role(
             headers=headers(version),
             json={
                 "event_id": str(uuid4()),
-                "signed_at": datetime.now(UTC).isoformat(),
+                "signed_at": database_now().isoformat(),
                 "reason": "Signer completed attributed signature",
             },
         )
@@ -212,7 +212,7 @@ def test_http_create_update_sign_and_replay_use_runtime_role(
         headers=headers(version),
         json={
             "event_id": str(uuid4()),
-            "signed_at": datetime.now(UTC).isoformat(),
+            "signed_at": database_now().isoformat(),
             "reason": "All required Signers and source terms validated",
         },
     )

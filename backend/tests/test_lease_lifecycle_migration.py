@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from threading import Barrier
 from uuid import UUID, uuid4
@@ -53,6 +53,19 @@ def runtime_database_url() -> str:
     if value is None:
         pytest.skip("APP_DATABASE_URL is required for runtime-role migration tests")
     return value.replace("postgresql+psycopg://", "postgresql://", 1)
+
+
+def database_now() -> datetime:
+    """Read the time from the database's own clock.
+
+    The database refuses a signing time later than its statement time, and it runs in a
+    container whose clock can lag the host clock, so a signing time taken from the host
+    clock can fail at random (TEST-019).
+    """
+    with psycopg.connect(runtime_database_url()) as connection:
+        value = connection.execute("SELECT clock_timestamp()").fetchone()
+    assert value is not None and isinstance(value[0], datetime)
+    return value[0]
 
 
 def setup_sources(
@@ -144,7 +157,7 @@ def signature_command(
         lease_id=lease_id,
         signer_id=signer_id,
         expected_version=expected_version,
-        signed_at=datetime.now(UTC) if signed_at is None else signed_at,
+        signed_at=database_now() if signed_at is None else signed_at,
         reason="Signer accepted the complete Lease",
         authorization_reference=LEASE_SIGN_CAPABILITY,
     )
@@ -210,7 +223,7 @@ def test_commands_are_idempotent_versioned_audited_and_preserve_signer_rules(
         draft.lease_id,
         draft.primary_signer_id,
         1,
-        signed_at=datetime.now(UTC),
+        signed_at=database_now(),
     )
     assert service.record_signature(primary_signature, actor=authenticated).version == 2
     additional_signer_id = uuid4()
@@ -231,7 +244,7 @@ def test_commands_are_idempotent_versioned_audited_and_preserve_signer_rules(
         event_id=uuid4(),
         lease_id=draft.lease_id,
         expected_version=3,
-        signed_at=datetime.now(UTC),
+        signed_at=database_now(),
         reason="Every Lease Signer completed signing",
         authorization_reference=LEASE_SIGN_CAPABILITY,
     )
@@ -241,12 +254,12 @@ def test_commands_are_idempotent_versioned_audited_and_preserve_signer_rules(
         draft.lease_id,
         additional_signer_id,
         3,
-        signed_at=datetime.now(UTC),
+        signed_at=database_now(),
     )
     assert service.record_signature(additional_signature, actor=authenticated).version == 4
     for invalid_signed_at in (
         additional_signature.signed_at - timedelta(microseconds=1),
-        datetime.now(UTC) + timedelta(days=1),
+        database_now() + timedelta(days=1),
     ):
         with pytest.raises(LeaseCommandInvalidError):
             service.sign(
@@ -266,7 +279,7 @@ def test_commands_are_idempotent_versioned_audited_and_preserve_signer_rules(
         event_id=sign.event_id,
         lease_id=sign.lease_id,
         expected_version=4,
-        signed_at=datetime.now(UTC),
+        signed_at=database_now(),
         reason=sign.reason,
         authorization_reference=sign.authorization_reference,
     )
@@ -275,7 +288,7 @@ def test_commands_are_idempotent_versioned_audited_and_preserve_signer_rules(
     assert signed.version == 5
     assert signed.signer_count == signed.signed_signer_count == 2
     assert service.sign(sign, actor=authenticated) == signed
-    termination_timestamp = datetime.now(UTC)
+    termination_timestamp = database_now()
     with pytest.raises(LeaseVersionConflictError):
         service.terminate(
             LeaseTerminateCommand(
@@ -488,7 +501,7 @@ def test_draft_cancellation_signer_removal_scope_and_end_date_boundaries(
             event_id=uuid4(),
             lease_id=ended_draft.lease_id,
             expected_version=2,
-            signed_at=datetime.now(UTC),
+            signed_at=database_now(),
             reason="Explicit signing remains required after the contractual boundary",
             authorization_reference=LEASE_SIGN_CAPABILITY,
         ),
@@ -532,6 +545,8 @@ def test_concurrent_overlapping_signing_allows_exactly_one_lease(
             actor=authenticated,
         )
     barrier = Barrier(2)
+    # Read once before the threads start, so a failed read cannot leave one thread waiting.
+    signed_at = database_now()
 
     def sign(draft: LeaseDraftCommand) -> str:
         barrier.wait()
@@ -542,7 +557,7 @@ def test_concurrent_overlapping_signing_allows_exactly_one_lease(
                     event_id=uuid4(),
                     lease_id=draft.lease_id,
                     expected_version=2,
-                    signed_at=datetime.now(UTC),
+                    signed_at=signed_at,
                     reason="Concurrent signing attempt",
                     authorization_reference=LEASE_SIGN_CAPABILITY,
                 ),
@@ -598,7 +613,7 @@ def test_open_occupancy_blocks_unrelated_signing_but_allows_exact_renewal(
             occupied_lease.lease_id,
             occupied_lease.primary_signer_id,
             1,
-            signed_at=datetime.now(UTC),
+            signed_at=database_now(),
         ),
         actor=authenticated,
     )
@@ -608,7 +623,7 @@ def test_open_occupancy_blocks_unrelated_signing_but_allows_exact_renewal(
             event_id=uuid4(),
             lease_id=occupied_lease.lease_id,
             expected_version=2,
-            signed_at=datetime.now(UTC),
+            signed_at=database_now(),
             reason="Complete the occupied Lease signing",
             authorization_reference=LEASE_SIGN_CAPABILITY,
         ),
@@ -641,7 +656,7 @@ def test_open_occupancy_blocks_unrelated_signing_but_allows_exact_renewal(
             successor.lease_id,
             successor.primary_signer_id,
             1,
-            signed_at=datetime.now(UTC),
+            signed_at=database_now(),
         ),
         actor=authenticated,
     )
@@ -652,7 +667,7 @@ def test_open_occupancy_blocks_unrelated_signing_but_allows_exact_renewal(
                 event_id=uuid4(),
                 lease_id=successor.lease_id,
                 expected_version=2,
-                signed_at=datetime.now(UTC),
+                signed_at=database_now(),
                 reason="Open physical Occupancy must block contractual reuse",
                 authorization_reference=LEASE_SIGN_CAPABILITY,
             ),
@@ -685,7 +700,7 @@ def test_open_occupancy_blocks_unrelated_signing_but_allows_exact_renewal(
             renewal.lease_id,
             renewal.primary_signer_id,
             1,
-            signed_at=datetime.now(UTC),
+            signed_at=database_now(),
         ),
         actor=authenticated,
     )
@@ -695,7 +710,7 @@ def test_open_occupancy_blocks_unrelated_signing_but_allows_exact_renewal(
             event_id=uuid4(),
             lease_id=renewal.lease_id,
             expected_version=2,
-            signed_at=datetime.now(UTC),
+            signed_at=database_now(),
             reason="Sign the exact non-overlapping predecessor renewal",
             authorization_reference=LEASE_SIGN_CAPABILITY,
         ),
