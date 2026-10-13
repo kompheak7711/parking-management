@@ -3640,6 +3640,15 @@ For a selected mixed Rent Invoice without Customer designation, the application 
 the Rent-first then recurring-Service proposal and authorized confirmation requirements
 in BR-PAY-036 through BR-PAY-039.
 
+Exception (owner answers (b) to Q-2026-10-13-104 and (a) to Q-2026-10-13-106, V1-056): when
+a post-settlement correction reverses a mistaken return and puts back the part of a Credit
+application that was not the mistaken money, that put-back goes back on its own Invoice line,
+even where the Rent-first proposal would choose another line; it restores what was there
+before the mistake and is not a new application choice. It is labelled "put back by a
+correction", only for a put-back linked to that correction, on the same line, and never more
+than the amount reversed there. Staff cannot choose this label for an ordinary Credit
+application.
+
 ---
 
 ## BR-CREDIT-007 — Application Limits

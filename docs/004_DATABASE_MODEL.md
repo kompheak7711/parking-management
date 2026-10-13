@@ -1431,7 +1431,8 @@ NULL FK`, `target_kind text NOT NULL CHECK IN ('INVOICE','LATE_PAYMENT_CHARGE')`
 `invoice_id uuid NULL FK`, `late_payment_charge_id uuid NULL FK`, `final_settlement_id
 uuid NULL FK`, `amount_usd_cents bigint NOT NULL CHECK (>0)`, `within_invoice_basis text
 NOT NULL CHECK IN ('RENT_THEN_RECURRING_SERVICES_PROPOSAL','CUSTOMER_DESIGNATED',
-'OTHER_APPLICABLE_OBLIGATION','NOT_APPLICABLE')`, `customer_designation_reference text
+'OTHER_APPLICABLE_OBLIGATION','NOT_APPLICABLE','PUT_BACK_BY_CORRECTION')` (the last value
+since sub-slice 10e-3e, below), `customer_designation_reference text
 NULL`, `proposal_generated_at timestamptz NULL`, `proposal_trace jsonb NULL`,
 `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`, and
 `authorization_reference text NOT NULL`.
@@ -1479,6 +1480,28 @@ Refund of the same correction yet (55000), and a matching Credit step of that co
 with the basis BR-CREDIT-006 gives (23514); the deferred check needs the correction's draft
 CONFIRMED by the same approver and pins the row to the plan step its detail names, once.
 
+As built in V1-056 sub-slice 10e-3e (migration `20261207_133`; owner answers (b) to
+Q-2026-10-13-104 and (a) to Q-2026-10-13-106): `within_invoice_basis` and the DB-CREDIT-005
+`attribution_basis` also accept `PUT_BACK_BY_CORRECTION` ("put back by a correction"). A
+`RETURN_REVERSAL` correction's Credit put-back (the part of a reversed Credit application that was
+not the mistaken money, sub-slices 10e-3c to 10e-3d-2b) on an Invoice with Rent or Service lines
+without a Customer designation carries it on the row and its detail, goes back on the reversed
+application's own line with no Rent-first proposal, and is never a new allocation; every
+put-back's detail `calculation_trace` names `restores_credit_application_id` (the step's restored
+application is the stored source's `reapply` entry at the step's position). A designated part
+keeps `CUSTOMER_DESIGNATED` and a Late-payment Charge `NOT_APPLICABLE`. Checks: a BEFORE INSERT
+trigger (`app.validate_credit_application_put_back`) allows the label only on a row linked to a
+correction of its Final Settlement confirmed in the same transaction, or on the re-posted rest
+of a row that has it (the release re-post of migration 67, which a later `REFUND` correction's
+confirm writes after closure, migration 100) (23514 otherwise), so an ordinary or Settlement Credit
+application never carries it; the header and its details agree on it; the deferred check
+(`app.settlement_correction_put_back_allowed`) needs, for a `RETURN_REVERSAL` correction, the
+named application with one detail, the same Credit, target and line, a reversal linked to the
+same correction, all put-backs naming it together at most its amount there, and the label exactly
+on such an Invoice without a designation; for any other correction no restored application and
+no label (23514). The sub-slice 10e-3d-2a Rent-first refusal and the sub-slice 10e-3c known limit
+(a put-back the Rent-first proposal would put on another line) end.
+
 ## DB-CREDIT-003 — `customer_credit_application_reversals`
 
 Append-only: `id uuid PK`, `credit_application_id uuid NOT NULL UNIQUE FK`, `reason text NOT NULL`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`, `authorization_reference text NOT NULL`.
@@ -1503,7 +1526,8 @@ FK`, `invoice_line_id uuid NULL FK`, `late_payment_charge_id uuid NULL FK`,
 `invoice_line_category_snapshot text NULL`, `proposed_amount_usd_cents bigint NULL
 CHECK (>0)`, `applied_amount_usd_cents bigint NOT NULL CHECK (>0)`,
 `attribution_basis text NOT NULL CHECK IN ('RENT_FIRST_PROPOSAL','SERVICE_PROPOSAL',
-'CUSTOMER_DESIGNATED','OTHER_CONFIRMED','DIRECT_LATE_PAYMENT_CHARGE')`, `detail_sequence
+'CUSTOMER_DESIGNATED','OTHER_CONFIRMED','DIRECT_LATE_PAYMENT_CHARGE',
+'PUT_BACK_BY_CORRECTION')` (the last value since sub-slice 10e-3e, DB-CREDIT-002), `detail_sequence
 smallint NOT NULL CHECK (>0)`, and `calculation_trace jsonb NOT NULL`, with `UNIQUE
 (customer_credit_application_id, detail_sequence)`. Exactly one target FK is present;
 Invoice details use authoritative line identity and require their line category snapshot;
@@ -2840,7 +2864,7 @@ are listed in the DL-032 stage order, then in the order their applications were 
 Credit part applied again without a Customer designation on the newer of two reversed applications
 of an Invoice with Rent or Service lines is refused ("A part applied again on an Invoice with Rent
 or Service lines would not follow the Rent-first order; reversing this return waits for the
-owner", Q-2026-10-13-104); and when two or more own corrections paid out from the source and one of
+owner", Q-2026-10-13-104; ended by sub-slice 10e-3e, DB-CREDIT-002); and when two or more own corrections paid out from the source and one of
 them also took another return's money (the source's `shared_with_other_returns`), the reversal
 waits for sub-slice 10e-3d-2b ("This return's own corrections also paid out another return's
 money; reversing it waits for sub-slice 10e-3d-2b"). Review round 2 (owner answer (a) to

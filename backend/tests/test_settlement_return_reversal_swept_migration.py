@@ -96,10 +96,6 @@ SHARED = (
     "This return's own corrections also paid out another return's money; "
     "reversing it waits for sub-slice 10e-3d-2b"
 )
-RENT_FIRST = (
-    "A part applied again on an Invoice with Rent or Service lines would not follow the "
-    "Rent-first order; reversing this return waits for the owner"
-)
 
 
 def linked(url: str, correction: object) -> list[str]:
@@ -652,15 +648,15 @@ def test_an_own_part_and_another_correction_s_part_are_each_applied_again(
         assert_reconciled(connection, customer)
 
 
-def test_a_part_applied_again_on_a_newer_rent_invoice_application_waits(
+def test_a_part_applied_again_on_a_newer_rent_invoice_application_passes_the_check(
     migrated_database_url: str,
 ) -> None:
     """Review round 1, on the refusal function with built sources on the Initial Invoice (it has
     a Rent line): another correction's two Credit applications on that Invoice paid out a 1,300
-    return. When the rest of the newer one would be applied again without a Customer designation
-    while the older one is reversed too, the Rent-first proposal would refuse it at the confirm,
-    so it waits for the owner (Q-2026-10-13-104); applying again the rest of the older one, or a
-    designated part, passes."""
+    return. Applying again the rest of the older one, or a designated part, passes. Since
+    sub-slice 10e-3e (owner answer (b) to Q-2026-10-13-104) the rest of the newer one passes too,
+    without a Customer designation, while the older one is reversed: it goes back on its own line,
+    put back by a correction, so the Rent-first order no longer decides it."""
     url = migrated_database_url
     case = {**closed_case(url), "url": url}
     invoice = str(case["initial"])
@@ -727,9 +723,7 @@ def test_a_part_applied_again_on_a_newer_rent_invoice_application_waits(
     with psycopg.connect(url) as connection:
         connection.execute(check, (Jsonb(built(older, 1_000, 300)),))
         connection.execute(check, (Jsonb(designated),))
-    with pytest.raises(psycopg.Error) as refused, psycopg.connect(url) as connection:
         connection.execute(check, (Jsonb(newer_again),))
-    assert (refused.value.sqlstate, refused.value.diag.message_primary) == ("55000", RENT_FIRST)
 
 
 def test_the_swept_parts_fail_closed(migrated_database_url: str) -> None:

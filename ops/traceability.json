@@ -40613,12 +40613,12 @@
       "notes": "Review round 1 on the real path (Credit): a return-only correction's own step and a held-value Refund naming it both paid out from the Credit, and the held-value Refund also took an older return's money; the walk places the return's money per correction (its own 1,500 payment, the held-value Refund's 200), so the reversal reverses the payment whole and charges the 200 back while the older return's payment stays (V1-056 sub-slice 10e-3d-2a; allowed since sub-slice 10e-3d-2b-1b, renamed from test_own_corrections_that_also_took_another_return_s_money_wait)."
     },
     {
-      "test_id": "test_a_part_applied_again_on_a_newer_rent_invoice_application_waits",
+      "test_id": "test_a_part_applied_again_on_a_newer_rent_invoice_application_passes_the_check",
       "upstream_ids": ["BR-SETTLE-013", "BR-CREDIT-014", "DB-SETTLE-005"],
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_return_reversal_swept_migration.py",
       "status": "implemented",
-      "notes": "Review round 1, on the refusal function with built sources on an Invoice with a Rent line: a Credit part applied again without a Customer designation on the newer of two reversed applications of that Invoice is refused and waits for the owner (Q-2026-10-13-104); the older one's part, or a designated part, passes (V1-056 sub-slice 10e-3d-2a)."
+      "notes": "Review round 1, on the refusal function with built sources on an Invoice with a Rent line: the older one's part, or a designated part, passes; since sub-slice 10e-3e (owner answer (b) to Q-2026-10-13-104) a Credit part applied again without a Customer designation on the newer of two reversed applications of that Invoice passes too, because it goes back on its own line, put back by a correction (V1-056 sub-slice 10e-3d-2a; renamed from test_a_part_applied_again_on_a_newer_rent_invoice_application_waits in sub-slice 10e-3e)."
     },
     {
       "test_id": "test_parts_applied_again_at_two_stages_follow_the_dl_032_order",
@@ -40739,6 +40739,62 @@
       "test_path": "backend/tests/test_settlement_return_reversal_own_parts_migration.py",
       "status": "implemented",
       "notes": "No role calls the parts function or the takes, each SECURITY DEFINER with the fixed search path; migration 132 adds only the parts function, replaces only the takes, changes only the source and the refusal function exactly by their replacements, no constraint and no trigger, and is forward-only (V1-056 sub-slice 10e-3d-2b-1b)."
+    },
+    {
+      "test_id": "test_a_credit_put_back_on_a_rent_invoice_is_labelled_and_names_what_it_restores",
+      "upstream_ids": ["BR-CREDIT-006", "BR-CREDIT-008", "BR-SETTLE-013", "BR-SETTLE-016", "DB-CREDIT-002", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_put_back_migration.py",
+      "status": "implemented",
+      "notes": "On the real path (Credit, Initial Invoice Rent line opened after closure): a return reversal reverses a 1,200 Rent payment whole and puts the older return's 300 back on the Rent line; the put-back and its line carry PUT_BACK_BY_CORRECTION, no Rent-first proposal, and name the reversed payment; exactly the mistaken 900 is owed again; linked, Settlement row unchanged, repeat replays, ledger reconciles (owner answers (b) to Q-2026-10-13-104 and (a) to Q-2026-10-13-106; V1-056 sub-slice 10e-3e)."
+    },
+    {
+      "test_id": "test_a_later_refund_correction_keeps_the_label_on_the_re_posted_rest",
+      "upstream_ids": ["BR-CREDIT-006", "BR-CREDIT-008", "BR-SETTLE-013", "BR-SETTLE-016", "DB-CREDIT-002"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_put_back_migration.py",
+      "status": "implemented",
+      "notes": "On the real path: a later REFUND correction of the Rent line releases 100 from the put-back (the newest payment) and refunds it to the Customer; the re-posted rest of 200 keeps PUT_BACK_BY_CORRECTION (V1-056 sub-slice 10e-3e)."
+    },
+    {
+      "test_id": "test_the_q104_example_puts_the_service_part_back_on_its_own_line",
+      "upstream_ids": ["BR-CREDIT-006", "BR-CREDIT-008", "BR-SETTLE-013", "BR-SETTLE-016", "DB-CREDIT-002", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_put_back_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 on the real path (the owner's Q-2026-10-13-104 example): a later return's Credit paid 1,000 of Rent and then the whole Trash Service line (prorated) of one Initial Invoice with the mistaken return's money and its own 100; the mistaken return's reversal reverses both payments whole and puts the later return's 100 back on the Service line with PUT_BACK_BY_CORRECTION while the Rent line is owed, so the Rent-first order no longer decides it; exactly the mistaken amount is owed again (owner answers (b) to Q-2026-10-13-104 and (a) to Q-2026-10-13-106; V1-056 sub-slice 10e-3e)."
+    },
+    {
+      "test_id": "test_only_a_correction_s_put_back_takes_the_label",
+      "upstream_ids": ["BR-CREDIT-006", "DB-CREDIT-002"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_put_back_migration.py",
+      "status": "implemented",
+      "notes": "The label on an ordinary Credit application is refused before any other check; a closed Settlement's own row without a correction link is refused by the Settlement check, which runs first (55000); staff who send the label on a detail of an ordinary Rent-first proposal are refused by the proposal recompute (P5104) and nothing is written (owner answer (a) to Q-2026-10-13-106: staff cannot choose it; V1-056 sub-slice 10e-3e)."
+    },
+    {
+      "test_id": "test_the_header_and_its_detail_agree_on_the_label",
+      "upstream_ids": ["BR-CREDIT-006", "DB-CREDIT-002"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_put_back_migration.py",
+      "status": "implemented",
+      "notes": "Review round 2: with the label trigger disabled by the table owner in a transaction that is always rolled back, the deferred completeness check refuses a header with PUT_BACK_BY_CORRECTION whose detail has another label (23514) and accepts both with the label; the trigger stays enabled and nothing is written (V1-056 sub-slice 10e-3e)."
+    },
+    {
+      "test_id": "test_the_put_back_rule_fails_closed",
+      "upstream_ids": ["BR-SETTLE-013", "DB-CREDIT-002", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_put_back_migration.py",
+      "status": "implemented",
+      "notes": "The deferred put-back rule on the real put-back's rows holds as written, counts other put-backs naming the same payment towards its amount, and fails for a trace naming another payment than its step's part or none, another Credit, another line, more than the reversed amount, another label, another step or a step before the first, and for a correction that is not a return reversal (V1-056 sub-slice 10e-3e)."
+    },
+    {
+      "test_id": "test_the_put_back_rule_is_least_privilege_and_forward_only",
+      "upstream_ids": ["BR-SETTLE-013", "DB-CREDIT-002"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_put_back_migration.py",
+      "status": "implemented",
+      "notes": "No role calls the two new functions, each SECURITY DEFINER with the fixed search path; migration 133 adds only them and the label trigger, relaxes only the two label CHECKs, changes only the five listed functions exactly by their replacements, and is forward-only (V1-056 sub-slice 10e-3e)."
     }
   ]
 }
