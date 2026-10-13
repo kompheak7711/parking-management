@@ -16,6 +16,7 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md. Nothing else 
 - Narrow a historical test only by changing the one expectation, keeping the test name, with a short comment and a docs/010 note.
 - When an owner answer changes a result and a committed test or fixture expects the old result, update it to the new result without asking. Change only the affected case or branch; name each change in the report; the independent reviewer compares it with HEAD and confirms nothing else got weaker. A change that removes a check, or that the answer does not cover, still needs the owner (owner, 2026-10-11; replaces the rule of the Q-2026-10-11-79 answer).
 - A change that makes a committed test stricter, found by a reviewer, is allowed without asking. Name each one in the report (owner, 2026-10-13; the two 10e-2 assertions that 10e-3b review round 2 made stricter were accepted).
+- When a reviewer asks for a test and the implementer thinks it cannot be written on the real path, the independent reviewer confirms that before it is recorded as a limit instead (owner, 2026-10-13; 10e-3d-1 recorded "own return first" as unseen on the real path, and review round 3 showed a real-path case).
 
 ## Business rules
 - Money in integer cents. Dates in Asia/Phnom_Penh. Nothing automatic.

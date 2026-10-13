@@ -64,7 +64,6 @@ from test_settlement_extra_charge_migration import (
 )
 from test_settlement_extra_charge_migration import record as record_extra_charge
 from test_settlement_held_value_refund_migration import (
-    DEPOSIT_EMPTY,
     NOTHING_LEFT,
     confirm_held,
     deposit_left,
@@ -638,8 +637,10 @@ def test_the_database_guards_and_a_reversal_of_uses_beyond_the_return(
     Refund came back return only, then 500 more with a new Refund, which refunds all 1,500 the Pet
     Deposit holds. The reversal of the 500 return charges back only the 500 (owner answer (a),
     sub-slice 10e-3b): the new Refund paid out the returned money first, its 1,000 rest stays paid
-    and the Pet Deposit holds nothing, so a held-value Refund naming the first return is refused;
-    a hand-built recovery of another share is refused inside the draft's own correction."""
+    and the Pet Deposit holds nothing; that rest paid out the first return's money, so nothing of
+    it is left and a held-value Refund naming the first return is refused (sub-slice 10e-3d, owner
+    answer (a) to Q-2026-10-12-97); a hand-built recovery of another share is refused inside the
+    draft's own correction."""
     url = migrated_database_url
     case = refunded_case(url)
     prop, human = case["prop"], case["human"]
@@ -801,7 +802,7 @@ def test_the_database_guards_and_a_reversal_of_uses_beyond_the_return(
         assert_reconciled(connection, UUID(str(paid["recipient_customer_id"])))
     with pytest.raises(FinalSettlementConflictError) as emptied:
         record_held(case, held_command(case, first_return, settlement_refund(case, "pet", 1_000)))
-    assert cause(emptied) == ("55000", DEPOSIT_EMPTY)
+    assert cause(emptied) == ("55000", NOTHING_LEFT)
 
 
 def rows(database: str, statement: str) -> list[tuple[Any, ...]]:
@@ -1382,6 +1383,10 @@ def test_the_shared_path_refusals_fail_closed(migrated_database_url: str) -> Non
         "source": {"value_usd_cents": 0},
         "uses": {"applied_usd_cents": 0, "refunded_usd_cents": 1_500, "returned_refunds": 0},
         "reapply": [],
+        # Sub-slice 10e-3d: no other correction paid out the returned money, and the reversal
+        # takes nothing beyond what it undoes.
+        "swept_usd_cents": 0,
+        "left_usd_cents": 0,
     }
     check = "SELECT app.assert_settlement_return_reversal_allowed(%s)"
     with psycopg.connect(url) as connection:
@@ -1529,6 +1534,10 @@ def test_the_part_applied_again_fails_closed(migrated_database_url: str) -> None
         "source": {"value_usd_cents": 0},
         "uses": {"applied_usd_cents": 1_500, "refunded_usd_cents": 500, "returned_refunds": 0},
         "reapply": [entry],
+        # Sub-slice 10e-3d: no other correction paid out the returned money, and the reversal
+        # takes nothing beyond what it undoes.
+        "swept_usd_cents": 0,
+        "left_usd_cents": 0,
     }
     check = "SELECT app.assert_settlement_return_reversal_allowed(%s)"
     with psycopg.connect(url) as connection:

@@ -2764,6 +2764,57 @@ is refused when the Deposit's path is no longer DL-032 (for example a later forf
 is no longer pet damage for the first Pet Deposit stage; a Credit part is refused when the Credit's
 Payment is no longer received.
 
+Since V1-056 sub-slice 10e-3d-1 (migration `20261203_129`; owner answer (a) to Q-2026-10-12-97 and
+its detail of 2026-10-13), what an earlier return-only correction has left counts every
+correction's use of its money. The internal `app.settlement_returned_value_left(settlement, kind,
+source, except)` (no grant) walks the Settlement's corrections oldest first (`occurred_at`, then
+id), leaving out `except`, each with what it did at its own time. A correction's own returns into
+the Credit or Deposit (its linked `VALUE_CORRECTION` rows) open its entry. What it drew from that
+source is what it paid out (its linked applications from the source, its linked Refunds from it
+and the returns it reversed, its linked `CORRECTION_REVERSAL` rows) less what it brought back
+(its linked reversals of applications from the source and its linked `RECOVERED_BY_CHARGE` rows of
+Refunds from it), never below 0, so a correction pays out the money it released first (a released
+application's rest written again and the Refund of the released part are not new uses). For a
+Deposit, its own receipts and forfeiture reversals also count as brought back, and its receipt
+reversals and forfeitures as paid out (whole records); a correction that reverses the Credit takes
+all the Credit still holds (review round 2). That draw
+takes first from its own entry, then from the entry of the earlier correction it names (a
+`HELD_VALUE_REFUND`, or a `RETURN_REVERSAL`, whose return reversal empties the named entry), then
+from the other entries, oldest return first; the rest is the source's other money. It returns, per
+entry, `returned_usd_cents`, `used_usd_cents`, `swept_usd_cents` (what went to a correction that
+neither is it nor names it) and `left_usd_cents`. `app.settlement_held_deposit_value` and `app.settlement_held_credit_value`
+now return that left value, so a sweep (the shared DL-032 step of a correction that does not name
+the earlier correction) lowers it, and a `HELD_VALUE_REFUND` naming a correction whose money a
+sweep paid out may use only what is left (refused when nothing is left: "Nothing the earlier
+correction returned is left to refund"). A part a `RETURN_REVERSAL` applies again is money the
+reversed correction already used, so it changes no left value (the reversal pays out exactly what
+it brings back). A correction's own return is taken before the earlier ones, which keeps the count
+in line with the 10e-3b and 10e-3c reversals (they charge back exactly that correction's own
+returned amount). The order shows on the real path when a return-only Credit correction's own step
+pays debt from a Credit that also holds an earlier return: X1 brings back 300, then X2 brings back
+1,700 and its step pays 1,500, so X1 keeps 300 and X2 200 (oldest first would leave X1 nothing and
+refuse its reversal). Only uses made by corrections of the Settlement count, and
+what the Credit or Deposit holds still caps every payout. Known limits (a left value can then be
+more than the source holds; payouts stay capped, and the holdings checks refuse): ordinary Credit
+spending (owner answer 2 to Q-2026-10-09-63); a correction of another Settlement (owner answer (a)
+to Q-2026-10-13-100 point 2: counted from sub-slice 10e-3d-2). Clipping a draw at 0 can leave a
+left value lower than the returned
+money the source still holds (the refusals then err on the safe side). A reversal of an earlier
+return takes only that return's own left value: the `RETURN_REVERSAL` source names the earlier
+correction's `swept_usd_cents`, and the check refuses any value other than 0 (55000, "Another
+correction paid out this return's money; reversing it waits for the owner", until sub-slice
+10e-3d-2 builds owner answer (a) to Q-2026-10-13-100 point 1) and a missing or non-number one ("The
+return reversal source is
+incomplete"; a fractional number fails its cast, 22P02). The source also names the earlier
+correction's `left_usd_cents`, and the check refuses a reversal that would take more than it from
+the source (the returned amount and the part applied again less the applications and recoveries it
+undoes; "The returned value is no longer available; undo its other use first"), for example when a
+Refund of the uses came back through a later return (reverse that later return first); a missing
+or non-number left value is an incomplete source (review round 2). Every `RETURN_REVERSAL` draft
+recorded before migration 129 is stale at its confirm (P5S02; its source gains two keys), and a
+`HELD_VALUE_REFUND` draft recorded before it is stale when its left value changed. No new table,
+column, constraint or trigger.
+
 As built in V1-056 sub-slice 10c-3a (migration `20261115_111`; owner answer to Q-2026-10-07-38): the
 `CHARGE_REDUCTION` variant also reduces an unpaid Late-payment Charge of an Invoice of the
 Settlement's Lease (draft `target_kind` `LATE_PAYMENT_CHARGE`, its own recorder and confirm). Its

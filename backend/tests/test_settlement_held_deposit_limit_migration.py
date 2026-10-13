@@ -43,7 +43,6 @@ from test_settlement_deposit_refund_return_migration import pet_refund
 from test_settlement_extra_charge_migration import cause, state
 from test_settlement_held_value_refund_migration import (
     COUNTS,
-    DEPOSIT_EMPTY,
     EVERY_BALANCE,
     NOTHING_LEFT,
     audit,
@@ -234,14 +233,14 @@ def test_a_credit_correction_leaves_held_deposit_money_to_the_correction_that_re
 def test_a_correction_that_names_no_earlier_correction_still_settles_held_money(
     migrated_database_url: str,
 ) -> None:
-    """The known limit that stays (docs/010): a returned-Refund correction with a new Refund names
-    no earlier correction and, by BR-SETTLE-008, applies or refunds every held DL-032 Deposit
-    balance. After a return-only correction Ed brought back 2,000 to the Pet Deposit, the return of
-    500 of a correction's Credit Refund with a new Refund also refunds the Pet Deposit's 2,000. Ed
-    still shows 2,000 left, but the Pet Deposit holds nothing, so naming Ed is refused and writes
-    nothing. Review round 1: when a later return-only correction E3 brings back 500, a correction
-    naming Ed may use those 500 (the smaller of what Ed left and what the Deposit holds), and naming
-    E3 is then refused because the Deposit holds nothing."""
+    """A returned-Refund correction with a new Refund names no earlier correction and, by
+    BR-SETTLE-008, applies or refunds every held DL-032 Deposit balance. After a return-only
+    correction Ed brought back 2,000 to the Pet Deposit, the return of 500 of a correction's Credit
+    Refund with a new Refund also refunds the Pet Deposit's 2,000. Sub-slice 10e-3d (owner answer
+    (a) to Q-2026-10-12-97) ends the known limit this test showed: that use counts against Ed, so
+    Ed has nothing left (it showed 2,000 before) and naming Ed is refused and writes nothing. When
+    a later return-only correction E3 brings back 500, naming Ed is still refused (before, it could
+    take E3's 500), a correction naming E3 refunds the 500, and E3 then has nothing left."""
     url = migrated_database_url
     case = refunded_case(url)
     refund, pet = case["refund"], case["pet"]
@@ -252,24 +251,34 @@ def test_a_correction_that_names_no_earlier_correction_still_settles_held_money(
     assert {
         (paid["source_deposit_id"], paid["amount_usd_cents"]) for paid in result["refunds"]
     } == {(None, 500), (str(pet), 2_000)}
-    assert (held(url, pet), deposit_left(url, deposit_return, pet)) == (0, 2_000)
+    assert (held(url, pet), deposit_left(url, deposit_return, pet)) == (0, 0)
     before = one(url, COUNTS)
     with pytest.raises(FinalSettlementConflictError) as emptied:
         record_held(case, held_command(case, deposit_return, settlement_refund(case, "pet", 2_000)))
-    assert cause(emptied) == ("55000", DEPOSIT_EMPTY)
+    assert cause(emptied) == ("55000", NOTHING_LEFT)
     assert one(url, COUNTS) == before
     newest = return_only(case, pet_refund(case), 500)
-    taking = held_command(case, deposit_return, settlement_refund(case, "pet", 500))
+    assert (
+        held(url, pet),
+        deposit_left(url, deposit_return, pet),
+        deposit_left(url, newest, pet),
+    ) == (500, 0, 500)
+    before = one(url, COUNTS)
+    with pytest.raises(FinalSettlementConflictError) as not_its_money:
+        record_held(case, held_command(case, deposit_return, settlement_refund(case, "pet", 500)))
+    assert cause(not_its_money) == ("55000", NOTHING_LEFT)
+    assert one(url, COUNTS) == before
+    taking = held_command(case, newest, settlement_refund(case, "pet", 500))
     [paid] = confirm_held(case, record_held(case, taking))["refunds"]
     assert (paid["source_deposit_id"], paid["amount_usd_cents"]) == (str(pet), 500)
     assert (
         held(url, pet),
         deposit_left(url, deposit_return, pet),
         deposit_left(url, newest, pet),
-    ) == (0, 1_500, 500)
+    ) == (0, 0, 0)
     with pytest.raises(FinalSettlementConflictError) as taken:
         record_held(case, held_command(case, newest, settlement_refund(case, "pet", 500)))
-    assert cause(taken) == ("55000", DEPOSIT_EMPTY)
+    assert cause(taken) == ("55000", NOTHING_LEFT)
 
 
 def test_the_plan_check_takes_the_limit_per_deposit(migrated_database_url: str) -> None:
