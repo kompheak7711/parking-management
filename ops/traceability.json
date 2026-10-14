@@ -40899,6 +40899,30 @@
       "test_path": "frontend/src/LeaseManagement.test.tsx",
       "status": "implemented",
       "notes": "The Lease screen sends the Lease signing with exactly the event id and the reason, no device time (owner answer (a) to Q-2026-10-14-110; V1-056 signing time from the database clock)."
+    },
+    {
+      "test_id": "test_a_tie_in_time_is_broken_by_the_order_the_correction_wrote_its_payments",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-016", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_returned_value_tie_break_migration.py",
+      "status": "implemented",
+      "notes": "Credit form: on the real path a correction's two payments from one Credit have distinct times and the newer holds the earlier return's money first; with the two times tied by hand in an always rolled-back owner transaction and the lower id written last, the placed parts, the reversal source's swept parts and the order it lists them in, and the correction's own choice of the payment reversed whole and the part applied again follow the write order, the same on a second read, not the id; the rollback leaves every trigger enabled and the rows unchanged (owner answer (a) to Q-2026-10-14-111; V1-056 sub-slice 10e-3d-2b-3)."
+    },
+    {
+      "test_id": "test_a_tie_in_a_changing_correction_s_payments_is_broken_by_write_order",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-016", "BR-CREDIT-014", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_returned_value_tie_break_migration.py",
+      "status": "implemented",
+      "notes": "Credit form, the follow function (review round 1 set-up): a Refund correction releases the payment holding an earlier return's money and its released Credit pays two other charges again before its Refund; on the real path the return's stretch follows into the newer payment first; with the two payments tied by hand in an always rolled-back owner transaction and the lower id written last, the stretch, the reversal source's swept parts and their listed order follow the write order, the same on a second read, not the id (owner answer (a) to Q-2026-10-14-111; V1-056 sub-slice 10e-3d-2b-3)."
+    },
+    {
+      "test_id": "test_the_tie_break_changes_only_three_orders_and_is_least_privilege_and_forward_only",
+      "upstream_ids": ["BR-SETTLE-013", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_returned_value_tie_break_migration.py",
+      "status": "implemented",
+      "notes": "Migration 135 adds no function, constraint or trigger and changes only the placed, follow and return reversal source functions, each body exactly the old one with the module's write-order replacements, privileges, owner, definer and settings kept and no role may call them; forward-only (owner answer (a) to Q-2026-10-14-111; V1-056 sub-slice 10e-3d-2b-3)."
     }
   ]
 }

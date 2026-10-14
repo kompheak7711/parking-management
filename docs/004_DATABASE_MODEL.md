@@ -2967,6 +2967,28 @@ relaxing change; the source is server-built and digest-checked at the confirm). 
 draft recorded before revision 134 whose source now differs is stale at its confirm (P5S02). No
 writer, lock or grant changes; no new table, column, constraint or trigger.
 
+As built in V1-056 sub-slice 10e-3d-2b-3 (migration `20261209_135`; owner answer (a) to
+Q-2026-10-14-111): within the newest-first order of one correction's payments from a Credit or a
+Deposit, a tie in time is broken by the order the correction wrote them
+(`settlement_correction_effects.effect_sequence`, the higher the newer), then by the id; a Deposit
+payment keeps `application_order` before it. The orders changed are the taking correction's
+payments in `app.settlement_returned_value_placed`, the changing correction's payments in the
+stream of `app.settlement_returned_value_follow`, and, in
+`app.settlement_return_reversal_source_state`, the listed payments the reversal undoes and the
+newest-first walk that chooses, on the pooled own path, the payments reversed whole and the part
+applied again (relaxing exact-text patches; no refusal added). This is defence in depth: the
+database already refuses two payments of one source at one time (a Credit application must be
+later than every earlier event of its Credit, `app.validate_credit_application_source`; a Deposit
+application later than the Deposit's latest balance event, `app.validate_deposit_application`, and
+`application_order` is unique per Final Settlement, so a Deposit tie cannot happen even by hand),
+so no stored result changes. A list of the source function can hold payments of two or more
+corrections, whose effect sequences are compared only on a time tie, and the id still decides any
+tie left. Not changed (each already fixed by a stored or chronological order and never deciding
+who pays or how much): the write order of a reversal's named Deposit application reversals, the
+listing order of the parts applied again (stored in the draft), and the release order of a
+`REFUND` correction. No writer, lock or grant changes; no new table, column, constraint or
+trigger.
+
 As built in V1-056 sub-slice 10c-3a (migration `20261115_111`; owner answer to Q-2026-10-07-38): the
 `CHARGE_REDUCTION` variant also reduces an unpaid Late-payment Charge of an Invoice of the
 Settlement's Lease (draft `target_kind` `LATE_PAYMENT_CHARGE`, its own recorder and confirm). Its
