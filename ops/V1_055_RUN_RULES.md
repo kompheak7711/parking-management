@@ -44,6 +44,7 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md. Nothing else 
 - Catalog dumps (owner, 2026-10-14): never run a script copy from a tmp folder. If a catalog dump is needed again, add it as a committed script under `scripts/` in its own small reviewed commit; like the other scripts, it must not print the database password or the database URL.
 - Lesson: put a CASE inside a PL/pgSQL IF condition in parentheses; otherwise the IF ends at the CASE's first THEN (owner, 2026-10-13; it broke 10e-3b and 10e-3c).
 - Review round 3 (owner, 2026-10-13; widens the standing round-3 rule of ops/V1_056_TAKEOVER.md section 4): if review round 2 has no blocker, and every should-fix is only a test, a text change, or a fail-closed check that adds a refusal, fix them and run round 3 without asking the owner, even when there are more than two. Round 3 must still be clean, or stop and tell the owner. Any other kind of should-fix beyond two still needs the owner's answer.
+- Design changes during a build (owner, 2026-10-14; the four implementer's readings of 10e-3d-2b-2 were accepted): when the written design must change to keep a committed test passing or to make the planned rule work, the implementer may make the change without stopping, if the reviewers of the same review round confirm that it is needed and safe. Name each such change in the report. A change to who pays or how much still needs the owner's answer first.
 
 ## Commits
 - One local checkpoint commit per sub-slice, explicit paths, secret and diff scan.

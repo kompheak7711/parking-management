@@ -201,7 +201,6 @@ def test_http_create_update_sign_and_replay_use_runtime_role(
             headers=headers(version),
             json={
                 "event_id": str(uuid4()),
-                "signed_at": database_now().isoformat(),
                 "reason": "Signer completed attributed signature",
             },
         )
@@ -212,7 +211,6 @@ def test_http_create_update_sign_and_replay_use_runtime_role(
         headers=headers(version),
         json={
             "event_id": str(uuid4()),
-            "signed_at": database_now().isoformat(),
             "reason": "All required Signers and source terms validated",
         },
     )
@@ -298,6 +296,125 @@ def test_http_create_update_sign_and_replay_use_runtime_role(
             "'app.update_lease_draft(uuid,uuid,text,uuid,uuid,integer,date,date,bigint,text,text,uuid)',"
             "'EXECUTE')"
         ).fetchone() == (True,)
+
+
+def test_http_signing_time_is_the_database_time(migrated_database_url: str) -> None:
+    """Q-2026-10-14-110: a signing time is the database's own time, never a device clock."""
+    with psycopg.connect(migrated_database_url) as connection:
+        actor_id, property_id, unit_id, primary_tenant_id, joint_signer_id = setup_sources(
+            connection
+        )
+        connection.commit()
+
+    client = api(runtime_database_url(), authenticated(actor_id, property_id))
+    lease_id = uuid4()
+    created = client.post(
+        f"/api/v1/properties/{property_id}/leases",
+        headers=headers(),
+        json={
+            "lease_id": str(lease_id),
+            "unit_id": str(unit_id),
+            "primary_tenant_id": str(primary_tenant_id),
+            "primary_signer_id": str(uuid4()),
+            "start_date": "2027-01-01",
+            "end_date": "2027-12-31",
+            "monthly_rent_usd_cents": 80000,
+            "predecessor_lease_id": None,
+            "additional_signers": [
+                {"signer_id": str(uuid4()), "customer_id": str(joint_signer_id)}
+            ],
+            "planned_occupant_customer_ids": [str(primary_tenant_id)],
+            "service_terms": [],
+            "pet_term": None,
+            "security_deposit_id": None,
+            "event_id": str(uuid4()),
+            "reason": "Approved Lease source terms",
+        },
+    )
+    assert created.status_code == 201, created.text
+    signers = created.json()["data"]["signers"]
+    assert len(signers) == 2
+    paths = [
+        f"/api/v1/lease-signers/{signer['signer_id']}?lease_id={lease_id}" for signer in signers
+    ]
+
+    before = database_now()
+    backdated = client.patch(
+        paths[0],
+        headers=headers(1),
+        json={"event_id": str(uuid4()), "signed_at": "2020-01-01T00:00:00Z", "reason": "Backdated"},
+    )
+    assert backdated.status_code == 422
+    assert backdated.json()["error"]["fields"] == ["body.signed_at"]
+    first_headers = headers(1)
+    first_body = {"event_id": str(uuid4()), "reason": "Signer completed attributed signature"}
+    first = client.patch(paths[0], headers=first_headers, json=first_body)
+    retried = client.patch(paths[0], headers=first_headers, json=first_body)
+    second = client.patch(
+        paths[1],
+        headers=headers(2),
+        json={"event_id": str(uuid4()), "reason": "Signer completed attributed signature"},
+    )
+    sign_headers = headers(3)
+    sign_body = {"event_id": str(uuid4()), "reason": "All required Signers and terms validated"}
+    completed = client.post(f"/api/v1/leases/{lease_id}/sign", headers=sign_headers, json=sign_body)
+    # The Lease is now at version 4, so only a replay can answer If-Match "3" with 200.
+    sign_retried = client.post(
+        f"/api/v1/leases/{lease_id}/sign", headers=sign_headers, json=sign_body
+    )
+    after = database_now()
+
+    assert first.status_code == 200, first.text
+    assert retried.status_code == 200, retried.text
+    assert second.status_code == 200, second.text
+    assert completed.status_code == 200, completed.text
+    assert completed.json()["data"]["status"] == "SIGNED"
+    assert sign_retried.status_code == 200, sign_retried.text
+    assert completed.json()["data"]["signed_at"] is not None
+    assert sign_retried.json()["data"]["signed_at"] == completed.json()["data"]["signed_at"]
+    first_signed = {
+        item["signer_id"]: item["signed_at"] for item in first.json()["data"]["signers"]
+    }
+    retried_signed = {
+        item["signer_id"]: item["signed_at"] for item in retried.json()["data"]["signers"]
+    }
+    assert first_signed[signers[0]["signer_id"]] is not None
+    assert retried_signed == first_signed
+    with psycopg.connect(migrated_database_url) as connection:
+        signer_times = [
+            row[0]
+            for row in connection.execute(
+                "SELECT signed_at FROM app.lease_signers WHERE lease_id=%s ORDER BY signed_at",
+                (lease_id,),
+            ).fetchall()
+        ]
+        signature_command_times = [
+            row[0]
+            for row in connection.execute(
+                "SELECT occurred_at FROM app.lease_commands "
+                "WHERE lease_id=%s AND action='lease.signer.sign' ORDER BY occurred_at",
+                (lease_id,),
+            ).fetchall()
+        ]
+        signing = connection.execute(
+            "SELECT lease.signed_at, outcome.occurred_at FROM app.leases AS lease "
+            "JOIN app.lease_signing_outcomes AS outcome ON outcome.lease_id=lease.id "
+            "WHERE lease.id=%s",
+            (lease_id,),
+        ).fetchall()
+        sign_command_count = connection.execute(
+            "SELECT count(*) FROM app.lease_commands WHERE lease_id=%s AND action='lease.sign'",
+            (lease_id,),
+        ).fetchone()
+    # A signature command row and the signing outcome row are stamped with the
+    # statement time by the database itself (the lease.sign command row stores the
+    # signing time it was given, so it proves nothing here); the retries wrote no row.
+    assert len(signer_times) == 2
+    assert signer_times == signature_command_times
+    assert len(signing) == 1
+    assert signing[0][0] == signing[0][1]
+    assert sign_command_count == (1,)
+    assert all(before <= value <= after for value in [*signer_times, signing[0][0]])
 
 
 def test_http_draft_requires_security_deposit_from_the_same_reservation_unit(

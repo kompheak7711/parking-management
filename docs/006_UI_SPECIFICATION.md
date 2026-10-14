@@ -332,6 +332,10 @@ Show a pre-signing summary and server validation of non-overlapping contractual
 period, required parties/terms, and source values. Signing is an explicit auditable
 action, not a generic status edit.
 
+The screen sends no signing time with a Signer signature (UI-038) or the Lease
+signing; it shows the times the server records, which are the database's own time,
+in the Signer rows and the Lease timeline (BR-AUDIT-003, Q-2026-10-14-110).
+
 ## UI-041 — Renewal
 
 Create a successor Lease linked to the current Lease, allowing preparation and

@@ -40859,6 +40859,46 @@
       "test_path": "backend/tests/test_settlement_return_reversal_changed_payment_migration.py",
       "status": "implemented",
       "notes": "No role calls the placed, follow or replaced parts function, each SECURITY DEFINER with the fixed search path; migration 134 adds only the two functions, replaces the parts function with privileges and settings kept, changes only the source, recovery scope and refusal functions exactly by their replacements, no constraint or trigger, and is forward-only (V1-056 sub-slice 10e-3d-2b-2)."
+    },
+    {
+      "test_id": "test_signing_routes_take_no_signing_time_from_the_request",
+      "upstream_ids": ["BR-AUDIT-003", "API-036", "API-038"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_lease_api.py",
+      "status": "implemented",
+      "notes": "A Signer signature body or a Lease signing body that sends signed_at is refused (422) and nothing is called; without it both routes pass no signing time, so the service records the database's own time (owner answer (a) to Q-2026-10-14-110; V1-056 signing time from the database clock)."
+    },
+    {
+      "test_id": "test_signing_commands_accept_no_time_and_keep_the_time_zone_rule",
+      "upstream_ids": ["BR-AUDIT-003", "API-036", "API-038"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_lease.py",
+      "status": "implemented",
+      "notes": "The two signing commands accept no signing time (the database's own time is used) with a stable request digest, so a retry replays the first result; a given time changes the digest, so the time stays bound into it; a given time without a time zone is still refused (owner answer (a) to Q-2026-10-14-110; V1-056 signing time from the database clock)."
+    },
+    {
+      "test_id": "test_http_signing_time_is_the_database_time",
+      "upstream_ids": ["BR-AUDIT-003", "API-036", "API-038"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_api_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL through the runtime role: a backdated signed_at is refused (422, field body.signed_at); each Signer's signature time equals the statement time the database stamps on its own lease command row, and the Lease signing time equals the statement time on its signing outcome row, all inside the database clock readings before and after; a retry of either route with the same Idempotency-Key returns the first time and writes no row (owner answer (a) to Q-2026-10-14-110; V1-056 signing time from the database clock)."
+    },
+    {
+      "test_id": "TEST-FE-674",
+      "upstream_ids": ["BR-AUDIT-003", "API-036", "UI-038"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/LeaseManagement.test.tsx",
+      "status": "implemented",
+      "notes": "The Lease screen sends a Signer signature with exactly the event id and the reason, no device time (owner answer (a) to Q-2026-10-14-110; V1-056 signing time from the database clock)."
+    },
+    {
+      "test_id": "TEST-FE-675",
+      "upstream_ids": ["BR-AUDIT-003", "API-038", "UI-040"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/LeaseManagement.test.tsx",
+      "status": "implemented",
+      "notes": "The Lease screen sends the Lease signing with exactly the event id and the reason, no device time (owner answer (a) to Q-2026-10-14-110; V1-056 signing time from the database clock)."
     }
   ]
 }

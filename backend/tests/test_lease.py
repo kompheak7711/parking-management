@@ -12,6 +12,7 @@ from property_rental.lease import (
     LEASE_SIGN_CAPABILITY,
     LeaseAuthorizationError,
     LeaseDraftCommand,
+    LeaseRecordSignatureCommand,
     LeaseSignCommand,
     LeaseStatus,
     PostgresLeaseService,
@@ -57,6 +58,48 @@ def test_request_digest_is_stable_and_binds_every_command_input() -> None:
     assert changed != first
     with pytest.raises(ValueError, match="action"):
         lease_request_digest("reservation.create", command)
+
+
+def test_signing_commands_accept_no_time_and_keep_the_time_zone_rule() -> None:
+    signature = LeaseRecordSignatureCommand(
+        idempotency_key=uuid4(),
+        event_id=uuid4(),
+        lease_id=uuid4(),
+        signer_id=uuid4(),
+        expected_version=1,
+        signed_at=None,
+        reason="Signer identity verified",
+        authorization_reference=LEASE_SIGN_CAPABILITY,
+    )
+    signing = LeaseSignCommand(
+        idempotency_key=uuid4(),
+        event_id=uuid4(),
+        lease_id=uuid4(),
+        expected_version=2,
+        signed_at=None,
+        reason="All Lease Signers completed signing",
+        authorization_reference=LEASE_SIGN_CAPABILITY,
+    )
+
+    # A retry of the same request has the same digest, so the database replays it.
+    assert lease_request_digest("lease.signer.sign", signature) == lease_request_digest(
+        "lease.signer.sign", replace(signature)
+    )
+    assert lease_request_digest("lease.sign", signing) == lease_request_digest(
+        "lease.sign", replace(signing)
+    )
+    # The time stays bound into the digest: a given time is a different request.
+    given = datetime(2027, 1, 1, tzinfo=UTC)
+    assert lease_request_digest("lease.signer.sign", signature) != lease_request_digest(
+        "lease.signer.sign", replace(signature, signed_at=given)
+    )
+    assert lease_request_digest("lease.sign", signing) != lease_request_digest(
+        "lease.sign", replace(signing, signed_at=given)
+    )
+    with pytest.raises(ValueError, match="timezone"):
+        replace(signature, signed_at=datetime(2027, 1, 1))
+    with pytest.raises(ValueError, match="timezone"):
+        replace(signing, signed_at=datetime(2027, 1, 1))
 
 
 def test_draft_rejects_partial_or_reversed_contractual_periods() -> None:

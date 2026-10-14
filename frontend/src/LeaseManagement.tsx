@@ -431,7 +431,6 @@ export function LeaseManagement({ api = leaseApi }: LeaseManagementProps) {
           signerId,
           {
             event_id: crypto.randomUUID(),
-            signed_at: new Date().toISOString(),
             reason,
           },
           crypto.randomUUID(),
@@ -458,7 +457,6 @@ export function LeaseManagement({ api = leaseApi }: LeaseManagementProps) {
           selected,
           {
             event_id: crypto.randomUUID(),
-            signed_at: new Date().toISOString(),
             reason: formString(data, "reason"),
           },
           crypto.randomUUID(),

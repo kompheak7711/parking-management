@@ -251,7 +251,8 @@ class LeaseRecordSignatureCommand:
     lease_id: UUID
     signer_id: UUID
     expected_version: int
-    signed_at: datetime
+    # None (every route): the database's own time at the command (Q-2026-10-14-110).
+    signed_at: datetime | None
     reason: str
     authorization_reference: str
 
@@ -260,7 +261,9 @@ class LeaseRecordSignatureCommand:
             _require_identity(getattr(self, field), field)
         if self.expected_version < 1:
             raise ValueError("expected_version must be positive")
-        if self.signed_at.tzinfo is None or self.signed_at.utcoffset() is None:
+        if self.signed_at is not None and (
+            self.signed_at.tzinfo is None or self.signed_at.utcoffset() is None
+        ):
             raise ValueError("signed_at must include a timezone")
         _require_nonblank(self.reason, "reason")
         _require_nonblank(self.authorization_reference, "authorization_reference")
@@ -295,7 +298,8 @@ class LeaseSignCommand:
     event_id: UUID
     lease_id: UUID
     expected_version: int
-    signed_at: datetime
+    # None (every route): the database's own time at the command (Q-2026-10-14-110).
+    signed_at: datetime | None
     reason: str
     authorization_reference: str
     reservation_id: UUID | None = None
@@ -307,7 +311,9 @@ class LeaseSignCommand:
             _require_identity(self.reservation_id, "reservation_id")
         if self.expected_version < 1:
             raise ValueError("expected_version must be positive")
-        if self.signed_at.tzinfo is None or self.signed_at.utcoffset() is None:
+        if self.signed_at is not None and (
+            self.signed_at.tzinfo is None or self.signed_at.utcoffset() is None
+        ):
             raise ValueError("signed_at must include a timezone")
         _require_nonblank(self.reason, "reason")
         _require_nonblank(self.authorization_reference, "authorization_reference")
@@ -634,8 +640,10 @@ class PostgresLeaseService:
             actor, LEASE_SIGN_CAPABILITY, command.authorization_reference
         )
         digest = lease_request_digest("lease.signer.sign", command)
+        # The function checks the time against statement_timestamp(), the same value here.
         return self._execute(
-            "SELECT app.record_lease_signature(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            "SELECT app.record_lease_signature(%s,%s,%s,%s,%s,%s,%s,"
+            "COALESCE(%s::timestamptz,statement_timestamp()),%s,%s)",
             (
                 self.property_id,
                 command.idempotency_key,
@@ -679,8 +687,10 @@ class PostgresLeaseService:
         )
         digest = lease_request_digest("lease.sign", command)
         # DL-064/DL-066: signing completes the Reservation (if any) and occupies the Unit.
+        # The signing time defaults to statement_timestamp(), the value app.sign_lease checks.
         return self._execute(
-            "SELECT app.sign_lease_with_reservation(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            "SELECT app.sign_lease_with_reservation(%s,%s,%s,%s,%s,%s,"
+            "COALESCE(%s::timestamptz,statement_timestamp()),%s,%s,%s)",
             (
                 self.property_id,
                 command.idempotency_key,

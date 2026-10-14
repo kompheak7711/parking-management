@@ -145,9 +145,9 @@ export interface LeaseSignerSource {
   reason: string;
 }
 
+// No signing time: the server records the database's own time (Q-2026-10-14-110).
 export interface LeaseSignatureSource {
   event_id: string;
-  signed_at: string;
   reason: string;
 }
 

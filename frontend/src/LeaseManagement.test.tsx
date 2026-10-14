@@ -242,6 +242,45 @@ describe("Lease staff workflow", () => {
     );
   });
 
+  it("TEST-FE-674 sends no device time with a Signer signature", async () => {
+    const api = client();
+    await loadAndOpen(api);
+    fireEvent.change(screen.getByLabelText("Signature evidence reason"), {
+      target: { value: "Signer identity and consent verified" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Record attributed signature" }),
+    );
+
+    await waitFor(() => {
+      expect(api.recordSignature).toHaveBeenCalledTimes(1);
+    });
+    const source = vi.mocked(api.recordSignature).mock.calls[0]?.[2];
+    expect(Object.keys(source ?? {}).sort()).toEqual(["event_id", "reason"]);
+    expect(typeof source?.event_id).toBe("string");
+    expect(source?.reason).toBe("Signer identity and consent verified");
+  });
+
+  it("TEST-FE-675 sends no device time with the Lease signing", async () => {
+    const api = client();
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    await loadAndOpen(api);
+    fireEvent.change(screen.getByLabelText("Signing reason and evidence"), {
+      target: { value: "All terms and Signers verified" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Review and sign Lease" }),
+    );
+
+    await waitFor(() => {
+      expect(api.sign).toHaveBeenCalledTimes(1);
+    });
+    const source = vi.mocked(api.sign).mock.calls[0]?.[1];
+    expect(Object.keys(source ?? {}).sort()).toEqual(["event_id", "reason"]);
+    expect(typeof source?.event_id).toBe("string");
+    expect(source?.reason).toBe("All terms and Signers verified");
+  });
+
   it("TEST-FE-190 conditionally displays Pet Deposit and completes move-in atomically", async () => {
     const signed = {
       ...drafted,

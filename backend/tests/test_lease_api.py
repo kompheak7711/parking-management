@@ -435,7 +435,6 @@ def test_signer_signing_renewal_and_termination_are_explicit_commands() -> None:
         headers=headers(version=2),
         json={
             "event_id": str(uuid4()),
-            "signed_at": "2026-08-27T01:00:00Z",
             "reason": "All required Signers completed",
         },
     )
@@ -473,6 +472,53 @@ def test_signer_signing_renewal_and_termination_are_explicit_commands() -> None:
     assert renewed.headers["location"] == f"/api/v1/leases/{successor_id}"
     assert renewed.json()["data"]["predecessor_lease_id"] == str(current.lease_id)
     assert terminated.json()["data"]["status"] == "TERMINATED"
+
+
+def test_signing_routes_take_no_signing_time_from_the_request() -> None:
+    property_id = uuid4()
+    current = resource(property_id)
+    flow = InMemoryLeaseFlow({current.lease_id: current})
+    api = client(flow, actor(property_id, "leases.read", "leases.sign"))
+    signer_id = uuid4()
+    signature_path = f"/api/v1/lease-signers/{signer_id}?lease_id={current.lease_id}"
+    sign_path = f"/api/v1/leases/{current.lease_id}/sign"
+    device_time = "2026-08-27T01:00:00Z"
+
+    refused_signature = api.patch(
+        signature_path,
+        headers=headers(version=1),
+        json={"event_id": str(uuid4()), "signed_at": device_time, "reason": "Signer verified"},
+    )
+    refused_signing = api.post(
+        sign_path,
+        headers=headers(version=1),
+        json={"event_id": str(uuid4()), "signed_at": device_time, "reason": "Signers completed"},
+    )
+
+    assert refused_signature.status_code == 422
+    assert refused_signing.status_code == 422
+    assert refused_signature.json()["error"]["fields"] == ["body.signed_at"]
+    assert refused_signing.json()["error"]["fields"] == ["body.signed_at"]
+    assert (flow.signature_command, flow.sign_command) == (None, None)
+
+    recorded = api.patch(
+        signature_path,
+        headers=headers(version=1),
+        json={"event_id": str(uuid4()), "reason": "Signer verified"},
+    )
+    signed = api.post(
+        sign_path,
+        headers=headers(version=2),
+        json={"event_id": str(uuid4()), "reason": "Signers completed"},
+    )
+
+    assert recorded.status_code == 200, recorded.text
+    assert signed.status_code == 200, signed.text
+    assert flow.signature_command is not None
+    assert flow.signature_command.signer_id == signer_id
+    assert flow.signature_command.signed_at is None
+    assert flow.sign_command is not None
+    assert flow.sign_command.signed_at is None
 
 
 def test_coordinated_occupancy_and_complete_move_in_share_atomic_service_boundary() -> None:

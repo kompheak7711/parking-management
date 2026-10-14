@@ -4752,6 +4752,11 @@ Signing, renewal records, Notices, warning letters, termination, Move-in,
 Move-out, Occupancy corrections, and Unit transitions must remain historically
 traceable.
 
+A Signer's signature time and the Lease signing time are the database's own time
+at the moment of the command. No browser or device clock sets them, so a device
+clock cannot refuse a signing or make a signature look earlier (owner answer to
+Q-2026-10-14-110).
+
 Nonpayment Warning Notices and Serious Nonpayment Default conditions must preserve
 their source Rent obligation, elapsed-day boundary, amount snapshot, issue or event
 time, actor, communication or document linkage where recorded, cure history, and

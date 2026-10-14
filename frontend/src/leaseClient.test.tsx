@@ -73,7 +73,6 @@ describe("Lease API client", () => {
       lease,
       {
         event_id: "event-1",
-        signed_at: "2026-08-26T01:00:00Z",
         reason: "All Signers completed",
       },
       "command-1",

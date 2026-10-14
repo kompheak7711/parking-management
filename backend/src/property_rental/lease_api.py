@@ -900,11 +900,12 @@ class LeaseSignerSource(BaseModel):
     reason: Annotated[str, Field(min_length=1, max_length=500)]
 
 
+# Q-2026-10-14-110: no signing time in a request; the database's own time is recorded,
+# and a body that still sends one is refused (extra="forbid").
 class LeaseSignatureSource(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     event_id: UUID
-    signed_at: datetime
     reason: Annotated[str, Field(min_length=1, max_length=500)]
 
 
@@ -912,7 +913,6 @@ class LeaseSignSource(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     event_id: UUID
-    signed_at: datetime
     reason: Annotated[str, Field(min_length=1, max_length=500)]
 
 
@@ -1348,7 +1348,7 @@ def create_lease_router(
                     lease_id=lease_id,
                     signer_id=signer_id,
                     expected_version=_version(if_match),
-                    signed_at=source.signed_at,
+                    signed_at=None,
                     reason=source.reason,
                     authorization_reference=LEASE_SIGN_CAPABILITY,
                 ),
@@ -1463,7 +1463,7 @@ def create_lease_router(
                     event_id=source.event_id,
                     lease_id=lease_id,
                     expected_version=_version(if_match),
-                    signed_at=source.signed_at,
+                    signed_at=None,
                     reason=source.reason,
                     authorization_reference=LEASE_SIGN_CAPABILITY,
                 ),

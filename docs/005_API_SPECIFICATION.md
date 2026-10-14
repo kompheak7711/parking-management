@@ -419,6 +419,10 @@ and optional predecessor link. It does not create month-to-month behavior.
 Schemas identify Customer and Primary Tenant/signing responsibility attributes.
 Multiple Signers are supported and Occupants are not inferred.
 
+The signature body is `event_id` and `reason` only. The server records the
+database's own time at the command as the signature time; a body that sends
+`signed_at` is refused with 422 (BR-AUDIT-003, Q-2026-10-14-110).
+
 ## API-037 — Occupancy
 
 - `GET /leases/{lease_id}/occupancies`
@@ -442,6 +446,10 @@ Defaults, cures, and authorized follow-up use API-095 instead.
 Each action has an explicit schema, authorization, reason/evidence, idempotency,
 and applicable rule references. Signing/renewal rechecks non-overlapping
 contractual periods transactionally. End Date alone invokes none of these actions.
+
+The signing body is `event_id` and `reason` only. The server records the
+database's own time at the command as the Lease signing time; a body that sends
+`signed_at` is refused with 422 (BR-AUDIT-003, Q-2026-10-14-110).
 
 For an approved voluntary early termination, the termination result charges the
 full move-out calendar month's Rent, applicable Utility/fixed Service/other

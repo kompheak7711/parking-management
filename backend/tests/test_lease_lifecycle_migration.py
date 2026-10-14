@@ -257,6 +257,7 @@ def test_commands_are_idempotent_versioned_audited_and_preserve_signer_rules(
         signed_at=database_now(),
     )
     assert service.record_signature(additional_signature, actor=authenticated).version == 4
+    assert additional_signature.signed_at is not None  # optional since Q-2026-10-14-110
     for invalid_signed_at in (
         additional_signature.signed_at - timedelta(microseconds=1),
         database_now() + timedelta(days=1),
