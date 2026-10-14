@@ -2935,6 +2935,38 @@ own part applied again, and the `shared_with_other_returns` flag, which now refu
 pooled-path source). A `RETURN_REVERSAL` draft recorded before revision 132 is stale at its
 confirm (P5S02). No writer, lock or grant changes; no new table, column, constraint or trigger.
 
+As built in V1-056 sub-slice 10e-3d-2b-2 (migration `20261208_134`; owner answer (a) to
+Q-2026-10-13-107 and the owner's acceptance of 2026-10-14 that a return reversal's put-back keeps
+each part's place with the reversed return's money cut out): each part of E's money keeps its
+place in its record (new internal `app.settlement_returned_value_placed`, the parts with their
+offsets; `app.settlement_returned_value_parts` now returns its rows without the offset), and a
+payment part is followed to the records that hold it now (this replaces, in the source, the
+successor rule of sub-slices 10e-3d-2b-1a and 10e-3d-2b-1b above; new internal
+`app.settlement_returned_value_follow`, STABLE, SECURITY DEFINER, `search_path=pg_catalog`, no
+grant). An active payment holds the part itself. A payment a `RETURN_REVERSAL` R reversed passes
+it to R's put-back (the n-th `reapply` entry is R's n-th linked payment, checked as in
+`app.settlement_returned_value_successor`, the put-back of this Settlement), at its offset less the
+stretches of R's reversed return before it; those stretches are that return's placed parts
+followed up to the payments R reversed, must add up to the payment less the put-back and must not
+overlap the part. A payment a `REFUND` correction or `PET_DAMAGE_RECLASSIFICATION` Q of the same
+Settlement reversed is laid over Q's stream: Q's reversals of payments from the source, in effect
+order, are what Q took back; Q's Refunds from the source (the oldest first), then its payments
+from it (the newest first), pay it out in that order; a Q Refund the part overlaps holds that part
+(charged back to its recipient), a Q payment is followed again. Everything else stops open
+(`CHANGED_APPLICATION`, now "A later correction changed a payment made with this return's money
+in a way this reversal cannot follow yet; reversing it waits for the owner"): an unknown payment,
+offset or part, a part not inside its payment, more than 100 steps, a reversal by no correction,
+another Settlement's correction or another kind, a put-back that does not check or whose cut does
+not add up, a Q that also brought money back other than by reversing payments or also reversed
+the Credit, a return or a receipt, or forfeited, a part past what Q paid out, and, while following
+a reversed return's stretches, a change by a correction not strictly earlier than that reversal
+(so the recursion ends). The source's `swept_state` sums the followed rows per own flag,
+correction and record; a Refund part more than the Refund's net stays open. The recovery scope
+`app.settlement_return_reversal_refund` also accepts a Refund the source lists in `own_parts` (a
+relaxing change; the source is server-built and digest-checked at the confirm). A `RETURN_REVERSAL`
+draft recorded before revision 134 whose source now differs is stale at its confirm (P5S02). No
+writer, lock or grant changes; no new table, column, constraint or trigger.
+
 As built in V1-056 sub-slice 10c-3a (migration `20261115_111`; owner answer to Q-2026-10-07-38): the
 `CHARGE_REDUCTION` variant also reduces an unpaid Late-payment Charge of an Invoice of the
 Settlement's Lease (draft `target_kind` `LATE_PAYMENT_CHARGE`, its own recorder and confirm). Its

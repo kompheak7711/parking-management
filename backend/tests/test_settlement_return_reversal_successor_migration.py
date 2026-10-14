@@ -19,11 +19,7 @@ from alembic import command as alembic_command
 from alembic.config import Config
 from alembic.script import ScriptDirectory
 
-from property_rental.final_settlement import (
-    FinalSettlementConflictError,
-    SettlementCreditStep,
-    SettlementDepositStep,
-)
+from property_rental.final_settlement import SettlementCreditStep, SettlementDepositStep
 from test_customer_ledger_migration import assert_reconciled
 from test_final_settlement_draft_migration import LINE, PET_REST, STAFF
 from test_final_settlement_draft_migration import refund as settlement_refund
@@ -33,8 +29,7 @@ from test_move_in_migration import migrated_database_url as migrated_database_ur
 from test_settlement_correction_plan_migration import closed_case
 from test_settlement_deposit_refund_correction_migration import confirm_refund, record_refund
 from test_settlement_deposit_refund_return_migration import pet_refund
-from test_settlement_extra_charge_migration import cause
-from test_settlement_held_value_refund_migration import COUNTS, return_only
+from test_settlement_held_value_refund_migration import return_only
 from test_settlement_refund_correction_migration import correction as refund_correction
 from test_settlement_refund_correction_migration import unpaid_charge
 from test_settlement_refund_return_migration import (
@@ -54,7 +49,6 @@ from test_settlement_return_reversal_migration import (
     record_reversal,
     reversal_command,
 )
-from test_settlement_returned_value_left_migration import CHANGED, DRAFTS
 
 REVISION = "20261205_131"
 INTERNAL = "app.settlement_returned_value_successor(text,uuid)"
@@ -233,15 +227,17 @@ def test_a_deposit_part_follows_to_its_put_back(migrated_database_url: str) -> N
         assert_reconciled(connection, case["customer"])
 
 
-def test_a_part_on_a_payment_a_refund_correction_changed_waits(
+def test_a_part_on_a_payment_a_refund_correction_changed_is_followed_into_its_payment_written_again(
     migrated_database_url: str,
 ) -> None:
-    """Review round 1, the 10e-3d-2b refusal that stays (Q-2026-10-13-107), on the real path: E
-    brings back 300 (return only); S brings back 1,200 (return only) and its step lets the Credit
-    pay a 1,500 charge (S's own 1,200, then E's 300, in one payment). A Refund correction then
-    finds 300 of the charge wrong: it releases 300 of that payment (reversed, 1,200 written again)
-    and refunds the 300. Where E's 300 now sits is what Q-107 decides, so the payment has no
-    successor, and E's reversal is refused with the 10e-3d-2b message and writes nothing."""
+    """Review round 1 set-up, allowed since sub-slice 10e-3d-2b-2 (owner answer (a) to
+    Q-2026-10-13-107): E brings back 300 (return only); S brings back 1,200 (return only) and its
+    step lets the Credit pay a 1,500 charge (S's own 1,200, then E's 300, in one payment). A Refund
+    correction then finds 300 of the charge wrong: it releases 300 of that payment (reversed, 1,200
+    written again) and refunds the 300. Of the money it took back, its Refund pays out the first
+    300 and the payment written again the rest, so E's 300 (the last 300) sits in the 1,200
+    payment: E's reversal reverses it whole and puts 900 back, 300 of the charge is owed again and
+    the Refund stays as it is."""
     url = migrated_database_url
     case = refunded_case(url)
     refund, credit = case["refund"], case["refund_credit"]
@@ -261,11 +257,34 @@ def test_a_part_on_a_payment_a_refund_correction_changed_waits(
     [paid] = released["refunds"]
     assert (paid["amount_usd_cents"], outstanding(url, charge_line)) == (300, 0)
     assert successor(url, "CREDIT", application) is None
-    unchanged = (one(url, COUNTS), one(url, DRAFTS))
-    with pytest.raises(FinalSettlementConflictError) as changed:
-        record_reversal(case, reversal_command(case, earlier))
-    assert cause(changed) == ("55000", CHANGED)
-    assert (one(url, COUNTS), one(url, DRAFTS)) == unchanged
+    [written_again] = one(
+        url,
+        "SELECT array_agg(application.id::text) FROM app.customer_credit_applications application "
+        "WHERE application.customer_credit_id=%s AND NOT EXISTS(SELECT 1 "
+        "FROM app.customer_credit_application_reversals reversal "
+        "WHERE reversal.credit_application_id=application.id)",
+        credit,
+    )[0]
+    before = available(url, credit)
+    source, result = reverse(case, earlier)
+    [part] = source["swept"]
+    assert (part["record_id"], part["amount_usd_cents"], part["part_usd_cents"]) == (
+        written_again,
+        1_200,
+        300,
+    )
+    assert (source["swept_open"], source["recoveries"]) == ([], [])
+    [undone] = result["credit_application_reversals"]
+    [again] = result["reapplied"]
+    assert (undone["credit_application_id"], undone["amount_usd_cents"]) == (written_again, 1_200)
+    assert (again["amount_usd_cents"], result["recoveries"]) == (900, [])
+    assert (available(url, credit), outstanding(url, charge_line), net(url, paid["id"])) == (
+        before,
+        300,
+        300,
+    )
+    with psycopg.connect(url) as connection:
+        assert_reconciled(connection, case["customer"])
 
 
 def test_the_successor_fails_closed(migrated_database_url: str) -> None:

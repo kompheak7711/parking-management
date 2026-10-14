@@ -86,8 +86,8 @@ PATCHED = {
 }
 # Sub-slice 10e-3d-2a: the payouts of returned money a reversal cannot undo yet.
 CHANGED = (
-    "A later correction changed a payment made with this return's money; "
-    "reversing it waits for sub-slice 10e-3d-2b"
+    "A later correction changed a payment made with this return's money in a way this reversal "
+    "cannot follow yet; reversing it waits for the owner"
 )
 REVERSED = (
     "A Credit reversal or a Deposit receipt reversal paid out this return's money; "

@@ -40661,12 +40661,12 @@
       "notes": "Deposit form on the real path: two Pet Deposit returns of 1,000; a correction's new Refund and Pet Deposit payment hold the first's money in both and the second's in the payment; the first's reversal charges 800 back and puts 1,000 back; the second's 1,000 follows to that put-back, which its reversal reverses whole with nothing put back (the successor then is none), so the charge owes 1,200 again and the Pet Deposit ends empty (V1-056 sub-slice 10e-3d-2b-1a)."
     },
     {
-      "test_id": "test_a_part_on_a_payment_a_refund_correction_changed_waits",
+      "test_id": "test_a_part_on_a_payment_a_refund_correction_changed_is_followed_into_its_payment_written_again",
       "upstream_ids": ["BR-SETTLE-013", "BR-CREDIT-014", "DB-SETTLE-005"],
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_return_reversal_successor_migration.py",
       "status": "implemented",
-      "notes": "Review round 1 on the real path (Credit): a later correction's payment holds a return's 300; a Refund correction releases 300 of that payment (reversed, the rest written again, the 300 refunded), so the payment has no successor and the return's reversal is refused with the 10e-3d-2b message and writes nothing (Q-2026-10-13-107 decides that case; V1-056 sub-slice 10e-3d-2b-1a)."
+      "notes": "Review round 1 set-up on the real path (Credit): a later correction's 1,500 payment holds a return's last 300; a Refund correction releases 300 of it (reversed, 1,200 written again, the 300 refunded); the payment still has no successor, but under owner answer (a) to Q-2026-10-13-107 the return's 300 sits in the 1,200 payment, so its reversal reverses that payment whole and puts 900 back, 300 of the charge is owed again and the Refund stays (V1-056 sub-slice 10e-3d-2b-1a; renamed in 10e-3d-2b-2 from test_a_part_on_a_payment_a_refund_correction_changed_waits)."
     },
     {
       "test_id": "test_the_successor_fails_closed",
@@ -40717,12 +40717,12 @@
       "notes": "Review round 1 on the real path (Credit): on the walk path, part of a held-value Refund holding the return's money comes back later, so the return's part is more than the Refund's net and its reversal is refused, writing nothing; after that later return is reversed the reversal goes through (V1-056 sub-slice 10e-3d-2b-1b)."
     },
     {
-      "test_id": "test_an_own_payment_a_refund_correction_changed_waits",
+      "test_id": "test_an_own_payment_a_refund_correction_changed_is_followed_into_its_refund_and_payment",
       "upstream_ids": ["BR-SETTLE-013", "DB-SETTLE-005"],
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_return_reversal_own_parts_migration.py",
       "status": "implemented",
-      "notes": "Review round 1 on the real path (Credit): a Refund correction released part of the return's own payment, so the own part has no successor, the source lists it as open and the return's reversal is refused with the 10e-3d-2b message, writing nothing (Q-2026-10-13-107 decides that case; V1-056 sub-slice 10e-3d-2b-1b)."
+      "notes": "Review round 1 set-up on the real path (Credit): a Refund correction released 300 of the return's own 1,500 payment (reversed, 1,200 written again, 300 refunded); under owner answer (a) to Q-2026-10-13-107 the own parts are the 300 Refund (charged back to the Customer who received it) and the 1,200 payment (reversed whole, nothing put back), so 1,200 of the charge is owed again and the Credit ends as before (V1-056 sub-slice 10e-3d-2b-1b; renamed in 10e-3d-2b-2 from test_an_own_payment_a_refund_correction_changed_waits)."
     },
     {
       "test_id": "test_the_own_parts_fail_closed",
@@ -40795,6 +40795,70 @@
       "test_path": "backend/tests/test_settlement_return_reversal_put_back_migration.py",
       "status": "implemented",
       "notes": "No role calls the two new functions, each SECURITY DEFINER with the fixed search path; migration 133 adds only them and the label trigger, relaxes only the two label CHECKs, changes only the five listed functions exactly by their replacements, and is forward-only (V1-056 sub-slice 10e-3e)."
+    },
+    {
+      "test_id": "test_a_stretch_over_a_refund_and_its_payment_written_again_is_split_between_them",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-016", "BR-CREDIT-014", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_changed_payment_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer (a) to Q-2026-10-13-107 on the real path (Credit): a return's 1,000 sits from 500 in a 1,500 payment; a Refund correction releases 800 of it (800 refunded, 700 written again), so 300 of the return's money is in the Refund and 700 in the new payment; the reversal charges 300 back to the Refund's recipient and reverses the 700 payment whole, 700 of the charge owed again, the Credit as before, the ledger reconciled (V1-056 sub-slice 10e-3d-2b-2)."
+    },
+    {
+      "test_id": "test_a_part_keeps_its_place_through_a_refund_correction_and_a_return_reversal",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-016", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_changed_payment_migration.py",
+      "status": "implemented",
+      "notes": "On the real path (Credit): a Refund correction rewrites a payment holding two returns' money, one return's reversal puts back its rest with that return's 300 cut out, and the other return's 300 keeps its place in that put-back, so its reversal puts back 600 of the 900 and 600 of the charge is owed again; the Refund stays (owner answers (a) to Q-2026-10-13-107 and of 2026-10-14; V1-056 sub-slice 10e-3d-2b-2)."
+    },
+    {
+      "test_id": "test_a_deposit_part_follows_into_the_refund_of_a_refund_correction",
+      "upstream_ids": ["BR-SETTLE-008", "BR-SETTLE-013", "BR-SETTLE-016", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_changed_payment_migration.py",
+      "status": "implemented",
+      "notes": "On the real path (Pet Deposit, migration 103): a return's 1,000 sits in a Pet Deposit payment that a Refund correction of the whole charge reverses and refunds, so the return's reversal charges 1,000 back to the Refund's recipient, nothing is owed on the charge and the Pet Deposit ends empty (owner answer (a) to Q-2026-10-13-107; V1-056 sub-slice 10e-3d-2b-2)."
+    },
+    {
+      "test_id": "test_the_follow_function_fails_closed",
+      "upstream_ids": ["BR-SETTLE-013", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_changed_payment_migration.py",
+      "status": "implemented",
+      "notes": "The follow function on real rows: an unknown payment, a payment of another source or kind, no or a negative offset, no or a zero part, a stretch not inside the reversed payment and another Settlement each stop open at the record; with p_until the Refund correction the stretch stops at the payment it reversed, with p_until an older correction it stops open (the recursion reads only earlier corrections); an active payment holds a stretch inside it and stops open past its end (V1-056 sub-slice 10e-3d-2b-2, review round 1)."
+    },
+    {
+      "test_id": "test_a_deposit_part_follows_into_the_refund_and_payment_of_a_refund_correction",
+      "upstream_ids": ["BR-SETTLE-008", "BR-SETTLE-013", "BR-SETTLE-016", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_changed_payment_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 set-up on the real path (Pet Deposit, migration 103): a return's 1,000 is 300 in a correction's Refund and its whole 700 payment; a Refund correction releases that payment, pays 400 again and refunds 300; the reversal charges back 300 of each Refund and reverses the 400 payment whole, 400 of the charge owed again, the Pet Deposit empty (owner answer (a) to Q-2026-10-13-107; V1-056 sub-slice 10e-3d-2b-2)."
+    },
+    {
+      "test_id": "test_a_part_on_a_payment_a_receipt_correction_reversed_waits",
+      "upstream_ids": ["BR-SETTLE-013", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_changed_payment_migration.py",
+      "status": "implemented",
+      "notes": "Review round 2 on the real path (Pet Deposit): a return's 1,000 sits in a later correction's payment that a DEPOSIT_RECEIPT_CORRECTION then reverses (a change sub-slice 10e-3d-2c decides); the source lists the part as open CHANGED_APPLICATION at that payment and the return's reversal is refused with the new message, writing nothing (V1-056 sub-slice 10e-3d-2b-2)."
+    },
+    {
+      "test_id": "test_a_deposit_part_follows_into_the_payment_of_a_pet_damage_reclassification",
+      "upstream_ids": ["BR-SETTLE-008", "BR-SETTLE-013", "BR-DEP-027", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_changed_payment_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 set-up on the real path (Pet Deposit, migration 105): a return's 600 on a pet-damage payment that a second reclassification reverses and pays again at the remainder stage keeps its place in the new payment; the reversal reverses both payments holding the return's money and puts back 300 and 400 at the remainder stage, exactly 1,000 owed again, the Pet Deposit empty (owner answer (a) to Q-2026-10-13-107; V1-056 sub-slice 10e-3d-2b-2)."
+    },
+    {
+      "test_id": "test_the_changed_payment_functions_are_least_privilege_and_forward_only",
+      "upstream_ids": ["BR-SETTLE-013", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_changed_payment_migration.py",
+      "status": "implemented",
+      "notes": "No role calls the placed, follow or replaced parts function, each SECURITY DEFINER with the fixed search path; migration 134 adds only the two functions, replaces the parts function with privileges and settings kept, changes only the source, recovery scope and refusal functions exactly by their replacements, no constraint or trigger, and is forward-only (V1-056 sub-slice 10e-3d-2b-2)."
     }
   ]
 }

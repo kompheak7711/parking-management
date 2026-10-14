@@ -2655,3 +2655,40 @@ Your answer (a) to Q-2026-10-13-106: a new label "put back by a correction", wri
 **Owner answer (2026-10-14).** Option (b): add the `PUT_BACK_BY_CORRECTION` label to the screen's two lists, so staff see the label and the real refusal reason instead of a general error. Build it as the small sub-slice 10e-3e-2.
 
 Also answered with the 10e-3e report (2026-10-14): (1) the implementer's three readings are accepted (the re-posted rest keeps the label; the label is used only where no existing label is true; the restored payment is read from the draft's stored source); (2) the `ops/traceability.json` change made by a script that wrote the whole file is accepted, because the diff showed only the intended lines; exact-text edits are preferred, and a script used again is named in the report; (3) a new small sub-slice comes first: the cause of the `Signature evidence is invalid` failures in the Lease signature fixture, then a test-set-up-only fix if the cause is the Mac and database clocks. Order: that sub-slice, 10e-3d-2b-2, 10e-3d-2c, 10e-3d-2d, 10e-3e-2, 10c-2a-7, 10c-3c-1, 10c-3c-2, 10f, 10g, 10e-2d, 10e-2b-3, 10e-2b-4, then 10h. Recorded in docs/010.
+
+**Owner answers to the signature fixture clock report and the 10e-3d-2b-2 design (2026-10-14, fresh session).** (1) The signature fixture clock fix (07bca44) is accepted. The run rule "Signature tests and the clock" is retired: from now on a `Signature evidence is invalid` failure is a real failure, and its cause is found as for any other failure (ops/V1_055_RUN_RULES.md). (2) A read-only check of where the real app gets the signing time; if it can come from a clock other than the database's, write it as a question with a recommendation and build nothing before the answer: see Q-2026-10-14-110. (3) The `catalog-dump.sh` copy run from a tmp folder is accepted this once. A catalog dump needed again is added as a committed script under `scripts/` in its own small reviewed commit; like the other scripts, it must not print the database password or the database URL; copies in a tmp folder are not run (ops/V1_055_RUN_RULES.md). (4) The implementer's reading in the 10e-3d-2b-2 design is accepted: a return reversal's put-back keeps each part's place, with the reversed return's money cut out. (5) The pending rename of `test_a_right_receipt_into_a_deposit_with_a_forfeiture_ground_waits_for_10e_2c` is done the next time its file is touched. Order: 10e-3d-2b-2, 10e-3d-2c, 10e-3d-2d, 10e-3e-2, 10c-2a-7, 10c-3c-1 (the hardening of owner answer 3 to Q-2026-10-10-69), 10c-3c-2, 10f, 10g, 10e-2d (the Q-2026-10-12-93 answer), 10e-2b-3, 10e-2b-4, then 10h. Recorded in docs/010.
+
+## Q-2026-10-14-110 — The real app takes the Lease signing time from the staff member's browser clock, and the database refuses any time ahead of its own (blocks nothing in slice 10; nothing is built before your answer)
+
+**Your request (2026-10-14).** A read-only check: `app.record_lease_signature` refuses a signing time later than the database's time, with no tolerance. Where does the real app get the signing time? If it can come from another clock, a small clock difference could refuse a real signing.
+
+**What the code does (read at head `20261207_133`).**
+- The staff Lease screen (`frontend/src/LeaseManagement.tsx`, lines 434 and 461) sets `signed_at` to `new Date().toISOString()`: the clock of the staff member's own computer or phone at the moment of the click.
+- The two Lease routes that record a Signer's signature and sign the Lease (`backend/src/property_rental/lease_api.py`) take `signed_at` from the request body and pass it unchanged to the service. The service passes it to `app.record_lease_signature` and to `app.sign_lease_with_reservation`, which calls `app.sign_lease`.
+- Both database functions refuse a signing time later than `statement_timestamp()`, the database server's clock (migration 24, lines 286 and 408: "Signature evidence is invalid", "Signing evidence is invalid"). The other time checks only keep the order (not before the Signer was added, not before an earlier signature; lines 304 and 448).
+- So the time comes neither from the app server nor from the database: it comes from the browser. That is wider than the app-server case: a staff device clock is set on that device and often runs seconds ahead or behind. A device whose clock runs ahead of the database server's clock by more than the time a request takes to reach the database (milliseconds) has every signing refused. A device that runs behind passes, and the stored signing time is then that much earlier than the real moment.
+
+**Example.** A staff laptop clock runs 3 seconds fast. Staff record the Primary Tenant's signature at 10:00:00 database time: the screen sends 10:00:03, so the database refuses it as invalid evidence. Every retry fails the same way until the laptop clock is corrected.
+
+**Options.**
+- (a) The signing time is the database's own time at the moment of the command: the screen stops sending its clock time, and the service or the database function uses `statement_timestamp()`. The existing check stays (it can no longer fail for a clock difference). The request shape changes (`signed_at` dropped or ignored), so docs/005, the client, the screen and their tests change, and a replayed request must still match its first result. A relaxing change; no existing record changes.
+- (b) Keep the browser time and allow a small tolerance ahead of the database time (for example 2 minutes) in the two database checks: a relaxing migration. A device more than the tolerance ahead is still refused, and a stored signing time can be up to the tolerance in the future.
+- (c) Keep it as is (a known limit): staff devices must keep a correct clock; the screen's error could say so.
+
+**Recommendation: (a)**, because a signing time is evidence and the database clock is the one clock the app controls; it ends the dependence on staff device clocks. It belongs with the Lease screens or the login slice, before the first real use, not inside slice 10. Nothing is built before your answer.
+
+**What goes ahead.** Everything; slice 10 does not depend on this answer.
+
+## Q-2026-10-14-111 — Sub-slice 10e-3d-2b-2 review round 1: two payments written in one correction can tie in the "newest first" order (blocks nothing; nothing is built before your answer)
+
+**What the reviewer found.** Your Q-100 and Q-107 answers place a mistaken return's money on a correction's payments "the newest first". The count orders them by their time, then by their id (sub-slice 10e-3d-2a, migration 130; the follow function of 10e-3d-2b-2 uses the same order). One correction often writes two or more payments from the same source with the same time (for example the rests a Refund correction writes again, which share one stamped time, migration 100). Then the order falls to the random id, so which of those two debts becomes owed again is chosen by chance. The total is always right (exactly the mistaken amount); only which debt is reopened can differ.
+
+**Example.** A Refund correction releases two Credit payments of one Invoice and writes their rests again, 400 on the Rent line and 300 on the Service line, at the same time. A mistaken return's 300 sits in "the newest" of the two: by chance either 300 of Rent or 300 of Service is owed again.
+
+**Options.**
+- (a) Break a tie by the order the correction wrote the payments (its effect order: the last written counts as the newest). One rule, always the same result. A small change of the count's order (a relaxing change in effect: no refusal is added); a reversal recorded before it, where such a tie exists, becomes stale at its confirm and is recorded again.
+- (b) Keep it as it is (a known limit; the total is always right).
+
+**Recommendation: (a)**, because a financial correction must give the same result every time (AGENTS.md: deterministic calculations). It would be a small sub-slice before 10h, with a test where two payments of one correction share a time.
+
+**What goes ahead.** Everything; nothing waits for this answer.

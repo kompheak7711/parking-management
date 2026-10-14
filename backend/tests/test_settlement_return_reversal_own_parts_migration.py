@@ -305,13 +305,16 @@ def test_an_own_refund_returned_later_waits_for_that_return_s_reversal(
         assert_reconciled(connection, case["customer"])
 
 
-def test_an_own_payment_a_refund_correction_changed_waits(migrated_database_url: str) -> None:
-    """Review round 1 (security SF4), on the walk path through a reversed own payment with no
-    put-back: E brings back 1,500 (return only) and its own step lets the Credit pay a 1,500
-    charge; a Refund correction then releases 300 of that payment (reversed, 1,200 written again)
-    and refunds the 300. Where E's money now sits is the 10e-3d-2b-2 case (Q-2026-10-13-107), so
-    the source lists the own part as open and E's reversal is refused with the 10e-3d-2b message,
-    writing nothing."""
+def test_an_own_payment_a_refund_correction_changed_is_followed_into_its_refund_and_payment(
+    migrated_database_url: str,
+) -> None:
+    """Review round 1 (security SF4) set-up, allowed since sub-slice 10e-3d-2b-2 (owner answer (a)
+    to Q-2026-10-13-107), on the walk path through a reversed own payment: E brings back 1,500
+    (return only) and its own step lets the Credit pay a 1,500 charge; a Refund correction then
+    releases 300 of that payment (reversed, 1,200 written again) and refunds the 300. E's 1,500 is
+    the whole payment, so its first 300 is in the Refund (charged back to the Customer who received
+    it) and the rest is the 1,200 payment (reversed whole, nothing put back): 1,200 of the charge is
+    owed again, and the Credit ends as before."""
     url = migrated_database_url
     case = refunded_case(url)
     refund, credit = case["refund"], case["refund_credit"]
@@ -320,31 +323,46 @@ def test_an_own_payment_a_refund_correction_changed_waits(migrated_database_url:
         case, refund, 1_500, SettlementCreditStep(credit, LINE, charge_line, 1_500)
     )
     [paying] = payments(url, credit)
-    confirm_refund(
+    released = confirm_refund(
         case, record_refund(case, refund_correction(case, charge_invoice, charge_line, 300))
     )
+    [paid] = released["refunds"]
     assert successor(url, "CREDIT", paying) is None
+    [_, written_again] = payments(url, credit)
     [source] = one(
         url,
         "SELECT app.settlement_return_reversal_source_state(%s,%s)",
         case["settlement"],
         earlier,
     )
+    assert (source["swept"], source["swept_open"], source["own_open"]) == ([], [], [])
+    assert sorted(
+        (part["record_kind"], part["record_id"], part["amount_usd_cents"], part["part_usd_cents"])
+        for part in source["own_parts"]
+    ) == sorted(
+        [
+            ("CREDIT_APPLICATION", written_again, 1_200, 1_200),
+            ("REFUND", str(paid["id"]), 300, 300),
+        ]
+    )
+    before = available(url, credit)
+    _, result = reverse(case, earlier)
+    [undone] = result["credit_application_reversals"]
+    [recovery] = result["recoveries"]
+    assert (undone["credit_application_id"], undone["amount_usd_cents"], result["reapplied"]) == (
+        written_again,
+        1_200,
+        [],
+    )
+    assert (str(recovery["refund_id"]), recovery["amount_usd_cents"]) == (str(paid["id"]), 300)
     assert (
-        source["own_parts"],
-        source["swept"],
-        source["swept_open"],
-        source["credit_applications"],
-    ) == ([], [], [], [])
-    assert [
-        (part["kind"], part["record_kind"], part["record_id"], part["part_usd_cents"])
-        for part in source["own_open"]
-    ] == [("CHANGED_APPLICATION", "CREDIT_APPLICATION", paying, 1_500)]
-    unchanged = (one(url, COUNTS), one(url, DRAFTS))
-    with pytest.raises(FinalSettlementConflictError) as changed:
-        record_reversal(case, reversal_command(case, earlier))
-    assert cause(changed) == ("55000", CHANGED)
-    assert (one(url, COUNTS), one(url, DRAFTS)) == unchanged
+        available(url, credit),
+        outstanding(url, charge_line),
+        charge_open(url, recovery),
+        net(url, paid["id"]),
+    ) == (before, 1_200, 300, 0)
+    with psycopg.connect(url) as connection:
+        assert_reconciled(connection, case["customer"])
 
 
 def test_the_own_parts_fail_closed(migrated_database_url: str) -> None:
