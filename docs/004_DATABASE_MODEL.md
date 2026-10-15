@@ -2980,14 +2980,37 @@ applied again (relaxing exact-text patches; no refusal added). This is defence i
 database already refuses two payments of one source at one time (a Credit application must be
 later than every earlier event of its Credit, `app.validate_credit_application_source`; a Deposit
 application later than the Deposit's latest balance event, `app.validate_deposit_application`, and
-`application_order` is unique per Final Settlement, so a Deposit tie cannot happen even by hand),
-so no stored result changes. A list of the source function can hold payments of two or more
+`application_order` is unique per Final Settlement, so a Deposit tie cannot happen on the real path;
+by hand it needs that constraint dropped too, as the sub-slice 10e-3d-2c test does inside an always
+rolled-back transaction), so no stored result changes. A list of the source function can hold payments of two or more
 corrections, whose effect sequences are compared only on a time tie, and the id still decides any
 tie left. Not changed (each already fixed by a stored or chronological order and never deciding
 who pays or how much): the write order of a reversal's named Deposit application reversals, the
 listing order of the parts applied again (stored in the draft), and the release order of a
 `REFUND` correction. No writer, lock or grant changes; no new table, column, constraint or
 trigger.
+
+As built in V1-056 sub-slice 10e-3d-2c (migration `20261210_136`; owner answer (a) to
+Q-2026-10-13-103 point 1, the Q-2026-10-11-78 rule): money of an earlier return-only correction E
+that left the Credit or Deposit through a `RETURNED_PAYMENT` or `DEPOSIT_RECEIPT_CORRECTION`
+correction C of the same Settlement (C's take through its Credit reversal or receipt reversal; a
+stretch on a payment C reversed when C also reversed the source; a Refund part above its Refund's
+net when C recovered at least that excess from the Refund and reversed the source) is a part of E's
+own returned Refund R (record kind `RETURNED_REFUND`). E's `RETURN_REVERSAL` charges those parts,
+summed in one recovery entry of R, to the person who received R (a DB-REFUND-002
+`RECOVERED_BY_CHARGE` on R linked to the reversal, the sub-slice 10e-1c charge), and nothing else;
+a part that cannot be followed stays open and is refused. The parts must add up to no more than R's
+net once E's return is reversed. Write order: the `CORRECTION_REVERSAL` row first, then R's
+charge-back with the same `occurred_at` (DB-REFUND-002 amendment, relaxing: the general Refund
+correction check counts the charge-back of R that the same `RETURN_REVERSAL` draft lists as
+available in the source and, when it covers the whole reversal, as standing for a source Payment
+no longer received; and allows that one paired charge-back the reversal's time, never earlier and
+no other row), because the deferred Credit and Deposit history checks group events by time and
+R's net cannot go below 0. The charge-back is so dated a few microseconds before the charge
+Invoice it names. Internal `app.settlement_return_reversal_charge_back` and
+`app.settlement_return_reversal_paired_charge_back`; exact-text patches of the placed, follow,
+source, refusal, recovery-scope, confirm, general Refund correction check and recovery writer
+functions. No table, column, constraint, trigger, lock or grant change.
 
 As built in V1-056 sub-slice 10c-3a (migration `20261115_111`; owner answer to Q-2026-10-07-38): the
 `CHARGE_REDUCTION` variant also reduces an unpaid Late-payment Charge of an Invoice of the
@@ -3427,6 +3450,17 @@ the check gives the same answer before and after the row is written), so the res
 recovered Refund can be
 charged back by a later correction (for example the return of the Payment that funded its
 Deposit) without breaking the obligation key (Customer, category and reference).
+
+Since sub-slice 10e-3d-2c (migration `20261210_136`; owner answer (a) to Q-2026-10-13-103 point 1;
+the DB-SETTLE-005 paragraph of that sub-slice gives the rule): inside a `RETURN_REVERSAL`, the
+reversal of the earlier return counts the charge-back of the returned Refund that the same draft
+lists as available in the source (internal `app.settlement_return_reversal_charge_back`, no grant)
+and, when it covers the whole reversal, as standing for a source Payment that is no longer
+received; that charge-back is a `RECOVERED_BY_CHARGE` of the returned Refund itself, in the
+recovery scope when the draft names a `RETURNED_REFUND` part of it, written right after the
+reversal with the reversal's exact `occurred_at` (internal
+`app.settlement_return_reversal_paired_charge_back`, no grant: the general check accepts that one
+paired row at the latest time; any other row at the latest time, or earlier, is still refused).
 
 ---
 

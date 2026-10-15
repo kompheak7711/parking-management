@@ -155,3 +155,13 @@ Independent: 0 blockers, 0 should-fix, 3 notes: clean. Security: 0 blockers, 0 s
   name); no env file or backup listed.
 
 Commit after the standard secret scan of the staged diff and the saved run outputs.
+
+## Correction (2026-10-15, sub-slice 10e-3d-2c)
+
+The statement above that "a Deposit tie cannot be made even by hand" was the implementer's; no
+reviewer of this sub-slice confirmed it. On the owner's instruction the round 1 independent
+reviewer of sub-slice 10e-3d-2c checked it and found it wrong: inside an always rolled-back owner
+transaction the unique constraint `deposit_applications_settlement_order` can be dropped too
+(DDL is transactional), so two Deposit payments of one correction can share their time and
+application order. The test `test_a_deposit_tie_made_by_hand_is_broken_by_write_order` was added
+in sub-slice 10e-3d-2c; its set-up is in ops/reviews/V1-056-slice-10e-3d-2c-return-reversal-returned-refund.md.

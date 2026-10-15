@@ -9,7 +9,9 @@ Credit (`app.validate_credit_application_source`), so on the real path two payme
 never share a time (the first part of each test shows it); the tie is made by hand on the payments
 of a real correction, in a transaction the table owner always rolls back, with the write order set
 against the id order, so that the id alone would choose the other payment. A Deposit payment
-cannot tie even by hand: its `application_order` is unique per Final Settlement.
+also ranks by its `application_order`, unique per Final Settlement, so a Deposit tie needs that
+constraint dropped too inside the rolled-back transaction (sub-slice 10e-3d-2c, independent review
+round 1 set-up; the 10e-3d-2b-3 text said a Deposit tie could not be made even by hand).
 """
 
 from __future__ import annotations
@@ -26,16 +28,19 @@ from alembic import command as alembic_command
 from alembic.config import Config
 from alembic.script import ScriptDirectory
 
-from property_rental.final_settlement import SettlementCreditStep
-from test_final_settlement_draft_migration import LINE
+from property_rental.final_settlement import SettlementCreditStep, SettlementDepositStep
+from test_final_settlement_draft_migration import LINE, PET_REST, STAFF
+from test_final_settlement_draft_migration import refund as settlement_refund
 from test_final_settlement_migration import one
 from test_migrations import _temporary_migration_database
 from test_move_in_migration import migrated_database_url as migrated_database_url
+from test_settlement_correction_plan_migration import closed_case
 from test_settlement_deposit_refund_correction_migration import command as refund_command
 from test_settlement_deposit_refund_correction_migration import confirm_refund, record_refund
+from test_settlement_deposit_refund_return_migration import pet_refund
 from test_settlement_held_value_refund_migration import return_only
 from test_settlement_refund_correction_migration import third_party_payment, unpaid_charge
-from test_settlement_refund_return_migration import refunded_case
+from test_settlement_refund_return_migration import confirm, record, refunded_case, return_command
 from test_settlement_return_reversal_migration import app_catalog
 
 REVISION = "20261209_135"
@@ -316,6 +321,111 @@ def test_a_tie_in_a_changing_correction_s_payments_is_broken_by_write_order(
                 [(record, part) for record, _, _, part, _ in by_write],
                 [low, high],
             )
+
+
+def test_a_deposit_tie_made_by_hand_is_broken_by_write_order(migrated_database_url: str) -> None:
+    """Sub-slice 10e-3d-2c (independent review round 1 set-up, Pet Deposit): E brings back 1,000
+    of the Settlement's Pet Deposit Refund (return only); S brings back 700 and pays 300 of a 400
+    debt from the Customer's Credit, the other 100 and a 1,500 debt from the Pet Deposit, and
+    refunds 100, so E's 1,000 lies after S's own 700 across S's two Deposit payments. In an always
+    rolled-back owner transaction the older payment takes the newer one's time and application
+    order (the unique constraint dropped inside it) and the payment with the lower id is written
+    last: E's placed parts follow the write order, not the id; afterwards the constraint, every
+    trigger and the rows are as before."""
+    url = migrated_database_url
+    case = {**closed_case(url), "url": url}
+    pet, pet_paid = case["pet"], pet_refund(case)
+    earlier = return_only(case, pet_paid, 1_000)
+    invoice_a, line_a = unpaid_charge(url, case, case["person"])
+    third_party_payment(url, case, invoice_a, line_a, 1_100)
+    _, line_b = unpaid_charge(url, case, case["person"])
+    taking = confirm(
+        case,
+        record(
+            case,
+            return_command(
+                case,
+                pet_paid,
+                700,
+                SettlementCreditStep(case["new_credit"], LINE, line_a, 300),
+                SettlementDepositStep(PET_REST, pet, LINE, line_a, 100),
+                SettlementDepositStep(PET_REST, pet, LINE, line_b, 1_500),
+                settlement_refund(case, "pet", 100),
+                pet_remainder=STAFF,
+            ),
+        ),
+    )
+    correction = taking["settlement_correction"]["id"]
+    rows = (
+        "SELECT application.id::text,application.amount_usd_cents,application.occurred_at,"
+        "application.application_order FROM app.settlement_correction_effects effect "
+        "JOIN app.deposit_applications application ON application.id=effect.deposit_application_id "
+        "WHERE effect.settlement_correction_id=%s ORDER BY effect.effect_sequence"
+    )
+    parts = (
+        "SELECT placed.record_id::text,placed.part_usd_cents "
+        "FROM app.settlement_returned_value_placed(%s,'DEPOSIT',%s,%s,true) placed "
+        "WHERE placed.record_kind='DEPOSIT_APPLICATION'"
+    )
+    triggers = (
+        "SELECT trigger.tgrelid::regclass::text,trigger.tgname,trigger.tgenabled "
+        "FROM pg_catalog.pg_trigger trigger WHERE trigger.tgrelid IN "
+        "('app.deposit_applications'::regclass,'app.settlement_correction_effects'::regclass) "
+        "AND NOT trigger.tgisinternal ORDER BY 1,2"
+    )
+    with psycopg.connect(url) as connection:
+        before = connection.execute(rows, (correction,)).fetchall()
+        trigger_states = connection.execute(triggers).fetchall()
+    [(older, _, _, _), (newer, _, newer_at, newer_order)] = before
+    amounts = {str(row[0]): int(row[1]) for row in before}
+    low, high = sorted((older, newer), key=lambda found: UUID(found).bytes)
+
+    def expected(newest: str, other: str) -> list[tuple[str, int]]:
+        """E's stretch [700, 1,700) over S's records: the 100 Refund first, then the newest."""
+        found: list[tuple[str, int]] = []
+        start = 100
+        for record_id in (newest, other):
+            end = start + amounts[record_id]
+            part = min(end, 1_700) - max(start, 700)
+            if part > 0:
+                found.append((record_id, part))
+            start = end
+        return sorted(found)
+
+    assert expected(low, high) != expected(high, low)
+    with psycopg.connect(url) as connection:
+        try:
+            for table in ("deposit_applications", "settlement_correction_effects"):
+                connection.execute(f"ALTER TABLE app.{table} DISABLE TRIGGER USER")
+            connection.execute(
+                "ALTER TABLE app.deposit_applications "
+                "DROP CONSTRAINT deposit_applications_settlement_order"
+            )
+            connection.execute(
+                "UPDATE app.deposit_applications SET occurred_at=%s,application_order=%s "
+                "WHERE id=%s",
+                (newer_at, newer_order, older),
+            )
+            connection.execute(
+                "UPDATE app.settlement_correction_effects SET effect_sequence=(SELECT "
+                "max(effect.effect_sequence)+1 FROM app.settlement_correction_effects effect "
+                "WHERE effect.settlement_correction_id=%s) WHERE deposit_application_id=%s",
+                (correction, low),
+            )
+            tied = connection.execute(rows, (correction,)).fetchall()
+            assert {(row[2], row[3]) for row in tied} == {(newer_at, newer_order)}
+            for _ in range(2):
+                found = connection.execute(parts, (case["settlement"], pet, earlier)).fetchall()
+                assert sorted((str(row[0]), int(row[1])) for row in found) == expected(low, high)
+        finally:
+            connection.rollback()
+    with psycopg.connect(url) as connection:
+        assert connection.execute(
+            "SELECT count(*) FROM pg_catalog.pg_constraint "
+            "WHERE conname='deposit_applications_settlement_order'"
+        ).fetchone() == (1,)
+        assert connection.execute(triggers).fetchall() == trigger_states
+        assert connection.execute(rows, (correction,)).fetchall() == before
 
 
 def test_the_tie_break_changes_only_three_orders_and_is_least_privilege_and_forward_only(

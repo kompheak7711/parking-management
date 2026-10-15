@@ -25,6 +25,7 @@ from alembic.script import ScriptDirectory
 from psycopg.types.json import Jsonb
 
 from property_rental.final_settlement import FinalSettlementConflictError, SettlementCreditStep
+from test_customer_ledger_migration import assert_reconciled
 from test_final_settlement_draft_migration import LINE
 from test_final_settlement_draft_migration import refund as settlement_refund
 from test_final_settlement_migration import held, one, outstanding
@@ -65,6 +66,7 @@ from test_settlement_refund_return_migration import (
 from test_settlement_return_reversal_migration import (
     NOT_AVAILABLE,
     app_catalog,
+    charge_open,
     confirm_reversal,
     correction_of,
     draft_source,
@@ -89,9 +91,11 @@ CHANGED = (
     "A later correction changed a payment made with this return's money in a way this reversal "
     "cannot follow yet; reversing it waits for the owner"
 )
+# Sub-slice 10e-3d-2c: reworded for a take that cannot be followed (owner answer (a) to
+# Q-2026-10-13-103 point 1 charges the others to the returned Refund's recipient).
 REVERSED = (
-    "A Credit reversal or a Deposit receipt reversal paid out this return's money; "
-    "reversing it waits for sub-slice 10e-3d-2c"
+    "A Credit reversal or a Deposit receipt reversal paid out this return's money in a way this "
+    "reversal cannot follow yet; reversing it waits for the owner"
 )
 INCOMPLETE = "The return reversal source is incomplete"
 DRAFTS = "SELECT count(*) FROM app.financial_drafts"
@@ -355,7 +359,80 @@ def test_a_correction_s_own_return_is_used_first(migrated_database_url: str) -> 
     assert (available(url, credit), credit_left(url, second, credit)) == (0, 0)
 
 
-def test_a_payment_return_and_a_receipt_correction_count_what_they_take_from_a_return(
+def charged_back(
+    url: str,
+    case: dict[str, Any],
+    earlier: object,
+    refund: object,
+    taker: object,
+    part: int,
+    whole: int,
+    listed: str = "swept",
+) -> None:
+    """Sub-slice 10e-3d-2c: the reversal of the earlier return lists the taker's take as a part of
+    the returned Refund (among another correction's parts, or the own uses' parts) and charges it
+    to that Refund's recipient: the Refund's net is 0 and its charges add up to the whole Refund;
+    the recipient's ledger reconciles."""
+    draft = record_reversal(case, reversal_command(case, earlier))
+    source = draft_source(url, draft)
+    assert [
+        (
+            item["settlement_correction_id"],
+            item["record_kind"],
+            item["record_id"],
+            item["part_usd_cents"],
+        )
+        for item in source[listed]
+    ] == [(str(taker), "RETURNED_REFUND", str(refund), part)]
+    assert (source["swept_open"], source["own_open"] or []) == ([], [])
+    [recipient] = one(url, "SELECT recipient_customer_id FROM app.refunds WHERE id=%s", refund)
+    assert [
+        (
+            item["refund_id"],
+            item["recipient_customer_id"],
+            item["amount_usd_cents"],
+            item["net_usd_cents"],
+        )
+        for item in source["recoveries"]
+    ] == [(str(refund), str(recipient), part, part)]
+    result = confirm_reversal(case, draft)
+    [recovery] = result["recoveries"]
+    assert (
+        recovery["refund_id"],
+        recovery["customer_id"],
+        recovery["amount_usd_cents"],
+        charge_open(url, recovery),
+    ) == (str(refund), str(recipient), part, part)
+    assert result["return_reversal"]["amount_usd_cents"] == part
+    assert net(url, refund) == 0
+    # Review round 1: the charge-back takes the time of the return's reversal written just
+    # before it (one point in the source's history), and no other row of the Refund shares it.
+    with psycopg.connect(url) as connection:
+        written = connection.execute(
+            "SELECT correction.correction_kind,correction.occurred_at "
+            "FROM app.settlement_correction_effects effect "
+            "JOIN app.refund_corrections correction ON correction.id=effect.refund_correction_id "
+            "WHERE effect.settlement_correction_id=%s AND correction.refund_id=%s "
+            "ORDER BY effect.effect_sequence",
+            (correction_of(result), refund),
+        ).fetchall()
+        assert [kind for kind, _ in written] == ["CORRECTION_REVERSAL", "RECOVERED_BY_CHARGE"]
+        assert written[0][1] == written[1][1]
+        assert connection.execute(
+            "SELECT count(*) FROM app.refund_corrections WHERE refund_id=%s AND occurred_at=%s",
+            (refund, written[0][1]),
+        ).fetchone() == (2,)
+    assert one(
+        url,
+        "SELECT sum(source_balance_effect_usd_cents) FROM app.refund_corrections "
+        "WHERE refund_id=%s AND correction_kind='RECOVERED_BY_CHARGE'",
+        refund,
+    ) == (whole,)
+    with psycopg.connect(url) as connection:
+        assert_reconciled(connection, recipient)
+
+
+def test_a_payment_return_and_a_receipt_correction_take_a_return_s_money_its_reversal_charges_back(
     migrated_database_url: str,
 ) -> None:
     """Review round 3 (the review round 2 terms of the count). Credit: X1 brings back 300 of the
@@ -367,9 +444,12 @@ def test_a_payment_return_and_a_receipt_correction_count_what_they_take_from_a_r
     applications (14,600) and charges the Refund's 4,400 rest back, but its receipt reversal pays
     out 20,000, so X1 has nothing left (without the receipt term its net draw would be 0 and X1
     would keep 1,000 while the Pet Deposit holds nothing). In both cases a Credit reversal or a
-    receipt reversal paid out X1's money, so X1's reversal waits for sub-slice 10e-3d-2c (owner
-    answer (a) to Q-2026-10-13-103 point 1), and a held-value Refund naming the Credit's X1 is
-    refused; neither writes anything."""
+    receipt reversal paid out X1's money, and a held-value Refund naming the Credit's X1 is
+    refused, writing nothing. Sub-slice 10e-3d-2c (owner answer (a) to Q-2026-10-13-103 point 1;
+    renamed from `..._count_what_they_take_from_a_return`, which expected X1's reversal to wait):
+    X1's reversal charges that money to the person who received the returned Refund, 300 and
+    1,000, so each recipient pays back the whole Refund (2,000 and 5,400) and each Refund's net is
+    0; the source stays empty and the ledger reconciles."""
     url = migrated_database_url
     case = refunded_case(url)
     refund, credit = case["refund"], case["refund_credit"]
@@ -396,10 +476,9 @@ def test_a_payment_return_and_a_receipt_correction_count_what_they_take_from_a_r
     with pytest.raises(FinalSettlementConflictError) as nothing:
         record_held(case, held_command(case, first))
     assert cause(nothing) == ("55000", NOTHING_LEFT)
-    with pytest.raises(FinalSettlementConflictError) as swept:
-        record_reversal(case, reversal_command(case, first))
-    assert cause(swept) == ("55000", REVERSED)
     assert (one(url, COUNTS), one(url, DRAFTS)) == unchanged
+    charged_back(url, case, first, refund, correction_of(returned), 300, 2_000)
+    assert available(url, credit) == 0
     deposit_case = closed_case(url)
     pet, pet_paid = deposit_case["pet"], pet_refund(deposit_case)
     earlier = return_only(deposit_case, pet_paid, 1_000)
@@ -427,11 +506,8 @@ def test_a_payment_return_and_a_receipt_correction_count_what_they_take_from_a_r
         str(earlier): (1_000, 1_000, 1_000, 0)
     }
     assert deposit_left(url, earlier, pet) == 0
-    unchanged = (one(url, COUNTS), one(url, DRAFTS))
-    with pytest.raises(FinalSettlementConflictError) as paid_out:
-        record_reversal(deposit_case, reversal_command(deposit_case, earlier))
-    assert cause(paid_out) == ("55000", REVERSED)
-    assert (one(url, COUNTS), one(url, DRAFTS)) == unchanged
+    charged_back(url, deposit_case, earlier, pet_paid, correction_of(corrected), 1_000, 5_400)
+    assert held(url, pet) == 0
 
 
 def test_the_count_and_the_reversal_limit_fail_closed(migrated_database_url: str) -> None:

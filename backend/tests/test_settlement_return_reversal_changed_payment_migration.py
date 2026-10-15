@@ -21,11 +21,7 @@ from alembic import command as alembic_command
 from alembic.config import Config
 from alembic.script import ScriptDirectory
 
-from property_rental.final_settlement import (
-    FinalSettlementConflictError,
-    SettlementCreditStep,
-    SettlementDepositStep,
-)
+from property_rental.final_settlement import SettlementCreditStep, SettlementDepositStep
 from test_customer_ledger_migration import assert_reconciled
 from test_final_settlement_draft_migration import LINE, PET_FIRST, PET_REST, SECURITY, STAFF
 from test_final_settlement_draft_migration import refund as settlement_refund
@@ -40,8 +36,7 @@ from test_settlement_deposit_receipt_correction_migration import request as rece
 from test_settlement_deposit_refund_correction_migration import command as deposit_refund_command
 from test_settlement_deposit_refund_correction_migration import confirm_refund, record_refund
 from test_settlement_deposit_refund_return_migration import pet_refund
-from test_settlement_extra_charge_migration import cause
-from test_settlement_held_value_refund_migration import COUNTS, return_only
+from test_settlement_held_value_refund_migration import return_only
 from test_settlement_pet_classification_migration import command as classification
 from test_settlement_pet_classification_migration import confirm as confirm_classification
 from test_settlement_pet_classification_migration import record as record_classification
@@ -58,11 +53,10 @@ from test_settlement_refund_return_migration import (
 from test_settlement_return_reversal_migration import (
     app_catalog,
     charge_open,
-    record_reversal,
-    reversal_command,
+    correction_of,
 )
 from test_settlement_return_reversal_successor_migration import reverse
-from test_settlement_returned_value_left_migration import CHANGED, DRAFTS
+from test_settlement_returned_value_left_migration import charged_back
 
 REVISION = "20261208_134"
 PLACED = "app.settlement_returned_value_placed(uuid,text,uuid,uuid,boolean)"
@@ -461,7 +455,7 @@ def test_a_deposit_part_follows_into_the_payment_of_a_pet_damage_reclassificatio
         assert_reconciled(connection, case["customer"])
 
 
-def test_a_part_on_a_payment_a_receipt_correction_reversed_waits(
+def test_a_part_on_a_payment_a_receipt_correction_reversed_is_charged_to_the_refund_s_recipient(
     migrated_database_url: str,
 ) -> None:
     """Review round 2, a change the follow function cannot follow, on the real path (Pet
@@ -469,9 +463,12 @@ def test_a_part_on_a_payment_a_receipt_correction_reversed_waits(
     back 500 with a new Refund: the Customer's other Credit pays 300 of a 1,500 charge, the Pet
     Deposit the other 1,200, and it refunds 300, so E's 1,000 sits from 200 in S's 1,200 payment.
     The Pet Deposit's receipt is then found wrong: its DEPOSIT_RECEIPT_CORRECTION reverses every
-    Deposit payment, S's included (a change sub-slice 10e-3d-2c decides). E's source lists the
-    part as open at that payment, and E's reversal is refused with the new message, writing
-    nothing."""
+    Deposit payment, S's included, and the receipt itself. Sub-slice 10e-3d-2c (owner answer (a)
+    to Q-2026-10-13-103 point 1; renamed from `..._reversed_waits`, which expected the part to stay
+    open at that payment and the reversal to be refused): the part went back into the Pet Deposit
+    and out with the receipt reversal, so E's reversal charges the 1,000 to the person who
+    received the returned Refund (who pays back the whole 5,400 less S's real 500 return), and
+    the charge's debt stays as the receipt correction left it."""
     url = migrated_database_url
     case = {**closed_case(url), "url": url}
     pet, pet_paid = case["pet"], pet_refund(case)
@@ -494,23 +491,15 @@ def test_a_part_on_a_payment_a_receipt_correction_reversed_waits(
     )
     [paying] = paid_out["deposit_applications"]
     receipt = receipt_of(url, pet)
-    confirm_receipt(case, record_receipt(case, receipt_request(case, receipt)))
-    [source] = one(
+    corrected = confirm_receipt(case, record_receipt(case, receipt_request(case, receipt)))
+    assert one(
         url,
-        "SELECT app.settlement_return_reversal_source_state(%s,%s)",
-        case["settlement"],
-        earlier,
-    )
-    assert source["swept"] == []
-    assert [
-        (part["kind"], part["record_kind"], part["record_id"], part["part_usd_cents"])
-        for part in source["swept_open"]
-    ] == [("CHANGED_APPLICATION", "DEPOSIT_APPLICATION", str(paying["id"]), 1_000)]
-    unchanged = (one(url, COUNTS), one(url, DRAFTS))
-    with pytest.raises(FinalSettlementConflictError) as changed:
-        record_reversal(case, reversal_command(case, earlier))
-    assert cause(changed) == ("55000", CHANGED)
-    assert (one(url, COUNTS), one(url, DRAFTS)) == unchanged
+        "SELECT count(*) FROM app.deposit_application_reversals WHERE deposit_application_id=%s",
+        paying["id"],
+    ) == (1,)
+    owed = outstanding(url, charge_line)
+    charged_back(url, case, earlier, pet_paid, correction_of(corrected), 1_000, 4_900)
+    assert (held(url, pet), outstanding(url, charge_line)) == (0, owed)
 
 
 def test_the_follow_function_fails_closed(migrated_database_url: str) -> None:
