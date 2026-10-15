@@ -68,7 +68,6 @@ from test_settlement_return_reversal_migration import (
 from test_settlement_returned_payment_migration import closed_case
 from test_settlement_returned_value_left_migration import CHANGED, counted
 from test_settlement_returned_value_other_settlements_migration import (
-    OTHER_SETTLEMENT,
     second_lease,
     two_lease_case,
 )
@@ -502,17 +501,23 @@ def test_a_source_s_companions_must_match_its_other_settlements(
         ), companions
 
 
-def test_a_take_whose_correction_also_refunded_from_the_credit_stays_one_open_part(
+def test_a_take_whose_correction_also_refunded_from_the_credit_is_undone_through_the_companion(
     migrated_database_url: str, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Independent review round 1 set-up (the case sub-slice 10e-3d-2d-2b builds): X0 of the
-    first Lease brought back 1,500 and the second Lease's correction paid the whole 1,500 charge
-    from the Credit; a later return X1 brings back 300. A REFUND correction of the second Lease
-    refunds 200 of that charge line: it releases the 1,500 payment, writes 1,300 again, lets the
-    Credit pay a new 300 charge first and refunds 200 from the Credit, so it draws 300 more than
-    it brought back, all X1's money. X1's source names that correction as one open
-    OTHER_SETTLEMENT part (its whole 300) and lists nothing for undoing; X1's reversal is refused
-    with the 10e-3d-2d-1 message and writes nothing."""
+    """Independent review round 1 set-up: X0 of the first Lease brought back 1,500 and the second
+    Lease's correction paid the whole 1,500 charge from the Credit; a later return X1 brings back
+    300. A REFUND correction of the second Lease refunds 200 of that charge line: it releases the
+    1,500 payment, writes 1,300 again, lets the Credit pay a new 300 charge first and refunds 200
+    from the Credit, so it draws 300 more than it brought back, all X1's money. Its draw comes
+    after the money it brought back, laid over its Refund and then its applications, the newest
+    first, so X1's 300 sits on the 1,300 written again (sub-slice 10e-3d-2d-2b-1; renamed from
+    `..._stays_one_open_part`: until then the whole take was one open part because the correction
+    also paid a Refund). X1's reversal reverses that application whole and puts 1,000 back on its
+    line, both through the companion of the second Settlement: the charge owes 300 again, the
+    Credit ends empty, the Refund's net is 500, nothing is charged back to the other Lease's 200
+    Refund; the ledger reconciles. X0's money, on the other Lease's 1,500 payment that its REFUND
+    correction changed, stops as a changed payment (fail closed), so X0's reversal is refused
+    (review round 1)."""
     url = migrated_database_url
     found = two_lease_case(url, monkeypatch, returned=1_500, credit_paid=1_500)
     first, second, refund, credit, earlier, taker = (
@@ -523,7 +528,7 @@ def test_a_take_whose_correction_also_refunded_from_the_credit_stays_one_open_pa
         found["earlier"],
         found["taker"],
     )
-    [(_, first_charge, _)] = applications_of(url, taker)
+    [(paid_first, first_charge, _)] = applications_of(url, taker)
     later = return_only(first, refund, 300)
     assert available(url, credit) == 300
     second_charge = charge(url, second, 300)
@@ -547,27 +552,74 @@ def test_a_take_whose_correction_also_refunded_from_the_credit_stays_one_open_pa
     ) == (0, 0, 0)
     with psycopg.connect(url) as connection:
         refunds = connection.execute(
-            "SELECT refund.source_customer_credit_id,refund.usd_accounting_value_cents "
+            "SELECT refund.source_customer_credit_id,refund.usd_accounting_value_cents,refund.id "
             "FROM app.settlement_correction_effects effect "
             "JOIN app.refunds refund ON refund.id=effect.refund_id "
             "WHERE effect.settlement_correction_id=%s",
             (refunding,),
         ).fetchall()
     assert [(str(row[0]), int(row[1])) for row in refunds] == [(str(credit), 200)]
+    other_refund = refunds[0][2]
+    assert net(url, other_refund) == 200
     expected = {str(earlier): (1_500, 1_500, 1_500, 0), str(later): (300, 300, 300, 0)}
     assert counted(url, first["settlement"], "CREDIT", credit) == expected
     assert counted(url, second["settlement"], "CREDIT", credit) == expected
+    [(rest, rest_line, rest_amount)] = [
+        written for written in applications_of(url, refunding) if written[1] == first_charge
+    ]
+    assert rest_amount == 1_300
     [source] = one(url, STATE, first["settlement"], later)
-    assert source["swept"] == [] and source["companions"] == []
-    assert source["credit_applications"] == []
+    assert source["swept_open"] == [] and source["swept_usd_cents"] == 300
     assert [
-        (item["kind"], item["record_id"], item["part_usd_cents"]) for item in source["swept_open"]
-    ] == [("OTHER_SETTLEMENT", str(refunding), 300)]
-    unchanged = one(url, COUNTS)
-    with pytest.raises(FinalSettlementConflictError) as waits:
-        record_reversal(first, reversal_command(first, later))
-    assert cause(waits) == ("55000", OTHER_SETTLEMENT)
-    assert one(url, COUNTS) == unchanged
+        (item["record_kind"], item["record_id"], item["amount_usd_cents"], item["part_usd_cents"])
+        for item in source["swept"]
+    ] == [("CREDIT_APPLICATION", rest, 1_300, 300)]
+    assert [item["id"] for item in source["credit_applications"]] == [rest]
+    assert [(item["application_id"], item["amount_usd_cents"]) for item in source["reapply"]] == [
+        (rest, 1_000)
+    ]
+    assert [item["final_settlement_id"] for item in source["companions"]] == [
+        str(second["settlement"])
+    ]
+    # Review round 1 (independent N2): nothing is charged back to the other Lease's Refund.
+    assert source["recoveries"] == []
+    # Review round 1 (independent SF3, set-up R1): X0's money sat on the other Lease's 1,500
+    # payment, which that Lease's REFUND correction changed; the follow function stops there
+    # (CHANGED_APPLICATION, fail closed). Following it into that correction's Refund and
+    # payments is sub-slice 10e-3d-2d-2b-2.
+    [changed_source] = one(url, STATE, first["settlement"], earlier)
+    assert [
+        (item["kind"], item["record_id"], item["part_usd_cents"])
+        for item in changed_source["swept_open"]
+    ] == [("CHANGED_APPLICATION", paid_first, 1_500)]
+    # Review round 2 (security N1): the counts are taken before the refused attempt, so the +2
+    # below also proves that the refusal writes nothing.
+    before = one(url, COUNTS)
+    with pytest.raises(FinalSettlementConflictError) as stops:
+        record_reversal(first, reversal_command(first, earlier))
+    assert cause(stops) == ("55000", CHANGED)
+    assert one(url, COUNTS) == before
+    result = confirm_reversal(first, record_reversal(first, reversal_command(first, later)))
+    assert result["credit_application_reversals"] == [] and result["reapplied"] == []
+    assert result["recoveries"] == []
+    [named] = result["companions"]
+    assert [
+        (item["credit_application_id"], item["amount_usd_cents"])
+        for item in named["credit_application_reversals"]
+    ] == [(rest, 1_300)]
+    assert [(item["invoice_line_id"], item["amount_usd_cents"]) for item in named["reapplied"]] == [
+        (str(rest_line), 1_000)
+    ]
+    assert one(url, COUNTS) == (before[0] + 2, before[1] + 2, *before[2:4], before[4] + 1)
+    assert (
+        outstanding(url, first_charge),
+        outstanding(url, second_charge),
+        available(url, credit),
+        net(url, refund),
+        net(url, other_refund),
+    ) == (300, 0, 0, 500, 200)
+    with psycopg.connect(url) as connection:
+        assert_reconciled(connection, first["customer"])
 
 
 def test_an_own_put_back_listed_after_a_companion_s_is_followed_by_a_later_reversal(

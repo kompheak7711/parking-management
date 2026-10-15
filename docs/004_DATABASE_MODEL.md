@@ -3091,6 +3091,32 @@ companion included, changed (`CHANGED_APPLICATION`), so a later reversal of anot
 money sat in such a payment is refused. A `RETURN_REVERSAL` draft recorded before migration
 `20261212_138` has no `companions` key in its source and is stale at its confirm (P5S02).
 
+As built in V1-056 sub-slice 10e-3d-2d-2b-1 (migration `20261213_139`; owner answers (a) to
+Q-2026-10-13-100 point 2 and Q-2026-10-13-103 point 3): a take of a return's money by a correction
+of another Final Settlement B that also paid a Refund from the Credit is placed on that
+correction's records as any other take, so its application parts are undone through the companion
+as above. A correction's draw covers, in order, what it brought back itself (the draw's offset), its
+own return, then the return it names, before any other return's money, and its records are laid
+out Refunds first, then applications, the newest first. Every Credit Refund writer caps its Refund
+by one of those three (a `REFUND` correction by what it released, a `REFUND_RETURN` by its own
+return, a held-value Refund by its named return's left value) or pays it from a Credit it creates
+itself, so another return's money starts after its Refunds and lands on its applications (in the
+committed case on the older 1,300 payment written again, at the end of the newest-first layout). A
+part that falls on any record of a correction of another Final Settlement other than a Credit
+application stays one open `OTHER_SETTLEMENT` part named by that correction, refused with its
+existing message, so nothing is undone half; no real path through a take to it was found (the
+Refund caps are enforced by the Refund writers, not by this function). For a Deposit source such a
+take stays refused (and is unreachable: a Deposit's walk reads only its own Settlement's
+corrections): each of its records is an open part, and a stretch no record covers fails the sum
+check. A real path to another Settlement's Refund exists through the follow function: a return's
+money on another Settlement's payment that a `REFUND` correction of that Settlement later changed
+(the follow function stops there as `CHANGED_APPLICATION`, fail closed); following it into that
+correction's Refund and payments, with the Refund's recipient charged on B's Lease when a signed
+Customer of it (owner answer 4 of 2026-10-16), is sub-slice 10e-3d-2d-2b-2. A take by another
+Settlement's correction that also reversed the Credit or a return is still refused, now with the
+`CREDIT_REVERSAL` message or the general one instead of the `OTHER_SETTLEMENT` message. Exact-text
+patches of the placed function only.
+
 As built in V1-056 sub-slice 10c-3a (migration `20261115_111`; owner answer to Q-2026-10-07-38): the
 `CHARGE_REDUCTION` variant also reduces an unpaid Late-payment Charge of an Invoice of the
 Settlement's Lease (draft `target_kind` `LATE_PAYMENT_CHARGE`, its own recorder and confirm). Its
