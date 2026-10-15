@@ -40987,6 +40987,38 @@
       "test_path": "backend/tests/test_settlement_returned_value_tie_break_migration.py",
       "status": "implemented",
       "notes": "Pet Deposit (independent review round 1 of sub-slice 10e-3d-2c, set-up in its review record): a correction's two Deposit payments tied by hand in time and application order (the unique constraint dropped inside an always rolled-back owner transaction) with the lower id written last; an earlier return's placed parts follow the write order, not the id, the same on a second read; afterwards the constraint, every trigger and the rows are as before (owner answer (a) to Q-2026-10-14-111; V1-056 sub-slices 10e-3d-2b-3 and 10e-3d-2c)."
+    },
+    {
+      "test_id": "test_another_lease_s_correction_counts_against_a_return_and_its_reversal_waits",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-016", "BR-CREDIT-014", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_returned_value_other_settlements_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer (a) to Q-2026-10-13-100 point 2, on the real path: one Customer with two closed Leases in the shared test Property; a correction of the first Lease refunds 2,000 from a Credit and a return-only correction X1 brings back 300 of it; a Refund return of the second Lease's Settlement Pet Deposit Refund lets that Credit pay 300 of the Customer's open debt on the second Lease first (DL-032); X1 then has nothing left, read from either Settlement (300 returned, used and swept), a held-value Refund naming X1 is refused, and X1's reversal is refused ('A correction of another Lease's Final Settlement used this return's money; reversing it waits for sub-slice 10e-3d-2d-2') with nothing written; the ledger reconciles (V1-056 sub-slice 10e-3d-2d-1)."
+    },
+    {
+      "test_id": "test_a_later_return_s_money_is_not_paid_out_for_an_earlier_return",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-016", "BR-CREDIT-014", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_returned_value_other_settlements_migration.py",
+      "status": "implemented",
+      "notes": "Independent review round 1, on the real path (the harm of Q-2026-10-13-100 point 2 (b)): X1 of the first Lease brings back 1,700 of a Credit Refund; the second Lease's correction lets the Credit pay the whole 1,500 charge there first; a later return X3 brings back the Refund's last 300, so the Credit holds 500; X1 has 200 left and X3 300 from either Settlement; X1's reversal is refused with nothing written; a held-value Refund naming X1 refunds exactly 200 to the Customer (not 500, which would include X3's money) and one naming X3 then refunds 300; the ledger reconciles (V1-056 sub-slice 10e-3d-2d-1)."
+    },
+    {
+      "test_id": "test_a_take_by_another_settlement_s_correction_is_one_open_part_refused_first",
+      "upstream_ids": ["BR-SETTLE-013", "BR-CREDIT-014", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_returned_value_other_settlements_migration.py",
+      "status": "implemented",
+      "notes": "Same real-path set-up: X1's reversal source lists the other Lease's correction as one open part of kind OTHER_SETTLEMENT (its whole 300) and none of its records for undoing; the refusal function refuses that source, refuses an OTHER_SETTLEMENT part before a changed-payment part in a hand-built source and as an own use's open part on the walk path, and still refuses a changed-payment part alone with its own message; a Deposit's walk stays per Settlement (the first Settlement's walk of the second Lease's Pet Deposit is empty) (V1-056 sub-slice 10e-3d-2d-1)."
+    },
+    {
+      "test_id": "test_the_returned_value_count_of_other_settlements_is_least_privilege_and_forward_only",
+      "upstream_ids": ["BR-SETTLE-013", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_returned_value_other_settlements_migration.py",
+      "status": "implemented",
+      "notes": "Migration 137 changes only the returned value walk, the placed function and the return reversal refusal function, each body exactly the old one with the module's replacements (privileges, owner, definer and settings kept), adds no function, constraint or trigger, no application role may call the three, and it is forward-only (V1-056 sub-slice 10e-3d-2d-1)."
     }
   ]
 }

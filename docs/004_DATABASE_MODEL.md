@@ -2817,7 +2817,8 @@ in line with the 10e-3b and 10e-3c reversals (they charge back exactly that corr
 returned amount). The order shows on the real path when a return-only Credit correction's own step
 pays debt from a Credit that also holds an earlier return: X1 brings back 300, then X2 brings back
 1,700 and its step pays 1,500, so X1 keeps 300 and X2 200 (oldest first would leave X1 nothing and
-refuse its reversal). Only uses made by corrections of the Settlement count, and
+refuse its reversal). Only uses made by corrections of the Settlement count (for a Credit, since
+sub-slice 10e-3d-2d-1, those of every Final Settlement that use it; see that paragraph), and
 what the Credit or Deposit holds still caps every payout. Known limits (a left value can then be
 more than the source holds; payouts stay capped, and the holdings checks refuse): ordinary Credit
 spending (owner answer 2 to Q-2026-10-09-63); a correction of another Settlement (owner answer (a)
@@ -3011,6 +3012,39 @@ Invoice it names. Internal `app.settlement_return_reversal_charge_back` and
 `app.settlement_return_reversal_paired_charge_back`; exact-text patches of the placed, follow,
 source, refusal, recovery-scope, confirm, general Refund correction check and recovery writer
 functions. No table, column, constraint, trigger, lock or grant change.
+
+As built in V1-056 sub-slice 10e-3d-2d-1 (migration `20261211_137`; owner answer (a) to
+Q-2026-10-13-100 point 2): a Customer Credit belongs to its Customer, not to a Lease, so a
+correction's DL-032 step on the Customer's other Lease can apply it to the open debt there. For a
+Credit, the walk behind every left value (`app.settlement_returned_value_walk`, read by
+`app.settlement_returned_value_left`, `app.settlement_held_credit_value`, the placed function and
+the `RETURN_REVERSAL` source) takes the corrections of the given Settlement and, of every other
+Final Settlement, those with a linked record it reads for that Credit (a Credit application from
+it or a reversal of one, a Refund from it, a return, return reversal or recovery of such a Refund,
+a reversal of the Credit), all in one order by time and id; this ends the known limit "a
+correction of another Settlement" above for a Credit. A Deposit belongs to one Lease, so its walk
+does not change. A take of a return's money by a correction of another Final Settlement is one
+open part of kind `OTHER_SETTLEMENT` (record id: that correction), none of its records listed for
+undoing, and the return's `RETURN_REVERSAL` is refused before any other open part ("A correction
+of another Lease's Final Settlement used this return's money; reversing it waits for sub-slice
+10e-3d-2d-2"), until that sub-slice undoes the use on the other Lease with a companion correction
+of its Settlement (owner answer (a) to Q-2026-10-13-103 point 3). Still not counted (the known
+limit of ordinary Credit spending, owner answer 2 to Q-2026-10-09-63): a use of the returned Credit
+by another Lease's own Final Settlement confirm, which is not a correction; what the Credit holds
+still caps every payout. Counting in one time order can move the attribution of a later sweep by
+this Settlement's own corrections to a later return (oldest return first): for example X1 and X2
+each bring back 300, another Lease's correction uses 300 and then a correction of this Settlement
+uses 300; X1's money is the other Lease's take (its reversal waits) and X2's is this Settlement's
+(its reversal undoes that use). The move can also go the other way, to an older return of another
+Lease's correction now in the walk: when that Lease's return Y came before this Settlement's
+return X and a correction of this Settlement then uses the Credit, Y's money is taken first, so X
+keeps its left value and Y's reversal waits for sub-slice 10e-3d-2d-2. Payouts stay capped by what
+the Credit holds. The count is read again on every read, so records confirmed before migration
+`20261211_137` are read with the new attribution; where that no longer matches a put-back made
+earlier, the follow function stops at it (`CHANGED_APPLICATION`, fail closed), and a waiting
+`RETURN_REVERSAL` or `HELD_VALUE_REFUND` draft whose source changed is stale at its confirm (P5S02).
+Exact-text patches of the walk, placed and refusal functions; no table, column, constraint,
+trigger, lock or grant change.
 
 As built in V1-056 sub-slice 10c-3a (migration `20261115_111`; owner answer to Q-2026-10-07-38): the
 `CHARGE_REDUCTION` variant also reduces an unpaid Late-payment Charge of an Invoice of the
