@@ -3151,6 +3151,32 @@ reversing it waits for the owner. Another Settlement's bounced Payment cannot ta
 money (its `RETURNED_PAYMENT` is refused while the first Settlement relies on the Credit); not
 built.
 
+As built in V1-056 sub-slice 10e-3d-2d-2c (migration `20261215_141`; owner answer (a) to
+Q-2026-10-15-113): a use of a returned Credit by another Lease's own Final Settlement confirm (not
+a correction) now counts too, which ends that case of the known limit in the 10e-3d-2d-1 paragraph
+above (the rest of owner answer 2 to Q-2026-10-09-63 stays). A Final Settlement's own confirm
+writes its Credit applications with `final_settlement_id` and no correction link (it pays no
+Credit Refund). For a Credit, the walk takes each Final Settlement whose own confirm applied it as
+a walker too, at the time of its first such application, in the one order by time and id with the
+corrections; its id in the walk is the Final Settlement's (there is no correction); its draw is
+the sum of those applications, and it takes the returns' money, the oldest first. It is a walker
+only while some return's money is left at its place in the order, so a confirm before every
+return into that Credit gives no row. Ordering a correction by its header time and a confirm by
+its first application's time is sound because every correction that writes a record of the
+Credit takes the Credit's row lock before its header (through
+`app.lock_settlement_correction_plan`), and a confirm writes its applications under that lock,
+each later than every earlier event of the Credit (review round 1 security note). The placed
+function places such a take on that confirm's applications from the Credit, the newest first; a
+part entry of the `RETURN_REVERSAL` source then carries the Final Settlement's id in
+`settlement_correction_id`. The follow function takes a Credit application with no correction
+link and a `final_settlement_id` as written by that Final Settlement (before, such a payment
+stopped as `CHANGED_APPLICATION`). The return's reversal lists such an application for
+undoing, names its Settlement as a companion, reverses it whole linked to the companion and puts
+back any rest through the companion's step, as for another Settlement's correction (sub-slice
+10e-3d-2d-2a); a later reversal of another return whose money sits in that put-back stops as
+`CHANGED_APPLICATION` (the 10e-3d-2d-2a limit). A Deposit belongs to one Lease and its own
+confirm comes before every correction of that Lease, so the Deposit walk does not change.
+
 As built in V1-056 sub-slice 10c-3a (migration `20261115_111`; owner answer to Q-2026-10-07-38): the
 `CHARGE_REDUCTION` variant also reduces an unpaid Late-payment Charge of an Invoice of the
 Settlement's Lease (draft `target_kind` `LATE_PAYMENT_CHARGE`, its own recorder and confirm). Its

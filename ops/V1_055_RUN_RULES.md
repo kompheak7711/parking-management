@@ -9,6 +9,7 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md. Nothing else 
 - Do not touch user-level settings or any service. OpenClaw stays untouched.
 - Do not search other folders, ~/Documents or old session records.
 - Edit long documents (docs/, ops/, the questions file included) only with exact-text edits, also when adding at the end; never append with a shell redirect or rewrite the whole file. Check `git diff --stat` after each edit (owner, 2026-10-08).
+- A script that makes exact-text replacements, each checked to match exactly once, counts as an exact-text edit, as long as `git diff` shows only the intended lines (owner, 2026-10-16; the scripted edit of ops/traceability.json in 10e-3d-2d-2b-2 was accepted).
 
 ## Database and history
 - Additive or relaxing migrations only.

@@ -41171,6 +41171,54 @@
       "test_path": "backend/tests/test_settlement_return_reversal_other_refund_follow_migration.py",
       "status": "implemented",
       "notes": "Independent review round 1 set-up S-B (the set-up of the changed companion test): X0's reversal goes through one companion that charges the other Lease's 200 Refund back on the second Lease, reverses the 300 payment and the 1,300 written again, and puts 300 back on the 1,300's line; the first charge owes 1,000, the new charge 300, the Credit ends empty, X0's Refund's net is 1,700; X1's reversal afterwards stops at the payment the companion changed (fail closed, writing nothing); the ledger reconciles (V1-056 sub-slice 10e-3d-2d-2b-2)."
+    },
+    {
+      "test_id": "test_another_lease_s_own_settlement_confirm_counts_and_is_undone_through_the_companion",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-016", "BR-CREDIT-014", "DL-032", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_settlement_confirm_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer (a) to Q-2026-10-15-113: X1 of the first Lease brings back 300; the Customer's second Lease closes after X1 and its own Final Settlement confirm lets the Credit pay 300 of its damage line first (DL-032); X1 has nothing left, read from either Settlement, and a held-value Refund naming X1 is refused with nothing written; the walk takes the second Settlement as a walker that takes X1's 300, and a confirm of a Credit with no return's money left gives no walk row; X1's source lists the confirm's application (part 300 of 300), no open part, nothing to put back and the second Settlement as its one companion; X1's reversal reverses that application through the companion: the line owes 300 again, the Credit ends empty, X1's Refund's net is 2,000 again; the ledger reconciles (V1-056 sub-slice 10e-3d-2d-2c)."
+    },
+    {
+      "test_id": "test_a_confirm_application_is_put_back_through_the_companion_and_a_later_return_waits",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-016", "BR-CREDIT-014", "DL-032", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_settlement_confirm_migration.py",
+      "status": "implemented",
+      "notes": "X1 and X3 bring back 300 each; the second Lease's own Final Settlement confirm, after both, lets the Credit pay 600 of its damage line (X1's 300 first); X1's reversal reverses the 600 application whole and puts back 300 on the same line through the companion's step: the line owes 300, the Credit ends empty, X1's Refund's net is 1,700; X3 has nothing left and its reversal is refused (CHANGED_APPLICATION: its money sits in the companion's put-back, the 10e-3d-2d-2a limit, fail closed) with nothing written; the ledger reconciles (V1-056 sub-slice 10e-3d-2d-2c)."
+    },
+    {
+      "test_id": "test_the_settlement_confirm_count_is_least_privilege_and_forward_only",
+      "upstream_ids": ["BR-SETTLE-013", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_settlement_confirm_migration.py",
+      "status": "implemented",
+      "notes": "Migration 141 adds no function and changes only the listed functions (each body exactly the old one with the module's replacements, each anchor found as often as listed; privileges, owner, definer and settings kept); no constraint or trigger changes; it is forward-only (V1-056 sub-slice 10e-3d-2d-2c)."
+    },
+    {
+      "test_id": "test_a_return_after_the_other_lease_s_confirm_keeps_its_money",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-016", "BR-CREDIT-014", "DL-032", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_settlement_confirm_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 (independent set-up S-1, security SF1), the time order: X1 brings back 300, the second Lease's own Final Settlement confirm lets the Credit pay 300, and X3 brings back 300 after that confirm; the confirm takes only X1's money: X1 has nothing left and X3 keeps 300, read from either Settlement, and a held-value Refund naming X1 is refused with nothing written (before this sub-slice it would have paid out X3's 300); X3's source undoes nothing; X1's reversal reverses the confirm's 300 application through the companion (the line owes 300, the Credit holds X3's 300, X1's Refund's net is 1,700, X3 keeps 300 left); X3's reversal then takes its 300 with no companion (the Credit ends empty, the Refund's net is 2,000); the ledger reconciles (V1-056 sub-slice 10e-3d-2d-2c)."
+    },
+    {
+      "test_id": "test_a_charge_back_on_no_lease_of_another_lease_s_refund_goes_through_its_companion",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-016", "BR-CREDIT-014", "DB-SETTLE-005", "DB-REFUND-002"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_settlement_confirm_migration.py",
+      "status": "implemented",
+      "notes": "Owner note of 2026-10-16 on the 10e-3d-2d-2b-2 limits, set-up (i) of the 10e-3d-2d-2c review round 1 independent reviewer: in an owner transaction that is always rolled back, the recipient's signature on the second Lease is cleared by hand; X0's source (set-up R1 with the whole 1,500 on the other Lease's Refund) then charges the 1,500 back on no Lease and names no Settlement, the refusals allow it, and the reversal recorded and confirmed there writes the charge-back through the companion: the charge-back, its charge and its Invoice are linked to the companion, the Invoice has no Lease and bills the Customer, the other Refund's net is 0, X0's Refund's net 2,000 and the Credit empty; afterwards every trigger is as before and nothing was written (V1-056 sub-slice 10e-3d-2d-2c)."
+    },
+    {
+      "test_id": "test_the_return_reversal_s_own_branch_alone_refuses_another_settlement_s_refund",
+      "upstream_ids": ["BR-SETTLE-013", "DB-SETTLE-005", "DB-REFUND-002"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_settlement_confirm_migration.py",
+      "status": "implemented",
+      "notes": "Owner note of 2026-10-16 on the 10e-3d-2d-2b-2 limits, set-up (ii) of the 10e-3d-2d-2c review round 1 independent reviewer (the 10e-3d-2d-2b-2 security round 2 check N-2 on its own): in an owner transaction that is always rolled back, after the confirm of X0's reversal of set-up R1, the second Lease's Final Settlement is made open again by hand; the companion's charge-back row is still allowed (600); moved to the return reversal, which still lists the Refund, it is refused, now only by the reversal's own branch (no Refund of another Final Settlement); afterwards every trigger and the closure are as before and nothing was written (V1-056 sub-slice 10e-3d-2d-2c)."
     }
   ]
 }
