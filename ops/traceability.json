@@ -40989,12 +40989,12 @@
       "notes": "Pet Deposit (independent review round 1 of sub-slice 10e-3d-2c, set-up in its review record): a correction's two Deposit payments tied by hand in time and application order (the unique constraint dropped inside an always rolled-back owner transaction) with the lower id written last; an earlier return's placed parts follow the write order, not the id, the same on a second read; afterwards the constraint, every trigger and the rows are as before (owner answer (a) to Q-2026-10-14-111; V1-056 sub-slices 10e-3d-2b-3 and 10e-3d-2c)."
     },
     {
-      "test_id": "test_another_lease_s_correction_counts_against_a_return_and_its_reversal_waits",
+      "test_id": "test_another_lease_s_correction_counts_against_a_return_and_its_reversal_is_allowed",
       "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-016", "BR-CREDIT-014", "DB-SETTLE-005"],
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_returned_value_other_settlements_migration.py",
       "status": "implemented",
-      "notes": "Owner answer (a) to Q-2026-10-13-100 point 2, on the real path: one Customer with two closed Leases in the shared test Property; a correction of the first Lease refunds 2,000 from a Credit and a return-only correction X1 brings back 300 of it; a Refund return of the second Lease's Settlement Pet Deposit Refund lets that Credit pay 300 of the Customer's open debt on the second Lease first (DL-032); X1 then has nothing left, read from either Settlement (300 returned, used and swept), a held-value Refund naming X1 is refused, and X1's reversal is refused ('A correction of another Lease's Final Settlement used this return's money; reversing it waits for sub-slice 10e-3d-2d-2') with nothing written; the ledger reconciles (V1-056 sub-slice 10e-3d-2d-1)."
+      "notes": "Owner answer (a) to Q-2026-10-13-100 point 2, on the real path: one Customer with two closed Leases in the shared test Property; a correction of the first Lease refunds 2,000 from a Credit and a return-only correction X1 brings back 300 of it; a Refund return of the second Lease's Settlement Pet Deposit Refund lets that Credit pay 300 of the Customer's open debt on the second Lease first (DL-032); X1 then has nothing left, read from either Settlement (300 returned, used and swept), a held-value Refund naming X1 is refused, and X1's reversal is recorded as one pending draft with nothing else written (sub-slice 10e-3d-2d-2a, owner answer (a) to Q-2026-10-13-103 point 3, renamed from test_another_lease_s_correction_counts_against_a_return_and_its_reversal_waits, which expected the 10e-3d-2d-1 refusal); the ledger reconciles (V1-056 sub-slices 10e-3d-2d-1 and 10e-3d-2d-2a)."
     },
     {
       "test_id": "test_a_later_return_s_money_is_not_paid_out_for_an_earlier_return",
@@ -41002,15 +41002,15 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_returned_value_other_settlements_migration.py",
       "status": "implemented",
-      "notes": "Independent review round 1, on the real path (the harm of Q-2026-10-13-100 point 2 (b)): X1 of the first Lease brings back 1,700 of a Credit Refund; the second Lease's correction lets the Credit pay the whole 1,500 charge there first; a later return X3 brings back the Refund's last 300, so the Credit holds 500; X1 has 200 left and X3 300 from either Settlement; X1's reversal is refused with nothing written; a held-value Refund naming X1 refunds exactly 200 to the Customer (not 500, which would include X3's money) and one naming X3 then refunds 300; the ledger reconciles (V1-056 sub-slice 10e-3d-2d-1)."
+      "notes": "Independent review round 1, on the real path (the harm of Q-2026-10-13-100 point 2 (b)): X1 of the first Lease brings back 1,700 of a Credit Refund; the second Lease's correction lets the Credit pay the whole 1,500 charge there first; a later return X3 brings back the Refund's last 300, so the Credit holds 500; X1 has 200 left and X3 300 from either Settlement; X1's reversal is allowed by the refusal function (since sub-slice 10e-3d-2d-2a; before, refused) with nothing written; a held-value Refund naming X1 refunds exactly 200 to the Customer (not 500, which would include X3's money) and one naming X3 then refunds 300; the ledger reconciles (V1-056 sub-slices 10e-3d-2d-1 and 10e-3d-2d-2a)."
     },
     {
-      "test_id": "test_a_take_by_another_settlement_s_correction_is_one_open_part_refused_first",
+      "test_id": "test_a_take_by_another_settlement_s_correction_is_listed_and_an_open_part_is_refused_first",
       "upstream_ids": ["BR-SETTLE-013", "BR-CREDIT-014", "DB-SETTLE-005"],
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_returned_value_other_settlements_migration.py",
       "status": "implemented",
-      "notes": "Same real-path set-up: X1's reversal source lists the other Lease's correction as one open part of kind OTHER_SETTLEMENT (its whole 300) and none of its records for undoing; the refusal function refuses that source, refuses an OTHER_SETTLEMENT part before a changed-payment part in a hand-built source and as an own use's open part on the walk path, and still refuses a changed-payment part alone with its own message; a Deposit's walk stays per Settlement (the first Settlement's walk of the second Lease's Pet Deposit is empty) (V1-056 sub-slice 10e-3d-2d-1)."
+      "notes": "Same real-path set-up: since sub-slice 10e-3d-2d-2a (owner answer (a) to Q-2026-10-13-103 point 3; renamed from test_a_take_by_another_settlement_s_correction_is_one_open_part_refused_first) X1's reversal source lists the other Lease's correction's Credit application (its whole 300) for undoing and the other Settlement as its one companion; with an OTHER_SETTLEMENT part built in by hand the refusal function refuses that source, refuses an OTHER_SETTLEMENT part before a changed-payment part in a hand-built source and as an own use's open part on the walk path, and still refuses a changed-payment part alone with its own message; a Deposit's walk stays per Settlement (the first Settlement's walk of the second Lease's Pet Deposit is empty) (V1-056 sub-slices 10e-3d-2d-1 and 10e-3d-2d-2a)."
     },
     {
       "test_id": "test_the_returned_value_count_of_other_settlements_is_least_privilege_and_forward_only",
@@ -41019,6 +41019,62 @@
       "test_path": "backend/tests/test_settlement_returned_value_other_settlements_migration.py",
       "status": "implemented",
       "notes": "Migration 137 changes only the returned value walk, the placed function and the return reversal refusal function, each body exactly the old one with the module's replacements (privileges, owner, definer and settings kept), adds no function, constraint or trigger, no application role may call the three, and it is forward-only (V1-056 sub-slice 10e-3d-2d-1)."
+    },
+    {
+      "test_id": "test_a_reversal_undoes_another_lease_s_credit_payment_through_a_companion",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-016", "BR-CREDIT-014", "BR-AUTH-010", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_companion_migration.py",
+      "status": "implemented",
+      "notes": "Owner answers (a) to Q-2026-10-13-100 point 2 and Q-2026-10-13-103 point 3, on the real path (the owner's example): X1 of the first Lease brought back 300 of a Credit Refund and a correction of the Customer's second closed Lease paid 300 of a charge there from that Credit; a reversal of that application linked to no correction of the second Settlement is refused by its guard (P5S01); X1's reversal reverses that application whole through a companion correction of the second Settlement (the charge owes 300 again, the Credit ends empty, the Refund's net is 2,000 again, X1 has nothing left from either Settlement); the companion is a confirmed RETURN_REVERSAL_COMPANION draft of the second Settlement prepared and confirmed by the reversal's approver with the reversal's reason, naming the reversal's draft and correction, with one header, the application reversal as its only effect and its own audit event on the second Lease; the reversal links none of the second Lease's records and names the companion in its result and audit event; the second Settlement's correction list shows it; an exact repeat replays; the ledger reconciles (V1-056 sub-slice 10e-3d-2d-2a)."
+    },
+    {
+      "test_id": "test_the_rest_of_another_lease_s_payment_is_put_back_through_the_companion",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-016", "BR-CREDIT-006", "BR-CREDIT-014", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_companion_migration.py",
+      "status": "implemented",
+      "notes": "Real path: X1 and X3 of the first Lease each brought back 300 and the second Lease's correction paid 600 of a charge from the Credit; X1's reversal reverses the 600 whole and puts the 300 that was X3's money back on the same line through the companion's one-step plan (written on the second Settlement, linked to the companion, naming the payment it restores, labelled the other applicable obligation because the charge has no Rent or Service line); the put-back rule reads the companion's draft and refuses another step or more than the reversed payment; the charge owes 300, the Credit stays empty, X1 and X3 have nothing left; X3's later reversal is refused as a changed payment (fail closed) with nothing written; the ledger reconciles (V1-056 sub-slice 10e-3d-2d-2a)."
+    },
+    {
+      "test_id": "test_a_reversal_undoes_another_lease_s_whole_payment_and_a_later_return_keeps_its_money",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-016", "BR-CREDIT-014", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_companion_migration.py",
+      "status": "implemented",
+      "notes": "The 10e-3d-2d-1 harm case confirmed on the real path: X1 brought back 1,700, the second Lease's correction paid the whole 1,500 charge from the Credit, a later return X3 brought back 300; X1's reversal reverses the 1,500 whole through the companion (nothing put back) and takes back X1's 1,700; the charge owes 1,500 again, the Credit holds X3's 300, X1 has nothing left and X3 keeps 300 from either Settlement; a held-value Refund naming X3 then refunds exactly 300; the ledger reconciles (V1-056 sub-slice 10e-3d-2d-2a)."
+    },
+    {
+      "test_id": "test_a_source_s_companions_must_match_its_other_settlements",
+      "upstream_ids": ["BR-SETTLE-013", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_companion_migration.py",
+      "status": "implemented",
+      "notes": "A return reversal source lists the other Final Settlement whose correction's Credit application it undoes as its one companion (closed, its Lease, the same Property) and the refusal function allows it; with no companion, a second entry for the same Settlement, an entry not closed, an entry for the reversal's own Settlement, an entry with another Lease, an entry of another Property or companions that are not a list, the source is refused as incomplete (55000, fail closed) (V1-056 sub-slice 10e-3d-2d-2a)."
+    },
+    {
+      "test_id": "test_a_take_whose_correction_also_refunded_from_the_credit_stays_one_open_part",
+      "upstream_ids": ["BR-SETTLE-013", "BR-CREDIT-014", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_companion_migration.py",
+      "status": "implemented",
+      "notes": "Independent review round 1 set-up, on the real path: X0 of the first Lease brought back 1,500 and the second Lease's correction paid the whole 1,500 charge from the Credit; a later return X1 brings back 300; a REFUND correction of the second Lease refunds 200 of that charge line (it releases the payment, writes 1,300 again, lets the Credit pay a new 300 charge first and refunds 200 from the Credit), drawing X1's 300; X1's source names that correction as one open OTHER_SETTLEMENT part and lists nothing for undoing, and X1's reversal is refused with the 10e-3d-2d-1 message and writes nothing (the charge-back through the companion is sub-slice 10e-3d-2d-2b) (V1-056 sub-slice 10e-3d-2d-2a)."
+    },
+    {
+      "test_id": "test_an_own_put_back_listed_after_a_companion_s_is_followed_by_a_later_reversal",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-016", "BR-CREDIT-014", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_companion_migration.py",
+      "status": "implemented",
+      "notes": "Independent review round 2 set-up, on the real path: X0 and X1 of the first Lease bring back 200 and 300; the second Lease's correction pays its 300 charge from the Credit; X3 brings back 300; a correction of the first Lease pays its 400 charge from the Credit; X1's reversal lists the second Lease's payment first, puts 200 back on each line (the first through the companion, the second as its own put-back); the successor function, called directly because it has had no caller since migration 134, finds that own put-back for the first Lease's 400 payment (review round 3, owner answer (a) to Q-2026-10-15-114); X3's reversal follows X3's money into that own put-back through the follow function (both rank only the first Settlement's entries) and is confirmed: the 200 put-back is reversed whole, the first Lease's charge owes 400 again, the Credit ends empty, the Refund's net is 1,800; the ledger reconciles (V1-056 sub-slice 10e-3d-2d-2a)."
+    },
+    {
+      "test_id": "test_the_return_reversal_companion_is_least_privilege_and_forward_only",
+      "upstream_ids": ["BR-SETTLE-013", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_companion_migration.py",
+      "status": "implemented",
+      "notes": "Migration 138 adds only three internal functions (the owner of a Credit application and the two companion functions), which no application role may call, and changes only its listed functions, each body exactly the old one with the module's replacements, each anchor found as often as listed (privileges, owner, definer and settings kept); no constraint or trigger changes; it is forward-only (V1-056 sub-slice 10e-3d-2d-2a)."
     }
   ]
 }

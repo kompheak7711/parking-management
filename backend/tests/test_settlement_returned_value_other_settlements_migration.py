@@ -5,10 +5,12 @@ Owner answer (a) to Q-2026-10-13-100 point 2: a correction on another Lease of t
 that uses the returned Credit counts too. A Customer Credit belongs to the Customer, so a
 correction's DL-032 step on the Customer's other Lease applies it to the open debt there. The
 walk now takes, for a Credit, the corrections of every Final Settlement whose records use it, in
-one time order; a Deposit belongs to one Lease, so its walk does not change. Until sub-slice
-10e-3d-2d-2 builds the undo on the other Lease with a companion correction of its Settlement
-(owner answer (a) to Q-2026-10-13-103 point 3), a reversal of a return whose money such a
-correction used is refused first, with nothing written.
+one time order; a Deposit belongs to one Lease, so its walk does not change. Since sub-slice
+10e-3d-2d-2a a reversal of a return whose money such a correction used through a Credit
+application is allowed (it undoes that use with a companion correction of the other Lease's
+Settlement, owner answer (a) to Q-2026-10-13-103 point 3; tested in
+`test_settlement_return_reversal_companion_migration.py`); a take that still waits is one open
+part, refused first, with nothing written.
 """
 
 from __future__ import annotations
@@ -79,6 +81,17 @@ OTHER_SETTLEMENT = (
     "A correction of another Lease's Final Settlement used this return's money; reversing it "
     "waits for sub-slice 10e-3d-2d-2"
 )
+
+
+def allowed(url: str, settlement: object, earlier: UUID) -> None:
+    """The return reversal's refusals allow the earlier correction's current source (the check the
+    recorder and the confirm run), in a read-only statement."""
+    with psycopg.connect(url) as connection:
+        connection.execute(
+            "SELECT app.assert_settlement_return_reversal_allowed("
+            "app.settlement_return_reversal_source_state(%s,%s))",
+            (settlement, earlier),
+        )
 
 
 def second_lease(url: str, monkeypatch: pytest.MonkeyPatch, customer: UUID) -> dict[str, Any]:
@@ -169,14 +182,16 @@ def two_lease_case(
     }
 
 
-def test_another_lease_s_correction_counts_against_a_return_and_its_reversal_waits(
+def test_another_lease_s_correction_counts_against_a_return_and_its_reversal_is_allowed(
     migrated_database_url: str, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Owner answer (a) to Q-2026-10-13-100 point 2: the second Lease's correction used X1's 300,
     so X1 has nothing left, read from either Settlement (before this sub-slice it kept 300 while
-    the Credit held nothing); a held-value Refund naming X1 is refused; X1's reversal is refused
-    with the new message (its undo on the other Lease is sub-slice 10e-3d-2d-2) and writes
-    nothing; the Credit, the charge and the Refund's net stay; the ledger reconciles."""
+    the Credit held nothing); a held-value Refund naming X1 is refused; X1's reversal is recorded
+    (sub-slice 10e-3d-2d-2a, owner answer (a) to Q-2026-10-13-103 point 3: it undoes the other
+    Lease's use with a companion correction; renamed from `..._and_its_reversal_waits`, which
+    expected the 10e-3d-2d-1 refusal) as one pending draft and nothing else; the Credit, the
+    charge and the Refund's net stay; the ledger reconciles."""
     url = migrated_database_url
     found = two_lease_case(url, monkeypatch)
     first, second, credit, earlier = (
@@ -193,10 +208,10 @@ def test_another_lease_s_correction_counts_against_a_return_and_its_reversal_wai
     with pytest.raises(FinalSettlementConflictError) as nothing_left:
         record_held(first, held_command(first, earlier))
     assert cause(nothing_left) == ("55000", NOTHING_LEFT)
-    with pytest.raises(FinalSettlementConflictError) as waits:
-        record_reversal(first, reversal_command(first, earlier))
-    assert cause(waits) == ("55000", OTHER_SETTLEMENT)
-    assert one(url, COUNTS) == unchanged
+    # Sub-slice 10e-3d-2d-2a: the reversal is now recorded (one pending draft, nothing else
+    # written; its confirmation is tested in the companion module).
+    record_reversal(first, reversal_command(first, earlier))
+    assert one(url, COUNTS) == (unchanged[0] + 1, *unchanged[1:])
     assert (available(url, credit), net(url, found["refund"])) == (0, 1_700)
     with psycopg.connect(url) as connection:
         assert_reconciled(connection, first["customer"])
@@ -209,8 +224,9 @@ def test_a_later_return_s_money_is_not_paid_out_for_an_earlier_return(
     1,700; the second Lease's correction lets the Credit pay the whole 1,500 charge there first
     and refunds the Pet Deposit's 5,400 again. A later return-only correction X3 brings back the
     Refund's last 300, so the Credit holds 500: X1 has 200 left and X3 300, read from either
-    Settlement. X1's reversal is refused (the other Lease's correction used 1,500 of its money)
-    with nothing written; a held-value Refund naming X1 refunds exactly 200 (before this
+    Settlement. X1's reversal is allowed (since sub-slice 10e-3d-2d-2a it undoes the other
+    Lease's 1,500 with a companion correction; before, it was refused) and the check writes
+    nothing; a held-value Refund naming X1 refunds exactly 200 (before this
     sub-slice X1 kept 1,700 left and it would have refunded 500, X3's 300 included), and one
     naming X3 then refunds X3's 300. The Credit ends empty and the ledger reconciles."""
     url = migrated_database_url
@@ -228,9 +244,8 @@ def test_a_later_return_s_money_is_not_paid_out_for_an_earlier_return(
     assert counted(url, first["settlement"], "CREDIT", credit) == expected
     assert counted(url, second["settlement"], "CREDIT", credit) == expected
     unchanged = one(url, COUNTS)
-    with pytest.raises(FinalSettlementConflictError) as waits:
-        record_reversal(first, reversal_command(first, earlier))
-    assert cause(waits) == ("55000", OTHER_SETTLEMENT)
+    # Sub-slice 10e-3d-2d-2a: the reversal's refusals now allow it.
+    allowed(url, first["settlement"], earlier)
     assert one(url, COUNTS) == unchanged
     customer = str(first["customer"])
     [paid] = confirm_held(first, record_held(first, held_command(first, earlier)))["refunds"]
@@ -252,14 +267,16 @@ def test_a_later_return_s_money_is_not_paid_out_for_an_earlier_return(
         assert_reconciled(connection, first["customer"])
 
 
-def test_a_take_by_another_settlement_s_correction_is_one_open_part_refused_first(
+def test_a_take_by_another_settlement_s_correction_is_listed_and_an_open_part_is_refused_first(
     migrated_database_url: str, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """X1's source names the second Lease's correction as one open part (kind OTHER_SETTLEMENT,
-    its whole 300), none of its records for undoing; the refusal function refuses that source,
-    and refuses an OTHER_SETTLEMENT part first when another open part (a changed payment) is in
-    the same source, and as an own use's open part on the walk path. A Deposit belongs to one
-    Lease: the first Settlement's walk of the second
+    """X1's source lists the second Lease's correction's Credit application (its whole 300) for
+    undoing and names the second Settlement as its one companion (sub-slice 10e-3d-2d-2a, owner
+    answer (a) to Q-2026-10-13-103 point 3; renamed from `..._is_one_open_part_refused_first`:
+    until then the take was one open part). An OTHER_SETTLEMENT part, which still stands for a
+    take that waits, built into that source by hand, is refused first, also when another open
+    part (a changed payment) is in the same source, and as an own use's open part on the walk
+    path. A Deposit belongs to one Lease: the first Settlement's walk of the second
     Lease's Pet Deposit is empty, the second's counts only its own return (5,400 returned and
     used, nothing swept)."""
     url = migrated_database_url
@@ -271,14 +288,47 @@ def test_a_take_by_another_settlement_s_correction_is_one_open_part_refused_firs
         found["taker"],
     )
     [source] = one(url, STATE, first["settlement"], earlier)
-    assert source["swept"] == [] and source["swept_undone_usd_cents"] == 0
+    [applications] = one(
+        url,
+        "SELECT array_agg(effect.customer_credit_application_id) "
+        "FROM app.settlement_correction_effects effect "
+        "WHERE effect.settlement_correction_id=%s "
+        "AND effect.customer_credit_application_id IS NOT NULL",
+        taker,
+    )
+    [application] = applications
+    assert source["swept"] == [
+        {
+            "settlement_correction_id": str(taker),
+            "record_kind": "CREDIT_APPLICATION",
+            "record_id": str(application),
+            "amount_usd_cents": 300,
+            "part_usd_cents": 300,
+        }
+    ]
+    assert source["swept_undone_usd_cents"] == 300 and source["swept_open"] == []
     assert source["swept_usd_cents"] == 300 and source["recoveries"] == []
-    assert [
-        (item["kind"], item["record_kind"], item["record_id"], item["part_usd_cents"])
-        for item in source["swept_open"]
-    ] == [("OTHER_SETTLEMENT", "OTHER_SETTLEMENT", str(taker), 300)]
-    [part] = source["swept_open"]
-    assert part["settlement_correction_id"] == str(taker)
+    assert [item["id"] for item in source["credit_applications"]] == [str(application)]
+    assert [(item["final_settlement_id"], item["closed"]) for item in source["companions"]] == [
+        (str(second["settlement"]), True)
+    ]
+    part = {
+        "settlement_correction_id": str(taker),
+        "kind": "OTHER_SETTLEMENT",
+        "record_kind": "OTHER_SETTLEMENT",
+        "record_id": str(taker),
+        "part_usd_cents": 300,
+    }
+    # Review round 2: the part built into the source as at 10e-3d-2d-1 (nothing listed).
+    source = {
+        **source,
+        "swept": [],
+        "swept_undone_usd_cents": 0,
+        "swept_open": [part],
+        "credit_applications": [],
+        "reapply": [],
+        "companions": [],
+    }
     changed = {
         "settlement_correction_id": str(uuid4()),
         "kind": "CHANGED_APPLICATION",

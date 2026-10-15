@@ -3046,6 +3046,51 @@ earlier, the follow function stops at it (`CHANGED_APPLICATION`, fail closed), a
 Exact-text patches of the walk, placed and refusal functions; no table, column, constraint,
 trigger, lock or grant change.
 
+As built in V1-056 sub-slice 10e-3d-2d-2a (migration `20261212_138`; owner answers (a) to
+Q-2026-10-13-100 point 2 and Q-2026-10-13-103 point 3): a `RETURN_REVERSAL` R whose earlier
+return's money a correction of another Final Settlement B paid out through a Credit application
+reverses that application whole and puts back the part that was not the return's money on its
+own line, as for a correction of R's own Settlement, with every record on B linked to a companion
+correction of B's Settlement. The companion is a `SETTLEMENT_CORRECTION` draft of B with the
+variant `RETURN_REVERSAL_COMPANION`, its id derived from R's draft and B
+(`app.settlement_correction_companion_id`), written by R's confirm with
+`final_settlements.prepare` and R's reason, prepared and confirmed by R's approver in R's
+transaction (its decision and header through `app.begin_settlement_correction`), so it is never
+pending; its payload names R's draft and correction and carries B's slice of R's stored source
+(`app.settlement_return_reversal_companion_source`: B's listed Credit applications and parts
+applied again) and its put-back plan. B's own rules pass unchanged: the reversal of B's Credit
+application and the put-back on B's line are linked to the companion, a correction of B confirmed
+in the same transaction. R's source names the companions (`companions`: each other Settlement,
+its Lease and Property, closed), the refusal function requires exactly one closed entry of the
+same Property per other Settlement whose application is listed, R's result and audit event name
+the companions, and each companion has its own audit event on B's Lease naming R, so B's
+correction list and Lease history show which correction undid the payment. The walk treats a
+companion as part of its reversal (companions are not walked; every sum reads the correction's
+and its companions' effects), so R's net draw is what R really takes from the source and the
+companion's time never ties R's (the companions are worked out from R's stored source, with no
+scan of drafts). The Settlement a listed Credit application belongs to is its own
+`final_settlement_id`, or, for an ordinary application such as the rest a `REFUND` correction
+writes again, the Final Settlement of its target's Lease
+(`app.settlement_credit_application_owner`); one with neither is refused as incomplete. Since R's
+`reapply` also lists other Settlements' entries, the successor and follow functions rank only the
+entries of R's own Settlement against R's linked put-backs. Every record of R and its companions
+is dated after every companion header. A companion's audit event names the returned Refund's
+recipient as its Customer, as R's does (for a Credit Refund, the Credit's own Customer, whose
+debt on B the Credit paid). A draft already recorded at a companion's derived id (only by a
+direct database caller; the routes derive draft ids from their idempotency keys) makes R's
+confirm fail (23505): R stays pending, and staff reject or withdraw it and record it again with a
+new idempotency key, which gives a new companion id. R's confirm takes the Settlement draft locks
+of its own and every companion's Settlement in Settlement id order, then their invoice-lease
+locks and Lease rows in Lease id order, before the lock function. Still refused: a take whose
+correction also paid a Refund from the Credit (the `OTHER_SETTLEMENT` part; its charge-back
+through the companion is sub-slice 10e-3d-2d-2b), another Settlement's Credit reversal or return
+reversal (their existing messages), and B's own Final Settlement confirm's use of the Credit (not
+counted until sub-slice 10e-3d-2d-2c, the owner answer (a) to Q-2026-10-15-113). Known limit
+(fail closed): the follow function stops at a payment that a correction of another Settlement, a
+companion included, changed (`CHANGED_APPLICATION`), so a later reversal of another return whose
+money sat in such a payment is refused. A `RETURN_REVERSAL` draft recorded before migration
+`20261212_138` has no `companions` key in its source and is stale at its confirm (P5S02).
+
 As built in V1-056 sub-slice 10c-3a (migration `20261115_111`; owner answer to Q-2026-10-07-38): the
 `CHARGE_REDUCTION` variant also reduces an unpaid Late-payment Charge of an Invoice of the
 Settlement's Lease (draft `target_kind` `LATE_PAYMENT_CHARGE`, its own recorder and confirm). Its
