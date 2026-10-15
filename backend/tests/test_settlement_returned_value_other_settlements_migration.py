@@ -77,9 +77,11 @@ WALK = "app.settlement_returned_value_walk(uuid,text,uuid,uuid)"
 PLACED = "app.settlement_returned_value_placed(uuid,text,uuid,uuid,boolean)"
 ASSERT = "app.assert_settlement_return_reversal_allowed(jsonb)"
 STATE = "SELECT app.settlement_return_reversal_source_state(%s,%s)"
+# Sub-slice 10e-3d-2d-2b-2: the message reworded (it now stands only for a part on another
+# Settlement's Refund reached through a take).
 OTHER_SETTLEMENT = (
-    "A correction of another Lease's Final Settlement used this return's money; reversing it "
-    "waits for sub-slice 10e-3d-2d-2"
+    "A correction of another Lease's Final Settlement used this return's money in a way this "
+    "reversal cannot undo; reversing it waits for the owner"
 )
 
 

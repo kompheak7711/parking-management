@@ -516,8 +516,9 @@ def test_a_take_whose_correction_also_refunded_from_the_credit_is_undone_through
     line, both through the companion of the second Settlement: the charge owes 300 again, the
     Credit ends empty, the Refund's net is 500, nothing is charged back to the other Lease's 200
     Refund; the ledger reconciles. X0's money, on the other Lease's 1,500 payment that its REFUND
-    correction changed, stops as a changed payment (fail closed), so X0's reversal is refused
-    (review round 1)."""
+    correction changed, is followed into that correction's Refund and payments (sub-slice
+    10e-3d-2d-2b-2; until then it stopped as a changed payment and X0's reversal was refused,
+    review round 1)."""
     url = migrated_database_url
     found = two_lease_case(url, monkeypatch, returned=1_500, credit_paid=1_500)
     first, second, refund, credit, earlier, taker = (
@@ -584,21 +585,27 @@ def test_a_take_whose_correction_also_refunded_from_the_credit_is_undone_through
     # Review round 1 (independent N2): nothing is charged back to the other Lease's Refund.
     assert source["recoveries"] == []
     # Review round 1 (independent SF3, set-up R1): X0's money sat on the other Lease's 1,500
-    # payment, which that Lease's REFUND correction changed; the follow function stops there
-    # (CHANGED_APPLICATION, fail closed). Following it into that correction's Refund and
-    # payments is sub-slice 10e-3d-2d-2b-2.
-    [changed_source] = one(url, STATE, first["settlement"], earlier)
-    assert [
-        (item["kind"], item["record_id"], item["part_usd_cents"])
-        for item in changed_source["swept_open"]
-    ] == [("CHANGED_APPLICATION", paid_first, 1_500)]
-    # Review round 2 (security N1): the counts are taken before the refused attempt, so the +2
-    # below also proves that the refusal writes nothing.
+    # payment, which that Lease's REFUND correction changed. Sub-slice 10e-3d-2d-2b-2 (owner
+    # answer 4 of 2026-10-16 and answer (a) to Q-2026-10-13-103 point 3) follows it into that
+    # correction's 200 Refund, its 300 payment and 1,000 of the 1,300 written again; until then
+    # it stopped there (CHANGED_APPLICATION) and X0's reversal was refused.
+    [(step, _, _)] = [
+        written for written in applications_of(url, refunding) if written[1] == second_charge
+    ]
+    [earlier_source] = one(url, STATE, first["settlement"], earlier)
+    assert earlier_source["swept_open"] == []
+    assert sorted(
+        (item["record_kind"], item["record_id"], item["part_usd_cents"])
+        for item in earlier_source["swept"]
+    ) == sorted(
+        [
+            ("REFUND", str(other_refund), 200),
+            ("CREDIT_APPLICATION", step, 300),
+            ("CREDIT_APPLICATION", rest, 1_000),
+        ]
+    )
+    assert paid_first not in [item["record_id"] for item in earlier_source["swept"]]
     before = one(url, COUNTS)
-    with pytest.raises(FinalSettlementConflictError) as stops:
-        record_reversal(first, reversal_command(first, earlier))
-    assert cause(stops) == ("55000", CHANGED)
-    assert one(url, COUNTS) == before
     result = confirm_reversal(first, record_reversal(first, reversal_command(first, later)))
     assert result["credit_application_reversals"] == [] and result["reapplied"] == []
     assert result["recoveries"] == []

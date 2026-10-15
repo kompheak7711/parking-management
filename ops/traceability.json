@@ -40826,7 +40826,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_return_reversal_changed_payment_migration.py",
       "status": "implemented",
-      "notes": "The follow function on real rows: an unknown payment, a payment of another source or kind, no or a negative offset, no or a zero part, a stretch not inside the reversed payment and another Settlement each stop open at the record; with p_until the Refund correction the stretch stops at the payment it reversed, with p_until an older correction it stops open (the recursion reads only earlier corrections); an active payment holds a stretch inside it and stops open past its end (V1-056 sub-slice 10e-3d-2b-2, review round 1)."
+      "notes": "The follow function on real rows: an unknown payment, a payment of another source or kind, no or a negative offset, no or a zero part and a stretch not inside the reversed payment each stop open at the record; for another Settlement than the one asked about the Refund correction is followed into its Refund since sub-slice 10e-3d-2d-2b-2 (owner answer 4 of 2026-10-16; until then it stopped open); with p_until the Refund correction the stretch stops at the payment it reversed, with p_until an older correction it stops open (the recursion reads only earlier corrections); an active payment holds a stretch inside it and stops open past its end (V1-056 sub-slice 10e-3d-2b-2, review round 1)."
     },
     {
       "test_id": "test_a_deposit_part_follows_into_the_refund_and_payment_of_a_refund_correction",
@@ -41058,7 +41058,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_return_reversal_companion_migration.py",
       "status": "implemented",
-      "notes": "Independent review round 1 set-up, on the real path: X0 of the first Lease brought back 1,500 and the second Lease's correction paid the whole 1,500 charge from the Credit; a later return X1 brings back 300; a REFUND correction of the second Lease refunds 200 of that charge line (it releases the payment, writes 1,300 again, lets the Credit pay a new 300 charge first and refunds 200 from the Credit), drawing X1's 300 after the 1,500 it brought back, so X1's money sits on the 1,300 written again; since sub-slice 10e-3d-2d-2b-1 (owner answer (a) to Q-2026-10-13-103 point 3; renamed from test_a_take_whose_correction_also_refunded_from_the_credit_stays_one_open_part, which expected one open OTHER_SETTLEMENT part and the refusal) X1's source lists that application (1,300, part 300) with 1,000 to put back and the second Settlement as its companion, and X1's reversal reverses it whole and puts 1,000 back on its line through the companion: the charge owes 300, the Credit stays empty, the Refund's net is 500, no recovery is listed or written and the other Lease's 200 Refund keeps its net; X0's money, on the other Lease's 1,500 payment that its REFUND correction changed, stops as a changed payment and X0's reversal is refused, writing nothing (review rounds 1 and 2); the ledger reconciles (V1-056 sub-slices 10e-3d-2d-2a and 10e-3d-2d-2b-1)."
+      "notes": "Independent review round 1 set-up, on the real path: X0 of the first Lease brought back 1,500 and the second Lease's correction paid the whole 1,500 charge from the Credit; a later return X1 brings back 300; a REFUND correction of the second Lease refunds 200 of that charge line (it releases the payment, writes 1,300 again, lets the Credit pay a new 300 charge first and refunds 200 from the Credit), drawing X1's 300 after the 1,500 it brought back, so X1's money sits on the 1,300 written again; since sub-slice 10e-3d-2d-2b-1 (owner answer (a) to Q-2026-10-13-103 point 3; renamed from test_a_take_whose_correction_also_refunded_from_the_credit_stays_one_open_part, which expected one open OTHER_SETTLEMENT part and the refusal) X1's source lists that application (1,300, part 300) with 1,000 to put back and the second Settlement as its companion, and X1's reversal reverses it whole and puts 1,000 back on its line through the companion: the charge owes 300, the Credit stays empty, the Refund's net is 500, no recovery is listed or written and the other Lease's 200 Refund keeps its net; X0's money, on the other Lease's 1,500 payment that its REFUND correction changed, is followed since sub-slice 10e-3d-2d-2b-2 (owner answer 4 of 2026-10-16) into that correction's 200 Refund, its 300 payment and 1,000 of the 1,300 written again, with no open part (until then it stopped as a changed payment and X0's reversal was refused, writing nothing; review rounds 1 and 2); the ledger reconciles (V1-056 sub-slices 10e-3d-2d-2a, 10e-3d-2d-2b-1 and 10e-3d-2d-2b-2)."
     },
     {
       "test_id": "test_an_own_put_back_listed_after_a_companion_s_is_followed_by_a_later_reversal",
@@ -41123,6 +41123,54 @@
       "test_path": "backend/tests/test_settlement_return_reversal_other_refunding_take_migration.py",
       "status": "implemented",
       "notes": "Review round 1 security: no real path places a return's money on another Settlement's Refund, so in an owner transaction that is always rolled back the other Lease's REFUND correction's link to its release is hidden; X1's 300 then falls on that correction's 200 Refund and 100 of its newest payment; the placed function names the first one open OTHER_SETTLEMENT part (200, named by the correction) and the second a payment part (100); the source holds the open part with matching totals and the refusal function refuses the whole reversal with the 10e-3d-2d-1 message; afterwards every trigger (compared with its state before) and the links are as before (V1-056 sub-slice 10e-3d-2d-2b-1)."
+    },
+    {
+      "test_id": "test_a_return_s_money_on_a_payment_another_lease_s_refund_correction_changed_is_undone",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-016", "BR-CREDIT-014", "DB-SETTLE-005", "DB-REFUND-002"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_other_refund_follow_migration.py",
+      "status": "implemented",
+      "notes": "Set-up R1 of the 10e-3d-2d-2b-1 review record, on the real path: X0 of the first Lease brings back 1,500 and the second Lease's correction pays its whole 1,500 charge from the Credit; a REFUND correction Q of the second Lease lowers the charge by 600, reverses that payment, writes 900 again and refunds 600 from the Credit. X0's source follows its money into Q's 600 Refund and the 900 written again (no open part), lists the second Settlement as its one companion and one charge-back of Q's Refund on the second Lease named by its closed Final Settlement (owner answer 4 of 2026-10-16); X0's reversal reverses the 900 payment and charges the 600 back to the Customer through the companion, which links the charge-back, its charge and its Invoice and names them in the result and its audit event: the line owes 900, the Credit ends empty, Q's Refund's net is 0 and X0's Refund's net 2,000 again; outside the confirming transaction the recovery check allows the row no more (security review round 1); the ledger reconciles (V1-056 sub-slice 10e-3d-2d-2b-2)."
+    },
+    {
+      "test_id": "test_a_return_s_money_wholly_on_another_lease_s_refund_is_charged_back_through_its_companion",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-016", "BR-CREDIT-014", "DB-SETTLE-005", "DB-REFUND-002"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_other_refund_follow_migration.py",
+      "status": "implemented",
+      "notes": "Set-up R1 with 1,500: Q refunds the whole 1,500 and writes nothing again, so X0's 1,500 sits wholly on Q's Refund; the refusal function allows X0's source and refuses it as incomplete when its companions miss the second Settlement, when the charge-back belongs to no listed companion, names the first Settlement or the first Lease, or when a charge on a Lease names no Settlement or no Lease names one (fail closed; security review rounds 1 and 2); X0's reversal writes a companion with only the charge-back (no payment reversed, an empty plan): the line owes nothing, the charge-back's charge owes 1,500, the Credit ends empty, Q's Refund's net is 0 and X0's Refund's net 2,000 again; the ledger reconciles (V1-056 sub-slice 10e-3d-2d-2b-2)."
+    },
+    {
+      "test_id": "test_a_charge_back_of_another_lease_s_refund_is_allowed_only_through_its_companion",
+      "upstream_ids": ["BR-SETTLE-013", "DB-REFUND-002"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_other_refund_follow_migration.py",
+      "status": "implemented",
+      "notes": "X0's recorded reversal of set-up R1 lists the other Lease's Refund and not X0's own Refund (security review round 1); in an owner transaction that is always rolled back, the reversal is confirmed; its charge-back of the other Lease's Refund, linked to the companion, is allowed for the 600 the companion's draft lists; linked instead to the return reversal itself, the same row is refused twice over while the reversal still lists the Refund: the reversal's own branch takes no Refund of another Settlement (security review round 2) and the other Lease's closed Final Settlement no longer links it; afterwards every trigger is as before and no charge-back exists (V1-056 sub-slice 10e-3d-2d-2b-2)."
+    },
+    {
+      "test_id": "test_the_other_refund_follow_is_least_privilege_and_forward_only",
+      "upstream_ids": ["BR-SETTLE-013", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_other_refund_follow_migration.py",
+      "status": "implemented",
+      "notes": "Migration 140 adds only the internal owner of a Refund, which no application role may call, and changes only the listed functions (each body exactly the old one with the module's replacements, each anchor found as often as listed; privileges, owner, definer and settings kept); no constraint or trigger changes; it is forward-only (V1-056 sub-slice 10e-3d-2d-2b-2)."
+    },
+    {
+      "test_id": "test_two_returns_charge_back_their_shares_of_another_lease_s_refund_in_turn",
+      "upstream_ids": ["BR-SETTLE-013", "BR-CREDIT-014", "DB-SETTLE-005", "DB-REFUND-002"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_other_refund_follow_migration.py",
+      "status": "implemented",
+      "notes": "Independent review round 1 set-up S-A: two return-only corrections X0 and X0b of the first Lease bring back 700 and 800; the second Lease's correction pays its 1,500 charge from the Credit (X0's 700 first) and a REFUND correction of the second Lease refunds the whole 1,500 from the Credit; X0's reversal charges back only its 700 share of that Refund's 1,500 net on the second Lease through a companion (the share the companion's draft lists), X0b's reversal the other 800 through a second companion of the same Settlement; the Credit stays empty, the other Refund's net ends at 0 and the first Lease's Refund's at 2,000; the ledger reconciles (V1-056 sub-slice 10e-3d-2d-2b-2)."
+    },
+    {
+      "test_id": "test_one_companion_charges_back_reverses_two_payments_and_puts_back_a_rest",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-016", "BR-CREDIT-014", "DB-SETTLE-005", "DB-REFUND-002"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_other_refund_follow_migration.py",
+      "status": "implemented",
+      "notes": "Independent review round 1 set-up S-B (the set-up of the changed companion test): X0's reversal goes through one companion that charges the other Lease's 200 Refund back on the second Lease, reverses the 300 payment and the 1,300 written again, and puts 300 back on the 1,300's line; the first charge owes 1,000, the new charge 300, the Credit ends empty, X0's Refund's net is 1,700; X1's reversal afterwards stops at the payment the companion changed (fail closed, writing nothing); the ledger reconciles (V1-056 sub-slice 10e-3d-2d-2b-2)."
     }
   ]
 }

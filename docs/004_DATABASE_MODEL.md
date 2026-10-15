@@ -3117,6 +3117,40 @@ Settlement's correction that also reversed the Credit or a return is still refus
 `CREDIT_REVERSAL` message or the general one instead of the `OTHER_SETTLEMENT` message. Exact-text
 patches of the placed function only.
 
+As built in V1-056 sub-slice 10e-3d-2d-2b-2 (migration `20261214_140`; owner answers (a) to
+Q-2026-10-13-103 point 3 and Q-2026-10-13-107, owner answer 4 of 2026-10-16): the follow function
+reads a changing correction of another Final Settlement B when the source is a Credit and its
+variant is `REFUND` (an allow-list; B's return reversal, companion, bounced Payment, pet-damage
+reclassification and every Deposit case still stop as `CHANGED_APPLICATION`), and follows the
+stretch into its Refunds (the oldest first) and payments (the newest first) exactly as for a
+`REFUND` correction of the reversal's own Settlement. A part on such a Refund is charged back to its
+recipient on B's Lease when the recipient is a signed Customer of it, else on no Lease; the
+recovery entry's `closed_final_settlement_id` is the Final Settlement of the charged Lease (one per
+Lease). The source's `companions` also lists each other Settlement that owns a Refund part
+(internal `app.settlement_refund_owner`, the Final Settlement of the correction a Refund is linked
+to; no grant), and the companion's draft source gets the key `recoveries` (its Settlement's
+charge-backs). The confirm writes those charge-backs linked to B's companion, so B's
+closed-Settlement guards accept the charge on B's Lease; the companion's result entry and audit
+event name them. The charge's obligation and Invoice audit events on B's Lease carry the return
+reversal's evidence (variant `RETURN_REVERSAL` and its ids, which the recovery writer's share rule
+reads) plus `companion_settlement_correction_id`; their correlation is the companion.
+`app.refund_recovery_allowed` allows such a row inside a `RETURN_REVERSAL_COMPANION` of the
+Refund's own Settlement confirmed by the same approver in this transaction whose return reversal,
+confirmed in this transaction too, lists the Refund (`app.settlement_return_reversal_refund` now
+accepts a swept Refund of a Settlement the source names as a companion); the row must still be
+linked by every closed Final Settlement the Refund belongs to, and the recovery check's own
+`RETURN_REVERSAL` branch takes only a Refund of no other Final Settlement (security review round
+2), so a row linked to the reversal alone is refused twice over.
+`app.settlement_return_reversal_recovery_amount` reads the companion's draft too, so
+the charge-back may be a share of the Refund's net. The refusal function checks that the companions
+also match the Refund parts' Settlements and that a charge-back of another Settlement's Refund
+belongs to a listed companion and names that Settlement and its Lease, or no Lease and no
+Settlement (fail closed; security review round 1); the `OTHER_SETTLEMENT` message, now given only
+for a part on another Settlement's Refund reached through a take (no real path found), says that
+reversing it waits for the owner. Another Settlement's bounced Payment cannot take the return's
+money (its `RETURNED_PAYMENT` is refused while the first Settlement relies on the Credit); not
+built.
+
 As built in V1-056 sub-slice 10c-3a (migration `20261115_111`; owner answer to Q-2026-10-07-38): the
 `CHARGE_REDUCTION` variant also reduces an unpaid Late-payment Charge of an Invoice of the
 Settlement's Lease (draft `target_kind` `LATE_PAYMENT_CHARGE`, its own recorder and confirm). Its

@@ -505,12 +505,13 @@ def test_a_part_on_a_payment_a_receipt_correction_reversed_is_charged_to_the_ref
 def test_the_follow_function_fails_closed(migrated_database_url: str) -> None:
     """Built by hand on real rows (the first test's shape: a 1,500 payment a Refund correction
     reversed, 800 refunded and 700 written again): an unknown payment, a payment of another
-    source, no offset, a negative offset, no part or a part of 0, a stretch not inside the reversed
-    payment, and a Settlement other than the one whose correction reversed it each stop open at the
-    record; with p_until the Refund correction a stretch stops at the payment it reversed, and with
-    p_until an older correction it stops open there (review round 1: the recursion reads only
-    earlier corrections); an active payment holds a stretch inside it and stops open past its
-    end."""
+    source, no offset, a negative offset, no part or a part of 0 and a stretch not inside the
+    reversed payment each stop open at the record; for a Settlement other than the one whose Refund
+    correction reversed it, that correction is followed too (sub-slice 10e-3d-2d-2b-2; until then
+    it stopped open); with p_until the Refund correction a stretch stops at the payment it
+    reversed, and with p_until an older correction it stops open there (review round 1: the
+    recursion reads only earlier corrections); an active payment holds a stretch inside it and
+    stops open past its end."""
     url = migrated_database_url
     case = refunded_case(url)
     refund, credit = case["refund"], case["refund_credit"]
@@ -542,9 +543,12 @@ def test_the_follow_function_fails_closed(migrated_database_url: str) -> None:
     assert followed(
         url, settlement, "CREDIT", credit, "CREDIT_APPLICATION", paying, 1_400, 200
     ) == [("CREDIT_APPLICATION", paying, 1_500, 1_400, 200, "CHANGED_APPLICATION")]
-    # The Refund correction belongs to this Settlement only.
+    # Sub-slice 10e-3d-2d-2b-2 (owner answer 4 of 2026-10-16 and answer (a) to Q-2026-10-13-103
+    # point 3): a REFUND correction of another Settlement than the one asked about is followed
+    # too, into its 800 Refund first; until then the stretch stopped open at the payment.
+    [released_refund] = released["refunds"]
     assert followed(url, uuid4(), "CREDIT", credit, "CREDIT_APPLICATION", paying, 0, 100) == [
-        ("CREDIT_APPLICATION", paying, 1_500, 0, 100, "CHANGED_APPLICATION")
+        ("REFUND", released_refund["id"], 800, 0, 100, None)
     ]
     # p_until: the payment the Refund correction reversed is where the stretch stops; an older
     # correction as p_until stops it open.
