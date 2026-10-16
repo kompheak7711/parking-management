@@ -38194,7 +38194,7 @@
       "notes": "A partly paid line is reduced by at most its unpaid rest; a draft whose line changed (another reduction, a later Payment) is stale and stays pending; the confirm runs only at READ COMMITTED; a reused draft key is refused (V1-056 sub-slice 10c-1a)."
     },
     {
-      "test_id": "test_an_invoice_paid_by_a_deposit_application_takes_no_charge_reduction_yet",
+      "test_id": "test_an_invoice_line_a_deposit_application_partly_paid_takes_a_reduction_of_its_unpaid_rest",
       "upstream_ids": [
         "BR-SETTLE-013",
         "DB-DEP-005"
@@ -38202,7 +38202,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_charge_reduction_migration.py",
       "status": "implemented",
-      "notes": "An Invoice that a Deposit application paid takes no charge reduction until sub-slice 10c-2 (the 8a-1 refusal stays) (V1-056 sub-slice 10c-1a)."
+      "notes": "An Invoice that a Deposit application paid takes no charge reduction until sub-slice 10c-2 (the 8a-1 refusal stays) (V1-056 sub-slice 10c-1a). Sub-slice 10c-3c-2 (owner answers (a) to Q-2026-10-10-70 and Q-2026-10-11-80): renamed from test_an_invoice_paid_by_a_deposit_application_takes_no_charge_reduction_yet; the line the Pet Deposit partly paid (1,000 of 12,500) now takes a reduction of 500 of its unpaid rest, recorded and confirmed as a linked credit Adjustment (11,500 to 11,000 owed), and the Deposit application stays (1,000, not reversed)."
     },
     {
       "test_id": "test_another_signers_reduction_stays_on_that_signer_and_the_variants_do_not_cross",
@@ -39482,7 +39482,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_late_charge_deposit_refund_migration.py",
       "status": "implemented",
-      "notes": "The Q-2026-10-07-46 answer for a Late-payment Charge: the charge reduction form and the one-call Charge correction still refuse a Deposit-paid Charge after closure; a REFUND correction that releases only a newer Payment allocation leaves the older Deposit application on the Charge, and its linked Charge correction passes the 8a-1 refusal; the allow function answers false for that Charge correction outside its correction's transaction and for no actor (V1-056 sub-slice 10c-3b-2, owner answer 1 to Q-2026-10-09-66)."
+      "notes": "The Q-2026-10-07-46 answer for a Late-payment Charge: the one-call Charge correction still refuses a Deposit-paid Charge after closure (since sub-slice 10c-3c-2, owner answer (a) to Q-2026-10-10-70, the charge reduction form records a reduction within the Charge's unpaid rest; the test withdraws it); a REFUND correction that releases only a newer Payment allocation leaves the older Deposit application on the Charge, and its linked Charge correction passes the 8a-1 refusal; the allow function answers false for that Charge correction outside its correction's transaction and for no actor (V1-056 sub-slice 10c-3b-2, owner answer 1 to Q-2026-10-09-66)."
     },
     {
       "test_id": "test_a_mixed_charge_is_released_across_a_payment_and_a_deposit_and_credit_pays_first",
@@ -39493,12 +39493,12 @@
       "notes": "A Late-payment Charge paid by a Deposit application at closure and a newer Payment after it is released newest first across both kinds; a plan that lets the returned Pet Deposit money pay the Customer's debt while that Customer's released Credit is unused is refused; the released Credit pays the Charge's rest and the Customer's other debt first, then the Pet Deposit money and the Credit left are refunded to the Primary Tenant (V1-056 sub-slice 10c-3b-2, owner answers 1 and 2 to Q-2026-10-07-42 and answer 2 to Q-2026-10-07-41)."
     },
     {
-      "test_id": "test_a_linked_charge_correction_passes_8a_1_but_no_charge_is_paid_more_than_its_new_amount",
+      "test_id": "test_a_linked_charge_correction_under_a_draft_naming_no_charge_is_refused_by_8a_1",
       "upstream_ids": ["BR-SETTLE-013", "BR-LATE-005", "BR-AUTH-010"],
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_late_charge_deposit_refund_migration.py",
       "status": "implemented",
-      "notes": "Inside one correction of the closed Settlement, a Late-payment Charge correction linked to it and written by its approver passes the 8a-1 refusal, but a reduction below the Deposit application that still pays the Charge is refused at commit by the Charge correction's own deferred check, so no Charge is paid more than its new amount; the same row by another actor stays refused (P4603); nothing is written (V1-056 sub-slice 10c-3b-2, owner answer to Q-2026-10-07-46). Sub-slice 10c-3c-1 (owner answer 3 to Q-2026-10-10-69, the approved hardening): the hand-built correction's draft names no Charge, so the approver's row is now refused by 8a-1 too (P4603); the commit-time check is kept in test_settlement_correction_allow_hardening_migration.py."
+      "notes": "Inside one correction of the closed Settlement, a Late-payment Charge correction linked to it and written by its approver passes the 8a-1 refusal, but a reduction below the Deposit application that still pays the Charge is refused at commit by the Charge correction's own deferred check, so no Charge is paid more than its new amount; the same row by another actor stays refused (P4603); nothing is written (V1-056 sub-slice 10c-3b-2, owner answer to Q-2026-10-07-46). Sub-slice 10c-3c-1 (owner answer 3 to Q-2026-10-10-69, the approved hardening): the hand-built correction's draft names no Charge, so the approver's row is now refused by 8a-1 too (P4603); the commit-time check is kept in test_settlement_correction_allow_hardening_migration.py. Renamed in sub-slice 10c-3c-2 from test_a_linked_charge_correction_passes_8a_1_but_no_charge_is_paid_more_than_its_new_amount (owner answer (a) to Q-2026-10-16-117)."
     },
     {
       "test_id": "test_late_charge_deposit_refund_is_least_privilege_and_forward_only",
@@ -41291,6 +41291,38 @@
       "test_path": "backend/tests/test_settlement_correction_allow_hardening_migration.py",
       "status": "implemented",
       "notes": "Migration 20261217_143 adds only the two new allow functions (no application role or PUBLIC may call them; SECURITY DEFINER with the fixed search path) and changes only the 8a-1 refusal, whose body is exactly the old one with its replacements and no longer calls the old three-argument functions (privileges, owner, definer and settings kept); no constraint or trigger changes; forward-only (V1-056 sub-slice 10c-3c-1)."
+    },
+    {
+      "test_id": "test_a_charge_the_pet_deposit_partly_paid_is_reduced_within_its_unpaid_rest",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-012", "BR-LATE-005", "BR-AUTH-010", "DL-032", "DB-SETTLE-005", "DB-DEP-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_paid_charge_reduction_migration.py",
+      "status": "implemented",
+      "notes": "The Q-2026-10-10-70 example to the cent after a real closure: a 3,000 Late-payment Charge, 2,000 of it paid by the Pet Deposit; a CHARGE_REDUCTION of 1,001 is refused (it would release paid value) and nothing is written; 1,000 is recorded and confirmed as one linked REDUCTION (3,000 to 2,000), the Charge owes nothing and a further reduction keeps the Deposit refusal (owner answer (a) to Q-2026-10-11-80), the Deposit application stays (2,000, not reversed), the closed Settlement row is unchanged and the ledger reconciles; the Deposit application was active when the confirm wrote the Charge correction, whose correlation is the correction and whose draft names exactly this Charge, so the writer meets the hardened 8a-1 rule (owner answer (a) to Q-2026-10-10-70, owner answer 3 of 2026-10-16; V1-056 sub-slice 10c-3c-2)."
+    },
+    {
+      "test_id": "test_an_invoice_line_the_pet_deposit_partly_paid_is_reduced_within_its_unpaid_rest",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-012", "BR-AUTH-010", "DL-032", "DB-SETTLE-005", "DB-DEP-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_paid_charge_reduction_migration.py",
+      "status": "implemented",
+      "notes": "After a real closure whose Pet Deposit paid 1,000 of the 1,500 key card line, a CHARGE_REDUCTION of 501 is refused (it would release paid value) and nothing is written; the unpaid 500 is recorded and confirmed as one linked credit Adjustment, the line owes nothing and a further reduction keeps the Deposit refusal (owner answer (a) to Q-2026-10-11-80), the Deposit application stays (1,000, not reversed), the closed Settlement row is unchanged and the ledger reconciles; the Deposit application was active when the confirm wrote the Adjustment, whose reference names the correction and whose draft names exactly this Invoice and line, so the writer meets the hardened 8a-1 rule (owner answer (a) to Q-2026-10-10-70, owner answer 3 of 2026-10-16; V1-056 sub-slice 10c-3c-2)."
+    },
+    {
+      "test_id": "test_deposit_paid_charge_reduction_is_least_privilege_and_forward_only",
+      "upstream_ids": ["BR-SETTLE-013", "DL-032", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_paid_charge_reduction_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20261218_144 changes only the two charge reduction plan functions, each body exactly the old one with its replacement (the Deposit refusal kept only for an obligation with no unpaid rest; privileges, owner, definer and settings kept); no function, constraint or trigger is added or removed; forward-only (V1-056 sub-slice 10c-3c-2)."
+    },
+    {
+      "test_id": "test_another_line_of_an_invoice_the_pet_deposit_partly_paid_is_reduced_within_its_rest",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-012", "BR-AUTH-010", "DL-032", "DB-SETTLE-005", "DB-DEP-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_paid_charge_reduction_migration.py",
+      "status": "implemented",
+      "notes": "The implementer's reading of sub-slice 10c-3c-2, confirmed in review round 1: after a real closure whose remaining Pet Deposit, by the Customer's choice, paid the first Service line and part of the Rent line of one Initial Invoice, its second Service line (no Deposit application) takes a CHARGE_REDUCTION of its unpaid rest: above the rest is refused (it would release paid value) and nothing is written; the whole rest is recorded and confirmed as one linked credit Adjustment of that line only; the two Deposit applications on the other lines stay, the Rent line still owes its rest, no Deposit holds money, the closed Settlement row is unchanged and the ledger reconciles; the Invoice-wide 8a-1 refusal let the Adjustment through only because its reference names the correction, whose draft names exactly this line (owner answer (a) to Q-2026-10-10-70; V1-056 sub-slice 10c-3c-2; fixed Lease dates as mixed_rent_case)."
     }
   ]
 }

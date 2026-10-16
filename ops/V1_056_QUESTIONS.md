@@ -2785,7 +2785,7 @@ Also: the pending rename of `test_a_right_receipt_into_a_deposit_with_a_forfeitu
 
 **Owner answer (2026-10-16).** Option (a). Keep the case allowed: the reversal charges the 300 back to the Customer on the other Lease, through its companion correction, as the committed test `test_a_confirm_application_its_own_lease_s_refund_correction_changed_is_followed` shows. This follows the owner answers to Q-2026-10-11-78, Q-2026-10-12-95, Q-2026-10-13-103 and Q-2026-10-13-107. The two security notes of the follow-up review (the same mistaken money becomes a different debt with or without a later `REFUND` correction: the line owes again, or a recovery charge on the closed other Lease; the first Lease's approver alone creates that debt on the other Lease) are kept in docs/004 as known behaviour. Nothing is built; no test changes. Recorded in docs/010.
 
-## Q-2026-10-16-116 — Sub-slice 10c-2a-7 review round 1: after a to-pet correction of a line from a superseded inspection, a later correction back to not pet damage passes (blocks nothing; nothing new is built)
+## Q-2026-10-16-116 — Sub-slice 10c-2a-7 review round 1: after a to-pet correction of a line from a superseded inspection, a later correction back to not pet damage passes (blocks nothing; nothing new is built) (ANSWERED 2026-10-16: (a); answer in docs/010)
 
 **What the reviewer found.** Your answer (a) to Q-2026-10-08-53 says the change "allows only the change to pet damage", and your answers to Q-2026-10-11-80 and Q-2026-10-11-85 keep a test that a correction that is not to-pet on such a line is still refused. Sub-slice 10c-2a-7 does that for a fresh line: such a line reads as not pet damage, so the change to not pet damage is refused as the same classification ("The line already has this pet classification"). But after a confirmed to-pet correction, the line reads as pet damage (its latest classification record decides, sub-slice 10c-2a-5), so a later correction back to not pet damage passes, like any other correction of an earlier correction. This is not new code: the 10c-2a-5 reader and checks already work this way. The plan's pre-code check of 2026-10-11 named it, but no owner answer says it in words. The new test `test_a_superseded_inspection_line_with_no_pet_deposit_money_only_records_the_change` shows it.
 
@@ -2799,7 +2799,9 @@ Also: the pending rename of `test_a_right_receipt_into_a_deposit_with_a_forfeitu
 
 **What goes ahead.** Everything; 10c-2a-7 is committed with (a) as built, and the next sub-slice follows.
 
-## Q-2026-10-16-117 — Sub-slice 10c-3c-1: a committed test whose name no longer fits after the hardening (blocks nothing)
+**Owner answer (2026-10-16).** Option (a). Keep it: the line's latest classification decides, so a confirmed correction to pet damage can later be corrected back to not pet damage, with its own approval. Nothing is built. Recorded in docs/010.
+
+## Q-2026-10-16-117 — Sub-slice 10c-3c-1: a committed test whose name no longer fits after the hardening (blocks nothing) (ANSWERED 2026-10-16: (a), and a standing rename rule; answer in docs/010)
 
 **What changed.** Your approved hardening (answer 3 to Q-2026-10-10-69) makes the 8a-1 refusal check that a linked Late-payment Charge correction's correlation is its correction and that the correction's draft names that Charge. The committed test `test_settlement_late_charge_deposit_refund_migration.py::test_a_linked_charge_correction_passes_8a_1_but_no_charge_is_paid_more_than_its_new_amount` builds its correction by hand with a draft that names no Charge, so its approver's row is now refused by 8a-1 (P4603) instead of passing it and being refused at commit (23514). Under the standing rule only its expectation, docstring and a comment changed; the commit-time check is kept with a matching row in the new module `test_settlement_correction_allow_hardening_migration.py`. The run rules say a narrowed historical test keeps its name, and the rename rule covers only a refused case that becomes allowed, so the name, which says "passes 8a-1", now says the wrong thing.
 
@@ -2810,3 +2812,5 @@ Also: the pending rename of `test_a_right_receipt_into_a_deposit_with_a_forfeitu
 **Recommendation: (a)**, because a test name should say what the test checks.
 
 **What goes ahead.** Everything; nothing waits for this answer.
+
+**Owner answer (2026-10-16).** Option (a). Rename that test the next time its file is touched. From now on, as a standing rule, the implementer may rename any committed test whose name an owner answer or a hardening has made wrong, without asking; only the name, the docstring and the traceability note change, and each rename is recorded (ops/V1_055_RUN_RULES.md). Also answered with the 10c-3c-1 report: 10c-3c-2 adds tests that reach the two `CHARGE_REDUCTION` writers that 10c-3c-1 confirmed only by reading, and shows they meet the new 8a-1 rule; the slice 12 list gets the old three-argument allow functions of 10c-3c-1, which have no caller (decide whether they are still needed). Order: 10c-3c-2, 10f, 10g, 10e-2d, 10e-2b-3, 10e-2b-4, 10h, then the Q-112 times sub-slice; stop before slice 11. Recorded in docs/010.

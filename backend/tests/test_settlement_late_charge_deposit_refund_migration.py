@@ -40,8 +40,9 @@ from test_customer_ledger_migration import assert_reconciled
 from test_final_settlement_closed_refusal_migration import closed_refusal
 from test_final_settlement_confirm_migration import confirm as confirm_settlement
 from test_final_settlement_draft_migration import LINE, PET_REST, STAFF, two_signer_case
+from test_final_settlement_draft_migration import drafts as draft_service
 from test_final_settlement_draft_migration import record as record_settlement
-from test_final_settlement_migration import held, one, outstanding
+from test_final_settlement_migration import held, one, outstanding, preparer
 from test_final_settlement_preview_migration import pay
 from test_late_payment_migration import late_payment_actor
 from test_late_payment_migration import service as late_payments
@@ -276,23 +277,31 @@ def test_a_deposit_paid_charge_refund_gives_the_deposit_its_value_and_the_step_p
 def test_an_older_deposit_application_stays_and_only_the_linked_charge_correction_passes(
     migrated_database_url: str,
 ) -> None:
-    """The Pet Deposit paid 3,000 of the Charge at closure. The 10c-3a CHARGE_REDUCTION form still
-    refuses this Deposit-paid Charge, also within its unpaid rest, and the one-call Charge
-    correction stays refused after closure (P5S01). After closure the Primary Tenant pays the Rent,
-    the key card and the Charge's 5,000. A Refund of 2,000 releases only the newest source (the
-    Payment allocation); the older Deposit application the release does not reach stays and still
-    pays the Charge, and the linked REDUCTION passes the 8a-1 refusal. The released Credit is
-    refunded to the Primary Tenant, who owes nothing more. Outside its correction's transaction the
-    allow function answers false for that same Charge correction."""
+    """The Pet Deposit paid 3,000 of the Charge at closure. Since sub-slice 10c-3c-2 (owner answer
+    (a) to Q-2026-10-10-70) the 10c-3a CHARGE_REDUCTION form records a reduction within this
+    Charge's unpaid rest (withdrawn here by its preparer, so the rest is unchanged), and the
+    one-call Charge correction stays refused after closure (P5S01). After closure the Primary
+    Tenant pays the Rent, the key card and the Charge's 5,000. A Refund of 2,000 releases only the
+    newest source (the Payment allocation); the older Deposit application the release does not
+    reach stays and still pays the Charge, and the linked REDUCTION passes the 8a-1 refusal. The
+    released Credit is refunded to the Primary Tenant, who owes nothing more. Outside its
+    correction's transaction the allow function answers false for that same Charge correction."""
     url = migrated_database_url
     case = deposit_settled_case(url, 3_000)
     prop, human, tenant, charge = case["prop"], case["human"], case["tenant"], case["charge"]
     application = deposit_application(url, charge)
     count = drafts(url)
-    with pytest.raises(FinalSettlementConflictError) as reduction:
-        record_reduction(case, reduction_command(case, 1_000))
-    assert cause(reduction) == ("55000", DEPOSIT_PAID)
-    assert drafts(url) == count
+    # Sub-slice 10c-3c-2: the 1,000 is within the Charge's unpaid rest (5,000), so it is recorded.
+    reduction = record_reduction(case, reduction_command(case, 1_000))
+    assert (drafts(url), state(url, reduction)) == (count + 1, "PENDING")
+    draft_service().withdraw(
+        prop,
+        reduction,
+        "Recorded in error",
+        prepare_capability="final_settlements.prepare",
+        actor=preparer(human, prop),
+    )
+    assert state(url, reduction) == "WITHDRAWN"
     closed_refusal(
         LatePaymentConflictError,
         late_payments().correct_charge,
@@ -441,16 +450,18 @@ def test_a_mixed_charge_is_released_across_a_payment_and_a_deposit_and_credit_pa
         assert_reconciled(connection, case["co_signer"])
 
 
-def test_a_linked_charge_correction_passes_8a_1_but_no_charge_is_paid_more_than_its_new_amount(
+def test_a_linked_charge_correction_under_a_draft_naming_no_charge_is_refused_by_8a_1(
     migrated_database_url: str,
 ) -> None:
     """Owner answer to Q-2026-10-07-46 for a Charge, by hand inside one correction of this
-    Settlement: the remaining Pet Deposit paid the whole Charge (8,000). Sub-slice 10c-3c-1 (owner
-    answer 3 to Q-2026-10-10-69, the approved hardening): this hand-built correction's draft names
-    no Charge, so a Charge correction linked to it is refused by the 8a-1 refusal (P4603) whether
-    its approver or another actor writes it; the commit-time check (a REDUCTION below the Deposit
-    application that still pays the Charge, 23514) is kept with a matching row in
-    test_settlement_correction_allow_hardening_migration.py. Nothing is written."""
+    Settlement: the remaining Pet Deposit paid the whole Charge (8,000). Renamed in sub-slice
+    10c-3c-2 (owner answer (a) to Q-2026-10-16-117): the earlier name said the row passes 8a-1.
+    Sub-slice 10c-3c-1 (owner answer 3 to Q-2026-10-10-69, the approved hardening): this
+    hand-built correction's draft names no Charge, so a Charge correction linked to it is refused
+    by the 8a-1 refusal (P4603) whether its approver or another actor writes it; the commit-time
+    check (a REDUCTION below the Deposit application that still pays the Charge, 23514) is kept
+    with a matching row in test_settlement_correction_allow_hardening_migration.py. Nothing is
+    written."""
     url = migrated_database_url
     case = deposit_settled_case(url, 8_000)
     charge = case["charge"]

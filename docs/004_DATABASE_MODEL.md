@@ -2481,7 +2481,8 @@ confirms it (`app.confirm_settlement_charge_reduction`), which writes, linked
 Adjustment follows its Invoice's Customer (BR-INV-045). A reduction that would release paid
 value is refused (a `REFUND` correction, sub-slice 10c-1b), and an Invoice that a Deposit
 application paid stays refused (DB-DEP-005; sub-slice 10c-2; still refused after sub-slice
-10c-2a-3, which corrects such an Invoice's lines only with a `REFUND`). A draft whose line changed since it
+10c-2a-3, which corrects such an Invoice's lines only with a `REFUND`; since sub-slice 10c-3c-2
+only a line that an active Deposit application paid and that has no unpaid rest). A draft whose line changed since it
 was recorded (a Payment, a Credit, an Adjustment, the Invoice's issue state or Deposit
 applications) is stale (P5S02) and stays pending. The confirm locks the Invoice before the
 Settlement row (the order of the 8e-1 refusal), runs only at READ COMMITTED, gives the Adjustment
@@ -2593,7 +2594,8 @@ Q-2026-10-07-46), so the correction's Adjustment passes while Deposit applicatio
 does not reach stay active, on the same line or on other lines of the Invoice. No line is paid
 more than its new amount: the deferred Adjustment check already refuses a line whose outstanding
 value at the Adjustment's time, Deposit applications included, is below zero. The
-`CHARGE_REDUCTION` recorder (10c-1a) still refuses an Invoice that a Deposit application paid.
+`CHARGE_REDUCTION` recorder (10c-1a) still refuses an Invoice that a Deposit application paid
+(since sub-slice 10c-3c-2 only a Deposit-paid line with no unpaid rest).
 
 As built in V1-056 sub-slice 10c-2a-5 (migration `20261109_105`; owner answer to
 Q-2026-10-07-45): the effects gain the link `settlement_pet_classification_id` (a DB-SETTLE-007
@@ -3194,7 +3196,8 @@ effect is one Late-payment Charge correction (`late_payment_charge_correction_id
 amount, or `CHARGE_REVERSAL` when the amount is the whole current obligation, with authorization
 reference `financial.approve`, the draft's reason and the correction as its correlation. At most the
 unpaid rest (the current obligation less the active applications) is reduced; a Charge that a
-Deposit application paid, a reversed Charge and a Charge on a VOID Invoice are refused.
+Deposit application paid (since sub-slice 10c-3c-2 only when it has no unpaid rest), a reversed
+Charge and a Charge on a VOID Invoice are refused.
 
 As built in V1-056 sub-slice 10c-3b-1 (migration `20261117_113`; owner answer to Q-2026-10-07-38
 (b), owner answer 2 to Q-2026-10-09-66): the `REFUND` variant also takes a paid Late-payment Charge
@@ -3238,6 +3241,31 @@ Every committed writer that links such a row meets both conditions (the `REFUND`
 exercised by the real-path tests; the `CHARGE_REDUCTION` confirms, whose recorders still refuse a
 Deposit-paid obligation, by reading until sub-slice 10c-3c-2). The old three-argument functions
 stay, with no caller. No table, column, constraint, trigger, lock or grant change.
+
+As built in V1-056 sub-slice 10c-3c-2 (migration `20261218_144`; owner answer (a) to
+Q-2026-10-10-70): a `CHARGE_REDUCTION` correction (the Invoice-line form of 10c-1a and the
+Late-payment Charge form of 10c-3a) accepts an obligation that a Deposit application partly paid,
+within its unpaid rest: the current obligation less every active application, Deposit applications
+not reversed included. The Deposit application stays; nothing is released and no money moves; a
+reduction above the unpaid rest is refused ("The charge reduction would release paid value",
+55000). An obligation that an active Deposit application paid and that has no unpaid rest keeps the
+Deposit refusal ("A Deposit application paid this obligation at Final Settlement", 55000; owner
+answer (a) to Q-2026-10-11-80). Two exact-text patches narrow the Deposit refusal in
+`app.settlement_charge_reduction_plan` and `app.settlement_late_charge_reduction_plan` to that
+case; each confirm runs the patched plan again under its locks, and the source digests hold the
+Deposit applications of the obligation (the line's paid value and the Invoice's application count;
+the Charge's application summary), so a Deposit change on the obligation between record and
+confirm makes the draft stale (P5S02). While an active Deposit application is on the Invoice or
+the Charge, the linked Adjustment or Charge correction passes the 8a-1 refusal only through the
+hardened allow functions of 10c-3c-1 (the Adjustment's reference, or the Charge correction's
+correlation, names the correction, whose draft names exactly that obligation); the new tests reach
+both writers with an active Deposit application on the obligation. The old Invoice-line refusal
+covered the whole Invoice (any Deposit application on any line, also a reversed one), so a line
+that no active Deposit application pays, on an Invoice where another line is Deposit-paid, also
+takes a reduction of its unpaid rest (the implementer's reading, confirmed in review round 1).
+While a Deposit application pays part of a Charge, the amount is below the current obligation, so
+the Charge correction is always a `REDUCTION`. No table, column, constraint, trigger, lock or grant
+change.
 
 As built in V1-056 sub-slice 10d (migration `20261119_115`; owner answer 4 to Q-2026-10-06-36,
 answer 2 to Q-2026-10-10-71): the variant `FORFEITURE_REVERSAL` reverses a confirmed Lease Deposit

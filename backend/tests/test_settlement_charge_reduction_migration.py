@@ -348,11 +348,13 @@ def test_a_partly_paid_line_is_reduced_within_its_unpaid_rest_and_a_changed_line
     assert adjustments(url, pet_line) == 0
 
 
-def test_an_invoice_paid_by_a_deposit_application_takes_no_charge_reduction_yet(
+def test_an_invoice_line_a_deposit_application_partly_paid_takes_a_reduction_of_its_unpaid_rest(
     migrated_database_url: str,
 ) -> None:
-    """The 8a-1 refusal stays until sub-slice 10c-2: an Invoice that a Deposit application paid
-    takes no Adjustment, also not a reduction of its unpaid rest."""
+    """Sub-slice 10c-3c-2 (owner answers (a) to Q-2026-10-10-70 and Q-2026-10-11-80): an Invoice
+    line that a Deposit application partly paid takes a reduction of its unpaid rest. The 500 is
+    recorded and confirmed as a linked credit Adjustment, checked to the cent; the Deposit
+    application stays."""
     url = migrated_database_url
     case = leaving_case(url)
     prop, human = case["prop"], case["human"]
@@ -371,13 +373,20 @@ def test_an_invoice_paid_by_a_deposit_application_takes_no_charge_reduction_yet(
     )
     close(url, human, case["settlement"])
     assert outstanding(url, line) == 11_500
-    with pytest.raises(FinalSettlementConflictError) as deposit:
-        record(case, reduction(case["settlement"], invoice_of(url, line), line, 500))
-    assert cause(deposit) == (
-        "55000",
-        "A Deposit application paid this obligation at Final Settlement",
+    draft = record(case, reduction(case["settlement"], invoice_of(url, line), line, 500))
+    result = corrections().confirm_charge_reduction(
+        prop, draft, actor=approving(approver(url), prop)
     )
-    assert adjustments(url, line) == 0
+    adjustment = cast(dict[str, Any], result["invoice_adjustment"])
+    assert (adjustment["adjustment_type"], adjustment["amount_usd_cents"]) == ("CREDIT", 500)
+    assert (outstanding(url, line), adjustments(url, line)) == (11_000, 1)
+    assert one(
+        url,
+        "SELECT application.amount_usd_cents,(SELECT count(*) FROM app.deposit_application_"
+        "reversals reversal WHERE reversal.deposit_application_id=application.id) "
+        "FROM app.deposit_applications application WHERE application.invoice_line_id=%s",
+        line,
+    ) == (1_000, 0)
 
 
 def test_another_signers_reduction_stays_on_that_signer_and_the_variants_do_not_cross(
