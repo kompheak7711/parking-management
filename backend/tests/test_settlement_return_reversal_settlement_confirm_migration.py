@@ -65,6 +65,7 @@ from test_settlement_return_reversal_companion_migration import STATE, companion
 from test_settlement_return_reversal_migration import (
     REASON,
     app_catalog,
+    charge_open,
     confirm_reversal,
     lease_of,
     record_reversal,
@@ -387,6 +388,139 @@ def test_a_return_after_the_other_lease_s_confirm_keeps_its_money(
         available(url, credit),
         net(url, found["refund"]),
     ) == (300, 0, 2_000)
+    with psycopg.connect(url) as connection:
+        assert_reconciled(connection, first["customer"])
+
+
+def test_a_confirm_application_its_own_lease_s_refund_correction_changed_is_followed(
+    migrated_database_url: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The case the 10e-3d-2d-2c round 1 reviewers named (security N3, independent N-6), on the
+    whole-line path the independent reviewer named. X1 brings back 300 and the second Lease's own
+    confirm lets the Credit pay 300 of its 12,500 damage line; then a `REFUND` correction Q of
+    the second Lease refunds the whole line (300 + 400 + 10,000 + 1,800): it reverses the
+    confirm's 300 application and refunds that 300 from the Credit to the Customer, refunds the
+    second Lease's own 400 Credit payment the same way, and refunds the released Deposit money.
+    The walk keeps the confirm as the taker of X1's 300, and Q draws nothing (it paid out what it
+    brought back). X1's reversal is not refused: the follow step reads Q through the
+    10e-3d-2d-2b-2 allow-list (a `REFUND` correction of another Settlement that changed a Credit
+    payment), so X1's source lists one part, Q's 300 Refund, with no open part and no payment to
+    undo, the second Settlement as its one companion and one charge-back of Q's Refund on the
+    second Lease. X1's reversal charges the 300 back to the Customer on the second Lease through
+    the companion, which links the charge-back, its charge and its Invoice and names the
+    charge-back in its audit event; outside the confirming transaction the recovery check allows
+    the row no more. The line still owes nothing, the Credit ends empty, Q's Refund's net is 0
+    and X1's Refund's net 2,000 again; the ledger reconciles."""
+    url = migrated_database_url
+    found = confirm_case(url, monkeypatch, (300,))
+    first, second, credit, [earlier] = (
+        found["first"],
+        found["second"],
+        found["credit"],
+        found["earlier"],
+    )
+    application, settlement, line = (
+        found["application"],
+        str(second["settlement"]),
+        second["other_line"],
+    )
+    assert one(url, "SELECT amount_usd_cents FROM app.invoice_lines WHERE id=%s", line) == (12_500,)
+    # The whole line: every payment of it is released; the released Deposit money is refunded
+    # (DL-032; nothing else is open).
+    whole = refund_command(
+        second,
+        line,
+        12_500,
+        settlement_refund(second, "security", 10_000),
+        settlement_refund(second, "pet", 1_800),
+    )
+    refunding = confirm_refund(second, record_refund(second, whole))["settlement_correction"]["id"]
+    [(other_refund, other_number)] = rows(
+        url,
+        "SELECT refund.id,refund.refund_number FROM app.settlement_correction_effects effect "
+        "JOIN app.refunds refund ON refund.id=effect.refund_id "
+        "WHERE effect.settlement_correction_id=%s AND refund.source_customer_credit_id=%s",
+        refunding,
+        credit,
+    )
+    assert rows(
+        url,
+        "SELECT effect.settlement_correction_id "
+        "FROM app.customer_credit_application_reversals reversal "
+        "JOIN app.settlement_correction_effects effect "
+        "ON effect.credit_application_reversal_id=reversal.id "
+        "WHERE reversal.credit_application_id=%s",
+        application,
+    ) == [(UUID(str(refunding)),)]
+    assert (net(url, other_refund), available(url, credit), outstanding(url, line)) == (300, 0, 0)
+    [source] = one(url, STATE, first["settlement"], earlier)
+    assert source["swept_open"] == [] and source["swept_usd_cents"] == 300
+    assert parts(source) == [(str(refunding), "REFUND", str(other_refund), 300, 300)]
+    assert source["credit_applications"] == [] and source["reapply"] == []
+    assert [item["final_settlement_id"] for item in source["companions"]] == [settlement]
+    assert [
+        row
+        for row in walk(url, first["settlement"], credit)
+        if row[1]
+        in (
+            settlement,
+            str(refunding),
+        )
+    ] == [
+        ("DRAW", settlement, None, 300, 0, False),
+        ("TAKE", settlement, str(earlier), 300, 0, True),
+    ]
+    assert credit_left(url, earlier, credit) == 0
+    named_refund = {
+        "first": first,
+        "second": second,
+        "credit": credit,
+        "other_refund": other_refund,
+        "other_refund_number": other_number,
+    }
+    assert source["recoveries"] == [expected_recovery(named_refund, 300)]
+    before = one(url, COUNTS)
+    draft = record_reversal(first, reversal_command(first, earlier))
+    result = confirm_reversal(first, draft)
+    assert result["credit_application_reversals"] == [] and result["recoveries"] == []
+    [named] = result["companions"]
+    assert (
+        named["final_settlement_id"],
+        named["credit_application_reversals"],
+        named["reapplied"],
+    ) == (settlement, [], [])
+    [recovery] = named["recoveries"]
+    assert (
+        recovery["refund_id"],
+        recovery["customer_id"],
+        recovery["lease_id"],
+        recovery["amount_usd_cents"],
+        recovery["charge"],
+    ) == (str(other_refund), str(first["customer"]), str(lease_of(second)), 300, "EXTRA_CHARGE")
+    assert charge_open(url, recovery) == 300
+    companion = companion_of(url, draft, second["settlement"])
+    header = str(companion["header"][0])
+    assert (named["settlement_correction_id"], str(companion["header"][1])) == (header, settlement)
+    payload = companion["draft"][4]
+    assert payload["source"]["recoveries"] == source["recoveries"]
+    assert payload["plan"] == {"steps": []}
+    linked = rows(url, LINKED, recovery["refund_correction_id"])
+    assert [str(row[0]) for row in linked] == [header, header, header]
+    [(audit_lease, state)] = companion["audits"]
+    assert (str(audit_lease), state["recoveries"]) == (str(lease_of(second)), [recovery])
+    assert rows(
+        url,
+        "SELECT app.refund_recovery_allowed(correction) FROM app.refund_corrections correction "
+        "WHERE correction.id=%s",
+        recovery["refund_correction_id"],
+    ) == [(False,)]
+    assert one(url, COUNTS) == (before[0] + 2, before[1] + 2, *before[2:])
+    assert (
+        outstanding(url, line),
+        available(url, credit),
+        net(url, other_refund),
+        net(url, found["refund"]),
+    ) == (0, 0, 0, 2_000)
     with psycopg.connect(url) as connection:
         assert_reconciled(connection, first["customer"])
 

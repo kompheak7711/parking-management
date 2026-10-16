@@ -41219,6 +41219,14 @@
       "test_path": "backend/tests/test_settlement_return_reversal_settlement_confirm_migration.py",
       "status": "implemented",
       "notes": "Owner note of 2026-10-16 on the 10e-3d-2d-2b-2 limits, set-up (ii) of the 10e-3d-2d-2c review round 1 independent reviewer (the 10e-3d-2d-2b-2 security round 2 check N-2 on its own): in an owner transaction that is always rolled back, after the confirm of X0's reversal of set-up R1, the second Lease's Final Settlement is made open again by hand; the companion's charge-back row is still allowed (600); moved to the return reversal, which still lists the Refund, it is refused, now only by the reversal's own branch (no Refund of another Final Settlement); afterwards every trigger and the closure are as before and nothing was written (V1-056 sub-slice 10e-3d-2d-2c)."
+    },
+    {
+      "test_id": "test_a_confirm_application_its_own_lease_s_refund_correction_changed_is_followed",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-016", "BR-CREDIT-014", "DL-032", "DB-SETTLE-005", "DB-REFUND-002"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_return_reversal_settlement_confirm_migration.py",
+      "status": "implemented",
+      "notes": "The case the 10e-3d-2d-2c round 1 reviewers named (security N3, independent N-6), on the real path through a REFUND correction of the whole line (owner instruction of 2026-10-16): X1 brings back 300, the second Lease's own Final Settlement confirm lets the Credit pay 300 of its 12,500 damage line, and a REFUND correction of the second Lease refunds the whole line (the confirm's 300 application reversed and its 300 refunded from the Credit to the Customer, the second Lease's own 400 Credit payment refunded too, the released Deposit money refunded); the walk shows the confirm as the taker of X1's 300 and no row for that correction; X1's reversal is not refused: the follow step reads that correction through the 10e-3d-2d-2b-2 allow-list, and X1's source lists that 300 Refund as its one part, with no open part and no payment to undo, the second Settlement as its one companion and one charge-back of that Refund on the second Lease; the reversal charges the 300 back to the Customer on the second Lease through the companion (the charge-back, its charge and its Invoice linked to it, named in its audit event, allowed no more outside the confirming transaction); the line owes nothing, the Credit ends empty, that Refund's net is 0 and X1's Refund's net 2,000 again; the ledger reconciles (V1-056, follow-up test of sub-slice 10e-3d-2d-2c)."
     }
   ]
 }

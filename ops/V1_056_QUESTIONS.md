@@ -2766,3 +2766,19 @@ Your answer (a) to Q-2026-10-13-100 point 2: a correction on another Lease of th
 5. Slice 12 list: `app.settlement_returned_value_successor` has had no caller since migration `20261208_134`; decide whether it is still needed.
 
 Also: the pending rename of `test_a_right_receipt_into_a_deposit_with_a_forfeiture_ground_waits_for_10e_2c` is done the next time its file is touched. Order after the 10e-3d-2d-2a commit: 10e-3d-2d-2b, 10e-3d-2d-2c (the Q-2026-10-15-113 answer), 10e-3e-2, 10c-2a-7, 10c-3c-1 (the hardening of owner answer 3 to Q-2026-10-10-69), 10c-3c-2, 10f, 10g, 10e-2d (the Q-2026-10-12-93 answer), 10e-2b-3, 10e-2b-4, 10h, then the Q-112 times sub-slice; stop before slice 11. Recorded in docs/010.
+
+## Q-2026-10-16-115 — The 10e-3d-2d-2c follow-up: a return reversal that meets a confirm application later changed by a `REFUND` correction of its own Lease is followed, not refused (blocks nothing; a test of today's result goes in its own commit)
+
+**Your instruction (2026-10-16).** The case 10e-3d-2d-2c did not build: a Final Settlement confirm's Credit application that a `REFUND` correction of its own Lease later changes. Confirm that a return reversal that meets this case is refused and writes nothing; then try the whole-line refund path the reviewer named; if it reaches the case, add a test that shows the refusal.
+
+**What the code does (read at head `20261215_141`, then tried on the real path).** The reversal is not refused. The follow function (`app.settlement_returned_value_follow`) takes the confirm's application as written by its Final Settlement (sub-slice 10e-3d-2d-2c), sees that it was reversed by a correction, and reads that correction through the 10e-3d-2d-2b-2 allow-list: a `REFUND` correction of another Final Settlement that changed a Credit payment. It then follows the money into that correction's Refunds and payments, exactly as for a take by another Lease's correction (your answer 4 of 2026-10-16 and answers (a) to Q-2026-10-13-103 point 3 and Q-2026-10-13-107). This is also what the two round 1 reviewers wrote ("followed by the 2b-2 allow-list").
+
+**Example (the new test, on the real path).** The first Lease's correction X1 brings back 300 of a Refund into the Customer's Credit. The second Lease closes; its own confirm lets that Credit pay 300 of its 12,500 damage line. A `REFUND` correction of the second Lease then refunds the whole line: it reverses the confirm's 300 payment and refunds that 300 from the Credit to the Customer (it also refunds the second Lease's own 400 Credit payment and the released Deposit money: 300 + 400 + 10,000 + 1,800 = 12,500). Now X1 turns out to be a mistake. X1's reversal lists one part (the second Lease's 300 Refund), the second Lease's Settlement as its companion, and a charge-back of that Refund to the Customer on the second Lease. Confirmed, it charges the 300 back on the second Lease through the companion; the line still owes nothing, the Credit ends empty, X1's Refund's net is 2,000 again, and the ledger reconciles.
+
+**Options.**
+- (a) Keep it: the case is followed and the person who received the refund money pays it back, on that Lease (Q-2026-10-11-78, answer 4 of 2026-10-16). The new test `test_a_confirm_application_its_own_lease_s_refund_correction_changed_is_followed` shows it.
+- (b) Refuse it (fail closed) until a later decision: a tightening of the follow function for an application a Final Settlement confirm wrote; the new test would change to a refusal with nothing written.
+
+**Recommendation: (a)**, because it follows your answers as they stand, and the money that left (the second Lease's Refund) is charged back to the person who received it, exactly as when another Lease's correction took the money.
+
+**What goes ahead.** Everything. The test of today's result is committed on its own (tests and records only, no code change), and the order continues with 10e-3e-2.
