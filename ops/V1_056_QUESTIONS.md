@@ -2767,7 +2767,7 @@ Your answer (a) to Q-2026-10-13-100 point 2: a correction on another Lease of th
 
 Also: the pending rename of `test_a_right_receipt_into_a_deposit_with_a_forfeiture_ground_waits_for_10e_2c` is done the next time its file is touched. Order after the 10e-3d-2d-2a commit: 10e-3d-2d-2b, 10e-3d-2d-2c (the Q-2026-10-15-113 answer), 10e-3e-2, 10c-2a-7, 10c-3c-1 (the hardening of owner answer 3 to Q-2026-10-10-69), 10c-3c-2, 10f, 10g, 10e-2d (the Q-2026-10-12-93 answer), 10e-2b-3, 10e-2b-4, 10h, then the Q-112 times sub-slice; stop before slice 11. Recorded in docs/010.
 
-## Q-2026-10-16-115 — The 10e-3d-2d-2c follow-up: a return reversal that meets a confirm application later changed by a `REFUND` correction of its own Lease is followed, not refused (blocks nothing; a test of today's result goes in its own commit)
+## Q-2026-10-16-115 — The 10e-3d-2d-2c follow-up: a return reversal that meets a confirm application later changed by a `REFUND` correction of its own Lease is followed, not refused (blocks nothing; a test of today's result goes in its own commit) (ANSWERED 2026-10-16: (a); answer in docs/010)
 
 **Your instruction (2026-10-16).** The case 10e-3d-2d-2c did not build: a Final Settlement confirm's Credit application that a `REFUND` correction of its own Lease later changes. Confirm that a return reversal that meets this case is refused and writes nothing; then try the whole-line refund path the reviewer named; if it reaches the case, add a test that shows the refusal.
 
@@ -2782,3 +2782,19 @@ Also: the pending rename of `test_a_right_receipt_into_a_deposit_with_a_forfeitu
 **Recommendation: (a)**, because it follows your answers as they stand, and the money that left (the second Lease's Refund) is charged back to the person who received it, exactly as when another Lease's correction took the money.
 
 **What goes ahead.** Everything. The test of today's result is committed on its own (tests and records only, no code change), and the order continues with 10e-3e-2.
+
+**Owner answer (2026-10-16).** Option (a). Keep the case allowed: the reversal charges the 300 back to the Customer on the other Lease, through its companion correction, as the committed test `test_a_confirm_application_its_own_lease_s_refund_correction_changed_is_followed` shows. This follows the owner answers to Q-2026-10-11-78, Q-2026-10-12-95, Q-2026-10-13-103 and Q-2026-10-13-107. The two security notes of the follow-up review (the same mistaken money becomes a different debt with or without a later `REFUND` correction: the line owes again, or a recovery charge on the closed other Lease; the first Lease's approver alone creates that debt on the other Lease) are kept in docs/004 as known behaviour. Nothing is built; no test changes. Recorded in docs/010.
+
+## Q-2026-10-16-116 — Sub-slice 10c-2a-7 review round 1: after a to-pet correction of a line from a superseded inspection, a later correction back to not pet damage passes (blocks nothing; nothing new is built)
+
+**What the reviewer found.** Your answer (a) to Q-2026-10-08-53 says the change "allows only the change to pet damage", and your answers to Q-2026-10-11-80 and Q-2026-10-11-85 keep a test that a correction that is not to-pet on such a line is still refused. Sub-slice 10c-2a-7 does that for a fresh line: such a line reads as not pet damage, so the change to not pet damage is refused as the same classification ("The line already has this pet classification"). But after a confirmed to-pet correction, the line reads as pet damage (its latest classification record decides, sub-slice 10c-2a-5), so a later correction back to not pet damage passes, like any other correction of an earlier correction. This is not new code: the 10c-2a-5 reader and checks already work this way. The plan's pre-code check of 2026-10-11 named it, but no owner answer says it in words. The new test `test_a_superseded_inspection_line_with_no_pet_deposit_money_only_records_the_change` shows it.
+
+**Example.** A line billed from inspection A's finding; A was superseded by B before closure. After closure staff record a to-pet correction X1 by mistake (the damage was not caused by the pet), and an approver confirms it. A second correction X2 sets the line back to not pet damage; it reverses what X1 changed under the usual rules and is confirmed by `financial.approve`.
+
+**Options.**
+- (a) Keep it: a correction that corrects an earlier correction is allowed, so a mistaken to-pet correction can be fixed with linked records.
+- (b) Refuse every change to not pet damage on such a line, also after a to-pet record (a tightening; a mistaken to-pet correction could then never be fixed in the system).
+
+**Recommendation: (a)**, because the answer's limit is about the inspection rule (a fresh line), and BR-SETTLE-013 lets a later fix be a new linked correction.
+
+**What goes ahead.** Everything; 10c-2a-7 is committed with (a) as built, and the next sub-slice follows.

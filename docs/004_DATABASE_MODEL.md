@@ -3177,6 +3177,16 @@ back any rest through the companion's step, as for another Settlement's correcti
 `CHANGED_APPLICATION` (the 10e-3d-2d-2a limit). A Deposit belongs to one Lease and its own
 confirm comes before every correction of that Lease, so the Deposit walk does not change.
 
+Known behaviour (owner answer (a) to Q-2026-10-16-115; follow-up test of sub-slice 10e-3d-2d-2c):
+a confirm's Credit application that a `REFUND` correction of its own Lease later changed is
+followed through the 10e-3d-2d-2b-2 allow-list, not refused, so the return's reversal charges
+the money that correction refunded back to the person who received it, on that Lease, through
+the companion. Two consequences are accepted as they are: the same mistaken money becomes a
+different debt with or without that later `REFUND` correction (without it the line owes again;
+with it a recovery charge on the closed other Lease), and the first Lease's approver alone
+creates that debt on the other Lease (the companion is recorded and confirmed by the same
+`financial.approve` actor in the same call).
+
 As built in V1-056 sub-slice 10c-3a (migration `20261115_111`; owner answer to Q-2026-10-07-38): the
 `CHARGE_REDUCTION` variant also reduces an unpaid Late-payment Charge of an Invoice of the
 Settlement's Lease (draft `target_kind` `LATE_PAYMENT_CHARGE`, its own recorder and confirm). Its
@@ -3315,7 +3325,7 @@ The closed inspection record is never changed.
 |---|---|---:|---|
 | `id` | `uuid` | no | PK; linked first by DB-SETTLE-005 `settlement_pet_classification_id` |
 | `settlement_correction_id` | `uuid` | no | FK DB-SETTLE-003; unique (one record per correction) |
-| `invoice_line_id` | `uuid` | no | FK; a `DAMAGE_CHARGES` line billed from a finding of a current inspection of the Settlement's Lease, on an issued, non-VOID Invoice of that Lease |
+| `invoice_line_id` | `uuid` | no | FK; a `DAMAGE_CHARGES` line billed from a finding of a move-out inspection of the Settlement's Lease (a current one, or from sub-slice 10c-2a-7 also one superseded before closure), on an issued, non-VOID Invoice of that Lease |
 | `pet_related` | `boolean` | no | the corrected classification; differs from the line's current one |
 | `evidence_reference` | `text` | no | 1 to 500 characters |
 | `reason` | `text` | no | 1 to 500 characters (the correction draft's reason) |
@@ -3327,11 +3337,26 @@ A BEFORE INSERT check (23514) locks the line's Invoice and needs the record link
 transaction to its own correction of the line's own closed Settlement confirmed by its approver
 (`app.settlement_correction_linked` and the effect row of `settlement_correction_id`), exactly as
 that correction's `PET_DAMAGE_RECLASSIFICATION` draft prepared it (line, classification,
-evidence, reason), a line billed from a finding of a current inspection, and `recorded_at` later
+evidence, reason), a line billed from a finding of a current inspection (from sub-slice 10c-2a-7
+also of one superseded before closure, below), and `recorded_at` later
 than the line's latest record (review round 1). Append-only; no application role may read or
 write it.
 `app.invoice_line_is_pet_damage` reads the line's latest record (by `recorded_at`, then id)
 before the inspection rule; records exist only after closure, so nothing before closure changes.
+
+As built in V1-056 sub-slice 10c-2a-7 (migration `20261216_142`; owner answer (a) to
+Q-2026-10-08-53): `app.settlement_pet_classification_line`, used by the recorder's plan and by the
+insert check above, also accepts a line billed from a finding of a move-out inspection of the
+Lease that was superseded; such an inspection was superseded before closure, because no
+inspection of a Lease with a closed Final Settlement is superseded (sub-slice 10c-2a-4). Without a
+record, `app.invoice_line_is_pet_damage` reads such a line as not pet damage (a finding's flag
+counts only on a current inspection), so on a fresh line the same-classification refusal leaves
+only the change to pet damage. The to-pet reversal rule is unchanged: the line's Security Deposit
+applications are reversed only while a Pet Deposit on the DL-032 path holds money. After a to-pet
+record, a later correction back to not pet damage passes by the latest-record rule (it corrects
+the earlier correction; Q-2026-10-16-116). The recorder's refusal of a line that may not take the
+correction now reads "A pet classification correction corrects only a Damage line billed from a
+finding of a move-out inspection of this Lease" (55000, as before).
 
 ## DB-SETTLE-006 — `settlement_invoice_line_items`
 

@@ -63,7 +63,7 @@ from test_migrations import _temporary_migration_database
 from test_move_in_migration import migrated_database_url as migrated_database_url
 from test_move_out_inspection_migration import actor as inspection_actor
 from test_move_out_inspection_migration import flow as inspection_flow
-from test_settlement_correction_migration import LINK, invoice_of, settlement_row
+from test_settlement_correction_migration import LINK, approver, invoice_of, settlement_row
 from test_settlement_correction_plan_migration import (
     PET_DAMAGE_ONLY,
     closed_case,
@@ -103,9 +103,11 @@ REASON = "The window latch was broken by the earlier tenant, not by the pet"
 EVIDENCE = "Vet and neighbour statements, file 12"
 NEW_CHOICE = "Primary Tenant agreed on 2026-10-08, by signed note, for this correction"
 ALREADY = "The line already has this pet classification"
+# Sub-slice 10c-2a-7 (owner answer (a) to Q-2026-10-08-53): a line billed from an inspection
+# superseded before closure is eligible too, so the message no longer names a current inspection.
 NOT_ELIGIBLE = (
     "A pet classification correction corrects only a Damage line billed from a finding of a "
-    "current inspection"
+    "move-out inspection of this Lease"
 )
 
 
@@ -749,13 +751,17 @@ def test_a_classification_record_is_written_only_as_its_own_draft_prepared_it(
     ) == (True,)
 
 
-def test_a_line_billed_from_an_inspection_superseded_before_closure_is_not_eligible(
+def test_a_line_billed_from_an_inspection_superseded_before_closure_takes_the_change_to_pet_damage(
     migrated_database_url: str,
 ) -> None:
     """Review round 1 choice (10), tested in review round 2: a Damage line billed from an
-    inspection superseded before closure is not pet damage under the inspection rule, and a pet
-    classification correction does not change that (the owner's open point on carrying a finding
-    forward, Q-2026-10-07-45, stays open); the draft is refused and nothing is recorded."""
+    inspection superseded before closure is not pet damage under the inspection rule. Sub-slice
+    10c-2a-7 (owner answers (a) to Q-2026-10-08-53, Q-2026-10-11-80 and Q-2026-10-11-85; renamed,
+    the setup kept): the change to not pet damage is still refused as the same classification and
+    nothing is recorded; the change to pet damage is recorded and confirmed with the full DL-032
+    steps of this hand-closed Settlement (the Credit 400 and the Security Deposit 10,000 and the
+    remaining Pet Deposit 2,100 on a staff reason pay the other line, the Pet Deposit 12,500 the
+    pet line, its rest 5,400 is refunded), checked to the cent."""
     url = migrated_database_url
     case = {**leaving_case(url), "url": url}
     prop, human, lease, pet_line = case["prop"], case["human"], case["lease"], case["pet_line"]
@@ -783,14 +789,78 @@ def test_a_line_billed_from_an_inspection_superseded_before_closure_is_not_eligi
     close(url, human, case["settlement"])
     assert is_pet(case, pet_line) is False
     with pytest.raises(FinalSettlementConflictError) as refused:
-        record(case, command(case, pet_line, True))
-    assert cause(refused) == ("55000", NOT_ELIGIBLE)
+        record(case, command(case, pet_line, False))
+    assert cause(refused) == ("55000", ALREADY)
     assert one(
         url,
         "SELECT count(*) FROM app.financial_drafts WHERE kind='SETTLEMENT_CORRECTION' "
         "AND payload->>'final_settlement_id'=%s",
         str(case["settlement"]),
     ) == (0,)
+    case["person"] = approver(url)
+    pet, security, other_line = case["pet"], case["security"], case["other_line"]
+    result = confirm(
+        case,
+        record(
+            case,
+            command(
+                case,
+                pet_line,
+                True,
+                SettlementCreditStep(case["credit"], LINE, other_line, 400),
+                SettlementDepositStep(PET_FIRST, pet, LINE, pet_line, 12_500),
+                SettlementDepositStep(
+                    SettlementDepositStepKind.SECURITY_DEPOSIT, security, LINE, other_line, 10_000
+                ),
+                SettlementDepositStep(PET_REST, pet, LINE, other_line, 2_100),
+                SettlementDepositRefund(
+                    pet, 5_400, case["cash"], "Cash at the desk", case["customer"]
+                ),
+                pet_remainder=STAFF,
+            ),
+        ),
+    )
+    correction = result["settlement_correction_id"]
+    assert one(
+        url,
+        "SELECT invoice_line_id,pet_related,evidence_reference,reason,actor_id,"
+        "authorization_reference FROM app.settlement_pet_classifications "
+        "WHERE settlement_correction_id=%s",
+        correction,
+    ) == (pet_line, True, EVIDENCE, REASON, case["person"], "financial.approve")
+    assert result["deposit_application_reversals"] == []
+    assert len(result["credit_application_ids"]) == 1
+    assert [application(url, item) for item in result["deposit_application_ids"]] == [
+        (pet, pet_line, 12_500, "PET_RELATED_FIRST"),
+        (security, other_line, 10_000, "SECURITY_EXPLICIT"),
+        (pet, other_line, 2_100, "PET_REMAINDER_EXPLICIT"),
+    ]
+    [refunded] = result["deposit_refund_ids"]
+    assert one(
+        url,
+        "SELECT source_deposit_id,usd_accounting_value_cents,recipient_customer_id "
+        "FROM app.refunds WHERE id=%s",
+        UUID(str(refunded)),
+    ) == (pet, 5_400, case["customer"])
+    assert (
+        is_pet(case, pet_line),
+        is_pet(case, other_line),
+        held(url, pet),
+        held(url, security),
+        outstanding(url, pet_line),
+        outstanding(url, other_line),
+        int(one(url, "SELECT app.credit_available_value(%s)", case["credit"])[0]),
+    ) == (True, False, 0, 0, 0, 0, 0)
+    assert effect_links(url, correction) == [
+        "settlement_pet_classification_id",
+        "customer_credit_application_id",
+        "deposit_application_id",
+        "deposit_application_id",
+        "deposit_application_id",
+        "refund_id",
+    ]
+    with psycopg.connect(url) as connection:
+        assert_reconciled(connection, case["customer"])
 
 
 def test_the_pet_classification_correction_is_least_privilege_and_forward_only(

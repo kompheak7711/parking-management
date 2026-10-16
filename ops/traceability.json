@@ -38909,12 +38909,12 @@
       "notes": "The DB-SETTLE-007 insert check: a record is accepted only linked to its own correction confirmed in this transaction and exactly as its draft prepared it; unlinked, another line, classification, evidence, reason or person, a time before the correction or at the line's latest record are refused (23514), each by its own clause; the confirm dates its record after the line's latest record; the table is append-only (V1-056 sub-slice 10c-2a-5, review rounds 1 and 2)."
     },
     {
-      "test_id": "test_a_line_billed_from_an_inspection_superseded_before_closure_is_not_eligible",
-      "upstream_ids": ["BR-SETTLE-013", "BR-MOVEOUT-006", "DB-SETTLE-007"],
+      "test_id": "test_a_line_billed_from_an_inspection_superseded_before_closure_takes_the_change_to_pet_damage",
+      "upstream_ids": ["BR-SETTLE-013", "BR-MOVEOUT-006", "DB-SETTLE-007", "DL-032"],
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_pet_classification_migration.py",
       "status": "implemented",
-      "notes": "A Damage line billed from an inspection superseded before closure is not eligible for a pet classification correction (the owner's open point on carrying a finding forward stays open); the draft is refused and nothing is recorded (V1-056 sub-slice 10c-2a-5, review round 2)."
+      "notes": "A Damage line billed from an inspection superseded before closure (V1-056 sub-slice 10c-2a-5, review round 2; renamed in sub-slice 10c-2a-7 under owner answers (a) to Q-2026-10-08-53, Q-2026-10-11-80 and Q-2026-10-11-85, the hand-closed setup kept): the change to not pet damage is refused as the same classification and nothing is recorded; the change to pet damage is recorded and confirmed with the full DL-032 steps (Credit 400, Pet Deposit 12,500 on the pet line, Security Deposit 10,000 and the remaining Pet Deposit 2,100 on a staff reason on the other line, the Pet Deposit's 5,400 refunded), checked to the cent."
     },
     {
       "test_id": "test_a_refund_confirm_checks_the_customer_choice_again_in_the_step",
@@ -41243,6 +41243,30 @@
       "test_path": "frontend/src/financialReferenceClient.test.ts",
       "status": "implemented",
       "notes": "The label PUT_BACK_BY_CORRECTION is refused where the database never writes it: on a Payment allocation, on a Payment allocation line, on a Credit payment on a Late-payment Charge and on its line, and on a Credit payment or a line that carries it without the other (INVALID_RESPONSE) (owner answer (b) to Q-2026-10-14-109; V1-056 sub-slice 10e-3e-2)."
+    },
+    {
+      "test_id": "test_a_superseded_inspection_line_with_no_pet_deposit_money_only_records_the_change",
+      "upstream_ids": ["BR-SETTLE-013", "BR-MOVEOUT-006", "DB-SETTLE-007", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_pet_classification_superseded_migration.py",
+      "status": "implemented",
+      "notes": "On a real closure whose inspection was superseded before the confirm by one that repeats both findings: the change to not pet damage of the line billed from the first inspection is refused as the same classification and writes nothing; the change to pet damage, its evidence reference naming the new inspection's pet finding, writes only the classification record while no Pet Deposit holds money (nothing reversed, Deposits and line unchanged); a later correction back to not pet damage passes by the latest-record rule (owner answer (a) to Q-2026-10-08-53; V1-056 sub-slice 10c-2a-7)."
+    },
+    {
+      "test_id": "test_a_superseded_inspection_line_set_to_pet_damage_is_paid_by_the_pet_deposit_first",
+      "upstream_ids": ["BR-SETTLE-013", "BR-SETTLE-008", "BR-MOVEOUT-006", "DL-032", "DB-SETTLE-007", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_pet_classification_superseded_migration.py",
+      "status": "implemented",
+      "notes": "After a return-only correction brings 2,000 of the Settlement's Pet Deposit Refund back (the Pet Deposit on the DL-032 path holds 2,000), the change to pet damage of a line billed from an inspection superseded before closure reverses the line's Security Deposit application (10,000), the Pet Deposit pays the line first (2,000), the Security Deposit the rest (8,000) and its rest (2,000) is refunded to the Customer; the remaining Pet Deposit application stays; checked to the cent, ledger reconciled (owner answer (a) to Q-2026-10-08-53, answer 6 to Q-2026-10-08-52; V1-056 sub-slice 10c-2a-7)."
+    },
+    {
+      "test_id": "test_the_superseded_inspection_rule_is_least_privilege_and_forward_only",
+      "upstream_ids": ["BR-SETTLE-013", "DB-SETTLE-007"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_pet_classification_superseded_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20261216_142 adds no function and changes only the two listed functions, each body exactly the old one with its replacements (privileges, owner, definer and settings kept), no constraint or trigger; no application role may call either function; forward-only (V1-056 sub-slice 10c-2a-7)."
     }
   ]
 }
