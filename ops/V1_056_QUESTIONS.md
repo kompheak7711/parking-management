@@ -2839,3 +2839,17 @@ Example: a Rent Invoice with Rent 500.00 and Service Charges 100.00. A Payment p
 **What goes ahead.** Everything else in 10f-1, then 10f-2 (after closure) and the rest of the order.
 
 **Owner answer (2026-10-16).** Point 1: option (a). Always put the Credit back on the Adjustment's own line, with the "put back by a correction" label, even when an earlier line still owes. This follows the Q-2026-10-13-104 answer: a put-back restores what was there before; it is not a new allocation. Never more than the release or the line's unpaid rest. Point 2: option (a). An Adjustment that a hand-back or unpaid-Initial resolution wrote stays refused. Build point 1 where it fits best, in 10f-2 or as its own small sub-slice before 10g. Recorded in docs/010. Placement (implementer, "where it fits best"): its own small sub-slice 10f-1b, right after 10f-1 and before 10f-2, because it changes the 10f-1 put-back that the 10f-2 correction then reuses from the start (the reason the Q-104 answer was placed as 10e-3e).
+
+## Q-2026-10-16-119 — Sub-slice 10f-2 (the `ADJUSTMENT_REVERSAL` correction after closure): may it reverse an Adjustment that a post-settlement correction wrote? (blocks only that case; refused until answered)
+
+Your rule (owner answer 7 to Q-2026-10-06-36): after closure, a mistaken credit Adjustment is reversed only inside a correction prepared under `final_settlements.prepare` and confirmed by `financial.approve`. Sub-slice 10f-1 refuses an Adjustment that a post-settlement correction wrote. After closure, three corrections write credit Adjustments: a `CHARGE_REDUCTION` (removes an unpaid wrong charge; it releases nothing), a `REFUND` (removes a paid wrong charge; the released value is paid out as a Refund in the same correction) and a pet-damage reclassification (moves value between lines and Deposits).
+
+Example: after closure, a `CHARGE_REDUCTION` correction removes 50.00 of a Damage line by mistake (the charge was right). Staff want to undo that reduction, so the line owes the 50.00 again.
+
+- (a) Keep them refused. A mistaken correction is fixed by a new correction of an existing kind (for example an `EXTRA_CHARGE` of 50.00 on a new Invoice).
+- (b) Allow the Adjustment of a `CHARGE_REDUCTION` only: it released nothing, so the reversal restores exactly the debt it removed, on the same line, and puts nothing back. Keep the Adjustments of a `REFUND` and of a pet-damage reclassification refused, because their released value already left through a Refund or another step of the same correction.
+- (c) Allow every correction's Adjustment like any other credit Adjustment.
+
+**Recommendation: (b)**, because it undoes the mistake exactly where it was made (as your Q-118 answer), and the other two kinds would need their Refund or their Deposit step undone too, which an Adjustment reversal does not do. Until you answer, 10f-2 refuses every correction's Adjustment (55000, as 10f-1 does today); a later relaxing change can lift the refusal.
+
+**What goes ahead.** Everything else in 10f-2: the correction for a credit Adjustment recorded before the closure. The design is in the plan (10f entry, "10f-2 pre-code design").
