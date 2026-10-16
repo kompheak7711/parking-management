@@ -548,8 +548,10 @@ def test_the_outcome_input_and_the_new_money_refusals(migrated_database_url: str
     record (55000). The input refuses a choice without its reason, an unknown choice and a bad
     reason (22023) and keeps a valid one. On changed targets: a choice on a Deposit never
     forfeited is refused; a reversed Deposit needs a choice; a forfeiture that would take other
-    money (the Deposit holds money after the correction, or has a pay-back count) is refused
-    (Q-2026-10-12-93); the forfeitures read from the targets name each forfeited receipt."""
+    money (the Deposit holds money after the correction) is refused, while a pay-back count alone
+    no longer refuses one (owner answer (a) to Q-2026-10-12-93, sub-slice 10e-2d: only the money
+    beyond the count is forfeited); the forfeitures read from the targets name each forfeited
+    receipt."""
     url = migrated_database_url
     case = closed_case(url)
     security = case["security"]
@@ -626,8 +628,6 @@ def test_the_outcome_input_and_the_new_money_refusals(migrated_database_url: str
         ({**never, **choice}, ONLY_REVERSED),
         (choice, ONLY_REVERSED),
         (reversed_ground, NEEDS_CHOICE),
-        ({**never, "payback_count": 1}, ONLY_NEW_MONEY),
-        ({**reversed_ground, **choice, "payback_count": 1}, ONLY_NEW_MONEY),
         ({**never, **other, "held_usd_cents": 500}, ONLY_NEW_MONEY),
     ):
         assert targets_check(url, case, source, [{**target, **change}]) == (
@@ -639,6 +639,11 @@ def test_the_outcome_input_and_the_new_money_refusals(migrated_database_url: str
         {**reversed_ground, **choice},
         {**reversed_ground, "outcome": "DL_032", "outcome_reason": OUTCOME_REASON},
         {**never, **other, "held_usd_cents": 0},
+        # Sub-slice 10e-2d (owner answer (a) to Q-2026-10-12-93): a pay-back count of 1 on the
+        # 8,000 receipt no longer refuses at the targets check (hand-built only: a Security
+        # Deposit's real count is always 0, and its forfeiture writer would not keep the 1 back).
+        {**never, "payback_count": 1},
+        {**reversed_ground, **choice, "payback_count": 1},
     ):
         assert targets_check(url, case, source, [{**target, **change}]) == (None, None), change
     listed = value(

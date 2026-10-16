@@ -164,6 +164,9 @@ def test_a_pet_receipt_correction_pays_the_recovery_charge_its_placeholder_line_
         "credits": {},
         "deposits": {},
         "deposits_after": {str(pet): 18_000},
+        # Sub-slice 10e-2d (owner answer (b) to Q-2026-10-17-122): the corrected receipt's
+        # Deposit, which the plan check counts without the payouts this correction undoes.
+        "corrected_deposit_id": str(pet),
         "new_obligations": {
             str(placeholder): {
                 "refund_id": str(refund),

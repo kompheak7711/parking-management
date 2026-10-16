@@ -1726,6 +1726,11 @@ ground (DB-SETTLE-005 `deposit_disposition_id`), through the internal
 disposition context keeps the default `recorded_at`, the start of the confirm's statement), and
 every insert check above runs; see the 10e-2c note under DB-SETTLE-005.
 
+As built in V1-056 sub-slice 10e-2d (migration `20261223_149`): such a forfeiture takes only the
+new money beyond the Pet Deposit's pay-back count, and the count holds only returned money the
+Customer has not received yet (owner answers (a) to Q-2026-10-12-93 and (b) to Q-2026-10-17-122);
+see the 10e-2d bullet under DB-DEP-005 and the 10e-2d note under DB-SETTLE-005.
+
 ### Lease Deposit command admission (V1-055)
 
 The existing Lease Deposit disposition command serializes its Property, actor,
@@ -1904,6 +1909,28 @@ Append-only Final Settlement financial event: `id uuid PK`, `deposit_id uuid NOT
   would forfeit returned pay-back money"). The sentence above that the disposition insert check
   is unchanged held until this sub-slice. Only the check is patched in place; the forfeiture draft
   path is unchanged, because its source already takes exactly that amount.
+- As amended in V1-056 sub-slice 10e-2d (migration `20261223_149`; owner answer (b) to
+  Q-2026-10-17-122): the pay-back count holds only returned money the Customer has not received
+  yet; money already paid out is not paid back again; one rule on every path. The new internal
+  `app.lease_deposit_payback_count_as(deposit, returned_refund, returned_amount, without_payouts)`
+  (no grant) is the 10c-2b-5 running count with one more kind of event: every payout of the
+  Deposit that is not undone takes pay-back money out first, in the same time order (at the same
+  moment returns come first): each Deposit application not reversed (only the Final Settlement and
+  its corrections write them) and each Refund of the Deposit other than a Pet Refund-review Refund,
+  less what came back to the Deposit for it (its Refund corrections' source effect: verified
+  returns net of their reversals, and a `RECOVERED_BY_CHARGE` recovery, which charges the money
+  back). So a returned Settlement Refund puts its pay-back part back. Forfeitures and their
+  reversals are not payouts. Pet Refund-review Refunds and their returns, return reversals and
+  recoveries count exactly as before. `returned_refund` and `returned_amount` count a return about
+  to be written (a Pet Refund-review Refund's at the end, as before; another Refund's lowers its net
+  payout); `without_payouts` leaves every payout out. `app.lease_deposit_payback_count(deposit)`
+  now returns `app.lease_deposit_payback_count_as(deposit,NULL,0,false)`, and
+  `app.lease_deposit_payback_after_return` uses the new function with the Refund and the amount;
+  the pay-back value, the Deposit path (and its `payback_usd_cents`), the forfeiture source, the
+  disposition insert check above and the receipt correction's forfeiture list follow it unchanged.
+  Where nothing was paid out every result is as before. The 10c-2b-5 sentence that a Settlement or
+  correction Refund, its return and a `RECOVERED_BY_CHARGE` recovery do not count held until this
+  sub-slice.
 - As built in V1-056 sub-slice 10c-2a-2 (migration `20261106_102`; owner answer 1 to
   Q-2026-10-07-41): after closure a Deposit application is still refused unless it is linked
   (DB-SETTLE-005 `deposit_application_id`, written first) to a post-settlement correction of its
@@ -3448,9 +3475,31 @@ check runs. The context's expected Deposit state version is read just before the
 P5801 check cannot fire on this path; staleness is held by the source digest, the forfeiture
 recompute and the writer's exact held-value check. A changed pay-back count, held value or kept
 state usually meets the targets check first (55000; the draft stays pending as well).
-Refused (55000) until the owner answers Q-2026-10-12-93: a forfeiture that would take other money
-than the new receipt's (the Deposit would hold other money afterwards, or has a pay-back count).
+Refused (55000): a forfeiture that would take other money than the new receipt's (the Deposit
+would hold other money afterwards).
 The result gains `deposit_disposition_ids`.
+As built in V1-056 sub-slice 10e-2d (migration
+`20261223_149`; owner answer (a) to Q-2026-10-12-93): a forfeiture takes only the new money beyond
+the Deposit's pay-back count (the receipt less the smaller of the count and the receipt); the rest
+stays in the Deposit as the Customer's pay-back money and follows DL-032 in the same correction's
+plan (the overlay's `deposits_after` keeps it, and the plan check accepts such a Pet Deposit with
+a ground, because after the correction it holds only pay-back money; the confirm-time step reads
+the real path). When the count covers the whole receipt nothing is forfeited and the draft lists
+no forfeiture for it; a staff choice `FORFEIT` is then refused (55000, "Nothing beyond the
+Customer's pay-back money is left to forfeit; choose DL-032"). The forfeiture writer's exact check
+(the Deposit holds the forfeited amount beyond its pay-back value) is unchanged.
+With owner answer (b) to Q-2026-10-17-122 (same sub-slice), the count is the pay-back money the
+Customer has not received yet (DB-DEP-005, 10e-2d bullet): a Pet Deposit whose pay-back money the
+Final Settlement or a correction already applied or refunded has a count of 0, so its new receipt
+is forfeited whole. The corrected receipt's own Deposit is counted without its payouts, because
+this correction undoes them (the Deposit must end empty; a count that would still be too high fails
+closed at the confirm, where the forfeiture writer's exact check and the step read the real
+count): the targets read
+`app.lease_deposit_payback_count_as(deposit,NULL,0,true)` for it, the overlay names it
+(`corrected_deposit_id`, a string that `deposits_after` names; `app.settlement_correction_plan_result`
+refuses any other value with 22023), and the plan check compares with the same count. The 10e-2c
+sentence above, that a changed pay-back count usually meets the targets check first, still holds:
+after closure the count changes only with a held change or a payout that the targets read again.
 
 As built in V1-056 sub-slice 10f-2 (migration `20261221_147`; DB-SETTLE-005, DB-INV-010): the
 `ADJUSTMENT_REVERSAL` variant links its `invoice_adjustment_reversals` row

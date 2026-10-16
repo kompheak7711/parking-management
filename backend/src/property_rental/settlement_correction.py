@@ -773,7 +773,9 @@ class RecordDepositReceiptCorrectionCommand:
     10e-2b-2). A receipt correction must change the Deposit or the amount (owner answer 1 to
     Q-2026-10-12-89). A right receipt into a Deposit with a forfeiture ground is forfeited in the
     same correction, or for a Deposit whose forfeiture was reversed as the receipt's ``outcome``
-    chooses; forfeited money is not in the plan (sub-slice 10e-2c).
+    chooses; forfeited money is not in the plan (sub-slice 10e-2c). Only the money beyond the Pet
+    Deposit's pay-back count is forfeited, and the count holds only returned money the Customer
+    has not received yet; the rest is in the plan (sub-slice 10e-2d).
     """
 
     idempotency_key: UUID
@@ -839,7 +841,9 @@ class CorrectionDepositReceipt:
     or neither) are the staff's choice for a Deposit with a forfeiture ground whose forfeiture was
     reversed: ``DL_032`` (the plan applies the money and refunds the rest) or ``FORFEIT``
     (forfeited again on the same ground). A Deposit with a ground that was never forfeited is
-    forfeited without a choice; any other Deposit takes none. The database checks both."""
+    forfeited without a choice; any other Deposit takes none. Only the money beyond the Pet
+    Deposit's pay-back count is forfeited, and ``FORFEIT`` is refused when the count covers the
+    whole receipt (sub-slice 10e-2d). The database checks both."""
 
     deposit_id: UUID
     amount_usd_cents: int

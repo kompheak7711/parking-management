@@ -40125,12 +40125,12 @@
       "notes": "Real refusals with nothing written: no room under the Pet Deposit's required amount, more than the receipt frees, new money left unused (also when a Refund is charged back on this Lease, refused as such until sub-slice 10e-2b-2 named that charge as a placeholder line), an unknown Deposit (P0002), the internal writer outside its correction; the other refusals on a changed target; a draft stale after an EXTRA_CHARGE changed the open debt stays pending; outside a correction a receipt that differs from the accepted amount is refused (23514) (V1-056 sub-slice 10e-2b-1)."
     },
     {
-      "test_id": "test_a_right_receipt_into_a_deposit_with_a_forfeiture_ground_waits_for_10e_2c",
+      "test_id": "test_a_right_receipt_into_a_kept_deposit_is_refused_and_after_a_reversal_needs_a_choice",
       "upstream_ids": ["BR-SETTLE-013", "BR-DEP-023", "DB-DEP-002"],
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_deposit_receipt_rewrite_migration.py",
       "status": "implemented",
-      "notes": "On a real kept Security Deposit (voluntary early leaving): a new receipt into it is refused while kept, and the plan check refuses a held value for a Deposit off the DL-032 path; after a FORFEITURE_REVERSAL correction a new receipt into it needs the staff's choice and without one is refused (sub-slice 10e-2c, owner answer 2 to Q-2026-10-12-88); nothing written (V1-056 sub-slice 10e-2b-1)."
+      "notes": "On a real kept Security Deposit (voluntary early leaving): a new receipt into it is refused while kept, and the plan check refuses a held value for a Deposit off the DL-032 path; after a FORFEITURE_REVERSAL correction a new receipt into it needs the staff's choice and without one is refused (sub-slice 10e-2c, owner answer 2 to Q-2026-10-12-88); nothing written (V1-056 sub-slice 10e-2b-1; renamed in sub-slice 10e-2d from test_a_right_receipt_into_a_deposit_with_a_forfeiture_ground_waits_for_10e_2c, owner answer to Q-2026-10-12-92)."
     },
     {
       "test_id": "test_right_receipts_are_least_privilege_and_forward_only",
@@ -40234,7 +40234,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_deposit_receipt_forfeiture_migration.py",
       "status": "implemented",
-      "notes": "A choice on a Deposit without a ground is refused at record; the input refuses a choice without its reason, an unknown choice and a bad reason (22023) and keeps a valid one; on changed targets a choice on a never-forfeited Deposit is refused, a reversed Deposit needs a choice, and a forfeiture that would take other money (pay-back count or other held money) is refused (Q-2026-10-12-93); the forfeiture list names each forfeited receipt with its basis and reason (V1-056 sub-slice 10e-2c)."
+      "notes": "A choice on a Deposit without a ground is refused at record; the input refuses a choice without its reason, an unknown choice and a bad reason (22023) and keeps a valid one; on changed targets a choice on a never-forfeited Deposit is refused, a reversed Deposit needs a choice, and a forfeiture that would take other money (other held money) is refused, while a pay-back count alone no longer refuses one (two hand-built targets with a count of 1 on the 8,000 receipt pass; owner answer (a) to Q-2026-10-12-93, sub-slice 10e-2d); the forfeiture list names each forfeited receipt with its basis and reason (V1-056 sub-slice 10e-2c)."
     },
     {
       "test_id": "test_receipt_forfeitures_are_least_privilege_and_forward_only",
@@ -41875,6 +41875,117 @@
       "test_path": "backend/tests/test_settlement_payment_move_migration.py",
       "status": "implemented",
       "notes": "Independent review round 1: the correct Invoice is paid in full after the record; the confirm is refused (55000, nothing outstanding), the draft stays pending, no move and no correction header are written (V1-056 sub-slice 10g)."
+    },
+    {
+      "test_id": "test_a_forfeited_right_receipt_does_not_pay_back_money_the_settlement_paid_out",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-SETTLE-008",
+        "BR-DEP-022",
+        "DL-032",
+        "DB-DEP-004",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_receipt_payback_forfeiture_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer (b) to Q-2026-10-17-122 on the security reviewer's round 1 case, after a real closure: a Pet Deposit had a pay-back count of 3,000 (a 5,000 Pet Refund-review Refund, 3,000 returned before the pet noncompliance termination) and the Final Settlement refunded that 3,000, so the count is 0; the receipt correction of the 10,000 Security receipt writes 5,000 Security (DL_032) and 5,000 Pet: the draft lists a 5,000 forfeiture on BR-DEP-022, deposits_after 5,000 and 0, the confirm forfeits 5,000 (linked) and the plan applies the Security 5,000 to the recovery charge (5,000 owed); with 8,000 and 2,000 the whole 2,000 is forfeited; the Pet Deposit's other Refunds stay 3,000, it pays no Deposit application, the count stays 0 and the ledger reconciles (V1-056 sub-slice 10e-2d)."
+    },
+    {
+      "test_id": "test_the_plan_check_and_the_forfeiture_list_follow_the_payback_count",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-SETTLE-008",
+        "BR-DEP-022",
+        "DB-DEP-004"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_receipt_payback_forfeiture_migration.py",
+      "status": "implemented",
+      "notes": "With the stored draft (count 0 after the Settlement Refund, owner answer (b) to Q-2026-10-17-122), the plan check accepts the empty Pet Deposit at 0 and refuses 1 (55000); named as the corrected receipt's own Deposit (corrected_deposit_id) it is counted without payouts and refuses 3,001 (the real-path own-Deposit test records a draft at the count); a corrected_deposit_id that is not a named Deposit or not a string is refused (22023); the target count is 0, or 3,000 for a hand-built source naming the Pet Deposit; the forfeiture list names the receipt less the count (5,000 on the real target, 2,000 on the hand-built own target; 8,000 gives 8,000, 5,000 and nothing for counts 0, 3,000, 8,000 and 9,000); a staff choice to forfeit again is refused while the count covers the receipt and passes one cent below it (V1-056 sub-slice 10e-2d)."
+    },
+    {
+      "test_id": "test_the_payback_forfeiture_migration_is_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "DB-DEP-004"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_receipt_payback_forfeiture_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20261223_149 adds one internal function (app.lease_deposit_payback_count_as: no grant, SECURITY DEFINER, fixed search path) and no constraint or trigger, changes only the eight patched functions (privileges, owner and settings kept; each body exactly the old one with the module's replacements) and is forward-only (V1-056 sub-slice 10e-2d)."
+    },
+    {
+      "test_id": "test_a_staff_choice_to_forfeit_again_takes_the_money_already_paid_back",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-SETTLE-008",
+        "BR-DEP-022",
+        "DL-032",
+        "DB-DEP-004",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_receipt_payback_forfeiture_migration.py",
+      "status": "implemented",
+      "notes": "The review round 1 set-up on the real path: the Pet Deposit's 3,000 beyond the count was forfeited through the draft, the Final Settlement refunded its 3,000 of pay-back money and a FORFEITURE_REVERSAL correction refunded the forfeited 3,000 (count 0, owner answer (b) to Q-2026-10-17-122); the receipt correction's 5,000 Pet receipt with the staff choice FORFEIT is listed and forfeited whole (STAFF_CHOICE, its reason, linked); the Pet Deposit is kept again and pays nothing; the Security 5,000 pays the recovery charge and 5,000 stays owed; the ledger reconciles (V1-056 sub-slice 10e-2d)."
+    },
+    {
+      "test_id": "test_the_count_takes_only_payouts_that_are_not_undone",
+      "upstream_ids": [
+        "BR-SETTLE-008",
+        "BR-SETTLE-013",
+        "BR-DEP-022",
+        "DL-032",
+        "DB-DEP-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_receipt_payback_forfeiture_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer (b) to Q-2026-10-17-122: the Final Settlement's 3,000 Pet Refund takes the count to 0; a return-only correction of 1,000 of it (real path) puts 1,000 back and the Pet Deposit follows DL-032; a hand-built rolled-back Deposit application of 400 takes 400 out and its reversal puts it back; the returned-Refund check counts the rest of that Refund's return; a Pet Refund-review Refund's return still adds at the end; without payouts the count is the built 3,000 (V1-056 sub-slice 10e-2d)."
+    },
+    {
+      "test_id": "test_a_payout_recovered_by_a_charge_is_payback_money_again",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-SETTLE-008",
+        "BR-DEP-022",
+        "DL-032",
+        "DB-DEP-005",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_receipt_payback_forfeiture_migration.py",
+      "status": "implemented",
+      "notes": "Review round 2 set-ups B and C on the real path: the seeded Pet receipt's correction recovers the Final Settlement's 3,000 Pet Refund (and the review Refund's 2,000) by a charge, so the count is 3,000 again with the Pet Deposit empty (implementer's reading (i), owner answer (b) to Q-2026-10-17-122); the Security receipt's correction then forfeits 2,000 of a 5,000 Pet receipt on BR-DEP-022 and its pay-back 3,000 follows DL-032 after the Security 5,000 on the recovery charge (2,000 owed); count 0 afterwards; the ledger reconciles (V1-056 sub-slice 10e-2d)."
+    },
+    {
+      "test_id": "test_the_corrected_receipt_s_own_pet_deposit_counts_without_its_payouts",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-SETTLE-008",
+        "BR-DEP-022",
+        "DL-032",
+        "DB-DEP-004",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_receipt_payback_forfeiture_migration.py",
+      "status": "implemented",
+      "notes": "Review round 2 set-up A on the real path: the seeded 5,000 Pet receipt was really 4,000 or 2,000; the correction recovers the Pet Deposit's two Refunds by a charge and writes the right receipt into the same Pet Deposit, whose target count is 3,000 (without payouts, corrected_deposit_id); 4,000 forfeits 1,000 and applies 3,000 to the Settlement Refund's recovery charge (the writer's exact check passes); 2,000 forfeits nothing and applies 2,000, 1,000 stays pay-back money; the Payment keeps the rest and the ledger reconciles (V1-056 sub-slice 10e-2d)."
+    },
+    {
+      "test_id": "test_a_staff_choice_to_forfeit_again_within_the_count_is_refused_on_the_real_path",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-DEP-022",
+        "DL-032",
+        "DB-DEP-004"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_receipt_payback_forfeiture_migration.py",
+      "status": "implemented",
+      "notes": "Review round 2 set-up D on the real path: after the forfeit_pet case's 8,000 Pet receipt is reversed with its three Refunds recovered by a charge (count 3,000, forfeiture reversed), a 3,000 Pet receipt with the staff choice FORFEIT is refused at record (55000, nothing written; owner confirmation with the answer to Q-2026-10-17-122); 5,000 forfeits 2,000 as STAFF_CHOICE and its pay-back 3,000 follows DL-032 (V1-056 sub-slice 10e-2d)."
     }
   ]
 }

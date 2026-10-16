@@ -222,6 +222,9 @@ def test_a_security_deposit_receipt_for_the_wrong_amount_is_written_again_and_ap
         "credits": {},
         "deposits": {},
         "deposits_after": {str(security): 8_000},
+        # Sub-slice 10e-2d (owner answer (b) to Q-2026-10-17-122): the corrected receipt's
+        # Deposit, which the plan check counts without the payouts this correction undoes.
+        "corrected_deposit_id": str(security),
     }
     assert (
         stored["plan_result"]["deposit_ids"],
@@ -514,7 +517,7 @@ def test_the_refusals_of_a_right_receipt(migrated_database_url: str) -> None:
     direct_receipt(url, security, payment, 10_000, case["human"])
 
 
-def test_a_right_receipt_into_a_deposit_with_a_forfeiture_ground_waits_for_10e_2c(
+def test_a_right_receipt_into_a_kept_deposit_is_refused_and_after_a_reversal_needs_a_choice(
     migrated_database_url: str,
 ) -> None:
     """Owner rule 3 and Q-2026-10-11-83 point 3 on the real path: while the Security Deposit is

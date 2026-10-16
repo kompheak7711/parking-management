@@ -1,10 +1,12 @@
 # V1-056 sub-slice 10e-2d — a forfeited right receipt keeps the pay-back money — review record
 
 Sub-slice: 10e-2d (owner answer (a) to Q-2026-10-12-93). Migration `20261223_149` (exact-text
-patches only). Base commit: 238a1c8. Built on 2026-10-17. STOPPED after review round 1 for
-Q-2026-10-17-122 (a money-rule blocker); NOT committed. Not pushed.
+patches only at first; one new internal function under the Q-122 answer). Base commit: 238a1c8.
+Built on 2026-10-17. Stopped after review round 1 for Q-2026-10-17-122 (a money-rule blocker);
+finished in a fresh session under the answer and committed after review round 3. Not pushed.
 
-Rule IDs: BR-SETTLE-013, BR-SETTLE-008, DL-032, BR-DEP-022, BR-DEP-023; DB-SETTLE-005, DB-DEP-004.
+Rule IDs: BR-SETTLE-013, BR-SETTLE-008, DL-032, BR-DEP-022, BR-DEP-023; DB-SETTLE-005, DB-DEP-004,
+DB-DEP-005.
 Design: ops/V1_056_PLAN.md, "10e-2d pre-code design".
 
 ## Built (working tree, not committed)
@@ -24,7 +26,9 @@ Design: ops/V1_056_PLAN.md, "10e-2d pre-code design".
   count of 1 moved from refused to passing, a comment, the docstring; owner standing rule, answer
   (a) to Q-93); the 27 head-revision assertions in 15 modules (revision strings only; a script
   checked each file's count).
-- Traceability: one note of entry 2,987 updated; three entries appended (3,170 to 3,172).
+- Traceability: one note of entry 2,987 updated; three entries appended (3,170 to 3,172). At the
+  commit: notes of entries 2,974 (the rename) and 2,987 updated; eight entries appended (3,170 to
+  3,177).
 - Docs: docs/004 (the receipt correction forfeiture paragraph).
 
 Read-only search for affected tests (before T1 and P1): every backend test naming the five patched
@@ -110,8 +114,169 @@ Security: 1 blocker, 2 should-fix, notes. Independent: 0 blockers, 3 should-fix,
   (recheck in 10h); service docstrings `settlement_correction.py:774-776` and `:839-842` still say
   the whole receipt is forfeited; no BR-DEP-023 case with a count.
 
-## Status
+## Status after round 1
 
 Stopped under the takeover stop conditions (a review finding that changes who pays or how much
-needs the owner). Nothing of the build is committed; this record, the plan text, the question and
-the NOW.md line are committed as records only.
+needs the owner). Nothing of the build was committed; this record, the plan text, the question and
+the NOW.md line were committed as records only (e5bcb2b).
+
+## Owner answers (2026-10-17, fresh session)
+
+Q-2026-10-17-122 (b): the pay-back count includes only money the Customer has not received yet;
+money already paid out is not paid back again; one rule on every path; where nothing was paid out
+the result stays as built. The `FORFEIT` refusal reading is confirmed. Q-2026-10-17-121 (a) is
+recorded too (built later as sub-slice 10g-2); its records ride in this commit.
+
+## Built under the answer (working tree, before round 2)
+
+- Design: plan, "Q-122 design" (catalog dumps D3 to D5, read only, no `REDACTED` marker in D3 and
+  D4; D5 has one `[HEX REDACTED]` marker outside the copied text).
+- New internal `app.lease_deposit_payback_count_as(deposit, returned_refund, returned_amount,
+  without_payouts)`; patched: the count, the returned-Refund check, the receipt correction targets
+  (the corrected receipt's own Deposit without payouts), the overlay (`corrected_deposit_id`),
+  `app.settlement_correction_plan_result` (the key's check and the 10e-2d branch); the five patches
+  of the first build stay. Eight patched functions, one new.
+- Tests: the security reviewer's $30 / $50 case (both receipts forfeited whole; non-review Refunds
+  3,000, applications 0, count 0), the round 1 staff-choice set-up on the real path (5,000
+  forfeited whole), the count on the real path (a return-only correction of the Settlement Refund
+  puts 1,000 back; a hand-built rolled-back application and its reversal), the plan check with the
+  key; the round 1 comment fix in the committed forfeiture test.
+- Read-only search for affected tests before T2: every test naming the pay-back functions, the
+  path, the forfeiture source, the disposition check, the returned-Refund plan, the receipt
+  correction functions, `deposits_after` or the plan result, and every module that creates Pet
+  Refund-review Refunds and touches a Deposit with a ground after a payout (27 modules in T2).
+
+## Runs (this session)
+
+| Run | Result |
+|---|---|
+| D3, D4, D5 | catalog dumps (read only) |
+| M3 | passed |
+| FF2/FC2/L2/Y2 | passed (formatter first; long lines fixed before L2 by the formatter) |
+| T2 | 4 failed, 538 passed: cause A (the new least-privilege test read the wrong tuple index; 1 of 2), cause B (two committed whole-overlay expectations lack `corrected_deposit_id`; 1 of 2), cause C (`test_refund_signer_recipient_migration.py::test_refunds_of_the_earlier_shape_project_exactly_as_before` ran after Settlement modules: the known order dependency of the slice 12 list, plan "Open item (sub-slice 8d, tests only)"; 1 of 2, fixed by the run order) |
+| T3 | 20 passed (the signer test first, the new module, the two changed committed modules): the passing rerun after A, B and C |
+| U2 | 3847 passed |
+| M4 | passed |
+| P2 | 2249 passed (the known Starlette deprecation and Pydantic alias warnings) |
+| FF3/FC3/L3/Y3 | passed (after the round 2 fixes) |
+| M5 | passed |
+| T4 | 299 passed (the new module, the three changed committed modules, the service unit tests) |
+| U3 | 3847 passed |
+| M6 | passed |
+| P3 | 2253 passed (the same known warnings) |
+
+Full outputs: `~/Development/prm-run-logs/v1-056-10e-2d-*.txt` (the format, lint and type checks
+are short and not saved).
+
+## Review round 2 (fresh read-only subagents, during P2; told to write no files at all, scratch files included, and to run no test, script or database command)
+
+Security: 0 blockers, 1 should-fix, notes. Independent: 0 blockers, 4 should-fix, notes. Blocker B1
+of round 1 is closed on every path traced (Settlement Refund and application, correction
+application and Refund, forfeiture reversal Refund, returned Settlement Refund, return reversal,
+recovery by a charge); the new count is never above the as-built count. Both reviewers confirm the
+three implementer's readings as needed and safe: (i) a `RECOVERED_BY_CHARGE` recovery undoes the
+payout (the other reading would charge the Customer and let the Property keep the money); (ii) a
+payout takes pay-back money first; (iii) the corrected receipt's own Deposit is counted without
+payouts, with the server-built `corrected_deposit_id`. No changed committed test got weaker (the
+two overlay expectations are stricter; the rename changes name and traceability only).
+
+Should-fix, all fixed (tests, text, one fail-closed check):
+- Security S1 / independent 2: the core money path (a partial forfeiture whose pay-back part the
+  step applies, the writer's exact check with a pay-back value, the own-Deposit count) had no
+  real-path test, and the plan's "no real path" for the own Deposit was wrong: the seeded Pet
+  receipt has a RECEIVED Payment and a committed test corrects such a receipt into the same Pet
+  Deposit (`test_settlement_deposit_receipt_recovery_line_migration.py:140`). Fixed with the
+  set-ups below; plan corrected.
+- Independent 1: the plan promised a test of a return reversal and of a recovery by a charge in the
+  count test. The recovery is now tested on the real path (set-ups B, C, A, D); the plan text no
+  longer claims a separate return reversal test (the same sum of Refund correction effects).
+- Independent 3: the hand-built own-Deposit assertion at the count (`!= ONLY_DL_032`) was weak:
+  removed; set-up A records such a draft on the real path.
+- Independent 4: the rename and the two changed overlay expectations are now in the plan and
+  docs/010, and the rename in the traceability file; docs/010 build and "Updated tests" notes written.
+- Security note 2 (fail closed): the plan check's 10e-2d branch now wraps its condition in
+  `COALESCE(...,false)`, so a missing value refuses.
+- Notes taken as text: the migration docstring calls the lower count an owner-approved narrowing
+  (security note 6; docs/010 too); the service docstrings of the receipt correction name the
+  pay-back count (round 1 note); the param ids of the first test; the traceability wording of the
+  plan-check entry.
+
+Notes kept (for the report): a new-Refund return of the forfeiture reversal's Pet Refund after a
+staff re-forfeit is refused (count 0; answer (b); unreachable at HEAD); the other-money refusal is
+reachable on a real path (a Pet Deposit holding unreceived pay-back money after a return-only
+correction): a known limit; security note 5, a Pet Refund-review Refund recovered by a charge still
+lowers the count as built: asked as Q-2026-10-17-123 (before 10e-2b-4, recommendation (a));
+security note 7, for 10e-2b-3 and 10e-2b-4: the forfeiture formula relies on the target holding
+nothing else after the correction (if that is relaxed, use the held amount after the correction);
+`app.lease_deposit_kept_rule` in the plan check can raise 22023 rather than 55000 for a Pet Deposit
+off DL-032 without a termination (no path reaches it); payouts include applications to any debt
+of the Lease and Refunds to an agreed Signer ("applied or refunded").
+
+### Round 2 test set-ups (written in full, run rule of 2026-10-13)
+
+- A (security and independent; the corrected receipt's own Pet Deposit): `payback_ground_case(url)`
+  (count 0, without payouts 3,000, held 0). Correct `receipt_of(url, pet)` (the seeded 5,000, its
+  Payment P) with `receipts=(CorrectionDepositReceipt(pet, X),)`, X = 4,000 or 2,000; the
+  correction recovers by a charge the review Refund's 2,000 and `settlement_pet_refund`'s 3,000
+  (held 0 + 2,000 + 3,000 = 5,000, the Deposit ends empty); steps: `PET_REST` of min(X, 3,000) onto
+  the placeholder `deposit_receipt_recovery_line_id(draft_id, settlement refund)`, `pet_remainder=STAFF`.
+  At record: target count 3,000; X 4,000 lists a 1,000 `TERMINATION_GROUND` forfeiture on BR-DEP-022
+  (X 2,000 lists none); `deposits_after` {pet: min(X, 3,000)}, `corrected_deposit_id` pet; open 5,000,
+  closing 5,000 less min(X, 3,000). At confirm: both recoveries linked, the 5,000 receipt reversed
+  and the X receipt written, X 4,000 forfeits 1,000 (linked, after the receipt), the application
+  pays min(X, 3,000) on the Settlement Refund's recovery line, the review Refund's line owes 2,000,
+  held 0, count 0 (X 4,000) or 1,000 (X 2,000), without payouts 3,000, path KEPT or NOTHING_HELD,
+  `available(P)` up by 5,000 less X, the ledger reconciles.
+- B (independent; reading (i) alone): `payback_ground_case(url)`, then record and confirm
+  `request(case, receipt_of(url, pet))` with no receipts: the recovery lines are 3,000 and 2,000,
+  held 0, count 3,000, path NOTHING_HELD.
+- C (independent; a forfeited right receipt into another Pet Deposit whose count is above 0 after
+  payouts): after B, the receipt correction of the 10,000 Security receipt with Security 5,000
+  (`DL_032`) and Pet 5,000 (`record_correction(case, 5_000, 5_000)`): forfeiture 2,000
+  (`TERMINATION_GROUND`), `deposits_after` {security 5,000, pet 3,000}; at confirm 2,000 forfeited,
+  applications Security 5,000 and Pet 3,000 on the 10,000 recovery line (2,000 owed), count 0, path
+  KEPT, the ledger reconciles. (The security reviewer's optional set-up C, the same through the
+  RETURNED_PAYMENT correction of the seeded Pet Payment, is not built: set-up B reaches the same
+  state through the receipt correction.)
+- D (both; the staff choice refusal on the real path): `payback_ground_case(url, forfeit_pet=True)`,
+  then the B-style correction of the seeded 8,000 Pet receipt (recoveries 2,000, 3,000 and 3,000;
+  count 3,000, held 0, forfeiture reversed, path DL_032); `record_correction(case, 5_000, 3_000,
+  "FORFEIT")` is refused (55000, "Nothing beyond the Customer's pay-back money is left to forfeit;
+  choose DL-032"), nothing written; `(5_000, 5_000, "FORFEIT")` lists 2,000 `STAFF_CHOICE` with the
+  outcome reason, `deposits_after` pet 3,000, and the confirm applies Security 5,000 and Pet 3,000,
+  count 0, path KEPT, the ledger reconciles.
+- The security reviewer's set-up B (the forfeit_pet case's own Pet receipt with a partial
+  `STAFF_CHOICE` forfeiture) is covered by A (own Deposit) and D (staff choice).
+
+All four built as tests in the new module (A parametrized); T4 and P3 passed.
+
+## Review round 3 (fresh read-only subagents, after U3 and P3; told to write no files at all, scratch files included, and to run no test, script or database command)
+
+Independent: clean (0 blockers, 0 should-fix; four optional notes). Security: clean for code and
+security (0 blockers, no code should-fix); one should-fix in the records and two notes. Both
+confirm every round 2 should-fix fixed, B1 closed, the own-Deposit count unreachable by crafted
+input (the source and the overlay are built by the server; the plan result has no grant), no
+changed committed test weaker, the texts matching the code and the runs the right evidence.
+
+Fixed under the run rule "Round 3 text and assertion fixes" (no code, migration logic or fixture
+change; no round 4):
+- Security S1 (records): Q-2026-10-17-123 did not cover set-up C, where the Pet Refund-review
+  Refund's own unreturned 2,000 is recovered by a charge and the new receipt still forfeits 2,000:
+  the question now has that case and three options, recommendation (a) a recovery by a charge
+  counts like a verified return; the test's 2,000 is marked as depending on the answer (plan,
+  docs/010, the test's docstring).
+- New assertions in built tests (security N1, independent note 4): set-up D asserts the linked
+  2,000 `STAFF_CHOICE` forfeiture row and the 2,000 still owed on the recovery line; set-up A at
+  2,000 asserts that the draft has no forfeiture key (independent note 3).
+- Text: docs/004 and the migration docstring say that a count that would still be too high fails
+  closed at the confirm (security N2); the record's status, rule IDs, traceability count and the
+  overlay-expectation wording (independent notes 1 and 2).
+
+| Run | Result |
+|---|---|
+| FF4/FC4/L4/Y4 | passed |
+| M7 | passed |
+| T5 | 10 passed (the new module; the last targeted run of every file changed since P3) |
+| P4 | 2253 passed (the known Starlette deprecation warning) |
+
+Status: committed (see git log). Not pushed.
