@@ -1140,6 +1140,32 @@ Credit still available, at most the release and the line's unpaid rest. The Rent
 10f-1 (recorder and confirm) ends. Drafts recorded before this change whose put-back the
 proposal placed on the line confirm unchanged in amount; only the label differs.
 
+As built in V1-056 sub-slice 10f-2 (migration `20261221_147`; owner answer 7 to Q-2026-10-06-36,
+answer (a) to Q-2026-10-16-118 and answer (b) to Q-2026-10-16-119): after the Lease's Final
+Settlement is closed, the second writer of this table is the `ADJUSTMENT_REVERSAL` variant of the
+`SETTLEMENT_CORRECTION` draft (DB-SETTLE-003, DB-SETTLE-005). A `final_settlements.prepare` holder
+records it (`app.record_settlement_adjustment_reversal_draft`: READ COMMITTED, the reason 1 to
+1,000 characters, an exact repeat replays, a reused id P5205, the `adjustment-reversal:` lock
+shared with the draft above, refused while a draft of either kind for the Adjustment waits); a
+`financial.approve` holder (a person, at READ COMMITTED) confirms it
+(`app.confirm_settlement_adjustment_reversal`). The source (internal overload
+`app.adjustment_reversal_source(property, adjustment, settlement)`) takes the releases and amounts
+of the draft above and refuses (55000): a debit Adjustment, a reversed one, one on an Invoice that
+is not issued, one a resolution wrote, one on an Invoice of another Lease, one a post-settlement
+correction wrote unless it is a `CHARGE_REDUCTION` correction of this Settlement (its reversal
+restores exactly the debt the reduction removed and puts nothing back), one recorded at or after
+the closure without such a link, and an open Settlement (P0002 for a Settlement or Adjustment not
+on the Property). The confirm takes the draft lock, the `adjustment-reversal:` lock, the
+Settlement's draft lock, the Credit writers' locks and the Invoice and its lines, checks the
+source again (stale P5S02, the draft stays pending), writes the decision and the correction header
+through an internal overload of `app.begin_settlement_correction` that also stores the reversal
+id, the put-backs and the debt in the decision, then links and writes the reversal and each
+labelled put-back (as in 10f-1b, on the Adjustment's own line), the Invoice status and version,
+all deferred checks at once, one `invoice.adjustment_reversed` audit event (correlated with the
+draft) and one `final_settlement.correction.confirmed` event. The rest of each release stays as
+debt on the Invoice Customer's ledger; no DL-032 step runs. The draft above, recorded before the
+closure, is stale at its confirm after it (its source's refusal changed) and stays pending.
+
 ---
 
 # 10. Payment, Exchange, Allocation, and Credit Tables
@@ -1557,6 +1583,16 @@ trigger, which refuses every such row except the re-posted rest of a labelled ro
 10e-3e test writes such a row by hand with the insert trigger disabled to reach the agreement
 check). The release re-post (migration 67) of a labelled put-back keeps the label on its rest, as
 before.
+
+As built in V1-056 sub-slice 10f-2 (migration `20261221_147`): the insert trigger, the deferred
+trigger's filter and `app.adjustment_reversal_put_back_allowed` also accept the confirmed decision
+of a `SETTLEMENT_CORRECTION` draft of the variant `ADJUSTMENT_REVERSAL` of the same transaction
+(the same binding); for such a decision the allowed function also needs the put-back linked to
+that correction (DB-SETTLE-005 `customer_credit_application_id`). The put-back still has no Final
+Settlement, so the 8e-2 refusal of a Settlement Credit application reversal does not cover it:
+after closure the ordinary Credit application reversal can still reverse it (as other Credit
+applications made after closure, until sub-slice 10h decides which records count as existing at
+closure).
 
 ## DB-CREDIT-003 — `customer_credit_application_reversals`
 
@@ -3413,6 +3449,13 @@ state usually meets the targets check first (55000; the draft stays pending as w
 Refused (55000) until the owner answers Q-2026-10-12-93: a forfeiture that would take other money
 than the new receipt's (the Deposit would hold other money afterwards, or has a pay-back count).
 The result gains `deposit_disposition_ids`.
+
+As built in V1-056 sub-slice 10f-2 (migration `20261221_147`; DB-SETTLE-005, DB-INV-010): the
+`ADJUSTMENT_REVERSAL` variant links its `invoice_adjustment_reversals` row
+(`invoice_adjustment_reversal_id`) and each labelled put-back (`customer_credit_application_id`, a
+Credit application with no Final Settlement) to the correction before it writes them; the reversal is always its first effect. Its
+decision also stores the reversal id, the put-backs and the debt that stays, which the 10f-1b
+put-back checks read (DB-CREDIT-002). No table, column or effect kind changed.
 
 ## DB-SETTLE-007 — `settlement_pet_classifications`
 

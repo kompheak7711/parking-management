@@ -6,8 +6,10 @@ Adjustment released, the Customer Credit that holds it, the part of that Credit 
 and the part that stays as debt. It has no financial effect until a ``financial.approve`` holder
 confirms it. Confirmation writes, in one transaction, the Adjustment reversal and puts the part
 still available back on the line as Credit applications. After the Lease's Final Settlement is
-closed, the reversal is a correction of that Settlement instead (sub-slice 10f-2). Rejection and
-withdrawal use the shared draft decisions; the HTTP routes and screens come in slice 11.
+closed, the reversal is a correction of that Settlement instead (sub-slice 10f-2): staff with
+``final_settlements.prepare`` record it, a ``financial.approve`` holder confirms it, and every
+record it writes is linked to the correction. Rejection and withdrawal use the shared draft
+decisions; the HTTP routes and screens come in slice 11.
 """
 
 from __future__ import annotations
@@ -21,6 +23,7 @@ import psycopg
 from property_rental.identity import AuthenticatedActor, AuthorizationRequirement, is_authorized
 
 ADJUSTMENT_REVERSAL_PREPARE_CAPABILITY: Final = "invoices.adjust"
+SETTLEMENT_CORRECTION_PREPARE_CAPABILITY: Final = "final_settlements.prepare"
 FINANCIAL_APPROVE_CAPABILITY: Final = "financial.approve"
 ADJUSTMENT_REVERSAL_CONNECT_TIMEOUT_SECONDS: Final = 3
 ADJUSTMENT_REVERSAL_LOCK_TIMEOUT_MS: Final = 3000
@@ -66,6 +69,16 @@ def adjustment_reversal_draft_id(property_id: UUID, actor_id: UUID, idempotency_
     )
 
 
+def settlement_adjustment_reversal_draft_id(
+    property_id: UUID, actor_id: UUID, idempotency_key: UUID
+) -> UUID:
+    """Stable correction draft id for one preparer's command key in one Property."""
+    return uuid5(
+        ADJUSTMENT_REVERSAL_NAMESPACE,
+        f"settlement-adjustment-reversal:{property_id}:{actor_id}:{idempotency_key}",
+    )
+
+
 def _uuid(value: object, name: str) -> UUID:
     if not isinstance(value, UUID) or value.int == 0:
         raise AdjustmentReversalInvalidError(f"{name} must be a nonzero UUID")
@@ -93,6 +106,22 @@ class RecordAdjustmentReversalCommand:
 
     def __post_init__(self) -> None:
         _uuid(self.idempotency_key, "idempotency_key")
+        _uuid(self.adjustment_id, "adjustment_id")
+        _text(self.reason, "reason", 1000)
+
+
+@dataclass(frozen=True, slots=True)
+class RecordSettlementAdjustmentReversalCommand:
+    """Reverse one credit Adjustment of a closed Final Settlement's Lease (sub-slice 10f-2)."""
+
+    idempotency_key: UUID
+    settlement_id: UUID
+    adjustment_id: UUID
+    reason: str
+
+    def __post_init__(self) -> None:
+        _uuid(self.idempotency_key, "idempotency_key")
+        _uuid(self.settlement_id, "settlement_id")
         _uuid(self.adjustment_id, "adjustment_id")
         _text(self.reason, "reason", 1000)
 
@@ -212,5 +241,47 @@ class AdjustmentReversalService:
         _uuid(draft_id, "draft_id")
         return self._call(
             "SELECT app.confirm_adjustment_reversal(%s,%s,%s,%s)",
+            (property_id, actor_id, draft_id, FINANCIAL_APPROVE_CAPABILITY),
+        )
+
+    def record_correction(
+        self,
+        property_id: UUID,
+        command: RecordSettlementAdjustmentReversalCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        """Record the correction draft; it has no financial effect until confirmed."""
+        actor_id = self._authorize(actor, property_id, SETTLEMENT_CORRECTION_PREPARE_CAPABILITY)
+        request = RecordSettlementAdjustmentReversalCommand(
+            command.idempotency_key, command.settlement_id, command.adjustment_id, command.reason
+        )
+        return self._call(
+            "SELECT app.record_settlement_adjustment_reversal_draft(%s,%s,%s,%s,%s,%s,%s)",
+            (
+                property_id,
+                actor_id,
+                settlement_adjustment_reversal_draft_id(
+                    property_id, actor_id, request.idempotency_key
+                ),
+                request.settlement_id,
+                request.adjustment_id,
+                request.reason,
+                SETTLEMENT_CORRECTION_PREPARE_CAPABILITY,
+            ),
+        )
+
+    def confirm_correction(
+        self,
+        property_id: UUID,
+        draft_id: UUID,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        """Reverse the Adjustment through the correction; only financial.approve may confirm."""
+        actor_id = self._authorize(actor, property_id, FINANCIAL_APPROVE_CAPABILITY)
+        _uuid(draft_id, "draft_id")
+        return self._call(
+            "SELECT app.confirm_settlement_adjustment_reversal(%s,%s,%s,%s)",
             (property_id, actor_id, draft_id, FINANCIAL_APPROVE_CAPABILITY),
         )

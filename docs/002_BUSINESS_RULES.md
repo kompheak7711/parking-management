@@ -3656,7 +3656,9 @@ Adjustment's own Invoice line, even where an earlier line still owes and the Ren
 proposal would choose it; it restores what was there before the mistake and is not a new
 application choice. It carries the same label "put back by a correction", only for a put-back
 of that reversal, on the Adjustment's line, and never more than the release or the line's
-unpaid rest.
+unpaid rest. The same holds after the Lease's Final Settlement is closed for the Adjustment
+reversal correction of that Settlement (V1-056 sub-slice 10f-2), whose put-back is also linked to
+the correction.
 
 ---
 
@@ -4560,6 +4562,8 @@ Amended by the owner's answers to Q-2026-10-06-36 and Q-2026-10-06-37 (2026-10-0
 Amended by the owner's answer to Q-2026-10-07-38 (2026-10-07): a wrong Late-payment Charge after closure is fixed by a Late-payment Charge correction linked to the Settlement, prepared under the Final Settlement preparer capability and confirmed only by a holder of `financial.approve`. When the Charge was paid, the value released by the correction follows BR-CREDIT-014, as for a credit Adjustment of an Invoice line.
 
 Amended by the owner's answer to Q-2026-10-07-45 (2026-10-07; built in V1-056 sub-slice 10c-2a-5): a Damage line whose pet classification is wrong after closure, in either direction, is fixed by a pet classification correction, prepared under the Final Settlement preparer capability and confirmed only by a holder of `financial.approve`. The charge amount stays the same and the closed inspection record is not changed; the correction records the corrected classification, its evidence and the reason. Where the corrected classification changes which Deposit should pay the line, the line's Deposit applications from the Deposit that no longer should pay are reversed and the released Deposit value follows DL-032 again, with every Final Settlement rule and, at a BR-DEP-027 termination, a Customer choice given for this correction. A Deposit refunded at closure is not taken back, so the line may stay open debt on the Customer's ledger. A line billed from an inspection that was superseded before closure is not corrected this way until the owner decides whether a superseding inspection may carry a finding forward (the open point of Q-2026-10-07-45).
+
+Amended by the owner's answers to Q-2026-10-16-118 and Q-2026-10-16-119 (2026-10-16; built in V1-056 sub-slice 10f-2): after closure, the Adjustment reversal correction reverses a mistaken credit Adjustment on an Invoice of the Settlement's Lease that was recorded before the closure, or the credit Adjustment that a charge reduction correction of that Settlement wrote; reversing a charge reduction's Adjustment restores exactly the debt the reduction removed. The Adjustments of every other correction kind and of a hand-back or unpaid-Initial resolution are not reversed this way. The part of each released value whose Credit is still available goes back on the Adjustment's own line; the rest stays as debt on the Invoice Customer's ledger.
 
 ---
 

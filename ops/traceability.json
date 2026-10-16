@@ -41586,6 +41586,143 @@
       "test_path": "backend/tests/test_adjustment_reversal_put_back_migration.py",
       "status": "implemented",
       "notes": "No role calls app.adjustment_reversal_put_back_allowed or app.validate_adjustment_reversal_put_back; the migration adds those two functions and the deferred trigger customer_credit_applications_adjustment_put_back, patches only app.adjustment_reversal_source, app.confirm_adjustment_reversal and app.validate_credit_application_put_back without changing their privileges or settings, and is forward-only (V1-056 sub-slice 10f-1b)."
+    },
+    {
+      "test_id": "test_a_pre_closure_adjustment_s_released_credit_goes_back_through_a_correction",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-SETTLE-012",
+        "BR-INV-044",
+        "BR-CREDIT-008",
+        "BR-AUTH-010",
+        "DB-SETTLE-003",
+        "DB-SETTLE-005",
+        "DB-INV-010",
+        "DB-CREDIT-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_adjustment_reversal_migration.py",
+      "status": "implemented",
+      "notes": "After a real closure that did not use the Signer's 400 Credit, an ADJUSTMENT_REVERSAL correction (final_settlements.prepare records, only financial.approve confirms; refused for Staff in the service and in the database, 42501) reverses the pre-closure credit Adjustment and puts the whole 400 back on the Adjustment's line with the label put back by a correction; the reversal and the put-back are the correction's two effects; the Invoice version advances by two and the Invoice is PAID; the closed Settlement row and its snapshot counts are unchanged; one invoice.adjustment_reversed and one final_settlement.correction.confirmed audit event; a replay returns the same result without the transaction id; a second correction is refused (already reversed); the ledger reconciles (V1-056 sub-slice 10f-2)."
+    },
+    {
+      "test_id": "test_only_the_credit_still_available_goes_back_and_the_rest_stays_as_debt",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-SETTLE-016",
+        "BR-CREDIT-008",
+        "DB-INV-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_adjustment_reversal_migration.py",
+      "status": "implemented",
+      "notes": "The Settlement's Credit step used 150 of the released 400 Credit at closure: the correction puts back only the 250 still available and the other 150 stays as debt on the Adjustment's line, on the Signer's ledger; the ledger reconciles (V1-056 sub-slice 10f-2)."
+    },
+    {
+      "test_id": "test_a_charge_reduction_s_adjustment_is_reversed_and_owes_exactly_what_it_removed",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-INV-044",
+        "DB-SETTLE-005",
+        "DB-INV-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_adjustment_reversal_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer (b) to Q-2026-10-16-119: a CHARGE_REDUCTION correction's Adjustment of 500 on the unpaid 1,500 key card line is reversed by the correction: the line owes 1,500 again, nothing is put back, the reversal is the correction's one effect; the 10f-1 draft still refuses a correction's Adjustment (V1-056 sub-slice 10f-2)."
+    },
+    {
+      "test_id": "test_refusals_waiting_drafts_stale_drafts_and_withdrawal",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-AUTH-010",
+        "DB-SETTLE-003",
+        "DB-INV-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_adjustment_reversal_migration.py",
+      "status": "implemented",
+      "notes": "An open Settlement refuses the correction; a 10f-1 draft recorded before the closure is stale at its confirm after it (P5S02, its source's refusal changed) and stays pending, and while it waits the correction is refused; after its withdrawal the correction is recorded; an exact repeat replays, a reused key, a second waiting draft, an unknown Adjustment, another Lease's Adjustment, a REFUND correction's Adjustment (Q-2026-10-16-119 (b)) and a confirm outside READ COMMITTED are refused; the REFUND correction makes the waiting draft stale and it stays pending; the preparer withdraws it, records it again and the confirm leaves the line owing nothing; the internal begin overload keeps a variant's own result keys while the framework keys win, and refuses a result that is not an object (22023), rolled back; the 10f-1 recorder still refuses a closed Settlement's Adjustment (V1-056 sub-slice 10f-2)."
+    },
+    {
+      "test_id": "test_a_resolution_s_adjustment_is_refused_by_the_correction_too",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-RENT-030",
+        "DB-INV-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_adjustment_reversal_migration.py",
+      "status": "implemented",
+      "notes": "Q-2026-10-16-118 point 2 (a): a hand-back resolution's credit Adjustment is refused by the correction recorder too, and no draft is written (V1-056 sub-slice 10f-2)."
+    },
+    {
+      "test_id": "test_settlement_adjustment_reversals_are_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "DB-SETTLE-003",
+        "DB-SETTLE-005",
+        "DB-INV-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_adjustment_reversal_migration.py",
+      "status": "implemented",
+      "notes": "Only the financial role records and confirms; no role calls the overload of app.begin_settlement_correction, the overload of app.adjustment_reversal_source or app.settlement_adjustment_reversal_result; the migration adds only its functions, patches only app.adjustment_reversal_result and the three 10f-1b put-back checks without changing their privileges or settings, adds no table or trigger and is forward-only (V1-056 sub-slice 10f-2)."
+    },
+    {
+      "test_id": "test_the_correction_needs_the_settlement_preparer_and_the_approver_before_any_connection",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-SETTLE-013"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_adjustment_reversal.py",
+      "status": "implemented",
+      "notes": "final_settlements.prepare records and financial.approve confirms the Adjustment reversal correction, both checked before any connection (V1-056 sub-slice 10f-2)."
+    },
+    {
+      "test_id": "test_the_correction_s_invalid_input_is_refused_before_any_connection",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-SETTLE-013"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_adjustment_reversal.py",
+      "status": "implemented",
+      "notes": "The key, the Settlement, the Adjustment and the reason (1 to 1000 characters) are checked before any connection (V1-056 sub-slice 10f-2)."
+    },
+    {
+      "test_id": "test_the_correction_s_database_failures_map_to_stable_errors",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-SETTLE-013"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_adjustment_reversal.py",
+      "status": "implemented",
+      "notes": "Database refusals of the correction map to stable service errors without the database message (V1-056 sub-slice 10f-2)."
+    },
+    {
+      "test_id": "test_the_correction_draft_id_is_its_own_and_scoped_to_property_preparer_and_key",
+      "upstream_ids": [
+        "BR-SETTLE-013"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_adjustment_reversal.py",
+      "status": "implemented",
+      "notes": "The correction draft id differs from the 10f-1 draft id for the same key and is scoped to the Property, the preparer and the key (V1-056 sub-slice 10f-2)."
+    },
+    {
+      "test_id": "test_a_correction_s_put_back_needs_its_link_and_this_transaction_s_decision",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-CREDIT-008",
+        "DB-SETTLE-005",
+        "DB-CREDIT-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_adjustment_reversal_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 (both reviewers, the 10f-1b room set-up): a hand-written put-back of 1 listed by a confirmed 10f-1 decision passes; listed by a SETTLEMENT_CORRECTION decision of the variant ADJUSTMENT_REVERSAL with no effect link it is refused by the deferred check (23514); with a decision of another transaction, one dated before this transaction, or one of the variant CHARGE_REDUCTION the label insert trigger refuses it (23514); all rolled back (V1-056 sub-slice 10f-2)."
     }
   ]
 }
