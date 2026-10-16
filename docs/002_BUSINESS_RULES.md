@@ -3649,6 +3649,15 @@ correction", only for a put-back linked to that correction, on the same line, an
 than the amount reversed there. Staff cannot choose this label for an ordinary Credit
 application.
 
+Exception (owner answer (a) to Q-2026-10-16-118 point 1, V1-056): when a confirmed Adjustment
+reversal (the `ADJUSTMENT_REVERSAL` draft of a mistaken credit Adjustment, confirmed under
+`financial.approve`) puts the released Credit back, that put-back always goes back on the
+Adjustment's own Invoice line, even where an earlier line still owes and the Rent-first
+proposal would choose it; it restores what was there before the mistake and is not a new
+application choice. It carries the same label "put back by a correction", only for a put-back
+of that reversal, on the Adjustment's line, and never more than the release or the line's
+unpaid rest.
+
 ---
 
 ## BR-CREDIT-007 — Application Limits

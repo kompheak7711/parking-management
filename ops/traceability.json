@@ -41348,7 +41348,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_adjustment_reversal_migration.py",
       "status": "implemented",
-      "notes": "The 10,000 a credit Adjustment released from a Payment allocation as the Invoice Customer's new Credit goes back on the same line on reversal, as one Credit application with the Rent-first proposal (credits.apply, the approver, a detail trace naming the reversal and the release): the line owes 60,000, 80,000 less what the Payment paid, and the Credit holds nothing (slice 10 entry, owner answer to the 8f report; V1-056 sub-slice 10f-1)."
+      "notes": "The 10,000 a credit Adjustment released from a Payment allocation as the Invoice Customer's new Credit goes back on the same line on reversal, as one Credit application with the label put back by a correction (the Rent-first proposal until sub-slice 10f-1b; owner answer (a) to Q-2026-10-16-118 point 1) (credits.apply, the approver, a detail trace naming the reversal and the release): the line owes 60,000, 80,000 less what the Payment paid, and the Credit holds nothing (slice 10 entry, owner answer to the 8f report; V1-056 sub-slice 10f-1)."
     },
     {
       "test_id": "test_a_released_credit_application_goes_back_only_with_what_is_left",
@@ -41364,7 +41364,7 @@
       "notes": "A credit Adjustment returned 5,000 to the Credit that paid the line; after the Customer used 22,000 of that Credit on the next Invoice only 3,000 remain, so the reversal puts back 3,000 and the other 2,000 stays as debt on the line, to the cent (slice 10 entry; V1-056 sub-slice 10f-1)."
     },
     {
-      "test_id": "test_a_put_back_goes_only_where_the_rent_first_order_also_puts_it",
+      "test_id": "test_a_put_back_goes_on_the_adjustment_s_line_even_when_an_earlier_line_owes",
       "upstream_ids": [
         "BR-CREDIT-006",
         "BR-INV-044",
@@ -41373,7 +41373,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_adjustment_reversal_migration.py",
       "status": "implemented",
-      "notes": "Fail closed until the owner answers Q-2026-10-16-118 point 1: the reversal of a credit Adjustment on a paid Service line is refused while the Rent line still owes, because the Rent-first order would put the Credit put-back on the Rent line, and no draft is written; once the Rent line is paid the put-back goes on the Service line with the Service proposal (V1-056 sub-slice 10f-1)."
+      "notes": "Owner answer (a) to Q-2026-10-16-118 point 1 (sub-slice 10f-1b; refused in 10f-1, renamed from test_a_put_back_goes_only_where_the_rent_first_order_also_puts_it): while the Rent line still owes, the reversal of a credit Adjustment on a paid Service line puts the Credit back on the Service line with the label put back by a correction on the row and its detail, where the Rent-first order would have chosen the Rent line; the Rent line still owes all of its amount and the ledger reconciles (V1-056 sub-slices 10f-1 and 10f-1b)."
     },
     {
       "test_id": "test_adjustment_reversal_refusals_stale_drafts_withdrawal_and_reads",
@@ -41409,7 +41409,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_adjustment_reversal_migration.py",
       "status": "implemented",
-      "notes": "Q-2026-10-16-118 point 2 (fail closed until the owner answers): the credit Adjustment a hand-back resolution wrote stays with its resolution; the reversal draft refuses it and no draft is written (V1-056 sub-slice 10f-1)."
+      "notes": "Q-2026-10-16-118 point 2, answered (a) on 2026-10-16 (keep it refused): the credit Adjustment a hand-back resolution wrote stays with its resolution; the reversal draft refuses it and no draft is written (V1-056 sub-slice 10f-1)."
     },
     {
       "test_id": "test_adjustment_reversal_drafts_are_least_privilege_and_forward_only",
@@ -41499,6 +41499,93 @@
       "test_path": "backend/tests/test_adjustment_reversal_migration.py",
       "status": "implemented",
       "notes": "Review round 1 set-up: a 40,000 credit Adjustment released two Credit applications of one Credit (30,000 whole and 10,000 of a 50,000 one); after the Customer used 25,000 of that Credit elsewhere, the reversal puts back 30,000 for the first release and only the 5,000 left for the second (the earlier put-back from the same Credit counted), both on the Adjustment's line in increasing time order, and 5,000 stays as debt; the Invoice version advances by two and the ledger reconciles (V1-056 sub-slice 10f-1)."
+    },
+    {
+      "test_id": "test_two_releases_go_back_on_the_adjustment_s_line_while_the_rent_line_owes",
+      "upstream_ids": [
+        "BR-CREDIT-006",
+        "BR-CREDIT-008",
+        "BR-INV-044",
+        "DB-CREDIT-002",
+        "DB-INV-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_adjustment_reversal_put_back_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer (a) to Q-2026-10-16-118 point 1: while the Rent line still owes, the reversal of a credit Adjustment of the whole Service line that released two Payment allocations as two new Credits puts each back on the Service line with the label put back by a correction (row and detail; no proposal, no designation, no proposed amount), in the release order; the Service line owes nothing, the Rent line still owes all of its amount, both Credits hold nothing and the ledger reconciles (V1-056 sub-slice 10f-1b)."
+    },
+    {
+      "test_id": "test_the_label_is_refused_on_a_row_no_adjustment_reversal_of_this_transaction_lists",
+      "upstream_ids": [
+        "BR-CREDIT-006",
+        "DB-CREDIT-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_adjustment_reversal_put_back_migration.py",
+      "status": "implemented",
+      "notes": "A Credit application with the label put back by a correction and no Final Settlement that no confirmed ADJUSTMENT_REVERSAL decision of the same transaction lists is refused at insert (23514), so an ordinary Credit application never carries the label; nothing is written and the Credit keeps its 10,000 (V1-056 sub-slice 10f-1b)."
+    },
+    {
+      "test_id": "test_the_put_back_check_holds_the_line_the_release_the_credit_and_the_amount",
+      "upstream_ids": [
+        "BR-CREDIT-008",
+        "BR-INV-044",
+        "DB-CREDIT-002",
+        "DB-INV-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_adjustment_reversal_put_back_migration.py",
+      "status": "implemented",
+      "notes": "The Service line is paid by two Payment allocations, so a credit Adjustment of the line releases two new Credits of the same Customer. After a real confirm in a rolled-back owner transaction, app.adjustment_reversal_put_back_allowed accepts the first stored put-back and refuses it moved to another line, with another detail amount, as a second put-back of the whole release, naming another reversal, with another header amount, with the Customer's other Credit, on another issued Invoice of the same Customer or with another label (the last three cases unconditional since review round 1); another transaction's view of the stored row is refused; the rollback leaves the draft pending and the service then confirms it (owner answer (a) to Q-2026-10-16-118 point 1: never more than the release; V1-056 sub-slice 10f-1b)."
+    },
+    {
+      "test_id": "test_the_deferred_check_refuses_a_listed_put_back_beyond_its_release",
+      "upstream_ids": [
+        "BR-CREDIT-008",
+        "BR-INV-044",
+        "DB-CREDIT-002",
+        "DB-INV-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_adjustment_reversal_put_back_migration.py",
+      "status": "implemented",
+      "notes": "The deferred trigger customer_credit_applications_adjustment_put_back itself: a Credit of 100,000 paid 60,000 of an 80,000 Rent line, a credit Adjustment of 40,000 released 20,000 of that application back to the Credit, and a real reversal put the 20,000 back on the line; a second confirmed ADJUSTMENT_REVERSAL decision written by the table owner in a rolled-back transaction lists a new labelled put-back of 1 from the same Credit and release; the insert checks let it in and the deferred check refuses it because the release is already all put back, 23514; the insert trigger refuses the same put-back (23514) when the decision names the transaction before this one or is dated before this transaction began (review round 1, security); nothing is written (owner answer (a) to Q-2026-10-16-118 point 1: never more than the release; the other-line case is test_the_deferred_check_takes_a_listed_put_back_only_on_the_adjustment_s_line; V1-056 sub-slice 10f-1b)."
+    },
+    {
+      "test_id": "test_the_deferred_check_takes_a_listed_put_back_only_on_the_adjustment_s_line",
+      "upstream_ids": [
+        "BR-CREDIT-008",
+        "BR-INV-044",
+        "DB-CREDIT-002",
+        "DB-INV-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_adjustment_reversal_put_back_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 set-up (independent): a credit Adjustment of the whole Service line released a Payment allocation as a new Credit, half of which then paid the Rent line; the reversal puts the rest back on the Service line, which owes that half; after the Rent-line application is reversed the Credit holds the half and the release has room; a hand-written put-back of 1 listed by a confirmed ADJUSTMENT_REVERSAL decision of the same rolled-back owner transaction passes the deferred check on the Service line and is refused on the Rent line (23514); nothing is written (owner answer (a) to Q-2026-10-16-118 point 1: only on the Adjustment's line; V1-056 sub-slice 10f-1b)."
+    },
+    {
+      "test_id": "test_a_later_adjustment_re_posts_a_labelled_put_back_with_the_label",
+      "upstream_ids": [
+        "BR-INV-044",
+        "BR-CREDIT-008",
+        "DB-CREDIT-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_adjustment_reversal_put_back_migration.py",
+      "status": "implemented",
+      "notes": "After a reversal put 10,000 back on an 80,000 line with the label, a later credit Adjustment of 65,000 releases 5,000 of the 20,000 paid: the labelled put-back is reversed whole and its 5,000 rest is posted again with the label (the release re-post of migration 20261003_67); the line owes nothing and the Credit holds 5,000 (V1-056 sub-slice 10f-1b)."
+    },
+    {
+      "test_id": "test_adjustment_reversal_put_back_is_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "DB-CREDIT-002",
+        "DB-INV-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_adjustment_reversal_put_back_migration.py",
+      "status": "implemented",
+      "notes": "No role calls app.adjustment_reversal_put_back_allowed or app.validate_adjustment_reversal_put_back; the migration adds those two functions and the deferred trigger customer_credit_applications_adjustment_put_back, patches only app.adjustment_reversal_source, app.confirm_adjustment_reversal and app.validate_credit_application_put_back without changing their privileges or settings, and is forward-only (V1-056 sub-slice 10f-1b)."
     }
   ]
 }

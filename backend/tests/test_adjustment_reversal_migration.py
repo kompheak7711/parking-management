@@ -5,8 +5,10 @@ report): an invoices.adjust holder records an ADJUSTMENT_REVERSAL draft, and onl
 financial.approve holder confirms it. The confirm writes the Adjustment reversal (DB-INV-010) and
 puts the released value back on the line: the part of each released value's Credit still available
 is applied to the line again (BR-CREDIT-008), and any part already used elsewhere stays as debt on
-the line. Until the owner answers Q-2026-10-16-118, a put-back that the Rent-first order
-(BR-CREDIT-006) would put on another line, and an Adjustment that a resolution wrote, are refused.
+the line. An Adjustment that a resolution wrote is refused (owner answer (a) to Q-2026-10-16-118
+point 2); since sub-slice 10f-1b every put-back goes back on the Adjustment's own line with the
+label put back by a correction, also where the Rent-first order (BR-CREDIT-006) would choose
+another line (point 1 (a)).
 After the Lease's Final Settlement is closed the reversal is a correction (sub-slice 10f-2).
 """
 
@@ -27,7 +29,6 @@ from alembic.script import ScriptDirectory
 from payment_test_support import seed_payment
 from property_rental.adjustment_reversal import (
     AdjustmentReversalAuthorizationError,
-    AdjustmentReversalConflictError,
     AdjustmentReversalKeyReused,
     AdjustmentReversalNotFoundError,
     AdjustmentReversalService,
@@ -85,9 +86,6 @@ PATCHED = {
 }
 REVISION = "20261219_145"
 REASON = "The credit was recorded on the wrong Invoice"
-PLACEMENT = (
-    "The Credit put-back would go on another line by the Rent-first order; this waits for the owner"
-)
 CLOSED = (
     "The Lease's Final Settlement is closed; the Adjustment is reversed through a correction of "
     "that Final Settlement"
@@ -258,8 +256,8 @@ def test_a_released_allocation_s_credit_goes_back_on_its_line(
 ) -> None:
     """A credit Adjustment of 70,000 on an 80,000 line a Payment paid 20,000 of released 10,000
     as the Invoice Customer's new Credit. The reversal applies that Credit again to the same line
-    with the Rent-first proposal: the line owes 60,000 (80,000 less what the Payment paid) and the
-    Credit holds nothing."""
+    with the label put back by a correction (sub-slice 10f-1b; it was the Rent-first proposal): the
+    line owes 60,000 (80,000 less what the Payment paid) and the Credit holds nothing."""
     url = migrated_database_url
     human, prop, payment, invoice_ids = allocation_source(url)
     invoice = invoice_ids[0]
@@ -295,10 +293,12 @@ def test_a_released_allocation_s_credit_goes_back_on_its_line(
         (
             credit,
             10_000,
-            "RENT_THEN_RECURRING_SERVICES_PROPOSAL",
+            # Owner answer (a) to Q-2026-10-16-118 point 1 (sub-slice 10f-1b): the label, not the
+            # Rent-first proposal.
+            "PUT_BACK_BY_CORRECTION",
             "credits.apply",
             line,
-            "RENT_FIRST_PROPOSAL",
+            "PUT_BACK_BY_CORRECTION",
             "Invoice Adjustment reversal put-back",
         )
     ]
@@ -430,13 +430,14 @@ def test_two_releases_of_one_credit_count_the_earlier_put_back(
     reconciled(url, invoice)
 
 
-def test_a_put_back_goes_only_where_the_rent_first_order_also_puts_it(
+def test_a_put_back_goes_on_the_adjustment_s_line_even_when_an_earlier_line_owes(
     migrated_database_url: str,
 ) -> None:
-    """Q-2026-10-16-118 point 1 (fail closed until the owner answers): a credit Adjustment on a
-    paid Service line released its value as Credit while the Rent line still owes; the Rent-first
-    order would put that Credit on the Rent line, so the draft is refused and nothing is written.
-    Once the Rent line is paid, the reversal puts the Credit back on the Service line."""
+    """Owner answer (a) to Q-2026-10-16-118 point 1 (sub-slice 10f-1b; this case was refused
+    before): a credit Adjustment on a paid Service line released its value as Credit while the
+    Rent line still owes. The Rent-first order would put that Credit on the Rent line; the
+    reversal puts it back on the Service line with the label put back by a correction, and the
+    Rent line still owes all of its amount."""
     url = migrated_database_url
     with psycopg.connect(url) as connection:
         human, prop, customer, lease, _ = setup_billing_source(connection)
@@ -466,28 +467,20 @@ def test_a_put_back_goes_only_where_the_rent_first_order_also_puts_it(
     adjust_credit(url, human, prop, invoice, service, service_due)
     [adjustment] = adjustments(url, service)
     assert outstanding(url, service) == 0 and outstanding(url, rent) == rent_due
-    assert refusal(prop, human, adjustment) == ("55000", PLACEMENT)
-    with pytest.raises(AdjustmentReversalConflictError):
-        reversals().record(prop, request(adjustment), actor=preparer(human, prop))
-    assert (
-        value(
-            url,
-            "SELECT count(*) FROM app.financial_drafts WHERE kind='ADJUSTMENT_REVERSAL' "
-            "AND payload->>'invoice_adjustment_id'=%s",
-            str(adjustment),
-        )
-        == 0
-    )
-    pay(prop, payment, invoice, rent, rent_due, human)
     recorded = reversals().record(prop, request(adjustment), actor=preparer(human, prop))
     assert source_of(recorded)["put_back_usd_cents"] == service_due
     result = reversals().confirm(prop, draft_id(recorded), actor=approver(human, prop))
     [put_back] = cast(list[dict[str, Any]], result["put_backs"])
-    [(_, amount, _, _, on_line, basis, _)] = put_back_rows(
+    [(_, amount, header_basis, _, on_line, basis, _)] = put_back_rows(
         url, UUID(str(put_back["credit_application_id"]))
     )
-    assert (amount, on_line, basis) == (service_due, service, "SERVICE_PROPOSAL")
-    assert outstanding(url, service) == 0 and outstanding(url, rent) == 0
+    assert (amount, on_line, header_basis, basis) == (
+        service_due,
+        service,
+        "PUT_BACK_BY_CORRECTION",
+        "PUT_BACK_BY_CORRECTION",
+    )
+    assert outstanding(url, service) == 0 and outstanding(url, rent) == rent_due
     reconciled(url, invoice)
 
 

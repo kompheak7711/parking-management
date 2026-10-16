@@ -1130,6 +1130,16 @@ the Adjustment's line in that order still owes, on any Invoice). No role may wri
 column or trigger changed. A pending `ADJUSTMENT_REVERSAL` draft does not block a Final
 Settlement; after the closure it is stale.
 
+As built in V1-056 sub-slice 10f-1b (migration `20261220_146`; owner answer (a) to
+Q-2026-10-16-118 point 1; point 2 answered (a): an Adjustment a resolution wrote stays refused):
+every put-back goes back on the Adjustment's own line with the label `PUT_BACK_BY_CORRECTION`
+(DB-CREDIT-002) on the row and its one detail, with no Rent-first proposal, no designation and no
+proposed amount, also when a line before it in the Rent-first order still owes; a put-back
+restores what was there before and is not a new allocation. Its amount stays the release's
+Credit still available, at most the release and the line's unpaid rest. The Rent-first refusal of
+10f-1 (recorder and confirm) ends. Drafts recorded before this change whose put-back the
+proposal placed on the line confirm unchanged in amount; only the label differs.
+
 ---
 
 # 10. Payment, Exchange, Allocation, and Credit Tables
@@ -1529,6 +1539,24 @@ same correction, all put-backs naming it together at most its amount there, and 
 on such an Invoice without a designation; for any other correction no restored application and
 no label (23514). The sub-slice 10e-3d-2a Rent-first refusal and the sub-slice 10e-3c known limit
 (a put-back the Rent-first proposal would put on another line) end.
+
+As built in V1-056 sub-slice 10f-1b (migration `20261220_146`; owner answer (a) to
+Q-2026-10-16-118 point 1): the pre-closure `ADJUSTMENT_REVERSAL` put-back (DB-INV-010) always
+carries the label, on any Invoice, with no Final Settlement. The BEFORE INSERT trigger also
+allows the label on a row with no Final Settlement that a confirmed `ADJUSTMENT_REVERSAL` decision
+of the same transaction (its stored transaction id and a decision time not before the
+transaction began) lists among its put-backs. A new deferred constraint trigger
+(`customer_credit_applications_adjustment_put_back`, internal
+`app.validate_adjustment_reversal_put_back` and `app.adjustment_reversal_put_back_allowed`)
+checks each such listed row that is not the re-posted rest of a release: one detail; listed with
+the same Credit, amount and release; the detail's trace names that decision's reversal and the
+release; the release belongs to the reversed Adjustment and its Credit is the row's; the row is on
+the Adjustment's Invoice and the detail on its line; all put-backs naming the release are together
+at most the released amount (23514 otherwise). Rows no decision lists are left to the insert
+trigger, which refuses every such row except the re-posted rest of a labelled row (a committed
+10e-3e test writes such a row by hand with the insert trigger disabled to reach the agreement
+check). The release re-post (migration 67) of a labelled put-back keeps the label on its rest, as
+before.
 
 ## DB-CREDIT-003 — `customer_credit_application_reversals`
 
