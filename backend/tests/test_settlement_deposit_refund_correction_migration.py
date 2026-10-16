@@ -709,8 +709,8 @@ def test_an_older_deposit_application_on_the_line_stays_and_unlinked_adjustments
     the same line stays active, and the correction's own Adjustment passes the 8a-1 refusal. The
     Customer's Credit pays the 100 the line owes again and the Pet Deposit's 2,100 is refunded. An
     unlinked Adjustment stays refused, an Adjustment linked by another person is refused by 8a-1,
-    and a linked Adjustment that would leave the line paid above its new amount is refused at
-    commit (no line is paid more than its new amount)."""
+    and (sub-slice 10c-3c-1) an Adjustment linked by the approver to a hand-built correction whose
+    draft names no obligation is refused by 8a-1 too."""
     url = migrated_database_url
     case = {**closed_case(url), "url": url}
     pet, line, person = case["pet"], case["other_line"], case["person"]
@@ -737,9 +737,14 @@ def test_an_older_deposit_application_on_the_line_stays_and_unlinked_adjustments
         "55000",
         DEPOSIT_APPLIED,
     )
+    # Sub-slice 10c-3c-1 (owner answer 3 to Q-2026-10-10-69, the approved hardening): this
+    # hand-built draft names no obligation and the reference is not the correction's, so the
+    # approver's linked Adjustment now meets the 8a-1 refusal instead of the commit-time check
+    # (23514); that check is kept with a matching row in
+    # test_settlement_correction_allow_hardening_migration.py.
     assert failure(url, lambda connection: adjust(connection, person, 100, linked=True)) == (
-        "23514",
-        "Invoice Adjustment would violate the issued obligation",
+        "55000",
+        DEPOSIT_APPLIED,
     )
     assert state(url, draft) == "PENDING"
     # The real correction.

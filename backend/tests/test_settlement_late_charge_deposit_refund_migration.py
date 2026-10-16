@@ -445,12 +445,12 @@ def test_a_linked_charge_correction_passes_8a_1_but_no_charge_is_paid_more_than_
     migrated_database_url: str,
 ) -> None:
     """Owner answer to Q-2026-10-07-46 for a Charge, by hand inside one correction of this
-    Settlement: the remaining Pet Deposit paid the whole Charge (8,000). A Charge correction linked
-    to the correction and written by its approver passes the 8a-1 refusal (the allow function
-    answers true in that transaction), but a REDUCTION below the Deposit application that still pays
-    the Charge is refused at commit by the Charge correction's own deferred check, so no Charge is
-    paid more than its new amount. The same row by another actor stays refused (P4603). Nothing is
-    written."""
+    Settlement: the remaining Pet Deposit paid the whole Charge (8,000). Sub-slice 10c-3c-1 (owner
+    answer 3 to Q-2026-10-10-69, the approved hardening): this hand-built correction's draft names
+    no Charge, so a Charge correction linked to it is refused by the 8a-1 refusal (P4603) whether
+    its approver or another actor writes it; the commit-time check (a REDUCTION below the Deposit
+    application that still pays the Charge, 23514) is kept with a matching row in
+    test_settlement_correction_allow_hardening_migration.py. Nothing is written."""
     url = migrated_database_url
     case = deposit_settled_case(url, 8_000)
     charge = case["charge"]
@@ -477,11 +477,10 @@ def test_a_linked_charge_correction_passes_8a_1_but_no_charge_is_paid_more_than_
             connection.execute("SET CONSTRAINTS ALL IMMEDIATE")
         return refused.value
 
+    # Sub-slice 10c-3c-1: the insert is refused before the in-transaction call of the old
+    # three-argument function, which is no longer reached.
     overpaid = reduce_by(case["person"])
-    assert (overpaid.sqlstate, overpaid.diag.message_primary) == (
-        "23514",
-        "Late-payment correction resulting balance is invalid",
-    )
+    assert (overpaid.sqlstate, overpaid.diag.message_primary) == ("P4603", DEPOSIT_PAID)
     other = reduce_by(case["human"])
     assert (other.sqlstate, other.diag.message_primary) == ("P4603", DEPOSIT_PAID)
     assert (state(url, draft), charge_corrections(url, charge)) == ("PENDING", 0)

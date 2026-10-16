@@ -2798,3 +2798,15 @@ Also: the pending rename of `test_a_right_receipt_into_a_deposit_with_a_forfeitu
 **Recommendation: (a)**, because the answer's limit is about the inspection rule (a fresh line), and BR-SETTLE-013 lets a later fix be a new linked correction.
 
 **What goes ahead.** Everything; 10c-2a-7 is committed with (a) as built, and the next sub-slice follows.
+
+## Q-2026-10-16-117 — Sub-slice 10c-3c-1: a committed test whose name no longer fits after the hardening (blocks nothing)
+
+**What changed.** Your approved hardening (answer 3 to Q-2026-10-10-69) makes the 8a-1 refusal check that a linked Late-payment Charge correction's correlation is its correction and that the correction's draft names that Charge. The committed test `test_settlement_late_charge_deposit_refund_migration.py::test_a_linked_charge_correction_passes_8a_1_but_no_charge_is_paid_more_than_its_new_amount` builds its correction by hand with a draft that names no Charge, so its approver's row is now refused by 8a-1 (P4603) instead of passing it and being refused at commit (23514). Under the standing rule only its expectation, docstring and a comment changed; the commit-time check is kept with a matching row in the new module `test_settlement_correction_allow_hardening_migration.py`. The run rules say a narrowed historical test keeps its name, and the rename rule covers only a refused case that becomes allowed, so the name, which says "passes 8a-1", now says the wrong thing.
+
+**Options.**
+- (a) Rename it, for example `test_a_linked_charge_correction_under_a_draft_naming_no_charge_is_refused_by_8a_1`, with its traceability entry, in the next sub-slice that touches that file.
+- (b) Keep the name; docs/010 and the traceability entry explain it.
+
+**Recommendation: (a)**, because a test name should say what the test checks.
+
+**What goes ahead.** Everything; nothing waits for this answer.

@@ -3223,6 +3223,22 @@ pays the Charge; the correction's own linked Charge correction passes the 8a-1 r
 internal `app.settlement_correction_charge_correction_allowed` (owner answer to Q-2026-10-07-46).
 No new table or column.
 
+As built in V1-056 sub-slice 10c-3c-1 (migration `20261217_143`; owner answer 3 to
+Q-2026-10-10-69 and answer (a) to Q-2026-10-10-70, an approved tightening): the 8a-1 refusal
+(DB-DEP-005) calls two new internal overloads of the allow functions with the row's own values,
+`app.settlement_correction_adjustment_allowed(invoice, line, adjustment, actor, source_reference)`
+and `app.settlement_correction_charge_correction_allowed(charge, charge correction, actor,
+correlation)`. Besides the earlier conditions, an Adjustment passes only when its
+`source_reference` is `settlement-correction:<the correction>` and the correction's
+`SETTLEMENT_CORRECTION` draft is a `CHARGE_REDUCTION` (key `reduction`) or `REFUND` (key `refund`)
+with no `target_kind` naming exactly the Adjustment's Invoice and line; a Late-payment Charge
+correction passes only when its `correlation_id` is the correction and the draft is a
+`CHARGE_REDUCTION` or `REFUND` with `target_kind` `LATE_PAYMENT_CHARGE` naming exactly its Charge.
+Every committed writer that links such a row meets both conditions (the `REFUND` confirms are
+exercised by the real-path tests; the `CHARGE_REDUCTION` confirms, whose recorders still refuse a
+Deposit-paid obligation, by reading until sub-slice 10c-3c-2). The old three-argument functions
+stay, with no caller. No table, column, constraint, trigger, lock or grant change.
+
 As built in V1-056 sub-slice 10d (migration `20261119_115`; owner answer 4 to Q-2026-10-06-36,
 answer 2 to Q-2026-10-10-71): the variant `FORFEITURE_REVERSAL` reverses a confirmed Lease Deposit
 forfeiture (DB-DEP-008) of a Deposit of the Settlement's Lease after closure. Its draft names the

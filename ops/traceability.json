@@ -38656,7 +38656,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_deposit_refund_correction_migration.py",
       "status": "implemented",
-      "notes": "Owner answer to Q-2026-10-07-46: a Refund correction releases only the line's newest Deposit application, the older one on the same line stays active and the correction's own Adjustment passes the 8a-1 refusal; an unlinked Adjustment stays refused, one linked but written by another person is refused by 8a-1, and a linked one that would leave the line paid above its new amount is refused at commit (V1-056 sub-slice 10c-2a-3)."
+      "notes": "Owner answer to Q-2026-10-07-46: a Refund correction releases only the line's newest Deposit application, the older one on the same line stays active and the correction's own Adjustment passes the 8a-1 refusal; an unlinked Adjustment stays refused, one linked but written by another person is refused by 8a-1, and a linked one that would leave the line paid above its new amount is refused at commit (V1-056 sub-slice 10c-2a-3). Sub-slice 10c-3c-1 (owner answer 3 to Q-2026-10-10-69, the approved hardening): the approver's linked Adjustment of the hand-built correction, whose draft names no obligation, is now refused by 8a-1 (55000); the commit-time check is kept in test_settlement_correction_allow_hardening_migration.py."
     },
     {
       "test_id": "test_a_deposit_application_on_another_line_of_the_invoice_stays",
@@ -39498,7 +39498,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_late_charge_deposit_refund_migration.py",
       "status": "implemented",
-      "notes": "Inside one correction of the closed Settlement, a Late-payment Charge correction linked to it and written by its approver passes the 8a-1 refusal, but a reduction below the Deposit application that still pays the Charge is refused at commit by the Charge correction's own deferred check, so no Charge is paid more than its new amount; the same row by another actor stays refused (P4603); nothing is written (V1-056 sub-slice 10c-3b-2, owner answer to Q-2026-10-07-46)."
+      "notes": "Inside one correction of the closed Settlement, a Late-payment Charge correction linked to it and written by its approver passes the 8a-1 refusal, but a reduction below the Deposit application that still pays the Charge is refused at commit by the Charge correction's own deferred check, so no Charge is paid more than its new amount; the same row by another actor stays refused (P4603); nothing is written (V1-056 sub-slice 10c-3b-2, owner answer to Q-2026-10-07-46). Sub-slice 10c-3c-1 (owner answer 3 to Q-2026-10-10-69, the approved hardening): the hand-built correction's draft names no Charge, so the approver's row is now refused by 8a-1 too (P4603); the commit-time check is kept in test_settlement_correction_allow_hardening_migration.py."
     },
     {
       "test_id": "test_late_charge_deposit_refund_is_least_privilege_and_forward_only",
@@ -41267,6 +41267,30 @@
       "test_path": "backend/tests/test_settlement_pet_classification_superseded_migration.py",
       "status": "implemented",
       "notes": "Migration 20261216_142 adds no function and changes only the two listed functions, each body exactly the old one with its replacements (privileges, owner, definer and settings kept), no constraint or trigger; no application role may call either function; forward-only (V1-056 sub-slice 10c-2a-7)."
+    },
+    {
+      "test_id": "test_an_adjustment_passes_8a_1_only_with_its_correction_s_reference_and_a_draft_naming_its_line",
+      "upstream_ids": ["BR-SETTLE-012", "BR-SETTLE-013", "BR-AUTH-010", "DL-032", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_correction_allow_hardening_migration.py",
+      "status": "implemented",
+      "notes": "After a real closure whose Deposits paid a Damage line, a hand-built correction's linked credit Adjustment of that line by the approver passes the 8a-1 refusal only when its reference is the correction's and the draft is a REFUND or CHARGE_REDUCTION with no target_kind naming exactly that Invoice and line (the new allow function answers true; the commit-time check then refuses the overpaid line, 23514); another correction's reference, a draft naming another line, another Invoice, another variant, a target_kind or the other variant's key is refused by 8a-1 (55000); nothing is written (owner answer 3 to Q-2026-10-10-69; V1-056 sub-slice 10c-3c-1)."
+    },
+    {
+      "test_id": "test_a_charge_correction_passes_8a_1_only_with_its_correction_s_correlation_and_a_named_charge",
+      "upstream_ids": ["BR-SETTLE-012", "BR-SETTLE-013", "BR-LATE-005", "BR-AUTH-010", "DL-032", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_correction_allow_hardening_migration.py",
+      "status": "implemented",
+      "notes": "After a real closure whose remaining Pet Deposit paid a Late-payment Charge, a hand-built correction's linked REDUCTION of that Charge by the approver passes the 8a-1 refusal only when its correlation is the correction and the draft is a REFUND or CHARGE_REDUCTION with target_kind LATE_PAYMENT_CHARGE naming exactly that Charge (the new allow function answers true; the commit-time check then refuses the overpaid Charge, 23514); another correlation, a draft naming another Charge, no target_kind, another variant or the other variant's key is refused by 8a-1 (P4603); nothing is written (owner answer 3 to Q-2026-10-10-69; V1-056 sub-slice 10c-3c-1)."
+    },
+    {
+      "test_id": "test_the_allow_hardening_is_least_privilege_and_forward_only",
+      "upstream_ids": ["BR-SETTLE-013", "DL-032", "DB-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_correction_allow_hardening_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20261217_143 adds only the two new allow functions (no application role or PUBLIC may call them; SECURITY DEFINER with the fixed search path) and changes only the 8a-1 refusal, whose body is exactly the old one with its replacements and no longer calls the old three-argument functions (privileges, owner, definer and settings kept); no constraint or trigger changes; forward-only (V1-056 sub-slice 10c-3c-1)."
     }
   ]
 }
