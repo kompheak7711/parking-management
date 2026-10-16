@@ -657,6 +657,10 @@ function originalEvent(
     "CUSTOMER_DESIGNATED",
     "OTHER_APPLICABLE_OBLIGATION",
     "NOT_APPLICABLE",
+    // The re-posted rest of a Credit payment a correction put back keeps this label (V1-056
+    // sub-slices 10e-3e and 10e-3e-2); the database writes it only on a Credit payment and its
+    // lines, never on a Payment allocation.
+    ...(allocation ? [] : ["PUT_BACK_BY_CORRECTION"]),
   ]);
   if (row.customer_designation_reference !== null)
     label(row.customer_designation_reference);
@@ -1008,8 +1012,15 @@ function detail(
       "CUSTOMER_DESIGNATED",
       "OTHER_CONFIRMED",
       "DIRECT_LATE_PAYMENT_CHARGE",
-      ...(allocation ? ["THIRD_PARTY_DESIGNATED"] : []),
+      ...(allocation ? ["THIRD_PARTY_DESIGNATED"] : ["PUT_BACK_BY_CORRECTION"]),
     ]);
+    // A line and its payment carry the put-back label together or not at all (the database's
+    // header and detail agreement, sub-slice 10e-3e).
+    if (
+      (row.attribution_basis === "PUT_BACK_BY_CORRECTION") !==
+      (original?.within_invoice_basis === "PUT_BACK_BY_CORRECTION")
+    )
+      invalidFinancial();
     const current = money(row.current_outstanding_usd_cents);
     if (selected.kind === "INVOICE") {
       if (row.target_kind !== "INVOICE_LINE") invalidFinancial();

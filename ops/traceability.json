@@ -41227,6 +41227,22 @@
       "test_path": "backend/tests/test_settlement_return_reversal_settlement_confirm_migration.py",
       "status": "implemented",
       "notes": "The case the 10e-3d-2d-2c round 1 reviewers named (security N3, independent N-6), on the real path through a REFUND correction of the whole line (owner instruction of 2026-10-16): X1 brings back 300, the second Lease's own Final Settlement confirm lets the Credit pay 300 of its 12,500 damage line, and a REFUND correction of the second Lease refunds the whole line (the confirm's 300 application reversed and its 300 refunded from the Credit to the Customer, the second Lease's own 400 Credit payment refunded too, the released Deposit money refunded); the walk shows the confirm as the taker of X1's 300 and no row for that correction; X1's reversal is not refused: the follow step reads that correction through the 10e-3d-2d-2b-2 allow-list, and X1's source lists that 300 Refund as its one part, with no open part and no payment to undo, the second Settlement as its one companion and one charge-back of that Refund on the second Lease; the reversal charges the 300 back to the Customer on the second Lease through the companion (the charge-back, its charge and its Invoice linked to it, named in its audit event, allowed no more outside the confirming transaction); the line owes nothing, the Credit ends empty, that Refund's net is 0 and X1's Refund's net 2,000 again; the ledger reconciles (V1-056, follow-up test of sub-slice 10e-3d-2d-2c)."
+    },
+    {
+      "test_id": "TEST-FE-676",
+      "upstream_ids": ["BR-CREDIT-006", "DB-CREDIT-002", "DB-CREDIT-005", "API-011", "SEC-022"],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "The one-call Credit payment reversal context accepts the re-posted rest of a Credit payment a correction put back (a credits.apply payment) with the label PUT_BACK_BY_CORRECTION on the payment and every line, on the five synthetic Invoice contexts of three Credit payments (two not reversed, three reversed), and keeps the reply as sent, so staff see the payment with its label instead of a general error; the reversal itself stays refused by the database (owner answer (b) to Q-2026-10-14-109; V1-056 sub-slice 10e-3e-2)."
+    },
+    {
+      "test_id": "TEST-FE-677",
+      "upstream_ids": ["BR-CREDIT-006", "DB-CREDIT-002", "DB-CREDIT-005", "API-011", "SEC-022"],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "The label PUT_BACK_BY_CORRECTION is refused where the database never writes it: on a Payment allocation, on a Payment allocation line, on a Credit payment on a Late-payment Charge and on its line, and on a Credit payment or a line that carries it without the other (INVALID_RESPONSE) (owner answer (b) to Q-2026-10-14-109; V1-056 sub-slice 10e-3e-2)."
     }
   ]
 }

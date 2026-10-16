@@ -1962,6 +1962,105 @@ describe("financial action context adjusted and coherent values", () => {
   });
 });
 
+const PUT_BACK = "PUT_BACK_BY_CORRECTION";
+function reversalSamples(
+  purpose: "allocation_reversal" | "credit_application_reversal",
+  kind: string,
+): FinancialActionFixture[] {
+  return actionContextFixtures.filter(
+    (row) =>
+      row.request.purpose === purpose &&
+      financialObject(row.data.target).kind === kind &&
+      Array.isArray(row.data.items) &&
+      row.data.items.length > 0,
+  );
+}
+function putBack(data: FinancialObject, payment: boolean, lines: boolean) {
+  const context = financialObject(data.context);
+  if (payment) {
+    const original = financialObject(context.application ?? context.allocation);
+    original.within_invoice_basis = PUT_BACK;
+    // A Credit payment put back carries no designation and no proposal; an allocation keeps
+    // its own fields, so only the label refuses it.
+    if (context.application !== undefined) {
+      original.customer_designation_reference = null;
+      original.proposal_generated_at = null;
+    }
+  }
+  if (lines && Array.isArray(data.items))
+    for (const item of data.items) {
+      const line = financialObject(financialObject(item).data);
+      if ("attribution_basis" in line) line.attribution_basis = PUT_BACK;
+    }
+}
+
+describe("financial action context put-back label (V1-056 sub-slice 10e-3e-2)", () => {
+  it("TEST-FE-676 shows the re-posted rest of a Credit payment a correction put back, with its label", async () => {
+    const samples = reversalSamples("credit_application_reversal", "INVOICE");
+    expect(samples).toHaveLength(5);
+    expect(
+      new Set(
+        samples.map(
+          (sample) => financialObject(sample.data.context).reversal === null,
+        ),
+      ),
+    ).toEqual(new Set([true, false]));
+    for (const sample of samples) {
+      const { client } = actionClient(sample, (envelope) => {
+        putBack(financialObject(envelope.data), true, true);
+      });
+      const reply = await client.read(actionScope(sample), sample.request),
+        sequence = actionSequence(sample);
+      sequence.append(reply);
+      expect(sequence.complete).toBe(true);
+      const expected = actionCopy(sample).data;
+      putBack(expected, true, true);
+      expect(sequence.data).toEqual(expected);
+      expect(
+        financialObject(financialObject(sequence.data?.context).application)
+          .within_invoice_basis,
+      ).toBe(PUT_BACK);
+      const items = sequence.data?.items;
+      expect(Array.isArray(items) && items.length > 0).toBe(true);
+      if (Array.isArray(items))
+        for (const item of items)
+          expect(
+            financialObject(financialObject(item).data).attribution_basis,
+          ).toBe(PUT_BACK);
+    }
+  });
+  it("TEST-FE-677 refuses the put-back label where the database never writes it", async () => {
+    const allocation = reversalSamples("allocation_reversal", "INVOICE")[0],
+      credit = reversalSamples("credit_application_reversal", "INVOICE")[0],
+      charge = reversalSamples(
+        "credit_application_reversal",
+        "LATE_PAYMENT_CHARGE",
+      )[0];
+    const cases: [FinancialActionFixture | undefined, boolean, boolean][] = [
+      [allocation, true, false],
+      [allocation, false, true],
+      // Each with its lines too, so only the allocation lists and the Charge rule refuse them.
+      [allocation, true, true],
+      [charge, true, true],
+      [charge, true, false],
+      [charge, false, true],
+      // A line and its payment must carry the label together.
+      [credit, true, false],
+      [credit, false, true],
+    ];
+    for (const [sample, payment, lines] of cases) {
+      expect(sample).toBeDefined();
+      if (!sample) throw new Error("Synthetic fixture missing");
+      const { client } = actionClient(sample, (envelope) => {
+        putBack(financialObject(envelope.data), payment, lines);
+      });
+      await expect(
+        client.read(actionScope(sample), sample.request),
+      ).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
+    }
+  });
+});
+
 function selectedCreditSample(reversed = false): FinancialActionFixture {
   const found = actionContextFixtures.find(
     (sample) =>
