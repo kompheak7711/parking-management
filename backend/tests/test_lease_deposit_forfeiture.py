@@ -280,6 +280,8 @@ def test_draft_reads_pass_only_the_prepare_capabilities_the_reader_holds(
                     "deposits.correct",
                     # V1-056 sub-slice 10e-1a (docs/010): the PAYMENT_RETURN preparer.
                     "payments.reverse",
+                    # V1-056 sub-slice 10f-1 (docs/010): the ADJUSTMENT_REVERSAL preparer.
+                    "invoices.adjust",
                 }
             ),
         ),
@@ -309,7 +311,9 @@ def test_capability_scoped_reads_fit_the_database_bound() -> None:
     """The read functions accept at most 7 capabilities (migration 20261019_84)."""
     # V1-056 sub-slice 10e-1a (migration 20261120_116, docs/010): payments.reverse is the eighth
     # preparer capability, and the read functions now accept at most 8.
-    assert 1 <= len(PREPARE_CAPABILITIES) <= 8
+    # V1-056 sub-slice 10f-1 (migration 20261219_145, docs/010): invoices.adjust is the ninth, and
+    # the read functions now accept at most 9.
+    assert 1 <= len(PREPARE_CAPABILITIES) <= 9
 
 
 @pytest.mark.parametrize("sqlstate", ["23514", "23505"])

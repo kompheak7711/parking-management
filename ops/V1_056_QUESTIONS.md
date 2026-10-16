@@ -2814,3 +2814,26 @@ Also: the pending rename of `test_a_right_receipt_into_a_deposit_with_a_forfeitu
 **What goes ahead.** Everything; nothing waits for this answer.
 
 **Owner answer (2026-10-16).** Option (a). Rename that test the next time its file is touched. From now on, as a standing rule, the implementer may rename any committed test whose name an owner answer or a hardening has made wrong, without asking; only the name, the docstring and the traceability note change, and each rename is recorded (ops/V1_055_RUN_RULES.md). Also answered with the 10c-3c-1 report: 10c-3c-2 adds tests that reach the two `CHARGE_REDUCTION` writers that 10c-3c-1 confirmed only by reading, and shows they meet the new 8a-1 rule; the slice 12 list gets the old three-argument allow functions of 10c-3c-1, which have no caller (decide whether they are still needed). Order: 10c-3c-2, 10f, 10g, 10e-2d, 10e-2b-3, 10e-2b-4, 10h, then the Q-112 times sub-slice; stop before slice 11. Recorded in docs/010.
+
+## Q-2026-10-16-118 — Sub-slice 10f-1 (the `ADJUSTMENT_REVERSAL` draft before closure): where the put-back goes, and which Adjustments it reverses (blocks only the refused cases; nothing waits)
+
+Your rule for the mistaken credit Adjustment (slice 10 entry, owner answer to the 8f report; owner answer 7 to Q-2026-10-06-36): an `invoices.adjust` holder prepares a draft, a `financial.approve` holder confirms it, and the confirm writes the Adjustment reversal and puts the released value back "on the line": a released Payment allocation made a new Credit, and the part of that Credit still available is applied to the line; a released Credit application returned its value to a Credit, and the part still available is applied again; any part already used elsewhere or refunded stays as debt on the line. The 10f pre-code design is in the plan. A read-only check found two points.
+
+**Point 1: where the put-back goes when an earlier line still owes.** The Credit proposal (BR-CREDIT-006, `app.credit_application_proposal`) puts Credit on an Invoice Rent first, then Service Charges, then the other lines by their line order, unless the Customer designates lines; it uses the same order on an Invoice with no Rent or Service line (for example a final Utility Invoice with an Electricity line before a Water line). Where a line before the Adjustment's line in that order still owes, your rule ("on the line") and the Credit rule give different lines. For a return reversal you chose the line (answer (b) to Q-2026-10-13-104), with the label "put back by a correction", written only by a correction's put-back (answer (a) to Q-2026-10-13-106).
+
+Example: a Rent Invoice with Rent 500.00 and Service Charges 100.00. A Payment paid the Service line in full; Rent still owes 500.00. Staff record a credit Adjustment of 100.00 on the Service line by mistake, so the 100.00 becomes Customer Credit. The reversal makes the Service line owe 100.00 again. The Rent-first rule would put the 100.00 Credit on the Rent line.
+
+- (a) Put it back on the Adjustment's own line, always, with the same label "put back by a correction" (an Adjustment reversal is a correction confirmed by `financial.approve`). The label check also accepts a put-back of an `ADJUSTMENT_REVERSAL` confirmed in the same transaction, only on the Adjustment's line and never more than the release.
+- (b) Keep the refusal of 10f-1: such an Adjustment cannot be reversed while a line before it still owes.
+- (c) Follow the Rent-first rule: the Credit goes on the Invoice by the usual order, so in the example the Rent line gets the 100.00 and the Service line owes 100.00.
+
+**Recommendation: (a)**, because it follows your rule and your return-reversal answer: the mistake is undone exactly where it was made. Until you answer, 10f-1 refuses the case (55000) and puts back only where the proposal order also chooses the Adjustment's line, that is, where no line before it still owes, on any Invoice (corrected in review round 1: the first text said this always held on an Invoice without Rent or Service lines, which is not so).
+
+**Point 2: Adjustments that a resolution wrote.** A hand-back resolution (BR-RENT-030) and an unpaid-Initial resolution write credit Adjustments as part of a resolution record. Reversing only the Adjustment would leave the resolution record saying the opposite of the Invoice.
+
+- (a) Keep them refused by the `ADJUSTMENT_REVERSAL` draft (a wrong resolution is decided as its own case when it happens).
+- (b) Allow them like any other credit Adjustment.
+
+**Recommendation: (a).** 10f-1 refuses them (55000).
+
+**What goes ahead.** Everything else in 10f-1, then 10f-2 (after closure) and the rest of the order.

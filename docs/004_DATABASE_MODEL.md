@@ -1102,6 +1102,34 @@ Adjustment's derived effect without changing the original Adjustment, Invoice, o
 The transaction locks and recomputes the line/Invoice and rejects any resulting negative
 balance or inconsistent application; status regression is derived under DB-DER-001.
 
+The first writer, V1-056 sub-slice 10f-1 (migration `20261219_145`; owner answer 7 to
+Q-2026-10-06-36 and the slice 10 entry of the plan): a mistaken credit Adjustment is reversed
+through a `financial_drafts` row of the new kind `ADJUSTMENT_REVERSAL`, prepared under
+`invoices.adjust` (the draft checks gain the kind and the preparer, also for a WITHDRAWN
+decision, and the two capability-scoped draft reads accept nine preparer capabilities). Staff
+record it (`app.record_adjustment_reversal_draft`, READ COMMITTED, one waiting draft per
+Adjustment); its payload lists the Adjustment, its line's current unpaid amount (the reversal adds the
+Adjustment's amount to it) and, for each
+`invoice_credit_excess_releases` row of the Adjustment in written order, the Credit that holds the
+released value, the part still available (0 for a reversed Credit, a Payment no longer received or
+another Customer's Credit; earlier put-backs from the same Credit counted), the put-back (at most
+the release and the line's unpaid rest) and the part that stays as debt on the line. A
+`financial.approve` holder (a person, at READ COMMITTED) confirms it (`app.confirm_adjustment_reversal`):
+the locks of the Credit writers (each released Credit's Payment, the Credits, then the Invoice and
+its lines), the source again (a changed source is stale, P5S02, and the draft stays pending), the
+decision, the reversal row (the draft's reason, the approver, `financial.approve`, a time later
+than every financial event of the Invoice), the Invoice status and version, then each put-back as
+a Credit application of that Credit to the Adjustment's line (`credits.apply`, the approver, the
+Rent-first proposal of `app.credit_application_proposal` for its amount, a detail trace naming the
+reversal and the release), all deferred checks at once, and one `invoice.adjustment_reversed`
+audit event correlated with the draft. Refused (55000): a debit Adjustment, a reversed one, one on
+an Invoice that is not issued or is VOID, one that a hand-back or unpaid-Initial resolution wrote, one linked to a post-settlement correction,
+one whose Lease's Final Settlement is closed (sub-slice 10f-2), and, until the owner answers
+Q-2026-10-16-118, a put-back that the Rent-first order would put on another line (a line before
+the Adjustment's line in that order still owes, on any Invoice). No role may write this table directly; no table,
+column or trigger changed. A pending `ADJUSTMENT_REVERSAL` draft does not block a Final
+Settlement; after the closure it is stale.
+
 ---
 
 # 10. Payment, Exchange, Allocation, and Credit Tables

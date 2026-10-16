@@ -28,6 +28,7 @@ class FinancialDraftKind(StrEnum):
     FINAL_SETTLEMENT = "FINAL_SETTLEMENT"
     SETTLEMENT_CORRECTION = "SETTLEMENT_CORRECTION"
     PAYMENT_RETURN = "PAYMENT_RETURN"
+    ADJUSTMENT_REVERSAL = "ADJUSTMENT_REVERSAL"
 
 
 class FinancialDraftState(StrEnum):
@@ -53,6 +54,8 @@ KIND_PREPARE_CAPABILITIES: Final[dict[FinancialDraftKind, frozenset[str]]] = {
     FinancialDraftKind.SETTLEMENT_CORRECTION: frozenset({FINAL_SETTLEMENTS_PREPARE_CAPABILITY}),
     # A returned Payment with no closed Final Settlement relied on (V1-056 sub-slice 10e-1a).
     FinancialDraftKind.PAYMENT_RETURN: frozenset({"payments.reverse"}),
+    # A mistaken credit Adjustment reversed before closure (V1-056 sub-slice 10f-1).
+    FinancialDraftKind.ADJUSTMENT_REVERSAL: frozenset({"invoices.adjust"}),
 }
 PREPARE_CAPABILITIES: Final = frozenset().union(*KIND_PREPARE_CAPABILITIES.values())
 

@@ -35791,7 +35791,7 @@
       "test_level": "unit",
       "test_path": "backend/tests/test_lease_deposit_forfeiture.py",
       "status": "implemented",
-      "notes": "The number of prepare capabilities fits the bound of the capability-scoped read functions (7)."
+      "notes": "The number of prepare capabilities fits the bound of the capability-scoped read functions (7 at migration 20261019_84, 8 since 20261120_116, 9 since 20261219_145 of V1-056 sub-slice 10f-1)."
     },
     {
       "test_id": "test_a_refused_withdrawal_is_a_conflict_not_unavailable_storage",
@@ -41323,6 +41323,182 @@
       "test_path": "backend/tests/test_settlement_deposit_paid_charge_reduction_migration.py",
       "status": "implemented",
       "notes": "The implementer's reading of sub-slice 10c-3c-2, confirmed in review round 1: after a real closure whose remaining Pet Deposit, by the Customer's choice, paid the first Service line and part of the Rent line of one Initial Invoice, its second Service line (no Deposit application) takes a CHARGE_REDUCTION of its unpaid rest: above the rest is refused (it would release paid value) and nothing is written; the whole rest is recorded and confirmed as one linked credit Adjustment of that line only; the two Deposit applications on the other lines stay, the Rent line still owes its rest, no Deposit holds money, the closed Settlement row is unchanged and the ledger reconciles; the Invoice-wide 8a-1 refusal let the Adjustment through only because its reference names the correction, whose draft names exactly this line (owner answer (a) to Q-2026-10-10-70; V1-056 sub-slice 10c-3c-2; fixed Lease dates as mixed_rent_case)."
+    },
+    {
+      "test_id": "test_a_credit_adjustment_that_released_nothing_owes_again",
+      "upstream_ids": [
+        "BR-INV-044",
+        "BR-AUTH-010",
+        "DB-INV-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_adjustment_reversal_migration.py",
+      "status": "implemented",
+      "notes": "A credit Adjustment within the unpaid value released nothing: an invoices.adjust holder records an ADJUSTMENT_REVERSAL draft (no financial effect), Staff without financial.approve cannot confirm it, the approver's confirm writes the Adjustment reversal with the draft's reason, restores the line's obligation to the cent, advances the Invoice version and status and writes one audit event correlated with the draft; a replay returns the same result without the transaction id; the ledger reconciles (owner answer 7 to Q-2026-10-06-36; V1-056 sub-slice 10f-1)."
+    },
+    {
+      "test_id": "test_a_released_allocation_s_credit_goes_back_on_its_line",
+      "upstream_ids": [
+        "BR-INV-044",
+        "BR-CREDIT-006",
+        "BR-CREDIT-008",
+        "DB-INV-010",
+        "DB-CREDIT-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_adjustment_reversal_migration.py",
+      "status": "implemented",
+      "notes": "The 10,000 a credit Adjustment released from a Payment allocation as the Invoice Customer's new Credit goes back on the same line on reversal, as one Credit application with the Rent-first proposal (credits.apply, the approver, a detail trace naming the reversal and the release): the line owes 60,000, 80,000 less what the Payment paid, and the Credit holds nothing (slice 10 entry, owner answer to the 8f report; V1-056 sub-slice 10f-1)."
+    },
+    {
+      "test_id": "test_a_released_credit_application_goes_back_only_with_what_is_left",
+      "upstream_ids": [
+        "BR-INV-044",
+        "BR-CREDIT-008",
+        "DB-INV-010",
+        "DB-CREDIT-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_adjustment_reversal_migration.py",
+      "status": "implemented",
+      "notes": "A credit Adjustment returned 5,000 to the Credit that paid the line; after the Customer used 22,000 of that Credit on the next Invoice only 3,000 remain, so the reversal puts back 3,000 and the other 2,000 stays as debt on the line, to the cent (slice 10 entry; V1-056 sub-slice 10f-1)."
+    },
+    {
+      "test_id": "test_a_put_back_goes_only_where_the_rent_first_order_also_puts_it",
+      "upstream_ids": [
+        "BR-CREDIT-006",
+        "BR-INV-044",
+        "DB-INV-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_adjustment_reversal_migration.py",
+      "status": "implemented",
+      "notes": "Fail closed until the owner answers Q-2026-10-16-118 point 1: the reversal of a credit Adjustment on a paid Service line is refused while the Rent line still owes, because the Rent-first order would put the Credit put-back on the Rent line, and no draft is written; once the Rent line is paid the put-back goes on the Service line with the Service proposal (V1-056 sub-slice 10f-1)."
+    },
+    {
+      "test_id": "test_adjustment_reversal_refusals_stale_drafts_withdrawal_and_reads",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-INV-044",
+        "DB-INV-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_adjustment_reversal_migration.py",
+      "status": "implemented",
+      "notes": "A debit Adjustment, an unknown Adjustment, a reused key, a second waiting draft and a reversed Adjustment are refused; an exact repeat replays; the database refuses a confirm under invoices.adjust (42501, nothing written); a draft whose sources changed is stale and stays pending; the recorder and the confirm need READ COMMITTED; the preparer withdraws under invoices.adjust; the preparer and an approver read the draft (V1-056 sub-slice 10f-1)."
+    },
+    {
+      "test_id": "test_a_closed_settlement_s_adjustment_waits_for_a_correction",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-INV-044",
+        "DB-INV-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_adjustment_reversal_migration.py",
+      "status": "implemented",
+      "notes": "After a real closure of the two-Signer Lease, whose Settlement used the Credit a credit Adjustment released, a reversal draft recorded before the closure is stale and stays pending, and the recorder refuses the Adjustment: after closure it is reversed only through a correction of that Final Settlement (sub-slice 10f-2; V1-056 sub-slice 10f-1)."
+    },
+    {
+      "test_id": "test_an_adjustment_a_hand_back_resolution_wrote_is_refused",
+      "upstream_ids": [
+        "BR-RENT-030",
+        "BR-INV-044",
+        "DB-INV-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_adjustment_reversal_migration.py",
+      "status": "implemented",
+      "notes": "Q-2026-10-16-118 point 2 (fail closed until the owner answers): the credit Adjustment a hand-back resolution wrote stays with its resolution; the reversal draft refuses it and no draft is written (V1-056 sub-slice 10f-1)."
+    },
+    {
+      "test_id": "test_adjustment_reversal_drafts_are_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "DB-INV-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_adjustment_reversal_migration.py",
+      "status": "implemented",
+      "notes": "Only the financial role executes the recorder and the confirm; no role executes the internal functions or writes app.invoice_adjustment_reversals, whose rows stay append-only; migration 20261219_145 adds only its five functions and relaxes only the two capability-scoped draft reads (privileges and settings kept), adds no table or trigger, and is forward-only (V1-056 sub-slice 10f-1)."
+    },
+    {
+      "test_id": "test_adjustment_reversal_record_and_confirm_refuse_missing_capability_before_any_connection",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "DB-INV-010"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_adjustment_reversal.py",
+      "status": "implemented",
+      "notes": "invoices.adjust records and financial.approve confirms, both checked before any connection (V1-056 sub-slice 10f-1)."
+    },
+    {
+      "test_id": "test_adjustment_reversal_invalid_input_is_refused_before_any_connection",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "DB-INV-010"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_adjustment_reversal.py",
+      "status": "implemented",
+      "notes": "Ids and the reason (trimmed, 1 to 1000 characters, no NUL) are checked before any connection (V1-056 sub-slice 10f-1)."
+    },
+    {
+      "test_id": "test_adjustment_reversal_database_failures_map_to_stable_errors",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "DB-INV-010"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_adjustment_reversal.py",
+      "status": "implemented",
+      "notes": "Database refusals map to stable service errors without the database message (V1-056 sub-slice 10f-1)."
+    },
+    {
+      "test_id": "test_adjustment_reversal_business_state_refusals_are_conflicts",
+      "upstream_ids": [
+        "DB-INV-010"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_adjustment_reversal.py",
+      "status": "implemented",
+      "notes": "A reused key and a stale draft are conflicts (V1-056 sub-slice 10f-1)."
+    },
+    {
+      "test_id": "test_adjustment_reversal_draft_id_is_scoped_to_property_preparer_and_key",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "DB-INV-010"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_adjustment_reversal.py",
+      "status": "implemented",
+      "notes": "The draft id is scoped to the Property, the preparer and the command key (V1-056 sub-slice 10f-1)."
+    },
+    {
+      "test_id": "test_adjustment_reversal_drafts_are_prepared_only_under_the_adjustment_capability",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "DB-INV-010"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_adjustment_reversal.py",
+      "status": "implemented",
+      "notes": "ADJUSTMENT_REVERSAL drafts are prepared only under invoices.adjust, the ninth preparer capability (owner answer 7 to Q-2026-10-06-36; V1-056 sub-slice 10f-1)."
+    },
+    {
+      "test_id": "test_two_releases_of_one_credit_count_the_earlier_put_back",
+      "upstream_ids": [
+        "BR-INV-044",
+        "BR-CREDIT-008",
+        "DB-INV-010",
+        "DB-CREDIT-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_adjustment_reversal_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 set-up: a 40,000 credit Adjustment released two Credit applications of one Credit (30,000 whole and 10,000 of a 50,000 one); after the Customer used 25,000 of that Credit elsewhere, the reversal puts back 30,000 for the first release and only the 5,000 left for the second (the earlier put-back from the same Credit counted), both on the Adjustment's line in increasing time order, and 5,000 stays as debt; the Invoice version advances by two and the ledger reconciles (V1-056 sub-slice 10f-1)."
     }
   ]
 }
