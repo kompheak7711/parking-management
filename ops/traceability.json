@@ -41723,6 +41723,158 @@
       "test_path": "backend/tests/test_settlement_adjustment_reversal_migration.py",
       "status": "implemented",
       "notes": "Review round 1 (both reviewers, the 10f-1b room set-up): a hand-written put-back of 1 listed by a confirmed 10f-1 decision passes; listed by a SETTLEMENT_CORRECTION decision of the variant ADJUSTMENT_REVERSAL with no effect link it is refused by the deferred check (23514); with a decision of another transaction, one dated before this transaction, or one of the variant CHARGE_REDUCTION the label insert trigger refuses it (23514); all rolled back (V1-056 sub-slice 10f-2)."
+    },
+    {
+      "test_id": "test_a_wrong_allocation_the_settlement_relied_on_moves_through_a_correction",
+      "upstream_ids": [
+        "BR-PAY-042",
+        "BR-SETTLE-013",
+        "BR-SETTLE-016",
+        "BR-AUTH-010",
+        "DB-SETTLE-005",
+        "DB-PAY-008"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_payment_move_migration.py",
+      "status": "implemented",
+      "notes": "After a real closure that relied on a 1,000 allocation meant for another Unit's Lease, a PAYMENT_MOVE correction (final_settlements.prepare records, financial.approve confirms; Staff refused by the service and by the database, 42501) reverses it and allocates the same Payment to the correct Invoice: the first line owes 1,000 again on its Customer's ledger, the second line owes 11,500, the reversal and the new allocation are linked to the correction, the payment_moves row names the correction draft, one move and one correction audit event, the closure snapshot unchanged, a replay returns the same result with no transaction id, both ledgers reconcile and the moved allocation still refuses the one-call reversal (V1-056 sub-slice 10g)."
+    },
+    {
+      "test_id": "test_only_what_the_correct_invoice_owes_moves_and_the_rest_stays_on_the_payment",
+      "upstream_ids": [
+        "BR-PAY-042",
+        "BR-SETTLE-013",
+        "BR-SETTLE-016"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_payment_move_migration.py",
+      "status": "implemented",
+      "notes": "The correct Invoice owes 300: the correction moves 300, the other 700 stays unallocated on the Payment (plan Q16) and the first line owes the whole 1,000 again; both ledgers reconcile (V1-056 sub-slice 10g)."
+    },
+    {
+      "test_id": "test_a_record_another_closed_settlement_relied_on_is_refused",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_payment_move_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer 5 to Q-2026-10-06-37: after the first Settlement's correction moved the allocation, the second Lease closes relying on it; a correction of the second Settlement naming it is refused (55000, another Settlement's correction wrote it; a known limit until the owner answers Q-2026-10-17-120) and the first Settlement's correction cannot name it (another Lease's Invoice); nothing is recorded (V1-056 sub-slice 10g)."
+    },
+    {
+      "test_id": "test_a_move_correction_s_refusals_waiting_drafts_stale_drafts_and_withdrawal",
+      "upstream_ids": [
+        "BR-PAY-042",
+        "BR-SETTLE-013",
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_payment_move_migration.py",
+      "status": "implemented",
+      "notes": "Refused (55000): an open Settlement, an allocation reversed before the closure, a waiting slice 7 move draft or a waiting correction draft of the allocation, an allocation made after the closure (the slice 7 move draft still records it); an exact repeat replays and a reused key is refused; a stale draft (the correct Invoice changed) is refused P5S02 and stays pending; the preparer withdraws it and a new draft moves 1,000 (V1-056 sub-slice 10g)."
+    },
+    {
+      "test_id": "test_the_move_check_needs_this_transaction_s_decision_and_both_links",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "DB-SETTLE-005",
+        "DB-PAY-008"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_payment_move_migration.py",
+      "status": "implemented",
+      "notes": "app.settlement_payment_move_allowed called directly inside the confirm's own transaction (rolled back): true for the stored move, false for another move id (review round 1: the decision names the move), another reversal, another allocation, another approver or another draft; false after the transaction (V1-056 sub-slice 10g)."
+    },
+    {
+      "test_id": "test_settlement_payment_moves_are_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-SETTLE-013"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_payment_move_migration.py",
+      "status": "implemented",
+      "notes": "Only the financial role records and confirms; no role executes the three internal functions; the migration adds only its five functions, patches only app.validate_payment_move with its privileges and settings kept, changes no table or trigger, and is forward-only (V1-056 sub-slice 10g)."
+    },
+    {
+      "test_id": "test_payment_move_correction_needs_its_capabilities_before_any_connection",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-SETTLE-013"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_move.py",
+      "status": "implemented",
+      "notes": "final_settlements.prepare records and financial.approve confirms the Payment move correction, both checked before any connection; the slice 7 preparer capability does neither (V1-056 sub-slice 10g)."
+    },
+    {
+      "test_id": "test_payment_move_correction_invalid_input_is_refused_before_any_connection",
+      "upstream_ids": [
+        "BR-PAY-042",
+        "BR-SETTLE-013"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_move.py",
+      "status": "implemented",
+      "notes": "The key, the Settlement, the allocation, the correct Invoice, the reason (1 to 1000 characters) and both acknowledgements (1 to 2000) are checked before any connection (V1-056 sub-slice 10g)."
+    },
+    {
+      "test_id": "test_payment_move_correction_failures_map_to_stable_errors",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-SETTLE-013"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_move.py",
+      "status": "implemented",
+      "notes": "Database refusals of the correction map to stable service errors: P5S02 a stale draft (a conflict), P5S01 and 55000 conflicts (V1-056 sub-slice 10g)."
+    },
+    {
+      "test_id": "test_payment_move_correction_draft_id_is_its_own",
+      "upstream_ids": [
+        "BR-SETTLE-013"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_move.py",
+      "status": "implemented",
+      "notes": "The correction draft id differs from the slice 7 draft id for the same key and is scoped to the Property, the preparer and the key (V1-056 sub-slice 10g)."
+    },
+    {
+      "test_id": "test_the_move_check_refuses_a_move_row_outside_its_correction",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-AUTH-010",
+        "DB-PAY-008",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_payment_move_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 (both reviewers): the patched app.validate_payment_move on the real insert path, as the owner, rolled back: inside the confirm's transaction a copy of the stored move passes the check and meets the primary key (23505); with another approver, another id, or under a copy of the draft of another variant it is refused (23514); in a later transaction the stored move itself, with its own id, is refused before the primary key (review round 2: the transaction binding), and so is the same move under a withdrawn slice 7 draft (it has a decision) (V1-056 sub-slice 10g)."
+    },
+    {
+      "test_id": "test_a_correct_invoice_on_a_closed_lease_takes_the_move",
+      "upstream_ids": [
+        "BR-PAY-042",
+        "BR-SETTLE-013",
+        "BR-SETTLE-016"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_payment_move_migration.py",
+      "status": "implemented",
+      "notes": "Security review round 1: a correction of the second Settlement moves a 500 allocation it relied on to the first Lease's Invoice, whose Settlement is closed and which owes 1,000 again: that line owes 500, the second line 500, the first closure snapshot unchanged, both ledgers reconcile (V1-056 sub-slice 10g)."
+    },
+    {
+      "test_id": "test_a_source_refusal_at_confirm_leaves_the_draft_pending",
+      "upstream_ids": [
+        "BR-PAY-042",
+        "BR-SETTLE-013"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_payment_move_migration.py",
+      "status": "implemented",
+      "notes": "Independent review round 1: the correct Invoice is paid in full after the record; the confirm is refused (55000, nothing outstanding), the draft stays pending, no move and no correction header are written (V1-056 sub-slice 10g)."
     }
   ]
 }

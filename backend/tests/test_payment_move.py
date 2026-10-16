@@ -16,9 +16,12 @@ from property_rental.payment_move import (
     PaymentMoveKeyReused,
     PaymentMoveNotFoundError,
     PaymentMoveService,
+    PaymentMoveStaleDraftError,
     PaymentMoveUnavailableError,
     RecordPaymentMoveCommand,
+    RecordSettlementPaymentMoveCommand,
     payment_move_draft_id,
+    settlement_payment_move_draft_id,
 )
 
 PROPERTY = UUID(int=7)
@@ -182,3 +185,114 @@ def test_credit_reversal_of_moved_payment_value_is_a_conflict() -> None:
                 PROPERTY, UUID(int=5), ReverseCreditCommand(UUID(int=6), "Return"), actor=actor
             )
     assert "Synthetic private diagnostic" not in str(caught.value)
+
+
+def correction(**changes: object) -> RecordSettlementPaymentMoveCommand:
+    values: dict[str, object] = {
+        "idempotency_key": UUID(int=1),
+        "settlement_id": UUID(int=5),
+        "allocation_id": UUID(int=2),
+        "target_invoice_id": UUID(int=3),
+        "reason": "Paid on Unit 203, meant for Unit 201",
+        "source_acknowledgement": "Dara Sok, 2026-10-16, in person at the office",
+        "target_acknowledgement": "Vanna Chea, 2026-10-16, by telephone",
+        **changes,
+    }
+    return RecordSettlementPaymentMoveCommand(**values)  # type: ignore[arg-type]
+
+
+def test_payment_move_correction_needs_its_capabilities_before_any_connection(
+    no_connection: None,
+) -> None:
+    """Sub-slice 10g: final_settlements.prepare records the correction, financial.approve
+    confirms it; the slice 7 preparer capability does neither."""
+    del no_connection
+    service = PaymentMoveService("unused")
+    for actor in (
+        person(),
+        person("financial.approve"),
+        person("payments.allocations.reverse"),
+        person("final_settlements.prepare", actor_id="x"),
+    ):
+        with pytest.raises(PaymentMoveAuthorizationError):
+            service.record_correction(PROPERTY, correction(), actor=actor)
+    for actor in (
+        person(),
+        person("final_settlements.prepare"),
+        person("payments.allocate"),
+        person("payments.allocations.reverse"),
+    ):
+        with pytest.raises(PaymentMoveAuthorizationError):
+            service.confirm_correction(PROPERTY, UUID(int=4), actor=actor)
+
+
+def test_payment_move_correction_invalid_input_is_refused_before_any_connection(
+    no_connection: None,
+) -> None:
+    del no_connection
+    service = PaymentMoveService("unused")
+    for change in (
+        {"idempotency_key": UUID(int=0)},
+        {"settlement_id": UUID(int=0)},
+        {"settlement_id": "not-a-uuid"},
+        {"allocation_id": UUID(int=0)},
+        {"target_invoice_id": UUID(int=0)},
+        {"reason": "x" * 1001},
+        {"source_acknowledgement": ""},
+        {"target_acknowledgement": "x" * 2001},
+    ):
+        with pytest.raises(PaymentMoveInvalidError):
+            service.record_correction(
+                PROPERTY, correction(**change), actor=person("final_settlements.prepare")
+            )
+    with pytest.raises(PaymentMoveInvalidError):
+        service.confirm_correction(PROPERTY, UUID(int=0), actor=person("financial.approve"))
+
+
+@pytest.mark.parametrize(
+    ("sqlstate", "expected"),
+    [
+        ("P0002", PaymentMoveNotFoundError),
+        ("42501", PaymentMoveAuthorizationError),
+        ("22023", PaymentMoveInvalidError),
+        ("P5205", PaymentMoveKeyReused),
+        ("P5S02", PaymentMoveStaleDraftError),
+        ("P5S01", PaymentMoveConflictError),
+        ("55000", PaymentMoveConflictError),
+        ("23514", PaymentMoveConflictError),
+        ("08006", PaymentMoveUnavailableError),
+    ],
+)
+def test_payment_move_correction_failures_map_to_stable_errors(
+    monkeypatch: pytest.MonkeyPatch, sqlstate: str, expected: type[Exception]
+) -> None:
+    class Failure(psycopg.Error):
+        pass
+
+    failure = Failure("Synthetic failure")
+    failure.sqlstate = sqlstate
+
+    def connect(*args: object, **kwargs: object) -> None:
+        raise failure
+
+    monkeypatch.setattr(psycopg, "connect", connect)
+    with pytest.raises(expected):
+        PaymentMoveService("unused").record_correction(
+            PROPERTY, correction(), actor=person("final_settlements.prepare")
+        )
+    with pytest.raises(expected):
+        PaymentMoveService("unused").confirm_correction(
+            PROPERTY, UUID(int=4), actor=person("financial.approve")
+        )
+
+
+def test_payment_move_correction_draft_id_is_its_own() -> None:
+    """A stale correction draft is a conflict; the correction's draft id never equals the slice 7
+    draft id for the same preparer and key."""
+    assert issubclass(PaymentMoveStaleDraftError, PaymentMoveConflictError)
+    key = uuid4()
+    base = settlement_payment_move_draft_id(PROPERTY, HUMAN, key)
+    assert base == settlement_payment_move_draft_id(PROPERTY, HUMAN, key)
+    assert base != payment_move_draft_id(PROPERTY, HUMAN, key)
+    assert base != settlement_payment_move_draft_id(UUID(int=9), HUMAN, key)
+    assert base != settlement_payment_move_draft_id(PROPERTY, UUID(int=9), key)

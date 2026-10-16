@@ -2855,3 +2855,26 @@ Example: after closure, a `CHARGE_REDUCTION` correction removes 50.00 of a Damag
 **What goes ahead.** Everything else in 10f-2: the correction for a credit Adjustment recorded before the closure. The design is in the plan (10f entry, "10f-2 pre-code design").
 
 **Owner answer (2026-10-16).** Option (b). The 10f-2 correction may reverse a credit Adjustment that a post-settlement correction wrote only when that correction is a `CHARGE_REDUCTION`. Its reversal restores exactly the debt the reduction removed. Every other correction's Adjustment stays refused. Recorded in docs/010; built in 10f-2.
+
+**Also answered with the 10f-2 report (2026-10-16).** (1) The four implementer's readings of 10f-2, confirmed needed and safe by the round 1 independent reviewer, are accepted. (2) For 10h: a put-back that an `ADJUSTMENT_REVERSAL` correction made after closure can still be undone by the ordinary Credit application reversal. 10h must close this gap: either refuse that reversal after closure, or route it through a linked correction. If the fix changes who pays or how much, a question with a recommendation is written first. Recorded in docs/010 and the plan (10h entry).
+
+## Q-2026-10-17-120 — Sub-slice 10g review round 1: an allocation that a `PAYMENT_MOVE` correction wrote on another Lease (blocks nothing in 10g; refused until answered)
+
+Your answer 5 to Q-2026-10-06-37: the wrong-Unit fix may pay another Lease's Invoice, but no record that another Lease's closed Settlement relied on may change except through a confirmed correction of that Settlement. Sub-slice 10g builds the `PAYMENT_MOVE` correction. Both round 1 reviewers found three related points about the new allocation it writes on the other Lease.
+
+**Point 1: a second mistake has no fix.** Example: Lease A's correction moves 1,000 onto Lease B's line. Later B closes, and its Settlement counts that 1,000. Then staff find B was also the wrong Invoice. A correction of B is refused, because A's correction wrote the allocation; a correction of A is refused, because the allocation is on B's Invoice. Until 10h the ordinary move draft still works; after 10h nothing does. The same holds in the other order: an allocation that B's correction wrote on A's Invoice after A closed is refused by both corrections (the 10g test of a correct Invoice on a closed Lease writes one).
+- (a) Keep it refused, as a known limit, like your answer (a) to Q-2026-10-10-72 point 3 (a Payment that two closed Settlements relied on cannot be returned). It needs two mistakes on the same money.
+- (b) Allow it only through two linked corrections, one of each Settlement (as the companion correction of Q-2026-10-13-103), as its own sub-slice.
+- **Recommendation: (a).** 10g refuses it now (55000, "A correction of another Final Settlement wrote this allocation; this correction cannot move it").
+
+**Point 2: other paths can still change that allocation without A's correction.** While B is open, an ordinary credit Adjustment on B's line can release it into B's Customer's Credit; after B closes, a `REFUND` correction of B can release it; and the ordinary move draft can move it (until 10h).
+- (a) 10h refuses each of them for an allocation that a correction of a closed Settlement wrote (fail closed), with tests, as part of the 10h refusals after closure.
+- (b) Keep them open (a known limit).
+- **Recommendation: (a)**, because your answer 5 says such a record changes only through a correction of the Settlement that relied on it.
+
+**Point 3: a waiting correction draft does not stop the other Lease's Settlement.** The Settlement preview lists a waiting ordinary move draft whose correct Invoice is on the Lease being settled, but not a waiting `PAYMENT_MOVE` correction draft (nor a waiting `PAYMENT_RETURN` or 10f-1 `ADJUSTMENT_REVERSAL` draft). So B's Settlement can close while A's correction waits; B's Deposit may then pay the line that A's Customer's Payment was meant to pay, and A's correction can no longer move the money there.
+- (a) 10h adds these waiting drafts to the preview's pending-draft check (fail closed), with a test.
+- (b) Keep it (a known limit; staff confirm or withdraw the correction first).
+- **Recommendation: (a)**, because the preview already blocks the same move as an ordinary draft.
+
+**What goes ahead.** Everything. 10g is committed with point 1 refused; points 2 and 3 are listed in the 10h entry and wait for your answer. 10h also makes the ordinary move recorder see a waiting correction draft (both reviewers; today only the correction recorder sees a waiting draft of either kind), as part of refusing ordinary move drafts of records a closed Settlement relied on.

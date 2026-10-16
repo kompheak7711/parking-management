@@ -1314,6 +1314,8 @@ and cannot exceed its remaining balance or affect the source Invoice.
 
 Append-only link of one confirmed wrong-Unit Payment move (BR-PAY-042, V1-056 slice 7, migration `20261020_85`): `id uuid PK`, `draft_id uuid NOT NULL UNIQUE FK financial_drafts`, `property_id`, `payment_id`, `source_allocation_id uuid NOT NULL UNIQUE FK payment_allocations`, `source_reversal_id uuid NOT NULL UNIQUE FK payment_allocation_reversals`, `source_reversed_by_move boolean NOT NULL`, `target_allocation_id uuid NOT NULL UNIQUE FK payment_allocations`, `source_invoice_id`, `target_invoice_id`, `moved_usd_cents bigint NOT NULL CHECK (>0)`, `source_acknowledgement` and `target_acknowledgement text NOT NULL` (1 to 2,000 characters: who acknowledged for each Customer, the date and how), `confirmed_at`, `confirmed_by`. Staff record a `PAYMENT_MOVE` draft under `payments.allocations.reverse` (`app.record_payment_move_draft`); a `financial.approve` holder confirms it (`app.confirm_payment_move_draft`), which in one transaction reverses the wrong Invoice allocation (unless the one-call reversal already did), posts the same Payment to the correct Invoice of another Unit and inserts this row; a deferred check requires the draft's CONFIRMED decision. The move is refused while the Payment has Customer Credit that is not reversed or a Refund that is not fully returned, and a draft is stale when the correct Invoice or the source changed. The Payment row and its Receipt never change. No runtime or financial role has table privileges. Update/delete is prohibited. The reversal and the new allocation share one instant, and one `payment_move.confirmed` audit event per move carries the draft id as its correlation id. The draft payload (both acknowledgements and the line split of the correct Invoice) must fit the 16,000-byte draft limit. The confirmation advances the correct Invoice's version even when its status is unchanged. A Customer Credit that a credit Adjustment released from a moved allocation is never reversed by the one-call Credit reversal unless the Payment is a normal Customer Payment and the Credit belongs to its payer (`customer_credit_reversals_moved_payment`, SQLSTATE P4904; owner answers to Q-2026-10-05-18 and Q-2026-10-05-19); otherwise it stays with its Customer. Exception since V1-056 sub-slice 10e-1a (migration `20261120_116`, DB-PAY-009): the confirm of a returned Payment reverses that Payment's moved allocation and such a Credit of that Payment in the same transaction. A Credit of a Customer other than the payer can be applied to that Customer's Invoices or Late-payment Charges, or refunded to that Customer through a `CREDIT_CUSTOMER` Refund draft confirmed by `financial.approve` (BR-CREDIT-014; V1-056 sub-slice 8f, migration `20261030_95`, DB-REFUND-001); the ordinary Credit Refund draft pays only a recipient who is both the Credit's Customer and the payer, so it is refused for such a Credit. A third-party payer's own Credit can still be refunded to the payer through a Refund draft.
 
+As built in V1-056 sub-slice 10g (migration `20261222_148`): a row is also written by the `PAYMENT_MOVE` variant of a post-settlement correction (DB-SETTLE-005); its `draft_id` is then the `SETTLEMENT_CORRECTION` draft, and the row is written after that draft's CONFIRMED decision, in the same transaction. The insert check `app.validate_payment_move` accepts such a row only through `app.settlement_payment_move_allowed`: the move's approver confirmed the draft under `financial.approve` in this transaction (its top-level transaction id and decision time), the decision names this move's id, and the source reversal and the new allocation are linked to that correction. The slice 7 branch (a `PAYMENT_MOVE` draft still undecided) and every other check of the row are unchanged.
+
 ## DB-PAY-009 — `payment_returns`
 
 Approved by owner answers 2 and 3 to Q-2026-10-06-37 (2026-10-07); built in V1-056 sub-slice 10e.
@@ -3456,6 +3458,19 @@ As built in V1-056 sub-slice 10f-2 (migration `20261221_147`; DB-SETTLE-005, DB-
 Credit application with no Final Settlement) to the correction before it writes them; the reversal is always its first effect. Its
 decision also stores the reversal id, the put-backs and the debt that stays, which the 10f-1b
 put-back checks read (DB-CREDIT-002). No table, column or effect kind changed.
+
+As built in V1-056 sub-slice 10g (migration `20261222_148`; owner answer 4 to Q-2026-10-06-36 and
+answers 1 and 5 to Q-2026-10-06-37): the `PAYMENT_MOVE` variant links the wrong allocation's
+reversal (`payment_allocation_reversal_id`, its first effect) and the new allocation of the same
+Payment to the correct Invoice (`payment_allocation_id`), which may be another Lease's Invoice
+(the first exception of owner answer 5). The source allocation must be one this Settlement relied
+on: an Invoice allocation of its Lease, not reversed, posted at or before the closure or linked to
+a correction of this Settlement. An allocation that a correction of another Final Settlement
+wrote (another Settlement's `PAYMENT_MOVE` target) is refused (55000) until the owner answers
+Q-2026-10-17-120, so this correction never changes a record that another Settlement's correction
+wrote (the condition of owner answer 5). The correct Invoice may belong to a Lease whose Final
+Settlement is closed: the new allocation pays its remaining debt and its closure snapshot does not
+change. No table, column or effect kind changed.
 
 ## DB-SETTLE-007 — `settlement_pet_classifications`
 
