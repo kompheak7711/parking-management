@@ -1749,6 +1749,10 @@ new money beyond the Pet Deposit's pay-back count, and the count holds only retu
 Customer has not received yet (owner answers (a) to Q-2026-10-12-93 and (b) to Q-2026-10-17-122);
 see the 10e-2d bullet under DB-DEP-005 and the 10e-2d note under DB-SETTLE-005.
 
+As built in V1-056 sub-slice 10e-2b-4a (migration `20261225_151`): what a charge recovers of a
+Pet Refund-review Refund adds to that count like a verified return (owner answer (a) to
+Q-2026-10-17-123), so such a forfeiture takes less; see the 10e-2b-4a bullet under DB-DEP-005.
+
 ### Lease Deposit command admission (V1-055)
 
 The existing Lease Deposit disposition command serializes its Property, actor,
@@ -1949,6 +1953,24 @@ Append-only Final Settlement financial event: `id uuid PK`, `deposit_id uuid NOT
   Where nothing was paid out every result is as before. The 10c-2b-5 sentence that a Settlement or
   correction Refund, its return and a `RECOVERED_BY_CHARGE` recovery do not count held until this
   sub-slice.
+- As amended in V1-056 sub-slice 10e-2b-4a (migration `20261225_151`; owner answer (a) to
+  Q-2026-10-17-123): what a charge recovers of a Pet Refund-review Refund counts like a verified
+  return of that Refund, so the Customer never both pays money back and loses it to a forfeiture.
+  The Pet Refund-review part of `app.lease_deposit_payback_count_as` also adds each
+  `RECOVERED_BY_CHARGE` row of such a Refund (the amount charged back; such a row is never
+  reversed). With `without_payouts` (used only for a receipt correction's own corrected Deposit,
+  by its targets and by the plan check) the count also adds, at the end, what is still to recover
+  of each Pet Refund-review Refund of the Deposit (`app.refund_net_value_at(refund,'infinity')`,
+  less a return about to be written, never below 0): that correction recovers by a charge every
+  Refund of the Deposit that is not fully returned, after every other event of the Deposit, so the
+  count it records equals the count its forfeiture writer and step read after its writes. The
+  sentence above that Pet Refund-review recoveries count exactly as before held until this
+  sub-slice. At the same moment and event order an addition to the count now comes before a
+  subtraction (the "returns come first" rule), because a return reversal's charge-back of a
+  returned Refund can be dated at the same instant as the return's `CORRECTION_REVERSAL`; so the
+  result never depends on the random row ids. One exact-text patch; the functions that read the
+  count follow it unchanged. Known limit (Q-2026-10-17-125): the count reads the recovery row,
+  not whether its recovery charge still stands.
 - As built in V1-056 sub-slice 10c-2a-2 (migration `20261106_102`; owner answer 1 to
   Q-2026-10-07-41): after closure a Deposit application is still refused unless it is linked
   (DB-SETTLE-005 `deposit_application_id`, written first) to a post-settlement correction of its

@@ -247,7 +247,9 @@ def payback_ground_case(url: str, forfeit_pet: bool = False) -> dict[str, Any]:
     # Owner answer (b) to Q-2026-10-17-122: the Settlement's Refund paid the pay-back money out.
     assert (held(url, pet), payback_count(url, pet)) == (0, 0)
     assert path(url, case, pet) == ("KEPT" if forfeit_pet else "NOTHING_HELD")
-    assert count_as(url, pet, None, 0, True) == 3_000
+    # Sub-slice 10e-2b-4a (owner answer (a) to Q-2026-10-17-123): counted as a receipt
+    # correction's own Deposit, the review Refund's 2,000 still to recover counts too.
+    assert count_as(url, pet, None, 0, True) == 5_000
     if forfeit_pet:
         case["disposition"] = disposition_of(url, pet)
         confirm_reversal(
@@ -473,20 +475,32 @@ def correct_pet_receipt(case: dict[str, Any]) -> None:
     confirm(case, record(case, request(case, receipt_of(url, pet))))
 
 
-def test_a_payout_recovered_by_a_charge_is_payback_money_again(migrated_database_url: str) -> None:
+@pytest.mark.parametrize(
+    ("security_amount", "pet_amount", "forfeited"),
+    [(5_000, 5_000, 0), (3_000, 7_000, 2_000)],
+    ids=["pet-5000", "pet-7000"],
+)
+def test_a_payout_recovered_by_a_charge_is_payback_money_again(
+    migrated_database_url: str, security_amount: int, pet_amount: int, forfeited: int
+) -> None:
     """Review round 2 set-ups B and C (implementer's reading (i), confirmed in review round 2):
     the Final Settlement's 3,000 Pet Refund is recovered by a charge when the seeded Pet receipt is
-    reversed, so the Customer owes it back and the count is 3,000 again (held 0). The receipt
-    correction of the 10,000 Security receipt then puts 5,000 into that Pet Deposit, which is not
-    the corrected receipt's: 2,000 beyond the count is forfeited on BR-DEP-022 and the pay-back
-    3,000 follows DL-032 (after the Security Deposit's 5,000, on the 10,000 recovery charge; 2,000
-    stays owed). The count is 0 afterwards and the ledger reconciles. The 2,000 forfeited here
-    depends on the answer to Q-2026-10-17-123 (the Pet Refund-review Refund's 2,000 recovered by a
-    charge is not counted as returned today, as built)."""
+    reversed, so the Customer owes it back and that 3,000 is pay-back money again (held 0). Owner
+    answer (a) to Q-2026-10-17-123 (sub-slice 10e-2b-4a): the Pet Refund-review Refund's 2,000
+    recovered by the same correction counts like a verified return, so the count is 5,000 (it was
+    3,000 before the answer). The receipt correction of the 10,000 Security receipt then puts
+    pet_amount into that Pet Deposit, which is not the corrected receipt's. 5,000: the count covers
+    it, so nothing is forfeited (2,000 before the answer) and the whole 5,000 follows DL-032 (after
+    the Security Deposit's 5,000, on the 10,000 recovery charge; nothing stays owed, 2,000 before);
+    the Pet Deposit was never forfeited (`NOTHING_HELD`, `KEPT` before). 7,000 with 3,000 Security
+    (added in review round 1 so that a partial forfeiture on the ground stays tested): 2,000 beyond
+    the count is forfeited on BR-DEP-022 and the pay-back 5,000 follows DL-032 after the Security
+    Deposit's 3,000, 2,000 owed. The count is 0 afterwards and the ledger reconciles."""
     url = migrated_database_url
     case = payback_ground_case(url)
     security, pet, lease = case["security"], case["pet"], case["lease"]
     settled = settlement_pet_refund(url, pet)
+    assert payback_count(url, pet) == 0
     correct_pet_receipt(case)
     assert (recovery_line(url, settled)[3], recovery_line(url, case["review_refund"])[3]) == (
         3_000,
@@ -494,82 +508,10 @@ def test_a_payout_recovered_by_a_charge_is_payback_money_again(migrated_database
     )
     assert (held(url, pet), payback_count(url, pet), path(url, case, pet)) == (
         0,
-        3_000,
+        5_000,
         "NOTHING_HELD",
     )
-    draft = record_correction(case, 5_000, 5_000)
-    stored = payload(url, draft)
-    assert stored["deposit_receipt_forfeitures"] == [
-        {
-            "deposit_id": str(pet),
-            "deposit_type": "PET",
-            "amount_usd_cents": 2_000,
-            "governing_rule": "BR-DEP-022",
-            "basis": "TERMINATION_GROUND",
-            "reason": REASON,
-        }
-    ]
-    assert stored["plan_overlay"]["deposits_after"] == {str(security): 5_000, str(pet): 3_000}
-    result = confirm(case, draft)
-    correction = UUID(str(result["settlement_correction"]["id"]))
-    assert forfeitures(url, pet) == [
-        (
-            2_000,
-            REASON,
-            "deposits.dispose",
-            case["person"],
-            termination_date(url, lease),
-            False,
-            "BR-DEP-022",
-            correction,
-        )
-    ]
-    real_line, *_ = recovery_line(url, case["refund"])
-    assert [
-        one(
-            url,
-            "SELECT deposit_id,invoice_line_id,amount_usd_cents FROM app.deposit_applications "
-            "WHERE id=%s",
-            UUID(str(application)),
-        )
-        for application in result["deposit_application_ids"]
-    ] == [(security, real_line, 5_000), (pet, real_line, 3_000)]
-    assert (outstanding(url, real_line), result["refund_ids"]) == (2_000, [])
-    assert (held(url, pet), payback_count(url, pet), path(url, case, pet)) == (0, 0, "KEPT")
-    reconciled(url, case["customer"])
-
-
-@pytest.mark.parametrize(("amount", "forfeited"), [(4_000, 1_000), (2_000, 0)])
-def test_the_corrected_receipt_s_own_pet_deposit_counts_without_its_payouts(
-    migrated_database_url: str, amount: int, forfeited: int
-) -> None:
-    """Review round 2 set-up A, on the real path: the seeded 5,000 Pet receipt was really amount.
-    The receipt correction recovers the Pet Deposit's two Refunds by a charge (2,000 and 3,000) and
-    writes the right receipt into the same Pet Deposit; it undoes every payout of that Deposit, so
-    its target count is 3,000 (counted without payouts). 4,000 forfeits 1,000 on BR-DEP-022 and
-    the pay-back 3,000 pays the Settlement Refund's recovery charge (the forfeiture writer's exact
-    check passes); 2,000 forfeits nothing and pays 2,000 of it, and 1,000 stays pay-back money.
-    The Payment keeps what the receipt does not take, and the ledger reconciles."""
-    url = migrated_database_url
-    case = payback_ground_case(url)
-    pet, lease = case["pet"], case["lease"]
-    settled = settlement_pet_refund(url, pet)
-    receipt = receipt_of(url, pet)
-    payment = receipt_payment(url, pet)
-    before_available = available(url, payment)
-    kept = min(amount, 3_000)
-    base = request(case, receipt, receipts=(CorrectionDepositReceipt(pet, amount),))
-    draft_id = settlement_correction_draft_id(case["prop"], case["human"], base.idempotency_key)
-    placeholder = deposit_receipt_recovery_line_id(draft_id, settled)
-    draft = record(
-        case,
-        replace(
-            base,
-            steps=(SettlementDepositStep(PET_REST, pet, LINE, placeholder, kept),),
-            pet_remainder=STAFF,
-        ),
-    )
-    assert draft == draft_id
+    draft = record_correction(case, security_amount, pet_amount)
     stored = payload(url, draft)
     if forfeited:
         assert stored["deposit_receipt_forfeitures"] == [
@@ -584,14 +526,10 @@ def test_the_corrected_receipt_s_own_pet_deposit_counts_without_its_payouts(
         ]
     else:
         assert "deposit_receipt_forfeitures" not in stored
-    assert (
-        stored["plan_overlay"]["deposits_after"],
-        stored["plan_overlay"]["corrected_deposit_id"],
-    ) == ({str(pet): kept}, str(pet))
-    assert (
-        stored["plan_result"]["open_total_usd_cents"],
-        stored["plan_result"]["closing_balance_usd_cents"],
-    ) == (5_000, 5_000 - kept)
+    assert stored["plan_overlay"]["deposits_after"] == {
+        str(security): security_amount,
+        str(pet): 5_000,
+    }
     result = confirm(case, draft)
     correction = UUID(str(result["settlement_correction"]["id"]))
     assert forfeitures(url, pet) == (
@@ -610,6 +548,74 @@ def test_the_corrected_receipt_s_own_pet_deposit_counts_without_its_payouts(
         if forfeited
         else []
     )
+    real_line, *_ = recovery_line(url, case["refund"])
+    assert [
+        one(
+            url,
+            "SELECT deposit_id,invoice_line_id,amount_usd_cents FROM app.deposit_applications "
+            "WHERE id=%s",
+            UUID(str(application)),
+        )
+        for application in result["deposit_application_ids"]
+    ] == [(security, real_line, security_amount), (pet, real_line, 5_000)]
+    assert (outstanding(url, real_line), result["refund_ids"]) == (5_000 - security_amount, [])
+    assert (held(url, pet), payback_count(url, pet), path(url, case, pet)) == (
+        0,
+        0,
+        "KEPT" if forfeited else "NOTHING_HELD",
+    )
+    reconciled(url, case["customer"])
+
+
+@pytest.mark.parametrize("amount", [4_000, 2_000])
+def test_the_corrected_receipt_s_own_pet_deposit_counts_without_its_payouts(
+    migrated_database_url: str, amount: int
+) -> None:
+    """Review round 2 set-up A, on the real path: the seeded 5,000 Pet receipt was really amount.
+    The receipt correction recovers the Pet Deposit's two Refunds by a charge (2,000 and 3,000) and
+    writes the right receipt into the same Pet Deposit; it undoes every payout of that Deposit, so
+    its target count is counted without payouts. Owner answer (a) to Q-2026-10-17-123 (sub-slice
+    10e-2b-4a): the review Refund's 2,000 that the correction charges back counts like a verified
+    return, so the target count is 5,000 (3,000 before the answer). 4,000 forfeits nothing (1,000
+    before the answer) and pays the Settlement Refund's 3,000 recovery charge and 1,000 of the
+    review Refund's (3,000 of the first before); 2,000 forfeits nothing and pays 2,000 of the
+    first, and 3,000 stays pay-back money (1,000 before). The forfeiture writer's exact check on
+    the own Deposit is tested in the forfeit_pet case below (review round 1: with this fixture the
+    own Deposit can no longer forfeit on the ground, so the forfeited branches are gone). The
+    Payment keeps what the receipt does not take, and the ledger reconciles."""
+    url = migrated_database_url
+    case = payback_ground_case(url)
+    pet = case["pet"]
+    settled = settlement_pet_refund(url, pet)
+    receipt = receipt_of(url, pet)
+    payment = receipt_payment(url, pet)
+    before_available = available(url, payment)
+    kept = min(amount, 5_000)
+    first, rest = min(kept, 3_000), max(0, kept - 3_000)
+    base = request(case, receipt, receipts=(CorrectionDepositReceipt(pet, amount),))
+    draft_id = settlement_correction_draft_id(case["prop"], case["human"], base.idempotency_key)
+    placeholder = deposit_receipt_recovery_line_id(draft_id, settled)
+    review_placeholder = deposit_receipt_recovery_line_id(draft_id, case["review_refund"])
+    steps = [SettlementDepositStep(PET_REST, pet, LINE, placeholder, first)]
+    if rest:
+        steps.append(SettlementDepositStep(PET_REST, pet, LINE, review_placeholder, rest))
+    draft = record(
+        case,
+        replace(base, steps=tuple(steps), pet_remainder=STAFF),
+    )
+    assert draft == draft_id
+    stored = payload(url, draft)
+    assert "deposit_receipt_forfeitures" not in stored
+    assert (
+        stored["plan_overlay"]["deposits_after"],
+        stored["plan_overlay"]["corrected_deposit_id"],
+    ) == ({str(pet): kept}, str(pet))
+    assert (
+        stored["plan_result"]["open_total_usd_cents"],
+        stored["plan_result"]["closing_balance_usd_cents"],
+    ) == (5_000, 5_000 - kept)
+    result = confirm(case, draft)
+    assert forfeitures(url, pet) == []
     assert receipts_of(url, pet) == [(payment, 5_000, True), (payment, amount, False)]
     settled_line, *_ = recovery_line(url, settled)
     review_line, *_ = recovery_line(url, case["review_refund"])
@@ -621,14 +627,17 @@ def test_the_corrected_receipt_s_own_pet_deposit_counts_without_its_payouts(
             UUID(str(application)),
         )
         for application in result["deposit_application_ids"]
-    ] == [(pet, settled_line, kept)]
-    assert (outstanding(url, settled_line), outstanding(url, review_line)) == (3_000 - kept, 2_000)
+    ] == [(pet, settled_line, first)] + ([(pet, review_line, rest)] if rest else [])
+    assert (outstanding(url, settled_line), outstanding(url, review_line)) == (
+        3_000 - first,
+        2_000 - rest,
+    )
     assert (held(url, pet), payback_count(url, pet), count_as(url, pet, None, 0, True)) == (
         0,
-        3_000 - kept,
-        3_000,
+        5_000 - kept,
+        5_000,
     )
-    assert path(url, case, pet) == ("KEPT" if forfeited else "NOTHING_HELD")
+    assert path(url, case, pet) == "NOTHING_HELD"
     assert available(url, payment) == before_available + 5_000 - amount
     reconciled(url, case["customer"])
 
@@ -637,25 +646,30 @@ def test_a_staff_choice_to_forfeit_again_within_the_count_is_refused_on_the_real
     migrated_database_url: str,
 ) -> None:
     """Review round 2 set-up D: in the forfeit_pet case the seeded 8,000 Pet receipt is reversed
-    with its three Refunds recovered by a charge (2,000, 3,000 and 3,000), so the count is 3,000
-    again, the Pet Deposit holds nothing and its forfeiture stays reversed. A 3,000 Pet receipt
-    with the staff choice FORFEIT is refused at record (55000; nothing written); 5,000 forfeits
-    2,000 as the staff's choice and its pay-back 3,000 follows DL-032 on the recovery charge."""
+    with its three Refunds recovered by a charge (2,000, 3,000 and 3,000), the Pet Deposit holds
+    nothing and its forfeiture stays reversed. Owner answer (a) to Q-2026-10-17-123 (sub-slice
+    10e-2b-4a): the review Refund's 2,000 charged back counts like a verified return, so the count
+    is 5,000 (3,000 before the answer). A 3,000 and now also a 5,000 Pet receipt with the staff
+    choice FORFEIT are refused at record (55000; nothing written; 5,000 forfeited 2,000 before the
+    answer); a 7,000 Pet receipt (with 3,000 Security Deposit) forfeits 2,000 as the staff's choice
+    and its pay-back 5,000 follows DL-032 on the recovery charge after the Security Deposit's
+    3,000, 2,000 owed (implementer's reading: the passing case moves so that no check is lost)."""
     url = migrated_database_url
     case = payback_ground_case(url, forfeit_pet=True)
     security, pet = case["security"], case["pet"]
     correct_pet_receipt(case)
     assert (held(url, pet), payback_count(url, pet), path(url, case, pet)) == (
         0,
-        3_000,
+        5_000,
         "DL_032",
     )
-    before = counts(url)
-    with pytest.raises(FinalSettlementConflictError) as refused:
-        record_correction(case, 5_000, 3_000, "FORFEIT")
-    assert cause(refused) == ("55000", NOTHING_BEYOND)
-    assert counts(url) == before
-    draft = record_correction(case, 5_000, 5_000, "FORFEIT")
+    for pet_amount in (3_000, 5_000):
+        before = counts(url)
+        with pytest.raises(FinalSettlementConflictError) as refused:
+            record_correction(case, 5_000, pet_amount, "FORFEIT")
+        assert cause(refused) == ("55000", NOTHING_BEYOND), pet_amount
+        assert counts(url) == before, pet_amount
+    draft = record_correction(case, 3_000, 7_000, "FORFEIT")
     stored = payload(url, draft)
     assert stored["deposit_receipt_forfeitures"] == [
         {
@@ -667,7 +681,7 @@ def test_a_staff_choice_to_forfeit_again_within_the_count_is_refused_on_the_real
             "reason": OUTCOME_REASON,
         }
     ]
-    assert stored["plan_overlay"]["deposits_after"] == {str(security): 5_000, str(pet): 3_000}
+    assert stored["plan_overlay"]["deposits_after"] == {str(security): 3_000, str(pet): 5_000}
     result = confirm(case, draft)
     correction = UUID(str(result["settlement_correction"]["id"]))
     assert forfeitures(url, pet)[-1] == (
@@ -689,7 +703,7 @@ def test_a_staff_choice_to_forfeit_again_within_the_count_is_refused_on_the_real
             UUID(str(application)),
         )
         for application in result["deposit_application_ids"]
-    ] == [(security, real_line, 5_000), (pet, real_line, 3_000)]
+    ] == [(security, real_line, 3_000), (pet, real_line, 5_000)]
     assert outstanding(url, real_line) == 2_000
     assert (held(url, pet), payback_count(url, pet), path(url, case, pet)) == (0, 0, "KEPT")
     reconciled(url, case["customer"])
@@ -734,7 +748,8 @@ def test_the_count_takes_only_payouts_that_are_not_undone(migrated_database_url:
     Deposit application of 400 (by hand, rolled back) takes 400 out, and its reversal puts it back.
     The returned-Refund check counts the rest of that Refund's return (2,000 more) as pay-back
     money; a Pet Refund-review Refund's return still adds at the end, as built; without payouts
-    the count is the built 3,000."""
+    the count is 5,000: the built 3,000 and, since sub-slice 10e-2b-4a (owner answer (a) to
+    Q-2026-10-17-123), the review Refund's 2,000 still to recover (3,000 before the answer)."""
     url = migrated_database_url
     case = payback_ground_case(url)
     pet = case["pet"]
@@ -766,7 +781,7 @@ def test_the_count_takes_only_payouts_that_are_not_undone(migrated_database_url:
         count_as(url, pet, refund, 2_000, False),
         count_as(url, pet, case["review_refund"], 500, False),
         count_as(url, pet, None, 0, True),
-    ) == (3_000, 1_500, 3_000)
+    ) == (3_000, 1_500, 5_000)
 
 
 def test_the_plan_check_and_the_forfeiture_list_follow_the_payback_count(
@@ -776,11 +791,14 @@ def test_the_plan_check_and_the_forfeiture_list_follow_the_payback_count(
     the empty Pet Deposit with a ground at 0 after the correction and refuses 1 cent (55000),
     because the Customer has received its pay-back money (count 0). Counted as the corrected
     receipt's own Deposit (the overlay's `corrected_deposit_id`, whose payouts that correction
-    undoes), the same Pet Deposit is counted without payouts and refuses 3,001 (the real-path
+    undoes), the same Pet Deposit is counted without payouts and refuses 5,001 (the real-path
     own-Deposit test records a draft at the count); a
     `corrected_deposit_id` that is not a named Deposit or not a string is refused (22023). The
-    target count is 0, or 3,000 when a hand-built source names the Pet Deposit as the corrected
-    receipt's. The forfeiture list of the real Pet target names 5,000; on hand-built counts an
+    target count is 0, or 5,000 when a hand-built source names the Pet Deposit as the corrected
+    receipt's (owner answer (a) to Q-2026-10-17-123, sub-slice 10e-2b-4a: with the review Refund's
+    2,000 that such a correction charges back; 3,000 and a refusal at 3,001 before the answer).
+    The forfeiture list of the real Pet target names 5,000 and of the own target nothing (2,000
+    before the answer); on hand-built counts an
     8,000 receipt gives 8,000, 5,000 and nothing for counts 0, 3,000, 8,000 and 9,000. A staff
     choice to forfeit again is refused while the count covers the receipt and passes one cent
     below it."""
@@ -805,7 +823,7 @@ def test_the_plan_check_and_the_forfeiture_list_follow_the_payback_count(
     for pet_after, own, refusal in (
         (1, False, ("55000", ONLY_DL_032)),
         (0, False, (None, None)),
-        (3_001, True, ("55000", ONLY_DL_032)),
+        (5_001, True, ("55000", ONLY_DL_032)),
     ):
         overlay = {**stored["plan_overlay"], "deposits_after": {**after, str(pet): pet_after}}
         if own:
@@ -836,7 +854,7 @@ def test_the_plan_check_and_the_forfeiture_list_follow_the_payback_count(
         "BR-DEP-022",
         "NONE",
     )
-    assert own_target["payback_count"] == 3_000
+    assert own_target["payback_count"] == 5_000
 
     def listed(targets: list[dict[str, Any]]) -> list[int]:
         return [
@@ -849,7 +867,7 @@ def test_the_plan_check_and_the_forfeiture_list_follow_the_payback_count(
             )
         ]
 
-    assert (listed([target]), listed([own_target])) == ([5_000], [2_000])
+    assert (listed([target]), listed([own_target])) == ([5_000], [])
     eight = {**target, "amount_usd_cents": 8_000}
     for count, amounts in ((0, [8_000]), (3_000, [5_000]), (8_000, []), (9_000, [])):
         assert listed([{**eight, "payback_count": count}]) == amounts, count
@@ -943,6 +961,263 @@ def test_the_payback_forfeiture_migration_is_least_privilege_and_forward_only(
     assert {function for function, _ in revision.module.PATCHES} == PATCHED
     assert set(revision.module.INTERNAL) == NEW
     for function, replacements in revision.module.PATCHES:
+        body = str(before_functions[function][0])
+        for anchor, replacement in replacements:
+            assert body.count(anchor) == 1, function
+            body = body.replace(anchor, replacement)
+        assert after_functions[function][0] == body, function
+
+
+REVISION_4A = "20261225_151"
+PATCHED_4A = {"app.lease_deposit_payback_count_as(uuid,uuid,bigint,boolean)"}
+
+
+def test_the_own_pet_deposit_forfeits_beyond_the_review_refund_it_charges_back(
+    migrated_database_url: str,
+) -> None:
+    """Owner answer (a) to Q-2026-10-17-123 (sub-slice 10e-2b-4a) on the corrected receipt's own
+    Deposit: in the forfeit_pet case the seeded 8,000 Pet receipt was really 7,000. The receipt
+    correction recovers the Pet Deposit's three Refunds by a charge (the review Refund's 2,000, the
+    Settlement's 3,000 and the forfeiture reversal's 3,000) and undoes every payout, so its target
+    count is 5,000: the review Refund's 3,000 that came back and its 2,000 that this correction
+    charges back. With the staff choice FORFEIT, 2,000 is forfeited (linked to the correction;
+    the forfeiture writer's exact check passes against the real count after the recoveries) and
+    the pay-back 5,000 follows DL-032 onto the recovery charges. The Payment keeps the other 1,000,
+    the count is 0 afterwards and the ledger reconciles."""
+    url = migrated_database_url
+    case = payback_ground_case(url, forfeit_pet=True)
+    pet, lease = case["pet"], case["lease"]
+    settled, reversed_refund = (
+        UUID(str(row[0]))
+        for row in rows(
+            url,
+            "SELECT id FROM app.refunds WHERE source_deposit_id=%s "
+            "AND pet_refund_review_id IS NULL ORDER BY processed_at,id",
+            pet,
+        )
+    )
+    receipt = receipt_of(url, pet)
+    payment = receipt_payment(url, pet)
+    before_available = available(url, payment)
+    assert count_as(url, pet, None, 0, True) == 5_000
+    base = request(
+        case,
+        receipt,
+        receipts=(CorrectionDepositReceipt(pet, 7_000, "FORFEIT", OUTCOME_REASON),),
+    )
+    draft_id = settlement_correction_draft_id(case["prop"], case["human"], base.idempotency_key)
+    steps = (
+        SettlementDepositStep(
+            PET_REST, pet, LINE, deposit_receipt_recovery_line_id(draft_id, settled), 3_000
+        ),
+        SettlementDepositStep(
+            PET_REST, pet, LINE, deposit_receipt_recovery_line_id(draft_id, reversed_refund), 2_000
+        ),
+    )
+    draft = record(case, replace(base, steps=steps, pet_remainder=STAFF))
+    assert draft == draft_id
+    stored = payload(url, draft)
+    assert stored["deposit_receipt_forfeitures"] == [
+        {
+            "deposit_id": str(pet),
+            "deposit_type": "PET",
+            "amount_usd_cents": 2_000,
+            "governing_rule": "BR-DEP-022",
+            "basis": "STAFF_CHOICE",
+            "reason": OUTCOME_REASON,
+        }
+    ]
+    assert (
+        stored["plan_overlay"]["deposits_after"],
+        stored["plan_overlay"]["corrected_deposit_id"],
+    ) == ({str(pet): 5_000}, str(pet))
+    result = confirm(case, draft)
+    correction = UUID(str(result["settlement_correction"]["id"]))
+    assert forfeitures(url, pet)[-1] == (
+        2_000,
+        OUTCOME_REASON,
+        "deposits.dispose",
+        case["person"],
+        termination_date(url, lease),
+        False,
+        "BR-DEP-022",
+        correction,
+    )
+    assert receipts_of(url, pet) == [(payment, 8_000, True), (payment, 7_000, False)]
+    settled_line, *_ = recovery_line(url, settled)
+    reversed_line, *_ = recovery_line(url, reversed_refund)
+    review_line, *_ = recovery_line(url, case["review_refund"])
+    assert [
+        one(
+            url,
+            "SELECT deposit_id,invoice_line_id,amount_usd_cents FROM app.deposit_applications "
+            "WHERE id=%s",
+            UUID(str(application)),
+        )
+        for application in result["deposit_application_ids"]
+    ] == [(pet, settled_line, 3_000), (pet, reversed_line, 2_000)]
+    assert (
+        outstanding(url, settled_line),
+        outstanding(url, reversed_line),
+        outstanding(url, review_line),
+    ) == (0, 1_000, 2_000)
+    assert (held(url, pet), payback_count(url, pet), path(url, case, pet)) == (0, 0, "KEPT")
+    assert available(url, payment) == before_available + 1_000
+    reconciled(url, case["customer"])
+
+
+def test_a_charge_back_at_the_instant_of_a_return_reversal_counts_alike_in_either_id_order(
+    migrated_database_url: str,
+) -> None:
+    """Sub-slice 10e-2b-4a review round 1 (security blocker): a return reversal can write a
+    charge-back of a Pet Refund-review Refund at the same instant as its CORRECTION_REVERSAL
+    (sub-slice 10e-3d-2c, migration 20261210_136). After the Final Settlement's Refund the count
+    is 0. By hand, in an owner transaction that is always rolled back (user triggers of the Refund
+    corrections off, the recovery charge's foreign key dropped), the review Refund's 3,000 return
+    is reversed (-3,000) and 3,000 is charged back (+3,000) at one instant, once with the
+    reversal's id first and once with the charge-back's: the charge-back alone gives 3,000, and
+    with the reversal the count is 0 both times, because at the same moment and order an addition
+    comes first (the ids alone would have given 3,000 in one order). Afterwards nothing of it is
+    left (review round 2)."""
+    url = migrated_database_url
+    case = payback_ground_case(url)
+    pet, review = case["pet"], case["review_refund"]
+    [(returned_id,)] = rows(
+        url,
+        "SELECT id FROM app.refund_corrections WHERE refund_id=%s "
+        "AND correction_kind='VALUE_CORRECTION'",
+        review,
+    )
+    assert payback_count(url, pet) == 0
+    insert = (
+        "INSERT INTO app.refund_corrections(id,refund_id,correction_kind,reverses_correction_id,"
+        "source_balance_effect_usd_cents,source_balance_effect_original_minor,"
+        "previous_net_refund_usd_cents,resulting_net_refund_usd_cents,reason,evidence_reference,"
+        "occurred_at,actor_id,authorization_reference,recovery_obligation_id) VALUES "
+        "(%s,%s,%s,%s,%s,%s,%s,%s,'Hand-built','Hand-built',"
+        "transaction_timestamp()+interval '1 second',%s,%s,%s)"
+    )
+    low, high = UUID(int=1), UUID(int=2**128 - 1)
+    counts_seen = []
+    for reversal, charge_back in ((low, high), (high, low)):
+        with psycopg.connect(url) as connection:
+            try:
+                connection.execute("ALTER TABLE app.refund_corrections DISABLE TRIGGER USER")
+                [(foreign_key,)] = connection.execute(
+                    "SELECT conname FROM pg_catalog.pg_constraint "
+                    "WHERE conrelid='app.refund_corrections'::regclass AND contype='f' "
+                    "AND pg_catalog.pg_get_constraintdef(oid) LIKE '%%recovery_obligation_id%%'"
+                ).fetchall()
+                connection.execute(
+                    f'ALTER TABLE app.refund_corrections DROP CONSTRAINT "{foreign_key}"'
+                )
+                connection.execute(
+                    insert,
+                    (
+                        charge_back,
+                        review,
+                        "RECOVERED_BY_CHARGE",
+                        None,
+                        3_000,
+                        3_000,
+                        5_000,
+                        2_000,
+                        case["person"],
+                        "financial.approve",
+                        uuid4(),
+                    ),
+                )
+                alone = connection.execute(COUNT_AS, (pet, None, 0, False)).fetchone()
+                assert alone is not None and int(alone[0]) == 3_000
+                connection.execute(
+                    insert,
+                    (
+                        reversal,
+                        review,
+                        "CORRECTION_REVERSAL",
+                        returned_id,
+                        -3_000,
+                        -3_000,
+                        2_000,
+                        5_000,
+                        case["person"],
+                        "refunds.corrections.reverse",
+                        None,
+                    ),
+                )
+                found = connection.execute(COUNT_AS, (pet, None, 0, False)).fetchone()
+                assert found is not None
+                counts_seen.append(int(found[0]))
+            finally:
+                connection.rollback()
+    assert counts_seen == [0, 0]
+    assert payback_count(url, pet) == 0
+    assert rows(url, "SELECT id FROM app.refund_corrections WHERE refund_id=%s", review) == [
+        (returned_id,)
+    ]
+    assert (
+        value(
+            url,
+            "SELECT count(*) FROM pg_catalog.pg_constraint "
+            "WHERE conrelid='app.refund_corrections'::regclass AND contype='f' "
+            "AND pg_catalog.pg_get_constraintdef(oid) LIKE '%%recovery_obligation_id%%'",
+        )
+        == 1
+    )
+
+
+def test_the_review_refund_recovery_migration_is_least_privilege_and_forward_only(
+    migrated_database_url: str,
+) -> None:
+    """Sub-slice 10e-2b-4a adds no function, constraint or trigger, changes only the pay-back
+    count function (privileges, owner and settings kept; its body is exactly the old one with the
+    module's two replacements) and is forward-only."""
+    config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
+    revision = ScriptDirectory.from_config(config).get_revision(REVISION_4A)
+    assert revision is not None and revision.down_revision == "20261224_150"
+    with pytest.raises(RuntimeError, match="forward-only"):
+        revision.module.downgrade()
+
+    def catalog(database: str) -> tuple[dict[str, tuple[object, ...]], set[str]]:
+        functions = {
+            str(row[0]): tuple(row[1:])
+            for row in rows(
+                database,
+                "SELECT p.oid::regprocedure::text,pg_catalog.pg_get_functiondef(p.oid),"
+                "p.proacl::text,p.proowner,p.prosecdef,p.proconfig::text "
+                "FROM pg_catalog.pg_proc p JOIN pg_catalog.pg_namespace n "
+                "ON n.oid=p.pronamespace WHERE n.nspname='app' AND p.prokind='f'",
+            )
+        }
+        others = {
+            ":".join(str(item) for item in row)
+            for row in rows(
+                database,
+                "SELECT 'constraint',c.conrelid::regclass::text,c.conname,"
+                "pg_catalog.pg_get_constraintdef(c.oid) "
+                "FROM pg_catalog.pg_constraint c JOIN pg_catalog.pg_namespace n "
+                "ON n.oid=c.connamespace WHERE n.nspname='app' "
+                "UNION ALL SELECT 'trigger',t.tgrelid::regclass::text,t.tgname,t.tgenabled::text "
+                "FROM pg_catalog.pg_trigger t JOIN pg_catalog.pg_class c ON c.oid=t.tgrelid "
+                "JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace "
+                "WHERE n.nspname='app' AND NOT t.tgisinternal",
+            )
+        }
+        return functions, others
+
+    with _temporary_migration_database("pet_review_refund_recovery_payback") as temporary:
+        alembic_command.upgrade(config, "20261224_150")
+        before_functions, before_others = catalog(temporary)
+        alembic_command.upgrade(config, REVISION_4A)
+        after_functions, after_others = catalog(temporary)
+    assert after_others == before_others
+    assert set(after_functions) == set(before_functions)
+    assert {
+        name for name in before_functions if after_functions[name] != before_functions[name]
+    } == PATCHED_4A
+    assert {function for function, _ in revision.module.PATCHES} == PATCHED_4A
+    for function, replacements in revision.module.PATCHES:
+        assert after_functions[function][1:] == before_functions[function][1:], function
         body = str(before_functions[function][0])
         for anchor, replacement in replacements:
             assert body.count(anchor) == 1, function
