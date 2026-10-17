@@ -272,8 +272,35 @@ class RecordDepositReceiptCommand:
             raise ValueError("reason must be at most 1000 characters")
 
 
+@dataclass(frozen=True, slots=True)
+class CreateLeaseSecurityDepositCommand:
+    """A walk-in Lease's Security Deposit with its required total from the Lease terms (V1-056
+    sub-slice 10e-2b-4c; owner answer (a) to Q-2026-10-17-124 point 1: deposits.manage)."""
+
+    idempotency_key: UUID
+    deposit_id: UUID
+    lease_id: UUID
+    required_usd_cents: int
+    reason: str
+    authorization_reference: str = DEPOSIT_MANAGE_CAPABILITY
+
+    def __post_init__(self) -> None:
+        for field in ("idempotency_key", "deposit_id", "lease_id"):
+            _identity(getattr(self, field), field)
+        if type(self.required_usd_cents) is not int or not (
+            0 < self.required_usd_cents <= 9_223_372_036_854_775_807
+        ):
+            raise ValueError(
+                "required_usd_cents must be positive integer USD cents within bigint range"
+            )
+        _text(self.reason, "reason")
+        if len(self.reason) > 1000:
+            raise ValueError("reason must be at most 1000 characters")
+
+
 DepositCommand: TypeAlias = (
     CreatePetDepositCommand
+    | CreateLeaseSecurityDepositCommand
     | AdjustDepositRequiredAmountCommand
     | ReverseDepositReceiptCommand
     | RecordPetDepartureCommand
@@ -446,6 +473,25 @@ class PostgresDepositService:
             ),
         )
 
+    def create_lease_security_deposit(
+        self, command: CreateLeaseSecurityDepositCommand, *, actor: AuthenticatedActor
+    ) -> DepositSnapshot:
+        self._authorize(actor, DEPOSIT_MANAGE_CAPABILITY, command.authorization_reference)
+        return self._execute(
+            "SELECT app.create_lease_security_deposit(%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            (
+                self.property_id,
+                self.actor_id,
+                command.idempotency_key,
+                deposit_request_digest("deposit.security.create", command),
+                command.deposit_id,
+                command.lease_id,
+                command.required_usd_cents,
+                command.reason,
+                command.authorization_reference,
+            ),
+        )
+
     def adjust_required_amount(
         self, command: AdjustDepositRequiredAmountCommand, *, actor: AuthenticatedActor
     ) -> DepositSnapshot:
@@ -470,7 +516,8 @@ class PostgresDepositService:
     def record_receipt(
         self, command: RecordDepositReceiptCommand, *, actor: AuthenticatedActor
     ) -> DepositReceiptRecord:
-        """Record a receipt into an existing Deposit of a signed or terminated Lease.
+        """Record a receipt into an existing Deposit of a signed or terminated Lease, or into an
+        ACTIVE Reservation's Security Deposit before signing (sub-slice 10e-2b-4c).
 
         payments.allocate, no draft; refused once the Lease's Final Settlement is closed (a
         conflict)."""

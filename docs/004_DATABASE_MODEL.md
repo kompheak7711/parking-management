@@ -1679,6 +1679,33 @@ Constraints:
 - A deferred transaction constraint requires exactly one Security Deposit for every Reservation and verifies that any later Lease is the Reservation's resulting Lease. No conversion or second Deposit is created.
 - Required amount is a historical obligation; a change requires an explicit audited correction event rather than silent overwrite after receipt.
 
+As built in V1-056 sub-slice 10e-2b-4c (migration `20261229_155`; owner answer (a) to
+Q-2026-10-17-124 point 1): a SECURITY Deposit may also have a Lease and no Reservation, the walk-in
+Lease's Security Deposit (`deposits_source_shape` gains that branch, relaxing). The deferred
+source check (`app.validate_deposit_source`) requires, for such a row, a SIGNED Lease whose Primary
+Tenant is the Deposit's Customer, signed through the new path with no Reservation (a
+`lease_signing_outcomes` row with no Reservation, and no Reservation names the Lease as its
+resulting Lease), not a renewal (no predecessor Lease; Q-2026-10-18-129), and no other Security
+Deposit of that Lease; it also refuses linking a Reservation's Deposit to a Lease that already has
+a walk-in Security Deposit (one Security Deposit per Lease; review round 1, because the old
+Reservation move-in reads no signing outcome). The writer is
+`app.create_lease_security_deposit(property, actor, idempotency key, request digest, deposit id,
+lease id, required amount, reason, authorization)` (SECURITY DEFINER, `search_path=pg_catalog`,
+EXECUTE only to `prm_financial`; the Deposit service's `create_lease_security_deposit` under
+`deposits.manage`): the input (22023), the idempotency lock and the replay (action
+`deposit.security.create` in `app.deposit_commands`, a relaxing widening of
+`deposit_commands_action_check`), READ COMMITTED (55000), an active financial actor, the SIGNED
+Lease of the Property locked FOR UPDATE (P0002 otherwise), then refused: a closed Final
+Settlement (P5S01), a Lease not signed as a walk-in (55000), a renewal (55000), a Lease that
+already has a Security Deposit (55000). The Customer is the Lease's Primary Tenant; the required
+effective date is the business date of the Lease's signing in the Property's time zone; it writes
+the `deposit.security.created` audit event and the command record. Later changes of the total use
+the existing required-amount adjustment (`deposits.manage`). The BEFORE INSERT Reservation
+continuity check (`app.validate_reservation_security_deposit`) returns at once for such a row.
+Known limit (Q-2026-10-18-130): the unpaid-Initial termination ground, the old Reservation
+move-in and the Reservation read API still read the first `required_usd_cents`, not the adjusted
+total.
+
 ## DB-DEP-002 — `deposit_receipts`
 
 Append-only: `id uuid PK`, `deposit_id uuid NOT NULL FK`, `payment_id uuid NOT NULL FK`, `amount_usd_cents bigint NOT NULL CHECK (>0)`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`, `UNIQUE (deposit_id, payment_id)`. The transaction prevents total allocations, active Deposit receipts, Credit recognition, and Refund commitments from exceeding Payment USD accounting value. This is not an Invoice Payment Allocation.
@@ -1752,6 +1779,30 @@ key) and the command record; its result is the Deposit snapshot with `deposit_re
 action check `deposit_commands_action_check` also allows `deposit.receipt.record` (relaxing). With
 Pet Deposit money now entering before closure through the app, the pay-back count's recovery rules
 (sub-slices 10e-2b-4a to 10e-2b-4b-2a) apply on the real path; see DB-DEP-005.
+
+As built in V1-056 sub-slice 10e-2b-4c (migration `20261229_155`; owner answers to Q-2026-10-17-124
+points 2 and 3 and the owner note on DL-009): (1) a walk-in Lease's Security Deposit (DB-DEP-001)
+has no accepted amount, so its first receipt may be any amount above 0, never above the required
+total; no receipt of it may be dated before the Lease's signing (`app.validate_deposit_receipt`;
+an unknown signing time reads as never). (2) `app.record_lease_deposit_receipt` also records a
+second receipt into a Reservation's Security Deposit before signing, within the required total,
+only while the Reservation is ACTIVE and its effective expiration date has not passed in the
+Property's time zone (otherwise 55000, "The Deposit's Reservation is not active; this receipt is
+not recorded here"); it locks the Reservation (FOR SHARE) before the Deposit, the order signing
+uses, so a signing, cancellation or expiration waits for the receipt and a receipt that waited
+reads the committed state (after a signing the Lease path runs); the Lease checks run only for a
+Deposit with a Lease. (3) DL-009 as written covers the extra money: the Reservation outcome code
+classifies all the money the Deposit holds, its active receipts; the outcome draft source
+(`app.reservation_deposit_draft_source`), the outcome insert check
+(`app.validate_reservation_financial_outcome`), the outcome writer
+(`app.create_reservation_deposit_outcome`) and the outcome correction
+(`app.correct_reservation_deposit_outcome`) count only receipts that are not reversed, and the
+draft source no longer refuses a Deposit with a reversed receipt (review round 1: a bounced second
+Payment's reversed receipt left the held money with no way out). A Customer-caused cancellation or
+expiration forfeits all of it; a Property-caused cancellation refunds all of it. The cancellation
+and the expiration (`app.cancel_reservation`, `app.expire_reservation`) and the Reservation read
+API also report only active receipts as the Deposit's received amount (review round 2); the old
+Reservation move-in still counts every receipt (Q-2026-10-18-130).
 
 ## DB-DEP-003 — `deposit_required_amount_adjustments`
 

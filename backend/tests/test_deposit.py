@@ -10,6 +10,7 @@ from property_rental.deposit import (
     DEPOSIT_MANAGE_CAPABILITY,
     PAYMENT_ALLOCATE_CAPABILITY,
     AdjustDepositRequiredAmountCommand,
+    CreateLeaseSecurityDepositCommand,
     CreatePetDepositCommand,
     DepositAdjustmentType,
     DepositAuthorizationError,
@@ -172,4 +173,60 @@ def test_deposit_receipt_needs_payments_allocate_before_the_database() -> None:
                 uuid4(), uuid4(), uuid4(), uuid4(), 100, "Paid", DEPOSIT_MANAGE_CAPABILITY
             ),
             actor=allocator,
+        )
+
+
+@pytest.mark.parametrize("required", [0, -1, True, 1.0, "100", None, 2**63])
+def test_lease_security_deposit_command_takes_only_positive_integer_cents(
+    required: object,
+) -> None:
+    with pytest.raises(ValueError, match="integer"):
+        CreateLeaseSecurityDepositCommand(
+            uuid4(), uuid4(), uuid4(), cast(int, required), "Lease terms"
+        )
+
+
+def test_lease_security_deposit_command_validates_identity_and_reason() -> None:
+    with pytest.raises(ValueError, match="nil UUID"):
+        CreateLeaseSecurityDepositCommand(uuid4(), uuid4(), UUID(int=0), 100, "Lease terms")
+    for reason in ("", " Lease terms", "x" * 1_001):
+        with pytest.raises(ValueError, match="reason"):
+            CreateLeaseSecurityDepositCommand(uuid4(), uuid4(), uuid4(), 100, reason)
+    command = CreateLeaseSecurityDepositCommand(uuid4(), uuid4(), uuid4(), 100, "x" * 1_000)
+    assert command.authorization_reference == DEPOSIT_MANAGE_CAPABILITY
+    changed = CreateLeaseSecurityDepositCommand(
+        command.idempotency_key, command.deposit_id, command.lease_id, 101, command.reason
+    )
+    assert deposit_request_digest("deposit.security.create", command) != (
+        deposit_request_digest("deposit.security.create", changed)
+    )
+
+
+def test_lease_security_deposit_needs_deposits_manage_before_the_database() -> None:
+    property_id = uuid4()
+    actor_id = uuid4()
+    service = PostgresDepositService("postgresql://unused", property_id, actor_id)
+    command = CreateLeaseSecurityDepositCommand(uuid4(), uuid4(), uuid4(), 100, "Lease terms")
+    for capability, scope in (
+        (PAYMENT_ALLOCATE_CAPABILITY, str(property_id)),
+        (DEPOSIT_MANAGE_CAPABILITY, str(uuid4())),
+    ):
+        refused = AuthenticatedActor(
+            actor_id=str(actor_id),
+            capability_grants=frozenset({CapabilityGrant(capability, frozenset({scope}))}),
+        )
+        with pytest.raises(DepositAuthorizationError):
+            service.create_lease_security_deposit(command, actor=refused)
+    manager = AuthenticatedActor(
+        actor_id=str(actor_id),
+        capability_grants=frozenset(
+            {CapabilityGrant(DEPOSIT_MANAGE_CAPABILITY, frozenset({str(property_id)}))}
+        ),
+    )
+    with pytest.raises(DepositAuthorizationError):
+        service.create_lease_security_deposit(
+            CreateLeaseSecurityDepositCommand(
+                uuid4(), uuid4(), uuid4(), 100, "Lease terms", PAYMENT_ALLOCATE_CAPABILITY
+            ),
+            actor=manager,
         )

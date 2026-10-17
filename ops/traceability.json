@@ -42331,7 +42331,7 @@
       "notes": "A Lease signed from a Reservation continues its Security Deposit (50,000 required, the accepted 10,000 received); later receipts from new Payments are recorded up to the required amount (15,000, then 25,000), and one cent more is refused (23514) (V1-056 sub-slice 10e-2b-4b-2b)."
     },
     {
-      "test_id": "test_the_writer_refuses_before_signing_after_closure_and_while_a_forfeiture_is_active",
+      "test_id": "test_the_writer_takes_a_reservation_deposit_and_refuses_after_closure_and_while_forfeited",
       "upstream_ids": [
         "BR-DEP-005",
         "BR-DEP-022",
@@ -42343,7 +42343,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_deposit_receipt_record_migration.py",
       "status": "implemented",
-      "notes": "Refused: a Reservation's Security Deposit before signing (no Lease, 55000; sub-slice 10e-2b-4c), a Deposit with an active forfeiture (55000), both Deposit types after the real closure (P5S01, the 8e-1 refusal, a conflict in the service), unknown Deposits and Payments (P0002, pinned messages), an unknown actor (55000), a stricter isolation level (55000), invalid input including a nil id (22023), the runtime role (42501) and an actor without payments.allocate (before any call); nothing is written (V1-056 sub-slice 10e-2b-4b-2b)."
+      "notes": "Renamed in sub-slice 10e-2b-4c (was test_the_writer_refuses_before_signing_after_closure_and_while_a_forfeiture_is_active; owner answer to Q-2026-10-17-124 point 3): a second receipt into an ACTIVE Reservation's Security Deposit before signing is now recorded (it was refused, no Lease, 55000). Refused: a Deposit with an active forfeiture (55000), both Deposit types after the real closure (P5S01, the 8e-1 refusal, a conflict in the service), unknown Deposits and Payments (P0002, pinned messages), an unknown actor (55000), a stricter isolation level (55000), invalid input including a nil id (22023), the runtime role (42501) and an actor without payments.allocate (before any call); nothing is written (V1-056 sub-slice 10e-2b-4b-2b)."
     },
     {
       "test_id": "test_a_review_refund_recovered_by_a_charge_raises_the_count_on_the_real_path",
@@ -42504,6 +42504,218 @@
       "test_path": "backend/tests/test_deposit_receipt_record_migration.py",
       "status": "implemented",
       "notes": "Review round 2 (security S2; known limit, Q-2026-10-18-127): after closure a Pet Deposit funded by two Payments and kept by the forfeiture cannot have one Payment returned: the RETURNED_PAYMENT correction is refused because the Deposit would not end empty, the ordinary return draft is refused as relied on, nothing is written and the Payment stays RECEIVED (V1-056 sub-slice 10e-2b-4b-2b)."
+    },
+    {
+      "test_id": "test_a_walk_in_lease_s_security_deposit_is_created_and_takes_any_first_receipt",
+      "upstream_ids": [
+        "BR-DEP-004",
+        "BR-DEP-002",
+        "BR-DEP-006",
+        "DB-DEP-001",
+        "DB-DEP-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_security_deposit_migration.py",
+      "status": "implemented",
+      "notes": "Owner answers (a) to Q-2026-10-17-124 points 1 and 2: staff create a walk-in Lease's Security Deposit with its required total under deposits.manage (the Customer is the Primary Tenant, the required effective date is the signing's business date, one audit event and one command record, an exact replay, a reused key refused); its first receipt may be any amount above 0 through the receipt writer, receipts reach exactly the required total and one cent more is refused (V1-056 sub-slice 10e-2b-4c)."
+    },
+    {
+      "test_id": "test_the_create_is_only_for_a_signed_walk_in_lease_with_no_security_deposit",
+      "upstream_ids": [
+        "BR-DEP-005",
+        "BR-DEP-004",
+        "BR-AUTH-008",
+        "DB-DEP-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_security_deposit_migration.py",
+      "status": "implemented",
+      "notes": "Refused: a Lease signed from a Reservation and a Lease signed through the old path (55000, its Security Deposit is the Reservation's), a second create (55000; two creates for one Lease wait on the Lease row and the second is refused), a Lease that is not signed (P0002), invalid input (22023), the runtime role (42501) and an actor without deposits.manage (before any call); nothing is written (V1-056 sub-slice 10e-2b-4c)."
+    },
+    {
+      "test_id": "test_the_deposit_table_holds_the_walk_in_rule_and_the_receipt_time_for_every_writer",
+      "upstream_ids": [
+        "BR-DEP-004",
+        "BR-DEP-005",
+        "DB-DEP-001",
+        "DB-DEP-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_security_deposit_migration.py",
+      "status": "implemented",
+      "notes": "Owner inserts, rolled back: the deferred source check refuses a walk-in Security Deposit for a Lease signed from a Reservation, for a Lease that is not signed and a second one for a walk-in Lease (23514); a walk-in Deposit's receipt dated before the Lease's signing is refused by the receipt check (23514), one dated at the signing passes (V1-056 sub-slice 10e-2b-4c)."
+    },
+    {
+      "test_id": "test_a_second_receipt_into_a_reservation_deposit_before_signing_continues_into_the_lease",
+      "upstream_ids": [
+        "BR-DEP-002",
+        "BR-DEP-005",
+        "BR-DEP-006",
+        "DB-DEP-002",
+        "DB-DEP-003"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_security_deposit_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer to Q-2026-10-17-124 point 3 (DL-008): a second receipt into an ACTIVE Reservation's Security Deposit is recorded within the required total, more is refused, a deposits.manage required-amount increase lets the next receipt pass, and the signing links the same Deposit to the Lease holding all of it (V1-056 sub-slice 10e-2b-4c)."
+    },
+    {
+      "test_id": "test_a_receipt_into_a_reservation_deposit_is_refused_once_the_reservation_has_ended",
+      "upstream_ids": [
+        "BR-DEP-001",
+        "BR-DEP-005",
+        "DB-DEP-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_security_deposit_migration.py",
+      "status": "implemented",
+      "notes": "A receipt into a Reservation's Security Deposit is refused (55000, invalid in the service) after the Reservation is cancelled and while it is still ACTIVE past its effective expiration date; nothing is written (V1-056 sub-slice 10e-2b-4c)."
+    },
+    {
+      "test_id": "test_dl_009_keeps_or_refunds_all_security_deposit_money_paid_before_signing",
+      "upstream_ids": [
+        "BR-RES-020",
+        "BR-RES-021",
+        "BR-RES-022",
+        "BR-DEP-015",
+        "BR-DEP-016",
+        "BR-DEP-017",
+        "BR-REFUND-004"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_security_deposit_migration.py",
+      "status": "implemented",
+      "notes": "Owner note of 2026-10-17 on DL-009: with 10,000 accepted and 25,000 more paid before signing, a Customer-caused cancellation forfeits all 35,000, a Property-caused cancellation refunds all 35,000 to the Reservation Customer, and a Customer-caused expiration forfeits all 35,000 (its extra receipt seeded by an owner insert dated before the expiration) (V1-056 sub-slice 10e-2b-4c)."
+    },
+    {
+      "test_id": "test_a_cancellation_waits_for_a_receipt_that_holds_the_reservation",
+      "upstream_ids": [
+        "BR-DEP-015",
+        "BR-DEP-005",
+        "DB-DEP-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_security_deposit_migration.py",
+      "status": "implemented",
+      "notes": "The receipt writer locks the Reservation before the Deposit (the signing order): a cancellation started while a receipt is recorded waits for it and counts it (15,000), and the forfeiture keeps all of it (V1-056 sub-slice 10e-2b-4c)."
+    },
+    {
+      "test_id": "test_the_lease_security_deposit_migration_is_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "BR-AUTH-008",
+        "DB-DEP-001",
+        "DB-DEP-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_security_deposit_migration.py",
+      "status": "implemented",
+      "notes": "One new SECURITY DEFINER function with the fixed search path, EXECUTE only to the financial role; the Deposit command action list and the Deposit shape check widened; ten functions patched by exactly their listed replacements with the same owner, privileges and settings; no other function, constraint or trigger changes; forward-only (V1-056 sub-slice 10e-2b-4c)."
+    },
+    {
+      "test_id": "test_lease_security_deposit_command_takes_only_positive_integer_cents",
+      "upstream_ids": [
+        "BR-DEP-004",
+        "DB-DEP-001"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_deposit.py",
+      "status": "implemented",
+      "notes": "The walk-in Security Deposit command takes only positive integer USD cents within the bigint range (V1-056 sub-slice 10e-2b-4c)."
+    },
+    {
+      "test_id": "test_lease_security_deposit_command_validates_identity_and_reason",
+      "upstream_ids": [
+        "BR-DEP-004",
+        "DB-DEP-001"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_deposit.py",
+      "status": "implemented",
+      "notes": "The walk-in Security Deposit command refuses a nil id and a missing, untrimmed or over-long reason, defaults to deposits.manage, and its request digest covers the required amount (V1-056 sub-slice 10e-2b-4c)."
+    },
+    {
+      "test_id": "test_lease_security_deposit_needs_deposits_manage_before_the_database",
+      "upstream_ids": [
+        "BR-AUTH-008",
+        "BR-DEP-004"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_deposit.py",
+      "status": "implemented",
+      "notes": "The service refuses the walk-in Security Deposit create, before any connection, without deposits.manage for the Property or with another authorization reference (V1-056 sub-slice 10e-2b-4c)."
+    },
+    {
+      "test_id": "test_dl_009_classifies_the_active_money_after_an_extra_receipt_is_reversed",
+      "upstream_ids": [
+        "BR-RES-020",
+        "BR-RES-022",
+        "BR-DEP-015",
+        "BR-DEP-017",
+        "BR-REFUND-004",
+        "DB-DEP-007"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_security_deposit_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 (independent B1; owner note on DL-009): with 10,000 accepted, 20,000 and 5,000 more paid and the 20,000 receipt reversed, the Reservation Deposit holds 15,000; a Property-caused cancellation refunds 15,000 and a Customer-caused one forfeits 15,000 (the outcome classifies active receipts; it was refused before) (V1-056 sub-slice 10e-2b-4c)."
+    },
+    {
+      "test_id": "test_a_renewal_or_another_customer_gets_no_walk_in_security_deposit",
+      "upstream_ids": [
+        "BR-DEP-004",
+        "BR-DEP-005",
+        "DB-DEP-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_security_deposit_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 (independent S1; Q-2026-10-18-129): a renewal Lease gets no walk-in Security Deposit (the create 55000, the table 23514) and the table refuses a walk-in Security Deposit whose Customer is not the Primary Tenant (23514); nothing is written (V1-056 sub-slice 10e-2b-4c)."
+    },
+    {
+      "test_id": "test_the_create_runs_only_at_read_committed",
+      "upstream_ids": [
+        "BR-DEP-004",
+        "DB-DEP-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_security_deposit_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 (security note 1): the create is refused at REPEATABLE READ (55000), also for a snapshot older than another create's commit, so a Lease keeps one Security Deposit (V1-056 sub-slice 10e-2b-4c)."
+    },
+    {
+      "test_id": "test_a_receipt_that_waits_for_a_signing_or_a_cancellation_reads_the_committed_state",
+      "upstream_ids": [
+        "BR-DEP-005",
+        "DB-DEP-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_security_deposit_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 (independent S2, security note 3): a receipt that waits for a signing holding the Reservation lock takes the Lease path and is recorded with the Lease in its audit event; a receipt that waits for a cancellation is refused (55000) and nothing is written (V1-056 sub-slice 10e-2b-4c)."
+    },
+    {
+      "test_id": "test_a_walk_in_lease_with_a_security_deposit_takes_no_reservation_deposit_at_move_in",
+      "upstream_ids": [
+        "BR-DEP-005",
+        "DB-DEP-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_security_deposit_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 (security should-fix 1): the old Reservation move-in cannot link a Reservation's Deposit to a walk-in Lease that already has its Security Deposit; the deferred source check refuses it (23514, invalid in the move-in service) and nothing changes (V1-056 sub-slice 10e-2b-4c)."
+    },
+    {
+      "test_id": "test_a_reversed_extra_receipt_is_not_shown_as_received",
+      "upstream_ids": [
+        "BR-DEP-004",
+        "BR-RES-020",
+        "DB-DEP-002",
+        "DB-DEP-007"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_security_deposit_migration.py",
+      "status": "implemented",
+      "notes": "Review round 2 (independent S1): with 10,000 accepted, 20,000 and 5,000 more paid and the 20,000 receipt reversed, the cancellation reports and stores 15,000 received, the Reservation read API shows 15,000 and the forfeiture keeps 15,000 (V1-056 sub-slice 10e-2b-4c)."
     }
   ]
 }

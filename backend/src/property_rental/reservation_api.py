@@ -426,6 +426,9 @@ class PostgresReservationResourceFlow:
         JOIN app.properties AS property ON property.id = unit.property_id
         JOIN app.deposits AS deposit ON deposit.reservation_id = reservation.id
         LEFT JOIN app.deposit_receipts AS receipt ON receipt.deposit_id = deposit.id
+          -- V1-056 sub-slice 10e-2b-4c (review round 2): a reversed receipt is not received.
+          AND NOT EXISTS (SELECT 1 FROM app.deposit_receipt_reversals AS reversal
+                          WHERE reversal.deposit_receipt_id = receipt.id)
         LEFT JOIN app.reservation_extension_notices AS notice
           ON notice.reservation_id = reservation.id
     """

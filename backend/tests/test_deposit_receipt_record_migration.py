@@ -100,7 +100,6 @@ ALLOCATE = "payments.allocate"
 REASON = "Pet Deposit paid at the front desk"
 DIGEST = "a" * 64
 INVALID = "Deposit receipt evidence is invalid"
-NO_LEASE = "The Deposit has no Lease yet; this receipt is not recorded here"
 CLOSED = "A closed Final Settlement changes only through a post-settlement correction"
 FORFEITED = "The Deposit has an active forfeiture; reverse the forfeiture first"
 READ_COMMITTED = "A Deposit receipt is recorded at READ COMMITTED"
@@ -409,11 +408,14 @@ def test_a_later_security_deposit_receipt_on_a_lease_signed_from_a_reservation(
     reconciled(url, source["customer"])
 
 
-def test_the_writer_refuses_before_signing_after_closure_and_while_a_forfeiture_is_active(
+def test_the_writer_takes_a_reservation_deposit_and_refuses_after_closure_and_while_forfeited(
     migrated_database_url: str,
 ) -> None:
-    """A Reservation's Security Deposit before signing has no Lease (55000; sub-slice 10e-2b-4c
-    decides that case). On a Lease terminated for pet noncompliance, the forfeited Security
+    """A Reservation's Security Deposit before signing has no Lease; since sub-slice 10e-2b-4c
+    (owner answer to Q-2026-10-17-124 point 3) a second receipt is taken while the Reservation is
+    ACTIVE, within the required total (renamed in 10e-2b-4c from
+    `test_the_writer_refuses_before_signing_after_closure_and_while_a_forfeiture_is_active`; it
+    was refused, 55000). On a Lease terminated for pet noncompliance, the forfeited Security
     Deposit is refused while its forfeiture is active (55000). After the real closure both Deposit
     types are refused with the 8e-1 refusal (P5S01), also the forfeited Security Deposit, and the
     service shows it as a conflict; nothing is written. Unknown Deposits and Payments are not found
@@ -426,11 +428,14 @@ def test_the_writer_refuses_before_signing_after_closure_and_while_a_forfeiture_
             connection, actor_id=human, property_id=prop, unit_id=unit, customer_id=customer
         )
     reserved = ids["deposit_id"]
+    # Sub-slice 10e-2b-4c (owner answer to Q-2026-10-17-124 point 3): was 55000 ("The Deposit
+    # has no Lease yet; this receipt is not recorded here") and (1, 0, 0); the second receipt is
+    # now recorded with its audit event and command.
     assert attempt(prop, human, reserved, payment(url, human, reserved, 5_000), 5_000) == (
-        "55000",
-        NO_LEASE,
+        None,
+        None,
     )
-    assert written(url, reserved) == (1, 0, 0)
+    assert written(url, reserved) == (2, 1, 1)
     case = pet_lease_case(url)
     human, prop, pet, security = case["human"], case["prop"], case["pet"], case["security"]
     service = PostgresDepositService(financial_database_url(), prop, human)

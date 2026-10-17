@@ -511,6 +511,17 @@ an Invoice or a Late-payment Charge is refused). The receipt keeps a reason, the
 actor and the Payment; no separate evidence reference. The routes above are not
 built yet; they come with the staff screens in slice 11.
 
+V1-056 sub-slice 10e-2b-4c (owner answers to Q-2026-10-17-124): the database
+command and the Deposit service command `create_lease_security_deposit` create a
+walk-in Lease's Security Deposit with its required total from the Lease terms
+(`deposits.manage`; a SIGNED Lease signed with no Reservation, not a renewal,
+with no Security Deposit yet; refused at another isolation level than READ
+COMMITTED). The same receipt command now also records a second receipt into an
+ACTIVE Reservation's Security Deposit before signing, within the required total,
+while the Reservation's expiration date has not passed. The route for the create
+(for example `POST /leases/{lease_id}/security-deposit`) comes with the staff
+screens in slice 11.
+
 ## API-041 — Pet Deposit Preconditions
 
 Pet Deposit creation/receipt is accepted only when the pet is approved and the
