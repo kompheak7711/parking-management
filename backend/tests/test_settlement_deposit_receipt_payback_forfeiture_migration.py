@@ -53,6 +53,8 @@ from test_final_settlement_preview_migration import pay
 from test_invoice_migration import financial_database_url
 from test_migrations import _temporary_migration_database
 from test_move_in_migration import migrated_database_url as migrated_database_url
+from test_one_time_charges_migration import draft_and_issue, invoices, miscellaneous
+from test_one_time_charges_migration import staff as invoice_staff
 from test_payment_move_migration import rows, value
 from test_pet_refund_migration import command as pet_command
 from test_refund_service_migration import refund_id, returned
@@ -1078,10 +1080,17 @@ def test_a_charge_back_at_the_instant_of_a_return_reversal_counts_alike_in_eithe
     reversal's id first and once with the charge-back's: the charge-back alone gives 3,000, and
     with the reversal the count is 0 both times, because at the same moment and order an addition
     comes first (the ids alone would have given 3,000 in one order). Afterwards nothing of it is
-    left (review round 2)."""
+    left (review round 2). Sub-slice 10e-2b-4b-1 (owner answer (a) to Q-2026-10-17-125: a recovery
+    counts only while its charge stands): the hand-built charge-back names a real issued 3,000
+    charge (a Miscellaneous charge of the Customer with no Lease) instead of an obligation that
+    does not exist."""
     url = migrated_database_url
     case = payback_ground_case(url)
     pet, review = case["pet"], case["review_refund"]
+    charge = replace(miscellaneous(case["customer"]), amount_usd_cents=3_000)
+    who = invoice_staff(case["human"], case["prop"])
+    invoices().record_one_time_charge(case["prop"], charge, actor=who)
+    draft_and_issue(case["prop"], charge.charge_id, who)
     [(returned_id,)] = rows(
         url,
         "SELECT id FROM app.refund_corrections WHERE refund_id=%s "
@@ -1124,7 +1133,7 @@ def test_a_charge_back_at_the_instant_of_a_return_reversal_counts_alike_in_eithe
                         2_000,
                         case["person"],
                         "financial.approve",
-                        uuid4(),
+                        charge.charge_id,
                     ),
                 )
                 alone = connection.execute(COUNT_AS, (pet, None, 0, False)).fetchone()

@@ -165,3 +165,29 @@ Fixed under the round 3 text rule (text only; no code, migration, test or fixtur
   own-Deposit forfeiture on the ground is asked of the owner in the report.
 
 Status: committed (see git log). Not pushed.
+
+## Follow-up review (2026-10-17, owner answer 5 to the 10e-2b-4a report; fresh read-only subagent, told to write no files at all, scratch files included, and to run no test, script or database command)
+
+Question: under the owner answers (a) to Q-2026-10-17-123, (a) to Q-2026-10-17-125 and to
+Q-2026-10-17-124, does any real path still reach the removed check, the corrected receipt's own
+Pet Deposit forfeiting a right receipt on the termination ground (`TERMINATION_GROUND`)?
+
+Verdict: not reachable at HEAD, and not reachable with the planned 10e-2b-4b receipt writer;
+reachable once the Q-125 answer is built. Reasons (the reviewer's, checked against the cited code):
+the ground basis needs a Deposit never forfeited (`20261128_124`), the right receipts together
+never take more than the corrected receipt frees and a right receipt into the same Deposit has
+another amount (`20261127_123`, `20261126_122`), so R < C; the 10e-2 end-empty check makes C the
+Deposit's only active receipt, and the own-Deposit count K (the running count without payouts plus
+what is still to recover, 4a) is C less (held plus applications plus the other Refunds' net) plus
+the running count; at closure a ground Deposit holds at most pay-back money (FORFEITURE_REQUIRED
+blocks the confirm), and after closure only a new receipt (forfeited beyond the count, so ACTIVE) or
+a forfeiture reversal (then STAFF_CHOICE) raises the held side, so C ≤ K and nothing is forfeited.
+The 4b writer adds receipts only before closure and the closure check still applies. The Q-125
+answer is the first event after closure that lowers the count without changing the held side, so
+K < C becomes possible.
+
+Outcome: the test is added in sub-slice 10e-2b-4b-1 (the Q-125 answer) on the real path (the
+reviewer's route, made concrete there: set-up B/C, a `CHARGE_REDUCTION` of the review Refund's
+recovery charge, then a receipt correction of the Pet receipt itself with a smaller right receipt).
+If that build shows the case unreachable after all, the next review round confirms it before the
+removal is recorded as accepted.

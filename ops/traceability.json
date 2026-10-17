@@ -42062,7 +42062,105 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_deposit_receipt_payback_forfeiture_migration.py",
       "status": "implemented",
-      "notes": "Sub-slice 10e-2b-4a review round 1 (security): by hand, rolled back, a reversal of the Pet Refund-review Refund's 3,000 return and a 3,000 charge-back of that Refund written at one instant give the same pay-back count (0) whichever row id sorts first, because at the same moment and order an addition comes first (V1-056 sub-slice 10e-2b-4a)."
+      "notes": "Sub-slice 10e-2b-4a review round 1 (security): by hand, rolled back, a reversal of the Pet Refund-review Refund's 3,000 return and a 3,000 charge-back of that Refund written at one instant give the same pay-back count (0) whichever row id sorts first, because at the same moment and order an addition comes first; from sub-slice 10e-2b-4b-1 the hand-built charge-back names a real issued 3,000 charge, because a recovery counts only while its charge stands (V1-056 sub-slice 10e-2b-4a)."
+    },
+    {
+      "test_id": "test_a_recovery_charge_reduced_after_closure_stops_counting",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-DEP-022",
+        "DL-032",
+        "DB-DEP-004",
+        "DB-REFUND-002",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_pet_payback_recovery_standing_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer (a) to Q-2026-10-17-125 after closure, on the 10e-2d set-up B/C: the Pet receipt's correction recovers the Settlement's 3,000 Pet Refund and the review Refund's 2,000 by charges (count 5,000); CHARGE_REDUCTIONs of 1,000 of the Settlement recovery charge (4,000: that much of the payout counts again from its time), of 1,500 of the review recovery charge (2,500) and of the Settlement charge's other 2,000 (500); a right 5,000 Pet receipt then keeps 500 as pay-back money (DL-032) and forfeits 4,500 on BR-DEP-022; the count is 0 afterwards and the ledger reconciles (V1-056 sub-slice 10e-2b-4b-1)."
+    },
+    {
+      "test_id": "test_a_recovery_charge_forgiven_on_an_open_lease_stops_counting_until_it_stands_again",
+      "upstream_ids": [
+        "BR-INV-044",
+        "BR-DEP-022",
+        "DB-DEP-004",
+        "DB-REFUND-002",
+        "DB-INV-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_pet_payback_recovery_standing_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer (a) to Q-2026-10-17-125 before closure, on the 10e-1c path: a 15,000 Pet Refund-review Refund recovered by an ordinary charge when its Payment is returned counts 15,000; a credit Adjustment of 4,000 gives 11,000, its reversal (10f-1 draft) 15,000, a VOID of the charge's Invoice 0, the same charge billed again and issued 15,000; while the charge is billed again on a DRAFT Invoice it counts 0 until the Invoice is issued; a VOID Invoice without its void event (hand-built, rolled back) still counts as VOID, also just before the VOID's time; review round 1: a later 10,000 Pet Refund-review Refund paid from a second seeded receipt gives 5,000, a VOID and re-bill give 0 and 5,000 again (not 15,000), 3,000 of it coming back gives 8,000 and a credit of the whole charge leaves exactly that 3,000 (V1-056 sub-slice 10e-2b-4b-1)."
+    },
+    {
+      "test_id": "test_the_own_pet_deposit_forfeits_on_the_ground_once_its_review_recovery_is_forgiven",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-DEP-022",
+        "DL-032",
+        "DB-DEP-004",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_pet_payback_recovery_standing_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer 5 to the 10e-2b-4a report on the real path: after set-up B/C with a 5,000 Pet receipt (nothing forfeited) a CHARGE_REDUCTION of the whole 2,000 review recovery charge lowers the own-Deposit count to 3,000; a receipt correction of that Pet receipt with a 4,500 right receipt into the same never-forfeited Pet Deposit forfeits 1,500 on BR-DEP-022 (TERMINATION_GROUND, linked) and the pay-back 3,000 follows DL-032 onto the Settlement Refund's recovery charge; the Payment keeps 500 and the ledger reconciles (V1-056 sub-slice 10e-2b-4b-1)."
+    },
+    {
+      "test_id": "test_the_recovery_standing_migration_is_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "DB-DEP-004",
+        "DB-REFUND-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_pet_payback_recovery_standing_migration.py",
+      "status": "implemented",
+      "notes": "The migration adds one internal function (no grant to any application role or PUBLIC, SECURITY DEFINER with the fixed search path), adds no constraint or trigger and changes only app.lease_deposit_payback_count_as (privileges, owner and settings kept; its body is exactly the old one with the module's two replacements); it is forward-only (V1-056 sub-slice 10e-2b-4b-1)."
+    },
+    {
+      "test_id": "test_a_forgiven_then_restored_charge_counts_as_before_and_a_draft_between_is_stale",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-DEP-022",
+        "BR-INV-044",
+        "DB-DEP-004",
+        "DB-REFUND-002",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_pet_payback_recovery_standing_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 (blocker B1, should-fix S3a): a receipt correction of the Pet receipt recorded while the own-Deposit count is 5,000 is stale at its confirm (P5S02; the draft stays PENDING and no forfeiture, receipt, application or correction is written) after a CHARGE_REDUCTION of the whole 2,000 review recovery charge; the 10f-2 reversal of that reduction's Adjustment makes the charge stand again and the count exactly as before the forgiveness (0; own-Deposit 5,000), although the 5,000 application paid that money out before the forgiveness (V1-056 sub-slice 10e-2b-4b-1)."
+    },
+    {
+      "test_id": "test_a_restored_charge_makes_a_waiting_forfeiture_stale",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-DEP-022",
+        "DB-DEP-004",
+        "DB-REFUND-002",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_pet_payback_recovery_standing_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 (should-fix S3b): a receipt correction of the Pet receipt recorded with 1,500 forfeited on BR-DEP-022 after a CHARGE_REDUCTION of the review recovery charge is stale at its confirm (P5S02) once the 10f-2 reversal restores the charge: the draft stays PENDING, nothing is forfeited, the receipt stays and no application or correction is written (V1-056 sub-slice 10e-2b-4b-1)."
+    },
+    {
+      "test_id": "test_a_standing_charge_counts_at_most_the_recovered_amount_paid_or_not",
+      "upstream_ids": [
+        "BR-INV-044",
+        "BR-DEP-022",
+        "DB-DEP-004",
+        "DB-REFUND-002",
+        "DB-INV-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_pet_payback_recovery_standing_migration.py",
+      "status": "implemented",
+      "notes": "Review round 2 (both reviewers): on the 10e-1c open-Lease path the 15,000 recovery counts at most the recovered amount: a DEBIT of 2,000 counts nothing more, a credit of 3,000 forgives the DEBIT's part first (14,000), a DEBIT of 1,000 gives 15,000 again, a Payment of 5,000 changes nothing (a paid charge stands), and a credit of 12,000 leaves 3,000 standing and counted; the ledger reconciles (V1-056 sub-slice 10e-2b-4b-1)."
     }
   ]
 }

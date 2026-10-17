@@ -1753,6 +1753,10 @@ As built in V1-056 sub-slice 10e-2b-4a (migration `20261225_151`): what a charge
 Pet Refund-review Refund adds to that count like a verified return (owner answer (a) to
 Q-2026-10-17-123), so such a forfeiture takes less; see the 10e-2b-4a bullet under DB-DEP-005.
 
+As built in V1-056 sub-slice 10e-2b-4b-1 (migration `20261226_152`): a recovery counts only while
+its charge stands (owner answer (a) to Q-2026-10-17-125), so a forgiven recovery charge lets such a
+forfeiture take more again; see the 10e-2b-4b-1 bullet under DB-DEP-005.
+
 ### Lease Deposit command admission (V1-055)
 
 The existing Lease Deposit disposition command serializes its Property, actor,
@@ -1970,7 +1974,33 @@ Append-only Final Settlement financial event: `id uuid PK`, `deposit_id uuid NOT
   returned Refund can be dated at the same instant as the return's `CORRECTION_REVERSAL`; so the
   result never depends on the random row ids. One exact-text patch; the functions that read the
   count follow it unchanged. Known limit (Q-2026-10-17-125): the count reads the recovery row,
-  not whether its recovery charge still stands.
+  not whether its recovery charge still stands. (Ended by sub-slice 10e-2b-4b-1, below.)
+- As amended in V1-056 sub-slice 10e-2b-4b-1 (migration `20261226_152`; owner answer (a) to
+  Q-2026-10-17-125): a recovery counts as money that came back only while its charge stands. New
+  internal `app.refund_recovery_standing_at(recovery, as_of)` (no grant): the least of the
+  recovered amount and the adjusted obligation (never below 0) of each line of the recovery's
+  charge (its `recovery_obligation_id`) on an Invoice issued by then and not VOID by then; a VOID
+  Invoice with no void event counts as VOID at every time (fail closed); paid or unpaid, a charge
+  that stands counts; a later credit forgives a DEBIT Adjustment of the line first. The Pet
+  Refund-review part of `app.lease_deposit_payback_count_as` counts each recovery at its own time
+  by what stands of its charge now (`'infinity'`), and another Refund's payout is undone by its
+  recovery only as far as the charge stands now, from the Refund's time (sub-slice 10e-2d): one
+  rule for both, as the answer says. A credit Adjustment, a `CHARGE_REDUCTION` or `REFUND`
+  correction's linked Adjustment or a VOID makes the recovery count as if it had been that much
+  smaller; an Adjustment reversal, a later DEBIT Adjustment of its line or the same charge billed again
+  and issued makes it count again exactly as before, whatever was paid out in between (review round 1, both reviewers: the first
+  build placed a forgiveness and a restoration at their own times, and the count's floor at 0
+  then swallowed a forgiveness after a payout and added the restoration in full). The receipt
+  correction's own-Deposit term (what is still to recover) is unchanged: a forgiven recovery
+  leaves the Refund's net at 0, so that correction does not charge it back again. A receipt
+  correction draft recorded before a forgiveness or a restoration is stale at its confirm (P5S02)
+  when its forfeitures or its source change (the forfeitures are computed again under the locks);
+  otherwise it confirms under the new count. One exact-text patch (two replacements);
+  the functions that read the count follow it unchanged. With this rule a receipt correction of a
+  Pet receipt can again forfeit the corrected receipt's own Pet Deposit on the termination ground
+  (a forgiven review recovery lowers the count without changing what the Deposit paid). Known
+  limit (Q-2026-10-17-126): a restoration after a forfeiture that the lower count allowed is not
+  refused.
 - As built in V1-056 sub-slice 10c-2a-2 (migration `20261106_102`; owner answer 1 to
   Q-2026-10-07-41): after closure a Deposit application is still refused unless it is linked
   (DB-SETTLE-005 `deposit_application_id`, written first) to a post-settlement correction of its
