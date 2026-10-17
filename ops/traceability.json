@@ -42161,6 +42161,147 @@
       "test_path": "backend/tests/test_pet_payback_recovery_standing_migration.py",
       "status": "implemented",
       "notes": "Review round 2 (both reviewers): on the 10e-1c open-Lease path the 15,000 recovery counts at most the recovered amount: a DEBIT of 2,000 counts nothing more, a credit of 3,000 forgives the DEBIT's part first (14,000), a DEBIT of 1,000 gives 15,000 again, a Payment of 5,000 changes nothing (a paid charge stands), and a credit of 12,000 leaves 3,000 standing and counted; the ledger reconciles (V1-056 sub-slice 10e-2b-4b-1)."
+    },
+    {
+      "test_id": "test_a_charge_billed_again_after_a_void_waits_until_the_forfeiture_is_reversed",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-DEP-022",
+        "BR-INV-044",
+        "DL-032",
+        "DL-053",
+        "DB-DEP-004",
+        "DB-REFUND-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_pet_payback_restoration_refusal_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer (a) to Q-2026-10-17-126 point 1, before closure on the 10e-1c path (the 10e-2b-4b-1 security set-up B2): a 15,000 Pet receipt refills the Pet Deposit (count 15,000); a VOID of the recovery charge's Invoice forgives it (count 0) and the BR-DEP-022 forfeiture takes all 15,000; the same charge billed again is refused at its issue (55000, the Invoice stays a DRAFT, nothing else changes); once the 6b draft reverses the forfeiture the issue passes (standing, count and held 15,000) and the ledger reconciles (V1-056 sub-slice 10e-2b-4b-2a)."
+    },
+    {
+      "test_id": "test_a_debit_and_an_adjustment_reversal_wait_until_the_forfeiture_is_reversed",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-DEP-022",
+        "BR-INV-044",
+        "DL-032",
+        "DL-053",
+        "DB-DEP-004",
+        "DB-REFUND-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_pet_payback_restoration_refusal_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer (a) to Q-2026-10-17-126 point 1: a credit Adjustment forgives 4,000 of the 15,000 recovery charge (count 11,000) and the forfeiture takes 4,000; a DEBIT Adjustment of the charge's line and the confirm of the 10f-1 reversal of that credit are refused (55000; the line keeps 11,000, no reversal row, the draft stays PENDING); after the forfeiture reversal the same reversal draft confirms (count 15,000) and a later DEBIT passes (V1-056 sub-slice 10e-2b-4b-2a)."
+    },
+    {
+      "test_id": "test_a_forfeiture_recorded_before_the_forgiveness_does_not_block_a_restoration",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-DEP-022",
+        "BR-INV-044",
+        "DL-032",
+        "DL-053",
+        "DB-DEP-004",
+        "DB-REFUND-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_pet_payback_restoration_refusal_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer (a) to Q-2026-10-17-126 point 1: a 5,000 forfeiture recorded while the charge stood whole never relied on a lower count, so a VOID and the same charge billed again pass (count 15,000). Hand-built and rolled back: the refusal function passes for that forfeiture; one timed before the charge's first issue never blocks (review round 1, independent S3); one timed at or after the restoring transaction's start is refused (fail closed for a concurrent forfeiture) (V1-056 sub-slice 10e-2b-4b-2a)."
+    },
+    {
+      "test_id": "test_after_closure_a_charge_reduction_is_not_reversed_while_its_forfeiture_is_active",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-DEP-022",
+        "BR-INV-044",
+        "DL-032",
+        "DL-053",
+        "DB-DEP-004",
+        "DB-REFUND-002",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_pet_payback_restoration_refusal_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer (a) to Q-2026-10-17-126 point 1, after closure: a CHARGE_REDUCTION of the review Refund's whole 2,000 recovery charge lets a receipt correction of the 5,000 Pet receipt (a 4,500 right receipt) forfeit 1,500 on BR-DEP-022; the 10f-2 ADJUSTMENT_REVERSAL correction of that reduction is refused at its confirm (55000), writes nothing and its draft stays PENDING; once a FORFEITURE_REVERSAL correction reverses the forfeiture (its 1,500 pays the open recovery charge of the Security Refund, DL-032), the same draft confirms and the 2,000 is owed again (review round 1, both reviewers) (V1-056 sub-slice 10e-2b-4b-2a)."
+    },
+    {
+      "test_id": "test_the_restoration_refusal_migration_is_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "DB-DEP-004",
+        "DB-REFUND-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_pet_payback_restoration_refusal_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20261227_153 adds three internal functions with no grant (SECURITY DEFINER, fixed search path), four deferred constraint triggers and one AFTER INSERT trigger on app.deposit_dispositions, changes no existing function, constraint or trigger, and is forward-only (V1-056 sub-slice 10e-2b-4b-2a)."
+    },
+    {
+      "test_id": "test_a_forgiveness_committed_while_a_forfeiture_waits_refuses_that_forfeiture",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-DEP-022",
+        "BR-INV-044",
+        "DL-032",
+        "DL-053",
+        "DB-DEP-004",
+        "DB-REFUND-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_pet_payback_restoration_refusal_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 (independent S1): the owner's 15,000 one-call forfeiture waits for the Pet Deposit lock while a VOID of the recovery charge commits; its count read would allow it but its time says the charge stood, so its own insert refuses it (40001, the recovery charge changed after the forfeiture's time; record it again) and nothing is written; recorded again it passes, and the charge billed again is then refused (V1-056 sub-slice 10e-2b-4b-2a)."
+    },
+    {
+      "test_id": "test_a_restoration_and_a_forfeiture_racing_for_the_deposit_lock_never_both_commit",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-DEP-022",
+        "BR-INV-044",
+        "DL-032",
+        "DL-053",
+        "DB-DEP-004",
+        "DB-REFUND-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_pet_payback_restoration_refusal_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 (both reviewers): the restoration check takes the Pet Deposit lock every forfeiture insert takes. Forfeiture first: an uncommitted 15,000 forfeiture makes the issue of the charge billed again wait, and after its commit the issue is refused (55000, the Invoice stays a DRAFT). Restoration first: an uncommitted issue makes the 15,000 one-call forfeiture wait, and after its commit the forfeiture reads the 15,000 count and is refused (23514) (V1-056 sub-slice 10e-2b-4b-2a)."
+    },
+    {
+      "test_id": "test_at_repeatable_read_the_later_writer_fails_on_the_deposit_guard",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-DEP-022",
+        "BR-INV-044",
+        "DL-032",
+        "DL-053",
+        "DB-DEP-004",
+        "DB-REFUND-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_pet_payback_restoration_refusal_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 (security S1): at REPEATABLE READ the writer with the older snapshot fails on the Pet Deposit's serialization guard (40001, the guard's own message, pinned in review round 2) in both directions: an issue of the charge billed again after a committed forfeiture, and a forfeiture after a committed issue; nothing is written by the failed side (V1-056 sub-slice 10e-2b-4b-2a)."
+    },
+    {
+      "test_id": "test_a_forfeiture_timed_before_a_charge_issued_ahead_of_the_clock_is_refused",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-DEP-022",
+        "BR-INV-044",
+        "DL-032",
+        "DL-053",
+        "DB-DEP-004",
+        "DB-REFUND-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_pet_payback_restoration_refusal_migration.py",
+      "status": "implemented",
+      "notes": "Review round 2 (security S1), hand-built and rolled back: the forgiven recovery charge's first issue moved 30 seconds ahead of the clock; the owner's 15,000 one-call forfeiture, which its count of 0 would allow, is refused by its own insert (40001, record it again), so the restoration check's first-issue filter never drops a forfeiture that read the charge; nothing is written (V1-056 sub-slice 10e-2b-4b-2a)."
     }
   ]
 }

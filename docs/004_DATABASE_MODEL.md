@@ -1757,6 +1757,10 @@ As built in V1-056 sub-slice 10e-2b-4b-1 (migration `20261226_152`): a recovery 
 its charge stands (owner answer (a) to Q-2026-10-17-125), so a forgiven recovery charge lets such a
 forfeiture take more again; see the 10e-2b-4b-1 bullet under DB-DEP-005.
 
+As built in V1-056 sub-slice 10e-2b-4b-2a (migration `20261227_153`): a forgiven recovery charge is
+not restored while a forfeiture that relied on the lower count is active (owner answer (a) to
+Q-2026-10-17-126); see the 10e-2b-4b-2a bullet under DB-DEP-005.
+
 ### Lease Deposit command admission (V1-055)
 
 The existing Lease Deposit disposition command serializes its Property, actor,
@@ -2000,7 +2004,44 @@ Append-only Final Settlement financial event: `id uuid PK`, `deposit_id uuid NOT
   Pet receipt can again forfeit the corrected receipt's own Pet Deposit on the termination ground
   (a forgiven review recovery lowers the count without changing what the Deposit paid). Known
   limit (Q-2026-10-17-126): a restoration after a forfeiture that the lower count allowed is not
-  refused.
+  refused. (Ended by sub-slice 10e-2b-4b-2a, below.)
+- As amended in V1-056 sub-slice 10e-2b-4b-2a (migration `20261227_153`; owner answer (a) to
+  Q-2026-10-17-126 point 1): restoring a forgiven recovery charge is refused (55000, "A forfeiture
+  recorded while this recovery charge was forgiven is still active; reverse the forfeiture first")
+  while a forfeiture of the recovered Refund's Pet Deposit that relied on the lower count is
+  active (not reversed); staff first reverse that forfeiture (the 6b draft before closure, a
+  `FORFEITURE_REVERSAL` correction after it), then restore the charge. A restoration is a DEBIT
+  Adjustment of the charge's line, the reversal of a credit Adjustment of that line (the 10f-1
+  draft, the 10f-2 correction) or the same charge billed again and issued after a VOID: a DEBIT or a
+  credit's reversal always, an issue only when another Invoice of the same obligation exists (the
+  recovery's own charge is its obligation's first Invoice; a structural rule, review round 1). A
+  forfeiture relied on the lower count when it was recorded at or after the charge's first issue,
+  at a time when the charge stood lower than it stands after the restoration
+  (`app.refund_recovery_standing_at` at the forfeiture's time against `'infinity'`); one recorded
+  before the forgiveness never blocks, and a forgiveness stays open. New internal
+  `app.refuse_recovery_charge_restoration(obligation)` and trigger function
+  `app.validate_recovery_charge_restoration()` (no grant) and four deferred constraint triggers:
+  `invoice_adjustments_recovery_restoration` (AFTER INSERT, DEBIT),
+  `invoice_adjustment_reversals_recovery_restoration` (AFTER INSERT, the reversal of a credit
+  Adjustment), `invoices_recovery_restoration_insert` (AFTER INSERT of an issued Invoice; every
+  Invoice starts as a DRAFT today, so a defensive check) and `invoices_recovery_restoration_issue`
+  (AFTER UPDATE OF `issued_at` when it becomes issued), so a recovery charge with no Lease is
+  covered too. Every restoring writer runs `SET CONSTRAINTS ALL IMMEDIATE`, so the check runs
+  inside that writer, which keeps its locks to commit: it takes `app.serialize_deposit_state` of
+  the Pet Deposit (the lock every forfeiture insert takes through the Deposit balance event
+  trigger) and then reads the forfeitures; a forfeiture timed at or after the restoring
+  transaction's start committed while that transaction ran, so it counts as relying (fail
+  closed). A forfeiture is timed by its statement's start, before it waits for the Deposit lock
+  and reads the count, and a forgiveness takes no Deposit lock (review round 1): the new AFTER
+  INSERT trigger `deposit_dispositions_recovery_standing` (function
+  `app.validate_forfeiture_recovery_standing()`, no grant) refuses a Lease Deposit forfeiture of a
+  Pet Deposit when a recovery charge of that Deposit stands lower now than at the forfeiture's
+  time (a forgiveness dated after it is already visible) or was first issued after that time (a
+  charge chained ahead of the clock, review round 2) (40001, "A recovery charge of this Pet
+  Deposit changed after this forfeiture's time; record it again"), so the restoration check can
+  trust the forfeiture's time. A narrower test (only a forfeiture that needed the lower
+  count) would need the count at the forfeiture's time, which the count does not keep. The
+  services show the refusal as a generic invalid command or conflict; slice 11 words it for staff.
 - As built in V1-056 sub-slice 10c-2a-2 (migration `20261106_102`; owner answer 1 to
   Q-2026-10-07-41): after closure a Deposit application is still refused unless it is linked
   (DB-SETTLE-005 `deposit_application_id`, written first) to a post-settlement correction of its
