@@ -1703,6 +1703,24 @@ requires its correction's decision confirmed in the same transaction by the same
 writes the same receipt again into the same Deposit (the same Payment and amount) is refused
 (owner answer 1 to Q-2026-10-12-89); see DB-SETTLE-005.
 
+As built in V1-056 sub-slice 10e-2b-3 (migration `20261224_150`; owner answer 2 to Q-2026-10-12-89,
+an approved tightening, and answer (a) to Q-2026-10-12-90): the table itself holds owner rule 3 for
+Pet Deposits once the Lease's Final Settlement is closed. From then on
+`app.validate_deposit_receipt` refuses every Pet Deposit receipt of that Lease (P5S01, "A closed
+Final Settlement changes only
+through a post-settlement correction", as the 8e-1 refusal) unless a correction of that Settlement,
+confirmed in the same transaction, links it (DB-SETTLE-005 `deposit_receipt_id`); a correction of
+another Lease's Settlement does not, and a correction confirmed in an earlier transaction cannot
+link a receipt at all (the effect trigger refuses the link, 23514). It is the Pet branch's first
+check, after the Payment source check, the Deposit row lock and the one-active-receipt check. The
+8e-3 confirm locks the Settlement row and then every Deposit of the Lease and writes the closure
+last; the receipt's earlier balance trigger locks the Deposit row first
+(`app.serialize_deposit_state`), so at READ COMMITTED a receipt that waited for the Deposit row
+reads a closure committed meanwhile, a REPEATABLE READ or SERIALIZABLE writer whose snapshot is
+older than the closure fails on the Deposit's serialization guard (40001), and a receipt that held
+the row first and committed makes the waiting confirm stale (P5S02). Before closure nothing changes;
+Security Deposit receipts do not change.
+
 ## DB-DEP-003 — `deposit_required_amount_adjustments`
 
 Append-only: `id uuid PK`, `deposit_id uuid NOT NULL FK`, `adjustment_type text NOT NULL CHECK IN ('INCREASE','DECREASE')`, `amount_usd_cents bigint NOT NULL CHECK (>0)`, `effective_date date NOT NULL`, `reason text NOT NULL`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`, `authorization_reference text NOT NULL`. Resulting required amount may not be negative. This table records only a valid governing Lease-term correction; it creates no right to change a Deposit.

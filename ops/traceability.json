@@ -41986,6 +41986,45 @@
       "test_path": "backend/tests/test_settlement_deposit_receipt_payback_forfeiture_migration.py",
       "status": "implemented",
       "notes": "Review round 2 set-up D on the real path: after the forfeit_pet case's 8,000 Pet receipt is reversed with its three Refunds recovered by a charge (count 3,000, forfeiture reversed), a 3,000 Pet receipt with the staff choice FORFEIT is refused at record (55000, nothing written; owner confirmation with the answer to Q-2026-10-17-122); 5,000 forfeits 2,000 as STAFF_CHOICE and its pay-back 3,000 follows DL-032 (V1-056 sub-slice 10e-2d)."
+    },
+    {
+      "test_id": "test_after_closure_a_pet_deposit_receipt_needs_its_own_settlement_s_correction",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-SETTLE-012",
+        "DB-DEP-002",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_pet_receipt_link_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer 2 to Q-2026-10-12-89 and answer (a) to Q-2026-10-12-90 on the real path: before the closure a direct Pet Deposit receipt passes as before; after the real closure the same receipt is refused (P5S01, the 8e-1 message), also in a transaction of its own that would commit it, and nothing is written; a correction of the same Settlement confirmed in an earlier transaction cannot link a receipt (the effect trigger refuses the link, 23514); in a rolled-back transaction where another Lease's FORFEITURE_REVERSAL correction is confirmed, its link opens only that Lease's own Pet Deposit, never the first Lease's, and an unlinked receipt stays refused (V1-056 sub-slice 10e-2b-3)."
+    },
+    {
+      "test_id": "test_the_pet_receipt_link_migration_is_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "DB-DEP-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_pet_receipt_link_migration.py",
+      "status": "implemented",
+      "notes": "The migration adds no function, constraint or trigger and changes only app.validate_deposit_receipt (privileges, owner and settings kept; its body is exactly the old one with the module's replacement); it is forward-only (V1-056 sub-slice 10e-2b-3)."
+    },
+    {
+      "test_id": "test_staff_finish_a_forfeited_right_receipt_after_a_held_value_refund_empties_the_deposit",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-SETTLE-008",
+        "BR-DEP-022",
+        "DL-032",
+        "DB-DEP-004",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_pet_receipt_link_migration.py",
+      "status": "implemented",
+      "notes": "The known limit of sub-slice 10e-2d on the real path (owner note 4 of 2026-10-17): the Final Settlement's 3,000 Pet Refund comes back by a return-only correction, so the never-forfeited Pet Deposit (BR-DEP-022 ground) holds 3,000 of unreceived pay-back money (count 3,000, DL-032); a receipt correction whose right Pet receipt the ground forfeits is refused (55000, only the new receipt's money) and writes nothing; a HELD_VALUE_REFUND correction naming the return refunds the 3,000 (count 0, held 0); the same receipt correction then forfeits the whole 5,000, linked (V1-056 sub-slice 10e-2b-3)."
     }
   ]
 }
