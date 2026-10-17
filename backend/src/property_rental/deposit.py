@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import asdict, dataclass
-from datetime import date
+from datetime import date, datetime
 from enum import StrEnum
 from typing import Final, TypeAlias, cast
 from uuid import UUID
@@ -20,6 +20,7 @@ DEPOSIT_MANAGE_CAPABILITY: Final = "deposits.manage"
 DEPOSIT_CORRECT_CAPABILITY: Final = "deposits.correct"
 DEPOSIT_DISPOSE_CAPABILITY: Final = "deposits.dispose"
 DEPOSIT_REFUND_QUALIFY_CAPABILITY: Final = "deposits.refund.qualify"
+PAYMENT_ALLOCATE_CAPABILITY: Final = "payments.allocate"
 DEPOSIT_CONNECT_TIMEOUT_SECONDS: Final = 3
 DEPOSIT_LOCK_TIMEOUT_MS: Final = 3_000
 DEPOSIT_QUERY_TIMEOUT_MS: Final = 3_000
@@ -243,6 +244,34 @@ class ReverseDepositDispositionCommand:
         _text(self.evidence_reference, "evidence_reference")
 
 
+@dataclass(frozen=True, slots=True)
+class RecordDepositReceiptCommand:
+    """A receipt from a received Payment into an existing Deposit of a signed or terminated Lease
+    (V1-056 sub-slice 10e-2b-4b-2b; owner answer to Q-2026-10-12-92: payments.allocate, no
+    draft)."""
+
+    idempotency_key: UUID
+    receipt_id: UUID
+    deposit_id: UUID
+    payment_id: UUID
+    amount_usd_cents: int
+    reason: str
+    authorization_reference: str = PAYMENT_ALLOCATE_CAPABILITY
+
+    def __post_init__(self) -> None:
+        for field in ("idempotency_key", "receipt_id", "deposit_id", "payment_id"):
+            _identity(getattr(self, field), field)
+        if type(self.amount_usd_cents) is not int or not (
+            0 < self.amount_usd_cents <= 9_223_372_036_854_775_807
+        ):
+            raise ValueError(
+                "amount_usd_cents must be positive integer USD cents within bigint range"
+            )
+        _text(self.reason, "reason")
+        if len(self.reason) > 1000:
+            raise ValueError("reason must be at most 1000 characters")
+
+
 DepositCommand: TypeAlias = (
     CreatePetDepositCommand
     | AdjustDepositRequiredAmountCommand
@@ -251,6 +280,7 @@ DepositCommand: TypeAlias = (
     | QualifyPetDepositRefundReviewCommand
     | RecordDepositDispositionCommand
     | ReverseDepositDispositionCommand
+    | RecordDepositReceiptCommand
 )
 
 
@@ -288,6 +318,18 @@ class DepositSnapshot:
     deposit_disposition_reversal_id: UUID | None = None
     refund_qualified: bool = False
     reservation_version: int | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class DepositReceiptRecord:
+    """The Deposit after a recorded receipt, with the receipt and its Payment's available value."""
+
+    deposit: DepositSnapshot
+    deposit_receipt_id: UUID
+    payment_id: UUID
+    amount_usd_cents: int
+    occurred_at: datetime
+    payment_available_usd_cents: int
 
 
 def _snapshot(row: tuple[object, ...]) -> DepositSnapshot:
@@ -349,6 +391,9 @@ class PostgresDepositService:
             raise DepositAuthorizationError("Deposit capability is not authorized")
 
     def _execute(self, query: str, parameters: tuple[object, ...]) -> DepositSnapshot:
+        return _snapshot(self._fetch(query, parameters))
+
+    def _fetch(self, query: str, parameters: tuple[object, ...]) -> tuple[object, ...]:
         try:
             with psycopg.connect(
                 self.financial_database_url, connect_timeout=DEPOSIT_CONNECT_TIMEOUT_SECONDS
@@ -371,14 +416,14 @@ class PostgresDepositService:
                 "Deposit idempotency key conflicts with another request" in str(exc)
             ):
                 raise DepositIdempotencyKeyReused("Deposit idempotency key was reused") from exc
-            if exc.sqlstate in {"23505", "23P01", "P5801", "40001"}:
+            if exc.sqlstate in {"23505", "23P01", "P5801", "40001", "P5S01"}:
                 raise DepositConflictError("Deposit command conflicted") from exc
             if exc.sqlstate in {"22023", "23514", "55000"}:
                 raise DepositInvalidError("Deposit command is invalid") from exc
             raise DepositServiceUnavailableError("Deposit persistence is unavailable") from exc
         if row is None:
             raise DepositServiceUnavailableError("Deposit command returned no result")
-        return _snapshot(row)
+        return row
 
     def create_pet_deposit(
         self, command: CreatePetDepositCommand, *, actor: AuthenticatedActor
@@ -420,6 +465,39 @@ class PostgresDepositService:
                 command.reason,
                 command.authorization_reference,
             ),
+        )
+
+    def record_receipt(
+        self, command: RecordDepositReceiptCommand, *, actor: AuthenticatedActor
+    ) -> DepositReceiptRecord:
+        """Record a receipt into an existing Deposit of a signed or terminated Lease.
+
+        payments.allocate, no draft; refused once the Lease's Final Settlement is closed (a
+        conflict)."""
+        self._authorize(actor, PAYMENT_ALLOCATE_CAPABILITY, command.authorization_reference)
+        row = self._fetch(
+            "SELECT app.record_lease_deposit_receipt(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            (
+                self.property_id,
+                self.actor_id,
+                command.idempotency_key,
+                deposit_request_digest("deposit.receipt.record", command),
+                command.receipt_id,
+                command.deposit_id,
+                command.payment_id,
+                command.amount_usd_cents,
+                command.reason,
+                command.authorization_reference,
+            ),
+        )
+        value = cast(dict[str, object], row[0])
+        return DepositReceiptRecord(
+            deposit=_snapshot(row),
+            deposit_receipt_id=UUID(str(value["deposit_receipt_id"])),
+            payment_id=UUID(str(value["payment_id"])),
+            amount_usd_cents=int(str(value["amount_usd_cents"])),
+            occurred_at=datetime.fromisoformat(str(value["occurred_at"])),
+            payment_available_usd_cents=int(str(value["payment_available_usd_cents"])),
         )
 
     def reverse_receipt(

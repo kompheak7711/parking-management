@@ -8,6 +8,7 @@ import pytest
 
 from property_rental.deposit import (
     DEPOSIT_MANAGE_CAPABILITY,
+    PAYMENT_ALLOCATE_CAPABILITY,
     AdjustDepositRequiredAmountCommand,
     CreatePetDepositCommand,
     DepositAdjustmentType,
@@ -15,6 +16,7 @@ from property_rental.deposit import (
     PetDepositAssessment,
     PostgresDepositService,
     RecordDepositDispositionCommand,
+    RecordDepositReceiptCommand,
     deposit_request_digest,
 )
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
@@ -104,4 +106,70 @@ def test_lease_disposition_rejects_non_date_effective_values(effective: object) 
     with pytest.raises(ValueError, match="date"):
         RecordDepositDispositionCommand(
             uuid4(), uuid4(), uuid4(), uuid4(), 100, cast(date, effective), "Approved"
+        )
+
+
+@pytest.mark.parametrize("amount", [0, -1, True, 1.0, "100", None, 2**63])
+def test_deposit_receipt_command_takes_only_positive_integer_cents(amount: object) -> None:
+    with pytest.raises(ValueError, match="integer"):
+        RecordDepositReceiptCommand(
+            uuid4(), uuid4(), uuid4(), uuid4(), cast(int, amount), "Pet Deposit paid"
+        )
+
+
+def test_deposit_receipt_command_validates_identity_and_reason() -> None:
+    with pytest.raises(ValueError, match="nil UUID"):
+        RecordDepositReceiptCommand(uuid4(), uuid4(), uuid4(), UUID(int=0), 100, "Paid")
+    for reason in ("", " Paid", "x" * 1_001):
+        with pytest.raises(ValueError, match="reason"):
+            RecordDepositReceiptCommand(uuid4(), uuid4(), uuid4(), uuid4(), 100, reason)
+    command = RecordDepositReceiptCommand(uuid4(), uuid4(), uuid4(), uuid4(), 100, "x" * 1_000)
+    assert command.authorization_reference == PAYMENT_ALLOCATE_CAPABILITY
+    changed = RecordDepositReceiptCommand(
+        command.idempotency_key,
+        command.receipt_id,
+        command.deposit_id,
+        command.payment_id,
+        101,
+        command.reason,
+    )
+    assert deposit_request_digest("deposit.receipt.record", command) != deposit_request_digest(
+        "deposit.receipt.record", changed
+    )
+
+
+def test_deposit_receipt_needs_payments_allocate_before_the_database() -> None:
+    property_id = uuid4()
+    actor_id = uuid4()
+    service = PostgresDepositService("postgresql://unused", property_id, actor_id)
+    command = RecordDepositReceiptCommand(uuid4(), uuid4(), uuid4(), uuid4(), 100, "Paid")
+    for capability in (DEPOSIT_MANAGE_CAPABILITY, "payments.allocations.reverse"):
+        manager = AuthenticatedActor(
+            actor_id=str(actor_id),
+            capability_grants=frozenset(
+                {CapabilityGrant(capability, frozenset({str(property_id)}))}
+            ),
+        )
+        with pytest.raises(DepositAuthorizationError):
+            service.record_receipt(command, actor=manager)
+    allocator = AuthenticatedActor(
+        actor_id=str(actor_id),
+        capability_grants=frozenset(
+            {CapabilityGrant(PAYMENT_ALLOCATE_CAPABILITY, frozenset({str(property_id)}))}
+        ),
+    )
+    elsewhere = AuthenticatedActor(
+        actor_id=str(actor_id),
+        capability_grants=frozenset(
+            {CapabilityGrant(PAYMENT_ALLOCATE_CAPABILITY, frozenset({str(uuid4())}))}
+        ),
+    )
+    with pytest.raises(DepositAuthorizationError):
+        service.record_receipt(command, actor=elsewhere)
+    with pytest.raises(DepositAuthorizationError):
+        service.record_receipt(
+            RecordDepositReceiptCommand(
+                uuid4(), uuid4(), uuid4(), uuid4(), 100, "Paid", DEPOSIT_MANAGE_CAPABILITY
+            ),
+            actor=allocator,
         )

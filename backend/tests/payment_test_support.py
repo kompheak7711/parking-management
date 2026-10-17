@@ -48,6 +48,7 @@ def seed_payment(
     lease_id: UUID | None = None,
     scope: str = "NORMAL_CUSTOMER",
     invoice_id: UUID | None = None,
+    late_payment_charge_id: UUID | None = None,
 ) -> UUID:
     """Create a real synthetic USD receipt; old-revision tests retain old schema."""
     identity = payment_id or uuid4()
@@ -59,10 +60,11 @@ def seed_payment(
         INSERT INTO app.payments(id,payment_number,property_id,payer_customer_id,
             payment_scope_kind,payment_date,payment_method_id,received_currency,
             received_amount_minor,usd_accounting_value_cents,confirmed_at,
-            confirmed_by,authorization_reference,lease_id,identified_invoice_id)
+            confirmed_by,authorization_reference,lease_id,identified_invoice_id,
+            identified_late_payment_charge_id)
         VALUES (%s,%s,%s,%s,%s,
             (COALESCE(%s,clock_timestamp()) AT TIME ZONE 'Asia/Phnom_Penh')::date,
-            %s,'USD',%s,%s,COALESCE(%s,clock_timestamp()),%s,'payments.record',%s,%s)
+            %s,'USD',%s,%s,COALESCE(%s,clock_timestamp()),%s,'payments.record',%s,%s,%s)
         """,
         (
             identity,
@@ -78,6 +80,7 @@ def seed_payment(
             actor_id,
             lease_id,
             invoice_id,
+            late_payment_charge_id,
         ),
     )
     return identity

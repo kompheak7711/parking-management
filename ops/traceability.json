@@ -42302,6 +42302,208 @@
       "test_path": "backend/tests/test_pet_payback_restoration_refusal_migration.py",
       "status": "implemented",
       "notes": "Review round 2 (security S1), hand-built and rolled back: the forgiven recovery charge's first issue moved 30 seconds ahead of the clock; the owner's 15,000 one-call forfeiture, which its count of 0 would allow, is refused by its own insert (40001, record it again), so the restoration check's first-issue filter never drops a forfeiture that read the charge; nothing is written (V1-056 sub-slice 10e-2b-4b-2a)."
+    },
+    {
+      "test_id": "test_a_pet_deposit_receipt_is_recorded_through_the_service_with_every_table_check",
+      "upstream_ids": [
+        "BR-DEP-009",
+        "BR-DEP-010",
+        "BR-AUTH-008",
+        "DB-DEP-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_receipt_record_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer to Q-2026-10-12-92: a Pet Deposit receipt on a signed Lease from a received Payment of its Customer is recorded through the Deposit service under payments.allocate with no draft: the Deposit holds the amount, the Payment's available value drops by it, the receipt time is the database's, one deposit.receipt.recorded audit event (its id the receipt's, correlated by the idempotency key) and one command record; an exact repeat replays and writes nothing, a reused key with another body is refused; the table still refuses a second active receipt from one Payment, more than the Payment's available value, another Customer's Payment and more than the required amount; a later receipt is dated one microsecond after a balance event dated ahead of the clock (V1-056 sub-slice 10e-2b-4b-2b)."
+    },
+    {
+      "test_id": "test_a_later_security_deposit_receipt_on_a_lease_signed_from_a_reservation",
+      "upstream_ids": [
+        "BR-DEP-002",
+        "BR-DEP-004",
+        "BR-DEP-005",
+        "BR-DEP-006",
+        "DB-DEP-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_receipt_record_migration.py",
+      "status": "implemented",
+      "notes": "A Lease signed from a Reservation continues its Security Deposit (50,000 required, the accepted 10,000 received); later receipts from new Payments are recorded up to the required amount (15,000, then 25,000), and one cent more is refused (23514) (V1-056 sub-slice 10e-2b-4b-2b)."
+    },
+    {
+      "test_id": "test_the_writer_refuses_before_signing_after_closure_and_while_a_forfeiture_is_active",
+      "upstream_ids": [
+        "BR-DEP-005",
+        "BR-DEP-022",
+        "BR-AUTH-008",
+        "BR-SETTLE-012",
+        "BR-SETTLE-013",
+        "DB-DEP-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_receipt_record_migration.py",
+      "status": "implemented",
+      "notes": "Refused: a Reservation's Security Deposit before signing (no Lease, 55000; sub-slice 10e-2b-4c), a Deposit with an active forfeiture (55000), both Deposit types after the real closure (P5S01, the 8e-1 refusal, a conflict in the service), unknown Deposits and Payments (P0002, pinned messages), an unknown actor (55000), a stricter isolation level (55000), invalid input including a nil id (22023), the runtime role (42501) and an actor without payments.allocate (before any call); nothing is written (V1-056 sub-slice 10e-2b-4b-2b)."
+    },
+    {
+      "test_id": "test_a_review_refund_recovered_by_a_charge_raises_the_count_on_the_real_path",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-DEP-022",
+        "DL-032",
+        "DL-053",
+        "DB-DEP-002",
+        "DB-DEP-004",
+        "DB-REFUND-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_receipt_record_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer (a) to Q-2026-10-17-123, the owner's first example on the real path with Pet Deposit money recorded by the new writer: a 15,000 Pet Refund-review Refund returned in full (count 15,000), a second 15,000 review Refund (count 0), then the funding Payment's return recovers the second Refund by a 15,000 charge on the signed Lease (the first is not charged) and the count rises by the 15,000 charged back while the charge stands; the Deposit holds nothing (V1-056 sub-slice 10e-2b-4b-2b)."
+    },
+    {
+      "test_id": "test_a_payment_confirmed_for_an_invoice_is_not_a_deposit_receipt",
+      "upstream_ids": [
+        "BR-PAY-024",
+        "BR-PAY-026",
+        "BR-DEP-005",
+        "DB-DEP-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_receipt_record_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 (security blocker): a Payment confirmed for an Invoice is allocated only to that target and its rest may become Credit or a Refund, never a Deposit receipt, so the writer refuses the whole Payment (55000; Q-2026-10-18-128) for the Customer's own Payment and for a third-party Payment naming the Lease and the Invoice, and nothing is written; a third-party Payment naming only the Lease still funds the Lease's Security Deposit (V1-056 sub-slice 10e-2b-4b-2b)."
+    },
+    {
+      "test_id": "test_on_a_terminated_lease_a_receipt_passes_until_closure_and_after_a_forfeiture_reversal",
+      "upstream_ids": [
+        "BR-DEP-010",
+        "BR-DEP-022",
+        "DB-DEP-002",
+        "DB-DEP-004"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_receipt_record_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 (independent S2): on a Lease terminated for pet noncompliance whose Settlement is started, a Pet Deposit receipt passes; the forfeited Security Deposit is refused while its forfeiture is active and takes a receipt once the forfeiture is reversed through the 6b draft (V1-056 sub-slice 10e-2b-4b-2b)."
+    },
+    {
+      "test_id": "test_a_receipt_makes_a_pending_forfeiture_draft_stale",
+      "upstream_ids": [
+        "BR-DEP-022",
+        "BR-AUTH-010",
+        "DB-DEP-002",
+        "DB-DEP-004"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_receipt_record_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 (security): the writer has no pending-draft refusal; a receipt into a Pet Deposit with a recorded forfeiture draft of the whole held amount passes, and the draft's confirm is then refused (stale) and writes no forfeiture (V1-056 sub-slice 10e-2b-4b-2b)."
+    },
+    {
+      "test_id": "test_a_closure_committed_while_the_writer_waits_is_read_after_the_deposit_lock",
+      "upstream_ids": [
+        "BR-SETTLE-012",
+        "BR-SETTLE-013",
+        "DB-DEP-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_receipt_record_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 (both reviewers): a Security Deposit receipt that waits for the closing confirm's Deposit locks reads the committed closure (P5S01, not the forfeiture refusal it would read before the lock) and writes nothing; a Pet Deposit receipt that holds the Deposit first makes the waiting closing confirm stale, the Settlement stays open and the receipt stands (V1-056 sub-slice 10e-2b-4b-2b)."
+    },
+    {
+      "test_id": "test_a_forfeiture_committed_while_the_writer_waits_refuses_the_receipt",
+      "upstream_ids": [
+        "BR-DEP-022",
+        "DB-DEP-002",
+        "DB-DEP-004"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_receipt_record_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 (independent S1): a receipt that waits for a one-call forfeiture's Deposit lock reads the committed forfeiture (55000) and writes nothing (V1-056 sub-slice 10e-2b-4b-2b)."
+    },
+    {
+      "test_id": "test_a_deposit_funded_by_two_payments_keeps_the_shared_deposit_refusal",
+      "upstream_ids": [
+        "BR-DEP-010",
+        "DL-053",
+        "DB-DEP-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_receipt_record_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 (security S2; known limit, Q-2026-10-18-127): a Pet Deposit funded by two Payments pays a Pet Refund-review Refund; the first Payment's return is refused by the shared-Deposit guard and the second receipt's reversal is refused while the Refund is not returned, neither writing anything; review round 2: once the Refund comes back in full, the first Payment's return draft is accepted (V1-056 sub-slice 10e-2b-4b-2b)."
+    },
+    {
+      "test_id": "test_the_receipt_writer_migration_is_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "DB-DEP-002",
+        "BR-AUTH-008"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_deposit_receipt_record_migration.py",
+      "status": "implemented",
+      "notes": "The migration adds one writer (SECURITY DEFINER, search_path pg_catalog and TimeZone UTC, EXECUTE only to the financial role), widens the Deposit command action list by deposit.receipt.record and changes no other function, constraint or trigger; it is forward-only (V1-056 sub-slice 10e-2b-4b-2b)."
+    },
+    {
+      "test_id": "test_deposit_receipt_command_takes_only_positive_integer_cents",
+      "upstream_ids": [
+        "BR-DEP-009",
+        "DB-DEP-002"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_deposit.py",
+      "status": "implemented",
+      "notes": "The receipt command takes only positive integer USD cents within the bigint range (V1-056 sub-slice 10e-2b-4b-2b)."
+    },
+    {
+      "test_id": "test_deposit_receipt_command_validates_identity_and_reason",
+      "upstream_ids": [
+        "BR-DEP-009",
+        "DB-DEP-002"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_deposit.py",
+      "status": "implemented",
+      "notes": "The receipt command refuses nil identities and a blank, unnormalized or over-long reason, defaults to payments.allocate, and its request digest binds the amount (V1-056 sub-slice 10e-2b-4b-2b)."
+    },
+    {
+      "test_id": "test_deposit_receipt_needs_payments_allocate_before_the_database",
+      "upstream_ids": [
+        "BR-AUTH-008",
+        "DB-DEP-002"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_deposit.py",
+      "status": "implemented",
+      "notes": "The Deposit service refuses a receipt before any database call when the actor lacks payments.allocate or the command names another authorization (V1-056 sub-slice 10e-2b-4b-2b)."
+    },
+    {
+      "test_id": "test_a_payment_confirmed_for_a_late_payment_charge_is_not_a_deposit_receipt",
+      "upstream_ids": [
+        "BR-PAY-024",
+        "BR-PAY-026",
+        "DB-DEP-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_receipt_record_migration.py",
+      "status": "implemented",
+      "notes": "Review round 2 (security S1): the Late-payment Charge branch of the intent refusal; a Payment that names only a Late-payment Charge is refused as a Deposit receipt (55000) before the receipt table's checks, nothing is written and the Payment keeps its value (V1-056 sub-slice 10e-2b-4b-2b)."
+    },
+    {
+      "test_id": "test_after_closure_a_deposit_funded_by_two_payments_keeps_a_bounced_payment_received",
+      "upstream_ids": [
+        "BR-SETTLE-012",
+        "BR-SETTLE-013",
+        "BR-DEP-022",
+        "DB-DEP-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_receipt_record_migration.py",
+      "status": "implemented",
+      "notes": "Review round 2 (security S2; known limit, Q-2026-10-18-127): after closure a Pet Deposit funded by two Payments and kept by the forfeiture cannot have one Payment returned: the RETURNED_PAYMENT correction is refused because the Deposit would not end empty, the ordinary return draft is refused as relied on, nothing is written and the Payment stays RECEIVED (V1-056 sub-slice 10e-2b-4b-2b)."
     }
   ]
 }

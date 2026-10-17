@@ -1694,7 +1694,8 @@ same transaction, links it (DB-SETTLE-005 `deposit_receipt_id`); all active rece
 the required amount, which does not change. Writers: `app.create_reservation` (a new Security
 Deposit) and the internal `app.write_correction_deposit_receipt`, called only by a
 `DEPOSIT_RECEIPT_CORRECTION` confirm for a receipt its draft names, from the corrected receipt's
-Payment; it is the only Pet Deposit receipt writer and writes a `deposit.receipt.recorded` Deposit
+Payment; it is the only Pet Deposit receipt writer (until sub-slice 10e-2b-4b-2b, below) and
+writes a `deposit.receipt.recorded` Deposit
 audit event (stamped with the statement time, so dated just before its receipt row, as the
 reversal event under DB-DEP-007). A Deposit the Property keeps (an active forfeiture) takes no
 new receipt; see DB-DEP-007. Since sub-slice 10e-2b-2 (migration `20261127_123`) the writer also
@@ -1720,6 +1721,37 @@ reads a closure committed meanwhile, a REPEATABLE READ or SERIALIZABLE writer wh
 older than the closure fails on the Deposit's serialization guard (40001), and a receipt that held
 the row first and committed makes the waiting confirm stale (P5S02). Before closure nothing changes;
 Security Deposit receipts do not change.
+
+As built in V1-056 sub-slice 10e-2b-4b-2b (migration `20261228_154`; owner answer to
+Q-2026-10-12-92): a third writer, `app.record_lease_deposit_receipt(property, actor, idempotency
+key, request digest, receipt id, deposit, payment, amount, reason, authorization)` (SECURITY
+DEFINER, `search_path=pg_catalog` and `TimeZone` UTC, EXECUTE only to `prm_financial`; the Deposit
+service's `record_receipt` under `payments.allocate`, no draft), records a receipt from a received
+Payment into an existing Deposit of a signed or terminated Lease: a Pet Deposit receipt, or a later
+Security Deposit receipt within the required amount. Order: the input (22023: nonzero ids, an
+amount above 0, `payments.allocate`, a normalized reason of at most 1,000 characters, a 64-hex
+request digest); the idempotency lock and the replay of an exact repeat (action
+`deposit.receipt.record` in `app.deposit_commands`; a reused key with another body 23505);
+READ COMMITTED (55000); an active financial actor (`app.assert_active_financial_actor`; the
+service checks the Property scope and `payments.allocate`); P0002 for a Payment or Deposit
+not of the Property; the locks in the insert triggers' order (`app.serialize_payment_state` and
+the Payment row, then `app.serialize_deposit_state`); then refused: a Deposit with no Lease (55000;
+a Reservation's Deposit before signing is sub-slice 10e-2b-4c), a closed Final Settlement of the
+Deposit's Lease (P5S01, the 8e-1 message, for both Deposit types, read after the Deposit lock that
+the closing confirm also takes), a Lease that is not SIGNED or TERMINATED (55000), an active
+forfeiture of the Deposit (55000, reverse it first), a Payment confirmed for an Invoice or a
+Late-payment Charge (55000; review round 1: such a Payment's value is allocated only to its
+identified target, BR-PAY-024 and BR-PAY-026, as the allocation check requires; what is left after
+that target may become Credit or a Refund, never a Deposit receipt: the whole Payment is refused,
+Q-2026-10-18-128). The receipt's time is the database's: the later of `clock_timestamp()` and one
+microsecond after the Deposit's latest balance event. Every check of
+this table and of the Payment source still runs. It writes the receipt, the
+`deposit.receipt.recorded` Deposit audit event (its id the receipt's, correlated by the idempotency
+key) and the command record; its result is the Deposit snapshot with `deposit_receipt_id`,
+`payment_id`, `amount_usd_cents`, `occurred_at` and `payment_available_usd_cents`. The command
+action check `deposit_commands_action_check` also allows `deposit.receipt.record` (relaxing). With
+Pet Deposit money now entering before closure through the app, the pay-back count's recovery rules
+(sub-slices 10e-2b-4a to 10e-2b-4b-2a) apply on the real path; see DB-DEP-005.
 
 ## DB-DEP-003 — `deposit_required_amount_adjustments`
 

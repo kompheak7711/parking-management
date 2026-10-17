@@ -502,6 +502,15 @@ No command may recognize Deposit income or ordinary Invoice Credit. Reservation
 Security Deposit continuity into the resulting Lease reuses the existing Deposit
 and ledger rather than creating a duplicate liability.
 
+V1-056 sub-slice 10e-2b-4b-2b (owner answer to Q-2026-10-12-92): the database
+writer and the Deposit service command for a receipt into an existing Deposit of
+a signed or terminated Lease exist (`payments.allocate`, no draft; refused once
+the Lease's Final Settlement is closed, as a conflict, P5S01, which the Deposit
+service now maps to a conflict for every Deposit command; a Payment confirmed for
+an Invoice or a Late-payment Charge is refused). The receipt keeps a reason, the
+actor and the Payment; no separate evidence reference. The routes above are not
+built yet; they come with the staff screens in slice 11.
+
 ## API-041 — Pet Deposit Preconditions
 
 Pet Deposit creation/receipt is accepted only when the pet is approved and the
