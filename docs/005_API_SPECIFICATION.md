@@ -522,6 +522,16 @@ while the Reservation's expiration date has not passed. The route for the create
 (for example `POST /leases/{lease_id}/security-deposit`) comes with the staff
 screens in slice 11.
 
+V1-056 sub-slice 10e-2b-4d (owner answers of 2026-10-18): the receipt command
+takes what is left of a Payment confirmed for an Invoice or a Late-payment
+Charge once that target has nothing outstanding (refused, invalid, while it is
+owed), and refuses (invalid) a receipt into a Deposit whose Refund is not fully
+returned and a receipt into a Deposit of a terminated Lease whose termination
+ground keeps that Deposit (also after a forfeiture reversal; staff record that
+money as a normal Payment); after any lock refusal (55P03, also a lock
+timeout) the service replays the same command at most three times and then
+answers unavailable (DL-067; at worst about 14 seconds).
+
 ## API-041 — Pet Deposit Preconditions
 
 Pet Deposit creation/receipt is accepted only when the pet is approved and the

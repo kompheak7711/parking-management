@@ -14,6 +14,7 @@ import psycopg
 
 from property_rental.deposit_disposition import LeaseDepositDispositionContext
 from property_rental.identity import AuthenticatedActor, AuthorizationRequirement, is_authorized
+from property_rental.lock_retry import retry_lock_not_available
 
 NIL_UUID: Final = UUID(int=0)
 DEPOSIT_MANAGE_CAPABILITY: Final = "deposits.manage"
@@ -420,20 +421,34 @@ class PostgresDepositService:
     def _execute(self, query: str, parameters: tuple[object, ...]) -> DepositSnapshot:
         return _snapshot(self._fetch(query, parameters))
 
-    def _fetch(self, query: str, parameters: tuple[object, ...]) -> tuple[object, ...]:
+    def _attempt(self, query: str, parameters: tuple[object, ...]) -> tuple[object, ...] | None:
+        with psycopg.connect(
+            self.financial_database_url, connect_timeout=DEPOSIT_CONNECT_TIMEOUT_SECONDS
+        ) as connection:
+            connection.execute(
+                "SELECT pg_catalog.set_config('lock_timeout', %s, true)",
+                (str(DEPOSIT_LOCK_TIMEOUT_MS),),
+            )
+            connection.execute(
+                "SELECT pg_catalog.set_config('statement_timeout', %s, true)",
+                (str(DEPOSIT_QUERY_TIMEOUT_MS),),
+            )
+            return connection.execute(query, parameters).fetchone()
+
+    def _fetch(
+        self,
+        query: str,
+        parameters: tuple[object, ...],
+        *,
+        replay_lock_refusal: bool = False,
+    ) -> tuple[object, ...]:
         try:
-            with psycopg.connect(
-                self.financial_database_url, connect_timeout=DEPOSIT_CONNECT_TIMEOUT_SECONDS
-            ) as connection:
-                connection.execute(
-                    "SELECT pg_catalog.set_config('lock_timeout', %s, true)",
-                    (str(DEPOSIT_LOCK_TIMEOUT_MS),),
-                )
-                connection.execute(
-                    "SELECT pg_catalog.set_config('statement_timeout', %s, true)",
-                    (str(DEPOSIT_QUERY_TIMEOUT_MS),),
-                )
-                row = connection.execute(query, parameters).fetchone()
+            if replay_lock_refusal:
+                # DL-067 (owner decision 2026-10-03): a command that reaches the excess check's
+                # NOWAIT locks is replayed unchanged, with the same key, after 55P03.
+                row = retry_lock_not_available(lambda: self._attempt(query, parameters))
+            else:
+                row = self._attempt(query, parameters)
         except psycopg.Error as exc:
             if exc.sqlstate == "42501":
                 raise DepositAuthorizationError("Deposit actor is not authorized") from exc
@@ -520,7 +535,10 @@ class PostgresDepositService:
         ACTIVE Reservation's Security Deposit before signing (sub-slice 10e-2b-4c).
 
         payments.allocate, no draft; refused once the Lease's Final Settlement is closed (a
-        conflict)."""
+        conflict). A Payment confirmed for an Invoice or a Late-payment Charge reaches the excess
+        check's NOWAIT locks (sub-slice 10e-2b-4d), so every receipt command is replayed after any
+        55P03 (also a lock timeout) at most three times and is unavailable after the last attempt
+        (DL-067, as in the Credit and Refund services; at worst about 14 seconds)."""
         self._authorize(actor, PAYMENT_ALLOCATE_CAPABILITY, command.authorization_reference)
         row = self._fetch(
             "SELECT app.record_lease_deposit_receipt(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
@@ -536,6 +554,7 @@ class PostgresDepositService:
                 command.reason,
                 command.authorization_reference,
             ),
+            replay_lock_refusal=True,
         )
         value = cast(dict[str, object], row[0])
         return DepositReceiptRecord(

@@ -4,6 +4,7 @@ from datetime import date, datetime
 from typing import cast
 from uuid import UUID, uuid4
 
+import psycopg
 import pytest
 
 from property_rental.deposit import (
@@ -14,6 +15,7 @@ from property_rental.deposit import (
     CreatePetDepositCommand,
     DepositAdjustmentType,
     DepositAuthorizationError,
+    DepositServiceUnavailableError,
     PetDepositAssessment,
     PostgresDepositService,
     RecordDepositDispositionCommand,
@@ -230,3 +232,35 @@ def test_lease_security_deposit_needs_deposits_manage_before_the_database() -> N
             ),
             actor=manager,
         )
+
+
+def test_a_receipt_is_replayed_after_a_nowait_refusal(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Sub-slice 10e-2b-4d (review round 1; DL-067, owner decision 2026-10-03): the receipt
+    writer's excess check takes its locks NOWAIT, so the service replays the same receipt command
+    after 55P03, at most three times (four attempts in all, each on its own connection), and
+    answers unavailable after the last attempt."""
+    property_id = uuid4()
+    actor_id = uuid4()
+    attempts: list[None] = []
+
+    def refuse(*_arguments: object, **_options: object) -> None:
+        attempts.append(None)
+        raise psycopg.errors.LockNotAvailable("could not obtain lock")
+
+    monkeypatch.setattr("property_rental.deposit.psycopg.connect", refuse)
+    monkeypatch.setattr("property_rental.lock_retry._pause", lambda _seconds: None)
+    service = PostgresDepositService("postgresql://unused", property_id, actor_id)
+    allocator = AuthenticatedActor(
+        actor_id=str(actor_id),
+        capability_grants=frozenset(
+            {CapabilityGrant(PAYMENT_ALLOCATE_CAPABILITY, frozenset({str(property_id)}))}
+        ),
+    )
+    with pytest.raises(DepositServiceUnavailableError):
+        service.record_receipt(
+            RecordDepositReceiptCommand(uuid4(), uuid4(), uuid4(), uuid4(), 100, "Paid"),
+            actor=allocator,
+        )
+    assert len(attempts) == 4

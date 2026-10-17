@@ -1,11 +1,11 @@
-# V1-056 sub-slice 10e-2b-4d — a Payment's leftover into a Deposit, and no receipt while a Refund is out — review record (STOPPED after review round 1)
+# V1-056 sub-slice 10e-2b-4d — a Payment's leftover into a Deposit, no receipt while a Refund is out, and none after a termination that keeps the Deposit — review record
 
 Sub-slice: 10e-2b-4d (owner answers of 2026-10-18 to the 10e-2b-4b-2b report: answer 1, option (d)
 of Q-2026-10-18-127; answer 2, option (b) of Q-2026-10-18-128; answer 3 waits for
 Q-2026-10-18-131). Migration `20261230_156` (one exact-text patch of the receipt writer). Base
-commit: 31fbd5a. Built on 2026-10-18. NOT committed: the code, tests, docs/004, docs/005 and
-traceability changes stay in the working tree; this record, the plan, the questions and ops/NOW.md
-are committed. Not pushed.
+commit: 31fbd5a. Built on 2026-10-18; stopped after review round 1 (record, plan and questions
+committed in 8b03750). Finished on 2026-10-18 in a fresh session after the owner answers (a) to
+Q-2026-10-18-131 and (b) to Q-2026-10-18-132 (sections below the round 1 set-ups). Not pushed.
 
 ## Built (in the working tree)
 
@@ -35,6 +35,19 @@ are committed. Not pushed.
 | U1 | 3866 passed |
 | M2 | passed |
 | P1 | 2 failed, 2304 passed: `test_refund_migration.py::test_usd_refund_correction_rejects_unverified_or_inconsistent_value[changes2]` and `[changes4]`, both `psycopg.errors.LockNotAvailable: could not obtain lock on relation "app.invoice_lines"` from the `NOWAIT` lock in `app.assert_payment_excess_eligible`, reached through `app.validate_general_refund_source` by the test's direct Refund insert. Outside the sub-slice: the module is listed 169th in `scripts/database-test.sh` and ran before every module this sub-slice changes, except the revision-string modules, which only assert the head revision; no 4d change touches that path. The known intermittent failure of DL-067 (Q-2026-10-05-26, Q-2026-10-09-62, Q-2026-10-13-102); this test is not yet on the slice 12 list. Stop condition: Q-2026-10-18-132 |
+| FF2/FC2/L2/Y2 | passed (fresh session, after the round 1 fixes and the Q-131 answer; formatter first, no change; long-line search first, none) |
+| M3 | passed |
+| T2 | 138 passed (`test_deposit.py`, `test_traceability.py`, `test_credit_migration.py`, the 4b, 4c and new modules, in the suite's order) |
+| U2 | 3866 passed |
+| M4 | passed |
+| P2 | 2311 passed (the passing full run after P1; `test_refund_migration.py` passed in full) |
+| FF3/FC3/L3/Y3 | passed (after the round 2 fixes; formatter no change; long-line search first, none) |
+| M5 | passed (after the nested IF) |
+| T3 | 141 passed (T2's set) |
+| U3 | 3866 passed (before round 3) |
+| M6 | passed |
+| P3 | 2314 passed (the full run after the last code and test change, before the round 3 verdicts) |
+| UT1 | 28 passed (`test_traceability.py`, after the round 3 text fix of two traceability notes) |
 
 Full outputs in `~/Development/prm-run-logs/v1-056-10e-2b-4d-*.txt`.
 
@@ -44,7 +57,8 @@ Independent: no blocker, 4 should-fix, notes. Security: no blocker, 2 should-fix
 confirmed: the build matches answers 1 and 2; money in cents; append-only; capabilities unchanged;
 the committed test changes are exactly the two renames, docstrings, the three refusal
 expectations and the constant; no other committed test needed to change; Q-131 is right that
-answer 3 changes committed tests. Nothing of the findings below is fixed yet (stopped).
+answer 3 changes committed tests. All findings below were fixed after the owner's answers (see
+"Round 1 fixes" below).
 
 1. Lock order (independent S1, security S1): NOWAIT only keeps the table lock from waiting; called
    before the Payment lock, the check holds SHARE on twelve obligation tables while the writer
@@ -266,3 +280,94 @@ def test_a_reversed_refund_return_leaves_a_later_receipt_in_a_deposit_whose_refu
     assert held(url, pet) == 10_000
     assert return_refused(prop, human, first) == ("55000", SHARED)
 ```
+
+## Owner answers of 2026-10-18 (fresh session) and the round 1 fixes
+
+Owner answers: Q-2026-10-18-132 (b), finish 4d, and a standing run rule for the known
+`LockNotAvailable` failure in a module the sub-slice does not change (rerun only those tests once);
+Q-2026-10-18-131 (a), answer 3 as written, also after a forfeiture reversal; Q-129 (a); Q-130 (a),
+its own sub-slice before 10g-2; the 4c reading and design changes accepted; the option (d) dodge
+by reversing a verified return accepted as a known limit (Q-127 (a), 10e-2b-4e, closes it).
+
+Round 1 fixes: (1) lock order: the excess check runs after the Payment and Deposit locks and the
+active-forfeiture refusal (migration replacement 1 removed; the second replacement now holds the
+three checks); (2) DL-067: `PostgresDepositService.record_receipt` replays the command after 55P03
+at most three times (`retry_lock_not_available`; `_fetch` split into `_attempt` and `_fetch`), then
+`DepositServiceUnavailableError`; the 55P03 conflict mapping is withdrawn; (3) Q-131 listed every
+committed test; (4) docs/010 entries; (5) the real-path lock tests (the round 1 set-ups; the
+security S2 set-up adapted: the allocation reversal holds the Payment, so the receipt waits and
+then reads the committed reversal, 23514, instead of meeting 55P03). Q-131 (a) built: after the
+active-forfeiture refusal, a TERMINATED Lease whose `app.lease_termination_forfeiture_rule` keeps
+the Deposit type refuses the receipt (55000, "The Lease's termination ground keeps this Deposit;
+this receipt is not recorded here"); it sits after the forfeiture refusal, so the committed
+FORFEITED expectations and the forfeiture-wait test keep their message. Not built: the security
+note 1 known-limit test of the option (d) dodge (10e-2b-4e closes the dodge and would change it).
+
+Committed tests changed (owner standing rules; names, old and new results in docs/010): in
+`test_deposit_receipt_record_migration.py` the two intent tests (renamed in the first session;
+23514), `test_on_a_terminated_lease_whose_ground_keeps_the_deposit_a_receipt_is_refused` (renamed
+from `test_on_a_terminated_lease_a_receipt_passes_until_closure_and_after_a_forfeiture_reversal`;
+both receipts refused), `test_a_receipt_makes_a_pending_forfeiture_draft_stale` (the writer refuses;
+its stale checks kept on a hand-built receipt, confirmed by both round 2 reviewers), the second
+half of `test_a_closure_committed_while_the_writer_waits_is_read_after_the_deposit_lock` (a
+voluntary early termination), `test_after_closure_a_deposit_funded_by_two_payments_keeps_a_bounced_payment_received`
+(receipts before the termination); new helper `terminated_pet_lease_case`; 27 revision strings.
+The new unit test of the first session (`test_a_nowait_lock_conflict_of_a_deposit_command_is_a_conflict`,
+never committed) became `test_a_receipt_is_replayed_after_a_nowait_refusal`.
+
+## Review round 2 (fresh read-only subagents, during P2; told to write no files at all, scratch files included, and to run no test, script or database command)
+
+Independent: no blocker, 2 should-fix, 6 notes. Security: no blocker, 2 should-fix, 6 notes. Both
+confirmed the lock order (no wait after the NOWAIT SHARE locks: the insert triggers re-take only
+the Payment, Deposit and actor locks already held) and the replay as needed and safe (the
+design-change rule), the Q-131 refusal as the owner wrote it, the committed test changes (nothing
+weaker), and that the stale-confirm checks are worth keeping (the only committed test of the
+forfeiture confirm's stale refusal on a change of the held amount; the ground refusal lives only
+in the writer, so the confirm's re-read is the table-level guard).
+
+Should-fix (all tests and text; fixed under the round-3 rule of 2026-10-13):
+- Independent S1 / security S2: the 55P03 test could hang (calls on the lock holder's thread with
+  no lock timeout) and did not prove the replay. Fixed: every call in a worker with a time limit,
+  the rollback in a `finally`, the replay's pauses counted (`[0.25, 0.5, 1.0]`).
+- Security S1: new `test_a_receipt_refused_by_the_nowait_lock_is_recorded_once_by_its_replay`
+  (the reviewer's set-up: the obligation table writer ends during the first pause; the receipt is
+  recorded once; a repeat is an exact replay).
+- Independent S2: the plan's slice 11 receipt-route notes, the Q-127 and Q-128 known limits, docs/004
+  ("after the Payment and Deposit locks").
+
+Notes taken: the ground check as a nested IF (security N6); new
+`test_a_leftover_receipt_waiting_for_the_deposit_holds_no_obligation_table_lock` (security N4, the
+reviewer's set-up); the receipt beside an uncommitted termination as a known limit with
+`test_a_receipt_beside_an_uncommitted_termination_is_recorded_known_limit` (both N1; the security
+reviewer's set-up) and new Q-2026-10-18-133 (also the termination dated earlier than its entry);
+the docstring and docs/005 say every receipt command is replayed after any 55P03 (independent N4,
+security N5); slice 12 list: a second receipt while a Pet Refund draft is pending escapes option
+(d) (security N2; 10e-2b-4e closes it), `app.confirm_refund_draft` takes the excess check before
+the Payment lock (security N3, pre-existing), more exposure to the known `LockNotAvailable`
+(independent N3). For the owner (independent N2): the ground refusal also refuses money received
+before the termination but recorded after it; that money becomes a normal Payment. Not taken:
+independent N5 (count every ShareLock in schema `app` instead of the twelve tables; the list is
+the check's own list) and N6 (optional coverage).
+
+Round 2 test set-ups: each was built as the reviewer gave it (the tests named above are the
+set-ups), except the 55P03 test, which joins both reviewers' versions (worker pool and time limits
+from security S2, the counted pauses from independent S1).
+
+## Review round 3 (fresh read-only subagents, during P3; same instructions)
+
+Independent: no blocker, no should-fix; 8 notes. Security: no blocker, no should-fix; 5 notes.
+Both: every round 2 fix right and complete; the migration's before text matches the writer byte
+for byte; the nested IF valid and of the same meaning; no new risk; docs, plan, Q-133 and
+traceability accurate.
+
+Notes taken (text only, under the round-3 text rule of 2026-10-16; no code, migration or fixture
+change): two traceability notes say the whole-Payment refusal held until 10e-2b-4d; docs/010 item
+(3) says the Deposit still holds 15,000; Q-133 says the termination locks the Lease and Unit rows;
+docs/004 names the termination dated earlier than its entry and the fail-closed 22023 for an
+ambiguous termination record. Not taken (test hygiene, for slice 12): two waiting tests
+(`test_an_allocation_reversal_committed_while_the_writer_waits_keeps_the_leftover_out`,
+`test_a_refund_committed_while_the_writer_waits_refuses_the_receipt`) call `wait_until_blocked_by`
+outside a `try`/`finally`, as committed tests do (a hang only if the worker reached its wait after
+the 10 s deadline); the fourth attempt's sqlstate of the 55P03 test is not asserted; the replay test
+cannot tell NOWAIT from a lock timeout (the 55P03 test covers it). For Q-133 (security N2): when
+option (a) is built, take the termination time after the Deposit locks.

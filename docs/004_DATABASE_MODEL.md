@@ -1804,6 +1804,37 @@ and the expiration (`app.cancel_reservation`, `app.expire_reservation`) and the 
 API also report only active receipts as the Deposit's received amount (review round 2); the old
 Reservation move-in still counts every receipt (Q-2026-10-18-130).
 
+As built in V1-056 sub-slice 10e-2b-4d (migration `20261230_156`; owner answers of 2026-10-18 to
+the 10e-2b-4b-2b report): `app.record_lease_deposit_receipt` no longer refuses a whole Payment
+confirmed for an Invoice or a Late-payment Charge. After the Payment and Deposit locks and the
+active-forfeiture refusal it (1) refuses (55000, "The Lease's termination ground keeps this
+Deposit; this receipt is not recorded here") a receipt into a Deposit of a TERMINATED Lease whose
+termination ground keeps that Deposit type (`app.lease_termination_forfeiture_rule`, the rule the
+Final Settlement and the forfeiture drafts use), also after a forfeiture reversal, so money paid
+after such a termination is recorded as a normal Payment and pays open Invoices or becomes Credit
+(answer 3, option (a) of Q-2026-10-18-131; a Deposit the ground does not keep, such as the Pet
+Deposit after voluntary early leaving, still takes receipts until closure); (2) refuses (55000,
+"The Deposit has a Refund that is not fully returned; this receipt is not recorded here") a
+receipt into a Deposit with a Refund its corrections do not cover in full
+(`app.deposit_has_unresolved_refund`; option (d) of Q-2026-10-18-127 until its option (a) is
+built); (3) for a Payment confirmed for an Invoice or a Late-payment Charge, runs the Credit
+path's `app.assert_payment_excess_eligible` (the obligation tables in SHARE MODE NOWAIT; 23514
+"Applicable obligations must be handled before excess disposition" while the named target, or a
+Late-payment Charge of the named Invoice, has anything outstanding), so once the named target has
+nothing outstanding the Payment's value left after it may go into the Deposit, within the Payment
+availability bound (option (b) of Q-2026-10-18-128). As in the Credit path, the check comes after
+the Payment and Deposit locks (review round 1: before it, the receipt held SHARE on the obligation tables while
+it waited for the Payment, Reservation and Deposit locks, and could deadlock with the allocation
+post or the Payment return confirm); its NOWAIT locks never wait. The Deposit service replays the
+receipt command after 55P03 at most three times and then answers unavailable (DL-067).
+Known limits (review round 2): the ground refusal reads the Lease status when the receipt is
+recorded, and a termination locks the Lease, not its Deposits, so a receipt recorded while a
+termination is still uncommitted is recorded, and a termination dated earlier than its entry
+leaves receipts recorded in between (Q-2026-10-18-133); a TERMINATED Lease without exactly one
+matching termination record refuses every receipt (22023, fail closed; the Final Settlement uses
+the same rule); option (d) does not cover a second
+receipt recorded while a Pet Refund draft is still pending (10e-2b-4e closes it).
+
 ## DB-DEP-003 — `deposit_required_amount_adjustments`
 
 Append-only: `id uuid PK`, `deposit_id uuid NOT NULL FK`, `adjustment_type text NOT NULL CHECK IN ('INCREASE','DECREASE')`, `amount_usd_cents bigint NOT NULL CHECK (>0)`, `effective_date date NOT NULL`, `reason text NOT NULL`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`, `authorization_reference text NOT NULL`. Resulting required amount may not be negative. This table records only a valid governing Lease-term correction; it creates no right to change a Deposit.

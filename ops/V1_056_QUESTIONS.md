@@ -3063,7 +3063,7 @@ Your rules: a Customer may designate the Invoice or Late-payment Charge a Paymen
 
 **Also answered with the 10e-2b-4b-2b report (2026-10-18).** (3) A receipt into a Deposit after a termination whose ground keeps that Deposit: refuse it. Money a Customer pays after such a termination must not be forfeited at once. Staff record it as a normal Payment, so it pays open Invoices or becomes Credit (DL-030, Q-2026-10-05-29). If this changes a committed test or conflicts with an approved rule, a question is written with a recommendation and the slice 11 warning is kept instead. (4) The Payment-intent refusal (the round 1 design change of 10e-2b-4b-2b) is accepted. (5) Keeping the test name `test_deposit_acl_uses_only_financial_command_role_and_withholds_receipt_recording` is fine, because its traceability entry is frozen and its checks are still true. (6) Accepted as built: a receipt dated when staff record it; a Pet Deposit receipt after the pet's recorded departure; a third-party Payment funding the tenant's Deposit, with the Refund going to the tenant. Order: 10e-2b-4c (with the Q-2026-10-17-124 answers and the DL-009 note), one small sub-slice for the Q-2026-10-18-127 option (d) refusal, this answer (b) and answer (3), then 10g-2, 10h (with the Q-2026-10-17-120 answer and the post-closure put-back gap), then the Q-112 times sub-slice; the Q-2026-10-18-127 option (a) shortfall charge-back where it fits best before slice 11; stop before slice 11. Recorded in docs/010.
 
-## Q-2026-10-18-129 — Sub-slice 10e-2b-4c: a renewal Lease's Security Deposit (blocks only a renewal Lease's create; refused until you answer; nothing else waits)
+## Q-2026-10-18-129 — Sub-slice 10e-2b-4c: a renewal Lease's Security Deposit (blocks only a renewal Lease's create; refused until you answer; nothing else waits) (ANSWERED 2026-10-18: (a); answer in docs/010)
 
 Your answer (a) to Q-2026-10-17-124 point 1: staff create a walk-in Lease's Security Deposit with its required total. A renewal Lease (a Lease with a predecessor Lease) is also signed with no Reservation (DL-066: a renewal keeps the OCCUPIED Unit), so it looks like a walk-in Lease.
 
@@ -3076,7 +3076,9 @@ Your answer (a) to Q-2026-10-17-124 point 1: staff create a walk-in Lease's Secu
 
 **What goes ahead.** Everything; 4c is committed with the refusal (in the create and in the table's source check) and a test of both.
 
-## Q-2026-10-18-130 — Sub-slice 10e-2b-4c reviews: three readers use the Security Deposit's first required total and ignore later adjustments (blocks nothing; a known limit until you answer; nothing is built)
+**Owner answer (2026-10-18).** Option (a). A renewal Lease's own Security Deposit stays refused until a later slice decides how the earlier Lease's Deposit carries over. Recorded in docs/010 and the plan (slice 12 list).
+
+## Q-2026-10-18-130 — Sub-slice 10e-2b-4c reviews: three readers use the Security Deposit's first required total and ignore later adjustments (blocks nothing; a known limit until you answer; nothing is built) (ANSWERED 2026-10-18: (a), its own small sub-slice before 10g-2; answer in docs/010)
 
 A Deposit's required total is its first amount plus every audited required-amount adjustment (`deposits.manage`; `app.deposit_snapshot`, BR-DEP-004). The receipt checks, the Deposit screens and the Final Settlement use that total. With your answers to Q-2026-10-17-124, adjustments become normal: staff enter a walk-in Lease's total and fix it later with an adjustment, and staff raise a Reservation's total before a second receipt ("enter it first"). The review round 1 reviewers (security should-fix 2, independent note 1) found three readers that still use only the first amount (the `required_usd_cents` column):
 
@@ -3094,7 +3096,11 @@ A Deposit's required total is its first amount plus every audited required-amoun
 
 **What goes ahead.** Everything. 4c is committed with this known limit (slice 12 list until answered); none of the next sub-slices depends on it.
 
-## Q-2026-10-18-131 — Sub-slice 10e-2b-4d: your answer 3 to the 10e-2b-4b-2b report changes a committed test (blocks only answer 3; the slice 11 warning stays until you answer; nothing of answer 3 is built)
+**Owner answer (2026-10-18).** Option (a). Fix all three places so they use the adjusted required total (the first amount plus the adjustments recorded by then): the unpaid-Initial ground, the old Reservation move-in (which also counts only active receipts) and the Reservation read API. Build it as its own small sub-slice before 10g-2. Recorded in docs/010.
+
+**Also answered with the 10e-2b-4c report (2026-10-18).** (1) The implementer's reading is confirmed: for a Reservation, "enter the required total first" uses the existing required-amount adjustment (`deposits.manage`); no new command. (2) The three design changes of 10e-2b-4c that the reviewers confirmed are accepted: the Reservation outcome code, the cancellation, the expiration and the read API count only active receipts; the deferred source check refuses linking a Reservation's Deposit to a Lease that already has a walk-in Security Deposit; the create runs at READ COMMITTED only. (3) The known limit that one person could get around option (d) of Q-2026-10-18-127 by reversing a verified return is accepted; option (a) of Q-2026-10-18-127 closes it. Recorded in docs/010.
+
+## Q-2026-10-18-131 — Sub-slice 10e-2b-4d: your answer 3 to the 10e-2b-4b-2b report changes a committed test (blocks only answer 3; the slice 11 warning stays until you answer; nothing of answer 3 is built) (ANSWERED 2026-10-18: (a); answer in docs/010)
 
 Your answer 3: refuse a receipt into a Deposit after a termination whose ground keeps that Deposit; money a Customer pays after such a termination must not be forfeited at once, so staff record it as a normal Payment, which pays open Invoices or becomes Credit (DL-030, Q-2026-10-05-29). You asked for a question with a recommendation if this changes a committed test or conflicts with an approved rule, and to keep the slice 11 warning until then.
 
@@ -3112,7 +3118,9 @@ Your answer 3: refuse a receipt into a Deposit after a termination whose ground 
 
 **Also from the 10e-2b-4d review round 1 (independent should-fix 3).** Answer 3 changes three more committed tests of the same module, all on a pet noncompliance termination: `test_a_receipt_makes_a_pending_forfeiture_draft_stale` (a $30.00 receipt after the termination makes a pending forfeiture draft stale; under (a) or (b) that scenario can no longer be reached through the writer at all, because a forfeiture draft exists only under a ground that keeps the Deposit, so the test would need another set-up or would lose that check: your decision), the second half of `test_a_closure_committed_while_the_writer_waits_is_read_after_the_deposit_lock` (a Pet receipt that makes the closing confirm stale) and `test_after_closure_a_deposit_funded_by_two_payments_keeps_a_bounced_payment_received` (its set-up records two Pet receipts after the termination). Two more tests may see another refusal message, depending on where the new refusal sits (the active-forfeiture assertion and the forfeiture-wait test).
 
-## Q-2026-10-18-132 — Sub-slice 10e-2b-4d stopped after review round 1: P1 failed two tests outside the sub-slice with the known `LockNotAvailable` (blocks the 4d commit; recommendation (a))
+**Owner answer (2026-10-18).** Option (a). Build answer 3 as written, also after a forfeiture reversal. The four committed tests may change as the standing rule allows. The test whose scenario can no longer be reached through the writer must now assert the refusal. If a reviewer confirms that its other checks are still worth keeping, keep them with a hand-built set-up. Name each changed test in the report. Recorded in docs/010; built in 10e-2b-4d.
+
+## Q-2026-10-18-132 — Sub-slice 10e-2b-4d stopped after review round 1: P1 failed two tests outside the sub-slice with the known `LockNotAvailable` (blocks the 4d commit; recommendation (a)) (ANSWERED 2026-10-18: (b), a standing run rule; answer in docs/010)
 
 **What happened.** The full PostgreSQL run P1 of 10e-2b-4d: 2 failed, 2,304 passed. Both failures are `test_refund_migration.py::test_usd_refund_correction_rejects_unverified_or_inconsistent_value` (cases `changes2` and `changes4`): `LockNotAvailable` on `app.invoice_lines` from the `NOWAIT` lock in `app.assert_payment_excess_eligible`, reached through `app.validate_general_refund_source` by the test's direct Refund insert. That module is listed 169th in `scripts/database-test.sh` and runs before every module this sub-slice changes (the revision-string modules only assert the head revision); no 4d change touches its path. It is the known intermittent failure of DL-067 (Q-2026-10-05-26, Q-2026-10-09-62, Q-2026-10-13-102); this test is not yet on the slice 12 list. The takeover's stop rule applies (a test that passed before fails for a cause outside the sub-slice), so I stopped: 4d is not committed (code, tests, docs/004, docs/005 and traceability stay in the working tree); its plan design, Q-2026-10-18-131, this question, ops/NOW.md and the review record are committed. T1 (133) and U1 (3,866) passed.
 
@@ -3130,3 +3138,21 @@ Your answer 3: refuse a receipt into a Deposit after a termination whose ground 
 - **Recommendation: (b)**, because the failure is the known DL-067 mechanism in a module no V1-056 sub-slice touches, it has now stopped three sub-slices, and the rerun-once rule still stops the work if it fails twice.
 
 **What goes ahead.** Nothing; I stopped as the takeover says. Next after your answer: finish 10e-2b-4d, then 10g-2, 10h, the Q-112 times sub-slice and the Q-127 (a) shortfall charge-back; stop before slice 11.
+
+**Owner answer (2026-10-18).** Option (b). Finish 4d. New standing rule (ops/V1_055_RUN_RULES.md): when a full run fails only with the known DL-067 `LockNotAvailable` failure, in a module the sub-slice does not change, rerun only those failing tests once and save that log. If they pass, record both runs and go on. If they fail again, or any other test fails, stop and tell the owner. The root cause stays on the slice 12 list. Order: finish 10e-2b-4d (the round 1 fixes and the Q-2026-10-18-131 answer), then 10e-2b-4e (the Q-2026-10-18-127 option (a) shortfall charge-back, replacing option (d)), the Q-2026-10-18-130 sub-slice, 10g-2, 10h (with the Q-2026-10-17-120 answer and the post-closure put-back gap), then the Q-112 times sub-slice; stop before slice 11. Recorded in docs/010.
+
+## Q-2026-10-18-133 — Sub-slice 10e-2b-4d review round 2: a receipt recorded beside an uncommitted termination is not refused (blocks nothing; a known limit until you answer; nothing is built)
+
+Your answer 3 (Q-2026-10-18-131 (a)): a receipt into a Deposit after a termination whose ground keeps that Deposit is refused. The writer reads the Lease status after its Payment and Deposit locks, but the termination command locks the Lease and Unit rows, never the Lease's Deposits. Both round 2 reviewers found two edges:
+
+1. **A termination still being saved.** If staff record a receipt in the same moment as another staff member saves the termination, the receipt does not wait, reads the Lease as signed and is recorded, dated after the termination (a window of milliseconds, two people on the same Lease). The test `test_deposit_receipt_leftover_migration.py::test_a_receipt_beside_an_uncommitted_termination_is_recorded_known_limit` shows it.
+2. **A termination dated earlier than its entry.** The termination time comes from the screen (one of the Q-2026-10-14-112 times); receipts recorded between that time and the entry stay in the Deposit.
+
+In both cases no money leaves without a `financial.approve` forfeiture, and the receipt can be reversed.
+
+**Options.**
+- (a) Close edge 1 with a small hardening: after its Lease lock, the termination command also locks each Deposit of the Lease (in id order; the same Lease-then-Deposit order the closing confirm uses), so a receipt waiting for it reads the termination and is refused. Edge 2 is decided with the Q-112 times sub-slice, which reads the termination time case by case (a time that means the moment staff save the action comes from the database clock). Built in the Q-112 times sub-slice, with a test.
+- (b) Keep both as known limits (slice 12 list), with a slice 11 screen warning.
+- **Recommendation: (a)**, because your answer says money paid after such a termination must not be forfeited at once, and the lock order is the one every Deposit writer already uses; it only adds a wait and changes no amount.
+
+**What goes ahead.** Everything; 10e-2b-4d is committed with this known limit and its test.

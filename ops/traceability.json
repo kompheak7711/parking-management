@@ -42362,7 +42362,7 @@
       "notes": "Owner answer (a) to Q-2026-10-17-123, the owner's first example on the real path with Pet Deposit money recorded by the new writer: a 15,000 Pet Refund-review Refund returned in full (count 15,000), a second 15,000 review Refund (count 0), then the funding Payment's return recovers the second Refund by a 15,000 charge on the signed Lease (the first is not charged) and the count rises by the 15,000 charged back while the charge stands; the Deposit holds nothing (V1-056 sub-slice 10e-2b-4b-2b)."
     },
     {
-      "test_id": "test_a_payment_confirmed_for_an_invoice_is_not_a_deposit_receipt",
+      "test_id": "test_a_payment_confirmed_for_an_owed_invoice_is_not_a_deposit_receipt",
       "upstream_ids": [
         "BR-PAY-024",
         "BR-PAY-026",
@@ -42372,10 +42372,10 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_deposit_receipt_record_migration.py",
       "status": "implemented",
-      "notes": "Review round 1 (security blocker): a Payment confirmed for an Invoice is allocated only to that target and its rest may become Credit or a Refund, never a Deposit receipt, so the writer refuses the whole Payment (55000; Q-2026-10-18-128) for the Customer's own Payment and for a third-party Payment naming the Lease and the Invoice, and nothing is written; a third-party Payment naming only the Lease still funds the Lease's Security Deposit (V1-056 sub-slice 10e-2b-4b-2b)."
+      "notes": "Renamed in sub-slice 10e-2b-4d (was test_a_payment_confirmed_for_an_invoice_is_not_a_deposit_receipt; owner answer (b) to Q-2026-10-18-128: refused only while the named Invoice is owed, now 23514, the excess check). Review round 1 (security blocker): a Payment confirmed for an Invoice is allocated only to that target and its rest may become Credit or a Refund, never a Deposit receipt, so the writer refused the whole Payment (55000; Q-2026-10-18-128) until 10e-2b-4d, for the Customer's own Payment and for a third-party Payment naming the Lease and the Invoice, and nothing is written; a third-party Payment naming only the Lease still funds the Lease's Security Deposit (V1-056 sub-slice 10e-2b-4b-2b)."
     },
     {
-      "test_id": "test_on_a_terminated_lease_a_receipt_passes_until_closure_and_after_a_forfeiture_reversal",
+      "test_id": "test_on_a_terminated_lease_whose_ground_keeps_the_deposit_a_receipt_is_refused",
       "upstream_ids": [
         "BR-DEP-010",
         "BR-DEP-022",
@@ -42385,7 +42385,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_deposit_receipt_record_migration.py",
       "status": "implemented",
-      "notes": "Review round 1 (independent S2): on a Lease terminated for pet noncompliance whose Settlement is started, a Pet Deposit receipt passes; the forfeited Security Deposit is refused while its forfeiture is active and takes a receipt once the forfeiture is reversed through the 6b draft (V1-056 sub-slice 10e-2b-4b-2b)."
+      "notes": "Renamed in sub-slice 10e-2b-4d (was test_on_a_terminated_lease_a_receipt_passes_until_closure_and_after_a_forfeiture_reversal; owner answer (a) to Q-2026-10-18-131): on a Lease terminated for pet noncompliance whose Settlement is started, a Pet Deposit receipt was recorded and is now refused (55000, the termination ground keeps the Deposit); the forfeited Security Deposit is refused while its forfeiture is active and, once the forfeiture is reversed through the 6b draft, took a receipt and is now refused by the ground too; nothing is written (review round 1, independent S2, of V1-056 sub-slice 10e-2b-4b-2b)."
     },
     {
       "test_id": "test_a_receipt_makes_a_pending_forfeiture_draft_stale",
@@ -42398,7 +42398,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_deposit_receipt_record_migration.py",
       "status": "implemented",
-      "notes": "Review round 1 (security): the writer has no pending-draft refusal; a receipt into a Pet Deposit with a recorded forfeiture draft of the whole held amount passes, and the draft's confirm is then refused (stale) and writes no forfeiture (V1-056 sub-slice 10e-2b-4b-2b)."
+      "notes": "Review round 1 (security): the writer has no pending-draft refusal; a receipt into a Pet Deposit with a recorded forfeiture draft of the whole held amount passes, and the draft's confirm is then refused (stale) and writes no forfeiture (V1-056 sub-slice 10e-2b-4b-2b). Since sub-slice 10e-2b-4d (owner answer (a) to Q-2026-10-18-131) the writer refuses that receipt after the pet noncompliance termination (55000) and writes nothing; the stale check runs on a hand-built receipt."
     },
     {
       "test_id": "test_a_closure_committed_while_the_writer_waits_is_read_after_the_deposit_lock",
@@ -42410,7 +42410,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_deposit_receipt_record_migration.py",
       "status": "implemented",
-      "notes": "Review round 1 (both reviewers): a Security Deposit receipt that waits for the closing confirm's Deposit locks reads the committed closure (P5S01, not the forfeiture refusal it would read before the lock) and writes nothing; a Pet Deposit receipt that holds the Deposit first makes the waiting closing confirm stale, the Settlement stays open and the receipt stands (V1-056 sub-slice 10e-2b-4b-2b)."
+      "notes": "Review round 1 (both reviewers): a Security Deposit receipt that waits for the closing confirm's Deposit locks reads the committed closure (P5S01, not the forfeiture refusal it would read before the lock) and writes nothing; a Pet Deposit receipt that holds the Deposit first makes the waiting closing confirm stale, the Settlement stays open and the receipt stands (V1-056 sub-slice 10e-2b-4b-2b; since sub-slice 10e-2b-4d, owner answer (a) to Q-2026-10-18-131, on a Lease terminated for voluntary early leaving, whose ground does not keep the Pet Deposit)."
     },
     {
       "test_id": "test_a_forfeiture_committed_while_the_writer_waits_refuses_the_receipt",
@@ -42481,7 +42481,7 @@
       "notes": "The Deposit service refuses a receipt before any database call when the actor lacks payments.allocate or the command names another authorization (V1-056 sub-slice 10e-2b-4b-2b)."
     },
     {
-      "test_id": "test_a_payment_confirmed_for_a_late_payment_charge_is_not_a_deposit_receipt",
+      "test_id": "test_a_payment_confirmed_for_an_owed_late_payment_charge_is_not_a_deposit_receipt",
       "upstream_ids": [
         "BR-PAY-024",
         "BR-PAY-026",
@@ -42490,7 +42490,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_deposit_receipt_record_migration.py",
       "status": "implemented",
-      "notes": "Review round 2 (security S1): the Late-payment Charge branch of the intent refusal; a Payment that names only a Late-payment Charge is refused as a Deposit receipt (55000) before the receipt table's checks, nothing is written and the Payment keeps its value (V1-056 sub-slice 10e-2b-4b-2b)."
+      "notes": "Renamed in sub-slice 10e-2b-4d (was test_a_payment_confirmed_for_a_late_payment_charge_is_not_a_deposit_receipt; owner answer (b) to Q-2026-10-18-128: refused only while the named Charge is owed, now 23514, the excess check). Review round 2 (security S1): the Late-payment Charge branch of the intent refusal; a Payment that names only a Late-payment Charge is refused as a Deposit receipt (55000 until 10e-2b-4d) before the receipt table's checks, nothing is written and the Payment keeps its value (V1-056 sub-slice 10e-2b-4b-2b)."
     },
     {
       "test_id": "test_after_closure_a_deposit_funded_by_two_payments_keeps_a_bounced_payment_received",
@@ -42503,7 +42503,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_deposit_receipt_record_migration.py",
       "status": "implemented",
-      "notes": "Review round 2 (security S2; known limit, Q-2026-10-18-127): after closure a Pet Deposit funded by two Payments and kept by the forfeiture cannot have one Payment returned: the RETURNED_PAYMENT correction is refused because the Deposit would not end empty, the ordinary return draft is refused as relied on, nothing is written and the Payment stays RECEIVED (V1-056 sub-slice 10e-2b-4b-2b)."
+      "notes": "Review round 2 (security S2; known limit, Q-2026-10-18-127): after closure a Pet Deposit funded by two Payments and kept by the forfeiture cannot have one Payment returned: the RETURNED_PAYMENT correction is refused because the Deposit would not end empty, the ordinary return draft is refused as relied on, nothing is written and the Payment stays RECEIVED (V1-056 sub-slice 10e-2b-4b-2b; since sub-slice 10e-2b-4d, owner answer (a) to Q-2026-10-18-131, the two receipts are recorded before the termination)."
     },
     {
       "test_id": "test_a_walk_in_lease_s_security_deposit_is_created_and_takes_any_first_receipt",
@@ -42716,6 +42716,151 @@
       "test_path": "backend/tests/test_lease_security_deposit_migration.py",
       "status": "implemented",
       "notes": "Review round 2 (independent S1): with 10,000 accepted, 20,000 and 5,000 more paid and the 20,000 receipt reversed, the cancellation reports and stores 15,000 received, the Reservation read API shows 15,000 and the forfeiture keeps 15,000 (V1-056 sub-slice 10e-2b-4c)."
+    },
+    {
+      "test_id": "test_a_receipt_into_a_deposit_whose_refund_is_out_is_refused",
+      "upstream_ids": [
+        "BR-DEP-005",
+        "BR-DEP-009",
+        "DB-DEP-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_receipt_leftover_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer (d) to Q-2026-10-18-127: a receipt into a Pet Deposit whose Pet Refund-review Refund is not fully returned is refused (55000, invalid in the service), also after a partial return; nothing is written and the Payment keeps its value; once the Refund is returned in full the receipt is recorded (V1-056 sub-slice 10e-2b-4d)."
+    },
+    {
+      "test_id": "test_the_rest_of_a_payment_named_for_the_initial_rent_invoice_goes_into_the_deposit",
+      "upstream_ids": [
+        "BR-PAY-024",
+        "BR-PAY-026",
+        "BR-CREDIT-004",
+        "BR-DEP-006",
+        "DB-DEP-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_receipt_leftover_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer (b) to Q-2026-10-18-128: a Payment naming the Initial Rent Invoice is refused as a Deposit receipt while the Invoice is owed (23514, the Credit path's excess check); after its allocation pays the Invoice, the 5,000 left is recorded into the Security Deposit and one cent more is refused by the availability bound (V1-056 sub-slice 10e-2b-4d)."
+    },
+    {
+      "test_id": "test_the_receipt_leftover_migration_is_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "BR-AUTH-008",
+        "DB-DEP-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_receipt_leftover_migration.py",
+      "status": "implemented",
+      "notes": "Only the receipt writer changes, by exactly its listed replacements, with the same owner, privileges and settings; no other function, constraint or trigger changes; forward-only (V1-056 sub-slice 10e-2b-4d)."
+    },
+    {
+      "test_id": "test_a_receipt_is_replayed_after_a_nowait_refusal",
+      "upstream_ids": [
+        "BR-PAY-024",
+        "DB-DEP-002"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_deposit.py",
+      "status": "implemented",
+      "notes": "Review round 1 (DL-067, owner decision 2026-10-03): after a 55P03 refusal of the receipt writer's NOWAIT excess check the Deposit service replays the same receipt command at most three times (four attempts, each on its own connection) and then raises the unavailable error (V1-056 sub-slice 10e-2b-4d)."
+    },
+    {
+      "test_id": "test_after_a_termination_only_a_deposit_its_ground_keeps_refuses_a_receipt",
+      "upstream_ids": [
+        "BR-DEP-022",
+        "BR-DEP-023",
+        "DL-030",
+        "DB-DEP-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_receipt_leftover_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer (a) to Q-2026-10-18-131: after a voluntary early termination (BR-LEASE-021), whose ground keeps the Security Deposit but not the Pet Deposit, a Pet Deposit receipt is recorded while the Settlement is open; a Security Deposit receipt is refused while its forfeiture is active and, after the forfeiture reversal, by the ground (55000, invalid in the service); nothing is written and the Payment keeps its value (V1-056 sub-slice 10e-2b-4d)."
+    },
+    {
+      "test_id": "test_a_leftover_receipt_waiting_for_the_payment_holds_no_obligation_table_lock",
+      "upstream_ids": [
+        "BR-PAY-024",
+        "BR-CREDIT-004",
+        "DB-DEP-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_receipt_leftover_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 (independent S1, security S1): the excess check runs after the Payment and Deposit locks; a leftover receipt waiting for a transaction that holds the Payment holds no SHARE lock on the twelve obligation tables, so that transaction writes them at once (no deadlock); once it ends the receipt is recorded (V1-056 sub-slice 10e-2b-4d)."
+    },
+    {
+      "test_id": "test_the_excess_check_refuses_at_once_while_an_obligation_table_is_written",
+      "upstream_ids": [
+        "BR-PAY-024",
+        "BR-CREDIT-004",
+        "DB-DEP-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_receipt_leftover_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 (independent S2, security S2; DL-067): while another transaction writes an obligation table, a receipt from a Payment named for an Invoice is refused at once (55P03); the service replays it three times, each attempt refused by the database (three pauses counted), and then answers unavailable; a Payment that names nothing is recorded; the named Payment keeps its value; every call runs in a worker with a time limit (review round 2) (V1-056 sub-slice 10e-2b-4d)."
+    },
+    {
+      "test_id": "test_an_allocation_reversal_committed_while_the_writer_waits_keeps_the_leftover_out",
+      "upstream_ids": [
+        "BR-PAY-024",
+        "BR-PAY-026",
+        "BR-CREDIT-004",
+        "DB-DEP-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_receipt_leftover_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 (security S2, adapted to the lock order fix): a leftover receipt that waits for an uncommitted one-call allocation reversal of its Payment reads the committed reversal; the named Invoice is owed again, so the receipt is refused (23514, invalid in the service) and nothing is written (V1-056 sub-slice 10e-2b-4d)."
+    },
+    {
+      "test_id": "test_a_refund_committed_while_the_writer_waits_refuses_the_receipt",
+      "upstream_ids": [
+        "BR-DEP-009",
+        "DB-DEP-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_receipt_leftover_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 (independent note 2): a receipt that waits for the confirm of a Pet Refund-review Refund of the same Pet Deposit reads the committed Refund and is refused (55000, the Refund is not fully returned); nothing is written and the Payment keeps its value (V1-056 sub-slice 10e-2b-4d)."
+    },
+    {
+      "test_id": "test_a_leftover_receipt_waiting_for_the_deposit_holds_no_obligation_table_lock",
+      "upstream_ids": [
+        "BR-PAY-024",
+        "BR-CREDIT-004",
+        "DB-DEP-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_receipt_leftover_migration.py",
+      "status": "implemented",
+      "notes": "Review round 2 (security note 4): the excess check also comes after the Deposit lock; a leftover receipt that holds its Payment and waits for the Deposit guard holds no obligation table lock, so the holder writes the allocation and Invoice line tables at once; once it ends the receipt is recorded (V1-056 sub-slice 10e-2b-4d)."
+    },
+    {
+      "test_id": "test_a_receipt_beside_an_uncommitted_termination_is_recorded_known_limit",
+      "upstream_ids": [
+        "BR-DEP-023",
+        "DL-030",
+        "DB-DEP-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_receipt_leftover_migration.py",
+      "status": "implemented",
+      "notes": "Review round 2 (both reviewers, note 1; known limit, Q-2026-10-18-133): a receipt recorded while a voluntary early termination is uncommitted reads the Lease as signed and is recorded, dated after the termination; once the termination is committed the next receipt is refused by the ground (55000) (V1-056 sub-slice 10e-2b-4d)."
+    },
+    {
+      "test_id": "test_a_receipt_refused_by_the_nowait_lock_is_recorded_once_by_its_replay",
+      "upstream_ids": [
+        "BR-PAY-024",
+        "BR-CREDIT-004",
+        "DB-DEP-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_receipt_leftover_migration.py",
+      "status": "implemented",
+      "notes": "Review round 2 (security S1; DL-067 on the real path): the first attempt of a leftover receipt meets the NOWAIT refusal; the obligation table writer ends during the first pause; the replay records the receipt once and a later repeat of the command is an exact replay that writes nothing (V1-056 sub-slice 10e-2b-4d)."
     }
   ]
 }

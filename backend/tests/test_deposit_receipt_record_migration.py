@@ -23,6 +23,7 @@ from alembic import command as alembic_command
 from alembic.config import Config
 from alembic.script import ScriptDirectory
 
+from deposit_disposition_test_support import terminate_for_disposition
 from deposit_receipt_reversal_test_support import reverse_receipt_as_owner
 from lease_deposit_forfeiture_test_support import forfeit_through_draft, reverse_through_draft
 from payment_test_support import seed_deposit_payment, seed_payment
@@ -55,13 +56,15 @@ from test_deposit_migration import (
     create_pet,
     deposit_actor,
     runtime_database_url,
+    seed_historical_deposit_receipt,
     setup_signed_pet_lease,
 )
 from test_final_settlement_closed_refusal_migration import overdue_case
 from test_final_settlement_confirm_migration import confirm as confirm_settlement
 from test_final_settlement_confirm_migration import this_month
 from test_final_settlement_draft_migration import record as record_settlement
-from test_final_settlement_migration import held, one, outstanding, today
+from test_final_settlement_migration import held, one, outstanding, start, today
+from test_final_settlement_preview_migration import pay
 from test_invoice_migration import financial_database_url
 from test_migrations import _temporary_migration_database
 from test_move_in_migration import migrated_database_url as migrated_database_url
@@ -91,7 +94,7 @@ from test_settlement_returned_payment_migration import RELIED_ON, STILL_HOLDS, c
 from test_settlement_returned_payment_migration import command as returned_command
 from test_settlement_returned_payment_migration import record as record_returned
 from test_settlement_returned_payment_migration import status as payment_status
-from test_unpaid_initial_termination_migration import signed_with_initial
+from test_unpaid_initial_termination_migration import rent_line, signed_with_initial
 
 REVISION = "20261228_154"
 WRITER = "app.record_lease_deposit_receipt(uuid,uuid,uuid,text,uuid,uuid,uuid,bigint,text,text)"
@@ -108,13 +111,19 @@ SECURITY_LIMIT = "Deposit receipt does not preserve the accepted or required amo
 ONE_PER_PAYMENT = "A Deposit holds at most one active receipt from each Payment"
 AVAILABILITY = "Deposit receipt exceeds Payment availability"
 INELIGIBLE = "Deposit receipt Payment source is ineligible"
-INTENT = "A Payment confirmed for an Invoice or a Late-payment Charge is not a Deposit receipt"
+# Sub-slice 10e-2b-4d (owner answer (b) to Q-2026-10-18-128): the whole-Payment refusal ("A Payment
+# confirmed for an Invoice or a Late-payment Charge is not a Deposit receipt", 55000) became the
+# Credit path's excess check, 23514, while the named target has anything outstanding.
+EXCESS = "Applicable obligations must be handled before excess disposition"
 SHARED = (
     "A Deposit this Payment funded also holds another Payment's money and has a Refund that is "
     "not fully returned"
 )
 DEPENDENT = "Deposit receipt has active dependent financial history"
 STALE_FORFEITURE = "Lease Deposit forfeiture draft is stale"
+# Sub-slice 10e-2b-4d (owner answer (a) to Q-2026-10-18-131): no receipt after a termination whose
+# ground keeps the Deposit, also after a forfeiture reversal.
+KEPT = "The Lease's termination ground keeps this Deposit; this receipt is not recorded here"
 
 
 def pet_case(url: str) -> dict[str, Any]:
@@ -247,6 +256,49 @@ def review_refund(case: dict[str, Any], review: UUID, amount: int) -> UUID:
             actor=actor(human, prop, "refunds.create"),
         )
     )
+
+
+def terminated_pet_lease_case(
+    url: str, *, voluntary: bool = False, receipts: tuple[int, ...] = ()
+) -> dict[str, Any]:
+    """`pet_lease_case` of `test_settlement_pet_receipt_link_migration` with two choices (sub-slice
+    10e-2b-4d; owner answer (a) to Q-2026-10-18-131 refuses a receipt after a termination whose
+    ground keeps the Deposit): before the termination the Pet Deposit takes one receipt of each
+    of `receipts` through the writer, each from a Payment of its own (listed in `payments`); with
+    `voluntary` the termination is voluntary early leaving (BR-LEASE-021), whose ground keeps the
+    Security Deposit (BR-DEP-023) but not the Pet Deposit. The Security Deposit is forfeited
+    through the draft; the Final Settlement is started, not closed."""
+    source = signed_with_initial(url, this_month(url))
+    human, prop, lease = source["actor"], source["property"], source["lease"]
+    customer, day = source["customer"], source["today"]
+    approval = uuid4()
+    with psycopg.connect(url) as connection:
+        connection.execute(
+            "INSERT INTO app.lease_pet_approvals(id,lease_id,approved_date,"
+            "deposit_required_by_signed_terms,pet_description,approved_at,approved_by) "
+            "VALUES (%s,%s,%s,true,'Synthetic approved pet',clock_timestamp(),%s)",
+            (approval, lease, day, human),
+        )
+    deposits = PostgresDepositService(financial_database_url(), prop, human)
+    pet, _ = create_pet(deposits, deposit_actor(human, prop), lease, approval, day)
+    paid = tuple(payment(url, human, pet, amount) for amount in receipts)
+    for paid_by, amount in zip(paid, receipts, strict=True):
+        deposits.record_receipt(receipt_command(pet, paid_by, amount), actor=allocator(human, prop))
+    rent, owed = rent_line(url, source["invoice"])
+    pay(url, prop, human, customer, source["invoice"], rent, owed)
+    terminate_for_disposition(url, deposits, lease, day, voluntary=voluntary)
+    forfeit_through_draft(deposits, source["deposit"])
+    return {
+        "url": url,
+        "human": human,
+        "prop": prop,
+        "lease": lease,
+        "customer": customer,
+        "security": source["deposit"],
+        "pet": pet,
+        "payments": paid,
+        "settlement": start(prop, human, lease),
+    }
 
 
 def test_a_pet_deposit_receipt_is_recorded_through_the_service_with_every_table_check(
@@ -535,16 +587,20 @@ def test_a_review_refund_recovered_by_a_charge_raises_the_count_on_the_real_path
     reconciled(url, case["customer"])
 
 
-def test_a_payment_confirmed_for_an_invoice_is_not_a_deposit_receipt(
+def test_a_payment_confirmed_for_an_owed_invoice_is_not_a_deposit_receipt(
     migrated_database_url: str,
 ) -> None:
     """Review round 1 (security blocker): a Payment confirmed for an Invoice (or a Late-payment
     Charge) is allocated only to that target (BR-PAY-024, BR-PAY-026; the allocation check refuses
     any other target) and its rest may become Credit or a Refund, never a Deposit receipt, so the
-    writer refuses the whole Payment (55000; Q-2026-10-18-128) and nothing is written:
-    the Customer's own Payment naming the Initial Rent Invoice, and a third-party Payment naming
-    the Lease and that Invoice. A third-party Payment that names only the Lease still funds the
-    Lease's Security Deposit (the receipt table's existing rule)."""
+    writer refused the whole Payment (55000). Since sub-slice 10e-2b-4d (owner answer (b) to
+    Q-2026-10-18-128; renamed from
+    `test_a_payment_confirmed_for_an_invoice_is_not_a_deposit_receipt`) it is refused while the
+    named Invoice is owed (23514, the Credit path's excess check), and nothing is written: the
+    Customer's own Payment naming the Initial Rent Invoice, and a third-party Payment naming the
+    Lease and that Invoice; the leftover case is in `test_deposit_receipt_leftover_migration.py`.
+    A third-party Payment that names only the Lease still funds the Lease's Security Deposit (the
+    receipt table's existing rule)."""
     url = migrated_database_url
     source = signed_with_initial(url, this_month(url))
     human, prop, security = source["actor"], source["property"], source["deposit"]
@@ -577,8 +633,9 @@ def test_a_payment_confirmed_for_an_invoice_is_not_a_deposit_receipt(
             lease_id=source["lease"],
             scope="THIRD_PARTY_IDENTIFIED",
         )
-    assert attempt(prop, human, security, named, 10_000) == ("55000", INTENT)
-    assert attempt(prop, human, security, third, 10_000) == ("55000", INTENT)
+    # Sub-slice 10e-2b-4d: was ("55000", the intent message) for both.
+    assert attempt(prop, human, security, named, 10_000) == ("23514", EXCESS)
+    assert attempt(prop, human, security, third, 10_000) == ("23514", EXCESS)
     assert written(url, security) == (1, 0, 0)
     available = "SELECT app.payment_available_value(%s)"
     assert (value(url, available, named), value(url, available, third)) == (10_000, 10_000)
@@ -586,42 +643,57 @@ def test_a_payment_confirmed_for_an_invoice_is_not_a_deposit_receipt(
     assert (held(url, security), written(url, security)) == (20_000, (2, 1, 1))
 
 
-def test_on_a_terminated_lease_a_receipt_passes_until_closure_and_after_a_forfeiture_reversal(
+def test_on_a_terminated_lease_whose_ground_keeps_the_deposit_a_receipt_is_refused(
     migrated_database_url: str,
 ) -> None:
-    """Review round 1 (independent S2): on a Lease terminated for pet noncompliance whose
-    Settlement is started but not closed, a Pet Deposit receipt passes (a TERMINATED Lease); the
-    forfeited Security Deposit is refused while its forfeiture is active and takes a receipt once
-    the forfeiture is reversed through the 6b draft (a reversed forfeiture does not block)."""
+    """Review round 1 (independent S2), changed by sub-slice 10e-2b-4d (owner answer (a) to
+    Q-2026-10-18-131; renamed from
+    `test_on_a_terminated_lease_a_receipt_passes_until_closure_and_after_a_forfeiture_reversal`):
+    on a Lease terminated for pet noncompliance, whose ground keeps both Deposits (BR-DEP-022), and
+    whose Settlement is started but not closed, a Pet Deposit receipt was recorded and is now
+    refused (55000; the service shows it as invalid); the forfeited Security Deposit is refused
+    while its forfeiture is active, and once the forfeiture is reversed through the 6b draft it
+    took a receipt and is now refused too (the reversal does not change the ground). Nothing is
+    written and both Payments keep their value."""
     url = migrated_database_url
     case = pet_lease_case(url)
     human, prop, security, pet = case["human"], case["prop"], case["security"], case["pet"]
     deposits = PostgresDepositService(financial_database_url(), prop, human)
     assert value(url, "SELECT status FROM app.leases WHERE id=%s", case["lease"]) == "TERMINATED"
-    pet_record = deposits.record_receipt(
-        receipt_command(pet, payment(url, human, pet, 5_000), 5_000), actor=allocator(human, prop)
-    )
-    assert (pet_record.deposit.held_refundable_usd_cents, written(url, pet)) == (5_000, (1, 1, 1))
+    pet_payment = payment(url, human, pet, 5_000)
+    # Sub-slice 10e-2b-4d: was recorded (the Pet Deposit held 5,000; (1, 1, 1)).
+    assert attempt(prop, human, pet, pet_payment, 5_000) == ("55000", KEPT)
+    with pytest.raises(DepositInvalidError):
+        deposits.record_receipt(
+            receipt_command(pet, pet_payment, 5_000), actor=allocator(human, prop)
+        )
     paid_by = payment(url, human, security, 5_000)
     assert attempt(prop, human, security, paid_by, 5_000) == ("55000", FORFEITED)
     dispositions = "SELECT id FROM app.deposit_dispositions WHERE deposit_id=%s"
     [disposition] = [UUID(str(row[0])) for row in rows(url, dispositions, security)]
     reverse_through_draft(deposits, disposition)
     held_before = held(url, security)
-    record = deposits.record_receipt(
-        receipt_command(security, paid_by, 5_000), actor=allocator(human, prop)
+    # Sub-slice 10e-2b-4d: was recorded (held_before + 5,000; (2, 1, 1)).
+    assert attempt(prop, human, security, paid_by, 5_000) == ("55000", KEPT)
+    available = "SELECT app.payment_available_value(%s)"
+    assert (held(url, pet), written(url, pet), held(url, security), written(url, security)) == (
+        0,
+        (0, 0, 0),
+        held_before,
+        (1, 0, 0),
     )
-    assert (record.deposit.held_refundable_usd_cents, written(url, security)) == (
-        held_before + 5_000,
-        (2, 1, 1),
-    )
+    assert (value(url, available, pet_payment), value(url, available, paid_by)) == (5_000, 5_000)
 
 
 def test_a_receipt_makes_a_pending_forfeiture_draft_stale(migrated_database_url: str) -> None:
     """Review round 1 (security S3 (c); the design has no pending-draft refusal): on a Pet
     Deposit holding 15,000 with a pay-back count of 0 after a pet noncompliance termination, a
-    forfeiture draft of the whole held amount is recorded; a 3,000 receipt then passes, and the
-    draft's confirm is refused (stale) and writes no forfeiture."""
+    forfeiture draft of the whole held amount is recorded; a 3,000 receipt then makes the draft's
+    confirm stale, and the confirm writes no forfeiture. Since sub-slice 10e-2b-4d (owner answer
+    (a) to Q-2026-10-18-131) the writer refuses that receipt (55000: the termination ground keeps
+    the Pet Deposit) and writes nothing, so the scenario cannot be reached through the writer;
+    the stale check is kept with a hand-built receipt (an owner insert, as the committed pay-back
+    fixtures seed receipts)."""
     url = migrated_database_url
     case = recovered_case(url, 15_000)
     void(case)
@@ -634,10 +706,14 @@ def test_a_receipt_makes_a_pending_forfeiture_draft_stale(migrated_database_url:
         RecordLeaseDepositForfeitureCommand(uuid4(), deposit, uuid4(), "Approved forfeiture"),
         actor=person,
     )
-    assert attempt(prop, human, deposit, payment(url, human, deposit, 3_000), 3_000) == (
-        None,
-        None,
+    later = payment(url, human, deposit, 3_000)
+    # Sub-slice 10e-2b-4d: was (None, None), the receipt recorded through the writer.
+    assert attempt(prop, human, deposit, later, 3_000) == ("55000", KEPT)
+    assert (held(url, deposit), value(url, "SELECT app.payment_available_value(%s)", later)) == (
+        15_000,
+        3_000,
     )
+    seed_historical_deposit_receipt(url, deposit_id=deposit, actor_id=human, amount_usd_cents=3_000)
     with pytest.raises(LeaseDepositForfeitureInvalidError) as refused:
         forfeitures.confirm(prop, deposit, UUID(str(draft["draft_id"])), actor=person)
     assert cause(refused) == ("23514", STALE_FORFEITURE)
@@ -653,7 +729,10 @@ def test_a_closure_committed_while_the_writer_waits_is_read_after_the_deposit_lo
     Security Deposit receipt that waits for them reads the committed closure (P5S01), not the
     forfeiture it would read before the lock (55000), and writes nothing. In the other order, a
     Pet Deposit receipt holding the Deposit first makes the waiting closing confirm stale; the
-    Settlement stays open and the receipt stands."""
+    Settlement stays open and the receipt stands. Since sub-slice 10e-2b-4d (owner answer (a) to
+    Q-2026-10-18-131 refuses a Pet Deposit receipt after the pet noncompliance termination) the
+    other order runs on a Lease terminated for voluntary early leaving, whose ground keeps only the
+    Security Deposit."""
     url = migrated_database_url
     case = pet_lease_case(url)
     human, prop, security = case["human"], case["prop"], case["security"]
@@ -670,7 +749,8 @@ def test_a_closure_committed_while_the_writer_waits_is_read_after_the_deposit_lo
             closing.commit()
             assert waiting.result(timeout=60) == ("P5S01", CLOSED)
     assert written(url, security) == (1, 0, 0)
-    other = pet_lease_case(url)
+    # Sub-slice 10e-2b-4d: was `pet_lease_case(url)` (pet noncompliance).
+    other = terminated_pet_lease_case(url, voluntary=True)
     human, prop, pet = other["human"], other["prop"], other["pet"]
     draft = record_settlement(other, ())
     paid_by = payment(url, human, pet, 5_000)
@@ -763,14 +843,17 @@ def test_a_deposit_funded_by_two_payments_keeps_the_shared_deposit_refusal(
     assert draft_state(url, draft_id(draft)) == "PENDING"
 
 
-def test_a_payment_confirmed_for_a_late_payment_charge_is_not_a_deposit_receipt(
+def test_a_payment_confirmed_for_an_owed_late_payment_charge_is_not_a_deposit_receipt(
     migrated_database_url: str,
 ) -> None:
     """Review round 2 (security S1, independent N-2): the Late-payment Charge branch of the intent
     refusal. A Payment of an overdue Customer that names only that Customer's Late-payment Charge
-    is refused as a Deposit receipt (55000). The refusal runs before the receipt table's checks,
-    so here the Charge branch alone decides: without it the table would refuse the Payment as
-    another Customer's (23514). Nothing is written and the Payment keeps its value."""
+    is refused as a Deposit receipt (55000 until sub-slice 10e-2b-4d; since then 23514, the Credit
+    path's excess check, while the Charge is owed; renamed from
+    `test_a_payment_confirmed_for_a_late_payment_charge_is_not_a_deposit_receipt`). The refusal
+    runs before the receipt table's checks, so here the Charge branch alone decides: without it the
+    table would refuse the Payment as another Customer's (23514, another message). Nothing is
+    written and the Payment keeps its value."""
     url = migrated_database_url
     overdue = overdue_case(url)
     source = signed_with_initial(url, this_month(url))
@@ -785,7 +868,8 @@ def test_a_payment_confirmed_for_a_late_payment_charge_is_not_a_deposit_receipt(
             amount=10_000,
             late_payment_charge_id=overdue["charge"],
         )
-    assert attempt(prop, human, security, charged, 10_000) == ("55000", INTENT)
+    # Sub-slice 10e-2b-4d: was ("55000", the intent message).
+    assert attempt(prop, human, security, charged, 10_000) == ("23514", EXCESS)
     assert written(url, security) == (1, 0, 0)
     assert value(url, "SELECT app.payment_available_value(%s)", charged) == 10_000
 
@@ -798,15 +882,16 @@ def test_after_closure_a_deposit_funded_by_two_payments_keeps_a_bounced_payment_
     Deposit takes 5,000 from each of two Payments, the pet noncompliance forfeiture keeps the
     10,000 and the Settlement closes. The first Payment's RETURNED_PAYMENT correction is refused
     because the Deposit would not end empty (55000), the ordinary return draft is refused as
-    relied on, nothing is written, and the Payment stays RECEIVED."""
+    relied on, nothing is written, and the Payment stays RECEIVED. Since sub-slice 10e-2b-4d
+    (owner answer (a) to Q-2026-10-18-131 refuses a receipt after the pet noncompliance
+    termination) the two receipts are recorded before the termination."""
     url = migrated_database_url
-    case = pet_lease_case(url)
+    # Sub-slice 10e-2b-4d: was `pet_lease_case(url)` and the two receipts after the termination.
+    case = terminated_pet_lease_case(url, receipts=(5_000, 5_000))
     human, prop, pet = case["human"], case["prop"], case["pet"]
     deposits = PostgresDepositService(financial_database_url(), prop, human)
-    first = payment(url, human, pet, 5_000)
-    second = payment(url, human, pet, 5_000)
-    for paid_by in (first, second):
-        deposits.record_receipt(receipt_command(pet, paid_by, 5_000), actor=allocator(human, prop))
+    first, _ = case["payments"]
+    assert held(url, pet) == 10_000
     forfeit_through_draft(deposits, pet)
     closed(case)
     before = counts(url)
