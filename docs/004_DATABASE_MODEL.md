@@ -1451,6 +1451,36 @@ the written recoveries (`recoveries`: the Refund, the person charged, the Lease 
 the charge form `EXTRA_CHARGE`, `LEASE` or `NO_LEASE`, the obligation and the Invoice). Drafts
 recorded before revision 118 are stale (their source gained `recoveries`) and are recorded again.
 
+As built in V1-056 sub-slice 10e-2b-4e-1 (migration `20261231_157`; owner answer (a) to
+Q-2026-10-18-127): the `PAYMENT_RETURN` draft no longer refuses a Refund of a shared Deposit (a
+Deposit the returned Payment funded that also holds another Payment's active receipt). Its
+recorder and confirm read `app.payment_return_draft_source`: the return source with the recoveries
+of `app.payment_return_shared_deposit_recoveries` and, for each funded Deposit, `shared` and
+`shortfall_usd_cents` (the returned Payment's active receipt less what the Deposit holds, never
+below 0). A shared Deposit with a shortfall of 0 plans no recovery: its receipt is reversed through
+the shared receipt writer while its Refund stays out, and the Refund is then paid from the other
+Payments' money. A shortfall above 0 is charged back newest Refund first (`processed_at`, id,
+descending), each Refund at most its net, with the same charge and `RECOVERED_BY_CHARGE` row as
+above for that share (`amount_usd_cents` the share, `net_usd_cents` the Refund's net), and the
+Deposit ends at 0. A shared Deposit whose Refunds not fully returned went to more than one person
+keeps the shared refusal while its shortfall is above 0 (Q-2026-10-18-134 point 2), and a shared
+Deposit with a Reservation outcome Refund or a charge on a closed Settlement's Lease keeps those
+refusals, also with a shortfall of 0 (review round 1). The rule reads only what the Deposit holds,
+not the order of events (owner answer (a)): when B's receipt paid a Refund before A's receipt came
+in (with option (d) in place, only after a dodge such as a verified return reversed after A's
+receipt) and B bounces, nothing is charged and the Refund stays paid from A's money; the Deposit is then
+short of its required total, as with any unpaid Deposit money. A Deposit the
+returned Payment alone funded is unchanged (its shortfall is the nets of its Refunds, each
+recovered whole). The insert check of the recovery row accepts a share only through
+`app.payment_return_shortfall_recovery_amount` (inside a confirmed `PAYMENT_RETURN` of this
+transaction whose Payment still has an active receipt in that shared Deposit, at most the
+Deposit's shortfall before the row); a smaller sum is refused by the Deposit's held-history check
+at the receipt reversal (DB-DEP-007). `app.payment_return_source` and `app.payment_return_recoveries`
+are unchanged, so the `RETURNED_PAYMENT` correction, the receipt correction and the return
+reversal still refuse a shared Deposit (sub-slice 10e-2b-4e-2, Q-2026-10-18-134 point 1). A
+draft recorded before revision 157 whose Payment has an active Deposit receipt is stale (its source
+gained the Deposit keys) and is recorded again; other drafts keep their digest.
+
 As built in V1-056 sub-slice 10e-4 (migration `20261201_127`; owner answer (c) to Q-2026-10-11-81
 point 3 and the owner answer to Q-2026-10-11-82): the `RETURNED_PAYMENT` correction also returns a
 Payment that no closed Final Settlement relied on, when the Payment names the correction's Lease or
@@ -1834,6 +1864,12 @@ leaves receipts recorded in between (Q-2026-10-18-133); a TERMINATED Lease witho
 matching termination record refuses every receipt (22023, fail closed; the Final Settlement uses
 the same rule); option (d) does not cover a second
 receipt recorded while a Pet Refund draft is still pending (10e-2b-4e closes it).
+V1-056 sub-slice 10e-2b-4e-1 (migration `20261231_157`; owner answer (a) to Q-2026-10-18-127)
+does not change refusal (2): option (d) stays until sub-slice 10e-2b-4e-2 builds the corrections
+after closure (review round 2: the owner's "(d) until (a) is built"; without it a receipt recorded
+while a Refund is out, followed by a closure and a bounce, would reach the refused
+`RETURNED_PAYMENT` correction). A return before closure of a Payment of a Deposit that another
+Payment also funded charges back only its shortfall (DB-REFUND-002 note, DB-DEP-007).
 
 ## DB-DEP-003 — `deposit_required_amount_adjustments`
 
@@ -2304,6 +2340,14 @@ reversal draft of one of its Deposits is pending. A receipt reversal draft that 
 pending blocks the recording of the Settlement draft through the preview's `PENDING_DRAFT`
 issue. The Settlement draft recorder locks the Lease's Deposit rows in a fixed order after the
 same per-Deposit advisory lock, so each recorder waits for the other and then sees its draft.
+
+Since V1-056 sub-slice 10e-2b-4e-1 (migration `20261231_157`; owner answer (a) to
+Q-2026-10-18-127): the refusal of a receipt reversal while the Deposit has a Refund that is not
+fully returned is skipped only when `app.payment_return_shared_receipt_reversal_allowed` holds: a
+confirmed `PAYMENT_RETURN` of this transaction (no correction) returns the receipt's Payment, and
+another Payment has an active receipt in the Deposit. The active-forfeiture, active-application
+and waiting-draft refusals, the closed-Settlement refusal and the held-history check stay, so the
+return can reverse that receipt only when the Deposit then holds 0 or more (DB-REFUND-002 note).
 
 ## DB-DEP-008 — `deposit_disposition_reversals`
 

@@ -72,7 +72,6 @@ from test_payment_move_migration import rows, value
 from test_payment_return_migration import approver as return_approver
 from test_payment_return_migration import draft_id, reconciled, request, returns
 from test_payment_return_migration import preparer as return_preparer
-from test_payment_return_recovery_migration import return_refused
 from test_pet_payback_recovery_standing_migration import open_lease_recovery, standing
 from test_pet_payback_restoration_refusal_migration import (
     one_call,
@@ -797,16 +796,18 @@ def test_a_forfeiture_committed_while_the_writer_waits_refuses_the_receipt(
     assert (value(url, receipts, deposit), held(url, deposit)) == (before, 0)
 
 
-def test_a_deposit_funded_by_two_payments_keeps_the_shared_deposit_refusal(
+def test_a_deposit_funded_by_two_payments_plans_only_the_shortfall_of_a_return(
     migrated_database_url: str,
 ) -> None:
-    """Review round 1 (security S2; a known limit, Q-2026-10-18-127): with this writer a Deposit
-    can hold money from two Payments. A Pet Deposit takes 10,000 from each of two Payments, then
-    pays a 15,000 Pet Refund-review Refund. The first Payment's return is refused (the
-    shared-Deposit guard of owner answer 2 to Q-2026-10-11-81), and the second receipt's reversal
-    is refused while the Refund is not returned (fail closed: neither refusal writes anything).
-    Review round 2: once the Refund comes back in full (a verified return), the first Payment's
-    return draft is accepted (the guard lifts before closure)."""
+    """Review round 1 (security S2; Q-2026-10-18-127): with this writer a Deposit can hold money
+    from two Payments. A Pet Deposit takes 10,000 from each of two Payments, then pays a 15,000 Pet
+    Refund-review Refund. Until sub-slice 10e-2b-4e-1 the first Payment's return was refused (the
+    shared-Deposit guard of owner answer 2 to Q-2026-10-11-81); since owner answer (a) its return
+    plans to charge back only the 5,000 shortfall (its 10,000 less the 5,000 held) on the Refund.
+    The second receipt's staff reversal is still refused while the Refund is not returned (fail
+    closed: nothing is written). Review round 2: once the Refund comes back in full (a verified
+    return), the first Payment's return draft is accepted with nothing to charge back. Renamed
+    from `test_a_deposit_funded_by_two_payments_keeps_the_shared_deposit_refusal`."""
     url = migrated_database_url
     case = pet_case(url)
     human, prop, pet = case["human"], case["prop"], case["pet"]
@@ -819,7 +820,12 @@ def test_a_deposit_funded_by_two_payments_keeps_the_shared_deposit_refusal(
     )
     refund = review_refund(case, qualify_review(case), 15_000)
     assert held(url, pet) == 5_000
-    assert return_refused(prop, human, first) == ("55000", SHARED)
+    plan = value(
+        url, "SELECT app.payment_return_draft_source(%s,%s,NULL)->'recoveries'", prop, first
+    )
+    assert [
+        (entry["refund_id"], entry["amount_usd_cents"], entry["net_usd_cents"]) for entry in plan
+    ] == [(str(refund), 5_000, 15_000)]
     with pytest.raises((DepositInvalidError, DepositConflictError)) as refused:
         reverse_receipt_as_owner(
             service,

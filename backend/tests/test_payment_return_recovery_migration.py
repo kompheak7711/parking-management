@@ -646,11 +646,13 @@ def test_the_cases_a_return_still_refuses(migrated_database_url: str) -> None:
 def test_the_refused_cases_on_real_sources(migrated_database_url: str) -> None:
     """Review round 1: each refusal on a real source, with nothing written for a refused case.
     (1) A cancelled Reservation's Deposit Refund (the Reservation outcome path, Q-2026-10-11-81).
-    (2) A Pet Refund-review Refund of a Deposit two Payments funded. (3) A Payment that names a
-    Lease whose Final Settlement is closed, refunded in part to its signed Customer after closure:
-    the PAYMENT_RETURN draft refuses it and names the correction; since sub-slice 10e-4 (owner
-    answer (c) to Q-2026-10-11-81) the correction of that Settlement records it, although the
-    Settlement did not rely on the Payment (its confirm is checked in
+    (2) A Pet Refund-review Refund of a Deposit two Payments funded (refused until sub-slice
+    10e-2b-4e-1; since owner answer (a) to Q-2026-10-18-127 the return is recorded, and here,
+    with the Deposit still holding more than the receipt, it plans no recovery). (3) A Payment
+    that names a Lease whose Final Settlement is closed, refunded in part to its signed Customer
+    after closure: the PAYMENT_RETURN draft refuses it and names the correction; since sub-slice
+    10e-4 (owner answer (c) to Q-2026-10-11-81) the correction of that Settlement records it,
+    although the Settlement did not rely on the Payment (its confirm is checked in
     test_returned_payment_after_closure_migration.py)."""
     url = migrated_database_url
     with psycopg.connect(url) as setup:
@@ -700,9 +702,19 @@ def test_the_refused_cases_on_real_sources(migrated_database_url: str) -> None:
         pet_refund_command(deposit, review.review_id, 5_000),
         actor=actor(service.actor_id, service.property_id, "refunds.create"),
     )
-    assert return_refused(service.property_id, service.actor_id, shared_payment) == (
-        "55000",
-        SHARED,
+    # Sub-slice 10e-2b-4e-1 (owner answer (a) to Q-2026-10-18-127; changed expectation, was the
+    # SHARED refusal): the Deposit two Payments funded still holds 15,000, at least the returned
+    # Payment's 10,000 receipt, so its return is recorded and plans no recovery.
+    assert one(
+        url,
+        "SELECT app.payment_return_draft_source(%s,%s,NULL)->'recoveries'",
+        service.property_id,
+        shared_payment,
+    ) == ([],)
+    returns().record(
+        service.property_id,
+        request(shared_payment),
+        actor=return_preparer(service.actor_id, service.property_id),
     )
 
     case = closed_case(url)
@@ -750,7 +762,7 @@ def test_the_refused_cases_on_real_sources(migrated_database_url: str) -> None:
         "'SETTLEMENT_CORRECTION') AND payload->>'payment_id' IN (%s,%s)",
         str(reservation_payment),
         str(shared_payment),
-    ) == (0,)
+    ) == (1,)  # Sub-slice 10e-2b-4e-1: the shared case's draft is recorded now (was 0).
     assert one(
         url,
         "SELECT count(*),min(id::text) FROM app.financial_drafts WHERE kind IN "
