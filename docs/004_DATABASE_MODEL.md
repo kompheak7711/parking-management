@@ -1467,8 +1467,9 @@ keeps the shared refusal while its shortfall is above 0 (Q-2026-10-18-134 point 
 Deposit with a Reservation outcome Refund or a charge on a closed Settlement's Lease keeps those
 refusals, also with a shortfall of 0 (review round 1). The rule reads only what the Deposit holds,
 not the order of events (owner answer (a)): when B's receipt paid a Refund before A's receipt came
-in (with option (d) in place, only after a dodge such as a verified return reversed after A's
-receipt) and B bounces, nothing is charged and the Refund stays paid from A's money; the Deposit is then
+in (a receipt into a Deposit whose Refund is out, recorded since sub-slice 10e-2b-4e-2b-2b ended
+option (d); before that only after a dodge such as a verified return reversed after A's receipt)
+and B bounces, nothing is charged and the Refund stays paid from A's money; the Deposit is then
 short of its required total, as with any unpaid Deposit money. A Deposit the
 returned Payment alone funded is unchanged (its shortfall is the nets of its Refunds, each
 recovered whole). The insert check of the recovery row accepts a share only through
@@ -1856,11 +1857,15 @@ termination ground keeps that Deposit type (`app.lease_termination_forfeiture_ru
 Final Settlement and the forfeiture drafts use), also after a forfeiture reversal, so money paid
 after such a termination is recorded as a normal Payment and pays open Invoices or becomes Credit
 (answer 3, option (a) of Q-2026-10-18-131; a Deposit the ground does not keep, such as the Pet
-Deposit after voluntary early leaving, still takes receipts until closure); (2) refuses (55000,
-"The Deposit has a Refund that is not fully returned; this receipt is not recorded here") a
-receipt into a Deposit with a Refund its corrections do not cover in full
-(`app.deposit_has_unresolved_refund`; option (d) of Q-2026-10-18-127 until its option (a) is
-built); (3) for a Payment confirmed for an Invoice or a Late-payment Charge, runs the Credit
+Deposit after voluntary early leaving, still takes receipts until closure); (2) from sub-slice
+10e-2b-4d to sub-slice 10e-2b-4e-2b-2b (migration `20270104_161`) it refused (55000, "The Deposit
+has a Refund that is not fully returned; this receipt is not recorded here") a receipt into a
+Deposit with a Refund its corrections do not cover in full (`app.deposit_has_unresolved_refund`;
+option (d) of Q-2026-10-18-127 until its option (a) was built); that refusal is removed, because
+option (a) is built in the return before closure and in both corrections after closure, so a
+receipt into a Deposit whose Refund is out is recorded again (before closure a Lease's Deposit has
+such a Refund only as a Pet Refund-review Refund) and a later bounce of another Payment of that
+Deposit charges back only its shortfall (DB-REFUND-002 note, DB-DEP-007); (3) for a Payment confirmed for an Invoice or a Late-payment Charge, runs the Credit
 path's `app.assert_payment_excess_eligible` (the obligation tables in SHARE MODE NOWAIT; 23514
 "Applicable obligations must be handled before excess disposition" while the named target, or a
 Late-payment Charge of the named Invoice, has anything outstanding), so once the named target has
@@ -1875,13 +1880,30 @@ recorded, and a termination locks the Lease, not its Deposits, so a receipt reco
 termination is still uncommitted is recorded, and a termination dated earlier than its entry
 leaves receipts recorded in between (Q-2026-10-18-133); a TERMINATED Lease without exactly one
 matching termination record refuses every receipt (22023, fail closed; the Final Settlement uses
-the same rule); option (d) does not cover a second
-receipt recorded while a Pet Refund draft is still pending (10e-2b-4e closes it).
+the same rule); option (d) did not cover a second
+receipt recorded while a Pet Refund draft was still pending (moot since option (d) ended).
+Known limit (sub-slice 10e-2b-4e-2b-2b review round 1, security; Q-2026-10-19-137): a receipt
+recorded into a Pet Deposit while its Pet Refund-review Refund is not fully returned cannot be
+reversed before closure until that Refund is returned in full, because the receipt reversal check
+refuses while the Deposit has such a Refund (55000, "Deposit receipt has active dependent
+financial history"); a Payment that names no owed target (a Payment confirmed for an owed Invoice
+or Late-payment Charge is refused by the excess check) and is recorded there by mistake stays in
+the Deposit until the Refund comes back, the Payment's own return, a second Pet Refund-review
+Refund under the same review (two people; it pays the Deposit owner) or the Final Settlement,
+while the Rent it was meant for stays owed (Late-payment Charges and the DL-054 Warning Notice and
+Serious Nonpayment Default can follow); after a termination whose ground keeps the Pet Deposit
+(BR-DEP-022) that money is forfeited by a Lease Deposit forfeiture draft (`financial.approve`)
+that the Settlement requires instead of refunded, and after closure the receipt correction fixes
+it once any forfeiture is reversed by a `FORFEITURE_REVERSAL` correction (which itself runs the
+DL-032 step on that money, so the receipt correction may then have to give back that
+correction's uses; untested combined path, review round 3, security note 2). No route reaches the writer before slice 11, whose receipt route
+waits for the owner's answer to Q-2026-10-19-137 (review round 2, security).
 V1-056 sub-slice 10e-2b-4e-1 (migration `20261231_157`; owner answer (a) to Q-2026-10-18-127)
-does not change refusal (2): option (d) stays until sub-slice 10e-2b-4e-2 builds the corrections
-after closure (review round 2: the owner's "(d) until (a) is built"; without it a receipt recorded
-while a Refund is out, followed by a closure and a bounce, would reach the refused
-`RETURNED_PAYMENT` correction). A return before closure of a Payment of a Deposit that another
+did not change refusal (2): option (d) stayed until the corrections after closure were built
+(review round 2: the owner's "(d) until (a) is built"; without it a receipt recorded while a
+Refund is out, followed by a closure and a bounce, would have reached the then refused
+`RETURNED_PAYMENT` correction; since sub-slices 10e-2b-4e-2a and 10e-2b-4e-2b-1 that correction
+gives back a shared Deposit's shortfall, and sub-slice 10e-2b-4e-2b-2b ended (d)). A return before closure of a Payment of a Deposit that another
 Payment also funded charges back only its shortfall (DB-REFUND-002 note, DB-DEP-007).
 
 ## DB-DEP-003 — `deposit_required_amount_adjustments`
@@ -2410,7 +2432,8 @@ outcome refusal; a plain Deposit's total keeps the end held at or above the coun
 forfeiture stays); a hand-built source can still reach its end-held branch, which reads the
 plan's total (a forfeiture list the database does not hold, or an entry marked not plain with no
 uses), and is refused (fail closed). The receipt correction of a
-shared Deposit and the end of option (d) are sub-slice 10e-2b-4e-2b-2.
+shared Deposit and the end of option (d) are sub-slice 10e-2b-4e-2b-2 (built as 10e-2b-4e-2b-2a
+and 10e-2b-4e-2b-2b).
 
 Since V1-056 sub-slice 10e-2b-4e-2b-2a (migration `20270103_160`; owner answer (a) to
 Q-2026-10-18-127 and answers (a) to Q-2026-10-18-134): the receipt correction
@@ -2440,7 +2463,7 @@ plan Customer Credit step beside a kept part (staff first refund or apply the Cu
 or correct the receipt without new receipts); the last three are refused at record time, because the Deposit
 application check keeps the stage order within a correction and would count an equal step as the
 kept part, and the correction's Credit order check refuses Credit after its Deposit applications.
-The end of option (d) is sub-slice 10e-2b-4e-2b-2b.
+The end of option (d) is sub-slice 10e-2b-4e-2b-2b (migration `20270104_161`, DB-DEP-002).
 
 ## DB-DEP-008 — `deposit_disposition_reversals`
 

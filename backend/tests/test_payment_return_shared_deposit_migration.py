@@ -6,7 +6,8 @@ bounces, its return reverses its receipt when the Deposit still holds at least i
 otherwise first charges back only the shortfall (its amount less what the Deposit holds) to the
 person who received the Refund, newest Refund first, with the same recovery charge as today.
 The return after closure (the two corrections) is sub-slice 10e-2b-4e-2; option (d) (no receipt
-into a Deposit whose Refund is out) stays until then (review round 2).
+into a Deposit whose Refund is out) stayed until then (review round 2) and ended in sub-slice
+10e-2b-4e-2b-2b.
 """
 
 from __future__ import annotations
@@ -33,11 +34,13 @@ from property_rental.refund import SignerRecipient
 from refund_test_support import cash, create_pet_refund
 from test_credit_migration import actor
 from test_deposit_migration import deposit_actor
-from test_deposit_receipt_leftover_migration import REFUND_OUT
 from test_deposit_receipt_record_migration import (
+    ALLOCATE,
+    CALL,
+    DIGEST,
+    REASON,
     SHARED,
     allocator,
-    attempt,
     payment,
     pet_case,
     qualify_review,
@@ -140,6 +143,20 @@ def return_payment(case: dict[str, Any], paid_by: UUID) -> dict[str, Any]:
     human, prop = case["human"], case["prop"]
     draft = returns().record(prop, request(paid_by), actor=return_preparer(human, prop))
     return returns().confirm(prop, draft_id(draft), actor=return_approver(human, prop))
+
+
+def receipt_rolled_back(prop: UUID, human: UUID, deposit: UUID, paid_by: UUID, amount: int) -> int:
+    """Call the receipt writer as the financial role and roll the call back (sub-slice
+    10e-2b-4e-2b-2b: option (d) ended, so it passes while a Refund is out); the held value the
+    writer reports inside the transaction."""
+    with psycopg.connect(financial_database_url()) as connection:
+        row = connection.execute(
+            CALL,
+            (prop, human, uuid4(), DIGEST, uuid4(), deposit, paid_by, amount, REASON, ALLOCATE),
+        ).fetchone()
+        connection.rollback()
+    assert row is not None
+    return int(str(cast(dict[str, Any], row[0])["held_refundable_usd_cents"]))
 
 
 def test_a_shared_deposit_charges_back_only_the_shortfall_then_the_rest_as_before(
@@ -359,11 +376,13 @@ def test_two_recipients_pay_the_shortfall_newest_refund_first(
     """Q-2026-10-18-134 point 2 (review round 1, both reviewers; owner answer (a), newest first,
     built in sub-slice 10e-2b-4e-2a): A 20,000 and B 10,000, then Refunds of 8,000 to the Primary
     Tenant and 7,000 to the second Signer (the Deposit holds 15,000, so A's shortfall is 5,000).
-    Option (d) still refuses a receipt from Payment C (55000) and C keeps its value. A's return
-    charges the 5,000 back to the second Signer, the newest Refund's recipient, and nothing to the
-    Primary Tenant; the Deposit holds 0 and B's receipt stays. With Refunds of 3,000 and 2,000 (the
-    Deposit holds 25,000, shortfall 0) nobody is charged, so A's return is recorded and confirmed
-    with no recovery and the Deposit holds B's 5,000 left. Renamed in 10e-2b-4e-2a from
+    Option (d) refused a receipt from Payment C (55000) until sub-slice 10e-2b-4e-2b-2b; now the
+    writer takes it, shown in a rolled-back call, so C keeps its value and the shortfall stays
+    5,000. A's return charges the 5,000 back to the second Signer, the newest Refund's
+    recipient, and nothing to the Primary Tenant; the Deposit holds 0 and B's receipt stays.
+    With Refunds of 3,000 and 2,000 (the Deposit holds 25,000, shortfall 0) nobody is charged, so
+    A's return is recorded and confirmed with no recovery and the Deposit holds B's 5,000 left.
+    Renamed in 10e-2b-4e-2a from
     `test_two_recipients_keep_the_shared_refusal_while_a_shortfall_is_charged` (A's return was
     refused, 55000, the shared-Deposit message)."""
     url = migrated_database_url
@@ -371,7 +390,8 @@ def test_two_recipients_pay_the_shortfall_newest_refund_first(
     human, prop, pet = case["human"], case["prop"], case["pet"]
     assert held(url, pet) == 15_000
     later = payment(url, human, pet, 5_000)
-    assert attempt(prop, human, pet, later, 5_000) == ("55000", REFUND_OUT)
+    assert receipt_rolled_back(prop, human, pet, later, 5_000) == 20_000
+    assert held(url, pet) == 15_000
     assert int(value(url, "SELECT app.payment_available_value(%s)", later)) == 5_000
     result = return_payment(case, case["first"])
     assert len(cast(list[dict[str, Any]], result["recoveries"])) == 1
@@ -391,11 +411,13 @@ def test_two_recipients_pay_the_shortfall_newest_refund_first(
 def test_a_verified_return_between_the_record_and_the_confirm_makes_the_return_stale(
     migrated_database_url: str,
 ) -> None:
-    """Review round 1 (security should-fix 1b), adapted in review round 2 (option (d) stays, so no
-    receipt can come in while the Refund is out): the Q-2026-10-18-127 example's return draft plans
-    5,000; then 2,000 of the Refund is verified returned (the Deposit holds 7,000). The confirm is
-    stale (P5S02) and writes nothing; the draft is withdrawn and recorded again, plans 3,000, and
-    its confirm charges back 3,000, leaves the Refund's net at 10,000 and the Deposit at 0."""
+    """Review round 1 (security should-fix 1b), adapted in review round 2 (option (d) then stood,
+    so no receipt could come in while the Refund was out; the receipt case is in
+    `test_deposit_receipt_refund_out_migration.py` since sub-slice 10e-2b-4e-2b-2b): the
+    Q-2026-10-18-127 example's return draft plans 5,000; then 2,000 of the Refund is verified
+    returned (the Deposit holds 7,000). The confirm is stale (P5S02) and writes nothing; the
+    draft is withdrawn and recorded again, plans 3,000, and its confirm charges back 3,000,
+    leaves the Refund's net at 10,000 and the Deposit at 0."""
     url = migrated_database_url
     case = shared_case(url, (15_000,))
     human, prop, pet = case["human"], case["prop"], case["pet"]

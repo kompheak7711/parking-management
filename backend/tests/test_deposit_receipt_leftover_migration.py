@@ -8,7 +8,8 @@ outstanding, what is left of that Payment may go into the Deposit; one transfer 
 Initial Rent and the Deposit together is normal); answer 3, option (a) of Q-2026-10-18-131 (no
 receipt into a Deposit after a termination whose ground keeps it, also after a forfeiture
 reversal). Review round 1: the excess check runs after the Payment and Deposit locks, and the
-Deposit service replays the receipt after a NOWAIT refusal (DL-067).
+Deposit service replays the receipt after a NOWAIT refusal (DL-067). Option (d) ended in sub-slice
+10e-2b-4e-2b-2b, once option (a) was built; its two tests here now show the receipt recorded.
 """
 
 from __future__ import annotations
@@ -70,10 +71,12 @@ from test_unpaid_initial_termination_migration import rent_line, signed_with_ini
 
 REVISION = "20261230_156"
 WRITER = "app.record_lease_deposit_receipt(uuid,uuid,uuid,text,uuid,uuid,uuid,bigint,text,text)"
+# The option (d) refusal of sub-slice 10e-2b-4d, removed by sub-slice 10e-2b-4e-2b-2b.
 REFUND_OUT = (
     "The Deposit has a Refund that is not fully returned; this receipt is not recorded here"
 )
 AVAILABLE = "SELECT app.payment_available_value(%s)"
+UNRESOLVED = "SELECT app.deposit_has_unresolved_refund(%s)"
 # The twelve tables `app.assert_payment_excess_eligible` locks IN SHARE MODE NOWAIT.
 OBLIGATION_TABLES = [
     "invoices",
@@ -117,15 +120,19 @@ def leftover_case(url: str) -> dict[str, Any]:
     return {**source, "transfer": transfer, "allocation": allocation, "line": line}
 
 
-def test_a_receipt_into_a_deposit_whose_refund_is_out_is_refused(
+def test_a_receipt_into_a_deposit_whose_refund_is_out_is_recorded(
     migrated_database_url: str,
 ) -> None:
-    """Owner answer (d) to Q-2026-10-18-127, the deliberate one-person path of its review round 3:
-    a Pet Deposit (required 20,000) takes 10,000 from Payment A and pays a 10,000 Pet Refund-review
-    Refund (it holds 0). A receipt from Payment C would make A's later return impossible (the
-    shared-Deposit guard), so it is refused (55000; the service shows it as invalid) while the
-    Refund is not fully returned, also after a partial return; nothing is written and C keeps its
-    value. Once the Refund is returned in full, C's receipt is recorded."""
+    """The deliberate one-person path of Q-2026-10-18-127 review round 3: a Pet Deposit (required
+    20,000) takes 10,000 from Payment A and pays a 10,000 Pet Refund-review Refund (it holds 0).
+    Option (d) refused a receipt from Payment C while the Refund was not fully returned (sub-slice
+    10e-2b-4d). Owner answer (a) replaces (d) once it is built, so since sub-slice 10e-2b-4e-2b-2b
+    C's receipt is recorded while the Refund is out (the Deposit holds 10,000 and C has nothing
+    left); A's later return charges back only its shortfall
+    (`test_deposit_receipt_refund_out_migration.py`). The Refund's verified returns of 4,000 and
+    6,000 then come back into the Deposit, which ends holding 20,000 with the Refund resolved, as
+    before. Renamed in 10e-2b-4e-2b-2b from
+    `test_a_receipt_into_a_deposit_whose_refund_is_out_is_refused`."""
     url = migrated_database_url
     case: dict[str, Any] = pet_case(url)
     human, prop, pet = case["human"], case["prop"], case["pet"]
@@ -137,21 +144,24 @@ def test_a_receipt_into_a_deposit_whose_refund_is_out_is_refused(
     refund = review_refund(case, qualify_review(case), 10_000)
     assert held(url, pet) == 0
     later = payment(url, human, pet, 10_000)
-    assert attempt(prop, human, pet, later, 10_000) == ("55000", REFUND_OUT)
-    with pytest.raises(DepositInvalidError):
-        service.record_receipt(receipt_command(pet, later, 10_000), actor=allocator(human, prop))
-    refund_service().verify_usd_return(
-        prop, refund, returned(4_000), actor=actor(human, prop, "refunds.correct")
-    )
-    assert attempt(prop, human, pet, later, 10_000) == ("55000", REFUND_OUT)
-    assert (written(url, pet), value(url, AVAILABLE, later)) == ((1, 1, 1), 10_000)
-    refund_service().verify_usd_return(
-        prop, refund, returned(6_000), actor=actor(human, prop, "refunds.correct")
-    )
     recorded = service.record_receipt(
         receipt_command(pet, later, 10_000), actor=allocator(human, prop)
     )
-    assert (recorded.deposit.held_refundable_usd_cents, written(url, pet)) == (20_000, (2, 2, 2))
+    assert (recorded.deposit.held_refundable_usd_cents, written(url, pet)) == (10_000, (2, 2, 2))
+    assert value(url, UNRESOLVED, pet) is True
+    assert value(url, AVAILABLE, later) == 0
+    refund_service().verify_usd_return(
+        prop, refund, returned(4_000), actor=actor(human, prop, "refunds.correct")
+    )
+    assert (held(url, pet), value(url, UNRESOLVED, pet)) == (14_000, True)
+    refund_service().verify_usd_return(
+        prop, refund, returned(6_000), actor=actor(human, prop, "refunds.correct")
+    )
+    assert (held(url, pet), written(url, pet), value(url, UNRESOLVED, pet)) == (
+        20_000,
+        (2, 2, 2),
+        False,
+    )
 
 
 def test_the_rest_of_a_payment_named_for_the_initial_rent_invoice_goes_into_the_deposit(
@@ -511,13 +521,15 @@ def test_an_allocation_reversal_committed_while_the_writer_waits_keeps_the_lefto
     assert (held(url, security), written(url, security)) == (before, (1, 0, 0))
 
 
-def test_a_refund_committed_while_the_writer_waits_refuses_the_receipt(
+def test_a_receipt_waiting_for_a_refund_confirm_is_recorded_after_it(
     migrated_database_url: str,
 ) -> None:
-    """Review round 1 (independent note 2): the Refund-out check reads after the Deposit lock. A
-    Pet Deposit holds 10,000; the confirm of a 10,000 Pet Refund-review Refund holds it; a receipt
-    that waits for that confirm reads the committed Refund and is refused (55000); nothing is
-    written and the Payment keeps its value."""
+    """Review round 1 (independent note 2): the writer reads after the Deposit lock. A Pet Deposit
+    holds 10,000; the confirm of a 10,000 Pet Refund-review Refund holds it; a receipt that waits
+    for that confirm reads the committed Refund. Option (d) refused it (55000) until sub-slice
+    10e-2b-4e-2b-2b ended (d); now it is recorded after the confirm, and the Deposit holds 10,000
+    with the Refund out. Renamed in 10e-2b-4e-2b-2b from
+    `test_a_refund_committed_while_the_writer_waits_refuses_the_receipt`."""
     url = migrated_database_url
     case: dict[str, Any] = pet_case(url)
     human, prop, pet = case["human"], case["prop"], case["pet"]
@@ -545,12 +557,22 @@ def test_a_refund_committed_while_the_writer_waits_refuses_the_receipt(
             waiting = pool.submit(attempt, prop, human, pet, later, 10_000)
             wait_until_blocked_by(url, confirming)
             confirming.commit()
-            assert waiting.result(timeout=60) == ("55000", REFUND_OUT)
+            assert waiting.result(timeout=60) == (None, None)
     assert (written(url, pet), held(url, pet), value(url, AVAILABLE, later)) == (
-        (1, 1, 1),
-        0,
+        (2, 2, 2),
         10_000,
+        0,
     )
+    # Review round 1 of sub-slice 10e-2b-4e-2b-2b (independent note 1): recorded after the
+    # Refund, which is still out.
+    assert value(
+        url,
+        "SELECT (SELECT occurred_at FROM app.deposit_receipts WHERE payment_id=%s)"
+        ">(SELECT max(processed_at) FROM app.refunds WHERE source_deposit_id=%s)",
+        later,
+        pet,
+    )
+    assert value(url, UNRESOLVED, pet) is True
 
 
 def test_the_receipt_leftover_migration_is_least_privilege_and_forward_only(
