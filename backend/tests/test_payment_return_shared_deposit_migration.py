@@ -353,26 +353,32 @@ def joint_shared_case(url: str, to_tenant: int, to_co_signer: int) -> dict[str, 
     }
 
 
-def test_two_recipients_keep_the_shared_refusal_while_a_shortfall_is_charged(
+def test_two_recipients_pay_the_shortfall_newest_refund_first(
     migrated_database_url: str,
 ) -> None:
-    """Q-2026-10-18-134 point 2 (review round 1, both reviewers): A 20,000 and B 10,000, then
-    Refunds of 8,000 to the Primary Tenant and 7,000 to the second Signer (the Deposit holds
-    15,000, so A's shortfall is 5,000). Who pays depends on the order, so A's return stays refused
-    (55000, the shared-Deposit message) and nothing is written; option (d) still refuses a receipt
-    from Payment C (55000) and C keeps its value. With Refunds of 3,000 and 2,000 (the Deposit
-    holds 25,000, shortfall 0) nobody is charged, so A's return is recorded and confirmed with no
-    recovery and the Deposit holds B's 5,000 left."""
+    """Q-2026-10-18-134 point 2 (review round 1, both reviewers; owner answer (a), newest first,
+    built in sub-slice 10e-2b-4e-2a): A 20,000 and B 10,000, then Refunds of 8,000 to the Primary
+    Tenant and 7,000 to the second Signer (the Deposit holds 15,000, so A's shortfall is 5,000).
+    Option (d) still refuses a receipt from Payment C (55000) and C keeps its value. A's return
+    charges the 5,000 back to the second Signer, the newest Refund's recipient, and nothing to the
+    Primary Tenant; the Deposit holds 0 and B's receipt stays. With Refunds of 3,000 and 2,000 (the
+    Deposit holds 25,000, shortfall 0) nobody is charged, so A's return is recorded and confirmed
+    with no recovery and the Deposit holds B's 5,000 left. Renamed in 10e-2b-4e-2a from
+    `test_two_recipients_keep_the_shared_refusal_while_a_shortfall_is_charged` (A's return was
+    refused, 55000, the shared-Deposit message)."""
     url = migrated_database_url
     case = joint_shared_case(url, 8_000, 7_000)
     human, prop, pet = case["human"], case["prop"], case["pet"]
     assert held(url, pet) == 15_000
-    assert return_refused(prop, human, case["first"]) == ("55000", SHARED)
     later = payment(url, human, pet, 5_000)
     assert attempt(prop, human, pet, later, 5_000) == ("55000", REFUND_OUT)
-    assert [recoveries(url, refund) for refund in case["refunds"]] == [[], []]
-    assert (held(url, pet), status(url, case["first"])) == (15_000, "RECEIVED")
     assert int(value(url, "SELECT app.payment_available_value(%s)", later)) == 5_000
+    result = return_payment(case, case["first"])
+    assert len(cast(list[dict[str, Any]], result["recoveries"])) == 1
+    assert [recoveries(url, refund) for refund in case["refunds"]] == [[], [5_000]]
+    assert [net(url, refund) for refund in case["refunds"]] == [8_000, 2_000]
+    assert (held(url, pet), status(url, case["first"])) == (0, "REVERSED")
+    assert active_receipts(url, pet) == [case["second"]]
 
     case = joint_shared_case(url, 3_000, 2_000)
     assert held(url, case["pet"]) == 25_000
@@ -439,13 +445,15 @@ def test_an_active_forfeiture_is_refused_before_the_shortfall_is_compared(
     assert status(url, first) == "RECEIVED"
 
 
-def test_the_shortfall_share_passes_the_recovery_check_only_without_a_settlement(
+def test_the_shortfall_share_passes_the_recovery_check_with_or_without_a_settlement(
     migrated_database_url: str,
 ) -> None:
     """Review round 1 (independent note 5), hand-built: a shared Deposit's entry with
-    `shortfall_share` passes the recovery check of the PAYMENT_RETURN path (no Settlement) and is
-    still refused (55000, the shared-Deposit message) when a Settlement is given; an entry without
-    it is refused in both."""
+    `shortfall_share` passes the recovery check of the PAYMENT_RETURN path (no Settlement) and,
+    since sub-slice 10e-2b-4e-2a (owner answers (a) to Q-2026-10-18-134), of the
+    RETURNED_PAYMENT correction (a Settlement given); an entry without it is refused (55000, the
+    shared-Deposit message). Renamed in 10e-2b-4e-2a from
+    `test_the_shortfall_share_passes_the_recovery_check_only_without_a_settlement`."""
     url = migrated_database_url
     base = {"reservation_outcome": False, "shared_deposit": True}
 
@@ -461,7 +469,8 @@ def test_the_shortfall_share_passes_the_recovery_check_only_without_a_settlement
         return None, None
 
     assert check({"shortfall_share": True}, None) == (None, None)
-    assert check({"shortfall_share": True}, uuid4()) == ("55000", SHARED)
+    # Sub-slice 10e-2b-4e-2a: was ("55000", SHARED).
+    assert check({"shortfall_share": True}, uuid4()) == (None, None)
     assert check({}, None) == ("55000", SHARED)
 
 

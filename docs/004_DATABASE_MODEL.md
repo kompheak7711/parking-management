@@ -1481,6 +1481,17 @@ reversal still refuse a shared Deposit (sub-slice 10e-2b-4e-2, Q-2026-10-18-134 
 draft recorded before revision 157 whose Payment has an active Deposit receipt is stale (its source
 gained the Deposit keys) and is recorded again; other drafts keep their digest.
 
+Since V1-056 sub-slice 10e-2b-4e-2a (migration `20270101_158`; owner answers (a) to
+Q-2026-10-18-134): the newest unreturned Refund's recipient pays first, before and after closure,
+also when the Refunds went to two people (the 4e-1 two-recipient refusal ends). The
+`RETURNED_PAYMENT` correction plans the shares of a shared Deposit's Refunds itself (newest use
+first over its Refunds, applications and forfeitures; DB-DEP-007 note), and the recovery insert
+check also accepts a share inside the confirmed `RETURNED_PAYMENT` correction that links the row,
+at most the Deposit's shortfall before the row (`app.payment_return_shortfall_recovery_amount` is
+bound to the return of the correction that links the row; a `PAYMENT_RETURN` has none). The
+receipt correction (until sub-slice 10e-2b-4e-2b) and the return reversal still refuse a shared
+Deposit.
+
 As built in V1-056 sub-slice 10e-4 (migration `20261201_127`; owner answer (c) to Q-2026-10-11-81
 point 3 and the owner answer to Q-2026-10-11-82): the `RETURNED_PAYMENT` correction also returns a
 Payment that no closed Final Settlement relied on, when the Payment names the correction's Lease or
@@ -2348,6 +2359,28 @@ confirmed `PAYMENT_RETURN` of this transaction (no correction) returns the recei
 another Payment has an active receipt in the Deposit. The active-forfeiture, active-application
 and waiting-draft refusals, the closed-Settlement refusal and the held-history check stay, so the
 return can reverse that receipt only when the Deposit then holds 0 or more (DB-REFUND-002 note).
+
+Since V1-056 sub-slice 10e-2b-4e-2a (migration `20270101_158`; owner answers (a) to
+Q-2026-10-18-134): after closure the `RETURNED_PAYMENT` correction of a shared Deposit (another
+Payment also has an active receipt in it) gives back only the Deposit's shortfall (the returned
+Payment's active receipt less what the Deposit holds, never below 0) from its uses still in force,
+newest first (by time; a Refund before an application before a forfeiture at the same moment;
+then the later application order; then id): a Refund that is not fully returned by a recovery
+charge to its recipient (DB-REFUND-002), a Deposit application by its reversal with its kept part
+written again as a new Deposit application of the same Deposit, stage and target, linked to the
+correction (DB-SETTLE-005 `deposit_application_id`), and a forfeiture by its reversal with its kept
+part forfeited again, linked (`deposit_disposition_id`). The plan is part of the draft's source
+(`shared_deposits`, built by `app.settlement_returned_payment_shared(property, payment, source)`),
+so its digest covers it; a `RETURNED_PAYMENT` draft recorded before this migration is stale at its
+confirm (P5S02). This receipt reversal then skips the unresolved-Refund, active-forfeiture and
+active-application refusals, but only for the return of the correction that links the reversal
+and whose plan lists the Deposit; the held-history check stays. Refused (55000): an application's
+kept part beside a forfeiture of that Deposit that stays active (a kept Deposit is never applied;
+a known limit), and, until the owner answers Q-2026-10-18-135, a plan that charges back or reverses
+a Refund or application of a Deposit with pay-back history (also when already paid out), or that
+would end holding less than the Customer's pay-back count, while a forfeiture of it stays active
+(also checked after the writes). The receipt correction of a shared Deposit is
+sub-slice 10e-2b-4e-2b.
 
 ## DB-DEP-008 — `deposit_disposition_reversals`
 
@@ -3789,6 +3822,18 @@ Q-2026-10-17-120, so this correction never changes a record that another Settlem
 wrote (the condition of owner answer 5). The correct Invoice may belong to a Lease whose Final
 Settlement is closed: the new allocation pays its remaining debt and its closure snapshot does not
 change. No table, column or effect kind changed.
+
+V1-056 sub-slice 10e-2b-4e-2a (migration `20270101_158`; owner answers (a) to Q-2026-10-18-134): a
+`RETURNED_PAYMENT` correction of a shared Deposit links, besides its reversals and recoveries, the
+kept parts it writes again: a Deposit application (`deposit_application_id`; the Deposit
+application check accepts it through `app.settlement_shared_deposit_kept_application_allowed`, never
+NULL: a `RETURNED_PAYMENT` draft whose stored source lists the same Deposit, stage, target and kept
+amount, the listed application reversed by a reversal linked to this correction, once) and a
+forfeiture (`deposit_disposition_id`; `app.write_correction_deposit_forfeiture` accepts a listed
+kept part whose forfeiture this correction reversed, with the draft's reason; the forfeiture
+table's held and pay-back limits stay). `app.settlement_returned_payment_result` gains
+`deposit_application_ids` and `forfeiture_ids`. No table, column or effect kind changed (DB-DEP-007
+note).
 
 ## DB-SETTLE-007 — `settlement_pet_classifications`
 

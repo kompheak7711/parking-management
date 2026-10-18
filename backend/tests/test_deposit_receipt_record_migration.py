@@ -40,10 +40,7 @@ from property_rental.deposit import (
     ReverseDepositReceiptCommand,
     deposit_request_digest,
 )
-from property_rental.final_settlement import (
-    FinalSettlementConflictError,
-    FinalSettlementStaleDraftError,
-)
+from property_rental.final_settlement import FinalSettlementStaleDraftError
 from property_rental.lease_deposit_forfeiture import (
     LeaseDepositForfeitureInvalidError,
     LeaseDepositForfeitureService,
@@ -85,12 +82,14 @@ from test_pet_refund_migration import command as pet_refund_command
 from test_refund_service_migration import refund_id, returned
 from test_refund_service_migration import service as refund_service
 from test_reservation_migration import create_reservation, setup_reservation_sources
+from test_settlement_correction_migration import approver as correction_approver
 from test_settlement_deposit_receipt_payback_forfeiture_migration import payback_count
 from test_settlement_extra_charge_migration import cause
 from test_settlement_extra_charge_migration import state as draft_state
 from test_settlement_pet_receipt_link_migration import closed, pet_lease_case
-from test_settlement_returned_payment_migration import RELIED_ON, STILL_HOLDS, counts
+from test_settlement_returned_payment_migration import RELIED_ON, counts
 from test_settlement_returned_payment_migration import command as returned_command
+from test_settlement_returned_payment_migration import confirm as confirm_returned
 from test_settlement_returned_payment_migration import record as record_returned
 from test_settlement_returned_payment_migration import status as payment_status
 from test_unpaid_initial_termination_migration import rent_line, signed_with_initial
@@ -880,34 +879,64 @@ def test_a_payment_confirmed_for_an_owed_late_payment_charge_is_not_a_deposit_re
     assert value(url, "SELECT app.payment_available_value(%s)", charged) == 10_000
 
 
-def test_after_closure_a_deposit_funded_by_two_payments_keeps_a_bounced_payment_received(
+def test_after_closure_a_bounced_payment_of_a_shared_kept_deposit_keeps_the_other_share(
     migrated_database_url: str,
 ) -> None:
-    """Review round 2 (security S2; the known limit of Q-2026-10-18-127): after closure, a Deposit
-    funded by two Payments cannot have one of them returned, with or without a Refund. A Pet
-    Deposit takes 5,000 from each of two Payments, the pet noncompliance forfeiture keeps the
-    10,000 and the Settlement closes. The first Payment's RETURNED_PAYMENT correction is refused
-    because the Deposit would not end empty (55000), the ordinary return draft is refused as
-    relied on, nothing is written, and the Payment stays RECEIVED. Since sub-slice 10e-2b-4d
-    (owner answer (a) to Q-2026-10-18-131 refuses a receipt after the pet noncompliance
-    termination) the two receipts are recorded before the termination."""
+    """Review round 2 (security S2; Q-2026-10-18-127), since sub-slice 10e-2b-4e-2a (owner answers
+    (a) to Q-2026-10-18-127 and Q-2026-10-18-134): a Pet Deposit takes 5,000 from each of two
+    Payments, the pet noncompliance forfeiture keeps the 10,000 and the Settlement closes. The
+    ordinary return draft of the first Payment is refused as relied on; its RETURNED_PAYMENT
+    correction gives back the 5,000 shortfall from the forfeiture (the only use): the 10,000
+    forfeiture is reversed and 5,000 forfeited again, linked, then the first receipt and Payment
+    are reversed. Nobody is charged, the Deposit holds 0 and the second Payment's 5,000 stays
+    forfeited. Since sub-slice 10e-2b-4d (owner answer (a) to Q-2026-10-18-131 refuses a receipt
+    after the pet noncompliance termination) the two receipts are recorded before the
+    termination. Renamed in 10e-2b-4e-2a from
+    `test_after_closure_a_deposit_funded_by_two_payments_keeps_a_bounced_payment_received` (the
+    correction was refused, 55000, "A Deposit this Payment funded would still hold money after
+    the return", and the Payment stayed RECEIVED)."""
     url = migrated_database_url
     # Sub-slice 10e-2b-4d: was `pet_lease_case(url)` and the two receipts after the termination.
     case = terminated_pet_lease_case(url, receipts=(5_000, 5_000))
     human, prop, pet = case["human"], case["prop"], case["pet"]
     deposits = PostgresDepositService(financial_database_url(), prop, human)
-    first, _ = case["payments"]
+    first, second = case["payments"]
     assert held(url, pet) == 10_000
     forfeit_through_draft(deposits, pet)
+    [forfeited] = rows(url, "SELECT id FROM app.deposit_dispositions WHERE deposit_id=%s", pet)
     closed(case)
     before = counts(url)
-    with pytest.raises(FinalSettlementConflictError) as refused:
-        record_returned(case, returned_command(case, first))
-    assert cause(refused) == ("55000", STILL_HOLDS)
     with pytest.raises(PaymentReturnConflictError) as plain:
         returns().record(prop, request(first), actor=return_preparer(human, prop))
     assert cause(plain) == ("55000", RELIED_ON)
-    assert (counts(url), payment_status(url, first)) == (before, "RECEIVED")
+    assert counts(url) == before
+    result = confirm_returned(
+        {**case, "person": correction_approver(url)},
+        record_returned(case, returned_command(case, first)),
+    )
+    assert result["recoveries"] == []
+    [reversal] = result["forfeiture_reversal_ids"]
+    assert value(
+        url,
+        "SELECT deposit_disposition_id FROM app.deposit_disposition_reversals WHERE id=%s",
+        UUID(str(reversal)),
+    ) == UUID(str(forfeited[0]))
+    [kept] = result["forfeiture_ids"]
+    assert rows(
+        url,
+        "SELECT disposition.amount_usd_cents,EXISTS(SELECT 1 "
+        "FROM app.deposit_disposition_reversals reversal "
+        "WHERE reversal.deposit_disposition_id=disposition.id) "
+        "FROM app.deposit_dispositions disposition WHERE disposition.deposit_id=%s "
+        "ORDER BY disposition.occurred_at",
+        pet,
+    ) == [(10_000, True), (5_000, False)]
+    assert UUID(str(kept)) != UUID(str(forfeited[0]))
+    assert (held(url, pet), payment_status(url, first), payment_status(url, second)) == (
+        0,
+        "REVERSED",
+        "RECEIVED",
+    )
 
 
 def test_the_receipt_writer_migration_is_least_privilege_and_forward_only(
