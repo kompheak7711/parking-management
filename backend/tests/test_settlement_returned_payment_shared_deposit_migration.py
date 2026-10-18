@@ -109,13 +109,17 @@ KEPT_ALLOWED = (
 )
 
 
-def shared_security_case(url: str, second_amount: int = 10_000) -> dict[str, Any]:
+def shared_security_case(
+    url: str, second_amount: int = 10_000, third_amount: int = 0
+) -> dict[str, Any]:
     """The `leaving_case` Lease (terminated with no forfeiture ground): its Security Deposit holds
     the Reservation Payment A's 10,000; its required total is raised by `second_amount` and
     Payment B's receipt of that amount is recorded. The Settlement applies 400 of Credit and 12,100
     of the Security Deposit to the other damage line, the Pet Deposit pays the pet damage line
     (12,500), and it refunds the rest of the Security Deposit (7,900 with the default) and 7,500
-    of the Pet Deposit; then it closes."""
+    of the Pet Deposit; then it closes. With `third_amount` (sub-slice 10e-2b-4e-2b-2a review round
+    2; none by default) the total is raised by that amount too and Payment C's receipt of it is
+    recorded before the Settlement, which refunds it with the rest."""
     case: dict[str, Any] = {**leaving_case(url, start_offset=this_month(url)), "url": url}
     human, prop, security = case["human"], case["prop"], case["security"]
     deposits = PostgresDepositService(financial_database_url(), prop, human)
@@ -125,7 +129,7 @@ def shared_security_case(url: str, second_amount: int = 10_000) -> dict[str, Any
             uuid4(),
             security,
             DepositAdjustmentType.INCREASE,
-            second_amount,
+            second_amount + third_amount,
             today(url),
             "The agreed Lease terms raise the Security Deposit",
         ),
@@ -136,17 +140,23 @@ def shared_security_case(url: str, second_amount: int = 10_000) -> dict[str, Any
     deposits.record_receipt(
         receipt_command(security, second, second_amount), actor=allocator(human, prop)
     )
-    assert held(url, security) == 10_000 + second_amount
+    third = None
+    if third_amount:
+        third = payment(url, human, security, third_amount)
+        deposits.record_receipt(
+            receipt_command(security, third, third_amount), actor=allocator(human, prop)
+        )
+    assert held(url, security) == 10_000 + second_amount + third_amount
     steps = (
         SettlementCreditStep(case["credit"], LINE, case["other_line"], 400),
         SettlementDepositStep(PET_FIRST, case["pet"], LINE, case["pet_line"], 12_500),
         SettlementDepositStep(SECURITY, security, LINE, case["other_line"], 12_100),
-        settlement_refund(case, "security", second_amount - 2_100),
+        settlement_refund(case, "security", second_amount + third_amount - 2_100),
         settlement_refund(case, "pet", 7_500),
     )
     confirm_settlement(case, record_settlement(case, steps))
     case["person"] = correction_approver(url)
-    return {**case, "first": first, "second": second}
+    return {**case, "first": first, "second": second, "third": third}
 
 
 def test_the_owner_s_example_gives_back_the_refund_then_part_of_the_application(

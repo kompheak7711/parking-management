@@ -43098,6 +43098,134 @@
       "test_path": "backend/tests/test_settlement_returned_payment_payback_first_migration.py",
       "status": "implemented",
       "notes": "Review round 2 (independent should-fix 1): a kept shared Pet Deposit holding 4,000 of pay-back money after a return-only correction, with a 3,000 forfeiture; the rule's 5,000 is capped at the 3,000 the forfeiture keeps, so the forfeiture is reversed in full, nobody is charged and the Deposit ends holding 2,000; review round 3: a hand-built forfeiture the database does not hold reaches the pay-back refusal's end-held branch (55000), and a forged held value or receipt that would hide it is refused by the record check's total first (V1-056 sub-slice 10e-2b-4e-2b-1)."
+    },
+    {
+      "test_id": "test_a_shared_deposit_receipt_meant_for_rent_gives_back_only_its_shortfall",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-SETTLE-016",
+        "DL-032",
+        "DB-SETTLE-005",
+        "DB-DEP-007",
+        "DB-REFUND-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_receipt_shared_deposit_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer (a) to Q-2026-10-18-127 and answers (a) to Q-2026-10-18-134 on the real path: a shared Security Deposit's 10,000 receipt from the Reservation Payment was meant for Rent; the receipt correction gives back its 10,000 shortfall newest first (the 7,900 Settlement Refund charged back to the Customer on the Lease, then 2,100 of the 12,100 application reversed with its kept 10,000 written again) and reverses the receipt; the other Payment's receipt stays applied; hand-built plans that miss the live shortfall are refused (V1-056 sub-slice 10e-2b-4e-2b-2a)."
+    },
+    {
+      "test_id": "test_a_shared_deposit_receipt_for_the_wrong_amount_is_written_again_and_applied",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-SETTLE-008",
+        "DL-032",
+        "DB-SETTLE-005",
+        "DB-DEP-002",
+        "DB-DEP-007"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_receipt_shared_deposit_migration.py",
+      "status": "implemented",
+      "notes": "Owner rules 1 and 2 of Q-2026-10-12-87 on a shared Deposit: after the shortfall give-back, a right 8,000 receipt of the same Payment into the same Deposit is applied by the DL-032 step to the 2,100 damage line and 5,900 of the recovery charge's placeholder line; 2,000 stays owed and 2,000 with the Payment; inside the confirm the shared receipt reversal passes its check (V1-056 sub-slice 10e-2b-4e-2b-2a)."
+    },
+    {
+      "test_id": "test_the_right_receipt_refusals_of_a_shared_deposit",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "DL-032",
+        "DB-DEP-007"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_receipt_shared_deposit_migration.py",
+      "status": "implemented",
+      "notes": "Fail-closed refusals of a shared Deposit's receipt correction: a plan Deposit step whose DL-032 stage comes before the kept Security application part is refused at record time; on hand-built targets, a shared Deposit that would still hold other money and a right receipt into a shared Deposit with a pay-back count are refused (known limits; V1-056 sub-slice 10e-2b-4e-2b-2a)."
+    },
+    {
+      "test_id": "test_the_shared_receipt_correction_migration_is_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_receipt_shared_deposit_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20270103_160 adds one internal function with no grant and patches only the nine listed functions by exactly their listed replacements, keeping owner, privileges and settings; no constraint or trigger changes; forward-only (V1-056 sub-slice 10e-2b-4e-2b-2a)."
+    },
+    {
+      "test_id": "test_a_receipt_correction_charges_back_only_part_of_a_refund_larger_than_its_shortfall",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-SETTLE-016",
+        "DL-032",
+        "DB-REFUND-002",
+        "DB-DEP-007"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_receipt_shared_deposit_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 (both reviewers): a shared Security Deposit whose Settlement Refund (17,900) is larger than the 10,000 shortfall; the receipt correction charges back only 10,000 of it (net 7,900) through the shortfall branch of the recovery insert check, reverses no application and reverses the receipt beside the Refund that stays out; with a right 8,000 receipt the plan pays 8,000 of the recovery charge's placeholder line (V1-056 sub-slice 10e-2b-4e-2b-2a)."
+    },
+    {
+      "test_id": "test_a_plan_step_that_repeats_the_kept_part_is_refused_and_a_split_step_passes",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "DL-032",
+        "DB-SETTLE-005",
+        "DB-DEP-007"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_receipt_shared_deposit_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 (independent should-fix 1): a plan Deposit step equal to the kept application part (same Deposit, stage, line and amount) is refused at record (55000); applied as 3,000 on the line and 1,000 on the placeholder line the correction passes, to the cent (V1-056 sub-slice 10e-2b-4e-2b-2a)."
+    },
+    {
+      "test_id": "test_a_shared_deposit_holding_more_than_the_receipt_gives_back_nothing",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "DL-032",
+        "DB-DEP-007"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_receipt_shared_deposit_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 (security note 6): after a return-only correction the shared Deposit holds 17,900, more than the 10,000 receipt; with a right receipt the correction is refused (55000, a known limit); without one the shortfall is 0, nothing is recovered or reversed and the Deposit ends holding 7,900 (V1-056 sub-slice 10e-2b-4e-2b-2a)."
+    },
+    {
+      "test_id": "test_the_table_checks_hold_a_receipt_correction_share_to_the_shortfall",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "DB-REFUND-002",
+        "DB-DEP-007"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_receipt_shared_deposit_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 (security S2 b; hand-built in a rolled-back owner transaction): a shared plan whose recovery asks one cent more than the shortfall is refused by the recovery insert check, one cent less by the Deposit's held-history check at the receipt reversal (23514 each); nothing is written (V1-056 sub-slice 10e-2b-4e-2b-2a)."
+    },
+    {
+      "test_id": "test_the_shared_receipt_reversal_check_binds_its_own_receipt_and_no_forfeiture",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "DB-SETTLE-005",
+        "DB-DEP-007"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_receipt_shared_deposit_migration.py",
+      "status": "implemented",
+      "notes": "Review round 2 (both reviewers): a Security Deposit of three Payments; inside the rolled-back confirm of A's receipt correction, the shared receipt reversal check passes for A's reversal, refuses a reversal of B's receipt linked to the same correction (55000) while C's receipt is still active, and fails beside a hand-built active forfeiture; the real confirm charges back 10,000 of the 12,900 Settlement Refund and leaves B's and C's receipts (V1-056 sub-slice 10e-2b-4e-2b-2a)."
+    },
+    {
+      "test_id": "test_a_customer_credit_step_beside_a_kept_part_is_refused_at_record",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "DL-032",
+        "DB-DEP-007"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_deposit_receipt_shared_deposit_migration.py",
+      "status": "implemented",
+      "notes": "Review round 2 (independent should-fix 1): a right receipt's plan with a Customer Credit step beside a kept application part, which the correction's Credit order check would refuse at the confirm, is refused at record (55000, a known limit) and nothing is written (V1-056 sub-slice 10e-2b-4e-2b-2a)."
     }
   ]
 }

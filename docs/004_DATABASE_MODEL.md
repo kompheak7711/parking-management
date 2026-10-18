@@ -1490,7 +1490,9 @@ check also accepts a share inside the confirmed `RETURNED_PAYMENT` correction th
 at most the Deposit's shortfall before the row (`app.payment_return_shortfall_recovery_amount` is
 bound to the return of the correction that links the row; a `PAYMENT_RETURN` has none). The
 receipt correction (until sub-slice 10e-2b-4e-2b) and the return reversal still refuse a shared
-Deposit.
+Deposit. Since sub-slice 10e-2b-4e-2b-2a the same function also accepts a share inside the
+confirmed `DEPOSIT_RECEIPT_CORRECTION` that links the row (DB-DEP-007 note); the return reversal
+still refuses a shared Deposit.
 
 As built in V1-056 sub-slice 10e-4 (migration `20261201_127`; owner answer (c) to Q-2026-10-11-81
 point 3 and the owner answer to Q-2026-10-11-82): the `RETURNED_PAYMENT` correction also returns a
@@ -2409,6 +2411,36 @@ forfeiture stays); a hand-built source can still reach its end-held branch, whic
 plan's total (a forfeiture list the database does not hold, or an entry marked not plain with no
 uses), and is refused (fail closed). The receipt correction of a
 shared Deposit and the end of option (d) are sub-slice 10e-2b-4e-2b-2.
+
+Since V1-056 sub-slice 10e-2b-4e-2b-2a (migration `20270103_160`; owner answer (a) to
+Q-2026-10-18-127 and answers (a) to Q-2026-10-18-134): the receipt correction
+(`DEPOSIT_RECEIPT_CORRECTION`) of a receipt whose Deposit also holds another Payment's active
+receipt gives back only that Deposit's shortfall (the corrected receipt less what the Deposit
+holds, never below 0), newest first, from its Refunds that are not fully returned (a recovery
+charge of the share to the recipient) and its active Deposit applications (reversed, the kept part
+written again, linked), then reverses the receipt; the Deposit then holds only the other Payments'
+money. Its source gains the shared planner's recoveries and its one `shared_deposits` entry
+(`app.settlement_deposit_receipt_correction_shared(property, source)`); a one-Payment Deposit's
+source and digest are unchanged. The record check requires exactly one entry, for the corrected
+receipt's Deposit, whose give-backs total the shortfall on the live state (the receipt and the held
+value read live; only Refunds and applications; a Deposit that is not plain gives back nothing);
+otherwise 55000 ("The Deposit would not end holding only the other Payments' money after this
+receipt correction"). An active forfeiture stays refused (staff reverse it with a
+`FORFEITURE_REVERSAL` correction first). The shortfall recovery amount and the shared receipt
+reversal check accept this correction too, bound to the correction that links the record,
+confirmed in this transaction, whose stored source lists the Deposit (the reversal only of that
+correction's own receipt, and never beside an active forfeiture); the kept-part check accepts that
+correction's listed kept part (the Deposit application check requires the correction to be
+confirmed in this transaction). Known limits (fail closed, 55000): with right receipts, a shared
+Deposit that would still hold money after the correction (staff first pay it out with a
+`HELD_VALUE_REFUND` correction), a right receipt into a shared Deposit with a pay-back count, a
+plan Deposit step whose DL-032 stage comes before a kept application part, a plan Deposit step
+equal to a kept part (the same Deposit, stage, target and amount; staff split the step), and a
+plan Customer Credit step beside a kept part (staff first refund or apply the Customer's Credit,
+or correct the receipt without new receipts); the last three are refused at record time, because the Deposit
+application check keeps the stage order within a correction and would count an equal step as the
+kept part, and the correction's Credit order check refuses Credit after its Deposit applications.
+The end of option (d) is sub-slice 10e-2b-4e-2b-2b.
 
 ## DB-DEP-008 — `deposit_disposition_reversals`
 
