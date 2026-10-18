@@ -43021,7 +43021,7 @@
       "notes": "Review round 1 (independent should-fix 1): after closure a shared Security Deposit's 10,000 shortfall is given back by the newest use alone, 10,000 of the 17,900 Settlement Refund charged back (net 7,900 stays out), the 12,100 application stays applied, and the receipt is reversed while the Refund is partly out beside the active application (V1-056 sub-slice 10e-2b-4e-2a)."
     },
     {
-      "test_id": "test_a_kept_pet_deposit_with_pay_back_money_is_refused_until_the_owner_answers",
+      "test_id": "test_a_kept_pet_deposit_with_pay_back_money_gives_back_from_the_forfeiture_first",
       "upstream_ids": [
         "BR-SETTLE-013",
         "BR-DEP-022",
@@ -43031,7 +43031,73 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_settlement_returned_payment_shared_deposit_migration.py",
       "status": "implemented",
-      "notes": "Review round 1 (security B1; Q-2026-10-18-135): a shared Pet Deposit with 4,000 of pay-back money, a 6,000 forfeiture beyond it and a 4,000 Settlement Refund; newest first would charge the pay-back money back while the forfeiture keeps it, so the returned-Payment correction is refused (55000) and nothing is written; review round 2 (security should-fix 1): after a return-only correction brings the 4,000 back, a forfeiture-only plan is refused at record too (V1-056 sub-slice 10e-2b-4e-2a)."
+      "notes": "Review round 1 (security B1); owner answer (a) to Q-2026-10-18-135 (renamed in sub-slice 10e-2b-4e-2b-1; it was test_a_kept_pet_deposit_with_pay_back_money_is_refused_until_the_owner_answers): a shared Pet Deposit with 4,000 of pay-back money, a 6,000 forfeiture beyond it and a 4,000 Settlement Refund; the returned-Payment correction gives back 5,000 from the forfeiture first (1,000 forfeited again), nobody is charged and the Settlement Refund stays out; the newest-first plan of 10e-2b-4e-2a is still refused (55000) as defence; review round 2 case: after a return-only correction brings the 4,000 back, the forfeiture still gives back 5,000 and the Deposit ends holding the 4,000 pay-back money (V1-056 sub-slices 10e-2b-4e-2a and 10e-2b-4e-2b-1)."
+    },
+    {
+      "test_id": "test_a_review_refund_paid_before_closure_gives_back_after_the_settlement_s_applications",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-SETTLE-016",
+        "DL-032",
+        "DL-053",
+        "DB-REFUND-002",
+        "DB-DEP-007"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_returned_payment_payback_first_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer 2 to the 10e-2b-4e-2a report: after closure a shared Pet Deposit's 10,000 shortfall is given back newest first by time, the Settlement's 5,000 application first (reversed, nothing kept), then 5,000 of the 15,000 Pet Refund-review Refund paid before closure (charged back to the Customer on the Lease); a plan whose give-backs miss its give_back total, or whose total is below the shortfall, is refused (V1-056 sub-slice 10e-2b-4e-2b-1)."
+    },
+    {
+      "test_id": "test_the_payback_first_migration_is_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "DB-SETTLE-005",
+        "DB-DEP-007"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_returned_payment_payback_first_migration.py",
+      "status": "implemented",
+      "notes": "No new function; only the two listed functions change, by exactly their listed replacements, with the same owner, privileges and settings; no constraint or trigger changes; forward-only (V1-056 sub-slice 10e-2b-4e-2b-1)."
+    },
+    {
+      "test_id": "test_a_forfeiture_smaller_than_the_shortfall_gives_back_whole_then_the_refund",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-DEP-022",
+        "DL-053",
+        "DB-REFUND-002",
+        "DB-DEP-007"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_returned_payment_payback_first_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 (both reviewers; owner answer (a) to Q-2026-10-18-135, its second clause): a kept shared Pet Deposit with 4,000 of pay-back money, a 2,000 forfeiture and a 4,000 Settlement Refund; the 5,000 shortfall reverses the forfeiture in full first, then charges back only 3,000 of the Settlement Refund (net 1,000); no forfeiture stays and the Deposit holds 0 (V1-056 sub-slice 10e-2b-4e-2b-1)."
+    },
+    {
+      "test_id": "test_two_forfeitures_give_back_newest_first_and_keep_part_of_the_older",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-DEP-022",
+        "DL-053",
+        "DB-DEP-007"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_returned_payment_payback_first_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 (security should-fix 1): a kept shared Pet Deposit with 4,000 of pay-back money and two 3,000 forfeitures; the 5,000 shortfall reverses the newer forfeiture in full and 2,000 of the older, whose kept 1,000 is forfeited again; nobody is charged and the Settlement Refund stays out (V1-056 sub-slice 10e-2b-4e-2b-1)."
+    },
+    {
+      "test_id": "test_the_forfeiture_gives_back_at_most_what_it_keeps",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-DEP-022",
+        "DL-053",
+        "DB-DEP-007"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_returned_payment_payback_first_migration.py",
+      "status": "implemented",
+      "notes": "Review round 2 (independent should-fix 1): a kept shared Pet Deposit holding 4,000 of pay-back money after a return-only correction, with a 3,000 forfeiture; the rule's 5,000 is capped at the 3,000 the forfeiture keeps, so the forfeiture is reversed in full, nobody is charged and the Deposit ends holding 2,000; review round 3: a hand-built forfeiture the database does not hold reaches the pay-back refusal's end-held branch (55000), and a forged held value or receipt that would hide it is refused by the record check's total first (V1-056 sub-slice 10e-2b-4e-2b-1)."
     }
   ]
 }

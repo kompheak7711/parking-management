@@ -2382,6 +2382,34 @@ would end holding less than the Customer's pay-back count, while a forfeiture of
 (also checked after the writes). The receipt correction of a shared Deposit is
 sub-slice 10e-2b-4e-2b.
 
+Since V1-056 sub-slice 10e-2b-4e-2b-1 (migration `20270102_159`; owner answer (a) to
+Q-2026-10-18-135): a shared Deposit with the Customer's pay-back money beside an active
+forfeiture (a pay-back count without payouts above 0, the condition of the refusal above) gives
+back from its forfeitures first (newest first among them; the Property keeps less; nobody is
+charged), and only the rest of its shortfall comes newest first from its Refunds and Deposit
+applications. The forfeitures give back the least of what they keep and the returned receipt less
+the held value plus the pay-back count with payouts, so no forfeiture that stays active keeps the
+pay-back money: while a forfeiture stays active the Deposit ends holding at least that count (it
+can give back more than the shortfall, for example 5,000 of a 6,000 forfeiture for a 1,000
+shortfall when the Deposit held 4,000 of pay-back money, which it keeps); a forfeiture never gives
+back more than it keeps. The plan's total is the greater of that part and the shortfall; every
+other shared Deposit gives back exactly its shortfall as before. Each `shared_deposits` entry gains
+`give_back_usd_cents`, `payback_first` and `payback_usd_cents` (so a `RETURNED_PAYMENT` draft
+recorded before this migration whose Payment funded a shared Deposit is stale at its confirm,
+P5S02). The record check takes exactly one plan entry per shared Deposit, and only for a shared
+Deposit of the source; it reads the returned Payment's receipt and the held value live and
+requires the entry's to equal them, requires a Deposit that is not plain to give back nothing,
+and compares the entry's total with the total the rule gives on the live state (the receipt, the
+held value, the active forfeitures and both pay-back counts, with the entry's own `plain` flag)
+and with its give-backs; anything else is refused (55000, "A Deposit this Payment funded would
+still hold money after the return"). The pay-back refusal above stays as defence in depth: no source the
+database builds reaches it (a Deposit that is not plain is refused earlier by the Reservation
+outcome refusal; a plain Deposit's total keeps the end held at or above the count while a
+forfeiture stays); a hand-built source can still reach its end-held branch, which reads the
+plan's total (a forfeiture list the database does not hold, or an entry marked not plain with no
+uses), and is refused (fail closed). The receipt correction of a
+shared Deposit and the end of option (d) are sub-slice 10e-2b-4e-2b-2.
+
 ## DB-DEP-008 — `deposit_disposition_reversals`
 
 Append-only: `id uuid PK`, `deposit_disposition_id uuid NOT NULL UNIQUE FK`, `reason

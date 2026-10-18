@@ -28,11 +28,7 @@ from property_rental.deposit import (
     DepositAdjustmentType,
     PostgresDepositService,
 )
-from property_rental.final_settlement import (
-    FinalSettlementConflictError,
-    SettlementCreditStep,
-    SettlementDepositStep,
-)
+from property_rental.final_settlement import SettlementCreditStep, SettlementDepositStep
 from test_deposit_migration import deposit_actor, seed_historical_deposit_receipt
 from test_deposit_receipt_record_migration import allocator, payment, receipt_command
 from test_final_settlement_confirm_migration import confirm as confirm_settlement
@@ -49,7 +45,6 @@ from test_payment_return_recovery_migration import charge
 from test_payment_return_shared_deposit_migration import active_receipts, net, recoveries
 from test_settlement_correction_migration import approver as correction_approver
 from test_settlement_correction_migration import settlement_row
-from test_settlement_extra_charge_migration import cause
 from test_settlement_pet_payback_migration import forfeit, forfeited
 from test_settlement_pet_payback_migration import pet_case as pet_payback_case
 from test_settlement_refund_return_migration import confirm as confirm_return
@@ -60,7 +55,6 @@ from test_settlement_returned_payment_migration import (
     allowed_check,
     command,
     confirm,
-    counts,
     payload,
     reconciled,
     record,
@@ -101,6 +95,12 @@ PAYBACK_BESIDE = (
 NOT_LISTED = (
     "A post-settlement correction Deposit application must be a Deposit step of its correction, "
     "once"
+)
+ACTIVE_FORFEITURES = (
+    "SELECT disposition.id,disposition.amount_usd_cents "
+    "FROM app.deposit_dispositions disposition WHERE disposition.deposit_id=%s "
+    "AND NOT EXISTS(SELECT 1 FROM app.deposit_disposition_reversals reversal "
+    "WHERE reversal.deposit_disposition_id=disposition.id) ORDER BY disposition.occurred_at"
 )
 KEPT_ALLOWED = (
     "SELECT app.settlement_shared_deposit_kept_application_allowed(%s,"
@@ -345,21 +345,24 @@ def test_a_refund_larger_than_the_shortfall_is_charged_back_only_in_part(
     reconciled(url, customer)
 
 
-def test_a_kept_pet_deposit_with_pay_back_money_is_refused_until_the_owner_answers(
-    migrated_database_url: str,
+@pytest.mark.parametrize("returned_first", [False, True])
+def test_a_kept_pet_deposit_with_pay_back_money_gives_back_from_the_forfeiture_first(
+    migrated_database_url: str, returned_first: bool
 ) -> None:
-    """Review round 1 (security B1, its set-up; Q-2026-10-18-135): A's 5,000 funds a Pet Deposit,
-    a 4,000 Pet Refund-review Refund comes back in full (pay-back count 4,000), and the Lease is
-    terminated for pet noncompliance; B's 5,000 receipt follows (the required total raised), the
-    forfeiture takes the 6,000 beyond the pay-back money and the Settlement refunds the 4,000 to
-    the Customer. Newest first would charge the 4,000 back and keep 5,000 forfeited, so the
-    Property would keep the Customer's pay-back money; A's correction is refused (55000) and
-    nothing is written. B's receipt is seeded by an owner insert after the termination, an order
-    the receipt writer refuses (sub-slice 10e-2b-4d); the real path records it after the return and
-    before the termination, and the checks read no event times. Review round 2 (security
-    should-fix 1, its set-up): after a return-only correction brings the 4,000 back into the Pet
-    Deposit, A's plan gives back only 1,000 of the forfeiture, which would still leave the
-    pay-back money forfeited; it is refused at record too."""
+    """Review round 1 (security B1, its set-up); owner answer (a) to Q-2026-10-18-135 (sub-slice
+    10e-2b-4e-2b-1): A's 5,000 funds a Pet Deposit, a 4,000 Pet Refund-review Refund comes back in
+    full (pay-back count 4,000), and the Lease is terminated for pet noncompliance; B's 5,000
+    receipt follows (the required total raised), the forfeiture takes the 6,000 beyond the pay-back
+    money and the Settlement refunds the 4,000 to the Customer. A's correction gives back from the
+    forfeiture first: 5,000 of the 6,000 (1,000 forfeited again), nobody is charged and the 4,000
+    Settlement Refund stays out; the Deposit holds 0. B's receipt is seeded by an owner insert
+    after the termination, an order the receipt writer refuses (sub-slice 10e-2b-4d); the real
+    path records it after the return and before the termination, and the checks read no event
+    times. Review round 2 (security should-fix 1, its set-up; returned_first): after a return-only
+    correction brings the 4,000 back into the Pet Deposit, the shortfall is 1,000, but the
+    forfeiture still gives back 5,000 and keeps 1,000, so no pay-back money stays forfeited and
+    the Deposit ends holding the 4,000 pay-back money. Until the owner's answer both were refused
+    (55000), so the test is renamed (standing rule)."""
     url = migrated_database_url
     case: dict[str, Any] = {
         **pet_payback_case(url, (("refund", 4_000), ("return", 4_000)), pet_amount=5_000),
@@ -385,26 +388,104 @@ def test_a_kept_pet_deposit_with_pay_back_money_is_refused_until_the_owner_answe
     forfeit(case, "pet")
     assert (forfeited(case, "pet"), held(url, pet)) == ([6_000], 4_000)
     confirm_settlement(case, record_settlement(case, (settlement_refund(case, "pet", 4_000),)))
-    before = counts(url)
-    with pytest.raises(FinalSettlementConflictError) as refused:
-        record(case, command(case, first))
-    assert cause(refused) == ("55000", PAYBACK_BESIDE)
-    assert (counts(url), status(url, first), held(url, pet)) == (before, "RECEIVED", 0)
-    assert forfeited(case, "pet") == [6_000]
+    [second] = [found for found in active_receipts(url, pet) if found != first]
     [paid_back] = rows(
         url,
         "SELECT id FROM app.refunds WHERE source_deposit_id=%s AND pet_refund_review_id IS NULL",
         pet,
     )
+    paid_back_id = UUID(str(paid_back[0]))
     case["person"] = correction_approver(url)
-    confirm_return(case, record_return(case, return_command(case, paid_back[0], 4_000, new=False)))
-    assert held(url, pet) == 4_000
-    before = counts(url)
-    with pytest.raises(FinalSettlementConflictError) as again:
-        record(case, command(case, first))
-    assert cause(again) == ("55000", PAYBACK_BESIDE)
-    assert (counts(url), status(url, first), held(url, pet)) == (before, "RECEIVED", 4_000)
-    assert forfeited(case, "pet") == [6_000]
+    if returned_first:
+        confirm_return(
+            case, record_return(case, return_command(case, paid_back_id, 4_000, new=False))
+        )
+        assert held(url, pet) == 4_000
+    draft = record(case, command(case, first))
+    source = payload(url, draft)["source"]
+    [plan] = source["shared_deposits"]
+    assert (
+        plan["payback_first"],
+        plan["shortfall_usd_cents"],
+        plan["give_back_usd_cents"],
+        plan["payback_usd_cents"],
+    ) == (True, 1_000 if returned_first else 5_000, 5_000, 4_000 if returned_first else 0)
+    keys = ("kind", "amount_usd_cents", "undo_usd_cents", "kept_usd_cents")
+    assert [tuple(use[key] for key in keys) for use in plan["uses"]] == [
+        ("FORFEITURE", 6_000, 5_000, 1_000)
+    ]
+    assert source["recoveries"] == []
+    assert allowed_check(url, case, source) == (None, None)
+    if not returned_first:
+        # The B1 refusal stays as defence: the newest-first plan of sub-slice 10e-2b-4e-2a, which
+        # charges the 4,000 pay-back money back and keeps 5,000 forfeited, is still refused.
+        newest = json.loads(json.dumps(source))
+        newest["shared_deposits"][0]["uses"] = [
+            {
+                "kind": "REFUND",
+                "id": str(paid_back_id),
+                "amount_usd_cents": 4_000,
+                "undo_usd_cents": 4_000,
+                "kept_usd_cents": 0,
+            },
+            {**plan["uses"][0], "undo_usd_cents": 1_000, "kept_usd_cents": 5_000},
+        ]
+        assert allowed_check(url, case, newest) == ("55000", PAYBACK_BESIDE)
+        # Review round 2 (security should-fix 1, set-up (a)): a plan that drops its receipt and
+        # claims no shortfall is refused; the receipt is read live.
+        dropped = json.loads(json.dumps(source))
+        [pet_entry] = [entry for entry in dropped["deposits"] if entry["id"] == str(pet)]
+        pet_entry["shortfall_usd_cents"] = 0
+        del dropped["shared_deposits"][0]["receipt_usd_cents"]
+        dropped["shared_deposits"][0].update({"give_back_usd_cents": 0, "uses": []})
+        assert allowed_check(url, case, dropped) == ("55000", STILL_HOLDS)
+    else:
+        # Review rounds 1 and 2 (both reviewers): a forfeiture-only plan that would keep the
+        # pay-back money is refused by the ends check: its total is not the rule's 5,000; with
+        # the Deposit marked not plain it gives back something (a Deposit that is not plain
+        # gives back nothing), also with a forged held value (set-up (b)); a plan whose
+        # give-backs miss its total and a source with no plan entry are refused too. No source
+        # the database builds reaches the B1 end-held branch; a hand-built forfeiture list can
+        # (test_settlement_returned_payment_payback_first_migration.py, the cap test).
+        short = json.loads(json.dumps(source))
+        short["shared_deposits"][0]["give_back_usd_cents"] = 1_000
+        short["shared_deposits"][0]["uses"][0].update(
+            {"undo_usd_cents": 1_000, "kept_usd_cents": 5_000}
+        )
+        assert allowed_check(url, case, short) == ("55000", STILL_HOLDS)
+        short["shared_deposits"][0]["plain"] = False
+        assert allowed_check(url, case, short) == ("55000", STILL_HOLDS)
+        short["shared_deposits"][0]["held_usd_cents"] = 8_000
+        assert allowed_check(url, case, short) == ("55000", STILL_HOLDS)
+        missed = json.loads(json.dumps(source))
+        missed["shared_deposits"][0]["uses"][0]["undo_usd_cents"] = 4_999
+        gone = json.loads(json.dumps(source))
+        gone["shared_deposits"] = []
+        for hand_built in (missed, gone):
+            assert allowed_check(url, case, hand_built) == ("55000", STILL_HOLDS)
+    [(original, _)] = rows(url, ACTIVE_FORFEITURES, pet)
+    before_row = settlement_row(url, case["settlement"])
+    result = confirm(case, draft)
+    assert result["recoveries"] == [] and result["deposit_application_ids"] == []
+    [reversal] = result["forfeiture_reversal_ids"]
+    assert (
+        value(
+            url,
+            "SELECT deposit_disposition_id FROM app.deposit_disposition_reversals WHERE id=%s",
+            UUID(str(reversal)),
+        )
+        == original
+    )
+    [kept] = result["forfeiture_ids"]
+    assert rows(url, ACTIVE_FORFEITURES, pet) == [(UUID(str(kept)), 1_000)]
+    assert forfeited(case, "pet") == [6_000, 1_000]
+    assert settlement_row(url, case["settlement"]) == before_row
+    assert (held(url, pet), net(url, paid_back_id)) == (
+        (4_000, 0) if returned_first else (0, 4_000)
+    )
+    assert active_receipts(url, pet) == [second]
+    assert (status(url, first), status(url, second)) == ("REVERSED", "RECEIVED")
+    reconciled(url, case["customer"])
 
 
 def test_the_shared_deposit_correction_migration_is_least_privilege_and_forward_only(
