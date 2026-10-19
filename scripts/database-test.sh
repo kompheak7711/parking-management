@@ -264,6 +264,7 @@ database_test_suites='
   tests/test_settlement_returned_payment_payback_first_migration.py
   tests/test_settlement_deposit_receipt_shared_deposit_migration.py
   tests/test_deposit_receipt_refund_out_migration.py
+  tests/test_deposit_receipt_reversal_after_refund_migration.py
 '
 
 for database_test_file in $database_test_suites; do

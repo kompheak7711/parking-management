@@ -6,10 +6,10 @@ Refund is not fully returned, sub-slice 10e-2b-4d) only until (a) is built. Opti
 the return before closure (10e-2b-4e-1, 10e-2b-4e-2a), the RETURNED_PAYMENT correction after
 closure (10e-2b-4e-2a, 10e-2b-4e-2b-1) and the receipt correction after closure (10e-2b-4e-2b-2a),
 so (d) ends. Every test runs on the real path, to the cent: the deliberate one-person path of
-Q-127 (4e-1 reading (4)), the known limit that such a receipt cannot be reversed while the Refund
-is out (review round 1, Q-2026-10-19-137), a receipt between a return's record and its confirm,
-and a receipt recorded while a Refund is out followed by a closure and a bounce (both
-corrections).
+Q-127 (4e-1 reading (4)), the two-person reversal of such a receipt while the Refund is out (a
+known limit of review round 1 until owner answer (a) to Q-2026-10-19-137, sub-slice
+10e-2b-4e-2b-3), a receipt between a return's record and its confirm, and a receipt recorded
+while a Refund is out followed by a closure and a bounce (both corrections).
 """
 
 from __future__ import annotations
@@ -30,7 +30,6 @@ from property_rental.deposit import (
     DepositAdjustmentType,
     PostgresDepositService,
 )
-from property_rental.deposit_receipt_reversal import DepositReceiptReversalConflictError
 from property_rental.final_settlement import SettlementDepositStep
 from property_rental.move_out_inspection import InspectionFinding, RecordMoveOutInspection
 from property_rental.payment_return import PaymentReturnStaleDraftError
@@ -38,7 +37,6 @@ from test_credit_migration import actor
 from test_deposit_migration import deposit_actor
 from test_deposit_receipt_leftover_migration import AVAILABLE, REFUND_OUT, UNRESOLVED, WRITER
 from test_deposit_receipt_record_migration import (
-    DEPENDENT,
     allocator,
     payment,
     pet_case,
@@ -49,7 +47,6 @@ from test_deposit_receipt_record_migration import (
 )
 from test_deposit_receipt_reversal_draft_migration import confirm as confirm_reversal
 from test_deposit_receipt_reversal_draft_migration import record as record_reversal
-from test_deposit_receipt_reversal_draft_migration import withdraw as withdraw_reversal
 from test_final_settlement_confirm_migration import confirm as confirm_settlement
 from test_final_settlement_confirm_migration import this_month
 from test_final_settlement_draft_migration import LINE, PET_FIRST, SECURITY
@@ -148,20 +145,19 @@ def test_a_receipt_while_a_refund_is_out_lets_the_bounced_payment_charge_nothing
     reconciled(url, customer)
 
 
-def test_a_receipt_recorded_while_a_refund_is_out_is_reversed_only_after_the_refund_returns(
+def test_a_receipt_recorded_while_a_refund_is_out_is_reversed_by_two_people(
     migrated_database_url: str,
 ) -> None:
-    """Review round 1 (security should-fix 1; a known limit, Q-2026-10-19-137): with (d) gone,
-    one staff member can record a Payment into a Pet Deposit whose Refund is out, and before
-    closure no receipt reversal undoes it while the Refund is not fully returned. A Pet Deposit
-    takes 10,000 from Payment A and pays a 10,000 Pet Refund-review Refund (it holds 0); C's
-    10,000 receipt is recorded (it holds 10,000). The confirm of a reversal draft of C's receipt
-    is refused (55000, the dependent-history message of the receipt reversal check): nothing is
-    written, the Deposit holds 10,000 and C has nothing left. The draft is withdrawn; after a
-    verified return of 4,000 (the Deposit holds 14,000, the Refund still out) a new draft is refused
-    the same way and withdrawn too (review round 2, independent note 2). Once the Refund is
-    returned in full (the Deposit holds 20,000) a new draft's confirm reverses C's receipt: the
-    Deposit holds 10,000 and C has its 10,000 back."""
+    """Review round 1 (security should-fix 1) named the limit; owner answer (a) to
+    Q-2026-10-19-137 (sub-slice 10e-2b-4e-2b-3, renamed from
+    `test_a_receipt_recorded_while_a_refund_is_out_is_reversed_only_after_the_refund_returns`) ends
+    it: a wrong receipt must always be fixable by two people. A Pet Deposit takes 10,000 from
+    Payment A and pays a 10,000 Pet Refund-review Refund (it holds 0); C's 10,000 receipt is
+    recorded (it holds 10,000). The confirm of a reversal draft of C's receipt reverses it while
+    the Refund is still out: the Deposit holds 0 and C has its 10,000 back. The Refund's verified
+    returns of 4,000 (the Deposit holds 4,000, the Refund still out) and 6,000 (the Deposit holds
+    10,000, the Refund resolved) follow, so the test ends as before: one reversal, the Deposit
+    holds 10,000 and C has 10,000."""
     url = migrated_database_url
     case: dict[str, Any] = pet_case(url)
     human, prop, pet = case["human"], case["prop"], case["pet"]
@@ -176,39 +172,21 @@ def test_a_receipt_recorded_while_a_refund_is_out_is_reversed_only_after_the_ref
         receipt_command(pet, later, 10_000), actor=allocator(human, prop)
     ).deposit_receipt_id
     draft = record_reversal(prop, human, receipt)
-    with pytest.raises(DepositReceiptReversalConflictError) as refused:
-        confirm_reversal(prop, human, receipt, draft["draft_id"])
-    cause = refused.value.__cause__
-    assert isinstance(cause, psycopg.Error)
-    assert (cause.sqlstate, cause.diag.message_primary) == ("55000", DEPENDENT)
+    confirm_reversal(prop, human, receipt, draft["draft_id"])
     assert (value(url, REVERSALS, pet), held(url, pet), value(url, AVAILABLE, later)) == (
+        1,
         0,
         10_000,
-        0,
     )
-    withdraw_reversal(prop, human, draft["draft_id"])
+    assert value(url, UNRESOLVED, pet) is True
     refund_service().verify_usd_return(
         prop, refund, returned(4_000), actor=actor(human, prop, "refunds.correct")
     )
-    assert (held(url, pet), value(url, UNRESOLVED, pet)) == (14_000, True)
-    partly = record_reversal(prop, human, receipt)
-    with pytest.raises(DepositReceiptReversalConflictError) as refused_again:
-        confirm_reversal(prop, human, receipt, partly["draft_id"])
-    cause = refused_again.value.__cause__
-    assert isinstance(cause, psycopg.Error)
-    assert (cause.sqlstate, cause.diag.message_primary) == ("55000", DEPENDENT)
-    assert (value(url, REVERSALS, pet), held(url, pet), value(url, AVAILABLE, later)) == (
-        0,
-        14_000,
-        0,
-    )
-    withdraw_reversal(prop, human, partly["draft_id"])
+    assert (held(url, pet), value(url, UNRESOLVED, pet)) == (4_000, True)
     refund_service().verify_usd_return(
         prop, refund, returned(6_000), actor=actor(human, prop, "refunds.correct")
     )
-    assert (held(url, pet), value(url, UNRESOLVED, pet)) == (20_000, False)
-    again = record_reversal(prop, human, receipt)
-    confirm_reversal(prop, human, receipt, again["draft_id"])
+    assert (held(url, pet), value(url, UNRESOLVED, pet)) == (10_000, False)
     assert (value(url, REVERSALS, pet), held(url, pet), value(url, AVAILABLE, later)) == (
         1,
         10_000,

@@ -60,6 +60,7 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md. Nothing else 
 
 ## Commits
 - One local checkpoint commit per sub-slice, explicit paths, secret and diff scan.
+- Adding a new test module to the full-run list in `scripts/database-test.sh` is part of that module and needs no separate mention in the review record (owner, 2026-10-19, with the answers to the 10e-2b-4e-2b-2b report).
 - No push. No amend. Never commit failing or half-finished work.
 - Keep ops/NOW.md updated with one short line after every commit: what is done, what is next.
 - If context is nearly full: finish and commit the current sub-slice only if green, update NOW.md, tell the owner to start a fresh session.

@@ -1898,6 +1898,33 @@ it once any forfeiture is reversed by a `FORFEITURE_REVERSAL` correction (which 
 DL-032 step on that money, so the receipt correction may then have to give back that
 correction's uses; untested combined path, review round 3, security note 2). No route reaches the writer before slice 11, whose receipt route
 waits for the owner's answer to Q-2026-10-19-137 (review round 2, security).
+Ended by V1-056 sub-slice 10e-2b-4e-2b-3 (migration `20270105_162`; owner answer (a) to
+Q-2026-10-19-137, narrowed by its review rounds 2 and 3: a wrong receipt must always be fixable by
+two people): the two-person receipt reversal (the 8r draft: `deposits.correct` records,
+`financial.approve` confirms) passes the unresolved-Refund refusal, in `app.reverse_deposit_receipt`
+and in the trigger `app.validate_deposit_receipt_reversal`, when the internal
+`app.deposit_receipt_reversal_after_refund_allowed` (no grant) holds: a `DEPOSIT_RECEIPT_REVERSAL`
+draft of that receipt's Property and Deposit, confirmed by the reversal's actor since the
+transaction began, names that receipt and that reversal (the reversal id is the reversal table's
+key and a receipt is reversed once, so such a decision belongs to the 8r confirm that writes the
+reversal); the Deposit's Lease has no closed Final Settlement; every Refund of the Deposit that is
+not fully returned was processed strictly before the receipt; and from the receipt on the Deposit
+held at least the receipt's amount at every balance time (`app.deposit_balance_events`), so no
+later Payment return, correction, verified-return reversal or other payout relied on the
+receipt's money. Every other refusal stays (an active forfeiture or Deposit application, a waiting
+draft, a closed Final Settlement, the draft's stale check, the held history at 0 or more). A
+receipt recorded before such a Refund, or one a later return relied on, stays refused; a return,
+a correction and the owner-only one-call path gain nothing: `app.confirm_payment_return` passes a
+fresh random reversal id to `app.reverse_deposit_receipt_v2` and the other returns and the
+corrections write through `app.write_payment_return_receipt_reversal`, so no draft names their
+ids; the one-call path (no application grant since migration 87) passes an id its caller chooses,
+but an id a waiting draft of that Deposit names meets the waiting-draft refusal, one a waiting
+draft of another Deposit, a withdrawn draft or a rejected draft names fails the CONFIRMED
+condition, and one a confirmed draft names was already written by that confirm (the reversal
+table's key). "Two people" is two capabilities: one person holding both `deposits.correct` and
+`financial.approve` may record and confirm the draft (DL-069). A waiting `PAYMENT_RETURN` draft of
+another Payment of the Deposit is made stale by such a reversal (its source digest covers the held
+value).
 V1-056 sub-slice 10e-2b-4e-1 (migration `20261231_157`; owner answer (a) to Q-2026-10-18-127)
 did not change refusal (2): option (d) stayed until the corrections after closure were built
 (review round 2: the owner's "(d) until (a) is built"; without it a receipt recorded while a
@@ -2283,7 +2310,8 @@ Append-only: `id uuid PK`, `deposit_application_id uuid NOT NULL UNIQUE FK`, `re
 Append-only: `id uuid PK`, `deposit_receipt_id uuid NOT NULL UNIQUE FK`, `reason text
 NOT NULL`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`,
 `authorization_reference text NOT NULL`. Posting is prohibited while any dependent
-Deposit disposition, application, or Refund remains active. It removes the receipt's
+Deposit disposition, application, or Refund remains active (the Refund part is narrowed by the
+returns and corrections notes below and by sub-slice 10e-2b-4e-2b-3). It removes the receipt's
 derived liability effect without altering the original receipt.
 
 As built in V1-056 sub-slice 8r (migration `20261022_87`, owner answer to
@@ -2464,6 +2492,13 @@ or correct the receipt without new receipts); the last three are refused at reco
 application check keeps the stage order within a correction and would count an equal step as the
 kept part, and the correction's Credit order check refuses Credit after its Deposit applications.
 The end of option (d) is sub-slice 10e-2b-4e-2b-2b (migration `20270104_161`, DB-DEP-002).
+
+Since V1-056 sub-slice 10e-2b-4e-2b-3 (migration `20270105_162`; owner answer (a) to
+Q-2026-10-19-137): the refusal of a receipt reversal while the Deposit has a Refund that is not
+fully returned is also skipped, in `app.reverse_deposit_receipt` and in this table's insert check,
+for the two-person 8r reversal of a receipt, recorded strictly after every such Refund, whose
+money no later balance event relied on (`app.deposit_receipt_reversal_after_refund_allowed`; the rule
+and its conditions are in DB-DEP-002). The other refusals of the first paragraph stay.
 
 ## DB-DEP-008 — `deposit_disposition_reversals`
 

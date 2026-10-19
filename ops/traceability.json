@@ -43275,7 +43275,7 @@
       "notes": "Migration 20270104_161 patches only app.record_lease_deposit_receipt by its one listed replacement (the option (d) refusal removed), with the same owner, privileges and settings; no other function, constraint or trigger changes; forward-only (V1-056 sub-slice 10e-2b-4e-2b-2b)."
     },
     {
-      "test_id": "test_a_receipt_recorded_while_a_refund_is_out_is_reversed_only_after_the_refund_returns",
+      "test_id": "test_a_receipt_recorded_while_a_refund_is_out_is_reversed_by_two_people",
       "upstream_ids": [
         "BR-DEP-009",
         "DB-DEP-002"
@@ -43283,7 +43283,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_deposit_receipt_refund_out_migration.py",
       "status": "implemented",
-      "notes": "Review round 1 of sub-slice 10e-2b-4e-2b-2b (security should-fix 1; known limit, Q-2026-10-19-137): a receipt recorded into a Pet Deposit whose Pet Refund-review Refund is out cannot be reversed through the receipt reversal draft while the Refund is not fully returned (55000, dependent history; nothing written), also after a partial verified return (review round 2); once the Refund is returned in full, a new draft reverses it and the Payment has its 10,000 back (V1-056 sub-slice 10e-2b-4e-2b-2b)."
+      "notes": "Review round 1 of sub-slice 10e-2b-4e-2b-2b (security should-fix 1) named the known limit; owner answer (a) to Q-2026-10-19-137 ends it (sub-slice 10e-2b-4e-2b-3; renamed from test_a_receipt_recorded_while_a_refund_is_out_is_reversed_only_after_the_refund_returns): a receipt recorded into a Pet Deposit whose Pet Refund-review Refund is out is reversed through the two-person receipt reversal draft while the Refund is still out (the Deposit holds 0, the Payment has its 10,000 back); the Refund's later verified returns of 4,000 and 6,000 end with the Deposit holding 10,000, as before (V1-056 sub-slices 10e-2b-4e-2b-2b and 10e-2b-4e-2b-3)."
     },
     {
       "test_id": "test_after_closure_the_receipt_correction_gives_back_the_same_shortfall",
@@ -43297,6 +43297,84 @@
       "test_path": "backend/tests/test_deposit_receipt_refund_out_migration.py",
       "status": "implemented",
       "notes": "Review round 1 of sub-slice 10e-2b-4e-2b-2b (independent should-fix 2): on the same real closure, the DEPOSIT_RECEIPT_CORRECTION of a wrong receipt of a Pet Deposit that took C's receipt while its Refund was out (A's receipt, or, review round 2, C's own) gives back the 10,000 shortfall from the Settlement's newer application, charges nobody, leaves the other receipt and the Payment's value available again (V1-056 sub-slice 10e-2b-4e-2b-2b)."
+    },
+    {
+      "test_id": "test_a_receipt_beside_a_partly_returned_refund_is_reversed",
+      "upstream_ids": [
+        "BR-DEP-002",
+        "BR-AUTH-010",
+        "DB-DEP-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_receipt_reversal_after_refund_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer (a) to Q-2026-10-19-137: with a verified return of 4,000 before or after the receipt (two cases), the two-person reversal of a receipt recorded after a Pet Refund-review Refund that is still out passes; the Deposit holds the 4,000 returned, the Payment has its 10,000 back and the Refund's net is 6,000 (V1-056 sub-slice 10e-2b-4e-2b-3)."
+    },
+    {
+      "test_id": "test_a_receipt_a_later_return_relied_on_is_not_reversed",
+      "upstream_ids": [
+        "BR-DEP-002",
+        "DB-DEP-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_receipt_reversal_after_refund_migration.py",
+      "status": "implemented",
+      "notes": "The narrowing of Q-2026-10-19-137 (review round 2 of 10e-2b-4e-2b-2b, independent should-fix 1): a receipt whose money a later Payment return relied on (A's return charged nothing because of it) is not reversed (55000, nothing written); a later receipt nothing relied on is reversed by two people (V1-056 sub-slice 10e-2b-4e-2b-3)."
+    },
+    {
+      "test_id": "test_a_receipt_a_verified_return_reversal_relied_on_is_not_reversed",
+      "upstream_ids": [
+        "BR-DEP-002",
+        "DB-DEP-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_receipt_reversal_after_refund_migration.py",
+      "status": "implemented",
+      "notes": "The narrowing of Q-2026-10-19-137 stated by its effect (review round 3 of 10e-2b-4e-2b-2b, security note 1): a receipt whose money a later reversal of a verified return took is not reversed (55000, nothing written), also when a later receipt brings the Deposit back up (V1-056 sub-slice 10e-2b-4e-2b-3)."
+    },
+    {
+      "test_id": "test_a_receipt_recorded_before_the_refund_is_not_reversed",
+      "upstream_ids": [
+        "BR-DEP-002",
+        "DB-DEP-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_receipt_reversal_after_refund_migration.py",
+      "status": "implemented",
+      "notes": "Q-2026-10-19-137 (a): a receipt recorded before a Pet Refund-review Refund that is not fully returned stays refused by the receipt reversal check (55000, nothing written) (V1-056 sub-slice 10e-2b-4e-2b-3)."
+    },
+    {
+      "test_id": "test_only_the_confirmed_draft_s_reversal_passes",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "DB-DEP-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_receipt_reversal_after_refund_migration.py",
+      "status": "implemented",
+      "notes": "Q-2026-10-19-137 (a) relaxes only the two-person draft: a hand-built reversal row of the same receipt with no draft, the owner one-call path, and (review round 1, security should-fix 1) hand-built rows reusing the reversal id of a draft withdrawn or rejected in the same transaction (review round 2), of a draft whose CONFIRMED decision is dated before the transaction began (the same decision dated in it passes the check, but not for another actor or reversal id, nor once the draft names another Deposit, review round 2), or of another receipt's draft confirmed in the same transaction (the receipt binding alone refuses it, review round 3), are refused (55000, rolled back); the draft's confirm then reverses the receipt (V1-056 sub-slice 10e-2b-4e-2b-3)."
+    },
+    {
+      "test_id": "test_the_reversal_after_refund_migration_is_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "DB-DEP-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_receipt_reversal_after_refund_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20270105_162 adds one internal function (SECURITY DEFINER, search_path=pg_catalog) on which only its owner holds any privilege and patches app.reverse_deposit_receipt and app.validate_deposit_receipt_reversal, each by its one listed replacement, with the same owner, privileges and settings; no other function, constraint or trigger changes; forward-only (V1-056 sub-slice 10e-2b-4e-2b-3)."
+    },
+    {
+      "test_id": "test_a_reversal_makes_a_waiting_return_of_another_payment_stale",
+      "upstream_ids": [
+        "BR-DEP-002",
+        "BR-SETTLE-013",
+        "DB-DEP-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_receipt_reversal_after_refund_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 of sub-slice 10e-2b-4e-2b-3 (security should-fix 2): a waiting PAYMENT_RETURN draft of another Payment of the Deposit, which planned no recovery because of the receipt's money, is stale (P5S02, nothing written) once the receipt is reversed by two people; recorded again, it charges the whole 10,000 Refund back and the Deposit holds 0 (V1-056 sub-slice 10e-2b-4e-2b-3)."
     }
   ]
 }
