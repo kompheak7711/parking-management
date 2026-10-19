@@ -380,6 +380,14 @@ class RefundService:
                     "Only a Credit that a credit Adjustment released to a Customer other than "
                     "the payer is refunded to that Customer"
                 ) from exc
+            if exc.sqlstate == "P5S01":
+                # V1-056 sub-slice 10h-1b (owner answer (b) to Q-2026-10-19-141): a closed Final
+                # Settlement refusal, today money a post-settlement correction brought back into a
+                # Credit, which a Refund pays out only through a correction; the draft stays
+                # pending.
+                raise RefundConflictError(
+                    "Refund draft conflicts with a closed Final Settlement"
+                ) from exc
             if exc.sqlstate in conflict_states:
                 raise RefundConflictError(
                     "Refund draft cannot be confirmed in the current state"

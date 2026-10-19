@@ -1094,6 +1094,17 @@ route records that draft yet (slice 11c); `POST /properties/{property_id}/refund
 confirms it like any Refund draft. An ordinary Credit Refund draft for such a Credit is refused at
 confirmation with 409.
 
+Amended by V1-056 sub-slice 10h-1b (owner answers (b) to Q-2026-10-19-141 and (a) to
+Q-2026-10-19-144): money that a post-settlement correction brought back into a Customer Credit (a
+returned Refund recorded by a correction of a closed Final Settlement) leaves only through a
+correction of that Settlement (a held-value Refund correction, which pays the Customer's open debt
+on the Lease first). `POST /refund-drafts` for a Credit source, and the confirm route for a Credit
+or `CREDIT_CUSTOMER` draft, answer 409 when those returns have money left and the amount is more
+than the Credit's available value less what they have left; a draft refused at confirmation stays
+pending. Money the Credit holds for other reasons stays refundable through these routes. `POST
+/customer-credits/{credit_id}/reverse` answers 409 while those returns have money left in the
+Credit.
+
 ## API-066 — Refund Correction
 
 `POST /refunds/{id}/verified-returns` records only value demonstrably returned after

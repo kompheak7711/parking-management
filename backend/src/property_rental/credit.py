@@ -329,10 +329,12 @@ class CustomerCreditService:
             if exc.sqlstate == "P5S01":
                 # V1-056 sub-slice 8e-2: a Credit application the Final Settlement made changes
                 # only through a post-settlement correction (owner answer 3 to Q-2026-10-06-32).
-                # Only the application reversal can raise P5S01 in this service today; revisit
-                # the message if another Credit command gains a Final Settlement refusal.
+                # Every other P5S01 of this service carries the closed-Settlement text; revisit
+                # the fallback message if a Credit command gains a refusal with another text.
                 # Sub-slice 10h-1: any other application a closed Final Settlement relied on
-                # (owner answer 3 to Q-2026-10-06-36) gets the closed-Settlement text.
+                # (owner answer 3 to Q-2026-10-06-36) gets the closed-Settlement text. Sub-slice
+                # 10h-1b: so does the Credit reversal of money a post-settlement correction
+                # brought back into the Credit (owner answer (a) to Q-2026-10-19-144).
                 if exc.diag.message_primary == CLOSED_SETTLEMENT_CHANGE:
                     raise CreditConflictError(CLOSED_SETTLEMENT_CHANGE) from exc
                 raise CreditConflictError(

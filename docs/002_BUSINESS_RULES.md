@@ -3705,6 +3705,17 @@ Refund Customer Credit only in USD, paid and recorded in exact USD cents. Preser
 its USD value and original source linkage, including any KHR Payment and immutable
 conversion-rate evidence. Do not convert Credit into a KHR Refund (DL-060).
 
+Amended by V1-056 sub-slice 10h-1b (owner answers (b) to Q-2026-10-19-141 and (a) to
+Q-2026-10-19-144): money that a post-settlement correction brought back into a Customer Credit (a
+Refund from that Credit whose return a correction of a closed Final Settlement recorded) leaves
+only through a correction of that Final Settlement, so the Customer's open debt on the Lease is
+paid first (DL-032). The ordinary Credit Refund draft refuses that money at record and at
+confirmation, and the one-call Credit reversal, which would move it back to its Payment, is
+refused while that money is in the Credit unless a correction of that Settlement links the
+reversal; money the Credit holds for other reasons stays refundable through the ordinary draft
+(BR-SETTLE-013). Other value a correction puts back into a Credit (for example a correction's
+reversal of a Credit application) is not counted as money brought back.
+
 ---
 
 ## BR-CREDIT-012 — Permanent Credit History
@@ -4574,6 +4585,8 @@ Amended by the owner's answers to Q-2026-10-16-118 and Q-2026-10-16-119 (2026-10
 Amended by the owner's answers to Q-2026-10-06-36 (answer 4) and Q-2026-10-06-37 (answers 1 and 5) (built in V1-056 sub-slice 10g, 2026-10-16): after closure, a Payment allocation that the Settlement relied on and that was made on the wrong Unit's Invoice is moved only through a Payment move correction of that Settlement (BR-PAY-042: the reason and the confirmation text of both Customers; prepared by the Settlement preparer and confirmed only by a `financial.approve` holder). The debt comes back on the Settlement's obligation and stays on its Customer's ledger; the correct Invoice may belong to another Lease, also one whose Final Settlement is closed (it pays that Lease's remaining debt); what it does not take stays unallocated on the Payment. An allocation made after the closure is moved by the ordinary move draft. An allocation that a correction of another Lease's Final Settlement wrote is not moved by this correction (open: Q-2026-10-17-120). Since V1-056 sub-slice 10g-2 (owner answer (a) to Q-2026-10-17-121), the Payment's other Customer Credit or Refunds block this correction only as the BR-PAY-042 amendment of 10g-2 says.
 
 Amended by the owner's answers to Q-2026-10-06-36 (answers 3 and 4), Q-2026-10-06-37 (answer 5), Q-2026-10-07-39 and Q-2026-10-17-120 (point 2), and the owner note of 2026-10-16 on the 10f-2 report (built in V1-056 sub-slice 10h-1): after closure, a Payment allocation or Customer Credit application that the Settlement relied on is never reversed outside a correction of that Settlement. The Settlement relied on an allocation or Credit application on an obligation of its Lease made at or before the closure (also the re-posted rest of one), on its own Credit applications, and on every record one of its corrections wrote (for example a put-back of an Adjustment reversal correction, or the new allocation of a Payment move correction on another Lease). The one-call allocation reversal, the one-call Credit application reversal, an ordinary credit Adjustment or another Lease's correction that would release such a record, and the ordinary move draft are refused as a conflict; the debt the Settlement saw paid stays paid, so a charge reduction can never remove it. A record that two closed Final Settlements relied on is reversed by neither (a known limit, Q-2026-10-17-120 point 1). Allocations and Credit applications made after the closure and not written by a correction stay reversible with one call, so the Customer can still pay and correct the remaining debt.
+
+Amended by the owner's answers (b) to Q-2026-10-19-141 and (a) to Q-2026-10-19-144 (built in V1-056 sub-slice 10h-1b): money that a post-settlement correction brought back into a Customer Credit (a Refund from that Credit, for example a Settlement Refund, whose return from the bank a correction of the closed Settlement recorded) leaves only through a correction of that Settlement, the held-value Refund correction naming the return, which pays the Customer's own open debt on the Lease first and refunds only the rest (DL-032). The ordinary Credit Refund draft is refused for that money at record and at confirmation (a conflict; the draft stays pending), and so is the one-call Credit reversal, which would move that money back to its Payment, from where a Payment Refund or a new Credit could pay it out while the Customer still owes on the closed Lease; a correction of that Settlement that links the Credit reversal (the returned-Payment correction) still reverses it. Money the Credit holds for other reasons stays refundable through the ordinary draft. Other value a correction puts back into a Credit (for example a correction's reversal of a Credit application) is not counted as money brought back.
 
 ---
 

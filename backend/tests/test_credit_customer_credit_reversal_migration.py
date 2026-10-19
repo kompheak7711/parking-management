@@ -204,6 +204,9 @@ def test_credit_customer_credit_reversal_refusal_is_least_privilege_and_forward_
     ) == [
         ("customer_credit_reversals_moved_payment",),
         (TRIGGER,),
+        # Since sub-slice 10h-1b (owner answer (a) to Q-2026-10-19-144): the refusal of a Credit
+        # reversal of money a post-settlement correction brought back, after this refusal.
+        ("customer_credit_reversals_returned_value",),
         ("customer_credit_reversals_validate",),
     ]
     config = Config(str(Path(__file__).parents[1] / "alembic.ini"))

@@ -3396,6 +3396,48 @@ recorded before migration 129 is stale at its confirm (P5S02; its source gains t
 `HELD_VALUE_REFUND` draft recorded before it is stale when its left value changed. No new table,
 column, constraint or trigger.
 
+Since V1-056 sub-slice 10h-1b (migration `20270109_166`; owner answers (b) to Q-2026-10-19-141
+and (a) to Q-2026-10-19-144), ordinary Credit spending is no longer a gap for Refunds and Credit
+reversals: the money a return has left leaves the Credit through a Refund or a Credit reversal
+only through a correction. The internal `app.credit_settlement_returned_value_by_settlement(credit)`
+(no grant) gives, for each Final Settlement whose corrections linked a `VALUE_CORRECTION` of a
+Refund from that Credit, the sum of `left_usd_cents` (each at least 0) of the return entries of
+the Credit in that Settlement's walk, counting only that Settlement's own corrections' entries (the
+walk also lists other Settlements' entries since sub-slice 10e-3d-2d-1; review round 1,
+independent S1; each entry is counted once because every Settlement's walk of the Credit covers
+the same corrections since migration 137), and `app.credit_settlement_returned_value_left(credit)`
+(no grant) sums it, 0 when none did, and
+`app.refuse_credit_refund_of_returned_value(credit, amount)` (no grant) raises P5S01 ("The Credit
+holds money a post-settlement correction brought back; refund that money through a held-value
+correction of that Final Settlement") when that sum is above 0 and the amount is more than
+`app.credit_available_value(credit)` less it. The ordinary Credit Refund draft recorders
+(`app.record_refund_draft`, variant `USD` with a `CREDIT` source; `app.record_credit_customer_refund_draft`)
+call it after their current-state checks (an exact repeat still replays first), and
+`app.confirm_refund_draft` calls it for a Credit source after it takes the Credit Refund locks
+(`app.lock_refund_payment_source`: the Payment state guard, the Payment, then the Credit, the
+order its writer takes next), so the transaction rolls back and the draft stays pending. Money the
+Credit holds for other reasons stays refundable; a left value above what the Credit holds (Credit
+applications outside a correction are still not counted) refuses every ordinary Refund of it. A
+Refund draft waiting on the Credit also blocks the return-only correction's record (the
+correction's waiting-draft check), so the confirm's refusal is the backstop for a draft that waited
+while money came back. One exact-text replacement each; signatures, settings and privileges are
+kept. A new BEFORE INSERT row trigger `customer_credit_reversals_returned_value` on
+`app.customer_credit_reversals` (function `app.refuse_returned_credit_reversal()`, no grant;
+Q-2026-10-19-144) takes the same Credit Refund locks first (`app.lock_refund_payment_source`, the
+order of the insert check `app.validate_credit_reversal`, which runs after it) and raises P5S01
+("A closed Final Settlement changes only through a post-settlement correction") unless, for every
+Settlement whose returns into the Credit have money left, `app.settlement_correction_linked` finds
+a correction of that Settlement confirmed in this transaction that links the reversal. Its name
+sorts after the slice 7 and 8g P4904 triggers and before the insert check. So the one-call Credit
+reversal cannot move that money back to its Payment, whose Payment Refund check reads only a named
+Invoice or Late-payment Charge; the `RETURNED_PAYMENT` correction links each Credit reversal before
+it writes it and still reverses the Credit; the ordinary `PAYMENT_RETURN` draft never reaches such
+a Credit (its source refuses a Payment whose Credit has a Refund or Refund correction linked to a
+correction). Only a returned Refund recorded by a correction counts: other value a correction puts
+back into a Credit (for example a correction's reversal of a Credit application) is not counted.
+Not changed: the Payment and Pet Deposit Refund drafts, Credit applications outside a correction,
+the correction writers and the owner-only one-call `app.create_usd_refund`.
+
 Since V1-056 sub-slice 10e-3d-2a (migration `20261204_130`; owner answer (a) to Q-2026-10-13-100
 point 1): the count above is one internal walk, `app.settlement_returned_value_walk` (no grant),
 which `app.settlement_returned_value_left` (same results) and the new

@@ -1,8 +1,11 @@
 # V1-056 sub-slice 10h-1b — the ordinary Credit Refund and money a correction brought back — review record
 
 Sub-slice: 10h-1b (owner answer (b) to Q-2026-10-19-141; placement confirmed by the owner on
-2026-10-19). Migration `20270109_166` (two internal functions, three exact-text replacements).
-Base commit: 06c327c (10h-1). Built on 2026-10-19 in one fresh session. Not pushed.
+2026-10-19; owner answer (a) to Q-2026-10-19-144 built in it). Migration `20270109_166` (four
+internal functions, one trigger, three exact-text replacements; two functions and the trigger
+added for Q-144 in the second session, see the end of this record). Base commit: 06c327c (10h-1).
+Built on 2026-10-19 in one fresh session and finished in a second fresh session (2026-10-19 to
+2026-10-20). Not pushed.
 
 ## Built
 
@@ -176,3 +179,102 @@ fail-closed):
   Credit application); docs/005 "(when those returns have money left)"; optional fail-closed form
   of the sum (each entry once at its largest value across the walks) or a docs/004 note that the
   join relies on the walks covering the same corrections.
+
+## Second session: owner answers, Q-144 build and round 2 items (2026-10-19 to 2026-10-20)
+
+Owner answers (recorded in docs/010 and ops/V1_056_QUESTIONS.md): Q-2026-10-19-144 option (a),
+built inside 10h-1b; the change to the committed held-value test accepted (its name stays right);
+new standing run rule in ops/V1_055_RUN_RULES.md (a new refusal that breaks a committed test only
+through its set-up: assert the refusal first, hand-build the same state, keep every check and
+amount, comment, list it here); the pending rename in `test_deposit_receipt_refund_out_migration.py`
+stays (that file was not touched).
+
+Built for Q-144 (a) (pre-code design: plan, the bullet "Owner answer (a) to Q-2026-10-19-144",
+items (6) to (9); catalog dump D2):
+- New internal `app.credit_settlement_returned_value_by_settlement(uuid)` (per-Settlement left
+  value; the sum function now reads it, same results).
+- New internal `app.refuse_returned_credit_reversal()` and BEFORE INSERT row trigger
+  `customer_credit_reversals_returned_value` on `app.customer_credit_reversals`: it takes
+  `app.lock_refund_payment_source(NULL, credit)` first (the insert check's order) and raises
+  P5S01 with the 8e-1 text unless every Settlement whose returns into the Credit have money left
+  links the reversal through a correction confirmed in the same transaction. Its name sorts after
+  the slice 7 and 8g P4904 triggers and before the insert check.
+- `CreditService`: comment only (P5S01 with the 8e-1 text already maps to a conflict).
+- Three new tests (the round 1 and round 2 security set-ups, and the reversal race).
+
+Committed tests changed (standing rules; each listed in docs/010):
+- `test_settlement_held_value_refund_migration.py::test_a_credit_return_while_a_deposit_holds_money_is_refunded_with_that_money`
+  (first session; owner answer 2 with Q-144 accepts it).
+- `test_credit_customer_credit_reversal_migration.py::test_credit_customer_credit_reversal_refusal_is_least_privilege_and_forward_only`:
+  its head list of BEFORE INSERT row triggers on the Credit reversals now also expects
+  `customer_credit_reversals_returned_value`, with a comment (the owner answer changes that
+  result; found by run T5; my pre-code search looked only for set-ups that write Credit
+  reversals). Nothing else in it changed.
+
+Round 2 items: security S1 (docs/002 and docs/004 name what is not counted: other value a
+correction puts back into a Credit); independent should-fix 1 (docs/010 names the ten tests);
+independent should-fix 2 (the plan's "as built" sentences for items (2) and (5)); notes: the race
+helper (now `during_a_return`, shared with the reversal race) stores and asserts the message and
+closes the connection when `BEGIN` fails; a 1-cent refusal ends the two-Settlement test; slice 12
+note for a real-path version of the held-value test's 600 Refund; docs/005 "when those returns
+have money left"; docs/004 note that each entry is counted once because every Settlement's walk
+covers the same corrections since migration 137. Not changed: the "Deposit lock" text of the
+committed helper `wait_until_blocked_by` (`test_pet_payback_restoration_refusal_migration.py`);
+it is a committed helper and the text does not affect any result.
+
+### Runs (second session)
+
+| Run | Result |
+|---|---|
+| D2 | catalog dump of `app.payment_return_source`, `app.serialize_payment_state`, `app.lock_refund_payment_source`, `app.validate_credit_reversal`, `app.confirm_payment_return`; no `REDACTED` marker; `~/Development/prm-run-logs/v1-056-10h-1b-D2.txt` |
+| I7/FF7/FC7/L7/Y7 | passed (long-line and unused-import search first: nothing found) |
+| M5 | passed |
+| T5 | 103 passed, 1 failed (9 modules in the full-suite order; cause B below) |
+| T6 | 4 passed (the fixed module) |
+| I8/FF8/FC8/L8/Y8 | passed |
+| U3 | 3867 passed |
+| M6 | passed |
+| P3 | 2399 passed (two known warnings) |
+| (after the round 3 fixes) | |
+| I9/FF9/FC9/L9/Y9 | passed |
+| T7 | 14 passed (the changed test modules) |
+| U4 | 3867 passed |
+| M7 | passed |
+| P4 | 2399 passed (two known warnings) |
+
+Cause B (a committed catalog assertion; correction 1 of 2): the head trigger list of
+`test_credit_customer_credit_reversal_refusal_is_least_privilege_and_forward_only` did not
+expect the new trigger; fixed as above.
+
+## Review round 3 (fresh read-only subagents, during P3; told to write no files at all, scratch files included, and to run no test, script or database command)
+
+Independent: no blocker, 1 should-fix (text), 6 notes. Security: no blocker, no should-fix, 4
+notes. Both confirmed: the owner answers are met; four new functions without grants, definer
+settings; no new lock order (the trigger takes the insert check's locks in its order, the two
+earlier triggers take none); trigger order; every writer of `app.customer_credit_reversals` is
+covered (the one-call reversal refused, the `PAYMENT_RETURN` confirm never reaches such a Credit,
+the `RETURNED_PAYMENT` writer links first and is the only one that links a Credit reversal);
+Payment Refunds and new Credit recognition need the Payment's available value, which stays 0;
+REPEATABLE READ and SERIALIZABLE get 40001 from the Payment state guard; the committed test
+change is the one list entry; every round 2 item is fixed or answered.
+
+Fixed under the round 3 text and assertion rule (no code logic, migration or fixture change;
+checks, T7, U4, M7 and P4 passed after them; no round 4):
+1. Independent should-fix (text): docs/010 now says four functions, one trigger and three
+   replacements, and names the committed trigger-list change; the plan's item (9) names it too;
+   this record names it.
+2. Independent N1 and security N2 (code comment only): the stale `CreditService` comment ("Only
+   the application reversal can raise P5S01") is reworded.
+3. Security N3 (new assertion in a built, green test): the reversal race test also runs at
+   SERIALIZABLE (40001).
+4. Independent N4 and security N4 (text): the two-Settlement fail-closed limit (a
+   `RETURNED_PAYMENT` correction of one Settlement is refused while another Settlement's return
+   keeps money in the Credit) is on the slice 12 list as a known limit.
+5. Independent N2: answered above (the committed helper's "Deposit lock" text stays).
+6. Independent N3 and security N1: this record now has the second session's runs.
+
+Notes kept, nothing changed: independent N5 (the `PAYMENT_RETURN` service mapping of a backstop
+P5S01 is unreachable today; not asserted); independent N6 (a dedicated linked `RETURNED_PAYMENT`
+test in the new module; the committed
+`test_settlement_returned_value_left_migration.py::test_a_payment_return_and_a_receipt_correction_take_a_return_s_money_its_reversal_charges_back`
+covers it with 300 left at insert time).

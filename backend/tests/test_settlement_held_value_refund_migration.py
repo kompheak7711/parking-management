@@ -35,7 +35,7 @@ from property_rental.final_settlement import (
     SettlementDepositStep,
     SettlementStep,
 )
-from property_rental.refund import CreateUsdRefundCommand
+from property_rental.refund import CreateUsdRefundCommand, RefundConflictError
 from property_rental.settlement_correction import RecordHeldValueRefundCorrectionCommand
 from refund_test_support import create_usd_refund
 from test_credit_migration import actor as refund_actor
@@ -97,6 +97,10 @@ NOTHING_LEFT = "Nothing the earlier correction returned is left to refund"
 CREDIT_EMPTY = "The Credit holds no returned value to refund"
 DEPOSIT_EMPTY = "The Deposit holds no returned money to refund"
 EVERY_BALANCE = "Every remaining Deposit balance must be applied or refunded"
+RETURNED_CREDIT = (
+    "The Credit holds money a post-settlement correction brought back; refund that money through "
+    "a held-value correction of that Final Settlement"
+)
 COUNTS = (
     "SELECT (SELECT count(*) FROM app.financial_drafts),"
     "(SELECT count(*) FROM app.settlement_corrections),(SELECT count(*) FROM app.refunds),"
@@ -601,15 +605,17 @@ def test_a_credit_return_while_a_deposit_holds_money_is_refunded_with_that_money
     """Owner answer 2 to Q-2026-10-08-59, owner answers 1 and 2 to Q-2026-10-09-63 and the owner
     answer to Q-2026-10-09-64 (sub-slice 10c-2b-4): the Pet Deposit holds 2,000 that a return-only
     correction Ed brought back; a return-only correction Ec of a correction's Credit Refund (1,000)
-    is still recorded. The Customer then spends 600 of that Credit through an ordinary Credit
-    Refund, which lowers only the Credit's available value (the known limit: Ec still shows 1,000
-    left). A held-value Refund linked to Ec may use no Deposit money, because Ec returned none:
-    with the Pet Deposit's Refund step it is refused and writes nothing; without it, it refunds
-    the Credit's 400 (capped by what it holds) and the Pet Deposit keeps its 2,000. A correction
-    linked to Ed refunds those 2,000 and its audit lists that Deposit balance; Ed then has nothing
-    left and naming it again is refused. When the Pet Deposit holds 500 again, a correction linked
-    to Ec is refused because the Credit holds nothing, although its plan has a Deposit Refund
-    step; no record is written; a correction linked to the new return refunds the 500."""
+    is still recorded. The Customer then spends 600 of that Credit outside a correction (since
+    sub-slice 10h-1b the ordinary Credit Refund draft refuses it, so the owner's one-call Refund
+    stands in), which lowers only the Credit's available value (the known limit: Ec still shows
+    1,000 left). A held-value Refund linked to Ec may use no Deposit money, because Ec returned
+    none: with the Pet Deposit's Refund step it is refused and writes nothing; without it, it
+    refunds the Credit's 400 (capped by what it holds) and the Pet Deposit keeps its 2,000. A
+    correction linked to Ed refunds those 2,000 and its audit lists that Deposit balance; Ed then
+    has nothing left and naming it again is refused. When the Pet Deposit holds 500 again, a
+    correction linked to Ec is refused because the Credit holds nothing, although its plan has a
+    Deposit Refund step; no record is written; a correction linked to the new return refunds the
+    500."""
     url = migrated_database_url
     case = refunded_case(url)
     refund, credit, customer, pet = (
@@ -621,12 +627,25 @@ def test_a_credit_return_while_a_deposit_holds_money_is_refunded_with_that_money
     deposit_return = return_only(case, pet_refund(case), 2_000)
     credit_return = return_only(case, refund, 1_000)
     assert (held(url, pet), available(url, credit)) == (2_000, 1_000)
-    create_usd_refund(
-        refunds(),
-        case["prop"],
-        CreateUsdRefundCommand(uuid4(), "CREDIT", credit, 600, "Customer asked for part"),
-        actor=refund_actor(case["human"], case["prop"], "refunds.create"),
-    )
+    # Since sub-slice 10h-1b (owner answer (b) to Q-2026-10-19-141) the ordinary Credit Refund
+    # draft refuses money a post-settlement correction brought back, so this state can no longer
+    # be reached through it: the refusal is asserted, then the owner writes the same 600 Refund
+    # with the one-call writer (Credit spent outside a correction, the known limit).
+    counted = one(url, COUNTS)
+    with pytest.raises(RefundConflictError) as ordinary:
+        create_usd_refund(
+            refunds(),
+            case["prop"],
+            CreateUsdRefundCommand(uuid4(), "CREDIT", credit, 600, "Customer asked for part"),
+            actor=refund_actor(case["human"], case["prop"], "refunds.create"),
+        )
+    assert cause(ordinary) == ("P5S01", RETURNED_CREDIT)
+    assert one(url, COUNTS) == counted
+    with psycopg.connect(url) as connection:
+        connection.execute(
+            "SELECT app.create_usd_refund(%s,%s,%s,'CREDIT',%s,600,'Customer asked for part')",
+            (case["prop"], case["human"], uuid4(), credit),
+        )
     assert (available(url, credit), credit_left(url, credit_return, credit)) == (400, 1_000)
     counted = one(url, COUNTS)
     with pytest.raises(FinalSettlementConflictError) as beyond:

@@ -1,5 +1,6 @@
 """Credit Customer Refund drafts in the Refund service (V1-056 sub-slice 8f, BR-CREDIT-014)."""
 
+from collections.abc import Callable
 from typing import Any
 from unittest.mock import MagicMock, patch
 from uuid import UUID, uuid4
@@ -157,3 +158,23 @@ def test_refund_draft_confirmation_maps_a_check_violation_to_a_conflict(
                 prop, uuid4(), actor=staff(prop, "financial.approve")
             )
     assert "private diagnostic" not in str(caught.value)
+
+
+def test_a_refund_draft_for_money_a_correction_brought_back_is_a_conflict() -> None:
+    """Sub-slice 10h-1b (owner answer (b) to Q-2026-10-19-141): the closed-Settlement refusal
+    (P5S01) of a Credit Refund draft at record or at confirm is a conflict, not an unknown
+    outcome, and carries no database text."""
+    prop = uuid4()
+    service = RefundService("read", "write")
+    attempts: tuple[Callable[[], object], ...] = (
+        lambda: service.record_credit_customer_draft(
+            prop, command(), method(), actor=staff(prop, "refunds.create")
+        ),
+        lambda: service.confirm_draft(prop, uuid4(), actor=staff(prop, "financial.approve")),
+    )
+    for attempt in attempts:
+        with patch("property_rental.refund.psycopg.connect", side_effect=failing("P5S01")):
+            with pytest.raises(RefundConflictError) as caught:
+                attempt()
+        assert "private diagnostic" not in str(caught.value)
+        assert "Final Settlement" in str(caught.value)

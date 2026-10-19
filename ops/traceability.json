@@ -43688,6 +43688,142 @@
       "test_path": "backend/tests/test_settlement_relied_on_reversal_migration.py",
       "status": "implemented",
       "notes": "Owner answer 3 to Q-2026-10-06-36: a 30,000 allocation and a 10,000 Credit application made after a real closure on an EXTRA_CHARGE Invoice of the closed Lease, not linked to a correction, are each reversed with one call, and the 40,000 is owed again (V1-056 sub-slice 10h-1)."
+    },
+    {
+      "test_id": "test_returned_credit_money_is_refunded_only_through_a_correction",
+      "upstream_ids": [
+        "DL-032",
+        "BR-SETTLE-013",
+        "BR-SETTLE-004",
+        "BR-CREDIT-011",
+        "BR-AUTH-010",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_returned_credit_refund_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer (b) to Q-2026-10-19-141: a correction's 2,000 Credit Refund comes back through a return-only correction; an ordinary Credit Refund draft of 1 cent is refused at record (P5S01) and a waiting hand-built draft of 500 at its confirm, which stays pending, with nothing written; a held-value Refund naming the return pays a 1,500 charge first and refunds 500, nothing is left, and a new ordinary draft is then recorded and is stale at its confirm (V1-056 sub-slice 10h-1b)."
+    },
+    {
+      "test_id": "test_other_credit_money_stays_refundable_through_the_ordinary_draft",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-CREDIT-011",
+        "BR-REFUND-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_returned_credit_refund_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer (b) to Q-2026-10-19-141: while a Credit holding 300 a correction returned refuses an ordinary Refund of 1 cent, the same Customer's own 300 of Credit with no return in it is refunded in full through the ordinary draft; on the returned Credit (300 held, 300 left) a direct call of the refusal passes 0 and refuses 1 cent; the same-Credit case is test_other_money_in_the_returned_credit_stays_refundable (V1-056 sub-slice 10h-1b)."
+    },
+    {
+      "test_id": "test_a_third_party_credit_s_returned_money_is_not_refunded_by_the_credit_customer_draft",
+      "upstream_ids": [
+        "BR-CREDIT-014",
+        "BR-SETTLE-013",
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_returned_credit_refund_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer (b) to Q-2026-10-19-141: a correction's Credit Refund of value released from a third-party Payment comes back (200); a Credit Customer draft is refused at record (P5S01), a waiting hand-built one is refused at its confirm and stays pending, and nothing is written (V1-056 sub-slice 10h-1b)."
+    },
+    {
+      "test_id": "test_the_returned_credit_refusal_is_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "BR-AUTH-010",
+        "BR-SETTLE-013",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_returned_credit_refund_migration.py",
+      "status": "implemented",
+      "notes": "The four new internal functions have no grant and the definer settings; the migration changes only the two Credit Refund draft recorders and the Refund draft confirm (owner, privileges and settings kept; each calls the refusal, the confirm after the Credit Refund locks), adds only one BEFORE INSERT row trigger on the Credit reversals (owner answer (a) to Q-2026-10-19-144), ordered after the slice 7 and 8g refusals and before the insert check, changes no relation privilege or constraint, and is forward-only (V1-056 sub-slice 10h-1b)."
+    },
+    {
+      "test_id": "test_other_money_in_the_returned_credit_stays_refundable",
+      "upstream_ids": [
+        "DL-032",
+        "BR-SETTLE-013",
+        "BR-CREDIT-011"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_returned_credit_refund_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 (independent S2): the Customer's own 2,000 Credit pays a 1,500 charge after closure; a 500 REFUND correction refunds 500 from it and a return-only correction brings the 500 back (1,000 held, 500 left); an ordinary draft of 501 is refused (P5S01), one of 500 is refunded, 1 cent is then refused, and a held-value Refund pays out the returned 500 (V1-056 sub-slice 10h-1b)."
+    },
+    {
+      "test_id": "test_returns_of_two_settlements_into_one_credit_are_counted_once",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-CREDIT-011",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_returned_credit_refund_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 (independent S1): one Credit pays a charge on each of two closed Leases of the Customer; each Settlement's REFUND correction refunds 500 from it and its return-only correction brings the 500 back; the returned left value is 1,000 (each Settlement counts only its own corrections' entries) of 1,500 held, an ordinary Refund of the other 500 is accepted, and one more cent is refused (P5S01, nothing written; review round 2 note) (V1-056 sub-slice 10h-1b)."
+    },
+    {
+      "test_id": "test_a_refund_confirm_waiting_for_a_return_reads_the_returned_money",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-AUTH-010",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_returned_credit_refund_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 (security S1): a Credit Refund draft recorded while a return-only correction's confirm holds the Credit locks; its confirm waits for them and then is refused at READ COMMITTED (P5S01, with its message since review round 2) and by the Payment state guard at REPEATABLE READ or SERIALIZABLE (40001); the draft stays pending and the return keeps 2,000 left (V1-056 sub-slice 10h-1b)."
+    },
+    {
+      "test_id": "test_a_refund_draft_for_money_a_correction_brought_back_is_a_conflict",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-CREDIT-014"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_customer_refund.py",
+      "status": "implemented",
+      "notes": "Owner answer (b) to Q-2026-10-19-141: the Refund service maps the closed-Settlement refusal (P5S01) of a Credit Refund draft at record and at confirm to a conflict without database text (V1-056 sub-slice 10h-1b)."
+    },
+    {
+      "test_id": "test_the_one_call_credit_reversal_of_returned_money_is_refused",
+      "upstream_ids": [
+        "DL-032",
+        "BR-SETTLE-013",
+        "BR-SETTLE-004",
+        "BR-CREDIT-011",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_returned_credit_refund_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer (a) to Q-2026-10-19-144: a correction's 2,000 Credit Refund comes back in full through a return-only correction; the one-call Credit reversal is refused through the Credit service as a conflict (P5S01) and a direct insert as the owner too, nothing is written and the Payment's available value stays 0; a held-value Refund naming the return then pays a 1,500 charge first and refunds 500, and nothing is left (V1-056 sub-slice 10h-1b)."
+    },
+    {
+      "test_id": "test_a_credit_from_a_payment_for_a_named_invoice_is_not_reversed_while_debt_is_open",
+      "upstream_ids": [
+        "DL-032",
+        "BR-SETTLE-013",
+        "BR-CREDIT-011",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_returned_credit_refund_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer (a) to Q-2026-10-19-144 (review round 2 security set-up): a 1,500 Credit from a Payment confirmed for the paid Initial Invoice pays a charge, a REFUND correction refunds it and a return-only correction brings it back while 1,500 is owed on the closed Lease; the one-call reversal is refused (P5S01), nothing is written and the Payment's available value stays 0 (V1-056 sub-slice 10h-1b)."
+    },
+    {
+      "test_id": "test_a_credit_reversal_waiting_for_a_return_reads_the_returned_money",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_returned_credit_refund_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer (a) to Q-2026-10-19-144: a one-call Credit reversal while a return-only correction's confirm holds the Credit locks waits for them and is then refused at READ COMMITTED (P5S01) and by the Payment state guard at REPEATABLE READ or SERIALIZABLE (40001, SERIALIZABLE since review round 3); nothing is written and the return keeps 2,000 left (V1-056 sub-slice 10h-1b)."
     }
   ]
 }
