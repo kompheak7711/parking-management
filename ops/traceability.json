@@ -43488,6 +43488,92 @@
       "test_path": "backend/tests/test_deposit_required_total_readers_migration.py",
       "status": "implemented",
       "notes": "Review round 2 (independent should-fix 3): a required 20,000 Pet Deposit holds its 20,000 receipt after a 5,000 decrease (total 15,000) and the old move-in completes, because the Pet Deposit check needs at least the current total, not equality (V1-056 sub-slice 10e-2b-4f)."
+    },
+    {
+      "test_id": "test_credit_the_settlement_used_from_the_payment_s_other_value_no_longer_blocks_the_move",
+      "upstream_ids": [
+        "BR-PAY-042",
+        "BR-SETTLE-013",
+        "BR-SETTLE-016",
+        "DB-PAY-008",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_payment_move_credit_migration.py",
+      "status": "implemented",
+      "notes": "Q-2026-10-17-121 (a), the owner's example after a real closure: a 12,700 Payment pays 12,500 on the wrong Lease's line and its 200 excess becomes Credit that the closure applies; the PAYMENT_MOVE correction moves the 12,500 (the first line owes it again, the second line is paid), the Credit and its Settlement application are unchanged, the closure snapshot is unchanged, both ledgers reconcile, and the slice 7 move draft still refuses that Payment; the one body called with NULL reads as the blanket rule and with true as the narrow one (review round 2) (V1-056 sub-slice 10g-2)."
+    },
+    {
+      "test_id": "test_a_refund_of_the_payment_s_other_value_does_not_block_the_correction",
+      "upstream_ids": [
+        "BR-PAY-042",
+        "BR-SETTLE-013",
+        "DB-PAY-008",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_payment_move_credit_migration.py",
+      "status": "implemented",
+      "notes": "Q-2026-10-17-121 (a): a correction recorded after closure is confirmed after the Payment's other 200 is refunded; the draft is not stale, the 1,000 moves, the Refund is unchanged and the slice 7 move draft refuses that Payment (V1-056 sub-slice 10g-2)."
+    },
+    {
+      "test_id": "test_a_release_of_the_wrong_money_still_blocks_the_correction",
+      "upstream_ids": [
+        "BR-PAY-042",
+        "BR-SETTLE-013",
+        "DB-PAY-008"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_payment_move_credit_migration.py",
+      "status": "implemented",
+      "notes": "Q-2026-10-17-121 (a), still refused: a credit Adjustment on the wrong Invoice released 300 of the wrong allocation as the Lease Customer's Credit before closure; the correction of the re-posted 12,200 allocation is refused (55000), nothing is written; for the payer's own Payment and for a third party's Payment identified for the Lease, whose released Credit belongs to a Customer who is not the payer (review round 1, security should-fix 3) (V1-056 sub-slice 10g-2)."
+    },
+    {
+      "test_id": "test_a_release_on_another_invoice_of_the_payment_does_not_block_the_correction",
+      "upstream_ids": [
+        "BR-PAY-042",
+        "BR-SETTLE-013",
+        "DB-PAY-008"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_payment_move_credit_migration.py",
+      "status": "implemented",
+      "notes": "Q-2026-10-17-121 (a): a credit Adjustment released 300 of the same Payment's allocation on another Invoice of the Lease; the correction moves the wrong allocation's 12,500, the Credit stays, and the slice 7 move draft refuses that Payment (V1-056 sub-slice 10g-2)."
+    },
+    {
+      "test_id": "test_a_refund_after_the_record_refuses_the_confirm_when_the_wrong_money_was_released",
+      "upstream_ids": [
+        "BR-PAY-042",
+        "BR-SETTLE-013",
+        "DB-PAY-008"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_payment_move_credit_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 (independent should-fix 1, security should-fix 2): a release of the wrong allocation whose Credit was reversed again lets the correction be recorded after closure; a Refund of the Payment's 300 recorded afterwards makes the confirm refuse (55000) under its locks, the draft stays pending and nothing moves (V1-056 sub-slice 10g-2)."
+    },
+    {
+      "test_id": "test_another_payment_s_release_on_the_wrong_invoice_does_not_block_the_correction",
+      "upstream_ids": [
+        "BR-PAY-042",
+        "BR-SETTLE-013",
+        "DB-PAY-008"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_payment_move_credit_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 (independent should-fix 2): a credit Adjustment on the wrong Invoice released another Payment's allocation; only this Payment's releases count, so the correction moves the 12,000, the Payment's 400 Credit stays and the slice 7 move draft refuses that Payment (V1-056 sub-slice 10g-2)."
+    },
+    {
+      "test_id": "test_the_narrow_refusal_is_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "BR-PAY-042",
+        "DB-PAY-008"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_payment_move_credit_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20270107_164 adds only app.wrong_unit_move_source (no grant, the slice 7 source's privileges, owner and settings; its body is the slice 7 body with the two replacements), the slice 7 source's whole definition is its old header and the call with false, the correction's source calls it with true, nothing else changes (functions, relation privileges, triggers and constraints compared), and it is forward-only (V1-056 sub-slice 10g-2)."
     }
   ]
 }

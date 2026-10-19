@@ -1325,6 +1325,8 @@ Append-only link of one confirmed wrong-Unit Payment move (BR-PAY-042, V1-056 sl
 
 As built in V1-056 sub-slice 10g (migration `20261222_148`): a row is also written by the `PAYMENT_MOVE` variant of a post-settlement correction (DB-SETTLE-005); its `draft_id` is then the `SETTLEMENT_CORRECTION` draft, and the row is written after that draft's CONFIRMED decision, in the same transaction. The insert check `app.validate_payment_move` accepts such a row only through `app.settlement_payment_move_allowed`: the move's approver confirmed the draft under `financial.approve` in this transaction (its top-level transaction id and decision time), the decision names this move's id, and the source reversal and the new allocation are linked to that correction. The slice 7 branch (a `PAYMENT_MOVE` draft still undecided) and every other check of the row are unchanged.
 
+As built in V1-056 sub-slice 10g-2 (migration `20270107_164`; owner answer (a) to Q-2026-10-17-121): the move source has one body, the new internal `app.wrong_unit_move_source(property, allocation, target invoice, settlement correction)` (no grant). The slice 7 source `app.payment_move_source` calls it with false and keeps the blanket refusal above. The `PAYMENT_MOVE` correction's source calls it with true: there a Payment's Customer Credit that is not reversed, or its Refund that is not fully returned, refuses the move only when a credit Adjustment released any part of an allocation of this Payment on the wrong Invoice (an `invoice_credit_excess_releases` row whose reversed allocation is of this Payment and on the move's source Invoice), because the correction moves only the wrong allocation's own value, still on that active allocation. The Payment's Credit and Refunds and the Settlement's use of them do not change. No table, column, trigger or grant changed.
+
 ## DB-PAY-009 — `payment_returns`
 
 Approved by owner answers 2 and 3 to Q-2026-10-06-37 (2026-10-07); built in V1-056 sub-slice 10e.
@@ -3950,7 +3952,10 @@ wrote (another Settlement's `PAYMENT_MOVE` target) is refused (55000) until the 
 Q-2026-10-17-120, so this correction never changes a record that another Settlement's correction
 wrote (the condition of owner answer 5). The correct Invoice may belong to a Lease whose Final
 Settlement is closed: the new allocation pays its remaining debt and its closure snapshot does not
-change. No table, column or effect kind changed.
+change. No table, column or effect kind changed. Since sub-slice 10g-2 (migration
+`20270107_164`; owner answer (a) to Q-2026-10-17-121) the Payment's Customer Credit or Refund
+refuses this variant only when a credit Adjustment released part of an allocation of that Payment
+on the wrong Invoice (DB-PAY-008).
 
 V1-056 sub-slice 10e-2b-4e-2a (migration `20270101_158`; owner answers (a) to Q-2026-10-18-134): a
 `RETURNED_PAYMENT` correction of a shared Deposit links, besides its reversals and recoveries, the
