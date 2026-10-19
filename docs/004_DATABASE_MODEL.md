@@ -2792,6 +2792,11 @@ Adjustment on an Invoice of the Lease (its draft id, kind and variant only for a
 post-settlement correction plan runs the same preview, such a waiting draft on a closed Lease's
 sources also refuses that Settlement's correction steps (55000) until it is confirmed, rejected
 or withdrawn (a Settlement's own `RETURNED_PAYMENT` correction draft is not listed for it);
+since V1-056 sub-slice 10h-4a (migration `20270112_169`; owner answer 2 of 2026-10-20 to the
+10h-3 report) also another Settlement's waiting `SETTLEMENT_CORRECTION` draft of the variant
+`HELD_VALUE_REFUND` whose `customer_credit_id` is a Credit held by a Settlement Customer (a
+Deposit held-value draft names no Credit and is not listed; a Settlement's own held-value draft
+is not listed for it);
 `ONE_TIME_CHARGE_NOT_INVOICED` for a one-time charge source of the Lease on
 no DRAFT or issued, non-VOID Invoice that is still waiting to be billed (not one whose Invoice was
 VOIDed and not one a draft correction replaced, read from `app.invoice_draft_revision_events`;
@@ -4066,7 +4071,12 @@ forfeiture of a Deposit whose other Lease has its own closed Settlement cannot l
 refused (fail closed, as for a record two Settlements relied on). The 6b source
 `app.lease_deposit_reversal_source` (one exact-text replacement, after its already-reversed
 check) refuses (P5S01) such a forfeiture, so the 6b recorder refuses at record and its confirm
-(which calls the source after the Deposit lock) at confirmation; the draft stays pending.
+(which calls the source after the Deposit lock) at confirmation; the draft stays pending. Since
+V1-056 sub-slice 10h-4a (migration `20270112_169`; owner answer 1 of 2026-10-20 to the 10h-2
+report) the same source first refuses (55000, "A Lease Deposit forfeiture reversal draft is
+recorded and confirmed at READ COMMITTED") a call at any other isolation level, before any
+read, so a snapshot older than a closure can neither record nor confirm a 6b draft; an exact
+repeat of a recorded draft still replays first.
 
 V1-056 sub-slice 10e-2b-4e-2a (migration `20270101_158`; owner answers (a) to Q-2026-10-18-134): a
 `RETURNED_PAYMENT` correction of a shared Deposit links, besides its reversals and recoveries, the

@@ -43945,6 +43945,42 @@
       "test_path": "backend/tests/test_settlement_preview_waiting_drafts_migration.py",
       "status": "implemented",
       "notes": "The migration changes only the body of app.final_settlement_preview (owner, privileges, definer flag and settings kept), adds each new pending-draft branch once, changes no trigger, relation, column, privilege or constraint, and is forward-only (V1-056 sub-slice 10h-3)."
+    },
+    {
+      "test_id": "test_a_waiting_held_value_refund_holds_the_open_lease_of_its_credit_s_customer",
+      "upstream_ids": [
+        "BR-SETTLE-002",
+        "BR-SETTLE-013",
+        "BR-CREDIT-008",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_held_value_wait_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer 2 to the 10h-3 report, on the real path: while a closed Lease's HELD_VALUE_REFUND correction draft of a Credit holding 2,000 waits, the same Customer's other terminated Lease lists it as its only blocking issue, its Settlement draft that would apply that Credit is not recorded (55000, nothing written) and the Credit keeps 2,000; the closed Lease's own preview and the preview of a Lease none of whose people holds the Credit do not list it; a Settlement draft of the other Lease recorded before a new held-value draft is refused at its confirm (55000) and stays pending; once the held-value draft is confirmed (2,000 refunded, the Credit holds 0) the other Lease is ready and closes (V1-056 sub-slice 10h-4a; review round 1 added the stranger Lease and the confirm refusal)."
+    },
+    {
+      "test_id": "test_a_six_b_draft_is_recorded_and_confirmed_only_at_read_committed",
+      "upstream_ids": [
+        "BR-DEP-019",
+        "BR-AUTH-010",
+        "BR-SETTLE-013"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_held_value_wait_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer 1 to the 10h-2 report: the 6b forfeiture reversal draft is refused at REPEATABLE READ and SERIALIZABLE (55000, no draft written) while an exact repeat still replays; the confirm of a waiting draft is refused at both levels (55000, the draft stays pending, nothing written); at READ COMMITTED the confirm reverses the forfeiture (V1-056 sub-slice 10h-4a)."
+    },
+    {
+      "test_id": "test_the_held_value_wait_and_6b_isolation_are_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "BR-SETTLE-002",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_held_value_wait_migration.py",
+      "status": "implemented",
+      "notes": "The migration changes only the bodies of app.final_settlement_preview and app.lease_deposit_reversal_source (owner, privileges, definer flag and settings kept), adds the held-value branch and the isolation check once each, adds no function, changes no trigger, relation, column, privilege or constraint, and is forward-only (V1-056 sub-slice 10h-4a)."
     }
   ]
 }
