@@ -81,3 +81,14 @@ run the full gates once (backend, PostgreSQL, frontend, type check, lint, audit)
 one final independent review of the whole V1-056 diff;
 write a short report for the owner: slices and commits, rule IDs covered, review results, known issues, anything that needs a decision;
 ask the owner for one push. Do not push before the owner says yes.
+8. Build order after slice 10 (owner decision of 2026-10-19, recorded 2026-10-20)
+Slice 10 ends with sub-slices 10h-3, 10h-4 and the Q-112 times sub-slice. Then V1-056 pauses before slice 11. Stop after the Q-112 times sub-slice and tell the owner.
+
+The next steps, in this order, each started only when the owner sends it:
+
+the docs-only rules updates;
+the login slice (sessions, MFA, tests);
+the existing screens rebuilt to the owner's UI design, with the owner testing each area as it lands;
+slices 11 and 12, built in the owner's design;
+the final gates and the push (section 7).
+Do not start any of these steps on your own. Details: ops/V1_056_PLAN.md (the build order entry at the end of slice 10) and docs/010 (the owner answers of 2026-10-20 to the 10h-2 report).
