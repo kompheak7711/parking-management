@@ -4028,6 +4028,34 @@ correction, and the slice 7 move. A record two closed Settlements relied on cann
 both and stays refused (Q-2026-10-17-120 point 1). The application services map P5S01 to a
 conflict.
 
+Since V1-056 sub-slice 10h-2 (migration `20270110_167`; owner answer (a) to Q-2026-10-19-143),
+both triggers first refuse (55000, "A reversal of a Payment allocation or Credit application is
+recorded at READ COMMITTED") a reversal written at any isolation level other than READ COMMITTED,
+before any read, as the 8e-3 confirm does, so a snapshot taken before a Final Settlement started
+cannot miss it. No application path writes a reversal at a stricter level. Owner answer 4 to
+Q-2026-10-06-36 and answer 6 to Q-2026-10-10-69: a new BEFORE INSERT row trigger
+`a0_deposit_disposition_reversals_final_settlement` on `app.deposit_disposition_reversals`
+(`app.refuse_closed_settlement_forfeiture_reversal()`, no grant; it sorts before
+`b_deposit_balance_source`) locks the Deposit row (the writers hold it already), then holds the
+closed Settlement rows of the forfeiture's governing Lease and of the Deposit's Lease FOR SHARE,
+and refuses (P5S01, the 8e-1 text "A closed Final Settlement changes only through a
+post-settlement correction") a forfeiture reversal that a correction of each of them,
+confirmed in this transaction, does not link (`deposit_disposition_reversal_id`; every
+correction writer links first: the forfeiture reversal, returned-Payment and receipt
+corrections). The Deposit lock orders it against a closing confirm: a Lease forfeiture's
+governing Lease is its Deposit's Lease (`app.validate_lease_deposit_disposition`), and the 8e-3
+confirm takes each Deposit of the Lease and its state guard before it closes and re-checks its
+digest after that, so at READ COMMITTED the writer reads a closure committed during its wait,
+and a confirm that waits for the writer finds its draft stale (P5S02); an open Settlement is not
+locked, so there is no deadlock with a running confirm; a REPEATABLE READ or SERIALIZABLE writer
+whose snapshot is older than the closure fails on the Deposit state guard (40001) in
+`b_deposit_balance_source`. A correction of one closed Settlement that would reverse a
+forfeiture of a Deposit whose other Lease has its own closed Settlement cannot link both and is
+refused (fail closed, as for a record two Settlements relied on). The 6b source
+`app.lease_deposit_reversal_source` (one exact-text replacement, after its already-reversed
+check) refuses (P5S01) such a forfeiture, so the 6b recorder refuses at record and its confirm
+(which calls the source after the Deposit lock) at confirmation; the draft stays pending.
+
 V1-056 sub-slice 10e-2b-4e-2a (migration `20270101_158`; owner answers (a) to Q-2026-10-18-134): a
 `RETURNED_PAYMENT` correction of a shared Deposit links, besides its reversals and recoveries, the
 kept parts it writes again: a Deposit application (`deposit_application_id`; the Deposit

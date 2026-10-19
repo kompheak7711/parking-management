@@ -12,6 +12,7 @@ forfeiture is reversed this way only when no other forfeiture of the Deposit sta
 
 from __future__ import annotations
 
+import hashlib
 from dataclasses import replace
 from pathlib import Path
 from typing import Any, cast
@@ -49,6 +50,7 @@ from property_rental.final_settlement import (
     SettlementStep,
 )
 from property_rental.lease_deposit_forfeiture import (
+    LeaseDepositForfeitureConflictError,
     LeaseDepositForfeitureInvalidError,
     RecordLeaseDepositReversalCommand,
 )
@@ -122,6 +124,10 @@ ANOTHER = (
     "the DL-032 path"
 )
 NOT_FOUND = "Lease Deposit forfeiture was not found"
+CLOSED_FORFEITURE = (
+    "The Lease's Final Settlement is closed; reverse this forfeiture through a correction of that "
+    "Final Settlement"
+)
 COUNTS = (
     "SELECT (SELECT count(*) FROM app.financial_drafts),"
     "(SELECT count(*) FROM app.settlement_corrections),(SELECT count(*) FROM app.refunds),"
@@ -229,6 +235,71 @@ def reversals(url: str, disposition: UUID) -> int:
             disposition,
         )[0]
     )
+
+
+def reverse_forfeiture_by_hand(case: dict[str, Any], disposition: UUID) -> None:
+    """Sub-slice 10h-2 hand-built set-up: the 6b reversal's own write
+    (app.reverse_deposit_disposition_v2) as the database owner, with only the 10h-2 trigger
+    disabled inside that one transaction (enabled again before it commits)."""
+    trigger = (
+        "app.deposit_disposition_reversals {} TRIGGER "
+        "a0_deposit_disposition_reversals_final_settlement"
+    )
+    with psycopg.connect(case["url"]) as connection:
+        connection.execute(f"ALTER TABLE {trigger.format('DISABLE')}")
+        connection.execute(
+            "SELECT app.reverse_deposit_disposition_v2(%s,%s,%s,%s,%s,%s,%s,%s,'deposits.correct')",
+            (
+                case["prop"],
+                case["human"],
+                uuid4(),
+                hashlib.sha256(b"hand-built forfeiture reversal").hexdigest(),
+                uuid4(),
+                disposition,
+                "Approved forfeiture correction",
+                "Reviewed correction evidence",
+            ),
+        )
+        # The deferred checks of the new row run first, so the table has no pending events.
+        connection.execute("SET CONSTRAINTS ALL IMMEDIATE")
+        connection.execute(f"ALTER TABLE {trigger.format('ENABLE')}")
+
+
+def waiting_six_b_draft(case: dict[str, Any]) -> dict[str, object]:
+    """A waiting 6b forfeiture reversal draft after closure. Since sub-slice 10h-2 (owner answer 4
+    to Q-2026-10-06-36) the 6b recorder refuses it (asserted first: a conflict, P5S01, nothing
+    written), so the draft is written by the owner through app.insert_financial_draft with the
+    payload and digest the recorder would store (standing rule of 2026-10-19 with
+    Q-2026-10-19-144)."""
+    url = case["url"]
+    counts = one(url, COUNTS)
+    with pytest.raises(LeaseDepositForfeitureConflictError) as closed:
+        six_b_draft(case)
+    assert cause(closed) == ("P5S01", CLOSED_FORFEITURE)
+    assert one(url, COUNTS) == counts
+    draft = uuid4()
+    with psycopg.connect(url) as connection:
+        connection.execute(
+            "SELECT app.insert_financial_draft(%s,%s,%s,'DEPOSIT_FORFEITURE','deposits.correct',"
+            "jsonb_build_object('variant','LEASE_FORFEITURE_REVERSAL','disposition_id',d.id,"
+            "'reversal_id',%s::uuid,'reason',%s::text,'evidence_reference',%s::text)"
+            "||jsonb_build_object('deposit_id',d.deposit_id,'lease_id',d.governing_lease_id,"
+            "'amount_usd_cents',d.amount_usd_cents,"
+            "'state_version',app.deposit_disposition_state_version(d.deposit_id)),"
+            "'deposit-state:'||app.deposit_disposition_state_version(d.deposit_id),%s) "
+            "FROM app.deposit_dispositions d WHERE d.id=%s",
+            (
+                case["prop"],
+                case["human"],
+                draft,
+                uuid4(),
+                "Reviewed again",
+                "Owner note 3",
+                "Reviewed again",
+                case["disposition"],
+            ),
+        )
+    return {"draft_id": str(draft)}
 
 
 def six_b_draft(case: dict[str, Any]) -> dict[str, object]:
@@ -639,7 +710,9 @@ def test_a_forfeiture_reversal_refuses_other_forfeitures_waiting_drafts_and_stal
             "agreement",
         )
     assert one(url, COUNTS) == counts
-    waiting = six_b_draft(case)
+    # Since sub-slice 10h-2 the 6b recorder refuses after the closure; the waiting draft is
+    # hand-built after that refusal is asserted.
+    waiting = waiting_six_b_draft(case)
     counts = one(url, COUNTS)
     with pytest.raises(FinalSettlementConflictError) as blocked:
         record_reversal(case, reversal_command(case, *plan))
@@ -732,7 +805,8 @@ def test_a_forfeiture_reversal_refuses_other_forfeitures_waiting_drafts_and_stal
         "A post-settlement correction is confirmed at READ COMMITTED",
     )
     assert (state(url, first), one(url, COUNTS)[1:]) == ("PENDING", counts[1:])
-    later = six_b_draft(case)
+    # Since sub-slice 10h-2: hand-built after the 6b recorder's refusal is asserted.
+    later = waiting_six_b_draft(case)
     with pytest.raises(FinalSettlementStaleDraftError):
         confirm_reversal(case, first)
     assert (state(url, first), reversals(url, case["disposition"]), held(url, security)) == (
@@ -854,9 +928,10 @@ def test_a_second_active_forfeiture_of_the_deposit_refuses_its_reversal(
     """Owner answer 2 to Q-2026-10-10-71: the kept Pet Deposit has two active forfeitures, so the
     reversal of either one would leave it kept and off the DL-032 path; both are refused (55000)
     and no draft is recorded. A correction draft for the Security Deposit's single forfeiture is
-    recorded; the 6b draft then reverses that forfeiture (the known gap until sub-slice 10h), so the
-    correction draft is stale at its confirm (its digest names the forfeiture's reversals; P5S02,
-    not the record-time 55000), stays pending and writes nothing."""
+    recorded; that forfeiture is then reversed outside the correction, so the correction draft is
+    stale at its confirm (its digest names the forfeiture's reversals; P5S02, not the record-time
+    55000), stays pending and writes nothing. Since sub-slice 10h-2 the 6b draft is refused after
+    the closure (asserted first), so that reversal is written by hand."""
     url = migrated_database_url
     case = twice_forfeited_case(url)
     pet, security = case["pet"], case["security"]
@@ -886,10 +961,19 @@ def test_a_second_active_forfeiture_of_the_deposit_refuses_its_reversal(
     draft = record_reversal(
         case, reversal_command(case, settlement_refund(case, "security", 10_000))
     )
-    reverse_through_draft(
-        PostgresDepositService(financial_database_url(), case["prop"], case["human"]),
-        case["disposition"],
-    )
+    # Since sub-slice 10h-2 (owner answer 4 to Q-2026-10-06-36) the 6b draft cannot reverse a
+    # forfeiture after the closure, so this state can no longer be reached through it: the
+    # refusal is asserted first, then the same reversal is written by hand (standing rule of
+    # 2026-10-19 with Q-2026-10-19-144).
+    counts = one(url, COUNTS)
+    with pytest.raises(LeaseDepositForfeitureConflictError) as closed:
+        reverse_through_draft(
+            PostgresDepositService(financial_database_url(), case["prop"], case["human"]),
+            case["disposition"],
+        )
+    assert cause(closed) == ("P5S01", CLOSED_FORFEITURE)
+    assert (one(url, COUNTS), reversals(url, case["disposition"])) == (counts, 0)
+    reverse_forfeiture_by_hand(case, case["disposition"])
     counts = one(url, COUNTS)
     with pytest.raises(FinalSettlementStaleDraftError):
         confirm_reversal(case, draft)

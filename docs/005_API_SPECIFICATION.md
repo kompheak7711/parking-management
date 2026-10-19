@@ -585,6 +585,13 @@ rules, then records nothing and answers 409 `DEPOSIT_RECEIPT_REVERSAL_DRAFT_REQU
 (rule ID `BR-AUTH-010`). The Deposit resource's `can_reverse_receipt` and the ledger's
 `can_reverse` are always false, so no event offers a one-call reverse route.
 
+Amended by V1-056 sub-slice 10h-2 (owner answer 4 to Q-2026-10-06-36): once the Final
+Settlement of a forfeiture's governing Lease or of its Deposit's Lease is closed, the Lease
+forfeiture reversal draft (database and service; its routes come in slice 11c) is refused as a
+conflict (409) at record and at confirmation, and a draft refused at confirmation stays pending;
+the forfeiture is reversed only through a `FORFEITURE_REVERSAL` correction of that Settlement
+(slice 11e routes). An already reversed forfeiture keeps its own refusal.
+
 Amended by V1-056 sub-slice 8a-2 (owner answer 2 to Q-2026-10-05-23): while a receipt
 reversal draft for a Deposit is pending, confirming a Refund draft or a forfeiture draft
 for the same Deposit is refused as a conflict and the draft stays pending: the Refund
