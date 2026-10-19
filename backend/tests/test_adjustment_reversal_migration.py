@@ -71,6 +71,7 @@ from test_invoice_migration import migrated_database_url as migrated_database_ur
 from test_migrations import _temporary_migration_database
 from test_payment_allocation_migration import source as allocation_source
 from test_payment_move_migration import person, rows, value
+from waiting_draft_test_support import recorded_then_rolled_back, written_after_closure
 
 RECORD = "app.record_adjustment_reversal_draft(uuid,uuid,uuid,uuid,text,text)"
 CONFIRM = "app.confirm_adjustment_reversal(uuid,uuid,uuid,text)"
@@ -589,7 +590,8 @@ def test_a_closed_settlement_s_adjustment_waits_for_a_correction(
     Signer's paid Invoice. A reversal draft recorded before the Final Settlement is stale after
     the real closure (the Settlement used that Credit) and stays pending; after the closure the
     recorder refuses the Adjustment, which only a correction of that Settlement may reverse
-    (sub-slice 10f-2)."""
+    (sub-slice 10f-2). Since sub-slice 10h-3 such a waiting draft blocks the closure, so the
+    draft recorded before it is written by hand after it."""
     url = migrated_database_url
     case = {**two_signer_case(url, overdue_rent=True), "url": url}
     human, prop = case["human"], case["prop"]
@@ -602,8 +604,19 @@ def test_a_closed_settlement_s_adjustment_waits_for_a_correction(
             case["lease"],
         )
     ]
-    early = reversals().record(prop, request(adjustment), actor=preparer(human, prop))
-    [release] = cast(list[dict[str, Any]], source_of(early)["releases"])
+    # Since sub-slice 10h-3 a waiting reversal draft blocks the closure (asserted in a
+    # rolled-back recording), so the draft recorded before it is written by hand after it.
+    held_id = uuid4()
+    held = recorded_then_rolled_back(
+        url,
+        f"SELECT {RECORD.split('(')[0]}(%s,%s,%s,%s,%s,'invoices.adjust')",
+        (prop, human, held_id, adjustment, REASON),
+        draft=held_id,
+        prop=prop,
+        actor=human,
+        settlement=case["settlement"],
+    )
+    [release] = cast(list[dict[str, Any]], source_of({"payload": held.payload})["releases"])
     assert (release["customer_credit_id"], release["put_back_usd_cents"]) == (
         str(case["credit"]),
         400,
@@ -619,9 +632,10 @@ def test_a_closed_settlement_s_adjustment_waits_for_a_correction(
             pet_remainder=STAFF,
         ),
     )
+    early = written_after_closure(url, prop, held)
     with pytest.raises(AdjustmentReversalStaleDraftError):
-        reversals().confirm(prop, draft_id(early), actor=approver(human, prop))
-    assert drafts().get(prop, draft_id(early), actor=approver(human, prop))["state"] == "PENDING"
+        reversals().confirm(prop, early, actor=approver(human, prop))
+    assert drafts().get(prop, early, actor=approver(human, prop))["state"] == "PENDING"
     assert reversed_rows(url, adjustment) == []
     assert refusal(prop, human, adjustment) == ("55000", CLOSED)
 

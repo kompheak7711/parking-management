@@ -2778,9 +2778,21 @@ no cleaning charge sits on an issued, non-VOID Invoice; `LATE_PAYMENT_DECISION_M
 UNPAID or PARTIALLY_PAID Invoice whose Late-payment review is eligible; `FORFEITURE_NOT_CONFIRMED`
 for a Deposit on the `FORFEITURE_REQUIRED` path; `PENDING_DRAFT` for a pending Refund, forfeiture
 (including the reversal and receipt reversal variants) or Payment move draft on a Lease Deposit,
-a Settlement Customer's Credit or Payment, or an allocation or target Invoice of the Lease (its
-draft id, kind and variant only for a `financial.approve` holder or a holder of the draft's
-prepare capability); `ONE_TIME_CHARGE_NOT_INVOICED` for a one-time charge source of the Lease on
+a Settlement Customer's Credit or Payment, or an allocation or target Invoice of the Lease, and,
+since V1-056 sub-slice 10h-3 (migration `20270111_168`; owner answer (a) to Q-2026-10-17-120
+point 3), for another Lease's waiting `SETTLEMENT_CORRECTION` draft of the variant `PAYMENT_MOVE`
+whose correct Invoice is an Invoice of the Lease, a waiting `PAYMENT_RETURN` draft, or another
+Settlement's waiting `SETTLEMENT_CORRECTION` draft of the variant `RETURNED_PAYMENT`, whose
+Payment has an active allocation on an obligation of the Lease, an active Customer Credit held by
+a Settlement Customer (with money left or not; fail closed), an active application of one of its
+Credits on such an obligation or an active receipt into a Deposit of the Lease, and a waiting
+`ADJUSTMENT_REVERSAL` draft of an
+Adjustment on an Invoice of the Lease (its draft id, kind and variant only for a
+`financial.approve` holder or a holder of the draft's prepare capability). Because every
+post-settlement correction plan runs the same preview, such a waiting draft on a closed Lease's
+sources also refuses that Settlement's correction steps (55000) until it is confirmed, rejected
+or withdrawn (a Settlement's own `RETURNED_PAYMENT` correction draft is not listed for it);
+`ONE_TIME_CHARGE_NOT_INVOICED` for a one-time charge source of the Lease on
 no DRAFT or issued, non-VOID Invoice that is still waiting to be billed (not one whose Invoice was
 VOIDed and not one a draft correction replaced, read from `app.invoice_draft_revision_events`;
 owner answer to Q-2026-10-05-27); `INVOICE_DRAFT_NOT_ISSUED` for an Invoice draft of the Lease.

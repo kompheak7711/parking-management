@@ -4454,6 +4454,8 @@ termination and Move-out dates, outstanding Invoices, applicable outstanding
 Late-payment Charges, Customer Credit, Security Deposit, Pet Deposit, final Utility
 handling, Adjustments, and other valid linked financial events applicable to that Lease.
 
+Amended by the owner's answer (a) to Q-2026-10-17-120 point 3 (built in V1-056 sub-slice 10h-3): a Final Settlement is not recorded or confirmed while a draft that could change its inputs waits. Besides a waiting Refund, forfeiture or wrong-Unit Payment move draft on the Lease's sources, this includes another Lease's waiting Payment move correction whose correct Invoice is on this Lease, a waiting returned-Payment draft, or another Settlement's waiting returned-Payment correction, of a Payment that paid this Lease's obligations, funded a Credit of one of its Customers or funded one of its Deposits, and a waiting Adjustment reversal draft of an Adjustment on one of its Invoices. The draft is first confirmed by an approver, rejected or withdrawn. After closure the same waiting drafts hold the Settlement's post-settlement corrections until they are confirmed, rejected or withdrawn.
+
 ---
 
 ## BR-SETTLE-003 — Finalize Valid Outstanding Charges

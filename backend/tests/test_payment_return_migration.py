@@ -103,6 +103,7 @@ from test_settlement_refund_correction_migration import record as record_refund_
 from test_settlement_refund_return_migration import confirm as confirm_refund_return
 from test_settlement_refund_return_migration import net, return_command
 from test_settlement_refund_return_migration import record as record_refund_return
+from waiting_draft_test_support import recorded_then_rolled_back, written_after_closure
 
 RECORD = "app.record_payment_return_draft(uuid,uuid,uuid,uuid,jsonb,text,text)"
 CONFIRM = "app.confirm_payment_return(uuid,uuid,uuid,text)"
@@ -451,7 +452,8 @@ def test_a_closed_settlement_s_records_are_refused_and_a_later_payment_is_return
     before the closure, whose Credit a Final Settlement Credit application used, or whose Deposit
     receipt the Settlement relied on, is refused here; a draft recorded before the closure is stale
     after it and stays pending; a Payment made after the closure is returned, and the closed
-    Settlement keeps its closing balance."""
+    Settlement keeps its closing balance. Since sub-slice 10h-3 such a waiting draft blocks the
+    closure, so the draft recorded before it is written by hand after it."""
     url = migrated_database_url
     case = leaving_case(url, start_offset=this_month(url))
     human, prop, customer, settlement = (
@@ -475,8 +477,19 @@ def test_a_closed_settlement_s_records_are_refused_and_a_later_payment_is_return
     invoices().record_one_time_charge(prop, appliances, actor=staff)
     extra_line = line_of(url, draft_and_issue(prop, appliances.charge_id, staff)["id"])
     # Before the closure a Payment pays 1,000 of the extra charge, and its return is recorded.
+    # Since sub-slice 10h-3 a waiting return draft of it blocks the closure (asserted in a
+    # rolled-back recording), so the same draft is written by hand after the closure.
     early = pay(url, prop, human, customer, invoice_of(url, extra_line), extra_line, 1_000)
-    early_draft = draft_id(returns().record(prop, request(early), actor=preparer(human, prop)))
+    held_id = uuid4()
+    held_return = recorded_then_rolled_back(
+        url,
+        "SELECT app.record_payment_return_draft(%s,%s,%s,%s,%s,%s,'payments.reverse')",
+        (prop, human, held_id, early, Jsonb({"evidence_reference": EVIDENCE}), REASON),
+        draft=held_id,
+        prop=prop,
+        actor=human,
+        settlement=settlement,
+    )
     plan = (
         SettlementCreditStep(case["credit"], LINE, case["other_line"], 400),
         SettlementDepositStep(PET_FIRST, case["pet"], LINE, case["pet_line"], 12_500),
@@ -485,6 +498,7 @@ def test_a_closed_settlement_s_records_are_refused_and_a_later_payment_is_return
         SettlementDepositStep(PET_REST, case["pet"], LINE, extra_line, 5_400),
     )
     confirm_settlement(case, record_settlement(case, plan, pet_remainder=STAFF))
+    early_draft = written_after_closure(url, prop, held_return)
     closed = rows(url, "SELECT to_jsonb(s) FROM app.final_settlements s WHERE s.id=%s", settlement)
     assert outstanding(url, extra_line) == 8_600
     # The closure changed what the draft depends on: it is stale and stays pending.

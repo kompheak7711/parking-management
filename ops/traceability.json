@@ -43873,6 +43873,78 @@
       "test_path": "backend/tests/test_settlement_forfeiture_reversal_after_closure_migration.py",
       "status": "implemented",
       "notes": "Owner answer (a) to Q-2026-10-19-143 (review round 1, both reviewers): on Leases with no Final Settlement, where the 10h-1 triggers exit early, a Payment allocation reversal and a Credit application reversal are refused at REPEATABLE READ and SERIALIZABLE (55000) with nothing written, and both reverse through the services at READ COMMITTED, so the 10,000 is owed again (V1-056 sub-slice 10h-2)."
+    },
+    {
+      "test_id": "test_a_waiting_move_correction_blocks_the_lease_of_its_correct_invoice",
+      "upstream_ids": [
+        "BR-SETTLE-002",
+        "BR-SETTLE-013",
+        "BR-PAY-042",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_preview_waiting_drafts_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer (a) to Q-2026-10-17-120 point 3: while a closed Lease's PAYMENT_MOVE correction draft waits, the Lease of its correct Invoice lists it as PENDING_DRAFT (to an approver and to a final_settlements.prepare holder), and that Lease's Settlement draft recorded before it is refused at its confirm (55000) and stays pending with nothing written; after the withdrawal it confirms (V1-056 sub-slice 10h-3)."
+    },
+    {
+      "test_id": "test_a_waiting_payment_return_blocks_the_closure_through_each_record_of_the_lease",
+      "upstream_ids": [
+        "BR-SETTLE-002",
+        "BR-SETTLE-013",
+        "BR-AUTH-010",
+        "DB-PAY-009"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_preview_waiting_drafts_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer (a) to Q-2026-10-17-120 point 3: a Payment return draft is the preview's only blocking issue and refuses the Settlement record (55000, nothing written) while its Payment has an allocation on the Lease, a Credit held by the Lease's Customer or a receipt into the Lease's Security Deposit (each Payment has only that record); its identity is shown to an approver and a payments.reverse holder and hidden from a final_settlements.prepare-only reader; after each withdrawal the preview is ready; a return of the Customer's unallocated Payment does not block (V1-056 sub-slice 10h-3)."
+    },
+    {
+      "test_id": "test_a_waiting_adjustment_reversal_draft_blocks_only_its_own_lease",
+      "upstream_ids": [
+        "BR-SETTLE-002",
+        "BR-INV-044",
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_preview_waiting_drafts_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer (a) to Q-2026-10-17-120 point 3: a 10f-1 Adjustment reversal draft of a Lease's credit Adjustment is that Lease's only blocking issue and refuses its Settlement record (55000); its identity is shown to an approver and an invoices.adjust holder and hidden from a final_settlements.prepare-only reader; another Lease's preview does not list it; after the withdrawal the preview is ready (V1-056 sub-slice 10h-3)."
+    },
+    {
+      "test_id": "test_a_waiting_returned_payment_correction_blocks_the_other_lease_of_its_payment",
+      "upstream_ids": [
+        "BR-SETTLE-002",
+        "BR-SETTLE-013",
+        "DB-PAY-009"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_preview_waiting_drafts_migration.py",
+      "status": "implemented",
+      "notes": "Review round 2 (security should-fix 1): while a closed Settlement's RETURNED_PAYMENT correction draft waits for a Payment that also has an allocation on another open Lease's damage line, that Lease's preview lists it as its only blocking issue and its Settlement draft is not recorded (55000, nothing written); the correction's own Lease does not list it; after the withdrawal the other Lease is ready (V1-056 sub-slice 10h-3)."
+    },
+    {
+      "test_id": "test_after_closure_a_waiting_return_draft_holds_the_settlement_s_corrections",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_preview_waiting_drafts_migration.py",
+      "status": "implemented",
+      "notes": "Sub-slice 10h-3, implementer's reading (iii): every correction plan runs the same preview, so after the closure a waiting Payment return draft of a Payment that paid the Late-payment Charge after the closure refuses the Late-payment Charge REFUND correction (55000, nothing written); after the withdrawal it is recorded (V1-056 sub-slice 10h-3)."
+    },
+    {
+      "test_id": "test_the_waiting_drafts_check_is_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "BR-SETTLE-002",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_preview_waiting_drafts_migration.py",
+      "status": "implemented",
+      "notes": "The migration changes only the body of app.final_settlement_preview (owner, privileges, definer flag and settings kept), adds each new pending-draft branch once, changes no trigger, relation, column, privilege or constraint, and is forward-only (V1-056 sub-slice 10h-3)."
     }
   ]
 }

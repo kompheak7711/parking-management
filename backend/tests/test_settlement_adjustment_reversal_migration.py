@@ -54,6 +54,8 @@ from test_adjustment_reversal_migration import (
     status,
     version,
 )
+from test_adjustment_reversal_migration import REASON as EARLY_REASON
+from test_adjustment_reversal_migration import RECORD as EARLY_RECORD
 from test_adjustment_reversal_migration import approver as early_approver
 from test_adjustment_reversal_migration import draft_id as early_draft_id
 from test_adjustment_reversal_migration import preparer as early_preparer
@@ -93,6 +95,7 @@ from test_migrations import _temporary_migration_database
 from test_payment_move_migration import person, rows, value
 from test_settlement_correction_migration import settlement_row
 from test_settlement_extra_charge_migration import corrections
+from waiting_draft_test_support import recorded_then_rolled_back, written_after_closure
 
 RECORD = "app.record_settlement_adjustment_reversal_draft(uuid,uuid,uuid,uuid,uuid,text,text)"
 CONFIRM = "app.confirm_settlement_adjustment_reversal(uuid,uuid,uuid,text)"
@@ -443,7 +446,9 @@ def test_refusals_waiting_drafts_stale_drafts_and_withdrawal(
     refused; after its withdrawal the correction is recorded. A reused key, a second waiting
     draft, another Lease's Adjustment, a REFUND correction's Adjustment and a READ COMMITTED
     breach are refused; an exact repeat replays; a draft whose Invoice changed is stale and stays
-    pending; the 10f-1 recorder still refuses a closed Settlement's Adjustment."""
+    pending; the 10f-1 recorder still refuses a closed Settlement's Adjustment. Since sub-slice
+    10h-3 a waiting 10f-1 draft blocks the closure, so the draft recorded before it is written by
+    hand after it."""
     url = migrated_database_url
     case = {**two_signer_case(url, overdue_rent=True), "url": url}
     prop, human = case["prop"], case["human"]
@@ -456,8 +461,17 @@ def test_refusals_waiting_drafts_stale_drafts_and_withdrawal(
     )
     signer_invoice = invoice_of(url, case["signer_line"])
     pay_line(url, prop, human, case["co_signer"], signer_invoice, case["signer_line"], 1_000)
-    early = early_reversals().record(
-        prop, early_request(adjustment), actor=person(human, prop, "invoices.adjust")
+    # Since sub-slice 10h-3 a waiting 10f-1 draft blocks the closure (asserted in a rolled-back
+    # recording), so the draft recorded before it is written by hand after it.
+    held_id = uuid4()
+    held = recorded_then_rolled_back(
+        url,
+        f"SELECT {EARLY_RECORD.split('(')[0]}(%s,%s,%s,%s,%s,'invoices.adjust')",
+        (prop, human, held_id, adjustment, EARLY_REASON),
+        draft=held_id,
+        prop=prop,
+        actor=human,
+        settlement=case["settlement"],
     )
     confirm_settlement(
         case,
@@ -467,6 +481,7 @@ def test_refusals_waiting_drafts_stale_drafts_and_withdrawal(
             pet_remainder=STAFF,
         ),
     )
+    early = {"draft_id": str(written_after_closure(url, prop, held))}
     # The 10f-1 source's refusal is part of its digest, so after the closure the 10f-1 draft is
     # stale (P5S02) and stays pending (review round 1).
     with pytest.raises(AdjustmentReversalStaleDraftError) as early_stale:
