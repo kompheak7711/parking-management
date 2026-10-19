@@ -14,6 +14,11 @@ from psycopg.types.json import Jsonb, set_json_loads
 from property_rental.identity import AuthenticatedActor, AuthorizationRequirement, is_authorized
 from property_rental.lock_retry import retry_lock_not_available
 
+# V1-056 sub-slice 10h-1: the database text of the closed-Settlement refusal (8e-1 and 10h-1).
+CLOSED_SETTLEMENT_CHANGE = (
+    "A closed Final Settlement changes only through a post-settlement correction"
+)
+
 
 class CreditNotFoundError(LookupError):
     pass
@@ -326,6 +331,10 @@ class CustomerCreditService:
                 # only through a post-settlement correction (owner answer 3 to Q-2026-10-06-32).
                 # Only the application reversal can raise P5S01 in this service today; revisit
                 # the message if another Credit command gains a Final Settlement refusal.
+                # Sub-slice 10h-1: any other application a closed Final Settlement relied on
+                # (owner answer 3 to Q-2026-10-06-36) gets the closed-Settlement text.
+                if exc.diag.message_primary == CLOSED_SETTLEMENT_CHANGE:
+                    raise CreditConflictError(CLOSED_SETTLEMENT_CHANGE) from exc
                 raise CreditConflictError(
                     "A Final Settlement Credit application changes only through a "
                     "post-settlement correction"

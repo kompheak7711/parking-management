@@ -43574,6 +43574,120 @@
       "test_path": "backend/tests/test_settlement_payment_move_credit_migration.py",
       "status": "implemented",
       "notes": "Migration 20270107_164 adds only app.wrong_unit_move_source (no grant, the slice 7 source's privileges, owner and settings; its body is the slice 7 body with the two replacements), the slice 7 source's whole definition is its old header and the call with false, the correction's source calls it with true, nothing else changes (functions, relation privileges, triggers and constraints compared), and it is forward-only (V1-056 sub-slice 10g-2)."
+    },
+    {
+      "test_id": "test_an_allocation_the_settlement_relied_on_is_not_reversed_or_moved_outside_a_correction",
+      "upstream_ids": [
+        "BR-SETTLE-012",
+        "BR-SETTLE-013",
+        "BR-SETTLE-016",
+        "BR-PAY-042",
+        "BR-AUTH-010",
+        "DB-PAY-008",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_relied_on_reversal_migration.py",
+      "status": "implemented",
+      "notes": "Owner answers 3 and 4 to Q-2026-10-06-36: after a real closure the one-call reversal of the 12,500 allocation the closure saw paid is refused as a conflict (P5S01) and writes nothing, so a charge reduction of that line still refuses to release paid value; the slice 7 move draft is refused (55000) at record, and a hand-built waiting one at confirm (it stays pending), and points to the correction, which still records the move (V1-056 sub-slice 10h-1)."
+    },
+    {
+      "test_id": "test_a_credit_application_the_settlement_relied_on_is_not_reversed_with_one_call",
+      "upstream_ids": [
+        "BR-SETTLE-012",
+        "BR-SETTLE-013",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_relied_on_reversal_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer 3 to Q-2026-10-06-36: an ordinary 400 Credit application made before a real closure on the pet damage line is not a Final Settlement application, but its one-call reversal is refused with the closed-Settlement text and writes nothing (V1-056 sub-slice 10h-1)."
+    },
+    {
+      "test_id": "test_a_late_payment_charge_paid_at_closure_stays_paid",
+      "upstream_ids": [
+        "BR-SETTLE-012",
+        "BR-SETTLE-013",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_relied_on_reversal_migration.py",
+      "status": "implemented",
+      "notes": "Sub-slice 10c-3a review round 1 note: the 8,000 Late-payment Charge paid directly before a real closure stays paid; its allocation's one-call reversal is refused and writes nothing, so a charge reduction of the Charge still refuses to release paid value (V1-056 sub-slice 10h-1)."
+    },
+    {
+      "test_id": "test_an_adjustment_reversal_correction_s_put_back_is_not_reversed_with_one_call",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_relied_on_reversal_migration.py",
+      "status": "implemented",
+      "notes": "Owner note of 2026-10-16 on the 10f-2 report: the 400 put-back an ADJUSTMENT_REVERSAL correction wrote after a real closure, linked to the correction with no Final Settlement on the row, is not reversed by the one-call Credit application reversal (P5S01, nothing written) (V1-056 sub-slice 10h-1)."
+    },
+    {
+      "test_id": "test_an_allocation_a_move_correction_wrote_on_the_open_lease_changes_only_through_it",
+      "upstream_ids": [
+        "BR-PAY-042",
+        "BR-SETTLE-013",
+        "BR-SETTLE-016",
+        "BR-AUTH-010",
+        "DB-PAY-008",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_relied_on_reversal_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer (a) to Q-2026-10-17-120 point 2: the 1,000 allocation a PAYMENT_MOVE correction of the first Settlement wrote on the second Lease's open line is refused to the one-call reversal, to an ordinary 12,000 credit Adjustment that would release 500 of it and to a slice 7 move draft, each writing nothing; a slice 7 move draft of the wrong allocation the correction reversed after the closure is refused too (V1-056 sub-slice 10h-1)."
+    },
+    {
+      "test_id": "test_the_relied_on_refusals_are_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_relied_on_reversal_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20270108_165 adds only the four internal functions (no grant, SECURITY DEFINER with the fixed search path) and the two row-level BEFORE INSERT triggers, which run in name order before the insert checks (the Credit one after the 8e-2 and 10c-1b refusals), changes only the slice 7 move source's body (owner, privileges and settings kept), changes no relation privilege or constraint, and is forward-only (V1-056 sub-slice 10h-1)."
+    },
+    {
+      "test_id": "test_another_lease_s_refund_correction_cannot_release_an_allocation_a_move_correction_wrote",
+      "upstream_ids": [
+        "BR-PAY-042",
+        "BR-SETTLE-013",
+        "BR-AUTH-010",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_relied_on_reversal_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer (a) to Q-2026-10-17-120 point 2 (review round 1, the security reviewer's set-up with the second Lease closed first): after both real closures, an EXTRA_CHARGE correction of the second Settlement bills 1,500 and the first Settlement's PAYMENT_MOVE correction moves 1,000 onto it; a 1,500 REFUND correction of the second Settlement, which would release the moved 1,000, is refused at confirm (P5S01); the draft stays pending and nothing is written (V1-056 sub-slice 10h-1)."
+    },
+    {
+      "test_id": "test_an_allocation_reversed_before_the_closure_keeps_the_slice_7_move",
+      "upstream_ids": [
+        "BR-PAY-042",
+        "BR-SETTLE-013",
+        "DB-PAY-008"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_relied_on_reversal_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 (independent S1): a 500 allocation reversed with one call before a real closure is not one the Settlement relied on; after the closure the PAYMENT_MOVE correction refuses it and the slice 7 move draft records and confirms its 500 move to the second Lease's line (V1-056 sub-slice 10h-1)."
+    },
+    {
+      "test_id": "test_records_made_after_the_closure_still_reverse_with_one_call",
+      "upstream_ids": [
+        "BR-SETTLE-012",
+        "BR-SETTLE-013",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_relied_on_reversal_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer 3 to Q-2026-10-06-36: a 30,000 allocation and a 10,000 Credit application made after a real closure on an EXTRA_CHARGE Invoice of the closed Lease, not linked to a correction, are each reversed with one call, and the 40,000 is owed again (V1-056 sub-slice 10h-1)."
     }
   ]
 }

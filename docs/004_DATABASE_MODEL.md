@@ -1327,6 +1327,8 @@ As built in V1-056 sub-slice 10g (migration `20261222_148`): a row is also writt
 
 As built in V1-056 sub-slice 10g-2 (migration `20270107_164`; owner answer (a) to Q-2026-10-17-121): the move source has one body, the new internal `app.wrong_unit_move_source(property, allocation, target invoice, settlement correction)` (no grant). The slice 7 source `app.payment_move_source` calls it with false and keeps the blanket refusal above. The `PAYMENT_MOVE` correction's source calls it with true: there a Payment's Customer Credit that is not reversed, or its Refund that is not fully returned, refuses the move only when a credit Adjustment released any part of an allocation of this Payment on the wrong Invoice (an `invoice_credit_excess_releases` row whose reversed allocation is of this Payment and on the move's source Invoice), because the correction moves only the wrong allocation's own value, still on that active allocation. The Payment's Credit and Refunds and the Settlement's use of them do not change. No table, column, trigger or grant changed.
 
+As built in V1-056 sub-slice 10h-1 (migration `20270108_165`; owner answers 3 and 4 to Q-2026-10-06-36 and point 2 of Q-2026-10-17-120): `app.payment_move_source` (whole-body replacement; same signature, settings and privileges) refuses (55000, "A closed Final Settlement relied on this allocation; move it through a correction of that Final Settlement") an allocation of the Property that `app.closed_settlements_relying_on_allocation` names (DB-SETTLE-005) and that was not reversed at or before that Settlement's closure (a Settlement did not rely on an allocation reversed before it closed, so that one keeps the slice 7 rules; review round 1, independent S1), before it calls `app.wrong_unit_move_source(...,false)`; the slice 7 recorder (both calls) and confirm refuse it, and the allocation reversal insert trigger of DB-SETTLE-005 is the backstop. The 10g source is unchanged.
+
 ## DB-PAY-009 — `payment_returns`
 
 Approved by owner answers 2 and 3 to Q-2026-10-06-37 (2026-10-07); built in V1-056 sub-slice 10e.
@@ -3956,6 +3958,33 @@ change. No table, column or effect kind changed. Since sub-slice 10g-2 (migratio
 `20270107_164`; owner answer (a) to Q-2026-10-17-121) the Payment's Customer Credit or Refund
 refuses this variant only when a credit Adjustment released part of an allocation of that Payment
 on the wrong Invoice (DB-PAY-008).
+
+V1-056 sub-slice 10h-1 (migration `20270108_165`; owner answers 3 and 4 to Q-2026-10-06-36,
+answer 5 to Q-2026-10-06-37, Q-2026-10-07-39, the owner note of 2026-10-16 on the 10f-2 report
+and point 2 of Q-2026-10-17-120): what a closed Final Settlement relied on is read by two new
+internal functions (no grant), `app.closed_settlements_relying_on_allocation(allocation)` and
+`app.closed_settlements_relying_on_credit_application(application)`: the closed Settlements of
+the Lease of the record's Invoice (or of its Late-payment Charge's source Invoice) closed at or
+after the record was made (`posted_at` or `occurred_at`), the Settlement of a Final Settlement
+Credit application, and the Settlement of every correction whose effect links the record (the
+definition of sub-slice 10e-1a). New BEFORE INSERT triggers
+`a0_payment_allocation_reversals_relied_on` (`app.refuse_relied_on_allocation_reversal()`) and
+`a1_customer_credit_application_reversals_relied_on`
+(`app.refuse_relied_on_credit_application_reversal()`, named to run after the 8e-2 and 10c-1b
+refusals, whose texts stay first for their records) refuse (P5S01, "A closed Final Settlement
+changes only through a post-settlement correction") a reversal of such a record unless, for each
+of those Settlements, `app.settlement_correction_linked` finds a correction of it confirmed in
+this transaction that links the reversal (every correction writer links before it writes). Each
+trigger first takes the insert check's own locks in its order (the payment state, the Payment,
+for a Credit application the Credit, then the target), so a Final Settlement started or closed
+during a lock wait is read after it (review round 1, security note 1). A record with no Final
+Settlement on its Lease and no correction link then takes no Settlement lock; otherwise the
+trigger takes the Settlement row of the target's Lease FOR SHARE (the 8e-1 order), so a running
+Final Settlement confirm is waited for and its closure is then read. They cover every writer: the one-call reversals, the ordinary credit
+Adjustment's release (which reverses before it writes the Adjustment), another Lease's `REFUND`
+correction, and the slice 7 move. A record two closed Settlements relied on cannot be linked to
+both and stays refused (Q-2026-10-17-120 point 1). The application services map P5S01 to a
+conflict.
 
 V1-056 sub-slice 10e-2b-4e-2a (migration `20270101_158`; owner answers (a) to Q-2026-10-18-134): a
 `RETURNED_PAYMENT` correction of a shared Deposit links, besides its reversals and recoveries, the

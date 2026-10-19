@@ -922,6 +922,21 @@ context eligibility, Payment availability, target outstanding balance, and concu
 A Late-payment Charge allocation reduces only that separate Charge and never the source
 Invoice. Reversal creates a linked event.
 
+Amended by V1-056 sub-slice 10h-1 (owner answers 3 and 4 to Q-2026-10-06-36): `POST
+/payment-allocations/{allocation_id}/reverse` answers 409 (a conflict; the service text is "A
+closed Final Settlement changes only through a post-settlement correction") for an allocation
+that a closed Final Settlement relied on: one made at or before the closure on an obligation
+of its Lease, or one a post-settlement correction wrote. Nothing is written; the allocation
+changes only through a correction of that Settlement. Allocations made after the closure are reversed as before.
+
+Amended by V1-056 sub-slice 10h-1 (owner answer (a) to Q-2026-10-17-120 point 2; review round
+1): `POST /invoices/{invoice_id}/adjustments` on an Invoice whose Lease has no closed Final
+Settlement (none yet, or one still open) also answers 409 (a conflict) when the credit Adjustment
+would release an allocation
+that a post-settlement correction of another Lease's closed Final Settlement wrote on that Invoice
+(the new allocation of a `PAYMENT_MOVE` correction). Nothing is written; that allocation changes
+only through a correction of the Settlement whose correction wrote it.
+
 ## API-060 — Payment Reversal
 
 `POST /payments/{payment_id}/reverse` requires reason, expected current state,
@@ -995,6 +1010,14 @@ made (its `final_settlement_id` is set); such an application changes only throug
 post-settlement corrections (slice 10). Other Credit applications and their reversals are
 unchanged. The Final Settlement's Credit applications have no route; only the Settlement
 confirm writes them.
+
+Amended by V1-056 sub-slice 10h-1 (owner answers 3 and 4 to Q-2026-10-06-36 and the owner note
+of 2026-10-16 on the 10f-2 report): the same route also answers 409 (a conflict; the service text is "A
+closed Final Settlement changes only through a post-settlement correction") for an ordinary
+Credit application that a closed Final Settlement relied on: one made at or before the
+closure on an obligation of its Lease, or one a post-settlement correction wrote, such as an
+Adjustment reversal correction's put-back. Nothing is written. Credit applications made after the closure are reversed as
+before.
 
 # 20. Refund Endpoints
 

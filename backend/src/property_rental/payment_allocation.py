@@ -180,6 +180,13 @@ class PaymentAllocationService:
                 ) from exc
             if exc.sqlstate == "P4902":
                 raise AllocationInvalidError("Payment command is invalid") from exc
+            if exc.sqlstate == "P5S01":
+                # V1-056 sub-slice 10h-1: an allocation a closed Final Settlement relied on is
+                # reversed only through a post-settlement correction (owner answer 3 to
+                # Q-2026-10-06-36); nothing was written.
+                raise AllocationConflictError(
+                    "A closed Final Settlement changes only through a post-settlement correction"
+                ) from exc
             # Serialization, timeout, connection and deferred-constraint failures
             # cannot prove that an earlier transmission of this key did not commit.
             raise AllocationUnavailableError(

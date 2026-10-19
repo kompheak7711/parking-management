@@ -38,6 +38,12 @@ from property_rental.final_settlement import (
 )
 from property_rental.payment_return import PaymentReturnConflictError
 from property_rental.settlement_correction import RecordReturnedPaymentCorrectionCommand
+from relied_on_reversal_test_support import (
+    ALLOCATION_TRIGGER,
+    CLOSED,
+    relied_on_refusal,
+    relied_on_triggers_disabled,
+)
 from test_customer_ledger_migration import assert_reconciled
 from test_final_settlement_confirm_migration import confirm as confirm_settlement
 from test_final_settlement_confirm_migration import invoice_of, this_month
@@ -851,15 +857,27 @@ def test_refusals_stale_drafts_and_a_deposit_that_would_still_hold_money(
             )
         )
     )
-    # As the one-call allocation reversal writes it (still open before sub-slice 10h).
+    # As the one-call allocation reversal writes it. Since sub-slice 10h-1 this state can no
+    # longer be reached by the one-call reversal or this insert (the closure relied on the
+    # allocation): the insert's refusal is asserted first, then it is written with only the 10h-1
+    # trigger disabled in this transaction (owner answer (a) to Q-2026-10-19-142).
+    reversal = (
+        "INSERT INTO app.payment_allocation_reversals(id,payment_allocation_id,reason,"
+        "occurred_at,actor_id,authorization_reference) VALUES (gen_random_uuid(),%s,"
+        "'Posted to the wrong line',app.credit_excess_instant(%s,NULL),%s,"
+        "'payments.allocations.reverse')"
+    )
+    parameters = (allocation, invoice_of(url, rent), human)
     with psycopg.connect(url) as connection:
-        connection.execute(
-            "INSERT INTO app.payment_allocation_reversals(id,payment_allocation_id,reason,"
-            "occurred_at,actor_id,authorization_reference) VALUES (gen_random_uuid(),%s,"
-            "'Posted to the wrong line',app.credit_excess_instant(%s,NULL),%s,"
-            "'payments.allocations.reverse')",
-            (allocation, invoice_of(url, rent), human),
+        assert relied_on_refusal(connection, lambda: connection.execute(reversal, parameters)) == (
+            "P5S01",
+            CLOSED,
         )
+        with relied_on_triggers_disabled(connection, (ALLOCATION_TRIGGER,)):
+            connection.execute(reversal, parameters)
+            # The insert's deferred checks run now, as at the commit of this one-insert
+            # transaction, so the trigger can be enabled again before it ends.
+            connection.execute("SET CONSTRAINTS ALL IMMEDIATE")
     with pytest.raises(FinalSettlementStaleDraftError):
         confirm(case, draft)
     assert state(url, draft) == "PENDING" and status(url, payment) == "RECEIVED"

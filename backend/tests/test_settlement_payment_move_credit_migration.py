@@ -68,6 +68,10 @@ INTERNAL = "app.wrong_unit_move_source(uuid,uuid,uuid,boolean)"
 SLICE_7_SOURCE = "app.payment_move_source(uuid,uuid,uuid)"
 SETTLEMENT_SOURCE = "app.settlement_payment_move_source(uuid,uuid,uuid,uuid)"
 BLANKET = "Reverse the Customer Credit or Refund from this Payment first"
+RELIED_ON = (
+    "A closed Final Settlement relied on this allocation; move it through a correction of that "
+    "Final Settlement"
+)
 RELEASE = (
     "SELECT replacement_payment_allocation_id,customer_credit_id "
     "FROM app.invoice_credit_excess_releases WHERE reversed_payment_allocation_id=%s"
@@ -218,7 +222,9 @@ def test_credit_the_settlement_used_from_the_payment_s_other_value_no_longer_blo
         outstanding(url, second["other_line"]),
         value(url, "SELECT app.payment_credit_value_at(%s,'infinity')", payment),
     ) == (0, 0, 12_500, 200)
-    assert slice_7_draft_refusal(first, allocation, target) == ("55000", BLANKET)
+    # Sub-slice 10h-1: the closure relied on this allocation, so the slice 7 draft is refused
+    # first and points to the correction.
+    assert slice_7_draft_refusal(first, allocation, target) == ("55000", RELIED_ON)
     # The one body: a NULL fourth argument reads as the blanket rule, true as the narrow one
     # (review round 2, independent note N2).
     with psycopg.connect(url) as connection:
@@ -278,7 +284,9 @@ def test_a_refund_of_the_payment_s_other_value_does_not_block_the_correction(
     )
     held = rows(url, refunded, payment, refund_id(refund))
     assert held[0][0] == 200
-    assert slice_7_draft_refusal(first, allocation, target) == ("55000", BLANKET)
+    # Sub-slice 10h-1: the closure relied on this allocation, so the slice 7 draft is refused
+    # first and points to the correction.
+    assert slice_7_draft_refusal(first, allocation, target) == ("55000", RELIED_ON)
     move = cast(dict[str, Any], confirm(first, draft_of(recorded))["move"])
     assert (move["moved_usd_cents"], move["left_on_payment_usd_cents"]) == (1_000, 0)
     assert (outstanding(url, first["other_line"]), outstanding(url, second["other_line"])) == (
@@ -356,7 +364,9 @@ def test_a_release_on_another_invoice_of_the_payment_does_not_block_the_correcti
         ),
     )
     first["person"] = correction_approver(url)
-    assert slice_7_draft_refusal(first, allocation, target) == ("55000", BLANKET)
+    # Sub-slice 10h-1: the closure relied on this allocation, so the slice 7 draft is refused
+    # first and points to the correction.
+    assert slice_7_draft_refusal(first, allocation, target) == ("55000", RELIED_ON)
     move = moved(first, allocation, target)
     assert (move["moved_usd_cents"], move["left_on_payment_usd_cents"]) == (12_500, 0)
     assert (
@@ -449,7 +459,9 @@ def test_another_payment_s_release_on_the_wrong_invoice_does_not_block_the_corre
     )
     assert released_payment == other
     close_other_line_paid(first, ((first["credit"], 400), (credit, 400), (released, 300)))
-    assert slice_7_draft_refusal(first, allocation, target) == ("55000", BLANKET)
+    # Sub-slice 10h-1: the closure relied on this allocation, so the slice 7 draft is refused
+    # first and points to the correction.
+    assert slice_7_draft_refusal(first, allocation, target) == ("55000", RELIED_ON)
     move = moved(first, allocation, target)
     assert (move["moved_usd_cents"], move["left_on_payment_usd_cents"]) == (12_000, 0)
     assert (

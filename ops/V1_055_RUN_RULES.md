@@ -31,6 +31,7 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md. Nothing else 
 ## Verification
 - Read the FULL unfiltered output of database and test runs (rtk proxy).
 - One targeted PostgreSQL run per sub-slice where a database is involved, after a read-only search of ALL backend tests for other affected tests.
+- Search for affected tests (owner, 2026-10-19; the 10h-1 pre-code search missed eight set-ups, found by review round 1 and run P1): also search committed tests and helpers for set-ups that call or hand-write the function about to be refused, and for comments such as "open until sub-slice".
 - No retry. Routine allowance: at most 2 corrections per distinct cause.
 - Known lock failure in a full run (owner, 2026-10-18; answer (b) to Q-2026-10-18-132): when a full run fails only with the known DL-067 `LockNotAvailable` failure, in a module the sub-slice does not change, rerun only those failing tests once (under `caffeinate -dims`) and save that log. If they pass, record both runs and go on. If they fail again, or any other test fails, stop and tell the owner. The root cause stays on the slice 12 list.
 - The same kind of error is the same cause, even when it shows up on different lines (owner, 2026-10-12; the long-line causes A and B of sub-slice 10e-2b-2 were one cause, so that was one correction past the limit; the commit stays). Implementer's stricter reading, applied from sub-slice 10e-2c: also in another file or after a rewrap; for example every too-long line is one lint cause, and every formatter change is one format cause.

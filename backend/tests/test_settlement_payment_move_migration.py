@@ -86,6 +86,11 @@ OTHER_LEASE = "The allocation does not pay an Invoice of this Final Settlement's
 AFTER_CLOSURE = "An allocation made after the closure moves through the ordinary move draft"
 REVERSED = "The allocation is already reversed"
 OPEN = "A post-settlement correction needs a closed Final Settlement"
+# Sub-slice 10h-1: the slice 7 move draft refuses an allocation a closed Settlement relied on.
+RELIED_ON = (
+    "A closed Final Settlement relied on this allocation; move it through a correction of that "
+    "Final Settlement"
+)
 LINKS = ("payment_allocation_reversal_id", "payment_allocation_id")
 
 
@@ -198,6 +203,42 @@ def confirm(case: dict[str, Any], draft: UUID) -> dict[str, Any]:
 
 def draft_of(result: dict[str, Any]) -> UUID:
     return UUID(str(result["draft_id"]))
+
+
+def hand_built_move_draft(case: dict[str, Any], allocation: UUID, target: UUID) -> UUID:
+    """A waiting slice 7 move draft of an allocation a closed Settlement relied on, written by the
+    owner connection through app.insert_financial_draft: since sub-slice 10h-1 the slice 7
+    recorder refuses such an allocation, so only a hand-built draft reaches the checks that see a
+    waiting or withdrawn slice 7 draft (as the owner answer to Q-2026-10-18-131 allowed). Its
+    source and digest are the ones the recorder would store, from the slice 7 body
+    app.wrong_unit_move_source (review round 1, independent S2 and security should-fix 1)."""
+    draft = uuid4()
+    payload = {
+        "variant": "WRONG_UNIT_MOVE",
+        "source_allocation_id": str(allocation),
+        "target_invoice_id": str(target),
+        "source_acknowledgement": SOURCE_ACK,
+        "target_acknowledgement": TARGET_ACK,
+    }
+    with psycopg.connect(case["url"]) as connection:
+        connection.execute(
+            "WITH source AS (SELECT app.wrong_unit_move_source(%s,%s,%s,false) AS value) "
+            "SELECT app.insert_financial_draft(%s,%s,%s,'PAYMENT_MOVE',"
+            "'payments.allocations.reverse',%s||jsonb_build_object('source',source.value),"
+            "'payment-move:'||encode(sha256(convert_to(source.value::text,'UTF8')),'hex'),%s) "
+            "FROM source",
+            (
+                case["prop"],
+                allocation,
+                target,
+                case["prop"],
+                case["human"],
+                draft,
+                Jsonb(payload),
+                REASON,
+            ),
+        )
+    return draft
 
 
 def cause(failure: pytest.ExceptionInfo[Exception]) -> tuple[Any, Any]:
@@ -368,7 +409,9 @@ def test_a_wrong_allocation_the_settlement_relied_on_moves_through_a_correction(
     assert confirm(first, draft) == result
     assert value(url, "SELECT app.payment_available_value(%s)", found["payment"]) == 0
     reconciled(url, first["customer"], second["customer"])
-    # Q-2026-10-05-17: the moved allocation changes only through another move draft.
+    # Q-2026-10-05-17: the moved allocation changes only through another move. Sub-slice 10h-1:
+    # the first Settlement's correction wrote it, so it changes only through a correction of that
+    # Settlement and its closed-Settlement refusal comes first (P5S01).
     with pytest.raises(AllocationConflictError) as one_call:
         allocations().reverse_allocation(
             prop,
@@ -376,7 +419,7 @@ def test_a_wrong_allocation_the_settlement_relied_on_moves_through_a_correction(
             ReverseAllocationCommand(uuid4(), "Undo the move"),
             actor=person(human, prop, "payments.allocations.reverse"),
         )
-    assert cast(psycopg.Error, one_call.value.__cause__).sqlstate == "P4904"
+    assert cast(psycopg.Error, one_call.value.__cause__).sqlstate == "P5S01"
 
 
 def test_only_what_the_correct_invoice_owes_moves_and_the_rest_stays_on_the_payment(
@@ -451,17 +494,22 @@ def test_a_move_correction_s_refusals_waiting_drafts_stale_drafts_and_withdrawal
     assert cause(reversed_before) == ("55000", REVERSED)
     assert draft_count(url) == before
     mover = person(human, prop, "payments.allocations.reverse")
-    ordinary = moves().record(
-        prop,
-        RecordPaymentMoveCommand(uuid4(), allocation, target, REASON, SOURCE_ACK, TARGET_ACK),
-        actor=mover,
-    )
+    # Sub-slice 10h-1: the slice 7 recorder refuses an allocation the closure relied on, so the
+    # waiting slice 7 draft is written by hand to keep the waiting-draft check.
+    with pytest.raises(PaymentMoveConflictError) as relied_on:
+        moves().record(
+            prop,
+            RecordPaymentMoveCommand(uuid4(), allocation, target, REASON, SOURCE_ACK, TARGET_ACK),
+            actor=mover,
+        )
+    assert cause(relied_on) == ("55000", RELIED_ON)
+    ordinary = hand_built_move_draft(first, allocation, target)
     with pytest.raises(PaymentMoveConflictError) as ordinary_waits:
         record(first, command(first["settlement"], allocation, target))
     assert cause(ordinary_waits) == ("55000", WAITING)
     drafts().withdraw(
         prop,
-        draft_of(ordinary),
+        ordinary,
         "Moved through the correction",
         prepare_capability="payments.allocations.reverse",
         actor=mover,
@@ -587,15 +635,9 @@ def test_the_move_check_refuses_a_move_row_outside_its_correction(
     first = found["first"]
     prop, human = first["prop"], first["human"]
     mover = person(human, prop, "payments.allocations.reverse")
-    ordinary = draft_of(
-        moves().record(
-            prop,
-            RecordPaymentMoveCommand(
-                uuid4(), found["allocation"], found["target"], REASON, SOURCE_ACK, TARGET_ACK
-            ),
-            actor=mover,
-        )
-    )
+    # Sub-slice 10h-1: the slice 7 recorder refuses an allocation the closure relied on, so the
+    # withdrawn slice 7 draft of the same allocation and Invoices is written by hand.
+    ordinary = hand_built_move_draft(first, found["allocation"], found["target"])
     drafts().withdraw(
         prop,
         ordinary,

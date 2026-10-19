@@ -26,7 +26,7 @@ from psycopg.types.json import Jsonb
 from property_rental.billing import PostgresRentBillingService
 from property_rental.credit import ApplyCreditCommand, CreditConflictError
 from property_rental.final_settlement import SettlementCreditStep
-from property_rental.payment_allocation import ReverseAllocationCommand
+from relied_on_reversal_test_support import reverse_allocation_by_hand
 from rent_month_test_support import bill_unbilled_rent_months
 from test_billing_service_migration import add_service, authenticated, initial_command
 from test_credit_application_migration import source as credit_source
@@ -43,8 +43,6 @@ from test_invoice_migration import financial_database_url
 from test_lease_migration import create_draft, setup_sources, sign_lease
 from test_migrations import _temporary_migration_database
 from test_move_in_migration import migrated_database_url as migrated_database_url
-from test_payment_allocation_migration import actor as allocation_actor
-from test_payment_allocation_migration import service as allocations
 from test_settlement_correction_migration import approver, settlement_row
 from test_settlement_deposit_refund_correction_migration import command as refund_command
 from test_settlement_deposit_refund_correction_migration import confirm_refund, record_refund
@@ -94,9 +92,11 @@ def rows(url: str, statement: str, *parameters: object) -> list[tuple[Any, ...]]
 
 
 def open_rent_line(url: str, case: dict[str, Any]) -> tuple[UUID, int]:
-    """Reverse, with one call (open until sub-slice 10h), every Payment allocation still paying
-    the Initial Invoice's Rent line, so the line is open after closure; the line and what it
-    owes."""
+    """Reverse every Payment allocation still paying the Initial Invoice's Rent line, so the line
+    is open after closure; the line and what it owes. Since sub-slice 10h-1 this state can no
+    longer be reached by the one-call reversal (the closure relied on these allocations): each
+    reversal is hand-built after its refusal is asserted (owner answer (a) to
+    Q-2026-10-19-142)."""
     rent, _ = rent_line(url, case["initial"])
     with psycopg.connect(url) as connection:
         paying = [
@@ -112,11 +112,8 @@ def open_rent_line(url: str, case: dict[str, Any]) -> tuple[UUID, int]:
         ]
     assert paying
     for allocation in paying:
-        allocations().reverse_allocation(
-            case["prop"],
-            allocation,
-            ReverseAllocationCommand(uuid4(), "Paid from the wrong transfer"),
-            actor=allocation_actor(case["human"], case["prop"]),
+        reverse_allocation_by_hand(
+            url, case["prop"], case["human"], allocation, "Paid from the wrong transfer"
         )
     return rent, outstanding(url, rent)
 
@@ -303,15 +300,14 @@ def test_the_q104_example_puts_the_service_part_back_on_its_own_line(
     refund, credit = UUID(str(paid["id"])), UUID(str(paid["source_customer_credit_id"]))
     assert (paid["amount_usd_cents"], available(url, credit)) == (2_000, 0)
     earlier = return_only(case, refund, 900 + part)
+    # Since sub-slice 10h-1 the one-call reversal can no longer open these lines (the closure
+    # relied on both allocations): each reversal is hand-built after its refusal is asserted.
     for payment in (rent_payment, trash_payment):
         [(allocation,)] = rows(
             url, "SELECT id FROM app.payment_allocations WHERE payment_id=%s", payment
         )
-        allocations().reverse_allocation(
-            prop,
-            UUID(str(allocation)),
-            ReverseAllocationCommand(uuid4(), "Paid from the wrong transfer"),
-            actor=allocation_actor(human, prop),
+        reverse_allocation_by_hand(
+            url, prop, human, UUID(str(allocation)), "Paid from the wrong transfer"
         )
     assert (outstanding(url, rent), outstanding(url, trash)) == (1_000, trash_owed)
     return_only(

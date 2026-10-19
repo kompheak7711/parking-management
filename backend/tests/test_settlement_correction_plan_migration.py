@@ -39,6 +39,12 @@ from property_rental.move_out_inspection import (
     PostgresMoveOutInspectionService,
     RecordMoveOutInspection,
 )
+from relied_on_reversal_test_support import (
+    ALLOCATION_TRIGGER,
+    CLOSED,
+    relied_on_refusal,
+    relied_on_triggers_disabled,
+)
 from test_billing_service_migration import admin_database_url
 from test_credit_migration import credit_id, recognize
 from test_customer_ledger_migration import assert_reconciled
@@ -688,7 +694,16 @@ def test_credit_released_from_a_payment_pays_its_customer_s_debt_before_the_depo
         reverse(connection, correction, pet_first, case["person"])
         adjustment = uuid4()
         connection.execute(LINK, (correction, "invoice_adjustment_id", adjustment))
-        credit_adjustment(connection, case, adjustment, 5_000)
+        # Since sub-slice 10h-1 the ordinary writer's release reversal can no longer be written
+        # here: a real correction links that reversal first, and this hand-built one cannot (the
+        # writer makes its id). The refusal is asserted, then the release is written with only
+        # the 10h-1 allocation trigger disabled in this transaction (owner answer (a) to
+        # Q-2026-10-19-142).
+        assert relied_on_refusal(
+            connection, lambda: credit_adjustment(connection, case, adjustment, 5_000)
+        ) == ("P5S01", CLOSED)
+        with relied_on_triggers_disabled(connection, (ALLOCATION_TRIGGER,)):
+            credit_adjustment(connection, case, adjustment, 5_000)
         found = connection.execute(
             "SELECT customer_credit_id FROM app.invoice_credit_excess_releases "
             "WHERE invoice_adjustment_id=%s",
@@ -736,7 +751,12 @@ def test_credit_released_from_a_payment_pays_its_customer_s_debt_before_the_depo
         reverse(connection, correction, pet_first, case["person"])
         adjustment = uuid4()
         connection.execute(LINK, (correction, "invoice_adjustment_id", adjustment))
-        credit_adjustment(connection, case, adjustment, 5_000)
+        # The same hand-built release as above (sub-slice 10h-1).
+        assert relied_on_refusal(
+            connection, lambda: credit_adjustment(connection, case, adjustment, 5_000)
+        ) == ("P5S01", CLOSED)
+        with relied_on_triggers_disabled(connection, (ALLOCATION_TRIGGER,)):
+            credit_adjustment(connection, case, adjustment, 5_000)
         written = post(connection, case, draft)
     released = UUID(str(written["credit_ids"][str(allocation)]))
     assert one(
