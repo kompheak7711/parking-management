@@ -387,7 +387,9 @@ class PostgresReservationResourceFlow:
                reservation.customer_id, customer.legal_name, reservation.reservation_date,
                reservation.original_expiration_date, reservation.effective_expiration_date,
                reservation.agreed_monthly_rent_usd_cents, reservation.status,
-               reservation.version, deposit.id, deposit.required_usd_cents,
+               reservation.version, deposit.id,
+               -- V1-056 sub-slice 10e-2b-4f: the required total with its adjustments.
+               (app.deposit_snapshot(deposit.id)->>'required_usd_cents')::bigint,
                COALESCE(sum(receipt.amount_usd_cents), 0)::bigint,
                CASE
                  WHEN (SELECT COALESCE(sum(refund.usd_accounting_value_cents

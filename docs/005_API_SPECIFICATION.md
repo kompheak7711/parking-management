@@ -329,6 +329,10 @@ Creation requires one Customer, one Unit, Reservation/Expiration dates, agreed
 monthly Rent evidence, and approved Security Deposit receipt/input workflow. It
 must satisfy `BR-RES-*` and create no Reservation Deposit type.
 
+The resource's `deposit_required_usd_cents` is the Security Deposit's required total with its
+required-amount adjustments (BR-DEP-004; since V1-056 sub-slice 10e-2b-4f), and
+`deposit_received_usd_cents` counts only receipts that are not reversed (since 10e-2b-4c).
+
 ## API-033 — Reservation Commands
 
 - `POST /reservations/{id}/extend`

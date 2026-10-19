@@ -43375,6 +43375,119 @@
       "test_path": "backend/tests/test_deposit_receipt_reversal_after_refund_migration.py",
       "status": "implemented",
       "notes": "Review round 1 of sub-slice 10e-2b-4e-2b-3 (security should-fix 2): a waiting PAYMENT_RETURN draft of another Payment of the Deposit, which planned no recovery because of the receipt's money, is stale (P5S02, nothing written) once the receipt is reversed by two people; recorded again, it charges the whole 10,000 Refund back and the Deposit holds 0 (V1-056 sub-slice 10e-2b-4e-2b-3)."
+    },
+    {
+      "test_id": "test_the_ground_reads_a_decreased_required_total",
+      "upstream_ids": [
+        "BR-LEASE-005",
+        "BR-DEP-004",
+        "DB-DEP-003"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_required_total_readers_migration.py",
+      "status": "implemented",
+      "notes": "Q-2026-10-18-130 (a): after a 40,000 decrease the Security Deposit's required total is the 10,000 it holds, so the unpaid-Initial termination ground (BR-LEASE-005) is not met (22023) and the Lease stays SIGNED; the ground no longer reads the 50,000 first amount (V1-056 sub-slice 10e-2b-4f)."
+    },
+    {
+      "test_id": "test_an_increase_counts_for_the_ground_from_its_record_time",
+      "upstream_ids": [
+        "BR-LEASE-005",
+        "BR-DEP-004",
+        "DB-DEP-003"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_required_total_readers_migration.py",
+      "status": "implemented",
+      "notes": "Q-2026-10-18-130 (a): with 50,000 held, a 1,000 increase recorded after a time t0 does not count for a termination dated t0 (the ground is not met, 22023) and counts for one dated after it (50,000 held is less than 51,000; the termination is recorded); the total at t0, the current total and the snapshot's total are compared (V1-056 sub-slice 10e-2b-4f)."
+    },
+    {
+      "test_id": "test_the_old_move_in_reads_an_increased_required_total",
+      "upstream_ids": [
+        "BR-DEP-004",
+        "DB-DEP-003"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_required_total_readers_migration.py",
+      "status": "implemented",
+      "notes": "Q-2026-10-18-130 (a): after a 5,000 increase of a fully paid Reservation Security Deposit the old Reservation move-in is refused (23514) and writes nothing; a 5,000 receipt through the receipt writer lets it complete (V1-056 sub-slice 10e-2b-4f)."
+    },
+    {
+      "test_id": "test_the_old_move_in_counts_only_active_receipts",
+      "upstream_ids": [
+        "BR-DEP-004",
+        "DB-DEP-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_required_total_readers_migration.py",
+      "status": "implemented",
+      "notes": "Q-2026-10-18-130 (a), an approved tightening of the old path: a 40,000 Security Deposit receipt reversed through the 8r draft no longer counts, so the old move-in is refused (23514) with 10,000 held; a new 40,000 receipt lets it complete (V1-056 sub-slice 10e-2b-4f)."
+    },
+    {
+      "test_id": "test_the_old_move_in_reads_a_pet_deposit_s_active_receipts_and_total",
+      "upstream_ids": [
+        "BR-DEP-004",
+        "DB-DEP-002",
+        "DB-DEP-003"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_required_total_readers_migration.py",
+      "status": "implemented",
+      "notes": "Q-2026-10-18-130 (a) in the old move-in's Pet Deposit check: a required 20,000 Pet Deposit whose 20,000 receipt is reversed is not paid (23514); after a 1,000 increase and a 21,000 receipt the move-in completes (V1-056 sub-slice 10e-2b-4f)."
+    },
+    {
+      "test_id": "test_the_reservation_read_api_shows_the_adjusted_required_total",
+      "upstream_ids": [
+        "API-032",
+        "BR-DEP-004"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_required_total_readers_migration.py",
+      "status": "implemented",
+      "notes": "Q-2026-10-18-130 (a): through the runtime role the Reservation resource shows the 50,000 first amount and then 51,000 after a 1,000 increase, with 50,000 received (V1-056 sub-slice 10e-2b-4f)."
+    },
+    {
+      "test_id": "test_the_required_total_readers_migration_is_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "DB-DEP-003"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_required_total_readers_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20270106_163 adds app.deposit_required_total_at (SECURITY DEFINER, search_path=pg_catalog, the owner of the two functions that call it; on a Deposit of the test, NULL for a NULL time, the first amount at -infinity, the adjusted total at infinity, NULL for an unknown Deposit), on which only its owner holds any privilege and which the runtime and financial roles cannot run (42501), and patches app.require_lease_termination_context and app.complete_reservation_move_in, each by its listed replacements, with the same owner, privileges and settings; no other function, constraint or trigger changes; forward-only (V1-056 sub-slice 10e-2b-4f)."
+    },
+    {
+      "test_id": "test_a_termination_dated_before_a_decrease_reads_the_earlier_total_known_limit",
+      "upstream_ids": [
+        "BR-LEASE-005",
+        "BR-DEP-004",
+        "DB-DEP-003"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_required_total_readers_migration.py",
+      "status": "implemented",
+      "notes": "Known limit of review round 1 (security should-fix 2), kept until the Q-112 times sub-slice reads the termination time: a termination entered after a 40,000 decrease but dated before it reads the 50,000 total recorded by its time, so the ground is met with 10,000 held and the termination is recorded (V1-056 sub-slice 10e-2b-4f)."
+    },
+    {
+      "test_id": "test_the_old_move_in_takes_a_deposit_holding_more_than_a_decreased_total",
+      "upstream_ids": [
+        "BR-DEP-004",
+        "DB-DEP-003"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_required_total_readers_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 (independent should-fix 1): after a 10,000 decrease the Reservation Security Deposit holds 50,000 of a 40,000 total and the old move-in completes, because it needs at least the current total, not equality (V1-056 sub-slice 10e-2b-4f)."
+    },
+    {
+      "test_id": "test_the_old_move_in_takes_a_pet_deposit_holding_more_than_a_decreased_total",
+      "upstream_ids": [
+        "BR-DEP-004",
+        "DB-DEP-003"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_required_total_readers_migration.py",
+      "status": "implemented",
+      "notes": "Review round 2 (independent should-fix 3): a required 20,000 Pet Deposit holds its 20,000 receipt after a 5,000 decrease (total 15,000) and the old move-in completes, because the Pet Deposit check needs at least the current total, not equality (V1-056 sub-slice 10e-2b-4f)."
     }
   ]
 }

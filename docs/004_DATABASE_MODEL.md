@@ -282,13 +282,22 @@ an OCCUPIED Unit keeps it OCCUPIED; a RESERVED or OUT_OF_SERVICE Unit is rejecte
 `lease_move_ins` and `lease_move_in_occupancy_links` record physical move-in for such
 Leases through `app.record_signed_lease_move_in`, which only begins Occupancy and has no
 payment gate. Leases signed before this migration keep `complete_reservation_move_in`.
+Since V1-056 sub-slice 10e-2b-4f (migration `20270106_163`; owner answer (a) to
+Q-2026-10-18-130) that old move-in counts only active receipts (no reversal) of the Security
+Deposit and of each required Pet Deposit, dated by the move-in date, and requires at least the
+current required total, adjustments included (BR-DEP-004); a Deposit holding more than a
+decreased total is fully paid. A receipt dated after a past move-in date does not count, so
+an increase recorded later cannot be met for that date.
 
 ### Unpaid Initial obligation termination (migration `20261005_70`)
 
 Termination basis `UNPAID_INITIAL_OBLIGATION` requires governing reference `BR-LEASE-005`,
 the signed clause reference, no warning letters, and, at termination time in
 Asia/Phnom_Penh, a date after Lease Start plus five days with the Initial Rent or the
-Security Deposit still unpaid. `unpaid_initial_termination_resolutions` (append-only, one per
+Security Deposit still unpaid. Since V1-056 sub-slice 10e-2b-4f (migration `20270106_163`)
+the Security Deposit is unpaid when its held value at the termination time is below its
+required total recorded by that time (the first amount plus the required-amount adjustments
+recorded at or before it, DB-DEP-003). `unpaid_initial_termination_resolutions` (append-only, one per
 termination event) records the cause `CUSTOMER_UNPAID_INITIAL_OBLIGATION`, the reason, the
 actor and what was done. Never moved in: the Initial Rent Invoice is VOIDed when nothing
 was applied or its unpaid lines are credited, and the Unit becomes VACANT or CLEANING with a
@@ -1936,6 +1945,8 @@ Payment also funded charges back only its shortfall (DB-REFUND-002 note, DB-DEP-
 ## DB-DEP-003 — `deposit_required_amount_adjustments`
 
 Append-only: `id uuid PK`, `deposit_id uuid NOT NULL FK`, `adjustment_type text NOT NULL CHECK IN ('INCREASE','DECREASE')`, `amount_usd_cents bigint NOT NULL CHECK (>0)`, `effective_date date NOT NULL`, `reason text NOT NULL`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`, `authorization_reference text NOT NULL`. Resulting required amount may not be negative. This table records only a valid governing Lease-term correction; it creates no right to change a Deposit.
+
+A Deposit's required total is its first amount (`deposits.required_usd_cents`) plus these adjustments (BR-DEP-004). Since V1-056 sub-slice 10e-2b-4f (migration `20270106_163`; owner answer (a) to Q-2026-10-18-130) the internal `app.deposit_required_total_at(deposit, as_of)` (no grant) gives the total with the adjustments recorded (`occurred_at`) at or before a time, and every reader uses that total: the snapshot and the readers built on it (the termination readiness, the Deposit resource, the customer ledger), the receipt check, the Final Settlement, the BR-LEASE-005 ground (at the termination time), the old Reservation move-in and the Reservation read API (at the current time). `effective_date` is not read by these checks.
 
 ## DB-DEP-004 — `deposit_dispositions`
 
