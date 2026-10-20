@@ -3492,3 +3492,163 @@ Your answer 1 to the 10h-2 report: add the READ COMMITTED check to the 8e-1 refu
 **What goes ahead.** Everything: 10i-4a, 10i-4b and 10i-4c (for `REFUND`, as answered) do not depend on it.
 
 **Owner answer (2026-10-20, fresh session, docs-only rules update).** Option (a). A waiting `REFUND_RETURN` correction draft is listed by the Final Settlement preview the same way as a `REFUND` draft: the release part of the Q-146 answer also covers a `REFUND_RETURN` draft whose plan overlay gives value back to a Credit held by a person of another Lease, and that other Lease's Settlement waits until the draft is confirmed, rejected or withdrawn. No amount rule changes, only the order. Not built now: the item stays on the slice 12 list, marked "answered (a), build in slice 12". Recorded in docs/010.
+
+## Q-2026-10-21-150 — Login slice: the Staff and Manager bundle lines the rules do not name (blocks L1c; nothing is built before your answer; recommendation (a))
+
+**What the rules say.** DL-074 answer 1: Owner gets every capability; Manager gets "all daily work, approvals (`financial.approve`), reports, audit history, exports and the health page; no user or role administration"; Staff gets "daily data entry only (Customers, Reservations, Readings, recording Payments, preparing drafts); no approvals, no administration, no audit, no export". DL-080: `leases.sign`, `reservations.extend`, `leases.terminate` and `invoices.void` are Manager actions; Staff prepare the Final Settlement (`final_settlements.prepare`). Your answer G7: Staff get `payments.record` and `payments.allocate`.
+
+**What is clear.** Staff get: `identity.read_self`, `customers.read`, `customers.manage`, `reservations.read`, `reservations.create`, `utility.read`, `utility_readings.record`, `payments.read`, `payments.record`, `payments.allocate`, `receipts.read`, `final_settlements.prepare`. Staff never get: `financial.approve`, `leases.sign`, `reservations.extend`, `leases.terminate`, `invoices.void`, `audit.view`, `identity.manage_access`, Settings access, the health capability, any export. Manager gets everything except `identity.manage_access` and Settings access.
+
+**What the rules do not name for Staff** (each is "daily work" or "preparing a draft" only by reading): the reads `leases.read`, `invoices.read`, `deposits.read`, `credits.read`, `refunds.read`, `customer_ledger.read`, `rent_nonpayment.read`, `configuration.read`, `units.read`, `property.read`; Reservation `reservations.cancel` and move-in `reservations.complete`; Lease `leases.draft`, `lease_signers.manage`, `leases.inspect` (move-out inspection), `leases.move_out`, `leases.warn` (violation warning); Utility `utility_readings.correct`, `utility_meters.manage`, `utility.calculate`, `utility.estimate`; billing `invoices.create`, `invoices.issue`, `invoices.adjust`, `damage_charges.bill`; `receipts.reprint`; Deposits `deposits.manage`, `deposits.refund.qualify` (Pet Deposit review), `reservation_deposits.refund`; draft preparation `refunds.create`, `payments.reverse` (Payment return draft, but also the one-call Payment reversal), `payments.allocations.reverse` (wrong-Unit move draft, but also the one-call allocation reversal); Credit `credits.recognize`, `credits.apply`, `credits.reverse`, `credits.applications.reverse`; `late_payment.review`; `rent_nonpayment.case_manage`, `rent_nonpayment.event_post`; `exchange_rates.manage`. For the Manager: `property.manage` (create and update Units).
+
+**Example.** A Customer pays 250.00 USD in cash for Unit U204's Rent of 250.00. Staff record it and pay the Invoice in one step (G7). The Customer then asks for a reprint of the Receipt: with `receipts.reprint` Staff do it; without it, Staff must call the Manager. The same day a Staff member types the Payment on the wrong Unit: with `payments.allocations.reverse` Staff can undo the allocation in one call (no approval); without it, the Manager does it.
+
+**Options.**
+- (a) Staff get every read named above, plus `reservations.cancel`, `reservations.complete`, `leases.draft`, `lease_signers.manage`, `leases.inspect`, `leases.move_out`, `utility.calculate`, `receipts.reprint` and `refunds.create` (a Refund is only a draft until a `financial.approve` holder confirms it). Staff do **not** get `leases.warn`, `utility_readings.correct`, `utility_meters.manage`, `utility.estimate`, `invoices.create`, `invoices.issue`, `invoices.adjust`, `damage_charges.bill`, `deposits.manage`, `deposits.refund.qualify`, `reservation_deposits.refund`, `payments.reverse`, `payments.allocations.reverse`, any `credits.*` change, `late_payment.review`, the `rent_nonpayment.*` changes or `exchange_rates.manage`, because each of them changes money or a Customer's standing at once. The Manager gets `property.manage`.
+- (b) Staff get only the "clear" list; everything else is Manager only.
+- (c) You give the list line by line.
+
+**Recommendation: (a)**, because it lets Staff serve a Customer at the desk (see the Lease, Invoice, Deposit and Credit, move a Customer in, print a Receipt) while every change that moves money at once or affects a Customer's standing stays with a Manager. The bundles stay editable, so you can move a line later without a code change.
+
+**What goes ahead.** L1a, L1b and L1d do not depend on it. L1c waits.
+
+## Q-2026-10-21-151 — Login slice: the Settings access capability, its name, and which of today's checks it replaces (blocks L1d and L5; nothing is built before your answer; recommendation (a))
+
+**What the rules say.** DL-074 answer 2: Settings access is its own capability given per user; only the Owner account class gives or removes it; the Owner always has it. DL-075: Settings covers the billing calendar, Reservation limits, Payment Methods, number letters and next numbers, Utility Rates, Services, cleaning rate groups and the Unit setup lists. DL-074 "Build in": the name and which of today's `service_rates.manage`, `utility_rates.manage` and `property.manage` checks it replaces are proposed now.
+
+**Today.** `service_rates.manage` guards the Service rate change; `utility_rates.manage` the Utility Rate change; `property.manage` guards the Property update and configuration (`property_api.py`), the one-time charge due-days setting (`invoice.py`), Unit create and update (`unit_api.py`), the per-Unit cleaning rate (migration `20261016_81`) and a few reads.
+
+**Example.** The Owner ticks Settings access for Manager Dara. Dara changes the Water Rate from a reading day. Staff member Sokha, with the Staff bundle, cannot see the change button. Later the Owner removes Dara's tick; Dara's next request is refused, without signing out.
+
+**Options.**
+- (a) Name it `settings.manage`. It replaces `service_rates.manage` and `utility_rates.manage` everywhere, and `property.manage` on the Property update, the Property configuration and the due-days setting. `property.manage` stays for Unit create and update and the per-Unit cleaning rate until the DL-075 Settings screens move the cleaning rate to rate groups (then those use `settings.manage` too). `settings.manage` can never be put in a bundle; it is given only per user, so the Owner keeps control of who has it. The two old capability names stay in the catalog with no route using them.
+- (b) As (a), but `property.manage` is replaced everywhere, Unit create and update included (Units are created only by someone with Settings access).
+- (c) Another name or split.
+
+**Recommendation: (a)**, because creating a Unit is not one of the DL-075 Settings items, and keeping `settings.manage` out of bundles is the only way "only the Owner gives or removes it" holds once a Manager could edit a bundle.
+
+**What goes ahead.** L1a to L1c and L2 to L4 do not depend on it; L1d and the L5 replacement wait.
+
+## Q-2026-10-21-152 — Login slice: Owner accounts and what a new account's class sets (blocks L1a and L2; nothing is built before your answer; recommendation (a))
+
+**What the rules say.** DL-058 and DL-074 tie the Owner rights to the account class `owner`; SEC-074 says the bootstrap cannot make another Owner; "later accounts use normal authorized management". The rules do not say whether normal management may make a second account of class `owner`, or what a new account's class sets.
+
+**Example.** Your spouse also runs the business. With (a) they get a Manager account with the Manager bundle and Settings access; they cannot reset you or give Settings access. With (b) you could make them a second Owner, who could then reset Managers and give Settings access too, and who could not be reset by you.
+
+**Options.**
+- (a) Exactly one Owner account (the bootstrapped one). The Owner creates Manager or Staff accounts only. The class sets the MFA rule (Manager required, Staff optional, Q-156) and the default bundle given at creation (Manager bundle or Staff bundle); the Owner may change the bundle later. The class never changes; to change a person's class, disable the account and create a new one (history stays).
+- (b) The Owner may create more Owner accounts.
+
+**Recommendation: (a)**, because DL-058 has no rule for one Owner recovering another, and one Owner keeps the Owner-only rights in one place.
+
+**What goes ahead.** L1b to L1d. L1a and L2 wait.
+
+## Q-2026-10-21-153 — Login slice: who makes the one-time password, and a new account's first password (blocks L4; nothing is built before your answer; recommendation (a))
+
+**What the rules say.** DL-080 item 10: the one-time password the Owner gives after a reset works for 24 hours and must be changed at the first sign-in; the new password follows the 15 to 128 character rule. Today the reset screen asks the Owner to type the new password. The rules do not say who makes the one-time password, how a brand-new account gets its first password, or whether the reset also clears MFA.
+
+**Example.** Staff member Sokha forgets her password at 09:00. The Owner presses Reset. With (a) the app shows a one-time password such as `river-candle-7410-orbit` once to the Owner, who tells Sokha in person. Sokha signs in at 09:10 and must choose her own new password before she can do anything. If she waits until 09:01 the next day, the one-time password no longer works and the Owner resets again.
+
+**Options.**
+- (a) The app makes the one-time password (random, about 20 characters, easy to read aloud), shows it once to the Owner and never again. A new Manager or Staff account gets its first password the same way (create, then a one-time password with the same 24 hours and forced change). The reset screen keeps the "also reset MFA" tick (today's `reset_mfa`): ticked, the Manager sets up the authenticator again at the next sign-in. An expired one-time password gives the normal "sign-in failed" message.
+- (b) The Owner types the one-time password (as today), with the same 24 hours and forced change.
+
+**Recommendation: (a)**, because a typed password tends to be short or reused, and the person changes it at once anyway.
+
+**What goes ahead.** Everything before L4.
+
+## Q-2026-10-21-154 — Login slice: the details of "5 wrong tries, wait 15 minutes" (blocks L3b; nothing is built before your answer; recommendation (a))
+
+**What the rules say.** DL-080 item 10 and SEC-012: after 5 wrong tries the person waits 15 minutes, with the same message whether or not the account exists; login and recovery are limited by account and by source. The rules do not say when the 15 minutes start, whether tries during the wait add time, whether a correct sign-in clears the count, whether wrong MFA codes count, or the limit per source.
+
+**Example.** At 08:00 someone types "sokha" with wrong passwords five times. With (a), from the 5th try at 08:02 every try for "sokha", even with the right password, gets "Too many tries. Wait 15 minutes and try again." until 08:17; typing more during the wait does not move 08:17. At 08:17 Sokha signs in with her right password and the count starts again from zero. The same message appears for a name that does not exist.
+
+**Options.**
+- (a) The count is per username (unknown names included) over a 15-minute window; the wait starts at the 5th wrong try and lasts 15 minutes; tries during the wait are refused without checking the password and do not add time; a correct sign-in clears the count; wrong TOTP codes and wrong recovery codes count as wrong tries for that account; per source address, 20 wrong tries in 15 minutes start the same 15-minute wait for that address; the counts are kept in the database, so a restart does not clear them. Anyone who knows a username can make that person wait 15 minutes; for the Owner that is accepted (the Owner waits, or uses the emergency server procedure).
+- (b) As (a), but tries during the wait restart the 15 minutes.
+- (c) Other values.
+
+**Recommendation: (a)**, because it matches the words "wait 15 minutes" exactly, and a fixed wait is easy to explain at the desk.
+
+**What goes ahead.** L1a to L3a. L3b waits.
+
+## Q-2026-10-21-155 — Login slice: password rule for later passwords, and the runtime key and blocklist files (blocks L3c, L4 and L7; nothing is built before your answer; recommendation (a))
+
+**What the rules say.** SEC-073 and API-100 give the first Owner's password rule in full (15 to 128 code points before and after NFC, local blocklist, no composition rule) and say the TOTP protection key never enters an ordinary environment value; it comes from an already-open root-controlled descriptor or an equivalent protected secret file. DL-080 says only "the 15 to 128 character rule" for the new password after a reset. The running API needs the same TOTP key to check sign-in codes, and today has no setting for it. Adding a path setting means editing `.env.example`, which you told me not to open in this session.
+
+**Example.** After a reset Sokha chooses `chetana residence 2026`. With (a) it is refused because "chetana" is on the local blocklist, and she picks another.
+
+**Options.**
+- (a) Every new password (bootstrap, the forced change, later changes) uses one rule: 15 to 128 code points before and after NFC, and the same local blocklist. The API reads the blocklist and the TOTP key from protected files whose paths are settings (`APP_TOTP_KEY_FILE` and `APP_PASSWORD_BLOCKLIST_FILE`, paths only). On the Mac mini the key file is `/usr/local/etc/prm/totp_protection_key` (root-owned, mode 0600) and the API is started by a small wrapper that opens it as root and then runs as your user, like the bootstrap helper. I may open and edit `.env.example` in L3c to add the two path names (names only, no values).
+- (b) Later passwords use only the 15 to 128 rule, without the blocklist.
+
+**Recommendation: (a)**, because the same rule everywhere is simpler and the blocklist is what stops the most common guesses.
+
+**What goes ahead.** L1a to L3b. L3c, L4 and L7 wait.
+
+## Q-2026-10-21-156 — Login slice: who turns on MFA for a Staff account (blocks the Staff part of L3c; nothing is built before your answer; recommendation (a))
+
+**What the rules say.** DL-056 and SEC-013: MFA is optional for Staff; Staff with MFA enabled must complete it. UI-110: Staff "can securely enroll when authorized". The rules do not say who authorizes it.
+
+**Example.** Staff member Vanna works the evening desk alone and wants extra protection. With (a) the Owner sets Vanna's account to "MFA required"; at her next sign-in Vanna sets up the authenticator and from then on must give a code. Vanna cannot turn it on or off herself.
+
+**Options.**
+- (a) Only the Owner (`identity.manage_access`) sets a Staff account's MFA to required or optional; a Staff member does not turn it on alone in V1. Turning it off later is a reset with "also reset MFA" by the Owner.
+- (b) A Staff member may turn MFA on for their own account; only the Owner may turn it off.
+
+**Recommendation: (a)**, because it keeps one simple path and the Owner sees every account's MFA state.
+
+**What goes ahead.** Everything except the Staff MFA path of L3c.
+
+## Q-2026-10-21-157 — Login slice: which actions need a recent password check, and how recent (blocks L3d and its routes in L2 and L4; nothing is built before your answer; recommendation (a))
+
+**What the rules say.** SEC-018 and API-097: the deployment must be able to require recent authentication or an extra factor for high-risk administration. The rules do not name the actions or the time.
+
+**Example.** The Owner signed in at 08:00 and leaves the office PC unlocked at 11:00. Someone sits down and tries to reset the Manager's password. With (a) the app first asks for the Owner's password and TOTP code again, because the last check was more than 15 minutes ago.
+
+**Options.**
+- (a) A fresh password and TOTP code (within the last 15 minutes) for: resetting an account, creating or disabling an account, changing a bundle or a user's bundle, giving or removing Settings access, and turning a Staff account's MFA on or off. Money actions are not on this list (they keep their capability and draft checks).
+- (b) The same list with 5 minutes.
+- (c) Another list.
+
+**Recommendation: (a)**, because these actions change who may do what, and 15 minutes avoids asking twice while the Owner sets up one new person.
+
+**What goes ahead.** L1a to L3c.
+
+## Q-2026-10-21-158 — Login slice: the health route, and new routes in docs/005 (blocks only the health route and the new routes; recommendation (a))
+
+**What the rules say.** DL-074 answer 3: the health page is for Owner and Manager through a capability in their bundles. API-081 lists `GET /api/v1/operations/status` (API, worker, job, migration and backup freshness). The run rules allow new docs/005 routes only for the pending V1-055 items. The login slice needs three new routes: `POST /api/v1/auth/password-change` (L4), `POST /api/v1/users/{user_id}/settings-access` and `POST /api/v1/users/{user_id}/settings-access/remove` (L2).
+
+**Options.**
+- (a) The login slice adds the capability `operations.status.read` to the Owner and Manager bundles now; the route itself is built with V1-059, when the backup job and the Telegram alerts it reports on exist. Your approval of this plan also approves the three new routes above in docs/005.
+- (b) The login slice also builds a first `GET /api/v1/operations/status` now (API, database, migration head and billing worker last run; backup "not set up yet").
+
+**Recommendation: (a)**, because half of the status page would report on things that do not exist yet.
+
+**What goes ahead.** Everything except the three routes and the health route.
+
+## Q-2026-10-21-159 — Login slice: how to try the sign-in in a browser on the Mac mini (blocks L7; nothing is built before your answer; recommendation (a))
+
+**What the rules say.** SEC-015 and SEC-016: session tokens only over protected channels, `Secure` and `HttpOnly` cookies. The code uses `__Host-` cookies and accepts only an `https://` Origin. Today `compose.yaml` runs PostgreSQL only, the API runs on `http://127.0.0.1:8000` and the Vite dev server has no proxy, so a browser cannot sign in locally. Nothing in the rules says how local development is served.
+
+**Options.**
+- (a) Vite serves the frontend over HTTPS on `https://localhost:5173` with a certificate you make once with the macOS `openssl` (kept in the ignored `.local/` folder; Safari and Chrome are told to trust it once), and Vite forwards `/api` to the API. No download and no new package. The same setup is the base for the screen rebuild, where you test each area.
+- (b) No browser sign-in before V1-059; only automated tests.
+
+**Recommendation: (a)**, because the screen rebuild needs a browser sign-in on your Mac mini anyway.
+
+**What goes ahead.** L1a to L6.
+
+## Q-2026-10-21-160 — Login slice: read capabilities for Units and the Property (blocks the L5 part for the four reads; recommendation (a))
+
+**What the rules say.** SEC-002: access is denied unless the actor has an explicit capability for the action and its Property scope. Today `GET /properties/{property_id}`, `GET /properties/{property_id}/units`, `GET /units/{unit_id}` and `GET /units/{unit_id}/timeline` need only a signed-in user, with no capability and no Property check. A new capability needs your answer.
+
+**Example.** A disabled Staff account cannot sign in at all; but an active account whose bundle you emptied on purpose (for example a person on leave) can still list every Unit and its history today. With (a) it cannot.
+
+**Options.**
+- (a) Two new capabilities, `property.read` and `units.read`, in all three default bundles, checked with the Property scope on these four routes.
+- (b) Reuse `configuration.read` for all four.
+
+**Recommendation: (a)**, because the Unit list is daily work for everyone, while `configuration.read` is about Settings.
+
+**What goes ahead.** Everything except this part of L5.
