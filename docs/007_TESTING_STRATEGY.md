@@ -884,6 +884,8 @@ Keyboard navigation, focus order, labels, accessible names, error association,
 status announcements, table semantics, contrast, and confirmation dialogs meet the
 project's accessibility requirements.
 
+Amended by DL-074 (owner, 2026-10-04 and 2026-10-20): the requirement is WCAG 2.2 level AA, with touch targets at least 44px tall.
+
 ## TEST-095 — Capability-sensitive UI
 
 Controls are hidden or disabled consistently with user capability while the server
@@ -1154,6 +1156,8 @@ audit-history integrity remain unchanged.
 **Current treatment:** Automated UI tests target current standards-compliant
 Chromium plus cross-browser coverage selected during implementation. No business
 policy depends on this choice.
+
+**RESOLVED by DL-074 (owner, 2026-10-20):** the latest Chrome, Edge and Safari, Safari on iPad included; desktop, laptop and iPad in both directions; every screen displays on a phone.
 
 **Blocking:** No.
 

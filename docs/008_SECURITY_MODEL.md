@@ -207,6 +207,8 @@ A deployment may group capabilities into named roles, but role names and their
 capability mappings are configured data. Specifications and code must authorize
 capabilities, not assume that a role title inherently grants a financial right.
 
+Amended by DL-074 (owner, 2026-10-04 and 2026-10-20): the default bundles are Owner, Manager and Staff (OOD-SEC-001), still configurable data. Settings access is its own per-user capability that only the Owner account class gives or removes and always has, as the Owner-only resets of DL-058 are tied to the account class, not to a role name.
+
 ## SEC-022 — Separation of Capabilities
 
 Capabilities for entering source data, authorizing a financial action, reversing
@@ -645,6 +647,8 @@ business?
 
 **Current treatment:** Capability definitions and role bundles are configurable.
 No role name is granted an irreversible financial authority by this specification.
+
+**RESOLVED by DL-074 (owner, 2026-10-04):** default bundles Owner (every capability), Manager (all daily work, approvals, reports, audit history, exports and the health page; no user or role administration) and Staff (daily data entry only; no approvals, administration, audit or export). The bundles stay configurable.
 
 **Blocking:** No. Database, API, UI, and testing designs can enforce capabilities
 without fixing the Owner's organizational mapping.

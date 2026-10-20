@@ -53,6 +53,8 @@ Amounts always display currency, exact formatting, source/selected rate when
 relevant, and whether a value is source, calculated, outstanding, available,
 held, applied, refunded, or reversed.
 
+Amended by DL-074 (owner, 2026-10-20): riel is written with ៛ after the number.
+
 ## UI-006 — Historical Visibility
 
 Current views link to complete history. History must not be concealed behind an
@@ -62,6 +64,8 @@ edit mode or replaced by only the latest value.
 
 All workflows support keyboard navigation, visible focus, semantic labels, error
 association, accessible tables/dialogs, and status announcements.
+
+Amended by DL-074 (owner, 2026-10-04): the accessibility target is WCAG 2.2 level AA.
 
 # 3. Application Shell and Navigation
 
@@ -91,11 +95,15 @@ The shell displays Property name, Property-local date/time context, authenticate
 user, environment indicator outside production, and application build identifier
 in an appropriate support area.
 
+Amended by DL-074 (owner, 2026-10-20): the app names itself "CHETANA Residence Management" and uses the CHETANA brand kit. Screens are in Khmer and English, with a ខ្មែរ / EN switch that changes every label; the app name stays in English in both. A native Khmer speaker checks the Khmer text before release.
+
 ## UI-010 — Global Search
 
 Authorized users may search by stable identifiers and approved identifying fields
 for Units, Customers, Reservations, Leases, Invoices, and Payments. Results are
 grouped by type and Property scope and reveal only authorized summary fields.
+
+Amended by DL-074 (owner, 2026-10-04): the top bar search finds Units, Customer names, phone numbers, and Invoice, Receipt and Refund numbers. It never searches or shows ID numbers. Leases and Reservations are found by their Unit, and a Payment by its Receipt number.
 
 ## UI-011 — Breadcrumbs and Deep Links
 
@@ -915,16 +923,22 @@ Capability-authorized screens manage approved configured data such as accepted
 Payment Methods, Utility Rates, Service Rates, Property timezone, and capability
 bundles. Effective-dated history is visible and protected.
 
+Amended by DL-074 (owner, 2026-10-20): the Owner, or a user the Owner ticks for "Settings access", may change the settings. Only the Owner gives or removes Settings access, and the Owner always has it. Every change is dated, written to the audit history, and never changes an issued Invoice, Receipt or Refund.
+
 ## UI-092 — User and Capability Administration
 
 Authorized administrators may create/disable accounts, configure role bundles and
 capabilities, revoke sessions, and inspect authorization history. Role labels do
 not imply hard-coded business authority.
 
+Amended by DL-074 (owner, 2026-10-04): the default bundles are Owner (every capability, including user accounts, role bundles and settings), Manager (no user or role administration) and Staff (daily data entry only); the bundles stay configurable. Only the Owner may reset Manager and Staff accounts (DL-058).
+
 ## UI-093 — Operational Status
 
 Authorized operators can view deployed version, API/worker health, last scheduled
 runs, migration version, and backup freshness without seeing secrets.
+
+Amended by DL-074 (owner, 2026-10-04): the health page is for the Owner and the Manager.
 
 ## UI-109 — Local Sign-in and Enumeration Safety
 
@@ -974,6 +988,8 @@ Display dates in Property-local business context and timestamps with timezone wh
 material. Consumption/billing periods show inclusive/exclusive boundaries
 unambiguously.
 
+Amended by DL-074 (owner, 2026-10-20): dates are shown as dd/mm/yyyy everywhere, for example 05/11/2026; periods as 01/11/2026 - 30/11/2026; times in 24-hour form in the Property's local time.
+
 ## UI-096 — Money Inputs
 
 Money inputs accept only exact supported decimal formats, display currency, reject
@@ -985,6 +1001,8 @@ floating-point calculation is used for displayed authoritative results.
 When upstream requires a reason, use an explicit required field and any configured
 reason code plus explanatory text. Do not use a generic checkbox as the sole audit
 reason.
+
+Amended by DL-074 (owner, 2026-10-20): reasons are free text, with one exception: reducing or waiving a late-payment charge uses one of three fixed reasons plus a required "What happened" text.
 
 # 24. Confirmation Dialogs
 
@@ -1026,6 +1044,8 @@ business action. Do not label an append-only correction as “delete.”
 The primary layout supports desktop/laptop property-management work with efficient
 tables and keyboard entry. Essential review and confirmation remains usable on
 smaller screens without hiding financial context.
+
+Amended by DL-074 (owner, 2026-10-20): full work is supported on desktop, laptop and iPad, in portrait and landscape, with touch targets at least 44px tall, in the latest Chrome, Edge and Safari (Safari on iPad included). Phones are for viewing and confirming, but every screen must still display on a phone.
 
 ## UI-102 — Unsaved Changes
 
@@ -1074,6 +1094,8 @@ must the application use?
 **Current treatment:** Use an accessible, neutral staff-oriented design system;
 visual branding can change without changing business workflows.
 
+**RESOLVED by DL-074 (owner, 2026-10-20):** the CHETANA brand kit (logo, colours and fonts) of the owner's design file DESIGN.md, which comes into the repository with the screen rebuild; the app name is "CHETANA Residence Management". Technical names do not change.
+
 **Blocking:** No.
 
 ## OOD-UI-002 — Certified Browser/Device Matrix
@@ -1082,6 +1104,8 @@ visual branding can change without changing business workflows.
 
 **Current treatment:** Implement standards-compliant responsive web behavior and
 record the certification matrix in testing/deployment configuration.
+
+**RESOLVED by DL-074 (owner, 2026-10-20):** desktop, laptop and iPad (both directions) in the latest Chrome, Edge and Safari, Safari on iPad included; phones for viewing and confirming, every screen still displays on a phone.
 
 **Blocking:** No.
 

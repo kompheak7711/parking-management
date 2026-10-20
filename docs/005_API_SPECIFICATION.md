@@ -1438,12 +1438,16 @@ and create immutable secret-free rejection evidence.
 Role bundles map configurable names to capabilities. The API does not hard-code
 business authority into a role title.
 
+Amended by DL-074 (owner, 2026-10-04 and 2026-10-20): the deployment starts with default Owner, Manager and Staff bundles as configurable data (Owner: every capability; Manager: all daily work, approvals, reports, audit history, exports and the health page, no user or role administration; Staff: daily data entry only, no approvals, administration, audit or export). Settings access is its own capability, given per user; only the Owner account class gives or removes it, and the Owner always has it.
+
 ## API-081 — Operational Health
 
 - `GET /health/live` provides minimal unauthenticated liveness.
 - `GET /health/ready` provides minimal readiness.
 - `GET /api/v1/operations/status` provides authorized detailed API/worker/job/
   migration/backup freshness without secrets.
+
+Amended by DL-074 (owner, 2026-10-04): the detailed status is for the Owner and the Manager by default, through a capability in their bundles.
 
 # 26. Validation Rules
 
