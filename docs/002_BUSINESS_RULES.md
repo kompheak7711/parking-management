@@ -749,7 +749,11 @@ For this ground, an increase of the required Security Deposit total counts only 
 later of Lease Start plus five days and five days after the increase was recorded
 (Asia/Phnom_Penh business dates, as the ground's own date rule), so the Customer always
 gets five days to pay an increase. A decrease counts from the moment it is recorded (owner
-answer (b) to Q-2026-10-19-138, V1-056 sub-slice 10i-2).
+answer (b) to Q-2026-10-19-138, V1-056 sub-slice 10i-2). The first amount of a Security
+Deposit created after the Lease was signed (every walk-in Security Deposit) counts only on a
+termination business date after its creation date plus five days; a Reservation's Deposit,
+created before signing, counts at once (owner answer (a) to Q-2026-10-20-148, V1-056
+sub-slice 10i-4a).
 
 ---
 

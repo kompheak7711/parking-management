@@ -44250,6 +44250,65 @@
       "test_path": "frontend/src/ReservationManagement.test.tsx",
       "status": "implemented",
       "notes": "The Reservation screen sends the Extension Notice with exactly the notice id, the new Expiration Date and the memo, no device time (owner answer (a) to Q-2026-10-14-112 point 1; V1-056 sub-slice 10i-3)."
+    },
+    {
+      "test_id": "test_a_deposit_created_after_signing_counts_only_after_its_creation_date_plus_five_days",
+      "upstream_ids": [
+        "BR-LEASE-005",
+        "BR-DEP-004",
+        "DL-066"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_created_after_signing_ground_delay_migration.py",
+      "status": "implemented",
+      "notes": "A walk-in Security Deposit (50,000 total, 10,000 held) created today on the real path, on a Lease that started ten days ago with its Initial Rent paid: the ground's total reads 0 now and on the business date five days after its creation and 50,000 from the sixth day, so the unpaid-Initial termination now is refused (22023) and the Lease stays SIGNED (owner answer (a) to Q-2026-10-20-148; V1-056 sub-slice 10i-4a)."
+    },
+    {
+      "test_id": "test_adjustments_of_such_a_deposit_keep_their_own_rules",
+      "upstream_ids": [
+        "BR-LEASE-005",
+        "BR-DEP-004",
+        "DL-066"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_created_after_signing_ground_delay_migration.py",
+      "status": "implemented",
+      "notes": "On a walk-in Security Deposit created today, a 20,000 decrease counts at once and a 5,000 increase only after its own five days: the ground's total reads -20,000 now and on the fifth day and 35,000 from the sixth, and the termination is refused (owner answer (a) to Q-2026-10-20-148; V1-056 sub-slice 10i-4a)."
+    },
+    {
+      "test_id": "test_a_reservation_deposit_still_counts_for_the_ground_at_once",
+      "upstream_ids": [
+        "BR-LEASE-005",
+        "BR-DEP-005",
+        "DL-066"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_created_after_signing_ground_delay_migration.py",
+      "status": "implemented",
+      "notes": "A Reservation's Security Deposit, created before signing, keeps today's rule: its 50,000 first amount counts at once with 10,000 held, and the unpaid-Initial termination is recorded (owner answer (a) to Q-2026-10-20-148; V1-056 sub-slice 10i-4a)."
+    },
+    {
+      "test_id": "test_the_created_after_signing_ground_delay_migration_is_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "BR-LEASE-005",
+        "DL-066"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_created_after_signing_ground_delay_migration.py",
+      "status": "implemented",
+      "notes": "The migration changes only the body of app.deposit_ground_required_total_at (owner, privileges, definer flag and settings kept; still no EXECUTE for the runtime, financial or bootstrap role); no function is added or removed and no trigger, relation, column, privilege or constraint changes; forward-only (V1-056 sub-slice 10i-4a)."
+    },
+    {
+      "test_id": "test_a_walk_in_deposit_dated_before_signing_still_waits_its_five_days",
+      "upstream_ids": [
+        "BR-LEASE-005",
+        "BR-DEP-004",
+        "DL-066"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_created_after_signing_ground_delay_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 (security): a Deposit with no Reservation always waits its five days. A walk-in Security Deposit written by hand with a creation time five days ago (before the signing) reads 0 now and the unpaid-Initial termination is refused; another walk-in Lease's Deposit dated six days ago reads its whole 50,000 with 10,000 held and the termination is recorded (owner answer (a) to Q-2026-10-20-148; V1-056 sub-slice 10i-4a)."
     }
   ]
 }
