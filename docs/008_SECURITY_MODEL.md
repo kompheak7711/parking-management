@@ -511,6 +511,8 @@ If later requirements permit document or evidence uploads, allowed type, size,
 name, storage path, and malware controls must be specified before enabling them.
 This document does not itself authorize a new upload feature.
 
+Amended by DL-077 (owner, 2026-10-20): the owner approves one upload: an optional photo or PDF proof of payment (at most 5 MB) on a Payment, kept and never deleted, opened only by users who may see that Payment. It is built in its own later file storage step after V1-056, with the file name, storage path and malware controls specified first; `python-multipart` needs the owner's yes then. Nothing is enabled before that step.
+
 # 16. Logging, Monitoring, and Incident Response
 
 ## SEC-064 — Operational Logging

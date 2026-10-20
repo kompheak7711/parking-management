@@ -645,6 +645,8 @@ A newly accepted Reservation begins in ACTIVE status only after all Reservation
 activation conditions, including receipt of the explicitly accepted initial Security
 Deposit amount, are met.
 
+Amended by DL-077 (owner, 2026-10-20): as BR-RES-004: Make Reservation receives the accepted initial Security Deposit on a Receipt in the same save step, and the Reservation becomes active when that amount is received in full.
+
 ### PR-RES-005 — Reservation Expiration Required
 
 **Business-rule traceability:** `BR-RES-005`
@@ -4257,6 +4259,8 @@ Payment Allocation is manual and performed by authorized staff. The system may
 calculate and present a proposal, but it must not post that proposal without
 authorized staff confirmation.
 
+Amended by DL-077 (owner, 2026-10-20): as BR-PAY-020: pressing Receive payment is the staff confirmation. The app ticks the proposal when the amount is entered, and one command saves the Payment and its Allocations in one database transaction. There is no "match later" while the Customer owes anything.
+
 ### PR-PAY-021 — Deterministic Default Proposal
 
 **Business-rule traceability:** `BR-PAY-021`
@@ -4391,6 +4395,8 @@ Credit.
 Once excess is recognized as Customer Credit or committed to a Refund, that
 disposed amount is excluded from the Payment's allocatable available value. The
 original received Payment amount remains unchanged.
+
+Amended by DL-077 (owner, 2026-10-20): as BR-PAY-031: money waits on the Receipt only when it is more than everything owed, or when nothing is owed; it is never called Credit before the Customer chooses Credit or a refund.
 
 ### PR-PAY-032 — Customer Coordination
 
@@ -4656,6 +4662,8 @@ designation if any, proposed default if any, actor confirmation, and time.
 For a selected mixed Rent Invoice without Customer designation, the application follows
 the Rent-first then recurring-Service proposal and authorized confirmation requirements
 in BR-PAY-036 through BR-PAY-039.
+
+Amended by DL-077 (owner, 2026-10-20): as BR-CREDIT-006: on issue day, "One tap" fills in the use of the Customer's Credit for the new Invoice, and staff confirm it.
 
 ### PR-CREDIT-007 — Application Limits
 

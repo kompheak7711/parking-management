@@ -922,6 +922,8 @@ A third-party payer may be recorded without becoming the financially responsible
 Customer. A third-party Payment must carry designated Invoice/Lease intent and may
 not be spread across unrelated obligations.
 
+Amended by DL-077 (owner, 2026-10-20): a new command receives a Payment and pays the ticked Invoices and late-payment charges in one database transaction (Payment, Receipt and Allocations as separate records). Not built yet (screen rebuild).
+
 ## API-058 — Exchange-rate Confirmation
 
 For applicable Payment confirmation, the server retrieves or accepts only the
@@ -964,6 +966,8 @@ would release an allocation
 that a post-settlement correction of another Lease's closed Final Settlement wrote on that Invoice
 (the new allocation of a `PAYMENT_MOVE` correction). Nothing is written; that allocation changes
 only through a correction of the Settlement whose correction wrote it.
+
+Amended by DL-077 (owner, 2026-10-20): the proposal is ticked on the Receive payment screen and saved with the Payment in one step; this route stays for money that waits and for paying again after a reversal. Not built yet (screen rebuild).
 
 ## API-060 — Payment Reversal
 

@@ -578,6 +578,8 @@ Capture Customer, amount/currency, method, received timestamp, payer/reference, 
 required evidence. Payment confirmation does not auto-select Invoices or create
 Credit.
 
+Replaced by DL-077 (owner, 2026-10-20): "Payment confirmation does not auto-select Invoices" is replaced: when the amount is entered, the app ticks Invoices oldest Due Date first, each late-payment charge right after its own Invoice. Staff change the ticks only when the Customer names an Invoice, and changing the ticks sets the amount to the ticked total. A third-party payer's money gets no automatic ticks. Pressing Receive payment saves the Payment and its Allocations in one step. Money waits only when it is more than everything owed or nothing is owed, and is not called Credit before the Customer chooses. No upload button until the later file storage step.
+
 ## UI-064 — Exchange-rate Panel
 
 For required USD/KHR conversion, show:
@@ -614,6 +616,8 @@ rather than spread across unrelated obligations.
 
 A Late-payment Charge target is displayed as a separate obligation and Allocation to
 it must never appear to reduce the source Invoice.
+
+Amended by DL-077 (owner, 2026-10-20): the allocation workspace is used for money that waits and after a reversal; ordinary payments are allocated on the Receive payment screen in the same step (UI-063).
 
 ## UI-067 — Allocation Reversal
 

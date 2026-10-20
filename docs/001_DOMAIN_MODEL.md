@@ -5077,6 +5077,8 @@ Payment Allocation is intentionally manual.
 
 Automatic allocation algorithms are not part of the current business model.
 
+Replaced by DL-077 (owner, 2026-10-20): money pays Invoices in the same save step in which it is received. The app ticks Invoices oldest Due Date first, each late-payment charge right after its own Invoice; staff change the ticks only when the Customer names an Invoice, and pressing Receive payment is the staff confirmation. A third-party payer's money gets no automatic ticks.
+
 ---
 
 ## 90.10 Smart Meter Integration
