@@ -72,7 +72,7 @@ The product shall manage exactly one Property, its Units and availability, and c
 The product shall support Reservation activation using the explicitly accepted partial
 Security Deposit amount, Unit holding, one authorized extension, end-of-date expiration,
 cancellation and responsibility classification, Deposit receipt and disposition, and
-coordinated completion through move-in.
+coordinated completion when the resulting Lease is signed (BR-RES-013, DL-064).
 **Traceability:** `BR-RES-001`–`BR-RES-022`; `BR-DEP-001`–`BR-DEP-025`.
 
 ## PR-CAP-003 — Lease, Occupancy, Termination, and Move-out
@@ -605,6 +605,8 @@ A Customer may reserve a Unit before signing its Lease. A Lease may also be sign
 without a Reservation for a walk-in Customer; then no Reservation is completed and the
 Unit still becomes OCCUPIED at signing under BR-UNIT-007.
 
+Replaced by DL-066 (noted 2026-10-21, docs-only rules update 2b, part 9): the title "Reservation Is Mandatory" is old; a Reservation is optional (BR-RES-001). The title is kept because the traceability audit maps this identifier by its heading.
+
 A walk-in Lease is subject to the same Unit exclusivity as any other Lease under
 BR-UNIT-005 and BR-UNIT-006.
 
@@ -755,7 +757,7 @@ Unit as agreed.
 
 A CANCELLED Reservation cannot later become ACTIVE or COMPLETED.
 
-### PR-RES-013 — Reservation Move-in Completion
+### PR-RES-013 — Reservation Completion at Lease Signing
 
 **Business-rule traceability:** `BR-RES-013`
 
@@ -990,6 +992,8 @@ Move-in is always recorded when it happens and is never blocked by an unpaid Sec
 Deposit or Initial Rent. If the Security Deposit balance or the Initial Rent is unpaid
 after that period, the owner may terminate under the standard Lease clause in
 BR-LEASE-025.
+
+Replaced by DL-066 (noted 2026-10-21, docs-only rules update 2b, part 9): the title "No Later Than Move-in Completion" is old; the remaining Security Deposit is due within five calendar days after the Lease Start Date and never blocks move-in (BR-DEP-006). The title is kept because the traceability audit maps this identifier by its heading.
 
 ### PR-DEP-007 — Pet Deposit Conditional
 

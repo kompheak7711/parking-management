@@ -477,7 +477,7 @@ A CANCELLED Reservation cannot later become ACTIVE or COMPLETED.
 
 ---
 
-## BR-RES-013 — Reservation Move-in Completion
+## BR-RES-013 — Reservation Completion at Lease Signing
 
 A Reservation becomes COMPLETED when its resulting Lease becomes SIGNED, in the same
 coordinated transition. At that moment the Reservation must be ACTIVE and not expired.
@@ -673,7 +673,7 @@ The system must not:
 
 ---
 
-## BR-DEP-006 — Remaining Deposit No Later Than Move-in Completion
+## BR-DEP-006 — Remaining Deposit Within Five Days After the Lease Start Date
 
 The Security Deposit balance remaining after the holding deposit is due within five
 calendar days after the Lease Start Date, together with the Initial Rent Invoice.

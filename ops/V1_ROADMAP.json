@@ -1683,7 +1683,7 @@
         "configuration, account, health, responsive and failure-state UX"
       ],
       "exclude": [
-        "brand decision and unsupported browser guarantees"
+        "unsupported browser guarantees"
       ],
       "risk_class": "medium",
       "acceptance_profile": "api_ui",

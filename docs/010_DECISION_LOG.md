@@ -292,6 +292,7 @@ Older unnumbered placeholder documents are not decision authority.
 - **Alternatives:** Not recorded.
 - **Replaced by DL-064 (noted 2026-10-21, docs-only rules update 2, part 8):** the system proposes an Initial Rent Invoice Due Date of the Lease Start Date plus five calendar days, not seven calendar days after the actual Move-in Date (BR-RENT-009). The decision text above is kept as history (section 13, rule 2).
 - **Amended by DL-075 (owner, 2026-10-20; docs-only rules update 2b, part 2):** the 25th issue day and the 5th Due Date day are the Settings defaults; a change starts with the next billing month.
+- **Replaced by DL-064 (noted 2026-10-21, docs-only rules update 2b, part 9):** Initial Rent coverage depends on the Lease Start Date in the signed Lease, not the actual Move-in Date (BR-RENT-005): day 1 to 20 covers the Lease Start Date through month-end; day 21 or later adds the entire following month. The decision text above is kept as history.
 
 ## DL-019 — Invoice ownership and optional Lease association
 

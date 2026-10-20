@@ -223,9 +223,10 @@ implementation choice; no Ledger entry may become a conflicting source of truth.
 
 ## Reservation
 
-A Reservation temporarily holds a Unit for one Customer before move-in. It may
-coexist with a DRAFTED or SIGNED Lease for the same planned tenancy while the
-Reservation remains ACTIVE.
+A Reservation temporarily holds a Unit for one Customer until its Lease is signed. It may
+coexist with a DRAFTED Lease for the same planned tenancy while the Reservation remains
+ACTIVE; it becomes COMPLETED when that Lease becomes SIGNED (BR-RES-013, DL-064). A
+Reservation is optional (BR-RES-001, DL-066).
 
 A Reservation:
 
@@ -250,7 +251,7 @@ A mandatory financial liability held by the Property.
 
 The Security Deposit may be paid in multiple installments.
 
-Typically, a Customer pays only part of the required Security Deposit during Reservation and pays the remaining balance before move-in.
+Typically, a Customer pays only part of the required Security Deposit during Reservation and pays the remaining balance within five calendar days after the Lease Start Date; an unpaid balance never blocks move-in (BR-DEP-006, DL-066).
 
 The Security Deposit:
 
@@ -406,6 +407,8 @@ at 20 calendar days after its Due Date. The Notice warns that continued nonpayme
 through 30 days overdue may lead authorized management to initiate the approved
 Lease termination or surrender process.
 
+Replaced by DL-064 (noted 2026-10-21, docs-only rules update 2b, part 9): the Rent nonpayment days are counted from the 1st of the billed month, not from the Due Date: day 20 is the 20th and day 30 is the 1st plus 29 days (BR-LEASE-026).
+
 ---
 
 ## Serious Nonpayment Default
@@ -415,6 +418,8 @@ unpaid at 30 calendar days after its Due Date. It may permit authorized manageme
 initiate the approved termination or surrender process, but it does not itself
 terminate the Lease, end Occupancy, change Unit status, create Move-out, or create
 Final Settlement.
+
+Replaced by DL-064 (noted 2026-10-21, docs-only rules update 2b, part 9): the Rent nonpayment days are counted from the 1st of the billed month, not from the Due Date: day 20 is the 20th and day 30 is the 1st plus 29 days (BR-LEASE-026).
 
 ---
 
@@ -518,7 +523,7 @@ The domain consists of the following Aggregate Roots.
 | Property         | Represents the apartment building managed by the application. |
 | Unit             | Represents a rentable residential unit.                       |
 | Customer         | Represents a person recorded by the business.                 |
-| Reservation      | Holds a Unit for one Customer before move-in.                 |
+| Reservation      | Holds a Unit for one Customer until its Lease is signed.      |
 | Lease            | Represents the legal rental agreement.                        |
 | Utility Meter    | Represents a physical utility meter installed on a Unit.      |
 | Utility Reading  | Represents recorded meter readings used for billing.          |
@@ -1962,27 +1967,28 @@ The system proposes an Initial Rent Invoice Due Date of the Lease Start Date plu
 calendar days, including when that date falls in the following month (BR-RENT-009,
 DL-064).
 
-For move-in on day 1 through day 20 inclusive, it covers the Move-in Date through
-the last calendar day of that month. For move-in on day 21 or later, it combines the
-prorated remainder of the move-in month plus the entire following calendar month.
+For a Lease Start Date on day 1 through day 20 inclusive, it covers the Lease Start Date
+through the last calendar day of that month. For a Lease Start Date on day 21 or later, it
+combines the prorated remainder of the start month plus the entire following calendar month
+(BR-RENT-005, not the actual Move-in Date).
 The prorated portion uses actual calendar days.
 
 Example:
 
 ```text
-Move-in date: 10 July
+Lease Start Date: 10 July
 
 Initial Rent period:
 10 July through 31 July
 
-Due date: 15 July (when 10 July is also the Lease Start Date)
+Due date: 15 July
 
 Next regular rental period:
 1 August through 31 August
 ```
 
-For a 27 July move-in, the Initial Rent period is 27 July through 31 August and is
-due 1 August when 27 July is also the Lease Start Date. Normal billing then resumes on 25 August for 1–30 September, due
+For a 27 July Lease Start Date, the Initial Rent period is 27 July through 31 August and is
+due 1 August. Normal billing then resumes on 25 August for 1–30 September, due
 5 September. Initial and recurring Rent periods must never duplicate or overlap.
 
 ---
@@ -2041,6 +2047,8 @@ that condition automatically terminates the Lease, ends Occupancy, changes Unit
 status, creates Move-out, or creates Final Settlement. Actual termination remains a
 separate explicit authorized process subject to the signed Lease and any applicable
 warning requirements.
+
+Replaced by DL-064 (noted 2026-10-21, docs-only rules update 2b, part 9): the Rent nonpayment days are counted from the 1st of the billed month, not from the Due Date: day 20 is the 20th and day 30 is the 1st plus 29 days (BR-LEASE-026).
 
 Full cure after the 20-day warning but before the 30-day threshold stops the current
 30-day trigger while preserving overdue, Notice, Payment, and Allocation history. A
@@ -2171,22 +2179,23 @@ Service approval, configuration, activation/inactivation, effective periods, and
 historical rates remain preserved.
 
 Each approved, configured, active, and applicable recurring Service follows the same
-Initial Invoice period structure as Rent. For move-in on day 1 through day 20, the
-initial Service period is the Move-in Date through month-end. For move-in on day 21
-or later, it combines the prorated remainder of that month and the full following
-calendar month. The line uses its approved Service rate and proration rule, shares the
-Initial Rent Invoice Due Date of seven calendar days after actual move-in, and must
+Initial Invoice period structure as Rent. For a Lease Start Date on day 1 through day 20,
+the initial Service period is the Lease Start Date through month-end. For a Lease Start
+Date on day 21 or later, it combines the prorated remainder of that month and the full
+following calendar month. The line uses its approved Service rate and proration rule, shares
+the Initial Rent Invoice Due Date of the Lease Start Date plus five calendar days
+(BR-SVC-012, BR-RENT-009), and must
 not overlap later recurring Service periods. Normal generation then resumes on the
 25th for the following uncovered calendar month.
 
 ```text
-10 July move-in:
+10 July Lease Start Date:
 Initial recurring-Service period: 10–31 July
-Initial Invoice Due Date:         17 July
+Initial Invoice Due Date:         15 July
 
-27 July move-in:
+27 July Lease Start Date:
 Initial recurring-Service period: 27–31 July plus 1–31 August
-Initial Invoice Due Date:         3 August
+Initial Invoice Due Date:         1 August
 Next normal generation:           25 August for 1–30 September, due 5 September
 ```
 
@@ -2547,7 +2556,7 @@ Reservation-expiration consequences are defined in `002_BUSINESS_RULES.md`.
 
 ## 33.6 Security Deposit During Lease
 
-When the Reservation proceeds to move-in:
+When the Reservation's resulting Lease is signed (BR-RES-013, DL-064):
 
 - the existing Security Deposit remains in place
 - the Deposit is associated with the resulting Lease
@@ -3401,8 +3410,9 @@ ReservationCompleted
 
 `ReservationExpirationExtended` records an extension while the Reservation remains ACTIVE.
 
-`ReservationCompleted` represents successful move-in completion of the Reservation
-lifecycle and links the Reservation to its exactly one resulting Lease.
+`ReservationCompleted` represents completion of the Reservation lifecycle when its
+resulting Lease becomes SIGNED (BR-RES-013, DL-064) and links the Reservation to its
+exactly one resulting Lease; physical move-in is recorded separately.
 
 ---
 
@@ -4235,7 +4245,7 @@ The system does not maintain permanent Customer Types.
 
 ## Reservation
 
-A temporary business commitment that holds one Unit for one Customer before move-in.
+A temporary business commitment that holds one Unit for one Customer until its Lease is signed (BR-RES-013, DL-064). A Reservation is optional (BR-RES-001, DL-066).
 
 A Reservation has:
 
@@ -4446,6 +4456,8 @@ The formal auditable warning required when an applicable Rent obligation remains
 unpaid at 20 calendar days overdue. It is distinct from an ephemeral alert and does
 not itself terminate the Lease.
 
+Replaced by DL-064 (noted 2026-10-21, docs-only rules update 2b, part 9): the Rent nonpayment days are counted from the 1st of the billed month, not from the Due Date: day 20 is the 20th and day 30 is the 1st plus 29 days (BR-LEASE-026).
+
 ---
 
 ## Serious Nonpayment Default
@@ -4454,6 +4466,8 @@ The permanent condition recorded when an applicable Rent obligation remains unpa
 at 30 calendar days overdue. It permits authorized management to initiate the approved
 termination or surrender process but performs none of the termination, Occupancy,
 Unit, Move-out, or Final Settlement transitions itself.
+
+Replaced by DL-064 (noted 2026-10-21, docs-only rules update 2b, part 9): the Rent nonpayment days are counted from the 1st of the billed month, not from the Due Date: day 20 is the 20th and day 30 is the 1st plus 29 days (BR-LEASE-026).
 
 A later cure does not erase this condition or its history.
 
@@ -5169,7 +5183,7 @@ The complete tenancy lifecycle is conceptually:
 UNIT VACANT
     │
     ▼
-RESERVATION CREATED
+RESERVATION CREATED (optional; a walk-in Lease starts at LEASE DRAFTED, DL-066)
     │
     ├── Security Deposit partially received
     │
@@ -5185,7 +5199,7 @@ LEASE SIGNED
     │
     ├── Reservation becomes COMPLETED (when the Lease came from one)
     ├── Unit becomes OCCUPIED
-    ├── Remaining Security Deposit completed
+    ├── Remaining Security Deposit due within five days after the Lease Start Date (never blocks move-in)
     │
     ▼
 MOVE-IN
@@ -5502,7 +5516,8 @@ The following architectural domain decisions are considered established by this 
 10. Security Deposit exists from the Reservation stage onward.
 11. There is no separate Reservation Deposit.
 12. Security Deposit may be partially paid.
-13. Remaining required Security Deposit must be satisfied according to move-in rules.
+13. Remaining required Security Deposit is due within five calendar days after the Lease
+    Start Date and never blocks move-in (BR-DEP-006, DL-066).
 14. Security Deposit is not refundable while the Lease remains active.
 15. Security Deposit and Pet Deposit are liabilities.
 16. Pet Deposit applies only when a pet is approved and the applicable signed
@@ -5554,6 +5569,7 @@ its financial lifecycle.
 46. Rent nonpayment requires a formal warning Notice at 20 days overdue and records a
     Serious Nonpayment Default at 30 days overdue when still unpaid; neither event
     automatically terminates the Lease or ends Occupancy.
+    Replaced by DL-064: the days count from the 1st of the billed month (BR-LEASE-026).
 47. Applicable configured recurring Services follow the same Initial Invoice period
     structure and the same Due Date (the Lease Start Date plus five calendar days) as Initial Rent without overlap.
 48. A positive confirmed Late-payment Charge is a separate immediately payable

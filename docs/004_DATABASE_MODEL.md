@@ -910,9 +910,9 @@ Constraints and indexes:
 - Unique `utility_consumption_period_id` prevents duplicate Utility billing.
 - A deferred issuance trigger requires `invoices.original_total_usd_cents = sum(invoice_lines.amount_usd_cents)` and at least one line before an Invoice leaves DRAFT.
 - Initial Rent and every applicable recurring-Service line share the Initial Invoice,
-  complete approved coverage period, and seven-day Due Date. For move-in days 21 or
-  later, each such line has two DB-INV-006 components: prorated move-in-month remainder
-  and complete following month. Recurring generation resumes on the 25th before the
+  complete approved coverage period, and the Due Date of the Lease Start Date plus five
+  calendar days (BR-RENT-009). For Lease Start Dates on day 21 or later, each such line has
+  two DB-INV-006 components: prorated start-month remainder and complete following month. Recurring generation resumes on the 25th before the
   first uncovered complete month. The existing Rent exclusion and Service uniqueness
   constraints reject overlap or duplicate coverage.
 
