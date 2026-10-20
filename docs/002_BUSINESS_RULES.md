@@ -744,6 +744,12 @@ When a Lease is terminated because the Initial Rent Invoice is unpaid:
   Move-out Date and any Damage charges are charged, and the move-out process applies.
   Final Settlement remains governed by its own rules.
 
+For this ground, an increase of the required Security Deposit total counts only from the
+later of Lease Start plus five days and five days after the increase was recorded
+(Asia/Phnom_Penh business dates, as the ground's own date rule), so the Customer always
+gets five days to pay an increase. A decrease counts from the moment it is recorded (owner
+answer (b) to Q-2026-10-19-138, V1-056 sub-slice 10i-2).
+
 ---
 
 ## BR-LEASE-006 — Primary Tenant Required

@@ -43389,7 +43389,7 @@
       "notes": "Q-2026-10-18-130 (a): after a 40,000 decrease the Security Deposit's required total is the 10,000 it holds, so the unpaid-Initial termination ground (BR-LEASE-005) is not met (22023) and the Lease stays SIGNED; the ground no longer reads the 50,000 first amount (V1-056 sub-slice 10e-2b-4f)."
     },
     {
-      "test_id": "test_an_increase_counts_for_the_ground_from_its_record_time",
+      "test_id": "test_an_increase_counts_for_the_ground_only_five_days_after_its_record",
       "upstream_ids": [
         "BR-LEASE-005",
         "BR-DEP-004",
@@ -43398,7 +43398,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_deposit_required_total_readers_migration.py",
       "status": "implemented",
-      "notes": "Q-2026-10-18-130 (a): with 50,000 held, a 1,000 increase recorded after a time t0 does not count for a termination dated t0 (the ground is not met, 22023) and counts for one dated after it (50,000 held is less than 51,000; the termination is recorded); the total at t0, the current total and the snapshot's total are compared (V1-056 sub-slice 10e-2b-4f)."
+      "notes": "Q-2026-10-18-130 (a): with 50,000 held, a 1,000 increase recorded after a time t0 does not count for a termination dated t0 (the ground is not met, 22023); the total at t0, the current total and the snapshot's total are compared (V1-056 sub-slice 10e-2b-4f). Owner answer (b) to Q-2026-10-19-138: the increase recorded now does not count for a termination now either (the ground reads 50,000; refused) (sub-slice 10i-2; renamed from test_an_increase_counts_for_the_ground_from_its_record_time)."
     },
     {
       "test_id": "test_the_old_move_in_reads_an_increased_required_total",
@@ -44180,6 +44180,53 @@
       "test_path": "backend/tests/test_termination_database_time_migration.py",
       "status": "implemented",
       "notes": "Review round 1 (independent blocker 1): the Pet departure writer locks the Lease before its Pet Deposit; a departure saved beside an uncommitted voluntary early termination waits for it and, after its commit, is refused as not eligible (no deadlock); no departure is written (V1-056 sub-slice 10i-1)."
+    },
+    {
+      "test_id": "test_an_increase_counts_only_after_its_business_date_plus_five_days",
+      "upstream_ids": [
+        "BR-LEASE-005",
+        "BR-DEP-004",
+        "DB-DEP-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_increase_ground_delay_migration.py",
+      "status": "implemented",
+      "notes": "An increase dated five days before today does not count (the ground reads 50,000 with 50,000 held: refused); one dated six days before counts (the ground reads 51,000 of a 52,000 total; the termination is recorded) (owner answer (b) to Q-2026-10-19-138; V1-056 sub-slice 10i-2)."
+    },
+    {
+      "test_id": "test_an_increase_before_lease_start_plus_five_days_gets_its_own_five_days",
+      "upstream_ids": [
+        "BR-LEASE-005",
+        "BR-DEP-004",
+        "DB-DEP-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_increase_ground_delay_migration.py",
+      "status": "implemented",
+      "notes": "An increase dated Lease Start plus three days does not count on its date plus five days and counts from the day after, so it also gets five days; today the termination is recorded with 50,000 held of 51,000 (owner answer (b) to Q-2026-10-19-138; V1-056 sub-slice 10i-2)."
+    },
+    {
+      "test_id": "test_a_decrease_counts_at_once_also_beside_an_uncounted_increase",
+      "upstream_ids": [
+        "BR-LEASE-005",
+        "BR-DEP-004",
+        "DB-DEP-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_increase_ground_delay_migration.py",
+      "status": "implemented",
+      "notes": "A 10,000 increase and a 10,000 decrease recorded now: the ground reads 40,000 (the decrease at once, the increase after five days), so 45,000 held does not meet it; six days later it reads 50,000 (owner answer (b) to Q-2026-10-19-138; V1-056 sub-slice 10i-2)."
+    },
+    {
+      "test_id": "test_the_increase_ground_delay_migration_is_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "BR-LEASE-005",
+        "DB-DEP-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_deposit_increase_ground_delay_migration.py",
+      "status": "implemented",
+      "notes": "The migration adds app.deposit_ground_required_total_at with no grant to the runtime, financial or bootstrap role and changes only the body of app.require_lease_termination_context, which reads it once and no longer reads app.deposit_required_total_at; owner, privileges, definer flag and settings kept; no trigger, relation, column, privilege or constraint change; forward-only (V1-056 sub-slice 10i-2)."
     }
   ]
 }

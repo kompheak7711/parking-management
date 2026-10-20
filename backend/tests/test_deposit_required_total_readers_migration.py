@@ -6,8 +6,10 @@ compares the Security Deposit's held value at the termination time with the tota
 that time; the old Reservation move-in (Leases signed before migration 69) counts only active
 receipts of the Security Deposit and of each required Pet Deposit, against the current total;
 the Reservation read API shows the current total. Every test runs on the real path, to the cent:
-the ground after a decrease, an increase counted from its record time, a termination dated
-before a decrease (a known limit until the Q-112 times sub-slice), the old move-in after an
+the ground after a decrease, an increase that does not count for the ground until five days after
+its record (sub-slice 10i-2, owner answer (b) to Q-2026-10-19-138), a termination dated before a
+decrease (a known limit of the database function; the routes take the database's time since
+sub-slice 10i-1), the old move-in after an
 increase, with more held than a decreased total (review round 1: at least the total, not
 equal to it), after a reversed Security Deposit receipt and with a required Pet Deposit (also
 holding more than a decreased total, review round 2), the Reservation read API, and least
@@ -178,11 +180,16 @@ def test_the_ground_reads_a_decreased_required_total(migrated_database_url: str)
     ground_refused(url, source)
 
 
-def test_an_increase_counts_for_the_ground_from_its_record_time(migrated_database_url: str) -> None:
+def test_an_increase_counts_for_the_ground_only_five_days_after_its_record(
+    migrated_database_url: str,
+) -> None:
     """The Security Deposit takes 40,000 more through the receipt writer (holds 50,000, its
     first amount). A 1,000 increase recorded after a time t0 does not count for a termination
-    dated t0 (refused), and counts for one dated after it: 50,000 held is less than 51,000, so the
-    termination is recorded."""
+    dated t0 (refused). Owner answer (b) to Q-2026-10-19-138 (sub-slice 10i-2, renamed from
+    `test_an_increase_counts_for_the_ground_from_its_record_time`): it does not count for a
+    termination now either, because the Customer gets five days to pay it; the required total is
+    51,000, but the ground reads 50,000 and is not met (the counting after five days is in
+    `test_deposit_increase_ground_delay_migration.py`)."""
     url = migrated_database_url
     source = initial_rent_paid(url)
     record(url, source["actor"], source["property"], source["deposit"], 40_000)
@@ -201,17 +208,22 @@ def test_an_increase_counts_for_the_ground_from_its_record_time(migrated_databas
         source["deposit"],
     ) == (50_000, 51_000, 51_000, 50_000)
     ground_refused(url, source, before)
-    terminate_at(url, source)
-    assert one(url, "SELECT status FROM app.leases WHERE id=%s", source["lease"]) == ("TERMINATED",)
+    # Sub-slice 10i-2: the increase recorded now counts for the ground only after five days.
+    assert one(
+        url, "SELECT app.deposit_ground_required_total_at(%s,clock_timestamp())", source["deposit"]
+    ) == (50_000,)
+    ground_refused(url, source)
 
 
 def test_a_termination_dated_before_a_decrease_reads_the_earlier_total_known_limit(
     migrated_database_url: str,
 ) -> None:
-    """Known limit (review round 1, security should-fix 2), kept until the Q-112 times
-    sub-slice reads the termination time: a 40,000 decrease is recorded after a time t0, and a
-    termination entered after it but dated t0 reads the 50,000 total recorded by t0, so the
-    ground is met with 10,000 held and the termination is recorded."""
+    """Known limit (review round 1, security should-fix 2): a 40,000 decrease is recorded after a
+    time t0, and a termination entered after it but dated t0 reads the 50,000 total recorded by
+    t0, so the ground is met with 10,000 held and the termination is recorded. Since sub-slice
+    10i-1 no route can date a termination (the database's own time); only the server's database
+    role can still pass an earlier time to the function (the Q-2026-10-14-112 point 2 known
+    limit)."""
     url = migrated_database_url
     source = initial_rent_paid(url)
     before = one(url, "SELECT clock_timestamp()")[0]

@@ -3451,3 +3451,20 @@ Your answer 1 to the 10h-2 report: add the READ COMMITTED check to the 8e-1 refu
 **Recommendation: (a)**, because the time cannot mean the moment the money was received (the database already refuses any time before the Payment's confirmation), the money's real receipt time stays on the Payment, and one clock rule is simpler for staff. If you choose (a), it is built when you send it (the build order pauses V1-056 after the Q-112 times sub-slice).
 
 **What goes ahead.** Everything: 10i-1 to 10i-3 do not change the Reservation create.
+
+## Q-2026-10-20-148 — Sub-slice 10i-2 security review round 1: a Security Deposit created after signing counts for the unpaid-Initial ground at once (blocks nothing; a known limit since 10e-2b-4c; nothing is built before your answer; recommendation (a))
+
+**What your answer (b) to Q-2026-10-19-138 built (10i-2).** An increase of the required Security Deposit total counts for the unpaid-Initial termination ground (BR-LEASE-005) only from the later of Lease Start plus five days and five days after it was recorded, so the Customer always gets five days to pay an increase.
+
+**The gap the security reviewer found (not new; on the slice 12 list since 10e-2b-4c as a known limit).** A walk-in Lease's Security Deposit is created by a `deposits.manage` command (`app.create_lease_security_deposit`) at any time after signing, with any first amount. The ground counts that first amount in full from the moment the Deposit exists. So a Deposit created late, or with a first amount higher than agreed, meets the ground at once, the same harm as Q-138 with one create command instead of an increase. Under DL-069 one person may hold `deposits.manage`, `leases.terminate` and `financial.approve`. Today neither the create nor the required-amount adjustment has an HTTP route (both come with slice 11), so staff cannot reach this or the Q-138 case yet; it affects the urgency only.
+
+**Example.** A walk-in Lease starts on 1 March. The Customer pays the Initial Rent on time and hands over 500.00 for the Security Deposit. On 20 March staff create the Security Deposit at 600.00 (by mistake or on purpose) and record the 500.00 receipt. The ground is met at once (500.00 held, 600.00 required, after 6 March): the Lease can be terminated on the unpaid-Initial ground the same day, and a confirmed forfeiture draft keeps the whole 500.00. For an increase from 500.00 to 600.00 on 20 March, 10i-2 makes the Customer wait until 26 March.
+
+**Options.**
+- (a) The first amount of a Security Deposit created after the Lease was signed counts for the ground only on a termination business date after its creation date plus five days (the same five days as an increase; `deposits.created_at`, Asia/Phnom_Penh business dates). A Reservation's Deposit (created before signing) keeps today's rule. Every walk-in Security Deposit is created after signing (`app.create_lease_security_deposit` needs a SIGNED Lease), so each gets the five days; one created by Lease Start is not affected in practice, because its five days end by Lease Start plus five days, which the ground already requires. One small fail-closed sub-slice with its tests, built when you send it. Example: the Deposit created on 20 March counts from 26 March.
+- (b) Keep it as a known limit (slice 12 list), with the slice 11 termination screen showing a Deposit created after Lease Start plus five days and its shortfall.
+- (c) A Security Deposit created after Lease Start plus five days never counts for this ground; a later shortfall is handled by another ground or as debt.
+
+**Recommendation: (a)**, because it gives a late or corrected first amount the same five days your answer gives an increase, and a create command by staff alone could then no longer end a Lease the same day; (c) would leave such a Deposit never enforceable through this ground.
+
+**What goes ahead.** Everything: 10i-2 is committed as built; 10i-3 does not touch the ground. Under the build order (ops/V1_056_TAKEOVER.md section 8) a sub-slice for (a) would be built only when you send it.
