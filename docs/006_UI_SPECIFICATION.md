@@ -188,10 +188,14 @@ Where supported by existing data, show:
 
 Each card links to its filtered source list and states the as-of time.
 
+Amended by DL-072 (owner, 2026-10-04): "Leases approaching End Date" means 60 days or less before the End Date, and "ACTIVE Reservations nearing expiration" means 14 days or less before the Expiration Date. The dashboard also shows: Rent nonpayment day-20 warnings and day-30 defaults that are due, overdue Initial Rent, financial drafts waiting for approval, Deposits waiting for a decision, and Final Settlements not yet closed. Not built yet (V1-057).
+
 ## UI-024 — Financial Dashboard Values
 
 Dashboard totals are server-calculated, currency-separated unless an approved
 conversion basis is explicit, and never silently sum USD and KHR.
+
+Amended by DL-072 (owner, 2026-10-04): the approved basis is DL-060: totals are in USD; KHR is never added to USD.
 
 # 7. Unit Screens
 
@@ -853,6 +857,8 @@ and linked records as authorized.
 Authorized users may filter by date, actor, action, record type/ID, Customer, Unit,
 Lease, and correlation identifier. Results paginate and protect sensitive data.
 
+Amended by DL-072 (owner, 2026-10-04): every audit search writes an audit event. By default only the Owner and the Manager may search audit.
+
 ## UI-086 — Reversal Chains
 
 Financial history views render original event, application/allocation, reversal or
@@ -863,6 +869,8 @@ row.
 
 Authorized export states filters/scope, produces a tamper-evident or integrity-
 verifiable artifact where specified technically, and creates its own audit event.
+
+Amended by DL-072 (owner, 2026-10-04): the file is CSV, and its SHA-256 fingerprint is saved in its own audit event.
 
 # 21. Reports
 
@@ -883,15 +891,21 @@ Reports may present existing authoritative data for:
 These reports do not authorize forecasting, new accounting classifications, fees,
 or financial consolidation rules.
 
+Amended by DL-072 (owner, 2026-10-04; answer 10 changed 2026-10-20 and 2026-10-21): all 9 reports are built. Staff get only reports 1, 2 and 7 (report 7 shows consumption without Rate or Invoice amounts), with no money totals. Overdue groups are 1 to 19, 20 to 29, and 30 days or more; a recurring monthly Rent Invoice counts from the 1st of the billed month (BR-LEASE-026), every other Invoice from the day after its Due Date (BR-INV-051). The monthly money-collected summary shows the money received in a month as: Paid to Invoices by DL-020 category, Late-payment Charges paid, money to a Deposit, money kept as Customer Credit, Refunded from the Payment, and not yet allocated; a Payment reversal is a minus line in the month of the reversal; the lines add up to the money received less reversals. No printable Customer statement. Not built yet (V1-057).
+
 ## UI-089 — Report Parameters
 
 Every report shows Property scope, as-of or date range, filters, currencies,
 calculation basis, generated timestamp, and source links where interactive.
 
+Amended by DL-072 (owner, 2026-10-04): totals are in USD; the Payment register also shows the KHR amount received and the exchange rate, as information only.
+
 ## UI-090 — Currency Separation
 
 Unless an explicitly authorized historical conversion basis exists, reports keep
 USD and KHR amounts separate rather than adding them.
+
+Amended by DL-072 (owner, 2026-10-04): DL-060 is that basis: report totals are the recorded USD accounting values, and KHR amounts are shown only as information, never added to USD.
 
 # 22. Configuration and Administration
 

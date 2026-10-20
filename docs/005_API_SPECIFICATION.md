@@ -1319,6 +1319,8 @@ source, reason, and correlation identifier.
 actor, action, resource type/id, Customer, Unit, Lease, and correlation identifier.
 Audit view/export requires dedicated capability.
 
+Amended by DL-072 (owner, 2026-10-04): every audit search writes an audit event. By default the Owner and the Manager may search and export audit; Staff may not (configurable role bundles, OOD-SEC-001). Record timelines (API-073) keep today's access. Not built yet (V1-057).
+
 ## API-075 — No Audit Mutation
 
 No ordinary API endpoint updates or deletes audit events.
@@ -1332,11 +1334,15 @@ currency-separated operational summaries derived from authoritative records. It
 must not create new statuses or aggregate USD and KHR without an explicit approved
 basis.
 
+Amended by DL-072 (owner, 2026-10-04): totals are in USD, the accounting currency of DL-060, which is the approved basis; KHR is never added to USD. The cards are those of UI-023 as amended by DL-072, each with its as-of time and a link to its filtered list. Not built yet (V1-057).
+
 ## API-077 — Reports
 
 `GET /properties/{property_id}/reports/{report_name}` supports only documented
 reports from `003`/`006`, bounded parameters, pagination or controlled export, and
 source/as-of metadata.
+
+Amended by DL-072 (owner, 2026-10-04; answer 10 changed 2026-10-20 and 2026-10-21): all 9 reports of UI-088 are supported, with the overdue groups and the monthly money-collected summary of DL-072. Staff may read only reports 1, 2 and 7, without money totals. Ordinary report views write no audit event. Not built yet (V1-057).
 
 ## API-078 — Export Jobs
 
@@ -1347,6 +1353,8 @@ Large authorized exports may use:
 
 Jobs are scoped, audited, expire from temporary storage, and never expose secrets
 or data outside authorization.
+
+Amended by DL-072 (owner, 2026-10-04): exports are CSV only. A small export downloads at once and is not stored on the server; an export job is kept 24 hours and then deleted. Every export writes an audit event, and an audit export's event holds the SHA-256 fingerprint of its file. A Customer appears only with name, Unit and phone number. Not built yet (V1-057).
 
 # 25. Administration Endpoints
 

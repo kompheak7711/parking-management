@@ -298,6 +298,8 @@ create new linked events.
 Audit viewing and export require separate capabilities. Audit data must be
 filtered to authorized Property scope and must not expose secrets.
 
+Amended by DL-072 (owner, 2026-10-04): by default the Owner and the Manager get all reports, audit search, audit export and data export; Staff get only the operational reports, with no money totals, no audit search, no audit export and no data export. The capabilities and default role bundles stay configurable (OOD-SEC-001); the capability names are proposed at V1-057 planning. Every export and every audit search writes an audit event; ordinary report views do not.
+
 ## SEC-033 — Clock Integrity
 
 Application, worker, and database hosts must use reliable time synchronization.
@@ -364,11 +366,15 @@ workflow. More sensitive details require explicit navigation and authorization.
 
 Amended by DL-071 (owner, 2026-10-20): the owner approves a new Customer field "ID number / Passport number" (DB-CUST-001). It is a sensitive detail: it never appears in exports or in the top bar search (UI-010).
 
+Amended by DL-072 (owner, 2026-10-04): an export shows a Customer only with name, Unit and phone number: no ID number, no address and no ID document.
+
 ## SEC-042 — Export Protection
 
 Customer and financial exports require an export capability, an audit event, and
 bounded scope. Export files must be protected in transit and removed from temporary
 storage according to a configured retention policy.
+
+Amended by DL-072 (owner, 2026-10-04): exports are CSV only. A small export downloads at once and is not stored on the server; an export job file is kept 24 hours and then deleted. An audit export's SHA-256 fingerprint is saved in its own audit event.
 
 ## SEC-043 — Logging Redaction
 
