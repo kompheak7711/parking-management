@@ -316,7 +316,7 @@ An existing Customer record should be reused when the same person enters a new R
 
 The system should avoid unnecessary duplicate Customer records.
 
-Amended by DL-071 (owner, 2026-10-20; answer 11): a Customer has an "ID number / Passport number" field. A Customer with the same ID number as another Customer is refused; staff must use the existing Customer. The same phone number or the same email address as another Customer shows a warning, and staff may still save. Not built yet.
+Amended by DL-071 (owner, 2026-10-20; answer 11): a Customer has an "ID number / Passport number" field. A Customer with the same ID number as another Customer is refused; staff must use the existing Customer. The same phone number or the same email address as another Customer shows a warning, and staff may still save. The ID number is required for every Customer, and two ID numbers are the same when they match after removing spaces and dashes and ignoring capital letters (owner, 2026-10-21). Not built yet.
 
 ---
 

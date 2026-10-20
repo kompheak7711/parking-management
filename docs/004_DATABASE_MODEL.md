@@ -186,7 +186,7 @@ historical records exist and is not a normal workflow. Input validation and dupl
 matching remain a technical choice under TCD-DB-001; no unapproved mandatory contact
 channel is introduced.
 
-Amended by DL-071 (owner, 2026-10-20; answer 11): a new Customer field "ID number / Passport number" (owner-approved personal data). A Customer with the same ID number as another Customer is refused, and staff use the existing Customer. The same phone number or email address as another Customer gives a warning and may still be saved through the existing `confirmed_distinct` flow. The ID number never appears in exports or in the top bar search. Not built yet (V1-059); whether it is required, and how two ID numbers are compared, is proposed at V1-059 planning.
+Amended by DL-071 (owner, 2026-10-20; answer 11): a new Customer field "ID number / Passport number" (owner-approved personal data). A Customer with the same ID number as another Customer is refused, and staff use the existing Customer. The same phone number or email address as another Customer gives a warning and may still be saved through the existing `confirmed_distinct` flow. The ID number never appears in exports or in the top bar search. The ID number is required for every Customer, and two ID numbers are the same when they match after removing spaces and dashes and ignoring capital letters (owner, 2026-10-21). Not built yet (V1-059).
 
 ---
 
