@@ -198,6 +198,8 @@ Each card links to its filtered source list and states the as-of time.
 
 Amended by DL-072 (owner, 2026-10-04): "Leases approaching End Date" means 60 days or less before the End Date, and "ACTIVE Reservations nearing expiration" means 14 days or less before the Expiration Date. The dashboard also shows: Rent nonpayment day-20 warnings and day-30 defaults that are due, overdue Initial Rent, financial drafts waiting for approval, Deposits waiting for a decision, and Final Settlements not yet closed. Not built yet (V1-057).
 
+Amended by DL-079 (owner, 2026-10-20): the Home page has eight cards in two rows with counts and totals (for example occupancy, outstanding Invoices, unallocated Payments, broken-meter charges, failed jobs). The dated items (expiring Reservations, Leases near their End Date, missing Readings, day-20 and day-30 letters, overdue Initial Rent, drafts waiting for approval, Deposits waiting for a decision, open Final Settlements, "Refund due by") go in a to-do list grouped Overdue, Today, This week, Later. Each card and to-do shows its as-of time and opens its page. Not built yet (V1-057).
+
 ## UI-024 — Financial Dashboard Values
 
 Dashboard totals are server-calculated, currency-separated unless an approved
@@ -915,12 +917,16 @@ or financial consolidation rules.
 
 Amended by DL-072 (owner, 2026-10-04; answer 10 changed 2026-10-20 and 2026-10-21): all 9 reports are built. Staff get only reports 1, 2 and 7 (report 7 shows consumption without Rate or Invoice amounts), with no money totals. Overdue groups are 1 to 19, 20 to 29, and 30 days or more; a recurring monthly Rent Invoice counts from the 1st of the billed month (BR-LEASE-026), every other Invoice from the day after its Due Date (BR-INV-051). The monthly money-collected summary shows the money received in a month as: Paid to Invoices by DL-020 category, Late-payment Charges paid, money to a Deposit, money kept as Customer Credit, Refunded from the Payment, and not yet allocated; a Payment reversal is a minus line in the month of the reversal; the lines add up to the money received less reversals. No printable Customer statement. Not built yet (V1-057).
 
+Amended by DL-079 (owner, 2026-10-20): four "Totals by Unit and month" reports come first (Total Income, Total Payment, Total Electricity, Total Water; Owner and Manager only), then the nine above in this order: Invoice register and balances, Payments and allocations, Utility consumption, Customer Credit ledger, Deposit liability and disposition, Final Settlement register, Unit occupancy, Lease dates, Audit activity. Staff keep Unit occupancy, Lease dates and Utility consumption (without amounts). The Payments report has no separate "Move-out charges" line, and its Paid to Invoices equals the Invoice register Paid total. Not built yet (V1-057).
+
 ## UI-089 — Report Parameters
 
 Every report shows Property scope, as-of or date range, filters, currencies,
 calculation basis, generated timestamp, and source links where interactive.
 
 Amended by DL-072 (owner, 2026-10-04): totals are in USD; the Payment register also shows the KHR amount received and the exchange rate, as information only.
+
+Amended by DL-079 (owner, 2026-10-20): every report summary has a chart; money charts are in USD only (riel at its recorded USD value), and a report without money gets a count bar chart.
 
 ## UI-090 — Currency Separation
 
