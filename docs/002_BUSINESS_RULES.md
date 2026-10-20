@@ -3002,7 +3002,7 @@ percentage, calculated default amount, actual approved amount, decision outcome,
 authorized management actor, reason, assessment timestamp, and confirmation or waiver
 timestamp.
 
-Replaced by DL-076 (owner, 2026-10-20): no management decision. at 00:00 Property time on the first day after the Due Date, the app adds the late-payment charge by itself, at the Settings rate (DL-075, default 10%) of the amount unpaid at that moment, rounded half-up; no management decision is needed. The Owner or a Manager may only reduce or waive it after the Customer complains that it is wrong because of a staff mistake, with one of three fixed reasons ("Staff recorded the payment on the wrong Invoice", "Paid on time but recorded late", "Other staff mistake") and a required "What happened" text. The amount only goes down.
+Replaced by DL-076 (owner, 2026-10-20): no management decision. At 00:00 Property time on the first day after the Due Date, the app adds the late-payment charge by itself, at the Settings rate (DL-075, default 10%) of the amount unpaid at that moment, rounded half-up; no management decision is needed. The Owner or a Manager may only reduce or waive it after the Customer complains that it is wrong because of a staff mistake, with one of three fixed reasons ("Staff recorded the payment on the wrong Invoice", "Paid on time but recorded late", "Other staff mistake") and a required "What happened" text. The amount only goes down.
 
 ---
 
@@ -5040,6 +5040,8 @@ Confirming, reducing, or waiving a proposed late-payment charge is restricted to
 authorized management. A positive approved charge requires the linked explicit
 Late-payment Charge obligation in BR-INV-055 and BR-LATE-001; ordinary staff cannot
 post, vary, correct, or reverse it arbitrarily.
+
+Amended by DL-076 (owner, 2026-10-20): the late-payment charge is added by the app at 00:00 on the first day after the Due Date, with no confirmation. Only the Owner or a Manager may reduce or waive it, after a Customer complaint of a staff mistake, with one of three fixed reasons and a required "What happened" text; the amount only goes down.
 
 ---
 

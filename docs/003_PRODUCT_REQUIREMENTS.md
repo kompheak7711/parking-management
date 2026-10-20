@@ -3860,7 +3860,7 @@ percentage, calculated default amount, actual approved amount, decision outcome,
 authorized management actor, reason, assessment timestamp, and confirmation or waiver
 timestamp.
 
-Replaced by DL-076 (owner, 2026-10-20): as BR-INV-053: no management decision. at 00:00 Property time on the first day after the Due Date, the app adds the late-payment charge by itself, at the Settings rate (DL-075, default 10%) of the amount unpaid at that moment, rounded half-up; no management decision is needed. The Owner or a Manager may only reduce or waive it after the Customer complains that it is wrong because of a staff mistake, with one of three fixed reasons ("Staff recorded the payment on the wrong Invoice", "Paid on time but recorded late", "Other staff mistake") and a required "What happened" text. The amount only goes down.
+Replaced by DL-076 (owner, 2026-10-20): as BR-INV-053: no management decision. At 00:00 Property time on the first day after the Due Date, the app adds the late-payment charge by itself, at the Settings rate (DL-075, default 10%) of the amount unpaid at that moment, rounded half-up; no management decision is needed. The Owner or a Manager may only reduce or waive it after the Customer complains that it is wrong because of a staff mistake, with one of three fixed reasons ("Staff recorded the payment on the wrong Invoice", "Paid on time but recorded late", "Other staff mistake") and a required "What happened" text. The amount only goes down.
 
 ### PR-INV-054 — One Final Non-compounding Decision per Invoice
 
