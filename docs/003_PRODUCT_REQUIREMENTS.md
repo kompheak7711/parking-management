@@ -1586,6 +1586,8 @@ assumption.
 
 Amended by DL-070 (owner, 2026-10-15; the new standard Lease agreement): a serious breach by the Customer, meaning a crime or danger to people or the building, may end the Lease at once, without the three warning letters. The authority still comes from the signed Lease (BR-LEASE-025), and the termination is still an explicit action by an authorized user with its grounds recorded; nothing is automatic. Every other Customer violation still needs the three warning letters. Not built yet.
 
+Amended by DL-073 (owner, 2026-10-20): for a Rent nonpayment termination the day-20 Nonpayment Warning Notice (BR-LEASE-027) is letter 1, the day-30 default notice (BR-LEASE-028) is letter 2 and the termination notice (BR-LEASE-022) is letter 3; such a termination needs no other warning letters (the owner's explicit approval under this rule). Not built yet.
+
 ### PR-LEASE-025 — Signed-Lease Termination Authority
 
 **Business-rule traceability:** `BR-LEASE-025`
@@ -1701,6 +1703,8 @@ physically occupies it.
 
 A remaining recurring-Service balance alone does not satisfy the Rent-balance condition
 for this rule.
+
+Amended by DL-073 (owner, 2026-10-20): the day-30 default notice is a letter the system records, like the day-20 Notice of BR-LEASE-027, and it counts as letter 2 of a Rent nonpayment termination (BR-LEASE-024). The condition itself and its no-automatic-action list are unchanged. Not built yet.
 
 ### PR-LEASE-029 — Cure After Warning and Before Thirty Days
 

@@ -3955,6 +3955,8 @@ actor, and date/time. The Lease need not terminate, and full history is preserve
 
 Refund methods are a configured list, like Payment Methods, starting with Cash and Bank transfer (ABA or another bank). Every Refund records its method and a reference note. All Refunds are in USD (DL-060). The system sets no Refund deadline (DL-068, DL-069).
 
+Amended by DL-073 (owner, 2026-10-20): there is still no Refund deadline or block in the system. While a Deposit Refund is not made, a to-do reminder shows "Refund due by" with the date 7 days after the later of the final inspection and the final Utility Invoice (the Lease's 7-day promise). Not built yet.
+
 ---
 
 ## BR-REFUND-015 — Deposit Refund Recipient for Joint Signers
@@ -4049,6 +4051,8 @@ procedure requires an expressly approved basis rather than an implementation
 assumption.
 
 Amended by DL-070 (owner, 2026-10-15; the new standard Lease agreement): a serious breach by the Customer, meaning a crime or danger to people or the building, may end the Lease at once, without the three warning letters. The authority still comes from the signed Lease (BR-LEASE-025), and the termination is still an explicit action by an authorized user with its grounds recorded; nothing is automatic. Every other Customer violation still needs the three warning letters. Not built yet.
+
+Amended by DL-073 (owner, 2026-10-20): for a Rent nonpayment termination the day-20 Nonpayment Warning Notice (BR-LEASE-027) is letter 1, the day-30 default notice (BR-LEASE-028) is letter 2 and the termination notice (BR-LEASE-022) is letter 3; such a termination needs no other warning letters (the owner's explicit approval under this rule). Not built yet.
 
 ---
 
@@ -4159,6 +4163,8 @@ physically occupies it.
 
 A remaining recurring-Service balance alone does not satisfy the Rent-balance condition
 for this rule.
+
+Amended by DL-073 (owner, 2026-10-20): the day-30 default notice is a letter the system records, like the day-20 Notice of BR-LEASE-027, and it counts as letter 2 of a Rent nonpayment termination (BR-LEASE-024). The condition itself and its no-automatic-action list are unchanged. Not built yet.
 
 ---
 
@@ -4432,6 +4438,8 @@ and Refund remains separately traceable.
 
 When the Security Deposit is kept, the whole deposit is forfeited through an explicit disposition event and is never used to pay what the Customer owes. Unpaid charges stay as debt on the Customer Ledger. This applies to voluntary early leaving, termination for unpaid Initial Rent or Security Deposit (whether or not the Customer moved in), termination for a violation (pet or non-pet) and termination after the 30-day Rent nonpayment default. At a normal Lease end DL-032 is unchanged (DL-064, DL-068, DL-069).
 
+Amended by DL-073 (owner, 2026-10-20; item 3c replaced 2026-10-21): a serious-breach termination (DL-070) is a violation termination: the Security Deposit is kept. The Security Deposit is kept, and Rent already paid for the hand-back month is not refunded, when the Customer chooses to leave before the End Date or the Lease is terminated on a ground of this list. When the Property ends the Lease with notice (Article 15.4) or both sides agree to end it early, DL-032 applies: the Security Deposit pays the open debt and the rest is refunded. Not built yet.
+
 Amended by the owner answer to Q-2026-10-05-24 (2026-10-05): when a confirmed forfeiture of the Security Deposit is reversed, the Deposit is held again; at Final Settlement it follows DL-032 (it pays open debt and the rest is refunded) unless a new forfeiture draft is confirmed (owner answer to Q-2026-10-05-23).
 
 ---
@@ -4439,6 +4447,8 @@ Amended by the owner answer to Q-2026-10-05-24 (2026-10-05): when a confirmed fo
 ## BR-DEP-027 — Pet Deposit at Other Terminations
 
 At termination for unpaid Initial Rent or Security Deposit, for a non-pet violation, or after the 30-day Rent nonpayment default, the Pet Deposit pays valid pet damage first and the rest is refunded, as in DL-013. Termination for pet noncompliance follows BR-DEP-022: both deposits are kept (DL-068, DL-069).
+
+Amended by DL-073 (owner, 2026-10-20): a serious-breach termination (DL-070) is treated as a non-pet violation termination: the Pet Deposit pays pet damage first and the rest is refunded; a pet-rule breach keeps both Deposits. Not built yet.
 
 Amended by the owner answer to Q-2026-10-05-21 (2026-10-05): at these terminations the remaining Pet Deposit pays other debt only when the Customer chooses it, recorded as text (who, the date, how) with the staff reason; otherwise the rest is refunded (owner answer to Q-2026-10-05-20). At a normal Lease end and at voluntary early leaving the DL-013 staff step stays: authorized staff may apply the remaining Pet Deposit with a reason when the Customer will not pay (BR-SETTLE-017).
 
