@@ -190,7 +190,6 @@ export function ReservationManagement({
         {
           notice_id: crypto.randomUUID(),
           new_expiration_date: formString(data, "new-expiration-date"),
-          approved_at: new Date().toISOString(),
           reason_memo: formString(data, "extension-reason"),
         },
         crypto.randomUUID(),

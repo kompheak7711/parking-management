@@ -178,7 +178,8 @@ class ReservationExtendCommand:
     reservation_id: UUID
     expected_version: int
     new_expiration_date: date
-    approved_at: datetime
+    # None (every route): the database's own time at the command (Q-2026-10-14-112).
+    approved_at: datetime | None
     reason_memo: str
     authorization_reference: str
 
@@ -449,9 +450,11 @@ class PostgresReservationService:
 
     def extend(self, command: ReservationExtendCommand) -> ReservationExtensionResult:
         digest = reservation_request_digest("reservation.extend", command)
+        # The approval time defaults to statement_timestamp(), within the notice's own check.
         return _extension(
             self._execute(
-                "SELECT * FROM app.extend_reservation_v2(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                "SELECT * FROM app.extend_reservation_v2(%s,%s,%s,%s,%s,%s,%s,"
+                "COALESCE(%s::timestamptz,statement_timestamp()),%s,%s,%s)",
                 (
                     self.property_id,
                     command.idempotency_key,

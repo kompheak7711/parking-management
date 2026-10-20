@@ -780,7 +780,6 @@ class ReservationExtend(BaseModel):
 
     notice_id: UUID
     new_expiration_date: date
-    approved_at: datetime
     reason_memo: Annotated[str, Field(max_length=500)] = ""
 
 
@@ -1102,7 +1101,8 @@ def create_reservation_router(
                     reservation_id=reservation_id,
                     expected_version=_version(if_match),
                     new_expiration_date=source.new_expiration_date,
-                    approved_at=source.approved_at,
+                    # The database's own time at the command (Q-2026-10-14-112).
+                    approved_at=None,
                     reason_memo=source.reason_memo,
                     authorization_reference=RESERVATION_EXTEND_CAPABILITY,
                 ),

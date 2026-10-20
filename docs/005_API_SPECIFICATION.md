@@ -345,6 +345,11 @@ one-extension/14-day rules. `cancel` requires reason; expiration uses
 coordinates Reservation `COMPLETED` with the resulting Lease, Occupancy, Unit, and
 continuing Security Deposit effects.
 
+The `extend` body is `notice_id`, `new_expiration_date` and the optional `reason_memo`.
+The server records the database's own time at the command as the extension approval
+time; a body that sends `approved_at` is refused with 422 (BR-RES-010, owner answer (a)
+to Q-2026-10-14-112 point 1, V1-056 sub-slice 10i-3).
+
 Amended by V1-056 slice 3b (owner answers of 2026-10-04 to Q-2026-10-03-2): `cancel`
 records the classified cancellation and releases the Unit at once; it takes no
 `outcome_id` or `refund_number` and needs only `reservations.cancel`. The Security

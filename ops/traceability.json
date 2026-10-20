@@ -44227,6 +44227,29 @@
       "test_path": "backend/tests/test_deposit_increase_ground_delay_migration.py",
       "status": "implemented",
       "notes": "The migration adds app.deposit_ground_required_total_at with no grant to the runtime, financial or bootstrap role and changes only the body of app.require_lease_termination_context, which reads it once and no longer reads app.deposit_required_total_at; owner, privileges, definer flag and settings kept; no trigger, relation, column, privilege or constraint change; forward-only (V1-056 sub-slice 10i-2)."
+    },
+    {
+      "test_id": "test_extend_route_takes_no_approval_time_from_the_request",
+      "upstream_ids": [
+        "BR-RES-010",
+        "API-033"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_reservation_api.py",
+      "status": "implemented",
+      "notes": "An extension body that sends approved_at is refused (422) and the flow is not called; without it the route passes no time, so the service records the database's own time (owner answer (a) to Q-2026-10-14-112 point 1; V1-056 sub-slice 10i-3)."
+    },
+    {
+      "test_id": "TEST-FE-680",
+      "upstream_ids": [
+        "BR-RES-010",
+        "API-033",
+        "UI-034"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/ReservationManagement.test.tsx",
+      "status": "implemented",
+      "notes": "The Reservation screen sends the Extension Notice with exactly the notice id, the new Expiration Date and the memo, no device time (owner answer (a) to Q-2026-10-14-112 point 1; V1-056 sub-slice 10i-3)."
     }
   ]
 }

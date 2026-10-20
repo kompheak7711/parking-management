@@ -291,6 +291,10 @@ The action is available only when the server reports eligibility. The dialog sho
 remaining days, maximum 14-day extension, resulting Expiration Date, one-extension
 limit, and Notice to be recorded.
 
+The screen sends no approval time; the server records the database's own time and the
+Notice shows it (BR-RES-010, owner answer (a) to Q-2026-10-14-112 point 1, V1-056
+sub-slice 10i-3).
+
 ## UI-035 — Cancel Reservation
 
 Cancellation requires an approved reason and confirmation. Property-caused

@@ -78,7 +78,6 @@ describe("Reservation API client", () => {
       {
         notice_id: "notice-1",
         new_expiration_date: "2026-09-12",
-        approved_at: "2026-09-01T00:00:00Z",
         reason_memo: "Approved",
       },
       "command-1",

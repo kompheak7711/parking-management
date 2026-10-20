@@ -114,7 +114,6 @@ export interface ReservationCreateSource {
 export interface ReservationExtendSource {
   notice_id: string;
   new_expiration_date: string;
-  approved_at: string;
   reason_memo: string;
 }
 

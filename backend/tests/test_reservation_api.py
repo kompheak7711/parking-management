@@ -1,7 +1,7 @@
 """API-032 through API-034 Reservation HTTP contract tests."""
 
 from dataclasses import dataclass, field, replace
-from datetime import date
+from datetime import UTC, date, datetime
 from uuid import UUID, uuid4
 
 import psycopg
@@ -156,7 +156,8 @@ class InMemoryReservationFlow:
                 command.notice_id,
                 current.effective_expiration_date,
                 command.new_expiration_date,
-                command.approved_at,
+                # The database stamps its own time when the route sends none (sub-slice 10i-3).
+                command.approved_at or datetime(2026, 9, 1, 1, tzinfo=UTC),
                 command.reason_memo or None,
             ),
         )
@@ -397,7 +398,6 @@ def test_extend_requires_version_and_records_one_notice_shape() -> None:
     payload = {
         "notice_id": str(uuid4()),
         "new_expiration_date": "2026-09-12",
-        "approved_at": "2026-09-01T01:00:00Z",
         "reason_memo": "Approved extension",
     }
     missing = api.post(
@@ -414,6 +414,39 @@ def test_extend_requires_version_and_records_one_notice_shape() -> None:
     assert flow.extend_command is not None
     assert flow.extend_command.authorization_reference == "reservations.extend"
     assert accepted.json()["data"]["extension_notice"]["new_expiration_date"] == "2026-09-12"
+
+
+def test_extend_route_takes_no_approval_time_from_the_request() -> None:
+    """Owner answer (a) to Q-2026-10-14-112 point 1 (V1-056 sub-slice 10i-3): the extension
+    approval time means the moment the authorized staff member records it, so the route sends no
+    time to the flow and the database takes its own; a body that still sends one is refused (422)
+    and the flow is not called."""
+    property_id = uuid4()
+    current = resource(property_id)
+    flow = InMemoryReservationFlow({current.reservation_id: current})
+    api = client(flow, actor(property_id, "reservations.read", "reservations.extend"))
+    path = f"/reservations/{current.reservation_id}/extend"
+    payload = {
+        "notice_id": str(uuid4()),
+        "new_expiration_date": "2026-09-12",
+        "reason_memo": "Approved extension",
+    }
+
+    refused = api.post(
+        path,
+        json={**payload, "approved_at": "2026-09-01T01:00:00Z"},
+        headers=headers(version=1),
+    )
+
+    assert refused.status_code == 422
+    assert refused.json()["error"]["fields"] == ["body.approved_at"]
+    assert [flow.extend_command] == [None]
+
+    accepted = api.post(path, json=payload, headers=headers(version=1))
+
+    assert accepted.status_code == 200, accepted.text
+    assert flow.extend_command is not None
+    assert flow.extend_command.approved_at is None
 
 
 def test_cancel_derives_customer_deposit_disposition_without_free_form_outcome() -> None:

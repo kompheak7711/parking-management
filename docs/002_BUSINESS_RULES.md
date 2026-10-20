@@ -432,7 +432,8 @@ Every extension must preserve:
 - original Expiration Date;
 - immediately previous Expiration Date;
 - new Expiration Date;
-- extension approval date and time;
+- extension approval date and time (the database's own time when the authorized user
+  records the extension; owner answer (a) to Q-2026-10-14-112 point 1);
 - authorized user; and
 - reason or memo when provided.
 

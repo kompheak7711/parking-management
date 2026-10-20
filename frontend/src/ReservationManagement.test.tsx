@@ -123,6 +123,36 @@ describe("Reservation staff workflow", () => {
     ).toBeInTheDocument();
   });
 
+  it("TEST-FE-680 sends no device time with the Extension Notice", async () => {
+    const client = api();
+    render(<ReservationManagement api={client} />);
+    fireEvent.change(screen.getByLabelText("Reservation Property identifier"), {
+      target: { value: "property-1" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Load Reservations" }));
+    fireEvent.click(await screen.findByRole("button", { name: "View" }));
+    await screen.findByRole("heading", { name: "Reservation detail" });
+    fireEvent.change(
+      screen.getByLabelText("New Expiration Date (maximum 14 added days)"),
+      {
+        target: { value: "2026-09-12" },
+      },
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Record Extension Notice" }),
+    );
+
+    await waitFor(() => {
+      expect(client.extend).toHaveBeenCalledTimes(1);
+    });
+    const source = vi.mocked(client.extend).mock.calls[0]?.[1];
+    expect(Object.keys(source ?? {}).sort()).toEqual([
+      "new_expiration_date",
+      "notice_id",
+      "reason_memo",
+    ]);
+  });
+
   it("TEST-FE-184 previews classified Deposit consequences and confirms cancellation", async () => {
     const client = api();
     vi.spyOn(window, "confirm").mockReturnValue(true);

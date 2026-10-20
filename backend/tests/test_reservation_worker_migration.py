@@ -363,7 +363,6 @@ def test_http_mutations_reach_real_postgres_with_security_replay_and_rollback(
     extend_payload = {
         "notice_id": str(notice_id),
         "new_expiration_date": (business_date + timedelta(days=12)).isoformat(),
-        "approved_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
         "reason_memo": "Approved extension",
     }
     extend_headers = {
@@ -459,7 +458,8 @@ def test_http_mutations_reach_real_postgres_with_security_replay_and_rollback(
         "notice_id": str(notice_id),
         "previous_expiration_date": create_payload["expiration_date"],
         "new_expiration_date": extend_payload["new_expiration_date"],
-        "approved_at": extend_payload["approved_at"],
+        # Sub-slice 10i-3: the database's own time; checked against its command row below.
+        "approved_at": extended_resource["extension_notice"]["approved_at"],
         "reason_memo": extend_payload["reason_memo"],
     }
     assert stale_extend.status_code == 412
@@ -546,6 +546,14 @@ def test_http_mutations_reach_real_postgres_with_security_replay_and_rollback(
             "FROM app.deposit_receipts AS receipt WHERE receipt.id=%s",
             (receipt_id,),
         ).fetchone()
+        # Sub-slice 10i-3 (owner answer (a) to Q-2026-10-14-112 point 1): the approval time is
+        # the statement time of the extension, the same value its command row is stamped with.
+        assert check.execute(
+            "SELECT notice.approved_at=command.created_at FROM app.reservation_extension_notices "
+            "notice JOIN app.reservation_commands command ON command.result_id=notice.id "
+            "AND command.action='reservation.extend' WHERE notice.id=%s",
+            (notice_id,),
+        ).fetchone() == (True,)
         notice_history = check.execute(
             "SELECT id,original_expiration_date,previous_expiration_date,new_expiration_date,"
             "approved_by,reason_memo,authorization_reference "
