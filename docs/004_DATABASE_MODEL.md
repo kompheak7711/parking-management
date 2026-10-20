@@ -369,6 +369,27 @@ context digest preserve exact historical replay; they do not admit fresh context
 termination. Supplied context and every original command field remain exact replay
 intent, with fresh active-human and Property checks at the wrapper.
 
+V1-056 sub-slice 10i-1 (migration `20270114_171`): the routes send no termination time,
+and the service passes the database's statement time, so a retry carries a new time; the
+wrapper's replay therefore compares every saved field except the time, which the request
+digest still binds (owner answer (a) to Q-2026-10-14-112 point 1). After the Lease and
+Unit locks and its version and status checks, the termination also locks the Lease's
+Deposits in id order (the closing confirm's Lease-then-Deposit order), before its
+chronology, context and ground checks, so a Deposit receipt or a
+required-amount adjustment saved beside a termination waits for it and reads the
+terminated Lease, and a termination that comes second reads the committed adjustment
+(owner answer (a) to Q-2026-10-18-133).
+Because the termination time is the start of its statement and its locks come later, a
+termination stamped with the database's time is refused (40001, "record it again") when a
+Deposit balance event or a required-amount adjustment of the Lease is dated after that
+time: it was saved while the termination waited, and the ground would not read it. A
+required-amount adjustment is dated with `clock_timestamp()` after its Deposit lock, and the
+Pet departure writer locks the Lease (FOR KEY SHARE) before its Pet Deposit, so it never holds
+the Deposit while its foreign key waits for a terminating Lease (review round 1 of 10i-1).
+`app.confirm_payment_return` still locks the Deposits it funded before its recovery Invoices
+take the Lease key; it already met the termination on the `invoice-lease` key before 10i-1, so
+a deadlock there (40P01) refuses one side and writes nothing (a slice 12 note).
+
 The new context and warning-source rows are immutable. Runtime has only the narrow
 command function, with no direct table or private-helper access. This stage performs no
 Deposit disposition, invoice adjustment, physical Occupancy end, Unit-condition change

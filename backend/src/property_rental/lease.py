@@ -348,7 +348,8 @@ class LeaseTerminateCommand:
     lease_id: UUID
     expected_version: int
     actual_termination_date: date
-    occurred_at: datetime
+    # None (every route): the database's own time at the command (Q-2026-10-14-112).
+    occurred_at: datetime | None
     governing_event_reference: str
     reason: str
     authorization_reference: str
@@ -359,7 +360,9 @@ class LeaseTerminateCommand:
             _require_identity(getattr(self, field), field)
         if self.expected_version < 1:
             raise ValueError("expected_version must be positive")
-        if self.occurred_at.tzinfo is None or self.occurred_at.utcoffset() is None:
+        if self.occurred_at is not None and (
+            self.occurred_at.tzinfo is None or self.occurred_at.utcoffset() is None
+        ):
             raise ValueError("occurred_at must include a timezone")
         _require_nonblank(self.governing_event_reference, "governing_event_reference")
         _require_nonblank(self.reason, "reason")
@@ -744,14 +747,18 @@ class PostgresLeaseService:
             command.reason,
             self.actor_id,
         )
+        # The termination time defaults to statement_timestamp(), the value app.terminate_lease
+        # checks.
         if command.context is not None:
             return self._execute(
-                "SELECT app.terminate_lease_with_context("
-                "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s::jsonb)",
+                "SELECT app.terminate_lease_with_context(%s,%s,%s,%s,%s,%s,%s,"
+                "COALESCE(%s::timestamptz,statement_timestamp()),%s,%s,%s,%s::jsonb)",
                 (*parameters, json.dumps(command.context.intent(), ensure_ascii=False)),
             )
         # The shared database boundary permits genuine legacy replay, but
         # rejects fresh termination without the newly required context.
         return self._execute(
-            "SELECT app.terminate_lease(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)", parameters
+            "SELECT app.terminate_lease(%s,%s,%s,%s,%s,%s,%s,"
+            "COALESCE(%s::timestamptz,statement_timestamp()),%s,%s,%s)",
+            parameters,
         )

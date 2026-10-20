@@ -184,7 +184,6 @@ export interface TerminationContextSource {
 export interface LeaseTerminateSource {
   event_id: string;
   actual_termination_date: string;
-  occurred_at: string;
   governing_event_reference: string;
   reason: string;
   context?: TerminationContextSource;

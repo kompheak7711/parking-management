@@ -255,7 +255,6 @@ describe("Lease API client", () => {
       {
         event_id: termination,
         actual_termination_date: "2026-09-10",
-        occurred_at: "2026-09-10T02:00:00Z",
         governing_event_reference: "BR-LEASE-005",
         reason: "Customer did not pay",
         context: {

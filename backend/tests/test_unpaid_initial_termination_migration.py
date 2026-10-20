@@ -456,15 +456,12 @@ CONTEXT_BODY = {
 }
 
 
-def db_now(url: str) -> object:
-    return row(url, "SELECT clock_timestamp()")[0]
-
-
 def terminate_body(url: str, source: dict[str, Any], **changes: object) -> dict[str, object]:
+    # Sub-slice 10i-1: the route sends no termination time; the database takes its own.
+    del url
     body: dict[str, object] = {
         "event_id": str(uuid4()),
         "actual_termination_date": source["today"].isoformat(),
-        "occurred_at": cast(datetime, db_now(url)).isoformat(),
         "governing_event_reference": "BR-LEASE-005",
         "reason": "Customer did not pay the Initial obligation",
         "context": CONTEXT_BODY,

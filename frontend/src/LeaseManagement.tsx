@@ -107,10 +107,7 @@ export function LeaseManagement({ api = leaseApi }: LeaseManagementProps) {
   const sequence = useRef(0);
   // A retry of an unchanged form reuses its identities so a lost reply is replayed, not repeated.
   const attempts = useRef(
-    new Map<
-      string,
-      { signature: string; key: string; id: string; at: string }
-    >(),
+    new Map<string, { signature: string; key: string; id: string }>(),
   );
 
   function attempt(name: string, signature: string) {
@@ -120,7 +117,6 @@ export function LeaseManagement({ api = leaseApi }: LeaseManagementProps) {
       signature,
       key: crypto.randomUUID(),
       id: crypto.randomUUID(),
-      at: new Date().toISOString(),
     };
     attempts.current.set(name, fresh);
     return fresh;
@@ -507,7 +503,6 @@ export function LeaseManagement({ api = leaseApi }: LeaseManagementProps) {
           {
             event_id: crypto.randomUUID(),
             actual_termination_date: formString(data, "actual-date"),
-            occurred_at: new Date().toISOString(),
             governing_event_reference: formString(data, "reference"),
             reason: formString(data, "reason"),
           },
@@ -578,7 +573,6 @@ export function LeaseManagement({ api = leaseApi }: LeaseManagementProps) {
           {
             event_id: retry.id,
             actual_termination_date: actualDate,
-            occurred_at: retry.at,
             governing_event_reference: "BR-LEASE-005",
             reason,
             context,

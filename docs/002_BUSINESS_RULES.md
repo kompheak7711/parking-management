@@ -4797,6 +4797,10 @@ at the moment of the command. No browser or device clock sets them, so a device
 clock cannot refuse a signing or make a signature look earlier (owner answer to
 Q-2026-10-14-110).
 
+The Lease termination time is also the database's own time at the moment of the
+termination command; the actual termination date stays a staff-entered date (owner
+answer (a) to Q-2026-10-14-112 point 1, V1-056 sub-slice 10i-1).
+
 Nonpayment Warning Notices and Serious Nonpayment Default conditions must preserve
 their source Rent obligation, elapsed-day boundary, amount snapshot, issue or event
 time, actor, communication or document linkage where recorded, cure history, and

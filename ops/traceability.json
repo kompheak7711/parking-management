@@ -42839,7 +42839,7 @@
       "notes": "Review round 2 (security note 4): the excess check also comes after the Deposit lock; a leftover receipt that holds its Payment and waits for the Deposit guard holds no obligation table lock, so the holder writes the allocation and Invoice line tables at once; once it ends the receipt is recorded (V1-056 sub-slice 10e-2b-4d)."
     },
     {
-      "test_id": "test_a_receipt_beside_an_uncommitted_termination_is_recorded_known_limit",
+      "test_id": "test_a_receipt_beside_an_uncommitted_termination_waits_and_is_refused",
       "upstream_ids": [
         "BR-DEP-023",
         "DL-030",
@@ -42848,7 +42848,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_deposit_receipt_leftover_migration.py",
       "status": "implemented",
-      "notes": "Review round 2 (both reviewers, note 1; known limit, Q-2026-10-18-133): a receipt recorded while a voluntary early termination is uncommitted reads the Lease as signed and is recorded, dated after the termination; once the termination is committed the next receipt is refused by the ground (55000) (V1-056 sub-slice 10e-2b-4d)."
+      "notes": "Review round 2 (both reviewers, note 1) showed a receipt recorded beside an uncommitted voluntary early termination; owner answer (a) to Q-2026-10-18-133: the termination also locks the Lease's Deposits, so the receipt waits for it and, after its commit, is refused by the ground (55000); no receipt of that Payment is written, and the next receipt is refused the same way (V1-056 sub-slice 10e-2b-4d; renamed from test_a_receipt_beside_an_uncommitted_termination_is_recorded_known_limit in sub-slice 10i-1)."
     },
     {
       "test_id": "test_a_receipt_refused_by_the_nowait_lock_is_recorded_once_by_its_replay",
@@ -44062,6 +44062,124 @@
       "test_path": "backend/tests/test_settlement_closed_change_isolation_migration.py",
       "status": "implemented",
       "notes": "The migration changes only the body of app.refuse_closed_final_settlement_change (owner, privileges, definer flag and settings kept), adds the isolation check once before the first per-table branch, adds no function, changes no trigger, relation, column, privilege or constraint, and is forward-only (V1-056 sub-slice 10h-4b)."
+    },
+    {
+      "test_id": "test_terminate_command_accepts_no_time_and_keeps_the_time_zone_rule",
+      "upstream_ids": [
+        "BR-AUDIT-003",
+        "API-038"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_lease.py",
+      "status": "implemented",
+      "notes": "A termination command without a time keeps its request digest on a retry, a given time is a different request, and a given time must carry a time zone (owner answer (a) to Q-2026-10-14-112 point 1; V1-056 sub-slice 10i-1)."
+    },
+    {
+      "test_id": "test_terminate_route_takes_no_termination_time_from_the_request",
+      "upstream_ids": [
+        "BR-AUDIT-003",
+        "API-038"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_lease_api.py",
+      "status": "implemented",
+      "notes": "A termination body that sends occurred_at is refused (422) and the flow is not called; without it the route passes no time, so the service records the database's own time (owner answer (a) to Q-2026-10-14-112 point 1; V1-056 sub-slice 10i-1)."
+    },
+    {
+      "test_id": "test_http_termination_time_is_the_database_time",
+      "upstream_ids": [
+        "BR-AUDIT-003",
+        "API-038",
+        "DB-LEASE-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_termination_database_time_migration.py",
+      "status": "implemented",
+      "notes": "Through the route and the runtime role, a body with occurred_at is refused (422, Lease unchanged); without it the Lease's terminated_at equals the termination context row's recorded_at (the statement time); a retry with the same Idempotency-Key and body returns the first result and writes no second row (owner answer (a) to Q-2026-10-14-112 point 1; V1-056 sub-slice 10i-1)."
+    },
+    {
+      "test_id": "test_a_termination_waits_for_a_decrease_being_saved_and_reads_it",
+      "upstream_ids": [
+        "BR-LEASE-005",
+        "BR-DEP-004",
+        "DB-DEP-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_termination_database_time_migration.py",
+      "status": "implemented",
+      "notes": "A 40,000 decrease saved in an open transaction holds the Security Deposit's lock; an unpaid-Initial termination waits for it and, after its commit, reads the 10,000 total: the ground is not met (22023) and the Lease stays signed (owner answer (a) to Q-2026-10-18-133; V1-056 sub-slice 10i-1)."
+    },
+    {
+      "test_id": "test_an_adjustment_waits_for_a_termination_being_saved",
+      "upstream_ids": [
+        "BR-LEASE-005",
+        "BR-DEP-004",
+        "DB-DEP-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_termination_database_time_migration.py",
+      "status": "implemented",
+      "notes": "A voluntary early termination saved in an open transaction holds the Lease's Deposit locks; a required-amount increase waits for it and is recorded after its commit, dated after the termination (owner answer (a) to Q-2026-10-18-133; V1-056 sub-slice 10i-1)."
+    },
+    {
+      "test_id": "test_the_termination_database_time_migration_is_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "BR-AUDIT-003",
+        "DB-LEASE-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_termination_database_time_migration.py",
+      "status": "implemented",
+      "notes": "The migration changes only the bodies of app.terminate_lease_with_context (the replay no longer compares the saved time; the digest comparison stays), app.terminate_lease (the Deposit lock once, after the version and status checks, then the changed-while-waiting refusal, then the context and ground checks), app.adjust_deposit_required_amount (dated with clock_timestamp()) and app.record_active_lease_pet_departure (the Lease before its Pet Deposit); owner, privileges, definer flag and settings kept; no function, trigger, relation, column, privilege or constraint change; forward-only (V1-056 sub-slice 10i-1, review round 1)."
+    },
+    {
+      "test_id": "TEST-FE-678",
+      "upstream_ids": [
+        "BR-AUDIT-003",
+        "API-038",
+        "UI-076"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/LeaseManagement.test.tsx",
+      "status": "implemented",
+      "notes": "The authorized termination form sends exactly the event id, the actual termination date, the governing event reference and the reason, no device time (owner answer (a) to Q-2026-10-14-112 point 1; V1-056 sub-slice 10i-1)."
+    },
+    {
+      "test_id": "TEST-FE-679",
+      "upstream_ids": [
+        "BR-AUDIT-003",
+        "API-038",
+        "UI-076"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/LeaseManagement.test.tsx",
+      "status": "implemented",
+      "notes": "The unpaid Initial termination form sends no device time, also on the retry after a failure (owner answer (a) to Q-2026-10-14-112 point 1; V1-056 sub-slice 10i-1)."
+    },
+    {
+      "test_id": "test_a_deposit_change_saved_while_a_termination_waits_refuses_it",
+      "upstream_ids": [
+        "BR-LEASE-005",
+        "BR-DEP-023",
+        "BR-DEP-026",
+        "DB-DEP-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_termination_database_time_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 (security should-fix 1): an unpaid-Initial termination stamped with the database's time waits for the Unit while a 40,000 receipt or a 40,000 decrease is saved and committed, dated after its time; the termination is refused (40001) instead of keeping the curing money, the Lease stays signed, and a new attempt reads the change and finds the ground not met (22023) (V1-056 sub-slice 10i-1)."
+    },
+    {
+      "test_id": "test_a_pet_departure_waits_for_a_termination_and_is_refused",
+      "upstream_ids": [
+        "BR-DEP-019",
+        "DB-DEP-001",
+        "DB-LEASE-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_termination_database_time_migration.py",
+      "status": "implemented",
+      "notes": "Review round 1 (independent blocker 1): the Pet departure writer locks the Lease before its Pet Deposit; a departure saved beside an uncommitted voluntary early termination waits for it and, after its commit, is refused as not eligible (no deadlock); no departure is written (V1-056 sub-slice 10i-1)."
     }
   ]
 }

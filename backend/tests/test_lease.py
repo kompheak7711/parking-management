@@ -10,11 +10,13 @@ from property_rental.identity import AuthenticatedActor, CapabilityGrant
 from property_rental.lease import (
     LEASE_DRAFT_CAPABILITY,
     LEASE_SIGN_CAPABILITY,
+    LEASE_TERMINATE_CAPABILITY,
     LeaseAuthorizationError,
     LeaseDraftCommand,
     LeaseRecordSignatureCommand,
     LeaseSignCommand,
     LeaseStatus,
+    LeaseTerminateCommand,
     PostgresLeaseService,
     lease_request_digest,
 )
@@ -100,6 +102,32 @@ def test_signing_commands_accept_no_time_and_keep_the_time_zone_rule() -> None:
         replace(signature, signed_at=datetime(2027, 1, 1))
     with pytest.raises(ValueError, match="timezone"):
         replace(signing, signed_at=datetime(2027, 1, 1))
+
+
+def test_terminate_command_accepts_no_time_and_keeps_the_time_zone_rule() -> None:
+    """Owner answer (a) to Q-2026-10-14-112 point 1 (V1-056 sub-slice 10i-1): a termination
+    without a time takes the database's own time; a retry keeps its digest, a given time is a
+    different request, and a given time must still carry a time zone."""
+    termination = LeaseTerminateCommand(
+        idempotency_key=uuid4(),
+        event_id=uuid4(),
+        lease_id=uuid4(),
+        expected_version=3,
+        actual_termination_date=date(2027, 1, 1),
+        occurred_at=None,
+        governing_event_reference="BR-LEASE-021",
+        reason="Approved voluntary departure",
+        authorization_reference=LEASE_TERMINATE_CAPABILITY,
+    )
+
+    assert lease_request_digest("lease.terminate", termination) == lease_request_digest(
+        "lease.terminate", replace(termination)
+    )
+    assert lease_request_digest("lease.terminate", termination) != lease_request_digest(
+        "lease.terminate", replace(termination, occurred_at=datetime(2027, 1, 1, tzinfo=UTC))
+    )
+    with pytest.raises(ValueError, match="timezone"):
+        replace(termination, occurred_at=datetime(2027, 1, 1))
 
 
 def test_draft_rejects_partial_or_reversed_contractual_periods() -> None:

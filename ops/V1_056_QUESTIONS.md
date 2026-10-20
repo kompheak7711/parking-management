@@ -3430,3 +3430,24 @@ Your answer 1 to the 10h-2 report: add the READ COMMITTED check to the 8e-1 refu
 **Recommendation: (a)**, as in Q-145: your answer to the 10h-3 report sets the rule that a waiting draft is decided before the closure or a correction goes ahead, and this is the last such draft the preview does not list. If you meant (b), say so and nothing is built.
 
 **What goes ahead.** Everything: 10h-4b and the Q-112 times sub-slice do not change the preview's pending-draft check. The slice 12 note and the slice 11 message are recorded now; under (a) the slice 12 note leaves the list when the sub-slice is built.
+
+**Owner note (2026-10-20, fresh session, with the 10h-4b report).** The Q-145 point 2 answer was unclear; this question stays open and nothing is built for it before the owner's answer. The Q-112 times sub-slice does not depend on it and goes ahead.
+
+**Also answered with the 10h-4b report (2026-10-20).** (1) The 10h-4b test changes are accepted, including the changed amounts in `test_invoice_migration.py::test_concurrent_duplicate_rent_period_and_billing_run_are_rejected` (nothing is written when both writers are refused) and the rename of the pet test. (2) Screens: under the new build order all screens are rebuilt to the owner's UI design after the login slice; in the Q-112 times sub-slice the frontend changes only as far as the rule needs to work and be tested, with no polish or redesign. (3) Run-rule slip in 10h-4b (a targeted run was given a background time limit that was too short): every targeted and full run gets a time limit long enough for the whole run. Order: the Q-112 times sub-slice (with the Q-2026-10-18-133 and Q-2026-10-19-138 answers, pre-code design first); then stop and tell the owner, before slice 11. Recorded in docs/010.
+
+## Q-2026-10-20-147 — Q-112 times sub-slice: the Reservation's holding deposit `received_at` (blocks nothing in 10i-1 to 10i-3; nothing is built for it before your answer; recommendation (a))
+
+**What the rule says.** Your answer (a) to Q-2026-10-14-112 point 1: a time that means the moment staff save the action comes from the database clock; a time that records something that happened before it was saved, like money received earlier, is not changed and is asked first. The Reservation create screen sends the device time at the save as `received_at` (`ReservationManagement.tsx`, `const now = new Date().toISOString()`); the route uses it twice: as the holding Security Deposit receipt's time (`app.deposit_receipts.occurred_at`) and as the deposit acceptance's `accepted_at`. Its name says "received", so it is asked first.
+
+**What it records today.** The money's own receipt time is the Payment's `received_at`, entered by staff on the Payment screen and unchanged here. The Reservation create links an already confirmed Payment, and the database refuses a Deposit receipt dated before that Payment's confirmation time (`Deposit receipt Payment source is ineligible`) or more than 5 seconds after its own clock. So this time can never be the earlier moment the money was received; it can only be the moment staff put the confirmed Payment's money into the Deposit, which is what a Lease Deposit receipt already records with the database's own time (sub-slice 10e-2b-4b-2b).
+
+**Example.** A Customer pays 200.00 in cash at 09:00; staff record and confirm the Payment at 09:05 (the Payment keeps "received 09:00"). At 09:40 staff create the Reservation with that Payment. Today the screen sends the device time: on a laptop 3 seconds fast the receipt is dated 09:40:03 (accepted); on one 2 minutes slow, a create right after the Payment's confirmation is refused (the receipt would be dated before the confirmation); on one set to the day before it is refused too. Under (a) the receipt and the acceptance are dated 09:40:00 by the database, and the Payment still says the money came at 09:00.
+
+**Options.**
+- (a) Both times come from the database clock at the save, as for the termination and the extension: the screen sends nothing, the route refuses a body that sends `received_at` (422), the service passes the database's statement time. One small sub-slice with its tests (the route and screen tests that send the field change, as the Q-112 answer covers).
+- (b) Keep a staff time, but the screen asks for it explicitly (a "put into the Deposit at" field), still checked by the database as today.
+- (c) Keep it as it is (a known limit; staff devices must keep a correct clock).
+
+**Recommendation: (a)**, because the time cannot mean the moment the money was received (the database already refuses any time before the Payment's confirmation), the money's real receipt time stays on the Payment, and one clock rule is simpler for staff. If you choose (a), it is built when you send it (the build order pauses V1-056 after the Q-112 times sub-slice).
+
+**What goes ahead.** Everything: 10i-1 to 10i-3 do not change the Reservation create.

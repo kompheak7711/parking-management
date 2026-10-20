@@ -755,6 +755,10 @@ with reason, Unit returned to VACANT; the Security Deposit stays held until a fo
 draft is confirmed by a `financial.approve` holder, V1-056 slice 6) or moved in (Invoice kept, prorated credit Adjustment for the
 days after termination, move-out). Every step requires explicit authorized confirmation.
 
+Neither termination form sends a termination time; the server records the database's
+own time, and a retry of the same form replays the first result (BR-AUDIT-003, owner
+answer (a) to Q-2026-10-14-112 point 1, V1-056 sub-slice 10i-1).
+
 ## UI-077 — Continued Occupancy
 
 When occupancy continues after contractual End Date, show the mismatch and require

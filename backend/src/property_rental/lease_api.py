@@ -964,7 +964,6 @@ class LeaseTerminateSource(BaseModel):
 
     event_id: UUID
     actual_termination_date: date
-    occurred_at: datetime
     governing_event_reference: Annotated[str, Field(min_length=1, max_length=255)]
     reason: Annotated[str, Field(min_length=1, max_length=500)]
     context: TerminationContextSource | None = None
@@ -1532,7 +1531,8 @@ def create_lease_router(
                     lease_id=lease_id,
                     expected_version=_version(if_match),
                     actual_termination_date=source.actual_termination_date,
-                    occurred_at=source.occurred_at,
+                    # The database's own time at the command (Q-2026-10-14-112).
+                    occurred_at=None,
                     governing_event_reference=source.governing_event_reference,
                     reason=source.reason,
                     authorization_reference=LEASE_TERMINATE_CAPABILITY,

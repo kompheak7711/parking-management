@@ -326,14 +326,16 @@ def test_a_leftover_receipt_waiting_for_the_deposit_holds_no_obligation_table_lo
     assert (held(url, security), written(url, security)) == (before + 5_000, (2, 1, 1))
 
 
-def test_a_receipt_beside_an_uncommitted_termination_is_recorded_known_limit(
+def test_a_receipt_beside_an_uncommitted_termination_waits_and_is_refused(
     migrated_database_url: str,
 ) -> None:
-    """Review round 2 (both reviewers, note 1; a known limit in the plan's slice 12 list): the
-    termination locks the Lease, not its Deposits, and the writer reads the Lease status without
-    a lock, so a receipt recorded while a voluntary early termination (whose ground keeps the
-    Security Deposit) is still uncommitted reads the Lease as signed and is recorded, dated after
-    the termination; once the termination is committed, the next receipt is refused (55000)."""
+    """Review round 2 (both reviewers, note 1) showed a receipt recorded beside an uncommitted
+    termination; owner answer (a) to Q-2026-10-18-133 (sub-slice 10i-1, renamed from
+    `test_a_receipt_beside_an_uncommitted_termination_is_recorded_known_limit`): the termination
+    also locks the Lease's Deposits, so a receipt saved while a voluntary early termination (whose
+    ground keeps the Security Deposit) is still uncommitted waits for it and, after its commit,
+    reads the terminated Lease and is refused (55000); no receipt of that Payment is written, and
+    the next receipt is refused the same way."""
     url = migrated_database_url
     source = signed_with_initial(url, this_month(url))
     human, prop, lease, security = (
@@ -370,19 +372,12 @@ def test_a_receipt_beside_an_uncommitted_termination_is_recorded_known_limit(
         )
         try:
             recorded = pool.submit(attempt, prop, human, security, paid_by, 5_000)
-            assert recorded.result(timeout=10) == (None, None)
+            wait_until_blocked_by(url, terminating)
+            assert not recorded.done()
         finally:
             terminating.commit()
-    assert (
-        value(
-            url,
-            "SELECT bool_and(receipt.occurred_at>lease.terminated_at) FROM app.deposit_receipts "
-            "receipt JOIN app.leases lease ON lease.id=%s WHERE receipt.payment_id=%s",
-            lease,
-            paid_by,
-        )
-        is True
-    )
+        assert recorded.result(timeout=10) == ("55000", KEPT)
+    assert value(url, "SELECT count(*) FROM app.deposit_receipts WHERE payment_id=%s", paid_by) == 0
     assert value(
         url, "SELECT app.lease_termination_forfeiture_rule(%s,%s,'SECURITY')", prop, lease
     ) == ("BR-DEP-023")

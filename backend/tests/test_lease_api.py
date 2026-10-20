@@ -458,7 +458,6 @@ def test_signer_signing_renewal_and_termination_are_explicit_commands() -> None:
         json={
             "event_id": str(uuid4()),
             "actual_termination_date": "2027-08-15",
-            "occurred_at": "2027-08-15T01:00:00Z",
             "governing_event_reference": "approved-termination-1",
             "reason": "Authorized termination boundary",
         },
@@ -519,6 +518,37 @@ def test_signing_routes_take_no_signing_time_from_the_request() -> None:
     assert flow.signature_command.signed_at is None
     assert flow.sign_command is not None
     assert flow.sign_command.signed_at is None
+
+
+def test_terminate_route_takes_no_termination_time_from_the_request() -> None:
+    """Owner answer (a) to Q-2026-10-14-112 point 1 (V1-056 sub-slice 10i-1): the termination
+    route sends no time to the flow, so the database takes its own; a body that still sends one is
+    refused (422) and the flow is not called."""
+    property_id = uuid4()
+    signed = replace(resource(property_id, lease_status=LeaseStatus.SIGNED), version=2)
+    flow = InMemoryLeaseFlow({signed.lease_id: signed})
+    api = client(flow, actor(property_id, "leases.read", "leases.terminate"))
+    path = f"/api/v1/leases/{signed.lease_id}/terminate"
+    body = {
+        "event_id": str(uuid4()),
+        "actual_termination_date": "2027-08-15",
+        "governing_event_reference": "approved-termination-1",
+        "reason": "Authorized termination boundary",
+    }
+
+    refused = api.post(
+        path, headers=headers(version=2), json={**body, "occurred_at": "2027-08-15T01:00:00Z"}
+    )
+
+    assert refused.status_code == 422
+    assert refused.json()["error"]["fields"] == ["body.occurred_at"]
+    assert [flow.terminate_command] == [None]
+
+    terminated = api.post(path, headers=headers(version=2), json=body)
+
+    assert terminated.status_code == 200, terminated.text
+    assert flow.terminate_command is not None
+    assert flow.terminate_command.occurred_at is None
 
 
 def test_coordinated_occupancy_and_complete_move_in_share_atomic_service_boundary() -> None:

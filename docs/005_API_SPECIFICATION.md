@@ -455,6 +455,13 @@ The signing body is `event_id` and `reason` only. The server records the
 database's own time at the command as the Lease signing time; a body that sends
 `signed_at` is refused with 422 (BR-AUDIT-003, Q-2026-10-14-110).
 
+The termination body is `event_id`, `actual_termination_date`,
+`governing_event_reference`, `reason` and the optional `context`. The server records
+the database's own time at the command as the termination time; a body that sends
+`occurred_at` is refused with 422, and a retry with the same Idempotency-Key and body
+returns the first result with its first time (BR-AUDIT-003, owner answer (a) to
+Q-2026-10-14-112 point 1, V1-056 sub-slice 10i-1).
+
 For an approved voluntary early termination, the termination result charges the
 full move-out calendar month's Rent, applicable Utility/fixed Service/other
 approved obligations, records Security Deposit non-refundability through explicit

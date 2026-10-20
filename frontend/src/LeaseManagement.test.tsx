@@ -669,6 +669,72 @@ describe("Lease staff workflow", () => {
         name: "Unpaid Initial obligation follow-up",
       });
     });
+    it("TEST-FE-678 sends no device time with the authorized termination", async () => {
+      const api = client({ get: vi.fn().mockResolvedValue(signed) });
+      vi.spyOn(window, "confirm").mockReturnValue(true);
+      await loadAndOpen(api);
+      fireEvent.change(screen.getByLabelText("Actual termination date"), {
+        target: { value: "2026-09-10" },
+      });
+      fireEvent.change(screen.getByLabelText("Governing event reference"), {
+        target: { value: "approved-termination-1" },
+      });
+      fireEvent.change(screen.getByLabelText("Termination reason"), {
+        target: { value: "Authorized termination boundary" },
+      });
+      fireEvent.click(
+        screen.getByRole("button", { name: "Apply authorized termination" }),
+      );
+      await waitFor(() => {
+        expect(api.terminate).toHaveBeenCalledTimes(1);
+      });
+      const source = vi.mocked(api.terminate).mock.calls[0]?.[1];
+      expect(Object.keys(source ?? {}).sort()).toEqual([
+        "actual_termination_date",
+        "event_id",
+        "governing_event_reference",
+        "reason",
+      ]);
+    });
+    it("TEST-FE-679 sends no device time with the unpaid Initial termination, also on its retry", async () => {
+      const terminate = vi
+        .fn()
+        .mockRejectedValueOnce(new Error("network"))
+        .mockResolvedValue(terminated);
+      const api = client({
+        get: vi.fn().mockResolvedValue(signed),
+        terminate,
+      });
+      vi.spyOn(window, "confirm").mockReturnValue(true);
+      await loadAndOpen(api);
+      fillTermination();
+      const submit = () => {
+        fireEvent.click(
+          screen.getByRole("button", {
+            name: "Terminate for unpaid Initial obligation",
+          }),
+        );
+      };
+      submit();
+      await waitFor(() => {
+        expect(terminate).toHaveBeenCalledTimes(1);
+      });
+      await screen.findByText(/was not completed/);
+      submit();
+      await waitFor(() => {
+        expect(terminate).toHaveBeenCalledTimes(2);
+      });
+      for (const call of terminate.mock.calls) {
+        const source = (call as [unknown, Record<string, unknown>])[1];
+        expect(Object.keys(source).sort()).toEqual([
+          "actual_termination_date",
+          "context",
+          "event_id",
+          "governing_event_reference",
+          "reason",
+        ]);
+      }
+    });
     it("TEST-FE-652 sends the notice identity and period end when a notice applies", async () => {
       const api = client({ get: vi.fn().mockResolvedValue(signed) });
       vi.spyOn(window, "confirm").mockReturnValue(true);
