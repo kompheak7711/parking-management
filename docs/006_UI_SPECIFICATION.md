@@ -226,11 +226,15 @@ Tabs or sections include:
 
 Historical and future non-overlapping Leases are distinct from current occupancy.
 
+Amended by DL-078 (owner, 2026-10-20): Unit detail shows floor, Unit Type, size in m², bedrooms, bathrooms, view, kitchen, Room features, notes and the Unit inventory with its History.
+
 ## UI-027 — Unit Actions
 
 Authorized actions may update editable Unit source data or start an approved
 Reservation/Lease/Meter workflow. The UI must not offer generic deletion for a Unit
 with historical references.
+
+Amended by DL-078 (owner, 2026-10-20): New Unit and Update Unit pick from the DL-075 lists; the Unit number cannot be changed.
 
 # 8. Customer Screens
 
@@ -238,6 +242,8 @@ with historical references.
 
 Search and display approved identifying/contact fields and concise current
 relationship indicators. Do not assign permanent Customer types.
+
+Amended by DL-078 (owner, 2026-10-20): the Customers page search may find a Customer by ID or passport number; the result list does not show the ID number (SEC-041). The top bar search never searches ID numbers.
 
 ## UI-029 — Customer Detail
 
@@ -251,6 +257,8 @@ Show identity/contact source data and role-based relationships:
 - Customer Credit;
 - Refunds; and
 - audit history.
+
+Amended by DL-078 (owner, 2026-10-20): Customer detail shows legal name, date of birth, gender, nationality, ID number / Passport number, phone, email, address and memo.
 
 ## UI-030 — Customer Financial Summary
 

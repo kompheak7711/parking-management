@@ -5055,6 +5055,8 @@ A dedicated maintenance domain may be introduced later.
 
 Purchasing, stock control, furniture inventory, and consumable inventory are outside the current domain.
 
+Amended by DL-078 (owner, 2026-10-20): each Unit has an inventory: a list of items with a quantity, grouped as Furniture, Appliances, Kitchen and Bathroom, each change dated and kept in History. It charges nothing by itself; move-out charges still come only from inspection findings. Purchasing, stock control and consumable inventory stay outside the domain.
+
 ---
 
 ## 90.7 Tax Accounting

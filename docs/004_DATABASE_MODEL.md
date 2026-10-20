@@ -173,6 +173,8 @@ Constraints and indexes:
 
 Amended by DL-075 (owner, 2026-10-20): `unit_type` comes from the Unit Types Settings list instead of the four fixed values; Floors, Views, Kitchens and Room features are Settings lists too. An item used by a Unit cannot be removed. Not built yet (screen rebuild).
 
+Amended by DL-078 (owner, 2026-10-20): new Unit columns: size in m², bedrooms, bathrooms, view, kitchen, Room features and notes (lists from DL-075), and a new append-only Unit inventory table (item, quantity, group Furniture, Appliances, Kitchen or Bathroom, dated History). `unit_number` cannot change after creation. One Unit photo is built in the later file storage step. Not built yet (screen rebuild).
+
 ## DB-CUST-001 — `customers`
 
 | Column | Type | Null | Rule |
@@ -191,6 +193,8 @@ matching remain a technical choice under TCD-DB-001; no unapproved mandatory con
 channel is introduced.
 
 Amended by DL-071 (owner, 2026-10-20; answer 11): a new Customer field "ID number / Passport number" (owner-approved personal data). A Customer with the same ID number as another Customer is refused, and staff use the existing Customer. The same phone number or email address as another Customer gives a warning and may still be saved through the existing `confirmed_distinct` flow. The ID number never appears in exports or in the top bar search. The ID number is required for every Customer, and two ID numbers are the same when they match after removing spaces and dashes and ignoring capital letters (owner, 2026-10-21). Not built yet (V1-059).
+
+Amended by DL-078 (owner, 2026-10-20): new optional Customer columns: date of birth, gender (`FEMALE` or `MALE`) and nationality (owner-approved personal data, SEC-006). Not built yet (screen rebuild).
 
 ---
 

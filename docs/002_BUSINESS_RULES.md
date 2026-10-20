@@ -159,6 +159,8 @@ A Unit may have only one current status:
 
 Each Unit Number must be unique within the Property.
 
+Amended by DL-078 (owner, 2026-10-20): the Unit number cannot change after the Unit is created.
+
 ---
 
 ## BR-UNIT-004 — Reservation Availability
@@ -331,6 +333,8 @@ Changing current Customer contact information must not alter the historical mean
 - Payments
 - Occupancies
 - financial records
+
+Amended by DL-078 (owner, 2026-10-20): Customer details are legal name (required), date of birth, gender (Female or Male), nationality, ID number / Passport number (required and unique, DL-071), phone, email, address and memo; changing them never changes past records.
 
 ---
 

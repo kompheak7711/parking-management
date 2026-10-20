@@ -370,6 +370,8 @@ Amended by DL-071 (owner, 2026-10-20): the owner approves a new Customer field "
 
 Amended by DL-072 (owner, 2026-10-04): an export shows a Customer only with name, Unit and phone number: no ID number, no address and no ID document.
 
+Amended by DL-078 (owner, 2026-10-20): the owner approves date of birth, gender and nationality as Customer fields (SEC-006). The Customers page search may find a Customer by ID number without listing it; exports still hold only name, Unit and phone.
+
 ## SEC-042 — Export Protection
 
 Customer and financial exports require an export capability, an audit event, and
