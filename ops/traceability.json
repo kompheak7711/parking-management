@@ -44333,6 +44333,45 @@
       "test_path": "frontend/src/ReservationManagement.test.tsx",
       "status": "implemented",
       "notes": "The Reservation create form sends exactly the identities, dates, amounts, Payment and reason, no device time (owner answer (a) to Q-2026-10-20-147; V1-056 sub-slice 10i-4b)."
+    },
+    {
+      "test_id": "test_a_waiting_correction_whose_plan_uses_a_credit_holds_the_other_lease",
+      "upstream_ids": [
+        "BR-SETTLE-002",
+        "BR-SETTLE-012",
+        "BR-SETTLE-013",
+        "BR-CREDIT-008",
+        "DL-032"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_preview_credit_step_wait_migration.py",
+      "status": "implemented",
+      "notes": "A closed Lease's waiting REFUND correction draft whose plan lets the Customer's Credit K (300) pay its line first is the only blocking issue of the Customer's second terminated Lease, whose Settlement draft is not recorded (55000; K keeps 300); the closed Lease's own preview and a Lease none of whose people holds K are not held; after the withdrawal the Lease is ready and closes with a plan in which K pays 300 of its own line (owner answer (a) to Q-2026-10-20-146; V1-056 sub-slice 10i-4c)."
+    },
+    {
+      "test_id": "test_a_waiting_refund_that_releases_value_into_a_credit_holds_the_other_lease",
+      "upstream_ids": [
+        "BR-SETTLE-002",
+        "BR-SETTLE-012",
+        "BR-SETTLE-013",
+        "BR-CREDIT-008",
+        "DL-032"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_preview_credit_step_wait_migration.py",
+      "status": "implemented",
+      "notes": "A closed Lease's waiting REFUND correction draft with no Credit step that releases 200 of a Settlement Credit application back into the second Signer's Credit holds that Signer's own terminated Lease (its only blocking issue; the 8e-3 confirm of its Settlement draft recorded earlier is refused and the draft stays pending) until the draft is confirmed; then the early draft is withdrawn and that Lease records again and closes (owner answer (a) to Q-2026-10-20-146; V1-056 sub-slice 10i-4c)."
+    },
+    {
+      "test_id": "test_the_credit_step_wait_migration_is_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "BR-SETTLE-002",
+        "DL-032"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_preview_credit_step_wait_migration.py",
+      "status": "implemented",
+      "notes": "The migration changes only the body of app.final_settlement_preview (owner, privileges, definer flag and settings kept) and adds the correction branch once; no function is added and no trigger, relation, column, privilege or constraint changes; forward-only (V1-056 sub-slice 10i-4c)."
     }
   ]
 }

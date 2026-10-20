@@ -2819,7 +2819,12 @@ since V1-056 sub-slice 10h-4a (migration `20270112_169`; owner answer 2 of 2026-
 10h-3 report) also another Settlement's waiting `SETTLEMENT_CORRECTION` draft of the variant
 `HELD_VALUE_REFUND` whose `customer_credit_id` is a Credit held by a Settlement Customer (a
 Deposit held-value draft names no Credit and is not listed; a Settlement's own held-value draft
-is not listed for it);
+is not listed for it); since V1-056 sub-slice 10i-4c (migration `20270117_174`; owner answer (a)
+to Q-2026-10-20-146) also another Settlement's waiting `SETTLEMENT_CORRECTION` draft of any
+variant whose plan (`payload->'plan'->'steps'`, read only when an array) has a `CUSTOMER_CREDIT`
+step on a Credit held by a Settlement Customer, or of the variant `REFUND` whose plan overlay
+(`payload->'plan_overlay'->'credits'`, read only when an object) has a key that is such a Credit
+(a released Payment allocation is keyed by its allocation and is not listed);
 `ONE_TIME_CHARGE_NOT_INVOICED` for a one-time charge source of the Lease on
 no DRAFT or issued, non-VOID Invoice that is still waiting to be billed (not one whose Invoice was
 VOIDed and not one a draft correction replaced, read from `app.invoice_draft_revision_events`;
