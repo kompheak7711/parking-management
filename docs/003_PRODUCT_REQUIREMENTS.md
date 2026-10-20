@@ -369,6 +369,8 @@ A Unit may use only one of the following Unit Types:
 
 Commercial Unit is not supported.
 
+Amended by DL-075 (owner, 2026-10-20): as BR-UNIT-001: Unit Types are a Settings list (the Owner or a user with Settings access, DL-074), no longer the four fixed types above, which are today's values. A Unit Type used by a Unit cannot be removed. Commercial Unit stays unsupported (DL-001).
+
 ### PR-UNIT-002 — Supported Unit Statuses
 
 **Business-rule traceability:** `BR-UNIT-002`
@@ -663,6 +665,8 @@ Property's configured local timezone.
 The initial Reservation Expiration Date must not be more than 21 calendar days
 from the Reservation Date. A shorter initial period is permitted.
 
+Amended by DL-075 (owner, 2026-10-20): as BR-RES-006: the 21 days are the Settings default for the longest first expiry. A new value applies only to new Reservations.
+
 ### PR-RES-007 — Reservation Extension Eligibility
 
 **Business-rule traceability:** `BR-RES-007`
@@ -688,6 +692,8 @@ existing Expiration Date.
 
 The extension is calculated from the existing Expiration Date, not from the date
 on which the extension is approved.
+
+Amended by DL-075 (owner, 2026-10-20): as BR-RES-008: the 14 days are the Settings default for the one extension. A new value applies only to new Reservations. The extension window of BR-RES-007 stays fixed.
 
 ### PR-RES-009 — Extension Is Not a Status
 
@@ -914,6 +920,8 @@ timestamp, and reason. It must not reject a Reservation merely because the colle
 Security Deposit is below 20%. A lower accepted amount may legitimately hold the Unit
 for a short Reservation period when authorized management accepts that arrangement.
 This amount is Security Deposit, not a fee or separate Deposit type.
+
+Amended by DL-075 (owner, 2026-10-20): as BR-DEP-003: the 20 percent is the Settings default for the suggested deposit. A new value applies only to new Reservations.
 
 ### PR-DEP-004 — Required Security Deposit Amount
 
@@ -1987,6 +1995,8 @@ Example:
 | 25 August       | September     |
 | 25 September    | October       |
 
+Amended by DL-075 (owner, 2026-10-20): as BR-RENT-008: the 25th is the Settings default issue day (day 1 to 28, after the reading day). A change starts with the next billing month.
+
 ### PR-RENT-009 — Rent Invoice Due Dates
 
 **Business-rule traceability:** `BR-RENT-009`
@@ -2020,6 +2030,8 @@ on the following calendar day in `Asia/Phnom_Penh`. Any response, including term
 under BR-LEASE-005 and BR-LEASE-025, is a separate manual authorized action; nothing is
 automatic. The actual Move-in Date is recorded when move-in occurs, whether or not the
 Invoice is paid.
+
+Amended by DL-075 (owner, 2026-10-20): as BR-RENT-009: the 5th is the Settings default Due Date day for recurring Rent and monthly Utility Invoices (day 1 to 28). A change starts with the next billing month; an issued Due Date never changes. The Initial Rent Due Date of the Lease Start Date plus five calendar days stays fixed.
 
 ### PR-RENT-010 — Invoice Generation Eligibility
 
@@ -2292,6 +2304,8 @@ termination boundary.
 
 The Initial Rent Invoice is not an applicable source Invoice for a late-payment charge.
 
+Amended by DL-075 (owner, 2026-10-20): as BR-RENT-029: the 10% is the Settings default late-payment rate, a whole percent from 0 to 10 (Lease Article 2.3 allows up to 10%). A new rate starts with the next billing month and applies to charges added after the change, for every Lease, never above 10%.
+
 ## 8.10 Utility Management and Billing Requirements
 
 ### PR-UTIL-001 — Supported Utility Types
@@ -2510,6 +2524,8 @@ is generated.
 That one rate applies to the entire consumption period represented by the
 Invoice.
 
+Amended by DL-075 (owner, 2026-10-20): as BR-UTIL-015: a new Utility Rate starts on a reading day (UI-091). The Rate effective on the Invoice generation date still applies.
+
 ### PR-UTIL-016 — Historical Rate Preservation
 
 **Business-rule traceability:** `BR-UTIL-016`
@@ -2611,6 +2627,8 @@ validated Readings or approved estimate. Its Due Date follows BR-INV-018. It mus
 duplicate a consumption period billed by the monthly run under BR-UTIL-018 and
 BR-INV-027.
 
+Amended by DL-075 (owner, 2026-10-20): as BR-UTIL-021: the final Utility Invoice is due 7 days after issue (Lease Article 14.3), whatever the "days after issue" setting says.
+
 ### PR-UTIL-022 — Utility Due Date
 
 **Business-rule traceability:** `BR-UTIL-022`
@@ -2622,6 +2640,8 @@ Property's configured local timezone, where “following month” is relative to
 billing month defined in BR-UTIL-020.
 
 The final Utility Invoice created at move-out follows BR-INV-018 instead.
+
+Amended by DL-075 (owner, 2026-10-20): as BR-UTIL-022: the 5th is the Settings default Due Date day (day 1 to 28). A change starts with the next billing month.
 
 ### PR-UTIL-023 — Confirmed Broken-Meter Estimation
 
@@ -2802,6 +2822,8 @@ the future. This document approves no other Service type. Any different Service
 requires a separate Owner-approved rule and explicit configuration before billing;
 staff must not create an arbitrary Service through a generic or miscellaneous field.
 
+Amended by DL-075 (owner, 2026-10-20): as BR-SVC-001: widened. Services are added in Settings by the Owner or a user with Settings access (DL-074), each with an English and a Khmer name, a Service type and a monthly rate. A Service type is "Only one per Lease" or "One or more per Lease"; changing a type to "Only one per Lease" is refused while a Lease holds two Services of that type, and a type that has Services cannot be removed. Trash Collection is chosen by default on a new Lease.
+
 ### PR-SVC-002 — Service Charge Independence
 
 **Business-rule traceability:** `BR-SVC-002`
@@ -2865,6 +2887,8 @@ Every service charge revision shall have an effective date.
 The revised amount applies only to billing periods beginning on or after that effective date.
 
 The applicable configured Service terms remain the source of truth.
+
+Amended by DL-075 (owner, 2026-10-20): as BR-SVC-005: a new Service rate starts on the first day of a later month. Issued Invoices keep the old rate, and a new Service name shows only on new Invoices.
 
 ### PR-SVC-006 — Historical Service Rate Preservation
 
@@ -2945,6 +2969,8 @@ and the same applicable Due Date as the recurring Rent Invoice.
 Normal recurring generation resumes with the first complete calendar month after the
 Initial Service period under BR-SVC-012. A scheduled run must not generate a Service
 period already covered by that Initial Service period.
+
+Amended by DL-075 (owner, 2026-10-20): as BR-SVC-011: the 25th is the Settings default issue day. A change starts with the next billing month.
 
 ### PR-SVC-012 — Initial Recurring-Service Period
 
@@ -3325,6 +3351,8 @@ proposes a Due Date of the issue date plus the Property's configured number of c
 days, seven by default. An authorized user may set a different Due Date with a mandatory
 reason; the actor and timestamp are recorded. The Due Date is fixed once issued. Debit
 Adjustments use their Invoice's Due Date under BR-INV-044.
+
+Amended by DL-075 (owner, 2026-10-20): as BR-INV-018: the configured number of days is the Settings "days after issue" (1 to 90, default 7), which applies at once to Invoices issued after the change. The move-out cleaning charge, move-out Damage Charges and the final Utility Invoice are due 7 days after issue (Lease Article 14.3), whatever the setting says; the authorized override with a mandatory reason stays.
 
 ### PR-INV-019 — Adjustment Principle
 
@@ -4018,6 +4046,8 @@ Accepted Payment Methods are configured business data and are not hard-coded by
 this document. Only a currently accepted configured method may be used.
 
 Supported Payment currencies are USD and KHR under BR-MONEY-002.
+
+Amended by DL-075 (owner, 2026-10-20): as BR-PAY-006: Payment Methods are added, edited and turned off in Settings. Each method says whether it needs a reference. A method used on a Receipt is never deleted, only turned off. At least one method stays on, and only methods that are on can be chosen.
 
 ### PR-PAY-007 — Payment Method Preservation
 

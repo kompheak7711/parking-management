@@ -925,6 +925,8 @@ bundles. Effective-dated history is visible and protected.
 
 Amended by DL-074 (owner, 2026-10-20): the Owner, or a user the Owner ticks for "Settings access", may change the settings. Only the Owner gives or removes Settings access, and the Owner always has it. Every change is dated, written to the audit history, and never changes an issued Invoice, Receipt or Refund.
 
+Amended by DL-075 (owner, 2026-10-20): the Settings screens hold the billing calendar, Reservation limits, Payment Methods, number letters and next numbers, Utility Rates (a new Rate starts on a reading day), Services, move-out cleaning rate groups and the Unit setup lists (Floors, Unit Types, Views, Kitchens, Room features), with today's values as defaults.
+
 ## UI-092 — User and Capability Administration
 
 Authorized administrators may create/disable accounts, configure role bundles and

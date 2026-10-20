@@ -1950,6 +1950,8 @@ Due date: 5 August
 
 The exact generation and due-date rules are defined in `002_BUSINESS_RULES.md`.
 
+Amended by DL-075 (owner, 2026-10-20): the 25th issue day and the 5th Due Date day are the Settings defaults (days 1 to 28, the issue day after the reading day); a change starts with the next billing month and never changes an issued Invoice.
+
 ---
 
 ## 21.2 Initial Rent Invoice
@@ -2187,6 +2189,8 @@ Next normal generation:           25 August for 1–30 September, due 5 Septembe
 Historical service rates must be preserved.
 
 A current service-rate change must not alter prior invoices.
+
+Amended by DL-075 (owner, 2026-10-20): Services are added in Settings by the Owner or a user with Settings access (DL-074), each with an English and a Khmer name, a Service type ("Only one per Lease" or "One or more per Lease") and a monthly rate that starts on the first day of a later month. Trash Collection is chosen by default on a new Lease. Issued Invoices keep their rate and name.
 
 ---
 
@@ -4192,6 +4196,8 @@ TWO_BEDROOM
 THREE_BEDROOM
 ```
 
+Amended by DL-075 (owner, 2026-10-20): Unit Types are a Settings list; the four types above are today's values. A Unit Type used by a Unit cannot be removed.
+
 ---
 
 ## Unit Status
@@ -5500,12 +5506,14 @@ Lease terms require it.
     rules and its Due Date of the Lease Start Date plus five calendar days; prorated initial and final portions use
     actual calendar days when applicable.
 25. Recurring monthly Rent Invoices are generated on the 25th and due on the 5th.
+    Amended by DL-075: the 25th and the 5th are the Settings defaults.
 26. Electricity and Water use individual Utility Meters.
 27. One Unit may have only one active meter per Utility Type.
 28. Historical Utility Meters and Utility Readings are preserved.
 29. Trash Collection is the currently approved recurring Service; Internet and
     Monthly Cleaning are not currently provided, and any future Service requires
     explicit Owner approval and configuration.
+    Amended by DL-075: Services are added in Settings (Owner or Settings access).
 30. Historical rates must remain preserved; a Utility Invoice selects the Utility
 Rate effective on its generation date and applies it to the entire represented
 consumption period.

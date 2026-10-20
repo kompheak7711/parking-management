@@ -151,6 +151,8 @@ follows the versioned Property update pattern (expected version, `updated_by`,
 `audit_events` row with the previous and resulting value and a mandatory reason. A
 change applies to Invoices issued afterwards; issued Due Dates never change.
 
+Amended by DL-075 (owner, 2026-10-20): `one_time_charge_due_days` is the Settings "days after issue" for other Invoices; the move-out cleaning charge, move-out Damage Charges and the final Utility Invoice use a fixed 7 days. Settings also hold the reading day (default 24), the issue day (default 25), the Due Date day (default 5), each 1 to 28 with the issue day after the reading day, and the late-payment rate (a whole percent 0 to 10, default 10); these four start with the next billing month. Not built yet (screen rebuild).
+
 ## DB-UNIT-001 — `units`
 
 | Column | Type | Null | Rule |
@@ -168,6 +170,8 @@ Constraints and indexes:
 - `UNIQUE (property_id, unit_number)`.
 - Index `units(property_id, status)`.
 - Status is a stored operational summary; legal availability is derived under DB-DER-003.
+
+Amended by DL-075 (owner, 2026-10-20): `unit_type` comes from the Unit Types Settings list instead of the four fixed values; Floors, Views, Kitchens and Room features are Settings lists too. An item used by a Unit cannot be removed. Not built yet (screen rebuild).
 
 ## DB-CUST-001 — `customers`
 
@@ -270,6 +274,8 @@ and trace. `AUTHORIZED_VARIANCE` is required exactly when the accepted amount di
 from the suggestion; the accepted amount may be below or above the suggestion. The row
 does not change the full required Security Deposit in `deposits`. Update/delete is
 prohibited so activation history cannot be rewritten.
+
+Amended by DL-075 (owner, 2026-10-20): the suggested rate is the Settings value (default 20 percent, 2000 basis points), read only for new Reservations; the `CHECK (= 2000)` changes with the screen rebuild.
 
 ### Signing outcome and signed-Lease move-in (migration `20261005_69`)
 
@@ -616,6 +622,8 @@ formula or substitute Reading.
 
 Append-only version table: `id uuid PK`, `property_id uuid NOT NULL FK`, `utility_type text NOT NULL CHECK IN ('ELECTRICITY','WATER')`, `measurement_unit_code text NOT NULL`, `rate_usd_per_unit numeric(20,8) NOT NULL CHECK (> 0)`, `effective_date date NOT NULL`, `notice_at timestamptz NOT NULL`, `notice_evidence text NOT NULL`, `source_memo text NULL`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`, `UNIQUE (property_id, utility_type, effective_date)`. The configured unit must match the applicable Meter. The Property-local date of `notice_at` must precede `effective_date`. The selected row is the one with greatest `effective_date <= invoice_date`; selection is snapshotted on the Invoice line.
 
+Amended by DL-075 (owner, 2026-10-20): a new Rate's `effective_date` is a reading day. Not built yet (screen rebuild).
+
 ## DB-UTIL-006 — `utility_consumption_periods`
 
 Authoritative billing-source record.
@@ -782,9 +790,13 @@ provided. A future Service identity may be configured without becoming billable;
 approval period may be created only after a separate authoritative Owner-approved
 Service rule and explicit authorization, never merely because staff entered a code.
 
+Amended by DL-075 (owner, 2026-10-20): Services are added in Settings (Owner or Settings access, DL-074) with an English and a Khmer name and a Service type ("Only one per Lease" or "One or more per Lease"). Trash Collection is chosen by default on a new Lease. Not built yet (screen rebuild).
+
 ## DB-SVC-002 — `service_rates`
 
 Append-only: `id uuid PK`, `property_service_id uuid NOT NULL FK`, `monthly_rate_usd_cents bigint NOT NULL CHECK (>0)`, `effective_date date NOT NULL`, `source_memo text NULL`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`, `UNIQUE (property_service_id, effective_date)`. The applicable rate is selected by billing-period start and snapshotted on the Invoice line.
+
+Amended by DL-075 (owner, 2026-10-20): a new rate's `effective_date` is the first day of a later month. Not built yet (screen rebuild).
 
 ## DB-SVC-003 — `property_service_approval_periods`
 
@@ -1208,6 +1220,8 @@ closure, is stale at its confirm after it (its source's refusal changed) and sta
 ## DB-PAY-001 — `payment_methods`
 
 Configured data: `id uuid PK`, `code text NOT NULL UNIQUE`, `display_name text NOT NULL`, `accepted boolean NOT NULL`, provenance columns. Historical Payments retain the selected row and immutable method-code/name snapshots below even if the method is retired.
+
+Amended by DL-075 (owner, 2026-10-20): each method says whether it needs a reference; a method used on a Receipt is never deleted, only turned off; at least one method stays on. Not built yet (screen rebuild).
 
 ## DB-PAY-002 — `exchange_rate_records`
 
