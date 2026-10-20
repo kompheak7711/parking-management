@@ -272,6 +272,7 @@ database_test_suites='
   tests/test_settlement_forfeiture_reversal_after_closure_migration.py
   tests/test_settlement_preview_waiting_drafts_migration.py
   tests/test_settlement_held_value_wait_migration.py
+  tests/test_settlement_closed_change_isolation_migration.py
 '
 
 for database_test_file in $database_test_suites; do

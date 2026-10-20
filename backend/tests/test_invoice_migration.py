@@ -601,7 +601,7 @@ def test_invoice_tables_are_current_forward_only_and_read_only_to_runtime(
     obligation_id = uuid4()
     with psycopg.connect(migrated_database_url) as owner:
         assert owner.execute("SELECT version_num FROM alembic_version").fetchone() == (
-            "20270112_169",
+            "20270113_170",
         )
         expected = {
             "actor_identities",
@@ -735,7 +735,7 @@ def test_invoice_tables_are_current_forward_only_and_read_only_to_runtime(
         command.downgrade(Config(str(Path(__file__).parents[1] / "alembic.ini")), "20260826_28")
     with psycopg.connect(migrated_database_url) as owner:
         assert owner.execute("SELECT version_num FROM alembic_version").fetchone() == (
-            "20270112_169",
+            "20270113_170",
         )
         assert owner.execute(
             "SELECT description FROM app.authorized_nonrecurring_obligations WHERE id=%s",
@@ -3863,11 +3863,14 @@ def test_concurrent_duplicate_rent_period_and_billing_run_are_rejected(
 
     with ThreadPoolExecutor(max_workers=2) as pool:
         adjustment_results = list(pool.map(insert_credit, (1, 2)))
-    assert sorted(adjustment_results) == ["40001", "committed"]
+    # Sub-slice 10h-4b (owner answer (a) to Q-2026-10-20-145 point 1): a REPEATABLE READ writer of
+    # these tables is refused before any read (55000), so neither credit is written; the READ
+    # COMMITTED race is in test_settlement_closed_change_isolation_migration.py.
+    assert sorted(adjustment_results) == ["55000", "55000"]
     with psycopg.connect(migrated_database_url) as verify:
         assert verify.execute(
             "SELECT app.invoice_adjusted_line_obligation(%s)", (adjustment_line_id,)
-        ).fetchone() == (30000,)
+        ).fetchone() == (80000,)
 
     replay_barrier = Barrier(2)
 
@@ -3889,10 +3892,11 @@ def test_concurrent_duplicate_rent_period_and_billing_run_are_rejected(
     with ThreadPoolExecutor(max_workers=2) as pool:
         replay_results = list(pool.map(replay_credit, (1, 2)))
     assert sorted(replay_results) == ["23505", "committed"]
+    # 10h-4b: the refused race above wrote nothing, so one 10,000 credit leaves 70,000.
     with psycopg.connect(migrated_database_url) as verify:
         assert verify.execute(
             "SELECT app.invoice_adjusted_line_obligation(%s)", (adjustment_line_id,)
-        ).fetchone() == (20000,)
+        ).fetchone() == (70000,)
 
     void_barrier = Barrier(2)
 
@@ -3952,7 +3956,8 @@ def test_concurrent_duplicate_rent_period_and_billing_run_are_rejected(
         void_future = pool.submit(void_invoice)
         adjustment_future = pool.submit(adjust_voiding_invoice)
         void_results = [void_future.result(), adjustment_future.result()]
-    assert sorted(void_results) == ["40001", "committed"]
+    # 10h-4b: both REPEATABLE READ writers are refused before any read (55000).
+    assert sorted(void_results) == ["55000", "55000"]
 
     late_correction_barrier = Barrier(2)
 
@@ -3987,7 +3992,10 @@ def test_concurrent_duplicate_rent_period_and_billing_run_are_rejected(
 
     with ThreadPoolExecutor(max_workers=2) as pool:
         late_correction_results = list(pool.map(reduce_late_charge, (1, 2)))
-    assert sorted(late_correction_results) == ["40001", "committed"]
+    # 10h-4b: both REPEATABLE READ writers are refused before any read (55000), so the Charge keeps
+    # its 8,000; the READ COMMITTED race of this guard is in
+    # test_settlement_closed_change_isolation_migration.py.
+    assert sorted(late_correction_results) == ["55000", "55000"]
     with psycopg.connect(migrated_database_url) as verify:
         assert verify.execute(
             "SELECT original_amount_usd_cents + COALESCE((SELECT sum(CASE correction_kind "
@@ -3996,7 +4004,7 @@ def test_concurrent_duplicate_rent_period_and_billing_run_are_rejected(
             "FROM app.late_payment_charge_corrections WHERE late_payment_charge_id=charge.id),0) "
             "FROM app.late_payment_charges AS charge WHERE id=%s",
             (late_charge_id,),
-        ).fetchone() == (7900,)
+        ).fetchone() == (8000,)
 
     generated_race_barrier = Barrier(2)
     with psycopg.connect(migrated_database_url) as timing_connection:
@@ -4259,7 +4267,10 @@ def test_concurrent_invoice_issuance_serializes_lease_and_service_sources(
         termination_future = pool.submit(terminate_before_issuance)
         issuance_future = pool.submit(issue_after_termination_started)
         assert termination_future.result(timeout=20) == "committed"
-        assert issuance_future.result(timeout=20) == "40001"
+        # Sub-slice 10h-4b (owner answer (a) to Q-2026-10-20-145 point 1): the REPEATABLE READ
+        # issue is refused before any read (55000); the READ COMMITTED race is in
+        # test_settlement_closed_change_isolation_migration.py.
+        assert issuance_future.result(timeout=20) == "55000"
 
     with psycopg.connect(migrated_database_url) as setup:
         actor_id, property_id, unit_id, tenant_id, _ = setup_sources(setup)

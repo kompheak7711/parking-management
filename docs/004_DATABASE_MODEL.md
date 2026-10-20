@@ -2881,6 +2881,13 @@ trigger (sub-slice 8e-2 refuses the reversal of a Credit application the Settlem
 DB-CREDIT-003). A scheduled Rent or Utility run item locks the Lease's Settlement row
 `FOR SHARE` and records a Lease whose Settlement is closed as `SKIPPED` with the diagnostic `FINAL_SETTLEMENT_CLOSED`
 (owner answer 1 to Q-2026-10-06-33), an accepted outcome of a successful run.
+Since V1-056 sub-slice 10h-4b (migration `20270113_170`; owner answer (a) to Q-2026-10-20-145
+point 1) the function first refuses (55000, "An Invoice, Adjustment or Late-payment record is
+written at READ COMMITTED") a write at any other isolation level, before any read and so before
+every other trigger of these tables, on any row (also on a Lease with no Final Settlement and on
+a row with no Lease): a snapshot older than a Settlement's start would not see the Settlement. No app path writes these tables at a
+stricter level; the serialization guards of these tables still work for every READ COMMITTED
+writer, which waits for the earlier writer's lock and is then refused.
 
 As built in V1-056 sub-slice 8e-3 (migration `20261029_94`): a `financial.approve` holder
 confirms a pending `FINAL_SETTLEMENT` draft with `app.confirm_final_settlement_draft(property,

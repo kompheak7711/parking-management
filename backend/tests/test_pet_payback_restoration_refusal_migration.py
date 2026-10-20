@@ -109,6 +109,7 @@ STANDING_CHANGED = (
     "A recovery charge of this Pet Deposit changed after this forfeiture's time; record it again"
 )
 GUARD = "could not serialize access due to concurrent update"
+CHANGE_READ_COMMITTED = "An Invoice, Adjustment or Late-payment record is written at READ COMMITTED"
 REFUSED = (
     "55000",
     "A forfeiture recorded while this recovery charge was forgiven is still active; "
@@ -595,13 +596,17 @@ def test_a_restoration_and_a_forfeiture_racing_for_the_deposit_lock_never_both_c
     reconciled(url, case["customer"])
 
 
-def test_at_repeatable_read_the_later_writer_fails_on_the_deposit_guard(
+def test_at_repeatable_read_an_issue_is_refused_and_a_forfeiture_fails_on_the_deposit_guard(
     migrated_database_url: str,
 ) -> None:
     """Review round 1 (security S1): a writer that keeps an older REPEATABLE READ snapshot fails
-    on the Pet Deposit's serialization guard (40001) when the other side committed after that
-    snapshot: an issue of the charge billed again after a committed forfeiture, and a forfeiture
-    after a committed issue. Nothing is written by the failed side."""
+    when the other side committed after that snapshot, and nothing is written by the failed side.
+    A forfeiture after a committed issue fails on the Pet Deposit's serialization guard (40001).
+    An issue of the charge billed again after a committed forfeiture failed on the same guard
+    until sub-slice 10h-4b; since then it is refused before any read (55000), because an Invoice
+    of a Lease is issued only at READ COMMITTED (owner answer (a) to Q-2026-10-20-145 point 1;
+    renamed under the standing rule, it was
+    `test_at_repeatable_read_the_later_writer_fails_on_the_deposit_guard`)."""
     url = migrated_database_url
     case = recovered_case(url, 15_000)
     void(case)
@@ -611,10 +616,13 @@ def test_at_repeatable_read_the_later_writer_fails_on_the_deposit_guard(
         reading.isolation_level = psycopg.IsolationLevel.REPEATABLE_READ
         reading.execute("SELECT 1")
         run(owner(), one_call(case, 15_000))
-        with pytest.raises(psycopg.errors.SerializationFailure) as issued:
+        with pytest.raises(psycopg.Error) as issued:
             reading.execute(*issue_sql(case, again))
-        # The Deposit guard, not the forfeiture's own recovery check (review round 2).
-        assert issued.value.diag.message_primary == GUARD
+        # 10h-4b: refused before any read, so before the Deposit guard (40001 until then).
+        assert (issued.value.sqlstate, issued.value.diag.message_primary) == (
+            "55000",
+            CHANGE_READ_COMMITTED,
+        )
         reading.rollback()
     assert one(url, "SELECT status FROM app.invoices WHERE id=%s", again) == ("DRAFT",)
     [(disposition, _)] = active_forfeitures(url, case["deposit"])

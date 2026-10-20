@@ -42272,7 +42272,7 @@
       "notes": "Review round 1 (both reviewers): the restoration check takes the Pet Deposit lock every forfeiture insert takes. Forfeiture first: an uncommitted 15,000 forfeiture makes the issue of the charge billed again wait, and after its commit the issue is refused (55000, the Invoice stays a DRAFT). Restoration first: an uncommitted issue makes the 15,000 one-call forfeiture wait, and after its commit the forfeiture reads the 15,000 count and is refused (23514) (V1-056 sub-slice 10e-2b-4b-2a)."
     },
     {
-      "test_id": "test_at_repeatable_read_the_later_writer_fails_on_the_deposit_guard",
+      "test_id": "test_at_repeatable_read_an_issue_is_refused_and_a_forfeiture_fails_on_the_deposit_guard",
       "upstream_ids": [
         "BR-SETTLE-013",
         "BR-DEP-022",
@@ -42285,7 +42285,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_pet_payback_restoration_refusal_migration.py",
       "status": "implemented",
-      "notes": "Review round 1 (security S1): at REPEATABLE READ the writer with the older snapshot fails on the Pet Deposit's serialization guard (40001, the guard's own message, pinned in review round 2) in both directions: an issue of the charge billed again after a committed forfeiture, and a forfeiture after a committed issue; nothing is written by the failed side (V1-056 sub-slice 10e-2b-4b-2a)."
+      "notes": "Review round 1 (security S1): at REPEATABLE READ the writer with the older snapshot fails and nothing is written by the failed side: a forfeiture after a committed issue fails on the Pet Deposit's serialization guard (40001, the guard's own message, pinned in review round 2); an issue of the charge billed again after a committed forfeiture failed on the same guard until sub-slice 10h-4b and is now refused before any read (55000, an Invoice of a Lease is issued only at READ COMMITTED; owner answer (a) to Q-2026-10-20-145 point 1; renamed in 10h-4b, it was test_at_repeatable_read_the_later_writer_fails_on_the_deposit_guard) (V1-056 sub-slice 10e-2b-4b-2a)."
     },
     {
       "test_id": "test_a_forfeiture_timed_before_a_charge_issued_ahead_of_the_clock_is_refused",
@@ -43981,6 +43981,87 @@
       "test_path": "backend/tests/test_settlement_held_value_wait_migration.py",
       "status": "implemented",
       "notes": "The migration changes only the bodies of app.final_settlement_preview and app.lease_deposit_reversal_source (owner, privileges, definer flag and settings kept), adds the held-value branch and the isolation check once each, adds no function, changes no trigger, relation, column, privilege or constraint, and is forward-only (V1-056 sub-slice 10h-4a)."
+    },
+    {
+      "test_id": "test_an_older_snapshot_cannot_change_a_closed_lease_s_invoice",
+      "upstream_ids": [
+        "BR-SETTLE-012",
+        "BR-SETTLE-013",
+        "DL-032",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_closed_change_isolation_migration.py",
+      "status": "implemented",
+      "notes": "Owner answer (a) to Q-2026-10-20-145 point 1: REPEATABLE READ and SERIALIZABLE snapshots taken before the Lease's Final Settlement started still see no Settlement row after its closure; each one's credit Adjustment of the unpaid Damage line is refused before any read (55000), nothing is written and the line owes the same; at READ COMMITTED the same Adjustment meets the closed Settlement (P5S01) (V1-056 sub-slice 10h-4b)."
+    },
+    {
+      "test_id": "test_every_guarded_write_outside_read_committed_is_refused_before_any_read",
+      "upstream_ids": [
+        "BR-SETTLE-012",
+        "BR-SETTLE-013",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_closed_change_isolation_migration.py",
+      "status": "implemented",
+      "notes": "A bare insert (only an id) into each of the eight tables the closed Final Settlement refusal guards, and the issue of a DRAFT Rent Invoice of a signed Lease, are refused at REPEATABLE READ and SERIALIZABLE with the isolation refusal (55000) before any read and before every other trigger or constraint; nothing is written and the Invoice stays a DRAFT (V1-056 sub-slice 10h-4b)."
+    },
+    {
+      "test_id": "test_at_read_committed_a_second_credit_adjustment_waits_and_is_refused",
+      "upstream_ids": [
+        "BR-INV-044",
+        "DB-TXN-003"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_closed_change_isolation_migration.py",
+      "status": "implemented",
+      "notes": "The guard of the REPEATABLE READ Adjustment race in test_invoice_migration.py, kept at READ COMMITTED (owner answer (a) to Q-2026-10-20-145 point 1): of two 50,000 credits on an 80,000 line, the second waits for the first's Invoice lock and, after its commit, is refused (23514); one Adjustment, 30,000 owed (V1-056 sub-slice 10h-4b)."
+    },
+    {
+      "test_id": "test_at_read_committed_an_adjustment_waits_for_a_void_and_is_refused",
+      "upstream_ids": [
+        "BR-INV-044",
+        "BR-INV-046",
+        "DB-TXN-003"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_closed_change_isolation_migration.py",
+      "status": "implemented",
+      "notes": "The guard of the REPEATABLE READ VOID-and-Adjustment race in test_invoice_migration.py, kept at READ COMMITTED (owner answer (a) to Q-2026-10-20-145 point 1): an Adjustment started during an uncommitted VOID waits for the Invoice lock and, after the VOID commits, is refused (23514); the Invoice is VOID with no Adjustment (V1-056 sub-slice 10h-4b)."
+    },
+    {
+      "test_id": "test_at_read_committed_an_issue_waits_for_a_termination_and_is_refused",
+      "upstream_ids": [
+        "BR-INV-040",
+        "DB-TXN-003"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_closed_change_isolation_migration.py",
+      "status": "implemented",
+      "notes": "The guard of the REPEATABLE READ issue-and-termination race in test_invoice_migration.py, kept at READ COMMITTED (owner answer (a) to Q-2026-10-20-145 point 1): the issue of next month's DRAFT Rent Invoice started during an uncommitted termination waits for the Lease's source lock and, after the termination commits, is refused at its commit (23514); the Invoice stays a DRAFT (V1-056 sub-slice 10h-4b)."
+    },
+    {
+      "test_id": "test_at_read_committed_a_second_charge_reduction_waits_and_is_refused",
+      "upstream_ids": [
+        "BR-LATE-005",
+        "DB-TXN-003"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_closed_change_isolation_migration.py",
+      "status": "implemented",
+      "notes": "The guard of the REPEATABLE READ Charge correction race in test_invoice_migration.py, kept at READ COMMITTED (owner answer (a) to Q-2026-10-20-145 point 1; review round 1): of two reductions of 100 from the same 8,000 Late-payment Charge balance, the second waits for the first's Charge lock and, after its commit, is refused at its own commit (40001, its previous balance is stale); one correction, 7,900 left (V1-056 sub-slice 10h-4b)."
+    },
+    {
+      "test_id": "test_the_closed_change_isolation_is_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "DB-SETTLE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settlement_closed_change_isolation_migration.py",
+      "status": "implemented",
+      "notes": "The migration changes only the body of app.refuse_closed_final_settlement_change (owner, privileges, definer flag and settings kept), adds the isolation check once before the first per-table branch, adds no function, changes no trigger, relation, column, privilege or constraint, and is forward-only (V1-056 sub-slice 10h-4b)."
     }
   ]
 }
