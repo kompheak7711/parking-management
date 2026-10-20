@@ -321,6 +321,8 @@ The screen sends no approval time; the server records the database's own time an
 Notice shows it (BR-RES-010, owner answer (a) to Q-2026-10-14-112 point 1, V1-056
 sub-slice 10i-3).
 
+Amended by DL-080 (owner, 2026-10-20): Extend Reservation needs a Manager.
+
 ## UI-035 — Cancel Reservation
 
 Cancellation requires an approved reason and confirmation. Property-caused
@@ -338,6 +340,8 @@ status; no path offers a free-form forfeiture.
 Support status, Unit, Customer, date, current/future/historical period, and
 approaching-End-Date filters. A future signed non-overlapping renewal is visually
 distinct from the current Lease.
+
+Amended by DL-080 (owner, 2026-10-20): a Lease has no number; it is named by its Unit, for example "Lease · U204".
 
 ## UI-037 — Lease Draft
 
@@ -365,6 +369,8 @@ action, not a generic status edit.
 The screen sends no signing time with a Signer signature (UI-038) or the Lease
 signing; it shows the times the server records, which are the database's own time,
 in the Signer rows and the Lease timeline (BR-AUDIT-003, Q-2026-10-14-110).
+
+Amended by DL-080 (owner, 2026-10-20): Sign Lease needs a Manager.
 
 ## UI-041 — Renewal
 
@@ -446,6 +452,8 @@ Separate:
 - Adjustments;
 - derived balance/status; and
 - audit timeline.
+
+Amended by DL-080 (owner, 2026-10-20): the printed Invoice is A4: Khmer above English, dates dd/mm/yyyy, 24-hour times, riel as ៛ after the number, Invoice spelled វិក្កយបត្រ everywhere, no address or phone in the header, the full-colour logo, the ABA KHQR code, and on a reprint the mark "REPRINT · ច្បាប់ចម្លង" with the reprint date. No VAT. "Move-out" is a screen label only; the records keep the DL-020 categories.
 
 ## UI-049 — Draft Invoice
 
@@ -647,6 +655,8 @@ reference in reprint history. Reprinting must never appear to create another Pay
 another Receipt identity, or another money-received event. A reversed Payment retains
 its original Receipt as historical evidence.
 
+Amended by DL-080 (owner, 2026-10-20): the printed Receipt is A5, with the same language, date, time, riel, header and logo rules as the printed Invoice (UI-048) and the reprint mark "REPRINT · ច្បាប់ចម្លង" with the reprint date.
+
 ## UI-068 — Overpayment Choices
 
 Unallocated excess remains labeled as part of the Payment. Offer Customer Credit or
@@ -794,6 +804,8 @@ days after termination, move-out). Every step requires explicit authorized confi
 Neither termination form sends a termination time; the server records the database's
 own time, and a retry of the same form replays the first result (BR-AUDIT-003, owner
 answer (a) to Q-2026-10-14-112 point 1, V1-056 sub-slice 10i-1).
+
+Amended by DL-080 (owner, 2026-10-20): Terminate Lease needs a Manager.
 
 ## UI-077 — Continued Occupancy
 
@@ -969,6 +981,8 @@ external identity provider. It uses generic failure and recovery responses that 
 reveal account existence, lifecycle state, MFA enrollment, or privilege class. The UI
 does not offer security questions or SMS authentication/recovery.
 
+Amended by DL-080 (owner, 2026-10-20): after 5 wrong tries the person waits 15 minutes; the wait message is the same whether or not the account exists.
+
 ## UI-110 — MFA Enrollment and Challenge
 
 Owner and Manager are directed through protected standards-based MFA enrollment before
@@ -990,6 +1004,8 @@ guidance. Used codes cannot be displayed or reused. Authorized Owner administrat
 initiate Manager/Staff recovery with explicit consequence and audit confirmation; Staff
 is never shown recovery authority for Owner/Manager, and no Manager recovery of Staff is
 implied.
+
+Amended by DL-080 (owner, 2026-10-20): after an Owner reset, the one-time password works for 24 hours and must be changed at the first sign-in; the new password follows the 15 to 128 character rule.
 
 ## UI-113 — No First-Owner Web Bootstrap
 

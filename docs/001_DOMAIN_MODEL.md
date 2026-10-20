@@ -5049,6 +5049,8 @@ Excluded concepts include:
 
 A dedicated maintenance domain may be introduced later.
 
+Amended by DL-080 (owner, 2026-10-20): repair requests, routine Unit checks, visits, birthdays, "Paid on time" and the printed Joint Inspection and Unit Check forms are not in V1 (planned for V1.1). The move-out inspection records stay in V1.
+
 ---
 
 ## 90.6 Procurement and Inventory

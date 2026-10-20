@@ -121,6 +121,8 @@ prohibited.
 Login and recovery endpoints must be rate-limited by account and source while
 avoiding account-enumeration disclosures.
 
+Amended by DL-080 (owner, 2026-10-20): after 5 wrong tries the person waits 15 minutes, with the same message whether or not the account exists. A one-time password given by the Owner after a reset works for 24 hours and must be changed at the first sign-in.
+
 ## SEC-013 — Multi-factor Authentication
 
 The authentication architecture must use an appropriate standards-based MFA mechanism.

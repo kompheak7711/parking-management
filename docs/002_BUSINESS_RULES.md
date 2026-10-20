@@ -4019,6 +4019,8 @@ Refund methods are a configured list, like Payment Methods, starting with Cash a
 
 Amended by DL-073 (owner, 2026-10-20): there is still no Refund deadline or block in the system. While a Deposit Refund is not made, a to-do reminder shows "Refund due by" with the date 7 days after the later of the final inspection and the final Utility Invoice (the Lease's 7-day promise). Not built yet.
 
+Amended by DL-080 (owner, 2026-10-20): for a cash Refund, the reference note says who took the money. Refund methods stay their own list, not the Payment Methods list.
+
 ---
 
 ## BR-REFUND-015 — Deposit Refund Recipient for Joint Signers
@@ -4996,6 +4998,8 @@ defined in the later Security Model and must not weaken these requirements.
 Reservation extension, exceptional cancellation classification, and correction
 of Reservation dates or reasons require authorization and audit.
 
+Amended by DL-080 (owner, 2026-10-20): extending a Reservation needs a Manager: the capability is in the default Owner and Manager bundles, not in the Staff bundle (DL-074).
+
 ---
 
 ## BR-AUTH-003 — Exchange-rate Authorization
@@ -5021,6 +5025,8 @@ applicable authorization.
 Issuance of a formal Rent Nonpayment Warning Notice, recording and acting on a
 Serious Nonpayment Default, and every resulting termination decision require their
 applicable authorization. Elapsed time alone grants no termination authority.
+
+Amended by DL-080 (owner, 2026-10-20): signing and terminating a Lease need a Manager: the capabilities are in the default Owner and Manager bundles, not in the Staff bundle (DL-074).
 
 ---
 
