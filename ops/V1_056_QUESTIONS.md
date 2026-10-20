@@ -3475,7 +3475,7 @@ Your answer 1 to the 10h-2 report: add the READ COMMITTED check to the 8e-1 refu
 
 **Owner answer (2026-10-20, fresh session).** Option (a): the first amount of a Security Deposit created after the Lease was signed counts for the unpaid-Initial ground only on a termination business date after its creation date plus five days (Asia/Phnom_Penh business dates). A Reservation's Deposit created before signing keeps today's rule. Built in sub-slice 10i-4. Recorded in docs/010.
 
-## Q-2026-10-20-149 — 10i-4 pre-code design: a waiting `REFUND_RETURN` correction draft also gives value back to an existing Credit (blocks nothing; 10i-4c builds your Q-146 answer for `REFUND` only; recommendation (a))
+## Q-2026-10-20-149 — 10i-4 pre-code design: a waiting `REFUND_RETURN` correction draft also gives value back to an existing Credit (blocks nothing; 10i-4c builds your Q-146 answer for `REFUND` only; recommendation (a)) (ANSWERED 2026-10-20: option (a), build in slice 12; answer in docs/010)
 
 **What your answer says.** Q-2026-10-20-146, option (a): the preview also lists a closed Settlement's waiting correction draft whose plan uses, or whose `REFUND` releases value into, a Credit held by a person of another Lease. 10i-4c builds both parts: the plan part for every variant (its `CUSTOMER_CREDIT` steps), and the release part for the variant `REFUND` (its plan overlay `credits`, keyed by the Credit it gives value back to).
 
@@ -3490,3 +3490,5 @@ Your answer 1 to the 10h-2 report: add the READ COMMITTED check to the 8e-1 refu
 **Recommendation: (a)**, because it is the same case your Q-146 answer closes for `REFUND`, and it changes no amount, only the order.
 
 **What goes ahead.** Everything: 10i-4a, 10i-4b and 10i-4c (for `REFUND`, as answered) do not depend on it.
+
+**Owner answer (2026-10-20, fresh session, docs-only rules update).** Option (a). A waiting `REFUND_RETURN` correction draft is listed by the Final Settlement preview the same way as a `REFUND` draft: the release part of the Q-146 answer also covers a `REFUND_RETURN` draft whose plan overlay gives value back to a Credit held by a person of another Lease, and that other Lease's Settlement waits until the draft is confirmed, rejected or withdrawn. No amount rule changes, only the order. Not built now: the item stays on the slice 12 list, marked "answered (a), build in slice 12". Recorded in docs/010.
