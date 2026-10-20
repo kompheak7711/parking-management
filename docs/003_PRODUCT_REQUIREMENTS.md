@@ -1582,6 +1582,8 @@ that applies to the eventual termination process. Counting one record toward ano
 procedure requires an expressly approved basis rather than an implementation
 assumption.
 
+Amended by DL-070 (owner, 2026-10-15; the new standard Lease agreement): a serious breach by the Customer, meaning a crime or danger to people or the building, may end the Lease at once, without the three warning letters. The authority still comes from the signed Lease (BR-LEASE-025), and the termination is still an explicit action by an authorized user with its grounds recorded; nothing is automatic. Every other Customer violation still needs the three warning letters. Not built yet.
+
 ### PR-LEASE-025 — Signed-Lease Termination Authority
 
 **Business-rule traceability:** `BR-LEASE-025`
@@ -1597,6 +1599,8 @@ if either the Security Deposit or the Initial Rent Invoice is not fully paid wit
 calendar days after the Lease Start Date. That clause is the governing signed-Lease ground for
 termination. BR-LEASE-024's three warning letters do not apply to this ground. The
 termination records the Lease clause reference.
+
+Amended by DL-070 (owner, 2026-10-15; the new standard Lease agreement): this clause is Article 2.5 of the standard Lease agreement, and a termination on this ground records "Article 2.5" as its clause reference. Not built yet: staff still enter the clause reference as text.
 
 ### PR-LEASE-026 — Rent Nonpayment Day Count
 
