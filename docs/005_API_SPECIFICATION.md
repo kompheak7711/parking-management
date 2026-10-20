@@ -380,6 +380,8 @@ Reservation Deposit drafts (V1-056 slice 3b):
   three fields. The draft covers the whole received Deposit, the Refund always goes to
   the Reservation Customer, and only one draft per Reservation may be pending. It answers
   201 with the pending draft and changes no balance.
+
+Amended by DL-071 (owner, 2026-10-20; answer 10a): a Refund draft no longer takes a staff-typed `refund_number`; the Refund gets its `RFD` number (for example `RFD260001`) when the draft is confirmed, and the draft carries only an internal draft reference. Not built yet (V1-059).
 - `POST /reservations/{reservation_id}/deposit-correction-drafts` records a draft that
   replaces the confirmed outcome with a new outcome of the same kind; it needs
   `reservation_deposits.correct` and the kind's capability. Body: `expected_outcome_id`,
@@ -1549,6 +1551,8 @@ This API Specification is complete for Owner Review when:
 ### V1-055 unbilled Utility periods — service boundary — 2026-10-02
 
 Since slice 9d it is exposed as `GET /properties/{id}/unbilled-utility-periods` (`limit` up to 50 and `offset`; read only; `private, no-store`). `PostgresUnbilledUtilityPeriodsService.read` (capability `utility.read`, read-only, at most 50 per page) lists finalized Utility periods that have no Invoice line and that no run will pick up: `period_id`, `unit_id`, `utility_type`, `start_date`, `end_date`, `consumption_quantity`, `lease_id`, `can_catch_up` and `gap_reason` (`LATE_AFTER_SUCCEEDED_RUN` or `NOT_MOVED_IN`). The catch-up command below accepts these periods; a late period is billed only by that explicit action.
+
+Amended by DL-071 (owner, 2026-10-20; answer 18): before V1-060 the scheduled billing worker bills a `LATE_AFTER_SUCCEEDED_RUN` period by itself, and this list stays as a safety check; a `NOT_MOVED_IN` period is still billed only by the catch-up command. Not built yet (V1-056 slice 12).
 
 ### V1-055 final Utility Invoice and catch-up Invoice — service boundary — 2026-10-02
 

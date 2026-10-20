@@ -362,6 +362,8 @@ exhaustion.
 Customer lists and search results should expose only fields needed for the current
 workflow. More sensitive details require explicit navigation and authorization.
 
+Amended by DL-071 (owner, 2026-10-20): the owner approves a new Customer field "ID number / Passport number" (DB-CUST-001). It is a sensitive detail: it never appears in exports or in the top bar search (UI-010).
+
 ## SEC-042 — Export Protection
 
 Customer and financial exports require an export capability, an audit event, and
@@ -466,11 +468,15 @@ configured. When enabled, it must use an authenticated encrypted access layer su
 as a managed VPN or equivalent controlled gateway, with MFA support, source
 restrictions where practical, and audit logging.
 
+Amended by DL-071 (owner, 2026-10-05): remote access is off in V1; the system is reached only on the office network.
+
 ## SEC-059 — No Required Cloud Dependency
 
 Core local operation must not require a new cloud service. Optional external
 identity, exchange-rate retrieval, monitoring, or remote-access services must fail
 safely and must not weaken local business integrity.
+
+Amended by DL-071 (owner, 2026-10-05): the critical alerts are also sent by Telegram message (DEPLOY-051). Telegram is such an optional service: the alerts carry no Customer data, the bot token is a secret kept out of the repository and the logs, and when a message cannot be sent the system keeps working and the health page shows the warning. No cloud storage service is used for backups.
 
 # 15. Application and Dependency Security
 

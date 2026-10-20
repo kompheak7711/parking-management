@@ -570,6 +570,8 @@ An existing Customer record should be reused when the same person enters a new R
 
 The system should avoid unnecessary duplicate Customer records.
 
+Amended by DL-071 (owner, 2026-10-20; answer 11): a Customer has an "ID number / Passport number" field. A Customer with the same ID number as another Customer is refused; staff must use the existing Customer. The same phone number or the same email address as another Customer shows a warning, and staff may still save. Not built yet.
+
 ### PR-CUST-003 — Customer History
 
 **Business-rule traceability:** `BR-CUST-003`
@@ -2378,6 +2380,8 @@ Historical Utility Meters shall remain permanently preserved.
 When a Meter is confirmed broken, it must be replaced. Failure and replacement
 dates, the failed Meter, and the replacement Meter must remain linked.
 
+Amended by DL-071 (owner, 2026-10-05; answer 12): a Meter serial number is unique across all Meters of the Property, whatever the Utility Type. Staff enter the serial printed on the Meter, or a unique Property code (for example `EL-U101`) when none is printed. A replaced Meter keeps its serial in history, and that serial cannot be used again. Not built yet.
+
 ### PR-UTIL-007 — Meter Replacement Boundary
 
 **Business-rule traceability:** `BR-UTIL-007`
@@ -4157,6 +4161,8 @@ Historical Payments shall permanently preserve:
 
 These values constitute the official financial record.
 
+Amended by DL-071 (owner, 2026-10-20; answer 10b): a Payment has one Receipt, and the Payment Number is that Receipt's number, for example `RCP260001` (type code, 2-digit year of the confirmation date, 4-digit running number). This replaces the separate Payment Number. Not built yet.
+
 ### PR-PAY-018 — Audit Requirement
 
 **Business-rule traceability:** `BR-PAY-018`
@@ -4483,6 +4489,8 @@ obligation independently, or serve as the authoritative receipt-of-money event.
 Every Receipt has a unique Receipt Number and identifies exactly one source Payment and
 that Payment's payer Customer. One Payment normally produces one business Receipt.
 Persistence of safely derived display fields is decided by `004_DATABASE_MODEL.md`.
+
+Amended by DL-071 (owner, 2026-10-20; answer 10): the Receipt Number is `RCP`, the 2-digit year of the confirmation date in the Property's local time and a 4-digit running number that restarts at 0001 each year, with no dashes or spaces (for example `RCP260001`); it grows to 5 digits after 9999 and is never reused. It is also the Payment Number. Not built yet.
 
 ### PR-RECEIPT-003 — Customer-facing Content
 

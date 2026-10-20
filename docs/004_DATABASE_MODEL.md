@@ -186,6 +186,8 @@ historical records exist and is not a normal workflow. Input validation and dupl
 matching remain a technical choice under TCD-DB-001; no unapproved mandatory contact
 channel is introduced.
 
+Amended by DL-071 (owner, 2026-10-20; answer 11): a new Customer field "ID number / Passport number" (owner-approved personal data). A Customer with the same ID number as another Customer is refused, and staff use the existing Customer. The same phone number or email address as another Customer gives a warning and may still be saved through the existing `confirmed_distinct` flow. The ID number never appears in exports or in the top bar search. Not built yet (V1-059); whether it is required, and how two ID numbers are compared, is proposed at V1-059 planning.
+
 ---
 
 # 6. Reservation and Lease Tables
@@ -567,7 +569,7 @@ Constraints:
 - A replacement transaction sets the failed Meter's `deactivated_date` to the
   replacement date. This model introduces no non-replacement deactivation command
   and stores no unapproved Meter status.
-- Serial uniqueness is not asserted because upstream policy does not define whether serials are globally reusable.
+- Serial uniqueness is not asserted because upstream policy does not define whether serials are globally reusable. Amended by DL-071 (owner, 2026-10-05; answer 12): `serial_number` is unique across all Meters of the Property, whatever the Utility Type, deactivated (replaced) Meters included, so a replaced Meter's serial is never used again. Where no serial is printed, staff enter a Property code (for example `EL-U101` or `WA-U101`), which is also unique. `measurement_unit_code` is kWh for electricity and cubic metres (m3) for water (answer 9). Not built yet (V1-059).
 - Index `(unit_id, utility_type, installed_date DESC)`.
 
 ## DB-UTIL-002 — `utility_meter_replacements`
@@ -760,6 +762,8 @@ picked up again; `app.utility_unbilled_periods` lists it (reason `LATE_AFTER_SUC
 `NOT_MOVED_IN`, and whether it can be caught up) and staff bill it only with the explicit catch-up command
 (`invoices.issue`, DB-UTIL-012). No run is created automatically.
 
+Amended by DL-071 (owner, 2026-10-20; answer 18): before V1-060 the scheduled billing worker bills a `LATE_AFTER_SUCCEEDED_RUN` period by itself; `app.utility_unbilled_periods` stays as a safety check. A `NOT_MOVED_IN` period is still billed only by the explicit catch-up command. Not built yet (V1-056 slice 12).
+
 ---
 
 # 8. Configured Service Tables
@@ -839,6 +843,7 @@ Constraints and indexes:
 - Lifecycle transitions follow BR-INV-015. UNPAID/PARTIALLY_PAID/PAID is reconciled to the derived balance after every financial application/reversal/Adjustment.
 - Once issued, Customer, Lease association or absence, Invoice Number, date, category, period, due date/source, and original total are immutable.
 - Index `(customer_id, status, due_date, issued_at, invoice_number)` supports deterministic FIFO; index `(lease_id, invoice_date)` where Lease is present.
+- Amended by DL-071 (owner, 2026-10-20; answer 10): `invoice_number` is given only at issue, in the format `INV` + 2-digit year of the issue date in `Asia/Phnom_Penh` + 4-digit running number restarting each year (for example `INV260001`; 5 digits after 9999), never reused. A DRAFT Invoice carries only an internal draft reference, never printed and never shown to a Customer. This replaces the rule that every Invoice, DRAFT included, has an `invoice_number`. Not built yet (V1-059); recorded Invoices keep their numbers.
 
 ## DB-INV-002 — `invoice_lines`
 
@@ -1259,6 +1264,8 @@ scope requires at least one identified Invoice, Lease, or Charge intent, validat
 Customer/Lease relationships, and prohibits spreading value across unrelated
 obligations of payer or beneficiary.
 Index `(payer_customer_id, payment_date DESC)` and partial index on RECEIVED.
+
+Amended by DL-071 (owner, 2026-10-05; answer 10 changed 2026-10-20): a Payment has one Receipt, and `payment_number` is that Receipt's `receipt_number` (for example `RCP260001`). This replaces the separate Payment Number (today `PAY-` followed by the Payment id). Not built yet (V1-059).
 
 Persistence uses an internal `payment_serialization_guards` row per Payment. Funding
 and reversal update its MVCC revision before checking append-only active consumption,
@@ -1721,6 +1728,8 @@ moves, allocates, nor settles value.
 Only immutable identity/display facts that cannot be safely re-derived may be
 snapshotted. Payment, Allocation, Credit, Deposit, and Charge amounts remain
 authoritative in their own tables and are joined for display.
+
+Amended by DL-071 (owner, 2026-10-05; answer 10 changed 2026-10-20): `receipt_number` is `RCP` + 2-digit year of the confirmation date in `Asia/Phnom_Penh` + 4-digit running number restarting each year (for example `RCP260001`; 5 digits after 9999), never reused; it is also the Payment's `payment_number`. Not built yet (V1-059).
 
 ## DB-RECEIPT-002 — `receipt_reprints`
 
@@ -4222,6 +4231,8 @@ fields from the new model, not existing historical transaction or conversion evi
 no historical record is rewritten or deleted. Settlement Deposit Refunds remain
 separate by Deposit.
 
+Amended by DL-071 (owner, 2026-10-20; answer 10): `refund_number` is given at confirmation, as `RFD` + 2-digit year of the confirmation date in `Asia/Phnom_Penh` + 4-digit running number restarting each year (for example `RFD260001`; 5 digits after 9999), never reused. A Refund draft carries only an internal draft reference, and staff no longer type a `refund_number`. Not built yet (V1-059).
+
 A Security Deposit Refund requires the Lease to be TERMINATED and the applicable Final
 Settlement. A Pet Deposit Refund normally follows that path, but while its Lease remains
 SIGNED it instead requires `pet_refund_review_id`, prohibits `final_settlement_id` (as built: has no
@@ -5023,20 +5034,20 @@ the normative model but do not reopen business policy:
 
 - **TCD-DB-001 — Customer input quality:** choose legal-name/contact validation and
   duplicate-record matching controls without changing one-Customer identity or deleting
-  history. No contact channel is made mandatory by this model.
+  history. No contact channel is made mandatory by this model. Amended by DL-071 (owner, 2026-10-20): an ID number already used by another Customer is refused; the same phone number or email address only warns (DB-CUST-001).
 - **TCD-DB-002 — Refund delivery implementation:** delivery integration and transient
   technical delivery states may be designed later; only a successfully processed
   Refund is the approved business event persisted here.
 - **TCD-DB-003 — Business-number generation:** configure formatting and sequence scope
   for Invoice, Payment, Receipt, and Refund Numbers while preserving uniqueness,
-  immutability, and non-reuse.
+  immutability, and non-reuse. Amended by DL-071 (owner, 2026-10-20): the format is the type code (`INV`, `RCP`, `RFD`), the 2-digit year and a 4-digit running number per type and year, given at issue or confirmation; the Payment Number is its Receipt's number (DB-INV-001, DB-PAY-003, DB-RECEIPT-001, DB-REFUND-001).
 - **TCD-DB-004 — Meter serial validation:** production configuration may enforce global
   or Utility-Type serial uniqueness when the source system guarantees that scope; the
-  stable Meter UUID remains authoritative.
+  stable Meter UUID remains authoritative. Amended by DL-071 (owner, 2026-10-05): serial numbers are unique across all Meters of the Property (DB-UTIL-001).
 - **TCD-DB-005 — Utility measurement configuration:** every Meter stores a nonblank
   production-configured unit code, and Utility Rate configuration uses the same unit.
   Electricity and Water fixtures cannot be finalized until their actual units/scales
-  are configured; this is configuration, not a new charging rule.
+  are configured; this is configuration, not a new charging rule. Amended by DL-071 (owner, 2026-10-05): the units are kWh for electricity and cubic metres (m3) for water.
 
 ---
 

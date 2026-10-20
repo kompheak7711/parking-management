@@ -135,11 +135,15 @@ gateway such as a managed VPN or equivalent access layer with authenticated user
 MFA capability, and audit logging. PostgreSQL and internal service ports are never
 published directly to the Internet.
 
+Amended by DL-071 (owner, 2026-10-05): remote access is off in V1; the system is reached only on the office network (resolves `OOD-DEPLOY-003` for V1).
+
 ## DEPLOY-016 — External Egress
 
 Outbound access is restricted to explicitly configured dependencies. Failure of
 automatic ABA reference-rate retrieval must activate the authorized manual
 reference-rate fallback without bypassing markup, rounding, or audit rules.
+
+Amended by DL-071 (owner, 2026-10-05): the allowed list also has one outbound connection to Telegram, used only for the critical alert messages of DEPLOY-051. The Telegram bot token is a secret: a placeholder in V1-059, never in the repository or in a log.
 
 # 5. Environment Model
 
@@ -375,6 +379,8 @@ Backup retention and off-host-copy frequency are deployment configuration pendin
 Owner confirmation of recovery objectives. Retention automation must never delete
 the final known good backup.
 
+Amended by DL-071 (owner, 2026-10-05): hourly copies are kept 2 days, daily copies 30 days and monthly copies 12 months; the last good copy is never deleted. A daily encrypted copy goes to an external drive or a second computer in the office, and a weekly encrypted copy is kept outside the building. No cloud storage service is used.
+
 # 10. Restore and Disaster Recovery
 
 ## DEPLOY-044 — Restore Procedure
@@ -405,6 +411,8 @@ must not become a competing source of financial truth.
 
 A successful backup command without a restore test is insufficient.
 
+Amended by DL-071 (owner, 2026-10-05): a full restore test runs every 3 months and before every release.
+
 ## DEPLOY-046 — Recovery Validation
 
 Validation includes:
@@ -429,6 +437,8 @@ Exact Recovery Point Objective and Recovery Time Objective values are an
 `OPEN OWNER DECISION`. The architecture keeps backup frequency, retention, and
 recovery procedures configurable so those values can be adopted without changing
 business records.
+
+Amended by DL-071 (owner, 2026-10-05): the Recovery Point Objective is at most 1 hour of data loss, with a backup every hour; the Recovery Time Objective is 1 working day.
 
 # 11. Logging and Monitoring
 
@@ -481,11 +491,15 @@ attempts. Deployment policy determines which audited high-value events require
 real-time alerts; this architecture does not require every business event to alert
 in real time.
 
+Amended by DL-071 (owner, 2026-10-05): critical alerts go by Telegram message to the Owner and the Manager, and the health page shows a warning. An alert carries no Customer data. When a message cannot be sent, the system keeps working and the health page warning stays (SEC-059).
+
 ## DEPLOY-052 — Log Retention
 
 Operational log retention is configurable and bounded. Audit and financial
 retention follows authoritative history requirements and is not reduced to match
 operational log retention.
+
+Amended by DL-071 (owner, 2026-10-05): technical (operational) logs are kept 90 days; audit and money history are kept forever.
 
 # 12. Deployment and Update Procedure
 
@@ -705,6 +719,8 @@ for the production installation?
 **Current treatment:** Backup frequency, retention, and restore automation remain
 configurable; no data-loss guarantee is invented.
 
+**RESOLVED by DL-071 (owner, 2026-10-05):** at most 1 hour of data loss (backups every hour); working again within 1 working day; retention and restore tests as in DEPLOY-043 and DEPLOY-045.
+
 **Blocking:** No.
 
 ## OOD-DEPLOY-002 — Production Host and LAN Address
@@ -715,6 +731,8 @@ method, and LAN address will be used?
 **Current treatment:** The architecture defines required properties without
 selecting hardware or network identifiers.
 
+**PARTLY RESOLVED by DL-071 (owner, 2026-10-05):** production runs on a separate small computer in the office, used only for this system, not the development Mac mini. The computer name, its address and the certificate method are chosen later; they do not block V1-059.
+
 **Blocking:** No.
 
 ## OOD-DEPLOY-003 — Remote Access Enablement
@@ -723,6 +741,8 @@ selecting hardware or network identifiers.
 through which approved controlled gateway?
 
 **Current treatment:** Disabled by default; optional architecture is specified.
+
+**RESOLVED for V1 by DL-071 (owner, 2026-10-05):** remote access is off in V1; office network only.
 
 **Blocking:** No.
 

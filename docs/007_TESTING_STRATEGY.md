@@ -1004,6 +1004,8 @@ A release candidate must pass:
 - production builds; and
 - security/dependency checks defined by release policy.
 
+Amended by DL-071 (owner, 2026-10-05): the V1-060 release candidate also has no open security warning (the `braces` advisory of DL-067 included), passes a speed test with 300 Units and 10 years of made-up history, and is not done until the Owner or the Manager has run one scripted test session with made-up data (reserve, sign, move in, bill, pay, move out, settle) and the owner says it passed.
+
 ## TEST-114 — No Placeholder Verification
 
 Commands that only print `Not implemented yet.` do not satisfy a quality gate even
@@ -1013,6 +1015,8 @@ when they exit successfully.
 
 A flaky test is a defect. Quarantine requires an owner, documented risk, tracking
 reference, and deadline; retries must not conceal deterministic business failures.
+
+Amended by DL-071 (owner, 2026-10-05): the V1-060 release candidate has no flaky tests. A flaky test is fixed, not run again until it passes; this includes TEST-FE-087, TEST-FE-128, TEST-FE-488 and the DL-067 `LockNotAvailable` full-run failure.
 
 ## TEST-116 — Coverage Use
 
@@ -1160,6 +1164,8 @@ certify?
 
 **Current treatment:** Restore tests are mandatory; exact objectives remain
 configurable and align with `009_DEPLOYMENT_ARCHITECTURE.md`.
+
+**RESOLVED by DL-071 (owner, 2026-10-05):** at most 1 hour of data loss, working again within 1 working day, and a full restore test every 3 months and before every release.
 
 **Blocking:** No.
 
