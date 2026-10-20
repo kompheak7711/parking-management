@@ -377,6 +377,8 @@ The decision is not an Invoice status and does not rewrite the original Invoice
 principal. A positive approved amount is an explicit linked financial charge; a
 waiver remains a permanent audited decision without creating a charge.
 
+Replaced by DL-076 (owner, 2026-10-20): there is no management decision any more; the app adds the charge by itself the day after the Due Date. A reduction or waiver after a Customer complaint is recorded on its own.
+
 ---
 
 ## Late-payment Charge
@@ -2052,6 +2054,8 @@ designation, the system proposes Rent first and then recurring-Service lines wit
 that selected Invoice; authorized staff must confirm the proposal before posting.
 Remaining Rent after confirmed applications—not the mixed Invoice's total balance—
 controls the Rent-specific warning and Serious Nonpayment Default tests.
+
+Amended by DL-076 (owner, 2026-10-20): at 00:00 Property time on the first day after the Due Date, the app adds the late-payment charge by itself, at the Settings rate (DL-075, default 10%) of the amount unpaid at that moment, rounded half-up; no management decision is needed. One charge per Invoice; money paid later does not change it. The Owner or a Manager may reduce or waive it only after the Customer complains of a staff mistake, with one of three fixed reasons and a "What happened" text; the amount only goes down.
 
 ---
 
@@ -4671,6 +4675,8 @@ preserves the Invoice-wide assessment base, 10% default, confirmed/reduced/waive
 result, authorization, and audit history. A confirmed positive amount creates one
 separate Late-payment Charge obligation; a waiver creates no receivable.
 
+Replaced by DL-076 (owner, 2026-10-20): there is no management decision any more; the app adds the charge by itself the day after the Due Date. A reduction or waiver after a Customer complaint is recorded on its own.
+
 ---
 
 ## Late-payment Charge
@@ -5537,6 +5543,7 @@ its financial lifecycle.
 44. Each applicable overdue Invoice receives at most one final late-payment decision
     based on its remaining unpaid overdue balance; the default is 10%, and authorized
     management may reduce or waive but never increase it above 10%.
+    Amended by DL-076: the charge is added automatically; reduce or waive only after a complaint.
 45. Late-payment charges do not repeat, compound, or rewrite source Invoice principal.
 46. Rent nonpayment requires a formal warning Notice at 20 days overdue and records a
     Serious Nonpayment Default at 30 days overdue when still unpaid; neither event
@@ -5547,6 +5554,7 @@ its financial lifecycle.
     obligation linked to exactly one Customer and one source Invoice; it is not an
     Invoice, Invoice Category, Miscellaneous Charge, source-Invoice line, or principal
     modification.
+    Amended by DL-076: payable at once when the app adds it, with no confirmation.
 49. Payment Allocation preserves target-obligation and sufficient Invoice-line detail;
     within an undesignated selected mixed Rent Invoice, the confirmed proposal applies
     Rent first and then recurring-Service lines.

@@ -874,6 +874,8 @@ Invoice line, Invoice category, Miscellaneous Charge, or source-Invoice balance.
 Charge corrections use only DB-INV-009's authorized reduction/reversal mechanisms and
 must not reopen, supplement, replace, or recalculate the final decision.
 
+Amended by DL-076 (owner, 2026-10-20): no manual decision route; the charge is added by the 00:00 job. A route reduces or waives a charge with one of three fixed reasons and a required "What happened" text. Not built yet (V1-056 slice 11).
+
 # 17. Scheduled Billing Endpoints
 
 ## API-054 — Rent Generation Run

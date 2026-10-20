@@ -487,6 +487,8 @@ or Charges.
 Verify an Adjustment recorded before the final decision is in its balance, and that a
 debit Adjustment recorded after the final decision is allowed but does not change it.
 
+Amended by DL-076 (owner, 2026-10-20): tests cover the automatic 00:00 charge (eligibility, one per Invoice, Settings rate, rounding, no charge on Initial Rent, no-Lease Invoices or charges) instead of a manual decision.
+
 ## TEST-124 — Late-payment Charge Corrections and Applications
 
 Verify DB-INV-009/API-091 authorized Charge reduction/reversal behavior preserves the
@@ -497,6 +499,8 @@ Verify Payment Allocation and Customer Credit may target an eligible separate
 Late-payment Charge. Such application reduces only that Charge and never its source
 Invoice. Test direct designation, availability limits, over-application rejection,
 reversal, concurrency, and historical reconstruction.
+
+Amended by DL-076 (owner, 2026-10-20): tests cover reductions and waivers after a complaint (three fixed reasons, "What happened", only down) and the paid part going to Customer Credit under BR-CREDIT-014.
 
 # 12. Payment, Allocation, Credit, Refund, and Reversal Coverage
 

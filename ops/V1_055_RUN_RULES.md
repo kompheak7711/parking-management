@@ -26,7 +26,7 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md. Nothing else 
 - When a reviewer gives a test set-up, write it in the review record, so a later session can use it (owner, 2026-10-13; the 10e-3d-2a round 2 set-ups were only summarised and had to be found again).
 
 ## Business rules
-- Money in integer cents. Dates in Asia/Phnom_Penh. Nothing automatic.
+- Money in integer cents. Dates in Asia/Phnom_Penh. Nothing automatic. Exception (owner, 2026-10-20; DL-076): the 00:00 late-payment charge job, for that one job only.
 - Final Settlement stays in V1-056. No photo storage. No new packages.
 
 ## Verification

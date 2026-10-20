@@ -491,6 +491,8 @@ Authorized Charge corrections/reversals use explicit DB-INV-009/API-091 actions,
 reason, consequence preview, confirmation, and append-only history. They never reopen
 or replace the final decision.
 
+Amended by DL-076 (owner, 2026-10-20): the screen shows the charges the app added and lets the Owner or a Manager reduce or waive one after a Customer complaint, with one of three fixed reasons and a required "What happened" text. Next month's Invoice shows "Unpaid late-payment charge" with its amount outside the Invoice total, and the Receipt has a "Paid for" table.
+
 # 13. Rent and Fixed Service UI
 
 ## UI-053 — Scheduled Rent Runs

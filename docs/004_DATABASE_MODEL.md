@@ -1110,6 +1110,8 @@ the calculated default amount; REDUCED requires a positive amount below the calc
 default amount. Once final,
 the row cannot be repeated, replaced, supplemented, updated, or deleted.
 
+Amended by DL-076 (owner, 2026-10-20): no manual decision any more: the app adds the charge at 00:00 on the first day after the Due Date with a system actor as `finalized_by`, and the rate comes from Settings instead of `CHECK (= 1000)`. Not built yet (V1-056 slice 11).
+
 ## DB-INV-008 — `late_payment_charges`
 
 Separate positive confirmed obligation: `id uuid PK`, `customer_id uuid NOT NULL FK`,
@@ -1123,6 +1125,8 @@ decision. Original columns are immutable.
 This table has no Due Date and is not an Invoice, Invoice line/category, or
 Miscellaneous Charge. It never changes source Invoice principal, lines, balance, or
 status and is not eligible to produce another late-payment decision or Charge.
+
+Amended by DL-076 (owner, 2026-10-20): `payable_at` is the time the app adds the charge, and `created_by` is the system actor. Not built yet (V1-056 slice 11).
 
 ## DB-INV-009 — `late_payment_charge_corrections`
 
@@ -1139,6 +1143,8 @@ adjusted obligation from falling below zero or exceeding the immutable original
 amount, verifies previous/resulting snapshots, and requires any now-excess Payment or
 Credit applications to be explicitly reversed in the same correlated transaction. No
 correction may supplement the final decision or create a new Charge.
+
+Amended by DL-076 (owner, 2026-10-20): reductions and waivers after a Customer complaint go in a new append-only table with one of three fixed reasons and a required "What happened" text; the amount only goes down, and paid money above the new amount becomes Customer Credit of the charge's Customer under BR-CREDIT-014, before or after closure. Not built yet (V1-056 slice 11).
 
 ## DB-INV-010 — `invoice_adjustment_reversals`
 

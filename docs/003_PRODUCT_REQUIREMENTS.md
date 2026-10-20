@@ -2306,6 +2306,8 @@ The Initial Rent Invoice is not an applicable source Invoice for a late-payment 
 
 Amended by DL-075 (owner, 2026-10-20): as BR-RENT-029: the 10% is the Settings default late-payment rate, a whole percent from 0 to 10 (Lease Article 2.3 allows up to 10%). A new rate starts with the next billing month and applies to charges added after the change, for every Lease, never above 10%.
 
+Amended by DL-076 (owner, 2026-10-20): as BR-RENT-029: the charge is added automatically under DL-076; the Owner or a Manager may reduce or waive it only after a Customer complaint of a staff mistake, never above the Settings rate (at most 10%).
+
 ## 8.10 Utility Management and Billing Requirements
 
 ### PR-UTIL-001 — Supported Utility Types
@@ -3782,6 +3784,8 @@ Eligibility does not automatically post a charge.
 
 The Initial Rent Invoice is not an applicable source Invoice for a late-payment charge.
 
+Amended by DL-076 (owner, 2026-10-20): as BR-INV-051: "Eligibility does not automatically post a charge" is replaced: at 00:00 Property time on the first day after the Due Date, the app adds the late-payment charge by itself, at the Settings rate (DL-075, default 10%) of the amount unpaid at that moment, rounded half-up; no management decision is needed.
+
 ### PR-INV-052 — Invoice-wide Late-payment Calculation
 
 **Business-rule traceability:** `BR-INV-052`
@@ -3822,6 +3826,8 @@ Remaining unpaid overdue balance:          $310
 Default late-payment charge at 10%:         $31
 ```
 
+Amended by DL-076 (owner, 2026-10-20): as BR-INV-052: the rate is the Settings rate (DL-075, default 10%), and the calculation is made once by the app at 00:00 on the first day after the Due Date.
+
 ### PR-INV-053 — Authorized Late-payment Decision
 
 **Business-rule traceability:** `BR-INV-053`
@@ -3848,6 +3854,8 @@ percentage, calculated default amount, actual approved amount, decision outcome,
 authorized management actor, reason, assessment timestamp, and confirmation or waiver
 timestamp.
 
+Replaced by DL-076 (owner, 2026-10-20): as BR-INV-053: no management decision. at 00:00 Property time on the first day after the Due Date, the app adds the late-payment charge by itself, at the Settings rate (DL-075, default 10%) of the amount unpaid at that moment, rounded half-up; no management decision is needed. The Owner or a Manager may only reduce or waive it after the Customer complains that it is wrong because of a staff mistake, with one of three fixed reasons ("Staff recorded the payment on the wrong Invoice", "Paid on time but recorded late", "Other staff mistake") and a required "What happened" text. The amount only goes down.
+
 ### PR-INV-054 — One Final Non-compounding Decision per Invoice
 
 **Business-rule traceability:** `BR-INV-054`
@@ -3873,6 +3881,8 @@ never changes a final decision.
 Example: if the default is $31 and management approves $15, the remaining $16 must
 never be imposed as a second late-payment charge for that source Invoice.
 
+Amended by DL-076 (owner, 2026-10-20): as BR-INV-054: one automatic charge per Invoice replaces the one final decision; money paid later does not change it. A reduction or waiver never raises it.
+
 ### PR-INV-055 — Explicit Linked Late-payment Financial Record
 
 **Business-rule traceability:** `BR-INV-055`
@@ -3888,6 +3898,8 @@ altered to incorporate the charge. A confirmed positive amount creates the separ
 Late-payment Charge obligation defined by BR-LATE-001. It does not create another
 Invoice, Invoice Category, Miscellaneous Charge, or historical source-Invoice line. A
 waiver records the final decision and audit history without creating a receivable.
+
+Amended by DL-076 (owner, 2026-10-20): as BR-INV-055: the linked record is the automatic charge and its reductions and waivers; history keeps every change.
 
 ## 8.13 Late-payment Charge Requirements
 
@@ -3906,6 +3918,8 @@ The obligation is part of the Customer's overall outstanding balance but is not 
 Invoice and does not affect the source Invoice's principal, lines, outstanding balance,
 or derived status.
 
+Amended by DL-076 (owner, 2026-10-20): as BR-LATE-001: the app creates the charge by itself (DL-076); no management confirmation.
+
 ### PR-LATE-002 — Immediate Payability
 
 **Business-rule traceability:** `BR-LATE-002`
@@ -3915,6 +3929,8 @@ or derived status.
 A positive Late-payment Charge becomes payable immediately at its management
 confirmation timestamp. It requires no new Invoice and no Invoice Due Date. Its
 confirmation timestamp is the date and time the obligation becomes payable.
+
+Amended by DL-076 (owner, 2026-10-20): as BR-LATE-002: the charge is payable at once from the moment the app adds it (00:00 on the first day after the Due Date).
 
 ### PR-LATE-003 — Waived and Reduced Decisions
 
@@ -3926,6 +3942,8 @@ A WAIVED or equivalent final outcome preserves the proposal and waiver decision 
 creates no positive receivable. A REDUCED or equivalent final outcome creates only the
 approved reduced Late-payment Charge amount. The waived or reduced difference must
 never be added later for that source Invoice.
+
+Amended by DL-076 (owner, 2026-10-20): as BR-LATE-003: a reduction or waiver is made after the charge exists, by the Owner or a Manager after a Customer complaint of a staff mistake; a paid charge may still be reduced or waived, and paid money above the new amount goes to Customer Credit under BR-CREDIT-014.
 
 ### PR-LATE-004 — Remaining Balance and Satisfaction
 
@@ -4501,6 +4519,8 @@ Charge is $31, a Customer-designated $100 Payment to the Late-payment Charge app
 there and leaves $69 for another valid confirmed Allocation or disposition. The source
 Invoice remains $310 outstanding until value is separately allocated to it. A Receipt
 may show both the $100 Payment and the confirmed $31 application.
+
+Replaced by DL-076 (owner, 2026-10-20): as BR-PAY-040: the proposal pays oldest Due Date first, and a late-payment charge right after its own Invoice, before newer Invoices. Staff change the ticks only when the Customer names what to pay (BR-PAY-024) and confirm with Receive payment (DL-029). A third-party payer's money gets no automatic ticks.
 
 ## 8.15 Receipt Requirements
 
