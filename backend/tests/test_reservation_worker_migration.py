@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from concurrent.futures import ThreadPoolExecutor
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 from pathlib import Path
 from uuid import UUID, uuid4
 
@@ -25,6 +25,7 @@ from property_rental.reservation_worker import (
     run_scheduled,
 )
 from reservation_deposit_test_support import confirm_reservation_outcome
+from test_lease_lifecycle_migration import database_now
 from test_reservation_lifecycle_migration import (
     expired_reservation,
     financial_database_url,
@@ -267,7 +268,9 @@ def test_http_mutations_reach_real_postgres_with_security_replay_and_rollback(
     acceptance_id = uuid4()
     receipt_id = uuid4()
     payment_id = uuid4()
-    payment_confirmed_at = datetime.now(UTC)
+    # Sub-slice 10i-4b: the receipt is dated by the database, so the Payment's confirmation time
+    # comes from the database clock too (the container clock can lag the host clock).
+    payment_confirmed_at = database_now()
     with psycopg.connect(migrated_database_url) as setup:
         seed_payment(
             setup,
@@ -294,7 +297,6 @@ def test_http_mutations_reach_real_postgres_with_security_replay_and_rollback(
         "deposit_id": str(deposit_id),
         "receipt_id": str(receipt_id),
         "payment_id": str(payment_id),
-        "received_at": payment_confirmed_at.isoformat().replace("+00:00", "Z"),
     }
 
     missing_csrf_id = uuid4()
@@ -445,7 +447,8 @@ def test_http_mutations_reach_real_postgres_with_security_replay_and_rollback(
             "receipt_id": str(receipt_id),
             "payment_id": str(payment_id),
             "amount_usd_cents": 10_001,
-            "occurred_at": create_payload["received_at"],
+            # Sub-slice 10i-4b: the database's own time; checked against its command row below.
+            "occurred_at": created_resource["receipts"][0]["occurred_at"],
             "actor_id": str(actor_id),
         }
     ]
@@ -546,6 +549,19 @@ def test_http_mutations_reach_real_postgres_with_security_replay_and_rollback(
             "FROM app.deposit_receipts AS receipt WHERE receipt.id=%s",
             (receipt_id,),
         ).fetchone()
+        # Sub-slice 10i-4b (owner answer (a) to Q-2026-10-20-147): the receipt and acceptance
+        # times are the statement time of the create, the same value its command row is stamped
+        # with.
+        assert check.execute(
+            "SELECT receipt.occurred_at=command.created_at,"
+            "acceptance.accepted_at=command.created_at FROM app.deposit_receipts receipt "
+            "JOIN app.deposits deposit ON deposit.id=receipt.deposit_id "
+            "JOIN app.reservation_deposit_acceptances acceptance "
+            "ON acceptance.reservation_id=deposit.reservation_id "
+            "JOIN app.reservation_commands command ON command.result_id=deposit.reservation_id "
+            "AND command.action='reservation.create' WHERE receipt.id=%s",
+            (receipt_id,),
+        ).fetchone() == (True, True)
         # Sub-slice 10i-3 (owner answer (a) to Q-2026-10-14-112 point 1): the approval time is
         # the statement time of the extension, the same value its command row is stamped with.
         assert check.execute(

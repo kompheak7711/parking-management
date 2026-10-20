@@ -335,7 +335,6 @@ def test_create_requires_csrf_and_preserves_client_idempotent_identity_and_trace
         "deposit_id": str(uuid4()),
         "receipt_id": str(uuid4()),
         "payment_id": str(uuid4()),
-        "received_at": "2026-08-26T01:00:00Z",
     }
     api = client(flow, authenticated)
     rejected = api.post(
@@ -357,6 +356,46 @@ def test_create_requires_csrf_and_preserves_client_idempotent_identity_and_trace
     assert flow.create_command.acceptance_kind == "NORMAL_SUGGESTION"
 
 
+def test_create_route_takes_no_receipt_time_from_the_request() -> None:
+    """Owner answer (a) to Q-2026-10-20-147 (V1-056 sub-slice 10i-4b): the holding deposit's
+    receipt and acceptance times are the moment staff save the Reservation, so the route sends no
+    time to the flow and the database takes its own; a body that still sends one is refused (422)
+    and the flow is not called. The money's own receipt time stays on the Payment."""
+    property_id = uuid4()
+    flow = InMemoryReservationFlow()
+    api = client(flow, actor(property_id, "reservations.read", "reservations.create"))
+    path = f"/properties/{property_id}/reservations"
+    payload = {
+        "reservation_id": str(uuid4()),
+        "unit_id": str(uuid4()),
+        "customer_id": str(uuid4()),
+        "reservation_date": "2026-08-26",
+        "agreed_monthly_rent_usd_cents": 50000,
+        "expiration_date": "2026-09-05",
+        "acceptance_id": str(uuid4()),
+        "accepted_initial_deposit_usd_cents": 10000,
+        "required_security_deposit_usd_cents": 50000,
+        "acceptance_reason": "Accepted normal suggestion",
+        "deposit_id": str(uuid4()),
+        "receipt_id": str(uuid4()),
+        "payment_id": str(uuid4()),
+    }
+
+    refused = api.post(
+        path, json={**payload, "received_at": "2026-08-26T01:00:00Z"}, headers=headers()
+    )
+
+    assert refused.status_code == 422
+    assert refused.json()["error"]["fields"] == ["body.received_at"]
+    assert [flow.create_command] == [None]
+
+    accepted = api.post(path, json=payload, headers=headers())
+
+    assert accepted.status_code == 201, accepted.text
+    assert flow.create_command is not None
+    assert (flow.create_command.accepted_at, flow.create_command.received_at) == (None, None)
+
+
 def test_authorized_variance_requires_separate_capability() -> None:
     property_id = uuid4()
     payload = {
@@ -373,7 +412,6 @@ def test_authorized_variance_requires_separate_capability() -> None:
         "deposit_id": str(uuid4()),
         "receipt_id": str(uuid4()),
         "payment_id": str(uuid4()),
-        "received_at": "2026-08-26T01:00:00Z",
     }
     missing = client(InMemoryReservationFlow(), actor(property_id, "reservations.create")).post(
         f"/properties/{property_id}/reservations", json=payload, headers=headers()

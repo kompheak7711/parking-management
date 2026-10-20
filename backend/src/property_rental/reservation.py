@@ -137,7 +137,8 @@ class ReservationCreateCommand:
     acceptance_id: UUID
     accepted_required_amount_usd_cents: int
     acceptance_kind: str
-    accepted_at: datetime
+    # None: the database's statement time (owner answer (a) to Q-2026-10-20-147).
+    accepted_at: datetime | None
     acceptance_reason: str
     authorization_reference: str
     calculation_trace: dict[str, object]
@@ -145,7 +146,7 @@ class ReservationCreateCommand:
     required_deposit_usd_cents: int
     receipt_id: UUID
     payment_id: UUID
-    received_at: datetime
+    received_at: datetime | None
 
     def __post_init__(self) -> None:
         for field in (
@@ -414,11 +415,15 @@ class PostgresReservationService:
 
     def create(self, command: ReservationCreateCommand) -> ReservationActivationResult:
         digest = reservation_request_digest("reservation.create", command)
+        # The acceptance and receipt times default to statement_timestamp() (owner answer (a) to
+        # Q-2026-10-20-147): one statement time for both, within the function's own checks.
         return _activation(
             self._execute(
                 """
                 SELECT * FROM app.create_reservation(
-                    %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s
+                    %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,
+                    COALESCE(%s::timestamptz,statement_timestamp()),%s,%s,%s,%s,%s,%s,%s,
+                    COALESCE(%s::timestamptz,statement_timestamp()),%s
                 )
                 """,
                 (

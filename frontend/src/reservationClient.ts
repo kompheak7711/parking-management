@@ -108,7 +108,6 @@ export interface ReservationCreateSource {
   deposit_id: string;
   receipt_id: string;
   payment_id: string;
-  received_at: string;
 }
 
 export interface ReservationExtendSource {

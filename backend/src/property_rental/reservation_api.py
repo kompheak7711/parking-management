@@ -772,7 +772,6 @@ class ReservationCreate(BaseModel):
     deposit_id: UUID
     receipt_id: UUID
     payment_id: UUID
-    received_at: datetime
 
 
 class ReservationExtend(BaseModel):
@@ -1039,7 +1038,7 @@ def create_reservation_router(
             acceptance_id=source.acceptance_id,
             accepted_required_amount_usd_cents=source.accepted_initial_deposit_usd_cents,
             acceptance_kind=acceptance_kind,
-            accepted_at=source.received_at,
+            accepted_at=None,
             acceptance_reason=source.acceptance_reason,
             authorization_reference=(
                 RESERVATION_CREATE_CAPABILITY
@@ -1055,7 +1054,8 @@ def create_reservation_router(
             required_deposit_usd_cents=source.required_security_deposit_usd_cents,
             receipt_id=source.receipt_id,
             payment_id=source.payment_id,
-            received_at=source.received_at,
+            # Owner answer (a) to Q-2026-10-20-147: the database's statement time.
+            received_at=None,
         )
         try:
             resource = flow.create(property_id, command, actor=actor)

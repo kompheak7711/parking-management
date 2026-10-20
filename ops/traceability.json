@@ -44309,6 +44309,30 @@
       "test_path": "backend/tests/test_deposit_created_after_signing_ground_delay_migration.py",
       "status": "implemented",
       "notes": "Review round 1 (security): a Deposit with no Reservation always waits its five days. A walk-in Security Deposit written by hand with a creation time five days ago (before the signing) reads 0 now and the unpaid-Initial termination is refused; another walk-in Lease's Deposit dated six days ago reads its whole 50,000 with 10,000 held and the termination is recorded (owner answer (a) to Q-2026-10-20-148; V1-056 sub-slice 10i-4a)."
+    },
+    {
+      "test_id": "test_create_route_takes_no_receipt_time_from_the_request",
+      "upstream_ids": [
+        "BR-RES-001",
+        "BR-DEP-005",
+        "API-032"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_reservation_api.py",
+      "status": "implemented",
+      "notes": "A Reservation create body that sends received_at is refused (422) and the flow is not called; without it the route passes no acceptance or receipt time, so the service records the database's own time (owner answer (a) to Q-2026-10-20-147; V1-056 sub-slice 10i-4b)."
+    },
+    {
+      "test_id": "TEST-FE-681",
+      "upstream_ids": [
+        "BR-RES-001",
+        "API-032",
+        "UI-032"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/ReservationManagement.test.tsx",
+      "status": "implemented",
+      "notes": "The Reservation create form sends exactly the identities, dates, amounts, Payment and reason, no device time (owner answer (a) to Q-2026-10-20-147; V1-056 sub-slice 10i-4b)."
     }
   ]
 }

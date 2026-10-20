@@ -136,7 +136,6 @@ export function ReservationManagement({
         ? "Creating the Reservation with the normal 20% Security Deposit suggestion…"
         : "Submitting the explicit Security Deposit variance for authorization…",
     );
-    const now = new Date().toISOString();
     void api
       .create(
         propertyId,
@@ -156,7 +155,6 @@ export function ReservationManagement({
           deposit_id: crypto.randomUUID(),
           receipt_id: crypto.randomUUID(),
           payment_id: formString(data, "payment-id"),
-          received_at: now,
         },
         crypto.randomUUID(),
       )

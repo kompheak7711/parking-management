@@ -329,6 +329,11 @@ Creation requires one Customer, one Unit, Reservation/Expiration dates, agreed
 monthly Rent evidence, and approved Security Deposit receipt/input workflow. It
 must satisfy `BR-RES-*` and create no Reservation Deposit type.
 
+The `POST` body takes no time: the server records the database's own time at the command
+as both the holding deposit's receipt time and its acceptance time; a body that sends
+`received_at` is refused with 422. The money's own receipt time stays on the linked
+Payment (owner answer (a) to Q-2026-10-20-147, V1-056 sub-slice 10i-4b).
+
 The resource's `deposit_required_usd_cents` is the Security Deposit's required total with its
 required-amount adjustments (BR-DEP-004; since V1-056 sub-slice 10e-2b-4f), and
 `deposit_received_usd_cents` counts only receipts that are not reversed (since 10e-2b-4c).

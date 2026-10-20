@@ -153,6 +153,54 @@ describe("Reservation staff workflow", () => {
     ]);
   });
 
+  it("TEST-FE-681 sends no device time with the Reservation create", async () => {
+    const client = api();
+    render(<ReservationManagement api={client} />);
+    fireEvent.change(screen.getByLabelText("Reservation Property identifier"), {
+      target: { value: "property-1" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Load Reservations" }));
+    await screen.findByRole("heading", { name: "Create Reservation" });
+    const fields: [string, string][] = [
+      ["Available Unit identifier", "unit-1"],
+      ["Customer identifier", "customer-1"],
+      ["Reservation Date", "2026-08-26"],
+      ["Expiration Date (maximum initial period: 21 days)", "2026-09-05"],
+      ["Agreed monthly Rent (USD)", "500.00"],
+      ["Accepted initial Security Deposit (USD)", "100.00"],
+      ["Full required Security Deposit (USD)", "500.00"],
+      ["Deposit Payment source identifier", "payment-1"],
+      ["Acceptance reason", "Accepted normal suggestion"],
+    ];
+    for (const [label, value] of fields) {
+      fireEvent.change(screen.getByLabelText(label), { target: { value } });
+    }
+    fireEvent.click(
+      screen.getByRole("button", { name: "Create ACTIVE Reservation" }),
+    );
+
+    await waitFor(() => {
+      expect(client.create).toHaveBeenCalledTimes(1);
+    });
+    const source = vi.mocked(client.create).mock.calls[0]?.[1];
+    expect(Object.keys(source ?? {}).sort()).toEqual([
+      "acceptance_id",
+      "acceptance_reason",
+      "accepted_initial_deposit_usd_cents",
+      "agreed_monthly_rent_usd_cents",
+      "customer_id",
+      "deposit_id",
+      "expiration_date",
+      "payment_id",
+      "receipt_id",
+      "required_security_deposit_usd_cents",
+      "reservation_date",
+      "reservation_id",
+      "unit_id",
+    ]);
+    expect(source?.accepted_initial_deposit_usd_cents).toBe(10000);
+  });
+
   it("TEST-FE-184 previews classified Deposit consequences and confirms cancellation", async () => {
     const client = api();
     vi.spyOn(window, "confirm").mockReturnValue(true);

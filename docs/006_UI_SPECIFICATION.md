@@ -279,6 +279,10 @@ The form selects one Customer and one available Unit, captures authoritative dat
 and agreed monthly Rent inputs, and shows the minimum partial Security Deposit
 requirement. Creation must not invent a Reservation Deposit type.
 
+The form sends no receipt time; the server records the database's own time as the holding
+deposit's receipt and acceptance time (owner answer (a) to Q-2026-10-20-147, V1-056
+sub-slice 10i-4b).
+
 ## UI-033 — Reservation Detail
 
 Show current status, Property-local expiration, source dates, Security Deposit
