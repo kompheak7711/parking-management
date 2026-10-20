@@ -334,7 +334,7 @@ Changing current Customer contact information must not alter the historical mean
 
 # 6. Reservation Rules
 
-## BR-RES-001 — Reservation Is Mandatory
+## BR-RES-001 — Reservation Is Optional
 
 A Customer may reserve a Unit before signing its Lease. A Lease may also be signed
 without a Reservation for a walk-in Customer; then no Reservation is completed and the
@@ -1129,7 +1129,7 @@ Invalid:
 Signing a Lease whose contractual period overlaps another SIGNED Lease for the Unit
 
 Invalid:
-Moving in while Security Deposit remains outstanding
+Moving in before the Lease is SIGNED
 
 Invalid:
 Cancelling a Signed Lease

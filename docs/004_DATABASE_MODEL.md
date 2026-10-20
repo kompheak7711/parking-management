@@ -338,8 +338,8 @@ Constraints and indexes:
   financial transfer policy.
 - Exclusion constraint using `daterange(start_date, end_date, '[]')`: `EXCLUDE USING gist (unit_id WITH =, daterange(...) WITH &&) WHERE (status = 'SIGNED')`. The same transaction changing to TERMINATED retains historical contractual dates but releases future exclusivity according to the approved actual termination process; application validation must still prevent invalid advance-billed periods.
 - Index `(unit_id, status)` and `(primary_tenant_id, start_date DESC)`.
-- No Lease column can override recurring Rent timing. Initial Rent is due seven
-  calendar days after actual Move-in Date; recurring Rent is due on the fifth day of
+- No Lease column can override recurring Rent timing. The Initial Rent Due Date is
+  proposed as the Lease Start Date plus five calendar days (BR-RENT-009, DL-064); recurring Rent is due on the fifth day of
   its billed calendar month. Non-recurring Invoice Due Dates retain their approved
   source in DB-INV-001.
 
@@ -1759,7 +1759,7 @@ outbound event; no Refund Receipt table or document is introduced.
 
 Constraints:
 
-- SECURITY requires one Reservation, prohibits pet approval, and `UNIQUE (reservation_id) WHERE deposit_type='SECURITY'`.
+- SECURITY requires one Reservation, or for a walk-in Lease one Lease and no Reservation (DL-066; as built in sub-slice 10e-2b-4c below), prohibits pet approval, and `UNIQUE (reservation_id) WHERE deposit_type='SECURITY'`.
 - PET requires one Lease and one approval whose terms require a Deposit; reservation
   is null; `UNIQUE (lease_id) WHERE deposit_type='PET'` and `UNIQUE
   (pet_approval_id) WHERE deposit_type='PET'` enforce the one optional Pet Deposit.

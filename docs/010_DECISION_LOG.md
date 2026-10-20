@@ -107,6 +107,7 @@ Older unnumbered placeholder documents are not decision authority.
 - **Rationale:** Not recorded.
 - **Decision date:** Not recorded.
 - **Alternatives:** Alternatives were discussed; their complete record is not reproduced here.
+- **Replaced by DL-066 and DL-064 (noted 2026-10-21, docs-only rules update 2, part 8):** a Reservation is not required; a walk-in Customer may sign a Lease without one (BR-RES-001, DL-066). A Reservation becomes COMPLETED when its resulting Lease becomes SIGNED, not at move-in (BR-RES-013, DL-064). The decision text above is kept as history (section 13, rule 2).
 
 ## DL-004 — Reservation expiration
 
@@ -166,6 +167,7 @@ Older unnumbered placeholder documents are not decision authority.
 - **Rationale:** Not recorded as part of the approved decisions.
 - **Decision date:** Not recorded in this log.
 - **Alternatives:** Presented before approval; not adopted.
+- **Replaced by DL-066 (noted 2026-10-21, docs-only rules update 2, part 8):** the remaining Security Deposit is due within five calendar days after the Lease Start Date, together with the Initial Rent Invoice, and an unpaid Security Deposit never blocks move-in (BR-DEP-006, BR-LEASE-015). The decision text above is kept as history (section 13, rule 2).
 
 ## DL-009 — Reservation cancellation and Security Deposit disposition
 
@@ -188,6 +190,7 @@ Older unnumbered placeholder documents are not decision authority.
 - **Rationale:** Not recorded as part of the approved decision.
 - **Decision date:** Not recorded in this log.
 - **Alternatives:** Not recorded.
+- **Replaced by DL-066 (noted 2026-10-21, docs-only rules update 2, part 8):** a Pet Deposit for a pet present from the beginning of occupancy is due within five calendar days after the Lease Start Date and never blocks move-in (BR-DEP-010, BR-LEASE-015). A later approved pet still pays before or when the pet begins staying. The decision text above is kept as history (section 13, rule 2).
 
 ## DL-011 — Undisclosed pet handling
 
@@ -285,6 +288,7 @@ Older unnumbered placeholder documents are not decision authority.
 - **Rationale:** Not recorded.
 - **Decision date:** Not recorded.
 - **Alternatives:** Not recorded.
+- **Replaced by DL-064 (noted 2026-10-21, docs-only rules update 2, part 8):** the system proposes an Initial Rent Invoice Due Date of the Lease Start Date plus five calendar days, not seven calendar days after the actual Move-in Date (BR-RENT-009). The decision text above is kept as history (section 13, rule 2).
 
 ## DL-019 — Invoice ownership and optional Lease association
 
@@ -574,6 +578,7 @@ open and was later resolved during authoritative reconciliation.
 - **Rationale:** Current authoritative rule controls; no new decision is needed.
 - **Decision date:** Not recorded.
 - **Alternatives:** Earlier alternatives are historical and no longer open.
+- **Replaced by DL-064 (noted 2026-10-21, docs-only rules update 2, part 8):** the seven-calendar-day Due Date in the resolution above is no longer current; `BR-RENT-009` now proposes an Initial Rent Invoice Due Date of the Lease Start Date plus five calendar days. The resolution text above is kept as history (section 13, rule 2).
 
 ## 11.1 Open Implementation and Operational Decisions
 
