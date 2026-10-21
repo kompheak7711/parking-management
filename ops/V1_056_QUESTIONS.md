@@ -3733,7 +3733,7 @@ Your answer 1 to the 10h-2 report: add the READ COMMITTED check to the 8e-1 refu
 
 **Owner answer (2026-10-21, same session, after the L1b-2 stop).** Option (a): make both fixes, run every check and run the run rules need, then do review round 4 with an independent review agent, and commit L1b-2 only if round 4 is clean. If the auto-mode checker blocks that agent again, follow the run rule for a blocked review agent. Then continue with L1c and the later sub-slices; stop after L5 is committed (L6 waits for the owner's sign-in screen description).
 
-## Q-2026-10-21-164 — Login sub-slice L1c: nine capabilities the Staff bundle answer does not name (blocks L1c; recommendation (a))
+## Q-2026-10-21-164 — Login sub-slice L1c: nine capabilities the Staff bundle answer does not name (blocks L1c; recommendation (a)) (ANSWERED 2026-10-21: (a))
 
 **What the rules say.** Your answer to Q-2026-10-21-150 (a) (DL-081) lists what Staff get and what Staff never get, with your note "Staff get no action that moves money at once or changes a Customer's standing". DL-074 answer 1 gives Staff "preparing drafts". The Manager and Owner bundles hold every bundle capability.
 
@@ -3749,3 +3749,13 @@ Your answer 1 to the 10h-2 report: add the READ COMMITTED check to the 8e-1 refu
 **Recommendation: (a)**, because it follows your note on Q-150 exactly and fails closed; a Manager confirms every money decision anyway.
 
 **What goes ahead.** L1d (Settings access), which does not depend on the Staff bundle. L1c waits; L2 (which gives a new account its class's default bundle) builds on L1c.
+
+**Owner answer (2026-10-21, fresh session).** Option (a), as recommended: none of the nine capabilities (`deposits.dispose`, `deposits.correct`, `reservation_deposits.dispose`, `reservation_deposits.correct`, `reservation_deposits.override`, `refunds.correct`, `refunds.corrections.reverse`, `late_payment.charge_correction`, `late_payment.final_decision`) goes in the Staff bundle. They stay in the Owner and Manager bundles, which hold every bundle capability. Built in L1c, which also records this answer in docs/010 DL-081.
+
+## Owner rule (2026-10-21, fresh session): Settings access needs the sign-in code (MFA) — not a question; recorded here with the answer above
+
+**The rule (owner's words, kept).** Any account that holds Settings access must use the sign-in code at every sign-in, the same as Owner and Manager accounts. The Owner can give Settings access to a Staff account only after that account has set up its sign-in code; if not, the give is refused with a plain message. No path may leave a Staff account with Settings access and no sign-in code. If a reset or removal path needs a choice from the owner, Claude Code writes a question with its recommendation.
+
+**Real-life example (owner's).** Dara is Staff and keeps the riel rate up to date. Someone who learns Dara's password still cannot change Settings without Dara's phone.
+
+**Where it is recorded.** docs/010: an "Amended by DL-081" line under DL-074 answer 2, and a short note in DL-081. It is built in its own small sub-slice after L1d (L1e, planned in ops/V1_056_PLAN.md section 7.3 with its pre-code design); a reset or removal path that needs the owner's choice gets its own question then.
