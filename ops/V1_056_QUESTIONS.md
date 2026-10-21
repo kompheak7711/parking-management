@@ -3674,3 +3674,36 @@ Your answer 1 to the 10h-2 report: add the READ COMMITTED check to the 8e-1 refu
 **What goes ahead.** Everything except this part of L5.
 
 **Owner answer (2026-10-21, fresh session, with the approval of the login slice plan in commit 2aabe67).** Option (a), as recommended: `property.read` and `units.read` in all three default bundles, checked with the Property scope on the four reads. In L5 the missing Origin and CSRF checks are also added to `POST /properties/{property_id}/units` and `PATCH /units/{unit_id}`. Built in L1b, L1c and L5. Recorded in docs/010 DL-081.
+
+## Q-2026-10-21-161 — Login sub-slice L1b-1 review round 1: `billing.generate` is also a capability for people today (blocks the L1b-1 commit; the catalog row can never change once written; recommendation (a))
+
+**What the plan says.** The approved login slice plan (section 7.1 and L1b) says `billing.generate` "belongs to the billing service principal only" and can never be put in a role bundle. L1b-1 was built that way: its catalog row says "not assignable by a bundle".
+
+**What the code does (found by the round 1 independent reviewer, checked).** People use `billing.generate` too: `POST /api/v1/properties/{property_id}/billing-runs/rent` and `.../billing-runs/utilities` (API-054, API-055; `billing_run_api.py`, `billing_run.py`) start a Rent or Utility billing run only for a signed-in human who holds `billing.generate` for the Property, and `GET /api/v1/billing-runs/{run_id}` reads a run's status with the same capability; the billing capabilities list shown on screen (`invoice_api.py`) includes it. The scheduled billing job has its own service principal and is not changed by either option.
+
+**Example.** On 25 November the scheduled Rent run did not finish because the Mac mini was restarted. With (a) Manager Dara opens Billing and presses "Run Rent billing" for November; the run makes the missing Rent Invoices once (the run is idempotent). With (b) nobody can start it from the screen; the Owner restarts the job on the server.
+
+**Options.**
+- (a) `billing.generate` is a bundle capability. The Owner and Manager bundles hold it (the Manager bundle has "every assignable capability"); the Staff bundle does not (Q-150 (a) keeps `invoices.create` and `invoices.issue` from Staff, and a billing run creates and issues Invoices). Its catalog description becomes "Start a Rent or Utility billing run and read its status". Only `rent_nonpayment.evaluate` stays a service-principal-only capability, and `settings.manage` per user only.
+- (b) Keep it out of every bundle, as the plan says. Then from L5 no person can start a billing run or read its status from the screen; API-054, API-055 and the run status read become worker-only (docs/005 changes), and the scheduled job is the only way to bill.
+
+**Recommendation: (a)**, because it keeps today's working routes and fits DL-074 answer 1 ("Manager: all daily work"); the plan's sentence came from a survey that missed these routes.
+
+**What goes ahead.** Nothing in the login slice: L1b-2 to L8 build on the catalog, and the catalog rows are append-only. The L1b-1 round 1 fixes are written down (ops/reviews/V1-056-login-L1b-1.md, a draft, not committed) and are made with your answer.
+
+## Q-2026-10-21-162 — Login sub-slice L1b-1 security review round 1: may `identity.manage_access` be put in a role bundle? (blocks the L1b-1 commit with Q-161; recommendation (b))
+
+**What the rules say.** DL-074 answer 1: Owner "every capability, including user accounts, role bundles and settings"; Manager "no user or role administration". DL-058 and Q-152 (a): exactly one Owner account; the Owner-only resets are tied to the account class, not to a role name. Q-156 (a) says "only the Owner (`identity.manage_access`)". The approved plan (L1c) puts `identity.manage_access` in the Owner bundle and leaves it out of the Manager bundle; bundles stay editable by whoever holds `identity.manage_access`.
+
+**The gap (security reviewer).** As a bundle capability, `identity.manage_access` can be ticked into any bundle by its holder. If it is ever ticked into a bundle a Manager holds, that Manager can create and disable accounts, edit bundles (also their own) and assign bundles, which is the user and role administration DL-074 keeps from Managers. Account resets are not affected: they are decided by the account class.
+
+**Example.** The Owner edits the Manager bundle to add "see users" and by mistake ticks `identity.manage_access`. With (a), Manager Dara can now give herself `financial.approve` through a new bundle and create a Staff account for a friend. With (b) the tick is not offered: only the Owner account administers users and bundles.
+
+**Options.**
+- (a) Keep it a bundle capability, as planned. L2 refuses a holder who edits a bundle they hold or their own assignments, and the screen warns when it is ticked.
+- (b) Make it an Owner-class capability: never in a bundle (like `settings.manage`); the grant reader gives it to the Owner account class only. The Owner bundle and the Manager bundle then hold the same bundle capabilities; the difference between Owner and Manager is the account class (`identity.manage_access`, `settings.manage`, the resets).
+- (c) Make it per user, given only by the Owner (like `settings.manage`).
+
+**Recommendation: (b)**, because there is exactly one Owner account (Q-152 (a)) and DL-074 gives user and role administration to the Owner only; (b) fails closed and needs no self-edit rules.
+
+**What goes ahead.** As for Q-161: nothing, because the catalog row is append-only.
