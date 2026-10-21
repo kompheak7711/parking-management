@@ -8,6 +8,7 @@ the request-digest, audit-action, log-event and function labels listed here.
 
 import ast
 import re
+import uuid
 from pathlib import Path
 
 import pytest
@@ -23,8 +24,11 @@ from property_rental.access_control import (
     SERVICE_PRINCIPAL_CAPABILITIES,
     SETTINGS_MANAGE_CAPABILITY,
     UNITS_READ_CAPABILITY,
+    CapabilityCatalogMismatch,
+    PostgresCapabilityGrantReader,
     capability_grant_path,
 )
+from property_rental.identity import CapabilityGrant
 
 SOURCE = Path(__file__).parents[1] / "src" / "property_rental"
 DOTTED = re.compile(r"^[a-z][a-z_]*(\.[a-z][a-z_]*)+$")
@@ -142,3 +146,55 @@ def test_each_capability_has_one_grant_path() -> None:
     assert len(BUNDLE_CAPABILITIES) == 72
     with pytest.raises(KeyError):
         capability_grant_path("reports.export")
+
+
+class _FakeCursor:
+    def __init__(self, rows: list[tuple[object, ...]]) -> None:
+        self.rows = rows
+
+    def __enter__(self) -> "_FakeCursor":
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        return None
+
+    def execute(self, query: str, parameters: tuple[object, ...]) -> None:
+        assert "app.actor_capability_grants" in query and len(parameters) == 1
+
+    def fetchall(self) -> list[tuple[object, ...]]:
+        return self.rows
+
+
+class _FakeConnection:
+    def __init__(self, rows: list[tuple[object, ...]]) -> None:
+        self.rows = rows
+
+    def cursor(self) -> "_FakeCursor":
+        return _FakeCursor(self.rows)
+
+
+def test_the_grant_reader_groups_property_ids_and_refuses_names_it_may_not_give() -> None:
+    reader = PostgresCapabilityGrantReader(
+        _FakeConnection([("leases.read", "p1"), ("leases.read", "p2"), ("units.read", "p1")])
+    )
+    assert reader.grants_for(uuid.uuid4()) == frozenset(
+        {
+            CapabilityGrant("leases.read", frozenset({"p1", "p2"})),
+            CapabilityGrant("units.read", frozenset({"p1"})),
+        }
+    )
+    assert PostgresCapabilityGrantReader(_FakeConnection([])).grants_for(uuid.uuid4()) == (
+        frozenset()
+    )
+    for refused_name in ("reports.export", "rent_nonpayment.evaluate", "settings.manage"):
+        # Review round 1: also a catalog name the reader may not give (a service principal's,
+        # and the per-user Settings access until L1d).
+        with pytest.raises(CapabilityCatalogMismatch):
+            PostgresCapabilityGrantReader(
+                _FakeConnection([("leases.read", "p1"), (refused_name, "p1")])
+            ).grants_for(uuid.uuid4())
+    assert PostgresCapabilityGrantReader(
+        _FakeConnection([("identity.manage_access", "p1")])
+    ).grants_for(uuid.uuid4()) == frozenset(
+        {CapabilityGrant("identity.manage_access", frozenset({"p1"}))}
+    )

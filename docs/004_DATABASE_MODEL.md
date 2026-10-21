@@ -5073,6 +5073,35 @@ catalog row needs a security review). The application keeps the same catalog in
 application code is neither a catalog capability nor a listed label. The runtime role may only
 read the catalog.
 
+## DB-AUTH-007 — Role bundles, assignments and effective grants
+
+Added by DL-081 (login sub-slice L1b-2, migration `20270120_177`). `role_bundles` holds the
+current state of each configurable bundle of a Property: its id, Property, name (trimmed, 1 to
+128 characters, no C0 or C1 control character and none of the listed invisible format
+characters (U+00AD, U+061C, U+180E, U+200B to U+200F, U+202A to U+202E, U+2060 to U+206F,
+U+FEFF, U+FFF9 to U+FFFB and the tag characters U+E0000 to U+E007F), unique per Property
+whatever its capital letters) and version; a new bundle starts at version 1, an update may
+change only the name and must raise the version by exactly 1, and a bundle is never deleted or
+truncated.
+`role_bundle_versions` keeps every version with its name (written by a trigger with the bundle),
+and `role_bundle_capabilities` keeps the complete capability set of every version: a capability
+in a bundle must be a catalog capability with grant path `bundle` (a foreign key on the
+capability and its grant path), so `settings.manage`, `identity.manage_access` and
+`rent_nonpayment.evaluate` can never be in a bundle; capabilities are written only for the
+bundle's current version and only by the transaction that wrote that version (its transaction
+id and its start time, so a logical restore that lets a later transaction reuse an old id still
+cannot add to a recorded version), so a recorded version never changes. `user_role_assignments` records each assignment of a bundle to an account
+with the bundle's Property and the account that assigned it (null only for seeds); an account
+has at most one active assignment of a bundle (checked under a lock, at READ COMMITTED only);
+`user_role_assignment_removals` ends an assignment at most once, with a reason and the account
+that removed it. The four history relations are never updated, deleted or truncated. The
+definer function `actor_capability_grants(actor_id)` returns the effective capabilities with
+their Property for an active, classified account only: the capabilities of the current version of
+every actively assigned bundle, and `identity.manage_access` for every Property when the account
+class is `owner`. A removed capability or assignment stops at the next read. The runtime role may
+only execute that function; the writers (default bundles, administration) are reviewed definer
+functions of later sub-slices.
+
 ---
 
 # 21. Deferred Technical and Configuration Decisions
@@ -5130,7 +5159,7 @@ replace detailed traceability.
 | Final Settlement | DB-SETTLE-001..006, DB-DEP-005..006, DB-DER-007 | BR-SETTLE-001..015 | PR-SETTLE-001..015, PR-CAP-006, PR-WF-005..007 |
 | Money, exchange, and rounding | DB-TYPE-004..005, DB-PAY-002..003, DB-REFUND-001, DB-TEST-005, DB-TEST-010 | BR-MONEY-001..013 | PR-MONEY-001..013, PR-CAP-005, PR-QUAL-006 |
 | Audit and authorization | DB-AUDIT-001..003, DB-IMM-001, DB-TXN-001..007 | BR-AUDIT-001..011, BR-AUTH-001..009 | PR-AUDIT-001..011, PR-AUTH-001..009, PR-CAP-007, PR-QUAL-001..008 |
-| Authentication and account security | DB-AUTH-001..006 | SEC-009..018, SEC-021, SEC-071..075 | PR-CAP-009 |
+| Authentication and account security | DB-AUTH-001..007 | SEC-001..003, SEC-009..018, SEC-020..022, SEC-071..075 | PR-CAP-009 |
 
 ---
 

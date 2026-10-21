@@ -111,7 +111,6 @@ def test_the_capability_catalog_is_append_only(migrated_database_url: str) -> No
             "UPDATE app.capabilities SET grant_path='bundle' "
             "WHERE capability_id='identity.manage_access'",
             "DELETE FROM app.capabilities WHERE capability_id='leases.read'",
-            "TRUNCATE app.capabilities",
         ):
             refused(
                 connection,
@@ -119,6 +118,15 @@ def test_the_capability_catalog_is_append_only(migrated_database_url: str) -> No
                 query,
                 match="capability catalog is append-only",
             )
+        # Since sub-slice L1b-2 `app.role_bundle_capabilities` refers to the catalog, so a TRUNCATE
+        # of the catalog alone is refused by that foreign key before the trigger runs; the
+        # trigger's refusal is checked with both tables in test_role_bundle_migration.py.
+        refused(
+            connection,
+            psycopg.errors.FeatureNotSupported,
+            "TRUNCATE app.capabilities",
+            match="cannot truncate a table referenced in a foreign key constraint",
+        )
         connection.rollback()
     with psycopg.connect(runtime_database_url()) as runtime:
         refused(

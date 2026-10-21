@@ -44631,6 +44631,144 @@
       "test_path": "backend/tests/test_access_control.py",
       "status": "implemented",
       "notes": "Every catalog capability has one grant path: settings.manage per_user, identity.manage_access owner_class, rent_nonpayment.evaluate service_principal, all 72 others (billing.generate included) bundle; the three sets do not overlap (review round 2); an unknown name is refused (login slice sub-slice L1b-1, review round 1; owner answers (a) to Q-2026-10-21-151 and Q-2026-10-21-161, (b) to Q-2026-10-21-162, DL-081)."
+    },
+    {
+      "test_id": "test_a_role_bundle_holds_only_bundle_capabilities_of_the_catalog",
+      "upstream_ids": [
+        "SEC-002",
+        "SEC-021",
+        "SEC-022",
+        "API-080",
+        "DB-AUTH-007",
+        "DL-074",
+        "DL-081"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_role_bundle_migration.py",
+      "status": "implemented",
+      "notes": "A role bundle holds only catalog capabilities whose grant path is bundle: settings.manage, identity.manage_access, rent_nonpayment.evaluate and an unknown name are refused by the catalog foreign key, another grant path by the check, a repeated capability by the key; billing.generate is accepted (login slice sub-slice L1b-2; owner answers (a) to Q-2026-10-21-161, (b) to Q-2026-10-21-162, DL-081)."
+    },
+    {
+      "test_id": "test_a_role_bundle_name_is_unique_per_property_and_every_version_is_kept",
+      "upstream_ids": [
+        "SEC-021",
+        "API-080",
+        "DB-AUTH-007",
+        "DL-081"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_role_bundle_migration.py",
+      "status": "implemented",
+      "notes": "A bundle name is trimmed, 1 to 128 characters, has no C0 or C1 control character and none of the listed invisible format characters (an isolate direction mark, a C1 control and a tag character tested; review rounds 1 and 3) and is unique per Property whatever its capital letters (review round 1); provenance is at most 500 characters; a new bundle starts at version 1 on an existing Property; an update changes only the name and raises the version by exactly 1; every version and its capability set is kept and a hand-written version row is refused; bundles are never deleted and the history is never updated, deleted or truncated (login slice sub-slice L1b-2; owner answers (a) to Q-2026-10-21-161, (b) to Q-2026-10-21-162, DL-081)."
+    },
+    {
+      "test_id": "test_a_bundle_version_takes_capabilities_only_in_the_transaction_that_wrote_it",
+      "upstream_ids": [
+        "SEC-021",
+        "API-080",
+        "DB-AUTH-007",
+        "DL-081"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_role_bundle_migration.py",
+      "status": "implemented",
+      "notes": "Capabilities are written only for the bundle's current version and only by the transaction that wrote that version, so a committed version and an earlier version of the same transaction never change (login slice sub-slice L1b-2; owner answers (a) to Q-2026-10-21-161, (b) to Q-2026-10-21-162, DL-081)."
+    },
+    {
+      "test_id": "test_a_bundle_is_assigned_once_until_its_assignment_is_removed",
+      "upstream_ids": [
+        "SEC-021",
+        "API-080",
+        "DB-AUTH-001",
+        "DB-AUTH-007",
+        "DL-081"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_role_bundle_migration.py",
+      "status": "implemented",
+      "notes": "An account has at most one active assignment of a bundle; an assignment names its bundle with the bundle's Property; who assigned or removed it is a real account (review round 1); it is removed at most once with a non-blank reason of at most 500 characters and can be assigned again after the removal; assignments and removals are never updated, deleted or truncated (login slice sub-slice L1b-2; owner answers (a) to Q-2026-10-21-161, (b) to Q-2026-10-21-162, DL-081)."
+    },
+    {
+      "test_id": "test_two_assignments_of_one_bundle_at_the_same_time_wait_and_one_is_refused",
+      "upstream_ids": [
+        "SEC-021",
+        "DB-AUTH-007",
+        "DL-081"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_role_bundle_migration.py",
+      "status": "implemented",
+      "notes": "Two assignments of one bundle to one account at the same time: the second waits on the advisory lock while the first is uncommitted and is refused once the first commits, so the check runs after the lock (review round 1); an assignment outside READ COMMITTED is refused (fail closed) (login slice sub-slice L1b-2; owner answers (a) to Q-2026-10-21-161, (b) to Q-2026-10-21-162, DL-081)."
+    },
+    {
+      "test_id": "test_the_grant_reader_gives_an_active_classified_account_its_current_capabilities",
+      "upstream_ids": [
+        "SEC-001",
+        "SEC-002",
+        "SEC-003",
+        "SEC-017",
+        "SEC-021",
+        "DB-AUTH-001",
+        "DB-AUTH-007",
+        "DL-058",
+        "DL-074",
+        "DL-081"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_role_bundle_migration.py",
+      "status": "implemented",
+      "notes": "app.actor_capability_grants and PostgresCapabilityGrantReader give an active, classified account the union of its actively assigned bundles' current capabilities with the bundle's Property; a new version without a capability and a removed assignment take it away at the next read; disabled, unclassified and unknown accounts get nothing, a disabled Owner too (review round 1); the Owner account class alone gets identity.manage_access for every Property, with its bundles' capabilities as well (review round 1), a Manager only its bundles (login slice sub-slice L1b-2; owner answers (a) to Q-2026-10-21-161, (b) to Q-2026-10-21-162, DL-081)."
+    },
+    {
+      "test_id": "test_the_runtime_role_reads_grants_only_through_the_reader",
+      "upstream_ids": [
+        "SEC-002",
+        "SEC-020",
+        "DB-AUTH-007",
+        "DL-081"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_role_bundle_migration.py",
+      "status": "implemented",
+      "notes": "The runtime role reads a committed account's grants through the definer reader and may not read or write any bundle, version, capability, assignment or removal relation (login slice sub-slice L1b-2; owner answers (a) to Q-2026-10-21-161, (b) to Q-2026-10-21-162, DL-081)."
+    },
+    {
+      "test_id": "test_the_role_bundle_migration_is_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "SEC-020",
+        "SEC-021",
+        "DB-AUTH-007",
+        "DL-081"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_role_bundle_migration.py",
+      "status": "implemented",
+      "notes": "Only the five relations with their keys and one index, six trigger functions (not definers, search_path pg_catalog), fifteen triggers and the definer reader (search_path pg_catalog) are added; nothing existing changes; the runtime role may only execute the reader, the other application roles get nothing and the backup role only its pg_read_all_data read; forward-only (login slice sub-slice L1b-2; owner answers (a) to Q-2026-10-21-161, (b) to Q-2026-10-21-162, DL-081)."
+    },
+    {
+      "test_id": "test_the_grant_reader_groups_property_ids_and_refuses_names_it_may_not_give",
+      "upstream_ids": [
+        "SEC-002",
+        "SEC-021",
+        "DB-AUTH-007",
+        "DL-081"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_access_control.py",
+      "status": "implemented",
+      "notes": "PostgresCapabilityGrantReader groups the reader's rows into one CapabilityGrant per capability with its Property ids, gives nothing for no rows, and refuses every grant when a name is not in the application catalog or is a capability the reader may not give (a service principal's, and the per-user Settings access until L1d); identity.manage_access is accepted (fail closed; L1b-1 review note, L1b-2 review round 1) (login slice sub-slice L1b-2; owner answers (a) to Q-2026-10-21-161, (b) to Q-2026-10-21-162, DL-081)."
+    },
+    {
+      "test_id": "test_a_reused_transaction_id_alone_cannot_add_to_a_recorded_version",
+      "upstream_ids": [
+        "SEC-021",
+        "DB-AUTH-007",
+        "DL-081"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_role_bundle_migration.py",
+      "status": "implemented",
+      "notes": "A recorded version also keeps its transaction's start time, so a later transaction that reuses a recorded transaction id (as after a logical restore) still cannot add capabilities to that version (security review round 1) (login slice sub-slice L1b-2; owner answers (a) to Q-2026-10-21-161, (b) to Q-2026-10-21-162, DL-081)."
     }
   ]
 }

@@ -3711,3 +3711,24 @@ Your answer 1 to the 10h-2 report: add the READ COMMITTED check to the 8e-1 refu
 **What goes ahead.** As for Q-161: nothing, because the catalog row is append-only.
 
 **Owner answer (2026-10-21, same session, after the L1b-1 stop).** Option (b). `identity.manage_access` comes only from the Owner account class and is never in any bundle. This keeps DL-058: only the Owner resets Manager and Staff accounts. Built in L1b-1 (the catalog row: Owner class only) and L1b-2 (the grant reader gives it to the Owner account class). Recorded in docs/010 DL-081.
+
+## Q-2026-10-21-163 — Login sub-slice L1b-2 review round 3: two should-fix findings (blocks the L1b-2 commit; recommendation (a)) (ANSWERED 2026-10-21: (a))
+
+**What happened.** L1b-2 (role bundles, assignments and the grant reader, migration `20270120_177`, not committed) passed review rounds 1 and 2 with no blocker, and every check and run is green (full PostgreSQL run P3: 2,465 passed). Review round 3 found no blocker but two should-fix items. The run rules let me fix round 3 findings without you only when they are text or new test assertions; these two are not, so I stopped.
+
+**The two findings.**
+- SF1 (test robustness): the new two-connection race test `test_two_assignments_of_one_bundle_at_the_same_time_wait_and_one_is_refused` can hang instead of failing if its 5-second wait check ever fails (for example on a very slow run): the waiting thread keeps the second connection busy, and the first connection, which holds the lock, is closed only after the second. Fix: roll back the first connection before joining the thread, and give the second connection a 15-second lock timeout. No rule or expected result changes.
+- SF2 (a refusal that is narrower than the docs say): the bundle name check refuses control characters and most invisible format characters, but misses a few (for example the "isolate" direction marks U+2066 to U+2069, U+061C, U+180E, U+206A to U+206F, U+FFF9 to U+FFFB and the tag characters), and the control-character class depends on the database locale. Fix: list the C0 and C1 control ranges and these characters explicitly in the uncommitted migration's check, add two test names that must be refused, and keep the docs as written. This only refuses more names; nothing else changes.
+
+**Example.** The Owner names a bundle "Staff" and, by a copy and paste from a chat app, a second one "Staff" with an invisible direction mark inside. Both would show as "Staff" on the bundle screen, and the Owner could assign the wrong one. With SF2 fixed, the second name is refused.
+
+**Options.**
+- (a) I make both fixes in the uncommitted L1b-2 work, run all checks and runs again, and do review round 4; I commit only if round 4 is clean, otherwise I stop again.
+- (b) As (a), without round 4: commit when all checks and runs are green.
+- (c) SF1 as (a); for SF2 I narrow the docs to the exact list of refused characters instead of changing the migration.
+
+**Recommendation: (a)**, because SF2 changes a migration check, which a fresh reviewer should see once more before the rows become permanent.
+
+**What goes ahead.** Nothing: L1c and the later sub-slices build on the L1b-2 tables, and L1b-2 is uncommitted work in the same files.
+
+**Owner answer (2026-10-21, same session, after the L1b-2 stop).** Option (a): make both fixes, run every check and run the run rules need, then do review round 4 with an independent review agent, and commit L1b-2 only if round 4 is clean. If the auto-mode checker blocks that agent again, follow the run rule for a blocked review agent. Then continue with L1c and the later sub-slices; stop after L5 is committed (L6 waits for the owner's sign-in screen description).

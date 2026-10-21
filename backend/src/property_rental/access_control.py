@@ -9,7 +9,10 @@ bundle may hold it), `per_user` (given to one user by the Owner, Q-2026-10-21-15
 (only a service principal has it).
 """
 
-from typing import Final, Literal
+from typing import Final, Literal, Protocol
+from uuid import UUID
+
+from property_rental.identity import CapabilityGrant
 
 IDENTITY_MANAGE_ACCESS_CAPABILITY: Final = "identity.manage_access"
 SETTINGS_MANAGE_CAPABILITY: Final = "settings.manage"
@@ -118,3 +121,63 @@ def capability_grant_path(capability: str) -> GrantPath:
 BUNDLE_CAPABILITIES: Final = frozenset(
     capability for capability in CAPABILITY_CATALOG if capability_grant_path(capability) == "bundle"
 )
+
+
+class GrantCursor(Protocol):
+    """Bounded cursor operations used by the grant reader."""
+
+    def __enter__(self) -> "GrantCursor": ...
+
+    def __exit__(self, *args: object) -> None: ...
+
+    def execute(self, query: str, parameters: tuple[object, ...]) -> None: ...
+
+    def fetchall(self) -> list[tuple[object, ...]]: ...
+
+
+class GrantConnection(Protocol):
+    """Runtime persistence connection used by the grant reader."""
+
+    def cursor(self) -> GrantCursor: ...
+
+
+class CapabilityCatalogMismatch(RuntimeError):
+    """The database granted a capability the catalog does not name or give that way."""
+
+
+# The grant paths the reader may return today (review round 1 of sub-slice L1b-2): bundle
+# capabilities and the Owner account class capability; L1d adds `per_user`.
+READER_GRANT_PATHS: Final = frozenset({"bundle", "owner_class"})
+
+
+class PostgresCapabilityGrantReader:
+    """Read an actor's effective capabilities with their Property scopes (sub-slice L1b-2).
+
+    `app.actor_capability_grants` returns rows only for an active, classified account: the
+    current capabilities of its assigned bundles, and `identity.manage_access` for the Owner
+    account class. A name outside the catalog, or one the catalog gives by another grant path,
+    refuses every grant (fail closed).
+    """
+
+    def __init__(self, connection: GrantConnection) -> None:
+        self._connection = connection
+
+    def grants_for(self, actor_id: UUID) -> frozenset[CapabilityGrant]:
+        with self._connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT capability_id, property_id::text FROM app.actor_capability_grants(%s)",
+                (actor_id,),
+            )
+            rows = cursor.fetchall()
+        properties: dict[str, set[str]] = {}
+        for capability, property_id in rows:
+            if (
+                capability not in CAPABILITY_CATALOG
+                or capability_grant_path(str(capability)) not in READER_GRANT_PATHS
+            ):
+                raise CapabilityCatalogMismatch
+            properties.setdefault(str(capability), set()).add(str(property_id))
+        return frozenset(
+            CapabilityGrant(capability=capability, property_ids=frozenset(property_ids))
+            for capability, property_ids in properties.items()
+        )
