@@ -44372,6 +44372,169 @@
       "test_path": "backend/tests/test_settlement_preview_credit_step_wait_migration.py",
       "status": "implemented",
       "notes": "The migration changes only the body of app.final_settlement_preview (owner, privileges, definer flag and settings kept) and adds the correction branch once; no function is added and no trigger, relation, column, privilege or constraint changes; forward-only (V1-056 sub-slice 10i-4c)."
+    },
+    {
+      "test_id": "test_an_account_class_is_owner_manager_staff_or_not_given",
+      "upstream_ids": [
+        "DB-AUTH-001",
+        "DL-074",
+        "DL-081",
+        "SEC-021"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_account_class_migration.py",
+      "status": "implemented",
+      "notes": "app.user_account_classes holds at most one class per account (owner, manager or staff; any other value or a blank provenance is refused, 23514; a second class for the same account is refused, 23505; an unknown account is refused, 23503); an account may have no class (login slice sub-slice L1a; owner answer (a) to Q-2026-10-21-152, DL-081)."
+    },
+    {
+      "test_id": "test_owner_and_manager_accounts_require_mfa",
+      "upstream_ids": [
+        "DB-AUTH-001",
+        "DL-056",
+        "DL-081",
+        "SEC-013",
+        "TEST-128"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_account_class_migration.py",
+      "status": "implemented",
+      "notes": "An owner or manager class is refused for an account with optional MFA, and an owner or manager account's MFA cannot later be set to optional (23514); other updates still work; a staff or unclassified account may switch (login slice sub-slice L1a; owner answer (a) to Q-2026-10-21-152, DL-081)."
+    },
+    {
+      "test_id": "test_at_most_one_owner_account_exists",
+      "upstream_ids": [
+        "DB-AUTH-001",
+        "DL-058",
+        "DL-081",
+        "SEC-074"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_account_class_migration.py",
+      "status": "implemented",
+      "notes": "A second owner class is refused by the one-Owner unique index (23505); several manager classes are allowed (login slice sub-slice L1a; owner answer (a) to Q-2026-10-21-152, DL-081)."
+    },
+    {
+      "test_id": "test_a_class_once_given_never_changes_or_goes_away",
+      "upstream_ids": [
+        "DB-AUTH-001",
+        "DL-058",
+        "DL-081",
+        "SEC-021"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_account_class_migration.py",
+      "status": "implemented",
+      "notes": "Updating a class row (its class or provenance), deleting it and truncating the relation are refused (23000, user account class is immutable); updating and disabling the account still work and keep the class (login slice sub-slice L1a; owner answer (a) to Q-2026-10-21-152, DL-081)."
+    },
+    {
+      "test_id": "test_the_bootstrapped_owner_has_class_owner_and_no_second_owner_can_be_added",
+      "upstream_ids": [
+        "DB-AUTH-001",
+        "DB-AUTH-005",
+        "DL-059",
+        "DL-081",
+        "SEC-074",
+        "TEST-133",
+        "TEST-134",
+        "API-100"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_account_class_migration.py",
+      "status": "implemented",
+      "notes": "On a fresh database the protected bootstrap writes the Owner with class owner (bootstrap provenance), required MFA and active state; a second owner row is refused while a manager can be added; the runtime role resolves the Owner for recovery and finds it for sign-in (login slice sub-slice L1a; owner answer (a) to Q-2026-10-21-152, DL-081)."
+    },
+    {
+      "test_id": "test_the_migration_classes_only_the_bootstrapped_owner",
+      "upstream_ids": [
+        "DB-AUTH-001",
+        "DB-AUTH-005",
+        "DL-059",
+        "DL-081"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_account_class_migration.py",
+      "status": "implemented",
+      "notes": "Upgrading a database bootstrapped at 20270117_174 gives class owner (backfill provenance) to the closure's actor only; every app.user_accounts row is unchanged; the bootstrap closed before the upgrade stays closed (no EXECUTE for prm_bootstrap, a new attempt returns false); the Owner resolves for recovery and an older account, which keeps no class, does not (login slice sub-slice L1a; owner answer (a) to Q-2026-10-21-152, DL-081)."
+    },
+    {
+      "test_id": "test_the_recovery_resolver_reads_only_the_stored_class_of_an_active_account",
+      "upstream_ids": [
+        "DB-AUTH-001",
+        "DL-058",
+        "DL-081",
+        "TEST-130",
+        "SEC-072"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_account_class_migration.py",
+      "status": "implemented",
+      "notes": "PostgresRecoveryAccountResolver on the runtime role returns the stored manager and staff classes; a disabled, an unclassified and an unknown account resolve to None (login slice sub-slice L1a; owner answer (a) to Q-2026-10-21-152, DL-081)."
+    },
+    {
+      "test_id": "test_an_account_without_a_class_cannot_be_found_for_sign_in",
+      "upstream_ids": [
+        "DB-AUTH-001",
+        "DL-055",
+        "DL-081",
+        "SEC-012"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_account_class_migration.py",
+      "status": "implemented",
+      "notes": "PostgresLocalAccountRepository finds a classified staff account with a credential but not an unclassified account with a credential (fail closed) (login slice sub-slice L1a; owner answer (a) to Q-2026-10-21-152, DL-081)."
+    },
+    {
+      "test_id": "test_the_account_class_migration_is_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "DB-AUTH-001",
+        "DB-AUTH-005",
+        "DL-059",
+        "DL-081",
+        "SEC-074"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_account_class_migration.py",
+      "status": "implemented",
+      "notes": "Only the bootstrap function body changes, by exactly the class insert (owner, privileges, definer flag and settings kept); three trigger functions (not definers, search_path pg_catalog, no EXECUTE for the runtime, financial or bootstrap roles) and four triggers are added; the new relation with its key and one-Owner index, constraints and four columns are the only other structure changes; the runtime role may only read the new relation; forward-only (login slice sub-slice L1a; owner answer (a) to Q-2026-10-21-152, DL-081)."
+    },
+    {
+      "test_id": "test_a_class_and_an_mfa_change_at_the_same_time_wait_for_each_other",
+      "upstream_ids": [
+        "DB-AUTH-001",
+        "DL-056",
+        "DL-081",
+        "SEC-013"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_account_class_migration.py",
+      "status": "implemented",
+      "notes": "At READ COMMITTED a Manager class insert waits (lock timeout) for an uncommitted MFA change to optional of the same account and after its commit is refused (23514); an MFA change to optional waits for an uncommitted Manager class and after its commit is refused (23514) (login slice sub-slice L1a, review round 1; owner answer (a) to Q-2026-10-21-152, DL-081)."
+    },
+    {
+      "test_id": "test_an_mfa_policy_is_lowered_only_at_read_committed",
+      "upstream_ids": [
+        "DB-AUTH-001",
+        "DL-056",
+        "DL-081",
+        "SEC-013"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_account_class_migration.py",
+      "status": "implemented",
+      "notes": "Under REPEATABLE READ and SERIALIZABLE, with a snapshot older than a Manager class given meanwhile, setting that account's or an unclassified account's MFA to optional is refused (55000), while raising a Staff account's MFA still works; at READ COMMITTED the Manager is refused (23514) and the unclassified account may lower it (login slice sub-slice L1a, review round 1; owner answer (a) to Q-2026-10-21-152, DL-081)."
+    },
+    {
+      "test_id": "test_a_class_given_from_a_snapshot_older_than_an_mfa_change_fails",
+      "upstream_ids": [
+        "DB-AUTH-001",
+        "DL-056",
+        "DL-081",
+        "SEC-013"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_account_class_migration.py",
+      "status": "implemented",
+      "notes": "Under REPEATABLE READ and SERIALIZABLE, a Manager class given from a snapshot taken before the account's MFA was set to optional fails with a serialization failure (40001) and no class is written (login slice sub-slice L1a, review round 2 note; owner answer (a) to Q-2026-10-21-152, DL-081)."
     }
   ]
 }

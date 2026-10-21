@@ -277,6 +277,7 @@ database_test_suites='
   tests/test_deposit_increase_ground_delay_migration.py
   tests/test_deposit_created_after_signing_ground_delay_migration.py
   tests/test_settlement_preview_credit_step_wait_migration.py
+  tests/test_account_class_migration.py
 '
 
 for database_test_file in $database_test_suites; do

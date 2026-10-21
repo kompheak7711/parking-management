@@ -169,10 +169,10 @@ class EmergencyProcedureVerifier(Protocol):
 class TrustedAccountRecoveryAuthorizer:
     """Resolve current classes and verify trusted proof before recovery.
 
-    Request class labels are never authority. The current schema has no durable account-class
-    relation, so provider authorization and the later database mutation cannot yet share one
-    PostgreSQL transaction. The mutation function revalidates every durable lifecycle predicate
-    that the existing schema can express.
+    Request class labels are never authority. Account classes come from the account resolver;
+    `PostgresRecoveryAccountResolver` reads the durable `app.user_account_classes` row. The
+    authorization and the later database mutation still run in separate transactions; a class
+    never changes, and the mutation function revalidates that the target account is active.
     """
 
     def __init__(
@@ -223,6 +223,33 @@ class TrustedAccountRecoveryAuthorizer:
             target=target,
             correlation_id=str(request.correlation_id),
         ).allowed
+
+
+class PostgresRecoveryAccountResolver:
+    """Read the stored account class of an active, classified account.
+
+    An unknown, disabled or unclassified account resolves to None, so recovery fails closed.
+    """
+
+    def __init__(self, connection: "AccountRecoveryConnection") -> None:
+        self._connection = connection
+
+    def resolve(self, actor_id: UUID) -> RecoveryAccount | None:
+        with self._connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT account.actor_id::text, classification.account_class
+                FROM app.user_accounts AS account
+                JOIN app.user_account_classes AS classification USING (actor_id)
+                WHERE account.actor_id = %s
+                  AND account.lifecycle_state = 'active'
+                """,
+                (actor_id,),
+            )
+            row = cursor.fetchone()
+        if row is None:
+            return None
+        return RecoveryAccount(account_id=str(row[0]), account_class=str(row[1]))
 
 
 class AccountRecoveryRepository(Protocol):

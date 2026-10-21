@@ -5013,6 +5013,16 @@ external-provider identity as the normal login source are prohibited. Role/capab
 assignments remain separate relations and do not become hard-coded username or role
 checks.
 
+Account class (DL-081, login sub-slice L1a, migration `20270118_175`): the separate
+append-only relation `user_account_classes` gives an account at most one class (`owner`,
+`manager` or `staff`), which ties the Owner-only rights to the class, not to a role name. At
+most one `owner` row exists (the bootstrapped Owner, classed by the bootstrap); an `owner` or
+`manager` account requires MFA (`mfa_policy_class` `required`, checked when the class is given
+and when the MFA policy changes); an MFA policy is lowered only at READ COMMITTED; a class, once
+given, is never updated, deleted or truncated. An account without a class cannot sign in, does
+not resolve for recovery and (from L1b) has no grants (fail closed). Only the migration owner
+and the protected bootstrap give a class today; later, only reviewed definer functions.
+
 ## DB-AUTH-002 — Password credentials
 
 Password credential rows store only a salted adaptive password-verifier encoding,

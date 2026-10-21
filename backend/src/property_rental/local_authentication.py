@@ -144,7 +144,10 @@ class PostgresLocalAccountRepository:
         self._connection = connection
 
     def find_by_username(self, username: str) -> LocalAccountCredential | None:
-        """Look up one credential by the transactionally unique normalized username."""
+        """Look up one credential by the transactionally unique normalized username.
+
+        An account without an account class is never found, so it cannot sign in (fail closed).
+        """
         normalized_username = normalize_local_username(username)
         with self._connection.cursor() as cursor:
             cursor.execute(
@@ -153,6 +156,7 @@ class PostgresLocalAccountRepository:
                        account.mfa_policy_class, credential.verifier_encoding
                 FROM app.user_accounts AS account
                 JOIN app.password_credentials AS credential USING (actor_id)
+                JOIN app.user_account_classes AS classification USING (actor_id)
                 WHERE account.normalized_username = %s
                 """,
                 (normalized_username,),

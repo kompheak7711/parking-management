@@ -52,6 +52,8 @@ def test_repository_normalizes_username_through_local_account_persistence() -> N
     assert connection.cursor_instance.parameters == ("operator",)
     assert "app.user_accounts" in connection.cursor_instance.query
     assert "app.password_credentials" in connection.cursor_instance.query
+    # Login slice L1a: only an account with a class can be found (fail closed).
+    assert "JOIN app.user_account_classes" in connection.cursor_instance.query
     assert account is not None
     assert account.actor_id == "actor-7"
     assert account.lifecycle_state == "active"
