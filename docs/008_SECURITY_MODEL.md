@@ -139,6 +139,13 @@ Amended by DL-081 (owner rule of 2026-10-21; login sub-slice L1e): an account th
 Account creation, disablement, capability changes, credential resets, and session
 revocation require an authorized actor and an immutable audit event.
 
+Amended by DL-081 (login sub-slice L2a): in the database only the active Owner account class
+creates, changes and disables accounts, revokes their sessions, creates and changes role bundles,
+assigns and removes them and gives and removes Settings access; each action writes one audit event
+without secrets in the same transaction (docs/004 DB-AUTH-010). The acting Owner is passed by the
+application from the signed-in session (sub-slice L3a), so this database check is a second line
+behind the session and capability checks of the routes.
+
 # 5. Session Security
 
 ## SEC-015 — Session Tokens

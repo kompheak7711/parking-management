@@ -5148,6 +5148,42 @@ added to an existing bundle by itself. The bundles stay configurable data (DB-AU
 migration seeds the Property that already exists; the Property setup calls the function in the
 same transaction as `initialize_property`. The runtime role may execute the function only.
 
+## DB-AUTH-010 — Account and role bundle administration
+
+Added by DL-081 (login sub-slice L2a, migration `20270124_181`; API-079, API-080, owner answers
+(a) to Q-2026-10-21-152, Q-156 and Q-165). Only the active Owner account class administers
+accounts, role bundles, assignments and Settings access, through definer functions that the
+runtime role may execute; each refuses any other acting account and any isolation level other
+than READ COMMITTED, and each write function writes one immutable `audit_events` row (actor, action, target, reason,
+non-secret previous and resulting state, correlation id, `identity.manage_access`) in the same
+transaction. `admin_create_account` makes a Manager (MFA `required`) or Staff (MFA `optional`)
+account with its class, its HUMAN identity and the class's default bundle of DB-AUTH-009, and no
+password (the first password is the one-time password of the Owner's reset); never an Owner.
+`admin_update_account` changes a Manager or Staff account's display name, audit name, MFA policy
+or lifecycle (disable only) with its expected version, or disables an account without a class;
+`user_account_changes` keeps every change (version, who, when, non-secret previous and resulting
+state) and is never updated, deleted or truncated; an account's version is 1 plus its number of
+changes. A username, display name or audit name is 1 to 128 characters with no space at either
+end and none of the control and invisible characters that DB-AUTH-007 refuses in a bundle name.
+Session revocation (DB-AUTH-004): disabling revokes every unexpired session (`account_disabled`)
+and keeps the account's assignments and Settings access as history (no function enables an
+account again, and DB-AUTH-007 gives a disabled account nothing); raising a Staff account's MFA
+policy to `required` revokes its sessions (`material_privilege_reduction`, provenance
+`access-admin-mfa-required`); setting a Staff account's MFA policy to `optional` (MFA off, whatever
+the policy was before) disables its sign-in code enrollment, revokes its sessions (`mfa_reset`)
+when an enrollment was disabled, and removes its Settings access as a recorded removal with the
+reason "sign-in code turned off"; an explicit revocation uses
+`material_privilege_reduction` with provenance `access-admin-revoke-sessions` (the session table
+has no closer reason); a role bundle update that takes a capability away revokes the sessions of
+every active holder, and an assignment removal those of its account. Role bundles are created and
+updated with only `bundle` grant-path capabilities and the expected version, each update writing
+the complete set of its new version; assignments are made to an active account with a class (the
+Owner included) and removed with a reason; Settings access is given and removed through the
+functions of DB-AUTH-008 with the audit event added. Two definer reads give the Owner the account
+list (class, version and recorded Settings access) and the bundle list (current capability set);
+the runtime role has no privilege on the bundle, assignment, default bundle, Settings access and
+account change relations.
+
 ---
 
 # 21. Deferred Technical and Configuration Decisions

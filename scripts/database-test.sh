@@ -283,6 +283,7 @@ database_test_suites='
   tests/test_settings_access_migration.py
   tests/test_default_role_bundles_migration.py
   tests/test_settings_access_sign_in_code_migration.py
+  tests/test_access_administration_migration.py
 '
 
 for database_test_file in $database_test_suites; do

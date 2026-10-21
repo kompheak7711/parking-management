@@ -3780,3 +3780,49 @@ Your answer 1 to the 10h-2 report: add the READ COMMITTED check to the 8e-1 refu
 **What goes ahead.** L1e is built and does not depend on the answer. L2 (MFA on or off) and L4 (the reset with a one-time password) build their own steps first; only the part that touches Settings access waits. With (a), the existing `reset_mfa` path of `app.perform_account_recovery` (administrative and emergency modes) is the one that changes.
 
 **Owner answer (2026-10-21, fresh session).** Option (a), as recommended. When an account's sign-in code is reset or its MFA is turned off, its Settings access is removed in the same step, as a recorded removal (who, when, reason). The Owner ticks it again once the new code is set up. Owner's example: Dara's phone is lost; the Owner resets Dara's sign-in code, and the user list at once shows that Dara has no Settings access until the Owner gives it again. The owner also agrees with the L1c ordering note: no build between L3a and L5 may be used. Built with the reset and MFA-off steps (L2 for MFA off, L4 for the Owner's reset, and the `reset_mfa` path of `app.perform_account_recovery`). Recorded in docs/010 DL-081.
+
+## Q-2026-10-21-166 — Login sub-slice L2a: no route removes a role bundle from an account (blocks only that route in L2b; recommendation (a))
+
+**What the rules say.** Q-157 (a) lists "changing a bundle or a user's bundle" as an action that needs a recent password check. API-080 lists only `POST /users/{id}/role-assignments` (assign); no route removes an assignment. The run rules allow new docs/005 routes only with your yes; the plan approval named three new routes, not this one.
+
+**What is built.** L2a builds the database function that removes an assignment (Owner only, with a reason, audited, and it ends the account's sessions because its rights shrink). Nothing can call it from the screen without a route.
+
+**Example.** Staff member Sokha was given the Manager bundle by mistake when covering the desk for a week. With (a) the Owner opens Sokha's account, removes the Manager bundle with the reason "cover week ended", and Sokha's next request is signed out and works with the Staff bundle only. With (b) the Owner must disable Sokha's account and create a new one (Sokha gets a new username and password).
+
+**Options.**
+- (a) A new route `POST /api/v1/users/{user_id}/role-assignments/remove` with the bundle id and a reason, Owner only, with the same recent password check as the other Q-157 actions; written into docs/005 API-080 by L2b.
+- (b) No removal route in V1: a wrong bundle is fixed by disabling the account and creating a new one.
+
+**Recommendation: (a)**, because removing a bundle is the everyday way to change what a person may do, and Q-157 already treats it as a normal Owner action.
+
+**What goes ahead.** L2a, and every other part of L2b and of the later sub-slices.
+
+## Q-2026-10-21-167 — Login sub-slice L2a review round 1: the runtime role may still run the unaudited Settings access functions of L1d (blocks nothing; recommendation (a))
+
+**What the rules say.** SEC-014: every capability change needs an immutable audit event. L1d built `app.give_settings_access` and `app.remove_settings_access` without an audit event, because the L2 routes would write it; L2a now builds `app.admin_give_settings_access` and `app.admin_remove_settings_access`, which call them and write the audit event. The runtime role (the API's database identity) may still run the two L1d functions directly. Taking that right away is a tightening, and it changes the expected result of a committed test (`test_settings_access_migration.py::test_the_runtime_role_reaches_settings_access_only_through_its_functions`), so it needs your answer.
+
+**Example.** A future programming mistake in the API calls the old give function. With (a) the database refuses it, so no Settings access can be given without an audit event. With (b) the access is given, the grant row keeps who, when and why, but the audit history has no event for it. A second case (review round 2): the old give does not wait for an account change that is under way, so if it runs while the Owner turns Dara's MFA off, Dara can keep a recorded grant that starts working again by itself once a new sign-in code is set up, against your answer to Q-165; the audited give waits and is then refused.
+
+**Options.**
+- (a) A small migration in L2b revokes the runtime role's right to run the two L1d functions; the committed test is changed to expect "permission denied" and named in the report; the API calls only the audited functions.
+- (b) Keep the right; L2b adds a test that the API never names the two L1d functions.
+
+**Recommendation: (a)**, because it makes "every Settings access change is audited" a database rule rather than a coding habit.
+
+**What goes ahead.** Everything. Until the answer, L2b calls only the audited functions.
+
+## Q-2026-10-21-168 — Login sub-slice L2a security review round 1: may a Staff account hold approval capabilities through a bundle the Owner edits? (blocks nothing; recommendation (a))
+
+**What the rules say.** SEC-021 and DL-074 answer 1: bundles are configurable data and a role name gives no power by itself. Your answer to Q-150 (a) lists what the default Staff bundle never gets (for example `financial.approve`, `invoices.void`, `payments.reverse`). Q-152 (a): the account class sets the default bundle at creation, and the Owner may change the bundle later. ops/V1_056_TAKEOVER.md section 4 asks the security review to check that Staff cannot confirm a draft.
+
+**The point.** Today the Owner can add `financial.approve` to the Staff bundle, or assign the Manager bundle to a Staff-class account; that Staff member can then confirm drafts. Nobody else can do this: only the Owner edits bundles and assignments.
+
+**Example.** The Manager is on leave for two weeks and the Owner wants Sokha (Staff) to confirm Refund drafts meanwhile. With (a) the Owner assigns the Manager bundle to Sokha for two weeks and removes it afterwards (Q-166). With (b) that is refused; the Owner must create a Manager account for Sokha.
+
+**Options.**
+- (a) Bundles stay fully configurable for every account class; the default Staff bundle keeps the Q-150 list, and the screen rebuild shows a warning when the Owner gives a Staff account a capability from the "never" list.
+- (b) A Staff ceiling: a Staff-class account never gets the Q-150 "never" capabilities, whatever bundle it holds (the grant reader leaves them out, and assigning or editing such a bundle for a Staff account is refused).
+
+**Recommendation: (a)**, because SEC-021 makes the bundles your configurable data, only you can change them, and (b) would make the class a hidden second rule that the bundle screen does not show.
+
+**What goes ahead.** Everything; nothing built depends on the answer.

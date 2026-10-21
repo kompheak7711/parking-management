@@ -45035,6 +45035,253 @@
       "test_path": "backend/tests/test_settings_access_sign_in_code_migration.py",
       "status": "implemented",
       "notes": "A Staff account without a sign-in code still gets exactly its default Staff bundle capabilities, and a hand-written Settings access grant adds nothing (login slice sub-slice L1e review round 1; owner rule of 2026-10-21 on Settings access and the sign-in code, DL-081)."
+    },
+    {
+      "test_id": "test_only_the_active_owner_administers_at_read_committed",
+      "upstream_ids": [
+        "API-079",
+        "API-080",
+        "DL-074",
+        "DL-081",
+        "SEC-002",
+        "SEC-014",
+        "SEC-021",
+        "DB-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_access_administration_migration.py",
+      "status": "implemented",
+      "notes": "Every administration function, the two reads included, refuses a Manager, Staff, disabled Manager, unclassified, unknown or disabled Owner acting account and refuses REPEATABLE READ and SERIALIZABLE; a write without a correlation id writes no audit event (login slice sub-slice L2a, DL-081)."
+    },
+    {
+      "test_id": "test_the_owner_creates_manager_and_staff_accounts",
+      "upstream_ids": [
+        "API-079",
+        "DL-056",
+        "DL-074",
+        "DL-081",
+        "SEC-014",
+        "SEC-075",
+        "DB-AUTH-001",
+        "DB-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_access_administration_migration.py",
+      "status": "implemented",
+      "notes": "The Owner creates a Manager (MFA required) and a Staff account (MFA optional) with a normalized username, its class, the HUMAN identity, no password and the class's default bundle assigned by the Owner, with exactly one secret-free audit event each; a second Owner and a duplicate username are refused (Q-2026-10-21-152 (a)) (login slice sub-slice L2a, DL-081)."
+    },
+    {
+      "test_id": "test_an_account_change_needs_its_version_and_keeps_its_history",
+      "upstream_ids": [
+        "API-079",
+        "DL-081",
+        "SEC-014",
+        "SEC-075",
+        "DB-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_access_administration_migration.py",
+      "status": "implemented",
+      "notes": "An account change needs the current version, records each new version in the append-only change history with one audit event, and refuses an empty change, the Owner account, an unknown account, a profile change of an account without a class (disable only) and any change of a disabled account (login slice sub-slice L2a, DL-081)."
+    },
+    {
+      "test_id": "test_disabling_an_account_revokes_its_sessions_and_keeps_its_history",
+      "upstream_ids": [
+        "API-079",
+        "API-097",
+        "DL-057",
+        "DL-081",
+        "SEC-014",
+        "SEC-017",
+        "SEC-075",
+        "DB-AUTH-004",
+        "DB-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_access_administration_migration.py",
+      "status": "implemented",
+      "notes": "Disabling an account revokes its unexpired sessions only (reason account_disabled), keeps its assignments and Settings access record as history, and the grant reader gives it nothing (login slice sub-slice L2a, DL-081)."
+    },
+    {
+      "test_id": "test_staff_mfa_raised_revokes_sessions_and_mfa_off_resets_the_sign_in_code",
+      "upstream_ids": [
+        "DL-056",
+        "DL-081",
+        "SEC-013",
+        "SEC-017",
+        "SEC-021",
+        "DB-AUTH-008",
+        "DB-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_access_administration_migration.py",
+      "status": "implemented",
+      "notes": "Raising a Staff account's MFA policy to required revokes its sessions in the same step (sub-slice L1e binding); MFA off disables the sign-in code, revokes the sessions (mfa_reset) and removes the Settings access as a recorded removal by the Owner with the reason \"sign-in code turned off\", named in the audit event (Q-2026-10-21-156 (a), Q-165 (a)); when MFA is required again the old code does not count and Settings access needs a new code; MFA off without Settings access removes nothing; a Manager's MFA cannot be lowered (login slice sub-slice L2a, DL-081)."
+    },
+    {
+      "test_id": "test_role_bundles_are_created_and_changed_with_kept_versions",
+      "upstream_ids": [
+        "API-080",
+        "DL-057",
+        "DL-081",
+        "SEC-017",
+        "SEC-021",
+        "DB-AUTH-007",
+        "DB-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_access_administration_migration.py",
+      "status": "implemented",
+      "notes": "The Owner creates a bundle with only bundle capabilities (duplicates removed) and changes it with its expected version; every version is kept; a rename or a larger set revokes nothing, a smaller set revokes the holders' sessions (material privilege reduction); service, per-user, Owner-class, unknown and null capabilities, a duplicate name, an unknown Property or bundle, a stale version and an empty change are refused (login slice sub-slice L2a, DL-081)."
+    },
+    {
+      "test_id": "test_role_bundles_are_assigned_and_removed",
+      "upstream_ids": [
+        "API-080",
+        "DL-057",
+        "DL-081",
+        "SEC-014",
+        "SEC-017",
+        "SEC-021",
+        "DB-AUTH-007",
+        "DB-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_access_administration_migration.py",
+      "status": "implemented",
+      "notes": "The Owner assigns a bundle to an active classified account, the Owner included, and removes it with a reason, which revokes the account's sessions; a second assignment, an unclassified or disabled account, an unknown bundle and a second removal are refused; each action writes one audit event (login slice sub-slice L2a, DL-081)."
+    },
+    {
+      "test_id": "test_settings_access_is_given_and_removed_with_an_audit_event",
+      "upstream_ids": [
+        "DL-074",
+        "DL-081",
+        "SEC-014",
+        "SEC-021",
+        "SEC-075",
+        "DB-AUTH-008",
+        "DB-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_access_administration_migration.py",
+      "status": "implemented",
+      "notes": "Settings access is given (after the Staff account's sign-in code is set up) and removed with one audit event each carrying the reason; the account list shows the recorded Settings access, and always for the Owner (login slice sub-slice L2a, DL-081)."
+    },
+    {
+      "test_id": "test_explicit_session_revocation_is_for_manager_and_staff_accounts",
+      "upstream_ids": [
+        "API-079",
+        "API-097",
+        "DL-057",
+        "SEC-014",
+        "SEC-017",
+        "DB-AUTH-004",
+        "DB-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_access_administration_migration.py",
+      "status": "implemented",
+      "notes": "The Owner revokes a Manager's unexpired sessions with one audit event and the count; the Owner account and an account without a class are refused (login slice sub-slice L2a, DL-081)."
+    },
+    {
+      "test_id": "test_the_runtime_role_administers_only_through_the_functions",
+      "upstream_ids": [
+        "DL-081",
+        "SEC-002",
+        "SEC-020",
+        "SEC-021",
+        "DB-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_access_administration_migration.py",
+      "status": "implemented",
+      "notes": "The runtime role may execute the administration functions, which still refuse a non-Owner, and may not read the account change history or execute an internal function (login slice sub-slice L2a, DL-081)."
+    },
+    {
+      "test_id": "test_the_access_administration_migration_is_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "DL-081",
+        "SEC-020",
+        "SEC-021",
+        "DB-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_access_administration_migration.py",
+      "status": "implemented",
+      "notes": "One relation with its key, two triggers, eleven definer functions (EXECUTE for the runtime role only) and eight internal functions (not definers, no EXECUTE for any application role) are added; nothing existing changes; no application role may use the new relation; forward-only (login slice sub-slice L2a, DL-081)."
+    },
+    {
+      "test_id": "test_account_names_have_only_visible_characters",
+      "upstream_ids": [
+        "API-079",
+        "DL-081",
+        "SEC-014",
+        "SEC-075",
+        "DB-AUTH-001",
+        "DB-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_access_administration_migration.py",
+      "status": "implemented",
+      "notes": "A username, display name or audit name with a zero-width, direction, C1 control or other invisible character, a space at either end, no character or more than 128 characters is refused at create and update; Khmer and English names are kept (login slice sub-slice L2a review round 1, DL-081)."
+    },
+    {
+      "test_id": "test_the_owner_needs_the_default_bundles_to_create_an_account",
+      "upstream_ids": [
+        "API-079",
+        "DL-074",
+        "DL-081",
+        "DB-AUTH-009",
+        "DB-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_access_administration_migration.py",
+      "status": "implemented",
+      "notes": "On a throwaway database whose Property has no default bundles, creating an account is refused (login slice sub-slice L2a review round 1, DL-081)."
+    },
+    {
+      "test_id": "test_disabling_with_mfa_off_does_both_in_one_change",
+      "upstream_ids": [
+        "API-079",
+        "DL-057",
+        "DL-081",
+        "SEC-014",
+        "SEC-017",
+        "DB-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_access_administration_migration.py",
+      "status": "implemented",
+      "notes": "Disabling a Staff account with MFA off in one change revokes its sessions as a disable, disables its sign-in code and removes its Settings access, with one audit event and one change row (login slice sub-slice L2a review round 1, DL-081)."
+    },
+    {
+      "test_id": "test_a_smaller_bundle_revokes_only_its_active_holders_sessions",
+      "upstream_ids": [
+        "API-080",
+        "DL-057",
+        "DL-081",
+        "SEC-017",
+        "DB-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_access_administration_migration.py",
+      "status": "implemented",
+      "notes": "A bundle that loses a capability revokes the unexpired sessions of its active holders, the Owner included, and not those of a removed holder or another bundle's holder, nor an expired session (login slice sub-slice L2a review round 1, DL-081)."
+    },
+    {
+      "test_id": "test_concurrent_administration_waits_and_sees_the_committed_change",
+      "upstream_ids": [
+        "API-079",
+        "DL-081",
+        "SEC-014",
+        "SEC-021",
+        "DB-AUTH-008",
+        "DB-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_access_administration_migration.py",
+      "status": "implemented",
+      "notes": "On a throwaway database: a give waiting for a disable is refused; a disable waiting for a give succeeds and the grant gives nothing; MFA off waiting for a give removes it; a second change from the same version is refused after the wait; a give waiting for MFA off is refused for the missing sign-in code (login slice sub-slice L2a review round 1, DL-081)."
     }
   ]
 }
