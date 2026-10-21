@@ -3493,7 +3493,7 @@ Your answer 1 to the 10h-2 report: add the READ COMMITTED check to the 8e-1 refu
 
 **Owner answer (2026-10-20, fresh session, docs-only rules update).** Option (a). A waiting `REFUND_RETURN` correction draft is listed by the Final Settlement preview the same way as a `REFUND` draft: the release part of the Q-146 answer also covers a `REFUND_RETURN` draft whose plan overlay gives value back to a Credit held by a person of another Lease, and that other Lease's Settlement waits until the draft is confirmed, rejected or withdrawn. No amount rule changes, only the order. Not built now: the item stays on the slice 12 list, marked "answered (a), build in slice 12". Recorded in docs/010.
 
-## Q-2026-10-21-150 — Login slice: the Staff and Manager bundle lines the rules do not name (blocks L1c; nothing is built before your answer; recommendation (a))
+## Q-2026-10-21-150 — Login slice: the Staff and Manager bundle lines the rules do not name (blocks L1c; nothing is built before your answer; recommendation (a)) (ANSWERED 2026-10-21: (a), with a note; answer in docs/010)
 
 **What the rules say.** DL-074 answer 1: Owner gets every capability; Manager gets "all daily work, approvals (`financial.approve`), reports, audit history, exports and the health page; no user or role administration"; Staff gets "daily data entry only (Customers, Reservations, Readings, recording Payments, preparing drafts); no approvals, no administration, no audit, no export". DL-080: `leases.sign`, `reservations.extend`, `leases.terminate` and `invoices.void` are Manager actions; Staff prepare the Final Settlement (`final_settlements.prepare`). Your answer G7: Staff get `payments.record` and `payments.allocate`.
 
@@ -3512,7 +3512,9 @@ Your answer 1 to the 10h-2 report: add the READ COMMITTED check to the 8e-1 refu
 
 **What goes ahead.** L1a, L1b and L1d do not depend on it. L1c waits.
 
-## Q-2026-10-21-151 — Login slice: the Settings access capability, its name, and which of today's checks it replaces (blocks L1d and L5; nothing is built before your answer; recommendation (a))
+**Owner answer (2026-10-21, fresh session, with the approval of the login slice plan in commit 2aabe67).** Option (a), as recommended. Staff get no action that moves money at once or changes a Customer's standing. Sign Lease, Extend Reservation and Terminate Lease stay Manager actions (DL-080 item 2): `leases.sign`, `reservations.extend` and `leases.terminate` are in the Owner and Manager bundles only. The Manager gets `property.manage`. Built in L1c. Recorded in docs/010 DL-081.
+
+## Q-2026-10-21-151 — Login slice: the Settings access capability, its name, and which of today's checks it replaces (blocks L1d and L5; nothing is built before your answer; recommendation (a)) (ANSWERED 2026-10-21: (a), with a note; answer in docs/010)
 
 **What the rules say.** DL-074 answer 2: Settings access is its own capability given per user; only the Owner account class gives or removes it; the Owner always has it. DL-075: Settings covers the billing calendar, Reservation limits, Payment Methods, number letters and next numbers, Utility Rates, Services, cleaning rate groups and the Unit setup lists. DL-074 "Build in": the name and which of today's `service_rates.manage`, `utility_rates.manage` and `property.manage` checks it replaces are proposed now.
 
@@ -3529,7 +3531,9 @@ Your answer 1 to the 10h-2 report: add the READ COMMITTED check to the 8e-1 refu
 
 **What goes ahead.** L1a to L1c and L2 to L4 do not depend on it; L1d and the L5 replacement wait.
 
-## Q-2026-10-21-152 — Login slice: Owner accounts and what a new account's class sets (blocks L1a and L2; nothing is built before your answer; recommendation (a))
+**Owner answer (2026-10-21, fresh session, with the approval of the login slice plan in commit 2aabe67).** Option (a), as recommended. The capability is `settings.manage`. It is given per user, never in a bundle; the Owner always has it through the Owner account class. It replaces `service_rates.manage` and `utility_rates.manage` everywhere, and `property.manage` on the Property update, the Property configuration and the due-days setting; `property.manage` stays for Unit create and update and the per-Unit cleaning rate. Built in L1d and L5. Recorded in docs/010 DL-081.
+
+## Q-2026-10-21-152 — Login slice: Owner accounts and what a new account's class sets (blocks L1a and L2; nothing is built before your answer; recommendation (a)) (ANSWERED 2026-10-21: (a); answer in docs/010)
 
 **What the rules say.** DL-058 and DL-074 tie the Owner rights to the account class `owner`; SEC-074 says the bootstrap cannot make another Owner; "later accounts use normal authorized management". The rules do not say whether normal management may make a second account of class `owner`, or what a new account's class sets.
 
@@ -3543,7 +3547,9 @@ Your answer 1 to the 10h-2 report: add the READ COMMITTED check to the 8e-1 refu
 
 **What goes ahead.** L1b to L1d. L1a and L2 wait.
 
-## Q-2026-10-21-153 — Login slice: who makes the one-time password, and a new account's first password (blocks L4; nothing is built before your answer; recommendation (a))
+**Owner answer (2026-10-21, fresh session, with the approval of the login slice plan in commit 2aabe67).** Option (a), as recommended: exactly one Owner account (the bootstrapped one); the Owner creates Manager or Staff accounts only; the class sets the MFA rule and the default bundle given at creation, and never changes. Built in L1a and L2. Recorded in docs/010 DL-081.
+
+## Q-2026-10-21-153 — Login slice: who makes the one-time password, and a new account's first password (blocks L4; nothing is built before your answer; recommendation (a)) (ANSWERED 2026-10-21: (a); answer in docs/010)
 
 **What the rules say.** DL-080 item 10: the one-time password the Owner gives after a reset works for 24 hours and must be changed at the first sign-in; the new password follows the 15 to 128 character rule. Today the reset screen asks the Owner to type the new password. The rules do not say who makes the one-time password, how a brand-new account gets its first password, or whether the reset also clears MFA.
 
@@ -3557,7 +3563,9 @@ Your answer 1 to the 10h-2 report: add the READ COMMITTED check to the 8e-1 refu
 
 **What goes ahead.** Everything before L4.
 
-## Q-2026-10-21-154 — Login slice: the details of "5 wrong tries, wait 15 minutes" (blocks L3b; nothing is built before your answer; recommendation (a))
+**Owner answer (2026-10-21, fresh session, with the approval of the login slice plan in commit 2aabe67).** Option (a), as recommended: the app makes the one-time password, shows it once to the Owner, valid 24 hours with a forced change at the first sign-in; a new Manager or Staff account gets its first password the same way; the reset keeps the "also reset MFA" tick; an expired one-time password gives the normal sign-in failure. Built in L4. Recorded in docs/010 DL-081.
+
+## Q-2026-10-21-154 — Login slice: the details of "5 wrong tries, wait 15 minutes" (blocks L3b; nothing is built before your answer; recommendation (a)) (ANSWERED 2026-10-21: (a); answer in docs/010)
 
 **What the rules say.** DL-080 item 10 and SEC-012: after 5 wrong tries the person waits 15 minutes, with the same message whether or not the account exists; login and recovery are limited by account and by source. The rules do not say when the 15 minutes start, whether tries during the wait add time, whether a correct sign-in clears the count, whether wrong MFA codes count, or the limit per source.
 
@@ -3572,7 +3580,9 @@ Your answer 1 to the 10h-2 report: add the READ COMMITTED check to the 8e-1 refu
 
 **What goes ahead.** L1a to L3a. L3b waits.
 
-## Q-2026-10-21-155 — Login slice: password rule for later passwords, and the runtime key and blocklist files (blocks L3c, L4 and L7; nothing is built before your answer; recommendation (a))
+**Owner answer (2026-10-21, fresh session, with the approval of the login slice plan in commit 2aabe67).** Option (a), as recommended: per username (unknown names included), the wait starts at the 5th wrong try within 15 minutes and lasts 15 minutes; tries during the wait are refused without checking the password and add no time; a correct sign-in clears the count; wrong TOTP and recovery codes count; 20 wrong tries per source address in 15 minutes start the same wait for that address; counts kept in the database. The Owner may be made to wait; accepted. Built in L3b. Recorded in docs/010 DL-081.
+
+## Q-2026-10-21-155 — Login slice: password rule for later passwords, and the runtime key and blocklist files (blocks L3c, L4 and L7; nothing is built before your answer; recommendation (a)) (ANSWERED 2026-10-21: (a), with a note; answer in docs/010)
 
 **What the rules say.** SEC-073 and API-100 give the first Owner's password rule in full (15 to 128 code points before and after NFC, local blocklist, no composition rule) and say the TOTP protection key never enters an ordinary environment value; it comes from an already-open root-controlled descriptor or an equivalent protected secret file. DL-080 says only "the 15 to 128 character rule" for the new password after a reset. The running API needs the same TOTP key to check sign-in codes, and today has no setting for it. Adding a path setting means editing `.env.example`, which you told me not to open in this session.
 
@@ -3586,7 +3596,9 @@ Your answer 1 to the 10h-2 report: add the READ COMMITTED check to the 8e-1 refu
 
 **What goes ahead.** L1a to L3b. L3c, L4 and L7 wait.
 
-## Q-2026-10-21-156 — Login slice: who turns on MFA for a Staff account (blocks the Staff part of L3c; nothing is built before your answer; recommendation (a))
+**Owner answer (2026-10-21, fresh session, with the approval of the login slice plan in commit 2aabe67).** Option (a), as recommended: one password rule for every new password (15 to 128 code points before and after NFC, the local blocklist); the API reads the TOTP key and the blocklist from protected files whose paths are the settings `APP_TOTP_KEY_FILE` and `APP_PASSWORD_BLOCKLIST_FILE`. In L3c only, Claude Code may open `.env.example` to add the two path setting names, with no values, and shows the added lines in the report. A real value, key or password is never written into it. The password credentials migration (`20260817_03`), `config/deployment/identity-secret-contract.json` and `docs/DEPLOYMENT_IDENTITY_SECRET_SCAFFOLDING.md` stay closed. Built in L3c, L4 and L7. Recorded in docs/010 DL-081.
+
+## Q-2026-10-21-156 — Login slice: who turns on MFA for a Staff account (blocks the Staff part of L3c; nothing is built before your answer; recommendation (a)) (ANSWERED 2026-10-21: (a); answer in docs/010)
 
 **What the rules say.** DL-056 and SEC-013: MFA is optional for Staff; Staff with MFA enabled must complete it. UI-110: Staff "can securely enroll when authorized". The rules do not say who authorizes it.
 
@@ -3600,7 +3612,9 @@ Your answer 1 to the 10h-2 report: add the READ COMMITTED check to the 8e-1 refu
 
 **What goes ahead.** Everything except the Staff MFA path of L3c.
 
-## Q-2026-10-21-157 — Login slice: which actions need a recent password check, and how recent (blocks L3d and its routes in L2 and L4; nothing is built before your answer; recommendation (a))
+**Owner answer (2026-10-21, fresh session, with the approval of the login slice plan in commit 2aabe67).** Option (a), as recommended: only the Owner (`identity.manage_access`) sets a Staff account's MFA to required or optional; turning it off later is a reset with "also reset MFA". Built in L2 and L3c. Recorded in docs/010 DL-081.
+
+## Q-2026-10-21-157 — Login slice: which actions need a recent password check, and how recent (blocks L3d and its routes in L2 and L4; nothing is built before your answer; recommendation (a)) (ANSWERED 2026-10-21: (a); answer in docs/010)
 
 **What the rules say.** SEC-018 and API-097: the deployment must be able to require recent authentication or an extra factor for high-risk administration. The rules do not name the actions or the time.
 
@@ -3615,7 +3629,9 @@ Your answer 1 to the 10h-2 report: add the READ COMMITTED check to the 8e-1 refu
 
 **What goes ahead.** L1a to L3c.
 
-## Q-2026-10-21-158 — Login slice: the health route, and new routes in docs/005 (blocks only the health route and the new routes; recommendation (a))
+**Owner answer (2026-10-21, fresh session, with the approval of the login slice plan in commit 2aabe67).** Option (a), as recommended: a fresh password and TOTP code (within the last 15 minutes) for resetting an account, creating or disabling an account, changing a bundle or a user's bundle, giving or removing Settings access, and turning a Staff account's MFA on or off; money actions are not on the list. Built in L3d (and used by the L2 and L4 routes). Recorded in docs/010 DL-081.
+
+## Q-2026-10-21-158 — Login slice: the health route, and new routes in docs/005 (blocks only the health route and the new routes; recommendation (a)) (ANSWERED 2026-10-21: (a), with a note; answer in docs/010)
 
 **What the rules say.** DL-074 answer 3: the health page is for Owner and Manager through a capability in their bundles. API-081 lists `GET /api/v1/operations/status` (API, worker, job, migration and backup freshness). The run rules allow new docs/005 routes only for the pending V1-055 items. The login slice needs three new routes: `POST /api/v1/auth/password-change` (L4), `POST /api/v1/users/{user_id}/settings-access` and `POST /api/v1/users/{user_id}/settings-access/remove` (L2).
 
@@ -3627,7 +3643,9 @@ Your answer 1 to the 10h-2 report: add the READ COMMITTED check to the 8e-1 refu
 
 **What goes ahead.** Everything except the three routes and the health route.
 
-## Q-2026-10-21-159 — Login slice: how to try the sign-in in a browser on the Mac mini (blocks L7; nothing is built before your answer; recommendation (a))
+**Owner answer (2026-10-21, fresh session, with the approval of the login slice plan in commit 2aabe67).** Option (a), as recommended: `operations.status.read` goes into the Owner and Manager bundles now; the route itself is built with V1-059. Approving the plan also approves the three new docs/005 routes: `POST /api/v1/auth/password-change`, `POST /api/v1/users/{user_id}/settings-access` and `POST /api/v1/users/{user_id}/settings-access/remove`; each is written into docs/005 by the sub-slice that builds it. Recorded in docs/010 DL-081.
+
+## Q-2026-10-21-159 — Login slice: how to try the sign-in in a browser on the Mac mini (blocks L7; nothing is built before your answer; recommendation (a)) (ANSWERED 2026-10-21: (a), with a note; answer in docs/010)
 
 **What the rules say.** SEC-015 and SEC-016: session tokens only over protected channels, `Secure` and `HttpOnly` cookies. The code uses `__Host-` cookies and accepts only an `https://` Origin. Today `compose.yaml` runs PostgreSQL only, the API runs on `http://127.0.0.1:8000` and the Vite dev server has no proxy, so a browser cannot sign in locally. Nothing in the rules says how local development is served.
 
@@ -3639,7 +3657,9 @@ Your answer 1 to the 10h-2 report: add the READ COMMITTED check to the 8e-1 refu
 
 **What goes ahead.** L1a to L6.
 
-## Q-2026-10-21-160 — Login slice: read capabilities for Units and the Property (blocks the L5 part for the four reads; recommendation (a))
+**Owner answer (2026-10-21, fresh session, with the approval of the login slice plan in commit 2aabe67).** Option (a), with one addition: the local certificate covers both `localhost` and the Mac mini's local network name, so the owner can also open the app on an iPad on the same Wi-Fi. The L7 runbook says how to trust the certificate on an iPad. No download and no new package. Built in L7. Recorded in docs/010 DL-081.
+
+## Q-2026-10-21-160 — Login slice: read capabilities for Units and the Property (blocks the L5 part for the four reads; recommendation (a)) (ANSWERED 2026-10-21: (a), with a note; answer in docs/010)
 
 **What the rules say.** SEC-002: access is denied unless the actor has an explicit capability for the action and its Property scope. Today `GET /properties/{property_id}`, `GET /properties/{property_id}/units`, `GET /units/{unit_id}` and `GET /units/{unit_id}/timeline` need only a signed-in user, with no capability and no Property check. A new capability needs your answer.
 
@@ -3652,3 +3672,5 @@ Your answer 1 to the 10h-2 report: add the READ COMMITTED check to the 8e-1 refu
 **Recommendation: (a)**, because the Unit list is daily work for everyone, while `configuration.read` is about Settings.
 
 **What goes ahead.** Everything except this part of L5.
+
+**Owner answer (2026-10-21, fresh session, with the approval of the login slice plan in commit 2aabe67).** Option (a), as recommended: `property.read` and `units.read` in all three default bundles, checked with the Property scope on the four reads. In L5 the missing Origin and CSRF checks are also added to `POST /properties/{property_id}/units` and `PATCH /units/{unit_id}`. Built in L1b, L1c and L5. Recorded in docs/010 DL-081.
