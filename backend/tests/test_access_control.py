@@ -186,15 +186,18 @@ def test_the_grant_reader_groups_property_ids_and_refuses_names_it_may_not_give(
     assert PostgresCapabilityGrantReader(_FakeConnection([])).grants_for(uuid.uuid4()) == (
         frozenset()
     )
-    for refused_name in ("reports.export", "rent_nonpayment.evaluate", "settings.manage"):
-        # Review round 1: also a catalog name the reader may not give (a service principal's,
-        # and the per-user Settings access until L1d).
+    for refused_name in ("reports.export", "rent_nonpayment.evaluate"):
+        # Review round 1: also a catalog name the reader may not give (a service principal's;
+        # the per-user Settings access is given from sub-slice L1d).
         with pytest.raises(CapabilityCatalogMismatch):
             PostgresCapabilityGrantReader(
                 _FakeConnection([("leases.read", "p1"), (refused_name, "p1")])
             ).grants_for(uuid.uuid4())
     assert PostgresCapabilityGrantReader(
-        _FakeConnection([("identity.manage_access", "p1")])
+        _FakeConnection([("identity.manage_access", "p1"), ("settings.manage", "p1")])
     ).grants_for(uuid.uuid4()) == frozenset(
-        {CapabilityGrant("identity.manage_access", frozenset({"p1"}))}
+        {
+            CapabilityGrant("identity.manage_access", frozenset({"p1"})),
+            CapabilityGrant("settings.manage", frozenset({"p1"})),
+        }
     )

@@ -44717,7 +44717,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_role_bundle_migration.py",
       "status": "implemented",
-      "notes": "app.actor_capability_grants and PostgresCapabilityGrantReader give an active, classified account the union of its actively assigned bundles' current capabilities with the bundle's Property; a new version without a capability and a removed assignment take it away at the next read; disabled, unclassified and unknown accounts get nothing, a disabled Owner too (review round 1); the Owner account class alone gets identity.manage_access for every Property, with its bundles' capabilities as well (review round 1), a Manager only its bundles (login slice sub-slice L1b-2; owner answers (a) to Q-2026-10-21-161, (b) to Q-2026-10-21-162, DL-081)."
+      "notes": "app.actor_capability_grants and PostgresCapabilityGrantReader give an active, classified account the union of its actively assigned bundles' current capabilities with the bundle's Property; a new version without a capability and a removed assignment take it away at the next read; disabled, unclassified and unknown accounts get nothing, a disabled Owner too (review round 1); the Owner account class alone gets identity.manage_access (and, from sub-slice L1d, settings.manage) for every Property, with its bundles' capabilities as well (review round 1), a Manager only its bundles (login slice sub-slice L1b-2; owner answers (a) to Q-2026-10-21-161, (b) to Q-2026-10-21-162, DL-081)."
     },
     {
       "test_id": "test_the_runtime_role_reads_grants_only_through_the_reader",
@@ -44756,7 +44756,7 @@
       "test_level": "unit",
       "test_path": "backend/tests/test_access_control.py",
       "status": "implemented",
-      "notes": "PostgresCapabilityGrantReader groups the reader's rows into one CapabilityGrant per capability with its Property ids, gives nothing for no rows, and refuses every grant when a name is not in the application catalog or is a capability the reader may not give (a service principal's, and the per-user Settings access until L1d); identity.manage_access is accepted (fail closed; L1b-1 review note, L1b-2 review round 1) (login slice sub-slice L1b-2; owner answers (a) to Q-2026-10-21-161, (b) to Q-2026-10-21-162, DL-081)."
+      "notes": "PostgresCapabilityGrantReader groups the reader's rows into one CapabilityGrant per capability with its Property ids, gives nothing for no rows, and refuses every grant when a name is not in the application catalog or is a capability the reader may not give (a service principal's); identity.manage_access and, from sub-slice L1d, settings.manage are accepted (fail closed; L1b-1 review note, L1b-2 review round 1) (login slice sub-slice L1b-2; owner answers (a) to Q-2026-10-21-161, (b) to Q-2026-10-21-162, DL-081)."
     },
     {
       "test_id": "test_a_reused_transaction_id_alone_cannot_add_to_a_recorded_version",
@@ -44769,6 +44769,103 @@
       "test_path": "backend/tests/test_role_bundle_migration.py",
       "status": "implemented",
       "notes": "A recorded version also keeps its transaction's start time, so a later transaction that reuses a recorded transaction id (as after a logical restore) still cannot add capabilities to that version (security review round 1) (login slice sub-slice L1b-2; owner answers (a) to Q-2026-10-21-161, (b) to Q-2026-10-21-162, DL-081)."
+    },
+    {
+      "test_id": "test_the_owner_gives_and_removes_settings_access",
+      "upstream_ids": [
+        "SEC-014",
+        "SEC-021",
+        "SEC-075",
+        "DB-AUTH-008",
+        "DL-074",
+        "DL-081"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settings_access_migration.py",
+      "status": "implemented",
+      "notes": "The Owner gives settings.manage to a Manager or a Staff account and removes it with a reason; giving twice and removing without a grant are refused; giving again after a removal makes a new grant; the grant and removal record who, why and the provenance (the audit event comes with the L2 routes, DL-081); a removal takes effect at the next read and touches no other grant; the Owner can also remove a disabled account's grant, which does not come back when the account is enabled again (review round 1) (login slice sub-slice L1d; owner answer (a) to Q-2026-10-21-151, DL-081)."
+    },
+    {
+      "test_id": "test_only_the_owner_gives_settings_access_and_only_to_a_manager_or_staff_account",
+      "upstream_ids": [
+        "SEC-002",
+        "SEC-021",
+        "DB-AUTH-008",
+        "DL-058",
+        "DL-074",
+        "DL-081"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settings_access_migration.py",
+      "status": "implemented",
+      "notes": "A Manager (even one holding Settings access), a Staff member, an unclassified, unknown or disabled acting account (a disabled Owner included) cannot give or remove Settings access; an Owner, unclassified, disabled or unknown target cannot get it, and a removal for an account with no grant is refused (review round 1: a removal checks only the Owner) (login slice sub-slice L1d; owner answer (a) to Q-2026-10-21-151, DL-081)."
+    },
+    {
+      "test_id": "test_only_settings_access_is_stored_and_its_history_is_append_only",
+      "upstream_ids": [
+        "SEC-014",
+        "SEC-021",
+        "DB-AUTH-008",
+        "DL-081"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settings_access_migration.py",
+      "status": "implemented",
+      "notes": "Only settings.manage with grant path per_user can be stored; a reason is non-blank and at most 500 characters; the giver and remover are real accounts; a grant is removed at most once; grants and removals are never updated, deleted or truncated (the audit event comes with the L2 routes, DL-081) (login slice sub-slice L1d; owner answer (a) to Q-2026-10-21-151, DL-081)."
+    },
+    {
+      "test_id": "test_two_grants_of_settings_access_at_the_same_time_wait_and_one_is_refused",
+      "upstream_ids": [
+        "SEC-021",
+        "DB-AUTH-008",
+        "DL-081"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settings_access_migration.py",
+      "status": "implemented",
+      "notes": "Two grants of Settings access to one account at the same time: the second waits on the advisory lock while the first is uncommitted and is refused once the first commits; a grant also waits while an uncommitted removal holds the same lock and is refused when the removal rolls back (review round 1); a grant or a removal outside READ COMMITTED is refused (fail closed) (login slice sub-slice L1d; owner answer (a) to Q-2026-10-21-151, DL-081)."
+    },
+    {
+      "test_id": "test_the_reader_gives_settings_access_to_the_owner_and_to_given_accounts_only",
+      "upstream_ids": [
+        "SEC-002",
+        "SEC-017",
+        "SEC-021",
+        "DB-AUTH-007",
+        "DB-AUTH-008",
+        "DL-074",
+        "DL-081"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settings_access_migration.py",
+      "status": "implemented",
+      "notes": "The grant reader gives the Owner account class identity.manage_access and settings.manage for every Property, and settings.manage to a Manager or Staff account with an active grant; a disabled holder and an unclassified account with a hand-written grant (review round 1) get nothing; a removed grant stops at the next read; the Python reader returns it as one grant with every Property (login slice sub-slice L1d; owner answer (a) to Q-2026-10-21-151, DL-081)."
+    },
+    {
+      "test_id": "test_the_runtime_role_reaches_settings_access_only_through_its_functions",
+      "upstream_ids": [
+        "SEC-002",
+        "SEC-020",
+        "DB-AUTH-008",
+        "DL-081"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settings_access_migration.py",
+      "status": "implemented",
+      "notes": "The runtime role reads a committed grant through the reader and may call the give and remove functions, which still refuse a non-Owner; it may not read or write the grant relations or call the internal Owner check (login slice sub-slice L1d; owner answer (a) to Q-2026-10-21-151, DL-081)."
+    },
+    {
+      "test_id": "test_the_settings_access_migration_is_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "SEC-020",
+        "SEC-021",
+        "DB-AUTH-008",
+        "DL-081"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settings_access_migration.py",
+      "status": "implemented",
+      "notes": "Only the two relations with their keys and one index, three functions that are not definers, the two definer functions, five triggers and the replaced reader (same signature, owner and privileges, still a STABLE definer with search_path pg_catalog) are added; nothing else changes; the runtime role may only execute the two definer functions and the reader; forward-only (login slice sub-slice L1d; owner answer (a) to Q-2026-10-21-151, DL-081)."
     }
   ]
 }

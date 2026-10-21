@@ -5102,6 +5102,24 @@ class is `owner`. A removed capability or assignment stops at the next read. The
 only execute that function; the writers (default bundles, administration) are reviewed definer
 functions of later sub-slices.
 
+## DB-AUTH-008 — Per-user Settings access
+
+Added by DL-081 (login sub-slice L1d, migration `20270121_178`; owner answer (a) to
+Q-2026-10-21-151). `user_capability_grants` records each grant of `settings.manage` (the only
+capability stored there, with grant path `per_user`) to one account: the account, when, who gave
+it, a reason and provenance; an account has at most one active grant (checked under a lock, at
+READ COMMITTED only; a removal takes the same lock and also runs at READ COMMITTED only). `user_capability_grant_removals` ends a grant at most once, with when, who
+and a reason. Both are never updated, deleted or truncated. Only the definer functions
+`give_settings_access(owner, account, reason)` and `remove_settings_access(owner, account,
+reason)` write them for the application: the acting account must be the active Owner account
+class; a grant goes only to an active Manager or Staff account (the Owner always has Settings
+access); a removal needs only an active grant, so the Owner can also remove the Settings access
+of a disabled account, which then does not come back when the account is enabled again.
+`actor_capability_grants` also returns `settings.manage` for every Property (the deployment has
+one) to the Owner account class and to an active, classified account with an active grant, as it
+returns `identity.manage_access`; a removal takes effect at the next read and
+revokes nothing else. The runtime role may execute the two functions and the reader only.
+
 ---
 
 # 21. Deferred Technical and Configuration Decisions
@@ -5159,7 +5177,7 @@ replace detailed traceability.
 | Final Settlement | DB-SETTLE-001..006, DB-DEP-005..006, DB-DER-007 | BR-SETTLE-001..015 | PR-SETTLE-001..015, PR-CAP-006, PR-WF-005..007 |
 | Money, exchange, and rounding | DB-TYPE-004..005, DB-PAY-002..003, DB-REFUND-001, DB-TEST-005, DB-TEST-010 | BR-MONEY-001..013 | PR-MONEY-001..013, PR-CAP-005, PR-QUAL-006 |
 | Audit and authorization | DB-AUDIT-001..003, DB-IMM-001, DB-TXN-001..007 | BR-AUDIT-001..011, BR-AUTH-001..009 | PR-AUDIT-001..011, PR-AUTH-001..009, PR-CAP-007, PR-QUAL-001..008 |
-| Authentication and account security | DB-AUTH-001..007 | SEC-001..003, SEC-009..018, SEC-020..022, SEC-071..075 | PR-CAP-009 |
+| Authentication and account security | DB-AUTH-001..008 | SEC-001..003, SEC-009..018, SEC-020..022, SEC-071..075 | PR-CAP-009 |
 
 ---
 

@@ -213,6 +213,8 @@ Amended by DL-074 (owner, 2026-10-04 and 2026-10-20): the default bundles are Ow
 
 Amended by DL-081 (login sub-slice L1b-1): capabilities are configured data too, in the append-only catalog of docs/004 DB-AUTH-006 (75 capabilities, among them the approved `settings.manage`, `operations.status.read`, `property.read` and `units.read`); each capability has one grant path: a bundle may hold only `bundle` capabilities (enforced from L1b-2), never `settings.manage` (per user), `identity.manage_access` (Owner account class only, Q-2026-10-21-162 (b)) or `rent_nonpayment.evaluate` (service principal); `billing.generate` is a bundle capability (Q-2026-10-21-161 (a)).
 
+Amended by DL-081 (login sub-slices L1b-2 and L1d): role bundles and their assignments are append-only data of docs/004 DB-AUTH-007, and a bundle can hold only `bundle` capabilities; the effective grants of an active, classified account are read fresh on every read (`actor_capability_grants`), so a removed capability, assignment or Settings access stops at the next read. `identity.manage_access` comes only from the Owner account class; `settings.manage` comes from the Owner account class and from a per-user grant that only the Owner gives or removes (docs/004 DB-AUTH-008).
+
 ## SEC-022 — Separation of Capabilities
 
 Capabilities for entering source data, authorizing a financial action, reversing

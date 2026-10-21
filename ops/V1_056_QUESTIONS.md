@@ -3732,3 +3732,20 @@ Your answer 1 to the 10h-2 report: add the READ COMMITTED check to the 8e-1 refu
 **What goes ahead.** Nothing: L1c and the later sub-slices build on the L1b-2 tables, and L1b-2 is uncommitted work in the same files.
 
 **Owner answer (2026-10-21, same session, after the L1b-2 stop).** Option (a): make both fixes, run every check and run the run rules need, then do review round 4 with an independent review agent, and commit L1b-2 only if round 4 is clean. If the auto-mode checker blocks that agent again, follow the run rule for a blocked review agent. Then continue with L1c and the later sub-slices; stop after L5 is committed (L6 waits for the owner's sign-in screen description).
+
+## Q-2026-10-21-164 — Login sub-slice L1c: nine capabilities the Staff bundle answer does not name (blocks L1c; recommendation (a))
+
+**What the rules say.** Your answer to Q-2026-10-21-150 (a) (DL-081) lists what Staff get and what Staff never get, with your note "Staff get no action that moves money at once or changes a Customer's standing". DL-074 answer 1 gives Staff "preparing drafts". The Manager and Owner bundles hold every bundle capability.
+
+**The gap (found in the L1c pre-code survey).** Nine bundle capabilities are in neither list: `deposits.dispose` (Lease Deposit forfeiture draft, and also the one-call Deposit disposition in `deposit.py`), `deposits.correct`, `reservation_deposits.dispose` (Reservation Deposit outcome draft, and also the Reservation cancel with a Security Deposit disposition route in `reservation_api.py`), `reservation_deposits.correct`, `reservation_deposits.override`, `refunds.correct`, `refunds.corrections.reverse`, `late_payment.charge_correction` and `late_payment.final_decision`. (`service_rates.manage` and `utility_rates.manage` are also unnamed, but L5 replaces them with `settings.manage`, which no bundle holds.)
+
+**Example.** A Customer leaves without paying the last Rent and the Manager is out. With (a), Staff member Sokha cannot record the Pet Deposit forfeiture; she notes it and the Manager records the draft and confirms it the next day. With (b), Sokha records the forfeiture draft herself, but the same capability also lets her record a Deposit disposition in one call, which takes effect at once.
+
+**Options.**
+- (a) None of the nine is in the Staff bundle (each decides, overrides or corrects money, and two of them also have a one-call path that takes effect at once). The bundles stay editable, so you can add one later.
+- (b) Staff also get `deposits.dispose` and `reservation_deposits.dispose` (they prepare drafts), but not the other seven.
+- (c) You give the list line by line.
+
+**Recommendation: (a)**, because it follows your note on Q-150 exactly and fails closed; a Manager confirms every money decision anyway.
+
+**What goes ahead.** L1d (Settings access), which does not depend on the Staff bundle. L1c waits; L2 (which gives a new account its class's default bundle) builds on L1c.

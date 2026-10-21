@@ -350,11 +350,13 @@ def test_a_role_bundle_name_is_unique_per_property_and_every_version_is_kept(
         ):
             refused(connection, psycopg.errors.IntegrityConstraintViolation, query, (), APPEND_ONLY)
         # The catalog's own refusal, now that a TRUNCATE of the catalog alone meets the foreign
-        # key first (test_capability_catalog_migration.py).
+        # key first (test_capability_catalog_migration.py). Sub-slice L1d: every table that
+        # refers to the catalog is named too; the check and its message are unchanged.
         refused(
             connection,
             psycopg.errors.IntegrityConstraintViolation,
-            "TRUNCATE app.capabilities, app.role_bundle_capabilities",
+            "TRUNCATE app.capabilities, app.role_bundle_capabilities, app.user_capability_grants, "
+            "app.user_capability_grant_removals",
             (),
             "capability catalog is append-only",
         )
@@ -631,19 +633,24 @@ def test_the_grant_reader_gives_an_active_classified_account_its_current_capabil
             disabled_owner = add_account(connection, "owner", "disabled")
             assign(connection, disabled_owner, reads, property_id)
             assert grants(connection, disabled_owner) == set()
-        # Q-2026-10-21-162 (b): the Owner account class alone gives `identity.manage_access`.
+        # Q-2026-10-21-162 (b): the Owner account class alone gives `identity.manage_access`;
+        # from sub-slice L1d it also gives `settings.manage` (Q-2026-10-21-151 (a)).
         owner = add_account(connection, "owner")
         every_property = {
             row[0] for row in connection.execute("SELECT id FROM app.properties").fetchall()
         }
-        assert grants(connection, owner) == {
-            ("identity.manage_access", found) for found in every_property
+        owner_class = {
+            (capability, found)
+            for capability in ("identity.manage_access", "settings.manage")
+            for found in every_property
         }
+        assert grants(connection, owner) == owner_class
         # Review round 1: an Owner with a bundle gets the bundle's capabilities as well.
         assign(connection, owner, reads, property_id)
-        assert grants(connection, owner) == {
-            ("identity.manage_access", found) for found in every_property
-        } | {("leases.read", property_id), ("customers.read", property_id)}
+        assert grants(connection, owner) == owner_class | {
+            ("leases.read", property_id),
+            ("customers.read", property_id),
+        }
         manager = add_account(connection, "manager")
         assign(connection, manager, reads, property_id)
         assert grants(connection, manager) == {

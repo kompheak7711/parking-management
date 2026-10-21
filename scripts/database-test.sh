@@ -280,6 +280,7 @@ database_test_suites='
   tests/test_account_class_migration.py
   tests/test_capability_catalog_migration.py
   tests/test_role_bundle_migration.py
+  tests/test_settings_access_migration.py
 '
 
 for database_test_file in $database_test_suites; do

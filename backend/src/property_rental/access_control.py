@@ -145,18 +145,20 @@ class CapabilityCatalogMismatch(RuntimeError):
     """The database granted a capability the catalog does not name or give that way."""
 
 
-# The grant paths the reader may return today (review round 1 of sub-slice L1b-2): bundle
-# capabilities and the Owner account class capability; L1d adds `per_user`.
-READER_GRANT_PATHS: Final = frozenset({"bundle", "owner_class"})
+# The grant paths the reader may return (review round 1 of sub-slice L1b-2): bundle
+# capabilities, the Owner account class capability and, from sub-slice L1d, the per-user
+# Settings access; never a service principal's capability.
+READER_GRANT_PATHS: Final = frozenset({"bundle", "owner_class", "per_user"})
 
 
 class PostgresCapabilityGrantReader:
     """Read an actor's effective capabilities with their Property scopes (sub-slice L1b-2).
 
     `app.actor_capability_grants` returns rows only for an active, classified account: the
-    current capabilities of its assigned bundles, and `identity.manage_access` for the Owner
-    account class. A name outside the catalog, or one the catalog gives by another grant path,
-    refuses every grant (fail closed).
+    current capabilities of its assigned bundles, `identity.manage_access` for the Owner account
+    class, and `settings.manage` for the Owner account class and an account given it (L1d). A
+    name outside the catalog, or one the catalog gives by another grant path, refuses every
+    grant (fail closed).
     """
 
     def __init__(self, connection: GrantConnection) -> None:
