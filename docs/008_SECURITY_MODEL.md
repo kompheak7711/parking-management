@@ -215,6 +215,8 @@ Amended by DL-081 (login sub-slice L1b-1): capabilities are configured data too,
 
 Amended by DL-081 (login sub-slices L1b-2 and L1d): role bundles and their assignments are append-only data of docs/004 DB-AUTH-007, and a bundle can hold only `bundle` capabilities; the effective grants of an active, classified account are read fresh on every read (`actor_capability_grants`), so a removed capability, assignment or Settings access stops at the next read. `identity.manage_access` comes only from the Owner account class; `settings.manage` comes from the Owner account class and from a per-user grant that only the Owner gives or removes (docs/004 DB-AUTH-008).
 
+Amended by DL-081 (login sub-slice L1c): the default Owner, Manager and Staff bundles are seeded once per Property as editable data (docs/004 DB-AUTH-009); the Owner and Manager bundles hold the same bundle capabilities, and the Staff bundle holds no approval, administration, audit, export or money-at-once capability. The bundle names give no power by themselves; only their capabilities do.
+
 ## SEC-022 — Separation of Capabilities
 
 Capabilities for entering source data, authorizing a financial action, reversing

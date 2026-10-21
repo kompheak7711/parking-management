@@ -44866,6 +44866,119 @@
       "test_path": "backend/tests/test_settings_access_migration.py",
       "status": "implemented",
       "notes": "Only the two relations with their keys and one index, three functions that are not definers, the two definer functions, five triggers and the replaced reader (same signature, owner and privileges, still a STABLE definer with search_path pg_catalog) are added; nothing else changes; the runtime role may only execute the two definer functions and the reader; forward-only (login slice sub-slice L1d; owner answer (a) to Q-2026-10-21-151, DL-081)."
+    },
+    {
+      "test_id": "test_the_default_staff_bundle_holds_exactly_the_approved_daily_work",
+      "upstream_ids": [
+        "DL-074",
+        "DL-080",
+        "DL-081",
+        "BR-AUTH-002",
+        "BR-AUTH-005",
+        "SEC-021",
+        "SEC-022"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_access_control.py",
+      "status": "implemented",
+      "notes": "The default Staff bundle constant is exactly the 31 approved capabilities, all bundle capabilities; with the never-for-Staff list, the nine of Q-164 and the two rate capabilities that L5 replaces it covers every bundle capability without overlap (login slice sub-slice L1c; owner answers (a) to Q-2026-10-21-150 and Q-2026-10-21-164, G7, DL-081)."
+    },
+    {
+      "test_id": "test_the_default_bundles_hold_the_approved_capabilities",
+      "upstream_ids": [
+        "DL-074",
+        "DL-080",
+        "DL-081",
+        "BR-AUTH-002",
+        "BR-AUTH-005",
+        "SEC-021",
+        "SEC-022",
+        "API-080",
+        "DB-AUTH-009",
+        "TEST-084"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_default_role_bundles_migration.py",
+      "status": "implemented",
+      "notes": "The seed makes the bundles Owner, Manager and Staff at version 1 with the default record; Owner and Manager hold every bundle capability of the catalog, Staff exactly the approved list (no Sign Lease, Extend Reservation or Terminate Lease); the Owner-class account gets the Owner bundle; the reader gives Owner, Manager-bundle and Staff-bundle accounts exactly those grants (login slice sub-slice L1c; owner answers (a) to Q-2026-10-21-150 and Q-2026-10-21-164, G7, DL-081)."
+    },
+    {
+      "test_id": "test_seeding_again_changes_nothing_and_the_bundles_stay_editable",
+      "upstream_ids": [
+        "DL-074",
+        "DL-081",
+        "SEC-021",
+        "API-080",
+        "DB-AUTH-009",
+        "TEST-086"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_default_role_bundles_migration.py",
+      "status": "implemented",
+      "notes": "A second seed returns the same bundles and changes nothing, also after a new catalog row (never added to an existing bundle by itself); the Owner bundle is assigned once; a new Staff bundle version changes what Staff get at the next read and the default record keeps the bundle; after the Owner removed its Owner bundle assignment and renamed the bundle, seeding again adds no bundle or assignment (login slice sub-slice L1c; owner answers (a) to Q-2026-10-21-150 and Q-2026-10-21-164, G7, DL-081)."
+    },
+    {
+      "test_id": "test_seeding_is_refused_outside_read_committed_or_for_an_unknown_property",
+      "upstream_ids": [
+        "DL-081",
+        "DB-AUTH-009",
+        "SEC-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_default_role_bundles_migration.py",
+      "status": "implemented",
+      "notes": "The seed is refused at REPEATABLE READ and SERIALIZABLE and for an unknown Property; the default record is never updated, deleted or truncated (login slice sub-slice L1c; owner answers (a) to Q-2026-10-21-150 and Q-2026-10-21-164, G7, DL-081)."
+    },
+    {
+      "test_id": "test_the_runtime_role_seeds_only_through_the_function",
+      "upstream_ids": [
+        "DL-081",
+        "DB-AUTH-009",
+        "SEC-002",
+        "SEC-020"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_default_role_bundles_migration.py",
+      "status": "implemented",
+      "notes": "The runtime role may call the seed function and may not read the default record (login slice sub-slice L1c; owner answers (a) to Q-2026-10-21-150 and Q-2026-10-21-164, G7, DL-081)."
+    },
+    {
+      "test_id": "test_the_property_setup_seeds_the_default_bundles_in_its_transaction",
+      "upstream_ids": [
+        "DL-074",
+        "DL-081",
+        "DB-AUTH-009",
+        "API-080"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_default_role_bundles_migration.py",
+      "status": "implemented",
+      "notes": "The Property setup path, as the runtime identity, makes the Property and its default bundles in one transaction (a seed refused at SERIALIZABLE leaves no Property, bundle, default record or assignment) and gives the bootstrapped Owner the Owner bundle; a second Property through the repository is refused and changes nothing (login slice sub-slice L1c; owner answers (a) to Q-2026-10-21-150 and Q-2026-10-21-164, G7, DL-081)."
+    },
+    {
+      "test_id": "test_two_seeds_of_one_property_at_the_same_time_make_the_bundles_once",
+      "upstream_ids": [
+        "DL-081",
+        "DB-AUTH-009"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_default_role_bundles_migration.py",
+      "status": "implemented",
+      "notes": "Two seeds of one Property at the same time: the second waits on the lock and returns the first committed bundles; three bundles and one Owner assignment exist (login slice sub-slice L1c; owner answers (a) to Q-2026-10-21-150 and Q-2026-10-21-164, G7, DL-081)."
+    },
+    {
+      "test_id": "test_the_default_bundles_migration_seeds_an_existing_property_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "DL-074",
+        "DL-081",
+        "DB-AUTH-009",
+        "SEC-020",
+        "SEC-021"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_default_role_bundles_migration.py",
+      "status": "implemented",
+      "notes": "The migration seeds an existing Property and gives its Owner the Owner bundle (a Manager account gets nothing); only the default record with its key, the definer seed function and two triggers are added; the runtime role may only execute the seed function; forward-only (login slice sub-slice L1c; owner answers (a) to Q-2026-10-21-150 and Q-2026-10-21-164, G7, DL-081)."
     }
   ]
 }

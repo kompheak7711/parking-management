@@ -1446,6 +1446,8 @@ business authority into a role title.
 
 Amended by DL-074 (owner, 2026-10-04 and 2026-10-20): the deployment starts with default Owner, Manager and Staff bundles as configurable data (Owner: every capability; Manager: all daily work, approvals, reports, audit history, exports and the health page, no user or role administration; Staff: daily data entry only, no approvals, administration, audit or export). Settings access is its own capability, given per user; only the Owner account class gives or removes it, and the Owner always has it.
 
+Amended by DL-081 (login sub-slice L1c): each Property gets its default bundles "Owner", "Manager" and "Staff" once, as editable data (docs/004 DB-AUTH-009). The Owner and Manager bundles hold every bundle capability; the Staff bundle holds the 31 approved daily-work capabilities only. `identity.manage_access` and `settings.manage` are in no bundle; they come from the Owner account class and the per-user grant.
+
 ## API-081 — Operational Health
 
 - `GET /health/live` provides minimal unauthenticated liveness.

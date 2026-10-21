@@ -23,6 +23,7 @@ from property_rental.access_control import (
     PROPERTY_READ_CAPABILITY,
     SERVICE_PRINCIPAL_CAPABILITIES,
     SETTINGS_MANAGE_CAPABILITY,
+    STAFF_DEFAULT_BUNDLE_CAPABILITIES,
     UNITS_READ_CAPABILITY,
     CapabilityCatalogMismatch,
     PostgresCapabilityGrantReader,
@@ -200,4 +201,108 @@ def test_the_grant_reader_groups_property_ids_and_refuses_names_it_may_not_give(
             CapabilityGrant("identity.manage_access", frozenset({"p1"})),
             CapabilityGrant("settings.manage", frozenset({"p1"})),
         }
+    )
+
+
+# Owner answer (a) to Q-2026-10-21-150 (DL-081): what Staff get, with G7's two payment lines.
+STAFF_APPROVED = frozenset(
+    {
+        "identity.read_self",
+        "customers.read",
+        "customers.manage",
+        "reservations.read",
+        "reservations.create",
+        "utility.read",
+        "utility_readings.record",
+        "payments.read",
+        "payments.record",
+        "payments.allocate",
+        "receipts.read",
+        "final_settlements.prepare",
+        "leases.read",
+        "invoices.read",
+        "deposits.read",
+        "credits.read",
+        "refunds.read",
+        "customer_ledger.read",
+        "rent_nonpayment.read",
+        "configuration.read",
+        "units.read",
+        "property.read",
+        "reservations.cancel",
+        "reservations.complete",
+        "leases.draft",
+        "lease_signers.manage",
+        "leases.inspect",
+        "leases.move_out",
+        "utility.calculate",
+        "receipts.reprint",
+        "refunds.create",
+    }
+)
+# What Staff never get (DL-081, Q-150 (a) with the owner's note, DL-080 item 2, Q-161 (a)); the
+# names that are not bundle capabilities can never be in any bundle.
+STAFF_NEVER = frozenset(
+    {
+        "financial.approve",
+        "invoices.void",
+        "audit.view",
+        "operations.status.read",
+        "leases.warn",
+        "utility_readings.correct",
+        "utility_meters.manage",
+        "utility.estimate",
+        "invoices.create",
+        "invoices.issue",
+        "invoices.adjust",
+        "damage_charges.bill",
+        "deposits.manage",
+        "deposits.refund.qualify",
+        "reservation_deposits.refund",
+        "payments.reverse",
+        "payments.allocations.reverse",
+        "credits.recognize",
+        "credits.apply",
+        "credits.reverse",
+        "credits.applications.reverse",
+        "late_payment.review",
+        "rent_nonpayment.case_manage",
+        "rent_nonpayment.event_post",
+        "exchange_rates.manage",
+        "leases.sign",
+        "reservations.extend",
+        "leases.terminate",
+        "billing.generate",
+        "property.manage",
+    }
+)
+# Owner answer (a) to Q-2026-10-21-164: none of these nine is in the Staff bundle.
+STAFF_NOT_NAMED = frozenset(
+    {
+        "deposits.dispose",
+        "deposits.correct",
+        "reservation_deposits.dispose",
+        "reservation_deposits.correct",
+        "reservation_deposits.override",
+        "refunds.correct",
+        "refunds.corrections.reverse",
+        "late_payment.charge_correction",
+        "late_payment.final_decision",
+    }
+)
+# Replaced by `settings.manage` in sub-slice L5 (Q-2026-10-21-151 (a)); not in the Staff bundle.
+RATE_CAPABILITIES = frozenset({"service_rates.manage", "utility_rates.manage"})
+
+
+def test_the_default_staff_bundle_holds_exactly_the_approved_daily_work() -> None:
+    assert STAFF_DEFAULT_BUNDLE_CAPABILITIES == STAFF_APPROVED
+    assert len(STAFF_APPROVED) == 31
+    assert STAFF_APPROVED <= BUNDLE_CAPABILITIES
+    groups = (STAFF_APPROVED, STAFF_NEVER, STAFF_NOT_NAMED, RATE_CAPABILITIES)
+    # Every bundle capability is in exactly one group, so a new bundle capability must be
+    # placed by the owner before the Staff list can be called complete.
+    assert sum(len(group) for group in groups) == len(BUNDLE_CAPABILITIES)
+    assert frozenset().union(*groups) == BUNDLE_CAPABILITIES
+    assert not STAFF_APPROVED & (
+        OWNER_CLASS_CAPABILITIES | PER_USER_CAPABILITIES | SERVICE_PRINCIPAL_CAPABILITIES
     )

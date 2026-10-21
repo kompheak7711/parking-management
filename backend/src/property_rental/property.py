@@ -79,8 +79,14 @@ class PostgresPropertyConfigurationRepository:
         )
 
     def add(self, configuration: PropertyConfiguration) -> None:
-        try:
-            with psycopg.connect(self.database_url) as connection:
+        expected = (
+            configuration.property_id,
+            configuration.name.strip(),
+            configuration.address_text,
+            configuration.timezone_name,
+        )
+        with psycopg.connect(self.database_url) as connection:
+            try:
                 row = connection.execute(
                     """
                     SELECT property_id, name, address_text, timezone_name
@@ -93,18 +99,20 @@ class PostgresPropertyConfigurationRepository:
                         self.actor_id,
                     ),
                 ).fetchone()
-        except psycopg.errors.UniqueViolation as error:
-            raise PropertyAlreadyConfiguredError(
-                "this deployment already has a Property configuration"
-            ) from error
-        expected = (
-            configuration.property_id,
-            configuration.name.strip(),
-            configuration.address_text,
-            configuration.timezone_name,
-        )
-        if row != expected:
-            raise RuntimeError("Property initialization returned an invalid result")
+            except psycopg.errors.UniqueViolation as error:
+                raise PropertyAlreadyConfiguredError(
+                    "this deployment already has a Property configuration"
+                ) from error
+            # Checked before the commit (review round 1 of sub-slice L1c), so an invalid
+            # result rolls back the new Property and its default bundles together.
+            if row != expected:
+                raise RuntimeError("Property initialization returned an invalid result")
+            # The default Owner, Manager and Staff bundles, in the same transaction as the new
+            # Property (login sub-slice L1c, DL-081).
+            connection.execute(
+                "SELECT owner_bundle_id FROM app.seed_default_role_bundles(%s)",
+                (configuration.property_id,),
+            )
 
 
 @dataclass(frozen=True, slots=True)

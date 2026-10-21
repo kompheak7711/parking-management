@@ -5120,6 +5120,23 @@ one) to the Owner account class and to an active, classified account with an act
 returns `identity.manage_access`; a removal takes effect at the next read and
 revokes nothing else. The runtime role may execute the two functions and the reader only.
 
+## DB-AUTH-009 — Default role bundles
+
+Added by DL-081 (login sub-slice L1c, migration `20270122_179`; owner answers (a) to
+Q-2026-10-21-150 and Q-2026-10-21-164, G7). `default_role_bundles` records, once per Property,
+which three role bundles are its defaults (`owner_bundle_id`, `manager_bundle_id`,
+`staff_bundle_id`, each a bundle of that Property, all different), when and with what provenance;
+it is never updated, deleted or truncated. Only the definer function
+`seed_default_role_bundles(property)` writes it, at READ COMMITTED under a per-Property lock: for
+a Property that has no defaults yet it creates the bundles "Owner" and "Manager", which hold every
+catalog capability whose grant path is `bundle` at that moment, and "Staff", which holds exactly
+the 31 approved daily-work capabilities (DL-081), all at version 1; it assigns the Owner bundle to
+the Owner-class account, if there is one, as a seed assignment; for a Property that already has
+its defaults it returns their ids and changes nothing, so a later catalog capability is never
+added to an existing bundle by itself. The bundles stay configurable data (DB-AUTH-007). The
+migration seeds the Property that already exists; the Property setup calls the function in the
+same transaction as `initialize_property`. The runtime role may execute the function only.
+
 ---
 
 # 21. Deferred Technical and Configuration Decisions
@@ -5177,7 +5194,7 @@ replace detailed traceability.
 | Final Settlement | DB-SETTLE-001..006, DB-DEP-005..006, DB-DER-007 | BR-SETTLE-001..015 | PR-SETTLE-001..015, PR-CAP-006, PR-WF-005..007 |
 | Money, exchange, and rounding | DB-TYPE-004..005, DB-PAY-002..003, DB-REFUND-001, DB-TEST-005, DB-TEST-010 | BR-MONEY-001..013 | PR-MONEY-001..013, PR-CAP-005, PR-QUAL-006 |
 | Audit and authorization | DB-AUDIT-001..003, DB-IMM-001, DB-TXN-001..007 | BR-AUDIT-001..011, BR-AUTH-001..009 | PR-AUDIT-001..011, PR-AUTH-001..009, PR-CAP-007, PR-QUAL-001..008 |
-| Authentication and account security | DB-AUTH-001..008 | SEC-001..003, SEC-009..018, SEC-020..022, SEC-071..075 | PR-CAP-009 |
+| Authentication and account security | DB-AUTH-001..009 | SEC-001..003, SEC-009..018, SEC-020..022, SEC-071..075 | PR-CAP-009 |
 
 ---
 

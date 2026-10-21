@@ -122,6 +122,45 @@ BUNDLE_CAPABILITIES: Final = frozenset(
     capability for capability in CAPABILITY_CATALOG if capability_grant_path(capability) == "bundle"
 )
 
+# The default Staff bundle of each Property (sub-slice L1c, migration `20270122_179`): owner
+# answer (a) to Q-2026-10-21-150 with G7, and (a) to Q-2026-10-21-164 (DL-081). The default
+# Owner and Manager bundles hold every bundle capability of the catalog when they are seeded.
+STAFF_DEFAULT_BUNDLE_CAPABILITIES: Final = frozenset(
+    {
+        "configuration.read",
+        "credits.read",
+        "customer_ledger.read",
+        "customers.manage",
+        "customers.read",
+        "deposits.read",
+        "final_settlements.prepare",
+        "identity.read_self",
+        "invoices.read",
+        "lease_signers.manage",
+        "leases.draft",
+        "leases.inspect",
+        "leases.move_out",
+        "leases.read",
+        "payments.allocate",
+        "payments.read",
+        "payments.record",
+        "property.read",
+        "receipts.read",
+        "receipts.reprint",
+        "refunds.create",
+        "refunds.read",
+        "rent_nonpayment.read",
+        "reservations.cancel",
+        "reservations.complete",
+        "reservations.create",
+        "reservations.read",
+        "units.read",
+        "utility.calculate",
+        "utility.read",
+        "utility_readings.record",
+    }
+)
+
 
 class GrantCursor(Protocol):
     """Bounded cursor operations used by the grant reader."""
