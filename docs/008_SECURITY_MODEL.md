@@ -211,6 +211,8 @@ capabilities, not assume that a role title inherently grants a financial right.
 
 Amended by DL-074 (owner, 2026-10-04 and 2026-10-20): the default bundles are Owner, Manager and Staff (OOD-SEC-001), still configurable data. Settings access is its own per-user capability that only the Owner account class gives or removes and always has, as the Owner-only resets of DL-058 are tied to the account class, not to a role name.
 
+Amended by DL-081 (login sub-slice L1b-1): capabilities are configured data too, in the append-only catalog of docs/004 DB-AUTH-006 (75 capabilities, among them the approved `settings.manage`, `operations.status.read`, `property.read` and `units.read`); each capability has one grant path: a bundle may hold only `bundle` capabilities (enforced from L1b-2), never `settings.manage` (per user), `identity.manage_access` (Owner account class only, Q-2026-10-21-162 (b)) or `rent_nonpayment.evaluate` (service principal); `billing.generate` is a bundle capability (Q-2026-10-21-161 (a)).
+
 ## SEC-022 — Separation of Capabilities
 
 Capabilities for entering source data, authorizing a financial action, reversing

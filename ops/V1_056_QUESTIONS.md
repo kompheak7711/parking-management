@@ -3675,7 +3675,7 @@ Your answer 1 to the 10h-2 report: add the READ COMMITTED check to the 8e-1 refu
 
 **Owner answer (2026-10-21, fresh session, with the approval of the login slice plan in commit 2aabe67).** Option (a), as recommended: `property.read` and `units.read` in all three default bundles, checked with the Property scope on the four reads. In L5 the missing Origin and CSRF checks are also added to `POST /properties/{property_id}/units` and `PATCH /units/{unit_id}`. Built in L1b, L1c and L5. Recorded in docs/010 DL-081.
 
-## Q-2026-10-21-161 — Login sub-slice L1b-1 review round 1: `billing.generate` is also a capability for people today (blocks the L1b-1 commit; the catalog row can never change once written; recommendation (a))
+## Q-2026-10-21-161 — Login sub-slice L1b-1 review round 1: `billing.generate` is also a capability for people today (blocks the L1b-1 commit; the catalog row can never change once written; recommendation (a)) (ANSWERED 2026-10-21: (a); answer in docs/010)
 
 **What the plan says.** The approved login slice plan (section 7.1 and L1b) says `billing.generate` "belongs to the billing service principal only" and can never be put in a role bundle. L1b-1 was built that way: its catalog row says "not assignable by a bundle".
 
@@ -3691,7 +3691,9 @@ Your answer 1 to the 10h-2 report: add the READ COMMITTED check to the 8e-1 refu
 
 **What goes ahead.** Nothing in the login slice: L1b-2 to L8 build on the catalog, and the catalog rows are append-only. The L1b-1 round 1 fixes are written down (ops/reviews/V1-056-login-L1b-1.md, a draft, not committed) and are made with your answer.
 
-## Q-2026-10-21-162 — Login sub-slice L1b-1 security review round 1: may `identity.manage_access` be put in a role bundle? (blocks the L1b-1 commit with Q-161; recommendation (b))
+**Owner answer (2026-10-21, same session, after the L1b-1 stop).** Option (a). `billing.generate` goes in the Owner and Manager bundles, not in the Staff bundle. It is a bundle capability; its catalog description becomes "Start a Rent or Utility billing run and read its status". Built in L1b-1 (the catalog row) and L1c (the bundles). Recorded in docs/010 DL-081.
+
+## Q-2026-10-21-162 — Login sub-slice L1b-1 security review round 1: may `identity.manage_access` be put in a role bundle? (blocks the L1b-1 commit with Q-161; recommendation (b)) (ANSWERED 2026-10-21: (b); answer in docs/010)
 
 **What the rules say.** DL-074 answer 1: Owner "every capability, including user accounts, role bundles and settings"; Manager "no user or role administration". DL-058 and Q-152 (a): exactly one Owner account; the Owner-only resets are tied to the account class, not to a role name. Q-156 (a) says "only the Owner (`identity.manage_access`)". The approved plan (L1c) puts `identity.manage_access` in the Owner bundle and leaves it out of the Manager bundle; bundles stay editable by whoever holds `identity.manage_access`.
 
@@ -3707,3 +3709,5 @@ Your answer 1 to the 10h-2 report: add the READ COMMITTED check to the 8e-1 refu
 **Recommendation: (b)**, because there is exactly one Owner account (Q-152 (a)) and DL-074 gives user and role administration to the Owner only; (b) fails closed and needs no self-edit rules.
 
 **What goes ahead.** As for Q-161: nothing, because the catalog row is append-only.
+
+**Owner answer (2026-10-21, same session, after the L1b-1 stop).** Option (b). `identity.manage_access` comes only from the Owner account class and is never in any bundle. This keeps DL-058: only the Owner resets Manager and Staff accounts. Built in L1b-1 (the catalog row: Owner class only) and L1b-2 (the grant reader gives it to the Owner account class). Recorded in docs/010 DL-081.

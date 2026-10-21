@@ -5056,6 +5056,23 @@ equivalently strong transactional guard prevents initial-Owner bootstrap after t
 initial Owner is established and prevents bootstrap from becoming an additional-Owner
 backdoor.
 
+## DB-AUTH-006 — Capability catalog
+
+Added by DL-081 (login sub-slice L1b-1, migration `20270119_176`). `capabilities` holds one
+append-only row for every capability the server checks: its lower-case dotted identifier (at most
+128 characters), its family (the part before the first dot), a description, its grant path, the
+time it was added and its provenance. The grant path says how the capability can be given:
+`bundle` (a role bundle may hold it), `per_user` (`settings.manage`, given to one user by the
+Owner), `owner_class` (`identity.manage_access`, only the Owner account class has it) or
+`service_principal` (`rent_nonpayment.evaluate`); `billing.generate` is a bundle capability.
+The pair of identifier and grant path is unique, so a bundle relation can refer to bundle
+capabilities only (enforced from L1b-2). Rows are never updated, deleted or truncated; a new
+capability is a new row, a name is never renamed, and a description is never corrected (a new
+catalog row needs a security review). The application keeps the same catalog in
+`property_rental.access_control`; a unit test fails when a literal dotted string in the
+application code is neither a catalog capability nor a listed label. The runtime role may only
+read the catalog.
+
 ---
 
 # 21. Deferred Technical and Configuration Decisions
@@ -5113,7 +5130,7 @@ replace detailed traceability.
 | Final Settlement | DB-SETTLE-001..006, DB-DEP-005..006, DB-DER-007 | BR-SETTLE-001..015 | PR-SETTLE-001..015, PR-CAP-006, PR-WF-005..007 |
 | Money, exchange, and rounding | DB-TYPE-004..005, DB-PAY-002..003, DB-REFUND-001, DB-TEST-005, DB-TEST-010 | BR-MONEY-001..013 | PR-MONEY-001..013, PR-CAP-005, PR-QUAL-006 |
 | Audit and authorization | DB-AUDIT-001..003, DB-IMM-001, DB-TXN-001..007 | BR-AUDIT-001..011, BR-AUTH-001..009 | PR-AUDIT-001..011, PR-AUTH-001..009, PR-CAP-007, PR-QUAL-001..008 |
-| Authentication and account security | DB-AUTH-001..005 | SEC-009..018, SEC-071..075 | PR-CAP-009 |
+| Authentication and account security | DB-AUTH-001..006 | SEC-009..018, SEC-021, SEC-071..075 | PR-CAP-009 |
 
 ---
 

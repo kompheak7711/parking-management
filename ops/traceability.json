@@ -44535,6 +44535,102 @@
       "test_path": "backend/tests/test_account_class_migration.py",
       "status": "implemented",
       "notes": "Under REPEATABLE READ and SERIALIZABLE, a Manager class given from a snapshot taken before the account's MFA was set to optional fails with a serialization failure (40001) and no class is written (login slice sub-slice L1a, review round 2 note; owner answer (a) to Q-2026-10-21-152, DL-081)."
+    },
+    {
+      "test_id": "test_the_capability_catalog_names_every_capability_the_code_checks",
+      "upstream_ids": [
+        "SEC-002",
+        "SEC-021",
+        "API-080",
+        "DB-AUTH-006",
+        "DL-074",
+        "DL-081",
+        "TEST-084"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_access_control.py",
+      "status": "implemented",
+      "notes": "Every dotted string constant in backend/src (except access_control.py) is a catalog capability or one of the listed request-digest, audit-action, log-event, message-type and function labels; no listed label is a capability and every listed label is still used; 70 capabilities are checked today; every dotted constant in access_control.py is a catalog name (review round 1) (login slice sub-slice L1b-1; owner answers (a) to Q-2026-10-21-151, Q-2026-10-21-158, Q-2026-10-21-160 and Q-2026-10-21-161, (b) to Q-2026-10-21-162, DL-081)."
+    },
+    {
+      "test_id": "test_the_catalog_holds_the_approved_new_names",
+      "upstream_ids": [
+        "SEC-021",
+        "SEC-022",
+        "API-080",
+        "DB-AUTH-006",
+        "DL-074",
+        "DL-081"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_access_control.py",
+      "status": "implemented",
+      "notes": "The catalog has 75 sorted, dotted (at most 128 characters), described capabilities, including settings.manage, operations.status.read, property.read, units.read and the database-only rent_nonpayment.evaluate (none of them used elsewhere yet); the scan covers every module under backend/src (review round 2) (login slice sub-slice L1b-1; owner answers (a) to Q-2026-10-21-151, Q-2026-10-21-158, Q-2026-10-21-160 and Q-2026-10-21-161, (b) to Q-2026-10-21-162, DL-081)."
+    },
+    {
+      "test_id": "test_the_catalog_table_holds_exactly_the_application_catalog",
+      "upstream_ids": [
+        "SEC-021",
+        "API-080",
+        "DB-AUTH-006",
+        "DL-081"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_capability_catalog_migration.py",
+      "status": "implemented",
+      "notes": "Read by the runtime role, app.capabilities holds exactly the access_control catalog, each row with its family, description, grant path, seed provenance and a finite added_at; only settings.manage (per_user), identity.manage_access (owner_class) and rent_nonpayment.evaluate (service_principal) are not bundle capabilities; billing.generate is a bundle capability (login slice sub-slice L1b-1; owner answers (a) to Q-2026-10-21-151, Q-2026-10-21-158, Q-2026-10-21-160 and Q-2026-10-21-161, (b) to Q-2026-10-21-162, DL-081)."
+    },
+    {
+      "test_id": "test_a_catalog_row_needs_a_dotted_name_its_family_a_description_and_a_grant_path",
+      "upstream_ids": [
+        "SEC-021",
+        "DB-AUTH-006",
+        "DL-081"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_capability_catalog_migration.py",
+      "status": "implemented",
+      "notes": "A capability name that is not lower-case dotted or is longer than 128 characters, a family that is not the part before the first dot, an unknown grant path, a blank description and a non-finite added_at (23514) and a duplicate name (23505) are refused; well-formed new rows are accepted and the capability and grant path pair is unique (rolled back) (login slice sub-slice L1b-1; owner answers (a) to Q-2026-10-21-151, Q-2026-10-21-158, Q-2026-10-21-160 and Q-2026-10-21-161, (b) to Q-2026-10-21-162, DL-081)."
+    },
+    {
+      "test_id": "test_the_capability_catalog_is_append_only",
+      "upstream_ids": [
+        "SEC-021",
+        "DB-AUTH-006",
+        "DL-081"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_capability_catalog_migration.py",
+      "status": "implemented",
+      "notes": "Updating a description or a grant path (settings.manage and identity.manage_access to bundle), deleting a row and truncating the catalog are refused (23000, capability catalog is append-only); the runtime role cannot insert (42501) (login slice sub-slice L1b-1; owner answers (a) to Q-2026-10-21-151, Q-2026-10-21-158, Q-2026-10-21-160 and Q-2026-10-21-161, (b) to Q-2026-10-21-162, DL-081)."
+    },
+    {
+      "test_id": "test_the_capability_catalog_migration_is_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "SEC-002",
+        "SEC-021",
+        "DB-AUTH-006",
+        "DL-081"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_capability_catalog_migration.py",
+      "status": "implemented",
+      "notes": "Only the catalog relation with its key and its unique capability and grant path index, one trigger function (not a definer, search_path pg_catalog, no EXECUTE for the runtime, financial or bootstrap roles) and two triggers are added; nothing existing changes; the runtime role may only read the catalog, the financial, bootstrap, restore and human administration roles get nothing and the backup role only its pg_read_all_data read (review round 2); forward-only (login slice sub-slice L1b-1; owner answers (a) to Q-2026-10-21-151, Q-2026-10-21-158, Q-2026-10-21-160 and Q-2026-10-21-161, (b) to Q-2026-10-21-162, DL-081)."
+    },
+    {
+      "test_id": "test_each_capability_has_one_grant_path",
+      "upstream_ids": [
+        "SEC-021",
+        "SEC-022",
+        "DB-AUTH-006",
+        "DL-058",
+        "DL-074",
+        "DL-081"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_access_control.py",
+      "status": "implemented",
+      "notes": "Every catalog capability has one grant path: settings.manage per_user, identity.manage_access owner_class, rent_nonpayment.evaluate service_principal, all 72 others (billing.generate included) bundle; the three sets do not overlap (review round 2); an unknown name is refused (login slice sub-slice L1b-1, review round 1; owner answers (a) to Q-2026-10-21-151 and Q-2026-10-21-161, (b) to Q-2026-10-21-162, DL-081)."
     }
   ]
 }

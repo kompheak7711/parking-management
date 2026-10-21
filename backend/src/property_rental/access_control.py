@@ -1,0 +1,120 @@
+"""Capability catalog of the login slice (sub-slice L1b-1; DL-074, DL-081).
+
+Every capability the server checks has one catalog row in `app.capabilities` (migration
+`20270119_176`), with the same identifier and description as here. A role name gives no power by
+itself (SEC-021); a bundle or a per-user grant gives capabilities only from this catalog. The
+catalog adds names and never renames one. Each capability has one grant path: `bundle` (a role
+bundle may hold it), `per_user` (given to one user by the Owner, Q-2026-10-21-151),
+`owner_class` (only the Owner account class has it, Q-2026-10-21-162) or `service_principal`
+(only a service principal has it).
+"""
+
+from typing import Final, Literal
+
+IDENTITY_MANAGE_ACCESS_CAPABILITY: Final = "identity.manage_access"
+SETTINGS_MANAGE_CAPABILITY: Final = "settings.manage"
+OPERATIONS_STATUS_READ_CAPABILITY: Final = "operations.status.read"
+PROPERTY_READ_CAPABILITY: Final = "property.read"
+UNITS_READ_CAPABILITY: Final = "units.read"
+
+CAPABILITY_CATALOG: Final[dict[str, str]] = {
+    "audit.view": "Search and read the audit history",
+    "billing.generate": "Start a Rent or Utility billing run and read its status",
+    "configuration.read": "Read the Property configuration and rates",
+    "credits.applications.reverse": "Reverse a Customer Credit application",
+    "credits.apply": "Apply Customer Credit to an Invoice",
+    "credits.read": "Read Customer Credit",
+    "credits.recognize": "Recognize unallocated Payment value as Customer Credit",
+    "credits.reverse": "Reverse a Customer Credit",
+    "customer_ledger.read": "Read the Customer ledger",
+    "customers.manage": "Create and update Customers",
+    "customers.read": "Read Customers",
+    "damage_charges.bill": "Bill move-out damage charges",
+    "deposits.correct": "Correct a Deposit disposition",
+    "deposits.dispose": "Record a Deposit disposition or forfeiture draft",
+    "deposits.manage": "Create Deposits and record Deposit receipts and adjustments",
+    "deposits.read": "Read Deposits",
+    "deposits.refund.qualify": "Review a Pet Deposit for its Refund",
+    "exchange_rates.manage": "Confirm exchange rates",
+    "final_settlements.prepare": "Prepare Final Settlement and correction drafts",
+    "financial.approve": "Confirm financial drafts",
+    "identity.manage_access": "Manage user accounts, role bundles and assignments",
+    "identity.read_self": "Read the signed-in account",
+    "invoices.adjust": "Adjust an Invoice",
+    "invoices.create": "Create Invoices and one-time charges",
+    "invoices.issue": "Issue Invoices",
+    "invoices.read": "Read Invoices",
+    "invoices.void": "Void an Invoice",
+    "late_payment.charge_correction": "Correct a late-payment charge",
+    "late_payment.final_decision": "Record a final late-payment decision",
+    "late_payment.review": "Review late payments",
+    "lease_signers.manage": "Add and remove Lease Signers",
+    "leases.draft": "Draft and update Leases",
+    "leases.inspect": "Record the move-out inspection",
+    "leases.move_out": "Record the physical move-out and its final Utility inputs",
+    "leases.read": "Read Leases",
+    "leases.sign": "Sign a Lease",
+    "leases.terminate": "Terminate a Lease",
+    "leases.warn": "Record a Lease violation warning",
+    "operations.status.read": "Read the operations health page",
+    "payments.allocate": "Allocate Payments to Invoices",
+    "payments.allocations.reverse": "Reverse a Payment allocation",
+    "payments.read": "Read Payments",
+    "payments.record": "Record Payments",
+    "payments.reverse": "Reverse or return a Payment",
+    "property.manage": "Update the Property and create and update Units",
+    "property.read": "Read the Property",
+    "receipts.read": "Read Receipts",
+    "receipts.reprint": "Reprint a Receipt",
+    "refunds.correct": "Correct a Refund",
+    "refunds.corrections.reverse": "Reverse a Refund correction",
+    "refunds.create": "Record Refund drafts",
+    "refunds.read": "Read Refunds",
+    "rent_nonpayment.case_manage": "Open and manage Rent nonpayment cases",
+    "rent_nonpayment.evaluate": "Evaluate Rent nonpayment (evaluation principal only)",
+    "rent_nonpayment.event_post": "Post Rent nonpayment events",
+    "rent_nonpayment.read": "Read Rent nonpayment cases",
+    "reservation_deposits.correct": "Correct a Reservation Deposit outcome",
+    "reservation_deposits.dispose": "Record a Reservation Deposit outcome draft",
+    "reservation_deposits.override": "Override a Reservation Deposit outcome",
+    "reservation_deposits.refund": "Refund a Reservation Deposit",
+    "reservations.cancel": "Cancel a Reservation",
+    "reservations.complete": "Complete a Reservation with the move-in",
+    "reservations.create": "Create Reservations",
+    "reservations.extend": "Extend a Reservation",
+    "reservations.read": "Read Reservations",
+    "service_rates.manage": "Change Service rates",
+    "settings.manage": "Change the Settings (given per user by the Owner only)",
+    "units.read": "Read Units and their history",
+    "utility.calculate": "Run the Utility calculation",
+    "utility.estimate": "Record a broken-Meter estimate",
+    "utility.read": "Read Utility readings and periods",
+    "utility_meters.manage": "Manage Utility Meters",
+    "utility_rates.manage": "Change Utility Rates",
+    "utility_readings.correct": "Correct a Utility Reading",
+    "utility_readings.record": "Record Utility Readings",
+}
+
+GrantPath = Literal["bundle", "per_user", "owner_class", "service_principal"]
+
+PER_USER_CAPABILITIES: Final = frozenset({SETTINGS_MANAGE_CAPABILITY})
+OWNER_CLASS_CAPABILITIES: Final = frozenset({IDENTITY_MANAGE_ACCESS_CAPABILITY})
+SERVICE_PRINCIPAL_CAPABILITIES: Final = frozenset({"rent_nonpayment.evaluate"})
+
+
+def capability_grant_path(capability: str) -> GrantPath:
+    """Return how a catalog capability can be given; an unknown name is refused."""
+    if capability not in CAPABILITY_CATALOG:
+        raise KeyError(capability)
+    if capability in PER_USER_CAPABILITIES:
+        return "per_user"
+    if capability in OWNER_CLASS_CAPABILITIES:
+        return "owner_class"
+    if capability in SERVICE_PRINCIPAL_CAPABILITIES:
+        return "service_principal"
+    return "bundle"
+
+
+BUNDLE_CAPABILITIES: Final = frozenset(
+    capability for capability in CAPABILITY_CATALOG if capability_grant_path(capability) == "bundle"
+)
