@@ -44979,6 +44979,62 @@
       "test_path": "backend/tests/test_default_role_bundles_migration.py",
       "status": "implemented",
       "notes": "The migration seeds an existing Property and gives its Owner the Owner bundle (a Manager account gets nothing); only the default record with its key, the definer seed function and two triggers are added; the runtime role may only execute the seed function; forward-only (login slice sub-slice L1c; owner answers (a) to Q-2026-10-21-150 and Q-2026-10-21-164, G7, DL-081)."
+    },
+    {
+      "test_id": "test_a_staff_account_gets_settings_access_only_after_setting_up_its_sign_in_code",
+      "upstream_ids": [
+        "DL-074",
+        "DL-081",
+        "SEC-013",
+        "SEC-021",
+        "DB-AUTH-008"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settings_access_sign_in_code_migration.py",
+      "status": "implemented",
+      "notes": "The give refuses a Staff account with optional MFA and no sign-in code, with MFA required and no code, with a code started but not confirmed, and with an active code but optional MFA, each with the plain message; it gives once MFA is required and the code is active; a Manager is given it without waiting for its enrollment (login slice sub-slice L1e; owner rule of 2026-10-21 on Settings access and the sign-in code, DL-081)."
+    },
+    {
+      "test_id": "test_a_staff_holder_has_settings_access_only_while_its_sign_in_code_is_set_up",
+      "upstream_ids": [
+        "DL-074",
+        "DL-081",
+        "SEC-013",
+        "SEC-017",
+        "SEC-021",
+        "DB-AUTH-008"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settings_access_sign_in_code_migration.py",
+      "status": "implemented",
+      "notes": "A Staff holder gets no Settings access after its sign-in code is disabled (as an MFA reset does) or its MFA policy is lowered, while the grant stays recorded, and gets it again after a new code is set up or MFA is required again; a grant written by hand for a Staff account without a code gives nothing, also through the application reader (login slice sub-slice L1e; owner rule of 2026-10-21 on Settings access and the sign-in code, DL-081)."
+    },
+    {
+      "test_id": "test_the_settings_access_sign_in_code_migration_is_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "DL-081",
+        "SEC-020",
+        "SEC-021",
+        "DB-AUTH-008"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settings_access_sign_in_code_migration.py",
+      "status": "implemented",
+      "notes": "Only the give function and reader bodies change (same signature, owner, privileges, volatility, definer flag and settings) and one internal STABLE function that is not a definer is added with no EXECUTE for any application role; no relation, trigger, constraint or column changes; forward-only (login slice sub-slice L1e; owner rule of 2026-10-21 on Settings access and the sign-in code, DL-081)."
+    },
+    {
+      "test_id": "test_a_staff_account_without_a_sign_in_code_keeps_its_bundle_capabilities",
+      "upstream_ids": [
+        "DL-074",
+        "DL-081",
+        "SEC-021",
+        "DB-AUTH-008",
+        "DB-AUTH-009"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settings_access_sign_in_code_migration.py",
+      "status": "implemented",
+      "notes": "A Staff account without a sign-in code still gets exactly its default Staff bundle capabilities, and a hand-written Settings access grant adds nothing (login slice sub-slice L1e review round 1; owner rule of 2026-10-21 on Settings access and the sign-in code, DL-081)."
     }
   ]
 }

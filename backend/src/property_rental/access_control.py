@@ -195,7 +195,8 @@ class PostgresCapabilityGrantReader:
 
     `app.actor_capability_grants` returns rows only for an active, classified account: the
     current capabilities of its assigned bundles, `identity.manage_access` for the Owner account
-    class, and `settings.manage` for the Owner account class and an account given it (L1d). A
+    class, and `settings.manage` for the Owner account class and an account given it (L1d; a Staff
+    account only while its sign-in code is set up, L1e). A
     name outside the catalog, or one the catalog gives by another grant path, refuses every
     grant (fail closed).
     """

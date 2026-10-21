@@ -5120,6 +5120,17 @@ one) to the Owner account class and to an active, classified account with an act
 returns `identity.manage_access`; a removal takes effect at the next read and
 revokes nothing else. The runtime role may execute the two functions and the reader only.
 
+Amended by DL-081 (owner rule of 2026-10-21; login sub-slice L1e, migration `20270123_180`):
+`give_settings_access` refuses a Staff account whose MFA policy is not `required` or that has no
+`active` sign-in code enrollment (`totp_mfa_enrollments`), with the plain message "a Staff
+account gets Settings access only after it has set up its sign-in code"; a Manager needs no
+enrollment check here, because its class always requires the code at sign-in. The reader gives
+a Staff account's per-user `settings.manage` only while its MFA policy is `required` and it has
+an `active` enrollment, so a sign-in code reset, a lowered MFA policy or a grant written another
+way gives nothing; the grant row itself stays until the Owner removes it (Q-2026-10-21-165).
+Both use the internal function `staff_sign_in_code_is_set_up(account)`, which no application
+role may execute.
+
 ## DB-AUTH-009 — Default role bundles
 
 Added by DL-081 (login sub-slice L1c, migration `20270122_179`; owner answers (a) to

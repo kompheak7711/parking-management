@@ -5,7 +5,8 @@ SEC-075, DB-AUTH-008: only the Owner account class gives or removes `settings.ma
 active Manager or Staff account; the Owner always has it; each grant and removal is an
 append-only record; the grant reader gives it at the next read and takes it away at the next read
 after its removal. Rows written here are rolled back, except the committed Manager and Staff
-accounts and the Staff grant of the race and runtime-role tests; no Owner is ever committed.
+accounts, the Staff grant of the race and runtime-role tests and the runtime-role test's
+Staff sign-in code (sub-slice L1e); no Owner is ever committed.
 """
 
 from __future__ import annotations
@@ -56,6 +57,7 @@ ONLY_MANAGER_OR_STAFF = "Settings access is given only to a Manager or Staff acc
 ALREADY = "this account already has Settings access"
 NONE_GIVEN = "this account has no Settings access"
 APPEND_ONLY = "settings access history is append-only"
+NO_SIGN_IN_CODE = "a Staff account gets Settings access only after it has set up its sign-in code"
 
 
 def every_property(connection: psycopg.Connection[Any]) -> set[uuid.UUID]:
@@ -70,6 +72,30 @@ def one(connection: psycopg.Connection[Any], query: str, parameters: tuple[Any, 
     row = connection.execute(query, parameters).fetchone()
     assert row is not None
     return row[0]
+
+
+def add_sign_in_code(connection: psycopg.Connection[Any], actor_id: uuid.UUID) -> uuid.UUID:
+    """The account requires MFA and has an active sign-in code enrollment (owner rule of
+    2026-10-21, sub-slice L1e), written as the table owner: the sign-in flow that sets one up
+    comes with sub-slice L3c."""
+    connection.execute(
+        "UPDATE app.user_accounts SET mfa_policy_class='required' WHERE actor_id=%s", (actor_id,)
+    )
+    enrollment_id = uuid.uuid4()
+    connection.execute(
+        "INSERT INTO app.totp_mfa_enrollments(enrollment_id,actor_id,secret_ciphertext,"
+        "secret_nonce,key_identifier,protection_algorithm,totp_algorithm,created_by_actor_id,"
+        "provenance) VALUES (%s,%s,%s,%s,'login-slice-l1e-test','aes-256-gcm','sha1',%s,"
+        "'login-slice-l1e-test')",
+        (enrollment_id, actor_id, b"c" * 36, uuid.uuid4().bytes[:12], actor_id),
+    )
+    connection.execute(
+        "UPDATE app.totp_mfa_enrollments SET enrollment_state='active',"
+        "activated_by_actor_id=%s,activation_provenance='login-slice-l1e-test' "
+        "WHERE enrollment_id=%s",
+        (actor_id, enrollment_id),
+    )
+    return enrollment_id
 
 
 def test_the_owner_gives_and_removes_settings_access(migrated_database_url: str) -> None:
@@ -87,6 +113,16 @@ def test_the_owner_gives_and_removes_settings_access(migrated_database_url: str)
             (owner, manager, "Given twice"),
             ALREADY,
         )
+        # Owner rule of 2026-10-21 (sub-slice L1e): a Staff account without a sign-in code
+        # cannot be given Settings access, so this one sets up its code first.
+        refused(
+            connection,
+            psycopg.errors.ObjectNotInPrerequisiteState,
+            GIVE,
+            (owner, staff, "Covers the Manager"),
+            NO_SIGN_IN_CODE,
+        )
+        add_sign_in_code(connection, staff)
         one(connection, GIVE, (owner, staff, "Covers the Manager"))
         assert grants(connection, staff) == settings_rows(connection)
         assert one(connection, REMOVE, (owner, manager, "Back to daily work")) == given
@@ -400,6 +436,16 @@ def test_the_reader_gives_settings_access_to_the_owner_and_to_given_accounts_onl
         )
         assert grants(connection, unclassified) == set()
         one(connection, GIVE, (owner, manager, "Changes the Water Rate"))
+        # Owner rule of 2026-10-21 (sub-slice L1e): a Staff account without a sign-in code
+        # cannot be given Settings access, so this one sets up its code first.
+        refused(
+            connection,
+            psycopg.errors.ObjectNotInPrerequisiteState,
+            GIVE,
+            (owner, staff, "Covers the Manager"),
+            NO_SIGN_IN_CODE,
+        )
+        add_sign_in_code(connection, staff)
         one(connection, GIVE, (owner, staff, "Covers the Manager"))
         reader = PostgresCapabilityGrantReader(cast(GrantConnection, connection))
         assert reader.grants_for(manager) == frozenset(
@@ -427,6 +473,8 @@ def test_the_runtime_role_reaches_settings_access_only_through_its_functions(
         the_property(setup)
         manager = add_account(setup, "manager")
         staff = add_account(setup, "staff")
+        # Sub-slice L1e: a Staff holder's Settings access works only with its sign-in code.
+        add_sign_in_code(setup, staff)
         setup.execute(
             INSERT_GRANT,
             (uuid.uuid4(), staff, "settings.manage", "per_user", manager, "Runtime test"),

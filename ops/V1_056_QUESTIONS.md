@@ -3759,3 +3759,22 @@ Your answer 1 to the 10h-2 report: add the READ COMMITTED check to the 8e-1 refu
 **Real-life example (owner's).** Dara is Staff and keeps the riel rate up to date. Someone who learns Dara's password still cannot change Settings without Dara's phone.
 
 **Where it is recorded.** docs/010: an "Amended by DL-081" line under DL-074 answer 2, and a short note in DL-081. It is built in its own small sub-slice after L1d (L1e, planned in ops/V1_056_PLAN.md section 7.3 with its pre-code design); a reset or removal path that needs the owner's choice gets its own question then.
+
+## Q-2026-10-21-165 — Login sub-slice L1e: what a sign-in code reset or "MFA off" does to a Staff account's Settings access (blocks only that part of L2 and L4; recommendation (a))
+
+**What the rules say.** Your rule of 2026-10-21 (DL-081): any account that holds Settings access must use the sign-in code at every sign-in; no path may leave a Staff account with Settings access and no sign-in code. Q-156 (a): turning a Staff account's MFA off is a reset with "also reset MFA" by the Owner. Q-153 (a): the Owner's reset keeps the "also reset MFA" tick. Two built paths can reset a Staff account's sign-in code today, both in `app.perform_account_recovery`: the Owner's administrative reset with "also reset MFA" (`reset_mfa`, route API-099) and the emergency server procedure (DL-058). A recovery with a recovery code cannot reset it (that mode refuses `reset_mfa` and is for the Owner's own account).
+
+**What L1e builds (no choice needed).** The Owner cannot give Settings access to a Staff account without a set-up sign-in code (plain message). And the app gives a Staff account's Settings access only while its sign-in code is set up and asked at every sign-in: after any reset, the Settings changes are refused at the next request, whatever path did it. So the rule already holds for what a person can do.
+
+**The open point.** After such a reset, the Settings access record itself stays: the user list would still show the tick, although it does not work until a new sign-in code is set up.
+
+**Example.** Dara (Staff) has Settings access and keeps the riel rate up to date. Dara's phone is lost; the Owner resets Dara's account with "also reset MFA". With (a), Dara's Settings access ends in the same step (recorded as a removal with the reason "sign-in code reset"); Dara sets up the code on the new phone, and the Owner ticks Settings access again. With (b), the tick stays, but Dara cannot change Settings until the new code is set up, then it works again by itself. With (c), the Owner must first untick Settings access, then the reset is allowed.
+
+**Options.**
+- (a) Every path that resets or turns off a Staff account's sign-in code (the Owner's reset with "also reset MFA", the Owner turning MFA off, the emergency server procedure) also ends its Settings access in the same step, as a recorded removal (who, when, reason). The Owner gives it again after the new code is set up.
+- (b) The Settings access stays recorded and simply does not work until a new sign-in code is set up (what L1e already does); the user list shows "waiting for sign-in code".
+- (c) Those paths are refused while the account has Settings access; the Owner removes it first.
+
+**Recommendation: (a)**, because the user list then always shows the truth, every change of who may change Settings is a decision the Owner sees and records, and a lost phone does not quietly bring access back later. (b) is the most convenient; (c) adds a step at a stressful moment.
+
+**What goes ahead.** L1e is built and does not depend on the answer. L2 (MFA on or off) and L4 (the reset with a one-time password) build their own steps first; only the part that touches Settings access waits. With (a), the existing `reset_mfa` path of `app.perform_account_recovery` (administrative and emergency modes) is the one that changes.
