@@ -483,14 +483,15 @@ def test_the_runtime_role_reaches_settings_access_only_through_its_functions(
         setup.commit()
     with psycopg.connect(runtime_database_url()) as runtime:
         assert grants(runtime, staff) == {("settings.manage", found) for found in properties}
-        # The runtime role may call the functions, which still refuse a non-Owner.
+        # Sub-slice L2b-1 (Q-2026-10-21-167 (a), owner, 2026-10-22): the runtime role may no
+        # longer call these unaudited functions; it uses the audited L2a functions instead.
         for query in (GIVE, REMOVE):
             refused(
                 runtime,
                 psycopg.errors.InsufficientPrivilege,
                 query,
                 (manager, staff, "Not the Owner"),
-                ONLY_OWNER,
+                "permission denied",
             )
         for table in TABLES:
             refused(

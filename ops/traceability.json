@@ -44852,7 +44852,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_settings_access_migration.py",
       "status": "implemented",
-      "notes": "The runtime role reads a committed grant through the reader and may call the give and remove functions, which still refuse a non-Owner; it may not read or write the grant relations or call the internal Owner check (login slice sub-slice L1d; owner answer (a) to Q-2026-10-21-151, DL-081)."
+      "notes": "The runtime role reads a committed grant through the reader; it may not execute the unaudited give and remove functions (permission denied since login slice sub-slice L2b-1, owner answer (a) to Q-2026-10-21-167), read or write the grant relations or call the internal Owner check (login slice sub-slice L1d; owner answer (a) to Q-2026-10-21-151, DL-081)."
     },
     {
       "test_id": "test_the_settings_access_migration_is_least_privilege_and_forward_only",
@@ -45282,6 +45282,105 @@
       "test_path": "backend/tests/test_access_administration_migration.py",
       "status": "implemented",
       "notes": "On a throwaway database: a give waiting for a disable is refused; a disable waiting for a give succeeds and the grant gives nothing; MFA off waiting for a give removes it; a second change from the same version is refused after the wait; a give waiting for MFA off is refused for the missing sign-in code (login slice sub-slice L2a review round 1, DL-081)."
+    },
+    {
+      "test_id": "test_settings_access_and_assignment_removal_need_actor_capability_scope_and_browser_proof",
+      "upstream_ids": [
+        "API-079",
+        "API-080",
+        "DL-081",
+        "SEC-002",
+        "SEC-016",
+        "SEC-021",
+        "TEST-084",
+        "TEST-085"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_access_admin_api.py",
+      "status": "implemented",
+      "notes": "The Settings access give and remove routes and the role assignment removal route answer 401 without an actor and 403 without identity.manage_access, without the account's or the bundle's object scope, for another Property, or without the exact Origin and CSRF proof, before any change (login slice sub-slice L2b-1, DL-081, Q-2026-10-21-158 (a), Q-166 (a))."
+    },
+    {
+      "test_id": "test_settings_access_is_given_and_removed_by_the_session_actor_with_a_reason",
+      "upstream_ids": [
+        "API-080",
+        "DL-074",
+        "DL-081",
+        "SEC-014",
+        "SEC-021",
+        "SEC-075"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_access_admin_api.py",
+      "status": "implemented",
+      "notes": "Settings access is given and removed through the new routes with the session's actor, the request id and the trimmed reason; the account returned shows its Settings access; a result for another account fails closed (login slice sub-slice L2b-1, DL-081, Q-2026-10-21-158 (a))."
+    },
+    {
+      "test_id": "test_a_role_bundle_is_removed_from_an_account_of_the_same_property_with_a_reason",
+      "upstream_ids": [
+        "API-080",
+        "DL-081",
+        "SEC-014",
+        "SEC-017",
+        "SEC-021"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_access_admin_api.py",
+      "status": "implemented",
+      "notes": "A role bundle is removed from an account with the session's actor and the trimmed reason; a bundle of another Property is refused (409) before the flow is called; a result for another account fails closed (login slice sub-slice L2b-1, DL-081, Q-2026-10-21-166 (a))."
+    },
+    {
+      "test_id": "test_settings_access_and_assignment_removal_need_a_valid_reason_and_known_fields",
+      "upstream_ids": [
+        "API-079",
+        "API-080",
+        "API-083",
+        "DL-081"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_access_admin_api.py",
+      "status": "implemented",
+      "notes": "A missing, blank or too long reason, an unknown field or a missing or malformed bundle id is refused (422) with nothing called; an account create request naming the Owner class or an MFA policy is refused (Q-2026-10-21-152 (a)); a reason with a control, line-break or direction character, or with nothing visible in it, is refused (review rounds 1 and 2); a 500-character reason and a Khmer reason with a zero-width space are accepted (login slice sub-slice L2b-1, DL-081)."
+    },
+    {
+      "test_id": "test_the_runtime_role_changes_settings_access_only_through_the_audited_functions",
+      "upstream_ids": [
+        "DL-081",
+        "SEC-014",
+        "SEC-075",
+        "DB-AUTH-008",
+        "DB-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settings_access_runtime_revoke_migration.py",
+      "status": "implemented",
+      "notes": "On a throwaway database the runtime role cannot execute the unaudited give and remove functions (permission denied), while the audited functions give and remove Staff Settings access for the Owner with one audit event each (login slice sub-slice L2b-1, DL-081, Q-2026-10-21-167 (a))."
+    },
+    {
+      "test_id": "test_the_settings_access_runtime_revoke_migration_is_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "DL-081",
+        "SEC-014",
+        "DB-AUTH-008"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settings_access_runtime_revoke_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20270125_182 removes only the runtime role's EXECUTE on the two unaudited Settings access functions; no function body, relation, trigger, constraint or column changes, the runtime role keeps EXECUTE on the audited functions, and the downgrade refuses (login slice sub-slice L2b-1, DL-081, Q-2026-10-21-167 (a))."
+    },
+    {
+      "test_id": "test_administration_results_must_match_the_change_that_was_asked",
+      "upstream_ids": [
+        "API-079",
+        "API-080",
+        "DL-081",
+        "SEC-002",
+        "SEC-021"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_access_admin_api.py",
+      "status": "implemented",
+      "notes": "A created account of another class or with an MFA policy its class does not set, a Settings access result that does not show the change, and a result for another account, bundle or Property fail closed (503), as does a removed assignment of another Property (review round 2); a missing account or bundle answers 404 before any change (login slice sub-slice L2b-1 review round 1, DL-081, Q-2026-10-21-152 (a))."
     }
   ]
 }

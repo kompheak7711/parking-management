@@ -610,6 +610,10 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/properties/{property_id}/role-bundles": {"get", "post"},
         "/api/v1/role-bundles/{role_bundle_id}": {"patch"},
         "/api/v1/users/{user_id}/role-assignments": {"post"},
+        # Login sub-slice L2b-1 (DL-081; Q-2026-10-21-158 (a), Q-2026-10-21-166 (a)).
+        "/api/v1/users/{user_id}/role-assignments/remove": {"post"},
+        "/api/v1/users/{user_id}/settings-access": {"post"},
+        "/api/v1/users/{user_id}/settings-access/remove": {"post"},
         "/api/v1/properties/{property_id}/authorization-history": {"get"},
         "/api/v1/users/{user_id}/administrative-recovery": {"post"},
         "/api/v1/properties/{property_id}/audit-events": {"get"},

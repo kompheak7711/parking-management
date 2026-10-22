@@ -1089,8 +1089,8 @@ export function App({
         username: value("new-username"),
         display_name: value("new-display-name"),
         audit_name: value("new-audit-name"),
-        mfa_policy_class:
-          value("new-mfa-policy") === "required" ? "required" : "optional",
+        account_class:
+          value("new-account-class") === "manager" ? "manager" : "staff",
       })
       .then((user) => {
         setAdministration((current) =>
@@ -2053,10 +2053,15 @@ export function App({
                           />
                         </div>
                         <div className="form-field">
-                          <label htmlFor="new-mfa-policy">MFA policy</label>
-                          <select id="new-mfa-policy" name="new-mfa-policy">
-                            <option value="optional">Optional</option>
-                            <option value="required">Required</option>
+                          <label htmlFor="new-account-class">
+                            Account class
+                          </label>
+                          <select
+                            id="new-account-class"
+                            name="new-account-class"
+                          >
+                            <option value="staff">Staff</option>
+                            <option value="manager">Manager</option>
                           </select>
                         </div>
                         <button type="submit">Create audited account</button>

@@ -1374,6 +1374,8 @@ Amended by DL-072 (owner, 2026-10-04): exports are CSV only. A small export down
 Account and session actions require administration capabilities and audit events.
 Credentials are never returned.
 
+Amended by DL-081 (owner answer (a) to Q-2026-10-21-152; login sub-slice L2b-1): `POST /properties/{property_id}/users` takes `account_class` (`manager` or `staff`) instead of `mfa_policy_class`; the class sets the MFA policy (Manager `required`, Staff `optional`) and the default role bundle, and no route creates an Owner account. Each account in a response also shows its `account_class` (`owner`, `manager`, `staff`, or null for an old account without a class) and `settings_access` (whether a Settings access grant is recorded; the Owner always has it).
+
 ## API-096 — Login, MFA, and Logout
 
 The authentication surface supports local username/password login, standards-based MFA
@@ -1447,6 +1449,12 @@ business authority into a role title.
 Amended by DL-074 (owner, 2026-10-04 and 2026-10-20): the deployment starts with default Owner, Manager and Staff bundles as configurable data (Owner: every capability; Manager: all daily work, approvals, reports, audit history, exports and the health page, no user or role administration; Staff: daily data entry only, no approvals, administration, audit or export). Settings access is its own capability, given per user; only the Owner account class gives or removes it, and the Owner always has it.
 
 Amended by DL-081 (login sub-slice L1c): each Property gets its default bundles "Owner", "Manager" and "Staff" once, as editable data (docs/004 DB-AUTH-009). The Owner and Manager bundles hold every bundle capability; the Staff bundle holds the 31 approved daily-work capabilities only. `identity.manage_access` and `settings.manage` are in no bundle; they come from the Owner account class and the per-user grant.
+
+Amended by DL-081 (owner answers (a) to Q-2026-10-21-158 and Q-2026-10-21-166; login sub-slice L2b-1): three more routes, each a browser mutation that needs `identity.manage_access` for the account and its Property and a reason (1 to 500 characters, with at least one visible character and no control character, line or paragraph separator or direction mark; otherwise `422`), and each writing an audit event:
+- `POST /users/{id}/settings-access` gives the account Settings access (`settings.manage`); it returns the account.
+- `POST /users/{id}/settings-access/remove` removes it; it returns the account.
+- `POST /users/{id}/role-assignments/remove` removes one assigned bundle (`role_bundle_id`, a bundle of the same Property) from the account and ends the account's sessions; it returns the removed assignment.
+The recent password check of Q-2026-10-21-157 is added to these routes, as to the other administration routes, by login sub-slice L3d.
 
 ## API-081 — Operational Health
 

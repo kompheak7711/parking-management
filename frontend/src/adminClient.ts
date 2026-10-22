@@ -7,6 +7,8 @@ export interface UserAccount {
   lifecycle_state: "active" | "disabled";
   mfa_policy_class: "required" | "optional";
   version: number;
+  account_class: "owner" | "manager" | "staff" | null;
+  settings_access: boolean;
 }
 
 export interface Capability {
@@ -51,7 +53,7 @@ export interface NewUser {
   username: string;
   display_name: string;
   audit_name: string;
-  mfa_policy_class: "required" | "optional";
+  account_class: "manager" | "staff";
 }
 
 export interface NewRoleBundle {
@@ -198,6 +200,7 @@ function userAccount(value: unknown): UserAccount {
   if (!isObject(value)) throw new AdministrationError();
   const lifecycle = value.lifecycle_state;
   const mfaPolicy = value.mfa_policy_class;
+  const accountClass = value.account_class;
   if (
     typeof value.user_id !== "string" ||
     typeof value.property_id !== "string" ||
@@ -206,7 +209,12 @@ function userAccount(value: unknown): UserAccount {
     typeof value.audit_name !== "string" ||
     (lifecycle !== "active" && lifecycle !== "disabled") ||
     (mfaPolicy !== "required" && mfaPolicy !== "optional") ||
-    typeof value.version !== "number"
+    typeof value.version !== "number" ||
+    (accountClass !== "owner" &&
+      accountClass !== "manager" &&
+      accountClass !== "staff" &&
+      accountClass !== null) ||
+    typeof value.settings_access !== "boolean"
   ) {
     throw new AdministrationError();
   }
@@ -219,6 +227,8 @@ function userAccount(value: unknown): UserAccount {
     lifecycle_state: lifecycle,
     mfa_policy_class: mfaPolicy,
     version: value.version,
+    account_class: accountClass,
+    settings_access: value.settings_access,
   };
 }
 

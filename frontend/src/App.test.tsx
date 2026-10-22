@@ -739,6 +739,8 @@ describe("local sign-in", () => {
       lifecycle_state: "active",
       mfa_policy_class: "optional",
       version: 1,
+      account_class: "staff",
+      settings_access: false,
     };
     const disableUser = vi.fn().mockResolvedValue({
       ...user,
@@ -840,6 +842,8 @@ describe("local sign-in", () => {
       lifecycle_state: "active",
       mfa_policy_class: "optional",
       version: 1,
+      account_class: "staff",
+      settings_access: false,
     };
     const administrativelyRecoverUser = vi.fn().mockResolvedValue({
       user_id: "user-1",

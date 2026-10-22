@@ -5131,6 +5131,12 @@ way gives nothing; the grant row itself stays until the Owner removes it (Q-2026
 Both use the internal function `staff_sign_in_code_is_set_up(account)`, which no application
 role may execute.
 
+Amended by DL-081 (owner answer (a) to Q-2026-10-21-167, 2026-10-22; login sub-slice L2b-1,
+migration `20270125_182`): the runtime role may no longer execute `give_settings_access` and
+`remove_settings_access`, which write no audit event. It gives and removes Settings access only
+through the audited `admin_give_settings_access` and `admin_remove_settings_access` of
+DB-AUTH-010, which call them as their owner and write the audit event in the same transaction.
+
 ## DB-AUTH-009 — Default role bundles
 
 Added by DL-081 (login sub-slice L1c, migration `20270122_179`; owner answers (a) to

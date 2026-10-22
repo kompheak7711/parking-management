@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
+  AdministrationError,
   AdministrationUnavailableError,
   UserAccount,
   accessAdministrationApi,
@@ -20,6 +21,8 @@ const user = {
   lifecycle_state: "active",
   mfa_policy_class: "optional",
   version: 1,
+  account_class: "staff",
+  settings_access: false,
 } satisfies UserAccount;
 
 function jsonResponse(data: unknown): Response {
@@ -142,6 +145,51 @@ describe("access administration client", () => {
     expect("body" in init ? init.body : undefined).toBe(
       JSON.stringify({ lifecycle_state: "disabled" }),
     );
+  });
+
+  it("TEST-FE-ADMIN-005 creates an account by its class and reads its class and Settings access", async () => {
+    vi.spyOn(document, "cookie", "get").mockReturnValue(
+      "__Host-prm_csrf=csrf-token",
+    );
+    const fetchImplementation = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse(user))
+      .mockResolvedValueOnce(jsonResponse({ ...user, account_class: "owner" }))
+      .mockResolvedValueOnce(jsonResponse({ ...user, account_class: null }))
+      .mockResolvedValueOnce(
+        jsonResponse({ ...user, account_class: "Owner authority" }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({ ...user, settings_access: undefined }),
+      );
+    vi.stubGlobal("fetch", fetchImplementation);
+    const newUser = {
+      username: "staff-one",
+      display_name: "Staff One",
+      audit_name: "Staff One",
+      account_class: "staff",
+    } as const;
+
+    await expect(
+      accessAdministrationApi.createUser("property-1", newUser),
+    ).resolves.toEqual(user);
+    const init: unknown = fetchImplementation.mock.calls[0]?.[1];
+    if (typeof init !== "object" || init === null || !("body" in init)) {
+      throw new Error("request initialization is missing");
+    }
+    expect(init.body).toBe(JSON.stringify(newUser));
+    await expect(
+      accessAdministrationApi.createUser("property-1", newUser),
+    ).resolves.toEqual({ ...user, account_class: "owner" });
+    await expect(
+      accessAdministrationApi.createUser("property-1", newUser),
+    ).resolves.toEqual({ ...user, account_class: null });
+    await expect(
+      accessAdministrationApi.createUser("property-1", newUser),
+    ).rejects.toEqual(new AdministrationError());
+    await expect(
+      accessAdministrationApi.createUser("property-1", newUser),
+    ).rejects.toEqual(new AdministrationError());
   });
 
   it("TEST-FE-ADMIN-004 follows bounded cursors instead of silently omitting history", async () => {

@@ -1,13 +1,21 @@
 """API-079/080 account and configurable capability administration surface."""
 
 import hmac
+import re
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Annotated, Final, Literal, Protocol
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Path, Query, Request, Response, status
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    ConfigDict,
+    Field,
+    StringConstraints,
+    model_validator,
+)
 
 from property_rental.api import ResponseMeta
 from property_rental.auth_api import CSRF_COOKIE_NAME
@@ -24,6 +32,31 @@ ACCESS_ADMIN_CAPABILITY: Final = "identity.manage_access"
 USER_ACCOUNT_OBJECT_TYPE: Final = "user_account"
 ROLE_BUNDLE_OBJECT_TYPE: Final = "role_bundle"
 BoundedName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=128)]
+# A reason is free text (DL-074 answer 10) kept in the audit history: no control character, line
+# or paragraph separator, or direction mark that could hide or reorder what the history shows.
+# The zero-width characters Khmer text uses (U+200B to U+200D) stay allowed.
+REFUSED_REASON_CHARACTERS: Final = re.compile(
+    "[\x00-\x1f\x7f-\x9f\u061c\u200e\u200f\u2028\u2029\u202a-\u202e\u2066-\u2069]"
+)
+
+ZERO_WIDTH_CHARACTERS: Final = dict.fromkeys((0x200B, 0x200C, 0x200D))
+
+
+def _visible_reason(value: str) -> str:
+    if REFUSED_REASON_CHARACTERS.search(value):
+        raise ValueError("a reason has no control, line-break or direction characters")
+    if not value.translate(ZERO_WIDTH_CHARACTERS).strip():
+        raise ValueError("a reason needs at least one visible character")
+    return value
+
+
+BoundedReason = Annotated[
+    str,
+    StringConstraints(strip_whitespace=True, min_length=1, max_length=500),
+    AfterValidator(_visible_reason),
+]
+AccountClass = Literal["owner", "manager", "staff"]
+CreatableAccountClass = Literal["manager", "staff"]
 CapabilityIdentifier = Annotated[
     str,
     StringConstraints(pattern=r"^[a-z][a-z0-9_.-]{0,127}$"),
@@ -46,6 +79,8 @@ class UserAccountView:
     lifecycle_state: Literal["active", "disabled"]
     mfa_policy_class: Literal["required", "optional"]
     version: int
+    account_class: AccountClass | None
+    settings_access: bool
 
 
 @dataclass(frozen=True, slots=True)
@@ -133,7 +168,7 @@ class AccessAdministrationFlow(Protocol):
         username: str,
         display_name: str,
         audit_name: str,
-        mfa_policy_class: Literal["required", "optional"],
+        account_class: CreatableAccountClass,
         audit_context: AdministrationAuditContext,
     ) -> UserAccountView: ...
 
@@ -211,6 +246,34 @@ class AccessAdministrationFlow(Protocol):
         audit_context: AdministrationAuditContext,
     ) -> RoleAssignmentView: ...
 
+    def remove_role_assignment(
+        self,
+        *,
+        user_id: UUID,
+        role_bundle_id: UUID,
+        property_id: str,
+        reason: str,
+        audit_context: AdministrationAuditContext,
+    ) -> RoleAssignmentView: ...
+
+    def give_settings_access(
+        self,
+        *,
+        user_id: UUID,
+        property_id: str,
+        reason: str,
+        audit_context: AdministrationAuditContext,
+    ) -> UserAccountView: ...
+
+    def remove_settings_access(
+        self,
+        *,
+        user_id: UUID,
+        property_id: str,
+        reason: str,
+        audit_context: AdministrationAuditContext,
+    ) -> UserAccountView: ...
+
     def list_authorization_history(
         self,
         *,
@@ -271,7 +334,7 @@ class UnavailableAccessAdministrationFlow:
         username: str,
         display_name: str,
         audit_name: str,
-        mfa_policy_class: Literal["required", "optional"],
+        account_class: CreatableAccountClass,
         audit_context: AdministrationAuditContext,
     ) -> UserAccountView:
         self._unavailable()
@@ -369,6 +432,40 @@ class UnavailableAccessAdministrationFlow:
         self._unavailable()
         raise AssertionError
 
+    def remove_role_assignment(
+        self,
+        *,
+        user_id: UUID,
+        role_bundle_id: UUID,
+        property_id: str,
+        reason: str,
+        audit_context: AdministrationAuditContext,
+    ) -> RoleAssignmentView:
+        self._unavailable()
+        raise AssertionError
+
+    def give_settings_access(
+        self,
+        *,
+        user_id: UUID,
+        property_id: str,
+        reason: str,
+        audit_context: AdministrationAuditContext,
+    ) -> UserAccountView:
+        self._unavailable()
+        raise AssertionError
+
+    def remove_settings_access(
+        self,
+        *,
+        user_id: UUID,
+        property_id: str,
+        reason: str,
+        audit_context: AdministrationAuditContext,
+    ) -> UserAccountView:
+        self._unavailable()
+        raise AssertionError
+
     def list_authorization_history(
         self,
         *,
@@ -396,14 +493,18 @@ class UnavailableAccessAdministrationFlow:
 
 
 class UserCreateRequest(BaseModel):
-    """Bounded profile and MFA policy for a new account; credentials are separate."""
+    """Bounded profile and account class for a new account; credentials are separate.
+
+    The class (Manager or Staff, never Owner) sets the MFA policy and the default role bundle
+    (DL-081, Q-2026-10-21-152 (a)).
+    """
 
     model_config = ConfigDict(extra="forbid")
 
     username: BoundedName
     display_name: BoundedName
     audit_name: BoundedName
-    mfa_policy_class: Literal["required", "optional"]
+    account_class: CreatableAccountClass
 
 
 class UserUpdateRequest(BaseModel):
@@ -463,6 +564,23 @@ class RoleAssignmentRequest(BaseModel):
     role_bundle_id: UUID
 
 
+class RoleAssignmentRemovalRequest(BaseModel):
+    """Remove one assigned bundle from an account, with a reason (Q-2026-10-21-166 (a))."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    role_bundle_id: UUID
+    reason: BoundedReason
+
+
+class SettingsAccessRequest(BaseModel):
+    """Give or remove per-user Settings access, with a reason (DL-081, Q-151 (a))."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    reason: BoundedReason
+
+
 class AdministrativeRecoveryRequest(BaseModel):
     """Explicit protected credential/MFA recovery request with an audit reason."""
 
@@ -486,6 +604,8 @@ class UserAccountData(BaseModel):
     lifecycle_state: Literal["active", "disabled"]
     mfa_policy_class: Literal["required", "optional"]
     version: int = Field(ge=1)
+    account_class: AccountClass | None
+    settings_access: bool
 
 
 class CapabilityData(BaseModel):
@@ -798,13 +918,18 @@ def create_access_admin_router(
             username=payload.username,
             display_name=payload.display_name,
             audit_name=payload.audit_name,
-            mfa_policy_class=payload.mfa_policy_class,
+            account_class=payload.account_class,
             audit_context=AdministrationAuditContext(
                 actor_id=actor.actor_id,
                 request_id=request.state.request_id,
             ),
         )
         _require_matching_property(user.property_id, property_id)
+        # Q-2026-10-21-152 (a): the class asked for, with the MFA policy it sets (fail closed).
+        if user.account_class != payload.account_class or user.mfa_policy_class != (
+            "required" if payload.account_class == "manager" else "optional"
+        ):
+            raise AccessAdministrationUnavailable
         response.headers["Location"] = f"/api/v1/users/{user.user_id}"
         return UserAccountResponse(
             data=_user_data(user),
@@ -1047,6 +1172,98 @@ def create_access_admin_router(
             data=RoleAssignmentData.model_validate(assignment, from_attributes=True),
             meta=ResponseMeta(request_id=request.state.request_id),
         )
+
+    @router.post(
+        "/users/{user_id}/role-assignments/remove",
+        response_model=RoleAssignmentResponse,
+    )
+    def remove_role_assignment(
+        user_id: UUID,
+        payload: RoleAssignmentRemovalRequest,
+        request: Request,
+    ) -> RoleAssignmentResponse:
+        actor = _require_access_actor(request, actor_resolver)
+        _require_browser_mutation(request, settings)
+        user_scope = ObjectScope(object_type=USER_ACCOUNT_OBJECT_TYPE, object_id=str(user_id))
+        bundle_scope = ObjectScope(
+            object_type=ROLE_BUNDLE_OBJECT_TYPE,
+            object_id=str(payload.role_bundle_id),
+        )
+        _require_object_access(actor, user_scope)
+        _require_object_access(actor, bundle_scope)
+        property_id = _resource_property_id(flow.user_property_id(user_id=user_id))
+        _require_property_access(actor, property_id, object_scope=user_scope)
+        role_bundle_property_id = _resource_property_id(
+            flow.role_bundle_property_id(role_bundle_id=payload.role_bundle_id)
+        )
+        _require_property_access(actor, role_bundle_property_id, object_scope=bundle_scope)
+        if role_bundle_property_id != property_id:
+            raise AccessAdministrationConflict
+        assignment = flow.remove_role_assignment(
+            user_id=user_id,
+            role_bundle_id=payload.role_bundle_id,
+            property_id=property_id,
+            reason=payload.reason,
+            audit_context=AdministrationAuditContext(
+                actor_id=actor.actor_id,
+                request_id=request.state.request_id,
+            ),
+        )
+        _require_matching_property(assignment.property_id, property_id)
+        _require_matching_identifier(assignment.user_id, user_id)
+        _require_matching_identifier(assignment.role_bundle_id, payload.role_bundle_id)
+        return RoleAssignmentResponse(
+            data=RoleAssignmentData.model_validate(assignment, from_attributes=True),
+            meta=ResponseMeta(request_id=request.state.request_id),
+        )
+
+    def change_settings_access(
+        user_id: UUID,
+        payload: SettingsAccessRequest,
+        request: Request,
+        *,
+        give: bool,
+    ) -> UserAccountResponse:
+        actor = _require_access_actor(request, actor_resolver)
+        _require_browser_mutation(request, settings)
+        user_scope = ObjectScope(object_type=USER_ACCOUNT_OBJECT_TYPE, object_id=str(user_id))
+        _require_object_access(actor, user_scope)
+        property_id = _resource_property_id(flow.user_property_id(user_id=user_id))
+        _require_property_access(actor, property_id, object_scope=user_scope)
+        change = flow.give_settings_access if give else flow.remove_settings_access
+        user = change(
+            user_id=user_id,
+            property_id=property_id,
+            reason=payload.reason,
+            audit_context=AdministrationAuditContext(
+                actor_id=actor.actor_id,
+                request_id=request.state.request_id,
+            ),
+        )
+        _require_matching_property(user.property_id, property_id)
+        _require_matching_identifier(user.user_id, user_id)
+        if user.settings_access is not give:
+            raise AccessAdministrationUnavailable
+        return UserAccountResponse(
+            data=_user_data(user),
+            meta=ResponseMeta(request_id=request.state.request_id),
+        )
+
+    @router.post("/users/{user_id}/settings-access", response_model=UserAccountResponse)
+    def give_settings_access(
+        user_id: UUID,
+        payload: SettingsAccessRequest,
+        request: Request,
+    ) -> UserAccountResponse:
+        return change_settings_access(user_id, payload, request, give=True)
+
+    @router.post("/users/{user_id}/settings-access/remove", response_model=UserAccountResponse)
+    def remove_settings_access(
+        user_id: UUID,
+        payload: SettingsAccessRequest,
+        request: Request,
+    ) -> UserAccountResponse:
+        return change_settings_access(user_id, payload, request, give=False)
 
     @router.get(
         "/properties/{property_id}/authorization-history",

@@ -49,6 +49,9 @@ class RecordingAccessAdministrationFlow(AccessAdministrationFlow):
     role_bundle_property: str | None = PROPERTY_ID
     assignment_user_id: UUID = USER_ID
     assignment_role_bundle_id: UUID = ROLE_BUNDLE_ID
+    created_account: UserAccountView | None = None
+    assignment_property_id: str | None = None
+    settings_access_result: bool | None = None
     account: UserAccountView = field(
         default_factory=lambda: UserAccountView(
             user_id=USER_ID,
@@ -59,6 +62,8 @@ class RecordingAccessAdministrationFlow(AccessAdministrationFlow):
             lifecycle_state="active",
             mfa_policy_class="required",
             version=VERSION,
+            account_class="manager",
+            settings_access=False,
         )
     )
     bundle: RoleBundleView = field(
@@ -90,7 +95,7 @@ class RecordingAccessAdministrationFlow(AccessAdministrationFlow):
         username: str,
         display_name: str,
         audit_name: str,
-        mfa_policy_class: Literal["required", "optional"],
+        account_class: Literal["manager", "staff"],
         audit_context: AdministrationAuditContext,
     ) -> UserAccountView:
         self.calls.append(
@@ -101,12 +106,14 @@ class RecordingAccessAdministrationFlow(AccessAdministrationFlow):
                     username,
                     display_name,
                     audit_name,
-                    mfa_policy_class,
+                    account_class,
                     audit_context.actor_id,
                     audit_context.request_id,
                 ),
             )
         )
+        if self.created_account is not None:
+            return self.created_account
         return UserAccountView(
             user_id=CREATED_USER_ID,
             property_id=property_id,
@@ -114,8 +121,10 @@ class RecordingAccessAdministrationFlow(AccessAdministrationFlow):
             display_name=display_name,
             audit_name=audit_name,
             lifecycle_state="active",
-            mfa_policy_class=mfa_policy_class,
+            mfa_policy_class="required" if account_class == "manager" else "optional",
             version=1,
+            account_class=account_class,
+            settings_access=False,
         )
 
     def user_property_id(self, *, user_id: UUID) -> str | None:
@@ -303,6 +312,68 @@ class RecordingAccessAdministrationFlow(AccessAdministrationFlow):
             role_bundle_id=self.assignment_role_bundle_id,
             property_id=property_id,
         )
+
+    def remove_role_assignment(
+        self,
+        *,
+        user_id: UUID,
+        role_bundle_id: UUID,
+        property_id: str,
+        reason: str,
+        audit_context: AdministrationAuditContext,
+    ) -> RoleAssignmentView:
+        self.calls.append(
+            (
+                "remove_role_assignment",
+                (
+                    user_id,
+                    role_bundle_id,
+                    property_id,
+                    reason,
+                    audit_context.actor_id,
+                    audit_context.request_id,
+                ),
+            )
+        )
+        return RoleAssignmentView(
+            user_id=self.assignment_user_id,
+            role_bundle_id=self.assignment_role_bundle_id,
+            property_id=self.assignment_property_id or property_id,
+        )
+
+    def give_settings_access(
+        self,
+        *,
+        user_id: UUID,
+        property_id: str,
+        reason: str,
+        audit_context: AdministrationAuditContext,
+    ) -> UserAccountView:
+        self.calls.append(
+            (
+                "give_settings_access",
+                (user_id, property_id, reason, audit_context.actor_id, audit_context.request_id),
+            )
+        )
+        result = self.settings_access_result
+        return replace(self.account, settings_access=True if result is None else result)
+
+    def remove_settings_access(
+        self,
+        *,
+        user_id: UUID,
+        property_id: str,
+        reason: str,
+        audit_context: AdministrationAuditContext,
+    ) -> UserAccountView:
+        self.calls.append(
+            (
+                "remove_settings_access",
+                (user_id, property_id, reason, audit_context.actor_id, audit_context.request_id),
+            )
+        )
+        result = self.settings_access_result
+        return replace(self.account, settings_access=False if result is None else result)
 
     def list_authorization_history(
         self,
@@ -567,6 +638,9 @@ def test_administration_openapi_exposes_only_api_079_080_operations_and_safe_fie
         ("/api/v1/properties/{property_id}/role-bundles", "post"),
         ("/api/v1/role-bundles/{role_bundle_id}", "patch"),
         ("/api/v1/users/{user_id}/role-assignments", "post"),
+        ("/api/v1/users/{user_id}/role-assignments/remove", "post"),
+        ("/api/v1/users/{user_id}/settings-access", "post"),
+        ("/api/v1/users/{user_id}/settings-access/remove", "post"),
         ("/api/v1/properties/{property_id}/authorization-history", "get"),
         ("/api/v1/users/{user_id}/administrative-recovery", "post"),
     }
@@ -588,6 +662,8 @@ def test_administration_openapi_exposes_only_api_079_080_operations_and_safe_fie
             "RoleBundleCreateRequest",
             "RoleBundleUpdateRequest",
             "RoleAssignmentRequest",
+            "RoleAssignmentRemovalRequest",
+            "SettingsAccessRequest",
         )
     }
 
@@ -611,7 +687,7 @@ def test_administration_openapi_exposes_only_api_079_080_operations_and_safe_fie
         "username",
         "display_name",
         "audit_name",
-        "mfa_policy_class",
+        "account_class",
     }
 
 
@@ -626,7 +702,7 @@ def test_every_administration_operation_denies_without_an_authenticated_actor() 
                 "username": "operator",
                 "display_name": "Operator",
                 "audit_name": "operator-audit",
-                "mfa_policy_class": "required",
+                "account_class": "manager",
             },
         ),
         ("PATCH", f"/api/v1/users/{USER_ID}", {"lifecycle_state": "disabled"}),
@@ -706,7 +782,7 @@ def test_every_browser_mutation_requires_exact_origin_and_csrf_proof() -> None:
                 "username": "operator",
                 "display_name": "Operator",
                 "audit_name": "operator-audit",
-                "mfa_policy_class": "optional",
+                "account_class": "staff",
             },
         ),
         ("PATCH", f"/api/v1/users/{USER_ID}", {"display_name": "Changed"}),
@@ -794,7 +870,7 @@ def test_account_list_and_creation_are_scoped_audited_and_never_return_credentia
             "username": "new.operator",
             "display_name": "New Operator",
             "audit_name": "new-operator-audit",
-            "mfa_policy_class": "optional",
+            "account_class": "staff",
         },
         request_id="account-create",
     )
@@ -810,6 +886,8 @@ def test_account_list_and_creation_are_scoped_audited_and_never_return_credentia
             "lifecycle_state": "active",
             "mfa_policy_class": "required",
             "version": VERSION,
+            "account_class": "manager",
+            "settings_access": False,
         }
     ]
     assert listed.json()["page"] == {"next_cursor": "next-users", "limit": 50}
@@ -829,7 +907,7 @@ def test_account_list_and_creation_are_scoped_audited_and_never_return_credentia
                 "new.operator",
                 "New Operator",
                 "new-operator-audit",
-                "optional",
+                "staff",
                 ACTOR_ID,
                 "account-create",
             ),
@@ -1247,7 +1325,7 @@ def test_request_validation_rejects_unknown_fields_blank_updates_and_invalid_cap
                 "username": "operator",
                 "display_name": "Operator",
                 "audit_name": "operator-audit",
-                "mfa_policy_class": "optional",
+                "account_class": "staff",
                 "role": "Owner",
             },
         ),
@@ -1405,3 +1483,346 @@ def test_administrative_recovery_requires_scope_csrf_and_explicit_audit_reason()
             "administrative-recovery",
         ),
     ) in flow.calls
+
+
+SETTINGS_ACCESS_PATH = f"/api/v1/users/{USER_ID}/settings-access"
+SETTINGS_ACCESS_REMOVE_PATH = f"/api/v1/users/{USER_ID}/settings-access/remove"
+ASSIGNMENT_REMOVE_PATH = f"/api/v1/users/{USER_ID}/role-assignments/remove"
+OWNER_ONLY_ROUTES: tuple[tuple[str, dict[str, object]], ...] = (
+    (SETTINGS_ACCESS_PATH, {"reason": "Keeps the riel rate"}),
+    (SETTINGS_ACCESS_REMOVE_PATH, {"reason": "Back to daily work"}),
+    (
+        ASSIGNMENT_REMOVE_PATH,
+        {"role_bundle_id": str(ROLE_BUNDLE_ID), "reason": "Cover week ended"},
+    ),
+)
+
+
+def test_settings_access_and_assignment_removal_need_actor_capability_scope_and_browser_proof() -> (
+    None
+):
+    """Login sub-slice L2b-1 (DL-081; Q-2026-10-21-158 (a), Q-166 (a))."""
+    for path, payload in OWNER_ONLY_ROUTES:
+        flow = RecordingAccessAdministrationFlow()
+        unauthenticated = request(
+            create_app(Settings(), access_administration_flow=flow),
+            "POST",
+            path,
+            payload=payload,
+        )
+        assert unauthenticated.status_code == 401, path
+        assert unauthenticated.json()["error"]["code"] == "UNAUTHORIZED"
+        no_capability = request(
+            create_app(
+                Settings(),
+                actor_resolver=lambda _: AuthenticatedActor(actor_id=ACTOR_ID),
+                access_administration_flow=flow,
+            ),
+            "POST",
+            path,
+            payload=payload,
+        )
+        assert no_capability.status_code == 403, path
+        no_scope = request(authorized_app(flow, object_scopes=()), "POST", path, payload=payload)
+        assert no_scope.status_code == 403, path
+        no_browser_proof = request(
+            authorized_app(flow), "POST", path, payload=payload, browser_protection=False
+        )
+        assert no_browser_proof.status_code == 403, path
+        wrong_origin = request(
+            authorized_app(flow),
+            "POST",
+            path,
+            payload=payload,
+            headers={"Origin": "https://attacker.invalid"},
+        )
+        assert wrong_origin.status_code == 403, path
+        assert flow.calls == [], path
+        other_property = request(
+            authorized_app(flow, property_ids=(OTHER_PROPERTY_ID,)), "POST", path, payload=payload
+        )
+        assert other_property.status_code == 403, path
+        assert flow.calls == [("user_property_id", USER_ID)], path
+
+    bundle_flow = RecordingAccessAdministrationFlow()
+    no_bundle_scope = request(
+        authorized_app(
+            bundle_flow,
+            object_scopes=(
+                ObjectScope(object_type=USER_ACCOUNT_OBJECT_TYPE, object_id=str(USER_ID)),
+            ),
+        ),
+        "POST",
+        ASSIGNMENT_REMOVE_PATH,
+        payload={"role_bundle_id": str(ROLE_BUNDLE_ID), "reason": "Cover week ended"},
+    )
+    assert no_bundle_scope.status_code == 403
+    assert bundle_flow.calls == []
+
+
+def test_settings_access_is_given_and_removed_by_the_session_actor_with_a_reason() -> None:
+    flow = RecordingAccessAdministrationFlow()
+    app = authorized_app(flow)
+
+    given = request(
+        app,
+        "POST",
+        SETTINGS_ACCESS_PATH,
+        payload={"reason": "  Keeps the riel rate  "},
+        request_id="settings-access-give",
+    )
+    removed = request(
+        app,
+        "POST",
+        SETTINGS_ACCESS_REMOVE_PATH,
+        payload={"reason": "Back to daily work"},
+        request_id="settings-access-remove",
+    )
+
+    assert given.status_code == 200
+    assert given.json()["data"]["user_id"] == str(USER_ID)
+    assert given.json()["data"]["settings_access"] is True
+    assert removed.status_code == 200
+    assert removed.json()["data"]["settings_access"] is False
+    assert flow.calls == [
+        ("user_property_id", USER_ID),
+        (
+            "give_settings_access",
+            (USER_ID, PROPERTY_ID, "Keeps the riel rate", ACTOR_ID, "settings-access-give"),
+        ),
+        ("user_property_id", USER_ID),
+        (
+            "remove_settings_access",
+            (USER_ID, PROPERTY_ID, "Back to daily work", ACTOR_ID, "settings-access-remove"),
+        ),
+    ]
+
+    wrong_user = replace(flow.account, user_id=CREATED_USER_ID)
+    mismatched = request(
+        authorized_app(RecordingAccessAdministrationFlow(account=wrong_user)),
+        "POST",
+        SETTINGS_ACCESS_PATH,
+        payload={"reason": "Keeps the riel rate"},
+    )
+    assert mismatched.status_code == 503
+
+
+def test_a_role_bundle_is_removed_from_an_account_of_the_same_property_with_a_reason() -> None:
+    flow = RecordingAccessAdministrationFlow()
+
+    removed = request(
+        authorized_app(flow),
+        "POST",
+        ASSIGNMENT_REMOVE_PATH,
+        payload={"role_bundle_id": str(ROLE_BUNDLE_ID), "reason": " Cover week ended "},
+        request_id="assignment-remove",
+    )
+
+    assert removed.status_code == 200
+    assert removed.json()["data"] == {
+        "user_id": str(USER_ID),
+        "role_bundle_id": str(ROLE_BUNDLE_ID),
+        "property_id": PROPERTY_ID,
+    }
+    assert flow.calls == [
+        ("user_property_id", USER_ID),
+        ("role_bundle_property_id", ROLE_BUNDLE_ID),
+        (
+            "remove_role_assignment",
+            (
+                USER_ID,
+                ROLE_BUNDLE_ID,
+                PROPERTY_ID,
+                "Cover week ended",
+                ACTOR_ID,
+                "assignment-remove",
+            ),
+        ),
+    ]
+
+    other_property_flow = RecordingAccessAdministrationFlow(role_bundle_property=OTHER_PROPERTY_ID)
+    other_property = request(
+        authorized_app(other_property_flow, property_ids=(PROPERTY_ID, OTHER_PROPERTY_ID)),
+        "POST",
+        ASSIGNMENT_REMOVE_PATH,
+        payload={"role_bundle_id": str(ROLE_BUNDLE_ID), "reason": "Cover week ended"},
+    )
+    assert other_property.status_code == 409
+    assert [call[0] for call in other_property_flow.calls] == [
+        "user_property_id",
+        "role_bundle_property_id",
+    ]
+
+    mismatched = request(
+        authorized_app(RecordingAccessAdministrationFlow(assignment_user_id=CREATED_USER_ID)),
+        "POST",
+        ASSIGNMENT_REMOVE_PATH,
+        payload={"role_bundle_id": str(ROLE_BUNDLE_ID), "reason": "Cover week ended"},
+    )
+    assert mismatched.status_code == 503
+
+
+def test_settings_access_and_assignment_removal_need_a_valid_reason_and_known_fields() -> None:
+    flow = RecordingAccessAdministrationFlow()
+    app = authorized_app(flow)
+    invalid_requests: tuple[tuple[str, dict[str, object]], ...] = (
+        (SETTINGS_ACCESS_PATH, {}),
+        (SETTINGS_ACCESS_PATH, {"reason": "   "}),
+        (SETTINGS_ACCESS_PATH, {"reason": "x" * 501}),
+        (SETTINGS_ACCESS_PATH, {"reason": "Keeps the riel rate", "capability": "settings.manage"}),
+        (SETTINGS_ACCESS_REMOVE_PATH, {"reason": ""}),
+        # Review round 1 (security): no control, line-break or direction characters.
+        (SETTINGS_ACCESS_PATH, {"reason": "Keeps\x00the riel rate"}),
+        (SETTINGS_ACCESS_PATH, {"reason": "Keeps\nthe riel rate"}),
+        (SETTINGS_ACCESS_PATH, {"reason": "Keeps\u2028the riel rate"}),
+        # Review round 2: one example of each other refused kind, and a reason with nothing
+        # visible in it.
+        (SETTINGS_ACCESS_PATH, {"reason": "Keeps\x7fthe riel rate"}),
+        (SETTINGS_ACCESS_PATH, {"reason": "Keeps\x85the riel rate"}),
+        (SETTINGS_ACCESS_PATH, {"reason": "Keeps\u2029the riel rate"}),
+        (SETTINGS_ACCESS_PATH, {"reason": "Keeps\u061cthe riel rate"}),
+        (SETTINGS_ACCESS_PATH, {"reason": "Keeps\u200ethe riel rate"}),
+        (SETTINGS_ACCESS_PATH, {"reason": "\u200b"}),
+        (SETTINGS_ACCESS_REMOVE_PATH, {"reason": "\u200b \u200c\u200d"}),
+        (SETTINGS_ACCESS_REMOVE_PATH, {"reason": "Back to \u202edaily work"}),
+        (ASSIGNMENT_REMOVE_PATH, {"role_bundle_id": str(ROLE_BUNDLE_ID), "reason": "End\u2066ed"}),
+        (ASSIGNMENT_REMOVE_PATH, {"reason": "Cover week ended"}),
+        (ASSIGNMENT_REMOVE_PATH, {"role_bundle_id": str(ROLE_BUNDLE_ID)}),
+        (ASSIGNMENT_REMOVE_PATH, {"role_bundle_id": "Manager", "reason": "Cover week ended"}),
+        # Q-2026-10-21-152 (a): the Owner creates Manager or Staff accounts only, and the class
+        # sets the MFA policy, so the request names no Owner class and no MFA policy.
+        (
+            f"/api/v1/properties/{PROPERTY_ID}/users",
+            {
+                "username": "second.owner",
+                "display_name": "Second Owner",
+                "audit_name": "second-owner",
+                "account_class": "owner",
+            },
+        ),
+        (
+            f"/api/v1/properties/{PROPERTY_ID}/users",
+            {
+                "username": "operator",
+                "display_name": "Operator",
+                "audit_name": "operator-audit",
+                "account_class": "staff",
+                "mfa_policy_class": "required",
+            },
+        ),
+    )
+
+    for path, payload in invalid_requests:
+        response = request(app, "POST", path, payload=payload)
+        assert response.status_code == 422, (path, payload, response.text)
+        assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+
+    accepted = request(app, "POST", SETTINGS_ACCESS_PATH, payload={"reason": "x" * 500})
+    assert accepted.status_code == 200
+    # Khmer text keeps its zero-width space (U+200B).
+    khmer = "\u1790\u17c2\u179a\u1780\u17d2\u179f\u17b6\u200b\u17a2\u178f\u17d2\u179a\u17b6"
+    accepted_khmer = request(app, "POST", SETTINGS_ACCESS_PATH, payload={"reason": khmer})
+    assert accepted_khmer.status_code == 200
+    assert [call[0] for call in flow.calls] == [
+        "user_property_id",
+        "give_settings_access",
+        "user_property_id",
+        "give_settings_access",
+    ]
+    assert flow.calls[-1][1] == (USER_ID, PROPERTY_ID, khmer, ACTOR_ID, "access-admin-test")
+
+
+def test_administration_results_must_match_the_change_that_was_asked() -> None:
+    """Review round 1 (independent and security): a result that does not show the change asked
+    for, or that names another account, bundle or Property, fails closed (503)."""
+    account = RecordingAccessAdministrationFlow().account
+    staff_payload = {
+        "username": "new.operator",
+        "display_name": "New Operator",
+        "audit_name": "new-operator-audit",
+        "account_class": "staff",
+    }
+    wrong_results = (
+        replace(account, account_class="manager", mfa_policy_class="optional"),
+        replace(account, account_class="staff", mfa_policy_class="required"),
+        replace(account, account_class="owner", mfa_policy_class="required"),
+        replace(account, account_class=None, mfa_policy_class="optional"),
+    )
+    for wrong in wrong_results:
+        created = request(
+            authorized_app(RecordingAccessAdministrationFlow(created_account=wrong)),
+            "POST",
+            f"/api/v1/properties/{PROPERTY_ID}/users",
+            payload=staff_payload,
+        )
+        assert created.status_code == 503, wrong
+    right = replace(account, account_class="staff", mfa_policy_class="optional")
+    created = request(
+        authorized_app(RecordingAccessAdministrationFlow(created_account=right)),
+        "POST",
+        f"/api/v1/properties/{PROPERTY_ID}/users",
+        payload=staff_payload,
+    )
+    assert created.status_code == 201
+
+    for path, stale in ((SETTINGS_ACCESS_PATH, False), (SETTINGS_ACCESS_REMOVE_PATH, True)):
+        response = request(
+            authorized_app(RecordingAccessAdministrationFlow(settings_access_result=stale)),
+            "POST",
+            path,
+            payload={"reason": "Keeps the riel rate"},
+        )
+        assert response.status_code == 503, path
+        other_property = request(
+            authorized_app(
+                RecordingAccessAdministrationFlow(
+                    account=replace(account, property_id=OTHER_PROPERTY_ID)
+                )
+            ),
+            "POST",
+            path,
+            payload={"reason": "Keeps the riel rate"},
+        )
+        assert other_property.status_code == 503, path
+        other_account = request(
+            authorized_app(
+                RecordingAccessAdministrationFlow(account=replace(account, user_id=CREATED_USER_ID))
+            ),
+            "POST",
+            path,
+            payload={"reason": "Keeps the riel rate"},
+        )
+        assert other_account.status_code == 503, path
+
+    removal = {"role_bundle_id": str(ROLE_BUNDLE_ID), "reason": "Cover week ended"}
+    other_bundle = request(
+        authorized_app(
+            RecordingAccessAdministrationFlow(assignment_role_bundle_id=OTHER_ROLE_BUNDLE_ID)
+        ),
+        "POST",
+        ASSIGNMENT_REMOVE_PATH,
+        payload=removal,
+    )
+    assert other_bundle.status_code == 503
+    other_property_assignment = request(
+        authorized_app(RecordingAccessAdministrationFlow(assignment_property_id=OTHER_PROPERTY_ID)),
+        "POST",
+        ASSIGNMENT_REMOVE_PATH,
+        payload=removal,
+    )
+    assert other_property_assignment.status_code == 503
+
+    for path, payload in OWNER_ONLY_ROUTES:
+        flow = RecordingAccessAdministrationFlow(user_property=None)
+        missing = request(authorized_app(flow), "POST", path, payload=payload)
+        assert missing.status_code == 404, path
+        assert flow.calls == [("user_property_id", USER_ID)], path
+    bundle_flow = RecordingAccessAdministrationFlow(role_bundle_property=None)
+    missing_bundle = request(
+        authorized_app(bundle_flow), "POST", ASSIGNMENT_REMOVE_PATH, payload=removal
+    )
+    assert missing_bundle.status_code == 404
+    assert [call[0] for call in bundle_flow.calls] == [
+        "user_property_id",
+        "role_bundle_property_id",
+    ]
