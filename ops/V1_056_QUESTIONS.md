@@ -3832,3 +3832,22 @@ Your answer 1 to the 10h-2 report: add the READ COMMITTED check to the 8e-1 refu
 **What goes ahead.** Everything; nothing built depends on the answer.
 
 **Owner answer (2026-10-22, fresh session).** Option (a), as recommended: bundles stay fully configurable, as SEC-021 says; there is no Staff ceiling. When the Owner adds an approval or money capability to a bundle that Staff accounts hold, the screen shows a plain warning first. Owner's example: if the Owner adds Refund approval to the Staff bundle, the screen warns that every Staff user with that bundle can now approve Refunds. Nothing in the database or the API changes; the warning is built with the administration screens of the screen rebuild. Recorded in docs/010 DL-081.
+
+## Q-2026-10-22-169 — Login sub-slice L2b-2: hidden characters in names and reasons (blocks nothing; recommendation (a))
+
+**What the rules say.** Nothing about hidden characters. Review notes of L1b-2, L2a and L2b-1 asked for this question with the name handling of L2b-2.
+
+**What is built today (fail closed).** A bundle name, username, display name or audit name refuses control characters and most invisible characters, among them the zero-width space U+200B, the soft hyphen U+00AD and the direction marks. A reason (free text in the audit history) refuses control characters, line breaks and direction marks, and a reason with nothing visible, but keeps U+200B, U+200C and U+200D, because Khmer text uses them. Before saving, the API makes each name NFC and trims white space at either end, and turns each run of space characters (Unicode space separators) inside into one space; a control character or line break inside a name is not changed and the database refuses it. A username may have no white space but the ordinary space, so "ann lee" written with a no-break space is refused.
+
+**The gaps.** (1) Some Khmer keyboards put a zero-width space (U+200B) between words, so a Khmer name typed that way is refused today with "A name has 1 to 128 visible characters and no hidden characters". (2) A few invisible characters are still accepted: in names, U+034F, the Hangul fillers (U+115F, U+1160, U+3164, U+FFA0) and the invisible Khmer vowels U+17B4 and U+17B5; in reasons, U+00AD, U+180E, U+FEFF, U+2060 to U+2064, U+FFF9 to U+FFFB and the tag characters U+E0000 to U+E007F. (3) The database does not check that a username is NFC, and the sign-in lookup does not make the typed username NFC yet (L3a will use the same rule as account creation). (4) Letters that look alike in other alphabets (for example a Greek "Ο" in "Οwner") are not refused.
+
+**Example.** The Owner creates Staff member "សុខា ចាន់" on an iPad. The keyboard puts a zero-width space after "សុខា". With (a) the name is saved without the hidden character and looks the same on every screen. With (b) the Owner sees the refusal and must type the name again another way.
+
+**Options.**
+- (a) The API removes U+200B from a name before saving it (it never changes how the name looks), and refuses every character of gap (2) in names and reasons; a later migration checks that a username is NFC, and sign-in uses the creation rule (gap 3). A bundle name that differs from another only by U+200B is then a duplicate and is refused. Gap (4) stays a practice point: the Owner reads new names on the account list.
+- (b) Keep today's rule: names with U+200B are refused; the gap (2) characters are refused too.
+- (c) Keep everything as it is today.
+
+**Recommendation: (a)**, because a Khmer name typed in the normal way should be accepted, while a hidden character must never make two names look the same or hide text in the audit history.
+
+**What goes ahead.** Everything. Until the answer, names with U+200B stay refused (fail closed) and the gap (2) characters stay accepted. Option (a) or (b) is a small later change: the API name step, one migration for the name check and the reason check, and their tests.

@@ -18,10 +18,12 @@ from property_rental.access_admin_api import (
     AccessAdministrationConflict,
     AccessAdministrationFlow,
     AccessAdministrationNotFound,
+    AccessAdministrationRejected,
     AccessAdministrationUnavailable,
     UnavailableAccessAdministrationFlow,
     create_access_admin_router,
 )
+from property_rental.access_admin_flow import PostgresAccessAdministrationFlow
 from property_rental.allocation_receipt_api import (
     AllocationReceiptFlow,
     PostgresAllocationReceiptFlow,
@@ -563,6 +565,28 @@ def create_app(
     ) -> JSONResponse:
         return error_response(status.HTTP_409_CONFLICT, request.state.request_id)
 
+    @app.exception_handler(AccessAdministrationRejected)
+    async def access_administration_rejected(
+        request: Request,
+        exc: AccessAdministrationRejected,
+    ) -> JSONResponse:
+        # Login sub-slice L2b-2: a stable code and a fixed plain message; no database text.
+        request_id = request.state.request_id
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "error": {
+                    "code": exc.code,
+                    "message": exc.message,
+                    "fields": [],
+                    "rule_ids": [],
+                    "current_version": None,
+                },
+                "meta": {"request_id": request_id},
+            },
+            headers={REQUEST_ID_HEADER: request_id},
+        )
+
     @app.exception_handler(AuditQueryUnavailable)
     async def audit_query_unavailable(
         request: Request,
@@ -787,7 +811,12 @@ def create_app(
     app.include_router(
         create_access_admin_router(
             actor_resolver,
-            access_administration_flow or UnavailableAccessAdministrationFlow(),
+            access_administration_flow
+            or (
+                PostgresAccessAdministrationFlow(resolved_settings.database_url.get_secret_value())
+                if resolved_settings.database_url is not None
+                else UnavailableAccessAdministrationFlow()
+            ),
             resolved_settings,
         )
     )

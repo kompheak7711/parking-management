@@ -45381,6 +45381,177 @@
       "test_path": "backend/tests/test_access_admin_api.py",
       "status": "implemented",
       "notes": "A created account of another class or with an MFA policy its class does not set, a Settings access result that does not show the change, and a result for another account, bundle or Property fail closed (503), as does a removed assignment of another Property (review round 2); a missing account or bundle answers 404 before any change (login slice sub-slice L2b-1 review round 1, DL-081, Q-2026-10-21-152 (a))."
+    },
+    {
+      "test_id": "test_the_flow_creates_lists_and_changes_accounts_through_the_audited_functions",
+      "upstream_ids": [
+        "API-079",
+        "DL-081",
+        "SEC-014",
+        "SEC-075",
+        "DB-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_access_admin_flow_migration.py",
+      "status": "implemented",
+      "notes": "On a throwaway database as the runtime role: the flow creates a Manager and a Staff account (class, MFA policy from the class, version 1, names with single spaces, a lower-case username) with an audit event under the request's correlation id, lists accounts in pages, finds an account's Property (none for an unknown account), revokes sessions (a count), changes one with its version, and answers STALE_VERSION, MANAGER_MFA_REQUIRED, OWNER_ACCOUNT_NOT_CHANGED, ACCOUNT_DISABLED, USERNAME_TAKEN, INVALID_NAME and a NUL character with stable codes (login slice sub-slice L2b-2, DL-081)."
+    },
+    {
+      "test_id": "test_the_flow_administers_role_bundles_and_assignments",
+      "upstream_ids": [
+        "API-080",
+        "DL-081",
+        "SEC-014",
+        "SEC-021",
+        "DB-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_access_admin_flow_migration.py",
+      "status": "implemented",
+      "notes": "The capability list holds exactly the bundle capabilities in order and pages; bundles are created and renamed with versions; CAPABILITY_NOT_ASSIGNABLE, ROLE_BUNDLE_NAME_TAKEN, INVALID_NAME and STALE_VERSION refusals; a bundle is assigned and removed with an audit event, a second assignment and a second removal are refused, an unknown bundle is not found (login slice sub-slice L2b-2, DL-081)."
+    },
+    {
+      "test_id": "test_the_flow_gives_and_removes_settings_access_with_the_sign_in_code_rule",
+      "upstream_ids": [
+        "API-080",
+        "DL-074",
+        "DL-081",
+        "SEC-013",
+        "SEC-014",
+        "SEC-021",
+        "DB-AUTH-008"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_access_admin_flow_migration.py",
+      "status": "implemented",
+      "notes": "A Staff account without a sign-in code is refused with SIGN_IN_CODE_REQUIRED and the plain owner-rule message; with its code, Settings access is given (audited) and removed; giving twice, removing twice and giving to the Owner are refused with stable codes (login slice sub-slice L2b-2, DL-081)."
+    },
+    {
+      "test_id": "test_a_non_owner_or_unknown_actor_is_refused_and_recovery_stays_unavailable",
+      "upstream_ids": [
+        "API-079",
+        "API-099",
+        "DL-081",
+        "SEC-002",
+        "SEC-021"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_access_admin_flow_migration.py",
+      "status": "implemented",
+      "notes": "A Manager, an unknown account and an actor id that is not a UUID are refused (403) for reads and changes, the authorization history and the capability list included (review round 1); an unknown account is not found; a malformed page cursor is refused; the Owner's reset stays unavailable until L4 (login slice sub-slice L2b-2, DL-081)."
+    },
+    {
+      "test_id": "test_the_authorization_history_lists_administration_events_oldest_first_in_pages",
+      "upstream_ids": [
+        "API-080",
+        "DL-081",
+        "SEC-014",
+        "SEC-075"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_access_admin_flow_migration.py",
+      "status": "implemented",
+      "notes": "The authorization history lists the identity.manage_access audit events of the Property oldest first, in pages, without duplicates, each completed and by the Owner (login slice sub-slice L2b-2, DL-081)."
+    },
+    {
+      "test_id": "test_the_owner_gets_object_scopes_for_every_account_and_bundle",
+      "upstream_ids": [
+        "API-079",
+        "API-080",
+        "DL-081",
+        "SEC-002",
+        "SEC-021"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_access_admin_flow_migration.py",
+      "status": "implemented",
+      "notes": "The scope reader gives the Owner a user_account scope for every account and a role_bundle scope for every bundle, gives a Manager none, and the scopes are added to the identity.manage_access grant only; a connection error is unavailable, never no scope (login slice sub-slice L2b-2 and its review round 2, DL-081)."
+    },
+    {
+      "test_id": "test_create_app_administers_through_postgresql_when_a_database_is_configured",
+      "upstream_ids": [
+        "API-079",
+        "API-080",
+        "DL-081",
+        "SEC-014"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_access_admin_flow_migration.py",
+      "status": "implemented",
+      "notes": "With a database URL set, create_app uses the PostgreSQL flow: an account is created over HTTP, and a Settings access give without a sign-in code answers 409 SIGN_IN_CODE_REQUIRED in the standard error envelope with no database text (login slice sub-slice L2b-2, DL-081)."
+    },
+    {
+      "test_id": "test_the_request_id_is_the_correlation_id_or_a_stable_uuid5_of_it",
+      "upstream_ids": [
+        "DL-081",
+        "SEC-014"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_access_admin_flow.py",
+      "status": "implemented",
+      "notes": "A UUID request id is the audit correlation id; any other request id gets a stable UUID5 in a fixed namespace (login slice sub-slice L2b-2, DL-081)."
+    },
+    {
+      "test_id": "test_names_are_nfc_with_single_spaces_and_usernames_lower_case",
+      "upstream_ids": [
+        "API-079",
+        "API-080",
+        "DL-081"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_access_admin_flow.py",
+      "status": "implemented",
+      "notes": "Names are made NFC with each run of space separators one space (Khmer names kept) while control characters and line breaks inside a name are left for the database to refuse; usernames are NFC, trimmed and lower case, and a username with white space other than U+0020 is refused (login slice sub-slice L2b-2 and its review round 1, DL-081)."
+    },
+    {
+      "test_id": "test_database_errors_become_stable_refusals_without_database_text",
+      "upstream_ids": [
+        "API-079",
+        "API-080",
+        "DL-081",
+        "SEC-002"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_access_admin_flow.py",
+      "status": "implemented",
+      "notes": "Each SQLSTATE becomes its stable status and code (404, 409, 412, 422) and an isolation-level, unknown, connection or permission error other than the Owner check becomes unavailable; no database text is passed on (login slice sub-slice L2b-2 and its review round 1, DL-081)."
+    },
+    {
+      "test_id": "test_pages_follow_the_text_order_after_the_cursor",
+      "upstream_ids": [
+        "API-079",
+        "API-080",
+        "DL-081"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_access_admin_flow.py",
+      "status": "implemented",
+      "notes": "Pages follow the text order of the ids after the cursor, with a next cursor only when more items remain (login slice sub-slice L2b-2, DL-081)."
+    },
+    {
+      "test_id": "test_the_flow_refuses_each_reachable_case_and_rolls_back_a_mismatched_result",
+      "upstream_ids": [
+        "API-079",
+        "API-080",
+        "DL-081",
+        "SEC-014",
+        "DB-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_access_admin_flow_migration.py",
+      "status": "implemented",
+      "notes": "ACCOUNT_WITHOUT_CLASS, a not-found account, NOT_MANAGER_OR_STAFF for the Owner's sessions, INVALID_NAME for a line break in a name and a no-break space in a username, and not found for another Property's bundles and history; a result check that fails before the commit leaves no account and no audit event (login slice sub-slice L2b-2 review round 1, DL-081)."
+    },
+    {
+      "test_id": "test_every_known_database_message_is_word_for_word_in_the_migrations",
+      "upstream_ids": [
+        "DL-081",
+        "DB-AUTH-010"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_access_admin_flow.py",
+      "status": "implemented",
+      "notes": "Every database message the flow maps to a stable code appears word for word in the migrations, so a changed message cannot quietly become a generic or unavailable answer (login slice sub-slice L2b-2 review round 1, DL-081)."
     }
   ]
 }

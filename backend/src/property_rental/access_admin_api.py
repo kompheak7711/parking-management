@@ -308,6 +308,16 @@ class AccessAdministrationConflict(RuntimeError):
     """Requested administration mutation conflicts with current state."""
 
 
+class AccessAdministrationRejected(RuntimeError):
+    """A refused administration request with a stable code and a fixed plain message."""
+
+    def __init__(self, status_code: int, code: str, message: str) -> None:
+        super().__init__(code)
+        self.status_code = status_code
+        self.code = code
+        self.message = message
+
+
 class UnavailableAccessAdministrationFlow:
     """Expose the stable contract while refusing work without a runtime adapter."""
 
