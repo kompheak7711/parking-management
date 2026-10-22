@@ -3781,7 +3781,7 @@ Your answer 1 to the 10h-2 report: add the READ COMMITTED check to the 8e-1 refu
 
 **Owner answer (2026-10-21, fresh session).** Option (a), as recommended. When an account's sign-in code is reset or its MFA is turned off, its Settings access is removed in the same step, as a recorded removal (who, when, reason). The Owner ticks it again once the new code is set up. Owner's example: Dara's phone is lost; the Owner resets Dara's sign-in code, and the user list at once shows that Dara has no Settings access until the Owner gives it again. The owner also agrees with the L1c ordering note: no build between L3a and L5 may be used. Built with the reset and MFA-off steps (L2 for MFA off, L4 for the Owner's reset, and the `reset_mfa` path of `app.perform_account_recovery`). Recorded in docs/010 DL-081.
 
-## Q-2026-10-21-166 — Login sub-slice L2a: no route removes a role bundle from an account (blocks only that route in L2b; recommendation (a))
+## Q-2026-10-21-166 — Login sub-slice L2a: no route removes a role bundle from an account (blocks only that route in L2b; recommendation (a)) (ANSWERED 2026-10-22: (a))
 
 **What the rules say.** Q-157 (a) lists "changing a bundle or a user's bundle" as an action that needs a recent password check. API-080 lists only `POST /users/{id}/role-assignments` (assign); no route removes an assignment. The run rules allow new docs/005 routes only with your yes; the plan approval named three new routes, not this one.
 
@@ -3797,7 +3797,9 @@ Your answer 1 to the 10h-2 report: add the READ COMMITTED check to the 8e-1 refu
 
 **What goes ahead.** L2a, and every other part of L2b and of the later sub-slices.
 
-## Q-2026-10-21-167 — Login sub-slice L2a review round 1: the runtime role may still run the unaudited Settings access functions of L1d (blocks nothing; recommendation (a))
+**Owner answer (2026-10-22, fresh session).** Option (a), as recommended: a new route `POST /api/v1/users/{user_id}/role-assignments/remove`, Owner only, with the bundle id and a reason; it calls the L2a function, which ends the account's sessions. Approving this answer also approves the new docs/005 route (written into API-080 by L2b). The recent password check of Q-157 is added to it by L3d, as for the other Q-157 routes. Built in L2b. Recorded in docs/010 DL-081.
+
+## Q-2026-10-21-167 — Login sub-slice L2a review round 1: the runtime role may still run the unaudited Settings access functions of L1d (blocks nothing; recommendation (a)) (ANSWERED 2026-10-22: (a))
 
 **What the rules say.** SEC-014: every capability change needs an immutable audit event. L1d built `app.give_settings_access` and `app.remove_settings_access` without an audit event, because the L2 routes would write it; L2a now builds `app.admin_give_settings_access` and `app.admin_remove_settings_access`, which call them and write the audit event. The runtime role (the API's database identity) may still run the two L1d functions directly. Taking that right away is a tightening, and it changes the expected result of a committed test (`test_settings_access_migration.py::test_the_runtime_role_reaches_settings_access_only_through_its_functions`), so it needs your answer.
 
@@ -3811,7 +3813,9 @@ Your answer 1 to the 10h-2 report: add the READ COMMITTED check to the 8e-1 refu
 
 **What goes ahead.** Everything. Until the answer, L2b calls only the audited functions.
 
-## Q-2026-10-21-168 — Login sub-slice L2a security review round 1: may a Staff account hold approval capabilities through a bundle the Owner edits? (blocks nothing; recommendation (a))
+**Owner answer (2026-10-22, fresh session).** Option (a), as recommended: in L2b a small migration takes away the runtime role's right to run the older `app.give_settings_access` and `app.remove_settings_access`, so only the audited `app.admin_give_settings_access` and `app.admin_remove_settings_access` are used. The owner approves the tightening and the change to the one committed test (`test_settings_access_migration.py::test_the_runtime_role_reaches_settings_access_only_through_its_functions`, which then expects "permission denied"); the change is named in the L2b report. Built in L2b. Recorded in docs/010 DL-081.
+
+## Q-2026-10-21-168 — Login sub-slice L2a security review round 1: may a Staff account hold approval capabilities through a bundle the Owner edits? (blocks nothing; recommendation (a)) (ANSWERED 2026-10-22: (a))
 
 **What the rules say.** SEC-021 and DL-074 answer 1: bundles are configurable data and a role name gives no power by itself. Your answer to Q-150 (a) lists what the default Staff bundle never gets (for example `financial.approve`, `invoices.void`, `payments.reverse`). Q-152 (a): the account class sets the default bundle at creation, and the Owner may change the bundle later. ops/V1_056_TAKEOVER.md section 4 asks the security review to check that Staff cannot confirm a draft.
 
@@ -3826,3 +3830,5 @@ Your answer 1 to the 10h-2 report: add the READ COMMITTED check to the 8e-1 refu
 **Recommendation: (a)**, because SEC-021 makes the bundles your configurable data, only you can change them, and (b) would make the class a hidden second rule that the bundle screen does not show.
 
 **What goes ahead.** Everything; nothing built depends on the answer.
+
+**Owner answer (2026-10-22, fresh session).** Option (a), as recommended: bundles stay fully configurable, as SEC-021 says; there is no Staff ceiling. When the Owner adds an approval or money capability to a bundle that Staff accounts hold, the screen shows a plain warning first. Owner's example: if the Owner adds Refund approval to the Staff bundle, the screen warns that every Staff user with that bundle can now approve Refunds. Nothing in the database or the API changes; the warning is built with the administration screens of the screen rebuild. Recorded in docs/010 DL-081.
