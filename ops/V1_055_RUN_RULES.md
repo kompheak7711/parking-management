@@ -82,3 +82,9 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md. Nothing else 
 
 ## Automation tests
 - Do not run make automation-test until the owner approves, after the agent explains in plain words what it does with the OpenClaw scripts.
+
+## Speed rules (owner, 2026-10-22)
+- Technical choices are Claude Code's. A question that is only technical (which characters a name may hold, error codes, internal names, how a check or a table is built) and does not change who may do what, money, what Customers or staff are allowed to do, or a step that cannot be undone, is decided by Claude Code's own recommendation. Record it in ops/V1_056_QUESTIONS.md as "decided by Claude Code under the owner's 2026-10-22 rule", list it in the report, and do not wait. The owner can still change it later. Stop and ask the owner only for business questions and for anything these run rules say needs the owner's yes.
+- Well-known tools, never home-made ones. For password hashing, sign-in codes (MFA), session tokens, CSRF and text checks, use the Python standard library or the well-known libraries already in the repository. Never write home-made cryptography. If a well-known library is missing, do not add it: stop and ask the owner, naming the package and why it is needed.
+- Read less at the start. At the start of each session, read the latest review record only; open older review records only when a detail from them is needed.
+- If the security-and-hardening skill is installed in Claude Code, use it as a checklist for the sign-in, session, MFA and password work (L3 and L4). It does not replace the run rules or the review rounds. Never use /security-review.
