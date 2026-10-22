@@ -5082,7 +5082,16 @@ characters (U+00AD, U+061C, U+180E, U+200B to U+200F, U+202A to U+202E, U+2060 t
 U+FEFF, U+FFF9 to U+FFFB and the tag characters U+E0000 to U+E007F), unique per Property
 whatever its capital letters) and version; a new bundle starts at version 1, an update may
 change only the name and must raise the version by exactly 1, and a bundle is never deleted or
-truncated.
+truncated. Amended by DL-081 (login sub-slice L2c, migration `20270126_183`, Q-2026-10-22-169
+(a)): the check constraint `role_bundles_name_visible_check` also refuses U+034F, the Hangul
+fillers (U+115F, U+1160, U+3164, U+FFA0), the invisible Khmer vowels U+17B4 and U+17B5, the
+line and paragraph separators U+2028 and U+2029, U+180B to U+180F, U+2800, the variation
+selectors U+FE00 to U+FE0F, U+FFF0 to U+FFF8, U+1BCA0 to U+1BCA3, U+1D173 to U+1D17A and U+E0080
+to U+E0FFF, a space other than U+0020, two U+0020 in a row, and a name that is not NFC; the API
+removes U+200B from a name before saving it (it stays refused here). The migration refuses to
+run while a stored username is not NFC or holds U+200B; display names and audit names saved
+before it are not checked again (bundle names are, when the constraint is added), and each
+later change of a name meets the new check.
 `role_bundle_versions` keeps every version with its name (written by a trigger with the bundle),
 and `role_bundle_capabilities` keeps the complete capability set of every version: a capability
 in a bundle must be a catalog capability with grant path `bundle` (a foreign key on the
@@ -5171,6 +5180,10 @@ or lifecycle (disable only) with its expected version, or disables an account wi
 state) and is never updated, deleted or truncated; an account's version is 1 plus its number of
 changes. A username, display name or audit name is 1 to 128 characters with no space at either
 end and none of the control and invisible characters that DB-AUTH-007 refuses in a bundle name.
+Amended by DL-081 (login sub-slice L2c, migration `20270126_183`, Q-2026-10-22-169 (a)):
+`app.assert_account_names` also refuses the characters and spaces that DB-AUTH-007's
+`role_bundles_name_visible_check` adds, and a name that is not NFC, so every username an
+administration function writes is NFC.
 Session revocation (DB-AUTH-004): disabling revokes every unexpired session (`account_disabled`)
 and keeps the account's assignments and Settings access as history (no function enables an
 account again, and DB-AUTH-007 gives a disabled account nothing); raising a Staff account's MFA

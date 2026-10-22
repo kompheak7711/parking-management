@@ -303,3 +303,41 @@ def test_rate_limited_authentication_is_generic_and_skips_account_lookup() -> No
     ]
     assert secret not in repr(result)
     assert secret not in repr(audit_sink.evidence)
+
+
+def test_sign_in_lookup_and_limiter_use_the_creation_rule_for_the_username() -> None:
+    """DL-081, Q-2026-10-22-169 (a) gap 3 (login sub-slice L2c, review round 1): the sign-in
+    lookup and the attempt limiter key remove U+200B and make the username NFC, as account
+    creation does, so every spelling of one username is looked up and counted as one."""
+    for typed, expected in (
+        (" Dara\u200b.Sok ", "dara.sok"),
+        ("dara.sok", "dara.sok"),
+        ("Dara.Sok", "dara.sok"),
+        ("Cafe\u0301.Desk", "caf\u00e9.desk"),
+    ):
+        connection = StubConnection(None)
+        assert PostgresLocalAccountRepository(connection).find_by_username(typed) is None
+        assert connection.cursor_instance.parameters == (expected,)
+
+    audit_sink = CollectingAuditSink()
+    service = LocalAuthenticationService(
+        repository=StubAccountRepository(None),
+        password_service=PasswordHashService(),
+        attempt_limiter=BoundedAuthenticationAttemptLimiter(
+            max_attempts_per_account=1,
+            max_attempts_per_source=10,
+            window_seconds=60,
+        ),
+        audit_sink=audit_sink,
+    )
+    for username in ("dara.sok", "Dara\u200b.Sok"):
+        result = service.authenticate(
+            username=username,
+            password="wrong password",
+            request_source="source-l2c",
+        )
+        assert result == AuthenticationResult(is_authenticated=False)
+    assert audit_sink.evidence == [
+        AuthenticationAuditEvidence(outcome="rejected", reason="credentials_rejected"),
+        AuthenticationAuditEvidence(outcome="rejected", reason="rate_limited"),
+    ]

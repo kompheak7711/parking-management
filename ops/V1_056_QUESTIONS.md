@@ -3853,3 +3853,23 @@ Your answer 1 to the 10h-2 report: add the READ COMMITTED check to the 8e-1 refu
 **What goes ahead.** Everything. Until the answer, names with U+200B stay refused (fail closed) and the gap (2) characters stay accepted. Option (a) or (b) is a small later change: the API name step, one migration for the name check and the reason check, and their tests.
 
 **Owner answer (2026-10-22, fresh session).** Option (a), as recommended. Khmer keyboards put an invisible space (U+200B) between words, so the API removes U+200B from names and reasons before saving them, and refuses the few other invisible characters still accepted (gap (2)). If one of those others is needed in normal Khmer typing (for example U+200C or U+200D), it is not refused: a new question with a recommendation is written instead. The same rule applies wherever the login slice checks names or reasons (bundle names, usernames, display names, audit names and the reasons of the administration routes; the sign-in lookup uses the creation rule for the username, gap (3)). Gap (4) stays a practice point. Other parts of the app with the same kind of check (for example Customer names) are not changed now; they go on the slice 12 list. Owner's example: the Owner creates Staff member "សុខា ចាន់" on an iPad; it is saved, and the name looks the same on screen. Built in sub-slice L2c, before L3a. Recorded in docs/010 DL-081.
+
+## Q-2026-10-22-170 — Login sub-slice L2c: U+200C and U+200D in names (blocks nothing; recommendation (a))
+
+**What the rules say.** Your answer to Q-2026-10-22-169 (a): the API removes U+200B from names and reasons and refuses the other hidden characters still accepted; a character that normal Khmer typing needs (for example U+200C or U+200D) is not refused, and a question is written instead.
+
+**What is built today.** Since sub-slice L1b-2 a name (bundle name, username, display name, audit name) refuses U+200C (zero-width non-joiner) and U+200D (zero-width joiner), with the other invisible characters. A reason keeps both. L2c changes neither: it refuses nothing new among them. Unlike U+200B, which only marks where a line may break, U+200C and U+200D can change how the letters around them join, so removing them could change how a name looks.
+
+**The point.** I could not check every Khmer keyboard. If a keyboard you use puts U+200C or U+200D into a name typed in the normal way, that name is refused today with "A name has 1 to 128 visible characters and no hidden characters".
+
+**Example.** The Owner types the new Staff member "សុខា ចាន់" on the iPad: it is saved (L2c removes the U+200B the keyboard adds). The Owner then pastes a name copied from a Word file that holds a U+200C between two letters. With (a) the name is refused and the Owner types it again on the keyboard. With (b) it is saved with the U+200C, and a second account whose name differs only by that U+200C looks the same on the account list.
+
+**Options.**
+- (a) Keep refusing U+200C and U+200D in names; reasons keep them.
+- (b) Accept U+200C and U+200D inside a name, between two Khmer letters only; usernames and bundle names compare names without them, so two names that differ only by them are refused as duplicates.
+
+**Recommendation: (a)**, because the names typed on the iPad, Mac and Windows Khmer keyboards I know of need only U+200B, which L2c now removes, and a hidden joiner must never make two names look the same. If your keyboard does put U+200C or U+200D into normal names, answer (b).
+
+**Three related points (review rounds 1 and 2 of L2c; all three fail closed today; tell me if any of them is wrong for you).** (1) A name also refuses the emoji variation selector U+FE0F, so a display name with an emoji such as "❤️" is refused (a reason keeps U+FE0F). (2) A reason refuses the old invisible Khmer vowels U+17B4 and U+17B5, so a reason pasted from an old document that holds them is refused and must be typed again; it also refuses the tag characters, so a flag emoji such as the flag of Scotland is refused in a reason (country flags such as 🇰🇭 are kept). (3) The database now also refuses a name with a space other than the ordinary space, or two spaces in a row; the API already turns them into one ordinary space before saving, so nothing typed on a screen changes; it only stops a future program mistake from saving a name that looks like another.
+
+**What goes ahead.** Everything; nothing built waits for this answer.

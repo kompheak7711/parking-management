@@ -28,6 +28,7 @@ from property_rental.app import create_app
 from property_rental.auth_api import CSRF_COOKIE_NAME
 from property_rental.identity import AuthenticatedActor, CapabilityGrant, ObjectScope
 from property_rental.settings import Settings
+from property_rental.visible_text import HIDDEN_NAME_CHARACTERS, HIDDEN_REASON_CHARACTERS
 
 PROPERTY_ID = "property-main"
 OTHER_PROPERTY_ID = "property-other"
@@ -1719,7 +1720,7 @@ def test_settings_access_and_assignment_removal_need_a_valid_reason_and_known_fi
 
     accepted = request(app, "POST", SETTINGS_ACCESS_PATH, payload={"reason": "x" * 500})
     assert accepted.status_code == 200
-    # Khmer text keeps its zero-width space (U+200B).
+    # Q-2026-10-22-169 (a): a Khmer reason is passed on without its zero-width space (U+200B).
     khmer = "\u1790\u17c2\u179a\u1780\u17d2\u179f\u17b6\u200b\u17a2\u178f\u17d2\u179a\u17b6"
     accepted_khmer = request(app, "POST", SETTINGS_ACCESS_PATH, payload={"reason": khmer})
     assert accepted_khmer.status_code == 200
@@ -1729,7 +1730,8 @@ def test_settings_access_and_assignment_removal_need_a_valid_reason_and_known_fi
         "user_property_id",
         "give_settings_access",
     ]
-    assert flow.calls[-1][1] == (USER_ID, PROPERTY_ID, khmer, ACTOR_ID, "access-admin-test")
+    saved = khmer.replace("\u200b", "")
+    assert flow.calls[-1][1] == (USER_ID, PROPERTY_ID, saved, ACTOR_ID, "access-admin-test")
 
 
 def test_administration_results_must_match_the_change_that_was_asked() -> None:
@@ -1826,3 +1828,103 @@ def test_administration_results_must_match_the_change_that_was_asked() -> None:
         "user_property_id",
         "role_bundle_property_id",
     ]
+
+
+def test_names_and_reasons_lose_the_zero_width_space_and_refuse_other_hidden_characters() -> None:
+    """DL-081, Q-2026-10-22-169 (a) (sub-slice L2c): the API removes U+200B from a name and a
+    reason before the length rule and passes them on without it; a reason refuses the other
+    hidden characters and keeps U+200C and U+200D, which Khmer text uses."""
+    flow = RecordingAccessAdministrationFlow()
+    app = authorized_app(flow)
+    sokha, chan = "\u179f\u17bb\u1781\u17b6", "\u1785\u17b6\u1793\u17cb"
+    created = request(
+        app,
+        "POST",
+        f"/api/v1/properties/{PROPERTY_ID}/users",
+        payload={
+            "username": "\u200bsokha.chan",
+            "display_name": f"{sokha}\u200b {chan}",
+            "audit_name": "\u200b" + "x" * 128,
+            "account_class": "staff",
+        },
+    )
+    assert created.status_code == 201, created.text
+    created_call = (
+        PROPERTY_ID,
+        "sokha.chan",
+        f"{sokha} {chan}",
+        "x" * 128,
+        "staff",
+        ACTOR_ID,
+        "access-admin-test",
+    )
+    assert flow.calls[-1:] == [("create_user", created_call)]
+
+    for character in (
+        "\u00ad",
+        "\u034f",
+        "\u115f",
+        "\u1160",
+        "\u17b4",
+        "\u17b5",
+        "\u180e",
+        "\u2060",
+        "\u2064",
+        "\u3164",
+        "\ufeff",
+        "\uffa0",
+        "\ufff9",
+        "\ufffb",
+        "\U000e0001",
+        "\U000e007f",
+        # Review rounds 1 and 2: the other invisible characters.
+        "\u180b",
+        "\u2800",
+        "\ufe00",
+        "\ufe0e",
+        "\ufff0",
+        "\U0001bca0",
+        "\U0001d173",
+        "\U000e0100",
+    ):
+        refused = request(
+            app, "POST", SETTINGS_ACCESS_PATH, payload={"reason": f"Keeps{character}the rate"}
+        )
+        assert refused.status_code == 422, (hex(ord(character)), refused.text)
+        assert refused.json()["error"]["code"] == "VALIDATION_ERROR"
+    assert flow.calls[-1:] == [("create_user", created_call)]
+
+    # Review round 2: U+FE0F (the emoji keyboard's variation selector) is kept but is not a
+    # visible character on its own.
+    for invisible in ("\ufe0f", "\ufe0f\u200d", "\u200b\u200c"):
+        refused = request(app, "POST", SETTINGS_ACCESS_PATH, payload={"reason": invisible})
+        assert refused.status_code == 422, (invisible.encode("unicode_escape"), refused.text)
+        assert refused.json()["error"]["code"] == "VALIDATION_ERROR"
+    assert flow.calls[-1:] == [("create_user", created_call)]
+    thanks = "Thanks \u2764\ufe0f"
+    thanked = request(app, "POST", SETTINGS_ACCESS_PATH, payload={"reason": thanks})
+    assert thanked.status_code == 200, thanked.text
+    assert flow.calls[-1:] == [
+        ("give_settings_access", (USER_ID, PROPERTY_ID, thanks, ACTOR_ID, "access-admin-test"))
+    ]
+
+    joined = f"{sokha}\u200c{chan}\u200d"
+    accepted = request(
+        app, "POST", SETTINGS_ACCESS_PATH, payload={"reason": f"\u200b{joined}\u200b"}
+    )
+    assert accepted.status_code == 200, accepted.text
+    assert flow.calls[-1:] == [
+        ("give_settings_access", (USER_ID, PROPERTY_ID, joined, ACTOR_ID, "access-admin-test"))
+    ]
+
+
+def test_the_reason_list_differs_from_the_name_list_only_by_kept_invisible_characters() -> None:
+    """Review round 2 of sub-slice L2c: the reason rule has no database twin, so this checks the
+    whole list. Over every code point but the surrogates, a reason refuses a subset of what a
+    name refuses, and the difference is exactly U+200C, U+200D (Khmer text) and U+FE0F (the
+    emoji keyboard)."""
+    points = [point for point in range(0x110000) if not 0xD800 <= point <= 0xDFFF]
+    names = {point for point in points if HIDDEN_NAME_CHARACTERS.fullmatch(chr(point))}
+    reasons = {point for point in points if HIDDEN_REASON_CHARACTERS.fullmatch(chr(point))}
+    assert reasons <= names
+    assert names - reasons == {0x200C, 0x200D, 0xFE0F}

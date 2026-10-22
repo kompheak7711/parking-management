@@ -1385,6 +1385,8 @@ enrollment/challenge; Staff may authenticate without MFA unless enabled for that
 account. Responses, timing, and rate limits resist guessing and account enumeration.
 SMS authentication or recovery is not exposed.
 
+Amended by DL-081 (login sub-slice L2c, owner answer (a) to Q-2026-10-22-169): sign-in looks a username up by the rule account creation uses: U+200B removed, NFC, spaces at either end trimmed, lower case; the wrong-try count uses the same form, so every spelling of one username is counted as one.
+
 ## API-097 — Session Lifetime
 
 Browser sessions enforce a 30-minute inactivity timeout and a 24-hour absolute lifetime.
@@ -1457,6 +1459,8 @@ Amended by DL-081 (owner answers (a) to Q-2026-10-21-158 and Q-2026-10-21-166; l
 The recent password check of Q-2026-10-21-157 is added to these routes, as to the other administration routes, by login sub-slice L3d.
 
 Amended by DL-081 (login sub-slice L2b-2): the administration routes of API-079 and API-080 run on PostgreSQL through the audited Owner-only database functions. A refusal answers with a stable code and a fixed plain message, never database text: `403 FORBIDDEN` (not the Owner); `404` (unknown account or bundle, or another Property's account list, bundle list or history); `409` `CONFLICT`, `USERNAME_TAKEN`, `ROLE_BUNDLE_NAME_TAKEN`, `ROLE_BUNDLE_ALREADY_ASSIGNED`, `ROLE_BUNDLE_NOT_ASSIGNED`, `SETTINGS_ACCESS_ALREADY_GIVEN`, `NO_SETTINGS_ACCESS`, `SIGN_IN_CODE_REQUIRED` ("A Staff account gets Settings access only after it has set up its sign-in code."), `ACCOUNT_DISABLED`, `PROPERTY_NOT_READY`, `TRY_AGAIN` (the change met another change); `412 STALE_VERSION` (the `If-Match` version is old); `422` `INVALID_NAME`, `CAPABILITY_NOT_ASSIGNABLE`, `OWNER_ACCOUNT_NOT_CHANGED`, `ACCOUNT_WITHOUT_CLASS`, `NOT_MANAGER_OR_STAFF`, `NO_CHANGE`, `MANAGER_MFA_REQUIRED`, `VALIDATION_ERROR`. `GET /capabilities` lists the capabilities that can be put in a bundle. The API trims white space at either end of a name or username. Names are saved NFC, with each run of space separators inside made one space; a control character or line break inside a name is refused, not folded. A username is lower case and has no white space inside but the ordinary space. The Owner's reset (API-099) stays unavailable until login sub-slice L4.
+
+Amended by DL-081 (login sub-slice L2c, owner answer (a) to Q-2026-10-22-169): before saving, the API removes U+200B (the invisible space that Khmer keyboards put between words) from a username, display name, audit name, bundle name and reason, and the length rules count the characters that are saved; so a username or bundle name that differs from another only by U+200B answers `USERNAME_TAKEN` or `ROLE_BUNDLE_NAME_TAKEN`. A name with any other hidden character listed in docs/004 DB-AUTH-007 and DB-AUTH-010 answers `422 INVALID_NAME` (U+0000 answers `422 VALIDATION_ERROR`; the API saves every name NFC). A reason also refuses U+00AD, U+034F, the Hangul fillers (U+115F, U+1160, U+3164, U+FFA0), U+17B4, U+17B5, U+180B to U+180F, U+2060 to U+206F, U+2800, the variation selectors U+FE00 to U+FE0E, U+FEFF, U+FFF0 to U+FFFB, U+1BCA0 to U+1BCA3, U+1D173 to U+1D17A and U+E0000 to U+E0FFF (`422`), and keeps U+200C and U+200D, which Khmer text uses, and the emoji variation selector U+FE0F.
 
 ## API-081 — Operational Health
 

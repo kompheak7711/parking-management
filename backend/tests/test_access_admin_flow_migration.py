@@ -221,7 +221,9 @@ def test_the_flow_creates_lists_and_changes_accounts_through_the_audited_functio
         audit_context=context(database.owner),
     )
     for display_name, code in (
-        ("Dara\u200bSok", "INVALID_NAME"),
+        # Q-2026-10-22-169 (a): U+200B is now removed before saving (sub-slice L2c), so the
+        # refused hidden character here is the direction mark U+200E (the L2a character list).
+        ("Dara\u200eSok", "INVALID_NAME"),
         ("Dara\x00Sok", "VALIDATION_ERROR"),
     ):
         refused(
@@ -289,7 +291,9 @@ def test_the_flow_administers_role_bundles_and_assignments(admin_database: Admin
         422,
         flow.create_role_bundle,
         property_id=database.property_id,
-        name="Night\u200bdesk",
+        # Q-2026-10-22-169 (a): U+200B is now removed before saving (sub-slice L2c); the direction
+        # mark U+200E stays refused by the L1b-2 check `role_bundles_name_check`.
+        name="Night\u200edesk",
         capability_ids=(),
         audit_context=context(database.owner),
     )

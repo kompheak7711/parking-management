@@ -36,6 +36,7 @@ from property_rental.access_admin_api import (
 )
 from property_rental.identity import CapabilityGrant, ObjectScope
 from property_rental.local_authentication import normalize_local_username
+from property_rental.visible_text import without_zero_width_spaces
 
 # The request id pattern allows text that is not a UUID; such an id gets a stable UUID5 in this
 # namespace as the audit correlation id.
@@ -119,6 +120,11 @@ KNOWN_REFUSALS: Final[dict[str, tuple[int, str, str]]] = {
         "INVALID_NAME",
         "A name has 1 to 128 visible characters and no hidden characters.",
     ),
+    "role_bundles_name_visible_check": (
+        422,
+        "INVALID_NAME",
+        "A name has 1 to 128 visible characters and no hidden characters.",
+    ),
     "only bundle capabilities can be in a role bundle": (
         422,
         "CAPABILITY_NOT_ASSIGNABLE",
@@ -198,14 +204,16 @@ def correlation_id(request_id: str) -> UUID:
 
 
 def normalized_name(value: str) -> str:
-    """NFC, with each run of space separators made one space and none at either end."""
-    return SPACE_SEPARATORS.sub(" ", unicodedata.normalize("NFC", value)).strip(" ")
+    """Without U+200B (Q-2026-10-22-169 (a)), NFC, with each run of space separators made one
+    space and none at either end."""
+    nfc = unicodedata.normalize("NFC", without_zero_width_spaces(value))
+    return SPACE_SEPARATORS.sub(" ", nfc).strip(" ")
 
 
 def normalized_username(value: str) -> str:
     """NFC and DB-AUTH-001 normalization; a username has no white space but U+0020
     (review round 1, security: two usernames must not look the same)."""
-    nfc = unicodedata.normalize("NFC", value)
+    nfc = unicodedata.normalize("NFC", without_zero_width_spaces(value))
     if any(character.isspace() and character != " " for character in nfc):
         raise AccessAdministrationRejected(*INVALID_NAME)
     return normalize_local_username(nfc)

@@ -20,6 +20,7 @@ from property_rental.access_admin_flow import (
     normalized_name,
     normalized_username,
 )
+from property_rental.local_authentication import normalize_local_username
 
 
 def test_the_request_id_is_the_correlation_id_or_a_stable_uuid5_of_it() -> None:
@@ -93,6 +94,19 @@ def test_every_known_database_message_is_word_for_word_in_the_migrations() -> No
         "user_accounts_normalized_username_key",
         "role_bundles_property_lower_name_key",
         "role_bundles_name_check",
+        # Q-2026-10-22-169 (a): the bundle name check of sub-slice L2c (migration 20270126_183).
+        "role_bundles_name_visible_check",
     }
     for message in messages:
         assert f"'{message}'" in sources, message
+
+
+def test_names_usernames_and_the_sign_in_lookup_lose_the_zero_width_space() -> None:
+    """DL-081, Q-2026-10-22-169 (a) (sub-slice L2c): every save path removes U+200B from a name
+    and a username, and the sign-in lookup uses the creation rule (NFC, U+200B removed)."""
+    sokha, chan = "\u179f\u17bb\u1781\u17b6", "\u1785\u17b6\u1793\u17cb"
+    assert normalized_name(f"\u200b{sokha}\u200b {chan}\u200b") == f"{sokha} {chan}"
+    assert normalized_name(f"{sokha}\u200b\u200b{chan}") == f"{sokha}{chan}"
+    assert normalized_username("\u200bDara.Sok\u200b ") == "dara.sok"
+    assert normalize_local_username(" Cafe\u0301\u200b.Desk ") == "caf\u00e9.desk"
+    assert normalize_local_username("Dara.Sok") == normalized_username("Dara.Sok")

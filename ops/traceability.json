@@ -45340,7 +45340,7 @@
       "test_level": "API",
       "test_path": "backend/tests/test_access_admin_api.py",
       "status": "implemented",
-      "notes": "A missing, blank or too long reason, an unknown field or a missing or malformed bundle id is refused (422) with nothing called; an account create request naming the Owner class or an MFA policy is refused (Q-2026-10-21-152 (a)); a reason with a control, line-break or direction character, or with nothing visible in it, is refused (review rounds 1 and 2); a 500-character reason and a Khmer reason with a zero-width space are accepted (login slice sub-slice L2b-1, DL-081)."
+      "notes": "A missing, blank or too long reason, an unknown field or a missing or malformed bundle id is refused (422) with nothing called; an account create request naming the Owner class or an MFA policy is refused (Q-2026-10-21-152 (a)); a reason with a control, line-break or direction character, or with nothing visible in it, is refused (review rounds 1 and 2); a 500-character reason and a Khmer reason with a zero-width space are accepted, the zero-width space removed before it is passed on (Q-2026-10-22-169 (a), sub-slice L2c) (login slice sub-slice L2b-1, DL-081)."
     },
     {
       "test_id": "test_the_runtime_role_changes_settings_access_only_through_the_audited_functions",
@@ -45552,6 +45552,121 @@
       "test_path": "backend/tests/test_access_admin_flow.py",
       "status": "implemented",
       "notes": "Every database message the flow maps to a stable code appears word for word in the migrations, so a changed message cannot quietly become a generic or unavailable answer (login slice sub-slice L2b-2 review round 1, DL-081)."
+    },
+    {
+      "test_id": "test_names_and_reasons_lose_the_zero_width_space_and_refuse_other_hidden_characters",
+      "upstream_ids": [
+        "API-079",
+        "API-080",
+        "DL-081",
+        "SEC-014"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_access_admin_api.py",
+      "status": "implemented",
+      "notes": "The API removes U+200B from a username, display name and audit name before the length rule and passes them on without it (a Khmer name typed with an iPad keyboard), refuses a reason with U+00AD, U+034F, a Hangul filler, U+17B4, U+17B5, U+180E, U+2060 to U+2064, U+FEFF, U+FFF9 to U+FFFB or a tag character (422, nothing called), and passes on a Khmer reason with U+200C and U+200D kept and U+200B removed; review rounds 1 and 2: also U+180B, U+2800, U+FE00, U+FE0E, U+FFF0, U+1BCA0, U+1D173 and U+E0100 are refused, a reason made only of U+FE0F, U+200C or U+200D is refused, and a reason with a heart emoji (U+2764 U+FE0F) is passed on unchanged (Q-2026-10-22-169 (a), login slice sub-slice L2c, DL-081)."
+    },
+    {
+      "test_id": "test_names_usernames_and_the_sign_in_lookup_lose_the_zero_width_space",
+      "upstream_ids": [
+        "API-079",
+        "API-096",
+        "DL-081",
+        "DB-AUTH-001"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_access_admin_flow.py",
+      "status": "implemented",
+      "notes": "The flow's name and username steps remove U+200B, and the sign-in lookup's username rule (normalize_local_username) removes U+200B and makes the username NFC, the same as account creation (Q-2026-10-22-169 (a) gap 3, login slice sub-slice L2c, DL-081)."
+    },
+    {
+      "test_id": "test_a_name_typed_with_a_khmer_keyboard_is_saved_without_its_zero_width_space",
+      "upstream_ids": [
+        "API-079",
+        "API-080",
+        "DL-081",
+        "DB-AUTH-007",
+        "DB-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_name_hidden_characters_migration.py",
+      "status": "implemented",
+      "notes": "Owner's example on a throwaway database as the runtime role: a Staff member whose Khmer display name holds U+200B after the first word is saved and listed without it; a username and a bundle name lose it too, so a username or a bundle name that differs from another only by U+200B is refused as taken; an account update and a bundle rename lose it too (Q-2026-10-22-169 (a), login slice sub-slice L2c and its review round 1, DL-081)."
+    },
+    {
+      "test_id": "test_the_flow_refuses_the_remaining_hidden_characters_in_names",
+      "upstream_ids": [
+        "API-079",
+        "API-080",
+        "DL-081",
+        "DB-AUTH-007",
+        "DB-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_name_hidden_characters_migration.py",
+      "status": "implemented",
+      "notes": "U+034F, the Hangul fillers, the invisible Khmer vowels U+17B4 and U+17B5, the line and paragraph separators, U+180B, U+2800, U+FE0F, U+FFF0, U+1BCA0, U+1D173 and U+E0100 inside an account name (create and update) or a bundle name, and U+2800 in a bundle rename (review round 2), are refused through the flow with INVALID_NAME (Q-2026-10-22-169 (a) gap 2, login slice sub-slice L2c and its review round 1, DL-081)."
+    },
+    {
+      "test_id": "test_the_database_refuses_every_hidden_character_and_a_name_that_is_not_nfc",
+      "upstream_ids": [
+        "DL-081",
+        "DB-AUTH-007",
+        "DB-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_name_hidden_characters_migration.py",
+      "status": "implemented",
+      "notes": "For every candidate code point (the Basic Multilingual Plane without surrogates, the U+1BCA0 and U+1D173 blocks and U+E0000 to U+E0FFF), the account name check and the two bundle name checks refuse exactly the characters of visible_text.HIDDEN_NAME_CHARACTERS, the spaces other than U+0020 that the API folds and the characters that make the name not NFC (read from the database), so the database and application lists stay in step; two spaces in a row and a decomposed name are refused, neighbouring characters and an NFC name are accepted; the test first asserts the libc locale provider, under which the comparison is exact (Q-2026-10-22-169 (a), login slice sub-slice L2c and its review rounds 1 and 2, DL-081)."
+    },
+    {
+      "test_id": "test_the_name_hidden_characters_migration_is_least_privilege_and_forward_only",
+      "upstream_ids": [
+        "DL-081",
+        "DB-AUTH-007",
+        "DB-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_name_hidden_characters_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20270126_183 changes only the body of app.assert_account_names (now with the NFC check; owner, volatility, definer flag, settings, parallel, strict and leakproof flags and return type unchanged) and adds the one check constraint role_bundles_name_visible_check; no privilege, relation, trigger or column changes, no application role may execute the name check, and the migration is forward-only (login slice sub-slice L2c and its review round 1, DL-081)."
+    },
+    {
+      "test_id": "test_the_migration_refuses_to_run_over_a_username_that_is_not_nfc",
+      "upstream_ids": [
+        "DL-081",
+        "DB-AUTH-001",
+        "DB-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_name_hidden_characters_migration.py",
+      "status": "implemented",
+      "notes": "On a throwaway database at 20270125_182 with a stored username that is not NFC, or (review round 2) that holds U+200B, the upgrade to 20270126_183 fails with its guard message and the revision stays at 20270125_182, so no account is left that the sign-in lookup could never find (login slice sub-slice L2c review round 1, security, DL-081)."
+    },
+    {
+      "test_id": "test_sign_in_lookup_and_limiter_use_the_creation_rule_for_the_username",
+      "upstream_ids": [
+        "API-096",
+        "DL-081",
+        "DB-AUTH-001",
+        "SEC-012"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_local_authentication.py",
+      "status": "implemented",
+      "notes": "The sign-in lookup asks for one normalized username for every spelling (U+200B removed, NFC, trimmed, lower case), and with a per-account limit of one a second try under another spelling of the same username is rate limited (Q-2026-10-22-169 (a) gap 3, login slice sub-slice L2c review round 1, DL-081)."
+    },
+    {
+      "test_id": "test_the_reason_list_differs_from_the_name_list_only_by_kept_invisible_characters",
+      "upstream_ids": [
+        "API-080",
+        "DL-081",
+        "SEC-014"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_access_admin_api.py",
+      "status": "implemented",
+      "notes": "Over every code point but the surrogates, the reason rule refuses a subset of what the name rule refuses, and the difference is exactly U+200C, U+200D (Khmer text) and U+FE0F (the emoji keyboard), so the reason list, which has no database twin, stays complete (login slice sub-slice L2c review round 2, DL-081)."
     }
   ]
 }

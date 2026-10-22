@@ -1,7 +1,6 @@
 """API-079/080 account and configurable capability administration surface."""
 
 import hmac
-import re
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Annotated, Final, Literal, Protocol
@@ -11,6 +10,7 @@ from fastapi import APIRouter, HTTPException, Path, Query, Request, Response, st
 from pydantic import (
     AfterValidator,
     BaseModel,
+    BeforeValidator,
     ConfigDict,
     Field,
     StringConstraints,
@@ -27,25 +27,36 @@ from property_rental.identity import (
     is_authorized,
 )
 from property_rental.settings import Settings
+from property_rental.visible_text import HIDDEN_REASON_CHARACTERS, without_zero_width_spaces
 
 ACCESS_ADMIN_CAPABILITY: Final = "identity.manage_access"
 USER_ACCOUNT_OBJECT_TYPE: Final = "user_account"
 ROLE_BUNDLE_OBJECT_TYPE: Final = "role_bundle"
-BoundedName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=128)]
-# A reason is free text (DL-074 answer 10) kept in the audit history: no control character, line
-# or paragraph separator, or direction mark that could hide or reorder what the history shows.
-# The zero-width characters Khmer text uses (U+200B to U+200D) stay allowed.
-REFUSED_REASON_CHARACTERS: Final = re.compile(
-    "[\x00-\x1f\x7f-\x9f\u061c\u200e\u200f\u2028\u2029\u202a-\u202e\u2066-\u2069]"
-)
 
-ZERO_WIDTH_CHARACTERS: Final = dict.fromkeys((0x200B, 0x200C, 0x200D))
+
+def _without_zero_width_spaces(value: object) -> object:
+    # Q-2026-10-22-169 (a): U+200B is removed before the trim and the length rule, so the
+    # length counts the characters that are saved.
+    return without_zero_width_spaces(value) if isinstance(value, str) else value
+
+
+BoundedName = Annotated[
+    str,
+    StringConstraints(strip_whitespace=True, min_length=1, max_length=128),
+    BeforeValidator(_without_zero_width_spaces),
+]
+# A reason is free text (DL-074 answer 10) kept in the audit history: no control character, line
+# or paragraph separator, direction mark or other hidden character that could hide or reorder
+# what the history shows (Q-2026-10-22-169 (a)). U+200B is removed; U+200C and U+200D, which
+# Khmer text uses, and the emoji variation selector U+FE0F stay allowed, but none of them counts
+# as a visible character (review round 2 of sub-slice L2c).
+INVISIBLE_KEPT_IN_REASONS: Final = dict.fromkeys((0x200C, 0x200D, 0xFE0F))
 
 
 def _visible_reason(value: str) -> str:
-    if REFUSED_REASON_CHARACTERS.search(value):
-        raise ValueError("a reason has no control, line-break or direction characters")
-    if not value.translate(ZERO_WIDTH_CHARACTERS).strip():
+    if HIDDEN_REASON_CHARACTERS.search(value):
+        raise ValueError("a reason has no control, line-break, direction or hidden characters")
+    if not value.translate(INVISIBLE_KEPT_IN_REASONS).strip():
         raise ValueError("a reason needs at least one visible character")
     return value
 
@@ -53,6 +64,7 @@ def _visible_reason(value: str) -> str:
 BoundedReason = Annotated[
     str,
     StringConstraints(strip_whitespace=True, min_length=1, max_length=500),
+    BeforeValidator(_without_zero_width_spaces),
     AfterValidator(_visible_reason),
 ]
 AccountClass = Literal["owner", "manager", "staff"]
