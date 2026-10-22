@@ -9,6 +9,8 @@ from typing import Final, Protocol
 from unicodedata import normalize
 from uuid import UUID
 
+from property_rental.visible_text import tidy_spaces
+
 RECOVERY_CODE_COUNT: Final = 10
 BOOTSTRAP_ACKNOWLEDGEMENT: Final = "I HAVE STORED THE RECOVERY CODES"
 PASSWORD_MIN_CODE_POINTS: Final = 15
@@ -140,6 +142,11 @@ class BootstrapRequest:
             not value or value != value.strip() or not value.isprintable()
             for value in (self.username, self.display_name, self.audit_name)
         ):
+            raise ValueError("invalid initial Owner bootstrap identity")
+        # Login sub-slice L2d review round 1 (security): sign-in tidies the typed username
+        # (Q-2026-10-22-170 (a)), so a username that tidying would change, such as one with two
+        # spaces in a row, is refused until L7 makes the bootstrap store the sign-in form.
+        if tidy_spaces(self.username) != self.username:
             raise ValueError("invalid initial Owner bootstrap identity")
 
 

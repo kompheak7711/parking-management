@@ -45501,7 +45501,7 @@
       "test_level": "unit",
       "test_path": "backend/tests/test_access_admin_flow.py",
       "status": "implemented",
-      "notes": "Names are made NFC with each run of space separators one space (Khmer names kept) while control characters and line breaks inside a name are left for the database to refuse; usernames are NFC, trimmed and lower case, and a username with white space other than U+0020 is refused (login slice sub-slice L2b-2 and its review round 1, DL-081)."
+      "notes": "Names are made NFC with each run of space separators one space (Khmer names kept) while control characters and line breaks inside a name are left for the database to refuse; usernames are NFC, trimmed and lower case, and a username with white space other than U+0020 is refused (login slice sub-slice L2b-2 and its review round 1, DL-081); since sub-slice L2d (Q-2026-10-22-170 (a)) a username with a no-break, thin or ideographic space is tidied to one U+0020 and only a tab is still refused."
     },
     {
       "test_id": "test_database_errors_become_stable_refusals_without_database_text",
@@ -45540,7 +45540,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_access_admin_flow_migration.py",
       "status": "implemented",
-      "notes": "ACCOUNT_WITHOUT_CLASS, a not-found account, NOT_MANAGER_OR_STAFF for the Owner's sessions, INVALID_NAME for a line break in a name and a no-break space in a username, and not found for another Property's bundles and history; a result check that fails before the commit leaves no account and no audit event (login slice sub-slice L2b-2 review round 1, DL-081)."
+      "notes": "ACCOUNT_WITHOUT_CLASS, a not-found account, NOT_MANAGER_OR_STAFF for the Owner's sessions, INVALID_NAME for a line break in a name and a no-break space in a username, and not found for another Property's bundles and history; a result check that fails before the commit leaves no account and no audit event (login slice sub-slice L2b-2 review round 1, DL-081); since sub-slice L2d (Q-2026-10-22-170 (a)) the username case holds a tab, because a no-break space is now tidied into an ordinary space."
     },
     {
       "test_id": "test_every_known_database_message_is_word_for_word_in_the_migrations",
@@ -45667,6 +45667,83 @@
       "test_path": "backend/tests/test_access_admin_api.py",
       "status": "implemented",
       "notes": "Over every code point but the surrogates, the reason rule refuses a subset of what the name rule refuses, and the difference is exactly U+200C, U+200D (Khmer text) and U+FE0F (the emoji keyboard), so the reason list, which has no database twin, stays complete (login slice sub-slice L2c review round 2, DL-081)."
+    },
+    {
+      "test_id": "test_names_with_odd_or_double_spaces_reach_the_flow_tidied",
+      "upstream_ids": [
+        "API-079",
+        "DL-081"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_access_admin_api.py",
+      "status": "implemented",
+      "notes": "The API tidies a username, display name and audit name before the length rule (every space separator becomes U+0020, a run of them one, none at either end), so \"Sokha  Chan\" typed with two spaces reaches the flow as \"Sokha Chan\", and a display name that is 129 characters after tidying is refused with nothing called; review round 1: a username made only of odd spaces is refused with nothing called, and the Owner's reset reason keeps its spaces as typed (only U+200B removed) (Q-2026-10-22-170 (a), login slice sub-slice L2d, DL-081)."
+    },
+    {
+      "test_id": "test_usernames_are_tidied_like_the_sign_in_lookup_and_other_white_space_is_refused",
+      "upstream_ids": [
+        "API-079",
+        "API-096",
+        "DL-081",
+        "DB-AUTH-001"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_access_admin_flow.py",
+      "status": "implemented",
+      "notes": "The flow's username step and the sign-in lookup's username rule (normalize_local_username) give the same tidied username for spellings with two spaces, a no-break, ideographic, thin, narrow no-break, medium mathematical or Ogham space, U+200B and capital letters; a username with a tab, line feed, U+2028 or U+0085 is still refused as INVALID_NAME (Q-2026-10-22-170 (a), login slice sub-slice L2d, DL-081)."
+    },
+    {
+      "test_id": "test_sign_in_lookup_and_limiter_tidy_spaces_in_the_typed_username",
+      "upstream_ids": [
+        "API-096",
+        "DL-081",
+        "DB-AUTH-001",
+        "SEC-012"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_local_authentication.py",
+      "status": "implemented",
+      "notes": "The sign-in lookup asks for the tidied username \"sokha chan\" for every spelling with odd or double spaces, and with a per-account limit of one a second try typed with two spaces is rate limited as the same username (Q-2026-10-22-170 (a), login slice sub-slice L2d, DL-081)."
+    },
+    {
+      "test_id": "test_a_name_typed_with_two_spaces_is_saved_tidied_and_found_at_sign_in",
+      "upstream_ids": [
+        "API-079",
+        "API-080",
+        "API-096",
+        "DL-081",
+        "DB-AUTH-001",
+        "DB-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_name_hidden_characters_migration.py",
+      "status": "implemented",
+      "notes": "Owner's example on a throwaway database as the runtime role: a Staff member typed as \"Sokha  Chan\" with two spaces is saved as the display name \"Sokha Chan\" and the username \"sokha chan\" with no error; every spelling the sign-in lookup tidies finds the account through the runtime role's real lookup (review round 1; a test credential row written as the table owner) and a spelling with a tab finds nothing; the same username typed with a no-break space is refused as taken; an account update and a bundle name are tidied too (Q-2026-10-22-170 (a), login slice sub-slice L2d, DL-081)."
+    },
+    {
+      "test_id": "test_the_tidied_spaces_are_exactly_the_unicode_space_separators",
+      "upstream_ids": [
+        "API-079",
+        "API-096",
+        "DL-081"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_access_admin_flow.py",
+      "status": "implemented",
+      "notes": "Over every code point but the surrogates, the spaces that are tidied are exactly Unicode category Zs (Q-2026-10-22-170 (a), login slice sub-slice L2d review round 1, DL-081)."
+    },
+    {
+      "test_id": "test_request_refuses_a_username_that_sign_in_would_tidy",
+      "upstream_ids": [
+        "API-100",
+        "DL-059",
+        "DL-081",
+        "SEC-074"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_initial_owner_bootstrap_cli.py",
+      "status": "implemented",
+      "notes": "The first-Owner bootstrap request refuses a username with two spaces in a row, a no-break space or a leading space, which sign-in would tidy, and accepts one with single spaces, so the bootstrapped Owner can always sign in until L7 makes the bootstrap store the sign-in form (Q-2026-10-22-170 (a), login slice sub-slice L2d review round 1 (security), DL-081)."
     }
   ]
 }

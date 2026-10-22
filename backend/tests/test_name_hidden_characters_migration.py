@@ -21,9 +21,10 @@ from alembic.config import Config
 from alembic.script import ScriptDirectory
 
 from property_rental.access_admin_api import AccessAdministrationRejected
-from property_rental.access_admin_flow import SPACE_SEPARATORS, PostgresAccessAdministrationFlow
-from property_rental.visible_text import HIDDEN_NAME_CHARACTERS
+from property_rental.access_admin_flow import PostgresAccessAdministrationFlow
+from property_rental.visible_text import HIDDEN_NAME_CHARACTERS, SPACE_SEPARATORS
 from test_access_admin_flow_migration import AdminDatabase, context
+from test_account_class_migration import ADD_CREDENTIAL, repository_for
 from test_default_role_bundles_migration import SEED_QUERY
 from test_migrations import _run_alembic, _temporary_migration_database, _url_with_database
 from test_move_in_migration import migrated_database_url as migrated_database_url
@@ -263,6 +264,81 @@ def test_a_name_typed_with_a_khmer_keyboard_is_saved_without_its_zero_width_spac
         audit_context=context(admin_database.owner),
     )
     assert renamed.name == f"Back desk {suffix}"
+
+
+def test_a_name_typed_with_two_spaces_is_saved_tidied_and_found_at_sign_in(
+    admin_database: AdminDatabase,
+) -> None:
+    """Owner's example (Q-2026-10-22-170 (a), login sub-slice L2d): Staff types "Sokha  Chan"
+    with two spaces on the iPad; it is saved as "Sokha Chan" (username "sokha chan") and nobody
+    sees an error; every spelling the sign-in lookup tidies finds that account on the database
+    (review round 1: a real lookup, with a test credential row written as the table owner), and
+    the same username typed with a no-break space is taken. The database still refuses two
+    spaces in a row from a caller that skips the flow (tested below), so its rule stays the last
+    guard."""
+    flow = PostgresAccessAdministrationFlow(admin_database.runtime_url)
+    suffix = uuid.uuid4().hex[:8]
+    created = flow.create_user(
+        property_id=admin_database.property_id,
+        username=f"Sokha  Chan {suffix}",
+        display_name="Sokha  Chan",
+        audit_name=f"\u00a0Sokha \u3000Chan {suffix} ",
+        account_class="staff",
+        audit_context=context(admin_database.owner),
+    )
+    assert (created.username, created.display_name, created.audit_name) == (
+        f"sokha chan {suffix}",
+        "Sokha Chan",
+        f"Sokha Chan {suffix}",
+    )
+    with psycopg.connect(admin_database.owner_url) as connection:
+        stored = connection.execute(
+            "SELECT normalized_username FROM app.user_accounts WHERE actor_id = %s",
+            (created.user_id,),
+        ).fetchone()
+        connection.execute(ADD_CREDENTIAL, (created.user_id,))
+        connection.commit()
+    assert stored == (f"sokha chan {suffix}",)
+    with psycopg.connect(admin_database.runtime_url) as runtime:
+        repository = repository_for(runtime)
+        for typed in (
+            f"Sokha  Chan {suffix}",
+            f" SOKHA\u00a0Chan\u2009 {suffix} ",
+            f"sokha\u3000chan {suffix}",
+        ):
+            found = repository.find_by_username(typed)
+            assert found is not None and found.actor_id == str(created.user_id), typed
+        assert repository.find_by_username(f"sokha\tchan {suffix}") is None
+    refused(
+        "USERNAME_TAKEN",
+        409,
+        flow.create_user,
+        property_id=admin_database.property_id,
+        username=f"sokha\u00a0chan {suffix}",
+        display_name="Another Sokha",
+        audit_name="Another Sokha",
+        account_class="staff",
+        audit_context=context(admin_database.owner),
+    )
+    changed = flow.update_user(
+        user_id=created.user_id,
+        property_id=admin_database.property_id,
+        expected_version=created.version,
+        display_name="Chan\u202f\u202fSokha ",
+        audit_name=None,
+        lifecycle_state=None,
+        mfa_policy_class=None,
+        revoke_applicable_sessions_if_disabled=True,
+        audit_context=context(admin_database.owner),
+    )
+    assert changed.display_name == "Chan Sokha"
+    bundle = flow.create_role_bundle(
+        property_id=admin_database.property_id,
+        name=f"Front  desk\u3000{suffix}",
+        capability_ids=(),
+        audit_context=context(admin_database.owner),
+    )
+    assert bundle.name == f"Front desk {suffix}"
 
 
 def test_the_flow_refuses_the_remaining_hidden_characters_in_names(

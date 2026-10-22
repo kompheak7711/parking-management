@@ -10,7 +10,7 @@ from threading import Lock
 from typing import Literal, Protocol
 
 from property_rental.password_security import PasswordHashService
-from property_rental.visible_text import without_zero_width_spaces
+from property_rental.visible_text import tidy_spaces, without_zero_width_spaces
 
 
 class CursorBoundary(Protocol):
@@ -136,8 +136,10 @@ class BoundedAuthenticationAttemptLimiter:
 
 def normalize_local_username(username: str) -> str:
     """Apply the lower-and-space-trim normalization enforced by DB-AUTH-001, after removing
-    U+200B and making the username NFC, as account creation does (Q-2026-10-22-169 (a))."""
-    return unicodedata.normalize("NFC", without_zero_width_spaces(username)).strip(" ").lower()
+    U+200B, making the username NFC (Q-2026-10-22-169 (a)) and tidying its spaces
+    (Q-2026-10-22-170 (a)), as account creation does."""
+    nfc = unicodedata.normalize("NFC", without_zero_width_spaces(username))
+    return tidy_spaces(nfc).lower()
 
 
 class PostgresLocalAccountRepository:

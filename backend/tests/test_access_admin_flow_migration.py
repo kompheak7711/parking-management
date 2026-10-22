@@ -675,7 +675,9 @@ def test_the_flow_refuses_each_reachable_case_and_rolls_back_a_mismatched_result
         422,
         flow.create_user,
         property_id=database.property_id,
-        username="ann\u00a0lee",
+        # Q-2026-10-22-170 (a) (sub-slice L2d): a no-break space is now tidied into an ordinary
+        # space (test_name_hidden_characters_migration.py); a tab is still refused.
+        username="ann\tlee",
         display_name="Ann Lee",
         audit_name="Ann Lee",
         account_class="staff",

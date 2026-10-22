@@ -6,7 +6,6 @@ change reads its result back and checks it in the same transaction, before the c
 errors become stable codes with fixed plain messages; database text is never passed on.
 """
 
-import re
 import unicodedata
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
@@ -36,7 +35,7 @@ from property_rental.access_admin_api import (
 )
 from property_rental.identity import CapabilityGrant, ObjectScope
 from property_rental.local_authentication import normalize_local_username
-from property_rental.visible_text import without_zero_width_spaces
+from property_rental.visible_text import tidy_spaces, without_zero_width_spaces
 
 # The request id pattern allows text that is not a UUID; such an id gets a stable UUID5 in this
 # namespace as the audit correlation id.
@@ -183,9 +182,6 @@ INVALID_NAME: Final = (
     "INVALID_NAME",
     "A name has 1 to 128 visible characters and no hidden characters.",
 )
-# The space separators (Unicode category Zs) folded in names; control characters and line
-# breaks are left for the database name check to refuse (review round 1).
-SPACE_SEPARATORS: Final = re.compile("[\u0020\u00a0\u1680\u2000-\u200a\u202f\u205f\u3000]+")
 GENERIC_REFUSALS: Final[dict[str, tuple[int, str, str]]] = {
     "40001": (412, "STALE_VERSION", "The record changed since it was read. Reload it."),
     "23505": (409, "CONFLICT", "The request conflicts with the current state."),
@@ -205,18 +201,19 @@ def correlation_id(request_id: str) -> UUID:
 
 def normalized_name(value: str) -> str:
     """Without U+200B (Q-2026-10-22-169 (a)), NFC, with each run of space separators made one
-    space and none at either end."""
-    nfc = unicodedata.normalize("NFC", without_zero_width_spaces(value))
-    return SPACE_SEPARATORS.sub(" ", nfc).strip(" ")
+    space and none at either end (Q-2026-10-22-170 (a)); control characters and line breaks are
+    left for the database name check to refuse (review round 1)."""
+    return tidy_spaces(unicodedata.normalize("NFC", without_zero_width_spaces(value)))
 
 
 def normalized_username(value: str) -> str:
-    """NFC and DB-AUTH-001 normalization; a username has no white space but U+0020
-    (review round 1, security: two usernames must not look the same)."""
-    nfc = unicodedata.normalize("NFC", without_zero_width_spaces(value))
-    if any(character.isspace() and character != " " for character in nfc):
+    """The sign-in lookup's DB-AUTH-001 normalization (U+200B removed, NFC, spaces tidied,
+    lower case; Q-2026-10-22-170 (a)); any other white space, such as a tab or a line break, is
+    refused (review round 1, security: two usernames must not look the same)."""
+    username = normalize_local_username(value)
+    if any(character.isspace() and character != " " for character in username):
         raise AccessAdministrationRejected(*INVALID_NAME)
-    return normalize_local_username(nfc)
+    return username
 
 
 def _owner(actor_id: str) -> UUID:

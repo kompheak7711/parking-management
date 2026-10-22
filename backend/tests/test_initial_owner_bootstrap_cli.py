@@ -336,6 +336,29 @@ def test_request_requires_exactly_ten_distinct_recovery_code_identifiers() -> No
         )
 
 
+def test_request_refuses_a_username_that_sign_in_would_tidy() -> None:
+    """DL-081, Q-2026-10-22-170 (a) (login sub-slice L2d review round 1, security): sign-in
+    tidies the typed username, so the bootstrap refuses a username with two spaces in a row,
+    which it would store as typed, until L7 makes it store the sign-in form."""
+
+    def request_for(username: str) -> BootstrapRequest:
+        return BootstrapRequest(
+            actor_id=REQUEST.actor_id,
+            correlation_id=REQUEST.correlation_id,
+            enrollment_id=REQUEST.enrollment_id,
+            recovery_set_id=REQUEST.recovery_set_id,
+            recovery_code_ids=REQUEST.recovery_code_ids,
+            username=username,
+            display_name="Initial Owner",
+            audit_name="initial-owner",
+        )
+
+    for refused in ("sokha  chan", "sokha\u00a0chan", " sokha chan"):
+        with pytest.raises(ValueError, match="invalid initial Owner bootstrap identity"):
+            request_for(refused)
+    assert request_for("sokha chan").username == "sokha chan"
+
+
 def test_recovery_codes_are_written_to_the_dedicated_tty_descriptor_not_stdout(
     capsys: pytest.CaptureFixture[str],
 ) -> None:

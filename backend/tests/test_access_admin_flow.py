@@ -1,5 +1,7 @@
 """Helpers of the PostgreSQL administration flow (login slice sub-slice L2b-2)."""
 
+import sys
+import unicodedata
 from pathlib import Path
 from uuid import UUID, uuid4
 
@@ -21,6 +23,7 @@ from property_rental.access_admin_flow import (
     normalized_username,
 )
 from property_rental.local_authentication import normalize_local_username
+from property_rental.visible_text import SPACE_SEPARATORS
 
 
 def test_the_request_id_is_the_correlation_id_or_a_stable_uuid5_of_it() -> None:
@@ -44,11 +47,13 @@ def test_names_are_nfc_with_single_spaces_and_usernames_lower_case() -> None:
         assert normalized_name(kept) == kept
     assert normalized_username(" Dara.Sok ") == "dara.sok"
     assert normalized_username("Cafe\u0301") == "caf\u00e9"
-    # Review round 1 (security): no white space but U+0020 in a username.
-    for lookalike in ("ann\u00a0lee", "ann\u2009lee", "ann\u3000lee", "ann\tlee"):
-        with pytest.raises(AccessAdministrationRejected) as caught:
-            normalized_username(lookalike)
-        assert (caught.value.status_code, caught.value.code) == (422, "INVALID_NAME")
+    # Review round 1 (security): no white space but U+0020 in a username. Q-2026-10-22-170 (a)
+    # (sub-slice L2d): other spaces are now tidied into one U+0020 instead of refused.
+    for spaced in ("ann\u00a0lee", "ann\u2009lee", "ann\u3000lee"):
+        assert normalized_username(spaced) == "ann lee"
+    with pytest.raises(AccessAdministrationRejected) as caught:
+        normalized_username("ann\tlee")
+    assert (caught.value.status_code, caught.value.code) == (422, "INVALID_NAME")
 
 
 def test_database_errors_become_stable_refusals_without_database_text() -> None:
@@ -110,3 +115,38 @@ def test_names_usernames_and_the_sign_in_lookup_lose_the_zero_width_space() -> N
     assert normalized_username("\u200bDara.Sok\u200b ") == "dara.sok"
     assert normalize_local_username(" Cafe\u0301\u200b.Desk ") == "caf\u00e9.desk"
     assert normalize_local_username("Dara.Sok") == normalized_username("Dara.Sok")
+
+
+def test_usernames_are_tidied_like_the_sign_in_lookup_and_other_white_space_is_refused() -> None:
+    """DL-081, Q-2026-10-22-170 (a) (sub-slice L2d): a username typed with odd or double spaces
+    is saved with one ordinary space between words and none at either end, exactly as the
+    sign-in lookup tidies the typed username; a tab or a line break is still refused."""
+    for typed in (
+        "Sokha  Chan",
+        " Sokha\u00a0Chan ",
+        "Sokha\u3000\u2009 Chan",
+        "\u200bSokha \u202f Chan\u205f",
+        "SOKHA\u1680CHAN",
+    ):
+        assert normalized_username(typed) == "sokha chan", typed
+        assert normalize_local_username(typed) == "sokha chan", typed
+    assert normalized_name("Sokha  Chan") == "Sokha Chan"
+    for refused in ("Sokha\tChan", "Sokha\nChan", "Sokha\u2028Chan", "Sokha\x85Chan"):
+        with pytest.raises(AccessAdministrationRejected) as caught:
+            normalized_username(refused)
+        assert (caught.value.status_code, caught.value.code) == (422, "INVALID_NAME")
+
+
+def test_the_tidied_spaces_are_exactly_the_unicode_space_separators() -> None:
+    """DL-081, Q-2026-10-22-170 (a) (sub-slice L2d review round 1): the spaces that are tidied
+    are exactly the code points of Unicode category Zs, so every space a keyboard can type is
+    tidied and nothing else is."""
+    space_separators = {
+        point for point in range(sys.maxunicode + 1) if unicodedata.category(chr(point)) == "Zs"
+    }
+    tidied = {
+        point
+        for point in range(sys.maxunicode + 1)
+        if not 0xD800 <= point <= 0xDFFF and SPACE_SEPARATORS.fullmatch(chr(point))
+    }
+    assert tidied == space_separators

@@ -27,7 +27,11 @@ from property_rental.identity import (
     is_authorized,
 )
 from property_rental.settings import Settings
-from property_rental.visible_text import HIDDEN_REASON_CHARACTERS, without_zero_width_spaces
+from property_rental.visible_text import (
+    HIDDEN_REASON_CHARACTERS,
+    tidy_spaces,
+    without_zero_width_spaces,
+)
 
 ACCESS_ADMIN_CAPABILITY: Final = "identity.manage_access"
 USER_ACCOUNT_OBJECT_TYPE: Final = "user_account"
@@ -40,7 +44,22 @@ def _without_zero_width_spaces(value: object) -> object:
     return without_zero_width_spaces(value) if isinstance(value, str) else value
 
 
+def _tidied_name(value: object) -> object:
+    # Q-2026-10-22-170 (a): a name typed with odd or double spaces is tidied, not refused; U+200B
+    # is removed and the spaces tidied before the trim and the length rule, so the length counts
+    # the characters that are saved.
+    return tidy_spaces(without_zero_width_spaces(value)) if isinstance(value, str) else value
+
+
 BoundedName = Annotated[
+    str,
+    StringConstraints(strip_whitespace=True, min_length=1, max_length=128),
+    BeforeValidator(_tidied_name),
+]
+# The Owner's reset reason keeps its L2c rule (U+200B removed, 1 to 128 characters) until login
+# sub-slice L4 moves it to `BoundedReason`; its spaces are not tidied, because the owner rule of
+# Q-2026-10-22-170 (a) covers names only (review round 1 of sub-slice L2d).
+RecoveryReason = Annotated[
     str,
     StringConstraints(strip_whitespace=True, min_length=1, max_length=128),
     BeforeValidator(_without_zero_width_spaces),
@@ -610,7 +629,7 @@ class AdministrativeRecoveryRequest(BaseModel):
 
     new_password: str = Field(min_length=15, max_length=128)
     reset_mfa: bool = False
-    reason: BoundedName
+    reason: RecoveryReason
 
 
 class UserAccountData(BaseModel):

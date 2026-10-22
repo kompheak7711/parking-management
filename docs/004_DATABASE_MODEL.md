@@ -5184,6 +5184,10 @@ Amended by DL-081 (login sub-slice L2c, migration `20270126_183`, Q-2026-10-22-1
 `app.assert_account_names` also refuses the characters and spaces that DB-AUTH-007's
 `role_bundles_name_visible_check` adds, and a name that is not NFC, so every username an
 administration function writes is NFC.
+Amended by DL-081 (login sub-slice L2d, Q-2026-10-22-170 (a); no schema change): the API and the
+flow tidy odd and double spaces in a name before calling these functions (every space separator
+becomes U+0020, a run of them one, none at either end), so their space checks only refuse a caller
+that skips the API; the sign-in lookup tidies the typed username the same way.
 Session revocation (DB-AUTH-004): disabling revokes every unexpired session (`account_disabled`)
 and keeps the account's assignments and Settings access as history (no function enables an
 account again, and DB-AUTH-007 gives a disabled account nothing); raising a Staff account's MFA

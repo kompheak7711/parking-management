@@ -341,3 +341,37 @@ def test_sign_in_lookup_and_limiter_use_the_creation_rule_for_the_username() -> 
         AuthenticationAuditEvidence(outcome="rejected", reason="credentials_rejected"),
         AuthenticationAuditEvidence(outcome="rejected", reason="rate_limited"),
     ]
+
+
+def test_sign_in_lookup_and_limiter_tidy_spaces_in_the_typed_username() -> None:
+    """DL-081, Q-2026-10-22-170 (a) (login sub-slice L2d): the sign-in lookup and the attempt
+    limiter key tidy the typed username as account creation does (every space separator becomes
+    U+0020, a run of them one, none at either end), so "Sokha  Chan" typed with two spaces on an
+    iPad finds and counts the account saved as "sokha chan"."""
+    for typed in ("Sokha  Chan", " Sokha\u00a0Chan ", "sokha\u3000\u2009chan", "sokha chan"):
+        connection = StubConnection(None)
+        assert PostgresLocalAccountRepository(connection).find_by_username(typed) is None
+        assert connection.cursor_instance.parameters == ("sokha chan",)
+
+    audit_sink = CollectingAuditSink()
+    service = LocalAuthenticationService(
+        repository=StubAccountRepository(None),
+        password_service=PasswordHashService(),
+        attempt_limiter=BoundedAuthenticationAttemptLimiter(
+            max_attempts_per_account=1,
+            max_attempts_per_source=10,
+            window_seconds=60,
+        ),
+        audit_sink=audit_sink,
+    )
+    for username in ("sokha chan", "Sokha  Chan"):
+        result = service.authenticate(
+            username=username,
+            password="wrong password",
+            request_source="source-l2d",
+        )
+        assert result == AuthenticationResult(is_authenticated=False)
+    assert audit_sink.evidence == [
+        AuthenticationAuditEvidence(outcome="rejected", reason="credentials_rejected"),
+        AuthenticationAuditEvidence(outcome="rejected", reason="rate_limited"),
+    ]

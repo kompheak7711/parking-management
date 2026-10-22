@@ -17,6 +17,7 @@ from property_rental.access_admin_api import (
     AccessAdministrationConflict,
     AccessAdministrationFlow,
     AdministrationAuditContext,
+    AdministrativeRecoveryRequest,
     AdministrativeRecoveryView,
     AuthorizationHistoryView,
     CapabilityView,
@@ -1928,3 +1929,75 @@ def test_the_reason_list_differs_from_the_name_list_only_by_kept_invisible_chara
     reasons = {point for point in points if HIDDEN_REASON_CHARACTERS.fullmatch(chr(point))}
     assert reasons <= names
     assert names - reasons == {0x200C, 0x200D, 0xFE0F}
+
+
+def test_names_with_odd_or_double_spaces_reach_the_flow_tidied() -> None:
+    """DL-081, Q-2026-10-22-170 (a) (login sub-slice L2d): the screen refuses no space; the API
+    tidies a username, display name and audit name before the length rule (every space
+    separator becomes U+0020, a run of them one, none at either end), so "Sokha  Chan" typed
+    with two spaces on an iPad reaches the flow as "Sokha Chan" and the 128 limit counts the
+    tidied name."""
+    flow = RecordingAccessAdministrationFlow()
+    app = authorized_app(flow)
+    created = request(
+        app,
+        "POST",
+        f"/api/v1/properties/{PROPERTY_ID}/users",
+        payload={
+            "username": " Sokha\u00a0 Chan ",
+            "display_name": "Sokha  Chan",
+            "audit_name": "x" * 64 + "\u3000\u2009  " + "y" * 63,
+            "account_class": "staff",
+        },
+    )
+    assert created.status_code == 201, created.text
+    assert flow.calls[-1:] == [
+        (
+            "create_user",
+            (
+                PROPERTY_ID,
+                "Sokha Chan",
+                "Sokha Chan",
+                "x" * 64 + " " + "y" * 63,
+                "staff",
+                ACTOR_ID,
+                "access-admin-test",
+            ),
+        )
+    ]
+
+    calls = len(flow.calls)
+    too_long = request(
+        app,
+        "POST",
+        f"/api/v1/properties/{PROPERTY_ID}/users",
+        payload={
+            "username": "sokha.chan",
+            "display_name": "x" * 64 + "  " + "y" * 64,
+            "audit_name": "Sokha Chan",
+            "account_class": "staff",
+        },
+    )
+    assert too_long.status_code == 422
+    assert len(flow.calls) == calls
+    # Review round 1: a name made only of odd spaces is empty after tidying and refused.
+    only_spaces = request(
+        app,
+        "POST",
+        f"/api/v1/properties/{PROPERTY_ID}/users",
+        payload={
+            "username": "\u00a0\u3000 ",
+            "display_name": "Sokha Chan",
+            "audit_name": "Sokha Chan",
+            "account_class": "staff",
+        },
+    )
+    assert only_spaces.status_code == 422
+    assert len(flow.calls) == calls
+    # Review round 1: the Owner's reset reason is free text, not a name; its spaces stay as typed
+    # (only U+200B is removed) until L4 moves it to the reason rule.
+    recovery = AdministrativeRecoveryRequest(
+        new_password="correct horse battery staple",
+        reason="forgot  password\u200b again",
+    )
+    assert recovery.reason == "forgot  password again"
