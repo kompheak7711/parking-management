@@ -37,6 +37,8 @@ class SessionView:
     absolute_expires_at: datetime
     mfa_assurance: Literal["none", "totp", "recovery_code"]
     reauthenticated_at: datetime | None
+    # The signed-in person's display name, for the shell (login sub-slice L3a-1).
+    display_name: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -253,7 +255,9 @@ class LoginRequest(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    username: str = Field(min_length=1, max_length=256)
+    # At most 128 characters, the longest saved username (login sub-slice L3a-1; L2c note), so
+    # the NFC step of the sign-in lookup never runs on a long input.
+    username: str = Field(min_length=1, max_length=128)
     password: str = Field(min_length=1, max_length=1024)
 
 
@@ -312,6 +316,7 @@ class SessionData(BaseModel):
     absolute_expires_at: datetime
     mfa_assurance: Literal["none", "totp", "recovery_code"]
     reauthenticated_at: datetime | None
+    display_name: str | None = None
 
 
 class AuthenticationData(BaseModel):

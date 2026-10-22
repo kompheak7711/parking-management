@@ -204,6 +204,8 @@ def test_successful_local_login_sets_protected_session_and_csrf_cookies() -> Non
                 "absolute_expires_at": "2026-08-20T09:00:00Z",
                 "mfa_assurance": "totp",
                 "reauthenticated_at": None,
+                # Login sub-slice L3a-1 (approved plan): the session shows the display name.
+                "display_name": None,
             },
         },
         "meta": {"request_id": "login-success"},
@@ -546,6 +548,7 @@ def test_authenticated_session_inspection_returns_only_bounded_non_secret_state(
         "absolute_expires_at",
         "mfa_assurance",
         "reauthenticated_at",
+        "display_name",
     }
     assert "session-token-secret" not in response.text
 

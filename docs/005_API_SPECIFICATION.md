@@ -1389,12 +1389,16 @@ Amended by DL-081 (login sub-slice L2c, owner answer (a) to Q-2026-10-22-169): s
 
 Amended by DL-081 (login sub-slice L2d, owner answer (a) to Q-2026-10-22-170): the sign-in lookup and the wrong-try count also tidy the typed username as account creation does: every space separator becomes an ordinary space, a run of spaces becomes one, and spaces at either end are removed, so "Sokha  Chan" typed with two spaces finds the account "sokha chan".
 
+Amended by DL-081 (login sub-slice L3a-1): sign-in, the session read and sign-out on PostgreSQL are described under API-097.
+
 ## API-097 — Session Lifetime
 
 Browser sessions enforce a 30-minute inactivity timeout and a 24-hour absolute lifetime.
 Activity cannot extend the absolute expiry. Logout, password/MFA recovery, account
 disablement, and material privilege reduction revoke applicable sessions. High-risk
 administration may require recent password authentication or an additional factor.
+
+Amended by DL-081 (login sub-slice L3a-1): `POST /auth/login`, `GET /auth/session` and `POST /auth/logout` run on PostgreSQL when `APP_DATABASE_URL` is set. The sign-in username is at most 128 characters. Every refused sign-in (wrong password, unknown, disabled or unclassified account, the per-process flood guard) answers the same `401`. An account whose MFA policy is `required` answers the phase `mfa_required` with no session; the MFA challenge, enrollment, reauthentication and recovery-code routes answer `503` (after their Origin, CSRF and cookie checks) until login sub-slices L3c and L3d. Any other account gets a session: the `__Host-prm_session` cookie holds a random token whose sha256 digest is the only thing stored. The session answer adds `display_name`. `GET /auth/session` answers only a live session (not revoked, before both expiries by the database clock, of an active classified account whose MFA policy is `optional` until login sub-slice L3c) and does not count as activity; `POST /auth/logout` revokes the session when it is not revoked and before both expiries, whatever the account's state (reason `logout`), and clears the cookies.
 
 ## API-098 — Recovery Codes
 

@@ -45744,6 +45744,171 @@
       "test_path": "backend/tests/test_initial_owner_bootstrap_cli.py",
       "status": "implemented",
       "notes": "The first-Owner bootstrap request refuses a username with two spaces in a row, a no-break space or a leading space, which sign-in would tidy, and accepts one with single spaces, so the bootstrapped Owner can always sign in until L7 makes the bootstrap store the sign-in form (Q-2026-10-22-170 (a), login slice sub-slice L2d review round 1 (security), DL-081)."
+    },
+    {
+      "test_id": "test_a_staff_account_signs_in_reads_its_session_and_signs_out",
+      "upstream_ids": [
+        "API-096",
+        "API-097",
+        "DL-055",
+        "DL-057",
+        "DL-081",
+        "DB-AUTH-004",
+        "SEC-015",
+        "TEST-131"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_auth_flow_migration.py",
+      "status": "implemented",
+      "notes": "A Staff account with MFA policy optional signs in through PostgresAuthenticationFlow as the runtime role: the session row keeps only the sha256 digest of the cookie token, the view has the display name and a new CSRF token, the session is read and signed out (revoked by itself with reason logout), and reading or signing out again, an unknown token, an empty token or a token over 128 characters is refused (login slice sub-slice L3a-1, DL-081)."
+    },
+    {
+      "test_id": "test_every_failed_sign_in_gives_the_same_rejection_and_writes_no_session",
+      "upstream_ids": [
+        "API-096",
+        "DL-055",
+        "DL-081",
+        "SEC-010",
+        "SEC-011",
+        "TEST-108"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_auth_flow_migration.py",
+      "status": "implemented",
+      "notes": "A wrong password, an unknown username, a disabled account and an account without a class all get the one generic rejection and no session row is written (login slice sub-slice L3a-1, DL-081)."
+    },
+    {
+      "test_id": "test_an_account_that_needs_mfa_gets_no_session_before_the_challenge",
+      "upstream_ids": [
+        "API-096",
+        "DL-056",
+        "DL-081",
+        "SEC-013",
+        "TEST-128"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_auth_flow_migration.py",
+      "status": "implemented",
+      "notes": "The Owner and a Manager (MFA policy required) get the phase mfa_required with a pre-authentication token and no session, no session row and no actor; the MFA challenge answers unavailable until sub-slice L3c (login slice sub-slice L3a-1, DL-081)."
+    },
+    {
+      "test_id": "test_a_session_ends_after_30_idle_minutes_and_after_24_hours",
+      "upstream_ids": [
+        "API-097",
+        "DL-057",
+        "DL-081",
+        "DB-AUTH-004",
+        "SEC-017",
+        "TEST-131"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_auth_flow_migration.py",
+      "status": "implemented",
+      "notes": "By the database clock, a session last active 29 minutes ago is read and signed out, one last active 31 minutes ago is refused, and one created 24 hours ago and last active 10 minutes ago is refused; neither expired session can be signed out (login slice sub-slice L3a-1, DL-081)."
+    },
+    {
+      "test_id": "test_the_sign_in_routes_use_secure_cookies_and_keep_secrets_out_of_answers_and_logs",
+      "upstream_ids": [
+        "API-096",
+        "API-097",
+        "DL-081",
+        "SEC-015",
+        "SEC-016",
+        "TEST-110"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_auth_flow_migration.py",
+      "status": "implemented",
+      "notes": "Through create_app with the real flow: the same 401 body for a wrong password, an unknown and a disabled account; the session cookie is __Host-, Secure, HttpOnly, SameSite=Lax, path / and without Domain; the token is never in a body; answers are no-store; the session answer has the display name; signing out clears the three cookies and the revoked token is refused; no token, CSRF value, password or username is in the log (login slice sub-slice L3a-1, DL-081)."
+    },
+    {
+      "test_id": "test_the_session_token_digest_is_sha256_and_a_long_or_empty_token_is_refused",
+      "upstream_ids": [
+        "DB-AUTH-004",
+        "DL-081",
+        "SEC-015"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_auth_flow.py",
+      "status": "implemented",
+      "notes": "The stored session verifier is the sha256 digest of the cookie token, and an empty token or one over 128 characters is refused before hashing (login slice sub-slice L3a-1, DL-081)."
+    },
+    {
+      "test_id": "test_the_sign_in_username_is_at_most_128_characters",
+      "upstream_ids": [
+        "API-096",
+        "DL-081"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_auth_flow.py",
+      "status": "implemented",
+      "notes": "The sign-in request takes a username of at most 128 characters, the longest saved username, so the sign-in lookup never makes a long input NFC (login slice sub-slice L3a-1, L2c note, DL-081)."
+    },
+    {
+      "test_id": "test_the_mfa_reauthentication_and_recovery_code_methods_stay_unavailable",
+      "upstream_ids": [
+        "API-096",
+        "API-098",
+        "DL-081"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_auth_flow.py",
+      "status": "implemented",
+      "notes": "Until sub-slices L3c and L3d, the MFA challenge, enrollment, reauthentication and recovery-code methods of PostgresAuthenticationFlow answer unavailable (login slice sub-slice L3a-1, DL-081)."
+    },
+    {
+      "test_id": "test_a_database_that_cannot_be_reached_answers_unavailable",
+      "upstream_ids": [
+        "API-096",
+        "API-097",
+        "DL-081",
+        "SEC-010"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_auth_flow.py",
+      "status": "implemented",
+      "notes": "Sign-in, the session read and sign-out against a database that cannot be reached raise AuthenticationUnavailable, and the login and session routes answer 503, with nothing that says whether the account exists (login slice sub-slice L3a-1 review round 1, DL-081)."
+    },
+    {
+      "test_id": "test_a_live_session_ends_when_its_account_is_disabled_or_needs_mfa",
+      "upstream_ids": [
+        "API-097",
+        "DL-056",
+        "DL-057",
+        "DL-081",
+        "SEC-017",
+        "TEST-131"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_auth_flow_migration.py",
+      "status": "implemented",
+      "notes": "A session made before its account was disabled, or before its MFA policy was raised to required, is refused at the next session read even without a revocation, because the read checks the account every time (login slice sub-slice L3a-1 review round 1, DL-081)."
+    },
+    {
+      "test_id": "test_a_password_reset_during_sign_in_leaves_no_session_made_with_the_old_password",
+      "upstream_ids": [
+        "API-096",
+        "API-099",
+        "DL-058",
+        "DL-081",
+        "SEC-017"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_auth_flow_migration.py",
+      "status": "implemented",
+      "notes": "When the account's password verifier is replaced after the password check and before the session is written, the sign-in is refused and no session row is written, because the session transaction checks the password again against the current verifier (login slice sub-slice L3a-1 review round 1 (security), DL-081)."
+    },
+    {
+      "test_id": "test_the_flood_guard_refuses_a_username_after_20_tries_and_a_source_after_100",
+      "upstream_ids": [
+        "API-096",
+        "DL-081",
+        "SEC-012"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_auth_flow_migration.py",
+      "status": "implemented",
+      "notes": "The coarse per-process flood guard refuses a username after 20 tries in 15 minutes even with the right password, and a source after 100 tries, with the same rejection and no session; the same username from another source and another flow signs in (login slice sub-slice L3a-1 review round 1, DL-081)."
     }
   ]
 }

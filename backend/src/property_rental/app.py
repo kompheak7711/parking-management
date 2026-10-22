@@ -47,6 +47,7 @@ from property_rental.auth_api import (
     UnavailableAuthenticationFlow,
     create_auth_router,
 )
+from property_rental.auth_flow import PostgresAuthenticationFlow
 from property_rental.billing_run import PostgresBillingRunService
 from property_rental.billing_run_api import (
     BillingRunFlow,
@@ -805,7 +806,12 @@ def create_app(
     app.include_router(
         create_auth_router(
             resolved_settings,
-            authentication_flow or UnavailableAuthenticationFlow(),
+            authentication_flow
+            or (
+                PostgresAuthenticationFlow(resolved_settings.database_url.get_secret_value())
+                if resolved_settings.database_url is not None
+                else UnavailableAuthenticationFlow()
+            ),
         )
     )
     app.include_router(

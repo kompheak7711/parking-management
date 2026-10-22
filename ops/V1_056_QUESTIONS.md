@@ -3883,3 +3883,11 @@ Your answer 1 to the 10h-2 report: add the READ COMMITTED check to the 8e-1 refu
 **Decision (technical; it does not change who may do what, money, or what staff may do).** Only the Unicode space separators (category Zs: the ordinary space, the no-break space, the thin and other typographic spaces, the ideographic space) are tidied. A tab, line break or other control character inside a name stays refused (`422 INVALID_NAME`), as before, because it comes from a paste mistake and the database refuses it; at either end of a name it is trimmed, as before. Built in L2d. The owner can change this later.
 
 **Example.** Staff types "Sokha  Chan" with two spaces: saved as "Sokha Chan". A name pasted from a spreadsheet as "Sokha" + tab + "Chan" is refused; the Owner types it again.
+
+## Q-2026-10-23-172 — Login sub-slice L3a-1: flood guard values, the session read and the username length (decided by Claude Code under the owner's 2026-10-22 rule)
+
+**The points (technical; they do not change who may do what, money, or what staff may do).** (1) Until L3b builds your 5-tries rule in the database, sign-in keeps the existing in-memory guard: 20 tries per username and 100 per source address in 15 minutes, per API process. (2) Reading the session (the screen asks when its session ends) does not count as activity, so an idle screen still signs out after 30 minutes. (3) The sign-in username is at most 128 characters, the longest username the app saves.
+
+**Example.** Someone tries 25 passwords for "sokha.chan" in five minutes: from the 21st try every try is refused with the normal sign-in failure until the 15 minutes pass (L3b then makes this 5 tries, as you answered in Q-154). Sokha leaves the iPad on the session page for 31 minutes: the next action asks her to sign in again.
+
+**Decision.** As above. Built in L3a-1. The owner can change it later.
