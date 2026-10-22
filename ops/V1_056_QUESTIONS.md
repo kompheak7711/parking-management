@@ -3833,7 +3833,7 @@ Your answer 1 to the 10h-2 report: add the READ COMMITTED check to the 8e-1 refu
 
 **Owner answer (2026-10-22, fresh session).** Option (a), as recommended: bundles stay fully configurable, as SEC-021 says; there is no Staff ceiling. When the Owner adds an approval or money capability to a bundle that Staff accounts hold, the screen shows a plain warning first. Owner's example: if the Owner adds Refund approval to the Staff bundle, the screen warns that every Staff user with that bundle can now approve Refunds. Nothing in the database or the API changes; the warning is built with the administration screens of the screen rebuild. Recorded in docs/010 DL-081.
 
-## Q-2026-10-22-169 — Login sub-slice L2b-2: hidden characters in names and reasons (blocks nothing; recommendation (a))
+## Q-2026-10-22-169 — Login sub-slice L2b-2: hidden characters in names and reasons (blocks nothing; recommendation (a)) (ANSWERED 2026-10-22: (a))
 
 **What the rules say.** Nothing about hidden characters. Review notes of L1b-2, L2a and L2b-1 asked for this question with the name handling of L2b-2.
 
@@ -3851,3 +3851,5 @@ Your answer 1 to the 10h-2 report: add the READ COMMITTED check to the 8e-1 refu
 **Recommendation: (a)**, because a Khmer name typed in the normal way should be accepted, while a hidden character must never make two names look the same or hide text in the audit history.
 
 **What goes ahead.** Everything. Until the answer, names with U+200B stay refused (fail closed) and the gap (2) characters stay accepted. Option (a) or (b) is a small later change: the API name step, one migration for the name check and the reason check, and their tests.
+
+**Owner answer (2026-10-22, fresh session).** Option (a), as recommended. Khmer keyboards put an invisible space (U+200B) between words, so the API removes U+200B from names and reasons before saving them, and refuses the few other invisible characters still accepted (gap (2)). If one of those others is needed in normal Khmer typing (for example U+200C or U+200D), it is not refused: a new question with a recommendation is written instead. The same rule applies wherever the login slice checks names or reasons (bundle names, usernames, display names, audit names and the reasons of the administration routes; the sign-in lookup uses the creation rule for the username, gap (3)). Gap (4) stays a practice point. Other parts of the app with the same kind of check (for example Customer names) are not changed now; they go on the slice 12 list. Owner's example: the Owner creates Staff member "សុខា ចាន់" on an iPad; it is saved, and the name looks the same on screen. Built in sub-slice L2c, before L3a. Recorded in docs/010 DL-081.
