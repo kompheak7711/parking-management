@@ -5046,6 +5046,11 @@ creation, last-activity, absolute-expiry, idle-expiry/recalculation data, revoca
 time/reason, and audit provenance. They enforce a 30-minute inactivity timeout and
 24-hour absolute lifetime. Password/MFA recovery, account disablement, and material
 privilege reduction can revoke all applicable sessions promptly.
+Amended by DL-081 (login sub-slice L3a-2, migration `20270127_184`): a revocation records the later
+of its statement time and the session's last activity, so an activity that a parallel request
+committed after the revoking statement started never makes the revocation fail
+(`app.protect_browser_session_lifecycle` replaced with the same signature, owner, privileges and
+attributes).
 
 ## DB-AUTH-005 — Recovery and bootstrap audit
 

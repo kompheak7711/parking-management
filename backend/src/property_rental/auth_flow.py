@@ -48,6 +48,9 @@ LOGIN_PROVENANCE: Final = "auth-login"
 LOGOUT_PROVENANCE: Final = "auth-logout"
 # A database that does not answer must not hold a request thread for long (review round 1).
 CONNECT_TIMEOUT_SECONDS: Final = 5
+# No statement of the sign-in or the session check may run longer than 5 seconds (login
+# sub-slice L3a-2).
+STATEMENT_TIMEOUT_OPTION: Final = "-c statement_timeout=5000"
 # A coarse per-process flood guard (decided under the owner's 2026-10-22 rule); login sub-slice
 # L3b adds the database count of 5 wrong tries per username and 20 per source in 15 minutes.
 FLOOD_GUARD_TRIES_PER_USERNAME: Final = 20
@@ -139,7 +142,9 @@ class _PostgresAccountLookup:
 
     def find_by_username(self, username: str) -> LocalAccountCredential | None:
         with psycopg.connect(
-            self._database_url, connect_timeout=CONNECT_TIMEOUT_SECONDS
+            self._database_url,
+            connect_timeout=CONNECT_TIMEOUT_SECONDS,
+            options=STATEMENT_TIMEOUT_OPTION,
         ) as connection:
             repository = PostgresLocalAccountRepository(cast(ConnectionBoundary, connection))
             return repository.find_by_username(username)
@@ -166,7 +171,9 @@ class PostgresAuthenticationFlow:
     def _transaction(self) -> Iterator[psycopg.Connection[tuple[object, ...]]]:
         try:
             with psycopg.connect(
-                self._database_url, connect_timeout=CONNECT_TIMEOUT_SECONDS
+                self._database_url,
+                connect_timeout=CONNECT_TIMEOUT_SECONDS,
+                options=STATEMENT_TIMEOUT_OPTION,
             ) as connection:
                 connection.isolation_level = IsolationLevel.READ_COMMITTED
                 yield connection
@@ -234,6 +241,8 @@ class PostgresAuthenticationFlow:
     def logout(self, *, session_token: str, request_id: str) -> None:
         digest = session_token_digest(session_token)
         with self._transaction() as connection:
+            # A parallel activity committed after this statement started is fine: the trigger
+            # records the later of the two times (migration 20270127_184).
             row = connection.execute(REVOKE_LIVE_SESSION, (LOGOUT_PROVENANCE, digest)).fetchone()
         if row is None:
             raise AuthenticationRejected

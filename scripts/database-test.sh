@@ -288,6 +288,8 @@ database_test_suites='
   tests/test_access_admin_flow_migration.py
   tests/test_name_hidden_characters_migration.py
   tests/test_auth_flow_migration.py
+  tests/test_session_actor_migration.py
+  tests/test_session_revocation_time_migration.py
 '
 
 for database_test_file in $database_test_suites; do

@@ -45909,6 +45909,144 @@
       "test_path": "backend/tests/test_auth_flow_migration.py",
       "status": "implemented",
       "notes": "The coarse per-process flood guard refuses a username after 20 tries in 15 minutes even with the right password, and a source after 100 tries, with the same rejection and no session; the same username from another source and another flow signs in (login slice sub-slice L3a-1 review round 1, DL-081)."
+    },
+    {
+      "test_id": "test_the_resolver_gives_the_session_account_its_bundle_grants_and_records_activity",
+      "upstream_ids": [
+        "API-008",
+        "API-097",
+        "DB-AUTH-004",
+        "DB-AUTH-007",
+        "DL-081",
+        "SEC-002",
+        "SEC-016",
+        "TEST-135"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_session_actor_migration.py",
+      "status": "implemented",
+      "notes": "A Staff account made by the Owner and signed in resolves, as the runtime role, to exactly the default Staff bundle capabilities for the Property, with the actor scope of itself on identity.read_self only; each resolved request records the activity by the database clock; through create_app, /identity/me answers the actor with the session cookie and 401 without it (login slice sub-slice L3a-2, DL-081)."
+    },
+    {
+      "test_id": "test_a_bundle_given_or_removed_counts_at_the_next_request",
+      "upstream_ids": [
+        "API-080",
+        "DB-AUTH-007",
+        "DL-057",
+        "DL-081",
+        "SEC-017",
+        "TEST-131"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_session_actor_migration.py",
+      "status": "implemented",
+      "notes": "A bundle the Owner assigns counts at the next request without a new sign-in, because the grants are read fresh on every request, and removing it ends the account's sessions, so the next request has no actor (login slice sub-slice L3a-2, DL-081)."
+    },
+    {
+      "test_id": "test_no_actor_without_a_live_session_of_an_active_account_that_needs_no_mfa",
+      "upstream_ids": [
+        "API-008",
+        "API-097",
+        "DL-056",
+        "DL-057",
+        "DL-081",
+        "SEC-002",
+        "TEST-131"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_session_actor_migration.py",
+      "status": "implemented",
+      "notes": "No cookie, an unknown or too long token, a signed-out session, a session idle for 31 minutes, the session of an account disabled after sign-in and a session of a Manager (MFA policy required) all give no actor, and the disabled, idle and Manager sessions get no activity (login slice sub-slice L3a-2 and its review round 2, DL-081)."
+    },
+    {
+      "test_id": "test_only_identity_read_self_gets_the_actor_scope_of_the_actor_itself",
+      "upstream_ids": [
+        "API-008",
+        "DL-081",
+        "SEC-002"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_session_actor.py",
+      "status": "implemented",
+      "notes": "The resolver adds the actor object scope of the actor itself to identity.read_self only and keeps every grant's Property scope (login slice sub-slice L3a-2, DL-081)."
+    },
+    {
+      "test_id": "test_the_resolver_fails_closed_and_needs_no_database_without_a_cookie",
+      "upstream_ids": [
+        "API-008",
+        "DL-081",
+        "SEC-002"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_session_actor.py",
+      "status": "implemented",
+      "notes": "No cookie or a token over 128 characters gives no actor without a database, and a session cookie with a database that cannot be reached raises AuthenticationUnavailable (503), never an actor (login slice sub-slice L3a-2, DL-081)."
+    },
+    {
+      "test_id": "test_a_sign_out_that_meets_a_later_activity_records_the_activity_time",
+      "upstream_ids": [
+        "API-097",
+        "DB-AUTH-004",
+        "DL-057",
+        "DL-081"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_session_revocation_time_migration.py",
+      "status": "implemented",
+      "notes": "A sign-out whose statement waits for the session row while a later activity commits still revokes the session, and the revocation time equals the last activity, which shows the activity committed after the revocation statement started (migration 20270127_184, login slice sub-slice L3a-2 review round 1, DL-081)."
+    },
+    {
+      "test_id": "test_an_owner_revocation_that_meets_a_later_activity_still_ends_the_session",
+      "upstream_ids": [
+        "API-079",
+        "DB-AUTH-004",
+        "DB-AUTH-010",
+        "DL-057",
+        "DL-081",
+        "SEC-017",
+        "TEST-131"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_session_revocation_time_migration.py",
+      "status": "implemented",
+      "notes": "The Owner's revocation of an account's sessions, whose statement started before the person's own request committed an activity, still ends the session with reason material_privilege_reduction and a revocation time equal to the last activity, instead of rolling back with a check violation (migration 20270127_184, login slice sub-slice L3a-2 review round 1 (security), DL-081)."
+    },
+    {
+      "test_id": "test_the_revocation_time_migration_changes_only_the_trigger_function_and_is_forward_only",
+      "upstream_ids": [
+        "DB-AUTH-004",
+        "DL-081"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_session_revocation_time_migration.py",
+      "status": "implemented",
+      "notes": "The session lifecycle trigger function keeps its attributes (not a definer, search path pg_catalog, volatile, returns trigger) and no EXECUTE for the application roles, holds the GREATEST revocation time, and the migration follows 20270126_183 and refuses a downgrade (login slice sub-slice L3a-2 review round 1, DL-081)."
+    },
+    {
+      "test_id": "test_the_owner_gets_its_administration_scopes_on_identity_manage_access_only",
+      "upstream_ids": [
+        "API-079",
+        "API-080",
+        "DL-081",
+        "SEC-002",
+        "SEC-021"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_session_actor.py",
+      "status": "implemented",
+      "notes": "With stand-ins (no Owner session can be resolved before sub-slice L3c), the resolver adds the Owner's administration scopes to identity.manage_access only, the actor's own scope to identity.read_self only, and no scope to other grants (login slice sub-slice L3a-2 review round 1, DL-081)."
+    },
+    {
+      "test_id": "test_a_capability_the_catalog_does_not_know_answers_unavailable",
+      "upstream_ids": [
+        "API-008",
+        "DL-081",
+        "SEC-002"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_session_actor.py",
+      "status": "implemented",
+      "notes": "When the grant reader refuses a capability the application catalog does not know, the resolver gives no actor with partial grants and raises AuthenticationUnavailable (503) (login slice sub-slice L3a-2 review round 1, DL-081)."
     }
   ]
 }

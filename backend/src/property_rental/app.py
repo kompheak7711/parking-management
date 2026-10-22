@@ -177,6 +177,7 @@ from property_rental.reservation_api import (
     create_reservation_router,
 )
 from property_rental.reservation_deposit_draft import ReservationDepositDraftKeyReused
+from property_rental.session_actor import PostgresSessionActorResolver
 from property_rental.settings import Settings
 from property_rental.unit_api import (
     PostgresUnitResourceFlow,
@@ -361,7 +362,7 @@ def create_app(
     readiness_check: Callable[[str], None] = check_database_readiness,
     lifecycle_resources: Iterable[AbstractAsyncContextManager[object]] = (),
     application_logger: Logger | None = None,
-    actor_resolver: ActorResolver = deny_unauthenticated_actor,
+    actor_resolver: ActorResolver | None = None,
     authentication_flow: AuthenticationFlow | None = None,
     access_administration_flow: AccessAdministrationFlow | None = None,
     audit_query_flow: AuditEventQueryFlow | None = None,
@@ -391,6 +392,14 @@ def create_app(
 ) -> FastAPI:
     """Build an application instance from validated settings."""
     resolved_settings = settings or Settings()
+    if actor_resolver is None:
+        # Login sub-slice L3a-2: the session cookie gives the actor when a database is set;
+        # otherwise everyone is denied. Tests keep injecting their own resolver.
+        actor_resolver = (
+            PostgresSessionActorResolver(resolved_settings.database_url.get_secret_value())
+            if resolved_settings.database_url is not None
+            else deny_unauthenticated_actor
+        )
     logger = application_logger or create_application_logger(
         service=resolved_settings.service_name,
         environment=resolved_settings.environment,

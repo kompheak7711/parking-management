@@ -3891,3 +3891,11 @@ Your answer 1 to the 10h-2 report: add the READ COMMITTED check to the 8e-1 refu
 **Example.** Someone tries 25 passwords for "sokha.chan" in five minutes: from the 21st try every try is refused with the normal sign-in failure until the 15 minutes pass (L3b then makes this 5 tries, as you answered in Q-154). Sokha leaves the iPad on the session page for 31 minutes: the next action asks her to sign in again.
 
 **Decision.** As above. Built in L3a-1. The owner can change it later.
+
+## Q-2026-10-23-173 — Login sub-slice L3a-2: the time a revoked session records, and activity only for usable sessions (decided by Claude Code under the owner's 2026-10-22 rule)
+
+**The points (technical; they do not change who may do what, money, or what staff may do).** (1) From L3a-2 every request counts as activity on the session. When the Owner disables an account, or a person signs out, while that person's own request is being handled, the database refused the revocation because it would be dated a moment before the last activity; a person who kept clicking could stop their own revocation. The revocation is now dated the later of the two times (migration `20270127_184`), so it always succeeds; the time differs from before by at most the moment the two requests overlap. (2) A session that the app refuses (account disabled, needing MFA, without a class) gets no activity recorded.
+
+**Example.** The Owner disables Sokha's account at 10:00:00.000 while Sokha's iPad loads a page at 10:00:00.010. Before: the disable failed with "try again". Now: Sokha's session ends, dated 10:00:00.010, and the next page asks Sokha to sign in.
+
+**Decision.** As above. Built in L3a-2. The owner can change it later.

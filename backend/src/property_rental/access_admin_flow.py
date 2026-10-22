@@ -33,6 +33,7 @@ from property_rental.access_admin_api import (
     RoleBundleView,
     UserAccountView,
 )
+from property_rental.auth_flow import CONNECT_TIMEOUT_SECONDS, STATEMENT_TIMEOUT_OPTION
 from property_rental.identity import CapabilityGrant, ObjectScope
 from property_rental.local_authentication import normalize_local_username
 from property_rental.visible_text import tidy_spaces, without_zero_width_spaces
@@ -801,7 +802,13 @@ class PostgresAccessAdministrationScopeReader:
 
     def object_scopes(self, actor_id: UUID) -> frozenset[ObjectScope]:
         try:
-            with psycopg.connect(self._database_url) as connection:
+            # Login sub-slice L3a-2 review round 1: the resolver calls this on every Owner
+            # request, so it has the resolver's timeouts.
+            with psycopg.connect(
+                self._database_url,
+                connect_timeout=CONNECT_TIMEOUT_SECONDS,
+                options=STATEMENT_TIMEOUT_OPTION,
+            ) as connection:
                 connection.isolation_level = IsolationLevel.READ_COMMITTED
                 accounts = connection.execute(
                     "SELECT actor_id::text FROM app.admin_accounts(%s)", (actor_id,)
