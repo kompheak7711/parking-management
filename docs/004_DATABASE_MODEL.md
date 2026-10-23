@@ -5049,6 +5049,13 @@ minutes by the database clock and changes only by one completion before that.
 locks the enrollment row; a step not after the last used one, after the current step of the
 database clock, or of an enrollment that is not active is refused), so a sign-in code is used
 once. The runtime role has column privileges only.
+Amended by DL-081 (login sub-slice L3c-2c-1, migration `20270201_189`): an account has at most one
+`app.recovery_code_sets` row that is not invalidated (the partial unique index
+`recovery_code_sets_one_live_per_actor`); the API writes the first set (provenance
+`auth-recovery-codes`) and a regenerated set (`auth-recovery-codes-regenerated`, after the prior
+set is invalidated by the account itself), each with 10 Argon2id verifiers. The codes of an
+invalidated set keep their own `invalidated_at` empty, so every check of a code also needs its
+set not invalidated.
 Amended by DL-081 (login sub-slice L3c-2b, migration `20270131_188`): a sign-in code set up at
 sign-in is a `pending` row of `app.totp_mfa_enrollments` written by the account itself (provenance
 `auth-mfa-enrollment`, the key identifier derived from the key file) and one row of

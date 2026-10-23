@@ -3990,3 +3990,12 @@ Your answer 1 to the 10h-2 report: add the READ COMMITTED check to the 8e-1 refu
 **Nothing waits.** L3c-2b is built as the approved plan says; the answer is built in L4 (or in its own sub-slice before L5).
 
 **Owner answer (2026-10-23): (a).** Every sign-in code reset also issues the L4 one-time password, so setting up a new sign-in code always needs the new password too. This covers the recovery with "also reset MFA" (the Owner's emergency procedure included) and a Staff account's MFA turned off and on again. The owner's example: Sokha loses a phone that has the password saved; the Owner resets Sokha's sign-in code, the old password stops working at once, and the Owner gives Sokha a new one-time password in person, so the finder cannot sign in and put the code on the finder's own phone. Built in L4.
+
+
+## Q-2026-10-24-181 — Login sub-slice L3c-2c-1: the first recovery codes and their regeneration (decided by Claude Code under the owner's 2026-10-22 rule)
+
+**The points (technical; they do not change who may do what, money, or what staff may do).** (1) The first 10 recovery codes are given once to a session made with the account's sign-in code in the last 15 minutes (review round 1), while the account has no live set of codes; after that, new codes come only by regeneration, which replaces the whole set. (2) Regeneration needs a sign-in code given in the last 15 minutes (the same time as the owner's answer to Q-2026-10-21-157); with an older one the person signs in again. (3) The codes keep the existing format of the bootstrap's codes (43 letters, digits, `-` and `_`, from 32 random bytes) and are stored only as Argon2id verifiers. (4) An account has at most one live set; two requests at the same moment leave one set and the other is refused. (5) The flow writes the codes itself with the existing generator and verifier, in the same database transaction that checks the session. (6) At most 5 sets of one account in 15 minutes (review round 2), so nobody can keep the server busy with the slow hashing; a sixth request is refused and the person waits.
+
+**Example.** Dara, a new Manager, sets up the sign-in code and then saves the 10 recovery codes shown once. Months later Dara wants new codes: Dara signs in with the sign-in code, asks for new codes within 15 minutes, and the old codes stop working at once.
+
+**Decision.** As above. Built in L3c-2c-1. The owner can change it later.

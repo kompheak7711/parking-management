@@ -378,7 +378,8 @@ class RecoveryCodeSetData(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     set_id: UUID
-    codes: tuple[str, ...] = Field(min_length=1, max_length=20)
+    # Review round 1 (security): the codes never appear in a printed model.
+    codes: tuple[str, ...] = Field(min_length=1, max_length=20, repr=False)
 
 
 class RecoveryCodeSetResponse(BaseModel):

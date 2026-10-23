@@ -15,6 +15,7 @@ password check, and a sign-in that makes a session clears the count.
 
 import hashlib
 import hmac
+import json
 import logging
 import secrets
 from collections.abc import Iterator
@@ -39,6 +40,7 @@ from property_rental.auth_api import (
     RecoveryCodeSetResult,
     SessionView,
 )
+from property_rental.initial_owner_bootstrap import RECOVERY_CODE_COUNT
 from property_rental.local_authentication import (
     AuthenticationAuditEvidence,
     BoundedAuthenticationAttemptLimiter,
@@ -50,6 +52,10 @@ from property_rental.local_authentication import (
     verifier_digest,
 )
 from property_rental.password_security import PasswordHashService
+from property_rental.recovery_code_security import (
+    Argon2idRecoveryCodeVerifierProvider,
+    SecureRecoveryCodeGenerator,
+)
 from property_rental.runtime_secrets import derive_totp_key_identifier
 from property_rental.totp_security import (
     TOTP_DEFAULT_DIGITS,
@@ -70,6 +76,12 @@ LOGIN_PROVENANCE: Final = "auth-login"
 MFA_CHALLENGE_PROVENANCE: Final = "auth-mfa-challenge"
 MFA_ENROLLMENT_PROVENANCE: Final = "auth-mfa-enrollment"
 MFA_ENROLLMENT_REPLACED_PROVENANCE: Final = "auth-mfa-enrollment-replaced"
+RECOVERY_CODES_PROVENANCE: Final = "auth-recovery-codes"
+RECOVERY_CODES_REGENERATED_PROVENANCE: Final = "auth-recovery-codes-regenerated"
+# Recovery codes are replaced only within 15 minutes of the sign-in code that proved the session
+# (decided under the owner's 2026-10-22 rule, login sub-slice L3c-2c-1; the time of the owner's
+# answer to Q-2026-10-21-157).
+RECOVERY_CODE_REGENERATION_WINDOW: Final = "15 minutes"
 # The name an authenticator app shows for the sign-in code (decided under the owner's
 # 2026-10-22 rule, login sub-slice L3c-2b).
 TOTP_ISSUER: Final = "Property Rental"
@@ -357,6 +369,64 @@ COMPLETE_CHALLENGE: Final = """
 INSERT_MFA_PROOF: Final = """
     INSERT INTO app.browser_session_mfa_proofs (session_id, challenge_id, method, enrollment_id)
     VALUES (%s, %s, %s, %s)
+"""
+# The MFA proof of a live session was made within the regeneration window (database clock).
+RECENT_PROOF: Final = f"""
+    SELECT statement_timestamp() - proof.proven_at <= interval '{RECOVERY_CODE_REGENERATION_WINDOW}'
+    FROM app.browser_session_mfa_proofs AS proof
+    WHERE proof.session_id = %s
+"""
+# The account's recovery-code set that is not invalidated (at most one, migration 20270201_189).
+LIVE_RECOVERY_SET: Final = """
+    SELECT recovery_set.set_id
+    FROM app.recovery_code_sets AS recovery_set
+    WHERE recovery_set.actor_id = %s
+      AND recovery_set.invalidated_at IS NULL
+"""
+# One generation of recovery codes per account at a time (review round 1, security); the lock
+# ends with the transaction.
+GENERATION_LOCK: Final = (
+    "SELECT pg_try_advisory_xact_lock(hashtextextended('recovery-codes:' || %s::text, 0))"
+)
+# At most 5 recovery-code sets of one account in 15 minutes (review round 2, security; decided
+# under the owner's 2026-10-22 rule), so no account can keep the server hashing.
+RECOVERY_SETS_PER_WINDOW: Final = 5
+RECENT_RECOVERY_SETS: Final = f"""
+    SELECT count(*)
+    FROM app.recovery_code_sets AS recovery_set
+    WHERE recovery_set.actor_id = %s
+      AND recovery_set.created_at
+          > statement_timestamp() - interval '{RECOVERY_CODE_REGENERATION_WINDOW}'
+"""
+# The live session read before the codes are committed, held until the commit, so a sign-out
+# waits for it (review round 2, security).
+LOCK_LIVE_SESSION: Final = f"""{LIVE_SESSION}    FOR SHARE OF browser
+"""
+LOCK_PRIOR_RECOVERY_SET: Final = """
+    SELECT recovery_set.set_id
+    FROM app.recovery_code_sets AS recovery_set
+    WHERE recovery_set.set_id = %s
+      AND recovery_set.actor_id = %s
+      AND recovery_set.invalidated_at IS NULL
+    FOR UPDATE
+"""
+INVALIDATE_RECOVERY_SET: Final = """
+    UPDATE app.recovery_code_sets AS recovery_set
+    SET invalidated_at = statement_timestamp(),
+        invalidated_by_actor_id = %s,
+        invalidation_provenance = %s
+    WHERE recovery_set.set_id = %s
+      AND recovery_set.invalidated_at IS NULL
+    RETURNING recovery_set.set_id
+"""
+INSERT_RECOVERY_SET: Final = """
+    INSERT INTO app.recovery_code_sets (set_id, actor_id, created_by_actor_id, provenance)
+    VALUES (%s, %s, %s, %s)
+"""
+INSERT_RECOVERY_CODE: Final = """
+    INSERT INTO app.recovery_codes (
+        code_id, set_id, verifier_encoding, algorithm, work_factor_metadata, provenance
+    ) VALUES (%s, %s, %s, %s, %s::jsonb, %s)
 """
 REVOKE_LIVE_SESSION: Final = """
     UPDATE app.browser_sessions AS browser
@@ -693,7 +763,8 @@ class PostgresAuthenticationFlow:
 
     @staticmethod
     def _unavailable() -> AuthenticationUnavailable:
-        # The recovery codes come with login sub-slice L3c-2c and reauthentication with L3d.
+        # A recovery code at the challenge comes with login sub-slice L3c-2c-2 and
+        # reauthentication with L3d.
         return AuthenticationUnavailable()
 
     def _refuse_during_wait(self, username_digest: bytes, source_digest: bytes) -> None:
@@ -1022,13 +1093,135 @@ class PostgresAuthenticationFlow:
     ) -> ReauthenticationResult:
         raise self._unavailable()
 
+    @staticmethod
+    def _recently_signed_in_with_code(
+        connection: psycopg.Connection[tuple[object, ...]], digest: bytes
+    ) -> object:
+        """The account of a live session proven with its sign-in code, which is still active,
+        within the last 15 minutes (review round 1: for the first codes too, so a session left
+        open cannot take them later)."""
+        row = connection.execute(LIVE_SESSION, (digest,)).fetchone()
+        if row is None or row[7] != "totp":
+            raise AuthenticationRejected
+        recent = connection.execute(RECENT_PROOF, (row[0],)).fetchone()
+        if recent is None or recent[0] is not True:
+            raise AuthenticationRejected
+        return row[1]
+
+    @staticmethod
+    def _one_generation_at_a_time(
+        connection: psycopg.Connection[tuple[object, ...]], actor_id: object
+    ) -> None:
+        """Review round 1 (security): the slow Argon2id work of one account runs once at a time;
+        a parallel request of the account is refused instead of hashing too."""
+        held = connection.execute(GENERATION_LOCK, (actor_id,)).fetchone()
+        if held is None or held[0] is not True:
+            raise AuthenticationRejected
+
+    @staticmethod
+    def _within_the_set_limit(
+        connection: psycopg.Connection[tuple[object, ...]], actor_id: object
+    ) -> None:
+        """At most 5 sets of the account in 15 minutes, checked before the slow hashing."""
+        made = connection.execute(RECENT_RECOVERY_SETS, (actor_id,)).fetchone()
+        if made is None or int(str(made[0])) >= RECOVERY_SETS_PER_WINDOW:
+            raise AuthenticationRejected
+
+    @staticmethod
+    def _still_signed_in_with_code(
+        connection: psycopg.Connection[tuple[object, ...]], digest: bytes
+    ) -> None:
+        """The session is still live and proven with an active sign-in code when the codes are
+        written; the row stays locked until the commit."""
+        row = connection.execute(LOCK_LIVE_SESSION, (digest,)).fetchone()
+        if row is None or row[7] != "totp":
+            raise AuthenticationRejected
+
+    @staticmethod
+    def _new_recovery_codes() -> tuple[tuple[str, ...], list[tuple[UUID, str, str, str]]]:
+        """10 new recovery codes and their Argon2id verifiers (the existing services of
+        `recovery_code_security.py`); only the verifiers are stored."""
+        generator = SecureRecoveryCodeGenerator()
+        verifiers = Argon2idRecoveryCodeVerifierProvider()
+        codes: list[str] = []
+        rows: list[tuple[UUID, str, str, str]] = []
+        while len(codes) < RECOVERY_CODE_COUNT:
+            code = generator.generate().get_secret_value()
+            if code in codes:
+                # 256 random bits do not repeat; a repeat means a broken entropy source.
+                raise RuntimeError("duplicate recovery-code material")
+            verifier = verifiers.encode(code)
+            codes.append(code)
+            rows.append(
+                (
+                    uuid4(),
+                    verifier.verifier_encoding,
+                    verifier.algorithm,
+                    json.dumps(
+                        dict(verifier.work_factor_metadata), separators=(",", ":"), sort_keys=True
+                    ),
+                )
+            )
+        return tuple(codes), rows
+
+    @staticmethod
+    def _write_recovery_set(
+        connection: psycopg.Connection[tuple[object, ...]],
+        *,
+        set_id: UUID,
+        actor_id: object,
+        rows: list[tuple[UUID, str, str, str]],
+        provenance: str,
+    ) -> None:
+        """The set and its codes; a parallel set of the account answers the generic rejection."""
+        try:
+            connection.execute(INSERT_RECOVERY_SET, (set_id, actor_id, actor_id, provenance))
+        except psycopg.errors.UniqueViolation as exc:
+            if exc.diag.constraint_name != "recovery_code_sets_one_live_per_actor":
+                raise
+            raise AuthenticationRejected from None
+        with connection.cursor() as cursor:
+            cursor.executemany(
+                INSERT_RECOVERY_CODE,
+                [
+                    (code_id, set_id, encoding, algorithm, work_factors, provenance)
+                    for code_id, encoding, algorithm, work_factors in rows
+                ],
+            )
+
     def issue_recovery_codes(
         self,
         *,
         session_token: str,
         request_id: str,
     ) -> RecoveryCodeSetResult:
-        raise self._unavailable()
+        """The first 10 recovery codes of an account (login sub-slice L3c-2c-1, DL-058, API-098):
+        a live session proven with the account's sign-in code within the last 15 minutes, while
+        the account has no recovery-code set that is not invalidated; shown once and stored
+        only as Argon2id verifiers. Later sets come only by regeneration. One READ COMMITTED
+        transaction: every check before the slow hashing, then the set, then the session read
+        back."""
+        digest = session_token_digest(session_token)
+        set_id = uuid4()
+        with self._transaction() as connection:
+            actor_id = self._recently_signed_in_with_code(connection, digest)
+            # The account's lock first (review round 2): every later check then sees what a
+            # parallel request of the account committed.
+            self._one_generation_at_a_time(connection, actor_id)
+            if connection.execute(LIVE_RECOVERY_SET, (actor_id,)).fetchone() is not None:
+                raise AuthenticationRejected
+            self._within_the_set_limit(connection, actor_id)
+            codes, rows = self._new_recovery_codes()
+            self._write_recovery_set(
+                connection,
+                set_id=set_id,
+                actor_id=actor_id,
+                rows=rows,
+                provenance=RECOVERY_CODES_PROVENANCE,
+            )
+            self._still_signed_in_with_code(connection, digest)
+        logger.info("recovery code decision", extra={"outcome": "issued", "request_id": request_id})
+        return RecoveryCodeSetResult(set_id=set_id, codes=codes)
 
     def regenerate_recovery_codes(
         self,
@@ -1037,4 +1230,48 @@ class PostgresAuthenticationFlow:
         prior_set_id: UUID,
         request_id: str,
     ) -> RecoveryCodeSetResult:
-        raise self._unavailable()
+        """Replace the account's live recovery-code set (login sub-slice L3c-2c-1, API-098,
+        TEST-129): a live session proven with the account's sign-in code within the last 15
+        minutes names the set it replaces; in one READ COMMITTED transaction the prior set is
+        locked before the slow hashing (review round 1), then invalidated, so none of its codes
+        works again, and 10 new codes are written and shown once."""
+        digest = session_token_digest(session_token)
+        set_id = uuid4()
+        with self._transaction() as connection:
+            actor_id = self._recently_signed_in_with_code(connection, digest)
+            self._one_generation_at_a_time(connection, actor_id)
+            if (
+                connection.execute(LOCK_PRIOR_RECOVERY_SET, (prior_set_id, actor_id)).fetchone()
+                is None
+            ):
+                raise AuthenticationRejected
+            self._within_the_set_limit(connection, actor_id)
+            codes, rows = self._new_recovery_codes()
+            # Review round 2: the invalidation names the set that replaces it.
+            invalidation = json.dumps(
+                {
+                    "reason": RECOVERY_CODES_REGENERATED_PROVENANCE,
+                    "replacement_set_id": str(set_id),
+                },
+                separators=(",", ":"),
+                sort_keys=True,
+            )
+            if (
+                connection.execute(
+                    INVALIDATE_RECOVERY_SET, (actor_id, invalidation, prior_set_id)
+                ).fetchone()
+                is None
+            ):
+                raise AuthenticationRejected
+            self._write_recovery_set(
+                connection,
+                set_id=set_id,
+                actor_id=actor_id,
+                rows=rows,
+                provenance=RECOVERY_CODES_REGENERATED_PROVENANCE,
+            )
+            self._still_signed_in_with_code(connection, digest)
+        logger.info(
+            "recovery code decision", extra={"outcome": "regenerated", "request_id": request_id}
+        )
+        return RecoveryCodeSetResult(set_id=set_id, codes=codes)

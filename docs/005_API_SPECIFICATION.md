@@ -1416,6 +1416,8 @@ operation governed by `API-100`. Codes are shown securely once, individually con
 not returned again, and reuse is rejected. Recovery actions are rate-limited,
 enumeration-resistant, session-revoking where appropriate, and immutably audited.
 
+Amended by DL-081 (login sub-slice L3c-2c-1): `POST /api/v1/auth/recovery-codes` answers 10 new recovery codes and their set id once, with `Cache-Control: no-store`, for a live session whose sign-in code was given in the last 15 minutes by the database clock while the account has no recovery-code set that is not invalidated (the first codes after the first sign-in code); otherwise 401. The Owner already has the bootstrap's set, whose id was never shown, so the Owner can replace it only once the set id can be read (login sub-slice L6). One account's codes are made once at a time, and at most 5 sets of an account in 15 minutes; a parallel or a sixth request answers 401. `POST /api/v1/auth/recovery-codes/regenerate` with the live set's id, for a live session whose sign-in code was given in the last 15 minutes by the database clock, invalidates that set (none of its codes works again) and answers 10 new codes once, no-store; another or an invalidated set id, or an older proof, answers 401 (sign in again). Codes are stored only as Argon2id verifiers; an account has at most one live set. Signing in with a recovery code comes with login sub-slice L3c-2c-2.
+
 ## API-099 — Administrative Recovery
 
 Authorized Owner administration may initiate controlled reset/recovery for Manager and
