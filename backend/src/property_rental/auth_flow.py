@@ -68,6 +68,8 @@ from property_rental.totp_security import (
     TotpService,
 )
 
+# A reauthentication password is at most as long as the API accepts (`ReauthenticationRequest`).
+MAX_REAUTHENTICATION_PASSWORD_LENGTH: Final = 1024
 # A session cookie made by this flow is 43 characters (`secrets.token_urlsafe(32)`); a longer
 # value is refused before it is hashed.
 MAX_SESSION_TOKEN_LENGTH: Final = 128
@@ -160,7 +162,10 @@ LIVE_SESSION: Final = f"""
                 WHERE proof.session_id = browser.session_id
                   AND {PROOF_COUNTS}),
                'none'
-           )
+           ),
+           (SELECT max(reauthentication.reauthenticated_at)
+            FROM app.browser_session_reauthentications AS reauthentication
+            WHERE reauthentication.session_id = browser.session_id)
     FROM app.browser_sessions AS browser
     JOIN app.user_accounts AS account ON account.actor_id = browser.actor_id
     JOIN app.user_account_classes AS classification ON classification.actor_id = browser.actor_id
@@ -416,6 +421,42 @@ CONSUME_RECOVERY_CODE: Final = """
         %s, %s, %s, 'recovery_code', NULL, 'mfa_recovery', NULL, NULL, NULL, false, %s
     ) AS recovery
 """
+# What a reauthentication checks of the session's account (login sub-slice L3d-1): the username
+# (the key of the wrong-try count), the current password verifier, and the active sign-in code
+# with its last used time step and the current time step of the database clock, when it has one.
+REAUTHENTICATION_ACCOUNT: Final = f"""
+    SELECT account.normalized_username,
+           credential.verifier_encoding,
+           account.mfa_policy_class <> 'optional',
+           enrollment.enrollment_id,
+           enrollment.secret_ciphertext,
+           enrollment.secret_nonce,
+           enrollment.key_identifier,
+           enrollment.protection_algorithm,
+           COALESCE(
+               (SELECT max(used.time_step)
+                FROM app.totp_used_steps AS used
+                WHERE used.enrollment_id = enrollment.enrollment_id),
+               0
+           ),
+           floor(extract(epoch FROM statement_timestamp()) / {TOTP_DEFAULT_PERIOD_SECONDS})::bigint
+    FROM app.user_accounts AS account
+    JOIN app.password_credentials AS credential ON credential.actor_id = account.actor_id
+    LEFT JOIN app.totp_mfa_enrollments AS enrollment
+      ON enrollment.actor_id = account.actor_id
+     AND enrollment.enrollment_state = 'active'
+    WHERE account.actor_id = %s
+"""
+INSERT_REAUTHENTICATION: Final = """
+    INSERT INTO app.browser_session_reauthentications (
+        reauthentication_id, session_id, actor_id, method, enrollment_id, time_step
+    ) VALUES (%s, %s, %s, %s, %s, %s)
+"""
+# One reauthentication of an account at a time (review round 1), a lock of the connection ended
+# when it closes.
+REAUTHENTICATION_TRY_LOCK: Final = (
+    "SELECT pg_try_advisory_lock(hashtextextended('reauthentication:' || %s::text, 0))"
+)
 # The MFA proof of a live session was made within the regeneration window (database clock).
 RECENT_PROOF: Final = f"""
     SELECT statement_timestamp() - proof.proven_at <= interval '{RECOVERY_CODE_REGENERATION_WINDOW}'
@@ -540,7 +581,10 @@ def sign_in_source_digest(source_key: str, key: bytes | None = None) -> bytes:
 
 def session_view(row: tuple[object, ...]) -> SessionView:
     """A `SessionView` from a `LIVE_SESSION` row."""
-    _, actor_id, display_name, created_at, last_activity_at, idle_expires_at, absolute, mfa = row
+    _, actor_id, display_name, created_at, last_activity_at, idle_expires_at, absolute, mfa = row[
+        :8
+    ]
+    reauthenticated_at = row[8]
     return SessionView(
         actor_id=str(actor_id),
         authenticated_at=cast(datetime, created_at),
@@ -548,7 +592,7 @@ def session_view(row: tuple[object, ...]) -> SessionView:
         idle_expires_at=cast(datetime, idle_expires_at),
         absolute_expires_at=cast(datetime, absolute),
         mfa_assurance=MFA_ASSURANCES.get(str(mfa), "none"),
-        reauthenticated_at=None,
+        reauthenticated_at=cast(datetime | None, reauthenticated_at),
         display_name=str(display_name),
     )
 
@@ -809,7 +853,6 @@ class PostgresAuthenticationFlow:
 
     @staticmethod
     def _unavailable() -> AuthenticationUnavailable:
-        # Reauthentication comes with login sub-slice L3d.
         return AuthenticationUnavailable()
 
     def _refuse_during_wait(self, username_digest: bytes, source_digest: bytes) -> None:
@@ -823,10 +866,21 @@ class PostgresAuthenticationFlow:
 
     def _open_sign_in_code(self, challenge: tuple[object, ...], *, request_id: str) -> TotpSecret:
         """The secret of the challenge row's sign-in code, opened with the protection key."""
+        return self._open_secret(challenge[1], challenge[5], challenge[6:10], request_id=request_id)
+
+    def _open_secret(
+        self,
+        actor_id: object,
+        enrollment_id: object,
+        protected: tuple[object, ...],
+        *,
+        request_id: str,
+    ) -> TotpSecret:
+        """A sign-in code's secret (ciphertext, nonce, key identifier and algorithm), opened with
+        the protection key."""
         if self._totp_protection_key is None:
             raise self._unavailable()
-        actor_id, enrollment_id = challenge[1], challenge[5]
-        ciphertext, nonce, key_identifier, protection_algorithm = challenge[6:10]
+        ciphertext, nonce, key_identifier, protection_algorithm = protected
         try:
             return Aes256GcmTotpSecretProtector(
                 key=self._totp_protection_key, key_identifier=str(key_identifier)
@@ -837,8 +891,8 @@ class PostgresAuthenticationFlow:
                     key_identifier=str(key_identifier),
                     encryption_algorithm=str(protection_algorithm),
                 ),
-                actor_id=cast(UUID, actor_id),
-                enrollment_id=cast(UUID, enrollment_id),
+                actor_id=UUID(str(actor_id)),
+                enrollment_id=UUID(str(enrollment_id)),
             )
         except (TotpSecretProtectionError, ValueError) as exc:
             # The key file does not open this sign-in code; no detail is given.
@@ -1254,7 +1308,127 @@ class PostgresAuthenticationFlow:
         second_factor_code: str | None,
         request_id: str,
     ) -> ReauthenticationResult:
-        raise self._unavailable()
+        """High-risk reauthentication (login sub-slice L3d-1, SEC-018, API-097, owner answer (a)
+        to Q-2026-10-21-157): a live session gives the password again and, when its account
+        needs MFA, a sign-in code (`totp`; a recovery code is not accepted here, as the owner's
+        answer names the sign-in code). One reauthentication of an account at a time, on one
+        connection holding the account's try lock (review round 1: parallel guesses would each
+        pass the wait check and do the Argon2id work); wrong tries are counted for the username,
+        with the session as the source (the API passes no source here), before the lock ends; a
+        wait answers 429 before any check. The right answer, in one transaction: the clear
+        first, the sign-in code's step recorded, the password verifier compared with the one
+        checked, the reauthentication written and the session locked and read last (review
+        round 1: the account and the sign-in code before the session, the order of the Owner's
+        functions); a new CSRF token is answered."""
+        digest = session_token_digest(session_token)
+        if not password or len(password) > MAX_REAUTHENTICATION_PASSWORD_LENGTH:
+            raise AuthenticationRejected
+        with self._transaction() as connection:
+            session = connection.execute(LIVE_SESSION, (digest,)).fetchone()
+            if session is None:
+                raise AuthenticationRejected
+            session_id, actor_id = session[0], session[1]
+            account = connection.execute(REAUTHENTICATION_ACCOUNT, (actor_id,)).fetchone()
+            connection.commit()
+            if account is None:
+                raise AuthenticationRejected
+            username, verifier, policy_requires_mfa, enrollment_id = account[:4]
+            last_used_step, current_step = account[8], account[9]
+            needs_mfa = bool(policy_requires_mfa) or enrollment_id is not None
+            if needs_mfa and (
+                second_factor_method != "totp"
+                or second_factor_code is None
+                or enrollment_id is None
+            ):
+                raise AuthenticationRejected
+            if not needs_mfa and second_factor_method is not None:
+                raise AuthenticationRejected
+            if needs_mfa and self._totp_protection_key is None:
+                # Without the protection key no sign-in code can be checked.
+                raise self._unavailable()
+            held = connection.execute(REAUTHENTICATION_TRY_LOCK, (actor_id,)).fetchone()
+            connection.commit()
+            if held is None or held[0] is not True:
+                logger.info(
+                    "reauthentication decision",
+                    extra={"outcome": "rejected", "request_id": request_id},
+                )
+                raise AuthenticationRejected
+            username_key = sign_in_username_digest(str(username), self._sign_in_try_key)
+            source_key = sign_in_source_digest(f"session:{session_id}", self._sign_in_try_key)
+            self._refuse_during_wait(username_key, source_key)
+            if not self._password_service.verify_password(password, str(verifier)).is_valid:
+                self._refuse_wrong_try(
+                    RECORD_WRONG_SIGN_IN, username_key, source_key, request_id=request_id
+                )
+            step: int | None = None
+            if needs_mfa:
+                secret = self._open_secret(
+                    actor_id, enrollment_id, account[4:8], request_id=request_id
+                )
+                step = self._matching_step(
+                    str(second_factor_code),
+                    secret,
+                    current_step=current_step,
+                    last_used_step=last_used_step,
+                )
+                if step is None:
+                    self._refuse_wrong_try(
+                        RECORD_WRONG_SIGN_IN_CODE, username_key, source_key, request_id=request_id
+                    )
+            self._clear_wrong_tries(connection, username_key, source_key, actor_id)
+            if step is not None:
+                locked = connection.execute(LOCK_ACTIVE_ENROLLMENT, (enrollment_id,)).fetchone()
+                last = connection.execute(LAST_USED_STEP, (enrollment_id,)).fetchone()
+                if locked is None or last is None or step <= int(str(last[0])):
+                    raise AuthenticationRejected
+                connection.execute(RECORD_USED_STEP, (enrollment_id, step))
+            # A password change after the check refuses (the L3a-1 guard).
+            current = connection.execute(CURRENT_VERIFIER, (actor_id,)).fetchone()
+            if current is None or not hmac.compare_digest(
+                verifier_digest(str(current[0])), verifier_digest(str(verifier))
+            ):
+                raise AuthenticationRejected
+            try:
+                connection.execute(
+                    INSERT_REAUTHENTICATION,
+                    (
+                        uuid4(),
+                        session_id,
+                        actor_id,
+                        "password" if step is None else "totp",
+                        enrollment_id if step is not None else None,
+                        step,
+                    ),
+                )
+            except psycopg.errors.IntegrityConstraintViolation:
+                # The guard refuses a change committed meanwhile (the account disabled, its MFA
+                # policy raised): the generic rejection (review round 1).
+                raise AuthenticationRejected from None
+            row = connection.execute(LOCK_LIVE_SESSION, (digest,)).fetchone()
+            if row is None or row[0] != session_id:
+                raise AuthenticationRejected
+        logger.info(
+            "reauthentication decision",
+            extra={"outcome": "authenticated", "request_id": request_id},
+        )
+        return ReauthenticationResult(
+            session=session_view(row), csrf_token=secrets.token_urlsafe(SESSION_TOKEN_BYTES)
+        )
+
+    def _refuse_wrong_try(
+        self, record: str, username_key: bytes, source_key: bytes, *, request_id: str
+    ) -> NoReturn:
+        """A wrong password or sign-in code at a reauthentication is a wrong try (429 when it
+        starts a wait, otherwise 401)."""
+        with self._transaction() as connection:
+            counted = connection.execute(record, (username_key, source_key)).fetchone()
+        logger.info(
+            "reauthentication decision", extra={"outcome": "rejected", "request_id": request_id}
+        )
+        if counted is not None and counted[0] is not None:
+            raise AuthenticationRateLimited(int(str(counted[0])))
+        raise AuthenticationRejected
 
     @staticmethod
     def _recently_signed_in_with_code(

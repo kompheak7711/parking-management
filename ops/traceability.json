@@ -47171,6 +47171,106 @@
       "test_path": "backend/tests/test_recovery_code_sign_in_migration.py",
       "status": "implemented",
       "notes": "A session made with a recovery code ends when the codes are replaced; the sign-in code's session stays live (login slice sub-slice L3c-2c-2 review round 2, DL-081)."
+    },
+    {
+      "test_id": "test_the_password_and_a_new_sign_in_code_reauthenticate_a_session",
+      "upstream_ids": [
+        "SEC-018",
+        "API-097",
+        "TEST-132",
+        "DB-AUTH-004"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reauthentication_migration.py",
+      "status": "implemented",
+      "notes": "The password and a sign-in code of an unused step reauthenticate a Manager's session: reauthenticated_at shown, a new CSRF token, the step used once and one row naming the code and the step (login slice sub-slice L3d-1, DL-081)."
+    },
+    {
+      "test_id": "test_wrong_passwords_and_codes_count_and_a_wait_refuses_before_any_check",
+      "upstream_ids": [
+        "SEC-018",
+        "DB-AUTH-011",
+        "TEST-132"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reauthentication_migration.py",
+      "status": "implemented",
+      "notes": "Wrong passwords and sign-in codes at a reauthentication are wrong tries of their kinds; the 3rd starts the wait and the right answer during it is refused with 429; nothing written (login slice sub-slice L3d-1, DL-081)."
+    },
+    {
+      "test_id": "test_a_reauthentication_without_the_right_factor_or_session_is_refused",
+      "upstream_ids": [
+        "SEC-018",
+        "TEST-132"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reauthentication_migration.py",
+      "status": "implemented",
+      "notes": "Refused and nothing written: no second factor or a recovery code for an MFA account, a used step (counted), a signed-out session, an unknown cookie, no protection key (unavailable) (login slice sub-slice L3d-1, DL-081)."
+    },
+    {
+      "test_id": "test_an_account_without_mfa_reauthenticates_with_its_password_only",
+      "upstream_ids": [
+        "SEC-018",
+        "API-097"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reauthentication_migration.py",
+      "status": "implemented",
+      "notes": "An account that needs no MFA reauthenticates with the password alone; a second factor given anyway is refused (login slice sub-slice L3d-1, DL-081)."
+    },
+    {
+      "test_id": "test_a_change_before_the_reauthentication_refuses_and_writes_nothing",
+      "upstream_ids": [
+        "SEC-018",
+        "DB-AUTH-004"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reauthentication_migration.py",
+      "status": "implemented",
+      "notes": "A parallel wait, a new password, the sign-in code turned off or the account disabled after the wait check refuses the reauthentication; nothing written and the count not cleared (login slice sub-slice L3d-1, DL-081)."
+    },
+    {
+      "test_id": "test_the_reauthentication_route_answers_the_session_and_a_new_csrf_cookie",
+      "upstream_ids": [
+        "API-097",
+        "UI-111"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reauthentication_migration.py",
+      "status": "implemented",
+      "notes": "Over HTTP the reauthentication answers the session with reauthenticated_at, no-store and a new CSRF cookie; a wrong password answers 401 (login slice sub-slice L3d-1, DL-081)."
+    },
+    {
+      "test_id": "test_a_reauthentication_is_guarded_in_the_database",
+      "upstream_ids": [
+        "DB-AUTH-004"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reauthentication_migration.py",
+      "status": "implemented",
+      "notes": "A reauthentication row needs a live session of its account; a totp row a step of the active sign-in code used in the same transaction; a password row is refused for an MFA account; append-only; insert-only column privileges (login slice sub-slice L3d-1, DL-081)."
+    },
+    {
+      "test_id": "test_the_session_reauthentication_migration_follows_l3c_2c_2_and_is_forward_only",
+      "upstream_ids": [
+        "DB-AUTH-004"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reauthentication_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20270203_191 follows 20270202_190 and refuses a downgrade (login slice sub-slice L3d-1, DL-081)."
+    },
+    {
+      "test_id": "test_one_reauthentication_of_an_account_at_a_time",
+      "upstream_ids": [
+        "SEC-018",
+        "DB-AUTH-011"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reauthentication_migration.py",
+      "status": "implemented",
+      "notes": "While one reauthentication of the account checks its password a second is refused at once, without a password check and uncounted; the first is counted once (login slice sub-slice L3d-1 review round 1, DL-081)."
     }
   ]
 }

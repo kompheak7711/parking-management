@@ -5102,6 +5102,13 @@ Amended by DL-081 (login sub-slice L3c-2c-2, migration `20270202_190`): a proof 
 the sign-in code the challenge was made for, consumed by that account since the challenge. A
 `recovery_code` proof counts while the sign-in code its challenge was made for is active and the
 code's set is live, so a sign-in code reset and a regeneration also end recovery-code sessions.
+Amended by DL-081 (login sub-slice L3d-1, migration `20270203_191`): a session's high-risk
+reauthentications are rows of `app.browser_session_reauthentications` (append-only; the method
+`totp` with the sign-in code and its time step, at most one row per step, or `password` for an
+account that needs no MFA; the insert guard checks a live session of the row's account, for
+`totp` the account's active sign-in code with a step used since the row's transaction began, and
+refuses `password` for an account that needs MFA); the session's `reauthenticated_at` is its
+latest row's time.
 
 ## DB-AUTH-005 — Recovery and bootstrap audit
 

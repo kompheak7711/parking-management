@@ -4008,3 +4008,14 @@ Your answer 1 to the 10h-2 report: add the READ COMMITTED check to the 8e-1 refu
 **Example.** Sokha's phone is in the repair shop. Sokha signs in with the password and one of the 10 recovery codes from the paper in the drawer; that code never works again, and any session Sokha left open elsewhere ends. When the phone is back, Sokha signs in with the sign-in code as before.
 
 **Decision.** As above. Built in L3c-2c-2. The owner can change it later.
+
+
+## Q-2026-10-24-183 — Login sub-slice L3d-1: how a session is reauthenticated (decided by Claude Code under the owner's 2026-10-22 rule)
+
+**The points (technical; they follow the owner's answer (a) to Q-2026-10-21-157 and do not change who may do what).** (1) A reauthentication asks for the password and, for an account that needs MFA, the sign-in code from the phone; a recovery code is not accepted here, because the owner's answer names "password and TOTP code". An account that needs no MFA (a Staff account without a sign-in code) gives the password alone; none of the actions of Q-157 is open to such an account. (2) A wrong password or sign-in code counts as a wrong try of the username, with the same waits as at sign-in; the screen sends no network address here, so the session stands in for it. (3) Each 30-second step of the sign-in code is used once, also across sign-in and reauthentication. (4) A successful reauthentication gives the screen a new CSRF token. (5) The session cookie itself stays the same (review round 1: a security standard, ASVS, asks for a new one at reauthentication; replacing it needs a new kind of sign-in proof, because a session's proof belongs to one sign-in step; the cookie is `__Host-`, HttpOnly, Secure and SameSite, and every high-risk action also needs the CSRF token; slice 12 list). (6) One reauthentication of an account runs at a time; a second one sent at the same moment is refused at once without being checked or counted.
+
+**Example.** The Owner signed in at 08:00 and wants to disable Dara's account at 11:00: the screen asks for the password and the code on the phone, and after that the Owner has 15 minutes for the actions of Q-157 (the check comes with L3d-2).
+
+**Decision.** As above. Built in L3d-1. The owner can change it later.
+
+**Owner answers (2026-10-24), login sub-slice L3d-1.** (1) The review agent that the auto-mode checker blocked in review round 2 of L3d-1 is not retried on the Mac; the cloud session runs review round 2 of L3d-1. (2) Session cookie at reauthentication: build a separate reauthentication cookie, set only at reauthentication and also required by L3d-2. This replaces point 5 above. The cloud session builds it in L3d-1.

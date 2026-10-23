@@ -295,6 +295,7 @@ database_test_suites='
   tests/test_sign_in_code_enrollment_migration.py
   tests/test_recovery_code_flow_migration.py
   tests/test_recovery_code_sign_in_migration.py
+  tests/test_reauthentication_migration.py
 '
 
 for database_test_file in $database_test_suites; do
