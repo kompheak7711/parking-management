@@ -290,6 +290,7 @@ database_test_suites='
   tests/test_auth_flow_migration.py
   tests/test_session_actor_migration.py
   tests/test_session_revocation_time_migration.py
+  tests/test_sign_in_wait_migration.py
 '
 
 for database_test_file in $database_test_suites; do

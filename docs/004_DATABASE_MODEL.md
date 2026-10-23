@@ -5212,6 +5212,30 @@ list (class, version and recorded Settings access) and the bundle list (current 
 the runtime role has no privilege on the bundle, assignment, default bundle, Settings access and
 account change relations.
 
+## DB-AUTH-011 — Wrong sign-in tries and waits
+
+Added by DL-081 (login sub-slice L3b, migration `20270128_185`; SEC-012, UI-109, DL-080 item 10 as
+amended by the owner). Three append-only relations (UPDATE, DELETE and TRUNCATE refused):
+`app.sign_in_wrong_tries` (one row per wrong try: the sha256 digests of the normalized username
+and of the request source, the kind `password`, `sign_in_code` or `recovery_code`, the database
+time), `app.sign_in_waits` (a username wait of 5 or 15 minutes or a source wait of 15 minutes,
+with its start, its end and the try that started it) and `app.sign_in_try_clears` (a correct
+sign-in of an active account clears its own username's tries up to the last one). The typed
+username, the password and the source address are never stored as text; the keys are
+pseudonymous sha256 digests without a key, so a list of names or the address range can be tried
+against them (Q-2026-10-23-175). The count for a username is its wrong tries since the last clear: the 3rd
+starts a 5-minute wait, the 5th a 15-minute wait, and every 2nd after that another 15-minute wait.
+A source with 20 wrong tries in 15 minutes waits 15 minutes. Three definer functions, READ
+COMMITTED only, are the runtime role's only access: `app.sign_in_wait_seconds` (the seconds left
+of the longest active wait for the username or the source), `app.record_sign_in_wrong_try`
+(records a try and starts a wait, or answers an active wait and records nothing) and
+`app.clear_sign_in_wrong_tries` (answers an active wait and clears nothing, so a wait started by a
+parallel try wins over a sign-in checked before it; clears only for the active account whose
+normalized username gives the digest). Each takes the username lock and then the source lock, so
+the wait read also waits for a wrong try being recorded. Because a correct sign-in clears only a
+real account's count, an unknown username's count never clears; a patient guesser can compare
+the two over days (Q-2026-10-23-176).
+
 ---
 
 # 21. Deferred Technical and Configuration Decisions

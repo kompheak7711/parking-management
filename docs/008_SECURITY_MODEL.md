@@ -123,6 +123,8 @@ avoiding account-enumeration disclosures.
 
 Amended by DL-080 (owner, 2026-10-20): after 5 wrong tries the person waits 15 minutes, with the same message whether or not the account exists. A one-time password given by the Owner after a reset works for 24 hours and must be changed at the first sign-in.
 
+Amended by DL-081 (owner's wait rule, recorded 2026-10-23 with login sub-slice L3b; replaces the "5 wrong tries, 15 minutes" values above): after 3 wrong tries in a row for one username the person waits 5 minutes; after 2 more wrong tries (5 in a row) 15 minutes; after that every 2 more wrong tries mean another 15-minute wait, until a correct sign-in clears the count. Unknown usernames are counted the same way; tries during a wait are refused without checking the password and add no time; wrong sign-in codes and recovery codes count; a source address with 20 wrong tries in 15 minutes waits 15 minutes; the counts are kept in the database (DB-AUTH-011).
+
 ## SEC-013 — Multi-factor Authentication
 
 The authentication architecture must use an appropriate standards-based MFA mechanism.

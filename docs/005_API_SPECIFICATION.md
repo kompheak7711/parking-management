@@ -1391,6 +1391,8 @@ Amended by DL-081 (login sub-slice L2d, owner answer (a) to Q-2026-10-22-170): t
 
 Amended by DL-081 (login sub-slice L3a-1): sign-in, the session read and sign-out on PostgreSQL are described under API-097.
 
+Amended by DL-081 (login sub-slice L3b, the owner's wait rule): wrong sign-in tries are counted in the database (DB-AUTH-011). After 3 wrong tries in a row for one username the person waits 5 minutes; after 5 in a row 15 minutes; after that every 2 more wrong tries mean another 15-minute wait, until a correct sign-in clears the count. A source address with 20 wrong tries in 15 minutes waits 15 minutes. During a wait `POST /api/v1/auth/login` answers 429 with the generic `RATE_LIMITED` body, `Retry-After` (the seconds left) and `Cache-Control: no-store`, without checking the password; the try that starts a wait gets the same answer. The answers are the same whether or not the username exists. A correct password of an account that needs MFA neither adds to nor clears the count; it is checked again for a wait (under the locks of the count) before the MFA step, and the completed MFA challenge clears the count (L3c).
+
 ## API-097 — Session Lifetime
 
 Browser sessions enforce a 30-minute inactivity timeout and a 24-hour absolute lifetime.

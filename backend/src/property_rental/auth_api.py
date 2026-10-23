@@ -156,7 +156,15 @@ class AuthenticationRejected(RuntimeError):
 
 
 class AuthenticationRateLimited(RuntimeError):
-    """Generic account-and-source authentication rate-limit signal."""
+    """Generic account-and-source authentication rate-limit signal.
+
+    `retry_after_seconds` is the seconds left of a sign-in wait (login sub-slice L3b), the same
+    for a known and an unknown username.
+    """
+
+    def __init__(self, retry_after_seconds: int | None = None) -> None:
+        super().__init__("authentication rate limited")
+        self.retry_after_seconds = retry_after_seconds
 
 
 class AuthenticationUnavailable(RuntimeError):

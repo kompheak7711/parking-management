@@ -550,9 +550,15 @@ def create_app(
     @app.exception_handler(AuthenticationRateLimited)
     async def authentication_rate_limited(
         request: Request,
-        _: AuthenticationRateLimited,
+        exc: AuthenticationRateLimited,
     ) -> JSONResponse:
-        return error_response(status.HTTP_429_TOO_MANY_REQUESTS, request.state.request_id)
+        response = error_response(status.HTTP_429_TOO_MANY_REQUESTS, request.state.request_id)
+        if exc.retry_after_seconds is not None:
+            # Login sub-slice L3b: the seconds left of the sign-in wait; the body stays the
+            # same for every username.
+            response.headers["Retry-After"] = str(exc.retry_after_seconds)
+            response.headers["Cache-Control"] = "no-store"
+        return response
 
     @app.exception_handler(AccessAdministrationUnavailable)
     async def access_administration_unavailable(

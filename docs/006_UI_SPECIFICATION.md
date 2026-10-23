@@ -983,6 +983,8 @@ does not offer security questions or SMS authentication/recovery.
 
 Amended by DL-080 (owner, 2026-10-20): after 5 wrong tries the person waits 15 minutes; the wait message is the same whether or not the account exists.
 
+Amended by DL-081 (owner's wait rule, recorded 2026-10-23 with login sub-slice L3b; replaces the values above): after 3 wrong tries in a row the person waits 5 minutes; after 2 more wrong tries (5 in a row) 15 minutes; after that every 2 more wrong tries mean another 15-minute wait, until a correct sign-in. The wait message is the same whether or not the account exists; the sign-in screen shows it from the API's 429 answer (L6).
+
 ## UI-110 — MFA Enrollment and Challenge
 
 Owner and Manager are directed through protected standards-based MFA enrollment before

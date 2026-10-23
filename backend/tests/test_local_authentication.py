@@ -1,5 +1,7 @@
 """Focused tests for the bounded Local Login Security Foundation."""
 
+import hashlib
+
 import pytest
 
 from property_rental.local_authentication import (
@@ -9,6 +11,7 @@ from property_rental.local_authentication import (
     LocalAccountCredential,
     LocalAuthenticationService,
     PostgresLocalAccountRepository,
+    verifier_digest,
 )
 from property_rental.password_security import PasswordHashService, PasswordVerification
 
@@ -375,3 +378,111 @@ def test_sign_in_lookup_and_limiter_tidy_spaces_in_the_typed_username() -> None:
         AuthenticationAuditEvidence(outcome="rejected", reason="credentials_rejected"),
         AuthenticationAuditEvidence(outcome="rejected", reason="rate_limited"),
     ]
+
+
+class RecordingSignInWaits:
+    """A stand-in for the database count of wrong tries (login sub-slice L3b)."""
+
+    def __init__(self, waiting: int | None = None, started: int | None = None) -> None:
+        self.waiting = waiting
+        self.started = started
+        self.asked: list[tuple[str, str]] = []
+        self.recorded: list[tuple[str, str]] = []
+
+    def wait_seconds(self, account_key: str, source_key: str) -> int | None:
+        self.asked.append((account_key, source_key))
+        return self.waiting
+
+    def record_wrong_try(self, account_key: str, source_key: str) -> int | None:
+        self.recorded.append((account_key, source_key))
+        return self.started
+
+
+def test_a_try_during_a_sign_in_wait_is_refused_before_the_lookup_and_the_password_check() -> None:
+    """DL-081 (the owner's wait rule): a try during a wait is refused without looking the
+    account up or checking the password, adds no wrong try and carries the seconds left."""
+    waits = RecordingSignInWaits(waiting=120)
+    audit_sink = CollectingAuditSink()
+    secret = "waiting-secret"
+    service = LocalAuthenticationService(
+        repository=UnexpectedLookupRepository(),
+        password_service=PasswordHashService(),
+        attempt_limiter=StubAttemptLimiter(),
+        audit_sink=audit_sink,
+        sign_in_waits=waits,
+    )
+
+    result = service.authenticate(username=" Sokha ", password=secret, request_source="desk")
+
+    assert result == AuthenticationResult(is_authenticated=False, wait_seconds=120)
+    assert waits.asked == [("sokha", "desk")] and waits.recorded == []
+    assert audit_sink.evidence == [
+        AuthenticationAuditEvidence(outcome="rejected", reason="sign_in_wait")
+    ]
+    assert secret not in repr(audit_sink.evidence)
+
+
+@pytest.mark.parametrize("account_kind", ["unknown", "disabled", "wrong_password"])
+def test_every_refused_password_check_records_one_wrong_try(account_kind: str) -> None:
+    """DL-081: an unknown username, a disabled account and a wrong password each record one
+    wrong try under the normalized username and the source, and carry the wait it started."""
+    password_service = PasswordHashService()
+    credential = password_service.hash_password("approved password")
+    account = (
+        None
+        if account_kind == "unknown"
+        else LocalAccountCredential(
+            actor_id="actor-3",
+            lifecycle_state="disabled" if account_kind == "disabled" else "active",
+            mfa_policy_class="optional",
+            verifier_encoding=credential.verifier_encoding,
+        )
+    )
+    waits = RecordingSignInWaits(started=300)
+    service = LocalAuthenticationService(
+        repository=StubAccountRepository(account),
+        password_service=password_service,
+        attempt_limiter=StubAttemptLimiter(),
+        audit_sink=CollectingAuditSink(),
+        sign_in_waits=waits,
+    )
+    password = "wrong password" if account_kind == "wrong_password" else "approved password"
+
+    result = service.authenticate(username="Sokha", password=password, request_source="desk")
+
+    assert result == AuthenticationResult(is_authenticated=False, wait_seconds=300)
+    assert waits.recorded == [("sokha", "desk")]
+
+
+def test_a_correct_password_records_no_wrong_try() -> None:
+    """DL-081: a correct password neither records a wrong try nor carries a wait; the count is
+    cleared where the session is written."""
+    password_service = PasswordHashService()
+    credential = password_service.hash_password("approved password")
+    waits = RecordingSignInWaits()
+    service = LocalAuthenticationService(
+        repository=StubAccountRepository(
+            LocalAccountCredential(
+                actor_id="actor-4",
+                lifecycle_state="active",
+                mfa_policy_class="optional",
+                verifier_encoding=credential.verifier_encoding,
+            )
+        ),
+        password_service=password_service,
+        attempt_limiter=StubAttemptLimiter(),
+        audit_sink=CollectingAuditSink(),
+        sign_in_waits=waits,
+    )
+
+    result = service.authenticate(
+        username="Sokha", password="approved password", request_source="desk"
+    )
+
+    assert result.is_authenticated is True and result.wait_seconds is None
+    assert waits.asked == [("sokha", "desk")] and waits.recorded == []
+    # Q-2026-10-23-177 (a): the digest of the verifier checked, for the session transaction.
+    assert result.verifier_digest == verifier_digest(credential.verifier_encoding)
+    assert result.verifier_digest == hashlib.sha256(credential.verifier_encoding.encode()).digest()
+    # Review round 4: verifier material is never represented.
+    assert result.verifier_digest.hex() not in repr(result)

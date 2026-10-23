@@ -3899,3 +3899,61 @@ Your answer 1 to the 10h-2 report: add the READ COMMITTED check to the 8e-1 refu
 **Example.** The Owner disables Sokha's account at 10:00:00.000 while Sokha's iPad loads a page at 10:00:00.010. Before: the disable failed with "try again". Now: Sokha's session ends, dated 10:00:00.010, and the next page asks Sokha to sign in.
 
 **Decision.** As above. Built in L3a-2. The owner can change it later.
+
+## Q-2026-10-23-174 — Login sub-slice L3b: technical choices of the wrong-try count (decided by Claude Code under the owner's 2026-10-22 rule)
+
+**The points (technical; they do not change who may do what, money, or what staff may do).** (1) The count keeps sha256 digests of the normalized username and of the request source, never the typed text. (2) The wait answer of `POST /api/v1/auth/login` is the existing generic 429 (`RATE_LIMITED`, "Too many requests.") with `Retry-After` (the seconds left) and `no-store`; the sign-in screen writes the owner's wait message from it in L6. (3) Every refused password check counts as one wrong try: a wrong password, an unknown username, a disabled account and an account without a class, so the answers are the same for every username. (4) A correct password of an account that needs MFA neither counts nor clears: the completed MFA challenge clears the count in L3c, so a known password cannot wipe a count of wrong sign-in codes; before the MFA step the password is checked again for a wait, under the locks of the count (review round 1, security). (5) A correct sign-in clears the wrong tries up to the last one recorded; a parallel wrong try recorded after this sign-in's password check is cleared too (at most one or two tries, so a person who signs in correctly never meets a stale wait). (6) The in-memory flood guard of Q-2026-10-23-172 stays in front and still answers its own refusal with the plain 401.
+
+**Example.** Sokha types a wrong password twice and then the right one: she signs in and the count starts again from zero. Someone types "nobody.here" three times: the third try gets the same 429 with `Retry-After: 300` as Sokha would.
+
+**Decision.** As above. Built in L3b. The owner can change it later.
+
+## Q-2026-10-23-175 — Login sub-slice L3b: the wrong-try rows keep pseudonymous keys for ever (blocks nothing; recommendation (a)) (ANSWERED 2026-10-23: (a))
+
+**What is built.** Every wrong sign-in try is a row with the sha256 digest of the typed username and of the source address. The rows are append-only and never removed, and they are in every backup. A sha256 digest without a secret key can be reversed by trying names, or the whole range of IPv4 addresses, in seconds; if a person types a password into the username box by mistake, its digest stays in the database, and a weak password could be found from a stolen backup by trying many passwords quickly (review round 1, security).
+
+**Example.** Sokha pastes her password into the username box by mistake on 2 November. The row stays. If a backup copy were stolen in 2027, someone could try billions of guesses against that row's digest; a long passphrase still holds, a short or common one may not.
+
+**Options.**
+- (a) In L3c, when the API first reads the protected key file (Q-155), key the digests with HMAC-SHA256 under a key derived from it (Python standard library `hmac`, no new package, no new secret), and add an Owner-run way to remove wrong-try rows older than 30 days in slice 12 (an additive, reviewed procedure; the waits never last longer than 15 minutes, so old rows change nothing). The rows written before L3c keep their plain digests until that removal. Note (review round 2): the database cannot make the keyed digest without the key, so (a) also needs a forward migration that replaces the clear's check that the actor's own username gives the digest, with a test that a correct sign-in still clears the count.
+- (b) Keep plain sha256 digests and keep the rows for ever.
+
+**Recommendation: (a)**, because it removes the offline guessing risk without a new package or a new secret, and old rows have no use after their wait.
+
+**What goes ahead.** Everything; L3b works the same either way.
+
+**Owner answer (2026-10-23, same session).** Option (a), as recommended: in L3c the digests are keyed with a key derived from the protected key file; no new package, no new secret, and the key is never printed. Removing wrong-try rows older than 30 days goes on the slice 12 list. Recorded in docs/010 DL-081.
+
+## Q-2026-10-23-176 — Login sub-slice L3b: "in a row" has no time limit (blocks nothing; recommendation (a), as built) (ANSWERED 2026-10-23: (a))
+
+**What the rule says.** The owner's amended rule (2026-10-23): after 3 wrong tries in a row the person waits 5 minutes; after 2 more (5 in a row) 15 minutes; then every 2 more another 15 minutes, until a correct sign-in. Q-154 (a) counted wrong tries within 15 minutes; the amended words "in a row" and "until a correct sign-in" have no time limit.
+
+**Example.** Sokha types a wrong password twice on Monday evening and goes home. On Tuesday morning she types it wrong once more. With (a) that is her 3rd wrong try in a row, and she waits 5 minutes. With (b), the Monday tries were more than 15 minutes ago, so Tuesday's try is her first.
+
+**Options.**
+- (a) Count every wrong try since the last correct sign-in, with no time limit (as built in L3b).
+- (b) Forget wrong tries older than 15 minutes, as Q-154 (a) did.
+
+**One more point (review round 2).** A correct sign-in clears a real person's count, while an unknown username's count never clears. So someone who makes 2 wrong tries for "sokha" and for "nobody", and 1 more for each a day later, sees "nobody" get the wait answer and "sokha" the plain failure if Sokha signed in in between: that shows that "sokha" exists and that she signed in. With (a) this works across days; with (b) only within 15 minutes. It cannot be closed fully without changing the rule that a correct sign-in clears the count.
+
+**Recommendation: (a)**, because it follows the words "in a row" and "until a correct sign-in" exactly; the point above is small next to a 5-minute wait for every typing mistake, but (b) narrows it. Tell me if you meant (b); it is a small change in the count.
+
+**What goes ahead.** Everything; L3b is built with (a).
+
+**Owner answer (2026-10-23, same session).** Option (a), as recommended: no time limit, as built. Recorded in docs/010 DL-081.
+
+## Q-2026-10-23-177 — Login sub-slice L3b review round 3: a burst of parallel tries can still test passwords by timing (blocks the L3b commit; recommendation (a)) (ANSWERED 2026-10-23: (a))
+
+**What review round 3 found (blocker; the round 3 rule says stop).** The wait check before the password check runs in its own short transaction, so up to 20 tries for one username sent at the same moment (the in-memory flood guard's limit per process) all pass it and all have their password checked. The wrong ones after the 3rd get the wait answer at once. A correct one is checked a second time inside the session transaction (the L3a-1 guard against a password reset racing the sign-in) and only then meets the wait; it gets the same wait answer, but about one password check later (tens to hundreds of milliseconds), which a measuring attacker can see. So about 20 passwords per burst are tested while your rule allows 3, then 2.
+
+**Example.** Someone sends 20 guesses for "sokha" in the same second. 19 wrong ones answer "wait" after about 0.1 seconds; if one of them is Sokha's real password, that answer comes after about 0.2 seconds. The attacker now knows her password, although every answer said "wait".
+
+**Options.**
+- (a) Remove the second password check from the session transaction: the first check returns which stored password it checked, and the session transaction compares that with the stored password it reads (any change, also a reset to the same password, writes a new stored value, so the L3a-1 reset guard still holds). A correct password that meets a wait then answers after exactly one password check, like a wrong one. New test: count the password checks of a correct sign-in that meets a parallel wait (exactly one). Then all checks and runs again and review round 4.
+- (b) Keep the code and record the timing difference as a known limit.
+
+**Recommendation: (a)**, because it closes the gap with a smaller sign-in path, no new package and no change to who may do what; the reset guard keeps working.
+
+**Owner answer (2026-10-23, same session).** Option (a), as recommended: the second password check is replaced by the comparison of the stored password value, with a test that such a sign-in checks the password exactly once; all runs again as the run rules say, then review round 4; L3b is committed only if round 4 finds no blocker, otherwise stop. Recorded in docs/010 DL-081.
+
+**What went ahead.** Nothing in L3b was committed before this answer. L3c, L3d and L4 change the same files (`auth_flow.py`), so they do not start; L5 would share `ops/traceability.json`, the plan and docs with the uncommitted L3b, so it does not start either.

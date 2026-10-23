@@ -14,7 +14,12 @@ from property_rental.auth_api import (
     AuthenticationUnavailable,
     LoginRequest,
 )
-from property_rental.auth_flow import PostgresAuthenticationFlow, session_token_digest
+from property_rental.auth_flow import (
+    PostgresAuthenticationFlow,
+    session_token_digest,
+    sign_in_source_digest,
+    sign_in_username_digest,
+)
 from property_rental.settings import Settings
 
 ORIGIN = "https://property.test"
@@ -86,3 +91,12 @@ def test_a_database_that_cannot_be_reached_answers_unavailable() -> None:
             "/api/v1/auth/session", headers={"Cookie": "__Host-prm_session=" + "t" * 43}
         )
         assert session.status_code == 503
+
+
+def test_the_wrong_try_keys_are_sha256_digests_of_the_username_and_the_source() -> None:
+    """Login sub-slice L3b: the database count keeps only sha256 digests, with a different
+    prefix for a username and a source, so the same text never gives the same key."""
+    assert sign_in_username_digest("sokha") == hashlib.sha256(b"username:sokha").digest()
+    assert sign_in_source_digest("10.0.0.7") == hashlib.sha256(b"source:10.0.0.7").digest()
+    assert sign_in_username_digest("desk") != sign_in_source_digest("desk")
+    assert len(sign_in_username_digest("u" * 128)) == 32

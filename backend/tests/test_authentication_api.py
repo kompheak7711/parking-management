@@ -768,6 +768,45 @@ def test_rate_limited_login_returns_generic_429_without_account_disclosure() -> 
     assert "operator" not in response.text
 
 
+class WaitingAuthenticationFlow(StubAuthenticationFlow):
+    def login(
+        self,
+        *,
+        username: str,
+        password: str,
+        request_source: str,
+        request_id: str,
+    ) -> AuthenticationResult:
+        raise AuthenticationRateLimited(300)
+
+
+def test_a_sign_in_wait_answers_429_with_retry_after_and_no_store() -> None:
+    """Login sub-slice L3b: the wait answer is the generic 429 body with the seconds left in
+    `Retry-After`, `no-store`, and nothing about the account."""
+    response = request(
+        create_app(
+            Settings(allowed_browser_origin="https://property.test"),
+            authentication_flow=WaitingAuthenticationFlow(authenticated_result()),
+        ),
+        "POST",
+        "/api/v1/auth/login",
+        json={"username": "operator", "password": "not-used"},
+        headers={"Origin": "https://property.test", "X-Request-ID": "auth-wait"},
+    )
+
+    assert response.status_code == 429
+    assert response.json()["error"] == {
+        "code": "RATE_LIMITED",
+        "message": "Too many requests.",
+        "fields": [],
+        "rule_ids": [],
+        "current_version": None,
+    }
+    assert response.headers["Retry-After"] == "300"
+    assert response.headers["Cache-Control"] == "no-store"
+    assert "operator" not in response.text and "set-cookie" not in response.headers
+
+
 def test_authentication_mutations_reject_missing_origin_and_csrf_evidence() -> None:
     app = create_app(
         Settings(allowed_browser_origin="https://property.test"),

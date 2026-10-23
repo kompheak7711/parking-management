@@ -1,11 +1,12 @@
 """Private local username/password authentication foundation."""
 
+import hashlib
 import secrets
 import time
 import unicodedata
 from collections import deque
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from threading import Lock
 from typing import Literal, Protocol
 
@@ -43,6 +44,19 @@ class AuthenticationAttemptLimiter(Protocol):
     def allow(self, account_key: str, source_key: str) -> bool: ...
 
 
+class SignInWaitBoundary(Protocol):
+    """The database count of wrong sign-in tries and the waits it starts (login sub-slice L3b).
+
+    Each method returns the seconds left of an active wait for the username or the source, or
+    None. The keys are the normalized username and the request source; an implementation stores
+    only digests of them.
+    """
+
+    def wait_seconds(self, account_key: str, source_key: str) -> int | None: ...
+
+    def record_wrong_try(self, account_key: str, source_key: str) -> int | None: ...
+
+
 class AuthenticationAuditSink(Protocol):
     """Sink for secret-free authentication decision evidence."""
 
@@ -66,6 +80,12 @@ class AuthenticationResult:
     is_authenticated: bool
     actor_id: str | None = None
     mfa_policy_class: str | None = None
+    # The seconds left of the wait a rejected try met or started (login sub-slice L3b).
+    wait_seconds: int | None = None
+    # The sha256 digest of the stored verifier the password was checked against, so a later
+    # transaction can see that the stored password has not changed without a second Argon2id
+    # check (owner answer (a) to Q-2026-10-23-177).
+    verifier_digest: bytes | None = field(default=None, repr=False)
 
 
 @dataclass(frozen=True, slots=True)
@@ -73,7 +93,7 @@ class AuthenticationAuditEvidence:
     """Secret-free evidence that an authentication decision occurred."""
 
     outcome: Literal["authenticated", "rejected"]
-    reason: Literal["credentials_verified", "credentials_rejected", "rate_limited"]
+    reason: Literal["credentials_verified", "credentials_rejected", "rate_limited", "sign_in_wait"]
     actor_id: str | None = None
 
 
@@ -134,6 +154,12 @@ class BoundedAuthenticationAttemptLimiter:
         return attempts
 
 
+def verifier_digest(verifier_encoding: str) -> bytes:
+    """The sha256 digest of a stored password verifier; any password change, also to the same
+    password, stores a new verifier with a new salt and so a new digest."""
+    return hashlib.sha256(verifier_encoding.encode("utf-8")).digest()
+
+
 def normalize_local_username(username: str) -> str:
     """Apply the lower-and-space-trim normalization enforced by DB-AUTH-001, after removing
     U+200B, making the username NFC (Q-2026-10-22-169 (a)) and tidying its spaces
@@ -187,11 +213,13 @@ class LocalAuthenticationService:
         password_service: PasswordHashService,
         attempt_limiter: AuthenticationAttemptLimiter,
         audit_sink: AuthenticationAuditSink,
+        sign_in_waits: SignInWaitBoundary | None = None,
     ) -> None:
         self._repository = repository
         self._password_service = password_service
         self._attempt_limiter = attempt_limiter
         self._audit_sink = audit_sink
+        self._sign_in_waits = sign_in_waits
         self._dummy_verifier_encoding = password_service.hash_password(
             secrets.token_urlsafe(32)
         ).verifier_encoding
@@ -207,6 +235,12 @@ class LocalAuthenticationService:
         account_key = normalize_local_username(username)
         if not self._attempt_limiter.allow(account_key, request_source):
             return self._reject("rate_limited")
+        if self._sign_in_waits is not None:
+            # A try during a wait is refused before the lookup and the password check, and
+            # adds nothing to the count (owner's rule, DL-081).
+            waiting = self._sign_in_waits.wait_seconds(account_key, request_source)
+            if waiting is not None:
+                return self._reject("sign_in_wait", wait_seconds=waiting)
 
         account = self._repository.find_by_username(username)
         verification = self._password_service.verify_password(
@@ -214,7 +248,14 @@ class LocalAuthenticationService:
             account.verifier_encoding if account is not None else self._dummy_verifier_encoding,
         )
         if account is None or account.lifecycle_state != "active" or not verification.is_valid:
-            return self._reject("credentials_rejected")
+            # Every refused password check counts as one wrong try, whether or not the account
+            # exists, so the answers stay the same for every username.
+            started = (
+                self._sign_in_waits.record_wrong_try(account_key, request_source)
+                if self._sign_in_waits is not None
+                else None
+            )
+            return self._reject("credentials_rejected", wait_seconds=started)
 
         evidence = AuthenticationAuditEvidence(
             outcome="authenticated",
@@ -226,11 +267,14 @@ class LocalAuthenticationService:
             is_authenticated=True,
             actor_id=account.actor_id,
             mfa_policy_class=account.mfa_policy_class,
+            verifier_digest=verifier_digest(account.verifier_encoding),
         )
 
     def _reject(
         self,
-        reason: Literal["credentials_rejected", "rate_limited"],
+        reason: Literal["credentials_rejected", "rate_limited", "sign_in_wait"],
+        *,
+        wait_seconds: int | None = None,
     ) -> AuthenticationResult:
         self._audit_sink.record(AuthenticationAuditEvidence(outcome="rejected", reason=reason))
-        return AuthenticationResult(is_authenticated=False)
+        return AuthenticationResult(is_authenticated=False, wait_seconds=wait_seconds)

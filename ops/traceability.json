@@ -45896,7 +45896,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_auth_flow_migration.py",
       "status": "implemented",
-      "notes": "When the account's password verifier is replaced after the password check and before the session is written, the sign-in is refused and no session row is written, because the session transaction checks the password again against the current verifier (login slice sub-slice L3a-1 review round 1 (security), DL-081)."
+      "notes": "When the account's password verifier is replaced after the password check and before the session is written, the sign-in is refused and no session row is written, because the session transaction checks that the current verifier is the one the password was checked against (a digest comparison since login slice sub-slice L3b, Q-2026-10-23-177 (a)) (login slice sub-slice L3a-1 review round 1 (security), DL-081)."
     },
     {
       "test_id": "test_the_flood_guard_refuses_a_username_after_20_tries_and_a_source_after_100",
@@ -45908,7 +45908,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_auth_flow_migration.py",
       "status": "implemented",
-      "notes": "The coarse per-process flood guard refuses a username after 20 tries in 15 minutes even with the right password, and a source after 100 tries, with the same rejection and no session; the same username from another source and another flow signs in (login slice sub-slice L3a-1 review round 1, DL-081)."
+      "notes": "The coarse per-process flood guard refuses a username after 20 tries in 15 minutes even with the right password, and a source after 100 tries, with the same rejection and no session; from sub-slice L3b the database wait answers first (the 3rd wrong try for the username and the 20th from one source start waits), the flood guard still refuses the 21st and the 101st try, the username's wait survives a new flow object and another account signs in from another source (login slice sub-slice L3a-1 review round 1 and L3b, DL-081)."
     },
     {
       "test_id": "test_the_resolver_gives_the_session_account_its_bundle_grants_and_records_activity",
@@ -46047,6 +46047,243 @@
       "test_path": "backend/tests/test_session_actor.py",
       "status": "implemented",
       "notes": "When the grant reader refuses a capability the application catalog does not know, the resolver gives no actor with partial grants and raises AuthenticationUnavailable (503) (login slice sub-slice L3a-2 review round 1, DL-081)."
+    },
+    {
+      "test_id": "test_the_owners_example_3_wrong_tries_wait_5_minutes_then_every_2_more_wait_15",
+      "upstream_ids": [
+        "API-096",
+        "DB-AUTH-011",
+        "DL-080",
+        "DL-081",
+        "SEC-012",
+        "TEST-108",
+        "UI-109"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_sign_in_wait_migration.py",
+      "status": "implemented",
+      "notes": "The owner's example: 3 wrong tries start a 5-minute wait; the right password and further tries are refused during it and add no row; after it the 4th wrong try gives no wait and the 5th a 15-minute wait; the 6th none and the 7th 15 minutes again (login slice sub-slice L3b, DL-081)."
+    },
+    {
+      "test_id": "test_a_correct_sign_in_just_after_the_wait_clears_the_count",
+      "upstream_ids": [
+        "API-096",
+        "DB-AUTH-011",
+        "DL-081",
+        "SEC-012"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_sign_in_wait_migration.py",
+      "status": "implemented",
+      "notes": "The right password is refused just before the end of a wait and makes a session just after it, recording a clear, so 3 more wrong tries start the 5-minute wait again; a username that is not ASCII is cleared too (database and Python digests match); a correct sign-in with no wrong try records no clear (login slice sub-slice L3b review round 2, DL-081)."
+    },
+    {
+      "test_id": "test_the_wait_answer_is_the_same_for_a_known_and_an_unknown_username",
+      "upstream_ids": [
+        "API-096",
+        "DL-080",
+        "DL-081",
+        "SEC-012",
+        "TEST-110",
+        "UI-109"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_sign_in_wait_migration.py",
+      "status": "implemented",
+      "notes": "Through create_app, an existing and an unknown username get the same 401 answers and then the same 429 answer (RATE_LIMITED, Retry-After 300, no-store); no username, password or source text reaches the rows or the log (login slice sub-slice L3b, DL-081)."
+    },
+    {
+      "test_id": "test_a_disabled_account_counts_and_an_mfa_password_neither_counts_nor_clears",
+      "upstream_ids": [
+        "API-096",
+        "DB-AUTH-011",
+        "DL-056",
+        "DL-081",
+        "SEC-012",
+        "SEC-013"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_sign_in_wait_migration.py",
+      "status": "implemented",
+      "notes": "The right password of a disabled account counts as a wrong try; the right password of an account that needs MFA gives the MFA step and neither adds to nor clears the count (login slice sub-slice L3b, DL-081)."
+    },
+    {
+      "test_id": "test_a_source_waits_15_minutes_after_20_wrong_tries_in_15_minutes",
+      "upstream_ids": [
+        "API-096",
+        "DB-AUTH-011",
+        "DL-081",
+        "SEC-012"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_sign_in_wait_migration.py",
+      "status": "implemented",
+      "notes": "20 wrong tries from one source in 15 minutes start a 15-minute wait for that source, also for a right password, while the account signs in from another source; older tries do not count and an ended source wait lets the source sign in (login slice sub-slice L3b, DL-081)."
+    },
+    {
+      "test_id": "test_the_clear_and_the_count_add_nothing_while_a_wait_is_active",
+      "upstream_ids": [
+        "DB-AUTH-011",
+        "DL-081",
+        "SEC-012"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_sign_in_wait_migration.py",
+      "status": "implemented",
+      "notes": "As the runtime role, during an active wait the clear and the count answer the wait and record nothing (a wait started by a parallel try wins), a clear for a disabled account records nothing, and the wait read answers NULL without a wait (login slice sub-slice L3b, DL-081)."
+    },
+    {
+      "test_id": "test_the_try_relations_are_append_only_and_only_the_functions_are_open_to_the_runtime",
+      "upstream_ids": [
+        "DB-AUTH-011",
+        "DL-081",
+        "SEC-012"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_sign_in_wait_migration.py",
+      "status": "implemented",
+      "notes": "The three relations refuse UPDATE, DELETE and TRUNCATE; the runtime role has no table privilege and EXECUTE only on the three definer functions with a pinned search_path; the functions refuse a non READ COMMITTED transaction, a key that is not a sha256 digest and an unknown try kind; the migration is the head, follows 20270127_184 and refuses a downgrade (login slice sub-slice L3b, DL-081)."
+    },
+    {
+      "test_id": "test_a_try_during_a_sign_in_wait_is_refused_before_the_lookup_and_the_password_check",
+      "upstream_ids": [
+        "API-096",
+        "DL-081",
+        "SEC-012",
+        "TEST-108"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_local_authentication.py",
+      "status": "implemented",
+      "notes": "A try during a wait is refused without the account lookup or the password check, records no wrong try, carries the seconds left and is audited as sign_in_wait without the password (login slice sub-slice L3b, DL-081)."
+    },
+    {
+      "test_id": "test_every_refused_password_check_records_one_wrong_try",
+      "upstream_ids": [
+        "API-096",
+        "DL-081",
+        "SEC-012",
+        "UI-109"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_local_authentication.py",
+      "status": "implemented",
+      "notes": "An unknown username, a disabled account and a wrong password each record one wrong try under the normalized username and the source and carry the wait it started (login slice sub-slice L3b, DL-081)."
+    },
+    {
+      "test_id": "test_a_correct_password_records_no_wrong_try",
+      "upstream_ids": [
+        "API-096",
+        "DL-081",
+        "SEC-012"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_local_authentication.py",
+      "status": "implemented",
+      "notes": "A correct password records no wrong try, carries no wait and carries the sha256 digest of the verifier it was checked against (login slice sub-slice L3b, Q-2026-10-23-177 (a), DL-081)."
+    },
+    {
+      "test_id": "test_the_wrong_try_keys_are_sha256_digests_of_the_username_and_the_source",
+      "upstream_ids": [
+        "DL-081",
+        "SEC-012",
+        "TEST-110"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_auth_flow.py",
+      "status": "implemented",
+      "notes": "The wrong-try count keeps only sha256 digests of the prefixed username and source (login slice sub-slice L3b, DL-081)."
+    },
+    {
+      "test_id": "test_a_sign_in_wait_answers_429_with_retry_after_and_no_store",
+      "upstream_ids": [
+        "API-096",
+        "DL-081",
+        "SEC-012",
+        "UI-109"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_authentication_api.py",
+      "status": "implemented",
+      "notes": "The wait answer is the generic 429 RATE_LIMITED body with Retry-After and no-store and nothing about the account (login slice sub-slice L3b, DL-081)."
+    },
+    {
+      "test_id": "test_the_mfa_step_is_refused_when_a_parallel_wrong_try_started_a_wait",
+      "upstream_ids": [
+        "API-096",
+        "DL-056",
+        "DL-081",
+        "SEC-012",
+        "SEC-013"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_sign_in_wait_migration.py",
+      "status": "implemented",
+      "notes": "The right password of an account that needs MFA is checked again for a wait under the locks of the count; a wait started by a parallel 3rd wrong try after the first check refuses the MFA step with the wait answer (login slice sub-slice L3b review round 1, DL-081)."
+    },
+    {
+      "test_id": "test_a_correct_sign_in_is_refused_when_the_clear_meets_a_parallel_wait",
+      "upstream_ids": [
+        "API-096",
+        "DB-AUTH-011",
+        "DL-081",
+        "SEC-012"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_sign_in_wait_migration.py",
+      "status": "implemented",
+      "notes": "When the first check saw no wait but a parallel wrong try started one, the clear in the session transaction answers it: the sign-in gets the wait answer after exactly one password check, no session is written and nothing is cleared (login slice sub-slice L3b review rounds 1 and 3, Q-2026-10-23-177 (a), DL-081)."
+    },
+    {
+      "test_id": "test_a_clear_with_another_accounts_actor_clears_nothing",
+      "upstream_ids": [
+        "DB-AUTH-011",
+        "DL-081",
+        "SEC-012"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_sign_in_wait_migration.py",
+      "status": "implemented",
+      "notes": "The clear refuses an actor whose username is not the one of the digest, so one account cannot clear another username's count (login slice sub-slice L3b review round 1, DL-081)."
+    },
+    {
+      "test_id": "test_each_function_waits_for_the_username_lock_and_then_meets_the_parallel_wait",
+      "upstream_ids": [
+        "DB-AUTH-011",
+        "DL-081",
+        "SEC-012"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_sign_in_wait_migration.py",
+      "status": "implemented",
+      "notes": "While another transaction holds the username lock and records the 3rd wrong try with its wait, the count, the wait read and the clear each wait for the lock and then answer that wait; the count records no row and the clear clears nothing (login slice sub-slice L3b review rounds 1 and 2, DL-081)."
+    },
+    {
+      "test_id": "test_a_wait_has_only_the_lengths_of_the_owners_rule",
+      "upstream_ids": [
+        "DB-AUTH-011",
+        "DL-080",
+        "DL-081",
+        "SEC-012"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_sign_in_wait_migration.py",
+      "status": "implemented",
+      "notes": "A username wait is 5 or 15 minutes and a source wait 15 minutes; any other length is refused by the database (login slice sub-slice L3b review round 1, DL-081)."
+    },
+    {
+      "test_id": "test_a_reset_to_the_same_password_during_sign_in_is_refused",
+      "upstream_ids": [
+        "DB-AUTH-004",
+        "DL-055",
+        "DL-081",
+        "SEC-011",
+        "SEC-017"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_sign_in_wait_migration.py",
+      "status": "implemented",
+      "notes": "A reset to the same password after the password check stores a new salted verifier, so the session transaction's verifier comparison refuses the sign-in and no session is written (login slice sub-slice L3b review round 4, Q-2026-10-23-177 (a), DL-081)."
     }
   ]
 }

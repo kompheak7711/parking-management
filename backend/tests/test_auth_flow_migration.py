@@ -25,6 +25,7 @@ from pydantic import SecretStr
 from property_rental.app import create_app
 from property_rental.auth_api import (
     AuthenticationPhase,
+    AuthenticationRateLimited,
     AuthenticationRejected,
     AuthenticationUnavailable,
 )
@@ -388,7 +389,8 @@ def test_a_password_reset_during_sign_in_leaves_no_session_made_with_the_old_pas
 ) -> None:
     """Review round 1 (security): the password is checked, then the account's password is
     replaced before the session is written; the sign-in is refused and no session is written,
-    because the session transaction checks the password again against the current verifier."""
+    because the session transaction checks that the current verifier is the one the password was
+    checked against (a comparison since login sub-slice L3b, Q-2026-10-23-177 (a))."""
     actor_id = add_staff(sign_in_database, "l3a-1.reset")
     flow = PostgresAuthenticationFlow(sign_in_database.runtime_url)
     replacement = PasswordHashService().hash_password("an entirely different passphrase")
@@ -416,14 +418,21 @@ def test_a_password_reset_during_sign_in_leaves_no_session_made_with_the_old_pas
 def test_the_flood_guard_refuses_a_username_after_20_tries_and_a_source_after_100(
     sign_in_database: SignInDatabase,
 ) -> None:
-    """Review round 1: the coarse per-process flood guard of this sub-slice (L3b adds the
-    database count of wrong tries) refuses a username after 20 tries in 15 minutes, even with
-    the right password, and a source after 100 tries, with the same rejection as a wrong
-    password and no session."""
+    """Review round 1: the coarse per-process flood guard of this sub-slice refuses a username
+    after 20 tries in 15 minutes, even with the right password, and a source after 100 tries,
+    with the same rejection as a wrong password and no session.
+
+    Login sub-slice L3b (the owner's wait rule, DL-081): the database count now answers first:
+    the 3rd wrong try for the username starts a 5-minute wait and the 20th wrong try from one
+    source a 15-minute wait, so the tries after them get the wait answer; the flood guard still
+    refuses the 21st and the 101st try before the database is asked. The wait is kept in the
+    database, so a new flow object still refuses the waiting username."""
     actor_id = add_staff(sign_in_database, "l3a-1.flood")
     flow = PostgresAuthenticationFlow(sign_in_database.runtime_url)
     for attempt in range(20):
-        with pytest.raises(AuthenticationRejected):
+        # L3b: the 3rd wrong try starts the 5-minute wait of the owner's rule.
+        refusal = AuthenticationRejected if attempt < 2 else AuthenticationRateLimited
+        with pytest.raises(refusal):
             flow.login(
                 username="l3a-1.flood",
                 password="wrong horse battery staple",
@@ -438,7 +447,9 @@ def test_the_flood_guard_refuses_a_username_after_20_tries_and_a_source_after_10
 
     other = PostgresAuthenticationFlow(sign_in_database.runtime_url)
     for attempt in range(100):
-        with pytest.raises(AuthenticationRejected):
+        # L3b: the 20th wrong try from one source starts its 15-minute wait.
+        refusal = AuthenticationRejected if attempt < 19 else AuthenticationRateLimited
+        with pytest.raises(refusal):
             other.login(
                 username=f"nobody-{attempt}",
                 password=PASSWORD,
@@ -453,7 +464,15 @@ def test_the_flood_guard_refuses_a_username_after_20_tries_and_a_source_after_10
             request_id="l3a-1",
         )
     assert sessions_of(sign_in_database, actor_id) == []
+    # L3b: the username's wait is in the database, so the new flow object still refuses it.
+    with pytest.raises(AuthenticationRateLimited):
+        other.login(
+            username="l3a-1.flood", password=PASSWORD, request_source="desk", request_id="l3a-1"
+        )
+    assert sessions_of(sign_in_database, actor_id) == []
+    # Another account still signs in from another source through the same flow object.
+    add_staff(sign_in_database, "l3a-1.flood-other")
     signed_in = other.login(
-        username="l3a-1.flood", password=PASSWORD, request_source="desk", request_id="l3a-1"
+        username="l3a-1.flood-other", password=PASSWORD, request_source="desk", request_id="l3a-1"
     )
     assert signed_in.session_token is not None
