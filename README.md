@@ -93,7 +93,10 @@ file without group or other access; never a key value). The API reads it once at
 keys its wrong-try counts with a key derived from it. With `APP_DATABASE_URL` set, the API refuses
 to start without it in every `APP_ENVIRONMENT` except `development` and `test`. `APP_ENVIRONMENT`
 defaults to `development`, so a real deployment must set it (for example to `production`).
-Changing the key starts every wrong-try count and wait again. `APP_PASSWORD_BLOCKLIST_FILE` is the
+Changing the key starts every wrong-try count and wait again. The API checks sign-in codes with
+the same key; without it, sign-in codes cannot be checked, and an API started with
+`APP_DATABASE_URL` and no key file logs the warning event `security.protected_key_file_missing` at
+start-up. `APP_PASSWORD_BLOCKLIST_FILE` is the
 path of the local password blocklist, read from login sub-slice L4 (the password change step).
 
 ## Verification

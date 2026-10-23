@@ -1,17 +1,22 @@
 """Login sub-slice L3c-1: the protected key file, its derived key and the start-up rule (DL-081,
 owner answers (a) to Q-2026-10-21-155 and Q-2026-10-23-175, SEC-073)."""
 
+import asyncio
+import io
+import json
 import os
 import stat
 from collections.abc import Callable
 from pathlib import Path
 
 import pytest
+from fastapi import FastAPI
 from pydantic import SecretStr
 
 import property_rental.app as app_module
 from property_rental.app import create_app
 from property_rental.auth_api import UnavailableAuthenticationFlow
+from property_rental.logging import create_application_logger
 from property_rental.runtime_secrets import (
     ProtectedKeyUnavailable,
     derive_sign_in_try_key,
@@ -125,14 +130,20 @@ def test_create_app_gives_the_derived_key_to_the_sign_in_flow(
 ) -> None:
     """Review round 1 (independent reviewer's set-up): with the key file, also in `production`,
     the app starts and gives the sign-in flow the key derived from it; without one, in
-    `development`, the flow gets no key."""
+    `development`, the flow gets no key. Login sub-slice L3c-2a: the flow also gets the
+    protection key itself, to check sign-in codes, and none without the key file."""
     monkeypatch.delenv("APP_TOTP_KEY_FILE", raising=False)
     seen: list[bytes | None] = []
+    protection_keys: list[bytes | None] = []
 
     def recording_flow(
-        database_url: str, *, sign_in_try_key: bytes | None = None
+        database_url: str,
+        *,
+        sign_in_try_key: bytes | None = None,
+        totp_protection_key: bytes | None = None,
     ) -> UnavailableAuthenticationFlow:
         seen.append(sign_in_try_key)
+        protection_keys.append(totp_protection_key)
         return UnavailableAuthenticationFlow()
 
     monkeypatch.setattr(app_module, "read_protected_totp_key", lambda _: bytes.fromhex(KEY_HEX))
@@ -146,3 +157,54 @@ def test_create_app_gives_the_derived_key_to_the_sign_in_flow(
     )
     create_app(Settings(environment="development", database_url=SecretStr(UNUSED_DATABASE)))
     assert seen == [derive_sign_in_try_key(bytes.fromhex(KEY_HEX)), None]
+    assert protection_keys == [bytes.fromhex(KEY_HEX), None]
+
+
+def start_and_stop(app: FastAPI) -> None:
+    async def run_lifespan() -> None:
+        async with app.router.lifespan_context(app):
+            pass
+
+    asyncio.run(run_lifespan())
+
+
+def test_a_start_with_a_database_and_no_key_file_logs_a_warning_without_secrets(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Owner item 4 of 2026-10-23: `APP_ENVIRONMENT` defaults to `development`, so an app started
+    with a database and without the key file logs one warning at start-up; the log shows no
+    key, no path and no database URL. With the key file, or without a database, there is no
+    warning."""
+    monkeypatch.delenv("APP_TOTP_KEY_FILE", raising=False)
+    monkeypatch.setattr(app_module, "read_protected_totp_key", lambda _: bytes.fromhex(KEY_HEX))
+    for settings, warned in (
+        (Settings(database_url=SecretStr(UNUSED_DATABASE)), True),
+        (Settings(environment="test", database_url=SecretStr(UNUSED_DATABASE)), True),
+        (
+            Settings(
+                environment="production",
+                database_url=SecretStr(UNUSED_DATABASE),
+                totp_key_file="/dev/fd/9",
+            ),
+            False,
+        ),
+        (Settings(environment="development", database_url=None), False),
+    ):
+        stream = io.StringIO()
+        logger = create_application_logger(
+            service="property-rental-backend",
+            environment=settings.environment,
+            level="INFO",
+            stream=stream,
+        )
+        start_and_stop(create_app(settings, application_logger=logger))
+        entries = [json.loads(line) for line in stream.getvalue().splitlines()]
+        warnings = [entry for entry in entries if entry["severity"] == "WARNING"]
+        expected = [{"event": "security.protected_key_file_missing"}] if warned else []
+        assert [{"event": entry["event"]} for entry in warnings] == expected
+        assert [entry["event"] for entry in entries if entry["severity"] == "INFO"] == [
+            "application.started",
+            "application.stopping",
+        ]
+        for secret in (UNUSED_DATABASE, KEY_HEX, "/dev/fd/9"):
+            assert secret not in stream.getvalue()

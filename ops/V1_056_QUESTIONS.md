@@ -3957,3 +3957,12 @@ Your answer 1 to the 10h-2 report: add the READ COMMITTED check to the 8e-1 refu
 **Owner answer (2026-10-23, same session).** Option (a), as recommended: the second password check is replaced by the comparison of the stored password value, with a test that such a sign-in checks the password exactly once; all runs again as the run rules say, then review round 4; L3b is committed only if round 4 finds no blocker, otherwise stop. Recorded in docs/010 DL-081.
 
 **What went ahead.** Nothing in L3b was committed before this answer. L3c, L3d and L4 change the same files (`auth_flow.py`), so they do not start; L5 would share `ops/traceability.json`, the plan and docs with the uncommitted L3b, so it does not start either.
+
+
+## Q-2026-10-23-178 — Login sub-slice L3c-2a: sign-in code checks and the start-up warning (decided by Claude Code under the owner's 2026-10-22 rule)
+
+**The points (technical; they do not change who may do what, money, or what staff may do).** (1) A sign-in code is accepted for the current 30-second step of the database clock and the step before it, so a code typed at the end of its 30 seconds still works; each step is used once, and only after the last step used. (2) The pre-authentication step lasts 5 minutes (the cookie's own time) and is completed once. (3) The start-up warning of owner item 4 is written when the API starts with a database and without the key file; without a database nobody can sign in, so no warning is written. The application log shows only the event `security.protected_key_file_missing` (the log keeps only fixed fields), never a key, a path or a file's content. (4) A used step and an MFA proof name their enrollment and session without a database foreign key; their insert checks do the same job, so the existing refusal to empty the session and sign-in code tables stays unchanged.
+
+**Example.** Sokha's phone shows 482913 at 09:00:28 and she presses the button at 09:00:31: the code is accepted. Someone who watched her screen types 482913 again at 09:00:40: it is refused, because that step was used.
+
+**Decision.** As above. Built in L3c-2a. The owner can change it later.

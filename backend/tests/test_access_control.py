@@ -66,6 +66,7 @@ NON_CAPABILITY_LABELS = frozenset(
         "reservation.create",
         "reservation.expire",
         "reservation.extend",
+        "security.protected_key_file_missing",
         "unit.created",
         "unit.updated",
         "unpaid_initial.moved_in_credit",

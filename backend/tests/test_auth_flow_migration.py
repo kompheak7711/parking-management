@@ -204,15 +204,16 @@ def test_every_failed_sign_in_gives_the_same_rejection_and_writes_no_session(
 def test_an_account_that_needs_mfa_gets_no_session_before_the_challenge(
     sign_in_database: SignInDatabase,
 ) -> None:
-    """DL-056: the Owner and a Manager (MFA policy `required`) get the phase `mfa_required` with a
-    pre-authentication token and no session, no session row and no actor; the challenge answers
-    unavailable until login sub-slice L3c."""
+    """DL-056: the Owner and a Manager (MFA policy `required`) without a sign-in code get the
+    phase `mfa_enrollment_required` (login sub-slice L3c-2a) with a pre-authentication token
+    and no session, no session row and no actor; a flow without the protection key answers the
+    challenge unavailable."""
     flow = PostgresAuthenticationFlow(sign_in_database.runtime_url)
     for username in ("owner.one", "manager.one"):
         result = flow.login(
             username=username, password=PASSWORD, request_source="desk", request_id="l3a-1"
         )
-        assert result.phase is AuthenticationPhase.MFA_REQUIRED
+        assert result.phase is AuthenticationPhase.MFA_ENROLLMENT_REQUIRED
         assert result.session is None and result.session_token is None
         assert result.preauth_token is not None and result.csrf_token
         assert sessions_of(sign_in_database, sign_in_database.accounts[username]) == []

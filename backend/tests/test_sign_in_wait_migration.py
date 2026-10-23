@@ -54,8 +54,10 @@ from test_move_in_migration import runtime_database_url
 
 REVISION = "20270128_185"
 PREVIOUS = "20270127_184"
-# The head after login sub-slice L3c-1 (migration 20270129_186).
-HEAD = "20270129_186"
+# The head after login sub-slice L3c-2a (migration 20270130_187).
+HEAD = "20270130_187"
+# The migration of login sub-slice L3c-1.
+KEYED_CLEAR = "20270129_186"
 PASSWORD = "correct horse battery staple"
 WRONG = "wrong horse battery staple"
 ORIGIN = "https://property.test"
@@ -351,7 +353,8 @@ def test_a_disabled_account_counts_and_an_mfa_password_neither_counts_nor_clears
     result = flow.login(
         username="l3b.manager", password=PASSWORD, request_source="l3b-mfa", request_id="l3b"
     )
-    assert result.phase is AuthenticationPhase.MFA_REQUIRED and result.session is None
+    # Login sub-slice L3c-2a: an account without a sign-in code is asked to set one up.
+    assert result.phase is AuthenticationPhase.MFA_ENROLLMENT_REQUIRED and result.session is None
     assert read(wait_database, TRIES_OF, key) == [(2,)]
     assert read(wait_database, CLEARS_OF, key) == []
     assert sign_in(flow, "l3b.manager", WRONG, "l3b-mfa") == 300
@@ -432,8 +435,8 @@ def test_the_try_relations_are_append_only_and_only_the_functions_are_open_to_th
     role has no privilege on them and EXECUTE only on the three definer functions (pinned
     `search_path`, no PUBLIC EXECUTE); the functions refuse a transaction that is not READ
     COMMITTED, a key that is not a sha256 digest and an unknown try kind; the migration follows
-    `20270127_184` and refuses a downgrade (the head is `20270129_186` since login sub-slice
-    L3c-1)."""
+    `20270127_184` and refuses a downgrade (the head is `20270130_187` since login sub-slice
+    L3c-2a)."""
     tries = add_tries(wait_database, "l3b.guard", "l3b-guard", 1, "1 minute")
     key = username_key("l3b.guard")
     source = sign_in_source_digest("l3b-guard")
@@ -651,7 +654,7 @@ def test_a_flow_with_the_protected_key_keeps_keyed_digests_and_clears_them(
     assert read(wait_database, TRIES_OF, bystander) == [(2,)]
 
     scripts = ScriptDirectory.from_config(Config("alembic.ini"))
-    revision = scripts.get_revision(HEAD)
+    revision = scripts.get_revision(KEYED_CLEAR)
     assert revision is not None and revision.down_revision == REVISION
     with pytest.raises(RuntimeError, match="forward-only"):
         revision.module.downgrade()

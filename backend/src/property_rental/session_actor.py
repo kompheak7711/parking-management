@@ -32,6 +32,7 @@ from property_rental.auth_api import (
 from property_rental.auth_flow import (
     CONNECT_TIMEOUT_SECONDS,
     LIVE_SESSION,
+    SESSION_MFA_SATISFIED,
     STATEMENT_TIMEOUT_OPTION,
     session_token_digest,
 )
@@ -40,9 +41,9 @@ from property_rental.identity import AuthenticatedActor, CapabilityGrant, Object
 # The session's activity (DB-AUTH-004): the trigger sets the new idle expiry, never past the
 # absolute one. The guard on `last_activity_at` skips the write when a parallel request already
 # recorded a later activity, so the trigger never sees time going back; a session of an account
-# that may not be resolved (disabled, unclassified, needing MFA) gets no activity (review round
-# 1).
-RECORD_ACTIVITY: Final = """
+# that may not be resolved (disabled, unclassified, needing MFA without an MFA proof) gets no
+# activity (review round 1; login sub-slice L3c-2a).
+RECORD_ACTIVITY: Final = f"""
     UPDATE app.browser_sessions AS browser
     SET last_activity_at = statement_timestamp()
     WHERE browser.token_verifier = %s
@@ -57,7 +58,7 @@ RECORD_ACTIVITY: Final = """
             ON classification.actor_id = account.actor_id
           WHERE account.actor_id = browser.actor_id
             AND account.lifecycle_state = 'active'
-            AND account.mfa_policy_class = 'optional'
+            AND {SESSION_MFA_SATISFIED}
       )
 """
 

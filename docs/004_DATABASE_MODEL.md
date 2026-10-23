@@ -5038,6 +5038,17 @@ required MFA enrollment is complete; Staff enrollment may be absent. Recovery co
 have independently verifiable one-time identities and consumed timestamps. If server
 verification material is retained, it is non-reversible; usable recovery codes are
 never stored in plaintext.
+Amended by DL-081 (login sub-slice L3c-2a, migration `20270130_187`): a password-checked sign-in
+of an account that needs MFA (MFA policy `required`, or an active sign-in code) writes one row of
+`app.sign_in_mfa_challenges` with only the sha256 digest of the pre-authentication token, the
+purpose (`challenge` or `enrollment`), for a `challenge` the active sign-in code of its own
+account it was made for (checked at insert; it completes only with that code while active), the
+sha256 digest of the password verifier that was checked and the wrong-try digests; it lasts 5
+minutes by the database clock and changes only by one completion before that.
+`app.totp_used_steps` keeps each used TOTP time step of an enrollment (append-only; the guard
+locks the enrollment row; a step not after the last used one, after the current step of the
+database clock, or of an enrollment that is not active is refused), so a sign-in code is used
+once. The runtime role has column privileges only.
 
 ## DB-AUTH-004 — Sessions and revocation
 
@@ -5051,6 +5062,14 @@ of its statement time and the session's last activity, so an activity that a par
 committed after the revoking statement started never makes the revocation fail
 (`app.protect_browser_session_lifecycle` replaced with the same signature, owner, privileges and
 attributes).
+Amended by DL-081 (login sub-slice L3c-2a, migration `20270130_187`): a session made by a
+completed sign-in code challenge gets one row of `app.browser_session_mfa_proofs` (the session,
+the challenge, the method `totp` or `recovery_code`, the enrollment for `totp`; append-only; the
+challenge must be completed and of the session's own account, the session not revoked and made
+after the challenge, and a `totp` proof must name the challenge's own sign-in code with a step
+used since the challenge). A session of an account that needs MFA counts as live (the session
+read, the actor resolver and its activity write) only with that proof, and a `totp` proof counts
+only while its sign-in code is active.
 
 ## DB-AUTH-005 — Recovery and bootstrap audit
 

@@ -294,13 +294,14 @@ ERROR_STATUS_DETAILS: Final = {
 PLAIN_DIGEST_ENVIRONMENTS: Final = frozenset({"development", "test"})
 
 
-def _sign_in_try_key(settings: Settings) -> bytes | None:
-    """The key of the wrong-try digests, derived from the protected key file read once at start-up
-    (login sub-slice L3c-1). A database without a key file stops the start in every environment
-    except `development` and `test` (an allowed list, review round 1), so plain digests are used
-    only there."""
+def _totp_protection_key(settings: Settings) -> bytes | None:
+    """The TOTP protection key, read once at start-up from the protected key file; the sign-in
+    flow checks sign-in codes with it (login sub-slice L3c-2a) and derives the key of the
+    wrong-try digests from it (L3c-1). A database without a key file stops the start in every
+    environment except `development` and `test` (an allowed list, review round 1), so plain
+    digests are used only there."""
     if settings.totp_key_file:
-        return derive_sign_in_try_key(read_protected_totp_key(settings.totp_key_file))
+        return read_protected_totp_key(settings.totp_key_file)
     if settings.database_url is not None and settings.environment not in PLAIN_DIGEST_ENVIRONMENTS:
         raise ProtectedKeyUnavailable("APP_TOTP_KEY_FILE is required with a database")
     return None
@@ -413,7 +414,10 @@ def create_app(
 ) -> FastAPI:
     """Build an application instance from validated settings."""
     resolved_settings = settings or Settings()
-    sign_in_try_key = _sign_in_try_key(resolved_settings)
+    totp_protection_key = _totp_protection_key(resolved_settings)
+    sign_in_try_key = (
+        derive_sign_in_try_key(totp_protection_key) if totp_protection_key is not None else None
+    )
     if actor_resolver is None:
         # Login sub-slice L3a-2: the session cookie gives the actor when a database is set;
         # otherwise everyone is denied. Tests keep injecting their own resolver.
@@ -434,6 +438,14 @@ def create_app(
             for resource in lifecycle_resources:
                 await stack.enter_async_context(resource)
             logger.info("application started", extra={"event": "application.started"})
+            if totp_protection_key is None and resolved_settings.database_url is not None:
+                # Owner item 4 of 2026-10-23: a database without the key file is never used
+                # quietly; the warning shows no key, path or file content.
+                logger.warning(
+                    "APP_TOTP_KEY_FILE is not set: sign-in codes cannot be checked and the "
+                    "wrong-try digests are not keyed; allowed only in development and test",
+                    extra={"event": "security.protected_key_file_missing"},
+                )
             try:
                 yield
             finally:
@@ -848,6 +860,7 @@ def create_app(
                 PostgresAuthenticationFlow(
                     resolved_settings.database_url.get_secret_value(),
                     sign_in_try_key=sign_in_try_key,
+                    totp_protection_key=totp_protection_key,
                 )
                 if resolved_settings.database_url is not None
                 else UnavailableAuthenticationFlow()
