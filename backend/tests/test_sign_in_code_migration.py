@@ -917,9 +917,11 @@ def test_a_session_of_an_account_with_a_sign_in_code_is_live_only_with_its_proof
 def test_a_sign_in_code_needs_the_protection_key_that_protected_it(
     code_database: CodeDatabase,
 ) -> None:
-    """Without the protection key, or for a recovery code (login sub-slice L3c-2c), the challenge
-    answers unavailable; with another key the code cannot be opened and the challenge answers
-    unavailable without detail; no wrong try is counted and no session is made."""
+    """Without the protection key the challenge answers unavailable; with another key the code
+    cannot be opened and the challenge answers unavailable without detail; no wrong try is
+    counted and no session is made. Login sub-slice L3c-2c-2 (the approved plan): a recovery
+    code is now a real method, so a sign-in code given as a recovery code is a wrong recovery
+    code (refused and counted, still no session)."""
     account = add_account(code_database, "l3c.other-key")
     preauth = challenge_token(
         PostgresAuthenticationFlow(code_database.runtime_url), account, "l3c-key"
@@ -928,10 +930,6 @@ def test_a_sign_in_code_needs_the_protection_key_that_protected_it(
     for flow, method in (
         (PostgresAuthenticationFlow(code_database.runtime_url), "totp"),
         (
-            PostgresAuthenticationFlow(code_database.runtime_url, totp_protection_key=KEY),
-            "recovery_code",
-        ),
-        (
             PostgresAuthenticationFlow(code_database.runtime_url, totp_protection_key=bytes(32)),
             "totp",
         ),
@@ -939,6 +937,12 @@ def test_a_sign_in_code_needs_the_protection_key_that_protected_it(
         with pytest.raises(AuthenticationUnavailable):
             flow.complete_mfa(preauth_token=preauth, method=method, code=code, request_id="k")
     assert read(code_database, TRIES_OF, username_key(account.username)) == []
+    assert read(code_database, SESSIONS_OF, account.actor_id) == []
+    with pytest.raises(AuthenticationRejected):
+        PostgresAuthenticationFlow(code_database.runtime_url, totp_protection_key=KEY).complete_mfa(
+            preauth_token=preauth, method="recovery_code", code=code, request_id="k"
+        )
+    assert read(code_database, TRIES_OF, username_key(account.username)) == [("recovery_code",)]
     assert read(code_database, SESSIONS_OF, account.actor_id) == []
 
 

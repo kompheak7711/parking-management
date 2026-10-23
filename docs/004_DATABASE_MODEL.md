@@ -5094,6 +5094,14 @@ keeps every earlier condition and also accepts a `totp` proof of a completed `en
 challenge that names the sign-in code the challenge started, with a step of it used since the
 challenge. The session's `mfa_assurance` is the proof's method only while the proof counts, else
 `none`.
+Amended by DL-081 (login sub-slice L3c-2c-2, migration `20270202_190`): a proof has a
+`recovery_code_id` (unique, a foreign key to `app.recovery_codes`; present exactly for the method
+`recovery_code`; insert and select privileges for the runtime role), and the proof guard
+(replaced again, every earlier condition kept) needs, for `recovery_code`, a `challenge` (not an
+`enrollment`) and a recovery code of a live set of the challenge's account, made no earlier than
+the sign-in code the challenge was made for, consumed by that account since the challenge. A
+`recovery_code` proof counts while the sign-in code its challenge was made for is active and the
+code's set is live, so a sign-in code reset and a regeneration also end recovery-code sessions.
 
 ## DB-AUTH-005 — Recovery and bootstrap audit
 

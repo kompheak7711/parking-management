@@ -74,6 +74,7 @@ MAX_SESSION_TOKEN_LENGTH: Final = 128
 SESSION_TOKEN_BYTES: Final = 32
 LOGIN_PROVENANCE: Final = "auth-login"
 MFA_CHALLENGE_PROVENANCE: Final = "auth-mfa-challenge"
+MFA_RECOVERY_CODE_PROVENANCE: Final = "auth-mfa-recovery-code"
 MFA_ENROLLMENT_PROVENANCE: Final = "auth-mfa-enrollment"
 MFA_ENROLLMENT_REPLACED_PROVENANCE: Final = "auth-mfa-enrollment-replaced"
 RECOVERY_CODES_PROVENANCE: Final = "auth-recovery-codes"
@@ -102,21 +103,39 @@ FLOOD_GUARD_WINDOW_SECONDS: Final = 15 * 60
 # only with an MFA proof (login sub-slice L3c-2a), and a `totp` proof only while its sign-in code
 # is active (review round 2), so a sign-in code turned off ends the session even without a
 # revocation. The fragment uses the aliases `browser` and `account`.
-SESSION_MFA_SATISFIED: Final = """
+# A proof counts while the sign-in code it stands for is active: for `totp` the code it used, for
+# `recovery_code` the code its challenge was made for (login sub-slice L3c-2c-2; the L3c-2a
+# binding: a sign-in code reset also ends recovery-code sessions) while the recovery code's set
+# is live (review round 2: replacing the codes also ends a session made with one of them). The
+# alias is `proof`.
+PROOF_COUNTS: Final = """
+    (
+        (proof.method = 'totp' AND EXISTS (
+            SELECT 1
+            FROM app.totp_mfa_enrollments AS proven
+            WHERE proven.enrollment_id = proof.enrollment_id
+              AND proven.enrollment_state = 'active'
+        ))
+        OR (proof.method = 'recovery_code' AND EXISTS (
+            SELECT 1
+            FROM app.sign_in_mfa_challenges AS proven_challenge
+            JOIN app.totp_mfa_enrollments AS proven
+              ON proven.enrollment_id = proven_challenge.enrollment_id
+            JOIN app.recovery_codes AS proven_code ON proven_code.code_id = proof.recovery_code_id
+            JOIN app.recovery_code_sets AS proven_set ON proven_set.set_id = proven_code.set_id
+            WHERE proven_challenge.challenge_id = proof.challenge_id
+              AND proven.enrollment_state = 'active'
+              AND proven_set.invalidated_at IS NULL
+        ))
+    )
+"""
+SESSION_MFA_SATISFIED: Final = f"""
     (
         EXISTS (
             SELECT 1
             FROM app.browser_session_mfa_proofs AS proof
             WHERE proof.session_id = browser.session_id
-              AND (
-                  proof.method <> 'totp'
-                  OR EXISTS (
-                      SELECT 1
-                      FROM app.totp_mfa_enrollments AS proven
-                      WHERE proven.enrollment_id = proof.enrollment_id
-                        AND proven.enrollment_state = 'active'
-                  )
-              )
+              AND {PROOF_COUNTS}
         )
         OR (
             account.mfa_policy_class = 'optional'
@@ -139,15 +158,7 @@ LIVE_SESSION: Final = f"""
                (SELECT proof.method
                 FROM app.browser_session_mfa_proofs AS proof
                 WHERE proof.session_id = browser.session_id
-                  AND (
-                      proof.method <> 'totp'
-                      OR EXISTS (
-                          SELECT 1
-                          FROM app.totp_mfa_enrollments AS proven
-                          WHERE proven.enrollment_id = proof.enrollment_id
-                            AND proven.enrollment_state = 'active'
-                      )
-                  )),
+                  AND {PROOF_COUNTS}),
                'none'
            )
     FROM app.browser_sessions AS browser
@@ -367,8 +378,43 @@ COMPLETE_CHALLENGE: Final = """
     RETURNING challenge.challenge_id
 """
 INSERT_MFA_PROOF: Final = """
-    INSERT INTO app.browser_session_mfa_proofs (session_id, challenge_id, method, enrollment_id)
-    VALUES (%s, %s, %s, %s)
+    INSERT INTO app.browser_session_mfa_proofs (
+        session_id, challenge_id, method, enrollment_id, recovery_code_id
+    ) VALUES (%s, %s, %s, %s, %s)
+"""
+# The usable recovery codes of an account: of its live set, neither consumed nor invalidated
+# (login sub-slice L3c-2c-2; the codes of an invalidated set keep their own `invalidated_at`
+# empty, so the set's invalidation is checked too), and made no earlier than the sign-in code
+# the challenge was made for (review round 2: codes from before a sign-in code reset never come
+# back with the new code; the bootstrap writes the Owner's code and codes at one time).
+USABLE_RECOVERY_CODES: Final = f"""
+    SELECT recovery_code.code_id, recovery_code.verifier_encoding
+    FROM app.recovery_codes AS recovery_code
+    JOIN app.recovery_code_sets AS recovery_set ON recovery_set.set_id = recovery_code.set_id
+    JOIN app.totp_mfa_enrollments AS enrollment ON enrollment.enrollment_id = %s
+    WHERE recovery_set.actor_id = %s
+      AND recovery_set.invalidated_at IS NULL
+      AND recovery_set.created_at >= enrollment.created_at
+      AND recovery_code.consumed_at IS NULL
+      AND recovery_code.invalidated_at IS NULL
+    ORDER BY recovery_code.code_id
+    LIMIT {RECOVERY_CODE_COUNT}
+"""
+# One recovery-code try of an account at a time, and none while its codes are made (the key of
+# `GENERATION_LOCK`), so parallel tries cannot multiply the slow Argon2id work; a lock of the
+# connection, held through the separate transactions of the try and ended when the connection
+# closes (review round 2: the sign-in wait locks are not held during the hashing).
+RECOVERY_TRY_LOCK: Final = (
+    "SELECT pg_try_advisory_lock(hashtextextended('recovery-codes:' || %s::text, 0))"
+)
+RECORD_WRONG_RECOVERY_CODE: Final = "SELECT app.record_sign_in_wrong_try(%s, %s, 'recovery_code')"
+# The recovery code is consumed through the audited account recovery of migration 20260819_08,
+# which also revokes every live session of the account.
+CONSUME_RECOVERY_CODE: Final = """
+    SELECT recovery.recovery_code_consumed
+    FROM app.perform_account_recovery(
+        %s, %s, %s, 'recovery_code', NULL, 'mfa_recovery', NULL, NULL, NULL, false, %s
+    ) AS recovery
 """
 # The MFA proof of a live session was made within the regeneration window (database clock).
 RECENT_PROOF: Final = f"""
@@ -763,8 +809,7 @@ class PostgresAuthenticationFlow:
 
     @staticmethod
     def _unavailable() -> AuthenticationUnavailable:
-        # A recovery code at the challenge comes with login sub-slice L3c-2c-2 and
-        # reauthentication with L3d.
+        # Reauthentication comes with login sub-slice L3d.
         return AuthenticationUnavailable()
 
     def _refuse_during_wait(self, username_digest: bytes, source_digest: bytes) -> None:
@@ -859,9 +904,11 @@ class PostgresAuthenticationFlow:
         enrollment_id: object,
         session_digest: bytes,
         provenance: str,
+        recovery_code_id: object = None,
     ) -> tuple[object, ...]:
-        """After the used step: the challenge completed, the password verifier compared, the
-        session and its `totp` proof written and the live session read back."""
+        """After the used step or the consumed recovery code: the challenge completed, the
+        password verifier compared, the session and its proof (`totp`, or `recovery_code` with
+        the consumed code) written and the live session read back."""
         if connection.execute(COMPLETE_CHALLENGE, (challenge_id,)).fetchone() is None:
             raise AuthenticationRejected
         # A password reset after the password check refuses the session (the L3a-1 guard).
@@ -872,7 +919,17 @@ class PostgresAuthenticationFlow:
             raise AuthenticationRejected
         session_id = uuid4()
         connection.execute(INSERT_SESSION, (session_id, actor_id, session_digest, provenance))
-        connection.execute(INSERT_MFA_PROOF, (session_id, challenge_id, "totp", enrollment_id))
+        method = "totp" if recovery_code_id is None else "recovery_code"
+        connection.execute(
+            INSERT_MFA_PROOF,
+            (
+                session_id,
+                challenge_id,
+                method,
+                enrollment_id if recovery_code_id is None else None,
+                recovery_code_id,
+            ),
+        )
         row = connection.execute(LIVE_SESSION, (session_digest,)).fetchone()
         if row is None:
             # The account changed between the challenge read and the session write.
@@ -887,10 +944,13 @@ class PostgresAuthenticationFlow:
         code: str,
         request_id: str,
     ) -> AuthenticationResult:
-        """The sign-in code challenge (login sub-slice L3c-2a, DL-056, SEC-013)."""
-        if method != "totp" or self._totp_protection_key is None:
-            # A recovery code comes with L3c-2c; without the protection key no sign-in code
-            # can be checked (development and tests without a key file).
+        """The sign-in code challenge (login sub-slice L3c-2a, DL-056, SEC-013), with the sign-in
+        code or with a recovery code (login sub-slice L3c-2c-2, DL-058, API-098)."""
+        if method not in ("totp", "recovery_code") or (
+            method == "totp" and self._totp_protection_key is None
+        ):
+            # Without the protection key no sign-in code can be checked (development and tests
+            # without a key file); a recovery code needs no key.
             raise self._unavailable()
         digest = session_token_digest(preauth_token)
         with self._transaction() as connection:
@@ -902,6 +962,10 @@ class PostgresAuthenticationFlow:
         username_key = bytes(cast(bytes, username_digest))
         source_key = bytes(cast(bytes, source_digest))
         self._refuse_during_wait(username_key, source_key)
+        if method == "recovery_code":
+            return self._complete_with_recovery_code(
+                challenge, code, username_key, source_key, request_id=request_id
+            )
         secret = self._open_sign_in_code(challenge, request_id=request_id)
         step = self._matching_step(
             code, secret, current_step=current_step, last_used_step=last_used_step
@@ -937,6 +1001,105 @@ class PostgresAuthenticationFlow:
             session_token=session_token,
             csrf_token=secrets.token_urlsafe(SESSION_TOKEN_BYTES),
             session=session_view(row),
+        )
+
+    def _complete_with_recovery_code(
+        self,
+        challenge: tuple[object, ...],
+        code: str,
+        username_key: bytes,
+        source_key: bytes,
+        *,
+        request_id: str,
+    ) -> AuthenticationResult:
+        """A recovery code instead of the sign-in code (login sub-slice L3c-2c-2), on one
+        connection that holds the account's try lock (review round 2): the try lock (refused at
+        once when held), the wait checked again under it (its own short transaction, so the
+        sign-in wait locks are not held during the hashing), the usable codes read, the typed
+        code compared with every one of them outside any transaction (at most 10 Argon2id
+        checks, so a match and a miss do the same work); a wrong code is counted as a wrong try
+        of kind `recovery_code` before the lock ends; the right code, in one transaction: the
+        clear first, the code consumed through the audited account recovery (every other
+        session of the account revoked), the challenge completed, the password verifier
+        compared, the session and its `recovery_code` proof written and the live session read
+        back."""
+        challenge_id, actor_id, checked_verifier = challenge[:3]
+        enrollment_id = challenge[5]
+        candidate = code.strip()
+        verifiers = Argon2idRecoveryCodeVerifierProvider()
+        session_token = secrets.token_urlsafe(SESSION_TOKEN_BYTES)
+        # The audit event's correlation id, also written to the decision log (review round 1).
+        correlation = uuid4()
+        with self._transaction() as connection:
+            held = connection.execute(RECOVERY_TRY_LOCK, (actor_id,)).fetchone()
+            connection.commit()
+            if held is None or held[0] is not True:
+                self._log_recovery_decision("rejected", request_id)
+                raise AuthenticationRejected
+            waiting = connection.execute(
+                SIGN_IN_WAIT_SECONDS, (username_key, source_key)
+            ).fetchone()
+            connection.commit()
+            if waiting is not None and waiting[0] is not None:
+                raise AuthenticationRateLimited(int(str(waiting[0])))
+            usable = connection.execute(USABLE_RECOVERY_CODES, (enrollment_id, actor_id)).fetchall()
+            connection.commit()
+            matched = [
+                code_id
+                for code_id, encoding in usable
+                if verifiers.matches(candidate, str(encoding))
+            ]
+            if not matched:
+                # The wrong try is counted before the try lock ends, so the next try of the
+                # account sees it (review round 1).
+                counted = connection.execute(
+                    RECORD_WRONG_RECOVERY_CODE, (username_key, source_key)
+                ).fetchone()
+                connection.commit()
+                self._log_recovery_decision("rejected", request_id)
+                if counted is not None and counted[0] is not None:
+                    raise AuthenticationRateLimited(int(str(counted[0])))
+                raise AuthenticationRejected
+            self._clear_wrong_tries(connection, username_key, source_key, actor_id)
+            try:
+                consumed = connection.execute(
+                    CONSUME_RECOVERY_CODE, (actor_id, actor_id, correlation, matched[0])
+                ).fetchone()
+            except psycopg.errors.RaiseException:
+                # The account recovery refuses (the account or the code changed meanwhile).
+                self._log_recovery_decision("rejected", request_id)
+                raise AuthenticationRejected from None
+            if consumed is None or consumed[0] is not True:
+                raise AuthenticationRejected
+            row = self._write_proven_session(
+                connection,
+                challenge_id=challenge_id,
+                actor_id=actor_id,
+                checked_verifier=checked_verifier,
+                enrollment_id=None,
+                session_digest=session_token_digest(session_token),
+                provenance=MFA_RECOVERY_CODE_PROVENANCE,
+                recovery_code_id=matched[0],
+            )
+        logger.info(
+            "recovery code sign-in decision",
+            extra={
+                "outcome": "authenticated",
+                "request_id": request_id,
+                "correlation_id": str(correlation),
+            },
+        )
+        return AuthenticationResult(
+            phase=AuthenticationPhase.AUTHENTICATED,
+            session_token=session_token,
+            csrf_token=secrets.token_urlsafe(SESSION_TOKEN_BYTES),
+            session=session_view(row),
+        )
+
+    @staticmethod
+    def _log_recovery_decision(outcome: str, request_id: str) -> None:
+        logger.info(
+            "recovery code sign-in decision", extra={"outcome": outcome, "request_id": request_id}
         )
 
     def begin_mfa_enrollment(

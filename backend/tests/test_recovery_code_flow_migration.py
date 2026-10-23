@@ -195,7 +195,10 @@ def test_recovery_codes_need_a_session_proven_with_a_sign_in_code_and_no_live_se
                 connection.execute(TURN_CODE_OFF, (account.actor_id, account.enrollment_id))
                 connection.commit()
         elif case == "recovery_code":
-            session = recovery_code_session(code_database, account)
+            # Login sub-slice L3c-2c-2: a recovery-code session needs its code's set to be live
+            # (review round 2), so this account has a live set; the regeneration below names
+            # it, so there only the session can refuse.
+            session = recovery_code_session(flow, code_database, account, session)
             assert flow.inspect_session(session_token=session, request_id="n").mfa_assurance == (
                 "recovery_code"
             )
@@ -203,11 +206,14 @@ def test_recovery_codes_need_a_session_proven_with_a_sign_in_code_and_no_live_se
     with pytest.raises(AuthenticationRejected):
         flow.issue_recovery_codes(session_token=session, request_id="n")
     if case != "live_set":
-        # Review round 2: a real live set, so only the session can refuse the regeneration.
-        prior = uuid.uuid4()
-        with psycopg.connect(code_database.owner_url) as connection:
-            connection.execute(ADD_SET, (prior, account.actor_id, account.actor_id))
-            connection.commit()
+        # Review round 2: a real live set, so only the session can refuse the regeneration
+        # (the recovery-code case names the set its code came from).
+        live = [row[0] for row in before if not row[3]]
+        prior = live[0] if live else uuid.uuid4()
+        if not live:
+            with psycopg.connect(code_database.owner_url) as connection:
+                connection.execute(ADD_SET, (prior, account.actor_id, account.actor_id))
+                connection.commit()
         before = read(code_database, SETS_OF, account.actor_id)
         with pytest.raises(AuthenticationRejected):
             flow.regenerate_recovery_codes(
@@ -216,36 +222,20 @@ def test_recovery_codes_need_a_session_proven_with_a_sign_in_code_and_no_live_se
     assert read(code_database, SETS_OF, account.actor_id) == before
 
 
-def recovery_code_session(database: CodeDatabase, account: Account) -> str:
-    """A live session of the account with a `recovery_code` proof (a completed challenge of the
-    account), written as the table owner until L3c-2c-2 builds the real path."""
-    token = f"recovered-{uuid.uuid4().hex}"[:43]
-    challenge_id = uuid.uuid4()
-    session_id = uuid.uuid4()
-    with psycopg.connect(database.owner_url) as connection:
-        connection.execute(
-            "INSERT INTO app.sign_in_mfa_challenges (challenge_id, actor_id, token_verifier, "
-            "purpose, enrollment_id, password_verifier_digest, username_digest, source_digest, "
-            "completed_at) VALUES (%s, %s, %s, 'challenge', %s, %s, %s, %s, "
-            "statement_timestamp())",
-            (
-                challenge_id,
-                account.actor_id,
-                digest(f"challenge-{token}"),
-                account.enrollment_id,
-                bytes(32),
-                bytes(32),
-                bytes(32),
-            ),
-        )
-        connection.execute(ADD_SESSION, (session_id, account.actor_id, digest(token), PROVENANCE))
-        connection.execute(
-            "INSERT INTO app.browser_session_mfa_proofs (session_id, challenge_id, method) "
-            "VALUES (%s, %s, 'recovery_code')",
-            (session_id, challenge_id),
-        )
-        connection.commit()
-    return token
+def recovery_code_session(
+    flow: PostgresAuthenticationFlow, database: CodeDatabase, account: Account, session: str
+) -> str:
+    """A live session of the account proven with one of its recovery codes. Login sub-slice
+    L3c-2c-2: a `recovery_code` proof must name a consumed code, so the hand-written proof of
+    L3c-2c-1 is refused now; the session comes from the real path (the first codes from the
+    session made with the sign-in code, then a sign-in with one of them)."""
+    codes = flow.issue_recovery_codes(session_token=session, request_id="n").codes
+    token = challenge_token(flow, account, f"{account.username}-recovery")
+    done = flow.complete_mfa(
+        preauth_token=token, method="recovery_code", code=codes[0], request_id="n"
+    )
+    assert done.session_token is not None
+    return done.session_token
 
 
 def test_regeneration_invalidates_the_prior_set_and_shows_10_new_codes_once(

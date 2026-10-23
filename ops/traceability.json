@@ -46479,7 +46479,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_sign_in_code_migration.py",
       "status": "implemented",
-      "notes": "Without the protection key, for a recovery code (until L3c-2c), or with another key the challenge answers unavailable; no wrong try is counted and no session is made (login slice sub-slice L3c-2a, DL-081)."
+      "notes": "Without the protection key or with another key the challenge answers unavailable; no wrong try is counted and no session is made; since L3c-2c-2 a sign-in code given as a recovery code is a wrong recovery code, refused and counted (login slice sub-slice L3c-2a, DL-081; changed with the approved plan in L3c-2c-2)."
     },
     {
       "test_id": "test_the_sign_in_code_routes_answer_401_and_429_and_set_the_session_cookie",
@@ -47001,6 +47001,176 @@
       "test_path": "backend/tests/test_recovery_code_flow_migration.py",
       "status": "implemented",
       "notes": "An account that made 5 recovery-code sets in the last 15 minutes by the database clock is refused a regeneration before any hashing; with the sets made 16 minutes ago it regenerates (login slice sub-slice L3c-2c-1 review round 2, DL-081)."
+    },
+    {
+      "test_id": "test_a_recovery_code_completes_the_challenge_once_and_ends_the_other_sessions",
+      "upstream_ids": [
+        "DL-058",
+        "API-096",
+        "API-098",
+        "DB-AUTH-003",
+        "DB-AUTH-004",
+        "TEST-129"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_recovery_code_sign_in_migration.py",
+      "status": "implemented",
+      "notes": "After a wrong recovery code a right one completes the sign-in code challenge: a session with mfa_assurance recovery_code and a proof naming the consumed code; the code is consumed through the audited account recovery, the other sessions are revoked and the count is cleared; the same code is refused later and another code works (login slice sub-slice L3c-2c-2, DL-081)."
+    },
+    {
+      "test_id": "test_wrong_recovery_codes_count_and_a_right_one_during_a_wait_is_refused",
+      "upstream_ids": [
+        "SEC-013",
+        "DB-AUTH-011",
+        "TEST-129"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_recovery_code_sign_in_migration.py",
+      "status": "implemented",
+      "notes": "Wrong recovery codes are wrong tries; the 3rd starts the 5-minute wait and a right code during the wait is refused with 429; nothing consumed (login slice sub-slice L3c-2c-2, DL-081)."
+    },
+    {
+      "test_id": "test_a_code_of_a_replaced_set_is_a_wrong_code",
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "TEST-129"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_recovery_code_sign_in_migration.py",
+      "status": "implemented",
+      "notes": "A code of a set a regeneration replaced is refused at the challenge and counted; a code of the new set works (login slice sub-slice L3c-2c-2, DL-081)."
+    },
+    {
+      "test_id": "test_a_recovery_code_does_not_complete_a_set_up_and_a_parallel_try_waits_for_nothing",
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "SEC-013"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_recovery_code_sign_in_migration.py",
+      "status": "implemented",
+      "notes": "A recovery code does not complete an enrollment challenge and nothing is consumed; a try while another try of the account holds its lock is refused at once without counting (login slice sub-slice L3c-2c-2, DL-081)."
+    },
+    {
+      "test_id": "test_a_recovery_code_session_ends_when_the_sign_in_code_is_turned_off",
+      "upstream_ids": [
+        "DB-AUTH-004",
+        "SEC-013"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_recovery_code_sign_in_migration.py",
+      "status": "implemented",
+      "notes": "A recovery_code proof counts only while the sign-in code its challenge was made for is active, so turning the code off ends the session (login slice sub-slice L3c-2c-2, DL-081)."
+    },
+    {
+      "test_id": "test_a_change_before_the_recovery_code_refuses_and_consumes_nothing",
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "DB-AUTH-004",
+        "SEC-013"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_recovery_code_sign_in_migration.py",
+      "status": "implemented",
+      "notes": "A parallel wait, a new password, the sign-in code turned off or the account disabled, committed after the wait check, refuses the right recovery code; nothing is consumed, revoked or made and the count is not cleared (login slice sub-slice L3c-2c-2, DL-081)."
+    },
+    {
+      "test_id": "test_the_challenge_route_takes_a_recovery_code_and_logs_no_code",
+      "upstream_ids": [
+        "API-096",
+        "API-098"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_recovery_code_sign_in_migration.py",
+      "status": "implemented",
+      "notes": "Over HTTP the challenge route takes a recovery code, sets the session cookie, removes the pre-authentication cookie and answers no-store; no recovery code reaches the log (login slice sub-slice L3c-2c-2, DL-081)."
+    },
+    {
+      "test_id": "test_a_recovery_code_proof_is_guarded_in_the_database",
+      "upstream_ids": [
+        "DB-AUTH-004"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_recovery_code_sign_in_migration.py",
+      "status": "implemented",
+      "notes": "A recovery_code proof needs a code of the challenge account consumed by it since the challenge, for a challenge not an enrollment; one code proves one session; a code of an invalidated set or of a set made before the challenge's sign-in code is refused; the method and the code go together; insert and select column privileges, no update (login slice sub-slice L3c-2c-2 review rounds 1 to 3, DL-081)."
+    },
+    {
+      "test_id": "test_the_recovery_code_sign_in_migration_follows_l3c_2c_1_and_is_forward_only",
+      "upstream_ids": [
+        "DB-AUTH-004"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_recovery_code_sign_in_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20270202_190 follows 20270201_189 and refuses a downgrade (login slice sub-slice L3c-2c-2, DL-081)."
+    },
+    {
+      "test_id": "test_another_accounts_code_is_a_wrong_code",
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "SEC-013"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_recovery_code_sign_in_migration.py",
+      "status": "implemented",
+      "notes": "A valid recovery code of another account is a wrong code here (counted, nothing consumed) and still works for its own account (login slice sub-slice L3c-2c-2 review round 1, DL-081)."
+    },
+    {
+      "test_id": "test_a_wait_that_starts_before_the_try_lock_is_met_under_it",
+      "upstream_ids": [
+        "DB-AUTH-011",
+        "SEC-013"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_recovery_code_sign_in_migration.py",
+      "status": "implemented",
+      "notes": "A wait the first check did not see is met under the try lock: 429 and no recovery code hashed (login slice sub-slice L3c-2c-2 review round 1, DL-081)."
+    },
+    {
+      "test_id": "test_a_regeneration_during_the_check_refuses_the_replaced_code",
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "TEST-129"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_recovery_code_sign_in_migration.py",
+      "status": "implemented",
+      "notes": "A set invalidated and committed while the typed code is checked makes the account recovery refuse it: 401 uncounted, nothing consumed, revoked or written, the challenge open (login slice sub-slice L3c-2c-2 review round 1, DL-081)."
+    },
+    {
+      "test_id": "test_the_sign_in_wait_locks_are_free_during_the_hashing",
+      "upstream_ids": [
+        "DB-AUTH-011",
+        "SEC-013"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_recovery_code_sign_in_migration.py",
+      "status": "implemented",
+      "notes": "While a recovery code is checked, the sign-in wait check of another account from the same source and of the same account does not wait; the try still makes its session (login slice sub-slice L3c-2c-2 review round 2, DL-081)."
+    },
+    {
+      "test_id": "test_codes_from_before_a_sign_in_code_reset_do_not_come_back",
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "SEC-013",
+        "TEST-129"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_recovery_code_sign_in_migration.py",
+      "status": "implemented",
+      "notes": "After the sign-in code is turned off and a new one set up, the codes made before are older than the challenge's sign-in code and are wrong codes (counted, nothing consumed, no session) (login slice sub-slice L3c-2c-2 review round 2, DL-081)."
+    },
+    {
+      "test_id": "test_replacing_the_codes_ends_a_session_made_with_one_of_them",
+      "upstream_ids": [
+        "DB-AUTH-004",
+        "TEST-129"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_recovery_code_sign_in_migration.py",
+      "status": "implemented",
+      "notes": "A session made with a recovery code ends when the codes are replaced; the sign-in code's session stays live (login slice sub-slice L3c-2c-2 review round 2, DL-081)."
     }
   ]
 }
