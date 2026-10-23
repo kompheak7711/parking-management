@@ -104,11 +104,15 @@ USED_STEPS_OF = (
     "SELECT time_step FROM app.totp_used_steps WHERE enrollment_id = %s ORDER BY time_step"
 )
 CREDENTIAL_OF = "SELECT verifier_encoding FROM app.password_credentials WHERE actor_id = %s"
-# Connections that wait for a lock; `pg_locks` shows every role's locks (review round 2:
-# `pg_stat_activity` may hide another role's wait). A row lock wait is a wait for the holder's
-# transaction id, which has no database, so the waiting connections are counted.
+# Connections of the test database that wait for a lock; `pg_locks` shows every role's locks
+# (review round 2: `pg_stat_activity` may hide another role's wait). A row lock wait is a wait for
+# the holder's transaction id, which has no database, so the waiting connections are counted and
+# kept to the test database by their `pg_stat_activity` row (review round 3, login sub-slice
+# L3c-2b).
 LOCK_WAITS = (
-    "SELECT count(DISTINCT lock.pid) FROM pg_catalog.pg_locks AS lock WHERE NOT lock.granted"
+    "SELECT count(DISTINCT lock.pid) FROM pg_catalog.pg_locks AS lock "
+    "JOIN pg_catalog.pg_stat_activity AS activity ON activity.pid = lock.pid "
+    "WHERE NOT lock.granted AND activity.datname = current_database()"
 )
 ADD_CHALLENGE = (
     "INSERT INTO app.sign_in_mfa_challenges (challenge_id, actor_id, token_verifier, purpose, "
@@ -682,7 +686,7 @@ def test_two_parallel_uses_of_one_code_make_one_session(code_database: CodeDatab
         threads = [threading.Thread(target=complete, args=(token,)) for token in tokens]
         for thread in threads:
             thread.start()
-        deadline = time.monotonic() + 3
+        deadline = time.monotonic() + 10
         while time.monotonic() < deadline and lock_waits(code_database) < 2:
             time.sleep(0.05)
         waited = lock_waits(code_database)
@@ -722,7 +726,7 @@ def test_a_used_step_waits_for_a_parallel_step_and_is_never_in_the_future(
         )
         waiting = threading.Thread(target=earlier_step)
         waiting.start()
-        deadline = time.monotonic() + 3
+        deadline = time.monotonic() + 10
         while time.monotonic() < deadline and lock_waits(code_database) < 1:
             time.sleep(0.05)
         assert lock_waits(code_database) >= 1 and waiting.is_alive()

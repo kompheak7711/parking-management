@@ -5049,6 +5049,17 @@ minutes by the database clock and changes only by one completion before that.
 locks the enrollment row; a step not after the last used one, after the current step of the
 database clock, or of an enrollment that is not active is refused), so a sign-in code is used
 once. The runtime role has column privileges only.
+Amended by DL-081 (login sub-slice L3c-2b, migration `20270131_188`): a sign-in code set up at
+sign-in is a `pending` row of `app.totp_mfa_enrollments` written by the account itself (provenance
+`auth-mfa-enrollment`, the key identifier derived from the key file) and one row of
+`app.sign_in_code_enrollment_starts` that ties it to its open `enrollment` challenge (append-only;
+one per challenge and per sign-in code; the insert guard checks that the challenge is open and of
+its own account, that the account is active, classified, with MFA `required` and no active
+sign-in code, and
+that the code is a new pending code of that account made since the challenge). The first right
+code activates it (by the account itself). A later sign-in's set-up turns off a pending code
+never confirmed (provenance `auth-mfa-enrollment-replaced`). The runtime role has column
+privileges only.
 
 ## DB-AUTH-004 — Sessions and revocation
 
@@ -5070,6 +5081,12 @@ after the challenge, and a `totp` proof must name the challenge's own sign-in co
 used since the challenge). A session of an account that needs MFA counts as live (the session
 read, the actor resolver and its activity write) only with that proof, and a `totp` proof counts
 only while its sign-in code is active.
+Amended by DL-081 (login sub-slice L3c-2b, migration `20270131_188`): the proof guard
+(`app.check_browser_session_mfa_proof`, replaced with the same signature, owner and privileges)
+keeps every earlier condition and also accepts a `totp` proof of a completed `enrollment`
+challenge that names the sign-in code the challenge started, with a step of it used since the
+challenge. The session's `mfa_assurance` is the proof's method only while the proof counts, else
+`none`.
 
 ## DB-AUTH-005 — Recovery and bootstrap audit
 

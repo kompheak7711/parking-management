@@ -3,6 +3,7 @@ methods that stay unavailable until L3c and L3d (DL-081, API-096, DB-AUTH-004)."
 
 import hashlib
 import hmac
+from urllib.parse import parse_qs, unquote, urlsplit
 from uuid import uuid4
 
 import pytest
@@ -17,11 +18,13 @@ from property_rental.auth_api import (
 )
 from property_rental.auth_flow import (
     PostgresAuthenticationFlow,
+    provisioning_uri,
     session_token_digest,
     sign_in_source_digest,
     sign_in_username_digest,
 )
 from property_rental.settings import Settings
+from property_rental.totp_security import TotpSecret
 
 ORIGIN = "https://property.test"
 
@@ -113,3 +116,21 @@ def test_the_keyed_wrong_try_digests_are_hmac_sha256_under_the_derived_key() -> 
     assert source == hmac.new(key, b"source:10.0.0.7", hashlib.sha256).digest()
     assert username != sign_in_username_digest("sokha")
     assert source != sign_in_source_digest("10.0.0.7")
+
+
+def test_the_provisioning_link_of_a_new_sign_in_code_is_the_standard_otpauth_link() -> None:
+    """Login sub-slice L3c-2b, UI-110: the issuer and the username are the label, both
+    percent-encoded (a space or Khmer letters cannot break the link); the Base32 secret, SHA-1,
+    6 digits and 30 seconds are the stored parameters."""
+    secret = TotpSecret.from_bytes(bytes(range(20)))
+    link = urlsplit(provisioning_uri("sokha chan ស", secret))
+    assert (link.scheme, link.netloc) == ("otpauth", "totp")
+    assert link.path == "/Property%20Rental:sokha%20chan%20%E1%9E%9F"
+    assert unquote(link.path) == "/Property Rental:sokha chan ស"
+    assert parse_qs(link.query, strict_parsing=True) == {
+        "secret": [secret.get_base32_value()],
+        "issuer": ["Property Rental"],
+        "algorithm": ["SHA1"],
+        "digits": ["6"],
+        "period": ["30"],
+    }

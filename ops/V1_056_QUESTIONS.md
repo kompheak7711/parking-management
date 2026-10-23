@@ -3966,3 +3966,27 @@ Your answer 1 to the 10h-2 report: add the READ COMMITTED check to the 8e-1 refu
 **Example.** Sokha's phone shows 482913 at 09:00:28 and she presses the button at 09:00:31: the code is accepted. Someone who watched her screen types 482913 again at 09:00:40: it is refused, because that step was used.
 
 **Decision.** As above. Built in L3c-2a. The owner can change it later.
+
+
+## Q-2026-10-23-179 — Login sub-slice L3c-2b: setting up a sign-in code at sign-in (decided by Claude Code under the owner's 2026-10-22 rule)
+
+**The points (technical; they do not change who may do what, money, or what staff may do).** (1) The authenticator app gets the standard `otpauth://totp/` link; it shows the name "Property Rental" and the username, and uses the 6 digits, 30 seconds and SHA-1 that the database stores. (2) A sign-in code set up by the API is stored with the key identifier `runtime-` and 32 hexadecimal characters, derived from the key file with HKDF-SHA256, so another key file gets another identifier and the key itself is never stored or shown. (3) One pre-authentication step sets up one sign-in code: the link is answered once; to get a new link the person signs in again, and that sign-in's set-up turns the unconfirmed code off, so it can no longer be confirmed. (4) During a wait for wrong tries the set-up waits too (429), as the code challenge does. (5) The first code is checked as at the challenge: the current or the previous 30-second step of the database clock, and a wrong code counts as a wrong try.
+
+**Example.** A new Manager, Dara, signs in, scans the link with a phone and closes the page before typing the code. Dara signs in again and gets a new link; the code from the first scan no longer works, and the code from the second scan finishes the sign-in.
+
+**Decision.** As above. Built in L3c-2b. The owner can change it later.
+
+
+## Q-2026-10-23-180 — Login sub-slice L3c-2b: a new sign-in code after a reset with only the password (needs the owner)
+
+**What happens today (as the approved plan says).** When the Owner resets a person's sign-in code without giving a new password (the reset with "also reset MFA" of the account recovery, the emergency procedure, or turning a Staff account's MFA off and on again), the account has MFA `required` and no sign-in code. At the next sign-in, whoever knows the password sets up a new sign-in code on their own phone. The emergency procedure can do this for the Owner account too.
+
+**Why it matters.** A sign-in code is often reset because a phone was lost or stolen, and then the password may be known to someone else too. With the rule today, that person can sign in first and put the account's sign-in code on their own phone. The usual security advice is that a new sign-in code after a reset needs more than the password.
+
+**Example.** Dara, a Manager, loses a phone that also had the password saved. The Owner resets Dara's sign-in code only. The finder signs in with the saved password before Dara does and sets up the sign-in code on the finder's phone.
+
+**Options.** (a) Recommended: every sign-in code reset of an account that needs MFA also gives a one-time password (the L4 reset), so setting up the new code needs the new password; turning a Staff account's MFA on again counts as a reset. (b) Keep the rule today and tell the Owner, in the reset screen, to reset the password too when a phone is lost. (c) Something else the owner names.
+
+**Nothing waits.** L3c-2b is built as the approved plan says; the answer is built in L4 (or in its own sub-slice before L5).
+
+**Owner answer (2026-10-23): (a).** Every sign-in code reset also issues the L4 one-time password, so setting up a new sign-in code always needs the new password too. This covers the recovery with "also reset MFA" (the Owner's emergency procedure included) and a Staff account's MFA turned off and on again. The owner's example: Sokha loses a phone that has the password saved; the Owner resets Sokha's sign-in code, the old password stops working at once, and the Owner gives Sokha a new one-time password in person, so the finder cannot sign in and put the code on the finder's own phone. Built in L4.

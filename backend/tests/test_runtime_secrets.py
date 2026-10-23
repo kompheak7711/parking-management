@@ -5,6 +5,7 @@ import asyncio
 import io
 import json
 import os
+import re
 import stat
 from collections.abc import Callable
 from pathlib import Path
@@ -20,9 +21,11 @@ from property_rental.logging import create_application_logger
 from property_rental.runtime_secrets import (
     ProtectedKeyUnavailable,
     derive_sign_in_try_key,
+    derive_totp_key_identifier,
     read_protected_totp_key,
 )
 from property_rental.settings import Settings
+from property_rental.totp_security import Aes256GcmTotpSecretProtector
 
 KEY_HEX = "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff"
 UNUSED_DATABASE = "postgresql://unused.invalid/unused"
@@ -90,6 +93,20 @@ def test_the_wrong_try_key_is_derived_and_never_the_protection_key() -> None:
     assert len(derived) == 32 and derived != protection
     assert derive_sign_in_try_key(protection) == derived
     assert derive_sign_in_try_key(bytes(32)) != derived
+
+
+def test_the_key_identifier_of_a_new_sign_in_code_names_the_key_without_showing_it() -> None:
+    """Login sub-slice L3c-2b: the identifier stored with a sign-in code set up at sign-in is
+    derived with HKDF-SHA256 under its own purpose: a valid key identifier, the same for the same
+    key, another for another key, and neither the key nor the wrong-try key."""
+    protection = bytes.fromhex(KEY_HEX)
+    identifier = derive_totp_key_identifier(protection)
+    assert re.fullmatch(r"runtime-[0-9a-f]{32}", identifier) is not None
+    assert derive_totp_key_identifier(protection) == identifier
+    assert derive_totp_key_identifier(bytes(32)) != identifier
+    assert KEY_HEX[:16] not in identifier
+    assert derive_sign_in_try_key(protection).hex()[:32] not in identifier
+    Aes256GcmTotpSecretProtector(key=protection, key_identifier=identifier)
 
 
 def test_the_two_protected_paths_are_settings_and_production_needs_the_key_file(

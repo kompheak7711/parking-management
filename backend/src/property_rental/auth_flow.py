@@ -7,9 +7,10 @@ digest of a random token; the token itself goes only into the `__Host-prm_sessio
 time is the database clock. An account that needs MFA (its MFA policy is `required`, or it has an
 active sign-in code) gets no session before the MFA challenge: its sign-in stores a challenge row
 with only the digest of the pre-authentication token, and the right sign-in code makes a session
-with an MFA proof (login sub-slice L3c-2a). Wrong tries are counted in the database (login
-sub-slice L3b): a try during a wait is refused before the password check, and a sign-in that
-makes a session clears the count.
+with an MFA proof (login sub-slice L3c-2a); an account without a sign-in code sets one up at
+sign-in and its first right code makes the session (login sub-slice L3c-2b). Wrong tries are
+counted in the database (login sub-slice L3b): a try during a wait is refused before the
+password check, and a sign-in that makes a session clears the count.
 """
 
 import hashlib
@@ -20,7 +21,8 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import replace
 from datetime import datetime
-from typing import Final, Literal, cast
+from typing import Final, Literal, NoReturn, cast
+from urllib.parse import quote, urlencode
 from uuid import UUID, uuid4
 
 import psycopg
@@ -48,10 +50,14 @@ from property_rental.local_authentication import (
     verifier_digest,
 )
 from property_rental.password_security import PasswordHashService
+from property_rental.runtime_secrets import derive_totp_key_identifier
 from property_rental.totp_security import (
+    TOTP_DEFAULT_DIGITS,
     TOTP_DEFAULT_PERIOD_SECONDS,
     Aes256GcmTotpSecretProtector,
     ProtectedTotpSecret,
+    TotpSecret,
+    TotpSecretGenerator,
     TotpSecretProtectionError,
     TotpService,
 )
@@ -62,6 +68,11 @@ MAX_SESSION_TOKEN_LENGTH: Final = 128
 SESSION_TOKEN_BYTES: Final = 32
 LOGIN_PROVENANCE: Final = "auth-login"
 MFA_CHALLENGE_PROVENANCE: Final = "auth-mfa-challenge"
+MFA_ENROLLMENT_PROVENANCE: Final = "auth-mfa-enrollment"
+MFA_ENROLLMENT_REPLACED_PROVENANCE: Final = "auth-mfa-enrollment-replaced"
+# The name an authenticator app shows for the sign-in code (decided under the owner's
+# 2026-10-22 rule, login sub-slice L3c-2b).
+TOTP_ISSUER: Final = "Property Rental"
 LOGOUT_PROVENANCE: Final = "auth-logout"
 # A database that does not answer must not hold a request thread for long (review round 1).
 CONNECT_TIMEOUT_SECONDS: Final = 5
@@ -107,14 +118,24 @@ SESSION_MFA_SATISFIED: Final = """
     )
 """
 # The live session of a token digest: not revoked, before both expiries by the database clock,
-# of an active, classified account, and with an MFA proof when the account needs MFA.
+# of an active, classified account, and with an MFA proof when the account needs MFA. The
+# `mfa_assurance` is the proof's method while it counts, else `none` (login sub-slice L3c-2b).
 LIVE_SESSION: Final = f"""
     SELECT browser.session_id, browser.actor_id::text, account.display_name, browser.created_at,
            browser.last_activity_at, browser.idle_expires_at, browser.absolute_expires_at,
            COALESCE(
                (SELECT proof.method
                 FROM app.browser_session_mfa_proofs AS proof
-                WHERE proof.session_id = browser.session_id),
+                WHERE proof.session_id = browser.session_id
+                  AND (
+                      proof.method <> 'totp'
+                      OR EXISTS (
+                          SELECT 1
+                          FROM app.totp_mfa_enrollments AS proven
+                          WHERE proven.enrollment_id = proof.enrollment_id
+                            AND proven.enrollment_state = 'active'
+                      )
+                  )),
                'none'
            )
     FROM app.browser_sessions AS browser
@@ -198,6 +219,118 @@ OPEN_CHALLENGE: Final = f"""
       AND account.lifecycle_state = 'active'
       AND enrollment.enrollment_state = 'active'
 """
+# An open `enrollment` challenge not yet started, of an active, classified account that still
+# needs a sign-in code (the L3c-2a binding; login sub-slice L3c-2b).
+OPEN_ENROLLMENT_CHALLENGE: Final = """
+    SELECT challenge.challenge_id, challenge.actor_id, challenge.username_digest,
+           challenge.source_digest, account.normalized_username,
+           challenge.password_verifier_digest
+    FROM app.sign_in_mfa_challenges AS challenge
+    JOIN app.user_accounts AS account ON account.actor_id = challenge.actor_id
+    JOIN app.user_account_classes AS classification ON classification.actor_id = challenge.actor_id
+    WHERE challenge.token_verifier = %s
+      AND challenge.purpose = 'enrollment'
+      AND challenge.completed_at IS NULL
+      AND statement_timestamp() < challenge.expires_at
+      AND account.lifecycle_state = 'active'
+      AND account.mfa_policy_class = 'required'
+      AND NOT EXISTS (
+          SELECT 1
+          FROM app.sign_in_code_enrollment_starts AS start
+          WHERE start.challenge_id = challenge.challenge_id
+      )
+      AND NOT EXISTS (
+          SELECT 1
+          FROM app.totp_mfa_enrollments AS enrollment
+          WHERE enrollment.actor_id = challenge.actor_id
+            AND enrollment.enrollment_state = 'active'
+      )
+"""
+# The same challenge locked for its start; a parallel start of it is then seen by a new
+# statement (review round 1: the re-check of a locked row does not see a start committed
+# meanwhile).
+LOCK_ENROLLMENT_CHALLENGE: Final = f"""{OPEN_ENROLLMENT_CHALLENGE}    FOR UPDATE OF challenge
+"""
+# The unique constraints a parallel start or first code meets (review round 2).
+STARTED_ELSEWHERE: Final = frozenset(
+    {"totp_mfa_enrollments_one_live_per_actor", "sign_in_code_enrollment_starts_pkey"}
+)
+CHALLENGE_STARTED: Final = """
+    SELECT EXISTS (
+        SELECT 1
+        FROM app.sign_in_code_enrollment_starts AS start
+        WHERE start.challenge_id = %s
+    )
+"""
+# A sign-in code started at an earlier sign-in and never confirmed is replaced.
+REPLACE_PENDING_CODE: Final = """
+    UPDATE app.totp_mfa_enrollments AS enrollment
+    SET enrollment_state = 'disabled',
+        disabled_by_actor_id = enrollment.actor_id,
+        disablement_provenance = %s
+    WHERE enrollment.actor_id = %s
+      AND enrollment.enrollment_state = 'pending'
+"""
+INSERT_PENDING_CODE: Final = """
+    INSERT INTO app.totp_mfa_enrollments (
+        enrollment_id, actor_id, secret_ciphertext, secret_nonce, key_identifier,
+        protection_algorithm, totp_algorithm, created_by_actor_id, provenance
+    ) VALUES (%s, %s, %s, %s, %s, %s, 'sha1', %s, %s)
+"""
+INSERT_ENROLLMENT_START: Final = """
+    INSERT INTO app.sign_in_code_enrollment_starts (challenge_id, actor_id, enrollment_id)
+    VALUES (%s, %s, %s)
+"""
+# An open, started `enrollment` challenge of an active, classified account that still has MFA
+# `required` (review round 1: MFA turned off while a start commits can leave the started code
+# pending, and it must not be activated), with its pending
+# sign-in code, the last used time step of that code and the current time step of the database
+# clock: the same columns as `OPEN_CHALLENGE`.
+OPEN_ENROLLMENT_START: Final = f"""
+    SELECT challenge.challenge_id, challenge.actor_id, challenge.password_verifier_digest,
+           challenge.username_digest, challenge.source_digest, enrollment.enrollment_id,
+           enrollment.secret_ciphertext, enrollment.secret_nonce, enrollment.key_identifier,
+           enrollment.protection_algorithm,
+           COALESCE(
+               (SELECT max(used.time_step)
+                FROM app.totp_used_steps AS used
+                WHERE used.enrollment_id = enrollment.enrollment_id),
+               0
+           ),
+           floor(extract(epoch FROM statement_timestamp()) / {TOTP_DEFAULT_PERIOD_SECONDS})::bigint
+    FROM app.sign_in_mfa_challenges AS challenge
+    JOIN app.user_accounts AS account ON account.actor_id = challenge.actor_id
+    JOIN app.user_account_classes AS classification ON classification.actor_id = challenge.actor_id
+    JOIN app.sign_in_code_enrollment_starts AS start
+      ON start.challenge_id = challenge.challenge_id
+     AND start.actor_id = challenge.actor_id
+    JOIN app.totp_mfa_enrollments AS enrollment
+      ON enrollment.enrollment_id = start.enrollment_id
+     AND enrollment.actor_id = challenge.actor_id
+    WHERE challenge.token_verifier = %s
+      AND challenge.purpose = 'enrollment'
+      AND challenge.completed_at IS NULL
+      AND statement_timestamp() < challenge.expires_at
+      AND account.lifecycle_state = 'active'
+      AND account.mfa_policy_class = 'required'
+      AND enrollment.enrollment_state = 'pending'
+"""
+ACTIVATE_PENDING_CODE: Final = """
+    UPDATE app.totp_mfa_enrollments AS enrollment
+    SET enrollment_state = 'active',
+        activated_by_actor_id = enrollment.actor_id,
+        activation_provenance = %s
+    WHERE enrollment.enrollment_id = %s
+      AND enrollment.enrollment_state = 'pending'
+    RETURNING enrollment.enrollment_id
+"""
+LOCK_PENDING_ENROLLMENT: Final = """
+    SELECT enrollment.enrollment_id
+    FROM app.totp_mfa_enrollments AS enrollment
+    WHERE enrollment.enrollment_id = %s
+      AND enrollment.enrollment_state = 'pending'
+    FOR UPDATE
+"""
 LOCK_ACTIVE_ENROLLMENT: Final = """
     SELECT enrollment.enrollment_id
     FROM app.totp_mfa_enrollments AS enrollment
@@ -250,6 +383,24 @@ def session_token_digest(session_token: str) -> bytes:
     if not session_token or len(session_token) > MAX_SESSION_TOKEN_LENGTH:
         raise AuthenticationRejected
     return hashlib.sha256(session_token.encode("utf-8")).digest()
+
+
+def provisioning_uri(username: str, secret: TotpSecret) -> str:
+    """The standard `otpauth://totp/` link of a new sign-in code (the authenticator app's key URI
+    format): the issuer and the username as the label, the secret in Base32 and the 6 digits,
+    30 seconds and SHA-1 the database stores."""
+    label = f"{quote(TOTP_ISSUER, safe='')}:{quote(username, safe='')}"
+    query = urlencode(
+        {
+            "secret": secret.get_base32_value(),
+            "issuer": TOTP_ISSUER,
+            "algorithm": "SHA1",
+            "digits": TOTP_DEFAULT_DIGITS,
+            "period": TOTP_DEFAULT_PERIOD_SECONDS,
+        },
+        quote_via=quote,
+    )
+    return f"otpauth://totp/{label}?{query}"
 
 
 def _try_digest(text: str, key: bytes | None) -> bytes:
@@ -382,6 +533,12 @@ class PostgresAuthenticationFlow:
         # The TOTP protection key read from the protected key file (login sub-slice L3c-2a);
         # without it no sign-in code can be checked.
         self._totp_protection_key = totp_protection_key
+        # The name stored with a sign-in code set up at sign-in (login sub-slice L3c-2b).
+        self._totp_key_identifier = (
+            derive_totp_key_identifier(totp_protection_key)
+            if totp_protection_key is not None
+            else None
+        )
         self._totp = TotpService()
         self._password_service = PasswordHashService()
         self._sign_in_waits = _PostgresSignInWaits(database_url, sign_in_try_key)
@@ -536,9 +693,120 @@ class PostgresAuthenticationFlow:
 
     @staticmethod
     def _unavailable() -> AuthenticationUnavailable:
-        # Enrollment comes with login sub-slice L3c-2b, the recovery codes with L3c-2c and
-        # reauthentication with L3d.
+        # The recovery codes come with login sub-slice L3c-2c and reauthentication with L3d.
         return AuthenticationUnavailable()
+
+    def _refuse_during_wait(self, username_digest: bytes, source_digest: bytes) -> None:
+        """A wait of the stored username or source answers 429 before any code is used."""
+        try:
+            waiting = self._sign_in_waits.challenge_wait_seconds(username_digest, source_digest)
+        except psycopg.Error as exc:
+            raise AuthenticationUnavailable from exc
+        if waiting is not None:
+            raise AuthenticationRateLimited(waiting)
+
+    def _open_sign_in_code(self, challenge: tuple[object, ...], *, request_id: str) -> TotpSecret:
+        """The secret of the challenge row's sign-in code, opened with the protection key."""
+        if self._totp_protection_key is None:
+            raise self._unavailable()
+        actor_id, enrollment_id = challenge[1], challenge[5]
+        ciphertext, nonce, key_identifier, protection_algorithm = challenge[6:10]
+        try:
+            return Aes256GcmTotpSecretProtector(
+                key=self._totp_protection_key, key_identifier=str(key_identifier)
+            ).unprotect(
+                ProtectedTotpSecret(
+                    ciphertext=bytes(cast(bytes, ciphertext)),
+                    nonce=bytes(cast(bytes, nonce)),
+                    key_identifier=str(key_identifier),
+                    encryption_algorithm=str(protection_algorithm),
+                ),
+                actor_id=cast(UUID, actor_id),
+                enrollment_id=cast(UUID, enrollment_id),
+            )
+        except (TotpSecretProtectionError, ValueError) as exc:
+            # The key file does not open this sign-in code; no detail is given.
+            logger.warning(
+                "sign-in code cannot be opened",
+                extra={"outcome": "unavailable", "request_id": request_id},
+            )
+            raise AuthenticationUnavailable from exc
+
+    def _matching_step(
+        self, code: str, secret: TotpSecret, *, current_step: object, last_used_step: object
+    ) -> int | None:
+        """The current or the previous 30-second step of the database clock (one step of drift)
+        that the code is right for, each used once and only after the last used step."""
+        return next(
+            (
+                candidate
+                for candidate in (int(str(current_step)), int(str(current_step)) - 1)
+                if candidate > int(str(last_used_step))
+                and self._totp.verify_code(
+                    code, secret, at_time=candidate * TOTP_DEFAULT_PERIOD_SECONDS
+                )
+            ),
+            None,
+        )
+
+    def _refuse_wrong_code(
+        self, username_digest: bytes, source_digest: bytes, *, decision: str, request_id: str
+    ) -> NoReturn:
+        """A wrong sign-in code is a wrong try of the account (Q-2026-10-21-154 (a)): 429 when
+        it starts a wait, otherwise 401."""
+        try:
+            waiting = self._sign_in_waits.record_wrong_code(username_digest, source_digest)
+        except psycopg.Error as exc:
+            raise AuthenticationUnavailable from exc
+        logger.info(decision, extra={"outcome": "rejected", "request_id": request_id})
+        if waiting is not None:
+            raise AuthenticationRateLimited(waiting)
+        raise AuthenticationRejected
+
+    @staticmethod
+    def _clear_wrong_tries(
+        connection: psycopg.Connection[tuple[object, ...]],
+        username_digest: bytes,
+        source_digest: bytes,
+        actor_id: object,
+    ) -> None:
+        """The clear first, as at a password sign-in: a wait that a parallel wrong try started
+        refuses and rolls everything back."""
+        cleared = connection.execute(
+            CLEAR_WRONG_SIGN_INS, (username_digest, source_digest, actor_id)
+        ).fetchone()
+        if cleared is not None and cleared[0] is not None:
+            raise AuthenticationRateLimited(int(str(cleared[0])))
+
+    @staticmethod
+    def _write_proven_session(
+        connection: psycopg.Connection[tuple[object, ...]],
+        *,
+        challenge_id: object,
+        actor_id: object,
+        checked_verifier: object,
+        enrollment_id: object,
+        session_digest: bytes,
+        provenance: str,
+    ) -> tuple[object, ...]:
+        """After the used step: the challenge completed, the password verifier compared, the
+        session and its `totp` proof written and the live session read back."""
+        if connection.execute(COMPLETE_CHALLENGE, (challenge_id,)).fetchone() is None:
+            raise AuthenticationRejected
+        # A password reset after the password check refuses the session (the L3a-1 guard).
+        current = connection.execute(CURRENT_VERIFIER, (actor_id,)).fetchone()
+        if current is None or not hmac.compare_digest(
+            verifier_digest(str(current[0])), bytes(cast(bytes, checked_verifier))
+        ):
+            raise AuthenticationRejected
+        session_id = uuid4()
+        connection.execute(INSERT_SESSION, (session_id, actor_id, session_digest, provenance))
+        connection.execute(INSERT_MFA_PROOF, (session_id, challenge_id, "totp", enrollment_id))
+        row = connection.execute(LIVE_SESSION, (session_digest,)).fetchone()
+        if row is None:
+            # The account changed between the challenge read and the session write.
+            raise AuthenticationRejected
+        return row
 
     def complete_mfa(
         self,
@@ -558,84 +826,22 @@ class PostgresAuthenticationFlow:
             challenge = connection.execute(OPEN_CHALLENGE, (digest,)).fetchone()
         if challenge is None:
             raise AuthenticationRejected
-        (
-            challenge_id,
-            actor_id,
-            checked_verifier,
-            username_digest,
-            source_digest,
-            enrollment_id,
-            ciphertext,
-            nonce,
-            key_identifier,
-            protection_algorithm,
-            last_used_step,
-            current_step,
-        ) = challenge
-        try:
-            waiting = self._sign_in_waits.challenge_wait_seconds(
-                bytes(cast(bytes, username_digest)), bytes(cast(bytes, source_digest))
-            )
-        except psycopg.Error as exc:
-            raise AuthenticationUnavailable from exc
-        if waiting is not None:
-            raise AuthenticationRateLimited(waiting)
-        try:
-            secret = Aes256GcmTotpSecretProtector(
-                key=self._totp_protection_key, key_identifier=str(key_identifier)
-            ).unprotect(
-                ProtectedTotpSecret(
-                    ciphertext=bytes(cast(bytes, ciphertext)),
-                    nonce=bytes(cast(bytes, nonce)),
-                    key_identifier=str(key_identifier),
-                    encryption_algorithm=str(protection_algorithm),
-                ),
-                actor_id=cast(UUID, actor_id),
-                enrollment_id=cast(UUID, enrollment_id),
-            )
-        except (TotpSecretProtectionError, ValueError) as exc:
-            # The key file does not open this sign-in code; no detail is given.
-            logger.warning(
-                "sign-in code cannot be opened",
-                extra={"outcome": "unavailable", "request_id": request_id},
-            )
-            raise AuthenticationUnavailable from exc
-        # The current and the previous 30-second step of the database clock (one step of
-        # drift), each used once and only after the last used step.
-        step = next(
-            (
-                candidate
-                for candidate in (int(str(current_step)), int(str(current_step)) - 1)
-                if candidate > int(str(last_used_step))
-                and self._totp.verify_code(
-                    code, secret, at_time=candidate * TOTP_DEFAULT_PERIOD_SECONDS
-                )
-            ),
-            None,
+        challenge_id, actor_id, checked_verifier, username_digest, source_digest = challenge[:5]
+        enrollment_id, last_used_step, current_step = challenge[5], challenge[10], challenge[11]
+        username_key = bytes(cast(bytes, username_digest))
+        source_key = bytes(cast(bytes, source_digest))
+        self._refuse_during_wait(username_key, source_key)
+        secret = self._open_sign_in_code(challenge, request_id=request_id)
+        step = self._matching_step(
+            code, secret, current_step=current_step, last_used_step=last_used_step
         )
         if step is None:
-            try:
-                waiting = self._sign_in_waits.record_wrong_code(
-                    bytes(cast(bytes, username_digest)), bytes(cast(bytes, source_digest))
-                )
-            except psycopg.Error as exc:
-                raise AuthenticationUnavailable from exc
-            logger.info(
-                "sign-in code decision", extra={"outcome": "rejected", "request_id": request_id}
+            self._refuse_wrong_code(
+                username_key, source_key, decision="sign-in code decision", request_id=request_id
             )
-            if waiting is not None:
-                raise AuthenticationRateLimited(waiting)
-            raise AuthenticationRejected
         session_token = secrets.token_urlsafe(SESSION_TOKEN_BYTES)
-        session_digest = session_token_digest(session_token)
         with self._transaction() as connection:
-            # The clear first, as at a password sign-in: a wait that a parallel wrong try started
-            # refuses and rolls everything back.
-            cleared = connection.execute(
-                CLEAR_WRONG_SIGN_INS, (username_digest, source_digest, actor_id)
-            ).fetchone()
-            if cleared is not None and cleared[0] is not None:
-                raise AuthenticationRateLimited(int(str(cleared[0])))
+            self._clear_wrong_tries(connection, username_key, source_key, actor_id)
             # The enrollment lock makes two uses of one step, or of one challenge, wait for each
             # other; the second then finds the step or the challenge used.
             locked = connection.execute(LOCK_ACTIVE_ENROLLMENT, (enrollment_id,)).fetchone()
@@ -643,23 +849,15 @@ class PostgresAuthenticationFlow:
             if locked is None or last is None or step <= int(str(last[0])):
                 raise AuthenticationRejected
             connection.execute(RECORD_USED_STEP, (enrollment_id, step))
-            if connection.execute(COMPLETE_CHALLENGE, (challenge_id,)).fetchone() is None:
-                raise AuthenticationRejected
-            # A password reset after the password check refuses the session (the L3a-1 guard).
-            current = connection.execute(CURRENT_VERIFIER, (actor_id,)).fetchone()
-            if current is None or not hmac.compare_digest(
-                verifier_digest(str(current[0])), bytes(cast(bytes, checked_verifier))
-            ):
-                raise AuthenticationRejected
-            session_id = uuid4()
-            connection.execute(
-                INSERT_SESSION, (session_id, actor_id, session_digest, MFA_CHALLENGE_PROVENANCE)
+            row = self._write_proven_session(
+                connection,
+                challenge_id=challenge_id,
+                actor_id=actor_id,
+                checked_verifier=checked_verifier,
+                enrollment_id=enrollment_id,
+                session_digest=session_token_digest(session_token),
+                provenance=MFA_CHALLENGE_PROVENANCE,
             )
-            connection.execute(INSERT_MFA_PROOF, (session_id, challenge_id, "totp", enrollment_id))
-            row = connection.execute(LIVE_SESSION, (session_digest,)).fetchone()
-            if row is None:
-                # The account changed between the challenge read and the session write.
-                raise AuthenticationRejected
         logger.info(
             "sign-in code decision", extra={"outcome": "authenticated", "request_id": request_id}
         )
@@ -676,7 +874,70 @@ class PostgresAuthenticationFlow:
         preauth_token: str,
         request_id: str,
     ) -> MfaEnrollmentResult:
-        raise self._unavailable()
+        """Set up a sign-in code at sign-in (login sub-slice L3c-2b, DL-056, UI-110): an open
+        `enrollment` challenge of an account that still needs a sign-in code writes a new
+        `pending` sign-in code, protected with the protection key, and starts it once; the
+        secret is answered once, as the standard provisioning link, and never stored in the
+        clear."""
+        if self._totp_protection_key is None or self._totp_key_identifier is None:
+            raise self._unavailable()
+        digest = session_token_digest(preauth_token)
+        with self._transaction() as connection:
+            challenge = connection.execute(OPEN_ENROLLMENT_CHALLENGE, (digest,)).fetchone()
+        if challenge is None:
+            raise AuthenticationRejected
+        # The wait first, outside the transaction that locks the challenge (review round 1).
+        self._refuse_during_wait(bytes(cast(bytes, challenge[2])), bytes(cast(bytes, challenge[3])))
+        secret = TotpSecretGenerator().generate()
+        enrollment_id = uuid4()
+        with self._transaction() as connection:
+            locked = connection.execute(LOCK_ENROLLMENT_CHALLENGE, (digest,)).fetchone()
+            if locked is None:
+                raise AuthenticationRejected
+            challenge_id, actor_id, _, _, username, checked_verifier = locked
+            started = connection.execute(CHALLENGE_STARTED, (challenge_id,)).fetchone()
+            if started is None or started[0] is not False:
+                raise AuthenticationRejected
+            # Review round 1 (security): a sign-in from before a password reset starts nothing,
+            # so it cannot turn off the code another sign-in started with the new password.
+            current = connection.execute(CURRENT_VERIFIER, (actor_id,)).fetchone()
+            if current is None or not hmac.compare_digest(
+                verifier_digest(str(current[0])), bytes(cast(bytes, checked_verifier))
+            ):
+                raise AuthenticationRejected
+            protected = Aes256GcmTotpSecretProtector(
+                key=self._totp_protection_key, key_identifier=self._totp_key_identifier
+            ).protect(secret, actor_id=cast(UUID, actor_id), enrollment_id=enrollment_id)
+            try:
+                connection.execute(
+                    REPLACE_PENDING_CODE, (MFA_ENROLLMENT_REPLACED_PROVENANCE, actor_id)
+                )
+                connection.execute(
+                    INSERT_PENDING_CODE,
+                    (
+                        enrollment_id,
+                        actor_id,
+                        protected.ciphertext,
+                        protected.nonce,
+                        protected.key_identifier,
+                        protected.encryption_algorithm,
+                        actor_id,
+                        MFA_ENROLLMENT_PROVENANCE,
+                    ),
+                )
+                connection.execute(INSERT_ENROLLMENT_START, (challenge_id, actor_id, enrollment_id))
+            except psycopg.errors.UniqueViolation as exc:
+                # A parallel start of another challenge of the account, or a parallel first code
+                # of an earlier start, came first (review round 1); everything rolls back. Any
+                # other violation stays unavailable (review round 2).
+                if exc.diag.constraint_name not in STARTED_ELSEWHERE:
+                    raise
+                raise AuthenticationRejected from None
+        logger.info(
+            "sign-in code enrollment decision",
+            extra={"outcome": "started", "request_id": request_id},
+        )
+        return MfaEnrollmentResult(provisioning_uri=provisioning_uri(str(username), secret))
 
     def confirm_mfa_enrollment(
         self,
@@ -685,7 +946,70 @@ class PostgresAuthenticationFlow:
         code: str,
         request_id: str,
     ) -> AuthenticationResult:
-        raise self._unavailable()
+        """The first right code of a started sign-in code activates it and makes the session
+        with a `totp` proof (login sub-slice L3c-2b); a wrong code is a wrong try, as at the
+        challenge."""
+        if self._totp_protection_key is None:
+            raise self._unavailable()
+        digest = session_token_digest(preauth_token)
+        with self._transaction() as connection:
+            challenge = connection.execute(OPEN_ENROLLMENT_START, (digest,)).fetchone()
+        if challenge is None:
+            raise AuthenticationRejected
+        challenge_id, actor_id, checked_verifier, username_digest, source_digest = challenge[:5]
+        enrollment_id, last_used_step, current_step = challenge[5], challenge[10], challenge[11]
+        username_key = bytes(cast(bytes, username_digest))
+        source_key = bytes(cast(bytes, source_digest))
+        self._refuse_during_wait(username_key, source_key)
+        secret = self._open_sign_in_code(challenge, request_id=request_id)
+        step = self._matching_step(
+            code, secret, current_step=current_step, last_used_step=last_used_step
+        )
+        if step is None:
+            self._refuse_wrong_code(
+                username_key,
+                source_key,
+                decision="sign-in code enrollment decision",
+                request_id=request_id,
+            )
+        session_token = secrets.token_urlsafe(SESSION_TOKEN_BYTES)
+        with self._transaction() as connection:
+            self._clear_wrong_tries(connection, username_key, source_key, actor_id)
+            # The lock makes a parallel confirmation, a replacement by a later sign-in or a
+            # sign-in code reset wait; the sign-in code must still be pending.
+            locked = connection.execute(LOCK_PENDING_ENROLLMENT, (enrollment_id,)).fetchone()
+            if locked is None:
+                raise AuthenticationRejected
+            if (
+                connection.execute(
+                    ACTIVATE_PENDING_CODE, (MFA_ENROLLMENT_PROVENANCE, enrollment_id)
+                ).fetchone()
+                is None
+            ):
+                raise AuthenticationRejected
+            last = connection.execute(LAST_USED_STEP, (enrollment_id,)).fetchone()
+            if last is None or step <= int(str(last[0])):
+                raise AuthenticationRejected
+            connection.execute(RECORD_USED_STEP, (enrollment_id, step))
+            row = self._write_proven_session(
+                connection,
+                challenge_id=challenge_id,
+                actor_id=actor_id,
+                checked_verifier=checked_verifier,
+                enrollment_id=enrollment_id,
+                session_digest=session_token_digest(session_token),
+                provenance=MFA_ENROLLMENT_PROVENANCE,
+            )
+        logger.info(
+            "sign-in code enrollment decision",
+            extra={"outcome": "authenticated", "request_id": request_id},
+        )
+        return AuthenticationResult(
+            phase=AuthenticationPhase.AUTHENTICATED,
+            session_token=session_token,
+            csrf_token=secrets.token_urlsafe(SESSION_TOKEN_BYTES),
+            session=session_view(row),
+        )
 
     def reauthenticate(
         self,

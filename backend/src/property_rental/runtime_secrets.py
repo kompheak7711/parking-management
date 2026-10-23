@@ -18,6 +18,8 @@ from property_rental.bootstrap_cli import read_root_controlled_totp_key
 
 DERIVED_KEY_BYTES: Final = 32
 SIGN_IN_TRY_KEY_INFO: Final = b"property-rental:sign-in-try-digest:v1"
+TOTP_KEY_IDENTIFIER_INFO: Final = b"property-rental:totp-key-identifier:v1"
+TOTP_KEY_IDENTIFIER_BYTES: Final = 16
 
 
 class ProtectedKeyUnavailable(RuntimeError):
@@ -52,3 +54,17 @@ def derive_sign_in_try_key(protection_key: bytes) -> bytes:
         salt=None,
         info=SIGN_IN_TRY_KEY_INFO,
     ).derive(protection_key)
+
+
+def derive_totp_key_identifier(protection_key: bytes) -> str:
+    """The key identifier stored with a sign-in code that the API sets up (login sub-slice
+    L3c-2b, decided under the owner's 2026-10-22 rule): a name of the protection key derived
+    with HKDF-SHA256, so another key file gets another name and the key itself is never stored
+    or shown."""
+    name = HKDF(
+        algorithm=hashes.SHA256(),
+        length=TOTP_KEY_IDENTIFIER_BYTES,
+        salt=None,
+        info=TOTP_KEY_IDENTIFIER_INFO,
+    ).derive(protection_key)
+    return f"runtime-{name.hex()}"
