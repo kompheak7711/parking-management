@@ -1,0 +1,148 @@
+"""Login sub-slice L3c-1: the protected key file, its derived key and the start-up rule (DL-081,
+owner answers (a) to Q-2026-10-21-155 and Q-2026-10-23-175, SEC-073)."""
+
+import os
+import stat
+from collections.abc import Callable
+from pathlib import Path
+
+import pytest
+from pydantic import SecretStr
+
+import property_rental.app as app_module
+from property_rental.app import create_app
+from property_rental.auth_api import UnavailableAuthenticationFlow
+from property_rental.runtime_secrets import (
+    ProtectedKeyUnavailable,
+    derive_sign_in_try_key,
+    read_protected_totp_key,
+)
+from property_rental.settings import Settings
+
+KEY_HEX = "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff"
+UNUSED_DATABASE = "postgresql://unused.invalid/unused"
+
+
+@pytest.mark.skipif(os.geteuid() == 0, reason="a file root writes is root-owned")
+def test_the_key_reader_refuses_a_missing_or_unprotected_file_without_its_content(
+    tmp_path: Path,
+) -> None:
+    """A file the test user owns is not root-controlled, and a missing file cannot be opened;
+    both refuse with a plain message that holds neither the path's content nor the key."""
+    unprotected = tmp_path / "totp_key"
+    unprotected.write_text(KEY_HEX, encoding="ascii")
+    os.chmod(unprotected, 0o600)
+    for path in (str(unprotected), str(tmp_path / "missing")):
+        with pytest.raises(ProtectedKeyUnavailable) as refused:
+            read_protected_totp_key(path)
+        assert KEY_HEX not in str(refused.value) and str(tmp_path) not in str(refused.value)
+
+
+def test_the_key_reader_accepts_a_root_controlled_file_through_the_bootstrap_checks(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """With the descriptor reported as a root-owned private regular file (the bootstrap's own
+    checks), the 64 hex characters give the 32-byte key; group or other access still refuses; an
+    inherited descriptor read to its end is read again from the start (review round 2)."""
+    key_file = tmp_path / "totp_key"
+    key_file.write_text(KEY_HEX + "\n", encoding="ascii")
+    real_fstat = os.fstat
+
+    def as_root(mode: int) -> Callable[[int], os.stat_result]:
+        def fstat(descriptor: int) -> os.stat_result:
+            found = real_fstat(descriptor)
+            fields = list(found)
+            fields[stat.ST_MODE] = stat.S_IFREG | mode
+            fields[stat.ST_UID] = 0
+            return os.stat_result(fields)
+
+        return fstat
+
+    monkeypatch.setattr(os, "fstat", as_root(0o600))
+    assert read_protected_totp_key(str(key_file)) == bytes.fromhex(KEY_HEX)
+    monkeypatch.setattr(os, "fstat", as_root(0o640))
+    with pytest.raises(ProtectedKeyUnavailable):
+        read_protected_totp_key(str(key_file))
+
+    # Review round 2: a `/dev/fd/<n>` path whose inherited descriptor was already read to the end
+    # is read again from the start (it shares the offset on macOS).
+    monkeypatch.setattr(os, "fstat", as_root(0o600))
+    inherited = os.open(key_file, os.O_RDONLY)
+    try:
+        while os.read(inherited, 4096):
+            pass
+        assert read_protected_totp_key(f"/dev/fd/{inherited}") == bytes.fromhex(KEY_HEX)
+    finally:
+        os.close(inherited)
+
+
+def test_the_wrong_try_key_is_derived_and_never_the_protection_key() -> None:
+    """HKDF-SHA256 with a fixed purpose: 32 bytes, the same for the same key, different for
+    another key, and never the protection key itself."""
+    protection = bytes.fromhex(KEY_HEX)
+    derived = derive_sign_in_try_key(protection)
+    assert len(derived) == 32 and derived != protection
+    assert derive_sign_in_try_key(protection) == derived
+    assert derive_sign_in_try_key(bytes(32)) != derived
+
+
+def test_the_two_protected_paths_are_settings_and_production_needs_the_key_file(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The settings read only the two paths; with a database, `staging` and `production` refuse
+    to start without the key file, and an unprotected key file refuses in any environment;
+    development without a key file starts."""
+    monkeypatch.setenv("APP_TOTP_KEY_FILE", "/dev/fd/4")
+    monkeypatch.setenv("APP_PASSWORD_BLOCKLIST_FILE", "/usr/local/etc/prm/blocklist.txt")
+    settings = Settings()
+    assert settings.totp_key_file == "/dev/fd/4"
+    assert settings.password_blocklist_file == "/usr/local/etc/prm/blocklist.txt"
+    monkeypatch.delenv("APP_TOTP_KEY_FILE")
+    monkeypatch.delenv("APP_PASSWORD_BLOCKLIST_FILE")
+
+    # Review round 1: an allowed list; every other environment name refuses.
+    for environment in ("staging", "production", "Production", "prod", "staging-2"):
+        with pytest.raises(ProtectedKeyUnavailable):
+            create_app(Settings(environment=environment, database_url=SecretStr(UNUSED_DATABASE)))
+    unprotected = tmp_path / "totp_key"
+    unprotected.write_text(KEY_HEX, encoding="ascii")
+    if os.geteuid() != 0:
+        with pytest.raises(ProtectedKeyUnavailable):
+            create_app(
+                Settings(database_url=SecretStr(UNUSED_DATABASE), totp_key_file=str(unprotected))
+            )
+    for environment in ("development", "test"):
+        assert (
+            create_app(Settings(environment=environment, database_url=SecretStr(UNUSED_DATABASE)))
+            is not None
+        )
+
+
+def test_create_app_gives_the_derived_key_to_the_sign_in_flow(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Review round 1 (independent reviewer's set-up): with the key file, also in `production`,
+    the app starts and gives the sign-in flow the key derived from it; without one, in
+    `development`, the flow gets no key."""
+    monkeypatch.delenv("APP_TOTP_KEY_FILE", raising=False)
+    seen: list[bytes | None] = []
+
+    def recording_flow(
+        database_url: str, *, sign_in_try_key: bytes | None = None
+    ) -> UnavailableAuthenticationFlow:
+        seen.append(sign_in_try_key)
+        return UnavailableAuthenticationFlow()
+
+    monkeypatch.setattr(app_module, "read_protected_totp_key", lambda _: bytes.fromhex(KEY_HEX))
+    monkeypatch.setattr(app_module, "PostgresAuthenticationFlow", recording_flow)
+    create_app(
+        Settings(
+            environment="production",
+            database_url=SecretStr(UNUSED_DATABASE),
+            totp_key_file="/dev/fd/9",
+        )
+    )
+    create_app(Settings(environment="development", database_url=SecretStr(UNUSED_DATABASE)))
+    assert seen == [derive_sign_in_try_key(bytes.fromhex(KEY_HEX)), None]

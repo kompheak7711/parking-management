@@ -88,6 +88,14 @@ authentication mutations. It defaults to `https://localhost`. Authentication rou
 closed with `503 Service Unavailable` until an atomic runtime authentication-flow adapter
 is configured; no in-memory or external-identity fallback is used.
 
+`APP_TOTP_KEY_FILE` is the path of the protected TOTP protection key file (a root-owned regular
+file without group or other access; never a key value). The API reads it once at start-up and
+keys its wrong-try counts with a key derived from it. With `APP_DATABASE_URL` set, the API refuses
+to start without it in every `APP_ENVIRONMENT` except `development` and `test`. `APP_ENVIRONMENT`
+defaults to `development`, so a real deployment must set it (for example to `production`).
+Changing the key starts every wrong-try count and wait again. `APP_PASSWORD_BLOCKLIST_FILE` is the
+path of the local password blocklist, read from login sub-slice L4 (the password change step).
+
 ## Verification
 
 Run the non-mutating quality gates:

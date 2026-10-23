@@ -177,6 +177,11 @@ from property_rental.reservation_api import (
     create_reservation_router,
 )
 from property_rental.reservation_deposit_draft import ReservationDepositDraftKeyReused
+from property_rental.runtime_secrets import (
+    ProtectedKeyUnavailable,
+    derive_sign_in_try_key,
+    read_protected_totp_key,
+)
 from property_rental.session_actor import PostgresSessionActorResolver
 from property_rental.settings import Settings
 from property_rental.unit_api import (
@@ -283,6 +288,22 @@ ERROR_STATUS_DETAILS: Final = {
         "A required service is temporarily unavailable.",
     ),
 }
+
+
+# The only environments where the wrong-try digests may be plain sha256 (login sub-slice L3c-1).
+PLAIN_DIGEST_ENVIRONMENTS: Final = frozenset({"development", "test"})
+
+
+def _sign_in_try_key(settings: Settings) -> bytes | None:
+    """The key of the wrong-try digests, derived from the protected key file read once at start-up
+    (login sub-slice L3c-1). A database without a key file stops the start in every environment
+    except `development` and `test` (an allowed list, review round 1), so plain digests are used
+    only there."""
+    if settings.totp_key_file:
+        return derive_sign_in_try_key(read_protected_totp_key(settings.totp_key_file))
+    if settings.database_url is not None and settings.environment not in PLAIN_DIGEST_ENVIRONMENTS:
+        raise ProtectedKeyUnavailable("APP_TOTP_KEY_FILE is required with a database")
+    return None
 
 
 def check_database_readiness(database_url: str) -> None:
@@ -392,6 +413,7 @@ def create_app(
 ) -> FastAPI:
     """Build an application instance from validated settings."""
     resolved_settings = settings or Settings()
+    sign_in_try_key = _sign_in_try_key(resolved_settings)
     if actor_resolver is None:
         # Login sub-slice L3a-2: the session cookie gives the actor when a database is set;
         # otherwise everyone is denied. Tests keep injecting their own resolver.
@@ -823,7 +845,10 @@ def create_app(
             resolved_settings,
             authentication_flow
             or (
-                PostgresAuthenticationFlow(resolved_settings.database_url.get_secret_value())
+                PostgresAuthenticationFlow(
+                    resolved_settings.database_url.get_secret_value(),
+                    sign_in_try_key=sign_in_try_key,
+                )
                 if resolved_settings.database_url is not None
                 else UnavailableAuthenticationFlow()
             ),

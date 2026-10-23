@@ -5236,6 +5236,19 @@ the wait read also waits for a wrong try being recorded. Because a correct sign-
 real account's count, an unknown username's count never clears; a patient guesser can compare
 the two over days (Q-2026-10-23-176).
 
+Amended by DL-081 (login sub-slice L3c-1, migration `20270129_186`, owner answer (a) to
+Q-2026-10-23-175): when the API has the protected key file (`APP_TOTP_KEY_FILE`), the digests are
+HMAC-SHA256 under a key derived from it with HKDF, so they can no longer be reversed by trying
+names or addresses without the key; plain sha256 digests are used only in development and tests
+(every other environment refuses to start with a database and no key file; `APP_ENVIRONMENT`
+defaults to `development`, so a deployment must set it). Because the
+database has no key, `app.clear_sign_in_wrong_tries` no longer compares the digest with the
+account's username; it still clears only for an active account and answers an active wait
+without clearing, and the application passes only the signed-in account's own digest. Rows
+written before the key existed, or under an earlier key, no longer match, so the counts and waits
+start again when the key is introduced or changed. Removing rows older than 30 days is on the
+slice 12 list.
+
 ---
 
 # 21. Deferred Technical and Configuration Decisions

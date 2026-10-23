@@ -10,6 +10,8 @@ sources, so the order of the tests does not matter.
 
 from __future__ import annotations
 
+import hashlib
+import hmac
 import json
 import logging
 import threading
@@ -44,6 +46,7 @@ from property_rental.local_authentication import (
     normalize_local_username,
 )
 from property_rental.password_security import PasswordHashService, PasswordVerification
+from property_rental.runtime_secrets import derive_sign_in_try_key
 from property_rental.settings import Settings
 from test_migrations import _run_alembic, _temporary_migration_database, _url_with_database
 from test_move_in_migration import migrated_database_url as migrated_database_url
@@ -51,6 +54,8 @@ from test_move_in_migration import runtime_database_url
 
 REVISION = "20270128_185"
 PREVIOUS = "20270127_184"
+# The head after login sub-slice L3c-1 (migration 20270129_186).
+HEAD = "20270129_186"
 PASSWORD = "correct horse battery staple"
 WRONG = "wrong horse battery staple"
 ORIGIN = "https://property.test"
@@ -426,8 +431,9 @@ def test_the_try_relations_are_append_only_and_only_the_functions_are_open_to_th
     """The three relations refuse UPDATE, DELETE and TRUNCATE, also from their owner; the runtime
     role has no privilege on them and EXECUTE only on the three definer functions (pinned
     `search_path`, no PUBLIC EXECUTE); the functions refuse a transaction that is not READ
-    COMMITTED, a key that is not a sha256 digest and an unknown try kind; the migration is the
-    head, follows `20270127_184` and refuses a downgrade."""
+    COMMITTED, a key that is not a sha256 digest and an unknown try kind; the migration follows
+    `20270127_184` and refuses a downgrade (the head is `20270129_186` since login sub-slice
+    L3c-1)."""
     tries = add_tries(wait_database, "l3b.guard", "l3b-guard", 1, "1 minute")
     key = username_key("l3b.guard")
     source = sign_in_source_digest("l3b-guard")
@@ -470,9 +476,7 @@ def test_the_try_relations_are_append_only_and_only_the_functions_are_open_to_th
             "SELECT has_function_privilege('prm_runtime', "
             "'app.reject_sign_in_try_history_change()', 'EXECUTE')"
         ).fetchone() == (False,)
-        assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-            REVISION,
-        )
+        assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (HEAD,)
     calls = (
         ("SELECT app.sign_in_wait_seconds(%s, %s)", (key, source)),
         ("SELECT app.record_sign_in_wrong_try(%s, %s, 'password')", (key, source)),
@@ -493,7 +497,7 @@ def test_the_try_relations_are_append_only_and_only_the_functions_are_open_to_th
                 "SELECT app.record_sign_in_wrong_try(%s, %s, 'guess')", (key, source)
             )
     scripts = ScriptDirectory.from_config(Config("alembic.ini"))
-    assert scripts.get_heads() == [REVISION]
+    assert scripts.get_heads() == [HEAD]
     revision = scripts.get_revision(REVISION)
     assert revision is not None and revision.down_revision == PREVIOUS
     with pytest.raises(RuntimeError, match="forward-only"):
@@ -566,21 +570,91 @@ def test_a_correct_sign_in_is_refused_when_the_clear_meets_a_parallel_wait(
     assert read(wait_database, CLEARS_OF, key) == []
 
 
-def test_a_clear_with_another_accounts_actor_clears_nothing(wait_database: WaitDatabase) -> None:
-    """Review round 1: the clear refuses an actor whose username is not the one of the digest,
-    so one account cannot clear another username's count."""
+def test_a_clear_needs_an_active_account_but_cannot_check_a_keyed_digest(
+    wait_database: WaitDatabase,
+) -> None:
+    """Review round 1 of L3b; changed with the owner answer (a) to Q-2026-10-23-175 (login
+    sub-slice L3c-1, renamed from `test_a_clear_with_another_accounts_actor_clears_nothing`): the
+    clear refuses a disabled account's actor, but the database can no longer check that the
+    digest is the actor's own username, because the application keys the digest; another active
+    account's actor now clears. The flow passes only the signed-in account's own digest."""
     add_account(wait_database, "l3b.owner-of-count")
     other = add_account(wait_database, "l3b.someone-else")
+    disabled = add_account(wait_database, "l3b.someone-off", lifecycle="disabled")
     key = username_key("l3b.owner-of-count")
-    add_tries(wait_database, "l3b.owner-of-count", "l3b-mismatch", 2, "1 minute")
-    with psycopg.connect(wait_database.runtime_url) as connection:
-        answer = connection.execute(
-            "SELECT app.clear_sign_in_wrong_tries(%s, %s, %s)",
-            (key, sign_in_source_digest("l3b-mismatch"), other),
-        ).fetchone()
+    tries = add_tries(wait_database, "l3b.owner-of-count", "l3b-mismatch", 2, "1 minute")
+    answers = []
+    for actor in (disabled, other):
+        with psycopg.connect(wait_database.runtime_url) as connection:
+            answers.append(
+                connection.execute(
+                    "SELECT app.clear_sign_in_wrong_tries(%s, %s, %s)",
+                    (key, sign_in_source_digest("l3b-mismatch"), actor),
+                ).fetchone()
+            )
+            connection.commit()
+        if actor == disabled:
+            assert read(wait_database, CLEARS_OF, key) == []
+    assert answers == [(None,), (None,)]
+    assert read(wait_database, CLEARS_OF, key) == [(other, tries[-1])]
+
+
+def test_a_flow_with_the_protected_key_keeps_keyed_digests_and_clears_them(
+    wait_database: WaitDatabase,
+) -> None:
+    """Login sub-slice L3c-1 (owner answer (a) to Q-2026-10-23-175): with the key derived from
+    the protected key file, the rows hold HMAC-SHA256 digests, never the plain sha256 ones; the
+    3rd wrong try starts the 5-minute wait, and after it ends a correct sign-in clears the keyed
+    count (migration 20270129_186 no longer compares the digest)."""
+    key = derive_sign_in_try_key(bytes(range(32)))
+    flow = PostgresAuthenticationFlow(wait_database.runtime_url, sign_in_try_key=key)
+    add_account(wait_database, "l3c1.keyed")
+    keyed = sign_in_username_digest("l3c1.keyed", key)
+    plain = username_key("l3c1.keyed")
+    assert keyed != plain
+    assert keyed == hmac.new(key, b"username:l3c1.keyed", hashlib.sha256).digest()
+    assert [sign_in(flow, "l3c1.keyed", WRONG, "l3c1-keyed") for _ in range(3)] == [0, 0, 300]
+    assert read(wait_database, TRIES_OF, keyed) == [(3,)]
+    assert read(wait_database, TRIES_OF, plain) == [(0,)]
+    with psycopg.connect(wait_database.owner_url) as connection:
+        sources = connection.execute(
+            "SELECT DISTINCT source_digest FROM app.sign_in_wrong_tries WHERE username_digest = %s",
+            (keyed,),
+        ).fetchall()
+    assert sources == [(sign_in_source_digest("l3c1-keyed", key),)]
+
+    # After an ended wait (written as earlier history), a correct sign-in clears the keyed count.
+    ended_actor = add_account(wait_database, "l3c1.ended")
+    ended = sign_in_username_digest("l3c1.ended", key)
+    with psycopg.connect(wait_database.owner_url) as connection:
+        numbers = []
+        for _ in range(3):
+            row = connection.execute(
+                ADD_TRY, (ended, sign_in_source_digest("l3c1-old", key), "6 minutes")
+            ).fetchone()
+            assert row is not None
+            numbers.append(int(str(row[0])))
+        connection.execute(ADD_WAIT, ("username", ended, "6 minutes", "-1 minute", numbers[-1]))
         connection.commit()
-    assert answer == (None,)
-    assert read(wait_database, CLEARS_OF, key) == []
+    # Review round 1: a correct sign-in clears only its own keyed count, not another account's.
+    add_account(wait_database, "l3c1.bystander")
+    bystander = sign_in_username_digest("l3c1.bystander", key)
+    with psycopg.connect(wait_database.owner_url) as connection:
+        for _ in range(2):
+            connection.execute(
+                ADD_TRY, (bystander, sign_in_source_digest("l3c1-keyed-other", key), "1 minute")
+            )
+        connection.commit()
+    assert sign_in(flow, "l3c1.ended", PASSWORD, "l3c1-keyed-other") == -1
+    assert read(wait_database, CLEARS_OF, ended) == [(ended_actor, numbers[-1])]
+    assert read(wait_database, CLEARS_OF, bystander) == []
+    assert read(wait_database, TRIES_OF, bystander) == [(2,)]
+
+    scripts = ScriptDirectory.from_config(Config("alembic.ini"))
+    revision = scripts.get_revision(HEAD)
+    assert revision is not None and revision.down_revision == REVISION
+    with pytest.raises(RuntimeError, match="forward-only"):
+        revision.module.downgrade()
 
 
 LOCKED_CALLS = {

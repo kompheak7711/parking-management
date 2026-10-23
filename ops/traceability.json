@@ -46235,7 +46235,7 @@
       "notes": "When the first check saw no wait but a parallel wrong try started one, the clear in the session transaction answers it: the sign-in gets the wait answer after exactly one password check, no session is written and nothing is cleared (login slice sub-slice L3b review rounds 1 and 3, Q-2026-10-23-177 (a), DL-081)."
     },
     {
-      "test_id": "test_a_clear_with_another_accounts_actor_clears_nothing",
+      "test_id": "test_a_clear_needs_an_active_account_but_cannot_check_a_keyed_digest",
       "upstream_ids": [
         "DB-AUTH-011",
         "DL-081",
@@ -46244,7 +46244,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_sign_in_wait_migration.py",
       "status": "implemented",
-      "notes": "The clear refuses an actor whose username is not the one of the digest, so one account cannot clear another username's count (login slice sub-slice L3b review round 1, DL-081)."
+      "notes": "The clear refuses a disabled account's actor; since login slice sub-slice L3c-1 (owner answer (a) to Q-2026-10-23-175) the database cannot check a keyed digest, so another active account's actor clears; renamed from test_a_clear_with_another_accounts_actor_clears_nothing (login slice sub-slices L3b review round 1 and L3c-1, DL-081)."
     },
     {
       "test_id": "test_each_function_waits_for_the_username_lock_and_then_meets_the_parallel_wait",
@@ -46284,6 +46284,88 @@
       "test_path": "backend/tests/test_sign_in_wait_migration.py",
       "status": "implemented",
       "notes": "A reset to the same password after the password check stores a new salted verifier, so the session transaction's verifier comparison refuses the sign-in and no session is written (login slice sub-slice L3b review round 4, Q-2026-10-23-177 (a), DL-081)."
+    },
+    {
+      "test_id": "test_the_key_reader_refuses_a_missing_or_unprotected_file_without_its_content",
+      "upstream_ids": [
+        "DL-059",
+        "DL-081",
+        "SEC-073"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_runtime_secrets.py",
+      "status": "implemented",
+      "notes": "The protected key reader refuses a file the test user owns and a missing file with a plain message holding neither the content nor the path (login slice sub-slice L3c-1, Q-2026-10-21-155 (a), DL-081)."
+    },
+    {
+      "test_id": "test_the_key_reader_accepts_a_root_controlled_file_through_the_bootstrap_checks",
+      "upstream_ids": [
+        "DL-059",
+        "DL-081",
+        "SEC-073"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_runtime_secrets.py",
+      "status": "implemented",
+      "notes": "With the descriptor reported as a root-owned private regular file, the bootstrap's own checks give the 32-byte key from 64 hex characters, group or other access refuses, and an inherited /dev/fd descriptor read to its end is read again from the start (login slice sub-slice L3c-1 review rounds 1 and 2, DL-081)."
+    },
+    {
+      "test_id": "test_the_wrong_try_key_is_derived_and_never_the_protection_key",
+      "upstream_ids": [
+        "DL-081",
+        "SEC-012",
+        "SEC-073"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_runtime_secrets.py",
+      "status": "implemented",
+      "notes": "The wrong-try digest key is derived with HKDF-SHA256 for one purpose: 32 bytes, stable, different for another key and never the protection key (login slice sub-slice L3c-1, Q-2026-10-23-175 (a), DL-081)."
+    },
+    {
+      "test_id": "test_the_two_protected_paths_are_settings_and_production_needs_the_key_file",
+      "upstream_ids": [
+        "DL-081",
+        "SEC-073"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_runtime_secrets.py",
+      "status": "implemented",
+      "notes": "APP_TOTP_KEY_FILE and APP_PASSWORD_BLOCKLIST_FILE are path settings; with a database, every environment except development and test (an allowed list, review round 1) refuses to start without the key file, an unprotected key file refuses, development starts (login slice sub-slice L3c-1, Q-2026-10-21-155 (a), DL-081)."
+    },
+    {
+      "test_id": "test_a_flow_with_the_protected_key_keeps_keyed_digests_and_clears_them",
+      "upstream_ids": [
+        "DB-AUTH-011",
+        "DL-081",
+        "SEC-012"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_sign_in_wait_migration.py",
+      "status": "implemented",
+      "notes": "With the derived key the wrong-try rows hold HMAC-SHA256 digests, never the plain ones; the 3rd wrong try starts the 5-minute wait; after an ended wait a correct sign-in clears the keyed count and not another account's; migration 20270129_186 follows 20270128_185 and refuses a downgrade (login slice sub-slice L3c-1, Q-2026-10-23-175 (a), DL-081)."
+    },
+    {
+      "test_id": "test_create_app_gives_the_derived_key_to_the_sign_in_flow",
+      "upstream_ids": [
+        "DL-081",
+        "SEC-012",
+        "SEC-073"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_runtime_secrets.py",
+      "status": "implemented",
+      "notes": "With the key file, also in production, create_app starts and gives the sign-in flow the key derived from it; without one, in development, the flow gets no key (login slice sub-slice L3c-1 review round 1, DL-081)."
+    },
+    {
+      "test_id": "test_the_keyed_wrong_try_digests_are_hmac_sha256_under_the_derived_key",
+      "upstream_ids": [
+        "DL-081",
+        "SEC-012"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_auth_flow.py",
+      "status": "implemented",
+      "notes": "With a key the wrong-try digests are HMAC-SHA256 of the prefixed username and source and differ from the plain ones (login slice sub-slice L3c-1 review round 1, Q-2026-10-23-175 (a), DL-081)."
     }
   ]
 }

@@ -2,6 +2,7 @@
 methods that stay unavailable until L3c and L3d (DL-081, API-096, DB-AUTH-004)."""
 
 import hashlib
+import hmac
 from uuid import uuid4
 
 import pytest
@@ -100,3 +101,15 @@ def test_the_wrong_try_keys_are_sha256_digests_of_the_username_and_the_source() 
     assert sign_in_source_digest("10.0.0.7") == hashlib.sha256(b"source:10.0.0.7").digest()
     assert sign_in_username_digest("desk") != sign_in_source_digest("desk")
     assert len(sign_in_username_digest("u" * 128)) == 32
+
+
+def test_the_keyed_wrong_try_digests_are_hmac_sha256_under_the_derived_key() -> None:
+    """Login sub-slice L3c-1 (review round 1): with a key the digests are HMAC-SHA256 of the same
+    prefixed text, and differ from the plain ones."""
+    key = bytes(range(32))
+    username = sign_in_username_digest("sokha", key)
+    source = sign_in_source_digest("10.0.0.7", key)
+    assert username == hmac.new(key, b"username:sokha", hashlib.sha256).digest()
+    assert source == hmac.new(key, b"source:10.0.0.7", hashlib.sha256).digest()
+    assert username != sign_in_username_digest("sokha")
+    assert source != sign_in_source_digest("10.0.0.7")

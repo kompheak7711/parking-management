@@ -119,16 +119,23 @@ def session_token_digest(session_token: str) -> bytes:
     return hashlib.sha256(session_token.encode("utf-8")).digest()
 
 
-def sign_in_username_digest(account_key: str) -> bytes:
-    """The sha256 key of a normalized username in the wrong-try count. The typed text, which may
-    be a password typed into the wrong box, is never stored as text; the digest has no key, so it
-    is pseudonymous only (Q-2026-10-23-175)."""
-    return hashlib.sha256(f"username:{account_key}".encode()).digest()
+def _try_digest(text: str, key: bytes | None) -> bytes:
+    if key is None:
+        return hashlib.sha256(text.encode()).digest()
+    return hmac.new(key, text.encode(), hashlib.sha256).digest()
 
 
-def sign_in_source_digest(source_key: str) -> bytes:
-    """The sha256 key of a request source in the wrong-try count."""
-    return hashlib.sha256(f"source:{source_key}".encode()).digest()
+def sign_in_username_digest(account_key: str, key: bytes | None = None) -> bytes:
+    """The key of a normalized username in the wrong-try count. The typed text, which may be a
+    password typed into the wrong box, is never stored as text. With the key derived from the
+    protected key file it is HMAC-SHA256 (owner answer (a) to Q-2026-10-23-175, login sub-slice
+    L3c-1); without one (development and tests only) a plain, pseudonymous sha256."""
+    return _try_digest(f"username:{account_key}", key)
+
+
+def sign_in_source_digest(source_key: str, key: bytes | None = None) -> bytes:
+    """The key of a request source in the wrong-try count, keyed as the username's."""
+    return _try_digest(f"source:{source_key}", key)
 
 
 def session_view(row: tuple[object, ...]) -> SessionView:
@@ -177,8 +184,9 @@ class _PostgresSignInWaits:
     """The database count of wrong sign-in tries, each call in its own short READ COMMITTED
     connection."""
 
-    def __init__(self, database_url: str) -> None:
+    def __init__(self, database_url: str, key: bytes | None) -> None:
         self._database_url = database_url
+        self._key = key
 
     def _seconds(self, query: str, parameters: tuple[object, ...]) -> int | None:
         with psycopg.connect(
@@ -195,23 +203,30 @@ class _PostgresSignInWaits:
     def wait_seconds(self, account_key: str, source_key: str) -> int | None:
         return self._seconds(
             SIGN_IN_WAIT_SECONDS,
-            (sign_in_username_digest(account_key), sign_in_source_digest(source_key)),
+            (
+                sign_in_username_digest(account_key, self._key),
+                sign_in_source_digest(source_key, self._key),
+            ),
         )
 
     def record_wrong_try(self, account_key: str, source_key: str) -> int | None:
         return self._seconds(
             RECORD_WRONG_SIGN_IN,
-            (sign_in_username_digest(account_key), sign_in_source_digest(source_key)),
+            (
+                sign_in_username_digest(account_key, self._key),
+                sign_in_source_digest(source_key, self._key),
+            ),
         )
 
 
 class PostgresAuthenticationFlow:
     """`AuthenticationFlow` sign-in, session read and sign-out on PostgreSQL."""
 
-    def __init__(self, database_url: str) -> None:
+    def __init__(self, database_url: str, *, sign_in_try_key: bytes | None = None) -> None:
         self._database_url = database_url
+        self._sign_in_try_key = sign_in_try_key
         self._password_service = PasswordHashService()
-        self._sign_in_waits = _PostgresSignInWaits(database_url)
+        self._sign_in_waits = _PostgresSignInWaits(database_url, sign_in_try_key)
         self._authentication = LocalAuthenticationService(
             repository=_PostgresAccountLookup(database_url),
             password_service=self._password_service,
@@ -288,8 +303,8 @@ class PostgresAuthenticationFlow:
             cleared = connection.execute(
                 CLEAR_WRONG_SIGN_INS,
                 (
-                    sign_in_username_digest(account_key),
-                    sign_in_source_digest(request_source),
+                    sign_in_username_digest(account_key, self._sign_in_try_key),
+                    sign_in_source_digest(request_source, self._sign_in_try_key),
                     result.actor_id,
                 ),
             ).fetchone()
