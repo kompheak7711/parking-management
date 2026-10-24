@@ -207,3 +207,24 @@ def test_v1_058_r2c_is_the_forward_only_head(migrated_database_url: str) -> None
             False,
         ),
     }
+
+
+def test_the_customers_page_search_finds_a_whole_id_number_and_never_shows_it(
+    migrated_database_url: str,
+) -> None:
+    """DL-078 answer 4 and its reading: whole number only; the list shows no number."""
+    actor_id, property_id = committed_actor(migrated_database_url)
+    number = unique_number()
+    created = CustomerService(PostgresCustomerRepository(runtime_url(), actor_id)).create(
+        uuid4(), legal_name="Searchable Person", id_document_number=number
+    )
+    flow = PostgresCustomerResourceFlow(runtime_url())
+
+    def found(query: str) -> set[object]:
+        page = flow.list(property_id, query=query, active=None, limit=50, cursor=None)
+        assert all(item.customer.id_document_number is None for item in page.items)
+        return {item.customer.customer_id for item in page.items}
+
+    assert created.customer_id in found(number)
+    assert created.customer_id in found(number.lower().replace(" ", "").replace("-", ""))
+    assert created.customer_id not in found(number[:5])

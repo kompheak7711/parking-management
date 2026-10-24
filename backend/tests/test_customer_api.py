@@ -1283,8 +1283,13 @@ def test_postgres_list_uses_immutable_cursor_and_literal_search_pattern(
         literal_pattern,
         literal_pattern,
         literal_pattern,
+        # DL-078 answer 4 (V1-058 R2c): the whole ID number compared by its match key.
+        r"person_%\path",
+        r"person_%\path",
         2,
     )
+    assert "app.customer_id_document_match_key(customer.id_document_number) = %s" in queries[0][0]
+    assert "customer.id_document_number" not in queries[0][0].split(" FROM ", 1)[0]
     assert "customer.id > %s" in queries[1][0]
     assert queries[1][1][-2:] == (first_id, 2)
     assert timeouts == [("1000",), ("3000",), ("1000",), ("3000",)]

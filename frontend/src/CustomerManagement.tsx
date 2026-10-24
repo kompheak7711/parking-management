@@ -2106,6 +2106,7 @@ export function CustomerManagement({
         <div className="form-field">
           <label htmlFor="customer-search">Search Customers</label>
           <input
+            aria-describedby="customer-search-hint"
             disabled={loading}
             id="customer-search"
             onChange={(event) => {
@@ -2115,6 +2116,9 @@ export function CustomerManagement({
             }}
             value={query}
           />
+          <p className="muted" id="customer-search-hint">
+            Name, phone, email, or the whole ID number / Passport number.
+          </p>
         </div>
         <div className="form-field">
           <label htmlFor="customer-active-filter">Customer state</label>

@@ -806,11 +806,18 @@ class PostgresCustomerResourceFlow:
                 "OR left(lower(customer.email_address), 320) "
                 "LIKE lower(%s) ESCAPE E'\\\\' "
                 "OR left(regexp_replace(customer.phone_number, '[^0-9]', '', 'g'), 100) "
-                "LIKE %s ESCAPE E'\\\\')"
+                "LIKE %s ESCAPE E'\\\\' "
+                # DL-078 answer 4: the whole ID or passport number finds its Customer; the
+                # list never shows the number (SEC-041). A part of a number finds nothing.
+                "OR (%s <> '' "
+                "AND app.customer_id_document_match_key(customer.id_document_number) = %s))"
             )
             escaped = normalized.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
             phone_key = "".join(character for character in normalized if character in "0123456789")
-            parameters.extend((f"{escaped}%", f"{escaped}%", f"{phone_key or escaped}%"))
+            id_key = id_document_match_key(normalized) or ""
+            parameters.extend(
+                (f"{escaped}%", f"{escaped}%", f"{phone_key or escaped}%", id_key, id_key)
+            )
         if active is not None:
             clauses.append(
                 "customer.deactivated_at IS NULL"

@@ -49688,6 +49688,17 @@
       "test_path": "backend/tests/test_customer_api.py",
       "status": "implemented",
       "notes": "V1-058 R2c review round 1: the Customer command fingerprint and replay with the optional details (DL-078 answer 3; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/V1_058_PLAN.md)."
+    },
+    {
+      "test_id": "test_the_customers_page_search_finds_a_whole_id_number_and_never_shows_it",
+      "upstream_ids": [
+        "DL-078",
+        "SEC-041"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_customer_details_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R2c: the Customers page search finds a Customer by the whole ID or passport number (any capitals, spaces or dashes), a part of a number finds nothing, and the list never shows the number (DL-078 answer 4 and its reading; whole number only decided by Claude under the owner's 2026-10-23 22:30 rule)."
     }
   ]
 }
