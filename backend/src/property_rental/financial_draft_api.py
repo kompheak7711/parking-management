@@ -45,6 +45,7 @@ from property_rental.draft_record_api import (
     PAYMENT_MOVE_CONFIRM_REFUSALS,
     PAYMENT_RETURN_REFUSALS,
 )
+from property_rental.final_settlement_api import FINAL_SETTLEMENT_CONFIRM_REFUSALS
 from property_rental.financial_context import bind_financial_property, financial_metadata
 from property_rental.financial_draft import (
     FINANCIAL_APPROVE_CAPABILITY,
@@ -190,6 +191,8 @@ CONFIRM_REFUSALS: Final[Mapping[str, Mapping[str, Refusal]]] = MappingProxyType(
         "PAYMENT_RETURN": PAYMENT_RETURN_REFUSALS,
         # Slice 11d: the wrong-Unit Payment move.
         "PAYMENT_MOVE": PAYMENT_MOVE_CONFIRM_REFUSALS,
+        # Slice 11e-1: the Final Settlement draft.
+        "FINAL_SETTLEMENT": FINAL_SETTLEMENT_CONFIRM_REFUSALS,
     }
 )
 

@@ -606,3 +606,218 @@ ALLOCATION_MOVED = Refusal(
     "a credit Adjustment.",
     ("BR-PAY-042",),
 )
+# V1-056 slice 11e-1: the Final Settlement start, preview and draft routes. A refusal of the
+# chosen steps answers 422 on the form field; the state of the Lease or Settlement answers 409.
+FINAL_SETTLEMENT_LEASE_NOT_TERMINATED = Refusal(
+    409,
+    "FINAL_SETTLEMENT_LEASE_NOT_TERMINATED",
+    "A Final Settlement is only for a terminated Lease. Record the termination first.",
+    ("BR-SETTLE-001",),
+)
+FINAL_SETTLEMENT_RECORD_UNCLEAR = Refusal(
+    409,
+    "FINAL_SETTLEMENT_RECORD_UNCLEAR",
+    "The Lease's termination or move-out record is not clear. Correct it first.",
+    ("BR-SETTLE-002",),
+)
+FINAL_SETTLEMENT_DRAFT_WAITING = Refusal(
+    409,
+    "FINAL_SETTLEMENT_DRAFT_WAITING",
+    "A Final Settlement draft waits for a decision. Decide it first.",
+    ("BR-AUTH-010",),
+)
+FINAL_SETTLEMENT_BLOCKING_ISSUES = Refusal(
+    409,
+    "FINAL_SETTLEMENT_BLOCKING_ISSUES",
+    "The Final Settlement still has blocking issues. Open the preview to see them.",
+    ("BR-SETTLE-011",),
+)
+FINAL_SETTLEMENT_STEP_ORDER = Refusal(
+    422,
+    "FINAL_SETTLEMENT_STEP_ORDER",
+    "Put the steps in the DL-032 order: Credit, pet damage, Security Deposit, remaining Pet "
+    "Deposit, then Refunds.",
+    ("BR-SETTLE-004",),
+    ("steps",),
+)
+FINAL_SETTLEMENT_CREDIT_OTHER_CUSTOMER = Refusal(
+    422,
+    "FINAL_SETTLEMENT_CREDIT_OTHER_CUSTOMER",
+    "A Customer's Credit can pay only that same Customer's debt.",
+    (
+        "BR-SETTLE-004",
+        "BR-CREDIT-008",
+    ),
+    ("steps",),
+)
+FINAL_SETTLEMENT_CREDIT_FIRST = Refusal(
+    422,
+    "FINAL_SETTLEMENT_CREDIT_FIRST",
+    "Use each Customer's Credit on that Customer's open debt, as far as it goes, before any "
+    "Deposit.",
+    ("BR-SETTLE-004",),
+    ("steps",),
+)
+FINAL_SETTLEMENT_CREDIT_RENT_FIRST = Refusal(
+    422,
+    "FINAL_SETTLEMENT_CREDIT_RENT_FIRST",
+    "Credit pays the Rent line first on this Invoice, unless the Customer chose the line. "
+    "Record who chose it.",
+    (
+        "BR-SETTLE-004",
+        "BR-CREDIT-006",
+    ),
+    ("steps",),
+)
+FINAL_SETTLEMENT_CREDIT_NOT_AVAILABLE = Refusal(
+    422,
+    "FINAL_SETTLEMENT_CREDIT_NOT_AVAILABLE",
+    "This Customer Credit cannot be used in this Final Settlement.",
+    ("BR-SETTLE-004",),
+    ("steps",),
+)
+FINAL_SETTLEMENT_CREDIT_OVER = Refusal(
+    422,
+    "FINAL_SETTLEMENT_CREDIT_OVER",
+    "This amount is more than the Customer Credit has left.",
+    ("BR-SETTLE-004",),
+    ("steps",),
+)
+FINAL_SETTLEMENT_DEPOSIT_NOT_USABLE = Refusal(
+    422,
+    "FINAL_SETTLEMENT_DEPOSIT_NOT_USABLE",
+    "This Deposit holds no money that this Final Settlement may use.",
+    ("BR-SETTLE-006",),
+    ("steps",),
+)
+FINAL_SETTLEMENT_DEPOSIT_WRONG_STEP = Refusal(
+    422,
+    "FINAL_SETTLEMENT_DEPOSIT_WRONG_STEP",
+    "This Deposit type does not belong in this step.",
+    ("BR-SETTLE-006",),
+    ("steps",),
+)
+FINAL_SETTLEMENT_DEPOSIT_OVER = Refusal(
+    422,
+    "FINAL_SETTLEMENT_DEPOSIT_OVER",
+    "This amount is more than the Deposit has left.",
+    ("BR-SETTLE-006",),
+    ("steps",),
+)
+FINAL_SETTLEMENT_OBLIGATION_OVER = Refusal(
+    422,
+    "FINAL_SETTLEMENT_OBLIGATION_OVER",
+    "This amount is more than the Invoice line or charge still owes.",
+    ("BR-SETTLE-003",),
+    ("steps",),
+)
+FINAL_SETTLEMENT_TARGET_NOT_OPEN = Refusal(
+    422,
+    "FINAL_SETTLEMENT_TARGET_NOT_OPEN",
+    "This Invoice line or charge is not open debt of this Final Settlement.",
+    ("BR-SETTLE-003",),
+    ("steps",),
+)
+FINAL_SETTLEMENT_PET_DAMAGE_ONLY = Refusal(
+    422,
+    "FINAL_SETTLEMENT_PET_DAMAGE_ONLY",
+    "In the pet damage step the Pet Deposit pays only pet damage.",
+    ("BR-SETTLE-005",),
+    ("steps",),
+)
+FINAL_SETTLEMENT_PET_DAMAGE_FIRST = Refusal(
+    422,
+    "FINAL_SETTLEMENT_PET_DAMAGE_FIRST",
+    "The Pet Deposit must pay the open pet damage before any other use or Refund.",
+    ("BR-SETTLE-005",),
+    ("steps",),
+)
+FINAL_SETTLEMENT_PET_REMAINDER_AFTER_SECURITY = Refusal(
+    422,
+    "FINAL_SETTLEMENT_PET_REMAINDER_AFTER_SECURITY",
+    "The rest of the Pet Deposit may pay only debt left after the Security Deposit is used up.",
+    ("BR-SETTLE-017",),
+    ("steps",),
+)
+FINAL_SETTLEMENT_PET_REMAINDER_CUSTOMER_ONLY = Refusal(
+    422,
+    "FINAL_SETTLEMENT_PET_REMAINDER_CUSTOMER_ONLY",
+    "For this kind of termination, only the Customer may choose to use the rest of the Pet "
+    "Deposit. Record the Customer's choice.",
+    (
+        "BR-SETTLE-017",
+        "BR-DEP-027",
+    ),
+    ("pet_remainder",),
+)
+FINAL_SETTLEMENT_PET_REMAINDER_REASON = Refusal(
+    422,
+    "FINAL_SETTLEMENT_PET_REMAINDER_REASON",
+    "Using the rest of the Pet Deposit needs the Customer's choice or a staff reason.",
+    ("BR-SETTLE-017",),
+    ("pet_remainder",),
+)
+FINAL_SETTLEMENT_PET_REMAINDER_NO_STEP = Refusal(
+    422,
+    "FINAL_SETTLEMENT_PET_REMAINDER_NO_STEP",
+    "A reason for the rest of the Pet Deposit needs a step that uses it.",
+    ("BR-SETTLE-017",),
+    ("pet_remainder",),
+)
+FINAL_SETTLEMENT_DEPOSIT_LEFT = Refusal(
+    422,
+    "FINAL_SETTLEMENT_DEPOSIT_LEFT",
+    "Each Deposit's remaining money must be used for debt or refunded.",
+    ("BR-SETTLE-008",),
+    ("steps",),
+)
+FINAL_SETTLEMENT_REFUND_WHILE_DEBT = Refusal(
+    422,
+    "FINAL_SETTLEMENT_REFUND_WHILE_DEBT",
+    "No Deposit Refund while the Lease still has debt that the Deposit could pay.",
+    ("BR-SETTLE-008",),
+    ("steps",),
+)
+FINAL_SETTLEMENT_ONE_REFUND_PER_DEPOSIT = Refusal(
+    422,
+    "FINAL_SETTLEMENT_ONE_REFUND_PER_DEPOSIT",
+    "Each Deposit can have only one Refund step.",
+    ("BR-SETTLE-008",),
+    ("steps",),
+)
+FINAL_SETTLEMENT_REFUND_RECIPIENT = Refusal(
+    422,
+    "FINAL_SETTLEMENT_REFUND_RECIPIENT",
+    "The Refund must go to a Signer of this Lease.",
+    ("BR-REFUND-015",),
+    ("steps",),
+)
+FINAL_SETTLEMENT_SIGNER_AGREEMENT = Refusal(
+    422,
+    "FINAL_SETTLEMENT_SIGNER_AGREEMENT",
+    "A Refund to a Signer other than the Primary Tenant needs the written agreement of all "
+    "Signers.",
+    ("BR-REFUND-015",),
+    ("steps",),
+)
+FINAL_SETTLEMENT_NO_AGREEMENT_FOR_PRIMARY = Refusal(
+    422,
+    "FINAL_SETTLEMENT_NO_AGREEMENT_FOR_PRIMARY",
+    "Leave the Signer agreement empty for a Refund to the Primary Tenant.",
+    ("BR-REFUND-015",),
+    ("steps",),
+)
+FINAL_SETTLEMENT_REFUND_METHOD_OFF = Refusal(
+    422,
+    "FINAL_SETTLEMENT_REFUND_METHOD_OFF",
+    "This Refund method is turned off. Choose another method.",
+    ("BR-REFUND-014",),
+    ("steps",),
+)
+FINAL_SETTLEMENT_TOO_LARGE = Refusal(
+    422,
+    "FINAL_SETTLEMENT_TOO_LARGE",
+    "This Final Settlement draft is too large. Use fewer steps or shorter notes.",
+    ("BR-SETTLE-002",),
+    ("steps",),
+)

@@ -13,6 +13,7 @@ from property_rental.app import create_app
 from property_rental.deposit_receipt_reversal import DepositReceiptReversalInvalidError
 from property_rental.final_settlement import (
     FinalSettlementConflictError,
+    FinalSettlementInvalidError,
     FinalSettlementStaleDraftError,
 )
 from property_rental.financial_draft import (
@@ -626,6 +627,30 @@ def test_a_payment_move_draft_confirm_names_its_database_refusals() -> None:
         path(correction, "confirm"), json={}, headers=mutation_headers()
     )
     assert (answer.status_code, answer.json()["error"]["code"]) == (409, "DRAFT_CONFIRM_REFUSED")
+
+
+def test_a_final_settlement_draft_confirm_names_its_database_refusals() -> None:
+    """Slice 11e-1: the Settlement state keeps its own code at the shared confirm; a step the plan
+    now refuses means the records changed, so the draft is out of date."""
+    conflict, invalid = FinalSettlementConflictError, FinalSettlementInvalidError
+    for error, message, code in (
+        (conflict, "The Final Settlement has blocking issues", "FINAL_SETTLEMENT_BLOCKING_ISSUES"),
+        (
+            conflict,
+            "A closed Final Settlement is never reopened or changed",
+            "FINAL_SETTLEMENT_CLOSED",
+        ),
+        (conflict, "The amount exceeds what the Deposit holds", "DRAFT_OUT_OF_DATE"),
+        # 22023 in the database: an invalid error, out of date too (review round 1).
+        (invalid, "The Primary Tenant needs no Signer agreement", "DRAFT_OUT_OF_DATE"),
+    ):
+        flow = Flow(kind="FINAL_SETTLEMENT", variant="FINAL_SETTLEMENT")
+        flow.error = _caused(error("4471"), message)
+        answer = api(flow, actor(flow.prop, APPROVE)).post(
+            path(flow, "confirm"), json={}, headers=mutation_headers()
+        )
+        assert (answer.status_code, answer.json()["error"]["code"]) == (409, code), message
+        assert message not in answer.text
 
 
 def test_an_out_of_date_refund_draft_stays_out_of_date_whatever_the_cause() -> None:

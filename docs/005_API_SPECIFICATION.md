@@ -1449,6 +1449,50 @@ Settlement source, a decided draft or a closed Settlement is 409; a missing or i
 is 403; an exact repeat by the same approver returns the stored result. The route is built in
 slice 11e.
 
+V1-056 slice 11e-1 (2026-10-24; no migration; BR-SETTLE-001 to BR-SETTLE-017, BR-REFUND-014,
+BR-REFUND-015, BR-CREDIT-006, BR-CREDIT-008, BR-DEP-027, BR-AUTH-010): the
+Final Settlement routes. Decided by Claude under the owner's 2026-10-23 22:30 rule: the routes
+carry the Property in the path like the other draft routes, and the preview is a `GET` because
+it writes nothing; the list and the single read of API-070 and the separate deposit-application
+and deposit-refund actions of API-072 are not built (the Settlement draft and its confirm replace
+the actions; the start route returns the Lease's Settlement).
+
+- `POST /properties/{property_id}/leases/{lease_id}/final-settlement`
+  (`final_settlements.prepare`; others a hidden 404; Origin, CSRF, `Idempotency-Key`; a JSON
+  body, sent as `{}` and ignored) opens the one Final Settlement of a terminated Lease, or returns
+  the one that exists, open or closed: 201 when this call opened it (`created` true), else 200,
+  with `id`, `lease_id`, `created`, `closed`, `closing_balance_due_usd_cents` and the dates.
+- `GET /properties/{property_id}/final-settlements/{settlement_id}/preview`
+  (`final_settlements.prepare` or `financial.approve`) answers the DB-SETTLE-001 preview:
+  `settlement`, `lease`, `customers`, `deposits`, `steps`, `open_total_usd_cents`,
+  `blocking_issues`, `information`, `ready` and `previewed_at`.
+- `POST /properties/{property_id}/final-settlements/{settlement_id}/drafts`
+  (`final_settlements.prepare`; Origin, CSRF, `Idempotency-Key`) records the Settlement draft and answers 201
+  with the draft (kind and variant `FINAL_SETTLEMENT`). Body: `reason` (1 to 1,000 characters),
+  `steps` (up to 200, in the DL-032 order; each `CUSTOMER_CREDIT` with `customer_credit_id`,
+  `target_kind` `INVOICE_LINE` or `LATE_PAYMENT_CHARGE`, `target_id`, `amount_usd_cents` and an
+  optional `customer_designation`; `PET_DEPOSIT_PET_DAMAGE`, `SECURITY_DEPOSIT` or
+  `PET_DEPOSIT_REMAINDER` with `deposit_id`, `target_kind`, `target_id` and `amount_usd_cents`;
+  `DEPOSIT_REFUNDS` with `deposit_id`, `amount_usd_cents`, `refund_method_id`, `reference_note`,
+  `recipient_customer_id` and an optional `signer_agreement`) and an optional `pet_remainder`
+  (`basis` `CUSTOMER_CHOICE` or `STAFF_REASON`, `staff_reason`, and `customer_choice` with
+  `CUSTOMER_CHOICE` only). A `financial.approve` holder confirms it through
+  `POST /properties/{property_id}/financial-drafts/{draft_id}/confirm`, which closes the
+  Settlement in one transaction.
+- Named refusals: 409 `FINAL_SETTLEMENT_LEASE_NOT_TERMINATED`, `FINAL_SETTLEMENT_RECORD_UNCLEAR`,
+  `FINAL_SETTLEMENT_BLOCKING_ISSUES` (a closed Settlement is the preview's `SETTLEMENT_CLOSED`
+  issue), `FINAL_SETTLEMENT_CLOSED` and, at record, `FINAL_SETTLEMENT_DRAFT_WAITING`; 422 on
+  `steps` for a step that breaks a DL-032 rule (`FINAL_SETTLEMENT_STEP_ORDER`,
+  `_CREDIT_OTHER_CUSTOMER`, `_CREDIT_FIRST`, `_CREDIT_RENT_FIRST`, `_CREDIT_NOT_AVAILABLE`,
+  `_CREDIT_OVER`, `_DEPOSIT_NOT_USABLE`, `_DEPOSIT_WRONG_STEP`, `_DEPOSIT_OVER`,
+  `_OBLIGATION_OVER`, `_TARGET_NOT_OPEN`, `_PET_DAMAGE_ONLY`, `_PET_DAMAGE_FIRST`,
+  `_PET_REMAINDER_AFTER_SECURITY`, `_DEPOSIT_LEFT`, `_REFUND_WHILE_DEBT`,
+  `_ONE_REFUND_PER_DEPOSIT`, `_REFUND_RECIPIENT`, `_SIGNER_AGREEMENT`,
+  `_NO_AGREEMENT_FOR_PRIMARY`, `_REFUND_METHOD_OFF`, `_TOO_LARGE`) and on `pet_remainder`
+  (`_PET_REMAINDER_CUSTOMER_ONLY`, `_PET_REMAINDER_REASON`, `_PET_REMAINDER_NO_STEP`). At the
+  confirm the state codes apply; a step the plan now refuses, or a stale draft, answers 409
+  `DRAFT_OUT_OF_DATE` (the draft stays pending: reject it and prepare a new one).
+
 # 23. Audit Endpoints
 
 ## API-073 — Record Audit

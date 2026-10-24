@@ -50469,6 +50469,177 @@
       "test_path": "backend/tests/test_financial_draft_api.py",
       "status": "implemented",
       "notes": "The shared confirm of a PAYMENT_MOVE draft names a reversed Payment, a stale draft, a paid correct Invoice and a Final Settlement closed meanwhile; a Final Settlement correction of variant PAYMENT_MOVE keeps DRAFT_CONFIRM_REFUSED (V1-056 slice 11d review round 1; ops/reviews/V1-056-slice-11d.md)."
+    },
+    {
+      "test_id": "test_a_settlement_is_started_for_the_path_lease_by_a_preparer",
+      "upstream_ids": [
+        "API-070",
+        "BR-SETTLE-001"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_final_settlement_api.py",
+      "status": "implemented",
+      "notes": "POST /properties/{p}/leases/{lease_id}/final-settlement starts (201) or returns (200) the Lease's one Final Settlement for a final_settlements.prepare holder (V1-056 slice 11e-1, Final Settlement routes; ops/reviews/V1-056-slice-11e-1.md)."
+    },
+    {
+      "test_id": "test_the_preview_is_read_by_a_preparer_or_an_approver_only",
+      "upstream_ids": [
+        "API-071",
+        "BR-SETTLE-011"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_final_settlement_api.py",
+      "status": "implemented",
+      "notes": "GET .../final-settlements/{id}/preview answers a final_settlements.prepare or financial.approve holder; others get a hidden 404, no sign-in 401 (V1-056 slice 11e-1, Final Settlement routes; ops/reviews/V1-056-slice-11e-1.md)."
+    },
+    {
+      "test_id": "test_a_settlement_draft_is_recorded_with_its_steps_in_order",
+      "upstream_ids": [
+        "API-072",
+        "BR-SETTLE-004",
+        "BR-AUTH-010"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_final_settlement_api.py",
+      "status": "implemented",
+      "notes": "POST .../final-settlements/{id}/drafts turns the Credit, Deposit and Deposit Refund steps and the Pet Deposit remainder decision into the draft command in order (V1-056 slice 11e-1, Final Settlement routes; ops/reviews/V1-056-slice-11e-1.md)."
+    },
+    {
+      "test_id": "test_the_commands_need_their_capability_sign_in_and_csrf",
+      "upstream_ids": [
+        "API-070",
+        "API-072",
+        "BR-AUTH-010"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_final_settlement_api.py",
+      "status": "implemented",
+      "notes": "Start and draft need final_settlements.prepare in the Property (an approver gets a hidden 404), sign-in and CSRF, and the draft an Idempotency-Key, before any command (V1-056 slice 11e-1, Final Settlement routes; ops/reviews/V1-056-slice-11e-1.md)."
+    },
+    {
+      "test_id": "test_a_bad_draft_form_is_refused_before_any_command",
+      "upstream_ids": [
+        "API-072"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_final_settlement_api.py",
+      "status": "implemented",
+      "notes": "A blank reason, an unknown step kind, a zero or text amount, an unknown target kind, a blank note, an unknown field, over 200 steps, an untrimmed reason or staff reason answers 422 before any command (V1-056 slice 11e-1, Final Settlement routes; ops/reviews/V1-056-slice-11e-1.md)."
+    },
+    {
+      "test_id": "test_each_named_settlement_refusal_answers_its_own_code",
+      "upstream_ids": [
+        "API-072",
+        "BR-SETTLE-004",
+        "BR-SETTLE-008"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_final_settlement_api.py",
+      "status": "implemented",
+      "notes": "Each named database refusal of the draft answers its own code, status, rules and field, without database text (V1-056 slice 11e-1, Final Settlement routes; ops/reviews/V1-056-slice-11e-1.md)."
+    },
+    {
+      "test_id": "test_start_and_preview_name_the_lease_and_settlement_state",
+      "upstream_ids": [
+        "API-070",
+        "API-071",
+        "BR-SETTLE-001"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_final_settlement_api.py",
+      "status": "implemented",
+      "notes": "Start and preview answer 409 with the named code for a Lease that is not terminated, an unclear termination or move-out record, blocking issues and a closed Settlement (V1-056 slice 11e-1, Final Settlement routes; ops/reviews/V1-056-slice-11e-1.md)."
+    },
+    {
+      "test_id": "test_the_codes_are_pinned",
+      "upstream_ids": [
+        "API-072"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_final_settlement_api.py",
+      "status": "implemented",
+      "notes": "State refusals are 409, step refusals 422 on steps or pet_remainder, and at the shared confirm every step refusal is DRAFT_OUT_OF_DATE (V1-056 slice 11e-1, Final Settlement routes; ops/reviews/V1-056-slice-11e-1.md)."
+    },
+    {
+      "test_id": "test_unnamed_settlement_refusals_keep_their_plain_answers",
+      "upstream_ids": [
+        "API-072"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_final_settlement_api.py",
+      "status": "implemented",
+      "notes": "An unnamed not-found, invalid, conflict or unavailable error keeps its plain answer and a reused key answers IDEMPOTENCY_KEY_REUSED (V1-056 slice 11e-1, Final Settlement routes; ops/reviews/V1-056-slice-11e-1.md)."
+    },
+    {
+      "test_id": "test_an_answer_for_another_property_lease_or_settlement_is_never_shown",
+      "upstream_ids": [
+        "API-070",
+        "API-071",
+        "API-072"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_final_settlement_api.py",
+      "status": "implemented",
+      "notes": "A start, preview or draft answer of another Property, Lease, Settlement, variant or kind answers 503 and is never shown (V1-056 slice 11e-1, Final Settlement routes; ops/reviews/V1-056-slice-11e-1.md)."
+    },
+    {
+      "test_id": "test_a_settlement_is_started_previewed_drafted_and_closed_over_http",
+      "upstream_ids": [
+        "API-070",
+        "API-071",
+        "API-072",
+        "BR-SETTLE-004",
+        "BR-SETTLE-012",
+        "BR-AUTH-010"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_final_settlement_api_migration.py",
+      "status": "implemented",
+      "notes": "On real PostgreSQL a preparer starts, previews and records the Settlement draft over HTTP (a Deposit before Credit answers FINAL_SETTLEMENT_CREDIT_FIRST; replay; key reuse; DRAFT_WAITING); an approver previews, cannot prepare, confirms through the shared route and the Settlement closes; a later draft answers FINAL_SETTLEMENT_BLOCKING_ISSUES (V1-056 slice 11e-1, Final Settlement routes; ops/reviews/V1-056-slice-11e-1.md)."
+    },
+    {
+      "test_id": "test_a_settlement_starts_only_for_a_terminated_lease",
+      "upstream_ids": [
+        "API-070",
+        "BR-SETTLE-001"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_final_settlement_api_migration.py",
+      "status": "implemented",
+      "notes": "On real PostgreSQL a signed Lease answers FINAL_SETTLEMENT_LEASE_NOT_TERMINATED and an unknown Lease 404 (V1-056 slice 11e-1, Final Settlement routes; ops/reviews/V1-056-slice-11e-1.md)."
+    },
+    {
+      "test_id": "test_a_final_settlement_draft_confirm_names_its_database_refusals",
+      "upstream_ids": [
+        "API-072",
+        "BR-SETTLE-011",
+        "BR-SETTLE-012"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "The shared confirm of a Final Settlement draft names blocking issues and a closed Settlement, and answers DRAFT_OUT_OF_DATE for a step the plan now refuses (V1-056 slice 11e-1, Final Settlement routes; ops/reviews/V1-056-slice-11e-1.md)."
+    },
+    {
+      "test_id": "test_a_wrong_pet_remainder_decision_is_refused_on_its_field",
+      "upstream_ids": [
+        "API-072",
+        "BR-SETTLE-017"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_final_settlement_api.py",
+      "status": "implemented",
+      "notes": "A Customer choice with the STAFF_REASON basis, or none with CUSTOMER_CHOICE, answers 422 on pet_remainder before any command (V1-056 slice 11e-1 review round 1, Final Settlement routes; ops/reviews/V1-056-slice-11e-1.md)."
+    },
+    {
+      "test_id": "test_the_preview_capabilities_fit_the_database_limit",
+      "upstream_ids": [
+        "API-071"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_final_settlement_api.py",
+      "status": "implemented",
+      "notes": "The preview passes at most 10 capabilities (every prepare capability and financial.approve), the database function's limit (V1-056 slice 11e-1 review round 1, Final Settlement routes; ops/reviews/V1-056-slice-11e-1.md)."
     }
   ]
 }

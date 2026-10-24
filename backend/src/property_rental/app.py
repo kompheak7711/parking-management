@@ -104,6 +104,11 @@ from property_rental.draft_record_api import (
     PostgresDraftRecordFlow,
     create_draft_record_router,
 )
+from property_rental.final_settlement_api import (
+    FinalSettlementFlow,
+    PostgresFinalSettlementFlow,
+    create_final_settlement_router,
+)
 from property_rental.financial_action_context import FinancialActionContextService
 from property_rental.financial_action_context_api import (
     FinancialActionContextFlow,
@@ -482,6 +487,7 @@ def create_app(
     credit_refund_flow: CreditRefundFlow | None = None,
     financial_draft_flow: FinancialDraftFlow | None = None,
     draft_record_flow: DraftRecordFlow | None = None,
+    final_settlement_flow: FinalSettlementFlow | None = None,
     customer_ledger_flow: CustomerLedgerFlow | None = None,
 ) -> FastAPI:
     """Build an application instance from validated settings."""
@@ -1417,6 +1423,21 @@ def create_app(
                 resolved_settings.financial_database_url.get_secret_value()
                 if resolved_settings.financial_database_url is not None
                 else None
+            ),
+            resolved_settings,
+        )
+    )
+    include_signed_in(
+        create_final_settlement_router(
+            actor_resolver,
+            final_settlement_flow
+            or PostgresFinalSettlementFlow(
+                resolved_settings.database_url.get_secret_value()
+                if resolved_settings.database_url is not None
+                else None,
+                resolved_settings.financial_database_url.get_secret_value()
+                if resolved_settings.financial_database_url is not None
+                else None,
             ),
             resolved_settings,
         )

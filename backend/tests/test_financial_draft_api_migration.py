@@ -132,6 +132,13 @@ def test_every_named_refusal_message_is_still_raised_at_head(
 
     messages |= {*PAYMENT_MOVE_REFUSALS, *PAYMENT_MOVE_CONFIRM_REFUSALS}
     messages |= set(ALLOCATION_REVERSAL_REFUSALS)
+    # Slice 11e-1: the Final Settlement start, preview, draft and confirm.
+    from property_rental.final_settlement_api import (
+        FINAL_SETTLEMENT_CONFIRM_REFUSALS,
+        FINAL_SETTLEMENT_DRAFT_REFUSALS,
+    )
+
+    messages |= {*FINAL_SETTLEMENT_DRAFT_REFUSALS, *FINAL_SETTLEMENT_CONFIRM_REFUSALS}
     messages.add(END_DATE_NOT_MONTH_END)
     with psycopg.connect(migrated_database_url) as connection:
         missing = [
