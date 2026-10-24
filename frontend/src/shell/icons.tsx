@@ -3,7 +3,23 @@
 
 import type { IconName } from "./navigation";
 
-type ShellIcon = IconName | "menu" | "search" | "signout" | "info" | "x";
+export type ShellIcon =
+  | IconName
+  | "menu"
+  | "search"
+  | "signout"
+  | "info"
+  | "x"
+  | "door"
+  | "wrench"
+  | "plus"
+  | "back"
+  | "swap"
+  | "alert"
+  | "clock"
+  | "zap"
+  | "drop"
+  | "upload";
 
 const PATHS: Record<ShellIcon, string[]> = {
   home: ["M3 10.5 12 3l9 7.5", "M5 9.5V21h14V9.5", "M10 21v-6h4v6"],
@@ -59,6 +75,27 @@ const PATHS: Record<ShellIcon, string[]> = {
     "M12 8v.1",
   ],
   x: ["M6 6l12 12M18 6 6 18"],
+  // V1-058 R2: icons of the Units screens.
+  door: [
+    "M6 21V4.5A1.5 1.5 0 0 1 7.5 3h9A1.5 1.5 0 0 1 18 4.5V21",
+    "M3.5 21h17",
+    "M14.5 12h.01",
+  ],
+  wrench: [
+    "M14.7 6.3a4 4 0 0 0-5.4 5.2l-5.8 5.8a1.8 1.8 0 0 0 2.5 2.5l5.8-5.8a4 4 0 0 0 5.2-5.4l-2.6 2.6-2.3-.4-.4-2.3z",
+  ],
+  plus: ["M12 5v14M5 12h14"],
+  back: ["M19 12H5M11 6l-6 6 6 6"],
+  swap: ["M4 8h13l-3.5-3.5", "M20 16H7l3.5 3.5"],
+  alert: ["M12 4 2.8 19.5h18.4z", "M12 10v4.5", "M12 17.2v.1"],
+  clock: ["M12 3.5a8.5 8.5 0 1 1 0 17 8.5 8.5 0 0 1 0-17z", "M12 7.5V12l3 2"],
+  zap: ["M13 3 5 13.5h6L10 21l8-10.5h-6z"],
+  drop: ["M12 3.5s6 6.6 6 10.5a6 6 0 0 1-12 0c0-3.9 6-10.5 6-10.5z"],
+  upload: [
+    "M12 15V4",
+    "m7.5 8.5 4.5-4.5 4.5 4.5",
+    "M4.5 15v3.5A1.5 1.5 0 0 0 6 20h12a1.5 1.5 0 0 0 1.5-1.5V15",
+  ],
 };
 
 export function Icon({ name, small }: { name: ShellIcon; small?: boolean }) {

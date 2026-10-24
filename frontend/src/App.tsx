@@ -24,8 +24,7 @@ import {
   PropertyConfigurationUnavailableError,
   propertyConfigurationApi,
 } from "./propertyClient";
-import { UnitManagement } from "./UnitManagement";
-import { UnitApi } from "./unitClient";
+import { UnitApi, unitApi as defaultUnitApi } from "./unitClient";
 import {
   CustomerManagement,
   CustomerReconciliationRequirement,
@@ -63,6 +62,7 @@ import { type Language, storeLanguage, storedLanguage } from "./signInText";
 import { AppShell } from "./shell/AppShell";
 import { ComingSoon, HomePage, NoAccess, PropertyNeeded } from "./shell/pages";
 import { openPageInAddress, useHashPage } from "./shell/useHashPage";
+import { UnitsPage } from "./units/UnitsPage";
 import { type ActorAccessApi, actorAccessApi } from "./shell/accessClient";
 import { pageAllowed, type PageId } from "./shell/navigation";
 
@@ -1440,13 +1440,16 @@ export function App({
       >
         <ComingSoon language={language} step="R7" />
       </div>
-      <div
-        className="shell-page"
-        data-page="units"
-        hidden={!shown("units")}
-        lang="en"
-      >
-        <UnitManagement api={unitApi} />
+      <div className="shell-page" data-page="units" hidden={!shown("units")}>
+        <UnitsPage
+          active={shown("units")}
+          capabilities={capabilities}
+          language={language}
+          leaseApi={leaseApi}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+          reservationApi={reservationApi}
+          unitApi={unitApi ?? defaultUnitApi}
+        />
       </div>
       <div
         className="shell-page"

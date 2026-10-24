@@ -271,6 +271,18 @@ def test_postgres_inventory_flow_reads_saves_and_offers_used_items(
         flow.current(uuid4())
     known = flow.known_items(property_id)
     timeline = units.timeline(unit.unit_id, limit=10, cursor=None)
+    # V1-058 R2: Change status writes the person's reason to the Unit's History.
+    cleaning = units.patch(
+        unit.unit_id,
+        floor_item_id=floor.item_id,
+        unit_type="STUDIO",
+        unit_status=UnitStatus.CLEANING,
+        details=UnitDetails(),
+        expected_version=unit.version,
+        actor_id=str(actor_id),
+        reason="Deep clean before viewing",
+    )
+    status_event = units.timeline(unit.unit_id, limit=1, cursor=None).items[0]
 
     assert (empty.record_number, empty.lines, empty.recorded_by) == (0, (), None)
     assert (saved.record_number, saved.recorded_by) == (1, actor_id)
@@ -280,3 +292,8 @@ def test_postgres_inventory_flow_reads_saves_and_offers_used_items(
     assert UnitInventoryItemName("FURNITURE", rare) in known
     assert UnitInventoryItemName("KITCHEN", "Kettle") in known
     assert timeline.items[0].action == "unit.inventory_updated"
+    assert cleaning.status == UnitStatus.CLEANING
+    assert (status_event.action, status_event.reason) == (
+        "unit.status_changed",
+        "Deep clean before viewing",
+    )

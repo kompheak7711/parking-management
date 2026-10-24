@@ -193,12 +193,31 @@ export function isPageId(value: string): value is PageId {
   return Object.prototype.hasOwnProperty.call(PAGE_NAMES, value);
 }
 
-/** The page named by an address such as "#/units"; Home for anything else. */
+/**
+ * The page named by an address such as "#/units" or "#/units/<Unit id>"; Home for anything
+ * else.
+ */
 export function pageFromHash(hash: string): PageId {
-  const name = hash.replace(/^#\/?/, "");
+  const name = hash.replace(/^#\/?/, "").split("/")[0] ?? "";
   return isPageId(name) ? name : "home";
 }
 
-export function hashForPage(page: PageId): string {
-  return `#/${page}`;
+/** V1-058 R2: the record an address opens inside its page ("#/units/<id>"), or null. */
+export function detailFromHash(hash: string): string | null {
+  const parts = hash.replace(/^#\/?/, "").split("/");
+  if (parts.length < 2 || !isPageId(parts[0] ?? "")) return null;
+  let detail: string;
+  try {
+    detail = decodeURIComponent(parts.slice(1).join("/"));
+  } catch {
+    // A broken address such as "#/units/%E0" opens the page itself.
+    return null;
+  }
+  return detail === "" ? null : detail;
+}
+
+export function hashForPage(page: PageId, detail?: string): string {
+  return detail === undefined
+    ? `#/${page}`
+    : `#/${page}/${encodeURIComponent(detail)}`;
 }

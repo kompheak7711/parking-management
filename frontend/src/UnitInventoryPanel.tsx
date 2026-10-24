@@ -1,4 +1,7 @@
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, Fragment, useEffect, useRef, useState } from "react";
+
+import { Icon } from "./shell/icons";
+import { Dialog } from "./shell/ui";
 
 import {
   UnitApi,
@@ -209,130 +212,163 @@ export function UnitInventoryPanel({
     );
   }
 
+  const editForm = (
+    <>
+      <p className="ui-small ui-muted">
+        Enter how many of each item are in the Unit. 0 takes an item out.
+      </p>
+      {unitInventoryGroups.map((group) => {
+        const items = choices().filter((item) => item.item_group === group);
+        if (items.length === 0) return null;
+        return (
+          <div key={group}>
+            <h4>{groupNames[group]}</h4>
+            <div className="ui-invgrid">
+              {items.map((item) => {
+                const itemKey = key(group, item.item_name);
+                return (
+                  <Fragment key={itemKey}>
+                    <label htmlFor={`inventory-${itemKey}`}>
+                      {item.item_name}
+                    </label>
+                    <input
+                      defaultValue={quantityOf(item)}
+                      id={`inventory-${itemKey}`}
+                      inputMode="numeric"
+                      max="999"
+                      min="0"
+                      name={itemKey}
+                      step="1"
+                      type="number"
+                    />
+                  </Fragment>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+      <h4>Another item</h4>
+      <div className="ui-row2">
+        <div className="ui-field">
+          <label htmlFor="inventory-new-group">Group</label>
+          <select id="inventory-new-group" name="inventory-new-group">
+            {unitInventoryGroups.map((group) => (
+              <option key={group} value={group}>
+                {groupNames[group]}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="ui-field">
+          <label htmlFor="inventory-new-quantity">How many</label>
+          <input
+            defaultValue={1}
+            id="inventory-new-quantity"
+            inputMode="numeric"
+            max="999"
+            min="1"
+            name="inventory-new-quantity"
+            step="1"
+            type="number"
+          />
+        </div>
+      </div>
+      <div className="ui-field">
+        <label htmlFor="inventory-new-name">Item name</label>
+        <input
+          id="inventory-new-name"
+          maxLength={100}
+          name="inventory-new-name"
+        />
+      </div>
+      {note !== null && (
+        <p className="ui-small" role="status">
+          {note}
+        </p>
+      )}
+    </>
+  );
+
   return (
     <section aria-labelledby="unit-inventory-heading">
-      <h5 id="unit-inventory-heading">Unit inventory</h5>
-      {note !== null && <p role="status">{note}</p>}
-      {inventory !== null && (
-        <>
-          <p>
-            {unitInventoryGroups
-              .map(
-                (group) =>
-                  `${String(inventory.counts[group])} ${countWords[group]}`,
-              )
-              .join(" · ")}
-            {inventory.recorded_at !== null &&
-              ` · saved ${dateTime(inventory.recorded_at)}`}
+      <div className="ui-chead gap">
+        <div>
+          <h3 id="unit-inventory-heading">Unit inventory</h3>
+          {inventory !== null && (
+            <p className="ui-small ui-muted">
+              {unitInventoryGroups
+                .map(
+                  (group) =>
+                    `${String(inventory.counts[group])} ${countWords[group]}`,
+                )
+                .join(" · ")}
+              {inventory.recorded_at !== null &&
+                ` · saved ${dateTime(inventory.recorded_at)}`}
+            </p>
+          )}
+        </div>
+        {inventory?.can_manage === true && (
+          <button
+            className="ui-btn"
+            disabled={busy || editing}
+            onClick={startEditing}
+            type="button"
+          >
+            <Icon name="list" />
+            Edit inventory
+          </button>
+        )}
+      </div>
+      {note !== null && !editing && (
+        <p className="ui-small" role="status">
+          {note}
+        </p>
+      )}
+      {inventory !== null &&
+        (inventory.lines.length === 0 ? (
+          <p className="ui-small ui-muted">
+            No inventory has been recorded for this Unit yet.
           </p>
-          {inventory.lines.length === 0 ? (
-            <p>No inventory has been recorded for this Unit yet.</p>
-          ) : (
-            unitInventoryGroups
-              .filter((group) =>
-                inventory.lines.some((line) => line.item_group === group),
-              )
-              .map((group) => (
-                <div key={group}>
-                  <h6>{groupNames[group]}</h6>
-                  <ul>
-                    {inventory.lines
-                      .filter((line) => line.item_group === group)
-                      .map((line) => (
-                        <li key={key(group, line.item_name)}>
-                          {line.item_name}
-                          {line.quantity > 1 && ` ×${String(line.quantity)}`}
-                        </li>
-                      ))}
-                  </ul>
-                </div>
-              ))
-          )}
-          {inventory.can_manage && !editing && (
-            <button disabled={busy} onClick={startEditing} type="button">
-              Edit inventory
-            </button>
-          )}
-          {editing && (
-            <form className="form-stack" onSubmit={save}>
-              <p className="muted">
-                Enter how many of each item are in the Unit. 0 takes an item
-                out.
-              </p>
-              {unitInventoryGroups.map((group) => (
-                <fieldset key={group}>
-                  <legend>{groupNames[group]}</legend>
-                  {choices()
-                    .filter((item) => item.item_group === group)
-                    .map((item) => {
-                      const itemKey = key(group, item.item_name);
-                      return (
-                        <div className="form-field" key={itemKey}>
-                          <label htmlFor={`inventory-${itemKey}`}>
-                            {item.item_name}
-                          </label>
-                          <input
-                            defaultValue={quantityOf(item)}
-                            id={`inventory-${itemKey}`}
-                            max="999"
-                            min="0"
-                            name={itemKey}
-                            step="1"
-                            type="number"
-                          />
-                        </div>
-                      );
-                    })}
-                </fieldset>
-              ))}
-              <fieldset>
-                <legend>Another item</legend>
-                <div className="form-field">
-                  <label htmlFor="inventory-new-group">Group</label>
-                  <select id="inventory-new-group" name="inventory-new-group">
-                    {unitInventoryGroups.map((group) => (
-                      <option key={group} value={group}>
-                        {groupNames[group]}
-                      </option>
+        ) : (
+          unitInventoryGroups
+            .filter((group) =>
+              inventory.lines.some((line) => line.item_group === group),
+            )
+            .map((group) => (
+              <div className="ui-grp" key={group}>
+                <h4>{groupNames[group]}</h4>
+                <ul className="ui-ulist">
+                  {inventory.lines
+                    .filter((line) => line.item_group === group)
+                    .map((line) => (
+                      <li key={key(group, line.item_name)}>
+                        <Icon name="check" small />
+                        <span>{line.item_name}</span>
+                        {line.quantity > 1 && (
+                          <span className="ui-qty ui-num">
+                            ×{line.quantity}
+                          </span>
+                        )}
+                      </li>
                     ))}
-                  </select>
-                </div>
-                <div className="form-field">
-                  <label htmlFor="inventory-new-name">Item name</label>
-                  <input
-                    id="inventory-new-name"
-                    maxLength={100}
-                    name="inventory-new-name"
-                  />
-                </div>
-                <div className="form-field">
-                  <label htmlFor="inventory-new-quantity">How many</label>
-                  <input
-                    defaultValue={1}
-                    id="inventory-new-quantity"
-                    max="999"
-                    min="1"
-                    name="inventory-new-quantity"
-                    step="1"
-                    type="number"
-                  />
-                </div>
-              </fieldset>
-              <button disabled={busy} type="submit">
-                Save inventory
-              </button>
-              <button
-                disabled={busy}
-                onClick={() => {
-                  setEditing(false);
-                }}
-                type="button"
-              >
-                Cancel
-              </button>
-            </form>
-          )}
-        </>
+                </ul>
+              </div>
+            ))
+        ))}
+      {editing && (
+        <Dialog
+          busy={busy}
+          closeLabel="Cancel"
+          onClose={() => {
+            setEditing(false);
+          }}
+          onSubmit={save}
+          submitLabel="Save inventory"
+          title="Edit inventory"
+        >
+          {editForm}
+        </Dialog>
       )}
     </section>
   );

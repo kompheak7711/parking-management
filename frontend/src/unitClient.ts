@@ -88,8 +88,10 @@ export interface UnitCreateSource extends Partial<UnitDetails> {
 }
 
 // The Unit number cannot change after creation (owner, 2026-10-24).
+// `reason` is the Change status reason; it is written to the Unit's History (V1-058 R2).
 export type UnitUpdateSource = Partial<
-  Pick<UnitResource, "floor_item_id" | "unit_type" | "status"> & UnitDetails
+  Pick<UnitResource, "floor_item_id" | "unit_type" | "status"> &
+    UnitDetails & { reason: string }
 >;
 
 export type UnitStatus =

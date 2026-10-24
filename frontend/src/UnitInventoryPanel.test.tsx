@@ -59,7 +59,8 @@ describe("Unit inventory", () => {
         "5 furniture items · 1 appliances · 0 kitchen items · 0 bathroom items · saved 24/10/2026 12:30",
       ),
     ).toBeInTheDocument();
-    expect(screen.getByText("Dining chair ×4")).toBeInTheDocument();
+    const chairs = screen.getByText("Dining chair").closest("li");
+    expect(chairs).toHaveTextContent("Dining chair×4");
     fireEvent.click(screen.getByRole("button", { name: "Edit inventory" }));
     const fan = await screen.findByLabelText("Fan");
     expect(fan).toHaveValue(1);
@@ -133,9 +134,9 @@ describe("Unit inventory", () => {
     fireEvent.click(
       await screen.findByRole("button", { name: "Save inventory" }),
     );
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      "Someone else saved this inventory first.",
-    );
+    expect(
+      await screen.findByText(/Someone else saved this inventory first\./),
+    ).toHaveAttribute("role", "status");
     expect(
       screen.getByRole("button", { name: "Edit inventory" }),
     ).toBeEnabled();

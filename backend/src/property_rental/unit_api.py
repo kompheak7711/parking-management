@@ -188,6 +188,7 @@ class UnitResourceFlow(Protocol):
         details: UnitDetails,
         expected_version: int,
         actor_id: str,
+        reason: str | None = None,
     ) -> Unit: ...
 
     def timeline(
@@ -278,8 +279,10 @@ class UnavailableUnitResourceFlow:
         details: UnitDetails,
         expected_version: int,
         actor_id: str,
+        reason: str | None = None,
     ) -> Unit:
         del unit_id, floor_item_id, unit_type, unit_status, details, expected_version, actor_id
+        del reason
         self._unavailable()
         raise AssertionError
 
@@ -474,6 +477,7 @@ class PostgresUnitResourceFlow:
         actor_id: str,
         action: str,
         previous_state: dict[str, object] | None,
+        reason: str | None = None,
     ) -> None:
         event_id = uuid4()
         connection.execute(
@@ -493,7 +497,7 @@ class PostgresUnitResourceFlow:
                 UUID(actor_id),
                 action,
                 unit.unit_id,
-                "Unit source data changed through the authorized Unit API",
+                reason or "Unit source data changed through the authorized Unit API",
                 unit.property_id,
                 None if previous_state is None else Jsonb(previous_state),
                 Jsonb(PostgresUnitResourceFlow._state(unit)),
@@ -576,6 +580,7 @@ class PostgresUnitResourceFlow:
         details: UnitDetails,
         expected_version: int,
         actor_id: str,
+        reason: str | None = None,
     ) -> Unit:
         try:
             with psycopg.connect(self._database_url) as connection:
@@ -609,12 +614,15 @@ class PostgresUnitResourceFlow:
                         raise UnitResourceNotFound("Unit was not found")
                     raise UnitVersionConflict(int(str(latest[0])))
                 updated = _unit(row)
+                # V1-058 R2: Change status keeps the person's reason in the Unit's History.
+                status_changed = reason is not None and updated.status != current.status
                 self._audit(
                     connection,
                     unit=updated,
                     actor_id=actor_id,
-                    action="unit.updated",
+                    action="unit.status_changed" if status_changed else "unit.updated",
                     previous_state=self._state(current),
+                    reason=reason if status_changed else None,
                 )
             return updated
         except (UnitResourceNotFound, UnitVersionConflict):
@@ -862,6 +870,8 @@ class UnitPatch(BaseModel):
     kitchen_item_id: UUID | None = None
     notes: UnitNotes | None = None
     room_feature_ids: list[UUID] | None = Field(default=None, max_length=MAX_ROOM_FEATURES)
+    # V1-058 R2: the reason given in Change status; it is written to the Unit's History.
+    reason: str | None = Field(default=None, min_length=1, max_length=500)
 
     @field_validator("unit_type")
     @classmethod
@@ -874,6 +884,12 @@ class UnitPatch(BaseModel):
     def trim_notes(cls, value: object) -> object:
         del cls
         return _normalized_notes(value)
+
+    @field_validator("reason", mode="before")
+    @classmethod
+    def trim_reason(cls, value: object) -> object:
+        del cls
+        return value.strip() if isinstance(value, str) else value
 
     @field_validator("room_feature_ids")
     @classmethod
@@ -1141,6 +1157,9 @@ def create_unit_router(
         given = patch.model_fields_set
         if any(getattr(patch, name) is None for name in given & UNIT_REQUIRED_PATCH_FIELDS):
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT)
+        if "reason" in given and "status" not in given:
+            # A reason belongs to Change status; alone it would be lost (V1-058 R2).
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT)
         if "unit_number" in given and (patch.unit_number or "").strip() != current.unit_number:
             # The owner's 2026-10-24 answer: the Unit number cannot change after creation.
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT)
@@ -1174,6 +1193,7 @@ def create_unit_router(
                 details=details,
                 expected_version=expected,
                 actor_id=actor.actor_id,
+                reason=patch.reason,
             )
         except UnitResourceNotFound as exc:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND) from exc

@@ -11731,9 +11731,9 @@
         "TEST-095"
       ],
       "test_level": "UI component",
-      "test_path": "frontend/src/UnitManagement.test.tsx",
+      "test_path": "frontend/src/units/UnitsPage.test.tsx",
       "status": "implemented",
-      "notes": "V1-024 verifies semantic Unit tables, operational alerts, and authorized management controls."
+      "notes": "V1-058 R2 (rebuilt screen; V1-024 intent kept): the Units table shows its seven columns, status chips, the Customer, Rent and Until from the current Lease or active Reservation, and New Unit only for a manager."
     },
     {
       "test_id": "TEST-FE-028",
@@ -11742,9 +11742,9 @@
         "TEST-095"
       ],
       "test_level": "UI component",
-      "test_path": "frontend/src/UnitManagement.test.tsx",
+      "test_path": "frontend/src/units/UnitsPage.test.tsx",
       "status": "implemented",
-      "notes": "V1-024 hides Unit mutation controls unless the server confirms scoped capability."
+      "notes": "V1-058 R2 (rebuilt screen; V1-024 intent kept): New Unit, Change status and Update Unit stay hidden unless the server confirms the person may manage Units."
     },
     {
       "test_id": "TEST-FE-029",
@@ -11756,9 +11756,9 @@
         "TEST-094"
       ],
       "test_level": "UI component",
-      "test_path": "frontend/src/UnitManagement.test.tsx",
+      "test_path": "frontend/src/units/UnitsPage.test.tsx",
       "status": "implemented",
-      "notes": "V1-024 keeps Unit source sections distinct and renders immutable event history."
+      "notes": "V1-058 R2 (rebuilt screen; V1-024 intent kept): the Unit page keeps Unit details, Current Lease, Lease history, Meters, Invoices and History apart, and History lists the Unit's audit events (with a status reason) and the Lease steps."
     },
     {
       "test_id": "TEST-FE-030",
@@ -11770,9 +11770,9 @@
         "TEST-095"
       ],
       "test_level": "UI component",
-      "test_path": "frontend/src/UnitManagement.test.tsx",
+      "test_path": "frontend/src/units/UnitsPage.test.tsx",
       "status": "implemented",
-      "notes": "V1-024 announces authorization and optimistic-concurrency failures without exposing unavailable actions."
+      "notes": "V1-058 R2 (rebuilt screen; V1-024 intent kept): a list that could not be read offers Retry, and a change someone else made first is named and the Unit read again."
     },
     {
       "test_id": "test_runtime_unit_flow_creates_updates_and_returns_immutable_timeline",
@@ -49845,9 +49845,9 @@
         "BR-UNIT-001"
       ],
       "test_level": "UI",
-      "test_path": "frontend/src/UnitManagement.test.tsx",
+      "test_path": "frontend/src/units/UnitsPage.test.tsx",
       "status": "implemented",
-      "notes": "V1-058 R2a: the Unit screen picks the Floor and Unit Type from the Settings lists (removed items hidden), shows the Unit Type name, saves the optional details, and the edit form shows the Unit number as fixed and never sends it."
+      "notes": "V1-058 R2 (moved to the rebuilt screen): New Unit picks the Floor and Unit Type from the Settings lists (removed items hidden), needs the number and floor, starts the Unit as Vacant, and Update Unit never sends the Unit number."
     },
     {
       "test_id": "test_acknowledgement_in_lower_case_or_with_extra_spaces_commits",
@@ -50037,6 +50037,53 @@
       "test_path": "frontend/src/UnitInventoryPanel.test.tsx",
       "status": "implemented",
       "notes": "V1-058 R2b review: an Another item whose name is already in its group adds to that item instead of a second line, an emptied box keeps the quantity, and switching to another Unit loads that Unit's inventory with Edit inventory enabled."
+    },
+    {
+      "test_id": "TEST-FE-823",
+      "upstream_ids": [
+        "DL-074",
+        "UI-025",
+        "BR-UNIT-002"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/units/UnitsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R2: the Units list filters by floor, by Unit Type (removed types not offered) and by the four count cards (Occupied, Reserved, Vacant, Not available), with Show all."
+    },
+    {
+      "test_id": "TEST-FE-824",
+      "upstream_ids": [
+        "DL-074",
+        "BR-UNIT-002",
+        "UI-027"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/units/UnitsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R2: Change status is refused while a signed Lease holds the Unit, offers only Vacant, Cleaning, Under maintenance and Out of service, needs a reason, and sends the status with the trimmed reason."
+    },
+    {
+      "test_id": "TEST-FE-825",
+      "upstream_ids": [
+        "DL-074",
+        "UI-025"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/units/UnitsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R2: a Unit opens at its own address (#/units/<id>), and a person who cannot read Leases or Reservations sees the Units with a note and dashes in those columns."
+    },
+    {
+      "test_id": "test_change_status_sends_its_reason_and_a_blank_reason_is_refused",
+      "upstream_ids": [
+        "DL-074",
+        "BR-UNIT-002",
+        "API-028"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_unit_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R2: PATCH /units/{id} takes a Change status reason of 1 to 500 characters (trimmed); a blank or too long reason is refused with 422."
     }
   ]
 }

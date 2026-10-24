@@ -31,6 +31,7 @@ class InMemoryUnitFlow:
     events: dict[UUID, tuple[UnitTimelineEvent, ...]] = field(default_factory=dict)
     last_filter: tuple[UnitStatus | None, bool | None, int, str | None] | None = None
     setup_items: dict[UUID, UnitSetupItem] = field(default_factory=dict)
+    reasons: list[str | None] = field(default_factory=list)
 
     def list(
         self,
@@ -92,8 +93,10 @@ class InMemoryUnitFlow:
         details: UnitDetails,
         expected_version: int,
         actor_id: str,
+        reason: str | None = None,
     ) -> Unit:
         del actor_id
+        self.reasons.append(reason)
         current = self.get(unit_id)
         if current.version != expected_version:
             raise UnitVersionConflict(current.version)
@@ -329,6 +332,39 @@ def test_unit_create_detail_and_version_checked_patch() -> None:
     assert updated.headers["etag"] == '"2"'
     assert updated.json()["data"]["floor"] == "2"
     assert updated.json()["data"]["status"] == "CLEANING"
+    assert flow.reasons == [None]
+
+
+def test_change_status_sends_its_reason_and_a_blank_reason_is_refused() -> None:
+    property_id = uuid4()
+    flow = InMemoryUnitFlow()
+    unit = sample_unit(property_id)
+    flow.units[unit.unit_id] = unit
+    client = TestClient(
+        create_app(actor_resolver=lambda _: manager(property_id), unit_resource_flow=flow)
+    )
+    url = f"/units/{unit.unit_id}"
+
+    blank = client.patch(
+        url, headers={**BROWSER, "If-Match": '"1"'}, json={"status": "VACANT", "reason": "  "}
+    )
+    too_long = client.patch(
+        url, headers={**BROWSER, "If-Match": '"1"'}, json={"status": "VACANT", "reason": "x" * 501}
+    )
+    changed = client.patch(
+        url,
+        headers={**BROWSER, "If-Match": '"1"'},
+        json={"status": "VACANT", "reason": " Repair finished "},
+    )
+
+    reason_alone = client.patch(
+        url, headers={**BROWSER, "If-Match": '"1"'}, json={"reason": "Repair finished"}
+    )
+
+    assert (blank.status_code, too_long.status_code, reason_alone.status_code) == (422, 422, 422)
+    assert changed.status_code == 200
+    assert changed.json()["data"]["status"] == "VACANT"
+    assert flow.reasons == ["Repair finished"]
 
 
 def test_unit_timeline_preserves_event_identity_and_has_no_delete_route() -> None:
