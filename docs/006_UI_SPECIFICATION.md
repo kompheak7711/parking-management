@@ -999,6 +999,11 @@ unsaved commands succeeded, clears accessible session material, and returns the 
 sign-in. High-risk administration presents recent-reauthentication/additional-factor
 requirements while preserving server-side capability checks.
 
+Amended by DL-081 (login sub-slice L3d-2): when an administration action answers
+`403 REAUTHENTICATION_REQUIRED`, the screen asks for the password and the sign-in code
+(`POST /auth/reauthenticate`), keeps what the user typed, and sends the action again; the screens
+come with login sub-slice L6.
+
 ## UI-112 — Recovery Codes and Administrative Recovery
 
 Recovery codes are presented once in a protected flow with secure-storage and single-use

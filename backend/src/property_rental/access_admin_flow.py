@@ -33,7 +33,12 @@ from property_rental.access_admin_api import (
     RoleBundleView,
     UserAccountView,
 )
-from property_rental.auth_flow import CONNECT_TIMEOUT_SECONDS, STATEMENT_TIMEOUT_OPTION
+from property_rental.auth_flow import (
+    CONNECT_TIMEOUT_SECONDS,
+    MAX_SESSION_TOKEN_LENGTH,
+    STATEMENT_TIMEOUT_OPTION,
+    session_token_digest,
+)
 from property_rental.identity import CapabilityGrant, ObjectScope
 from property_rental.local_authentication import normalize_local_username
 from property_rental.visible_text import tidy_spaces, without_zero_width_spaces
@@ -49,6 +54,55 @@ BUNDLES: Final = (
     "SELECT role_bundle_id::text, property_id::text, name, version, capability_ids "
     "FROM app.admin_role_bundles(%s)"
 )
+
+# Login sub-slice L3d-2 (owner answer (a) to Q-2026-10-21-157): the actions that change who may
+# do what need a reauthentication with the password and the sign-in code in the last 15
+# minutes, checked on the database clock in the action's own transaction. Only the latest `totp`
+# reauthentication of the request's own live session counts, found through the request's
+# reauthentication cookie (L3d-1 review rounds 2 and 3), and only while its sign-in code is still
+# the account's active one. The session is held `FOR SHARE` until the action commits, so a
+# sign-out waits for it.
+REAUTHENTICATION_WINDOW: Final = "15 minutes"
+LOCK_TIMEOUT_OPTION: Final = "-c lock_timeout=3000"
+RECENT_REAUTHENTICATION: Final = f"""
+    SELECT 1
+    FROM app.browser_sessions AS browser
+    JOIN app.browser_session_reauthentications AS reauthentication
+      ON reauthentication.session_id = browser.session_id
+     AND reauthentication.actor_id = browser.actor_id
+    JOIN app.totp_mfa_enrollments AS enrollment
+      ON enrollment.enrollment_id = reauthentication.enrollment_id
+     AND enrollment.actor_id = browser.actor_id
+     AND enrollment.enrollment_state = 'active'
+    WHERE browser.token_verifier = %s
+      AND browser.verifier_algorithm = 'sha256'
+      AND browser.actor_id = %s
+      AND browser.revoked_at IS NULL
+      AND statement_timestamp() < browser.idle_expires_at
+      AND statement_timestamp() < browser.absolute_expires_at
+      AND reauthentication.token_verifier = %s
+      AND reauthentication.method = 'totp'
+      AND reauthentication.reauthenticated_at
+          > statement_timestamp() - interval '{REAUTHENTICATION_WINDOW}'
+      AND NOT EXISTS (
+          SELECT 1
+          FROM app.browser_session_reauthentications AS newer
+          WHERE newer.session_id = browser.session_id
+            AND newer.method = 'totp'
+            AND newer.reauthenticated_at > reauthentication.reauthenticated_at
+      )
+    FOR SHARE OF browser
+"""
+REAUTHENTICATION_REQUIRED_MESSAGE: Final = (
+    "Please enter your password and sign-in code again, then try again."
+)
+
+
+def _reauthentication_required() -> AccessAdministrationRejected:
+    return AccessAdministrationRejected(
+        403, "REAUTHENTICATION_REQUIRED", REAUTHENTICATION_REQUIRED_MESSAGE
+    )
+
 
 Row = tuple[object, ...]
 Connection = psycopg.Connection[Row]
@@ -189,6 +243,7 @@ GENERIC_REFUSALS: Final[dict[str, tuple[int, str, str]]] = {
     "22023": (422, "VALIDATION_ERROR", "The request is not valid."),
     "23514": (409, "TRY_AGAIN", "The change met another change. Try again."),
     "40P01": (409, "TRY_AGAIN", "The change met another change. Try again."),
+    "55P03": (409, "TRY_AGAIN", "The change met another change. Try again."),
 }
 
 
@@ -300,8 +355,15 @@ class PostgresAccessAdministrationFlow:
 
     @contextmanager
     def _transaction(self) -> Iterator[Connection]:
+        """One action's connection, with the time limits of the sign-in flow and a lock wait
+        limit (login sub-slice L3d-2 review round 1, security): the check holds the Owner's
+        session `FOR SHARE` for the whole action, so a stuck action must not hold it long."""
         try:
-            with psycopg.connect(self._database_url) as connection:
+            with psycopg.connect(
+                self._database_url,
+                connect_timeout=CONNECT_TIMEOUT_SECONDS,
+                options=f"{STATEMENT_TIMEOUT_OPTION} {LOCK_TIMEOUT_OPTION}",
+            ) as connection:
                 connection.isolation_level = IsolationLevel.READ_COMMITTED
                 yield connection
         except psycopg.Error as exc:
@@ -365,6 +427,28 @@ class PostgresAccessAdministrationFlow:
         connection.execute("SELECT 1 FROM app.admin_role_bundles(%s) LIMIT 1", (owner,))
 
     @staticmethod
+    def _require_recent_reauthentication(
+        connection: Connection, audit_context: AdministrationAuditContext
+    ) -> None:
+        """A recent reauthentication of the request's own session (login sub-slice L3d-2): the
+        first statement of the action's transaction; without one, 403 `REAUTHENTICATION_REQUIRED`
+        and nothing is written. It never replaces the capability check (SEC-018)."""
+        tokens = (audit_context.session_token, audit_context.reauthentication_token)
+        if any(not token or len(token) > MAX_SESSION_TOKEN_LENGTH for token in tokens):
+            raise _reauthentication_required()
+        session_token, reauthentication_token = cast(tuple[str, str], tokens)
+        found = connection.execute(
+            RECENT_REAUTHENTICATION,
+            (
+                session_token_digest(session_token),
+                _owner(audit_context.actor_id),
+                session_token_digest(reauthentication_token),
+            ),
+        ).fetchone()
+        if found is None:
+            raise _reauthentication_required()
+
+    @staticmethod
     def _call(connection: Connection, query: str, parameters: tuple[object, ...]) -> object:
         row = connection.execute(query, parameters).fetchone()
         if row is None or row[0] is None:
@@ -400,6 +484,7 @@ class PostgresAccessAdministrationFlow:
     ) -> UserAccountView:
         owner = _owner(audit_context.actor_id)
         with self._transaction() as connection:
+            self._require_recent_reauthentication(connection, audit_context)
             if self._property_id(connection) != property_id:
                 raise AccessAdministrationNotFound
             created = self._call(
@@ -451,6 +536,10 @@ class PostgresAccessAdministrationFlow:
         del revoke_applicable_sessions_if_disabled
         owner = _owner(audit_context.actor_id)
         with self._transaction() as connection:
+            if lifecycle_state is not None or mfa_policy_class is not None:
+                # Disabling an account or turning its MFA on or off (Q-2026-10-21-157
+                # (a)); a change of the names alone is not on the list.
+                self._require_recent_reauthentication(connection, audit_context)
             version = self._call(
                 connection,
                 "SELECT app.admin_update_account(%s,%s,%s,%s,%s,%s,%s,%s)",
@@ -550,6 +639,7 @@ class PostgresAccessAdministrationFlow:
     ) -> RoleBundleView:
         owner = _owner(audit_context.actor_id)
         with self._transaction() as connection:
+            self._require_recent_reauthentication(connection, audit_context)
             if self._property_id(connection) != property_id:
                 raise AccessAdministrationNotFound
             created = self._call(
@@ -596,6 +686,7 @@ class PostgresAccessAdministrationFlow:
         del revoke_affected_sessions_on_capability_reduction
         owner = _owner(audit_context.actor_id)
         with self._transaction() as connection:
+            self._require_recent_reauthentication(connection, audit_context)
             version = self._call(
                 connection,
                 "SELECT app.admin_update_role_bundle(%s,%s,%s,%s,%s,%s)",
@@ -631,6 +722,7 @@ class PostgresAccessAdministrationFlow:
     ) -> RoleAssignmentView:
         owner = _owner(audit_context.actor_id)
         with self._transaction() as connection:
+            self._require_recent_reauthentication(connection, audit_context)
             self._call(
                 connection,
                 "SELECT app.admin_assign_role_bundle(%s,%s,%s,%s)",
@@ -651,6 +743,7 @@ class PostgresAccessAdministrationFlow:
     ) -> RoleAssignmentView:
         owner = _owner(audit_context.actor_id)
         with self._transaction() as connection:
+            self._require_recent_reauthentication(connection, audit_context)
             self._call(
                 connection,
                 "SELECT app.admin_remove_role_assignment(%s,%s,%s,%s,%s)",
@@ -672,6 +765,7 @@ class PostgresAccessAdministrationFlow:
     ) -> UserAccountView:
         owner = _owner(audit_context.actor_id)
         with self._transaction() as connection:
+            self._require_recent_reauthentication(connection, audit_context)
             self._call(
                 connection,
                 query,
@@ -784,7 +878,8 @@ class PostgresAccessAdministrationFlow:
         reason: str,
         audit_context: AdministrationAuditContext,
     ) -> AdministrativeRecoveryView:
-        # The Owner's reset with a one-time password comes with login sub-slice L4.
+        # The Owner's reset with a one-time password comes with login sub-slice L4, which also
+        # checks a recent reauthentication first (login sub-slice L3d-2, binding).
         del user_id, property_id, new_password, reset_mfa, reason, audit_context
         raise AccessAdministrationUnavailable
 

@@ -557,14 +557,18 @@ def request(
     headers: dict[str, str] | None = None,
     browser_protection: bool = True,
     include_if_match: bool = True,
+    cookies: Mapping[str, str] | None = None,
 ) -> httpx.Response:
     async def send() -> httpx.Response:
         transport = httpx.ASGITransport(app=app)
-        cookies = {CSRF_COOKIE_NAME: CSRF_TOKEN} if browser_protection else None
+        client_cookies = {
+            **({CSRF_COOKIE_NAME: CSRF_TOKEN} if browser_protection else {}),
+            **(cookies or {}),
+        }
         async with httpx.AsyncClient(
             transport=transport,
             base_url="http://test",
-            cookies=cookies,
+            cookies=client_cookies or None,
         ) as client:
             mutation_headers: dict[str, str] = (
                 {
@@ -2001,3 +2005,58 @@ def test_names_with_odd_or_double_spaces_reach_the_flow_tidied() -> None:
         reason="forgot  password\u200b again",
     )
     assert recovery.reason == "forgot  password again"
+
+
+def test_the_routes_pass_both_browser_cookies_to_the_flow_and_never_show_them() -> None:
+    """Login sub-slice L3d-2: the route hands the flow the session and reauthentication cookies
+    for the recent-reauthentication check, kept out of the context's repr; without them the
+    context carries none."""
+    seen: list[AdministrationAuditContext] = []
+
+    class SeeingFlow(RecordingAccessAdministrationFlow):
+        def create_user(
+            self,
+            *,
+            property_id: str,
+            username: str,
+            display_name: str,
+            audit_name: str,
+            account_class: Literal["manager", "staff"],
+            audit_context: AdministrationAuditContext,
+        ) -> UserAccountView:
+            seen.append(audit_context)
+            return super().create_user(
+                property_id=property_id,
+                username=username,
+                display_name=display_name,
+                audit_name=audit_name,
+                account_class=account_class,
+                audit_context=audit_context,
+            )
+
+    app = authorized_app(SeeingFlow())
+    payload = {
+        "username": "dara.staff",
+        "display_name": "Dara",
+        "audit_name": "Dara",
+        "account_class": "staff",
+    }
+    path = f"/api/v1/properties/{PROPERTY_ID}/users"
+    with_cookies = request(
+        app,
+        "POST",
+        path,
+        payload=payload,
+        cookies={
+            "__Host-prm_session": "session-cookie-secret",
+            "__Host-prm_reauth": "reauthentication-cookie-secret",
+        },
+    )
+    assert with_cookies.status_code == 201, with_cookies.text
+    without = request(app, "POST", path, payload=payload)
+    assert without.status_code == 201, without.text
+    assert [(item.session_token, item.reauthentication_token) for item in seen] == [
+        ("session-cookie-secret", "reauthentication-cookie-secret"),
+        (None, None),
+    ]
+    assert "cookie-secret" not in repr(seen[0])

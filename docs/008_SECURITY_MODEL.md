@@ -174,6 +174,15 @@ Deployments must be able to require recent authentication or an additional facto
 for high-risk administration. Reauthentication does not replace the business
 authorization and confirmation requirements for financial actions.
 
+Amended by DL-081 (login sub-slice L3d-2, owner answer (a) to Q-2026-10-21-157,
+Q-2026-10-24-184): the actions that change who may do what (creating or disabling an account,
+turning its MFA on or off, creating or changing a role bundle, giving or removing one, giving or
+removing Settings access, and the Owner's reset of an account) need a reauthentication with the
+password and the sign-in code of the same browser session in the last 15 minutes, shown by the
+separate reauthentication cookie; a copied session cookie alone, a password-only
+reauthentication or a recovery code never passes. A sign-in with the sign-in code counts as one.
+The capability check still applies.
+
 # 6. Authorization Model
 
 ## SEC-019 — Property Scope

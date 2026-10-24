@@ -5117,6 +5117,14 @@ is never stored. A session shows `reauthenticated_at` only for the row of the co
 sends with it, so a copied session cookie alone shows none. This replaces "the session's
 `reauthenticated_at` is its latest row's time".
 
+Amended by DL-081 (login sub-slice L3d-2, Q-2026-10-24-184, no migration): a sign-in completed
+with the sign-in code and a confirmed sign-in code set-up also write a `totp` row for the new
+session (the step the sign-in used), in the same transaction. Each high-risk administration
+action reads first, in its own transaction, the row of the request's reauthentication cookie for
+the request's live session: method `totp`, not older than 15 minutes on the database clock, no
+newer `totp` row of the session, and its sign-in code still the account's active one; the
+session is held `FOR SHARE` until the action commits.
+
 ## DB-AUTH-005 — Recovery and bootstrap audit
 
 Administrative recovery, emergency Owner recovery, MFA enrollment/reset/disablement,

@@ -995,6 +995,43 @@ class PostgresAuthenticationFlow:
             raise AuthenticationRateLimited(int(str(cleared[0])))
 
     @staticmethod
+    def _write_sign_in_reauthentication(
+        connection: psycopg.Connection[tuple[object, ...]],
+        row: tuple[object, ...],
+        *,
+        actor_id: object,
+        enrollment_id: object,
+        step: int,
+    ) -> tuple[str, datetime]:
+        """A sign-in with the sign-in code also counts as a reauthentication of its new session
+        (login sub-slice L3d-2, decided by Claude under the owner's 2026-10-23 22:30 rule): the
+        same `totp` row as `reauthenticate` writes, for the step just used, in the same
+        transaction, with a new reauthentication cookie of which only the digest is kept. So
+        the 15 minutes of Q-2026-10-21-157 (a) start at the sign-in, and only in the browser
+        that signed in (L3d-1 review round 2)."""
+        token = secrets.token_urlsafe(SESSION_TOKEN_BYTES)
+        try:
+            written = connection.execute(
+                INSERT_REAUTHENTICATION,
+                (
+                    uuid4(),
+                    row[0],
+                    actor_id,
+                    "totp",
+                    enrollment_id,
+                    step,
+                    session_token_digest(token),
+                ),
+            ).fetchone()
+        except psycopg.errors.IntegrityConstraintViolation as exc:
+            # The guard refused (for example the account was disabled meanwhile): a refused
+            # sign-in, as in `reauthenticate` (review round 1, security note).
+            raise AuthenticationRejected from exc
+        if written is None:
+            raise AuthenticationRejected
+        return token, cast(datetime, written[0])
+
+    @staticmethod
     def _write_proven_session(
         connection: psycopg.Connection[tuple[object, ...]],
         *,
@@ -1093,6 +1130,9 @@ class PostgresAuthenticationFlow:
                 session_digest=session_token_digest(session_token),
                 provenance=MFA_CHALLENGE_PROVENANCE,
             )
+            reauthentication_token, reauthenticated_at = self._write_sign_in_reauthentication(
+                connection, row, actor_id=actor_id, enrollment_id=enrollment_id, step=step
+            )
         logger.info(
             "sign-in code decision", extra={"outcome": "authenticated", "request_id": request_id}
         )
@@ -1100,7 +1140,8 @@ class PostgresAuthenticationFlow:
             phase=AuthenticationPhase.AUTHENTICATED,
             session_token=session_token,
             csrf_token=secrets.token_urlsafe(SESSION_TOKEN_BYTES),
-            session=session_view(row),
+            session=replace(session_view(row), reauthenticated_at=reauthenticated_at),
+            reauthentication_token=reauthentication_token,
         )
 
     def _complete_with_recovery_code(
@@ -1334,6 +1375,9 @@ class PostgresAuthenticationFlow:
                 session_digest=session_token_digest(session_token),
                 provenance=MFA_ENROLLMENT_PROVENANCE,
             )
+            reauthentication_token, reauthenticated_at = self._write_sign_in_reauthentication(
+                connection, row, actor_id=actor_id, enrollment_id=enrollment_id, step=step
+            )
         logger.info(
             "sign-in code enrollment decision",
             extra={"outcome": "authenticated", "request_id": request_id},
@@ -1342,7 +1386,8 @@ class PostgresAuthenticationFlow:
             phase=AuthenticationPhase.AUTHENTICATED,
             session_token=session_token,
             csrf_token=secrets.token_urlsafe(SESSION_TOKEN_BYTES),
-            session=session_view(row),
+            session=replace(session_view(row), reauthenticated_at=reauthenticated_at),
+            reauthentication_token=reauthentication_token,
         )
 
     def reauthenticate(

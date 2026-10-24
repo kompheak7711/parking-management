@@ -90,6 +90,10 @@ ADD_START = (
     "SELECT challenge.challenge_id, %s, %s FROM app.sign_in_mfa_challenges AS challenge "
     "WHERE challenge.token_verifier = %s"
 )
+REAUTHENTICATIONS_OF = (
+    "SELECT method, enrollment_id, time_step FROM app.browser_session_reauthentications "
+    "WHERE actor_id = %s ORDER BY reauthenticated_at"
+)
 
 
 def enrollment_token(flow: PostgresAuthenticationFlow, account: Account, source: str) -> str:
@@ -208,6 +212,12 @@ def test_an_account_without_a_sign_in_code_sets_one_up_and_its_first_right_code_
         ] == [("active", account.actor_id, "auth-mfa-enrollment")]
         assert read(code_database, USED_STEPS_OF, enrollment_id) == [(step - 1,)]
         assert read(code_database, PROOFS_OF, account.actor_id) == [("totp", enrollment_id)]
+        # Login sub-slice L3d-2 (Q-2026-10-24-184): the sign-in also reauthenticates the new
+        # session with the step it used, in the same transaction, and answers its cookie.
+        assert done.reauthentication_token and done.session.reauthenticated_at is not None
+        assert read(code_database, REAUTHENTICATIONS_OF, account.actor_id) == [
+            ("totp", enrollment_id, step - 1)
+        ]
         assert [
             (bytes(row[1]), row[2]) for row in read(code_database, SESSIONS_OF, account.actor_id)
         ] == [(digest(done.session_token), "auth-mfa-enrollment")]

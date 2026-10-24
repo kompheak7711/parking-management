@@ -23,7 +23,7 @@ from alembic.script import ScriptDirectory
 from property_rental.access_admin_api import AccessAdministrationRejected
 from property_rental.access_admin_flow import PostgresAccessAdministrationFlow
 from property_rental.visible_text import HIDDEN_NAME_CHARACTERS, SPACE_SEPARATORS
-from test_access_admin_flow_migration import AdminDatabase, context
+from test_access_admin_flow_migration import AdminDatabase, allow_admin_actions, context
 from test_account_class_migration import ADD_CREDENTIAL, repository_for
 from test_default_role_bundles_migration import SEED_QUERY
 from test_migrations import _run_alembic, _temporary_migration_database, _url_with_database
@@ -161,6 +161,7 @@ def admin_database(migrated_database_url: str) -> Iterator[AdminDatabase]:
             manager = add_account(setup, "manager")
             setup.execute(SEED_QUERY, (property_id,))
             setup.commit()
+        allow_admin_actions(temporary, owner, manager)
         yield AdminDatabase(temporary, runtime_url, str(property_id), owner, manager)
 
 

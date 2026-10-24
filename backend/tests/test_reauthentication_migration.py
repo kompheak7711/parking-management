@@ -21,6 +21,11 @@ from fastapi.testclient import TestClient
 from psycopg import errors
 from pydantic import SecretStr
 
+from property_rental.access_admin_api import (
+    AccessAdministrationRejected,
+    AdministrationAuditContext,
+)
+from property_rental.access_admin_flow import PostgresAccessAdministrationFlow
 from property_rental.app import create_app
 from property_rental.auth_api import (
     AuthenticationRateLimited,
@@ -42,6 +47,7 @@ from test_sign_in_code_migration import (
     Account,
     CodeDatabase,
     add_account,
+    challenge_token,
     change_for,
     code_for,
     digest,
@@ -68,6 +74,12 @@ def flow_of(database: CodeDatabase) -> PostgresAuthenticationFlow:
 
 def username_key(account: Account) -> bytes:
     return sign_in_username_digest(account.username)
+
+
+def signed_in_row(account: Account, step: int) -> tuple[str, uuid.UUID | None, int]:
+    """The reauthentication a sign-in with the code of `step - 1` writes for its own session
+    (login sub-slice L3d-2, Q-2026-10-24-184): nothing a later reauthentication did."""
+    return ("totp", account.enrollment_id, step - 1)
 
 
 def reauthenticate(
@@ -117,8 +129,10 @@ def test_the_password_and_a_new_sign_in_code_reauthenticate_a_session(
         ).reauthenticated_at
         == result.session.reauthenticated_at
     )
+    # The first row is the sign-in's own (login sub-slice L3d-2, Q-2026-10-24-184).
     assert read(code_database, REAUTHENTICATIONS_OF, account.actor_id) == [
-        ("totp", account.enrollment_id, step)
+        ("totp", account.enrollment_id, step - 1),
+        ("totp", account.enrollment_id, step),
     ]
     assert read(code_database, USED_STEPS_OF, account.enrollment_id) == [(step - 1,), (step,)]
 
@@ -155,10 +169,13 @@ def test_a_reauthentication_shows_only_with_its_own_reauthentication_cookie(
     )
     kept = read(
         code_database,
-        "SELECT token_verifier FROM app.browser_session_reauthentications WHERE actor_id = %s",
+        "SELECT token_verifier FROM app.browser_session_reauthentications WHERE actor_id = %s "
+        "ORDER BY reauthenticated_at",
         account.actor_id,
     )
-    assert kept == [(digest(first.reauthentication_token),)]
+    # After the sign-in's own row (login sub-slice L3d-2, Q-2026-10-24-184).
+    assert len(kept) == 2 and kept[1] == (digest(first.reauthentication_token),)
+    assert len(bytes(kept[0][0])) == 32 and bytes(kept[0][0]) != digest(session)
 
     def shown(token: str | None) -> object:
         return flow.inspect_session(
@@ -190,6 +207,7 @@ def test_a_reauthentication_shows_only_with_its_own_reauthentication_cookie(
     assert shown(later.reauthentication_token) == later.session.reauthenticated_at
     assert shown(first.reauthentication_token) == first.session.reauthenticated_at
     assert read(code_database, REAUTHENTICATIONS_OF, account.actor_id) == [
+        ("totp", account.enrollment_id, step - 1),
         ("totp", account.enrollment_id, step),
         ("totp", account.enrollment_id, step + 1),
     ]
@@ -222,7 +240,9 @@ def test_wrong_passwords_and_codes_count_and_a_wait_refuses_before_any_check(
         ("sign_in_code",),
         ("password",),
     ]
-    assert read(code_database, REAUTHENTICATIONS_OF, account.actor_id) == []
+    assert read(code_database, REAUTHENTICATIONS_OF, account.actor_id) == [
+        signed_in_row(account, step)
+    ]
     assert read(code_database, USED_STEPS_OF, account.enrollment_id) == [(step - 1,)]
 
 
@@ -260,7 +280,9 @@ def test_a_reauthentication_without_the_right_factor_or_session_is_refused(
         refusal = AuthenticationUnavailable
     with pytest.raises(refusal):
         reauthenticate(flow, session, method=method, code=code)
-    assert read(code_database, REAUTHENTICATIONS_OF, account.actor_id) == []
+    assert read(code_database, REAUTHENTICATIONS_OF, account.actor_id) == [
+        signed_in_row(account, step)
+    ]
     expected_tries = [("sign_in_code",)] if case == "used_step" else []
     assert read(code_database, TRIES_OF, username_key(account)) == expected_tries
 
@@ -378,7 +400,9 @@ def test_a_change_before_the_reauthentication_refuses_and_writes_nothing(
     )
     with pytest.raises(refusal):
         reauthenticate(flow, session, code=code_for(account, step))
-    assert read(code_database, REAUTHENTICATIONS_OF, account.actor_id) == []
+    assert read(code_database, REAUTHENTICATIONS_OF, account.actor_id) == [
+        signed_in_row(account, step)
+    ]
     expected_steps = [(step - 1,), (step,)] if case == "step_used" else [(step - 1,)]
     assert read(code_database, USED_STEPS_OF, account.enrollment_id) == expected_steps
     assert read(code_database, CLEARS_OF, username_key(account)) == [(0,)]
@@ -572,7 +596,8 @@ def test_a_reauthentication_is_guarded_in_the_database(code_database: CodeDataba
         ).fetchone()
     assert privileges == (True, False, False, False, True, True, False)
     assert read(code_database, REAUTHENTICATIONS_OF, account.actor_id) == [
-        ("totp", account.enrollment_id, step)
+        signed_in_row(account, step),
+        ("totp", account.enrollment_id, step),
     ]
     # Review round 1: each `totp` condition alone, with a raw positive control, written as the
     # table owner in one transaction each (the step is used in the same transaction).
@@ -660,7 +685,8 @@ def test_a_reauthentication_is_guarded_in_the_database(code_database: CodeDataba
         )
         connection.commit()
     assert read(code_database, REAUTHENTICATIONS_OF, other.actor_id) == [
-        ("totp", other.enrollment_id, other_step)
+        signed_in_row(other, other_step),
+        ("totp", other.enrollment_id, other_step),
     ]
     # The `password` refusal for an account with MFA `optional` and an active sign-in code.
     optional = add_account(
@@ -678,6 +704,80 @@ def test_a_reauthentication_is_guarded_in_the_database(code_database: CodeDataba
                 add_row,
                 (uuid.uuid4(), optional_session_id, optional.actor_id, "password", None, None),
             )
+
+
+def check_recent_reauthentication(
+    database: CodeDatabase, account: Account, session: str, cookie: str | None
+) -> None:
+    """The check the high-risk administration actions run first in their transaction."""
+    admin = PostgresAccessAdministrationFlow(database.runtime_url)
+    with admin._transaction() as connection:
+        admin._require_recent_reauthentication(
+            connection,
+            AdministrationAuditContext(
+                actor_id=str(account.actor_id),
+                request_id="l3d-2",
+                session_token=session,
+                reauthentication_token=cookie,
+            ),
+        )
+
+
+def test_a_sign_in_with_the_sign_in_code_reauthenticates_its_own_session_only(
+    code_database: CodeDatabase,
+) -> None:
+    """TEST-132, login sub-slice L3d-2 (Q-2026-10-24-184, decided by Claude under the owner's
+    2026-10-23 22:30 rule): a sign-in completed with the sign-in code writes a `totp`
+    reauthentication of the new session for the step it used, in the same transaction, and
+    answers its reauthentication cookie. The high-risk check passes with both cookies; a copied
+    session cookie alone is refused, in the first 15 minutes too, and so are the cookies after a
+    reauthentication by the password and code in another client of the same session (binding
+    of L3d-1 review round 2)."""
+    flow = flow_of(code_database)
+    account = add_account(code_database, "l3d-2.manager")
+    step = fresh_step(code_database)
+    done = flow.complete_mfa(
+        preauth_token=challenge_token(flow, account, "l3d-2-desk"),
+        method="totp",
+        code=code_for(account, step - 1),
+        request_id="l3d-2",
+    )
+    assert done.session is not None and done.session_token is not None
+    assert done.reauthentication_token and done.session.reauthenticated_at is not None
+    assert done.reauthentication_token not in (done.session_token, done.csrf_token)
+    assert read(code_database, REAUTHENTICATIONS_OF, account.actor_id) == [
+        ("totp", account.enrollment_id, step - 1)
+    ]
+    assert (
+        flow.inspect_session(
+            session_token=done.session_token,
+            request_id="l3d-2",
+            reauthentication_token=done.reauthentication_token,
+        ).reauthenticated_at
+        == done.session.reauthenticated_at
+    )
+    check_recent_reauthentication(
+        code_database, account, done.session_token, done.reauthentication_token
+    )
+    with pytest.raises(AccessAdministrationRejected) as caught:
+        check_recent_reauthentication(code_database, account, done.session_token, None)
+    assert (caught.value.status_code, caught.value.code) == (403, "REAUTHENTICATION_REQUIRED")
+    # Another client with the copied session cookie reauthenticates: its own cookie counts, and
+    # the first client's older cookie no longer does.
+    again = flow.reauthenticate(
+        session_token=done.session_token,
+        password=PASSWORD,
+        second_factor_method="totp",
+        second_factor_code=code_for(account, step),
+        request_id="l3d-2",
+    )
+    check_recent_reauthentication(
+        code_database, account, done.session_token, again.reauthentication_token
+    )
+    with pytest.raises(AccessAdministrationRejected):
+        check_recent_reauthentication(
+            code_database, account, done.session_token, done.reauthentication_token
+        )
 
 
 def test_the_session_reauthentication_migration_follows_l3c_2c_2_and_is_forward_only() -> None:

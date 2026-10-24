@@ -45438,7 +45438,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_access_admin_flow_migration.py",
       "status": "implemented",
-      "notes": "A Manager, an unknown account and an actor id that is not a UUID are refused (403) for reads and changes, the authorization history and the capability list included (review round 1); an unknown account is not found; a malformed page cursor is refused; the Owner's reset stays unavailable until L4 (login slice sub-slice L2b-2, DL-081)."
+      "notes": "A Manager, an unknown account and an actor id that is not a UUID are refused (403) for reads and changes, the authorization history and the capability list included (review round 1); an unknown account is not found; a malformed page cursor is refused; the Owner's reset stays unavailable until L4 (login slice sub-slice L2b-2, DL-081). Login slice sub-slice L3d-2: an unknown account with no session is refused by the reauthentication check first (REAUTHENTICATION_REQUIRED, still 403); the reauthenticated Manager by the capability and an actor id that is not a UUID before any database work (FORBIDDEN)."
     },
     {
       "test_id": "test_the_authorization_history_lists_administration_events_oldest_first_in_pages",
@@ -45478,7 +45478,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_access_admin_flow_migration.py",
       "status": "implemented",
-      "notes": "With a database URL set, create_app uses the PostgreSQL flow: an account is created over HTTP, and a Settings access give without a sign-in code answers 409 SIGN_IN_CODE_REQUIRED in the standard error envelope with no database text (login slice sub-slice L2b-2, DL-081)."
+      "notes": "With a database URL set, create_app uses the PostgreSQL flow: an account is created over HTTP, and a Settings access give without a sign-in code answers 409 SIGN_IN_CODE_REQUIRED in the standard error envelope with no database text (login slice sub-slice L2b-2, DL-081). Login slice sub-slice L3d-2: the HTTP requests send the session and reauthentication cookies; the session cookie alone answers 403 REAUTHENTICATION_REQUIRED in the standard error envelope."
     },
     {
       "test_id": "test_the_request_id_is_the_correlation_id_or_a_stable_uuid5_of_it",
@@ -47283,6 +47283,64 @@
       "test_path": "backend/tests/test_reauthentication_migration.py",
       "status": "implemented",
       "notes": "Each reauthentication answers a new reauthentication cookie whose sha256 digest only is kept on its row; the session shows its reauthentication only with that cookie, not with a copied session cookie alone, another session's cookie, a made-up one or a malformed one, and a later reauthentication answers its own cookie (login slice sub-slice L3d-1 review round 2, owner answer of 2026-10-24 to Q-2026-10-24-183, DL-081)."
+    },
+    {
+      "test_id": "test_each_change_of_who_may_do_what_needs_a_recent_reauthentication",
+      "upstream_ids": [
+        "API-079",
+        "API-080",
+        "SEC-018"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_access_admin_flow_migration.py",
+      "status": "implemented",
+      "notes": "Creating an account, disabling it or changing its MFA policy, creating or changing a role bundle, giving or removing one, and giving or removing Settings access each answer 403 REAUTHENTICATION_REQUIRED with the plain message without a reauthentication cookie or with a copied session cookie alone, and write nothing, no audit event included; a names-only change and signing an account out are not checked; with a recent reauthentication the change goes through (login slice sub-slice L3d-2, owner answer (a) to Q-2026-10-21-157, Q-2026-10-24-184, DL-081)."
+    },
+    {
+      "test_id": "test_only_a_recent_sign_in_code_reauthentication_of_the_same_session_counts",
+      "upstream_ids": [
+        "DB-AUTH-004",
+        "SEC-018"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_access_admin_flow_migration.py",
+      "status": "implemented",
+      "notes": "Only the latest totp reauthentication of the request's own live session, found through its cookie, made in the last 15 minutes on the database clock (14 minutes allowed, 16 refused), with its sign-in code still active, counts; another session's cookie, a Manager's cookies sent for the Owner, an older cookie after a newer one, a signed-out session, a sign-in code turned off since, empty or too long cookies and a password-only reauthentication are refused; a reauthenticated Manager is still refused by the capability (login slice sub-slice L3d-2, Q-2026-10-24-184, DL-081)."
+    },
+    {
+      "test_id": "test_a_sign_in_with_the_sign_in_code_reauthenticates_its_own_session_only",
+      "upstream_ids": [
+        "API-097",
+        "DB-AUTH-004",
+        "SEC-018"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reauthentication_migration.py",
+      "status": "implemented",
+      "notes": "A sign-in finished with the sign-in code writes a totp reauthentication of the new session for its step and answers its cookie; the high-risk check passes with both cookies and refuses a copied session cookie alone in the first 15 minutes; after a reauthentication in another client of the same session only the newer cookie counts (login slice sub-slice L3d-2, Q-2026-10-24-184, DL-081)."
+    },
+    {
+      "test_id": "test_the_routes_pass_both_browser_cookies_to_the_flow_and_never_show_them",
+      "upstream_ids": [
+        "API-079",
+        "SEC-018"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_access_admin_api.py",
+      "status": "implemented",
+      "notes": "The administration route hands the flow the session and reauthentication cookies for the recent-reauthentication check, kept out of the audit context's repr; a request without them hands over none (login slice sub-slice L3d-2, DL-081)."
+    },
+    {
+      "test_id": "test_the_check_holds_the_session_and_comes_before_the_other_refusals",
+      "upstream_ids": [
+        "API-080",
+        "DB-AUTH-004",
+        "SEC-018"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_access_admin_flow_migration.py",
+      "status": "implemented",
+      "notes": "A session past its 30 idle minutes or its 24 hours (then past both, by the table check) is refused like a signed-out one; the check holds the session FOR SHARE, so a sign-out from another connection waits (lock wait limit) while the same transaction may still end it; a stale reauthentication is refused before a stale version (login slice sub-slice L3d-2 review round 1, DL-081)."
     }
   ]
 }

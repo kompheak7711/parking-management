@@ -140,6 +140,9 @@ def test_a_recovery_code_completes_the_challenge_once_and_ends_the_other_session
         str(account.actor_id),
         "recovery_code",
     )
+    # Login sub-slice L3d-2 (Q-2026-10-24-184): only a sign-in with the sign-in code counts as a
+    # reauthentication; a recovery code does not.
+    assert done.reauthentication_token is None and done.session.reauthenticated_at is None
     used = code_id_of(code_database, account, codes[3])
     assert consumed_codes(code_database, account) == [used]
     assert [

@@ -55,6 +55,8 @@ class AuthenticationResult:
     preauth_token: str | None = field(default=None, repr=False)
     csrf_token: str = field(default="", repr=False)
     session: SessionView | None = None
+    # A sign-in with the sign-in code also counts as a reauthentication (login sub-slice L3d-2).
+    reauthentication_token: str | None = field(default=None, repr=False)
 
 
 @dataclass(frozen=True, slots=True)
@@ -447,6 +449,23 @@ def _set_secret_cookie(
     )
 
 
+def _set_reauthentication_cookie(response: Response, token: str | None) -> None:
+    """The reauthentication cookie of a sign-in with the sign-in code (login sub-slice L3d-2);
+    a sign-in code challenge or set-up without one (a recovery code) clears any cookie an earlier
+    session left (review round 1); the cookie is bound to its session anyway."""
+    if token:
+        _set_secret_cookie(
+            response,
+            name=REAUTHENTICATION_COOKIE_NAME,
+            value=token,
+            httponly=True,
+            samesite="strict",
+            max_age=REAUTHENTICATION_COOKIE_MAX_AGE_SECONDS,
+        )
+    else:
+        response.delete_cookie(REAUTHENTICATION_COOKIE_NAME, path="/", secure=True, httponly=True)
+
+
 def create_auth_router(settings: Settings, flow: AuthenticationFlow) -> APIRouter:
     """Create local authentication routes around an atomic application boundary."""
     router = APIRouter(prefix="/api/v1/auth", tags=["authentication"])
@@ -563,6 +582,7 @@ def create_auth_router(settings: Settings, flow: AuthenticationFlow) -> APIRoute
             samesite="strict",
         )
         response.delete_cookie(PREAUTH_COOKIE_NAME, path="/", secure=True, httponly=True)
+        _set_reauthentication_cookie(response, result.reauthentication_token)
         return AuthenticationResponse(
             data=AuthenticationData(
                 phase=result.phase,
@@ -644,6 +664,7 @@ def create_auth_router(settings: Settings, flow: AuthenticationFlow) -> APIRoute
             samesite="strict",
         )
         response.delete_cookie(PREAUTH_COOKIE_NAME, path="/", secure=True, httponly=True)
+        _set_reauthentication_cookie(response, result.reauthentication_token)
         return AuthenticationResponse(
             data=AuthenticationData(
                 phase=result.phase,
@@ -738,14 +759,7 @@ def create_auth_router(settings: Settings, flow: AuthenticationFlow) -> APIRoute
             httponly=False,
             samesite="strict",
         )
-        _set_secret_cookie(
-            response,
-            name=REAUTHENTICATION_COOKIE_NAME,
-            value=result.reauthentication_token,
-            httponly=True,
-            samesite="strict",
-            max_age=REAUTHENTICATION_COOKIE_MAX_AGE_SECONDS,
-        )
+        _set_reauthentication_cookie(response, result.reauthentication_token)
         return SessionResponse(
             data=SessionData.model_validate(result.session, from_attributes=True),
             meta=ResponseMeta(request_id=request.state.request_id),

@@ -1,7 +1,7 @@
 """API-079/080 account and configurable capability administration surface."""
 
 import hmac
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Annotated, Final, Literal, Protocol
 from uuid import UUID
@@ -18,7 +18,11 @@ from pydantic import (
 )
 
 from property_rental.api import ResponseMeta
-from property_rental.auth_api import CSRF_COOKIE_NAME
+from property_rental.auth_api import (
+    CSRF_COOKIE_NAME,
+    REAUTHENTICATION_COOKIE_NAME,
+    SESSION_COOKIE_NAME,
+)
 from property_rental.identity import (
     ActorResolver,
     AuthenticatedActor,
@@ -168,10 +172,17 @@ class AdministrativeRecoveryView:
 
 @dataclass(frozen=True, slots=True)
 class AdministrationAuditContext:
-    """Evidence that every mutation must persist as an immutable atomic audit event."""
+    """Evidence that every mutation must persist as an immutable atomic audit event.
+
+    The browser's session and reauthentication cookies travel with it, never shown, so the
+    flow can check a recent reauthentication in the action's own transaction (login sub-slice
+    L3d-2, owner answer (a) to Q-2026-10-21-157).
+    """
 
     actor_id: str
     request_id: str
+    session_token: str | None = field(default=None, repr=False)
+    reauthentication_token: str | None = field(default=None, repr=False)
 
 
 class AccessAdministrationFlow(Protocol):
@@ -909,6 +920,17 @@ def _role_bundle_data(view: RoleBundleView) -> RoleBundleData:
     return RoleBundleData.model_validate(view, from_attributes=True)
 
 
+def _audit_context(actor_id: str, request: Request) -> AdministrationAuditContext:
+    """The audit evidence of a mutation, with the browser's session and reauthentication
+    cookies for the recent-reauthentication check (login sub-slice L3d-2)."""
+    return AdministrationAuditContext(
+        actor_id=actor_id,
+        request_id=request.state.request_id,
+        session_token=request.cookies.get(SESSION_COOKIE_NAME),
+        reauthentication_token=request.cookies.get(REAUTHENTICATION_COOKIE_NAME),
+    )
+
+
 def create_access_admin_router(
     actor_resolver: ActorResolver,
     flow: AccessAdministrationFlow,
@@ -960,10 +982,7 @@ def create_access_admin_router(
             display_name=payload.display_name,
             audit_name=payload.audit_name,
             account_class=payload.account_class,
-            audit_context=AdministrationAuditContext(
-                actor_id=actor.actor_id,
-                request_id=request.state.request_id,
-            ),
+            audit_context=_audit_context(actor.actor_id, request),
         )
         _require_matching_property(user.property_id, property_id)
         # Q-2026-10-21-152 (a): the class asked for, with the MFA policy it sets (fail closed).
@@ -1005,10 +1024,7 @@ def create_access_admin_router(
             lifecycle_state=payload.lifecycle_state,
             mfa_policy_class=payload.mfa_policy_class,
             revoke_applicable_sessions_if_disabled=True,
-            audit_context=AdministrationAuditContext(
-                actor_id=actor.actor_id,
-                request_id=request.state.request_id,
-            ),
+            audit_context=_audit_context(actor.actor_id, request),
         )
         _require_matching_property(user.property_id, property_id)
         _require_matching_identifier(user.user_id, user_id)
@@ -1037,10 +1053,7 @@ def create_access_admin_router(
         )
         revoked = flow.revoke_user_sessions(
             user_id=user_id,
-            audit_context=AdministrationAuditContext(
-                actor_id=actor.actor_id,
-                request_id=request.state.request_id,
-            ),
+            audit_context=_audit_context(actor.actor_id, request),
         )
         return SessionRevocationResponse(
             data=SessionRevocationData(user_id=user_id, sessions_revoked=revoked),
@@ -1111,10 +1124,7 @@ def create_access_admin_router(
             property_id=property_id,
             name=payload.name,
             capability_ids=payload.capability_ids,
-            audit_context=AdministrationAuditContext(
-                actor_id=actor.actor_id,
-                request_id=request.state.request_id,
-            ),
+            audit_context=_audit_context(actor.actor_id, request),
         )
         _require_matching_property(bundle.property_id, property_id)
         response.headers["Location"] = f"/api/v1/role-bundles/{bundle.role_bundle_id}"
@@ -1151,10 +1161,7 @@ def create_access_admin_router(
             name=payload.name,
             capability_ids=payload.capability_ids,
             revoke_affected_sessions_on_capability_reduction=True,
-            audit_context=AdministrationAuditContext(
-                actor_id=actor.actor_id,
-                request_id=request.state.request_id,
-            ),
+            audit_context=_audit_context(actor.actor_id, request),
         )
         _require_matching_property(bundle.property_id, property_id)
         _require_matching_identifier(bundle.role_bundle_id, role_bundle_id)
@@ -1201,10 +1208,7 @@ def create_access_admin_router(
             user_id=user_id,
             role_bundle_id=payload.role_bundle_id,
             property_id=property_id,
-            audit_context=AdministrationAuditContext(
-                actor_id=actor.actor_id,
-                request_id=request.state.request_id,
-            ),
+            audit_context=_audit_context(actor.actor_id, request),
         )
         _require_matching_property(assignment.property_id, property_id)
         _require_matching_identifier(assignment.user_id, user_id)
@@ -1245,10 +1249,7 @@ def create_access_admin_router(
             role_bundle_id=payload.role_bundle_id,
             property_id=property_id,
             reason=payload.reason,
-            audit_context=AdministrationAuditContext(
-                actor_id=actor.actor_id,
-                request_id=request.state.request_id,
-            ),
+            audit_context=_audit_context(actor.actor_id, request),
         )
         _require_matching_property(assignment.property_id, property_id)
         _require_matching_identifier(assignment.user_id, user_id)
@@ -1276,10 +1277,7 @@ def create_access_admin_router(
             user_id=user_id,
             property_id=property_id,
             reason=payload.reason,
-            audit_context=AdministrationAuditContext(
-                actor_id=actor.actor_id,
-                request_id=request.state.request_id,
-            ),
+            audit_context=_audit_context(actor.actor_id, request),
         )
         _require_matching_property(user.property_id, property_id)
         _require_matching_identifier(user.user_id, user_id)
@@ -1358,10 +1356,7 @@ def create_access_admin_router(
             new_password=payload.new_password,
             reset_mfa=payload.reset_mfa,
             reason=payload.reason,
-            audit_context=AdministrationAuditContext(
-                actor_id=actor.actor_id,
-                request_id=request.state.request_id,
-            ),
+            audit_context=_audit_context(actor.actor_id, request),
         )
         _require_matching_identifier(result.user_id, user_id)
         return AdministrativeRecoveryResponse(

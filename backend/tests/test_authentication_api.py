@@ -1,7 +1,7 @@
 """API-096/097 authentication transport tests."""
 
 import asyncio
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime, timedelta
 from typing import Literal
 from uuid import UUID
@@ -154,6 +154,27 @@ def authenticated_result() -> AuthenticationResult:
             reauthenticated_at=None,
         ),
     )
+
+
+def reauthentication_cookies(response: httpx.Response) -> list[str]:
+    """The reauthentication cookies a response sets (login sub-slices L3d-1 and L3d-2)."""
+    return [
+        value
+        for value in response.headers.get_list("set-cookie")
+        if value.startswith("__Host-prm_reauth=")
+    ]
+
+
+def assert_sign_in_reauthentication_cookie(response: httpx.Response) -> None:
+    """Login sub-slice L3d-2 (Q-2026-10-24-184): a sign-in with the sign-in code also sets the
+    reauthentication cookie: HttpOnly, Secure, SameSite=Strict, the whole site, 15 minutes;
+    never in the body."""
+    cookies = reauthentication_cookies(response)
+    assert len(cookies) == 1
+    assert cookies[0].startswith("__Host-prm_reauth=sign-in-reauthentication-secret;")
+    for attribute in ("HttpOnly", "Secure", "SameSite=strict", "Path=/", "Max-Age=900"):
+        assert attribute in cookies[0]
+    assert "sign-in-reauthentication-secret" not in response.text
 
 
 def mfa_required_result() -> AuthenticationResult:
@@ -342,7 +363,10 @@ def test_totp_challenge_requires_preauthentication_and_csrf_then_establishes_ses
             assert method == "totp"
             assert code == "123456"
             assert request_id == "mfa-success"
-            return authenticated_result()
+            return replace(
+                authenticated_result(),
+                reauthentication_token="sign-in-reauthentication-secret",
+            )
 
     app = create_app(
         Settings(allowed_browser_origin="https://property.test"),
@@ -367,6 +391,7 @@ def test_totp_challenge_requires_preauthentication_and_csrf_then_establishes_ses
     cookies = response.headers.get_list("set-cookie")
     assert any("__Host-prm_session=session-token-secret" in value for value in cookies)
     assert any('__Host-prm_preauth=""' in value and "Max-Age=0" in value for value in cookies)
+    assert_sign_in_reauthentication_cookie(response)
 
 
 def test_recovery_code_challenge_is_transported_exactly_and_establishes_session() -> None:
@@ -403,6 +428,11 @@ def test_recovery_code_challenge_is_transported_exactly_and_establishes_session(
 
     assert response.status_code == 200
     assert response.json()["data"]["phase"] == "authenticated"
+    # A recovery code sign-in is not a reauthentication (login sub-slice L3d-2): it only clears
+    # a reauthentication cookie an earlier session left (review round 1).
+    cleared = reauthentication_cookies(response)
+    assert len(cleared) == 1 and cleared[0].startswith('__Host-prm_reauth="";')
+    assert "Max-Age=0" in cleared[0]
 
 
 @pytest.mark.parametrize("method", ["totp", "recovery_code"])
@@ -491,7 +521,10 @@ def test_confirmed_mfa_enrollment_activates_totp_and_establishes_session() -> No
             assert preauth_token == "preauth-token-secret"
             assert code == "654321"
             assert request_id == "enrollment-confirm"
-            return authenticated_result()
+            return replace(
+                authenticated_result(),
+                reauthentication_token="sign-in-reauthentication-secret",
+            )
 
     app = create_app(
         Settings(allowed_browser_origin="https://property.test"),
@@ -517,6 +550,7 @@ def test_confirmed_mfa_enrollment_activates_totp_and_establishes_session() -> No
         "__Host-prm_session=session-token-secret" in value
         for value in response.headers.get_list("set-cookie")
     )
+    assert_sign_in_reauthentication_cookie(response)
 
 
 def test_authenticated_session_inspection_returns_only_bounded_non_secret_state() -> None:

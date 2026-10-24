@@ -1113,6 +1113,15 @@ Verify high-risk administration requires recent authentication or an additional 
 where specified and still requires the independent server-side capability and business
 authorization checks.
 
+Amended by DL-081 (login sub-slice L3d-2): the PostgreSQL tests show each listed action refused
+without a recent reauthentication or with a copied session cookie alone, writing nothing; a
+names-only change and signing an account out are not checked; only the latest `totp`
+reauthentication of the same session within 15 minutes counts (another session's cookie,
+another account's cookies, a 16-minute-old row, a signed-out session, a sign-in code turned off
+since and a password-only reauthentication are refused; 14 minutes is allowed); a sign-in with
+the sign-in code reauthenticates its own session only; the capability is still checked (a
+reauthenticated Manager is refused).
+
 ## TEST-133 — Initial Owner CLI Bootstrap
 
 Verify bootstrap creates the initial unique Owner only when none exists, accepts the
