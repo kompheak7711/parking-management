@@ -1,0 +1,21 @@
+# V1-059 (DL-071 answer 4): the daily encrypted copy to the second office computer or the
+# always-connected external drive, mounted at /mnt/prm-offhost. Started by prm-offhost-daily.timer.
+[Unit]
+Description=CHETANA Residence Management daily off-host backup copy
+RequiresMountsFor=/mnt/prm-offhost
+
+[Service]
+Type=oneshot
+User=prm-ops
+Group=prm-ops
+UMask=0077
+ExecStart=/opt/prm/venv/bin/property-rental-backup --config /etc/prm/production-operations.json offhost-copy --kind daily --destination /mnt/prm-offhost
+StandardOutput=journal
+StandardError=journal
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/prm /mnt/prm-offhost
+PrivateTmp=true
+# The secret files live in /etc/prm/secrets (kept across restarts); the job sees them at
+# /run/secrets, the paths of production-operations.json.
+BindReadOnlyPaths=/etc/prm/secrets:/run/secrets

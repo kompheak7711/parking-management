@@ -48370,6 +48370,546 @@
       "test_path": "frontend/src/SignInScreens.test.tsx",
       "status": "implemented",
       "notes": "The session timer ends the app when the server answers with another person's session or cannot be reached (review round 2) (login slice sub-slice L6, Q-2026-10-24-187, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "test_a_sealed_backup_opens_to_the_same_bytes",
+      "upstream_ids": [
+        "DEPLOY-041",
+        "DEPLOY-042",
+        "DL-071"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_backup_encryption.py",
+      "status": "implemented",
+      "notes": "V1-059 part A: the backup file sealing (AES-256-GCM) and its key file (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
+    },
+    {
+      "test_id": "test_two_seals_of_the_same_dump_differ",
+      "upstream_ids": [
+        "DEPLOY-041",
+        "DEPLOY-042",
+        "DL-071"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_backup_encryption.py",
+      "status": "implemented",
+      "notes": "V1-059 part A: the backup file sealing (AES-256-GCM) and its key file (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
+    },
+    {
+      "test_id": "test_any_changed_byte_fails_and_leaves_no_opened_file",
+      "upstream_ids": [
+        "DEPLOY-041",
+        "DEPLOY-042",
+        "DL-071"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_backup_encryption.py",
+      "status": "implemented",
+      "notes": "V1-059 part A: the backup file sealing (AES-256-GCM) and its key file (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
+    },
+    {
+      "test_id": "test_another_key_and_a_truncated_file_fail",
+      "upstream_ids": [
+        "DEPLOY-041",
+        "DEPLOY-042",
+        "DL-071"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_backup_encryption.py",
+      "status": "implemented",
+      "notes": "V1-059 part A: the backup file sealing (AES-256-GCM) and its key file (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
+    },
+    {
+      "test_id": "test_the_key_file_must_be_private_and_hold_a_32_byte_base64_key",
+      "upstream_ids": [
+        "DEPLOY-041",
+        "DEPLOY-042",
+        "DL-071"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_backup_encryption.py",
+      "status": "implemented",
+      "notes": "V1-059 part A: the backup file sealing (AES-256-GCM) and its key file (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
+    },
+    {
+      "test_id": "test_the_first_backup_of_a_local_day_and_month_is_also_daily_and_monthly",
+      "upstream_ids": [
+        "DEPLOY-043",
+        "DEPLOY-047",
+        "DL-071"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_backup_retention.py",
+      "status": "implemented",
+      "notes": "V1-059 part A: the backup retention classes (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
+    },
+    {
+      "test_id": "test_hourly_copies_are_kept_2_days_daily_30_days_monthly_12_months",
+      "upstream_ids": [
+        "DEPLOY-043",
+        "DEPLOY-047",
+        "DL-071"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_backup_retention.py",
+      "status": "implemented",
+      "notes": "V1-059 part A: the backup retention classes (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
+    },
+    {
+      "test_id": "test_the_newest_good_backup_is_never_deleted_whatever_its_age",
+      "upstream_ids": [
+        "DEPLOY-043",
+        "DEPLOY-047",
+        "DL-071"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_backup_retention.py",
+      "status": "implemented",
+      "notes": "V1-059 part A: the backup retention classes (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
+    },
+    {
+      "test_id": "test_month_arithmetic_keeps_the_last_day_of_a_short_month",
+      "upstream_ids": [
+        "DEPLOY-043",
+        "DEPLOY-047",
+        "DL-071"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_backup_retention.py",
+      "status": "implemented",
+      "notes": "V1-059 part A: the backup retention classes (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
+    },
+    {
+      "test_id": "test_times_without_a_time_zone_are_refused",
+      "upstream_ids": [
+        "DEPLOY-043",
+        "DEPLOY-047",
+        "DL-071"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_backup_retention.py",
+      "status": "implemented",
+      "notes": "V1-059 part A: the backup retention classes (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
+    },
+    {
+      "test_id": "test_only_verified_manifests_with_their_file_count_as_stored_copies",
+      "upstream_ids": [
+        "DEPLOY-040",
+        "DEPLOY-042",
+        "DEPLOY-043",
+        "DEPLOY-045",
+        "DL-071"
+      ],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_backup_job.py",
+      "status": "implemented",
+      "notes": "V1-059 part A: the backup job storage, off-host copy and secrets (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
+    },
+    {
+      "test_id": "test_prune_deletes_expired_copies_but_never_the_newest",
+      "upstream_ids": [
+        "DEPLOY-040",
+        "DEPLOY-042",
+        "DEPLOY-043",
+        "DEPLOY-045",
+        "DL-071"
+      ],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_backup_job.py",
+      "status": "implemented",
+      "notes": "V1-059 part A: the backup job storage, off-host copy and secrets (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
+    },
+    {
+      "test_id": "test_offhost_copy_checks_the_copy_and_keeps_the_newest",
+      "upstream_ids": [
+        "DEPLOY-040",
+        "DEPLOY-042",
+        "DEPLOY-043",
+        "DEPLOY-045",
+        "DL-071"
+      ],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_backup_job.py",
+      "status": "implemented",
+      "notes": "V1-059 part A: the backup job storage, off-host copy and secrets (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
+    },
+    {
+      "test_id": "test_the_password_goes_to_a_private_file_not_the_environment_or_arguments",
+      "upstream_ids": [
+        "DEPLOY-040",
+        "DEPLOY-042",
+        "DEPLOY-043",
+        "DEPLOY-045",
+        "DL-071"
+      ],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_backup_job.py",
+      "status": "implemented",
+      "notes": "V1-059 part A: the backup job storage, off-host copy and secrets (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
+    },
+    {
+      "test_id": "test_a_restore_test_refuses_a_database_not_named_for_tests",
+      "upstream_ids": [
+        "DEPLOY-040",
+        "DEPLOY-042",
+        "DEPLOY-043",
+        "DEPLOY-045",
+        "DL-071"
+      ],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_backup_job.py",
+      "status": "implemented",
+      "notes": "V1-059 part A: the backup job storage, off-host copy and secrets (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
+    },
+    {
+      "test_id": "test_an_unreadable_database_file_is_a_fixed_failure_code",
+      "upstream_ids": [
+        "DEPLOY-040",
+        "DEPLOY-042",
+        "DEPLOY-043",
+        "DEPLOY-045",
+        "DL-071"
+      ],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_backup_job.py",
+      "status": "implemented",
+      "notes": "V1-059 part A: the backup job storage, off-host copy and secrets (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
+    },
+    {
+      "test_id": "test_orphan_files_and_leftover_work_folders_are_removed",
+      "upstream_ids": [
+        "DEPLOY-040",
+        "DEPLOY-042",
+        "DEPLOY-043",
+        "DEPLOY-045",
+        "DL-071"
+      ],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_backup_job.py",
+      "status": "implemented",
+      "notes": "V1-059 part A: the backup job storage, off-host copy and secrets (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
+    },
+    {
+      "test_id": "test_a_healthy_system_has_no_warning",
+      "upstream_ids": [
+        "DEPLOY-051",
+        "API-081",
+        "DL-071"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_operations_status.py",
+      "status": "implemented",
+      "notes": "V1-059 part A: the operations status files and health warnings (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
+    },
+    {
+      "test_id": "test_nothing_recorded_yet_shows_every_overdue_record",
+      "upstream_ids": [
+        "DEPLOY-051",
+        "API-081",
+        "DL-071"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_operations_status.py",
+      "status": "implemented",
+      "notes": "V1-059 part A: the operations status files and health warnings (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
+    },
+    {
+      "test_id": "test_each_record_becomes_a_warning_when_too_old",
+      "upstream_ids": [
+        "DEPLOY-051",
+        "API-081",
+        "DL-071"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_operations_status.py",
+      "status": "implemented",
+      "notes": "V1-059 part A: the operations status files and health warnings (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
+    },
+    {
+      "test_id": "test_failures_and_check_findings_become_warnings",
+      "upstream_ids": [
+        "DEPLOY-051",
+        "API-081",
+        "DL-071"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_operations_status.py",
+      "status": "implemented",
+      "notes": "V1-059 part A: the operations status files and health warnings (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
+    },
+    {
+      "test_id": "test_a_stale_check_hides_its_old_findings_and_telegram_not_set_up_is_shown",
+      "upstream_ids": [
+        "DEPLOY-051",
+        "API-081",
+        "DL-071"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_operations_status.py",
+      "status": "implemented",
+      "notes": "V1-059 part A: the operations status files and health warnings (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
+    },
+    {
+      "test_id": "test_warning_texts_carry_no_data_and_page_only_warnings_exist",
+      "upstream_ids": [
+        "DEPLOY-051",
+        "API-081",
+        "DL-071"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_operations_status.py",
+      "status": "implemented",
+      "notes": "V1-059 part A: the operations status files and health warnings (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
+    },
+    {
+      "test_id": "test_status_files_are_replaced_in_one_step_and_checked",
+      "upstream_ids": [
+        "DEPLOY-051",
+        "API-081",
+        "DL-071"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_operations_status.py",
+      "status": "implemented",
+      "notes": "V1-059 part A: the operations status files and health warnings (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
+    },
+    {
+      "test_id": "test_a_message_goes_to_the_owner_and_the_manager",
+      "upstream_ids": [
+        "DEPLOY-016",
+        "DEPLOY-051",
+        "SEC-059",
+        "DL-071"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_telegram_alerts.py",
+      "status": "implemented",
+      "notes": "V1-059 part A: the Telegram alerts to the Owner and the Manager (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
+    },
+    {
+      "test_id": "test_placeholders_mean_not_set_up_and_nothing_is_sent",
+      "upstream_ids": [
+        "DEPLOY-016",
+        "DEPLOY-051",
+        "SEC-059",
+        "DL-071"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_telegram_alerts.py",
+      "status": "implemented",
+      "notes": "V1-059 part A: the Telegram alerts to the Owner and the Manager (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
+    },
+    {
+      "test_id": "test_missing_files_mean_not_set_up",
+      "upstream_ids": [
+        "DEPLOY-016",
+        "DEPLOY-051",
+        "SEC-059",
+        "DL-071"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_telegram_alerts.py",
+      "status": "implemented",
+      "notes": "V1-059 part A: the Telegram alerts to the Owner and the Manager (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
+    },
+    {
+      "test_id": "test_a_network_failure_is_a_failed_delivery_and_shows_no_token",
+      "upstream_ids": [
+        "DEPLOY-016",
+        "DEPLOY-051",
+        "SEC-059",
+        "DL-071"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_telegram_alerts.py",
+      "status": "implemented",
+      "notes": "V1-059 part A: the Telegram alerts to the Owner and the Manager (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
+    },
+    {
+      "test_id": "test_an_alert_starts_repeats_after_12_hours_and_ends_once",
+      "upstream_ids": [
+        "DEPLOY-050",
+        "DEPLOY-051",
+        "SEC-059",
+        "DL-071"
+      ],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_operations_check.py",
+      "status": "implemented",
+      "notes": "V1-059 part A: the operations check and Telegram alert routing (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
+    },
+    {
+      "test_id": "test_a_failed_delivery_is_tried_again_once_an_hour_and_shown_on_the_page",
+      "upstream_ids": [
+        "DEPLOY-050",
+        "DEPLOY-051",
+        "SEC-059",
+        "DL-071"
+      ],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_operations_check.py",
+      "status": "implemented",
+      "notes": "V1-059 part A: the operations check and Telegram alert routing (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
+    },
+    {
+      "test_id": "test_a_fixed_message_waits_until_delivered_and_an_unsent_alert_ends_silently",
+      "upstream_ids": [
+        "DEPLOY-050",
+        "DEPLOY-051",
+        "SEC-059",
+        "DL-071"
+      ],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_operations_check.py",
+      "status": "implemented",
+      "notes": "V1-059 part A: the operations check and Telegram alert routing (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
+    },
+    {
+      "test_id": "test_without_telegram_the_check_finishes_and_the_page_warns",
+      "upstream_ids": [
+        "DEPLOY-050",
+        "DEPLOY-051",
+        "SEC-059",
+        "DL-071"
+      ],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_operations_check.py",
+      "status": "implemented",
+      "notes": "V1-059 part A: the operations check and Telegram alert routing (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
+    },
+    {
+      "test_id": "test_no_finding_and_telegram_set_up_shows_nothing",
+      "upstream_ids": [
+        "DEPLOY-050",
+        "DEPLOY-051",
+        "SEC-059",
+        "DL-071"
+      ],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_operations_check.py",
+      "status": "implemented",
+      "notes": "V1-059 part A: the operations check and Telegram alert routing (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
+    },
+    {
+      "test_id": "test_low_disk_and_an_unreadable_certificate_are_found",
+      "upstream_ids": [
+        "DEPLOY-050",
+        "DEPLOY-051",
+        "SEC-059",
+        "DL-071"
+      ],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_operations_check.py",
+      "status": "implemented",
+      "notes": "V1-059 part A: the operations check and Telegram alert routing (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
+    },
+    {
+      "test_id": "test_record_migration_writes_the_outcome",
+      "upstream_ids": [
+        "DEPLOY-050",
+        "DEPLOY-051",
+        "SEC-059",
+        "DL-071"
+      ],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_operations_check.py",
+      "status": "implemented",
+      "notes": "V1-059 part A: the operations check and Telegram alert routing (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
+    },
+    {
+      "test_id": "test_only_a_signed_in_holder_of_operations_status_read_gets_the_status",
+      "upstream_ids": [
+        "API-081",
+        "UI-093",
+        "SEC-002",
+        "DL-071",
+        "DL-081"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_operations_status_api.py",
+      "status": "implemented",
+      "notes": "V1-059 part A: GET /api/v1/operations/status (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
+    },
+    {
+      "test_id": "test_the_status_shows_records_and_warnings_without_secrets_or_paths",
+      "upstream_ids": [
+        "API-081",
+        "UI-093",
+        "SEC-002",
+        "DL-071",
+        "DL-081"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_operations_status_api.py",
+      "status": "implemented",
+      "notes": "V1-059 part A: GET /api/v1/operations/status (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
+    },
+    {
+      "test_id": "test_only_operational_log_files_older_than_90_days_are_expired",
+      "upstream_ids": [
+        "DEPLOY-052",
+        "DL-071"
+      ],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_log_retention.py",
+      "status": "implemented",
+      "notes": "V1-059 part A: the 90-day operational log retention (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
+    },
+    {
+      "test_id": "test_the_committed_configuration_passes_and_loads",
+      "upstream_ids": [
+        "DEPLOY-015",
+        "DEPLOY-016",
+        "DEPLOY-043",
+        "DEPLOY-052",
+        "DL-071"
+      ],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_operations_deployment_config.py",
+      "status": "implemented",
+      "notes": "V1-059 part A: the production operations configuration checks (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
+    },
+    {
+      "test_id": "test_a_configuration_that_breaks_dl_071_is_refused",
+      "upstream_ids": [
+        "DEPLOY-015",
+        "DEPLOY-016",
+        "DEPLOY-043",
+        "DEPLOY-052",
+        "DL-071"
+      ],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_operations_deployment_config.py",
+      "status": "implemented",
+      "notes": "V1-059 part A: the production operations configuration checks (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
+    },
+    {
+      "test_id": "test_a_committed_telegram_token_is_refused",
+      "upstream_ids": [
+        "DEPLOY-015",
+        "DEPLOY-016",
+        "DEPLOY-043",
+        "DEPLOY-052",
+        "DL-071"
+      ],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_operations_deployment_config.py",
+      "status": "implemented",
+      "notes": "V1-059 part A: the production operations configuration checks (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
+    },
+    {
+      "test_id": "test_resolved_production_warns_but_passes_without_telegram",
+      "upstream_ids": [
+        "DEPLOY-015",
+        "DEPLOY-016",
+        "DEPLOY-043",
+        "DEPLOY-052",
+        "DL-071"
+      ],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_operations_deployment_config.py",
+      "status": "implemented",
+      "notes": "V1-059 part A: the production operations configuration checks (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
     }
   ]
 }

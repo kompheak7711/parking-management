@@ -137,6 +137,8 @@ published directly to the Internet.
 
 Amended by DL-071 (owner, 2026-10-05): remote access is off in V1; the system is reached only on the office network (resolves `OOD-DEPLOY-003` for V1).
 
+Built in V1-059 part A (2026-10-24): `config/deployment/production-operations.json` says `remote_access.enabled: false`, and `scripts/validate-deployment-config.py check-examples` refuses any other value. Runbook: `docs/V1_059_OPERATIONS_RUNBOOK.md`.
+
 ## DEPLOY-016 — External Egress
 
 Outbound access is restricted to explicitly configured dependencies. Failure of
@@ -144,6 +146,8 @@ automatic ABA reference-rate retrieval must activate the authorized manual
 reference-rate fallback without bypassing markup, rounding, or audit rules.
 
 Amended by DL-071 (owner, 2026-10-05): the allowed list also has one outbound connection to Telegram, used only for the critical alert messages of DEPLOY-051. The Telegram bot token is a secret: a placeholder in V1-059, never in the repository or in a log.
+
+Built in V1-059 part A (2026-10-24): the outbound allowed list in `config/deployment/production-operations.json` is exactly `api.telegram.org` (no automatic exchange-rate host exists yet; it is added when that function is built); the validator refuses another host, a secret value in the file, and anything shaped like a Telegram bot token under `config/deployment/`. The bot token and the Owner and Manager chat ids are files under `/run/secrets/`; the repository holds placeholders only.
 
 # 5. Environment Model
 
@@ -381,6 +385,8 @@ the final known good backup.
 
 Amended by DL-071 (owner, 2026-10-05): hourly copies are kept 2 days, daily copies 30 days and monthly copies 12 months; the last good copy is never deleted. A daily encrypted copy goes to an external drive or a second computer in the office, and a weekly encrypted copy is kept outside the building. No cloud storage service is used.
 
+Built in V1-059 part A (2026-10-24): `property-rental-backup run` (hourly timer) makes a `pg_dump` custom-format backup with the read-only backup identity on one exported snapshot, with the row count of every table of that snapshot; checks it with `pg_restore --list`; seals it with AES-256-GCM (`cryptography`) and opens it again to compare SHA-256; stores it with a DEPLOY-042 manifest; links the first good backup of a Phnom Penh day and month into the daily and monthly classes; and deletes expired copies, never a copy of the newest good backup (`backup_retention.py`). `offhost-copy --kind daily|weekly` copies the newest good backup, still encrypted, and checks the copy by SHA-256; off-host daily copies are kept 30 days and weekly copies about 12 months, never the newest (decided by Claude under the owner's 2026-10-23 22:30 rule). Runbook: `docs/V1_059_OPERATIONS_RUNBOOK.md`.
+
 # 10. Restore and Disaster Recovery
 
 ## DEPLOY-044 — Restore Procedure
@@ -412,6 +418,8 @@ must not become a competing source of financial truth.
 A successful backup command without a restore test is insufficient.
 
 Amended by DL-071 (owner, 2026-10-05): a full restore test runs every 3 months and before every release.
+
+Built in V1-059 part A (2026-10-24): `property-rental-backup restore-test` restores the newest good backup, in one transaction with owners and grants, into an empty throwaway database whose name starts with `prm_restore_test`, and compares the schema revision and the row count of every table with the backup's manifest; the health page warns when the last test failed or is more than 92 days old. The Customer Account Ledger reconstruction is a person check in the runbook until V1-060 automates it. `scripts/backup-restore-check.sh` runs the whole path on a throwaway PostgreSQL 17.6. Runbook: `docs/V1_059_OPERATIONS_RUNBOOK.md`.
 
 ## DEPLOY-046 — Recovery Validation
 
@@ -493,6 +501,8 @@ in real time.
 
 Amended by DL-071 (owner, 2026-10-05): critical alerts go by Telegram message to the Owner and the Manager, and the health page shows a warning. An alert carries no Customer data. When a message cannot be sent, the system keeps working and the health page warning stays (SEC-059).
 
+Built in V1-059 part A (2026-10-24): `property-rental-ops-check run` (every 5 minutes) checks the database, the readiness page, the backup, off-host copy, restore test and migration records, repeated scheduled-job failures, free disk and the TLS certificate; the same rules (`operations_status.evaluate_warnings`) feed `GET /api/v1/operations/status` and the Telegram messages. A critical warning is sent when it starts, every 12 hours while it lasts and once when it ends; a message holds only fixed warning texts. A failed or impossible delivery is retried on the next check and shown on the health page. The audit-write failure alert waits until the application records such failures (V1-059 part B or V1-060).
+
 ## DEPLOY-052 — Log Retention
 
 Operational log retention is configurable and bounded. Audit and financial
@@ -500,6 +510,8 @@ retention follows authoritative history requirements and is not reduced to match
 operational log retention.
 
 Amended by DL-071 (owner, 2026-10-05): technical (operational) logs are kept 90 days; audit and money history are kept forever.
+
+Built in V1-059 part A (2026-10-24): `property-rental-log-retention` (daily) deletes operational log files older than 90 days in the configured log folder only (`.log`, `.jsonl` and their `.gz`; no sub-folders, no links); the example journal setting keeps the system journal 90 days and sends the containers' logs there. The database's audit and money history are out of its reach.
 
 # 12. Deployment and Update Procedure
 

@@ -1,0 +1,11 @@
+# V1-059: a backup every hour (at most 1 hour of data loss, DL-071 answer 1).
+[Unit]
+Description=CHETANA Residence Management hourly backup timer
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+RandomizedDelaySec=60
+
+[Install]
+WantedBy=timers.target

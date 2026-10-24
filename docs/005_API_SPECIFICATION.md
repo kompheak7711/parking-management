@@ -1521,6 +1521,8 @@ Amended by DL-081 (login sub-slice L3d-2 review round 1, Q-2026-10-24-184): the 
 
 Amended by DL-074 (owner, 2026-10-04): the detailed status is for the Owner and the Manager by default, through a capability in their bundles.
 
+Built in V1-059 part A (2026-10-24; DL-081 Q-2026-10-21-158 (a)): `GET /api/v1/operations/status` needs a signed-in user (401) holding `operations.status.read` (403 otherwise; the Owner and Manager bundles hold it) and answers `Cache-Control: private, no-store` with `data`: `build_version`, `environment`, `generated_at`, `database` (`ok`, `unavailable` or `not_configured`), the `backup`, `offhost_daily`, `offhost_weekly`, `restore_test` and `migration` records (times, outcome, fixed failure code, backup name, schema revision), `last_check_at`, `schema_revision`, `scheduled_jobs` (last successful billing run attempt and Reservation expiration run), `telegram` (`configured`, `last_delivery_outcome`, `last_attempt_at`) and `warnings` (`code`, a fixed plain `message`, `critical`); and `meta.request_id`. It never shows a secret, a database address, a file path or a Customer detail. Without `APP_OPERATIONS_STATUS_DIRECTORY` the only warning is `operations_status_not_set_up`.
+
 # 26. Validation Rules
 
 ## API-082 — Relationship Validation

@@ -34,13 +34,27 @@ from property_rental.identity import CapabilityGrant
 SOURCE = Path(__file__).parents[1] / "src" / "property_rental"
 DOTTED = re.compile(r"^[a-z][a-z_]*(\.[a-z][a-z_]*)+$")
 # Dotted strings that are not capabilities: request-digest and audit-action labels, log events
-# and database function names. A new label is added here; a new capability goes in the catalog.
+# and database function names (V1-059 part A adds its log events, configuration field names and
+# work file names). A new label is added here; a new capability goes in the catalog.
 NON_CAPABILITY_LABELS = frozenset(
     {
+        "alerts.disk_paths",
+        "alerts.telegram",
+        "alerts.telegram.api_host",
         "app.utility_catch_up_invoice_create",
         "app.utility_final_invoice_create",
         "application.started",
         "application.stopping",
+        "backup.config_invalid",
+        "backup.database_url_file",
+        "backup.directory",
+        "backup.encryption_key_file",
+        "backup.offhost_copy_succeeded",
+        "backup.pgdump",
+        "backup.skipped",
+        "backup.succeeded",
+        "backup.tool_failed",
+        "backup.verified",
         "deposit.pet.create",
         "deposit.pet_departure.record",
         "deposit.pet_refund.review",
@@ -60,12 +74,22 @@ NON_CAPABILITY_LABELS = frozenset(
         "lease.signer.remove",
         "lease.signer.sign",
         "lease.terminate",
+        "log_retention.completed",
+        "log_retention.config_invalid",
+        "logs.directory",
+        "opened.pgdump",
+        "operations_check.completed",
+        "operations_check.config_invalid",
+        "operations_check.migration_recorded",
         "request.completed",
         "request.exception",
         "reservation.cancel",
         "reservation.create",
         "reservation.expire",
         "reservation.extend",
+        "restore.pgdump",
+        "restore_test.counts_differ",
+        "restore_test.succeeded",
         "security.protected_key_file_missing",
         "unit.created",
         "unit.updated",

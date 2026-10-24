@@ -40,3 +40,9 @@ class Settings(BaseSettings):
         default=None,
         validation_alias="APP_PASSWORD_BLOCKLIST_FILE",
     )
+    # V1-059 (DL-071): the folder of the operations status files, mounted read-only; a path
+    # only. Without it the health page says the records are not set up.
+    operations_status_directory: str | None = Field(
+        default=None,
+        validation_alias="APP_OPERATIONS_STATUS_DIRECTORY",
+    )

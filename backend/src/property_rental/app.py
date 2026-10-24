@@ -150,6 +150,7 @@ from property_rental.lease_enforcement_api import (
 )
 from property_rental.lease_enforcement_context import PostgresEnforcementContext
 from property_rental.logging import create_application_logger
+from property_rental.operations_status_api import create_operations_status_router
 from property_rental.payment_allocation import AllocationIdempotencyKeyReused
 from property_rental.payment_api import (
     PaymentFlow,
@@ -914,6 +915,9 @@ def create_app(
             readiness_check,
             actor_resolver,
         )
+    )
+    include_signed_in(
+        create_operations_status_router(actor_resolver, resolved_settings, readiness_check)
     )
     app.include_router(
         create_auth_router(

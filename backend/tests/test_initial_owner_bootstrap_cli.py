@@ -616,6 +616,8 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         ): {"get"},
         "/api/v1/health/live": {"get"},
         "/api/v1/health/ready": {"get"},
+        # V1-059 part A: the health page data (API-081), signed in with operations.status.read.
+        "/api/v1/operations/status": {"get"},
         "/api/v1/identity/me": {"get"},
         "/api/v1/auth/login": {"post"},
         "/api/v1/auth/password-change": {"post"},

@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "environment": "production",
+  "property_time_zone": "Asia/Phnom_Penh",
+  "remote_access": {
+    "enabled": false
+  },
+  "egress_allowlist": [
+    "api.telegram.org"
+  ],
+  "backup": {
+    "interval_minutes": 60,
+    "retention": {
+      "hourly_days": 2,
+      "daily_days": 30,
+      "monthly_months": 12
+    },
+    "never_delete_last_good_copy": true,
+    "directory": "/var/lib/prm/backups",
+    "database_url_file": "/run/secrets/prm_production_backup_database_url",
+    "encryption_key_file": "/run/secrets/prm_production_backup_encryption_key",
+    "offhost": {
+      "daily": "office external drive or second office computer",
+      "weekly": "kept outside the building",
+      "cloud_storage": false
+    },
+    "restore_test_interval_days": 92
+  },
+  "status_directory": "/var/lib/prm/status",
+  "alerts": {
+    "telegram": {
+      "api_host": "api.telegram.org",
+      "bot_token_file": "/run/secrets/prm_production_telegram_bot_token",
+      "chat_ids_file": "/run/secrets/prm_production_telegram_chat_ids",
+      "recipients": [
+        "owner",
+        "manager"
+      ],
+      "optional": true
+    },
+    "repeat_hours": 12,
+    "readiness_url": "http://127.0.0.1:8000/api/v1/health/ready",
+    "tls_certificate_file": null,
+    "tls_warning_days": 21,
+    "disk_paths": [
+      "/var/lib/prm",
+      "/var/lib/docker"
+    ],
+    "disk_minimum_free_percent": 10,
+    "disk_minimum_free_gigabytes": 5
+  },
+  "logs": {
+    "operational_retention_days": 90,
+    "directory": "/var/log/prm",
+    "audit_and_money_history": "kept forever in the database"
+  }
+}

@@ -21,6 +21,9 @@ dependencies = [
 [project.scripts]
 property-rental-reservation-expiration = "property_rental.reservation_worker:main"
 property-rental-scheduled-billing = "property_rental.billing_worker:main"
+property-rental-backup = "property_rental.backup_job:main"
+property-rental-ops-check = "property_rental.operations_check:main"
+property-rental-log-retention = "property_rental.log_retention:main"
 
 [project.optional-dependencies]
 dev = [

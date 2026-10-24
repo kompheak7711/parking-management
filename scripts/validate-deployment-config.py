@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any, Final
@@ -22,6 +23,24 @@ IDENTITY_KINDS: Final = {
     "bootstrap",
 }
 PLACEHOLDER_MARKERS: Final = (b"change-me", b"placeholder", b"replace-me", b"<secret>")
+# V1-059 (DL-071 answers 1 to 8 and 17): the production operations configuration.
+OPERATIONS_PATH: Final = CONFIG_ROOT / "production-operations.json"
+TELEGRAM_TOKEN_EXAMPLE_PATH: Final = CONFIG_ROOT / "production-telegram-bot-token.example"
+TELEGRAM_CHAT_IDS_EXAMPLE_PATH: Final = CONFIG_ROOT / "production-telegram-chat-ids.example.json"
+TELEGRAM_HOST: Final = "api.telegram.org"
+TELEGRAM_TOKEN_SHAPE: Final = re.compile(r"[0-9]{5,16}:[A-Za-z0-9_-]{30,64}")
+OPERATIONS_KEYS: Final = {
+    "schema_version",
+    "environment",
+    "property_time_zone",
+    "remote_access",
+    "egress_allowlist",
+    "backup",
+    "status_directory",
+    "alerts",
+    "logs",
+}
+SECRET_WORDS: Final = ("token", "password", "secret", "key", "chat_id")
 
 
 class ValidationError(ValueError):
@@ -148,6 +167,141 @@ def check_examples() -> None:
         if all_paths.intersection(paths):
             raise ValidationError("secret source paths must not cross environment boundaries")
         all_paths.update(paths)
+    check_operations(_load_json(OPERATIONS_PATH), _load_json(CONFIG_ROOT / "production.json"))
+
+
+def _object(value: object, name: str) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        raise ValidationError(f"operations configuration: {name} must be an object")
+    return value
+
+
+def _secret_value_keys(value: object, path: str = "") -> list[str]:
+    """Keys that look like secrets but are not file references."""
+    found: list[str] = []
+    if isinstance(value, dict):
+        for key, item in value.items():
+            name = f"{path}.{key}" if path else str(key)
+            lowered = str(key).lower()
+            if any(word in lowered for word in SECRET_WORDS) and not lowered.endswith("_file"):
+                found.append(name)
+            found.extend(_secret_value_keys(item, name))
+    elif isinstance(value, list):
+        for index, item in enumerate(value):
+            found.extend(_secret_value_keys(item, f"{path}[{index}]"))
+    return found
+
+
+def _production_secret_path(value: object, name: str) -> str:
+    if not isinstance(value, str) or not value.startswith("/run/secrets/prm_production_"):
+        raise ValidationError(
+            f"operations configuration: {name} must be a /run/secrets/prm_production_ file"
+        )
+    if ".." in Path(value).parts:
+        raise ValidationError(f"operations configuration: {name} must not leave /run/secrets")
+    return value
+
+
+def check_no_telegram_token_in_repository_config() -> None:
+    """No file of config/deployment may hold something shaped like a Telegram bot token."""
+    for path in sorted(CONFIG_ROOT.rglob("*")):
+        if path.is_file() and TELEGRAM_TOKEN_SHAPE.search(
+            path.read_bytes().decode("utf-8", errors="replace")
+        ):
+            raise ValidationError(f"a Telegram bot token must never be committed: {path.name}")
+
+
+def check_operations(operations: dict[str, Any], production_profile: dict[str, Any]) -> None:
+    """The production operations configuration must match DL-071 exactly."""
+    if set(operations) != OPERATIONS_KEYS:
+        raise ValidationError("operations configuration has missing or unsupported fields")
+    if operations.get("schema_version") != 1 or operations.get("environment") != "production":
+        raise ValidationError("operations configuration must be schema 1 for production")
+    if operations.get("property_time_zone") != "Asia/Phnom_Penh":
+        raise ValidationError("operations configuration must use the Asia/Phnom_Penh time zone")
+    if operations.get("remote_access") != {"enabled": False}:
+        raise ValidationError("remote access must be off in V1 (DL-071 answer 6)")
+    if operations.get("egress_allowlist") != [TELEGRAM_HOST]:
+        raise ValidationError("the outbound allowed list must be exactly the Telegram host")
+    secret_value_keys = _secret_value_keys(operations)
+    if secret_value_keys:
+        raise ValidationError("operations configuration holds a direct secret value field")
+
+    backup = _object(operations.get("backup"), "backup")
+    if backup.get("interval_minutes") != 60:
+        raise ValidationError("backups must run every 60 minutes (DL-071 answer 1)")
+    if backup.get("retention") != {"hourly_days": 2, "daily_days": 30, "monthly_months": 12}:
+        raise ValidationError("backup retention must be 2 days, 30 days and 12 months")
+    if backup.get("never_delete_last_good_copy") is not True:
+        raise ValidationError("retention must never delete the last good backup (DEPLOY-043)")
+    offhost = _object(backup.get("offhost"), "backup.offhost")
+    if offhost.get("cloud_storage") is not False or not offhost.get("daily") or not offhost.get(
+        "weekly"
+    ):
+        raise ValidationError("off-host copies must be daily and weekly, with no cloud storage")
+    if backup.get("restore_test_interval_days") != 92:
+        # The health page uses the same fixed 92 days (every 3 months, DL-071 answer 5).
+        raise ValidationError("a restore test is due every 92 days (3 months)")
+    sources = production_profile.get("sources", {})
+    if _production_secret_path(
+        backup.get("database_url_file"), "backup.database_url_file"
+    ) != sources.get("BACKUP_DATABASE_URL_FILE"):
+        raise ValidationError("the backup job must use the backup database identity")
+    if _production_secret_path(
+        backup.get("encryption_key_file"), "backup.encryption_key_file"
+    ) != sources.get("BACKUP_ENCRYPTION_KEY_FILE"):
+        raise ValidationError("the backup job must use the backup encryption key")
+    for name in ("directory",):
+        value = backup.get(name)
+        if not isinstance(value, str) or not value.startswith("/"):
+            raise ValidationError("the backup folder must be an absolute path")
+    status_directory = operations.get("status_directory")
+    if not isinstance(status_directory, str) or not status_directory.startswith("/"):
+        raise ValidationError("the status folder must be an absolute path")
+
+    alerts = _object(operations.get("alerts"), "alerts")
+    telegram = _object(alerts.get("telegram"), "alerts.telegram")
+    if telegram.get("api_host") != TELEGRAM_HOST:
+        raise ValidationError("Telegram alerts must use the Telegram host on the allowed list")
+    if telegram.get("recipients") != ["owner", "manager"]:
+        raise ValidationError("Telegram alerts go to the Owner and the Manager (DL-071 answer 8)")
+    if telegram.get("optional") is not True:
+        raise ValidationError("Telegram must stay optional (SEC-059)")
+    token_file = _production_secret_path(telegram.get("bot_token_file"), "bot_token_file")
+    chat_file = _production_secret_path(telegram.get("chat_ids_file"), "chat_ids_file")
+    if token_file == chat_file or {token_file, chat_file} & set(sources.values()):
+        raise ValidationError("the Telegram secret files must be separate from other secrets")
+
+    logs = _object(operations.get("logs"), "logs")
+    if logs.get("operational_retention_days") != 90:
+        raise ValidationError("technical logs must be kept 90 days (DL-071 answer 17)")
+
+    token_example = TELEGRAM_TOKEN_EXAMPLE_PATH.read_bytes().strip().lower()
+    if not any(marker in token_example for marker in PLACEHOLDER_MARKERS):
+        raise ValidationError("the committed Telegram bot token example must be a placeholder")
+    chats_example = _load_json(TELEGRAM_CHAT_IDS_EXAMPLE_PATH)
+    if set(chats_example) != {"owner", "manager"} or any(
+        not isinstance(value, str)
+        or not any(marker.decode() in value.lower() for marker in PLACEHOLDER_MARKERS)
+        for value in chats_example.values()
+    ):
+        raise ValidationError("the committed Telegram chat id example must be placeholders")
+    check_no_telegram_token_in_repository_config()
+
+
+def check_resolved_operations(source_root: Path) -> str | None:
+    """Telegram is optional: a missing or placeholder token gives a warning, not a failure."""
+    operations = _load_json(OPERATIONS_PATH)
+    telegram = _object(_object(operations.get("alerts"), "alerts").get("telegram"), "telegram")
+    for key in ("bot_token_file", "chat_ids_file"):
+        path = source_root / Path(str(telegram.get(key))).relative_to("/")
+        try:
+            value = path.read_bytes().strip().lower()
+        except OSError:
+            return "warning: Telegram alerts are not set up (optional; the health page warns)"
+        if not value or any(marker in value for marker in PLACEHOLDER_MARKERS):
+            return "warning: Telegram alerts are not set up (optional; the health page warns)"
+    return None
 
 
 def check_resolved_profile(profile_path: Path, source_root: Path = Path("/")) -> None:
@@ -190,6 +344,11 @@ def main() -> int:
             check_examples()
         else:
             check_resolved_profile(arguments.profile, arguments.source_root)
+            profile = _load_json(arguments.profile)
+            if profile.get("environment") == "production":
+                warning = check_resolved_operations(arguments.source_root)
+                if warning is not None:
+                    print(warning, file=sys.stderr)
     except ValidationError as error:
         print(f"deployment configuration invalid: {error}", file=sys.stderr)
         return 1

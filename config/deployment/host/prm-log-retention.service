@@ -1,0 +1,15 @@
+# V1-059 (DL-071 answer 17; DEPLOY-052): delete technical log files older than 90 days, once a day.
+[Unit]
+Description=CHETANA Residence Management log retention
+
+[Service]
+Type=oneshot
+User=prm-ops
+Group=prm-ops
+ExecStart=/opt/prm/venv/bin/property-rental-log-retention --config /etc/prm/production-operations.json
+StandardOutput=journal
+StandardError=journal
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/var/log/prm
+PrivateTmp=true
