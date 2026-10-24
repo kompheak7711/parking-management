@@ -474,6 +474,28 @@ def test_duplicate_replacement_material_fails_before_prior_set_invalidation() ->
     assert repository.calls == []
 
 
+def test_two_spellings_of_one_code_fail_before_prior_set_invalidation() -> None:
+    """Login sub-slice L7a review round 3: the duplicate check compares canonical forms, so two
+    spellings of one code (whose verifiers would both match it) are refused."""
+    repository = RecordingRepository()
+    service = RecoveryCodeRegenerationService(
+        authorizer=StubAuthorizer(),
+        generator=StubGenerator(["7KQ4-M2XD-9PRT", "7kq4m2xd9prt"]),
+        verifier_provider=StubVerifierProvider(),
+        repository=repository,
+        audit_sink=RecordingAuditSink(),
+        code_count=2,
+    )
+
+    with pytest.raises(
+        RecoveryCodeRegenerationFailed,
+        match=r"^recovery-code regeneration failed$",
+    ):
+        service.regenerate(REQUEST)
+
+    assert repository.calls == []
+
+
 def test_published_providers_create_independently_salted_replacement_verifiers() -> None:
     verifier_provider = Argon2idRecoveryCodeVerifierProvider()
     repository = RecordingRepository()

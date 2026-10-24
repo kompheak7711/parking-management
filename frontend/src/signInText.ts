@@ -68,12 +68,12 @@ const text = {
   au_use_app: ["Use the code from my phone", "ប្រើលេខកូដពីទូរស័ព្ទខ្ញុំ"],
   au_rc: ["Recovery code", "លេខកូដសង្គ្រោះ"],
   au_rc_h: [
-    "One of the 10 codes you wrote down, like 7KQ4-M2XD. Each code works once.",
-    "លេខកូដមួយក្នុងចំណោម ១០ ដែលអ្នកបានកត់ទុក ដូចជា 7KQ4-M2XD។ លេខកូដនីមួយៗប្រើបានតែម្តង។",
+    "One of the 10 codes you wrote down, like 7KQ4-M2XD-9PRT. Each code works once.",
+    "លេខកូដមួយក្នុងចំណោម ១០ ដែលអ្នកបានកត់ទុក ដូចជា 7KQ4-M2XD-9PRT។ លេខកូដនីមួយៗប្រើបានតែម្តង។",
   ],
   au_e_rc: [
-    "Type a recovery code, like 7KQ4-M2XD.",
-    "សូមវាយលេខកូដសង្គ្រោះ ដូចជា 7KQ4-M2XD។",
+    "Type a recovery code, like 7KQ4-M2XD-9PRT.",
+    "សូមវាយលេខកូដសង្គ្រោះ ដូចជា 7KQ4-M2XD-9PRT។",
   ],
   au_e_rc_bad: [
     "That recovery code does not work. It may be used already.",

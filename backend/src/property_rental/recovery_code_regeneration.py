@@ -15,6 +15,7 @@ from property_rental.recovery_code_issuance import (
 from property_rental.recovery_code_security import (
     RecoveryCodeGenerator,
     RecoveryCodeVerifierProvider,
+    canonical_recovery_code,
 )
 
 
@@ -347,7 +348,7 @@ class RecoveryCodeRegenerationService:
         verifier_records: list[RecoveryCodeVerifierRecord] = []
         for _ in range(self._code_count):
             plaintext = self._generator.generate().get_secret_value()
-            if plaintext in plaintext_codes:
+            if canonical_recovery_code(plaintext) in map(canonical_recovery_code, plaintext_codes):
                 raise RuntimeError("recovery-code generator returned duplicate material")
             verifier = self._verifier_provider.encode(plaintext)
             plaintext_codes.append(plaintext)

@@ -996,6 +996,8 @@ surfaces protect secret material and never imply authorization from a role label
 
 Amended by DL-081 (login sub-slice L6, Q-2026-10-24-187): the "Two-step sign-in" screen asks for the 6-digit code (numbers only, `one-time-code`) and can switch to a recovery code; a wrong code gives "That code is not right. Type the newest code from your phone."; a code step older than 5 minutes (10 for a new password) sends the person back to sign in. "Set up two-step sign-in" shows three numbered steps with the QR code the server makes and the key in groups of four; the key and the picture are dropped as soon as the code is confirmed. The first 10 recovery codes then show once in a numbered list with "Copy codes" and a box to tick before "Finish and open the app".
 
+Amended by DL-081 (login sub-slice L7a, Q-2026-10-24-188): recovery codes are 12 symbols in three groups of four, such as 7KQ4-M2XD-9PRT, so a person can copy them by hand; the recovery-code box and its message show that example. The person may type a code in small or capital letters, with or without the dashes.
+
 ## UI-111 — Session Expiration and Reauthentication
 
 The UI handles 30-minute inactivity expiry and 24-hour absolute expiry without claiming

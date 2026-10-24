@@ -620,6 +620,8 @@ server-side, usable codes must not be stored in plaintext. Generation, regenerat
 use, rejection, and related session revocation are auditable. Recovery endpoints retain
 rate limiting and account-enumeration protection.
 
+Amended by DL-081 (login sub-slice L7a, Q-2026-10-24-188): each recovery code holds 60 random bits from the operating system's secure source, written as 12 symbols of Crockford's Base32 so it can be copied by hand; it is stored only as an Argon2id verifier of its canonical form (capitals, no dashes or spaces, I and L as 1, O as 0), and wrong codes count toward the sign-in wait.
+
 ## SEC-072 — Controlled Administrative Recovery
 
 Recovery never bypasses authorization. Owner may administratively reset/recover Manager

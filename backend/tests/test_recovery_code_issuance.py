@@ -368,6 +368,30 @@ def test_duplicate_generated_material_fails_before_persisting_a_non_independent_
     assert repository.records == []
 
 
+def test_two_spellings_of_one_code_fail_as_duplicate_material_before_persisting() -> None:
+    """Login sub-slice L7a review round 3: the duplicate check compares canonical forms, so two
+    spellings of one code (whose verifiers would both match it) are refused."""
+    repository = RecordingRepository()
+    service = RecoveryCodeIssuanceService(
+        authorizer=StubAuthorizer(),
+        generator=StubGenerator(["7KQ4-M2XD-9PRT", "7kq4m2xd9prt"]),
+        verifier_provider=StubVerifierProvider(),
+        repository=repository,
+        code_count=2,
+    )
+    request = RecoveryCodeIssuanceRequest(
+        authorized_actor_id=UUID(int=10),
+        target_actor_id=UUID(int=11),
+        correlation_id="canonical-duplicate-correlation",
+        provenance="protected-enrollment",
+    )
+
+    with pytest.raises(RecoveryCodeIssuanceFailed, match=r"^recovery-code issuance failed$"):
+        service.issue(request)
+
+    assert repository.records == []
+
+
 def test_issuance_contract_rejects_empty_set_configuration() -> None:
     with pytest.raises(ValueError, match=r"^recovery-code count must be positive$"):
         RecoveryCodeIssuanceService(

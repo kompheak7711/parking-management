@@ -48910,6 +48910,71 @@
       "test_path": "backend/tests/test_operations_deployment_config.py",
       "status": "implemented",
       "notes": "V1-059 part A: the production operations configuration checks (DL-071 answers 1 to 8 and 17; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-A.md)."
+    },
+    {
+      "test_id": "test_a_recovery_code_is_twelve_symbols_of_the_hand_copy_alphabet",
+      "upstream_ids": [
+        "API-098",
+        "SEC-071",
+        "TEST-129",
+        "DL-081"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_security.py",
+      "status": "implemented",
+      "notes": "The alphabet is 32 distinct symbols without I, L, O or U, and the edges of the 60 random bits give ZZZZ-ZZZZ-ZZZZ and 0000-0000-0000 (login slice sub-slice L7a, Q-2026-10-24-188, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "test_a_recovery_code_matches_in_any_case_with_or_without_dashes_and_look_alikes",
+      "upstream_ids": [
+        "API-098",
+        "SEC-071",
+        "TEST-129",
+        "DL-081"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_security.py",
+      "status": "implemented",
+      "notes": "A code matches in small or capital letters, with or without dashes and spaces, with I or L as 1 and O as 0; another code, a symbol outside the alphabet, a short or long code, a tab or control separator, a non-ASCII letter or digit, or no text does not; a code made before L7a matches only as written (login slice sub-slice L7a, Q-2026-10-24-188, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "test_the_canonical_form_keeps_anything_that_is_not_a_code_as_given",
+      "upstream_ids": [
+        "API-098",
+        "SEC-071",
+        "TEST-129",
+        "DL-081"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_security.py",
+      "status": "implemented",
+      "notes": "Only the 12-symbol shape in ASCII is changed for the check; anything else (a short code, text with a dotless i or a long s) is kept as given (login slice sub-slice L7a, Q-2026-10-24-188, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "test_two_spellings_of_one_code_fail_as_duplicate_material_before_persisting",
+      "upstream_ids": [
+        "API-098",
+        "SEC-071",
+        "TEST-129",
+        "DL-081"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_issuance.py",
+      "status": "implemented",
+      "notes": "A generator giving 7KQ4-M2XD-9PRT and 7kq4m2xd9prt is refused as duplicate material and nothing is stored (the check compares canonical forms) (login slice sub-slice L7a review round 3, Q-2026-10-24-188, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "test_two_spellings_of_one_code_fail_before_prior_set_invalidation",
+      "upstream_ids": [
+        "API-098",
+        "SEC-071",
+        "TEST-129",
+        "DL-081"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_regeneration.py",
+      "status": "implemented",
+      "notes": "A generator giving two spellings of one code is refused before the live set is invalidated (the check compares canonical forms) (login slice sub-slice L7a review round 3, Q-2026-10-24-188, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
     }
   ]
 }

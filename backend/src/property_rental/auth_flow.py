@@ -61,6 +61,7 @@ from property_rental.password_security import (
 from property_rental.recovery_code_security import (
     Argon2idRecoveryCodeVerifierProvider,
     SecureRecoveryCodeGenerator,
+    canonical_recovery_code,
 )
 from property_rental.runtime_secrets import derive_totp_key_identifier
 from property_rental.totp_security import (
@@ -1839,8 +1840,8 @@ class PostgresAuthenticationFlow:
         rows: list[tuple[UUID, str, str, str]] = []
         while len(codes) < RECOVERY_CODE_COUNT:
             code = generator.generate().get_secret_value()
-            if code in codes:
-                # 256 random bits do not repeat; a repeat means a broken entropy source.
+            if canonical_recovery_code(code) in map(canonical_recovery_code, codes):
+                # 60 random bits do not repeat in 10 codes; a repeat means a broken entropy source.
                 raise RuntimeError("duplicate recovery-code material")
             verifier = verifiers.encode(code)
             codes.append(code)
