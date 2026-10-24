@@ -306,6 +306,7 @@ database_test_suites='
   tests/test_financial_draft_api_migration.py
   tests/test_move_out_billing_api_migration.py
   tests/test_refund_reads_variant_recovery_migration.py
+  tests/test_draft_record_api_migration.py
 '
 
 for database_test_file in $database_test_suites; do

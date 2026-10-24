@@ -636,6 +636,43 @@ reversal draft is recorded only at READ COMMITTED, and recording a Lease Deposit
 after the Lease's Final Settlement is closed is refused as a conflict too (the forfeiture service
 maps P5S01 to a conflict; its routes come in slice 11c).
 
+V1-056 slice 11c-3 (2026-10-24; no migration): the draft routes of this section. Each needs the
+browser mutation rules, a strict JSON body and `Idempotency-Key` (the same key and body answer the
+same draft again; the same key with another body answers 409 `IDEMPOTENCY_KEY_REUSED`), and
+answers 201 with the draft as API-101 shows it. A person without the route's capability in the
+Property gets a hidden 404. The draft has no financial effect until a `financial.approve` holder
+confirms it through `POST /properties/{property_id}/financial-drafts/{draft_id}/confirm`; it is
+rejected or withdrawn there too (API-101).
+
+- `POST /properties/{property_id}/deposits/{deposit_id}/forfeiture-drafts` (`deposits.dispose`;
+  body `disposition_id`, a new id the form chooses, and `reason`): a `DEPOSIT_FORFEITURE` draft
+  of variant `LEASE_FORFEITURE` that forfeits the whole held Deposit of a terminated Lease on the
+  ground the database works out from the termination record (BR-DEP-026).
+- `POST /properties/{property_id}/deposit-dispositions/{disposition_id}/reversal-drafts`
+  (`deposits.correct`; body `reversal_id`, `reason` of up to 500 characters and
+  `evidence_reference`): variant `LEASE_FORFEITURE_REVERSAL`.
+- `POST /properties/{property_id}/deposit-receipts/{receipt_id}/reversal-drafts`
+  (`deposits.correct`; body `reversal_id` and `reason` of up to 500 characters): variant
+  `DEPOSIT_RECEIPT_REVERSAL`, for a Lease or a Reservation Deposit.
+- `POST /properties/{property_id}/payments/{payment_id}/return-drafts` (`payments.reverse`; body
+  `reason` and `evidence_reference`): a `PAYMENT_RETURN` draft (BR-SETTLE-013).
+
+A business-state refusal answers 409 with its own code, at record and, for the same rule, at the
+shared confirm: `DEPOSIT_FORFEITURE_LEASE_NOT_TERMINATED`, `DEPOSIT_FORFEITURE_NO_GROUND`,
+`DEPOSIT_FORFEITURE_PET_AT_SETTLEMENT`, `DEPOSIT_FORFEITURE_NOTHING_HELD`,
+`DEPOSIT_FORFEITURE_DRAFT_WAITING`, `DEPOSIT_FORFEITURE_ALREADY_REVERSED`,
+`DEPOSIT_FORFEITURE_REVERSAL_DRAFT_WAITING`, `DEPOSIT_RECEIPT_ALREADY_REVERSED`,
+`DEPOSIT_DRAFT_WAITING`, `PAYMENT_RETURN_NOT_RECEIVED`, `PAYMENT_RETURN_THROUGH_CORRECTION`,
+`PAYMENT_RETURN_REFUND_NOT_RETURNED`, `PAYMENT_RETURN_REFUND_NO_RECOVERY`,
+`PAYMENT_RETURN_SETTLEMENT_NOT_CORRECTABLE`, `PAYMENT_RETURN_FORFEITURE_ACTIVE`,
+`PAYMENT_RETURN_DEPOSIT_USED`, `PAYMENT_RETURN_DRAFT_WAITING`, `PAYMENT_RETURN_TOO_LARGE` and
+`FINAL_SETTLEMENT_CLOSED`; a `disposition_id` or `reversal_id` that is already used answers 409
+`DRAFT_RECORD_ID_IN_USE`. At the shared confirm a Deposit draft whose Deposit changed since it
+was recorded answers 409 `DRAFT_OUT_OF_DATE` and stays pending; Reservation Deposit drafts (the
+same kind) keep their earlier answers. Other refusals keep their plain status. The one-call routes
+`POST /deposit-receipts/{id}/reverse` and `POST /deposit-dispositions/{id}/reverse` still record
+nothing and answer their draft-required 409.
+
 ## API-094 — Active-Lease Pet Deposit Refund Qualification
 
 - `POST /leases/{lease_id}/pet-departures`

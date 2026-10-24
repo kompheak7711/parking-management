@@ -39,6 +39,11 @@ from property_rental.credit_refund_api import (
     CreditRefundRequestRoute,
     _financial_json,
 )
+from property_rental.draft_record_api import (
+    DEPOSIT_DRAFT_CONFIRM_REFUSALS,
+    DEPOSIT_DRAFT_VARIANTS,
+    PAYMENT_RETURN_REFUSALS,
+)
 from property_rental.financial_context import bind_financial_property, financial_metadata
 from property_rental.financial_draft import (
     FINANCIAL_APPROVE_CAPABILITY,
@@ -173,21 +178,36 @@ def _without_transaction_id(value: object) -> object:
     return value
 
 
-# The named refusals of a draft kind's confirm command (slice 11c). Only Refund drafts have
-# them yet; the other kinds keep their plain answers until their own routes name them
-# (slice 11c-2 review round 1: a closed-Settlement refusal reads wrongly on a correction).
+# The named refusals of a draft kind's confirm command (slice 11c). Refund, Deposit (slice
+# 11c-3) and returned-Payment drafts have them; the other kinds keep their plain answers until
+# their own routes name them (slice 11c-2 review round 1: a closed-Settlement refusal reads
+# wrongly on a correction).
 CONFIRM_REFUSALS: Final[Mapping[str, Mapping[str, Refusal]]] = MappingProxyType(
-    {"REFUND": REFUND_REFUSALS_BY_DATABASE_MESSAGE}
+    {
+        "REFUND": REFUND_REFUSALS_BY_DATABASE_MESSAGE,
+        "DEPOSIT_FORFEITURE": DEPOSIT_DRAFT_CONFIRM_REFUSALS,
+        "PAYMENT_RETURN": PAYMENT_RETURN_REFUSALS,
+    }
 )
 
 
-def _confirm_invoke(call: Callable[[], T], kind: object) -> T:
+def _confirm_table(draft: Mapping[str, object]) -> Mapping[str, Refusal] | None:
+    """The named refusals of this draft's confirm; a Reservation Deposit draft (kind
+    DEPOSIT_FORFEITURE too) has none yet (slice 11c-3 review round 1)."""
+    kind, payload = draft.get("kind"), draft.get("payload")
+    variant = payload.get("variant") if isinstance(payload, dict) else None
+    if kind == "DEPOSIT_FORFEITURE" and variant not in DEPOSIT_DRAFT_VARIANTS:
+        return None
+    return CONFIRM_REFUSALS.get(kind) if isinstance(kind, str) else None
+
+
+def _confirm_invoke(call: Callable[[], T], draft: Mapping[str, object]) -> T:
     try:
         return _confirm_call(call)
     except (HTTPException, RefusedRequest) as exc:
         # Slice 11c: a named business-state refusal of the kind's command keeps its own code.
         cause = exc.__cause__
-        table = CONFIRM_REFUSALS.get(kind) if isinstance(kind, str) else None
+        table = _confirm_table(draft)
         refusal = None if cause is None or table is None else database_refusal(cause, table)
         if refusal is not None and not (
             isinstance(exc, RefusedRequest) and exc.refusal == DRAFT_OUT_OF_DATE
@@ -492,7 +512,7 @@ def create_financial_draft_router(
             raise RefusedRequest(DRAFT_ALREADY_DECIDED)
         try:
             result = _confirm_invoke(
-                lambda: flow.confirm(property_id, current, actor=actor), current.get("kind")
+                lambda: flow.confirm(property_id, current, actor=actor), current
             )
         except RefusedRequest as exc:
             # Decided by someone else after the read above: say so, not "cannot be confirmed".

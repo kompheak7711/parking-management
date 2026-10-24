@@ -10,6 +10,7 @@ import psycopg
 from fastapi.testclient import TestClient
 
 from property_rental.app import create_app
+from property_rental.deposit_receipt_reversal import DepositReceiptReversalInvalidError
 from property_rental.final_settlement import (
     FinalSettlementConflictError,
     FinalSettlementStaleDraftError,
@@ -26,7 +27,8 @@ from property_rental.financial_draft import (
 )
 from property_rental.financial_draft_confirm import DraftConfirmNotAvailable, DraftPayloadInvalid
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
-from property_rental.payment_return import PaymentReturnStaleDraftError
+from property_rental.lease_deposit_forfeiture import LeaseDepositForfeitureConflictError
+from property_rental.payment_return import PaymentReturnConflictError, PaymentReturnStaleDraftError
 from property_rental.refund import (
     RefundAuthorizationError,
     RefundConflictError,
@@ -498,7 +500,8 @@ def test_a_named_refusal_of_the_kinds_confirm_keeps_its_own_code() -> None:
 
 
 def test_only_a_refund_draft_confirm_names_its_database_refusals() -> None:
-    """Slice 11c-2 review round 1: other kinds keep their plain answers for now."""
+    """Slice 11c-2 review round 1: a correction draft keeps its plain answer. (Since slice 11c-3
+    Deposit and returned-Payment drafts name theirs too; see the test below.)"""
     closed = "A closed Final Settlement changes only through a post-settlement correction"
     flow = Flow(kind="SETTLEMENT_CORRECTION", variant="EXTRA_CHARGE")
     flow.error = _caused(FinalSettlementConflictError("4471"), closed)
@@ -512,6 +515,76 @@ def test_only_a_refund_draft_confirm_names_its_database_refusals() -> None:
         path(refund, "confirm"), json={}, headers=mutation_headers()
     )
     assert named.json()["error"]["code"] == "FINAL_SETTLEMENT_CLOSED"
+
+
+def test_a_deposit_or_returned_payment_draft_confirm_names_its_database_refusals() -> None:
+    """Slice 11c-3: the shared confirm answers the same codes as the record routes."""
+    cases = [
+        (
+            "DEPOSIT_FORFEITURE",
+            "LEASE_FORFEITURE",
+            LeaseDepositForfeitureConflictError("4471"),
+            "A Deposit receipt reversal draft for this Deposit is waiting",
+            "DEPOSIT_DRAFT_WAITING",
+        ),
+        (
+            "DEPOSIT_FORFEITURE",
+            "DEPOSIT_RECEIPT_REVERSAL",
+            DepositReceiptReversalInvalidError("4471"),
+            "The Deposit receipt is already reversed",
+            "DEPOSIT_RECEIPT_ALREADY_REVERSED",
+        ),
+        (
+            "PAYMENT_RETURN",
+            "PAYMENT_RETURN",
+            PaymentReturnConflictError("4471"),
+            "A draft that names this Payment or one of its records is waiting",
+            "PAYMENT_RETURN_DRAFT_WAITING",
+        ),
+    ]
+    for kind, variant, error, message, code in cases:
+        flow = Flow(kind=kind, variant=variant)
+        flow.error = _caused(error, message)
+        answer = api(flow, actor(flow.prop, APPROVE)).post(
+            path(flow, "confirm"), json={}, headers=mutation_headers()
+        )
+        assert (answer.status_code, answer.json()["error"]["code"]) == (409, code), kind
+        assert message not in answer.text
+    # A Deposit draft whose Deposit changed answers out of date (review round 1).
+    for variant, message in (
+        ("LEASE_FORFEITURE", "Lease Deposit forfeiture draft is stale"),
+        ("LEASE_FORFEITURE_REVERSAL", "Lease Deposit forfeiture reversal draft is stale"),
+        ("DEPOSIT_RECEIPT_REVERSAL", "Deposit receipt reversal draft is stale"),
+    ):
+        changed = Flow(kind="DEPOSIT_FORFEITURE", variant=variant)
+        changed.error = _caused(DepositReceiptReversalInvalidError("4471"), message)
+        answer = api(changed, actor(changed.prop, APPROVE)).post(
+            path(changed, "confirm"), json={}, headers=mutation_headers()
+        )
+        assert (answer.status_code, answer.json()["error"]["code"]) == (
+            409,
+            "DRAFT_OUT_OF_DATE",
+        ), variant
+    # A Reservation Deposit draft (the same kind) keeps its plain answer.
+    reservation = Flow(kind="DEPOSIT_FORFEITURE", variant="RESERVATION_OUTCOME")
+    reservation.error = _caused(
+        LeaseDepositForfeitureConflictError("4471"),
+        "A Deposit receipt reversal draft for this Deposit is waiting",
+    )
+    answer = api(reservation, actor(reservation.prop, APPROVE, "reservations.read")).post(
+        path(reservation, "confirm"), json={}, headers=mutation_headers()
+    )
+    assert answer.json()["error"]["code"] == "DRAFT_CONFIRM_REFUSED"
+    # A returned-Payment draft whose sources changed stays out of date.
+    stale = Flow(kind="PAYMENT_RETURN", variant="PAYMENT_RETURN")
+    stale.error = _caused(
+        PaymentReturnStaleDraftError("4471"),
+        "A draft that names this Payment or one of its records is waiting",
+    )
+    answer = api(stale, actor(stale.prop, APPROVE)).post(
+        path(stale, "confirm"), json={}, headers=mutation_headers()
+    )
+    assert answer.json()["error"]["code"] == "DRAFT_OUT_OF_DATE"
 
 
 def test_an_out_of_date_refund_draft_stays_out_of_date_whatever_the_cause() -> None:

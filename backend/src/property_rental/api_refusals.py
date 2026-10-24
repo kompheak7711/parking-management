@@ -292,3 +292,123 @@ REFUND_DEPOSIT_RECEIPT_REVERSAL_WAITING = Refusal(
     "The reversal draft of this Deposit's receipt waits for a decision. Decide it first.",
     ("BR-AUTH-010",),
 )
+
+# V1-056 slice 11c-3: Deposit forfeiture, Deposit correction and returned-Payment draft routes.
+DRAFT_RECORD_ID_IN_USE = Refusal(
+    409,
+    "DRAFT_RECORD_ID_IN_USE",
+    "The record id this form chose is already used. Open the form again.",
+    ("API-016",),
+)
+DEPOSIT_FORFEITURE_LEASE_NOT_TERMINATED = Refusal(
+    409,
+    "DEPOSIT_FORFEITURE_LEASE_NOT_TERMINATED",
+    "The Lease of this Deposit is not terminated, so the Deposit cannot be forfeited.",
+    ("BR-DEP-026",),
+)
+DEPOSIT_FORFEITURE_NO_GROUND = Refusal(
+    409,
+    "DEPOSIT_FORFEITURE_NO_GROUND",
+    "The termination of this Lease gives no ground to forfeit this Deposit.",
+    ("BR-DEP-026",),
+)
+DEPOSIT_FORFEITURE_PET_AT_SETTLEMENT = Refusal(
+    409,
+    "DEPOSIT_FORFEITURE_PET_AT_SETTLEMENT",
+    "This Pet Deposit is decided in the Final Settlement, not forfeited here.",
+    ("BR-DEP-024", "BR-DEP-027"),
+)
+DEPOSIT_FORFEITURE_NOTHING_HELD = Refusal(
+    409,
+    "DEPOSIT_FORFEITURE_NOTHING_HELD",
+    "This Deposit holds no money to forfeit.",
+    ("BR-DEP-026",),
+)
+DEPOSIT_FORFEITURE_DRAFT_WAITING = Refusal(
+    409,
+    "DEPOSIT_FORFEITURE_DRAFT_WAITING",
+    "A forfeiture draft of this Deposit waits for a decision. Decide it first.",
+    ("BR-AUTH-010",),
+)
+DEPOSIT_FORFEITURE_ALREADY_REVERSED = Refusal(
+    409,
+    "DEPOSIT_FORFEITURE_ALREADY_REVERSED",
+    "This forfeiture was reversed before.",
+    ("BR-DEP-026",),
+)
+DEPOSIT_FORFEITURE_REVERSAL_DRAFT_WAITING = Refusal(
+    409,
+    "DEPOSIT_FORFEITURE_REVERSAL_DRAFT_WAITING",
+    "A reversal draft of this forfeiture waits for a decision. Decide it first.",
+    ("BR-AUTH-010",),
+)
+DEPOSIT_RECEIPT_ALREADY_REVERSED = Refusal(
+    409,
+    "DEPOSIT_RECEIPT_ALREADY_REVERSED",
+    "This Deposit receipt was reversed before.",
+    ("BR-AUTH-010",),
+)
+DEPOSIT_DRAFT_WAITING = Refusal(
+    409,
+    "DEPOSIT_DRAFT_WAITING",
+    "Another draft of this Deposit waits for a decision. Decide it first.",
+    ("BR-AUTH-010",),
+)
+PAYMENT_RETURN_NOT_RECEIVED = Refusal(
+    409,
+    "PAYMENT_RETURN_NOT_RECEIVED",
+    "This Payment is not in the received state, so it cannot be returned.",
+    ("BR-SETTLE-013",),
+)
+PAYMENT_RETURN_THROUGH_CORRECTION = Refusal(
+    409,
+    "PAYMENT_RETURN_THROUGH_CORRECTION",
+    "A closed Final Settlement used this Payment. Return it through a correction of that "
+    "Final Settlement.",
+    ("BR-SETTLE-013",),
+)
+PAYMENT_RETURN_REFUND_NOT_RETURNED = Refusal(
+    409,
+    "PAYMENT_RETURN_REFUND_NOT_RETURNED",
+    "Money from this Payment was refunded and has not all come back. Record the Refund's "
+    "return first.",
+    ("BR-SETTLE-013",),
+)
+PAYMENT_RETURN_REFUND_NO_RECOVERY = Refusal(
+    409,
+    "PAYMENT_RETURN_REFUND_NO_RECOVERY",
+    "Money from this Payment was refunded and the app cannot plan how to charge it back. "
+    "Record the Refund's return first.",
+    ("BR-SETTLE-013",),
+)
+PAYMENT_RETURN_SETTLEMENT_NOT_CORRECTABLE = Refusal(
+    409,
+    "PAYMENT_RETURN_SETTLEMENT_NOT_CORRECTABLE",
+    "A Refund from this Payment would be charged on a Lease whose closed Final Settlement this "
+    "return cannot correct.",
+    ("BR-SETTLE-013",),
+)
+PAYMENT_RETURN_FORFEITURE_ACTIVE = Refusal(
+    409,
+    "PAYMENT_RETURN_FORFEITURE_ACTIVE",
+    "A Deposit this Payment paid is forfeited. Reverse the forfeiture first.",
+    ("BR-SETTLE-013",),
+)
+PAYMENT_RETURN_DEPOSIT_USED = Refusal(
+    409,
+    "PAYMENT_RETURN_DEPOSIT_USED",
+    "A Deposit this Payment paid was used to pay debts. Reverse that use first.",
+    ("BR-SETTLE-013",),
+)
+PAYMENT_RETURN_DRAFT_WAITING = Refusal(
+    409,
+    "PAYMENT_RETURN_DRAFT_WAITING",
+    "A draft about this Payment or its records waits for a decision. Decide it first.",
+    ("BR-AUTH-010",),
+)
+PAYMENT_RETURN_TOO_LARGE = Refusal(
+    409,
+    "PAYMENT_RETURN_TOO_LARGE",
+    "This Payment has too many records to return in one draft.",
+    ("BR-SETTLE-013",),
+)

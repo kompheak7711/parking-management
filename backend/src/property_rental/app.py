@@ -99,6 +99,11 @@ from property_rental.deposit_api import (
     create_deposit_router,
     deposit_idempotency_key_reused_response,
 )
+from property_rental.draft_record_api import (
+    DraftRecordFlow,
+    PostgresDraftRecordFlow,
+    create_draft_record_router,
+)
 from property_rental.financial_action_context import FinancialActionContextService
 from property_rental.financial_action_context_api import (
     FinancialActionContextFlow,
@@ -476,6 +481,7 @@ def create_app(
     allocation_receipt_flow: AllocationReceiptFlow | None = None,
     credit_refund_flow: CreditRefundFlow | None = None,
     financial_draft_flow: FinancialDraftFlow | None = None,
+    draft_record_flow: DraftRecordFlow | None = None,
     customer_ledger_flow: CustomerLedgerFlow | None = None,
 ) -> FastAPI:
     """Build an application instance from validated settings."""
@@ -1399,6 +1405,18 @@ def create_app(
                 resolved_settings.financial_database_url.get_secret_value()
                 if resolved_settings.financial_database_url is not None
                 else None,
+            ),
+            resolved_settings,
+        )
+    )
+    include_signed_in(
+        create_draft_record_router(
+            actor_resolver,
+            draft_record_flow
+            or PostgresDraftRecordFlow(
+                resolved_settings.financial_database_url.get_secret_value()
+                if resolved_settings.financial_database_url is not None
+                else None
             ),
             resolved_settings,
         )
