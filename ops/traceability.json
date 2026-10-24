@@ -49909,6 +49909,134 @@
       "test_path": "frontend/src/App.test.tsx",
       "status": "implemented",
       "notes": "When sign-out does not reach the office computer, the screen stays signed in and says so, instead of showing the sign-in screen while the server session lives on (login sub-slice L8, final review of the login slice, decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-056-login-L8.md; DL-081)."
+    },
+    {
+      "test_id": "test_the_inventory_is_saved_as_numbered_records_and_an_item_left_out_is_gone",
+      "upstream_ids": [
+        "DL-078",
+        "BR-UNIT-003"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_unit_inventory_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R2b: the Unit inventory is read with units.read, each save with If-Match is a new numbered record, an item left out of a save is no longer in the Unit, a stale record number gives 412, and Edit inventory offers the starter items and the items already used (DL-078 answer 2)."
+    },
+    {
+      "test_id": "test_only_a_unit_manager_saves_and_bad_lines_are_refused",
+      "upstream_ids": [
+        "DL-078",
+        "SEC-041"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_unit_inventory_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R2b: only property.manage at the Unit's Property saves the inventory, with the Origin and CSRF pair; unknown groups, blank or long names, quantities outside 1 to 999, a name twice in a group, more than 200 items and extra fields are refused."
+    },
+    {
+      "test_id": "test_saves_are_numbered_records_and_each_is_in_the_unit_history",
+      "upstream_ids": [
+        "DL-078",
+        "DB-UNIT-001"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_unit_inventory_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R2b: app.record_unit_inventory numbers each save, trims names, refuses a stale record number, and writes unit.inventory_updated to the Unit's history with the previous and new items (DL-078 answer 2)."
+    },
+    {
+      "test_id": "test_bad_lines_and_unknown_units_are_refused",
+      "upstream_ids": [
+        "DL-078",
+        "DB-UNIT-001"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_unit_inventory_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R2b: unknown groups, quantity 0, blank names, a name twice in a group (any capitals), more than 200 items, a non-list and an unknown Unit are refused and save nothing."
+    },
+    {
+      "test_id": "test_inventory_history_is_append_only",
+      "upstream_ids": [
+        "DL-078",
+        "DB-UNIT-001"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_unit_inventory_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R2b: inventory records and their items cannot be changed or deleted (dated History kept, DL-078 answer 2)."
+    },
+    {
+      "test_id": "test_runtime_role_reads_the_inventory_and_saves_only_through_the_function",
+      "upstream_ids": [
+        "DL-078",
+        "DB-UNIT-001"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_unit_inventory_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R2b: the runtime role reads both inventory tables and saves only through the definer function."
+    },
+    {
+      "test_id": "test_v1_058_r2b_is_forward_only_and_follows_r2a",
+      "upstream_ids": [
+        "DL-078",
+        "TEST-022"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_unit_inventory_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R2b: migration 20270210_198 follows 20270209_197 and refuses a downgrade."
+    },
+    {
+      "test_id": "test_postgres_inventory_flow_reads_saves_and_offers_used_items",
+      "upstream_ids": [
+        "DL-078",
+        "DB-UNIT-001"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_unit_inventory_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R2b: the runtime inventory flow reads an empty inventory, saves record 1, reports a stale save as a version conflict and a bad group as invalid, offers the used and starter items, and the save shows in the Unit timeline."
+    },
+    {
+      "test_id": "TEST-FE-819",
+      "upstream_ids": [
+        "DL-078"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/UnitInventoryPanel.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R2b: the Unit inventory shows the count line, the save time as dd/mm/yyyy 24-hour in Phnom Penh and the items by group; Edit inventory has a number box for every known item (0 takes it out) and an Another item row, and saves every item above 0."
+    },
+    {
+      "test_id": "TEST-FE-820",
+      "upstream_ids": [
+        "DL-078"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/UnitInventoryPanel.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R2b: Edit inventory is hidden without access, an empty inventory says so, and a save someone else beat is named."
+    },
+    {
+      "test_id": "TEST-FE-821",
+      "upstream_ids": [
+        "DL-078"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/unitClient.test.ts",
+      "status": "implemented",
+      "notes": "V1-058 R2b: the Unit client reads the inventory, saves it with If-Match set to the record number it showed, and refuses an unknown item group."
+    },
+    {
+      "test_id": "TEST-FE-822",
+      "upstream_ids": [
+        "DL-078"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/UnitInventoryPanel.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R2b review: an Another item whose name is already in its group adds to that item instead of a second line, an emptied box keeps the quantity, and switching to another Unit loads that Unit's inventory with Edit inventory enabled."
     }
   ]
 }

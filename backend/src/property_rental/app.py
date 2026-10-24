@@ -202,6 +202,12 @@ from property_rental.unit_api import (
     UnitVersionConflict,
     create_unit_router,
 )
+from property_rental.unit_inventory_api import (
+    PostgresUnitInventoryFlow,
+    UnavailableUnitInventoryFlow,
+    UnitInventoryFlow,
+    create_unit_inventory_router,
+)
 from property_rental.unpaid_initial_termination_api import (
     PostgresUnpaidInitialFlow,
     UnavailableUnpaidInitialFlow,
@@ -446,6 +452,7 @@ def create_app(
     audit_query_flow: AuditEventQueryFlow | None = None,
     property_resource_flow: PropertyResourceFlow | None = None,
     unit_resource_flow: UnitResourceFlow | None = None,
+    unit_inventory_flow: UnitInventoryFlow | None = None,
     customer_resource_flow: CustomerResourceFlow | None = None,
     configuration_flow: ConfigurationFlow | None = None,
     exchange_rate_provider: ExchangeRateProvider | None = None,
@@ -1046,6 +1053,18 @@ def create_app(
                 PostgresUnitResourceFlow(resolved_settings.database_url.get_secret_value())
                 if resolved_settings.database_url is not None
                 else UnavailableUnitResourceFlow()
+            ),
+            resolved_settings,
+        )
+    )
+    include_signed_in(
+        create_unit_inventory_router(
+            actor_resolver,
+            unit_inventory_flow
+            or (
+                PostgresUnitInventoryFlow(resolved_settings.database_url.get_secret_value())
+                if resolved_settings.database_url is not None
+                else UnavailableUnitInventoryFlow()
             ),
             resolved_settings,
         )

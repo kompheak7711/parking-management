@@ -850,6 +850,8 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/properties/{property_id}/unit-setup/items": {"post"},
         "/unit-setup/items/{item_id}": {"patch"},
         "/unit-setup/items/{item_id}/remove": {"post"},
+        "/units/{unit_id}/inventory": {"get", "put"},
+        "/properties/{property_id}/unit-inventory-items": {"get"},
         "/api/v1/properties/{property_id}/customers": {"get", "post"},
         "/api/v1/properties/{property_id}/customers/{customer_id}/command-status": {"get"},
         "/api/v1/customers/{customer_id}": {"get", "patch"},

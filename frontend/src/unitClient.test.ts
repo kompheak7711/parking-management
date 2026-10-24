@@ -128,4 +128,45 @@ describe("Unit API client", () => {
       UnitRequestError,
     );
   });
+
+  it("TEST-FE-821 reads the Unit inventory and saves it against the record number it showed", async () => {
+    Object.defineProperty(document, "cookie", {
+      configurable: true,
+      value: "__Host-prm_csrf=token-1",
+    });
+    const shown = {
+      unit_id: "unit-1",
+      record_number: 2,
+      recorded_at: "2026-10-24T05:30:00+00:00",
+      recorded_by: "actor-1",
+      lines: [{ item_group: "FURNITURE", item_name: "Bed", quantity: 1 }],
+      counts: { FURNITURE: 1, APPLIANCES: 0, KITCHEN: 0, BATHROOM: 0 },
+      can_manage: true,
+    };
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(respond(200, shown))
+      .mockResolvedValueOnce(respond(200, { ...shown, record_number: 3 }))
+      .mockResolvedValueOnce(
+        respond(200, {
+          items: [{ item_group: "GARDEN", item_name: "Hose" }],
+        }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const current = await unitApi.inventory("unit-1");
+    const saved = await unitApi.saveInventory(current, current.lines);
+
+    expect(current.lines).toEqual(shown.lines);
+    expect(current.counts.FURNITURE).toBe(1);
+    expect(saved.record_number).toBe(3);
+    const [path, init] = fetchMock.mock.calls[1] ?? [];
+    expect(path).toBe("/units/unit-1/inventory");
+    expect(init?.method).toBe("PUT");
+    expect(init?.headers).toMatchObject({ "If-Match": '"2"' });
+    expect(JSON.parse(init?.body as string)).toEqual({ lines: shown.lines });
+    await expect(unitApi.inventoryItems("property-1")).rejects.toBeInstanceOf(
+      UnitRequestError,
+    );
+  });
 });

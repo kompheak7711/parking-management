@@ -44,6 +44,42 @@ export interface UnitDetails {
   room_feature_ids: string[];
 }
 
+// DL-078 answer 2: the items in a Unit, each with a quantity, in four groups. Every save is a new
+// numbered record kept in History; record number 0 means nothing was saved yet.
+export type UnitInventoryGroup =
+  | "FURNITURE"
+  | "APPLIANCES"
+  | "KITCHEN"
+  | "BATHROOM";
+
+export const unitInventoryGroups: UnitInventoryGroup[] = [
+  "FURNITURE",
+  "APPLIANCES",
+  "KITCHEN",
+  "BATHROOM",
+];
+
+export interface UnitInventoryLine {
+  item_group: UnitInventoryGroup;
+  item_name: string;
+  quantity: number;
+}
+
+export interface UnitInventory {
+  unit_id: string;
+  record_number: number;
+  recorded_at: string | null;
+  recorded_by: string | null;
+  lines: UnitInventoryLine[];
+  counts: Record<UnitInventoryGroup, number>;
+  can_manage: boolean;
+}
+
+export interface UnitInventoryItemName {
+  item_group: UnitInventoryGroup;
+  item_name: string;
+}
+
 export interface UnitCreateSource extends Partial<UnitDetails> {
   unit_number: string;
   floor_item_id: string;
@@ -138,6 +174,12 @@ export interface UnitApi {
     source: Partial<Pick<UnitSetupItem, "name_en" | "name_km" | "sort_order">>,
   ) => Promise<UnitSetupItem>;
   removeSetupItem: (item: UnitSetupItem) => Promise<UnitSetupItem>;
+  inventory: (unitId: string) => Promise<UnitInventory>;
+  saveInventory: (
+    current: UnitInventory,
+    lines: UnitInventoryLine[],
+  ) => Promise<UnitInventory>;
+  inventoryItems: (propertyId: string) => Promise<UnitInventoryItemName[]>;
 }
 
 export class UnitUnavailableError extends Error {
@@ -513,6 +555,103 @@ async function removeSetupItem(current: UnitSetupItem): Promise<UnitSetupItem> {
   );
 }
 
+function inventoryGroup(value: unknown): UnitInventoryGroup {
+  if (
+    typeof value !== "string" ||
+    !unitInventoryGroups.includes(value as UnitInventoryGroup)
+  ) {
+    throw new UnitRequestError();
+  }
+  return value as UnitInventoryGroup;
+}
+
+function inventoryLine(value: unknown): UnitInventoryLine {
+  if (
+    !isObject(value) ||
+    typeof value.item_name !== "string" ||
+    typeof value.quantity !== "number" ||
+    !Number.isInteger(value.quantity)
+  ) {
+    throw new UnitRequestError();
+  }
+  return {
+    item_group: inventoryGroup(value.item_group),
+    item_name: value.item_name,
+    quantity: value.quantity,
+  };
+}
+
+function inventoryOf(data: Record<string, unknown>): UnitInventory {
+  if (
+    typeof data.unit_id !== "string" ||
+    typeof data.record_number !== "number" ||
+    !nullableString(data.recorded_at) ||
+    !nullableString(data.recorded_by) ||
+    !Array.isArray(data.lines) ||
+    !isObject(data.counts) ||
+    typeof data.can_manage !== "boolean"
+  ) {
+    throw new UnitRequestError();
+  }
+  const source = data.counts;
+  const counts = Object.fromEntries(
+    unitInventoryGroups.map((group) => {
+      const count = source[group];
+      if (typeof count !== "number") throw new UnitRequestError();
+      return [group, count];
+    }),
+  ) as Record<UnitInventoryGroup, number>;
+  return {
+    unit_id: data.unit_id,
+    record_number: data.record_number,
+    recorded_at: data.recorded_at ?? null,
+    recorded_by: data.recorded_by ?? null,
+    lines: data.lines.map(inventoryLine),
+    counts,
+    can_manage: data.can_manage,
+  };
+}
+
+async function inventory(unitId: string): Promise<UnitInventory> {
+  return inventoryOf(
+    await request(`/units/${encodeURIComponent(unitId)}/inventory`, {
+      method: "GET",
+    }),
+  );
+}
+
+async function saveInventory(
+  current: UnitInventory,
+  lines: UnitInventoryLine[],
+): Promise<UnitInventory> {
+  return inventoryOf(
+    await request(`/units/${encodeURIComponent(current.unit_id)}/inventory`, {
+      method: "PUT",
+      headers: mutationHeaders(current.record_number),
+      body: JSON.stringify({ lines }),
+    }),
+  );
+}
+
+async function inventoryItems(
+  propertyId: string,
+): Promise<UnitInventoryItemName[]> {
+  const data = await request(
+    `/properties/${encodeURIComponent(propertyId)}/unit-inventory-items`,
+    { method: "GET" },
+  );
+  if (!Array.isArray(data.items)) throw new UnitRequestError();
+  return data.items.map((value): UnitInventoryItemName => {
+    if (!isObject(value) || typeof value.item_name !== "string") {
+      throw new UnitRequestError();
+    }
+    return {
+      item_group: inventoryGroup(value.item_group),
+      item_name: value.item_name,
+    };
+  });
+}
+
 export const unitApi: UnitApi = {
   list,
   get,
@@ -523,4 +662,7 @@ export const unitApi: UnitApi = {
   createSetupItem,
   updateSetupItem,
   removeSetupItem,
+  inventory,
+  saveInventory,
+  inventoryItems,
 };

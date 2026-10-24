@@ -1,5 +1,6 @@
 import { FormEvent, useRef, useState } from "react";
 
+import { UnitInventoryPanel } from "./UnitInventoryPanel";
 import {
   UnitApi,
   UnitConflictError,
@@ -630,6 +631,21 @@ export function UnitManagement({ api = unitApi }: UnitManagementProps) {
               </p>
             </form>
           )}
+
+          <UnitInventoryPanel
+            api={api}
+            key={selected.unit_id}
+            onSaved={() => {
+              void api
+                .timeline(selected.unit_id)
+                .then((events) => {
+                  setTimeline(events.items);
+                })
+                .catch(() => undefined);
+            }}
+            propertyId={selected.property_id}
+            unitId={selected.unit_id}
+          />
 
           <section aria-labelledby="unit-timeline-heading">
             <h5 id="unit-timeline-heading">Audit history</h5>

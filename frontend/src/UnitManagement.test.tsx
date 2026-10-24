@@ -12,6 +12,7 @@ import { UnitManagement } from "./UnitManagement";
 import {
   UnitApi,
   UnitConflictError,
+  UnitInventory,
   UnitResource,
   UnitSetupItem,
   UnitSetupListKind,
@@ -63,6 +64,16 @@ function setupItem(
   };
 }
 
+const inventory: UnitInventory = {
+  unit_id: "unit-1",
+  record_number: 0,
+  recorded_at: null,
+  recorded_by: null,
+  lines: [],
+  counts: { FURNITURE: 0, APPLIANCES: 0, KITCHEN: 0, BATHROOM: 0 },
+  can_manage: true,
+};
+
 const setupLists = {
   lists: {
     FLOOR: [
@@ -97,6 +108,9 @@ function api(overrides: Partial<UnitApi> = {}): UnitApi {
     createSetupItem: vi.fn(),
     updateSetupItem: vi.fn(),
     removeSetupItem: vi.fn(),
+    inventory: vi.fn().mockResolvedValue(inventory),
+    saveInventory: vi.fn(),
+    inventoryItems: vi.fn().mockResolvedValue([]),
     timeline: vi.fn().mockResolvedValue({
       items: [
         {
