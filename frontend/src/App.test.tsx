@@ -329,6 +329,14 @@ function reconciledCustomer(
   };
 }
 
+// V1-058 R1: every page has its own address; a test opens a page the way the menu link does.
+function openPage(page: string) {
+  act(() => {
+    window.history.replaceState(null, "", `#/${page}`);
+    window.dispatchEvent(new HashChangeEvent("hashchange"));
+  });
+}
+
 function renderPropertyConfigurationApp(propertyApi: PropertyConfigurationApi) {
   render(
     <App
@@ -342,6 +350,7 @@ function renderPropertyConfigurationApp(propertyApi: PropertyConfigurationApi) {
 }
 
 async function signInAndLoadProperty(propertyId = "property-1") {
+  openPage("settings");
   fireEvent.change(screen.getByLabelText("Username"), {
     target: { value: "manager" },
   });
@@ -500,6 +509,7 @@ describe("local sign-in", () => {
   });
 
   it("TEST-FE-221 mounts the Utilities workflow only in the authenticated workspace", async () => {
+    openPage("utilities");
     const authenticate = vi.fn().mockResolvedValue({
       phase: "authenticated",
       session,
@@ -523,7 +533,7 @@ describe("local sign-in", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
     expect(
-      await screen.findByRole("heading", { name: "Utilities" }),
+      await screen.findByRole("heading", { name: "Utilities", level: 3 }),
     ).toBeInTheDocument();
   });
 
@@ -750,7 +760,7 @@ describe("local sign-in", () => {
     await act(async () => {
       await Promise.resolve();
     });
-    expect(screen.getByRole("main")).toHaveAccessibleName("Account and access");
+    expect(screen.getByRole("main")).toHaveAccessibleName("Home");
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1000);
     });
@@ -768,6 +778,7 @@ describe("local sign-in", () => {
   });
 
   it("TEST-FE-012 exposes account commands only after server capability and recent-auth checks with explicit consequence confirmation", async () => {
+    openPage("settings");
     const user: UserAccount = {
       user_id: "user-1",
       property_id: "property-1",
@@ -834,6 +845,7 @@ describe("local sign-in", () => {
   });
 
   it("TEST-FE-013 presents recovery codes once and clears accessible material on acknowledgement", async () => {
+    openPage("settings");
     const api = mockAuthenticationApi();
     render(
       <App
@@ -871,6 +883,7 @@ describe("local sign-in", () => {
   });
 
   it("TEST-FE-707 shows the live recovery-code set and replaces it by its id, and a refused read keeps the person signed in", async () => {
+    openPage("settings");
     let answerLiveSet!: (value: RecoveryCodeSetSummary) => void;
     const api = mockAuthenticationApi({
       liveRecoveryCodeSet: vi
@@ -966,11 +979,12 @@ describe("local sign-in", () => {
     expect(
       await screen.findByText(/Your recovery codes could not be checked/),
     ).toBeInTheDocument();
-    expect(screen.getByRole("main")).toHaveAccessibleName("Account and access");
+    expect(screen.getByRole("main")).toHaveAccessibleName("Settings");
     expect(refused.logout).not.toHaveBeenCalled();
   });
 
   it("TEST-FE-014 requires consequence confirmation before administrative recovery", async () => {
+    openPage("settings");
     const user: UserAccount = {
       user_id: "user-1",
       property_id: "property-1",
@@ -1067,6 +1081,7 @@ describe("local sign-in", () => {
   });
 
   it("TEST-FE-684 shows a new account's first one-time password once and clears it", async () => {
+    openPage("settings");
     const created: UserAccount = {
       user_id: "user-2",
       property_id: "property-1",
@@ -1276,6 +1291,7 @@ describe("local sign-in", () => {
   );
 
   it("TEST-FE-015 restores a valid server session after a browser refresh", async () => {
+    openPage("settings");
     const restoredSession = {
       ...session,
       idle_expires_at: "2099-08-22T10:30:00Z",
@@ -1422,6 +1438,7 @@ describe("local sign-in", () => {
   });
 
   it("TEST-FE-071 protects dirty Customer forms from in-app sign-out", async () => {
+    openPage("customers");
     const authentication = mockAuthenticationApi();
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
     render(
@@ -1467,6 +1484,7 @@ describe("local sign-in", () => {
   });
 
   it("TEST-FE-072 hides a pending command and requires reconciliation after sign-out", async () => {
+    openPage("customers");
     let finishCreate!: (value: Parameters<CustomerApi["update"]>[0]) => void;
     const pendingCreate = new Promise<Parameters<CustomerApi["update"]>[0]>(
       (resolve) => {
@@ -1620,6 +1638,7 @@ describe("local sign-in", () => {
   });
 
   it("TEST-FE-076 marks an in-flight Customer outcome unknown on session expiry", async () => {
+    openPage("customers");
     vi.useFakeTimers();
     let finishCreate!: (value: Parameters<CustomerApi["update"]>[0]) => void;
     const pendingCreate = new Promise<Parameters<CustomerApi["update"]>[0]>(
@@ -1735,6 +1754,7 @@ describe("local sign-in", () => {
   });
 
   it("TEST-FE-101 keeps an unresolved Customer command pending at later session expiry", async () => {
+    openPage("customers");
     vi.useFakeTimers();
     const expiringSession = {
       ...session,
@@ -1814,6 +1834,7 @@ describe("local sign-in", () => {
   });
 
   it("TEST-FE-079 requires list reconciliation after an ambiguous Customer create", async () => {
+    openPage("customers");
     const customers = customerApiDouble({
       get: vi
         .fn()
@@ -1912,6 +1933,7 @@ describe("local sign-in", () => {
   });
 
   it("TEST-FE-087 safely retries an authoritatively absent creation with the same identity", async () => {
+    openPage("customers");
     const commandId = "11111111-1111-4111-8111-111111111111";
     vi.spyOn(crypto, "randomUUID").mockReturnValue(commandId);
     const customers = customerApiDouble({
@@ -2001,6 +2023,7 @@ describe("local sign-in", () => {
   });
 
   it("TEST-FE-080 restores an unresolved Customer command gate after reload", async () => {
+    openPage("customers");
     const customers = customerApiDouble({
       create: vi
         .fn()
@@ -2134,6 +2157,7 @@ describe("local sign-in", () => {
   });
 
   it("TEST-FE-088 synchronizes an actor's unresolved command gate across tabs", async () => {
+    openPage("customers");
     render(
       <App
         api={mockAuthenticationApi()}
@@ -2381,6 +2405,7 @@ describe("local sign-in", () => {
   });
 
   it("TEST-FE-135 treats a matching gate cleared by another tab as reconciled", async () => {
+    openPage("customers");
     const commandId = "77777777-7777-4777-8777-777777777777";
     vi.spyOn(crypto, "randomUUID").mockReturnValue(commandId);
     const customers = customerApiDouble({
@@ -2475,6 +2500,7 @@ describe("local sign-in", () => {
   }, 15000);
 
   it("TEST-FE-093 sends no Customer command when durable coordination is unavailable", async () => {
+    openPage("customers");
     vi.spyOn(window.localStorage, "setItem").mockImplementation(() => {
       throw new Error("storage unavailable");
     });
@@ -2524,6 +2550,7 @@ describe("local sign-in", () => {
   });
 
   it("TEST-FE-109 keeps Customer reads available when durable mutation coordination is unavailable", async () => {
+    openPage("customers");
     vi.spyOn(window.localStorage, "getItem").mockImplementation(() => {
       throw new Error("storage unavailable");
     });
@@ -2859,6 +2886,7 @@ describe("financial panel session integration", () => {
   it.each([false, true])(
     "TEST-FE-498 removes financial access and aborts discovery during logout, delayed=%s",
     async (delayed) => {
+      openPage("payments");
       const actorId = "70000000-0000-4000-8000-000000000001",
         signedIn = { ...session, actor_id: actorId };
       let releaseDiscovery!: () => void, releaseLogout!: () => void;
@@ -2951,6 +2979,7 @@ describe("financial drafts during App logout and expiry", () => {
   it.each([false, true])(
     "TEST-FE-525 protects voluntary sign-out drafts and immediately clears forced expiry, forced=%s",
     async (forced) => {
+      openPage("payments");
       const actorId = "70000000-0000-4000-8000-000000000001",
         propertyId = "70000000-0000-4000-8000-000000000002",
         sourceId = "70000000-0000-4000-8000-000000000003",
@@ -3116,6 +3145,7 @@ describe("financial drafts during App logout and expiry", () => {
 
 describe("Customer ledger App integration", () => {
   it("TEST-FE-578 opens ledger from the Customer detail and aborts its read when logout begins, without replay after sign-in", async () => {
+    openPage("customers");
     const actorId = "00000000-0000-4000-8000-000000000001",
       customerId = "00000000-0000-4000-8000-000000000003",
       propertyId = "00000000-0000-4000-8000-000000000002";
@@ -3222,6 +3252,7 @@ describe("Lease enforcement drafts during App logout and expiry", () => {
   it.each([false, true])(
     "TEST-FE-614 protects unsaved enforcement values and invalidates forced expiry, forced=%s",
     async (forced) => {
+      openPage("letters");
       const signedIn = { ...session, actor_id: enforcementIds.actor };
       const discard = vi.spyOn(window, "confirm").mockReturnValue(false);
       const read = vi.fn<EnforcementClient["read"]>(async (scope, input) =>

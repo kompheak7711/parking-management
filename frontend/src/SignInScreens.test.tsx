@@ -885,7 +885,7 @@ describe("sign-in layer in the app", () => {
     await act(async () => {
       await Promise.resolve();
     });
-    expect(screen.getByRole("main")).toHaveAccessibleName("Account and access");
+    expect(screen.getByRole("main")).toHaveAccessibleName("Home");
     expect(screen.getByText("Sokha Chan")).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent(
       "Signed in as Sokha Chan.",
@@ -951,7 +951,7 @@ describe("sign-in layer in the app", () => {
       await vi.advanceTimersByTimeAsync(1000);
     });
     expect(client.inspectSession).toHaveBeenCalledTimes(1);
-    expect(screen.getByRole("main")).toHaveAccessibleName("Account and access");
+    expect(screen.getByRole("main")).toHaveAccessibleName("Home");
     expect(
       screen.queryByText(/Nobody used the app on this computer/),
     ).not.toBeInTheDocument();
@@ -987,9 +987,7 @@ describe("sign-in layer in the app", () => {
       await act(async () => {
         await Promise.resolve();
       });
-      expect(screen.getByRole("main")).toHaveAccessibleName(
-        "Account and access",
-      );
+      expect(screen.getByRole("main")).toHaveAccessibleName("Home");
       await act(async () => {
         await vi.advanceTimersByTimeAsync(1000);
       });

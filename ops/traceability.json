@@ -49390,6 +49390,103 @@
       "test_path": "backend/tests/test_customer_id_document_number_migration.py",
       "status": "implemented",
       "notes": "V1-059 part B: Customer ID number / Passport number (DL-071 answer 11; review round 1: the earlier create overloads are closed to the runtime role; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-B.md)."
+    },
+    {
+      "test_id": "TEST-FE-801",
+      "upstream_ids": [
+        "UI-008",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shell/AppShell.test.tsx",
+      "status": "implemented",
+      "notes": "The menu shows the groups the owner approved on 24/10/2026 (Daily work, Tenants, Building, Office) in order, one link per menu item (V1-058 R1 app shell, DESIGN.md 0.29; non-money design points decided by Claude under the owner's 2026-10-23 22:30 rule, DL-074)."
+    },
+    {
+      "test_id": "TEST-FE-802",
+      "upstream_ids": [
+        "UI-008",
+        "UI-011"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shell/AppShell.test.tsx",
+      "status": "implemented",
+      "notes": "Only the open page is marked in the menu, each link has its own address and the work area is named after the page (V1-058 R1 app shell, DESIGN.md 0.29; non-money design points decided by Claude under the owner's 2026-10-23 22:30 rule, DL-074)."
+    },
+    {
+      "test_id": "TEST-FE-803",
+      "upstream_ids": [
+        "UI-009",
+        "UI-095"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shell/AppShell.test.tsx",
+      "status": "implemented",
+      "notes": "The top bar shows the weekday, the date as dd/mm/yyyy and the 24-hour time in Phnom Penh (V1-058 R1 app shell, DESIGN.md 0.29; non-money design points decided by Claude under the owner's 2026-10-23 22:30 rule, DL-074)."
+    },
+    {
+      "test_id": "TEST-FE-804",
+      "upstream_ids": [
+        "UI-009",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shell/AppShell.test.tsx",
+      "status": "implemented",
+      "notes": "The Khmer / EN switch changes the menu language and the page language attribute (V1-058 R1 app shell, DESIGN.md 0.29; non-money design points decided by Claude under the owner's 2026-10-23 22:30 rule, DL-074)."
+    },
+    {
+      "test_id": "TEST-FE-805",
+      "upstream_ids": [
+        "UI-009"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shell/AppShell.test.tsx",
+      "status": "implemented",
+      "notes": "The menu shows the signed-in name, the environment badge outside production and a Sign out button (V1-058 R1 app shell, DESIGN.md 0.29; non-money design points decided by Claude under the owner's 2026-10-23 22:30 rule, DL-074)."
+    },
+    {
+      "test_id": "TEST-FE-806",
+      "upstream_ids": [
+        "UI-009",
+        "UI-007"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shell/AppShell.test.tsx",
+      "status": "implemented",
+      "notes": "The environment badge is hidden in production and Sign out stays locked while a sign-in action runs (V1-058 R1 app shell, DESIGN.md 0.29; non-money design points decided by Claude under the owner's 2026-10-23 22:30 rule, DL-074)."
+    },
+    {
+      "test_id": "TEST-FE-807",
+      "upstream_ids": [
+        "UI-101",
+        "UI-007"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shell/AppShell.test.tsx",
+      "status": "implemented",
+      "notes": "On narrow screens the menu slides in from the menu button and closes with Escape (V1-058 R1 app shell, DESIGN.md 0.29; non-money design points decided by Claude under the owner's 2026-10-23 22:30 rule, DL-074)."
+    },
+    {
+      "test_id": "TEST-FE-808",
+      "upstream_ids": [
+        "UI-011"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shell/AppShell.test.tsx",
+      "status": "implemented",
+      "notes": "The page is read from the address and follows address changes (Back, Forward, bookmarks) (V1-058 R1 app shell, DESIGN.md 0.29; non-money design points decided by Claude under the owner's 2026-10-23 22:30 rule, DL-074)."
+    },
+    {
+      "test_id": "TEST-FE-809",
+      "upstream_ids": [
+        "UI-008",
+        "UI-011"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shell/AppShell.test.tsx",
+      "status": "implemented",
+      "notes": "Letters and Move-out are tabs of Leases (the Leases menu item stays marked); Bookings shows no tab bar while it has one tab (V1-058 R1 app shell, owner menu approval of 24/10/2026)."
     }
   ]
 }

@@ -59,6 +59,10 @@ import {
   type LedgerSelection,
 } from "./CustomerAccountLedger";
 import type { CustomerLedgerApi } from "./customerLedgerClient";
+import { type Language, storeLanguage, storedLanguage } from "./signInText";
+import { AppShell } from "./shell/AppShell";
+import { ComingSoon, HomePage, PropertyNeeded } from "./shell/pages";
+import { useHashPage } from "./shell/useHashPage";
 
 export interface AppProps {
   environment: string;
@@ -531,6 +535,14 @@ export function App({
     () => api ?? { ...authenticationApi, signIn: authenticate },
     [api, authenticate],
   );
+  // V1-058 R1: the page named by the address, and the screen language chosen on this device
+  // (shared with the sign-in screens).
+  const page = useHashPage();
+  const [language, setLanguage] = useState<Language>(storedLanguage);
+  function changeLanguage(next: Language) {
+    setLanguage(next);
+    storeLanguage(next);
+  }
   const [screen, setScreen] = useState<Screen>("sign_in");
   const [session, setSession] = useState<SessionData | null>(null);
   const [submissionState, setSubmissionState] =
@@ -650,6 +662,8 @@ export function App({
     invalidatePropertyConfiguration();
     setPropertyConfigurationStatus(null);
     setSession(result.session);
+    // The sign-in screens may have changed the language on this device.
+    setLanguage(storedLanguage());
     setCustomerCoordinationAvailable(
       stored.status !== "unavailable" && stored.status !== "invalid",
     );
@@ -1286,39 +1300,233 @@ export function App({
   }
 
   return (
-    <div className="app-shell">
-      <header className="app-header">
-        <p className="eyebrow">Staff application</p>
-        <h1>Property Rental Management</h1>
-      </header>
-
-      <main aria-labelledby="screen-heading" className="app-content">
-        {notice !== null && (
+    <AppShell
+      buildId={buildId}
+      displayName={session.display_name ?? null}
+      environment={environment}
+      language={language}
+      notice={
+        notice !== null && (
           <p className="global-status" role="status">
             {notice}
           </p>
+        )
+      }
+      now={now}
+      onLanguageChange={changeLanguage}
+      onSignOut={handleLogout}
+      page={page}
+      signOutDisabled={isSubmitting}
+    >
+      <div className="shell-page" data-page="home" hidden={page !== "home"}>
+        <HomePage language={language} name={session.display_name ?? null} />
+      </div>
+      <div
+        className="shell-page"
+        data-page="payments"
+        hidden={page !== "payments"}
+      >
+        {!logoutPending && (
+          <FinancialManagement
+            key={session.actor_id}
+            actorId={session.actor_id}
+            services={financialServices}
+            onDirtyStateChange={setFinancialDraftsDirty}
+          />
         )}
-
+      </div>
+      <div
+        className="shell-page"
+        data-page="invoices"
+        hidden={page !== "invoices"}
+      >
+        {propertyConfiguration === null && (
+          <PropertyNeeded language={language} />
+        )}
+        {!logoutPending && (
+          <InvoiceManagement
+            api={invoiceApi}
+            actorId={session.actor_id}
+            propertyId={propertyConfiguration?.property_id ?? ""}
+          />
+        )}
+      </div>
+      <div
+        className="shell-page"
+        data-page="utilities"
+        hidden={page !== "utilities"}
+      >
+        {propertyConfiguration === null && (
+          <PropertyNeeded language={language} />
+        )}
+        <UtilityManagement
+          api={utilityApi}
+          propertyId={propertyConfiguration?.property_id ?? ""}
+        />
+        <UtilityLeaseWorkflows
+          propertyId={propertyConfiguration?.property_id ?? ""}
+        />
+      </div>
+      <div
+        className="shell-page"
+        data-page="approvals"
+        hidden={page !== "approvals"}
+      >
+        <ComingSoon language={language} step="R7" />
+      </div>
+      <div className="shell-page" data-page="units" hidden={page !== "units"}>
+        <UnitManagement api={unitApi} />
+      </div>
+      <div
+        className="shell-page"
+        data-page="customers"
+        hidden={page !== "customers"}
+      >
+        {!logoutPending && (
+          <CustomerAccountLedger
+            key={`customer-ledger:${session.actor_id}`}
+            actorId={session.actor_id}
+            api={ledgerApi}
+            requested={
+              ledgerSelection?.actorId === session.actor_id
+                ? ledgerSelection
+                : undefined
+            }
+          />
+        )}
+        {!logoutPending && (
+          <CustomerManagement
+            actorId={session.actor_id}
+            api={customerApi}
+            onOpenAccountLedger={(selection) => {
+              setLedgerSelection({
+                ...selection,
+                actorId: session.actor_id,
+                sequence: ++ledgerSequence.current,
+              });
+            }}
+            mutationCoordinationAvailable={customerCoordinationAvailable}
+            onCommandBusyChange={setCustomerCommandBusy}
+            onDirtyStateChange={setCustomerDraftsDirty}
+            onReconciled={async (requirement) => {
+              const clearance = await clearCustomerReconciliation(requirement);
+              if (clearance.status === "cleared") {
+                setCustomerCoordinationAvailable(true);
+                setCustomerReconciliationRequirement((current) =>
+                  sameCustomerReconciliation(current, requirement)
+                    ? null
+                    : current,
+                );
+                return true;
+              } else if (clearance.status === "superseded") {
+                if (clearance.requirement === null) {
+                  setCustomerCoordinationAvailable(true);
+                  setCustomerReconciliationRequirement(null);
+                  setNotice(
+                    "The Customer reconciliation gate was already resolved in another tab.",
+                  );
+                  return true;
+                }
+                setCustomerReconciliationRequirement(clearance.requirement);
+                setNotice(
+                  "A newer Customer command gate remains active. Reconcile that exact command before retrying.",
+                );
+                return false;
+              } else {
+                setNotice(
+                  "The Customer result is known, but its durable command gate could not be cleared. Customer commands remain blocked.",
+                );
+                return false;
+              }
+            }}
+            onReconciliationRequired={async (requirement) => {
+              const reservation =
+                await reserveCustomerReconciliation(requirement);
+              if (reservation.existing !== null) {
+                setCustomerCoordinationAvailable(true);
+                setCustomerReconciliationRequirement(reservation.existing);
+                return false;
+              }
+              if (!reservation.reserved) {
+                setNotice(
+                  reservation.storageAvailable
+                    ? "Another tab already reserved the Customer command gate. Reconcile it before retrying."
+                    : "Customer command coordination is unavailable. No command was sent; restore durable browser coordination before retrying.",
+                );
+                return false;
+              }
+              setCustomerCoordinationAvailable(true);
+              setCustomerReconciliationRequirement(requirement);
+              return true;
+            }}
+            reconciliationRequirement={customerReconciliationRequirement}
+          />
+        )}
+        {!logoutPending && !customerCoordinationAvailable && (
+          <section className="information-card">
+            <h3>Customer command coordination unavailable</h3>
+            <p>
+              Customer commands are blocked because the opaque reconciliation
+              handle cannot be matched to this authenticated browser session. No
+              confidential Customer or actor metadata was read from local
+              storage.
+            </p>
+          </section>
+        )}
+      </div>
+      <div
+        className="shell-page"
+        data-page="reservations"
+        hidden={page !== "reservations"}
+      >
+        <ReservationManagement api={reservationApi} />
+      </div>
+      <div className="shell-page" data-page="leases" hidden={page !== "leases"}>
+        <LeaseManagement api={leaseApi} />
+      </div>
+      <div
+        className="shell-page"
+        data-page="letters"
+        hidden={page !== "letters"}
+      >
+        {!logoutPending && (
+          <LeaseEnforcementManagement
+            key={`lease-enforcement:${session.actor_id}`}
+            actorId={session.actor_id}
+            services={enforcementServices}
+            onDirtyStateChange={setEnforcementDraftsDirty}
+          />
+        )}
+      </div>
+      <div
+        className="shell-page"
+        data-page="moveout"
+        hidden={page !== "moveout"}
+      >
+        <DepositManagement api={depositApi} />
+      </div>
+      <div
+        className="shell-page"
+        data-page="reports"
+        hidden={page !== "reports"}
+      >
+        <ComingSoon language={language} step="V1-057" />
+      </div>
+      <div
+        className="shell-page"
+        data-page="history"
+        hidden={page !== "history"}
+      >
+        <ComingSoon language={language} step="R7" />
+      </div>
+      <div
+        className="shell-page"
+        data-page="settings"
+        hidden={page !== "settings"}
+      >
         <section className="workspace-panel">
           <div className="workspace-heading">
-            <div>
-              <p className="eyebrow">Authenticated workspace</p>
-              <h2 id="screen-heading">Account and access</h2>
-            </div>
-            <div className="signed-in-person">
-              {session.display_name !== undefined &&
-                session.display_name !== null &&
-                session.display_name.trim().length > 0 && (
-                  <p className="signed-in-name">{session.display_name}</p>
-                )}
-              <button
-                disabled={isSubmitting}
-                onClick={handleLogout}
-                type="button"
-              >
-                Sign out
-              </button>
-            </div>
+            <h2 id="screen-heading">Account and access</h2>
           </div>
           <section
             aria-labelledby="session-heading"
@@ -1646,132 +1854,6 @@ export function App({
             api={effectiveConfigApi}
             propertyId={propertyConfiguration?.property_id ?? ""}
           />
-          <UtilityManagement
-            api={utilityApi}
-            propertyId={propertyConfiguration?.property_id ?? ""}
-          />
-          <UtilityLeaseWorkflows
-            propertyId={propertyConfiguration?.property_id ?? ""}
-          />
-          <UnitManagement api={unitApi} />
-          {!logoutPending && (
-            <InvoiceManagement
-              api={invoiceApi}
-              actorId={session.actor_id}
-              propertyId={propertyConfiguration?.property_id ?? ""}
-            />
-          )}
-          {!logoutPending && (
-            <FinancialManagement
-              key={session.actor_id}
-              actorId={session.actor_id}
-              services={financialServices}
-              onDirtyStateChange={setFinancialDraftsDirty}
-            />
-          )}
-          {!logoutPending && (
-            <CustomerAccountLedger
-              key={`customer-ledger:${session.actor_id}`}
-              actorId={session.actor_id}
-              api={ledgerApi}
-              requested={
-                ledgerSelection?.actorId === session.actor_id
-                  ? ledgerSelection
-                  : undefined
-              }
-            />
-          )}
-          <ReservationManagement api={reservationApi} />
-          <LeaseManagement api={leaseApi} />
-          {!logoutPending && (
-            <LeaseEnforcementManagement
-              key={`lease-enforcement:${session.actor_id}`}
-              actorId={session.actor_id}
-              services={enforcementServices}
-              onDirtyStateChange={setEnforcementDraftsDirty}
-            />
-          )}
-          <DepositManagement api={depositApi} />
-          {!logoutPending && (
-            <CustomerManagement
-              actorId={session.actor_id}
-              api={customerApi}
-              onOpenAccountLedger={(selection) => {
-                setLedgerSelection({
-                  ...selection,
-                  actorId: session.actor_id,
-                  sequence: ++ledgerSequence.current,
-                });
-              }}
-              mutationCoordinationAvailable={customerCoordinationAvailable}
-              onCommandBusyChange={setCustomerCommandBusy}
-              onDirtyStateChange={setCustomerDraftsDirty}
-              onReconciled={async (requirement) => {
-                const clearance =
-                  await clearCustomerReconciliation(requirement);
-                if (clearance.status === "cleared") {
-                  setCustomerCoordinationAvailable(true);
-                  setCustomerReconciliationRequirement((current) =>
-                    sameCustomerReconciliation(current, requirement)
-                      ? null
-                      : current,
-                  );
-                  return true;
-                } else if (clearance.status === "superseded") {
-                  if (clearance.requirement === null) {
-                    setCustomerCoordinationAvailable(true);
-                    setCustomerReconciliationRequirement(null);
-                    setNotice(
-                      "The Customer reconciliation gate was already resolved in another tab.",
-                    );
-                    return true;
-                  }
-                  setCustomerReconciliationRequirement(clearance.requirement);
-                  setNotice(
-                    "A newer Customer command gate remains active. Reconcile that exact command before retrying.",
-                  );
-                  return false;
-                } else {
-                  setNotice(
-                    "The Customer result is known, but its durable command gate could not be cleared. Customer commands remain blocked.",
-                  );
-                  return false;
-                }
-              }}
-              onReconciliationRequired={async (requirement) => {
-                const reservation =
-                  await reserveCustomerReconciliation(requirement);
-                if (reservation.existing !== null) {
-                  setCustomerCoordinationAvailable(true);
-                  setCustomerReconciliationRequirement(reservation.existing);
-                  return false;
-                }
-                if (!reservation.reserved) {
-                  setNotice(
-                    reservation.storageAvailable
-                      ? "Another tab already reserved the Customer command gate. Reconcile it before retrying."
-                      : "Customer command coordination is unavailable. No command was sent; restore durable browser coordination before retrying.",
-                  );
-                  return false;
-                }
-                setCustomerCoordinationAvailable(true);
-                setCustomerReconciliationRequirement(requirement);
-                return true;
-              }}
-              reconciliationRequirement={customerReconciliationRequirement}
-            />
-          )}
-          {!logoutPending && !customerCoordinationAvailable && (
-            <section className="information-card">
-              <h3>Customer command coordination unavailable</h3>
-              <p>
-                Customer commands are blocked because the opaque reconciliation
-                handle cannot be matched to this authenticated browser session.
-                No confidential Customer or actor metadata was read from local
-                storage.
-              </p>
-            </section>
-          )}
           <section
             aria-labelledby="administration-heading"
             className="information-card"
@@ -2121,9 +2203,7 @@ export function App({
             )}
           </section>
         </section>
-      </main>
-
-      {buildInformation}
-    </div>
+      </div>
+    </AppShell>
   );
 }
