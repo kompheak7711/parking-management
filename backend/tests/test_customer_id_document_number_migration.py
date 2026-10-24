@@ -190,4 +190,8 @@ def test_the_runtime_role_cannot_create_a_customer_without_the_number(
         "app.create_customer(uuid,text,text,text,text,text,uuid,uuid,text)": True,
         "app.execute_customer_create(uuid,uuid,text,uuid,text,text,text,text,text,uuid)": False,
         "app.execute_customer_create(uuid,uuid,text,uuid,text,text,text,text,text,uuid,text)": True,
+        # V1-058 R2c (20270208_196) adds the details overloads; the number stays required.
+        "app.create_customer(uuid,text,text,text,text,text,uuid,uuid,text,date,text,text)": True,
+        "app.execute_customer_create("
+        "uuid,uuid,text,uuid,text,text,text,text,text,uuid,text,date,text,text)": True,
     }

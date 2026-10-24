@@ -49565,6 +49565,129 @@
       "test_path": "frontend/src/App.test.tsx",
       "status": "implemented",
       "notes": "V1-058 R1b: after sign-in the menu shows only the allowed pages, a closed page is mounted but not visible, a page the person may not use says so and shows nothing of it, and the one Property fills the Property boxes."
+    },
+    {
+      "test_id": "test_customer_details_are_optional_checked_and_kept_unless_given",
+      "upstream_ids": [
+        "DL-078",
+        "BR-CUST-003"
+      ],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_customer.py",
+      "status": "implemented",
+      "notes": "V1-058 R2c: Customer date of birth, gender and nationality, all optional (DL-078 answer 3; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/V1_058_PLAN.md)."
+    },
+    {
+      "test_id": "test_customer_details_are_optional_checked_shown_in_detail_and_cleared_with_null",
+      "upstream_ids": [
+        "DL-078",
+        "BR-CUST-003",
+        "SEC-006"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_customer_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R2c: Customer date of birth, gender and nationality, all optional (DL-078 answer 3; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/V1_058_PLAN.md)."
+    },
+    {
+      "test_id": "test_the_details_are_stored_returned_and_audited_without_their_values",
+      "upstream_ids": [
+        "DL-078",
+        "SEC-006",
+        "DB-CUST-001"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_customer_details_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R2c: Customer date of birth, gender and nationality, all optional (DL-078 answer 3; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/V1_058_PLAN.md)."
+    },
+    {
+      "test_id": "test_the_database_refuses_details_outside_the_rules",
+      "upstream_ids": [
+        "DL-078",
+        "DB-CUST-001"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_customer_details_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R2c: Customer date of birth, gender and nationality, all optional (DL-078 answer 3; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/V1_058_PLAN.md)."
+    },
+    {
+      "test_id": "test_an_update_through_the_earlier_overload_keeps_the_details",
+      "upstream_ids": [
+        "DL-078",
+        "BR-CUST-003"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_customer_details_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R2c: Customer date of birth, gender and nationality, all optional (DL-078 answer 3; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/V1_058_PLAN.md)."
+    },
+    {
+      "test_id": "test_the_details_are_kept_in_the_command_replay",
+      "upstream_ids": [
+        "DL-078",
+        "DB-CUST-001"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_customer_details_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R2c: Customer date of birth, gender and nationality, all optional (DL-078 answer 3; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/V1_058_PLAN.md)."
+    },
+    {
+      "test_id": "test_v1_058_r2c_is_the_forward_only_head",
+      "upstream_ids": [
+        "DL-078",
+        "DB-CUST-001"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_customer_details_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R2c: Customer date of birth, gender and nationality, all optional (DL-078 answer 3; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/V1_058_PLAN.md)."
+    },
+    {
+      "test_id": "TEST-FE-815",
+      "upstream_ids": [
+        "DL-078",
+        "BR-CUST-003"
+      ],
+      "test_level": "UI",
+      "test_path": "frontend/src/customerClient.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R2c: the Customer client reads the optional date of birth (yyyy-mm-dd), gender (FEMALE or MALE) and nationality, and refuses other values (DL-078 answer 3)."
+    },
+    {
+      "test_id": "TEST-FE-816",
+      "upstream_ids": [
+        "DL-078",
+        "BR-CUST-003"
+      ],
+      "test_level": "UI",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R2c: the Customers screen records the optional date of birth, gender and nationality, shows the date as dd/mm/yyyy, and an update sends only the detail that was changed (a cleared gender is sent as null) (DL-078 answer 3)."
+    },
+    {
+      "test_id": "test_customer_detail_digests_keep_older_requests_and_tell_different_details_apart",
+      "upstream_ids": [
+        "DL-078",
+        "API-016"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_customer_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R2c review round 1: the Customer command fingerprint and replay with the optional details (DL-078 answer 3; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/V1_058_PLAN.md)."
+    },
+    {
+      "test_id": "test_customer_command_replay_keeps_the_details_and_refuses_a_different_detail",
+      "upstream_ids": [
+        "DL-078",
+        "API-016"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_customer_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R2c review round 1: the Customer command fingerprint and replay with the optional details (DL-078 answer 3; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/V1_058_PLAN.md)."
     }
   ]
 }

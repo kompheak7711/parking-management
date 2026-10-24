@@ -6,6 +6,7 @@ import {
   CustomerIdNumberInUseError,
   CustomerDetail,
   CustomerFinancialSummary,
+  CustomerGender,
   CustomerListItem,
   CustomerRequestError,
   CustomerSource,
@@ -61,7 +62,10 @@ type CustomerSourceField =
   | "email_address"
   | "contact_address"
   | "memo"
-  | "id_document_number";
+  | "id_document_number"
+  | "date_of_birth"
+  | "gender"
+  | "nationality";
 
 interface PendingUpdateReview {
   customerId: string;
@@ -124,6 +128,34 @@ function optionalFormString(data: FormData, name: string): string | null {
   return value === "" ? null : value;
 }
 
+// DL-078 answer 3 (V1-058 R2c): gender is a choice; anything else is not recorded.
+function genderFormValue(data: FormData, name: string): CustomerGender | null {
+  const value = formString(data, name);
+  return value === "FEMALE" || value === "MALE" ? value : null;
+}
+
+// The latest date of birth a date box offers: today in Phnom Penh (yyyy-mm-dd).
+function todayInPhnomPenh(): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Phnom_Penh",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+const GENDER_NAMES: Record<CustomerGender, string> = {
+  FEMALE: "Female",
+  MALE: "Male",
+};
+
+// dd/mm/yyyy, as everywhere in the app (approved 2026-10-12).
+function dateOfBirthText(value: string | null | undefined): string {
+  if (value === null || value === undefined) return "Not recorded";
+  const [year, month, day] = value.split("-");
+  return `${day ?? ""}/${month ?? ""}/${year ?? ""}`;
+}
+
 function usd(cents: number): string {
   if (!Number.isSafeInteger(cents)) return "Unsupported amount";
   const negative = cents < 0;
@@ -141,6 +173,9 @@ const UPDATE_FORM_FIELDS: readonly (readonly [CustomerSourceField, string])[] =
     ["contact_address", "edit-customer-address"],
     ["memo", "edit-customer-memo"],
     ["id_document_number", "edit-customer-id-number"],
+    ["date_of_birth", "edit-customer-date-of-birth"],
+    ["gender", "edit-customer-gender"],
+    ["nationality", "edit-customer-nationality"],
   ];
 
 function differingUpdateFields(
@@ -181,6 +216,15 @@ function updateSource(
     id_document_number: edited.has("id_document_number")
       ? optionalFormString(data, "edit-customer-id-number")
       : current.id_document_number,
+    date_of_birth: edited.has("date_of_birth")
+      ? optionalFormString(data, "edit-customer-date-of-birth")
+      : current.date_of_birth,
+    gender: edited.has("gender")
+      ? genderFormValue(data, "edit-customer-gender")
+      : current.gender,
+    nationality: edited.has("nationality")
+      ? optionalFormString(data, "edit-customer-nationality")
+      : current.nationality,
     confirmed_distinct: data.get("edit-customer-confirmed-distinct") === "on",
   };
 }
@@ -193,6 +237,9 @@ function createSource(data: FormData): CustomerSource {
     contact_address: optionalFormString(data, "customer-address"),
     memo: optionalFormString(data, "customer-memo"),
     id_document_number: formString(data, "customer-id-number"),
+    date_of_birth: optionalFormString(data, "customer-date-of-birth"),
+    gender: genderFormValue(data, "customer-gender"),
+    nationality: optionalFormString(data, "customer-nationality"),
     confirmed_distinct: data.get("customer-confirmed-distinct") === "on",
   };
 }
@@ -224,6 +271,18 @@ function changedCustomerSource(
     draft.id_document_number !== current.id_document_number
   )
     changed.id_document_number = draft.id_document_number;
+  if (
+    edited.has("date_of_birth") &&
+    (draft.date_of_birth ?? null) !== current.date_of_birth
+  )
+    changed.date_of_birth = draft.date_of_birth ?? null;
+  if (edited.has("gender") && (draft.gender ?? null) !== current.gender)
+    changed.gender = draft.gender ?? null;
+  if (
+    edited.has("nationality") &&
+    (draft.nationality ?? null) !== current.nationality
+  )
+    changed.nationality = draft.nationality ?? null;
   if (draft.confirmed_distinct) changed.confirmed_distinct = true;
   return changed;
 }
@@ -278,7 +337,10 @@ function hasChangedCustomerSource(source: Partial<CustomerSource>): boolean {
     "email_address" in source ||
     "contact_address" in source ||
     "memo" in source ||
-    "id_document_number" in source
+    "id_document_number" in source ||
+    "date_of_birth" in source ||
+    "gender" in source ||
+    "nationality" in source
   );
 }
 
@@ -418,6 +480,8 @@ function fingerprintPayload(
   );
 }
 
+// A replayed command shows the Customer's current ID number and details (V1-059 part B,
+// V1-058 R2c), so the result proofs leave the details out; the version still proves the result.
 export async function customerReconciliationResultFingerprint(
   kind: "update" | "deactivate",
   customer: Parameters<typeof fingerprintPayload>[1],
@@ -450,6 +514,9 @@ export async function customerCreateRequestFingerprint(
           normalizedOptionalSourceValue(source.contact_address),
           normalizedOptionalSourceValue(source.memo),
           normalizedOptionalSourceValue(source.id_document_number),
+          normalizedOptionalSourceValue(source.date_of_birth),
+          normalizedOptionalSourceValue(source.gender),
+          normalizedOptionalSourceValue(source.nationality),
           source.confirmed_distinct === true,
         ]),
       ),
@@ -523,6 +590,9 @@ export async function customerUpdateRequestFingerprint(
         "contact_address",
         "memo",
         "id_document_number",
+        "date_of_birth",
+        "gender",
+        "nationality",
       ] as const
     )
       .filter((field) => Object.hasOwn(changed, field))
@@ -2198,6 +2268,43 @@ export function CustomerManagement({
             />
           </div>
           <div className="form-field">
+            <label htmlFor="customer-date-of-birth">
+              Date of birth (optional)
+            </label>
+            <input
+              disabled={loading}
+              id="customer-date-of-birth"
+              max={todayInPhnomPenh()}
+              min="1900-01-01"
+              name="customer-date-of-birth"
+              type="date"
+              defaultValue={createDraft?.date_of_birth ?? ""}
+            />
+          </div>
+          <div className="form-field">
+            <label htmlFor="customer-gender">Gender (optional)</label>
+            <select
+              disabled={loading}
+              id="customer-gender"
+              name="customer-gender"
+              defaultValue={createDraft?.gender ?? ""}
+            >
+              <option value="">Not recorded</option>
+              <option value="FEMALE">Female</option>
+              <option value="MALE">Male</option>
+            </select>
+          </div>
+          <div className="form-field">
+            <label htmlFor="customer-nationality">Nationality (optional)</label>
+            <input
+              disabled={loading}
+              id="customer-nationality"
+              maxLength={64}
+              name="customer-nationality"
+              defaultValue={createDraft?.nationality ?? ""}
+            />
+          </div>
+          <div className="form-field">
             <label htmlFor="customer-phone">Phone (optional)</label>
             <input
               disabled={loading}
@@ -2275,6 +2382,22 @@ export function CustomerManagement({
                 {selected.id_document_number ??
                   "Not recorded yet. Add it with Update Customer."}
               </dd>
+            </div>
+            <div>
+              <dt>Date of birth</dt>
+              <dd>{dateOfBirthText(selected.date_of_birth)}</dd>
+            </div>
+            <div>
+              <dt>Gender</dt>
+              <dd>
+                {selected.gender === null
+                  ? "Not recorded"
+                  : GENDER_NAMES[selected.gender]}
+              </dd>
+            </div>
+            <div>
+              <dt>Nationality</dt>
+              <dd>{selected.nationality ?? "Not recorded"}</dd>
             </div>
             <div>
               <dt>Phone</dt>
@@ -2566,6 +2689,55 @@ export function CustomerManagement({
                   />
                 </div>
                 <div className="form-field">
+                  <label htmlFor="edit-customer-date-of-birth">
+                    Date of birth
+                  </label>
+                  <input
+                    defaultValue={
+                      editDraft === null
+                        ? (selected.date_of_birth ?? "")
+                        : (editDraft.date_of_birth ?? "")
+                    }
+                    disabled={loading}
+                    id="edit-customer-date-of-birth"
+                    max={todayInPhnomPenh()}
+                    min="1900-01-01"
+                    name="edit-customer-date-of-birth"
+                    type="date"
+                  />
+                </div>
+                <div className="form-field">
+                  <label htmlFor="edit-customer-gender">Gender</label>
+                  <select
+                    defaultValue={
+                      editDraft === null
+                        ? (selected.gender ?? "")
+                        : (editDraft.gender ?? "")
+                    }
+                    disabled={loading}
+                    id="edit-customer-gender"
+                    name="edit-customer-gender"
+                  >
+                    <option value="">Not recorded</option>
+                    <option value="FEMALE">Female</option>
+                    <option value="MALE">Male</option>
+                  </select>
+                </div>
+                <div className="form-field">
+                  <label htmlFor="edit-customer-nationality">Nationality</label>
+                  <input
+                    defaultValue={
+                      editDraft === null
+                        ? (selected.nationality ?? "")
+                        : (editDraft.nationality ?? "")
+                    }
+                    disabled={loading}
+                    id="edit-customer-nationality"
+                    maxLength={64}
+                    name="edit-customer-nationality"
+                  />
+                </div>
+                <div className="form-field">
                   <label htmlFor="edit-customer-memo">Memo</label>
                   <textarea
                     defaultValue={
@@ -2657,6 +2829,23 @@ export function CustomerManagement({
                     <div>
                       <dt>Draft ID number / Passport number</dt>
                       <dd>{editDraft.id_document_number ?? "Not recorded"}</dd>
+                    </div>
+                    <div>
+                      <dt>Draft date of birth</dt>
+                      <dd>{dateOfBirthText(editDraft.date_of_birth)}</dd>
+                    </div>
+                    <div>
+                      <dt>Draft gender</dt>
+                      <dd>
+                        {editDraft.gender === null ||
+                        editDraft.gender === undefined
+                          ? "Not recorded"
+                          : GENDER_NAMES[editDraft.gender]}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Draft nationality</dt>
+                      <dd>{editDraft.nationality ?? "Not recorded"}</dd>
                     </div>
                   </dl>
                 )}
