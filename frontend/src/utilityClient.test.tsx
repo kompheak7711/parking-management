@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
+  MeterSerialNumberInUseError,
   UtilityClientError,
   UtilityConflictError,
   utilityApi,
@@ -544,5 +545,50 @@ describe("Utility client", () => {
     await expect(utilityApi.loadMeters(meter.unit_id)).rejects.toBeInstanceOf(
       UtilityClientError,
     );
+  });
+
+  it("TEST-FE-V059B-01 names a Meter serial already used in the Property", async () => {
+    Object.defineProperty(document, "cookie", {
+      configurable: true,
+      value: "__Host-prm_csrf=utility-token",
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            error: {
+              code: "METER_SERIAL_NUMBER_IN_USE",
+              fields: ["serial_number"],
+            },
+            meta: { request_id: "serial-in-use" },
+          }),
+          { status: 409, headers: { "Content-Type": "application/json" } },
+        ),
+      ),
+    );
+    const install = utilityApi.installMeter(
+      meter.unit_id,
+      {
+        utility_type: "WATER",
+        serial_number: "WA-U101",
+        measurement_unit_code: "M3",
+        description: null,
+        installed_date: "2026-08-01",
+        memo: null,
+        initial_reading: {
+          reading_date: "2026-08-01",
+          reading_value: "1.000000",
+          source_evidence: "Photograph ref 1",
+        },
+      },
+      "10000000-0000-4000-8000-000000000005",
+    );
+    await expect(install).rejects.toBeInstanceOf(MeterSerialNumberInUseError);
+    await expect(install).rejects.toMatchObject({
+      fields: ["serial_number"],
+      message:
+        "Another Meter of this Property, current or replaced, already has this serial number.",
+    });
   });
 });

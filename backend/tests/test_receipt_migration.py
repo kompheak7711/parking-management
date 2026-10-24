@@ -57,6 +57,15 @@ def source(url: str) -> tuple[UUID, UUID, UUID, UUID, UUID]:
     return human, prop, customer, payment, UUID(str(row[0]))
 
 
+def payment_number(database_url: str, payment: UUID) -> str:
+    with psycopg.connect(database_url) as connection:
+        row = connection.execute(
+            "SELECT payment_number FROM app.payments WHERE id=%s", (payment,)
+        ).fetchone()
+    assert row is not None and str(row[0]).startswith("RCP")
+    return str(row[0])
+
+
 def test_receipt_confirmation_identity_money_and_audit(migrated_database_url: str) -> None:  # noqa: F811
     human, prop, customer, payment, receipt = source(migrated_database_url)
     staff = actor(human, prop, "receipts.read")
@@ -65,7 +74,8 @@ def test_receipt_confirmation_identity_money_and_audit(migrated_database_url: st
     identity = result["receipt"]
     assert isinstance(identity, dict)
     assert identity["id"] == str(receipt)
-    assert identity["receipt_number"] == f"R-{receipt}"
+    # DL-071 answer 10 (V1-059 part B): the Receipt has its Payment's number (RCP...).
+    assert identity["receipt_number"] == payment_number(migrated_database_url, payment)
     assert identity["payment_id"] == str(payment)
     assert identity["payer_customer_id"] == str(customer)
     assert identity["issued_by"] == str(human)
@@ -166,7 +176,7 @@ def test_receipt_reprint_replay_conflict_and_no_new_money(migrated_database_url:
     assert service().reprint(prop, receipt, request, actor=staff) == result
     assert result["receipt_id"] == str(receipt)
     assert result["payment_id"] == str(payment)
-    assert result["receipt_number"] == f"R-{receipt}"
+    assert result["receipt_number"] == payment_number(migrated_database_url, payment)
     with pytest.raises(ReceiptIdempotencyKeyReused):
         service().reprint(
             prop,

@@ -134,7 +134,7 @@ def committed_sources(database_url: str) -> tuple[UUID, UUID, UUID]:
 def install_payload() -> dict[str, object]:
     return {
         "utility_type": "ELECTRICITY",
-        "serial_number": "ELEC-API-301",
+        "serial_number": f"ELEC-API-{uuid4().hex[:12]}",
         "measurement_unit_code": "KWH",
         "description": "Main Electricity Meter",
         "installed_date": date(2026, 1, 1),
@@ -177,7 +177,7 @@ def test_v1_043_is_forward_only_head_and_runtime_has_only_command_execute(
     migrated_database_url: str,
 ) -> None:
     config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
-    assert ScriptDirectory.from_config(config).get_current_head() == "20270204_192"
+    assert ScriptDirectory.from_config(config).get_current_head() == "20270207_195"
     source = (
         Path(__file__).parents[1] / "migrations/versions/20260829_34_v1_043_utility_api.py"
     ).read_text()
@@ -186,7 +186,7 @@ def test_v1_043_is_forward_only_head_and_runtime_has_only_command_execute(
         command.downgrade(config, "20260829_33")
     with psycopg.connect(migrated_database_url) as owner:
         assert owner.execute("SELECT version_num FROM alembic_version").fetchone() == (
-            "20270204_192",
+            "20270207_195",
         )
         for table in (
             "utility_meters",

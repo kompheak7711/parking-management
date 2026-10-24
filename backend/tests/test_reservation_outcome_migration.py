@@ -80,7 +80,9 @@ def test_customer_and_property_outcomes_preserve_exact_source_links_and_audit(
         customer_outcome,
         None,
     )
-    assert property_row[11:] == ("REFUND", property_outcome, "RF-SOURCE-1")
+    assert property_row[11:13] == ("REFUND", property_outcome)
+    # DL-071 answer 10 (V1-059 part B): the database gives the Refund its RFD number.
+    assert str(property_row[13]).startswith("RFD")
     with psycopg.connect(reservation_outcome_database_url) as verify:
         assert verify.execute(
             """
@@ -165,7 +167,7 @@ def test_duplicate_refund_number_rolls_back_cancellation_and_availability(
         actor2, property2, unit2, _, reservation2 = active_reservation(setup)
         setup.commit()
     with psycopg.connect(financial_database_url()) as runtime:
-        cancel(
+        first = cancel(
             runtime,
             actor_id=actor1,
             property_id=property1,
@@ -175,9 +177,12 @@ def test_duplicate_refund_number_rolls_back_cancellation_and_availability(
             responsibility="PROPERTY",
             property_could_provide_unit=False,
             coordination_reference="CASE-A",
-            refund_number="RF-UNIQUE-ROLLBACK",
         )
         runtime.commit()
+    # DL-071 answer 10 (V1-059 part B): the database gives the Refund number; a draft whose
+    # reference is that used number is refused and the cancellation rolls back.
+    used_number = str(first[13])
+    assert used_number.startswith("RFD")
     failed_event = uuid4()
     with psycopg.connect(financial_database_url()) as runtime:
         with pytest.raises(Error) as duplicate:
@@ -191,7 +196,7 @@ def test_duplicate_refund_number_rolls_back_cancellation_and_availability(
                 responsibility="PROPERTY",
                 property_could_provide_unit=False,
                 coordination_reference="CASE-B",
-                refund_number="RF-UNIQUE-ROLLBACK",
+                refund_number=used_number,
             )
             runtime.commit()
         assert duplicate.value.sqlstate == "23505"

@@ -305,6 +305,16 @@ export class UtilityConflictError extends UtilityClientError {
   }
 }
 
+// DL-071 answer 12: another Meter of the Property, current or replaced, has this serial.
+export class MeterSerialNumberInUseError extends UtilityConflictError {
+  constructor(fields: string[] = [], requestId: string | null = null) {
+    super(fields, requestId);
+    this.message =
+      "Another Meter of this Property, current or replaced, already has this serial number.";
+    this.name = "MeterSerialNumberInUseError";
+  }
+}
+
 function object(value: unknown): Record<string, unknown> {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     throw new UtilityClientError();
@@ -388,6 +398,13 @@ async function response(
       : [];
   if (result.status === 401 || result.status === 403) {
     throw new UtilityAuthorizationError(fields, requestId);
+  }
+  if (
+    result.status === 409 &&
+    error !== null &&
+    error.code === "METER_SERIAL_NUMBER_IN_USE"
+  ) {
+    throw new MeterSerialNumberInUseError(fields, requestId);
   }
   if (result.status === 409 || result.status === 412) {
     throw new UtilityConflictError(fields, requestId);

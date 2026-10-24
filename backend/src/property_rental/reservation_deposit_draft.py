@@ -100,23 +100,32 @@ def _text(value: object, name: str, limit: int) -> str:
     return value
 
 
+def draft_refund_reference(outcome_id: UUID) -> str:
+    """The internal reference of a Refund draft; the database gives the Refund its number.
+
+    DL-071 answer 10 (V1-059 part B): staff no longer type a Refund number. The Refund gets the
+    next RFD number when the draft is confirmed and the Refund is recorded.
+    """
+    return f"DRAFT-{outcome_id}"
+
+
 def _refund_details(
     decision: ReservationDepositDecision,
-    refund_number: str | None,
+    outcome_id: UUID,
     method: RefundMethodChoice | None,
 ) -> tuple[str | None, UUID | None, str | None]:
     if decision is ReservationDepositDecision.REFUND:
-        if refund_number is None or method is None:
+        if method is None:
             raise ReservationDepositDraftInvalidError(
-                "A Reservation Refund draft needs a Refund number, method and reference note"
+                "A Reservation Refund draft needs a Refund method and reference note"
             )
         choice = RefundMethodChoice(method.refund_method_id, method.reference_note)
         return (
-            _text(refund_number, "refund_number", 128),
+            draft_refund_reference(outcome_id),
             choice.refund_method_id,
             choice.reference_note,
         )
-    if refund_number is not None or method is not None:
+    if method is not None:
         raise ReservationDepositDraftInvalidError("A forfeiture draft takes no Refund details")
     return None, None, None
 
@@ -129,7 +138,6 @@ class RecordReservationDepositDraftCommand:
     reservation_id: UUID
     outcome_id: UUID
     reason: str
-    refund_number: str | None = None
     method: RefundMethodChoice | None = None
 
     def __post_init__(self) -> None:
@@ -150,7 +158,6 @@ class RecordReservationDepositCorrectionDraftCommand:
     replacement_outcome_id: UUID
     reason: str
     evidence_reference: str
-    refund_number: str | None = None
     method: RefundMethodChoice | None = None
 
     def __post_init__(self) -> None:
@@ -279,11 +286,10 @@ class ReservationDepositDraftService:
             command.reservation_id,
             command.outcome_id,
             command.reason,
-            command.refund_number,
             command.method,
         )
-        refund_number, method_id, note = _refund_details(
-            decision, request.refund_number, request.method
+        refund_reference, method_id, note = _refund_details(
+            decision, request.outcome_id, request.method
         )
         return self._call(
             "SELECT app.record_reservation_deposit_draft(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
@@ -295,7 +301,7 @@ class ReservationDepositDraftService:
                 decision.value,
                 request.outcome_id,
                 request.reason,
-                refund_number,
+                refund_reference,
                 method_id,
                 note,
                 capability,
@@ -326,11 +332,10 @@ class ReservationDepositDraftService:
             command.replacement_outcome_id,
             command.reason,
             command.evidence_reference,
-            command.refund_number,
             command.method,
         )
-        refund_number, method_id, note = _refund_details(
-            decision, request.refund_number, request.method
+        refund_reference, method_id, note = _refund_details(
+            decision, request.replacement_outcome_id, request.method
         )
         return self._call(
             "SELECT app.record_reservation_deposit_correction_draft("
@@ -346,7 +351,7 @@ class ReservationDepositDraftService:
                 request.replacement_outcome_id,
                 request.reason,
                 request.evidence_reference,
-                refund_number,
+                refund_reference,
                 method_id,
                 note,
                 DEPOSIT_OUTCOME_CORRECT_CAPABILITY,

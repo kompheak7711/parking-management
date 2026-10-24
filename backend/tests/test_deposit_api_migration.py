@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, timedelta
 from pathlib import Path
@@ -659,10 +660,10 @@ def test_ledger_includes_refund_and_refund_correction_history(
     correction = next(
         event for event in page.items if event.event_kind == "REFUND_VALUE_CORRECTION"
     )
-    assert {event.reference_number for event in refunds} == {
-        "RF-LEDGER-ORIGINAL",
-        "RF-LEDGER-REPLACEMENT",
-    }
+    # DL-071 answer 10 (V1-059 part B): each Refund shows the RFD number the database gave it.
+    numbers = {event.reference_number for event in refunds}
+    assert len(numbers) == 2
+    assert all(re.fullmatch(r"RFD\d{6,}", str(number)) for number in numbers)
     assert all(event.currency == "USD" for event in refunds)
     assert all(event.amount_minor is not None for event in refunds)
     assert correction.evidence_reference == "EVIDENCE-LEDGER"

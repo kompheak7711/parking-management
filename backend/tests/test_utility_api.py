@@ -22,6 +22,7 @@ from property_rental.utility_api import (
     CorrectionResult,
     MeterRecord,
     MeterReplacementEvidenceRecord,
+    MeterSerialNumberInUse,
     ReadingCorrectionRecord,
     ReadingCreateInput,
     ReadingRecord,
@@ -823,3 +824,68 @@ def test_idempotency_digest_binds_action_and_target_resource() -> None:
     assert _digest(reading, "RECORD_READING", first_meter) != _digest(
         reading, "CORRECT_READING", first_meter
     )
+
+
+def test_install_uses_kwh_or_m3_and_refuses_another_unit_code() -> None:
+    """DL-071 answer 9: the measurement unit follows the Utility Type (V1-059 part B)."""
+    flow = InMemoryUtilityFlow(uuid4())
+    client = client_for(flow, "utility_meters.manage")
+    payload: dict[str, object] = {
+        "utility_type": "ELECTRICITY",
+        "serial_number": "EL-U101",
+        "installed_date": "2026-08-01",
+        "initial_reading": {
+            "reading_date": "2026-08-01",
+            "reading_value": "1.000000",
+            "source_evidence": "Photograph 1",
+        },
+    }
+    url = f"/api/v1/units/{flow.unit_id}/meters"
+    assert client.post(url, json=payload, headers=browser_headers(uuid4())).status_code == 201
+    assert flow.last_payload is not None
+    assert flow.last_payload["measurement_unit_code"] == "KWH"
+    water = {**payload, "utility_type": "WATER", "measurement_unit_code": "M3"}
+    assert client.post(url, json=water, headers=browser_headers(uuid4())).status_code == 201
+    assert flow.last_payload is not None
+    assert flow.last_payload.get("measurement_unit_code") == "M3"
+    for wrong in (
+        {**payload, "measurement_unit_code": "MWH"},
+        {**water, "measurement_unit_code": "KWH"},
+    ):
+        assert client.post(url, json=wrong, headers=browser_headers(uuid4())).status_code == 422
+
+
+def test_install_with_a_serial_used_in_the_property_answers_409() -> None:
+    """DL-071 answer 12: a used serial, current or replaced Meter, is refused (V1-059 part B)."""
+
+    class UsedSerialFlow(InMemoryUtilityFlow):
+        def install_meter(
+            self,
+            unit_id: UUID,
+            *,
+            payload: dict[str, object],
+            actor_id: UUID,
+            idempotency_key: UUID,
+            request_digest: str,
+        ) -> MeterRecord:
+            raise MeterSerialNumberInUse("Meter serial number is already used")
+
+    flow = UsedSerialFlow(uuid4())
+    client = client_for(flow, "utility_meters.manage")
+    response = client.post(
+        f"/api/v1/units/{flow.unit_id}/meters",
+        json={
+            "utility_type": "WATER",
+            "serial_number": "WA-U101",
+            "installed_date": "2026-08-01",
+            "initial_reading": {
+                "reading_date": "2026-08-01",
+                "reading_value": "1.000000",
+                "source_evidence": "Photograph 1",
+            },
+        },
+        headers=browser_headers(uuid4()),
+    )
+    assert response.status_code == 409
+    assert response.json()["error"]["code"] == "METER_SERIAL_NUMBER_IN_USE"
+    assert response.json()["error"]["fields"] == ["serial_number"]

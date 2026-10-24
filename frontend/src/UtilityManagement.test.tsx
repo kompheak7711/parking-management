@@ -176,7 +176,7 @@ describe("UtilityManagement", () => {
   it("TEST-FE-217 renders Meter, corrected Reading, and Rate evidence", async () => {
     const client = api();
     await loadWorkspace(client);
-    expect(screen.getByText("105.000000 KWH")).toBeInTheDocument();
+    expect(screen.getByText("105.000000 kWh")).toBeInTheDocument();
     expect(
       screen.getByText(
         "Validated by 10000000-0000-4000-8000-000000000015 at 2026-07-31T12:00:00Z",
@@ -788,8 +788,8 @@ describe("UtilityManagement", () => {
       name: "Selected Reading correction source",
     });
     expect(sourceRegion).toHaveTextContent(readingId);
-    expect(sourceRegion).toHaveTextContent("100.000000 KWH");
-    expect(sourceRegion).toHaveTextContent("105.000000 KWH");
+    expect(sourceRegion).toHaveTextContent("100.000000 kWh");
+    expect(sourceRegion).toHaveTextContent("105.000000 kWh");
     expect(sourceRegion).toHaveTextContent(/Expected Reading version\s*2/);
     expect(
       screen.queryByLabelText("Reading identifier"),
@@ -813,7 +813,7 @@ describe("UtilityManagement", () => {
     expect(client.correctReading).not.toHaveBeenCalled();
     expect(
       screen.getByRole("region", { name: "Confirm Reading correction" }),
-    ).toHaveTextContent("105.000000 KWH to 110 KWH");
+    ).toHaveTextContent("105.000000 kWh to 110 kWh");
 
     fireEvent.click(
       screen.getByRole("button", { name: "Confirm and append correction" }),

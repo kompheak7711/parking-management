@@ -534,7 +534,10 @@ def test_allocation_bounded_fifo_proposals_continue_after_explicit_post(
         targets = cast(list[dict[str, object]], proposal["targets"])
         assert 0 < len(targets) <= 100
         if count == 0:
-            assert len(targets) < 100 if large_names else len(targets) == 100
+            # DL-071 answer 10 (V1-059 part B): an issued Invoice has a short INV number given
+            # by the database; a long draft reference stays in draft_reference and is not part
+            # of the proposal, so the first page holds 100 targets either way.
+            assert len(targets) == 100
         assert [target["invoice_id"] for target in targets] == invoices[
             count : count + len(targets)
         ]
@@ -600,6 +603,15 @@ def test_allocation_same_due_date_uses_issuance_then_invoice_number(
                 (human, human, ids),
             )
             connection.execute("SET CONSTRAINTS ALL IMMEDIATE")
+            # DL-071 answer 10 (V1-059 part B): the Invoice Numbers are given at issue.
+            expected = [
+                UUID(str(row[0]))
+                for row in connection.execute(
+                    "SELECT id FROM app.invoices WHERE id=ANY(%s) "
+                    'ORDER BY invoice_number COLLATE "C"',
+                    (ids,),
+                ).fetchall()
+            ]
     with psycopg.connect(migrated_database_url) as connection:
         facts = connection.execute(
             "SELECT count(DISTINCT due_date),count(DISTINCT issued_at) FROM app.invoices "

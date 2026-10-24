@@ -426,12 +426,23 @@ def test_runtime_repository_requires_reuse_decision_and_preserves_update_history
     repository = PostgresCustomerRepository(runtime_url, actor_id)
     service = CustomerService(repository)
     email = f"{uuid4()}@example.com"
-    created = service.create(uuid4(), legal_name="Dara Sok", email_address=email)
+    created = service.create(
+        uuid4(),
+        legal_name="Dara Sok",
+        id_document_number=f"ID-{uuid4().hex[:12]}",
+        email_address=email,
+    )
     with pytest.raises(CustomerReuseRequired):
-        service.create(uuid4(), legal_name="Dara S.", email_address=email.upper())
+        service.create(
+            uuid4(),
+            legal_name="Dara S.",
+            id_document_number=f"ID-{uuid4().hex[:12]}",
+            email_address=email.upper(),
+        )
     idn = service.create(
         uuid4(),
         legal_name="IDN Customer",
+        id_document_number=f"ID-{uuid4().hex[:12]}",
         email_address="user@bücher.de",
     )
     assert idn.email_address == "user@xn--bcher-kva.de"
@@ -439,6 +450,7 @@ def test_runtime_repository_requires_reuse_decision_and_preserves_update_history
         service.create(
             uuid4(),
             legal_name="Equivalent ASCII IDN Customer",
+            id_document_number=f"ID-{uuid4().hex[:12]}",
             email_address="user@xn--bcher-kva.de",
         )
     updated = service.update(
@@ -555,7 +567,9 @@ def test_runtime_reuse_decision_serializes_concurrent_create_and_update(
             )
 
     service = CustomerService(PostgresCustomerRepository(runtime_url, actor_id))
-    current = service.create(uuid4(), legal_name="Existing Customer")
+    current = service.create(
+        uuid4(), legal_name="Existing Customer", id_document_number=f"ID-{uuid4().hex[:12]}"
+    )
     shared_email = f"concurrent-{uuid4()}@example.com"
     barrier = Barrier(2)
 
@@ -565,6 +579,7 @@ def test_runtime_reuse_decision_serializes_concurrent_create_and_update(
             service.create(
                 uuid4(),
                 legal_name="New Customer",
+                id_document_number=f"ID-{uuid4().hex[:12]}",
                 email_address=shared_email.upper(),
             )
         except CustomerReuseRequired:
@@ -641,6 +656,7 @@ def test_runtime_reuse_lock_wait_is_bounded_and_reported_unavailable(
                 property_id,
                 customer_id=uuid4(),
                 legal_name="Bounded Lock Wait",
+                id_document_number=f"ID-{uuid4().hex[:12]}",
                 phone_number=None,
                 email_address=email,
                 contact_address=None,
@@ -876,6 +892,7 @@ def test_runtime_customer_commands_replay_original_results_after_later_changes(
         property_id,
         customer_id=customer_id,
         legal_name="Original Customer",
+        id_document_number=f"ID-{uuid4().hex[:12]}",
         phone_number=None,
         email_address="original@example.com",
         contact_address=None,
@@ -919,6 +936,7 @@ def test_runtime_customer_commands_replay_original_results_after_later_changes(
         property_id,
         customer_id=customer_id,
         legal_name="Original Customer",
+        id_document_number=f"ID-{uuid4().hex[:12]}",
         phone_number=None,
         email_address="original@example.com",
         contact_address=None,
@@ -954,6 +972,7 @@ def test_runtime_customer_commands_replay_original_results_after_later_changes(
             property_id,
             customer_id=customer_id,
             legal_name="Different Input",
+            id_document_number=f"ID-{uuid4().hex[:12]}",
             phone_number=None,
             email_address="different@example.com",
             contact_address=None,
@@ -980,6 +999,7 @@ def test_runtime_customer_commands_replay_original_results_after_later_changes(
         property_id,
         customer_id=uuid4(),
         legal_name="Independently Scoped Customer",
+        id_document_number=f"ID-{uuid4().hex[:12]}",
         phone_number=None,
         email_address=None,
         contact_address=None,
@@ -1062,6 +1082,7 @@ def test_runtime_customer_commands_replay_original_results_after_later_changes(
             property_id,
             customer_id=customer_id,
             legal_name="Changed After Archive",
+            id_document_number=f"ID-{uuid4().hex[:12]}",
             phone_number=None,
             email_address="changed-after-archive@example.com",
             contact_address=None,

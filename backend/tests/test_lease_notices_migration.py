@@ -113,7 +113,8 @@ def business_snapshot(url: str, lease: UUID) -> list[tuple[object, ...]]:
     with psycopg.connect(url) as connection:
         return connection.execute(
             "SELECT to_jsonb(l),to_jsonb(u),to_jsonb(o),to_jsonb(i)-ARRAY["
-            "'due_date_override_reason','due_date_set_by','due_date_set_at'],to_jsonb(il) "
+            "'due_date_override_reason','due_date_set_by','due_date_set_at','draft_reference'],"
+            "to_jsonb(il) "
             "FROM app.leases l JOIN app.units u ON u.id=l.unit_id "
             "LEFT JOIN app.occupancies o ON o.lease_id=l.id "
             "LEFT JOIN app.invoices i ON i.lease_id=l.id "

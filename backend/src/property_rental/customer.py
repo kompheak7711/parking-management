@@ -16,6 +16,8 @@ CUSTOMER_STATEMENT_TIMEOUT_MS = 3_000
 CUSTOMER_CONNECT_TIMEOUT_SECONDS = 3
 
 NIL_UUID = UUID(int=0)
+ID_DOCUMENT_NUMBER_MAX_LENGTH = 64
+ID_DOCUMENT_NUMBER_INDEX = "customers_id_document_number_unique"
 
 
 def normalize_optional(value: str | None) -> str | None:
@@ -54,6 +56,19 @@ def canonical_email(value: str | None) -> str | None:
     return f"{local}@{ascii_domain}"
 
 
+def id_document_match_key(value: str | None) -> str | None:
+    """Return the ID number compared for duplicates: no spaces or dashes, any capital letters.
+
+    The same reading as `app.customer_id_document_match_key` (DL-071 answer 11, owner answer of
+    2026-10-21).
+    """
+    normalized = normalize_optional(value)
+    if normalized is None:
+        return None
+    key = "".join(character for character in normalized if not character.isspace())
+    return key.replace("-", "").lower() or None
+
+
 def normalized_phone(value: str | None) -> str | None:
     """Return a conservative digit match key; never use it to merge automatically."""
     normalized = normalize_optional(value)
@@ -74,6 +89,7 @@ class Customer:
     contact_address: str | None = None
     memo: str | None = None
     version: int = 1
+    id_document_number: str | None = None
     _allow_legacy_phone: InitVar[bool] = False
     _allow_legacy_fields: InitVar[frozenset[str]] = frozenset()
 
@@ -114,6 +130,14 @@ class Customer:
             raise ValueError("phone_number must use supported ASCII phone characters")
         if self.version < 1:
             raise ValueError("version must be positive")
+        if "id_document_number" not in _allow_legacy_fields and self.id_document_number is not None:
+            value = self.id_document_number
+            if value != value.strip() or not 1 <= len(value) <= ID_DOCUMENT_NUMBER_MAX_LENGTH:
+                raise ValueError(
+                    "id_document_number must be normalized text of at most 64 characters"
+                )
+            if id_document_match_key(value) is None:
+                raise ValueError("id_document_number must hold a letter or a digit")
 
 
 class CustomerIdentityAlreadyExistsError(ValueError):
@@ -126,6 +150,14 @@ class CustomerVersionConflict(RuntimeError):
     def __init__(self, current_version: int) -> None:
         super().__init__("the Customer version precondition was not met")
         self.current_version = current_version
+
+
+class CustomerIdNumberInUse(ValueError):
+    """Another Customer has the same ID number; staff must use that Customer (DL-071 answer 11)."""
+
+    def __init__(self, existing: Customer | None) -> None:
+        super().__init__("another Customer has the same ID number")
+        self.existing = existing
 
 
 class CustomerReuseRequired(ValueError):
@@ -149,6 +181,13 @@ class CustomerRepository(Protocol):
     def add(self, customer: Customer) -> None: ...
 
     def update(self, customer: Customer, *, expected_version: int) -> Customer: ...
+
+
+@runtime_checkable
+class IdNumberCustomerRepository(Protocol):
+    """Repository extension that finds the Customer holding an ID number."""
+
+    def find_by_id_document_number(self, id_document_number: str) -> Customer | None: ...
 
 
 @runtime_checkable
@@ -188,7 +227,10 @@ class PostgresCustomerRepository:
     actor_id: UUID
     command: CustomerCommandContext | None = None
 
-    _columns = "id, legal_name, phone_number, email_address, contact_address, memo, version"
+    _columns = (
+        "id, legal_name, phone_number, email_address, contact_address, memo, version, "
+        "id_document_number"
+    )
     _qualified_columns = ", ".join(f"customer.{column.strip()}" for column in _columns.split(","))
 
     @staticmethod
@@ -272,6 +314,31 @@ class PostgresCustomerRepository:
             ).fetchall()
         return tuple(_customer_from_row(row) for row in rows)
 
+    def find_by_id_document_number(self, id_document_number: str) -> Customer | None:
+        """Return the minimized Customer (id and name only) that holds this ID number."""
+        key = id_document_match_key(id_document_number)
+        if key is None:
+            return None
+        with psycopg.connect(
+            self.database_url, connect_timeout=CUSTOMER_CONNECT_TIMEOUT_SECONDS
+        ) as connection:
+            self._bound_work(connection)
+            row = connection.execute(
+                "SELECT customer.id, left(customer.legal_name, 255), "
+                "NULL::text, NULL::text, NULL::text, NULL::text, customer.version "
+                "FROM app.customers AS customer "
+                "WHERE customer.id_document_number IS NOT NULL "
+                "AND app.customer_id_document_match_key(customer.id_document_number) = %s",
+                (key,),
+            ).fetchone()
+        return None if row is None else _customer_from_row(row)
+
+    def _id_number_in_use(self, error: psycopg.Error, customer: Customer) -> bool:
+        return (
+            error.diag.constraint_name == ID_DOCUMENT_NUMBER_INDEX
+            and customer.id_document_number is not None
+        )
+
     def add(self, customer: Customer) -> None:
         try:
             with psycopg.connect(
@@ -282,7 +349,7 @@ class PostgresCustomerRepository:
                     row = connection.execute(
                         """
                         SELECT * FROM app.create_customer(
-                            %s, %s, %s, %s, %s, %s, %s, %s
+                            %s, %s, %s, %s, %s, %s, %s, %s, %s
                         )
                         """,
                         (
@@ -294,13 +361,14 @@ class PostgresCustomerRepository:
                             customer.memo,
                             self.actor_id,
                             uuid4(),
+                            customer.id_document_number,
                         ),
                     ).fetchone()
                 else:
                     row = connection.execute(
                         """
                         SELECT * FROM app.execute_customer_create(
-                            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                         )
                         """,
                         (
@@ -314,9 +382,14 @@ class PostgresCustomerRepository:
                             customer.contact_address,
                             customer.memo,
                             self.actor_id,
+                            customer.id_document_number,
                         ),
                     ).fetchone()
         except psycopg.errors.UniqueViolation as error:
+            if self._id_number_in_use(error, customer):
+                raise CustomerIdNumberInUse(
+                    self.find_by_id_document_number(cast(str, customer.id_document_number))
+                ) from error
             raise CustomerIdentityAlreadyExistsError(
                 f"Customer identity {customer.customer_id} already exists"
             ) from error
@@ -324,6 +397,16 @@ class PostgresCustomerRepository:
             raise RuntimeError("Customer creation returned an invalid result")
 
     def update(self, customer: Customer, *, expected_version: int) -> Customer:
+        try:
+            return self._update(customer, expected_version=expected_version)
+        except psycopg.errors.UniqueViolation as error:
+            if self._id_number_in_use(error, customer):
+                raise CustomerIdNumberInUse(
+                    self.find_by_id_document_number(cast(str, customer.id_document_number))
+                ) from error
+            raise
+
+    def _update(self, customer: Customer, *, expected_version: int) -> Customer:
         with psycopg.connect(
             self.database_url, connect_timeout=CUSTOMER_CONNECT_TIMEOUT_SECONDS
         ) as connection:
@@ -332,7 +415,7 @@ class PostgresCustomerRepository:
                 row = connection.execute(
                     """
                     SELECT * FROM app.update_customer(
-                        %s, %s, %s, %s, %s, %s, %s, %s, %s
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                     )
                     """,
                     (
@@ -345,13 +428,14 @@ class PostgresCustomerRepository:
                         expected_version,
                         self.actor_id,
                         uuid4(),
+                        customer.id_document_number,
                     ),
                 ).fetchone()
             else:
                 row = connection.execute(
                     """
                     SELECT * FROM app.execute_customer_update(
-                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                     )
                     """,
                     (
@@ -366,6 +450,7 @@ class PostgresCustomerRepository:
                         customer.memo,
                         expected_version,
                         self.actor_id,
+                        customer.id_document_number,
                     ),
                 ).fetchone()
             if row is None:
@@ -411,7 +496,12 @@ class CustomerService:
         contact_address: str | None = None,
         memo: str | None = None,
         confirmed_distinct: bool = False,
+        id_document_number: str | None = None,
     ) -> Customer:
+        """Create a Customer; the ID number is required (DL-071 answer 11)."""
+        normalized_id_number = normalize_optional(id_document_number)
+        if normalized_id_number is None:
+            raise ValueError("id_document_number is required")
         customer = Customer(
             customer_id=customer_id,
             legal_name=legal_name.strip(),
@@ -419,8 +509,10 @@ class CustomerService:
             email_address=canonical_email(email_address),
             contact_address=normalize_optional(contact_address),
             memo=normalize_optional(memo),
+            id_document_number=normalized_id_number,
         )
         with self._reuse_guard(customer):
+            self._refuse_used_id_number(customer)
             candidates = self._other_candidates(customer)
             if candidates and not confirmed_distinct:
                 raise CustomerReuseRequired(candidates)
@@ -437,7 +529,19 @@ class CustomerService:
         contact_address: str | None,
         memo: str | None,
         confirmed_distinct: bool = False,
+        id_document_number: str | None = None,
     ) -> Customer:
+        """Update current values; a recorded ID number may be corrected, never removed.
+
+        `id_document_number=None` keeps the current number.
+        """
+        normalized_id_number = (
+            current.id_document_number
+            if id_document_number is None
+            else normalize_optional(id_document_number)
+        )
+        if current.id_document_number is not None and normalized_id_number is None:
+            raise ValueError("id_document_number cannot be removed")
         normalized_legal_name = legal_name.strip()
         normalized_phone_number = normalize_optional(phone_number)
         normalized_email_address = normalize_optional(email_address)
@@ -463,6 +567,7 @@ class CustomerService:
                 else normalized_contact_address
             ),
             "memo": current.memo if memo == current.memo else normalized_memo,
+            "id_document_number": normalized_id_number,
         }
         preserved_legacy_fields = frozenset(
             field_name
@@ -476,6 +581,7 @@ class CustomerService:
             email_address=candidate_values["email_address"],
             contact_address=candidate_values["contact_address"],
             memo=candidate_values["memo"],
+            id_document_number=candidate_values["id_document_number"],
             version=current.version + 1,
             _allow_legacy_phone=normalized_phone_number == current.phone_number,
             _allow_legacy_fields=preserved_legacy_fields,
@@ -486,18 +592,21 @@ class CustomerService:
             candidate.email_address,
             candidate.contact_address,
             candidate.memo,
+            candidate.id_document_number,
         ) == (
             current.legal_name,
             current.phone_number,
             current.email_address,
             current.contact_address,
             current.memo,
+            current.id_document_number,
         ):
             if isinstance(self.repository, VersionedCustomerRepository):
                 repository = cast(VersionedCustomerRepository, self.repository)
                 repository.assert_version(current.customer_id, current.version)
             raise ValueError("Customer update must change source data")
         with self._reuse_guard(candidate):
+            self._refuse_used_id_number(candidate)
             matches = self._other_candidates(candidate)
             if matches and not confirmed_distinct:
                 raise CustomerReuseRequired(matches)
@@ -511,6 +620,17 @@ class CustomerService:
             email_key=normalized_email(customer.email_address),
             phone_key=normalized_phone(customer.phone_number),
         )
+
+    def _refuse_used_id_number(self, customer: Customer) -> None:
+        """Refuse early, whatever `confirmed_distinct` says; the unique index decides races."""
+        if customer.id_document_number is None or not isinstance(
+            self.repository, IdNumberCustomerRepository
+        ):
+            return
+        repository = cast(IdNumberCustomerRepository, self.repository)
+        holder = repository.find_by_id_document_number(customer.id_document_number)
+        if holder is not None and holder.customer_id != customer.customer_id:
+            raise CustomerIdNumberInUse(holder)
 
     def _other_candidates(self, customer: Customer) -> tuple[Customer, ...]:
         matches = self.repository.find_reuse_candidates(
@@ -529,8 +649,16 @@ def _customer_from_row(row: tuple[object, ...]) -> Customer:
         contact_address=None if row[4] is None else str(row[4]),
         memo=None if row[5] is None else str(row[5]),
         version=int(str(row[6])),
+        id_document_number=None if len(row) < 8 or row[7] is None else str(row[7]),
         _allow_legacy_phone=True,
         _allow_legacy_fields=frozenset(
-            {"legal_name", "phone_number", "email_address", "contact_address", "memo"}
+            {
+                "legal_name",
+                "phone_number",
+                "email_address",
+                "contact_address",
+                "memo",
+                "id_document_number",
+            }
         ),
     )

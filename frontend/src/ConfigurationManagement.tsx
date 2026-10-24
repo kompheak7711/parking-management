@@ -1,6 +1,11 @@
 import { FormEvent, useRef, useState } from "react";
 
 import {
+  MEASUREMENT_UNIT_CODES,
+  measurementUnitLabel,
+} from "./measurementUnits";
+
+import {
   EffectiveConfigurationApi,
   EffectiveConfigurationConflictError,
   EffectiveConfigurationError,
@@ -171,7 +176,10 @@ export function ConfigurationManagement({
         data.get("utility-type") === "WATER"
           ? ("WATER" as const)
           : ("ELECTRICITY" as const),
-      measurement_unit_code: text(data, "utility-unit"),
+      measurement_unit_code:
+        MEASUREMENT_UNIT_CODES[
+          data.get("utility-type") === "WATER" ? "WATER" : "ELECTRICITY"
+        ],
       rate_usd_per_unit: text(data, "utility-rate"),
       effective_date: text(data, "utility-effective-date"),
       notice_at: cambodiaTimestamp(text(data, "utility-notice-at")),
@@ -478,7 +486,8 @@ export function ConfigurationManagement({
                       <td>{rate.utility_type}</td>
                       <td>{rate.effective_date}</td>
                       <td>
-                        {rate.rate_usd_per_unit} / {rate.measurement_unit_code}
+                        {rate.rate_usd_per_unit} /{" "}
+                        {measurementUnitLabel(rate.measurement_unit_code)}
                       </td>
                     </tr>
                   ))}
@@ -505,10 +514,9 @@ export function ConfigurationManagement({
                     <option value="WATER">Water</option>
                   </select>
                 </label>
-                <label>
-                  Stored unit code
-                  <input maxLength={32} name="utility-unit" required />
-                </label>
+                <p className="panel-help">
+                  Electricity is measured in kWh and water in m³.
+                </p>
                 <label>
                   USD rate per unit
                   <input

@@ -826,7 +826,7 @@ def test_refund_return_records_are_least_privilege_and_forward_only(
             ).fetchone() == (function != INTERNAL[5], True), function
     config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
     scripts = ScriptDirectory.from_config(config)
-    assert scripts.get_current_head() == "20270204_192"
+    assert scripts.get_current_head() == "20270207_195"
     revision = scripts.get_revision("20261111_107")
     assert revision is not None and revision.down_revision == "20261110_106"
     with pytest.raises(RuntimeError, match="forward-only"):

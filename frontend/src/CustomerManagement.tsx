@@ -3,6 +3,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import {
   CustomerApi,
   CustomerConflictError,
+  CustomerIdNumberInUseError,
   CustomerDetail,
   CustomerFinancialSummary,
   CustomerListItem,
@@ -59,7 +60,8 @@ type CustomerSourceField =
   | "phone_number"
   | "email_address"
   | "contact_address"
-  | "memo";
+  | "memo"
+  | "id_document_number";
 
 interface PendingUpdateReview {
   customerId: string;
@@ -138,6 +140,7 @@ const UPDATE_FORM_FIELDS: readonly (readonly [CustomerSourceField, string])[] =
     ["email_address", "edit-customer-email"],
     ["contact_address", "edit-customer-address"],
     ["memo", "edit-customer-memo"],
+    ["id_document_number", "edit-customer-id-number"],
   ];
 
 function differingUpdateFields(
@@ -175,6 +178,9 @@ function updateSource(
     memo: edited.has("memo")
       ? optionalFormString(data, "edit-customer-memo")
       : current.memo,
+    id_document_number: edited.has("id_document_number")
+      ? optionalFormString(data, "edit-customer-id-number")
+      : current.id_document_number,
     confirmed_distinct: data.get("edit-customer-confirmed-distinct") === "on",
   };
 }
@@ -186,6 +192,7 @@ function createSource(data: FormData): CustomerSource {
     email_address: optionalFormString(data, "customer-email"),
     contact_address: optionalFormString(data, "customer-address"),
     memo: optionalFormString(data, "customer-memo"),
+    id_document_number: formString(data, "customer-id-number"),
     confirmed_distinct: data.get("customer-confirmed-distinct") === "on",
   };
 }
@@ -212,6 +219,11 @@ function changedCustomerSource(
     changed.contact_address = draft.contact_address;
   if (edited.has("memo") && draft.memo !== current.memo)
     changed.memo = draft.memo;
+  if (
+    edited.has("id_document_number") &&
+    draft.id_document_number !== current.id_document_number
+  )
+    changed.id_document_number = draft.id_document_number;
   if (draft.confirmed_distinct) changed.confirmed_distinct = true;
   return changed;
 }
@@ -265,7 +277,8 @@ function hasChangedCustomerSource(source: Partial<CustomerSource>): boolean {
     "phone_number" in source ||
     "email_address" in source ||
     "contact_address" in source ||
-    "memo" in source
+    "memo" in source ||
+    "id_document_number" in source
   );
 }
 
@@ -375,6 +388,7 @@ function fingerprintPayload(
     | "email_address"
     | "contact_address"
     | "memo"
+    | "id_document_number"
     | "version"
     | "active"
     | "deactivation_reason"
@@ -392,6 +406,7 @@ function fingerprintPayload(
           normalizedEmailSourceValue(customer.email_address),
           customer.contact_address,
           customer.memo,
+          customer.id_document_number,
         ]
       : [
           kind,
@@ -434,6 +449,7 @@ export async function customerCreateRequestFingerprint(
           normalizedEmailSourceValue(source.email_address),
           normalizedOptionalSourceValue(source.contact_address),
           normalizedOptionalSourceValue(source.memo),
+          normalizedOptionalSourceValue(source.id_document_number),
           source.confirmed_distinct === true,
         ]),
       ),
@@ -482,6 +498,7 @@ export async function customerCreateResultFingerprint(
           normalizedEmailSourceValue(source.email_address),
           normalizedOptionalSourceValue(source.contact_address),
           normalizedOptionalSourceValue(source.memo),
+          normalizedOptionalSourceValue(source.id_document_number),
         ]),
       ),
     );
@@ -505,6 +522,7 @@ export async function customerUpdateRequestFingerprint(
         "email_address",
         "contact_address",
         "memo",
+        "id_document_number",
       ] as const
     )
       .filter((field) => Object.hasOwn(changed, field))
@@ -1405,6 +1423,7 @@ export function CustomerManagement({
             email_address: current.email_address,
             contact_address: current.contact_address,
             memo: current.memo,
+            id_document_number: current.id_document_number,
             ...requirement.updateSource,
           };
           setEditDraft(restoredDraft);
@@ -1699,6 +1718,12 @@ export function CustomerManagement({
         }
         void onReconciled?.(commandRequirement);
         setReconciledRetryRequirement(null);
+        if (error instanceof CustomerIdNumberInUseError) {
+          setReuseCandidates(error.candidates);
+          setEditDraft(source);
+          setStatus(error.message);
+          return;
+        }
         if (
           error instanceof CustomerConflictError &&
           error.candidates.length > 0
@@ -2160,6 +2185,19 @@ export function CustomerManagement({
             />
           </div>
           <div className="form-field">
+            <label htmlFor="customer-id-number">
+              ID number / Passport number
+            </label>
+            <input
+              disabled={loading}
+              id="customer-id-number"
+              maxLength={64}
+              name="customer-id-number"
+              required
+              defaultValue={createDraft?.id_document_number ?? ""}
+            />
+          </div>
+          <div className="form-field">
             <label htmlFor="customer-phone">Phone (optional)</label>
             <input
               disabled={loading}
@@ -2230,6 +2268,13 @@ export function CustomerManagement({
             <div>
               <dt>State</dt>
               <dd>{selected.active ? "Active" : "Deactivated"}</dd>
+            </div>
+            <div>
+              <dt>ID number / Passport number</dt>
+              <dd>
+                {selected.id_document_number ??
+                  "Not recorded yet. Add it with Update Customer."}
+              </dd>
             </div>
             <div>
               <dt>Phone</dt>
@@ -2504,6 +2549,23 @@ export function CustomerManagement({
                   />
                 </div>
                 <div className="form-field">
+                  <label htmlFor="edit-customer-id-number">
+                    ID number / Passport number
+                  </label>
+                  <input
+                    defaultValue={
+                      editDraft === null
+                        ? (selected.id_document_number ?? "")
+                        : (editDraft.id_document_number ?? "")
+                    }
+                    disabled={loading}
+                    id="edit-customer-id-number"
+                    maxLength={64}
+                    name="edit-customer-id-number"
+                    required={selected.id_document_number !== null}
+                  />
+                </div>
+                <div className="form-field">
                   <label htmlFor="edit-customer-memo">Memo</label>
                   <textarea
                     defaultValue={
@@ -2591,6 +2653,10 @@ export function CustomerManagement({
                     <div>
                       <dt>Draft memo</dt>
                       <dd>{editDraft.memo ?? "Not supplied"}</dd>
+                    </div>
+                    <div>
+                      <dt>Draft ID number / Passport number</dt>
+                      <dd>{editDraft.id_document_number ?? "Not recorded"}</dd>
                     </div>
                   </dl>
                 )}

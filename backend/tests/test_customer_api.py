@@ -10,7 +10,13 @@ import pytest
 from fastapi.testclient import TestClient
 
 from property_rental.app import create_app
-from property_rental.customer import Customer, CustomerReuseRequired, CustomerVersionConflict
+from property_rental.customer import (
+    Customer,
+    CustomerIdNumberInUse,
+    CustomerReuseRequired,
+    CustomerVersionConflict,
+    id_document_match_key,
+)
 from property_rental.customer_api import (
     CustomerCommandIdentityConflict,
     CustomerCommandStatus,
@@ -120,6 +126,7 @@ class InMemoryCustomerFlow:
         actor_id: str,
         idempotency_key: UUID,
         request_digest: str,
+        id_document_number: str | None = None,
     ) -> CustomerRecord:
         existing_command = self.commands.get(idempotency_key)
         if existing_command is not None:
@@ -136,7 +143,20 @@ class InMemoryCustomerFlow:
             email_address,
             contact_address,
             memo,
+            id_document_number=id_document_number,
         )
+        holder = next(
+            (
+                record.customer
+                for record in self.customers.values()
+                if record.customer.customer_id != customer_id
+                and id_document_match_key(record.customer.id_document_number)
+                == id_document_match_key(id_document_number)
+            ),
+            None,
+        )
+        if holder is not None:
+            raise CustomerIdNumberInUse(holder)
         existing = self.customers.get(customer_id)
         if existing is not None:
             if existing.property_id == property_id and existing.customer == customer:
@@ -172,6 +192,7 @@ class InMemoryCustomerFlow:
         actor_id: str,
         idempotency_key: UUID,
         request_digest: str,
+        id_document_number: str | None = None,
     ) -> CustomerRecord:
         existing_command = self.commands.get(idempotency_key)
         if existing_command is not None:
@@ -185,18 +206,25 @@ class InMemoryCustomerFlow:
             raise CustomerVersionConflict(current.customer.version)
         if not current.active:
             raise CustomerLifecycleConflict(current.customer.version)
+        id_number = (
+            current.customer.id_document_number
+            if id_document_number is None
+            else id_document_number
+        )
         if (
             legal_name,
             phone_number,
             email_address,
             contact_address,
             memo,
+            id_number,
         ) == (
             current.customer.legal_name,
             current.customer.phone_number,
             current.customer.email_address,
             current.customer.contact_address,
             current.customer.memo,
+            current.customer.id_document_number,
         ):
             raise CustomerResourceInvalid("Customer update must change source data")
         try:
@@ -208,6 +236,7 @@ class InMemoryCustomerFlow:
                 contact_address,
                 memo,
                 current.customer.version + 1,
+                id_number,
                 _allow_legacy_phone=phone_number == current.customer.phone_number,
             )
         except ValueError as exc:
@@ -548,6 +577,7 @@ def test_customer_create_requires_scope_and_an_explicit_reuse_decision() -> None
     )
     payload: dict[str, object] = {
         "customer_id": str(uuid4()),
+        "id_document_number": f"P {uuid4().hex[:8]}",
         "legal_name": "Dara S.",
         "email_address": "dara@example.com",
     }
@@ -617,6 +647,7 @@ def test_customer_create_requires_scope_and_an_explicit_reuse_decision() -> None
 
     boundary_payload = {
         "customer_id": str(uuid4()),
+        "id_document_number": f"P {uuid4().hex[:8]}",
         "legal_name": "x" * 255,
         "confirmed_distinct": True,
     }
@@ -655,6 +686,7 @@ def test_customer_create_requires_scope_and_an_explicit_reuse_decision() -> None
             f"/api/v1/properties/{property_id}/customers",
             json={
                 "customer_id": str(uuid4()),
+                "id_document_number": f"P {uuid4().hex[:8]}",
                 "legal_name": "Malformed",
                 "confirmed_distinct": "yes",
             },
@@ -663,29 +695,38 @@ def test_customer_create_requires_scope_and_an_explicit_reuse_decision() -> None
         == 422
     )
     for invalid_payload in (
-        {"customer_id": str(uuid4()), "legal_name": "Invalid\x00Name"},
         {
             "customer_id": str(uuid4()),
+            "id_document_number": f"P {uuid4().hex[:8]}",
+            "legal_name": "Invalid\x00Name",
+        },
+        {
+            "customer_id": str(uuid4()),
+            "id_document_number": f"P {uuid4().hex[:8]}",
             "legal_name": "Invalid phone",
             "phone_number": "١٢٣",
         },
         {
             "customer_id": str(uuid4()),
+            "id_document_number": f"P {uuid4().hex[:8]}",
             "legal_name": "Invalid phone",
             "phone_number": "012/345",
         },
         {
             "customer_id": str(uuid4()),
+            "id_document_number": f"P {uuid4().hex[:8]}",
             "legal_name": "Unicode email domain requires ASCII IDN input",
             "email_address": "user@bücher.de",
         },
         {
             "customer_id": str(uuid4()),
+            "id_document_number": f"P {uuid4().hex[:8]}",
             "legal_name": "Unsupported email local punctuation",
             "email_address": "user,name@example.com",
         },
         {
             "customer_id": str(uuid4()),
+            "id_document_number": f"P {uuid4().hex[:8]}",
             "legal_name": "Unsupported email local control",
             "email_address": "user\x01name@example.com",
         },
@@ -701,7 +742,11 @@ def test_customer_create_requires_scope_and_an_explicit_reuse_decision() -> None
     surrogate_response = client.post(
         f"/api/v1/properties/{property_id}/customers",
         content=json.dumps(
-            {"customer_id": str(uuid4()), "legal_name": "Invalid\ud800Name"},
+            {
+                "customer_id": str(uuid4()),
+                "id_document_number": f"P {uuid4().hex[:8]}",
+                "legal_name": "Invalid\ud800Name",
+            },
             ensure_ascii=True,
         ),
         headers={**mutation_headers(), "Content-Type": "application/json"},
@@ -712,6 +757,7 @@ def test_customer_create_requires_scope_and_an_explicit_reuse_decision() -> None
             f"/api/v1/properties/{property_id}/customers",
             json={
                 "customer_id": str(uuid4()),
+                "id_document_number": f"P {uuid4().hex[:8]}",
                 "legal_name": "Invalid",
                 "customer_type": "TENANT",
             },
@@ -1017,6 +1063,7 @@ def test_normalized_noop_still_detects_a_concurrent_version_change() -> None:
             actor_id: str,
             idempotency_key: UUID,
             request_digest: str,
+            id_document_number: str | None = None,
         ) -> CustomerRecord:
             current = self.get(customer_id)
             self.customers[customer_id] = replace(
@@ -1036,6 +1083,7 @@ def test_normalized_noop_still_detects_a_concurrent_version_change() -> None:
                 actor_id=actor_id,
                 idempotency_key=idempotency_key,
                 request_digest=request_digest,
+                id_document_number=id_document_number,
             )
 
     property_id = uuid4()
@@ -1651,3 +1699,77 @@ def test_customer_financial_summary_is_truthful_and_exposes_no_export_or_ledger_
         == 403
     )
     assert client.get(f"/api/v1/customers/{record.customer.customer_id}/export").status_code == 404
+
+
+def test_customer_id_number_is_required_unique_shown_in_detail_and_never_cleared() -> None:
+    """DL-071 answer 11 and the owner's 2026-10-21 answer (V1-059 part B)."""
+    property_id = uuid4()
+    existing = sample_record(property_id)
+    existing = replace(existing, customer=replace(existing.customer, id_document_number="N0123456"))
+    flow = InMemoryCustomerFlow(property_id, {existing.customer.customer_id: existing})
+    client = TestClient(
+        create_app(actor_resolver=lambda _: manager(property_id), customer_resource_flow=flow)
+    )
+    url = f"/api/v1/properties/{property_id}/customers"
+    missing = client.post(
+        url,
+        json={"customer_id": str(uuid4()), "legal_name": "Srey Mom"},
+        headers=mutation_headers(),
+    )
+    assert missing.status_code == 422
+    assert missing.json()["error"]["fields"] == ["body.id_document_number"]
+    for blank in ("   ", "- -"):
+        assert (
+            client.post(
+                url,
+                json={
+                    "customer_id": str(uuid4()),
+                    "legal_name": "Srey",
+                    "id_document_number": blank,
+                },
+                headers=mutation_headers(),
+            ).status_code
+            == 422
+        )
+    duplicate = client.post(
+        url,
+        json={
+            "customer_id": str(uuid4()),
+            "legal_name": "Dara S.",
+            "id_document_number": "n 0123-456",
+            "confirmed_distinct": True,
+        },
+        headers=mutation_headers(),
+    )
+    assert duplicate.status_code == 409
+    error = duplicate.json()["error"]
+    assert error["code"] == "CUSTOMER_ID_NUMBER_IN_USE"
+    assert error["fields"] == ["id_document_number"]
+    assert error["existing_customer"] == {
+        "customer_id": str(existing.customer.customer_id),
+        "legal_name": "Dara Sok",
+    }
+    assert "0123" not in duplicate.text
+    created = client.post(
+        url,
+        json={"customer_id": str(uuid4()), "legal_name": "Srey Mom", "id_document_number": " P77 "},
+        headers=mutation_headers(),
+    )
+    assert created.status_code == 201
+    assert created.json()["data"]["id_document_number"] == "P77"
+    listed = client.get(url)
+    assert "N0123456" not in listed.text and "P77" not in listed.text
+    customer_id = created.json()["data"]["customer_id"]
+    cleared = client.patch(
+        f"/api/v1/customers/{customer_id}",
+        json={"id_document_number": None},
+        headers=mutation_headers(1),
+    )
+    assert cleared.status_code == 422
+    corrected = client.patch(
+        f"/api/v1/customers/{customer_id}",
+        json={"id_document_number": "P78"},
+        headers=mutation_headers(1),
+    )
+    assert corrected.status_code == 200
+    assert corrected.json()["data"]["id_document_number"] == "P78"

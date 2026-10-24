@@ -1188,8 +1188,11 @@ export function validateFinancialActionContext(
     same(receipt.id, source);
     same(receipt.payment_id, payment?.id);
     same(receipt.payer_customer_id, payment?.payer_customer_id);
+    // DL-071 answer 10 (V1-059 part B): a Receipt has its Payment's number (RCP...); a
+    // Receipt recorded before keeps its earlier R-<id> number.
     if (
-      receipt.receipt_number !== `R-${source}` ||
+      (receipt.receipt_number !== payment?.payment_number &&
+        receipt.receipt_number !== `R-${source}`) ||
       financialInstant(receipt.issued_at) <
         financialInstant(payment?.confirmed_at)
     )

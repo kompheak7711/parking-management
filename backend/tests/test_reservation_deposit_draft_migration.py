@@ -10,6 +10,7 @@ to the Reservation Customer.
 from __future__ import annotations
 
 import os
+import re
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
@@ -320,7 +321,6 @@ def test_property_cancellation_refund_goes_to_the_reservation_customer_with_meth
             actor=staff,
         )
     outcome_id = uuid4()
-    refund_number = f"RF-RES-{outcome_id}"
     draft = drafts().record(
         property_id,
         ReservationDepositDecision.REFUND,
@@ -329,7 +329,6 @@ def test_property_cancellation_refund_goes_to_the_reservation_customer_with_meth
             reservation_id,
             outcome_id,
             "Property could not provide the Unit",
-            refund_number,
             RefundMethodChoice(method_id, NOTE),
         ),
         actor=staff,
@@ -342,18 +341,19 @@ def test_property_cancellation_refund_goes_to_the_reservation_customer_with_meth
         actor=person(actor_id, property_id, "financial.approve"),
     )
     with psycopg.connect(migrated_database_url) as verify:
-        assert verify.execute(
+        refund_row = verify.execute(
             "SELECT recipient_customer_id, usd_accounting_value_cents, refund_currency, "
-            "refund_number, processed_by, authorization_reference FROM app.refunds WHERE id = %s",
+            "refund_number, processed_by, authorization_reference, "
+            "to_char(processed_at AT TIME ZONE 'Asia/Phnom_Penh', 'YY') "
+            "FROM app.refunds WHERE id = %s",
             (outcome_id,),
-        ).fetchone() == (
-            customer_id,
-            10_000,
-            "USD",
-            refund_number,
-            actor_id,
-            "reservation_deposits.refund",
-        )
+        ).fetchone()
+        assert refund_row is not None
+        assert refund_row[:3] == (customer_id, 10_000, "USD")
+        assert refund_row[4:6] == (actor_id, "reservation_deposits.refund")
+        # DL-071 answer 10 (V1-059 part B): the database gives the Refund its RFD number when
+        # the draft is confirmed; the draft carried only an internal reference.
+        assert re.fullmatch(rf"RFD{refund_row[6]}\d{{4,}}", str(refund_row[3]))
         assert verify.execute(
             "SELECT draft_id, refund_method_id, reference_note "
             "FROM app.refund_draft_details WHERE refund_id = %s",
@@ -394,11 +394,13 @@ def test_reservation_deposit_draft_refuses_wrong_kind_second_draft_and_used_numb
             actor=staff,
         )
     cancel_by_staff(actor_id, property_id, refunded_id, CancellationResponsibility.PROPERTY)
-    used = f"RF-USED-{uuid4()}"
+    refunded_outcome = uuid4()
     refunded = drafts().record(
         property_id,
         ReservationDepositDecision.REFUND,
-        RecordReservationDepositDraftCommand(uuid4(), refunded_id, uuid4(), "Refund", used, method),
+        RecordReservationDepositDraftCommand(
+            uuid4(), refunded_id, refunded_outcome, "Refund", method
+        ),
         actor=staff,
     )
     drafts().confirm(
@@ -407,18 +409,37 @@ def test_reservation_deposit_draft_refuses_wrong_kind_second_draft_and_used_numb
         UUID(str(refunded["draft_id"])),
         actor=person(actor_id, property_id, "financial.approve"),
     )
-    with pytest.raises(ReservationDepositDraftConflictError):
-        drafts().record(
-            property_id,
-            ReservationDepositDecision.REFUND,
-            RecordReservationDepositDraftCommand(
-                uuid4(), reservation_id, uuid4(), "Used number", used, method
+    # A Refund number is never typed or used twice (DL-071 answer 10): the confirmed Refund has
+    # the database's RFD number, and a reference that is a used Refund number is refused.
+    with psycopg.connect(migrated_database_url) as verify:
+        used = verify.execute(
+            "SELECT refund_number FROM app.refunds WHERE id = %s", (refunded_outcome,)
+        ).fetchone()
+    assert used is not None and str(used[0]).startswith("RFD")
+    with (
+        psycopg.connect(financial_database_url()) as financial,
+        pytest.raises(psycopg.Error) as refused,
+    ):
+        financial.execute(
+            "SELECT app.record_reservation_deposit_draft(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            (
+                property_id,
+                actor_id,
+                uuid4(),
+                reservation_id,
+                "REFUND",
+                uuid4(),
+                "Used number",
+                used[0],
+                method.refund_method_id,
+                method.reference_note,
+                "reservation_deposits.refund",
             ),
-            actor=staff,
         )
+    assert refused.value.sqlstate == "23505"
     key = uuid4()
     first = RecordReservationDepositDraftCommand(
-        key, reservation_id, uuid4(), "First draft", f"RF-FIRST-{key}", method
+        key, reservation_id, uuid4(), "First draft", method
     )
     recorded = drafts().record(property_id, ReservationDepositDecision.REFUND, first, actor=staff)
     assert (
@@ -430,7 +451,7 @@ def test_reservation_deposit_draft_refuses_wrong_kind_second_draft_and_used_numb
             property_id,
             ReservationDepositDecision.REFUND,
             RecordReservationDepositDraftCommand(
-                uuid4(), reservation_id, uuid4(), "Second draft", f"RF-SECOND-{key}", method
+                uuid4(), reservation_id, uuid4(), "Second draft", method
             ),
             actor=staff,
         )
@@ -550,7 +571,6 @@ def test_a_completed_earlier_outcome_does_not_read_as_waiting(migrated_database_
             reservation_id,
             outcome_id,
             "Property could not provide the Unit",
-            f"RF-DONE-{outcome_id}",
             RefundMethodChoice(cash_method_id(property_id, actor_id), NOTE),
         ),
         actor=person(actor_id, property_id, "reservation_deposits.refund"),

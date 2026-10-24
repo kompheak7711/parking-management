@@ -35,6 +35,8 @@ export interface CustomerDetail {
   email_address: string | null;
   contact_address: string | null;
   memo: string | null;
+  // DL-071 answer 11: required for new Customers; null only for Customers recorded before.
+  id_document_number: string | null;
   version: number;
   active: boolean;
   deactivated_at: string | null;
@@ -100,6 +102,7 @@ export interface CustomerSource {
   email_address?: string | null;
   contact_address?: string | null;
   memo?: string | null;
+  id_document_number?: string | null;
   confirmed_distinct?: boolean;
 }
 
@@ -153,6 +156,18 @@ export class CustomerConflictError extends Error {
     );
     this.name = "CustomerConflictError";
     this.candidates = candidates;
+  }
+}
+
+// DL-071 answer 11: another Customer has this ID number; staff must use that Customer.
+export class CustomerIdNumberInUseError extends CustomerConflictError {
+  constructor(existing: CustomerListItem[] = []) {
+    super(existing);
+    this.message =
+      existing.length > 0
+        ? `Another Customer (${existing[0]?.legal_name ?? ""}) already has this ID number or passport number. Use the existing Customer.`
+        : "Another Customer already has this ID number or passport number. Use the existing Customer.";
+    this.name = "CustomerIdNumberInUseError";
   }
 }
 
@@ -248,6 +263,13 @@ async function request(
         meta !== null && typeof meta.request_id === "string"
           ? meta.request_id
           : response.headers.get("X-Request-ID"),
+      );
+    }
+    if (error?.code === "CUSTOMER_ID_NUMBER_IN_USE") {
+      throw new CustomerIdNumberInUseError(
+        isObject(error.existing_customer)
+          ? [reuseCandidate(error.existing_customer)]
+          : [],
       );
     }
     const candidates =
@@ -415,6 +437,7 @@ function detail(value: unknown): CustomerDetail {
     email_address: nullableString(value.email_address),
     contact_address: nullableString(value.contact_address),
     memo: nullableString(value.memo),
+    id_document_number: nullableString(value.id_document_number),
     version: value.version,
     active: value.active,
     deactivated_at: nullableString(value.deactivated_at),

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   CustomerConflictError,
+  CustomerIdNumberInUseError,
   type CustomerDetail,
   CustomerIdempotencyReuseError,
   CustomerRequestError,
@@ -21,6 +22,7 @@ const current = {
   email_address: null,
   contact_address: null,
   memo: null,
+  id_document_number: "N0123456",
   version: 4,
   active: true,
   deactivated_at: null,
@@ -385,5 +387,50 @@ describe("Customer API client", () => {
       .catch((caught: unknown) => caught);
     expect(deactivateError).toBeInstanceOf(CustomerRequestError);
     expect(deactivateError).toMatchObject({ outcomeUnknown: true });
+  });
+
+  it("TEST-FE-V059B-02 names the Customer that already has the ID number", async () => {
+    Object.defineProperty(document, "cookie", {
+      configurable: true,
+      value: "__Host-prm_csrf=csrf-token",
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            error: {
+              code: "CUSTOMER_ID_NUMBER_IN_USE",
+              fields: ["id_document_number"],
+              existing_customer: {
+                customer_id: "customer-1",
+                legal_name: "Dara Sok",
+              },
+            },
+          }),
+          { status: 409, headers: { "Content-Type": "application/json" } },
+        ),
+      ),
+    );
+    const error = await customerApi
+      .create(
+        "property-1",
+        "customer-command-2",
+        { legal_name: "Dara S.", id_document_number: "n 0123-456" },
+        "22222222-2222-4222-8222-222222222222",
+      )
+      .catch((caught: unknown) => caught);
+    expect(error).toBeInstanceOf(CustomerIdNumberInUseError);
+    expect((error as CustomerIdNumberInUseError).message).toBe(
+      "Another Customer (Dara Sok) already has this ID number or passport number. Use the existing Customer.",
+    );
+    expect((error as CustomerIdNumberInUseError).candidates).toEqual([
+      {
+        customer_id: "customer-1",
+        legal_name: "Dara Sok",
+        active: true,
+        relationship_indicators: [],
+      },
+    ]);
   });
 });

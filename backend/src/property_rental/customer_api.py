@@ -25,9 +25,11 @@ from property_rental.auth_api import CSRF_COOKIE_NAME
 from property_rental.customer import (
     CUSTOMER_CONNECT_TIMEOUT_SECONDS,
     CUSTOMER_LOCK_TIMEOUT_MS,
+    ID_DOCUMENT_NUMBER_MAX_LENGTH,
     Customer,
     CustomerCommandContext,
     CustomerIdentityAlreadyExistsError,
+    CustomerIdNumberInUse,
     CustomerRepository,
     CustomerReuseRequired,
     CustomerService,
@@ -35,6 +37,7 @@ from property_rental.customer import (
     PostgresCustomerRepository,
     _customer_from_row,
     canonical_email,
+    id_document_match_key,
     normalize_optional,
 )
 from property_rental.identity import (
@@ -179,6 +182,47 @@ class CustomerReuseConflict(Exception):
         self.candidates = candidates
 
 
+class CustomerIdNumberConflict(Exception):
+    """Another Customer has the same ID number (DL-071 answer 11)."""
+
+    def __init__(self, existing: Customer | None) -> None:
+        super().__init__("Customer ID number is already used")
+        self.existing = existing
+
+
+def customer_id_number_conflict_response(
+    request: Request,
+    exc: CustomerIdNumberConflict,
+) -> JSONResponse:
+    """Name only the existing Customer (id and name), never the number itself."""
+    request_id = request.state.request_id
+    return JSONResponse(
+        status_code=status.HTTP_409_CONFLICT,
+        content={
+            "error": {
+                "code": "CUSTOMER_ID_NUMBER_IN_USE",
+                "message": (
+                    "Another Customer already has this ID number or passport number. "
+                    "Use the existing Customer."
+                ),
+                "fields": ["id_document_number"],
+                "rule_ids": ["BR-CUST-002"],
+                "current_version": None,
+                "existing_customer": (
+                    None
+                    if exc.existing is None
+                    else {
+                        "customer_id": str(exc.existing.customer_id),
+                        "legal_name": exc.existing.legal_name,
+                    }
+                ),
+            },
+            "meta": {"request_id": request_id},
+        },
+        headers={"X-Request-ID": request_id, "Cache-Control": "private, no-store"},
+    )
+
+
 def customer_idempotency_key_reused_response(request: Request) -> JSONResponse:
     """Return the dedicated API-016 error without exposing stored command input."""
     request_id = request.state.request_id
@@ -312,6 +356,7 @@ class CustomerResourceFlow(Protocol):
         actor_id: str,
         idempotency_key: UUID,
         request_digest: str,
+        id_document_number: str | None = None,
     ) -> CustomerRecord: ...
 
     def update(
@@ -328,6 +373,7 @@ class CustomerResourceFlow(Protocol):
         actor_id: str,
         idempotency_key: UUID,
         request_digest: str,
+        id_document_number: str | None = None,
     ) -> CustomerRecord: ...
 
     def deactivate(
@@ -427,6 +473,7 @@ class UnavailableCustomerResourceFlow:
         actor_id: str,
         idempotency_key: UUID,
         request_digest: str,
+        id_document_number: str | None = None,
     ) -> CustomerRecord:
         del (
             property_id,
@@ -440,6 +487,7 @@ class UnavailableCustomerResourceFlow:
             actor_id,
             idempotency_key,
             request_digest,
+            id_document_number,
         )
         self._fail()
         raise AssertionError
@@ -458,6 +506,7 @@ class UnavailableCustomerResourceFlow:
         actor_id: str,
         idempotency_key: UUID,
         request_digest: str,
+        id_document_number: str | None = None,
     ) -> CustomerRecord:
         del (
             customer_id,
@@ -471,6 +520,7 @@ class UnavailableCustomerResourceFlow:
             actor_id,
             idempotency_key,
             request_digest,
+            id_document_number,
         )
         self._fail()
         raise AssertionError
@@ -619,8 +669,10 @@ def _command_digest(
 
 
 def _record(row: tuple[object, ...]) -> CustomerRecord:
+    """Map a Customer row; the ID number, when read, is the eleventh column."""
+    id_document_number = row[10] if len(row) > 10 else None
     return CustomerRecord(
-        customer=_customer_from_row(row[:7]),
+        customer=_customer_from_row((*row[:7], id_document_number)),
         property_id=UUID(str(row[9])),
         deactivated_at=cast(datetime | None, row[7]),
         deactivation_reason=None if row[8] is None else str(row[8]),
@@ -668,7 +720,7 @@ class PostgresCustomerResourceFlow:
         "customer.id, customer.legal_name, customer.phone_number, "
         "customer.email_address, customer.contact_address, customer.memo, "
         "customer.version, customer.deactivated_at, customer.deactivation_reason, "
-        "property.id"
+        "property.id, customer.id_document_number"
     )
     _list_columns: Final = (
         "customer.id, left(customer.legal_name, 255), NULL::text, NULL::text, "
@@ -837,6 +889,7 @@ class PostgresCustomerResourceFlow:
         actor_id: str,
         idempotency_key: UUID,
         request_digest: str,
+        id_document_number: str | None = None,
     ) -> CustomerRecord:
         replay = self.command_status(
             property_id=property_id,
@@ -879,13 +932,14 @@ class PostgresCustomerResourceFlow:
                     contact_address=contact_address,
                     memo=memo,
                     confirmed_distinct=confirmed_distinct,
+                    id_document_number=id_document_number,
                 )
             except CustomerIdentityAlreadyExistsError:
                 raise CustomerCommandIdentityConflict(
                     "Customer command identity was already used"
                 ) from None
             return CustomerRecord(created, property_id)
-        except (CustomerResourceNotFound, CustomerReuseRequired):
+        except (CustomerResourceNotFound, CustomerReuseRequired, CustomerIdNumberInUse):
             raise
         except psycopg.errors.InvalidParameterValue as exc:
             raise _customer_command_parameter_error(exc) from exc
@@ -908,6 +962,7 @@ class PostgresCustomerResourceFlow:
         actor_id: str,
         idempotency_key: UUID,
         request_digest: str,
+        id_document_number: str | None = None,
     ) -> CustomerRecord:
         initial = self.get(customer_id)
         replay = self.command_status(
@@ -962,6 +1017,7 @@ class PostgresCustomerResourceFlow:
                 contact_address=contact_address,
                 memo=memo,
                 confirmed_distinct=confirmed_distinct,
+                id_document_number=id_document_number,
             )
             return CustomerRecord(
                 updated,
@@ -969,7 +1025,7 @@ class PostgresCustomerResourceFlow:
                 current.deactivated_at,
                 current.deactivation_reason,
             )
-        except CustomerReuseRequired:
+        except (CustomerReuseRequired, CustomerIdNumberInUse):
             raise
         except psycopg.errors.InvalidParameterValue as exc:
             raise _customer_command_parameter_error(exc) from exc
@@ -1135,9 +1191,43 @@ class PostgresCustomerResourceFlow:
             raise CustomerResourceUnavailable("Customer command status is unavailable") from exc
         return CustomerCommandStatus(
             row is not None,
-            None if row is None else _record(row),
+            None if row is None else self._with_current_id_number(_record(row[:10])),
             None if row is None else UUID(str(row[10])),
             tombstone is not None,
+        )
+
+    def _with_current_id_number(self, record: CustomerRecord) -> CustomerRecord:
+        """A replayed command shows the Customer's current ID number (V1-059 part B)."""
+        try:
+            with psycopg.connect(
+                self._database_url, connect_timeout=CUSTOMER_CONNECT_TIMEOUT_SECONDS
+            ) as connection:
+                self._bound_query(connection)
+                row = connection.execute(
+                    "SELECT id_document_number FROM app.customers WHERE id = %s",
+                    (record.customer.customer_id,),
+                ).fetchone()
+        except psycopg.Error as exc:
+            raise CustomerResourceUnavailable("Customer command status is unavailable") from exc
+        if row is None or row[0] is None:
+            return record
+        customer = record.customer
+        return CustomerRecord(
+            _customer_from_row(
+                (
+                    customer.customer_id,
+                    customer.legal_name,
+                    customer.phone_number,
+                    customer.email_address,
+                    customer.contact_address,
+                    customer.memo,
+                    customer.version,
+                    row[0],
+                )
+            ),
+            record.property_id,
+            record.deactivated_at,
+            record.deactivation_reason,
         )
 
     def command_history(
@@ -1356,12 +1446,20 @@ class CustomerCreate(BaseModel):
     contact_address: str | None = Field(default=None, max_length=1000)
     memo: str | None = Field(default=None, max_length=5000)
     confirmed_distinct: StrictBool = False
+    id_document_number: str = Field(min_length=1, max_length=ID_DOCUMENT_NUMBER_MAX_LENGTH)
 
-    @field_validator("legal_name", mode="before")
+    @field_validator("legal_name", "id_document_number", mode="before")
     @classmethod
     def normalize_legal_name(cls, value: object) -> object:
         del cls
         return _normalize_required_command_text(value)
+
+    @field_validator("id_document_number")
+    @classmethod
+    def validate_id_document_number(cls, value: str) -> str:
+        del cls
+        _validate_customer_text(value)
+        return _validate_id_document_number(value)
 
     @field_validator("phone_number", "email_address", "contact_address", "memo", mode="before")
     @classmethod
@@ -1406,12 +1504,25 @@ class CustomerPatch(BaseModel):
     confirmed_distinct: StrictBool = False
     deactivate: StrictBool = False
     deactivation_reason: str | None = Field(default=None, max_length=1000)
+    id_document_number: str | None = Field(
+        default=None, min_length=1, max_length=ID_DOCUMENT_NUMBER_MAX_LENGTH
+    )
 
-    @field_validator("legal_name", mode="before")
+    @field_validator("legal_name", "id_document_number", mode="before")
     @classmethod
     def normalize_legal_name(cls, value: object) -> object:
         del cls
         return _normalize_required_command_text(value)
+
+    @field_validator("id_document_number")
+    @classmethod
+    def validate_id_document_number(cls, value: str | None) -> str | None:
+        """A recorded ID number may be corrected; it is never cleared (null is refused)."""
+        del cls
+        if value is None:
+            raise ValueError("id_document_number cannot be removed")
+        _validate_customer_text(value)
+        return _validate_id_document_number(value)
 
     @field_validator(
         "phone_number",
@@ -1445,6 +1556,13 @@ class CustomerPatch(BaseModel):
     def validate_email(cls, value: str | None) -> str | None:
         del cls
         return _validate_email_address(value)
+
+
+def _validate_id_document_number(value: str) -> str:
+    """The ID number must hold at least one letter or digit (DL-071 answer 11)."""
+    if id_document_match_key(value) is None:
+        raise ValueError("id_document_number must hold a letter or a digit")
+    return value
 
 
 def _validate_customer_text(value: str | None) -> None:
@@ -1582,6 +1700,7 @@ def _canonical_create_payload(command: CustomerCreate) -> dict[str, object]:
         "contact_address": normalize_optional(command.contact_address),
         "memo": normalize_optional(command.memo),
         "confirmed_distinct": command.confirmed_distinct,
+        "id_document_number": command.id_document_number.strip(),
     }
 
 
@@ -1601,6 +1720,7 @@ def _canonical_update_payload(
         "email_address",
         "contact_address",
         "memo",
+        "id_document_number",
     ):
         if field_name not in patch.model_fields_set:
             continue
@@ -1650,6 +1770,7 @@ def _detail(
         "email_address": customer.email_address,
         "contact_address": customer.contact_address,
         "memo": customer.memo,
+        "id_document_number": customer.id_document_number,
         "version": customer.version,
         "active": record.active,
         "deactivated_at": (
@@ -1799,6 +1920,7 @@ def create_customer_router(
                 contact_address=command.contact_address,
                 memo=command.memo,
                 confirmed_distinct=command.confirmed_distinct,
+                id_document_number=command.id_document_number,
                 actor_id=actor.actor_id,
                 idempotency_key=idempotency_key,
                 request_digest=_command_digest(
@@ -1810,6 +1932,8 @@ def create_customer_router(
             )
         except CustomerReuseRequired as exc:
             raise CustomerReuseConflict(exc.candidates) from exc
+        except CustomerIdNumberInUse as exc:
+            raise CustomerIdNumberConflict(exc.existing) from exc
         except CustomerIdempotencyKeyReused:
             raise
         except CustomerCommandIdentityConflict as exc:
@@ -1957,6 +2081,7 @@ def create_customer_router(
             "email_address",
             "contact_address",
             "memo",
+            "id_document_number",
         }
         changed_source_fields = source_fields.intersection(patch.model_fields_set)
         try:
@@ -2015,6 +2140,11 @@ def create_customer_router(
                     contact_address=contact_address,
                     memo=memo,
                     confirmed_distinct=patch.confirmed_distinct,
+                    id_document_number=(
+                        patch.id_document_number
+                        if "id_document_number" in patch.model_fields_set
+                        else None
+                    ),
                     expected_version=expected,
                     actor_id=actor.actor_id,
                     idempotency_key=idempotency_key,
@@ -2030,6 +2160,8 @@ def create_customer_router(
                 )
         except CustomerReuseRequired as exc:
             raise CustomerReuseConflict(exc.candidates) from exc
+        except CustomerIdNumberInUse as exc:
+            raise CustomerIdNumberConflict(exc.existing) from exc
         except CustomerIdempotencyKeyReused:
             raise
         except CustomerCommandIdentityConflict as exc:

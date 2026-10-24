@@ -301,6 +301,7 @@ function reconciledCustomer(
   return {
     customer_id: customerId,
     legal_name: legalName,
+    id_document_number: "N 0123456",
     phone_number: null,
     email_address: null,
     contact_address: null,
@@ -1538,6 +1539,12 @@ describe("local sign-in", () => {
       }),
       { target: { value: "Pending Customer" } },
     );
+    fireEvent.change(
+      screen.getByLabelText("ID number / Passport number", {
+        selector: "#customer-id-number",
+      }),
+      { target: { value: "N 0123456" } },
+    );
     fireEvent.click(screen.getByRole("button", { name: "Create Customer" }));
     await waitFor(() => {
       expect(customers.create).toHaveBeenCalledOnce();
@@ -1556,6 +1563,7 @@ describe("local sign-in", () => {
       finishCreate({
         customer_id: "customer-created",
         legal_name: "Pending Customer",
+        id_document_number: null,
         phone_number: null,
         email_address: null,
         contact_address: null,
@@ -1670,6 +1678,12 @@ describe("local sign-in", () => {
       }),
       { target: { value: "Pending Customer" } },
     );
+    fireEvent.change(
+      screen.getByLabelText("ID number / Passport number", {
+        selector: "#customer-id-number",
+      }),
+      { target: { value: "N 0123456" } },
+    );
     fireEvent.click(screen.getByRole("button", { name: "Create Customer" }));
 
     await vi.waitFor(() => {
@@ -1689,6 +1703,7 @@ describe("local sign-in", () => {
       finishCreate({
         customer_id: "customer-created",
         legal_name: "Pending Customer",
+        id_document_number: null,
         phone_number: null,
         email_address: null,
         contact_address: null,
@@ -1772,6 +1787,12 @@ describe("local sign-in", () => {
       }),
       { target: { value: "Possibly Created" } },
     );
+    fireEvent.change(
+      screen.getByLabelText("ID number / Passport number", {
+        selector: "#customer-id-number",
+      }),
+      { target: { value: "N 0123456" } },
+    );
     fireEvent.click(screen.getByRole("button", { name: "Create Customer" }));
     await vi.waitFor(() => {
       expect(customers.create).toHaveBeenCalledOnce();
@@ -1844,6 +1865,12 @@ describe("local sign-in", () => {
         selector: "#customer-legal-name",
       }),
       { target: { value: "Possibly Created" } },
+    );
+    fireEvent.change(
+      screen.getByLabelText("ID number / Passport number", {
+        selector: "#customer-id-number",
+      }),
+      { target: { value: "N 0123456" } },
     );
     fireEvent.click(screen.getByRole("button", { name: "Create Customer" }));
 
@@ -1930,6 +1957,12 @@ describe("local sign-in", () => {
       }),
       { target: { value: "Possibly Created" } },
     );
+    fireEvent.change(
+      screen.getByLabelText("ID number / Passport number", {
+        selector: "#customer-id-number",
+      }),
+      { target: { value: "N 0123456" } },
+    );
     fireEvent.click(screen.getByRole("button", { name: "Create Customer" }));
     await screen.findByText(/Customer creation outcome is unknown/);
     fireEvent.click(
@@ -2007,6 +2040,12 @@ describe("local sign-in", () => {
         selector: "#customer-legal-name",
       }),
       { target: { value: "Possibly Created" } },
+    );
+    fireEvent.change(
+      screen.getByLabelText("ID number / Passport number", {
+        selector: "#customer-id-number",
+      }),
+      { target: { value: "N 0123456" } },
     );
     fireEvent.click(screen.getByRole("button", { name: "Create Customer" }));
     await screen.findByText(/Customer creation outcome is unknown/);
@@ -2396,6 +2435,12 @@ describe("local sign-in", () => {
       }),
       { target: { value: "Cross-tab Customer" } },
     );
+    fireEvent.change(
+      screen.getByLabelText("ID number / Passport number", {
+        selector: "#customer-id-number",
+      }),
+      { target: { value: "N 0123456" } },
+    );
     fireEvent.click(screen.getByRole("button", { name: "Create Customer" }));
     await screen.findByText(/Customer creation outcome is unknown/);
     const checkStatus = screen.getByRole("button", {
@@ -2460,6 +2505,12 @@ describe("local sign-in", () => {
         selector: "#customer-legal-name",
       }),
       { target: { value: "Blocked command" } },
+    );
+    fireEvent.change(
+      screen.getByLabelText("ID number / Passport number", {
+        selector: "#customer-id-number",
+      }),
+      { target: { value: "N 0123456" } },
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Create Customer" }));

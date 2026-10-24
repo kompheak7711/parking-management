@@ -252,7 +252,10 @@ def snapshot(url: str) -> dict[str, Any]:
     with psycopg.connect(url) as connection:
         return {
             table: connection.execute(
-                "SELECT COALESCE(jsonb_agg(to_jsonb(t) ORDER BY t.id),'[]'::jsonb) "
+                # V1-059 part B adds invoices.draft_reference and customers.id_document_number
+                # (NULL on earlier rows); every other value must stay as it was.
+                "SELECT COALESCE(jsonb_agg(to_jsonb(t)-'draft_reference'-'id_document_number' "
+                "ORDER BY t.id),'[]'::jsonb) "
                 f"FROM app.{table} t"
             ).fetchone()
             for table in SNAPSHOT_TABLES

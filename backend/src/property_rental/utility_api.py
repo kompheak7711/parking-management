@@ -32,6 +32,7 @@ from property_rental.identity import (
     AuthorizationRequirement,
     is_authorized,
 )
+from property_rental.measurement_units import fixed_measurement_unit_input
 from property_rental.settings import Settings
 from property_rental.utility import (
     PostgresUtilityService,
@@ -74,6 +75,10 @@ class UtilityResourceVersionConflict(UtilityResourceConflict):
 
 class UtilityResourceIdempotencyConflict(UtilityResourceConflict):
     pass
+
+
+class MeterSerialNumberInUse(UtilityResourceConflict):
+    """Another Meter of the Property, current or replaced, has this serial (DL-071 answer 12)."""
 
 
 class UtilityResourceInvalid(ValueError):
@@ -465,6 +470,8 @@ class PostgresUtilityResourceFlow:
                 return UtilityResourceConflict("Utility version changed")
         if exc.sqlstate == "23505" and "idempotency" in message:
             return UtilityResourceIdempotencyConflict("Idempotency key was reused")
+        if exc.sqlstate == "23505" and "meter serial number" in message:
+            return MeterSerialNumberInUse("Meter serial number is already used")
         if exc.sqlstate in {"23505", "23P01", "40001", "55P03", "55000"}:
             return UtilityResourceConflict("Utility command conflicted")
         if exc.sqlstate in {"22003", "22023", "23514", "23502"}:
@@ -938,6 +945,11 @@ class MeterInstallInput(BaseModel):
     memo: str | None = Field(default=None, min_length=1, max_length=500)
     initial_reading: InitialReadingInput
 
+    @model_validator(mode="before")
+    @classmethod
+    def fixed_measurement_unit(cls, data: object) -> object:
+        return fixed_measurement_unit_input(data)
+
     @model_validator(mode="after")
     def boundary(self) -> MeterInstallInput:
         if self.initial_reading.reading_date != self.installed_date:
@@ -1084,6 +1096,8 @@ def _invoke(command: Callable[[], object]) -> object:
     except UtilityResourceNotFound as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND) from exc
     except UtilityResourceVersionConflict:
+        raise
+    except MeterSerialNumberInUse:
         raise
     except (UtilityResourceConflict, UtilityResourceIdempotencyConflict) as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT) from exc

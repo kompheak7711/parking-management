@@ -604,7 +604,7 @@ def test_ledger_read_migration_is_forward_only_and_preserves_populated48_sources
 ) -> None:
     config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
     scripts = ScriptDirectory.from_config(config)
-    assert scripts.get_heads() == ["20270204_192"]
+    assert scripts.get_heads() == ["20270207_195"]
     revision = scripts.get_revision("20260909_49")
     assert revision is not None and revision.down_revision == "20260909_48"
     with pytest.raises(RuntimeError, match="forward-only"):

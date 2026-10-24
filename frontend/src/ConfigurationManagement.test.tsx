@@ -312,9 +312,11 @@ describe("ConfigurationManagement", () => {
     fireEvent.change(screen.getByLabelText("Utility type"), {
       target: { value: "WATER" },
     });
-    fireEvent.change(screen.getByLabelText("Stored unit code"), {
-      target: { value: "M3" },
-    });
+    // DL-071 answer 9: the unit follows the Utility Type (m³ for water).
+    expect(
+      screen.getAllByText("Electricity is measured in kWh and water in m³.")
+        .length,
+    ).toBeGreaterThan(0);
     fireEvent.change(screen.getByLabelText("USD rate per unit"), {
       target: { value: "0.5" },
     });

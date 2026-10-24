@@ -8,13 +8,21 @@ import pytest
 from property_rental.customer import (
     Customer,
     CustomerIdentityAlreadyExistsError,
+    CustomerIdNumberInUse,
     CustomerReuseRequired,
     CustomerService,
     CustomerVersionConflict,
     _customer_from_row,
+    id_document_match_key,
     normalized_email,
     normalized_phone,
 )
+
+
+def create_customer(service: CustomerService, customer_id: UUID, **values: object) -> Customer:
+    """Create with a fresh ID number unless the test gives one (DL-071 answer 11)."""
+    values.setdefault("id_document_number", f"ID {customer_id.hex[:10]}")
+    return service.create(customer_id, **values)  # type: ignore[arg-type]
 
 
 @dataclass
@@ -32,6 +40,17 @@ class InMemoryCustomerRepository:
             for customer in self.customers.values()
             if (email_key is not None and normalized_email(customer.email_address) == email_key)
             or (phone_key is not None and normalized_phone(customer.phone_number) == phone_key)
+        )
+
+    def find_by_id_document_number(self, id_document_number: str) -> Customer | None:
+        key = id_document_match_key(id_document_number)
+        return next(
+            (
+                customer
+                for customer in self.customers.values()
+                if id_document_match_key(customer.id_document_number) == key
+            ),
+            None,
         )
 
     def add(self, customer: Customer) -> None:
@@ -92,7 +111,8 @@ def test_customer_rejects_invalid_identity_or_source_values(
 def test_service_normalizes_optional_contact_without_requiring_a_channel() -> None:
     service = CustomerService(InMemoryCustomerRepository())
 
-    customer = service.create(
+    customer = create_customer(
+        service,
         uuid4(),
         legal_name="  Dara Sok  ",
         phone_number="  ",
@@ -111,13 +131,16 @@ def test_service_normalizes_optional_contact_without_requiring_a_channel() -> No
 def test_service_requires_explicit_reuse_or_distinct_decision() -> None:
     repository = InMemoryCustomerRepository()
     service = CustomerService(repository)
-    existing = service.create(uuid4(), legal_name="Dara Sok", email_address="Dara@Example.com")
+    existing = create_customer(
+        service, uuid4(), legal_name="Dara Sok", email_address="Dara@Example.com"
+    )
 
     with pytest.raises(CustomerReuseRequired) as raised:
-        service.create(uuid4(), legal_name="Dara S.", email_address="dara@example.com")
+        create_customer(service, uuid4(), legal_name="Dara S.", email_address="dara@example.com")
 
     assert raised.value.candidates == (existing,)
-    distinct = service.create(
+    distinct = create_customer(
+        service,
         uuid4(),
         legal_name="Dara S.",
         email_address="dara@example.com",
@@ -131,7 +154,8 @@ def test_service_canonicalizes_idn_domains_before_reuse_matching() -> None:
     repository = InMemoryCustomerRepository()
     service = CustomerService(repository)
 
-    existing = service.create(
+    existing = create_customer(
+        service,
         uuid4(),
         legal_name="IDN Customer",
         email_address="user@straße.de",
@@ -139,7 +163,8 @@ def test_service_canonicalizes_idn_domains_before_reuse_matching() -> None:
 
     assert existing.email_address == "user@strasse.de"
     with pytest.raises(CustomerReuseRequired) as raised:
-        service.create(
+        create_customer(
+            service,
             uuid4(),
             legal_name="Duplicate IDN Customer",
             email_address="USER@STRASSE.DE",
@@ -164,7 +189,7 @@ def test_one_customer_identity_can_be_reused_across_domain_relationships() -> No
 def test_contact_update_preserves_identity_and_advances_version() -> None:
     repository = InMemoryCustomerRepository()
     service = CustomerService(repository)
-    current = service.create(uuid4(), legal_name="Dara Sok", phone_number="012 345 678")
+    current = create_customer(service, uuid4(), legal_name="Dara Sok", phone_number="012 345 678")
 
     updated = service.update(
         current,
@@ -309,10 +334,12 @@ def test_persisted_legacy_phone_remains_readable_but_new_input_is_strict() -> No
 def test_phone_matching_is_conservative_and_never_merges_automatically() -> None:
     repository = InMemoryCustomerRepository()
     service = CustomerService(repository)
-    existing = service.create(uuid4(), legal_name="Srey Mom", phone_number="+855 12-345-678")
+    existing = create_customer(
+        service, uuid4(), legal_name="Srey Mom", phone_number="+855 12-345-678"
+    )
 
     with pytest.raises(CustomerReuseRequired) as raised:
-        service.create(uuid4(), legal_name="S. Mom", phone_number="85512345678")
+        create_customer(service, uuid4(), legal_name="S. Mom", phone_number="85512345678")
 
     assert raised.value.candidates == (existing,)
     assert repository.customers == {existing.customer_id: existing}
@@ -321,3 +348,69 @@ def test_phone_matching_is_conservative_and_never_merges_automatically() -> None
 def test_phone_matching_uses_only_supported_ascii_digits() -> None:
     assert normalized_phone("+855 (12) 345-678") == "85512345678"
     assert normalized_phone("١٢٣") is None
+
+
+def test_create_needs_an_id_number_and_refuses_one_another_customer_has() -> None:
+    """DL-071 answer 11 and the owner's 2026-10-21 answer (V1-059 part B)."""
+    service = CustomerService(InMemoryCustomerRepository())
+    with pytest.raises(ValueError, match="id_document_number is required"):
+        service.create(uuid4(), legal_name="Dara Sok")
+    existing = create_customer(
+        service, uuid4(), legal_name="Dara Sok", id_document_number="N-0123 456"
+    )
+    for same in ("n0123456", "N 0123-456", "N0123456"):
+        with pytest.raises(CustomerIdNumberInUse) as refused:
+            create_customer(
+                service,
+                uuid4(),
+                legal_name="Dara S.",
+                id_document_number=same,
+                confirmed_distinct=True,
+            )
+        assert refused.value.existing == existing
+
+
+def test_update_corrects_but_never_removes_the_id_number_and_keeps_it_unique() -> None:
+    repository = InMemoryCustomerRepository()
+    service = CustomerService(repository)
+    first = create_customer(service, uuid4(), legal_name="Dara Sok", id_document_number="A111")
+    other = create_customer(service, uuid4(), legal_name="Srey Mom", id_document_number="B222")
+    corrected = service.update(
+        first,
+        legal_name=first.legal_name,
+        phone_number=None,
+        email_address=None,
+        contact_address=None,
+        memo=None,
+        id_document_number="A112",
+    )
+    assert corrected.id_document_number == "A112"
+    with pytest.raises(ValueError, match="cannot be removed"):
+        service.update(
+            corrected,
+            legal_name=corrected.legal_name,
+            phone_number=None,
+            email_address=None,
+            contact_address=None,
+            memo=None,
+            id_document_number=" ",
+        )
+    with pytest.raises(CustomerIdNumberInUse):
+        service.update(
+            other,
+            legal_name=other.legal_name,
+            phone_number=None,
+            email_address=None,
+            contact_address=None,
+            memo=None,
+            id_document_number="a-112",
+        )
+    kept = service.update(
+        other,
+        legal_name="Srey Mom Sok",
+        phone_number=None,
+        email_address=None,
+        contact_address=None,
+        memo=None,
+    )
+    assert kept.id_document_number == "B222"

@@ -26,6 +26,7 @@ from property_rental.identity import (
     AuthorizationRequirement,
     is_authorized,
 )
+from property_rental.measurement_units import fixed_measurement_unit_input
 from property_rental.settings import Settings
 
 CONFIGURATION_READ_CAPABILITY = "configuration.read"
@@ -652,6 +653,11 @@ class UtilityRateCreate(BaseModel):
     notice_at: datetime
     notice_evidence: str = Field(min_length=1, max_length=500)
     source_memo: str | None = Field(default=None, max_length=500)
+
+    @model_validator(mode="before")
+    @classmethod
+    def fixed_measurement_unit(cls, data: object) -> object:
+        return fixed_measurement_unit_input(data)
 
     @field_validator("measurement_unit_code", "notice_evidence", "source_memo")
     @classmethod

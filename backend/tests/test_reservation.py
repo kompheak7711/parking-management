@@ -145,7 +145,6 @@ def test_outcome_correction_digest_binds_replacement_and_evidence() -> None:
         replacement_outcome_id=uuid4(),
         reason="Correct external Refund reference",
         evidence_reference="CASE-2026-004",
-        refund_number="RF-2026-004-R1",
     )
     property_id, actor_id = uuid4(), uuid4()
 

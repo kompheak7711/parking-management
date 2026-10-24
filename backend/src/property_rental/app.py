@@ -73,12 +73,14 @@ from property_rental.credit_refund_api import (
 from property_rental.customer import CustomerVersionConflict
 from property_rental.customer_api import (
     CustomerIdempotencyKeyReused,
+    CustomerIdNumberConflict,
     CustomerLifecycleConflict,
     CustomerResourceFlow,
     CustomerReuseConflict,
     PostgresCustomerResourceFlow,
     UnavailableCustomerResourceFlow,
     create_customer_router,
+    customer_id_number_conflict_response,
     customer_idempotency_key_reused_response,
     customer_reuse_conflict_response,
 )
@@ -207,6 +209,7 @@ from property_rental.unpaid_initial_termination_api import (
     create_unpaid_initial_termination_router,
 )
 from property_rental.utility_api import (
+    MeterSerialNumberInUse,
     PostgresUtilityResourceFlow,
     UnavailableUtilityResourceFlow,
     UtilityResourceFlow,
@@ -383,6 +386,32 @@ def error_response(
     )
 
 
+def rule_conflict_response(
+    request: Request,
+    *,
+    code: str,
+    message: str,
+    fields: list[str],
+    rule_ids: list[str],
+) -> JSONResponse:
+    """Build the 409 envelope of a refused duplicate with a fixed code and message."""
+    request_id = request.state.request_id
+    return JSONResponse(
+        status_code=status.HTTP_409_CONFLICT,
+        content={
+            "error": {
+                "code": code,
+                "message": message,
+                "fields": fields,
+                "rule_ids": rule_ids,
+                "current_version": None,
+            },
+            "meta": {"request_id": request_id},
+        },
+        headers={REQUEST_ID_HEADER: request_id, "Cache-Control": "private, no-store"},
+    )
+
+
 def safe_validation_fields(exc: RequestValidationError) -> list[str]:
     """Return bounded field locations while excluding rejected values and diagnostics."""
     fields: set[str] = set()
@@ -529,6 +558,21 @@ def create_app(
         request: Request, _: CreditIdempotencyKeyReused | RefundIdempotencyKeyReused
     ) -> JSONResponse:
         return payment_key_reused_response(request)
+
+    @app.exception_handler(MeterSerialNumberInUse)
+    async def meter_serial_number_in_use(
+        request: Request, _: MeterSerialNumberInUse
+    ) -> JSONResponse:
+        return rule_conflict_response(
+            request,
+            code="METER_SERIAL_NUMBER_IN_USE",
+            message=(
+                "Another Meter of this Property, current or replaced, already has this serial "
+                "number."
+            ),
+            fields=["serial_number"],
+            rule_ids=["DB-UTIL-001"],
+        )
 
     @app.exception_handler(ReservationDepositDraftRequired)
     async def reservation_deposit_draft_required(
@@ -768,6 +812,13 @@ def create_app(
             request.state.request_id,
             current_version=exc.current_version,
         )
+
+    @app.exception_handler(CustomerIdNumberConflict)
+    async def customer_id_number_conflict(
+        request: Request,
+        exc: CustomerIdNumberConflict,
+    ) -> JSONResponse:
+        return customer_id_number_conflict_response(request, exc)
 
     @app.exception_handler(CustomerReuseConflict)
     async def customer_reuse_conflict(

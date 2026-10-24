@@ -813,7 +813,6 @@ class ReservationDepositDraftCreate(BaseModel):
 
     outcome_id: UUID
     reason: Annotated[str, Field(min_length=1, max_length=1000)]
-    refund_number: Annotated[str | None, Field(min_length=1, max_length=128)] = None
     refund_method_id: UUID | None = None
     reference_note: Annotated[str | None, Field(min_length=1, max_length=500)] = None
 
@@ -832,7 +831,6 @@ class ReservationDepositCorrectionDraftCreate(BaseModel):
     replacement_outcome_id: UUID
     reason: Annotated[str, Field(min_length=1, max_length=1000)]
     evidence_reference: Annotated[str, Field(min_length=1, max_length=500)]
-    refund_number: Annotated[str | None, Field(min_length=1, max_length=128)] = None
     refund_method_id: UUID | None = None
     reference_note: Annotated[str | None, Field(min_length=1, max_length=500)] = None
 
@@ -1219,7 +1217,6 @@ def create_reservation_router(
                     reservation_id,
                     source.outcome_id,
                     source.reason,
-                    source.refund_number,
                     _method(source.refund_method_id, source.reference_note),
                 ),
                 actor=actor,
@@ -1260,7 +1257,6 @@ def create_reservation_router(
                     source.replacement_outcome_id,
                     source.reason,
                     source.evidence_reference,
-                    source.refund_number,
                     _method(source.refund_method_id, source.reference_note),
                 ),
                 actor=actor,

@@ -388,6 +388,8 @@ Reservation Deposit drafts (V1-056 slice 3b):
   201 with the pending draft and changes no balance.
 
 Amended by DL-071 (owner, 2026-10-20; answer 10a): a Refund draft no longer takes a staff-typed `refund_number`; the Refund gets its `RFD` number (for example `RFD260001`) when the draft is confirmed, and the draft carries only an internal draft reference. Not built yet (V1-059).
+
+Built in V1-059 part B (2026-10-24): the two Reservation Deposit draft bodies no longer have `refund_number`; sending it answers 422 (unknown field). The Customer create body needs `id_document_number` (1 to 64 characters) and the update body may correct it (null refused); a number another Customer has answers 409 `CUSTOMER_ID_NUMBER_IN_USE` with `existing_customer` (id and legal name, never the number); the number shows in the Customer detail only. A Meter install or Utility rate with a unit code other than `KWH` (electricity) or `M3` (water) answers 422, and a serial used in the Property answers 409 `METER_SERIAL_NUMBER_IN_USE`.
 - `POST /reservations/{reservation_id}/deposit-correction-drafts` records a draft that
   replaces the confirmed outcome with a new outcome of the same kind; it needs
   `reservation_deposits.correct` and the kind's capability. Body: `expected_outcome_id`,

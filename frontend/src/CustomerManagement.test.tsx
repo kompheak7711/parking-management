@@ -19,6 +19,7 @@ import {
 import {
   CustomerApi,
   CustomerConflictError,
+  CustomerIdNumberInUseError,
   CustomerDetail,
   CustomerIdempotencyReuseError,
   CustomerRequestError,
@@ -32,6 +33,7 @@ const customer: CustomerDetail = {
   email_address: "dara@example.com",
   contact_address: "Phnom Penh",
   memo: null,
+  id_document_number: "N0123456",
   version: 1,
   active: true,
   deactivated_at: null,
@@ -140,6 +142,63 @@ async function loadCustomers(api: CustomerApi) {
 }
 
 describe("CustomerManagement", () => {
+  it("TEST-FE-V059B-03 asks for the ID number and shows when an older Customer has none", async () => {
+    const api = client({
+      get: vi.fn().mockResolvedValue({ ...customer, id_document_number: null }),
+    });
+    await loadCustomers(api);
+    const createInput = screen.getByLabelText("ID number / Passport number", {
+      selector: "#customer-id-number",
+    });
+    expect(createInput).toBeRequired();
+    expect(createInput).toHaveAttribute("maxlength", "64");
+    fireEvent.click(screen.getByRole("button", { name: "Open Dara Sok" }));
+    expect(
+      await screen.findByText("Not recorded yet. Add it with Update Customer."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("ID number / Passport number", {
+        selector: "#edit-customer-id-number",
+      }),
+    ).not.toBeRequired();
+  });
+
+  it("TEST-FE-V059B-04 keeps the update draft when another Customer has the ID number", async () => {
+    const api = client({
+      update: vi.fn().mockRejectedValue(
+        new CustomerIdNumberInUseError([
+          {
+            customer_id: "customer-9",
+            legal_name: "Srey Mom",
+            active: true,
+            relationship_indicators: [],
+          },
+        ]),
+      ),
+    });
+    await loadCustomers(api);
+    fireEvent.click(screen.getByRole("button", { name: "Open Dara Sok" }));
+    const input = await screen.findByLabelText("ID number / Passport number", {
+      selector: "#edit-customer-id-number",
+    });
+    expect(input).toBeRequired();
+    fireEvent.change(input, { target: { value: "P 7788" } });
+    fireEvent.click(screen.getByRole("button", { name: "Update Customer" }));
+    expect(
+      await screen.findByText(
+        "Another Customer (Srey Mom) already has this ID number or passport number. Use the existing Customer.",
+      ),
+    ).toBeInTheDocument();
+    expect(api.update).toHaveBeenCalledWith(
+      expect.objectContaining({ customer_id: "customer-1" }),
+      { id_document_number: "P 7788" },
+      expect.any(String),
+    );
+    expect(
+      screen.getByRole("button", { name: "Review existing Srey Mom" }),
+    ).toBeInTheDocument();
+  });
+
   it("TEST-FE-116 exposes the API Customer limits and phone format in both forms", async () => {
     const api = client();
     await loadCustomers(api);
@@ -489,6 +548,12 @@ describe("CustomerManagement", () => {
       }),
       { target: { value: "Unrelated local draft" } },
     );
+    fireEvent.change(
+      screen.getByLabelText("ID number / Passport number", {
+        selector: "#customer-id-number",
+      }),
+      { target: { value: "N0123456" } },
+    );
 
     view.rerender(
       <CustomerManagement
@@ -570,6 +635,12 @@ describe("CustomerManagement", () => {
       }),
       { target: { value: "Unrelated local draft" } },
     );
+    fireEvent.change(
+      screen.getByLabelText("ID number / Passport number", {
+        selector: "#customer-id-number",
+      }),
+      { target: { value: "N0123456" } },
+    );
     view.rerender(
       <CustomerManagement
         api={api}
@@ -630,6 +701,12 @@ describe("CustomerManagement", () => {
       screen.getByLabelText("Legal name", { selector: "#customer-legal-name" }),
       { target: { value: "Pending Customer" } },
     );
+    fireEvent.change(
+      screen.getByLabelText("ID number / Passport number", {
+        selector: "#customer-id-number",
+      }),
+      { target: { value: "N0123456" } },
+    );
     fireEvent.click(screen.getByRole("button", { name: "Create Customer" }));
     expect(busy).toHaveBeenLastCalledWith(true);
 
@@ -671,6 +748,12 @@ describe("CustomerManagement", () => {
             selector: "#customer-legal-name",
           }),
           { target: { value: "Pending Customer" } },
+        );
+        fireEvent.change(
+          screen.getByLabelText("ID number / Passport number", {
+            selector: "#customer-id-number",
+          }),
+          { target: { value: "N0123456" } },
         );
         fireEvent.click(
           screen.getByRole("button", { name: "Create Customer" }),
@@ -892,6 +975,12 @@ describe("CustomerManagement", () => {
         target: { value: "Dara Sok" },
       },
     );
+    fireEvent.change(
+      screen.getByLabelText("ID number / Passport number", {
+        selector: "#customer-id-number",
+      }),
+      { target: { value: "N7654321" } },
+    );
     fireEvent.click(
       screen.getByLabelText(
         "Confirm a distinct person after reviewing a possible match",
@@ -905,6 +994,7 @@ describe("CustomerManagement", () => {
         expect.any(String),
         expect.objectContaining({
           legal_name: "Dara Sok",
+          id_document_number: "N7654321",
           confirmed_distinct: true,
         }),
         expect.any(String),
@@ -1045,6 +1135,12 @@ describe("CustomerManagement", () => {
       }),
       { target: { value: "Sensitive create draft" } },
     );
+    fireEvent.change(
+      screen.getByLabelText("ID number / Passport number", {
+        selector: "#customer-id-number",
+      }),
+      { target: { value: "N0123456" } },
+    );
     fireEvent.click(
       screen.getByRole("button", { name: "Load more Customers" }),
     );
@@ -1072,6 +1168,12 @@ describe("CustomerManagement", () => {
         selector: "#customer-legal-name",
       }),
       { target: { value: " \u00a0 " } },
+    );
+    fireEvent.change(
+      screen.getByLabelText("ID number / Passport number", {
+        selector: "#customer-id-number",
+      }),
+      { target: { value: "N0123456" } },
     );
     fireEvent.click(screen.getByRole("button", { name: "Create Customer" }));
     expect(api.create).not.toHaveBeenCalled();
@@ -1123,6 +1225,12 @@ describe("CustomerManagement", () => {
     fireEvent.change(
       screen.getByLabelText("Legal name", { selector: "#customer-legal-name" }),
       { target: { value: "Dara S." } },
+    );
+    fireEvent.change(
+      screen.getByLabelText("ID number / Passport number", {
+        selector: "#customer-id-number",
+      }),
+      { target: { value: "N0123456" } },
     );
     fireEvent.click(screen.getByRole("button", { name: "Create Customer" }));
 
@@ -1240,6 +1348,12 @@ describe("CustomerManagement", () => {
       screen.getByLabelText("Legal name", { selector: "#customer-legal-name" }),
       { target: { value: "New Customer" } },
     );
+    fireEvent.change(
+      screen.getByLabelText("ID number / Passport number", {
+        selector: "#customer-id-number",
+      }),
+      { target: { value: "N0123456" } },
+    );
     fireEvent.click(screen.getByRole("button", { name: "Create Customer" }));
     await screen.findByText(
       "Customer created without assigning a permanent type.",
@@ -1266,6 +1380,12 @@ describe("CustomerManagement", () => {
     fireEvent.change(
       screen.getByLabelText("Legal name", { selector: "#customer-legal-name" }),
       { target: { value: "Pending Customer" } },
+    );
+    fireEvent.change(
+      screen.getByLabelText("ID number / Passport number", {
+        selector: "#customer-id-number",
+      }),
+      { target: { value: "N0123456" } },
     );
     fireEvent.click(screen.getByRole("button", { name: "Create Customer" }));
 
@@ -1991,6 +2111,12 @@ describe("CustomerManagement", () => {
       screen.getByLabelText("Legal name", { selector: "#customer-legal-name" }),
       { target: { value: "New Customer" } },
     );
+    fireEvent.change(
+      screen.getByLabelText("ID number / Passport number", {
+        selector: "#customer-id-number",
+      }),
+      { target: { value: "N0123456" } },
+    );
 
     fireEvent.click(screen.getByRole("button", { name: "Create Customer" }));
 
@@ -2086,6 +2212,12 @@ describe("CustomerManagement", () => {
     fireEvent.change(
       screen.getByLabelText("Legal name", { selector: "#customer-legal-name" }),
       { target: { value: "Created Customer" } },
+    );
+    fireEvent.change(
+      screen.getByLabelText("ID number / Passport number", {
+        selector: "#customer-id-number",
+      }),
+      { target: { value: "N0123456" } },
     );
     fireEvent.click(screen.getByRole("button", { name: "Create Customer" }));
 
@@ -2207,6 +2339,12 @@ describe("CustomerManagement", () => {
       screen.getByLabelText("Legal name", { selector: "#customer-legal-name" }),
       { target: { value: "Unsent Customer" } },
     );
+    fireEvent.change(
+      screen.getByLabelText("ID number / Passport number", {
+        selector: "#customer-id-number",
+      }),
+      { target: { value: "N0123456" } },
+    );
     fireEvent.change(screen.getByLabelText("Search Customers"), {
       target: { value: "new search" },
     });
@@ -2293,6 +2431,12 @@ describe("CustomerManagement", () => {
     fireEvent.change(
       screen.getByLabelText("Legal name", { selector: "#customer-legal-name" }),
       { target: { value: "Unsent create draft" } },
+    );
+    fireEvent.change(
+      screen.getByLabelText("ID number / Passport number", {
+        selector: "#customer-id-number",
+      }),
+      { target: { value: "N0123456" } },
     );
     fireEvent.change(screen.getByLabelText("Reason"), {
       target: { value: "Unsent deactivation draft" },
@@ -2701,7 +2845,10 @@ describe("CustomerManagement", () => {
         customer: null,
       }),
     });
-    const createSource = { legal_name: "Retried Customer" };
+    const createSource = {
+      legal_name: "Retried Customer",
+      id_document_number: "N0123456",
+    };
     const requestFingerprint =
       await customerCreateRequestFingerprint(createSource);
     const resultFingerprint = await customerCreateResultFingerprint(
@@ -2755,6 +2902,12 @@ describe("CustomerManagement", () => {
         selector: "#customer-legal-name",
       }),
       { target: { value: "Retried Customer" } },
+    );
+    fireEvent.change(
+      screen.getByLabelText("ID number / Passport number", {
+        selector: "#customer-id-number",
+      }),
+      { target: { value: "N0123456" } },
     );
     fireEvent.click(screen.getByRole("button", { name: "Create Customer" }));
 
@@ -2824,6 +2977,12 @@ describe("CustomerManagement", () => {
         selector: "#customer-legal-name",
       }),
       { target: { value: "Fresh Customer" } },
+    );
+    fireEvent.change(
+      screen.getByLabelText("ID number / Passport number", {
+        selector: "#customer-id-number",
+      }),
+      { target: { value: "N0123456" } },
     );
     fireEvent.click(screen.getByRole("button", { name: "Create Customer" }));
 
@@ -2979,6 +3138,12 @@ describe("CustomerManagement", () => {
       }),
       { target: { value: "Altered Customer" } },
     );
+    fireEvent.change(
+      screen.getByLabelText("ID number / Passport number", {
+        selector: "#customer-id-number",
+      }),
+      { target: { value: "N0123456" } },
+    );
     fireEvent.click(screen.getByRole("button", { name: "Create Customer" }));
 
     expect(
@@ -3107,6 +3272,12 @@ describe("CustomerManagement", () => {
         selector: "#customer-legal-name",
       }),
       { target: { value: "Preserved draft" } },
+    );
+    fireEvent.change(
+      screen.getByLabelText("ID number / Passport number", {
+        selector: "#customer-id-number",
+      }),
+      { target: { value: "N0123456" } },
     );
     fireEvent.change(screen.getByLabelText("Email (optional)"), {
       target: { value: "preserved@example.com" },
@@ -3569,6 +3740,12 @@ describe("CustomerManagement", () => {
       }),
       { target: { value: "Blocked duplicate" } },
     );
+    fireEvent.change(
+      screen.getByLabelText("ID number / Passport number", {
+        selector: "#customer-id-number",
+      }),
+      { target: { value: "N0123456" } },
+    );
     fireEvent.click(screen.getByRole("button", { name: "Create Customer" }));
 
     await waitFor(() => {
@@ -3586,6 +3763,12 @@ describe("CustomerManagement", () => {
     fireEvent.change(
       screen.getByLabelText("Legal name", { selector: "#customer-legal-name" }),
       { target: { value: "Discarded Customer" } },
+    );
+    fireEvent.change(
+      screen.getByLabelText("ID number / Passport number", {
+        selector: "#customer-id-number",
+      }),
+      { target: { value: "N0123456" } },
     );
     fireEvent.change(screen.getByLabelText("Search Customers"), {
       target: { value: "new scope" },
@@ -3728,6 +3911,12 @@ describe("CustomerManagement", () => {
         selector: "#customer-legal-name",
       }),
       { target: { value: "Privileged create draft" } },
+    );
+    fireEvent.change(
+      screen.getByLabelText("ID number / Passport number", {
+        selector: "#customer-id-number",
+      }),
+      { target: { value: "N0123456" } },
     );
     if (kind === "update") {
       fireEvent.change(screen.getByLabelText("Memo"), {
@@ -3876,6 +4065,12 @@ describe("CustomerManagement", () => {
     fireEvent.change(
       screen.getByLabelText("Legal name", { selector: "#customer-legal-name" }),
       { target: { value: "Privileged create draft" } },
+    );
+    fireEvent.change(
+      screen.getByLabelText("ID number / Passport number", {
+        selector: "#customer-id-number",
+      }),
+      { target: { value: "N0123456" } },
     );
     view.rerender(
       <CustomerManagement

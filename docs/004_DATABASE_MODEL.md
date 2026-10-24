@@ -194,6 +194,8 @@ channel is introduced.
 
 Amended by DL-071 (owner, 2026-10-20; answer 11): a new Customer field "ID number / Passport number" (owner-approved personal data). A Customer with the same ID number as another Customer is refused, and staff use the existing Customer. The same phone number or email address as another Customer gives a warning and may still be saved through the existing `confirmed_distinct` flow. The ID number never appears in exports or in the top bar search. The ID number is required for every Customer, and two ID numbers are the same when they match after removing spaces and dashes and ignoring capital letters (owner, 2026-10-21). Not built yet (V1-059).
 
+Built in V1-059 part B (2026-10-24; migration `20270206_194`): `customers.id_document_number text NULL` (trimmed, 1 to 64 characters) with a unique index on `app.customer_id_document_match_key` (spaces and dashes removed, lower case). The create and update functions take it last; a new Customer needs it, an update may correct it but never clears it, and the audit row records only `id_document_number_recorded` or `id_document_number_changed`, never the number. Customers recorded before have no number until an update adds one.
+
 Amended by DL-078 (owner, 2026-10-20): new optional Customer columns: date of birth, gender (`FEMALE` or `MALE`) and nationality (owner-approved personal data, SEC-006). Not built yet (screen rebuild).
 
 ---
@@ -580,6 +582,7 @@ Constraints:
   replacement date. This model introduces no non-replacement deactivation command
   and stores no unapproved Meter status.
 - Serial uniqueness is not asserted because upstream policy does not define whether serials are globally reusable. Amended by DL-071 (owner, 2026-10-05; answer 12): `serial_number` is unique across all Meters of the Property, whatever the Utility Type, deactivated (replaced) Meters included, so a replaced Meter's serial is never used again. Where no serial is printed, staff enter a Property code (for example `EL-U101` or `WA-U101`), which is also unique. `measurement_unit_code` is kWh for electricity and cubic metres (m3) for water (answer 9). Not built yet (V1-059).
+  Built in V1-059 part B (2026-10-24; migration `20270205_193`): the trigger `utility_meters_serial_unique` (`app.guard_utility_meter_serial`) refuses a new Meter whose serial, compared by `app.meter_serial_match_key` (spaces and dashes removed, lower case), is used by any Meter of the same Property, under a transaction lock per Property. The API fixes `measurement_unit_code` from the Utility Type (`KWH`, `M3`) and refuses another code; the screens show kWh and m³.
 - Index `(unit_id, utility_type, installed_date DESC)`.
 
 ## DB-UTIL-002 — `utility_meter_replacements`
@@ -860,6 +863,7 @@ Constraints and indexes:
 - Once issued, Customer, Lease association or absence, Invoice Number, date, category, period, due date/source, and original total are immutable.
 - Index `(customer_id, status, due_date, issued_at, invoice_number)` supports deterministic FIFO; index `(lease_id, invoice_date)` where Lease is present.
 - Amended by DL-071 (owner, 2026-10-20; answer 10): `invoice_number` is given only at issue, in the format `INV` + 2-digit year of the issue date in `Asia/Phnom_Penh` + 4-digit running number restarting each year (for example `INV260001`; 5 digits after 9999), never reused. A DRAFT Invoice carries only an internal draft reference, never printed and never shown to a Customer. This replaces the rule that every Invoice, DRAFT included, has an `invoice_number`. Not built yet (V1-059); recorded Invoices keep their numbers.
+  Built in V1-059 part B (2026-10-24; migration `20270207_195`): `app.next_document_number` keeps one counter per type and Phnom Penh year in `app.document_number_counters` (forward only) and the letters in `app.document_number_series` (INV, RCP, RFD; 2 to 5 capital letters, all different; Settings later, DL-075). The trigger `invoices_zz_document_number` keeps the writer's internal reference in `invoice_number` while the Invoice is a DRAFT (also in the new `draft_reference`) and replaces it with the next INV number when the Invoice is issued; a dropped DRAFT keeps its reference; nobody else may change either column. Decided by Claude: the reference stays in `invoice_number` until issue, so no reader needs a null number.
 
 ## DB-INV-002 — `invoice_lines`
 
@@ -1290,6 +1294,8 @@ obligations of payer or beneficiary.
 Index `(payer_customer_id, payment_date DESC)` and partial index on RECEIVED.
 
 Amended by DL-071 (owner, 2026-10-05; answer 10 changed 2026-10-20): a Payment has one Receipt, and `payment_number` is that Receipt's `receipt_number` (for example `RCP260001`). This replaces the separate Payment Number (today `PAY-` followed by the Payment id). Not built yet (V1-059).
+
+Built in V1-059 part B (2026-10-24; migration `20270207_195`): the trigger `a00_payments_document_number` gives every new Payment the next RCP number by the Phnom Penh date of `confirmed_at`, and `a00_receipts_document_number` gives its Receipt the same number; the check that a Receipt number is `R-` followed by its id is removed. Earlier Payments and Receipts keep their numbers.
 
 Persistence uses an internal `payment_serialization_guards` row per Payment. Funding
 and reversal update its MVCC revision before checking append-only active consumption,
@@ -1754,6 +1760,8 @@ snapshotted. Payment, Allocation, Credit, Deposit, and Charge amounts remain
 authoritative in their own tables and are joined for display.
 
 Amended by DL-071 (owner, 2026-10-05; answer 10 changed 2026-10-20): `receipt_number` is `RCP` + 2-digit year of the confirmation date in `Asia/Phnom_Penh` + 4-digit running number restarting each year (for example `RCP260001`; 5 digits after 9999), never reused; it is also the Payment's `payment_number`. Not built yet (V1-059).
+
+Built in V1-059 part B (2026-10-24): see `app.payments` above; the Receipt takes its Payment's number.
 
 ## DB-RECEIPT-002 — `receipt_reprints`
 
@@ -4256,6 +4264,8 @@ no historical record is rewritten or deleted. Settlement Deposit Refunds remain
 separate by Deposit.
 
 Amended by DL-071 (owner, 2026-10-20; answer 10): `refund_number` is given at confirmation, as `RFD` + 2-digit year of the confirmation date in `Asia/Phnom_Penh` + 4-digit running number restarting each year (for example `RFD260001`; 5 digits after 9999), never reused. A Refund draft carries only an internal draft reference, and staff no longer type a `refund_number`. Not built yet (V1-059).
+
+Built in V1-059 part B (2026-10-24; migration `20270207_195`): the trigger `a00_refunds_document_number` gives every new Refund the next RFD number by the Phnom Penh date of `processed_at`, whatever number the writing function passed; the functions that returned the number they wrote now read the given number back. A Reservation Deposit Refund draft carries the internal reference `DRAFT-` followed by its outcome id.
 
 A Security Deposit Refund requires the Lease to be TERMINATED and the applicable Final
 Settlement. A Pet Deposit Refund normally follows that path, but while its Lease remains

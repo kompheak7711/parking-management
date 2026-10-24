@@ -599,7 +599,7 @@ def test_enforcement_new_context_permissions_and_forward_only_head(
     from alembic.script import ScriptDirectory
 
     scripts = ScriptDirectory.from_config(Config("alembic.ini"))
-    assert scripts.get_heads() == ["20270204_192"]
+    assert scripts.get_heads() == ["20270207_195"]
     revision = scripts.get_revision("20260910_51")
     assert revision is not None and revision.down_revision == "20260910_50"
     with pytest.raises(RuntimeError, match="forward-only"):
@@ -647,7 +647,10 @@ def test_forward_trigger_revocation_preserves_runtime_customer_email_matching(
     service = CustomerService(PostgresCustomerRepository(runtime_database_url(), human))
     original_email = f"{uuid4()}@example.com"
     customer = service.create(
-        uuid4(), legal_name="Synthetic trigger regression", email_address=original_email
+        uuid4(),
+        legal_name="Synthetic trigger regression",
+        id_document_number=f"ID-{uuid4().hex[:12]}",
+        email_address=original_email,
     )
 
     def match_key() -> tuple[object, ...] | None:
@@ -660,7 +663,10 @@ def test_forward_trigger_revocation_preserves_runtime_customer_email_matching(
     assert match_key() == (md5(original_email.encode(), usedforsecurity=False).hexdigest(),)
     with pytest.raises(CustomerReuseRequired):
         service.create(
-            uuid4(), legal_name="Synthetic duplicate", email_address=original_email.upper()
+            uuid4(),
+            legal_name="Synthetic duplicate",
+            id_document_number=f"ID-{uuid4().hex[:12]}",
+            email_address=original_email.upper(),
         )
     replacement = f"{uuid4()}@example.com"
     customer = service.update(
@@ -674,7 +680,10 @@ def test_forward_trigger_revocation_preserves_runtime_customer_email_matching(
     assert match_key() == (md5(replacement.encode(), usedforsecurity=False).hexdigest(),)
     with pytest.raises(CustomerReuseRequired):
         service.create(
-            uuid4(), legal_name="Synthetic updated duplicate", email_address=replacement.upper()
+            uuid4(),
+            legal_name="Synthetic updated duplicate",
+            id_document_number=f"ID-{uuid4().hex[:12]}",
+            email_address=replacement.upper(),
         )
     customer = service.update(
         customer,

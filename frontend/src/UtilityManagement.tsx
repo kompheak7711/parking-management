@@ -1,11 +1,17 @@
 import { FormEvent, useRef, useState } from "react";
 
 import {
+  MEASUREMENT_UNIT_CODES,
+  measurementUnitLabel,
+} from "./measurementUnits";
+
+import {
   BatchReadingInput,
   ReadingCorrectionResult,
   UtilityApi,
   UtilityCalculation,
   UtilityClientError,
+  MeterSerialNumberInUseError,
   UtilityConflictError,
   UtilityReading,
   UtilitySnapshot,
@@ -155,9 +161,11 @@ export function UtilityManagement({
       .catch((error: unknown) => {
         setFailed(true);
         setStatus(
-          error instanceof UtilityConflictError
-            ? `Utility history changed or the command conflicts. Reload before retrying.${diagnostics(error)}`
-            : `The Utility command was not completed.${diagnostics(error)}`,
+          error instanceof MeterSerialNumberInUseError
+            ? `${error.message} Use the serial printed on the Meter, or another Property code.${diagnostics(error)}`
+            : error instanceof UtilityConflictError
+              ? `Utility history changed or the command conflicts. Reload before retrying.${diagnostics(error)}`
+              : `The Utility command was not completed.${diagnostics(error)}`,
         );
       })
       .finally(() => {
@@ -170,12 +178,13 @@ export function UtilityManagement({
     const form = event.currentTarget;
     const data = new FormData(form);
     const installedDate = text(data, "install-date");
+    const utilityType = (
+      text(data, "install-type") === "WATER" ? "WATER" : "ELECTRICITY"
+    ) as UtilityType;
     const payload = {
-      utility_type: (text(data, "install-type") === "WATER"
-        ? "WATER"
-        : "ELECTRICITY") as UtilityType,
+      utility_type: utilityType,
       serial_number: text(data, "install-serial"),
-      measurement_unit_code: text(data, "install-unit"),
+      measurement_unit_code: MEASUREMENT_UNIT_CODES[utilityType],
       description: optional(data, "install-description"),
       installed_date: installedDate,
       memo: optional(data, "install-memo"),
@@ -331,11 +340,12 @@ export function UtilityManagement({
     event.preventDefault();
     const form = event.currentTarget;
     const data = new FormData(form);
+    const utilityType = (
+      text(data, "rate-type") === "WATER" ? "WATER" : "ELECTRICITY"
+    ) as UtilityType;
     const payload = {
-      utility_type: (text(data, "rate-type") === "WATER"
-        ? "WATER"
-        : "ELECTRICITY") as UtilityType,
-      measurement_unit_code: text(data, "rate-unit"),
+      utility_type: utilityType,
+      measurement_unit_code: MEASUREMENT_UNIT_CODES[utilityType],
       rate_usd_per_unit: text(data, "rate-value"),
       effective_date: text(data, "rate-effective-date"),
       notice_at: localTimestamp(text(data, "rate-notice-at")),
@@ -548,7 +558,9 @@ export function UtilityManagement({
                       </div>
                       <div>
                         <dt>Measurement unit</dt>
-                        <dd>{meter.measurement_unit_code}</dd>
+                        <dd>
+                          {measurementUnitLabel(meter.measurement_unit_code)}
+                        </dd>
                       </div>
                       <div>
                         <dt>Installed</dt>
@@ -601,7 +613,9 @@ export function UtilityManagement({
                                 <td>{reading.original_value}</td>
                                 <td>
                                   {reading.effective_value}{" "}
-                                  {reading.measurement_unit_code}
+                                  {measurementUnitLabel(
+                                    reading.measurement_unit_code,
+                                  )}
                                 </td>
                                 <td>
                                   {reading.validated
@@ -658,13 +672,12 @@ export function UtilityManagement({
                 </select>
               </label>
               <label>
-                Serial or physical identity
+                Serial number (or a Property code such as EL-U101)
                 <input name="install-serial" required />
               </label>
-              <label>
-                Measurement unit code
-                <input name="install-unit" required />
-              </label>
+              <p className="panel-help">
+                Electricity is measured in kWh and water in m³.
+              </p>
               <label>
                 Installation date
                 <input name="install-date" required type="date" />
@@ -986,14 +999,18 @@ export function UtilityManagement({
                       <dt>Original value</dt>
                       <dd>
                         {correctionDraft.reading.original_value}{" "}
-                        {correctionDraft.reading.measurement_unit_code}
+                        {measurementUnitLabel(
+                          correctionDraft.reading.measurement_unit_code,
+                        )}
                       </dd>
                     </div>
                     <div>
                       <dt>Current effective value</dt>
                       <dd>
                         {correctionDraft.reading.effective_value}{" "}
-                        {correctionDraft.reading.measurement_unit_code}
+                        {measurementUnitLabel(
+                          correctionDraft.reading.measurement_unit_code,
+                        )}
                       </dd>
                     </div>
                     <div>
@@ -1057,12 +1074,16 @@ export function UtilityManagement({
                       Append a correction from{" "}
                       <strong>
                         {correctionDraft.reading.effective_value}{" "}
-                        {correctionDraft.reading.measurement_unit_code}
+                        {measurementUnitLabel(
+                          correctionDraft.reading.measurement_unit_code,
+                        )}
                       </strong>{" "}
                       to{" "}
                       <strong>
                         {correctionDraft.correctedValue}{" "}
-                        {correctionDraft.reading.measurement_unit_code}
+                        {measurementUnitLabel(
+                          correctionDraft.reading.measurement_unit_code,
+                        )}
                       </strong>{" "}
                       for “{correctionDraft.reason}” under authorization “
                       {correctionDraft.authorizationReference}”.
@@ -1214,7 +1235,7 @@ export function UtilityManagement({
                       <td>{item.utility_type}</td>
                       <td>
                         {item.rate_usd_per_unit} USD per{" "}
-                        {item.measurement_unit_code}
+                        {measurementUnitLabel(item.measurement_unit_code)}
                       </td>
                       <td>{item.effective_date}</td>
                       <td>{item.notice_at}</td>
@@ -1232,10 +1253,9 @@ export function UtilityManagement({
                   <option value="WATER">Water</option>
                 </select>
               </label>
-              <label>
-                Measurement unit code
-                <input name="rate-unit" required />
-              </label>
+              <p className="panel-help">
+                Electricity is measured in kWh and water in m³.
+              </p>
               <label>
                 Rate in USD per unit
                 <input

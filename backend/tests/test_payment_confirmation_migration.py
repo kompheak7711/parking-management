@@ -1,5 +1,6 @@
 """USD confirmation, exact replay, original evidence and forward-only PostgreSQL bridge."""
 
+import re
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
@@ -7,6 +8,7 @@ from datetime import UTC, datetime, timedelta
 from threading import Barrier
 from typing import Literal, cast
 from uuid import UUID, uuid4
+from zoneinfo import ZoneInfo
 
 import psycopg
 import pytest
@@ -34,6 +36,8 @@ from test_reservation_migration import (  # noqa: F401
     migrated_database_url,
     setup_reservation_sources,
 )
+
+PHNOM_PENH = ZoneInfo("Asia/Phnom_Penh")
 
 
 def service() -> PaymentConfirmationService:
@@ -78,7 +82,12 @@ def test_confirmation_records_usd_received_time_unique_receipt_audit_and_no_impl
     result = service().confirm_usd(prop, request, actor=actor(human, prop, "payments.record"))
     payment = cast(dict[str, object], result["payment"])
     identity = payment_id(result)
-    assert payment["payment_number"] == f"PAY-{identity}"
+    # DL-071 answer 10 (V1-059 part B): RCP, the 2-digit Phnom Penh year of the confirmation
+    # and a running number; the Receipt has the same number.
+    confirmed_year = (
+        datetime.fromisoformat(str(payment["confirmed_at"])).astimezone(PHNOM_PENH).strftime("%y")
+    )
+    assert re.fullmatch(rf"RCP{confirmed_year}\d{{4,}}", str(payment["payment_number"]))
     assert payment["received_currency"] == "USD"
     assert payment["received_amount_minor"] == payment["usd_accounting_value_cents"] == amount
     assert payment["status"] == "RECEIVED" and payment["exchange_rate_record_id"] is None
@@ -95,7 +104,8 @@ def test_confirmation_records_usd_received_time_unique_receipt_audit_and_no_impl
     assert result["evidence_reference"] == request.evidence_reference
     receipt = cast(dict[str, object], result["receipt"])
     assert (
-        receipt["payment_id"] == str(identity) and receipt["receipt_number"] == f"R-{receipt['id']}"
+        receipt["payment_id"] == str(identity)
+        and receipt["receipt_number"] == payment["payment_number"]
     )
     with psycopg.connect(migrated_database_url) as connection:
         saved = connection.execute(

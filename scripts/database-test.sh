@@ -299,6 +299,9 @@ database_test_suites='
   tests/test_one_time_password_migration.py
   tests/test_one_time_password_flow_migration.py
   tests/test_settings_access_routes_migration.py
+  tests/test_meter_serial_number_migration.py
+  tests/test_customer_id_document_number_migration.py
+  tests/test_document_numbers_migration.py
 '
 
 for database_test_file in $database_test_suites; do

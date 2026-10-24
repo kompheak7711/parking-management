@@ -2819,6 +2819,29 @@ describe("independent reviewAA finite selected facts", () => {
       ).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
     },
   );
+  it("TEST-FE-V059B-05 accepts a Receipt that carries its Payment's RCP number", async () => {
+    const sample = reviewAASample(2),
+      receipt = financialObject(financialObject(sample.data.context).receipt),
+      payment = financialObject(
+        financialObject(sample.data.payment_resource).payment,
+      );
+    await reviewAAComplete(sample);
+    payment.payment_number = "RCP260001";
+    receipt.receipt_number = "RCP260001";
+    financialObject(
+      financialObject(sample.data.payment_resource).receipt,
+    ).receipt_number = "RCP260001";
+    await expect(
+      actionClient(sample).client.read(actionScope(sample), sample.request),
+    ).resolves.toBeTruthy();
+    receipt.receipt_number = "RCP260002";
+    financialObject(
+      financialObject(sample.data.payment_resource).receipt,
+    ).receipt_number = "RCP260002";
+    await expect(
+      actionClient(sample).client.read(actionScope(sample), sample.request),
+    ).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
+  });
   it("TEST-FE-408 preserves multiple contributing sources, reversed originals and full returns after parent reversal", async () => {
     for (const [index, creditSource, field] of [
       [7, false, "allocation_usd_cents"],

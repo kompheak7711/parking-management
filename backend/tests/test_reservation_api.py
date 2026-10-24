@@ -699,13 +699,26 @@ def test_deposit_draft_kind_and_capability_follow_cancellation_responsibility() 
         json={
             "outcome_id": str(uuid4()),
             "reason": "Property could not provide the Unit",
-            "refund_number": "RF-1",
             "refund_method_id": str(method_id),
             "reference_note": "Cash at the office",
         },
         headers=headers(),
     )
     refund_allowed = client(
+        flow, actor(property_id, "reservations.read", "reservation_deposits.refund")
+    ).post(
+        f"/reservations/{refund.reservation_id}/deposit-drafts",
+        json={
+            "outcome_id": str(uuid4()),
+            "reason": "Property could not provide the Unit",
+            "refund_method_id": str(method_id),
+            "reference_note": "Cash at the office",
+        },
+        headers=headers(),
+    )
+
+    # DL-071 answer 10 (V1-059 part B): staff no longer type a Refund number.
+    typed_number = client(
         flow, actor(property_id, "reservations.read", "reservation_deposits.refund")
     ).post(
         f"/reservations/{refund.reservation_id}/deposit-drafts",
@@ -723,6 +736,7 @@ def test_deposit_draft_kind_and_capability_follow_cancellation_responsibility() 
     assert forfeiture.headers["cache-control"] == "private, no-store"
     assert refund_denied.status_code == 404
     assert refund_allowed.status_code == 201
+    assert typed_number.status_code == 422
     kinds = [call[2] for call in flow.draft_calls]
     assert kinds == [
         ReservationDepositDecision.DEPOSIT_FORFEITURE,
@@ -763,7 +777,6 @@ def test_deposit_draft_routes_refuse_active_reservations_csrf_and_partial_method
         json={
             "outcome_id": str(uuid4()),
             "reason": "Method without note",
-            "refund_number": "RF-2",
             "refund_method_id": str(uuid4()),
         },
         headers=headers(),

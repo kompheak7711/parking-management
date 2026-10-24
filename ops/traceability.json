@@ -49155,6 +49155,241 @@
       "test_path": "backend/tests/test_runtime_secrets.py",
       "status": "implemented",
       "notes": "The key reader's copy of an inherited /dev/fd/<n> refuses a closed descriptor, a pipe (at once, never waiting) and, when not run as root, a private file the person owns (login slice sub-slice L7c review round 3, DL-081)."
+    },
+    {
+      "test_id": "test_install_uses_kwh_or_m3_and_refuses_another_unit_code",
+      "upstream_ids": [
+        "DL-071",
+        "DB-UTIL-001"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_utility_api.py",
+      "status": "implemented",
+      "notes": "V1-059 part B: Meter units and serial numbers (DL-071 answers 9 and 12; the owner's go-ahead for the serial check 2026-10-24) (technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-B.md)."
+    },
+    {
+      "test_id": "test_install_with_a_serial_used_in_the_property_answers_409",
+      "upstream_ids": [
+        "DL-071",
+        "DB-UTIL-001"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_utility_api.py",
+      "status": "implemented",
+      "notes": "V1-059 part B: Meter units and serial numbers (DL-071 answers 9 and 12; the owner's go-ahead for the serial check 2026-10-24) (technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-B.md)."
+    },
+    {
+      "test_id": "test_a_serial_is_unique_across_utility_types_and_ignores_case_spaces_and_dashes",
+      "upstream_ids": [
+        "DL-071",
+        "DB-UTIL-001"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_meter_serial_number_migration.py",
+      "status": "implemented",
+      "notes": "V1-059 part B: Meter units and serial numbers (DL-071 answers 9 and 12; the owner's go-ahead for the serial check 2026-10-24) (technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-B.md)."
+    },
+    {
+      "test_id": "test_a_replaced_meter_keeps_its_serial_and_another_unit_cannot_use_it",
+      "upstream_ids": [
+        "DL-071",
+        "DB-UTIL-001"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_meter_serial_number_migration.py",
+      "status": "implemented",
+      "notes": "V1-059 part B: Meter units and serial numbers (DL-071 answers 9 and 12; the owner's go-ahead for the serial check 2026-10-24) (technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-B.md)."
+    },
+    {
+      "test_id": "test_two_meters_with_one_serial_saved_at_once_cannot_both_commit",
+      "upstream_ids": [
+        "DL-071",
+        "DB-UTIL-001"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_meter_serial_number_migration.py",
+      "status": "implemented",
+      "notes": "V1-059 part B: Meter units and serial numbers (DL-071 answers 9 and 12; the owner's go-ahead for the serial check 2026-10-24) (technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-B.md)."
+    },
+    {
+      "test_id": "TEST-FE-V059B-01",
+      "upstream_ids": [
+        "DL-071",
+        "DB-UTIL-001"
+      ],
+      "test_level": "UI",
+      "test_path": "frontend/src/utilityClient.test.tsx",
+      "status": "implemented",
+      "notes": "V1-059 part B: Meter units and serial numbers (DL-071 answers 9 and 12; the owner's go-ahead for the serial check 2026-10-24) (technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-B.md)."
+    },
+    {
+      "test_id": "test_create_needs_an_id_number_and_refuses_one_another_customer_has",
+      "upstream_ids": [
+        "DL-071",
+        "BR-CUST-002"
+      ],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_customer.py",
+      "status": "implemented",
+      "notes": "V1-059 part B: Customer ID number / Passport number (DL-071 answer 11; the owner's go-ahead for the check 2026-10-24) (technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-B.md)."
+    },
+    {
+      "test_id": "test_update_corrects_but_never_removes_the_id_number_and_keeps_it_unique",
+      "upstream_ids": [
+        "DL-071",
+        "BR-CUST-002"
+      ],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_customer.py",
+      "status": "implemented",
+      "notes": "V1-059 part B: Customer ID number / Passport number (DL-071 answer 11; the owner's go-ahead for the check 2026-10-24) (technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-B.md)."
+    },
+    {
+      "test_id": "test_customer_id_number_is_required_unique_shown_in_detail_and_never_cleared",
+      "upstream_ids": [
+        "DL-071",
+        "BR-CUST-002",
+        "SEC-006"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_customer_api.py",
+      "status": "implemented",
+      "notes": "V1-059 part B: Customer ID number / Passport number (DL-071 answer 11; the owner's go-ahead for the check 2026-10-24) (technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-B.md)."
+    },
+    {
+      "test_id": "test_runtime_create_stores_the_number_and_refuses_the_same_number_in_any_form",
+      "upstream_ids": [
+        "DL-071",
+        "BR-CUST-002",
+        "SEC-006"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_customer_id_document_number_migration.py",
+      "status": "implemented",
+      "notes": "V1-059 part B: Customer ID number / Passport number (DL-071 answer 11; the owner's go-ahead for the check 2026-10-24) (technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-B.md)."
+    },
+    {
+      "test_id": "test_the_unique_index_decides_two_creates_with_one_number_at_once",
+      "upstream_ids": [
+        "DL-071",
+        "BR-CUST-002"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_customer_id_document_number_migration.py",
+      "status": "implemented",
+      "notes": "V1-059 part B: Customer ID number / Passport number (DL-071 answer 11; the owner's go-ahead for the check 2026-10-24) (technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-B.md)."
+    },
+    {
+      "test_id": "test_a_legacy_customer_gets_a_number_by_update_and_it_is_never_cleared",
+      "upstream_ids": [
+        "DL-071",
+        "BR-CUST-002"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_customer_id_document_number_migration.py",
+      "status": "implemented",
+      "notes": "V1-059 part B: Customer ID number / Passport number (DL-071 answer 11; the owner's go-ahead for the check 2026-10-24) (technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-B.md)."
+    },
+    {
+      "test_id": "test_the_number_is_kept_in_the_command_replay",
+      "upstream_ids": [
+        "DL-071",
+        "BR-CUST-002"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_customer_id_document_number_migration.py",
+      "status": "implemented",
+      "notes": "V1-059 part B: Customer ID number / Passport number (DL-071 answer 11; the owner's go-ahead for the check 2026-10-24) (technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-B.md)."
+    },
+    {
+      "test_id": "TEST-FE-V059B-02",
+      "upstream_ids": [
+        "DL-071",
+        "BR-CUST-002"
+      ],
+      "test_level": "UI",
+      "test_path": "frontend/src/customerClient.test.tsx",
+      "status": "implemented",
+      "notes": "V1-059 part B: Customer ID number / Passport number (DL-071 answer 11; the owner's go-ahead for the check 2026-10-24) (technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-B.md)."
+    },
+    {
+      "test_id": "TEST-FE-V059B-03",
+      "upstream_ids": [
+        "DL-071",
+        "BR-CUST-002"
+      ],
+      "test_level": "UI",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "V1-059 part B: Customer ID number / Passport number (DL-071 answer 11; the owner's go-ahead for the check 2026-10-24) (technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-B.md)."
+    },
+    {
+      "test_id": "TEST-FE-V059B-04",
+      "upstream_ids": [
+        "DL-071",
+        "BR-CUST-002"
+      ],
+      "test_level": "UI",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "V1-059 part B: Customer ID number / Passport number (DL-071 answer 11; the owner's go-ahead for the check 2026-10-24) (technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-B.md)."
+    },
+    {
+      "test_id": "test_numbers_restart_each_phnom_penh_year_and_grow_past_9999",
+      "upstream_ids": [
+        "DL-071",
+        "DB-INV-001",
+        "DB-PAY-003",
+        "DB-REFUND-001"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_document_numbers_migration.py",
+      "status": "implemented",
+      "notes": "V1-059 part B: Invoice, Receipt and Refund numbers (DL-071 answers 9 and 10, DL-075) (technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-B.md)."
+    },
+    {
+      "test_id": "test_a_counter_never_goes_back_and_the_letters_can_change",
+      "upstream_ids": [
+        "DL-071",
+        "DB-INV-001"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_document_numbers_migration.py",
+      "status": "implemented",
+      "notes": "V1-059 part B: Invoice, Receipt and Refund numbers (DL-071 answers 9 and 10, DL-075) (technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-B.md)."
+    },
+    {
+      "test_id": "test_a_draft_invoice_has_only_its_reference_until_it_is_issued",
+      "upstream_ids": [
+        "DL-071",
+        "DB-INV-001"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_document_numbers_migration.py",
+      "status": "implemented",
+      "notes": "V1-059 part B: Invoice, Receipt and Refund numbers (DL-071 answers 9 and 10, DL-075) (technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-B.md)."
+    },
+    {
+      "test_id": "TEST-FE-V059B-05",
+      "upstream_ids": [
+        "DL-071",
+        "DB-PAY-003"
+      ],
+      "test_level": "UI",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "V1-059 part B: Invoice, Receipt and Refund numbers (DL-071 answers 9 and 10, DL-075) (technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-B.md)."
+    },
+    {
+      "test_id": "test_the_runtime_role_cannot_create_a_customer_without_the_number",
+      "upstream_ids": [
+        "DL-071",
+        "BR-CUST-002"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_customer_id_document_number_migration.py",
+      "status": "implemented",
+      "notes": "V1-059 part B: Customer ID number / Passport number (DL-071 answer 11; review round 1: the earlier create overloads are closed to the runtime role; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-B.md)."
     }
   ]
 }
