@@ -7,6 +7,8 @@ import {
   LocalSignIn,
   MfaEnrollmentData,
   MfaMethod,
+  PASSWORD_RULE_MESSAGE,
+  PasswordRuleError,
   RecoveryCodeSetData,
   SessionData,
   authenticationApi,
@@ -87,12 +89,16 @@ type Screen =
   | "sign_in"
   | "mfa_required"
   | "mfa_enrollment_required"
+  | "password_change_required"
   | "authenticated";
 
 function formatDateTime(value: string): string {
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? "Unavailable" : parsed.toISOString();
 }
+
+const PASSWORD_CHANGE_NOT_FINISHED =
+  "The password change did not finish. Sign in with your new password. If it is not accepted, sign in with your one-time password.";
 
 function phaseScreen(result: AuthenticationData): Screen {
   return result.phase;
@@ -554,6 +560,13 @@ export function App({
   const [administrationStatus, setAdministrationStatus] = useState<
     string | null
   >(null);
+  // Login sub-slice L4: the one-time password the server made, shown once to the Owner.
+  const [issuedPassword, setIssuedPassword] = useState<{
+    username: string;
+    value: string;
+    expires_at: string;
+  } | null>(null);
+  const [passwordRuleRefused, setPasswordRuleRefused] = useState(false);
   const [propertyId, setPropertyId] = useState("");
   const [configurationPropertyId, setConfigurationPropertyId] = useState("");
   const [propertyConfiguration, setPropertyConfiguration] =
@@ -583,7 +596,7 @@ export function App({
   const [pendingCommand, setPendingCommand] = useState<{
     kind: "disable" | "revoke" | "recover";
     user: UserAccount;
-    recovery?: { new_password: string; reset_mfa: boolean; reason: string };
+    recovery?: { reset_mfa: boolean; reason: string };
   } | null>(null);
 
   useEffect(() => {
@@ -670,6 +683,8 @@ export function App({
     setSession(null);
     setEnrollment(null);
     setRecoveryCodes(null);
+    setIssuedPassword(null);
+    setPasswordRuleRefused(false);
     invalidatePropertyConfiguration();
     setPropertyConfigurationStatus(null);
     setSubmissionState("idle");
@@ -771,6 +786,36 @@ export function App({
       .then((result) => acceptAuthentication(result))
       .catch(() => {
         setSubmissionState("failed");
+      });
+  }
+
+  function handlePasswordChange(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    const newPassword = data.get("new-password");
+    const repeated = data.get("new-password-again");
+    setPasswordRuleRefused(false);
+    if (
+      typeof newPassword !== "string" ||
+      newPassword.length === 0 ||
+      newPassword !== repeated
+    ) {
+      setSubmissionState("failed");
+      return;
+    }
+    setSubmissionState("submitting");
+    void client
+      .changePassword(newPassword)
+      .then((result) => acceptAuthentication(result))
+      .catch((error: unknown) => {
+        if (error instanceof PasswordRuleError) {
+          setPasswordRuleRefused(true);
+          setSubmissionState("idle");
+        } else {
+          // The change may have been saved before a later step failed (review round 1), so
+          // the person is told to try the new password first.
+          returnToSignIn(PASSWORD_CHANGE_NOT_FINISHED);
+        }
       });
   }
 
@@ -1054,6 +1099,8 @@ export function App({
 
   function loadAdministration(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    // L4 review round 2: a one-time password never stays beside another property's users.
+    setIssuedPassword(null);
     setAdministrationStatus(
       "Checking server-authorized administration access…",
     );
@@ -1092,12 +1139,16 @@ export function App({
         account_class:
           value("new-account-class") === "manager" ? "manager" : "staff",
       })
-      .then((user) => {
+      .then((created) => {
         setAdministration((current) =>
           current === null
             ? current
-            : { ...current, users: [...current.users, user] },
+            : { ...current, users: [...current.users, created.account] },
         );
+        setIssuedPassword({
+          username: created.account.username,
+          ...created.one_time_password,
+        });
         setAdministrationStatus("Account created and recorded for audit.");
         form.reset();
       })
@@ -1139,6 +1190,10 @@ export function App({
       void administrationApi
         .administrativelyRecoverUser(command.user.user_id, command.recovery)
         .then((result) => {
+          setIssuedPassword({
+            username: command.user.username,
+            ...result.one_time_password,
+          });
           setAdministrationStatus(
             `Recovery completed; ${String(result.sessions_revoked)} applicable session(s) revoked.`,
           );
@@ -1172,14 +1227,12 @@ export function App({
     const selected = administration.users.find(
       (user) => user.user_id === userId,
     );
-    const password = data.get("recovery-password");
     const reason = data.get("recovery-reason");
     if (selected === undefined) return;
     setPendingCommand({
       kind: "recover",
       user: selected,
       recovery: {
-        new_password: typeof password === "string" ? password : "",
         reset_mfa: data.get("recovery-reset-mfa") === "yes",
         reason: typeof reason === "string" ? reason : "",
       },
@@ -1313,6 +1366,63 @@ export function App({
             <p className="panel-help">
               Need help signing in? Contact your administrator.
             </p>
+          </section>
+        )}
+
+        {screen === "password_change_required" && (
+          <section className="auth-panel">
+            <p className="eyebrow">One-time password</p>
+            <h2 id="screen-heading">Choose your own password</h2>
+            <p className="panel-introduction">
+              You signed in with a one-time password. Choose a new password to
+              continue.
+            </p>
+            <form className="form-stack" onSubmit={handlePasswordChange}>
+              {/* 128 code points may be 256 UTF-16 units; the server checks the rule. */}
+              <div className="form-field">
+                <label htmlFor="new-password">New password</label>
+                <input
+                  aria-describedby="password-rule"
+                  autoComplete="new-password"
+                  disabled={isSubmitting}
+                  id="new-password"
+                  maxLength={256}
+                  minLength={15}
+                  name="new-password"
+                  required
+                  type="password"
+                />
+              </div>
+              <div className="form-field">
+                <label htmlFor="new-password-again">New password again</label>
+                <input
+                  autoComplete="new-password"
+                  disabled={isSubmitting}
+                  id="new-password-again"
+                  maxLength={256}
+                  minLength={15}
+                  name="new-password-again"
+                  required
+                  type="password"
+                />
+              </div>
+              <p className="panel-help" id="password-rule">
+                {PASSWORD_RULE_MESSAGE}
+              </p>
+              {passwordRuleRefused && (
+                <p className="authentication-error" role="alert">
+                  This password was not accepted. {PASSWORD_RULE_MESSAGE}
+                </p>
+              )}
+              {hasError && (
+                <p className="authentication-error" role="alert">
+                  The two passwords must match.
+                </p>
+              )}
+              <button disabled={isSubmitting} type="submit">
+                Save the new password
+              </button>
+            </form>
           </section>
         )}
 
@@ -1910,6 +2020,31 @@ export function App({
               {administrationStatus !== null && (
                 <p role="status">{administrationStatus}</p>
               )}
+              {issuedPassword !== null && (
+                <section
+                  aria-label="One-time password"
+                  className="protected-material"
+                >
+                  <p>
+                    One-time password for {issuedPassword.username}:{" "}
+                    <code>{issuedPassword.value}</code>
+                  </p>
+                  <p className="panel-help">
+                    Give it to the person directly. It works until{" "}
+                    {formatDateTime(issuedPassword.expires_at)}, and the person
+                    must choose a new password when they sign in. It is shown
+                    only once.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setIssuedPassword(null);
+                    }}
+                    type="button"
+                  >
+                    I gave it to the person—clear it
+                  </button>
+                </section>
+              )}
 
               {administration !== null && (
                 <div className="administration-grid">
@@ -2160,26 +2295,12 @@ export function App({
                             </select>
                           </div>
                           <div className="form-field">
-                            <label htmlFor="recovery-password">
-                              New password (15–128 characters)
-                            </label>
-                            <input
-                              autoComplete="new-password"
-                              id="recovery-password"
-                              maxLength={128}
-                              minLength={15}
-                              name="recovery-password"
-                              required
-                              type="password"
-                            />
-                          </div>
-                          <div className="form-field">
                             <label htmlFor="recovery-reason">
                               Audit reason
                             </label>
                             <input
                               id="recovery-reason"
-                              maxLength={128}
+                              maxLength={500}
                               name="recovery-reason"
                               required
                             />
@@ -2214,7 +2335,7 @@ export function App({
                     {pendingCommand.kind === "disable"
                       ? "Disabling this account also revokes every applicable session."
                       : pendingCommand.kind === "recover"
-                        ? "Recovery changes the selected account credentials, may reset MFA, and revokes every applicable session."
+                        ? "Recovery gives the selected account a one-time password, may reset MFA, and revokes every applicable session."
                         : "This revokes every applicable session for the selected account."}{" "}
                     The server records the acting account and request for audit.
                   </p>

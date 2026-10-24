@@ -10,14 +10,16 @@ import httpx
 import pytest
 from fastapi import FastAPI
 
-from property_rental.app import create_app
+from property_rental.app import NEW_PASSWORD_RULE_MESSAGE, create_app
 from property_rental.auth_api import (
     AuthenticationFlow,
     AuthenticationPhase,
     AuthenticationRateLimited,
     AuthenticationRejected,
     AuthenticationResult,
+    AuthenticationUnavailable,
     MfaEnrollmentResult,
+    NewPasswordRejected,
     ReauthenticationResult,
     RecoveryCodeSetResult,
     SessionView,
@@ -62,6 +64,15 @@ class StubAuthenticationFlow(AuthenticationFlow):
         preauth_token: str,
         request_id: str,
     ) -> MfaEnrollmentResult:
+        raise NotImplementedError
+
+    def change_password(
+        self,
+        *,
+        preauth_token: str,
+        new_password: str,
+        request_id: str,
+    ) -> AuthenticationResult:
         raise NotImplementedError
 
     def confirm_mfa_enrollment(
@@ -962,3 +973,195 @@ def test_sms_mfa_is_not_an_accepted_authentication_method() -> None:
     assert response.status_code == 422
     assert response.json()["error"]["code"] == "VALIDATION_ERROR"
     assert "sms" not in response.text
+
+
+CHANGE_HEADERS = {
+    "Cookie": "__Host-prm_preauth=preauth-token-secret; __Host-prm_csrf=csrf-token-secret",
+    "Origin": "https://property.test",
+    "X-CSRF-Token": "csrf-token-secret",
+    "X-Request-ID": "password-change",
+}
+NEW_PASSWORD = "a new long password of mine"
+
+
+def password_change_result() -> AuthenticationResult:
+    return AuthenticationResult(
+        phase=AuthenticationPhase.PASSWORD_CHANGE_REQUIRED,
+        preauth_token="preauth-token-secret",
+        csrf_token="csrf-token-secret",
+    )
+
+
+class PasswordChangeFlow(StubAuthenticationFlow):
+    """Answers the password change with `change_result`, or raises it; records the calls."""
+
+    def __init__(self, change_result: AuthenticationResult | Exception) -> None:
+        super().__init__(password_change_result())
+        self.change_result = change_result
+        self.changes: list[tuple[str, str, str]] = []
+
+    def change_password(
+        self,
+        *,
+        preauth_token: str,
+        new_password: str,
+        request_id: str,
+    ) -> AuthenticationResult:
+        self.changes.append((preauth_token, new_password, request_id))
+        if isinstance(self.change_result, Exception):
+            raise self.change_result
+        return self.change_result
+
+
+def change_app(flow: AuthenticationFlow) -> FastAPI:
+    return create_app(
+        Settings(allowed_browser_origin="https://property.test"), authentication_flow=flow
+    )
+
+
+def test_a_one_time_password_sign_in_asks_for_a_new_password_for_10_minutes() -> None:
+    """Login sub-slice L4 (owner answer (a) to Q-2026-10-21-153, Q-2026-10-24-185): the right
+    one-time password gives no session, only the pre-authentication cookie of the password
+    change, for 10 minutes, and any session cookie is cleared."""
+    response = request(
+        change_app(StubAuthenticationFlow(password_change_result())),
+        "POST",
+        "/api/v1/auth/login",
+        json={"username": "operator", "password": "correct horse battery staple"},
+        headers={"Origin": "https://property.test", "X-Request-ID": "login-success"},
+    )
+
+    assert response.status_code == 200
+    assert response.headers["Cache-Control"] == "no-store"
+    assert response.json()["data"] == {"phase": "password_change_required", "session": None}
+    cookies = response.headers.get_list("set-cookie")
+    preauth_cookie = next(value for value in cookies if "__Host-prm_preauth=" in value)
+    for attribute in ("preauth-token-secret", "Max-Age=600", "HttpOnly", "SameSite=strict"):
+        assert attribute in preauth_cookie
+    assert any('__Host-prm_session=""' in value for value in cookies)
+    assert "preauth-token-secret" not in response.text
+
+
+@pytest.mark.parametrize(
+    ("next_step", "cookie", "max_age"),
+    [
+        (authenticated_result(), "__Host-prm_session=session-token-secret", None),
+        (mfa_required_result(), "__Host-prm_preauth=preauth-token-secret", "Max-Age=300"),
+    ],
+)
+def test_the_password_change_continues_the_sign_in_with_the_next_step(
+    next_step: AuthenticationResult, cookie: str, max_age: str | None
+) -> None:
+    """Login sub-slice L4: the new password goes to the flow exactly, with the
+    pre-authentication cookie; the answer is the session, or the next step (the sign-in code or
+    its set-up) with a 5-minute cookie, never cached and never showing the password."""
+    flow = PasswordChangeFlow(next_step)
+    response = request(
+        change_app(flow),
+        "POST",
+        "/api/v1/auth/password-change",
+        json={"new_password": NEW_PASSWORD},
+        headers=CHANGE_HEADERS,
+    )
+
+    assert response.status_code == 200
+    assert response.headers["Cache-Control"] == "no-store"
+    assert response.json()["data"]["phase"] == next_step.phase.value
+    assert flow.changes == [("preauth-token-secret", NEW_PASSWORD, "password-change")]
+    set_cookie = next(value for value in response.headers.get_list("set-cookie") if cookie in value)
+    assert max_age is None or max_age in set_cookie
+    assert NEW_PASSWORD not in response.text
+
+
+def test_a_refused_new_password_names_the_rule_and_other_refusals_stay_generic() -> None:
+    """Login sub-slice L4: a new password against the rule (length, blocklist, the account's
+    names, the one-time password itself) answers 422 `PASSWORD_RULE` naming only the field;
+    a wrong or old step answers a generic 401; a flow that answers the change step again fails
+    closed (503); none of them shows the password."""
+    refused = request(
+        change_app(PasswordChangeFlow(NewPasswordRejected())),
+        "POST",
+        "/api/v1/auth/password-change",
+        json={"new_password": NEW_PASSWORD},
+        headers=CHANGE_HEADERS,
+    )
+    assert refused.status_code == 422
+    assert refused.headers["Cache-Control"] == "no-store"
+    assert refused.json()["error"]["code"] == "PASSWORD_RULE"
+    assert refused.json()["error"]["fields"] == ["new_password"]
+    # Review rounds 2 and 3: the one message the screen also shows, word for word
+    # (`PASSWORD_RULE_MESSAGE` in authClient.ts).
+    assert (
+        refused.json()["error"]["message"]
+        == NEW_PASSWORD_RULE_MESSAGE
+        == (
+            "Choose a password of 15 to 128 characters that is not a common password, not your "
+            "name and not the one-time password."
+        )
+    )
+    assert NEW_PASSWORD not in refused.text
+
+    for result, status_code in (
+        (AuthenticationRejected(), 401),
+        (password_change_result(), 503),
+    ):
+        response = request(
+            change_app(PasswordChangeFlow(result)),
+            "POST",
+            "/api/v1/auth/password-change",
+            json={"new_password": NEW_PASSWORD},
+            headers=CHANGE_HEADERS,
+        )
+        assert response.status_code == status_code
+        assert NEW_PASSWORD not in response.text
+        assert all(
+            "session-token-secret" not in value for value in response.headers.get_list("set-cookie")
+        )
+
+
+def test_the_password_change_needs_origin_csrf_and_its_step_before_the_flow() -> None:
+    """Login sub-slice L4: without the browser origin, the CSRF pair or the
+    pre-authentication cookie, or with an old request shape, nothing reaches the flow."""
+    flow = PasswordChangeFlow(authenticated_result())
+    app = change_app(flow)
+    cases: tuple[tuple[dict[str, str], dict[str, object], int], ...] = (
+        ({**CHANGE_HEADERS, "Origin": "https://other.test"}, {"new_password": NEW_PASSWORD}, 403),
+        ({**CHANGE_HEADERS, "X-CSRF-Token": "other"}, {"new_password": NEW_PASSWORD}, 403),
+        (
+            {**CHANGE_HEADERS, "Cookie": "__Host-prm_csrf=csrf-token-secret"},
+            {"new_password": NEW_PASSWORD},
+            401,
+        ),
+        (CHANGE_HEADERS, {"new_password": ""}, 422),
+        (CHANGE_HEADERS, {"new_password": "x" * 1025}, 422),
+        (CHANGE_HEADERS, {"new_password": NEW_PASSWORD, "password": NEW_PASSWORD}, 422),
+    )
+    for headers, payload, status_code in cases:
+        response = request(
+            app, "POST", "/api/v1/auth/password-change", json=payload, headers=headers
+        )
+        assert response.status_code == status_code, (headers, payload)
+        assert NEW_PASSWORD not in response.text
+    assert flow.changes == []
+
+
+def test_the_password_change_answers_a_wait_with_429_and_an_outage_with_503() -> None:
+    """Login sub-slice L4 review round 1: a sign-in wait during the change answers 429 with
+    Retry-After and no-store, and an unavailable database 503, both without the
+    password."""
+    for failure, status_code in (
+        (AuthenticationRateLimited(300), 429),
+        (AuthenticationUnavailable(), 503),
+    ):
+        response = request(
+            change_app(PasswordChangeFlow(failure)),
+            "POST",
+            "/api/v1/auth/password-change",
+            json={"new_password": NEW_PASSWORD},
+            headers=CHANGE_HEADERS,
+        )
+        assert response.status_code == status_code
+        assert NEW_PASSWORD not in response.text
+        if status_code == 429:
+            assert response.headers["Retry-After"] == "300"
+            assert response.headers["Cache-Control"] == "no-store"

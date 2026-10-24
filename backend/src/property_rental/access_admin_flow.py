@@ -6,9 +6,11 @@ change reads its result back and checks it in the same transaction, before the c
 errors become stable codes with fixed plain messages; database text is never passed on.
 """
 
+import json
 import unicodedata
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
+from dataclasses import replace
 from datetime import datetime
 from typing import Final, Literal, TypeVar, cast
 from uuid import UUID, uuid5
@@ -29,6 +31,7 @@ from property_rental.access_admin_api import (
     AuthorizationHistoryView,
     CapabilityView,
     CreatableAccountClass,
+    OneTimePasswordView,
     RoleAssignmentView,
     RoleBundleView,
     UserAccountView,
@@ -42,6 +45,11 @@ from property_rental.auth_flow import (
 )
 from property_rental.identity import CapabilityGrant, ObjectScope
 from property_rental.local_authentication import normalize_local_username
+from property_rental.password_security import (
+    PasswordCredentialMaterial,
+    PasswordHashService,
+    new_one_time_password,
+)
 from property_rental.visible_text import tidy_spaces, without_zero_width_spaces
 
 # The request id pattern allows text that is not a UUID; such an id gets a stable UUID5 in this
@@ -66,6 +74,23 @@ BUNDLES: Final = (
 LOCK_TIMEOUT_OPTION: Final = "-c lock_timeout=3000"
 RECENT_REAUTHENTICATION: Final = f"""{RECENT_SESSION_REAUTHENTICATION}    FOR SHARE OF browser
 """
+# Login sub-slice L4 (owner answers (a) to Q-2026-10-21-153 and Q-2026-10-23-180,
+# Q-2026-10-24-185): the Owner's reset, a new account's first password and a Staff account's MFA
+# turned off each give a one-time password through `app.issue_one_time_password`, in the action's
+# own transaction. A Staff account's MFA off takes the replacement locks before the account
+# function (the same order as every replacement).
+ISSUE_ONE_TIME_PASSWORD: Final = """
+    SELECT issued_one_time_password_id, issued_expires_at, sign_in_code_reset,
+           recovery_codes_ended, settings_access_ended, sessions_ended
+    FROM app.issue_one_time_password(%s, %s, %s, %s, %s, %s, %s::jsonb, %s)
+"""
+REPLACEMENT_LOCKS: Final = (
+    "SELECT pg_advisory_xact_lock(hashtextextended('recovery-codes:' || %s::text, 0)), "
+    "pg_advisory_xact_lock(hashtextextended('password-credential:' || %s::text, 0))"
+)
+MFA_POLICY_OF: Final = "SELECT mfa_policy_class FROM app.user_accounts WHERE actor_id = %s"
+FIRST_PASSWORD_REASON: Final = "First password of a new account"
+MFA_OFF_REASON: Final = "Sign-in code turned off"
 REAUTHENTICATION_REQUIRED_MESSAGE: Final = (
     "Please enter your password and sign-in code again, then try again."
 )
@@ -325,6 +350,7 @@ class PostgresAccessAdministrationFlow:
 
     def __init__(self, database_url: str) -> None:
         self._database_url = database_url
+        self._password_service = PasswordHashService()
 
     @contextmanager
     def _transaction(self) -> Iterator[Connection]:
@@ -456,6 +482,7 @@ class PostgresAccessAdministrationFlow:
         audit_context: AdministrationAuditContext,
     ) -> UserAccountView:
         owner = _owner(audit_context.actor_id)
+        one_time_password, credential = self._new_one_time_password()
         with self._transaction() as connection:
             self._require_recent_reauthentication(connection, audit_context)
             if self._property_id(connection) != property_id:
@@ -483,7 +510,22 @@ class PostgresAccessAdministrationFlow:
                 or account.audit_name != normalized_name(audit_name)
             ):
                 raise AccessAdministrationUnavailable
-        return account
+            # Q-2026-10-21-153 (a): the first password is a one-time password, in the same step.
+            issued = self._issue_one_time_password(
+                connection,
+                owner=owner,
+                user_id=account.user_id,
+                reason=FIRST_PASSWORD_REASON,
+                reset_mfa=False,
+                credential=credential,
+                request_id=audit_context.request_id,
+            )
+        return replace(
+            account,
+            one_time_password=OneTimePasswordView(
+                value=one_time_password, expires_at=cast(datetime, issued[1])
+            ),
+        )
 
     def user_property_id(self, *, user_id: UUID) -> str | None:
         with self._transaction() as connection:
@@ -508,11 +550,21 @@ class PostgresAccessAdministrationFlow:
         # The database function revokes the sessions of a disabled account in the same step.
         del revoke_applicable_sessions_if_disabled
         owner = _owner(audit_context.actor_id)
+        # The slow hashing comes before the locks (review round 1); unused unless MFA was required.
+        prepared = self._new_one_time_password() if mfa_policy_class == "optional" else None
         with self._transaction() as connection:
             if lifecycle_state is not None or mfa_policy_class is not None:
                 # Disabling an account or turning its MFA on or off (Q-2026-10-21-157
                 # (a)); a change of the names alone is not on the list.
                 self._require_recent_reauthentication(connection, audit_context)
+            mfa_turned_off = False
+            if mfa_policy_class == "optional":
+                # Q-2026-10-23-180 (a): a Staff account's MFA turned off also replaces the
+                # password with a one-time password and ends the recovery codes, in this step;
+                # the replacement locks first (Q-2026-10-24-185 point 5).
+                connection.execute(REPLACEMENT_LOCKS, (user_id, user_id))
+                before = connection.execute(MFA_POLICY_OF, (user_id,)).fetchone()
+                mfa_turned_off = before is not None and before[0] == "required"
             version = self._call(
                 connection,
                 "SELECT app.admin_update_account(%s,%s,%s,%s,%s,%s,%s,%s)",
@@ -541,6 +593,25 @@ class PostgresAccessAdministrationFlow:
                 or (mfa_policy_class is not None and account.mfa_policy_class != mfa_policy_class)
             ):
                 raise AccessAdministrationUnavailable
+            # A request that also disables the account gives no one-time password: a disabled
+            # account cannot sign in, and no path makes it active again.
+            if mfa_turned_off and account.lifecycle_state == "active" and prepared is not None:
+                one_time_password, credential = prepared
+                issued = self._issue_one_time_password(
+                    connection,
+                    owner=owner,
+                    user_id=user_id,
+                    reason=MFA_OFF_REASON,
+                    reset_mfa=True,
+                    credential=credential,
+                    request_id=audit_context.request_id,
+                )
+                return replace(
+                    account,
+                    one_time_password=OneTimePasswordView(
+                        value=one_time_password, expires_at=cast(datetime, issued[1])
+                    ),
+                )
         return account
 
     def revoke_user_sessions(
@@ -846,15 +917,74 @@ class PostgresAccessAdministrationFlow:
         *,
         user_id: UUID,
         property_id: str,
-        new_password: str,
         reset_mfa: bool,
         reason: str,
         audit_context: AdministrationAuditContext,
     ) -> AdministrativeRecoveryView:
-        # The Owner's reset with a one-time password comes with login sub-slice L4, which also
-        # checks a recent reauthentication first (login sub-slice L3d-2, binding).
-        del user_id, property_id, new_password, reset_mfa, reason, audit_context
-        raise AccessAdministrationUnavailable
+        """The Owner's reset with a one-time password (login sub-slice L4, owner answer (a) to
+        Q-2026-10-21-153): the recent reauthentication first (L3d-2 binding), then
+        `app.issue_one_time_password` (only a Manager or Staff account; "also reset MFA" also
+        ends the recovery codes and the Settings access); every session of the account ends.
+        The one-time password is answered once and never kept."""
+        owner = _owner(audit_context.actor_id)
+        one_time_password, credential = self._new_one_time_password()
+        with self._transaction() as connection:
+            self._require_recent_reauthentication(connection, audit_context)
+            if self._property_id(connection) != property_id:
+                raise AccessAdministrationNotFound
+            issued = self._issue_one_time_password(
+                connection,
+                owner=owner,
+                user_id=user_id,
+                reason=reason,
+                reset_mfa=reset_mfa,
+                credential=credential,
+                request_id=audit_context.request_id,
+            )
+            if bool(issued[2]) and not reset_mfa:
+                raise AccessAdministrationUnavailable
+        return AdministrativeRecoveryView(
+            user_id=user_id,
+            password_changed=True,
+            mfa_reset=bool(issued[2]),
+            sessions_revoked=int(str(issued[5])),
+            one_time_password=OneTimePasswordView(
+                value=one_time_password, expires_at=cast(datetime, issued[1])
+            ),
+        )
+
+    def _new_one_time_password(self) -> tuple[str, PasswordCredentialMaterial]:
+        """A new one-time password and its Argon2id verifier, made before the transaction."""
+        one_time_password = new_one_time_password()
+        return one_time_password, self._password_service.hash_password(one_time_password)
+
+    @staticmethod
+    def _issue_one_time_password(
+        connection: Connection,
+        *,
+        owner: UUID,
+        user_id: UUID,
+        reason: str,
+        reset_mfa: bool,
+        credential: PasswordCredentialMaterial,
+        request_id: str,
+    ) -> tuple[object, ...]:
+        row = connection.execute(
+            ISSUE_ONE_TIME_PASSWORD,
+            (
+                owner,
+                user_id,
+                correlation_id(request_id),
+                reason,
+                credential.verifier_encoding,
+                credential.algorithm,
+                json.dumps(dict(credential.work_factor_metadata)),
+                reset_mfa,
+            ),
+        ).fetchone()
+        if row is None or row[0] is None or row[1] is None:
+            raise AccessAdministrationUnavailable
+        return tuple(row)
 
 
 class PostgresAccessAdministrationScopeReader:

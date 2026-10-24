@@ -33,8 +33,8 @@ class Settings(BaseSettings):
         pattern=r"^https://[^/]+$",
     )
     # Login sub-slice L3c-1 (owner answer (a) to Q-2026-10-21-155): paths only, never a key or a
-    # list. The key file is read once at start-up; the blocklist file is read from login sub-slice
-    # L4, where it becomes required like the key file.
+    # list. Both files are read once at start-up; since login sub-slice L4 the blocklist file is
+    # required like the key file.
     totp_key_file: str | None = Field(default=None, validation_alias="APP_TOTP_KEY_FILE")
     password_blocklist_file: str | None = Field(
         default=None,

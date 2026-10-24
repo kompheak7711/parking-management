@@ -6,15 +6,14 @@ import time
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from typing import Final, Protocol
-from unicodedata import normalize
 from uuid import UUID
 
+from property_rental.password_security import blocked_passwords as shared_blocked_passwords
+from property_rental.password_security import validate_new_password
 from property_rental.visible_text import tidy_spaces
 
 RECOVERY_CODE_COUNT: Final = 10
 BOOTSTRAP_ACKNOWLEDGEMENT: Final = "I HAVE STORED THE RECOVERY CODES"
-PASSWORD_MIN_CODE_POINTS: Final = 15
-PASSWORD_MAX_CODE_POINTS: Final = 128
 
 
 @dataclass(frozen=True, slots=True)
@@ -176,35 +175,18 @@ class BootstrapSecretBundle:
 
 
 class BootstrapPasswordPolicy:
-    """Apply the Owner-approved local password acceptance policy."""
+    """Apply the Owner-approved local password acceptance policy (the shared new-password rule
+    of `password_security`, login sub-slice L4; unchanged for the bootstrap)."""
 
     def __init__(self, *, blocked_passwords: set[str]) -> None:
-        self._blocked = frozenset(self._comparison_value(value) for value in blocked_passwords)
+        self._blocked = shared_blocked_passwords(blocked_passwords)
 
     def accept(self, password: str, *, context: tuple[str, ...]) -> str:
         """Return NFC material only when the entire password is acceptable."""
-        if len(password) < PASSWORD_MIN_CODE_POINTS or len(password) > PASSWORD_MAX_CODE_POINTS:
-            raise ValueError("bootstrap password rejected")
-        normalized = normalize("NFC", password)
-        comparison = self._comparison_value(normalized)
-        contextual_values = {
-            self._comparison_value(value)
-            for value in context
-            if value and self._comparison_value(value)
-        }
-        if (
-            not normalized
-            or len(normalized) < PASSWORD_MIN_CODE_POINTS
-            or len(normalized) > PASSWORD_MAX_CODE_POINTS
-            or comparison in self._blocked
-            or comparison in contextual_values
-        ):
-            raise ValueError("bootstrap password rejected")
-        return normalized
-
-    @staticmethod
-    def _comparison_value(value: str) -> str:
-        return normalize("NFC", value).casefold()
+        try:
+            return validate_new_password(password, blocked=self._blocked, context=context)
+        except ValueError:
+            raise ValueError("bootstrap password rejected") from None
 
 
 class BootstrapRepository(Protocol):

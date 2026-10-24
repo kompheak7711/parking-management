@@ -60,14 +60,6 @@ BoundedName = Annotated[
     StringConstraints(strip_whitespace=True, min_length=1, max_length=128),
     BeforeValidator(_tidied_name),
 ]
-# The Owner's reset reason keeps its L2c rule (U+200B removed, 1 to 128 characters) until login
-# sub-slice L4 moves it to `BoundedReason`; its spaces are not tidied, because the owner rule of
-# Q-2026-10-22-170 (a) covers names only (review round 1 of sub-slice L2d).
-RecoveryReason = Annotated[
-    str,
-    StringConstraints(strip_whitespace=True, min_length=1, max_length=128),
-    BeforeValidator(_without_zero_width_spaces),
-]
 # A reason is free text (DL-074 answer 10) kept in the audit history: no control character, line
 # or paragraph separator, direction mark or other hidden character that could hide or reorder
 # what the history shows (Q-2026-10-22-169 (a)). U+200B is removed; U+200C and U+200D, which
@@ -103,6 +95,15 @@ PropertyIdentifier = Annotated[
 
 
 @dataclass(frozen=True, slots=True)
+class OneTimePasswordView:
+    """A one-time password the app made (login sub-slice L4, owner answer (a) to
+    Q-2026-10-21-153): answered once to the Owner, never stored or printed."""
+
+    value: str = field(repr=False)
+    expires_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
 class UserAccountView:
     """Safe administrative account state without credentials or session material."""
 
@@ -116,6 +117,9 @@ class UserAccountView:
     version: int
     account_class: AccountClass | None
     settings_access: bool
+    # Only in the answer of a create, or of a Staff account's MFA turned off (login sub-slice
+    # L4): the one-time password given in the same step.
+    one_time_password: OneTimePasswordView | None = field(default=None, repr=False)
 
 
 @dataclass(frozen=True, slots=True)
@@ -168,6 +172,7 @@ class AdministrativeRecoveryView:
     password_changed: bool
     mfa_reset: bool
     sessions_revoked: int
+    one_time_password: OneTimePasswordView = field(repr=False)
 
 
 @dataclass(frozen=True, slots=True)
@@ -331,7 +336,6 @@ class AccessAdministrationFlow(Protocol):
         *,
         user_id: UUID,
         property_id: str,
-        new_password: str,
         reset_mfa: bool,
         reason: str,
         audit_context: AdministrationAuditContext,
@@ -535,7 +539,6 @@ class UnavailableAccessAdministrationFlow:
         *,
         user_id: UUID,
         property_id: str,
-        new_password: str,
         reset_mfa: bool,
         reason: str,
         audit_context: AdministrationAuditContext,
@@ -634,13 +637,14 @@ class SettingsAccessRequest(BaseModel):
 
 
 class AdministrativeRecoveryRequest(BaseModel):
-    """Explicit protected credential/MFA recovery request with an audit reason."""
+    """The Owner's reset with an audit reason; the app makes the one-time password (login
+    sub-slice L4, owner answer (a) to Q-2026-10-21-153), and the reason follows the reason rule
+    (Q-2026-10-22-169 (a); the L2c note)."""
 
     model_config = ConfigDict(extra="forbid")
 
-    new_password: str = Field(min_length=15, max_length=128)
     reset_mfa: bool = False
-    reason: RecoveryReason
+    reason: BoundedReason
 
 
 class UserAccountData(BaseModel):
@@ -713,6 +717,16 @@ class AuthorizationHistoryData(BaseModel):
     outcome: Literal["completed", "rejected"]
 
 
+class OneTimePasswordData(BaseModel):
+    """The one-time password, shown once to the Owner (login sub-slice L4); the answer carrying
+    it is never cached."""
+
+    model_config = ConfigDict(frozen=True)
+
+    value: str = Field(repr=False)
+    expires_at: datetime
+
+
 class AdministrativeRecoveryData(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -720,12 +734,16 @@ class AdministrativeRecoveryData(BaseModel):
     password_changed: bool
     mfa_reset: bool
     sessions_revoked: int = Field(ge=0)
+    one_time_password: OneTimePasswordData
 
 
 class UserAccountResponse(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     data: UserAccountData
+    # A create, or a Staff account's MFA turned off, gives a one-time password (login sub-slice
+    # L4); every other account answer has none.
+    one_time_password: OneTimePasswordData | None = None
     meta: ResponseMeta
 
 
@@ -931,6 +949,10 @@ def _audit_context(actor_id: str, request: Request) -> AdministrationAuditContex
     )
 
 
+def _one_time_password_data(view: OneTimePasswordView) -> OneTimePasswordData:
+    return OneTimePasswordData(value=view.value, expires_at=view.expires_at)
+
+
 def create_access_admin_router(
     actor_resolver: ActorResolver,
     flow: AccessAdministrationFlow,
@@ -990,9 +1012,14 @@ def create_access_admin_router(
             "required" if payload.account_class == "manager" else "optional"
         ):
             raise AccessAdministrationUnavailable
+        # Q-2026-10-21-153 (a): a new account's first password, shown once (fail closed).
+        if user.one_time_password is None:
+            raise AccessAdministrationUnavailable
         response.headers["Location"] = f"/api/v1/users/{user.user_id}"
+        response.headers["Cache-Control"] = "no-store"
         return UserAccountResponse(
             data=_user_data(user),
+            one_time_password=_one_time_password_data(user.one_time_password),
             meta=ResponseMeta(request_id=request.state.request_id),
         )
 
@@ -1001,6 +1028,7 @@ def create_access_admin_router(
         user_id: UUID,
         payload: UserUpdateRequest,
         request: Request,
+        response: Response,
     ) -> UserAccountResponse:
         actor = _require_access_actor(request, actor_resolver)
         _require_browser_mutation(request, settings)
@@ -1028,8 +1056,18 @@ def create_access_admin_router(
         )
         _require_matching_property(user.property_id, property_id)
         _require_matching_identifier(user.user_id, user_id)
+        if user.one_time_password is not None:
+            # A Staff account's MFA turned off (Q-2026-10-23-180 (a)): shown once.
+            if payload.mfa_policy_class != "optional":
+                raise AccessAdministrationUnavailable
+            response.headers["Cache-Control"] = "no-store"
         return UserAccountResponse(
             data=_user_data(user),
+            one_time_password=(
+                _one_time_password_data(user.one_time_password)
+                if user.one_time_password is not None
+                else None
+            ),
             meta=ResponseMeta(request_id=request.state.request_id),
         )
 
@@ -1343,6 +1381,7 @@ def create_access_admin_router(
         user_id: UUID,
         payload: AdministrativeRecoveryRequest,
         request: Request,
+        response: Response,
     ) -> AdministrativeRecoveryResponse:
         actor = _require_access_actor(request, actor_resolver)
         _require_browser_mutation(request, settings)
@@ -1353,14 +1392,20 @@ def create_access_admin_router(
         result = flow.administratively_recover_user(
             user_id=user_id,
             property_id=property_id,
-            new_password=payload.new_password,
             reset_mfa=payload.reset_mfa,
             reason=payload.reason,
             audit_context=_audit_context(actor.actor_id, request),
         )
         _require_matching_identifier(result.user_id, user_id)
+        response.headers["Cache-Control"] = "no-store"
         return AdministrativeRecoveryResponse(
-            data=AdministrativeRecoveryData.model_validate(result, from_attributes=True),
+            data=AdministrativeRecoveryData(
+                user_id=result.user_id,
+                password_changed=result.password_changed,
+                mfa_reset=result.mfa_reset,
+                sessions_revoked=result.sessions_revoked,
+                one_time_password=_one_time_password_data(result.one_time_password),
+            ),
             meta=ResponseMeta(request_id=request.state.request_id),
         )
 

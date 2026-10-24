@@ -17,7 +17,7 @@ from property_rental.password_security import PasswordHashService, PasswordVerif
 
 
 class StubCursor:
-    def __init__(self, row: tuple[str, str, str, str] | None) -> None:
+    def __init__(self, row: tuple[object, ...] | None) -> None:
         self.row = row
         self.query = ""
         self.parameters: tuple[str, ...] = ()
@@ -32,12 +32,12 @@ class StubCursor:
         self.query = query
         self.parameters = parameters
 
-    def fetchone(self) -> tuple[str, str, str, str] | None:
+    def fetchone(self) -> tuple[object, ...] | None:
         return self.row
 
 
 class StubConnection:
-    def __init__(self, row: tuple[str, str, str, str] | None) -> None:
+    def __init__(self, row: tuple[object, ...] | None) -> None:
         self.cursor_instance = StubCursor(row)
 
     def cursor(self) -> StubCursor:
@@ -46,7 +46,7 @@ class StubConnection:
 
 def test_repository_normalizes_username_through_local_account_persistence() -> None:
     connection = StubConnection(
-        ("actor-7", "active", "required", "$argon2id$v=19$parameters$salt-hash")
+        ("actor-7", "active", "required", "$argon2id$v=19$parameters$salt-hash", None, False)
     )
     repository = PostgresLocalAccountRepository(connection)
 
@@ -486,3 +486,66 @@ def test_a_correct_password_records_no_wrong_try() -> None:
     assert result.verifier_digest == hashlib.sha256(credential.verifier_encoding.encode()).digest()
     # Review round 4: verifier material is never represented.
     assert result.verifier_digest.hex() not in repr(result)
+
+
+@pytest.mark.parametrize("expired", [False, True])
+def test_a_one_time_password_signs_in_until_it_expires_and_then_counts_as_a_wrong_try(
+    expired: bool,
+) -> None:
+    """Login sub-slice L4 (Q-2026-10-24-185): the right one-time password is checked like any
+    password and the result names it, so the flow asks for the new password; after its 24 hours
+    (read on the database clock) the same password gets the generic refusal and one wrong try,
+    after the one Argon2id check."""
+    password_service = RecordingPasswordService()
+    credential = password_service.hash_password("k7m2-x9qp-4hrt-w3nd")
+    waits = RecordingSignInWaits(started=0)
+    audit_sink = CollectingAuditSink()
+    service = LocalAuthenticationService(
+        repository=StubAccountRepository(
+            LocalAccountCredential(
+                actor_id="actor-5",
+                lifecycle_state="active",
+                mfa_policy_class="optional",
+                verifier_encoding=credential.verifier_encoding,
+                one_time_password_id="otp-1",
+                one_time_password_expired=expired,
+            )
+        ),
+        password_service=password_service,
+        attempt_limiter=StubAttemptLimiter(),
+        audit_sink=audit_sink,
+        sign_in_waits=waits,
+    )
+
+    result = service.authenticate(
+        username="Sokha", password="k7m2-x9qp-4hrt-w3nd", request_source="desk"
+    )
+
+    assert password_service.verification_calls == 1
+    if expired:
+        assert result.is_authenticated is False and result.one_time_password_id is None
+        assert waits.recorded == [("sokha", "desk")]
+        assert audit_sink.evidence == [
+            AuthenticationAuditEvidence(outcome="rejected", reason="credentials_rejected")
+        ]
+    else:
+        assert result.is_authenticated is True
+        assert result.one_time_password_id == "otp-1"
+        assert waits.recorded == []
+    assert "k7m2-x9qp-4hrt-w3nd" not in repr(result)
+
+
+def test_the_account_query_reads_the_one_time_password_on_the_database_clock() -> None:
+    """Login sub-slice L4: the lookup joins the credential's one-time password and compares its
+    end with the database's clock, never the app's."""
+    connection = StubConnection(
+        ("actor-6", "active", "optional", "$argon2id$v=19$stub", "otp-2", False)
+    )
+    account = PostgresLocalAccountRepository(connection).find_by_username("Sokha")
+
+    assert account is not None
+    assert account.one_time_password_id == "otp-2"
+    assert account.one_time_password_expired is False
+    query = connection.cursor_instance.query
+    assert "app.one_time_passwords" in query
+    assert "issued.expires_at <= statement_timestamp()" in query

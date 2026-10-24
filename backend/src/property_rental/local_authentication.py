@@ -23,7 +23,7 @@ class CursorBoundary(Protocol):
 
     def execute(self, query: str, parameters: tuple[str, ...]) -> None: ...
 
-    def fetchone(self) -> tuple[str, str, str, str] | None: ...
+    def fetchone(self) -> tuple[object, ...] | None: ...
 
 
 class ConnectionBoundary(Protocol):
@@ -71,6 +71,10 @@ class LocalAccountCredential:
     lifecycle_state: str
     mfa_policy_class: str
     verifier_encoding: str
+    # The pending one-time password of the Owner's reset, and whether its 24 hours have passed
+    # on the database clock (login sub-slice L4, Q-2026-10-24-185).
+    one_time_password_id: str | None = None
+    one_time_password_expired: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -86,6 +90,9 @@ class AuthenticationResult:
     # transaction can see that the stored password has not changed without a second Argon2id
     # check (owner answer (a) to Q-2026-10-23-177).
     verifier_digest: bytes | None = field(default=None, repr=False)
+    # Set when the password was a one-time password that must be changed first (login
+    # sub-slice L4).
+    one_time_password_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -184,10 +191,14 @@ class PostgresLocalAccountRepository:
             cursor.execute(
                 """
                 SELECT account.actor_id::text, account.lifecycle_state,
-                       account.mfa_policy_class, credential.verifier_encoding
+                       account.mfa_policy_class, credential.verifier_encoding,
+                       credential.one_time_password_id::text,
+                       COALESCE(issued.expires_at <= statement_timestamp(), false)
                 FROM app.user_accounts AS account
                 JOIN app.password_credentials AS credential USING (actor_id)
                 JOIN app.user_account_classes AS classification USING (actor_id)
+                LEFT JOIN app.one_time_passwords AS issued
+                  ON issued.one_time_password_id = credential.one_time_password_id
                 WHERE account.normalized_username = %s
                 """,
                 (normalized_username,),
@@ -196,10 +207,12 @@ class PostgresLocalAccountRepository:
         if row is None:
             return None
         return LocalAccountCredential(
-            actor_id=row[0],
-            lifecycle_state=row[1],
-            mfa_policy_class=row[2],
-            verifier_encoding=row[3],
+            actor_id=str(row[0]),
+            lifecycle_state=str(row[1]),
+            mfa_policy_class=str(row[2]),
+            verifier_encoding=str(row[3]),
+            one_time_password_id=None if row[4] is None else str(row[4]),
+            one_time_password_expired=row[5] is True,
         )
 
 
@@ -247,7 +260,14 @@ class LocalAuthenticationService:
             password,
             account.verifier_encoding if account is not None else self._dummy_verifier_encoding,
         )
-        if account is None or account.lifecycle_state != "active" or not verification.is_valid:
+        if (
+            account is None
+            or account.lifecycle_state != "active"
+            or not verification.is_valid
+            # A one-time password after its 24 hours gets the same answer as a wrong password
+            # (owner answer (a) to Q-2026-10-21-153; login sub-slice L4).
+            or account.one_time_password_expired
+        ):
             # Every refused password check counts as one wrong try, whether or not the account
             # exists, so the answers stay the same for every username.
             started = (
@@ -268,6 +288,7 @@ class LocalAuthenticationService:
             actor_id=account.actor_id,
             mfa_policy_class=account.mfa_policy_class,
             verifier_digest=verifier_digest(account.verifier_encoding),
+            one_time_password_id=account.one_time_password_id,
         )
 
     def _reject(

@@ -618,6 +618,7 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/health/ready": {"get"},
         "/api/v1/identity/me": {"get"},
         "/api/v1/auth/login": {"post"},
+        "/api/v1/auth/password-change": {"post"},
         "/api/v1/auth/mfa/challenge": {"post"},
         "/api/v1/auth/mfa/enrollment": {"post"},
         "/api/v1/auth/mfa/enrollment/confirm": {"post"},

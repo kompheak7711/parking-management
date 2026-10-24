@@ -45427,7 +45427,7 @@
       "notes": "A Staff account without a sign-in code is refused with SIGN_IN_CODE_REQUIRED and the plain owner-rule message; with its code, Settings access is given (audited) and removed; giving twice, removing twice and giving to the Owner are refused with stable codes (login slice sub-slice L2b-2, DL-081)."
     },
     {
-      "test_id": "test_a_non_owner_or_unknown_actor_is_refused_and_recovery_stays_unavailable",
+      "test_id": "test_a_non_owner_or_unknown_actor_is_refused_including_the_owners_reset",
       "upstream_ids": [
         "API-079",
         "API-099",
@@ -45438,7 +45438,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_access_admin_flow_migration.py",
       "status": "implemented",
-      "notes": "A Manager, an unknown account and an actor id that is not a UUID are refused (403) for reads and changes, the authorization history and the capability list included (review round 1); an unknown account is not found; a malformed page cursor is refused; the Owner's reset stays unavailable until L4 (login slice sub-slice L2b-2, DL-081). Login slice sub-slice L3d-2: an unknown account with no session is refused by the reauthentication check first (REAUTHENTICATION_REQUIRED, still 403); the reauthenticated Manager by the capability and an actor id that is not a UUID before any database work (FORBIDDEN)."
+      "notes": "A Manager, an unknown account and an actor id that is not a UUID are refused (403) for reads and changes, the authorization history and the capability list included (review round 1); an unknown account is not found; a malformed page cursor is refused; the Owner's reset stays unavailable until L4 (login slice sub-slice L2b-2, DL-081). Login slice sub-slice L3d-2: an unknown account with no session is refused by the reauthentication check first (REAUTHENTICATION_REQUIRED, still 403); the reauthenticated Manager by the capability and an actor id that is not a UUID before any database work (FORBIDDEN). Login slice sub-slice L4: renamed from the old name ending `recovery_stays_unavailable`; the Owner's reset now works, and these actors are refused it in the same order of checks as an account creation (DL-081)."
     },
     {
       "test_id": "test_the_authorization_history_lists_administration_events_oldest_first_in_pages",
@@ -47353,6 +47353,489 @@
       "test_path": "backend/tests/test_recovery_code_flow_migration.py",
       "status": "implemented",
       "notes": "Right after a sign-in with the sign-in code, the session cookie alone, another session's reauthentication cookie, an empty or too long cookie get no first recovery codes; the session's own cookie does; after a later reauthentication with the password and the code only its new cookie regenerates (login slice sub-slice L3d-2b, Q-2026-10-24-184 point 8, DL-081)."
+    },
+    {
+      "test_id": "test_the_migration_follows_l3d_1_is_forward_only_and_opens_only_the_functions",
+      "upstream_ids": [
+        "DB-AUTH-002",
+        "DB-AUTH-005",
+        "DL-081"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_one_time_password_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20270204_192 follows 20270203_191 and refuses a downgrade; the runtime role may only read the one-time passwords, read and add change steps, run the two functions and read the credential's new column; nothing on the change records (login slice sub-slice L4, Q-2026-10-24-185, DL-081)."
+    },
+    {
+      "test_id": "test_the_owner_resets_a_manager_with_mfa_and_everything_ends_in_one_step",
+      "upstream_ids": [
+        "API-099",
+        "DL-058",
+        "DL-080",
+        "DL-081",
+        "SEC-014",
+        "SEC-075",
+        "TEST-130",
+        "TEST-131",
+        "DB-AUTH-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_one_time_password_migration.py",
+      "status": "implemented",
+      "notes": "The Owner's reset of a Manager with 'also reset MFA' stores the one-time password's verifier with a 24-hour end, ends every session, the sign-in code, the recovery codes and the Settings access, and writes one recovery audit row and one audit event without the password (login slice sub-slice L4, Q-2026-10-24-185, DL-081)."
+    },
+    {
+      "test_id": "test_a_reset_without_mfa_keeps_the_code_the_codes_and_settings_access",
+      "upstream_ids": [
+        "API-099",
+        "DL-058",
+        "DL-080",
+        "DL-081",
+        "SEC-014",
+        "SEC-075",
+        "TEST-130",
+        "TEST-131",
+        "SEC-017"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_one_time_password_migration.py",
+      "status": "implemented",
+      "notes": "A reset without 'also reset MFA' ends every session but keeps the sign-in code, the recovery codes and the Settings access (login slice sub-slice L4, Q-2026-10-24-185, DL-081)."
+    },
+    {
+      "test_id": "test_a_new_account_gets_its_first_password_as_a_one_time_password",
+      "upstream_ids": [
+        "API-099",
+        "DL-058",
+        "DL-080",
+        "DL-081",
+        "SEC-014",
+        "SEC-075",
+        "TEST-130"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_one_time_password_migration.py",
+      "status": "implemented",
+      "notes": "An account with no password gets its first one as a one-time password (owner answer (a) to Q-2026-10-21-153) (login slice sub-slice L4, Q-2026-10-24-185, DL-081)."
+    },
+    {
+      "test_id": "test_only_the_owner_resets_and_only_an_active_manager_or_staff_account",
+      "upstream_ids": [
+        "API-099",
+        "DL-058",
+        "DL-080",
+        "DL-081",
+        "SEC-014",
+        "SEC-075",
+        "TEST-130"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_one_time_password_migration.py",
+      "status": "implemented",
+      "notes": "A Manager, a Staff account or an unknown actor cannot reset; the Owner cannot reset itself, another Owner-class account or a disabled or unknown account; an empty reason is refused; a refusal writes nothing (login slice sub-slice L4, Q-2026-10-24-185, DL-081)."
+    },
+    {
+      "test_id": "test_the_old_recovery_function_no_longer_resets_without_a_one_time_password",
+      "upstream_ids": [
+        "API-099",
+        "DL-058",
+        "DL-081",
+        "DB-AUTH-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_one_time_password_migration.py",
+      "status": "implemented",
+      "notes": "app.perform_account_recovery refuses the administrative mode; the emergency mode still needs its verifier and ends the recovery codes when it resets MFA (login slice sub-slice L4, Q-2026-10-24-185, DL-081)."
+    },
+    {
+      "test_id": "test_the_forced_change_replaces_the_one_time_password_once",
+      "upstream_ids": [
+        "API-096",
+        "DL-081",
+        "SEC-011",
+        "SEC-014",
+        "DB-AUTH-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_one_time_password_migration.py",
+      "status": "implemented",
+      "notes": "The change step replaces the one-time password once, completes the step, ends every session and records the change; a second use is refused (login slice sub-slice L4, Q-2026-10-24-185, DL-081)."
+    },
+    {
+      "test_id": "test_the_change_is_refused_after_24_hours_or_a_newer_password",
+      "upstream_ids": [
+        "API-096",
+        "DL-081",
+        "SEC-011",
+        "SEC-014",
+        "DB-AUTH-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_one_time_password_migration.py",
+      "status": "implemented",
+      "notes": "The change is refused once the one-time password is past its 24 hours (database clock), after a newer reset, for a disabled account or a step older than 10 minutes (login slice sub-slice L4, Q-2026-10-24-185, DL-081)."
+    },
+    {
+      "test_id": "test_the_records_are_append_only",
+      "upstream_ids": [
+        "DB-AUTH-002",
+        "DB-AUTH-005",
+        "DL-081"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_one_time_password_migration.py",
+      "status": "implemented",
+      "notes": "The one-time passwords, the change steps and the change records refuse an update or a delete; a change step is completed once only (login slice sub-slice L4, Q-2026-10-24-185, DL-081)."
+    },
+    {
+      "test_id": "test_a_reset_waits_for_a_session_write_that_holds_the_password_lock",
+      "upstream_ids": [
+        "DL-081",
+        "SEC-014",
+        "DB-AUTH-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_one_time_password_migration.py",
+      "status": "implemented",
+      "notes": "A reset waits for a session write that holds the account's password lock shared, so the two never both commit with the old password (the L3a-1 and L3d-1 bindings) (login slice sub-slice L4, Q-2026-10-24-185, DL-081)."
+    },
+    {
+      "test_id": "test_a_new_account_signs_in_with_its_first_one_time_password_and_must_change_it",
+      "upstream_ids": [
+        "API-099",
+        "DL-058",
+        "DL-080",
+        "DL-081",
+        "SEC-014",
+        "SEC-075",
+        "TEST-130",
+        "API-096",
+        "SEC-011"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_one_time_password_flow_migration.py",
+      "status": "implemented",
+      "notes": "Through the flows: a new Staff account's one-time password (24 hours, shown once, audited) opens only the change step; refused new passwords keep the step open; the right one signs in once; the one-time password then fails and the new one works; no password or token is logged (login slice sub-slice L4, Q-2026-10-24-185, DL-081)."
+    },
+    {
+      "test_id": "test_the_owners_reset_ends_every_session_and_keeps_or_resets_the_sign_in_code",
+      "upstream_ids": [
+        "API-099",
+        "DL-058",
+        "DL-080",
+        "DL-081",
+        "SEC-014",
+        "SEC-075",
+        "TEST-130",
+        "TEST-131",
+        "API-096"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_one_time_password_flow_migration.py",
+      "status": "implemented",
+      "notes": "Through the flows: the Owner's reset of a Manager ends its session (password_reset), the old password fails, the change leads to the kept sign-in code; with 'also reset MFA' the code ends and the change leads to its set-up (login slice sub-slice L4, Q-2026-10-24-185, DL-081)."
+    },
+    {
+      "test_id": "test_a_one_time_password_works_for_24_hours_and_then_counts_as_a_wrong_try",
+      "upstream_ids": [
+        "API-096",
+        "DL-081",
+        "SEC-011",
+        "SEC-014",
+        "SEC-012"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_one_time_password_flow_migration.py",
+      "status": "implemented",
+      "notes": "Just before 24 hours the one-time password opens the change step; after them it gets the generic refusal and one wrong try, and a step opened before the end is refused too (login slice sub-slice L4, Q-2026-10-24-185, DL-081)."
+    },
+    {
+      "test_id": "test_turning_a_staff_accounts_mfa_off_gives_a_one_time_password",
+      "upstream_ids": [
+        "API-099",
+        "DL-058",
+        "DL-080",
+        "DL-081",
+        "SEC-014",
+        "SEC-075",
+        "TEST-130"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_one_time_password_flow_migration.py",
+      "status": "implemented",
+      "notes": "Turning off the MFA a Staff account had to use ends its sign-in code and gives a one-time password (owner answer (a) to Q-2026-10-23-180); turning MFA on gives none (login slice sub-slice L4, Q-2026-10-24-185, DL-081)."
+    },
+    {
+      "test_id": "test_a_sign_in_or_reauthentication_that_meets_a_reset_waits_and_is_refused",
+      "upstream_ids": [
+        "DL-081",
+        "SEC-014",
+        "SEC-018",
+        "DB-AUTH-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_one_time_password_flow_migration.py",
+      "status": "implemented",
+      "notes": "With the real statements: a sign-in or a reauthentication whose password was checked before a reset waits for the reset's lock and is then refused; no session of the old password is left (login slice sub-slice L4, Q-2026-10-24-185, DL-081)."
+    },
+    {
+      "test_id": "test_turning_a_staff_accounts_mfa_off_answers_its_one_time_password_once",
+      "upstream_ids": [
+        "API-079",
+        "DL-081",
+        "SEC-014"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_access_admin_api.py",
+      "status": "implemented",
+      "notes": "The account change answers the one-time password once with no-store when MFA is turned off; with any other change it fails closed (503) (login slice sub-slice L4, Q-2026-10-24-185, DL-081)."
+    },
+    {
+      "test_id": "test_a_one_time_password_sign_in_asks_for_a_new_password_for_10_minutes",
+      "upstream_ids": [
+        "API-096",
+        "DL-081",
+        "SEC-011",
+        "SEC-014"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_authentication_api.py",
+      "status": "implemented",
+      "notes": "A one-time password sign-in answers phase password_change_required with a 10-minute pre-authentication cookie, no session and no-store (login slice sub-slice L4, Q-2026-10-24-185, DL-081)."
+    },
+    {
+      "test_id": "test_the_password_change_continues_the_sign_in_with_the_next_step",
+      "upstream_ids": [
+        "API-096",
+        "DL-081",
+        "SEC-011",
+        "SEC-014"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_authentication_api.py",
+      "status": "implemented",
+      "notes": "POST /api/v1/auth/password-change passes the new password exactly and answers the session or the next sign-in step, never showing the password (login slice sub-slice L4, Q-2026-10-24-185, DL-081)."
+    },
+    {
+      "test_id": "test_a_refused_new_password_names_the_rule_and_other_refusals_stay_generic",
+      "upstream_ids": [
+        "API-096",
+        "DL-081",
+        "SEC-011",
+        "SEC-014"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_authentication_api.py",
+      "status": "implemented",
+      "notes": "A rule refusal answers 422 PASSWORD_RULE naming only the field; a wrong step answers a generic 401; a repeated change step fails closed (login slice sub-slice L4, Q-2026-10-24-185, DL-081)."
+    },
+    {
+      "test_id": "test_the_password_change_needs_origin_csrf_and_its_step_before_the_flow",
+      "upstream_ids": [
+        "API-096",
+        "DL-081",
+        "SEC-011",
+        "SEC-014",
+        "SEC-016"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_authentication_api.py",
+      "status": "implemented",
+      "notes": "Without the origin, the CSRF pair or the pre-authentication cookie, or with an empty, too long or old-shaped body, nothing reaches the flow (login slice sub-slice L4, Q-2026-10-24-185, DL-081)."
+    },
+    {
+      "test_id": "test_a_one_time_password_signs_in_until_it_expires_and_then_counts_as_a_wrong_try",
+      "upstream_ids": [
+        "API-096",
+        "DL-081",
+        "SEC-011",
+        "SEC-014",
+        "SEC-012"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_local_authentication.py",
+      "status": "implemented",
+      "notes": "The password check names a pending one-time password; an expired one gets the generic refusal and one wrong try after the one Argon2id check (login slice sub-slice L4, Q-2026-10-24-185, DL-081)."
+    },
+    {
+      "test_id": "test_the_account_query_reads_the_one_time_password_on_the_database_clock",
+      "upstream_ids": [
+        "API-096",
+        "DL-081",
+        "SEC-011",
+        "SEC-014"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_local_authentication.py",
+      "status": "implemented",
+      "notes": "The account lookup compares the one-time password's end with the database clock (login slice sub-slice L4, Q-2026-10-24-185, DL-081)."
+    },
+    {
+      "test_id": "test_a_new_password_needs_15_to_128_code_points_and_is_not_blocked_or_a_name",
+      "upstream_ids": [
+        "SEC-011",
+        "DL-081",
+        "DB-AUTH-002"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_password_security.py",
+      "status": "implemented",
+      "notes": "One rule for every new password: 15 to 128 code points before and after NFC, not on the blocklist, not one of the account's names; one message for every refusal (login slice sub-slice L4, Q-2026-10-24-185, DL-081)."
+    },
+    {
+      "test_id": "test_the_blocklist_is_one_password_per_line_in_comparison_form",
+      "upstream_ids": [
+        "SEC-011",
+        "DL-081",
+        "DB-AUTH-002"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_password_security.py",
+      "status": "implemented",
+      "notes": "The blocklist is one password per line, kept after NFC and case folding (login slice sub-slice L4, Q-2026-10-24-185, DL-081)."
+    },
+    {
+      "test_id": "test_a_one_time_password_is_random_easy_to_type_and_meets_the_rule",
+      "upstream_ids": [
+        "SEC-011",
+        "DL-081",
+        "DB-AUTH-002",
+        "API-099"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_password_security.py",
+      "status": "implemented",
+      "notes": "A one-time password is 4 groups of 4 from an alphabet without look-alikes and meets the new-password rule (login slice sub-slice L4, Q-2026-10-24-185, DL-081)."
+    },
+    {
+      "test_id": "test_the_password_blocklist_is_read_once_and_needed_with_a_database_outside_development",
+      "upstream_ids": [
+        "SEC-011",
+        "DL-081",
+        "DB-AUTH-002",
+        "SEC-073"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_runtime_secrets.py",
+      "status": "implemented",
+      "notes": "The blocklist file is a regular, non-empty file within the size limit, refused without its content otherwise; with a database every environment but development and test needs it (login slice sub-slice L4, Q-2026-10-24-185, DL-081)."
+    },
+    {
+      "test_id": "TEST-FE-682",
+      "upstream_ids": [
+        "API-096",
+        "DL-081",
+        "UI-112"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "After a one-time password sign-in the screen asks for the new password twice, shows the server's rule, and continues to the next step (login slice sub-slice L4, Q-2026-10-24-185, DL-081)."
+    },
+    {
+      "test_id": "TEST-FE-683",
+      "upstream_ids": [
+        "API-096",
+        "DL-081",
+        "UI-112"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "An ended change step returns to sign-in with a plain message; a change that did not finish tells the person to try the new password first, then the one-time password (login slice sub-slice L4 review round 1, Q-2026-10-24-185, DL-081)."
+    },
+    {
+      "test_id": "test_the_one_time_password_in_another_case_or_spacing_is_compared_as_written",
+      "upstream_ids": [
+        "SEC-011",
+        "DL-081",
+        "DB-AUTH-002"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_password_security.py",
+      "status": "implemented",
+      "notes": "A new password that is the one-time password in capitals, without its hyphens or with spaces is compared with the one-time password as written, so the change refuses it; any other password is compared only as typed (login slice sub-slice L4 review round 1, Q-2026-10-24-185, DL-081)."
+    },
+    {
+      "test_id": "test_a_forced_change_that_meets_a_reset_waits_and_is_refused",
+      "upstream_ids": [
+        "API-096",
+        "DL-081",
+        "SEC-011",
+        "SEC-014",
+        "DB-AUTH-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_one_time_password_flow_migration.py",
+      "status": "implemented",
+      "notes": "A forced change whose step was opened before a reset waits for the reset's lock and is then refused, because a newer one-time password exists (login slice sub-slice L4 review round 1, Q-2026-10-24-185, DL-081)."
+    },
+    {
+      "test_id": "test_a_change_step_of_an_account_disabled_meanwhile_is_refused",
+      "upstream_ids": [
+        "API-096",
+        "DL-081",
+        "SEC-011",
+        "SEC-014",
+        "DB-AUTH-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_one_time_password_flow_migration.py",
+      "status": "implemented",
+      "notes": "An account the Owner disables while its change step is open cannot finish the change; its one-time password stays unchanged and no session is made (login slice sub-slice L4 review round 1, Q-2026-10-24-185, DL-081)."
+    },
+    {
+      "test_id": "test_the_password_change_answers_a_wait_with_429_and_an_outage_with_503",
+      "upstream_ids": [
+        "API-096",
+        "DL-081",
+        "SEC-011",
+        "SEC-014"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_authentication_api.py",
+      "status": "implemented",
+      "notes": "A sign-in wait during the password change answers 429 with Retry-After and no-store, an unavailable database 503, both without the password (login slice sub-slice L4 review round 1, Q-2026-10-24-185, DL-081)."
+    },
+    {
+      "test_id": "test_a_reset_staff_account_with_its_own_sign_in_code_still_needs_the_code",
+      "upstream_ids": [
+        "API-096",
+        "API-099",
+        "DL-081",
+        "SEC-011",
+        "SEC-014",
+        "TEST-130"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_one_time_password_flow_migration.py",
+      "status": "implemented",
+      "notes": "A Staff account whose MFA is optional but which set up a sign-in code keeps it after a reset without 'also reset MFA', so the password change leads to the sign-in code and never straight to a session (login slice sub-slice L4 review round 2, Q-2026-10-24-185, DL-081)."
+    },
+    {
+      "test_id": "TEST-FE-684",
+      "upstream_ids": [
+        "API-079",
+        "DL-081",
+        "UI-112"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "A new account's first one-time password is shown once with its username and cleared by the button; loading the administration again clears it too (login slice sub-slice L4 review round 2, Q-2026-10-24-185, DL-081)."
+    },
+    {
+      "test_id": "test_a_sign_in_code_set_up_that_meets_a_reset_waits_and_is_refused",
+      "upstream_ids": [
+        "API-096",
+        "DL-081",
+        "SEC-014",
+        "DB-AUTH-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_one_time_password_flow_migration.py",
+      "status": "implemented",
+      "notes": "Starting a sign-in code set-up takes the account's password lock shared like every other sign-in write, so a set-up from before a reset waits for it and is then refused, with no pending sign-in code written (login slice sub-slice L4 review round 3, Q-2026-10-24-185, DL-081)."
     }
   ]
 }

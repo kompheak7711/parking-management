@@ -357,4 +357,6 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md.
 
 - Login L3d-2b DONE (2026-10-24, cloud session; no migration; record ops/reviews/V1-056-login-L3d-2b.md): new recovery codes (the first 10 and a regeneration) also need the session's own reauthentication cookie of the last 15 minutes, so a copied session cookie cannot take them (Q-2026-10-24-184 point 8); review no blocker; U1 3,924, P1 2,657 passed. L3d is complete. NEXT: L4 (the Owner's reset with a one-time password).
 
+- Login L4 DONE (2026-10-24, cloud session; migration 20270204_192; record ops/reviews/V1-056-login-L4.md): the Owner resets a Manager or Staff account and gets a one-time password (24 hours, shown once); a new account gets its first password the same way, and so does a Staff account whose required MFA is turned off; the person must choose a new password at the first sign-in (15 to 128 characters, not common, not their name, not the one-time password); every session of the account ends (owner answers (a) to Q-2026-10-21-153, Q-2026-10-21-165 and Q-2026-10-23-180; technical points Q-2026-10-24-185, decided by Claude under the owner's 2026-10-23 22:30 rule); reviews rounds 1 to 3 (no blocker); U2 3,939, P1 2,676 passed (one column test fixed after the run, T7 123 passed), F2 1,607. NEXT: L5 (every route needs a signed-in user and a capability).
+
 - Updated: 2026-10-24.

@@ -1014,6 +1014,8 @@ implied.
 
 Amended by DL-080 (owner, 2026-10-20): after an Owner reset, the one-time password works for 24 hours and must be changed at the first sign-in; the new password follows the 15 to 128 character rule.
 
+Amended by DL-081 (login sub-slice L4): the account form shows a new account's one-time password, and the reset its new one, once in a "One-time password" box with its end time and the button "I gave it to the person—clear it"; the reset form asks only for the reason and "also reset MFA", and its confirmation says the person gets a one-time password. After a sign-in with a one-time password the sign-in screen asks "Choose your own password" (the new password twice); a rule refusal shows the server's rule and keeps the form; if the change did not finish, sign-in returns with "The password change did not finish. Sign in with your new password. If it is not accepted, sign in with your one-time password." The designed screens come with L6.
+
 ## UI-113 — No First-Owner Web Bootstrap
 
 The web application exposes no “Create First Owner” route. Before bootstrap it may show

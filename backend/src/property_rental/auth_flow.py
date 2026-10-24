@@ -36,6 +36,7 @@ from property_rental.auth_api import (
     AuthenticationResult,
     AuthenticationUnavailable,
     MfaEnrollmentResult,
+    NewPasswordRejected,
     ReauthenticationResult,
     RecoveryCodeSetResult,
     SessionView,
@@ -51,7 +52,11 @@ from property_rental.local_authentication import (
     normalize_local_username,
     verifier_digest,
 )
-from property_rental.password_security import PasswordHashService
+from property_rental.password_security import (
+    PasswordHashService,
+    one_time_password_forms,
+    validate_new_password,
+)
 from property_rental.recovery_code_security import (
     Argon2idRecoveryCodeVerifierProvider,
     SecureRecoveryCodeGenerator,
@@ -190,6 +195,46 @@ CURRENT_VERIFIER: Final = """
     FROM app.password_credentials AS credential
     WHERE credential.actor_id = %s
 """
+# Login sub-slice L4 (Q-2026-10-24-185 point 5): every session write takes the account's password
+# lock shared as its first statement; every replacement of the password or the sign-in code takes
+# it exclusive first (migration 20270204_192).
+SHARE_PASSWORD_LOCK: Final = (
+    "SELECT pg_advisory_xact_lock_shared(hashtextextended('password-credential:' || %s::text, 0))"
+)
+# The pre-authentication state of a sign-in with a one-time password (login sub-slice L4); the
+# database sets its 10 minutes.
+INSERT_PASSWORD_CHANGE_CHALLENGE: Final = """
+    INSERT INTO app.password_change_challenges (
+        challenge_id, actor_id, one_time_password_id, token_verifier, checked_verifier_digest,
+        username_digest, source_digest
+    ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+"""
+# The open change step of a pre-authentication token: its account, stored digests, the one-time
+# password's verifier, the account's names (the password must not be one of them) and whether a
+# sign-in code follows (the MFA policy, or an active sign-in code).
+OPEN_PASSWORD_CHANGE: Final = """
+    SELECT challenge.actor_id, challenge.username_digest, challenge.source_digest,
+           credential.verifier_encoding, account.normalized_username, account.display_name,
+           account.audit_name,
+           account.mfa_policy_class <> 'optional' OR EXISTS (
+               SELECT 1
+               FROM app.totp_mfa_enrollments AS enrollment
+               WHERE enrollment.actor_id = account.actor_id
+                 AND enrollment.enrollment_state = 'active'
+           )
+    FROM app.password_change_challenges AS challenge
+    JOIN app.user_accounts AS account ON account.actor_id = challenge.actor_id
+    JOIN app.password_credentials AS credential ON credential.actor_id = challenge.actor_id
+    WHERE challenge.token_verifier = %s
+      AND challenge.completed_at IS NULL
+      AND statement_timestamp() < challenge.expires_at
+      AND account.lifecycle_state = 'active'
+      AND credential.one_time_password_id = challenge.one_time_password_id
+"""
+CHANGE_ONE_TIME_PASSWORD: Final = (
+    "SELECT changed_actor_id, sessions_ended "
+    "FROM app.change_one_time_password(%s, %s, %s, %s::jsonb, %s)"
+)
 # The database count of wrong tries (login sub-slice L3b, migration 20270128_185); each answers
 # the seconds left of an active wait, or NULL.
 SIGN_IN_WAIT_SECONDS: Final = "SELECT app.sign_in_wait_seconds(%s, %s)"
@@ -743,8 +788,12 @@ class PostgresAuthenticationFlow:
         *,
         sign_in_try_key: bytes | None = None,
         totp_protection_key: bytes | None = None,
+        password_blocklist: frozenset[str] = frozenset(),
     ) -> None:
         self._database_url = database_url
+        # The local password blocklist of every new password, in comparison form (login
+        # sub-slice L4); read at start-up.
+        self._password_blocklist = password_blocklist
         self._sign_in_try_key = sign_in_try_key
         # The TOTP protection key read from the protected key file (login sub-slice L3c-2a);
         # without it no sign-in code can be checked.
@@ -804,37 +853,79 @@ class PostgresAuthenticationFlow:
             raise AuthenticationRejected
         csrf_token = secrets.token_urlsafe(SESSION_TOKEN_BYTES)
         account_key = normalize_local_username(username)
-        if result.mfa_policy_class != "optional":
+        username_key = sign_in_username_digest(account_key, self._sign_in_try_key)
+        source_key = sign_in_source_digest(request_source, self._sign_in_try_key)
+        if result.verifier_digest is None:
+            raise AuthenticationRejected
+        if result.one_time_password_id is not None:
+            # Login sub-slice L4 (owner answer (a) to Q-2026-10-21-153, Q-2026-10-24-185): a
+            # one-time password is changed first, before the sign-in code and before any session
+            # or actor; as for MFA, only the digest of the pre-authentication token is stored.
+            self._refuse_during_wait(username_key, source_key)
+            preauth_token = secrets.token_urlsafe(SESSION_TOKEN_BYTES)
+            with self._transaction() as connection:
+                connection.execute(
+                    INSERT_PASSWORD_CHANGE_CHALLENGE,
+                    (
+                        uuid4(),
+                        result.actor_id,
+                        result.one_time_password_id,
+                        session_token_digest(preauth_token),
+                        result.verifier_digest,
+                        username_key,
+                        source_key,
+                    ),
+                )
+            return AuthenticationResult(
+                phase=AuthenticationPhase.PASSWORD_CHANGE_REQUIRED,
+                preauth_token=preauth_token,
+                csrf_token=csrf_token,
+            )
+        return self._after_password(
+            actor_id=result.actor_id,
+            mfa_required=result.mfa_policy_class != "optional",
+            checked_verifier=result.verifier_digest,
+            username_key=username_key,
+            source_key=source_key,
+            csrf_token=csrf_token,
+        )
+
+    def _after_password(
+        self,
+        *,
+        actor_id: object,
+        mfa_required: bool,
+        checked_verifier: bytes,
+        username_key: bytes,
+        source_key: bytes,
+        csrf_token: str,
+    ) -> AuthenticationResult:
+        """After a checked password (a sign-in, or the forced change of a one-time password):
+        the sign-in code challenge or its set-up where MFA is needed, otherwise the session."""
+        if mfa_required:
             # Review round 1 (security): a wait that a parallel wrong try started after the
             # first check refuses the MFA step too; the check takes the same locks as the count.
-            try:
-                waiting = self._sign_in_waits.wait_seconds(account_key, request_source)
-            except psycopg.Error as exc:
-                raise AuthenticationUnavailable from exc
-            if waiting is not None:
-                raise AuthenticationRateLimited(waiting)
+            self._refuse_during_wait(username_key, source_key)
             # No session and no actor before MFA (DL-056): a stored challenge row keeps only the
             # digest of the pre-authentication token (login sub-slice L3c-2a). The wrong-try
             # count is neither added to nor cleared here: it is cleared only when the challenge
             # completes, so a known password cannot clear a count of wrong sign-in codes.
-            if result.verifier_digest is None:
-                raise AuthenticationRejected
             preauth_token = secrets.token_urlsafe(SESSION_TOKEN_BYTES)
             with self._transaction() as connection:
-                enrolled = connection.execute(ACTIVE_ENROLLMENT_OF, (result.actor_id,)).fetchone()
+                enrolled = connection.execute(ACTIVE_ENROLLMENT_OF, (actor_id,)).fetchone()
                 enrollment_id = enrolled[0] if enrolled is not None else None
                 purpose = "challenge" if enrollment_id is not None else "enrollment"
                 connection.execute(
                     INSERT_CHALLENGE,
                     (
                         uuid4(),
-                        result.actor_id,
+                        actor_id,
                         session_token_digest(preauth_token),
                         purpose,
                         enrollment_id,
-                        result.verifier_digest,
-                        sign_in_username_digest(account_key, self._sign_in_try_key),
-                        sign_in_source_digest(request_source, self._sign_in_try_key),
+                        checked_verifier,
+                        username_key,
+                        source_key,
                     ),
                 )
             return AuthenticationResult(
@@ -849,36 +940,32 @@ class PostgresAuthenticationFlow:
         session_token = secrets.token_urlsafe(SESSION_TOKEN_BYTES)
         digest = session_token_digest(session_token)
         with self._transaction() as connection:
+            # Login sub-slice L4 (Q-2026-10-24-185): the password lock first, so a reset either
+            # committed before (the comparison below refuses) or waits and ends this session.
+            self._hold_password(connection, actor_id)
             # A correct sign-in clears the wrong-try count, unless a parallel wrong try started
-            # a wait after this sign-in was checked (fail closed, login sub-slice L3b). It is the
-            # first statement, so a correct password that meets a wait answers after the same
-            # work as a wrong one (owner answer (a) to Q-2026-10-23-177; review round 4); a
-            # refusal below rolls the clear back.
+            # a wait after this sign-in was checked (fail closed, login sub-slice L3b). It comes
+            # before the password work, so a correct password that meets a wait answers after
+            # the same work as a wrong one (owner answer (a) to Q-2026-10-23-177; review round
+            # 4); a refusal below rolls the clear back.
             cleared = connection.execute(
-                CLEAR_WRONG_SIGN_INS,
-                (
-                    sign_in_username_digest(account_key, self._sign_in_try_key),
-                    sign_in_source_digest(request_source, self._sign_in_try_key),
-                    result.actor_id,
-                ),
+                CLEAR_WRONG_SIGN_INS, (username_key, source_key, actor_id)
             ).fetchone()
             if cleared is not None and cleared[0] is not None:
                 raise AuthenticationRateLimited(int(str(cleared[0])))
             # Review round 1 (security): a password reset that committed after the password
             # check must not leave a session made with the old password, so the verifier this
-            # transaction reads must be the one the password was checked against. A reset that
-            # commits after this read and before the commit is closed by login sub-slice L4
-            # (binding). Login sub-slice L3b (Q-2026-10-23-177 (a)): a comparison of digests,
-            # not a second Argon2id check; a reset to the same password stores a new verifier and
-            # is refused too.
-            current = connection.execute(CURRENT_VERIFIER, (result.actor_id,)).fetchone()
-            if (
-                current is None
-                or result.verifier_digest is None
-                or not hmac.compare_digest(verifier_digest(str(current[0])), result.verifier_digest)
+            # transaction reads must be the one the password was checked against; a reset that
+            # has not committed yet waits for the lock above (login sub-slice L4). Login
+            # sub-slice L3b (Q-2026-10-23-177 (a)): a comparison of digests, not a second
+            # Argon2id check; a reset to the same password stores a new verifier and is refused
+            # too.
+            current = connection.execute(CURRENT_VERIFIER, (actor_id,)).fetchone()
+            if current is None or not hmac.compare_digest(
+                verifier_digest(str(current[0])), checked_verifier
             ):
                 raise AuthenticationRejected
-            connection.execute(INSERT_SESSION, (uuid4(), result.actor_id, digest, LOGIN_PROVENANCE))
+            connection.execute(INSERT_SESSION, (uuid4(), actor_id, digest, LOGIN_PROVENANCE))
             row = connection.execute(LIVE_SESSION, (digest,)).fetchone()
             if row is None:
                 # The account changed between the password check and the session write.
@@ -888,6 +975,92 @@ class PostgresAuthenticationFlow:
             session_token=session_token,
             csrf_token=csrf_token,
             session=session_view(row),
+        )
+
+    @staticmethod
+    def _hold_password(
+        connection: psycopg.Connection[tuple[object, ...]], actor_id: object
+    ) -> None:
+        """The account's `password-credential:` lock, shared, as the first statement of every
+        session write (login sub-slice L4, Q-2026-10-24-185 point 5): a replacement of the
+        password or the sign-in code takes it exclusive before any other work (a reset takes
+        only the `recovery-codes:` lock before it), so the two never both commit with the old
+        one (the L3a-1 and L3d-1 bindings)."""
+        connection.execute(SHARE_PASSWORD_LOCK, (actor_id,))
+
+    def change_password(
+        self,
+        *,
+        preauth_token: str,
+        new_password: str,
+        request_id: str,
+    ) -> AuthenticationResult:
+        """The forced change of a one-time password (login sub-slice L4, owner answer (a) to
+        Q-2026-10-21-153, Q-2026-10-24-185 points 3 and 4): the open change step of the
+        pre-authentication token, the wait of its stored username and source, the shared rule
+        (15 to 128 code points before and after NFC, the blocklist, not one of the account's
+        names) and a password other than the one-time password; then, in one transaction of
+        `app.change_one_time_password`, the password replaced, the step completed and every
+        session ended; then the sign-in code where MFA is needed, otherwise the session."""
+        if not preauth_token or len(preauth_token) > MAX_SESSION_TOKEN_LENGTH:
+            raise AuthenticationRejected
+        digest = session_token_digest(preauth_token)
+        with self._transaction() as connection:
+            opened = connection.execute(OPEN_PASSWORD_CHANGE, (digest,)).fetchone()
+        if opened is None:
+            raise AuthenticationRejected
+        actor_id, username_digest, source_digest, one_time_verifier = opened[:4]
+        names = tuple(str(name) for name in opened[4:7])
+        mfa_required = opened[7] is True
+        username_key = bytes(cast(bytes, username_digest))
+        source_key = bytes(cast(bytes, source_digest))
+        self._refuse_during_wait(username_key, source_key)
+        try:
+            accepted = validate_new_password(
+                new_password, blocked=self._password_blocklist, context=names
+            )
+        except ValueError:
+            raise NewPasswordRejected from None
+        # The one-time password in another case or spacing is refused too (review round 1).
+        if any(
+            self._password_service.verify_password(form, str(one_time_verifier)).is_valid
+            for form in one_time_password_forms(accepted)
+        ):
+            raise NewPasswordRejected
+        credential = self._password_service.hash_password(accepted)
+        correlation = uuid4()
+        with self._transaction() as connection:
+            try:
+                changed = connection.execute(
+                    CHANGE_ONE_TIME_PASSWORD,
+                    (
+                        digest,
+                        credential.verifier_encoding,
+                        credential.algorithm,
+                        json.dumps(dict(credential.work_factor_metadata)),
+                        correlation,
+                    ),
+                ).fetchone()
+            except psycopg.errors.RaiseException:
+                # The step was used, ended, or the password changed meanwhile.
+                raise AuthenticationRejected from None
+        if changed is None or str(changed[0]) != str(actor_id):
+            raise AuthenticationRejected
+        logger.info(
+            "password change decision",
+            extra={
+                "outcome": "changed",
+                "request_id": request_id,
+                "correlation_id": str(correlation),
+            },
+        )
+        return self._after_password(
+            actor_id=actor_id,
+            mfa_required=mfa_required,
+            checked_verifier=verifier_digest(credential.verifier_encoding),
+            username_key=username_key,
+            source_key=source_key,
+            csrf_token=secrets.token_urlsafe(SESSION_TOKEN_BYTES),
         )
 
     def inspect_session(
@@ -1144,6 +1317,8 @@ class PostgresAuthenticationFlow:
             )
         session_token = secrets.token_urlsafe(SESSION_TOKEN_BYTES)
         with self._transaction() as connection:
+            # The password lock first (login sub-slice L4, Q-2026-10-24-185).
+            self._hold_password(connection, actor_id)
             self._clear_wrong_tries(connection, username_key, source_key, actor_id)
             # The enrollment lock makes two uses of one step, or of one challenge, wait for each
             # other; the second then finds the step or the challenge used.
@@ -1232,6 +1407,8 @@ class PostgresAuthenticationFlow:
                 if counted is not None and counted[0] is not None:
                     raise AuthenticationRateLimited(int(str(counted[0])))
                 raise AuthenticationRejected
+            # The password lock first (login sub-slice L4, Q-2026-10-24-185).
+            self._hold_password(connection, actor_id)
             self._clear_wrong_tries(connection, username_key, source_key, actor_id)
             try:
                 consumed = connection.execute(
@@ -1306,6 +1483,8 @@ class PostgresAuthenticationFlow:
                 raise AuthenticationRejected
             # Review round 1 (security): a sign-in from before a password reset starts nothing,
             # so it cannot turn off the code another sign-in started with the new password.
+            # The password lock first (L4 review round 2), as every other write of a sign-in.
+            self._hold_password(connection, actor_id)
             current = connection.execute(CURRENT_VERIFIER, (actor_id,)).fetchone()
             if current is None or not hmac.compare_digest(
                 verifier_digest(str(current[0])), bytes(cast(bytes, checked_verifier))
@@ -1380,6 +1559,8 @@ class PostgresAuthenticationFlow:
             )
         session_token = secrets.token_urlsafe(SESSION_TOKEN_BYTES)
         with self._transaction() as connection:
+            # The password lock first (login sub-slice L4, Q-2026-10-24-185).
+            self._hold_password(connection, actor_id)
             self._clear_wrong_tries(connection, username_key, source_key, actor_id)
             # The lock makes a parallel confirmation, a replacement by a later sign-in or a
             # sign-in code reset wait; the sign-in code must still be pending.
@@ -1513,6 +1694,8 @@ class PostgresAuthenticationFlow:
                     self._refuse_wrong_try(
                         RECORD_WRONG_SIGN_IN_CODE, username_key, source_key, request_id=request_id
                     )
+            # The password lock first (login sub-slice L4, Q-2026-10-24-185).
+            self._hold_password(connection, actor_id)
             self._clear_wrong_tries(connection, username_key, source_key, actor_id)
             if step is not None:
                 locked = connection.execute(LOCK_ACTIVE_ENROLLMENT, (enrollment_id,)).fetchone()

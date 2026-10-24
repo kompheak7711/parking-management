@@ -25,16 +25,27 @@ const user = {
   settings_access: false,
 } satisfies UserAccount;
 
-function jsonResponse(data: unknown): Response {
+function jsonResponse(
+  data: unknown,
+  extra: Record<string, unknown> = {},
+): Response {
   return new Response(
     JSON.stringify({
       data,
       page: { next_cursor: null, limit: 100 },
       meta: { request_id: "request-1" },
+      ...extra,
     }),
     { status: 200, headers: { "Content-Type": "application/json" } },
   );
 }
+
+// Login sub-slice L4: the one-time password the server makes for a new or reset account.
+const oneTimePassword = {
+  value: "k7m2-x9qp-4hrt-w3nd",
+  expires_at: "2026-08-23T10:10:00Z",
+};
+const withPassword = { one_time_password: oneTimePassword };
 
 describe("access administration client", () => {
   it("TEST-FE-ADMIN-001 loads only server-authorized property users, bundles, and capability catalog", async () => {
@@ -153,14 +164,25 @@ describe("access administration client", () => {
     );
     const fetchImplementation = vi
       .fn<typeof fetch>()
-      .mockResolvedValueOnce(jsonResponse(user))
-      .mockResolvedValueOnce(jsonResponse({ ...user, account_class: "owner" }))
-      .mockResolvedValueOnce(jsonResponse({ ...user, account_class: null }))
+      .mockResolvedValueOnce(jsonResponse(user, withPassword))
       .mockResolvedValueOnce(
-        jsonResponse({ ...user, account_class: "Owner authority" }),
+        jsonResponse({ ...user, account_class: "owner" }, withPassword),
       )
       .mockResolvedValueOnce(
-        jsonResponse({ ...user, settings_access: undefined }),
+        jsonResponse({ ...user, account_class: null }, withPassword),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse(
+          { ...user, account_class: "Owner authority" },
+          withPassword,
+        ),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({ ...user, settings_access: undefined }, withPassword),
+      )
+      .mockResolvedValueOnce(jsonResponse(user))
+      .mockResolvedValueOnce(
+        jsonResponse(user, { one_time_password: { value: "" } }),
       );
     vi.stubGlobal("fetch", fetchImplementation);
     const newUser = {
@@ -172,7 +194,7 @@ describe("access administration client", () => {
 
     await expect(
       accessAdministrationApi.createUser("property-1", newUser),
-    ).resolves.toEqual(user);
+    ).resolves.toEqual({ account: user, one_time_password: oneTimePassword });
     const init: unknown = fetchImplementation.mock.calls[0]?.[1];
     if (typeof init !== "object" || init === null || !("body" in init)) {
       throw new Error("request initialization is missing");
@@ -180,15 +202,53 @@ describe("access administration client", () => {
     expect(init.body).toBe(JSON.stringify(newUser));
     await expect(
       accessAdministrationApi.createUser("property-1", newUser),
-    ).resolves.toEqual({ ...user, account_class: "owner" });
+    ).resolves.toEqual({
+      account: { ...user, account_class: "owner" },
+      one_time_password: oneTimePassword,
+    });
     await expect(
       accessAdministrationApi.createUser("property-1", newUser),
-    ).resolves.toEqual({ ...user, account_class: null });
+    ).resolves.toEqual({
+      account: { ...user, account_class: null },
+      one_time_password: oneTimePassword,
+    });
+    // Two wrong accounts, then a new account without its one-time password or with an empty one.
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      await expect(
+        accessAdministrationApi.createUser("property-1", newUser),
+      ).rejects.toEqual(new AdministrationError());
+    }
+  });
+
+  it("TEST-FE-ADMIN-006 resets an account without a typed password and reads its one-time password", async () => {
+    vi.spyOn(document, "cookie", "get").mockReturnValue(
+      "__Host-prm_csrf=csrf-token",
+    );
+    const result = {
+      user_id: "user-1",
+      password_changed: true,
+      mfa_reset: false,
+      sessions_revoked: 1,
+    };
+    const fetchImplementation = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        jsonResponse({ ...result, one_time_password: oneTimePassword }),
+      )
+      .mockResolvedValueOnce(jsonResponse(result));
+    vi.stubGlobal("fetch", fetchImplementation);
+    const request = { reset_mfa: false, reason: "Forgot the password" };
+
     await expect(
-      accessAdministrationApi.createUser("property-1", newUser),
-    ).rejects.toEqual(new AdministrationError());
+      accessAdministrationApi.administrativelyRecoverUser("user-1", request),
+    ).resolves.toEqual({ ...result, one_time_password: oneTimePassword });
+    const init: unknown = fetchImplementation.mock.calls[0]?.[1];
+    if (typeof init !== "object" || init === null || !("body" in init)) {
+      throw new Error("request initialization is missing");
+    }
+    expect(init.body).toBe(JSON.stringify(request));
     await expect(
-      accessAdministrationApi.createUser("property-1", newUser),
+      accessAdministrationApi.administrativelyRecoverUser("user-1", request),
     ).rejects.toEqual(new AdministrationError());
   });
 

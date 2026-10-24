@@ -1105,6 +1105,8 @@ it. Verify Owner recovery by recovery code and the controlled server-side emerge
 procedure, including authorization, deliberate operator controls, session revocation,
 secret-free logs, and immutable audit evidence.
 
+Amended by DL-081 (login sub-slice L4): covered on PostgreSQL by `test_one_time_password_migration.py` (the records, the reset with and without MFA, who may reset whom, the change, the 24-hour end, append-only, the lock order) and `test_one_time_password_flow_migration.py` (through the flows: first password, the Owner's reset, a Staff account that kept its own sign-in code, the 24-hour edge, Staff MFA off, a sign-in, a reauthentication or a forced change that meets a reset, a change step of an account disabled meanwhile); without a database by the API, password-rule, local-authentication and blocklist tests; on the screen by TEST-FE-682, TEST-FE-683, TEST-FE-684 and TEST-FE-AUTH-011.
+
 ## TEST-131 — Session Time Boundaries
 
 With controlled clocks, verify expiration immediately after 30 minutes of inactivity and

@@ -9,12 +9,14 @@ the protection key itself only protects sign-in code secrets. No key is ever pri
 """
 
 import os
+import stat
 from typing import Final
 
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 
-from property_rental.bootstrap_cli import read_root_controlled_totp_key
+from property_rental.bootstrap_cli import MAX_BLOCKLIST_BYTES, read_root_controlled_totp_key
+from property_rental.password_security import parse_password_blocklist
 
 DERIVED_KEY_BYTES: Final = 32
 SIGN_IN_TRY_KEY_INFO: Final = b"property-rental:sign-in-try-digest:v1"
@@ -24,6 +26,37 @@ TOTP_KEY_IDENTIFIER_BYTES: Final = 16
 
 class ProtectedKeyUnavailable(RuntimeError):
     """The protected key file is missing, unreadable or not protected; no detail is given."""
+
+
+class PasswordBlocklistUnavailable(RuntimeError):
+    """The password blocklist file is missing, unreadable, too large or empty."""
+
+
+def read_password_blocklist(path: str) -> frozenset[str]:
+    """The local password blocklist (owner answer (a) to Q-2026-10-21-155), read once at
+    start-up from the file named by `APP_PASSWORD_BLOCKLIST_FILE` (login sub-slice L4): one
+    password per line, at most the bootstrap's size, not empty. Not a secret, so no ownership
+    check; a FIFO or a terminal is not waited on."""
+    try:
+        descriptor = os.open(path, os.O_RDONLY | os.O_NONBLOCK | os.O_NOCTTY)
+    except (OSError, ValueError):
+        raise PasswordBlocklistUnavailable("the password blocklist cannot be opened") from None
+    try:
+        if not stat.S_ISREG(os.fstat(descriptor).st_mode):
+            raise ValueError("not a regular file")
+        os.lseek(descriptor, 0, os.SEEK_SET)
+        with os.fdopen(descriptor, "rb", closefd=False) as source:
+            data = source.read(MAX_BLOCKLIST_BYTES + 1)
+        if len(data) > MAX_BLOCKLIST_BYTES:
+            raise ValueError("too large")
+        blocked = parse_password_blocklist(data.decode("utf-8"))
+    except (OSError, ValueError):
+        raise PasswordBlocklistUnavailable("the password blocklist is not usable") from None
+    finally:
+        os.close(descriptor)
+    if not blocked:
+        raise PasswordBlocklistUnavailable("the password blocklist is empty")
+    return blocked
 
 
 def read_protected_totp_key(path: str) -> bytes:

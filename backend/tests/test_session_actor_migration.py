@@ -9,7 +9,6 @@ the administration flow, signs in through `PostgresAuthenticationFlow` and is re
 from __future__ import annotations
 
 import hashlib
-import json
 import secrets
 import uuid
 from collections.abc import Iterator
@@ -28,7 +27,6 @@ from property_rental.access_control import STAFF_DEFAULT_BUNDLE_CAPABILITIES
 from property_rental.app import create_app
 from property_rental.auth_flow import PostgresAuthenticationFlow
 from property_rental.identity import ObjectScope
-from property_rental.password_security import PasswordHashService
 from property_rental.session_actor import PostgresSessionActorResolver
 from property_rental.settings import Settings
 from test_access_admin_flow_migration import allow_admin_actions, context
@@ -39,10 +37,6 @@ from test_move_in_migration import runtime_database_url
 from test_role_bundle_migration import add_account, the_property
 
 PASSWORD = "correct horse battery staple"
-ADD_CREDENTIAL = (
-    "INSERT INTO app.password_credentials(actor_id,verifier_encoding,algorithm,"
-    "work_factor_metadata,provenance) VALUES (%s,%s,%s,%s::jsonb,'initial-credential')"
-)
 ADD_OLD_SESSION = """
     INSERT INTO app.browser_sessions (
         session_id, actor_id, token_verifier, verifier_algorithm, created_at, last_activity_at,
@@ -83,21 +77,6 @@ def actor_database(migrated_database_url: str) -> Iterator[ActorDatabase]:
         yield ActorDatabase(temporary, runtime_url, str(property_id), owner, manager)
 
 
-def add_password(database: ActorDatabase, actor_id: uuid.UUID) -> None:
-    credential = PasswordHashService().hash_password(PASSWORD)
-    with psycopg.connect(database.owner_url) as connection:
-        connection.execute(
-            ADD_CREDENTIAL,
-            (
-                actor_id,
-                credential.verifier_encoding,
-                credential.algorithm,
-                json.dumps(dict(credential.work_factor_metadata)),
-            ),
-        )
-        connection.commit()
-
-
 def signed_in_staff(database: ActorDatabase, username: str) -> tuple[uuid.UUID, str]:
     """A Staff account made by the Owner (with the default Staff bundle), signed in."""
     created = PostgresAccessAdministrationFlow(database.runtime_url).create_user(
@@ -108,8 +87,21 @@ def signed_in_staff(database: ActorDatabase, username: str) -> tuple[uuid.UUID, 
         account_class="staff",
         audit_context=context(database.owner),
     )
-    add_password(database, created.user_id)
-    result = PostgresAuthenticationFlow(database.runtime_url).login(
+    # Login sub-slice L4: a new account's first password is a one-time password, changed at the
+    # first sign-in; the account then signs in with its own password.
+    flow = PostgresAuthenticationFlow(database.runtime_url)
+    assert created.one_time_password is not None
+    started = flow.login(
+        username=username,
+        password=created.one_time_password.value,
+        request_source="desk",
+        request_id="l3a-2",
+    )
+    assert started.preauth_token is not None
+    flow.change_password(
+        preauth_token=started.preauth_token, new_password=PASSWORD, request_id="l3a-2"
+    )
+    result = flow.login(
         username=username, password=PASSWORD, request_source="desk", request_id="l3a-2"
     )
     assert result.session_token is not None

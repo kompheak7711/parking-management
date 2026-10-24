@@ -24,7 +24,7 @@ from property_rental.access_admin_api import AccessAdministrationRejected
 from property_rental.access_admin_flow import PostgresAccessAdministrationFlow
 from property_rental.visible_text import HIDDEN_NAME_CHARACTERS, SPACE_SEPARATORS
 from test_access_admin_flow_migration import AdminDatabase, allow_admin_actions, context
-from test_account_class_migration import ADD_CREDENTIAL, repository_for
+from test_account_class_migration import repository_for
 from test_default_role_bundles_migration import SEED_QUERY
 from test_migrations import _run_alembic, _temporary_migration_database, _url_with_database
 from test_move_in_migration import migrated_database_url as migrated_database_url
@@ -273,10 +273,10 @@ def test_a_name_typed_with_two_spaces_is_saved_tidied_and_found_at_sign_in(
     """Owner's example (Q-2026-10-22-170 (a), login sub-slice L2d): Staff types "Sokha  Chan"
     with two spaces on the iPad; it is saved as "Sokha Chan" (username "sokha chan") and nobody
     sees an error; every spelling the sign-in lookup tidies finds that account on the database
-    (review round 1: a real lookup, with a test credential row written as the table owner), and
-    the same username typed with a no-break space is taken. The database still refuses two
-    spaces in a row from a caller that skips the flow (tested below), so its rule stays the last
-    guard."""
+    (review round 1: a real lookup; since L4 the account's own first one-time password is its
+    credential row), and the same username typed with a no-break space is taken. The database
+    still refuses two spaces in a row from a caller that skips the flow (tested below), so its
+    rule stays the last guard."""
     flow = PostgresAccessAdministrationFlow(admin_database.runtime_url)
     suffix = uuid.uuid4().hex[:8]
     created = flow.create_user(
@@ -297,8 +297,7 @@ def test_a_name_typed_with_two_spaces_is_saved_tidied_and_found_at_sign_in(
             "SELECT normalized_username FROM app.user_accounts WHERE actor_id = %s",
             (created.user_id,),
         ).fetchone()
-        connection.execute(ADD_CREDENTIAL, (created.user_id,))
-        connection.commit()
+        # Login sub-slice L4: the account already has a credential, its first one-time password.
     assert stored == (f"sokha chan {suffix}",)
     with psycopg.connect(admin_database.runtime_url) as runtime:
         repository = repository_for(runtime)

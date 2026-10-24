@@ -9,7 +9,6 @@ statement started; both now succeed and record the activity's time.
 from __future__ import annotations
 
 import hashlib
-import json
 import threading
 import time
 import uuid
@@ -26,7 +25,6 @@ from alembic.script import ScriptDirectory
 
 from property_rental.access_admin_flow import PostgresAccessAdministrationFlow
 from property_rental.auth_flow import PostgresAuthenticationFlow
-from property_rental.password_security import PasswordHashService
 from test_access_admin_flow_migration import allow_admin_actions, context
 from test_default_role_bundles_migration import SEED_QUERY
 from test_migrations import _run_alembic, _temporary_migration_database, _url_with_database
@@ -37,10 +35,6 @@ from test_role_bundle_migration import add_account, the_property
 REVISION = "20270127_184"
 PREVIOUS = "20270126_183"
 PASSWORD = "correct horse battery staple"
-ADD_CREDENTIAL = (
-    "INSERT INTO app.password_credentials(actor_id,verifier_encoding,algorithm,"
-    "work_factor_metadata,provenance) VALUES (%s,%s,%s,%s::jsonb,'initial-credential')"
-)
 SESSION_OF = (
     "SELECT revoked_at, last_activity_at, revocation_reason FROM app.browser_sessions "
     "WHERE token_verifier = %s"
@@ -87,19 +81,21 @@ def signed_in_staff(database: RevocationDatabase, username: str) -> tuple[uuid.U
         account_class="staff",
         audit_context=context(database.owner),
     )
-    credential = PasswordHashService().hash_password(PASSWORD)
-    with psycopg.connect(database.owner_url) as connection:
-        connection.execute(
-            ADD_CREDENTIAL,
-            (
-                created.user_id,
-                credential.verifier_encoding,
-                credential.algorithm,
-                json.dumps(dict(credential.work_factor_metadata)),
-            ),
-        )
-        connection.commit()
-    result = PostgresAuthenticationFlow(database.runtime_url).login(
+    # Login sub-slice L4: a new account's first password is a one-time password, changed at the
+    # first sign-in; the account then signs in with its own password.
+    flow = PostgresAuthenticationFlow(database.runtime_url)
+    assert created.one_time_password is not None
+    started = flow.login(
+        username=username,
+        password=created.one_time_password.value,
+        request_source="desk",
+        request_id="l3a-2",
+    )
+    assert started.preauth_token is not None
+    flow.change_password(
+        preauth_token=started.preauth_token, new_password=PASSWORD, request_id="l3a-2"
+    )
+    result = flow.login(
         username=username, password=PASSWORD, request_source="desk", request_id="l3a-2"
     )
     assert result.session_token is not None

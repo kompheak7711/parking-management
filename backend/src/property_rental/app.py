@@ -44,6 +44,7 @@ from property_rental.auth_api import (
     AuthenticationFlow,
     AuthenticationRateLimited,
     AuthenticationUnavailable,
+    NewPasswordRejected,
     UnavailableAuthenticationFlow,
     create_auth_router,
 )
@@ -178,8 +179,10 @@ from property_rental.reservation_api import (
 )
 from property_rental.reservation_deposit_draft import ReservationDepositDraftKeyReused
 from property_rental.runtime_secrets import (
+    PasswordBlocklistUnavailable,
     ProtectedKeyUnavailable,
     derive_sign_in_try_key,
+    read_password_blocklist,
     read_protected_totp_key,
 )
 from property_rental.session_actor import PostgresSessionActorResolver
@@ -290,6 +293,11 @@ ERROR_STATUS_DETAILS: Final = {
 }
 
 
+# The answer to a new password that breaks the rule (login sub-slice L4, UI-003).
+NEW_PASSWORD_RULE_MESSAGE: Final = (
+    "Choose a password of 15 to 128 characters that is not a common password, not your name "
+    "and not the one-time password."
+)
 # The only environments where the wrong-try digests may be plain sha256 (login sub-slice L3c-1).
 PLAIN_DIGEST_ENVIRONMENTS: Final = frozenset({"development", "test"})
 
@@ -305,6 +313,19 @@ def _totp_protection_key(settings: Settings) -> bytes | None:
     if settings.database_url is not None and settings.environment not in PLAIN_DIGEST_ENVIRONMENTS:
         raise ProtectedKeyUnavailable("APP_TOTP_KEY_FILE is required with a database")
     return None
+
+
+def _password_blocklist(settings: Settings) -> frozenset[str]:
+    """The local password blocklist of every new password (login sub-slice L4), read once at
+    start-up; like the key file, a database without it stops the start in every environment
+    except `development` and `test`, and an empty setting counts as unset (L3c-1 binding)."""
+    if settings.password_blocklist_file:
+        return read_password_blocklist(settings.password_blocklist_file)
+    if settings.database_url is not None and settings.environment not in PLAIN_DIGEST_ENVIRONMENTS:
+        raise PasswordBlocklistUnavailable(
+            "APP_PASSWORD_BLOCKLIST_FILE is required with a database"
+        )
+    return frozenset()
 
 
 def check_database_readiness(database_url: str) -> None:
@@ -415,6 +436,7 @@ def create_app(
     """Build an application instance from validated settings."""
     resolved_settings = settings or Settings()
     totp_protection_key = _totp_protection_key(resolved_settings)
+    password_blocklist = _password_blocklist(resolved_settings)
     sign_in_try_key = (
         derive_sign_in_try_key(totp_protection_key) if totp_protection_key is not None else None
     )
@@ -593,6 +615,28 @@ def create_app(
             response.headers["Retry-After"] = str(exc.retry_after_seconds)
             response.headers["Cache-Control"] = "no-store"
         return response
+
+    @app.exception_handler(NewPasswordRejected)
+    async def new_password_rejected(
+        request: Request,
+        _: NewPasswordRejected,
+    ) -> JSONResponse:
+        # Login sub-slice L4: the rule of every new password, the same answer for every reason.
+        request_id = request.state.request_id
+        return JSONResponse(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            content={
+                "error": {
+                    "code": "PASSWORD_RULE",
+                    "message": NEW_PASSWORD_RULE_MESSAGE,
+                    "fields": ["new_password"],
+                    "rule_ids": [],
+                    "current_version": None,
+                },
+                "meta": {"request_id": request_id},
+            },
+            headers={REQUEST_ID_HEADER: request_id, "Cache-Control": "no-store"},
+        )
 
     @app.exception_handler(AccessAdministrationUnavailable)
     async def access_administration_unavailable(
@@ -861,6 +905,7 @@ def create_app(
                     resolved_settings.database_url.get_secret_value(),
                     sign_in_try_key=sign_in_try_key,
                     totp_protection_key=totp_protection_key,
+                    password_blocklist=password_blocklist,
                 )
                 if resolved_settings.database_url is not None
                 else UnavailableAuthenticationFlow()

@@ -33,6 +33,7 @@ import property_rental.bootstrap_cli as bootstrap_cli
 from property_rental.account_recovery import (
     AccountRecoveryConnection,
     AccountRecoveryMutation,
+    AccountRecoveryRejected,
     AccountRecoveryRequest,
     PostgresAccountRecoveryRepository,
 )
@@ -590,6 +591,9 @@ def test_password_credentials_store_only_bounded_verifier_material() -> None:
                 ("changed_at", "timestamp with time zone", "NO"),
                 ("changed_by_actor_id", "uuid", "YES"),
                 ("provenance", "text", "NO"),
+                # Login sub-slice L4a: names the one-time password until the person changes it;
+                # an id only, never a password.
+                ("one_time_password_id", "uuid", "YES"),
             ]
 
 
@@ -3189,7 +3193,10 @@ def test_account_recovery_repository_atomically_resets_password_revokes_sessions
             )
         connection.commit()
 
-    request = AccountRecoveryRequest(
+    # Login sub-slice L4a (owner answer (a) to Q-2026-10-21-153): the Owner's reset is
+    # `app.issue_one_time_password`, so the administrative mode here is refused and changes
+    # nothing; the emergency mode still resets atomically.
+    administrative = AccountRecoveryRequest(
         mode="administrative",
         actor_id=owner_id,
         target_actor_id=target_id,
@@ -3198,6 +3205,27 @@ def test_account_recovery_repository_atomically_resets_password_revokes_sessions
         request_source="authenticated-owner",
         correlation_id=uuid.uuid4(),
         reason="authorized_account_recovery",
+    )
+    with psycopg.connect(_required_url(RUNTIME_URL_ENV)) as runtime_connection:
+        with pytest.raises(AccountRecoveryRejected):
+            PostgresAccountRecoveryRepository(
+                connection=cast(AccountRecoveryConnection, runtime_connection),
+                recovery_code_verifier=Argon2idRecoveryCodeVerifierProvider(),
+            ).recover_atomically(
+                administrative,
+                AccountRecoveryMutation(password_credential=replacement),
+                None,
+            )
+    request = AccountRecoveryRequest(
+        mode="emergency",
+        actor_id=None,
+        target_actor_id=target_id,
+        actor_class=None,
+        target_class="manager",
+        request_source="server-console",
+        correlation_id=uuid.uuid4(),
+        reason="documented_emergency_recovery",
+        procedure_identity="server-console",
     )
     with psycopg.connect(_required_url(RUNTIME_URL_ENV)) as runtime_connection:
         result = PostgresAccountRecoveryRepository(
@@ -3231,7 +3259,12 @@ def test_account_recovery_repository_atomically_resets_password_revokes_sessions
                 """,
                 (request.correlation_id,),
             )
-            assert cursor.fetchone() == ("administrative", "completed", True, 1)
+            assert cursor.fetchone() == ("emergency", "completed", True, 1)
+            cursor.execute(
+                "SELECT count(*) FROM app.account_recovery_audit_events WHERE correlation_id = %s",
+                (administrative.correlation_id,),
+            )
+            assert cursor.fetchone() == (0,)
 
 
 def test_owner_recovery_code_consumption_revocation_and_audit_are_one_transaction() -> None:
@@ -3637,7 +3670,7 @@ def test_protected_bootstrap_migration_accepts_large_object_without_bootstrap_au
         with psycopg.connect(migration_url) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT version_num FROM alembic_version")
-                assert cursor.fetchone() == ("20270203_191",)
+                assert cursor.fetchone() == ("20270204_192",)
 
 
 def test_customer_migration_accepts_a_malformed_revision_15_email_domain() -> None:
@@ -4266,7 +4299,7 @@ def test_v1_027_upgrade_preserves_v1_022_payment_configuration() -> None:
         with psycopg.connect(migration_url) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT version_num FROM alembic_version")
-                assert cursor.fetchone() == ("20270203_191",)
+                assert cursor.fetchone() == ("20270204_192",)
                 cursor.execute(
                     """
                     SELECT id, code, display_name, accepted, created_by, updated_by
@@ -4420,7 +4453,7 @@ def test_v1_029_upgrade_preserves_v1_028_property_unit_and_customer_data() -> No
         with psycopg.connect(migration_url) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT version_num FROM alembic_version")
-                assert cursor.fetchone() == ("20270203_191",)
+                assert cursor.fetchone() == ("20270204_192",)
                 cursor.execute(
                     """
                     SELECT unit.id, unit.property_id, unit.status, customer.id
@@ -4820,7 +4853,7 @@ def test_v1_034_upgrade_preserves_v1_033_lease_and_replaces_unbounded_runtime_he
         assert result.returncode == 0, result.stderr
         with psycopg.connect(migration_url) as connection:
             assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-                "20270203_191",
+                "20270204_192",
             )
             assert connection.execute(
                 "SELECT id,status,version,start_date,end_date FROM app.leases WHERE id=%s",
@@ -5016,7 +5049,7 @@ def test_v1_039_upgrade_serializes_user_creation_across_actor_identity_backfill(
                 (actor_id,),
             ).fetchone() == ("HUMAN",)
             assert verify.execute("SELECT version_num FROM alembic_version").fetchone() == (
-                "20270203_191",
+                "20270204_192",
             )
 
 
@@ -5104,7 +5137,7 @@ def test_v1_042_published_schema_upgrades_to_corrected_runtime_contract() -> Non
         assert corrected.returncode == 0, corrected.stderr
         with psycopg.connect(migration_url) as connection:
             assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-                "20270203_191",
+                "20270204_192",
             )
             assert connection.execute(
                 "SELECT format_type(attribute.atttypid,attribute.atttypmod) "
@@ -5272,7 +5305,7 @@ def test_v1_045_populated_revision_35_upgrades_to_invoice_command_boundary() -> 
         assert upgraded.returncode == 0, upgraded.stderr
         with psycopg.connect(migration_url) as connection:
             assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-                "20270203_191",
+                "20270204_192",
             )
             snapshot = connection.execute(
                 "SELECT app.invoice_resource_snapshot(%s)", (invoice_id,)
@@ -5477,7 +5510,7 @@ def test_v1_042_upgrade_front_door_gate_prevents_service_writer_deadlock() -> No
 
         with psycopg.connect(migration_url) as connection:
             assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-                "20270203_191",
+                "20270204_192",
             )
             assert connection.execute(
                 "SELECT consumption_quantity FROM app.utility_consumption_periods WHERE id=%s",

@@ -17,11 +17,14 @@ from pydantic import SecretStr
 import property_rental.app as app_module
 from property_rental.app import create_app
 from property_rental.auth_api import UnavailableAuthenticationFlow
+from property_rental.bootstrap_cli import MAX_BLOCKLIST_BYTES
 from property_rental.logging import create_application_logger
 from property_rental.runtime_secrets import (
+    PasswordBlocklistUnavailable,
     ProtectedKeyUnavailable,
     derive_sign_in_try_key,
     derive_totp_key_identifier,
+    read_password_blocklist,
     read_protected_totp_key,
 )
 from property_rental.settings import Settings
@@ -29,6 +32,7 @@ from property_rental.totp_security import Aes256GcmTotpSecretProtector
 
 KEY_HEX = "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff"
 UNUSED_DATABASE = "postgresql://unused.invalid/unused"
+BLOCKLIST = frozenset({"password1234567"})
 
 
 @pytest.mark.skipif(os.geteuid() == 0, reason="a file root writes is root-owned")
@@ -158,23 +162,30 @@ def test_create_app_gives_the_derived_key_to_the_sign_in_flow(
         *,
         sign_in_try_key: bytes | None = None,
         totp_protection_key: bytes | None = None,
+        password_blocklist: frozenset[str] = frozenset(),
     ) -> UnavailableAuthenticationFlow:
         seen.append(sign_in_try_key)
         protection_keys.append(totp_protection_key)
+        blocklists.append(password_blocklist)
         return UnavailableAuthenticationFlow()
 
+    blocklists: list[frozenset[str]] = []
     monkeypatch.setattr(app_module, "read_protected_totp_key", lambda _: bytes.fromhex(KEY_HEX))
+    monkeypatch.setattr(app_module, "read_password_blocklist", lambda _: BLOCKLIST)
     monkeypatch.setattr(app_module, "PostgresAuthenticationFlow", recording_flow)
     create_app(
         Settings(
             environment="production",
             database_url=SecretStr(UNUSED_DATABASE),
             totp_key_file="/dev/fd/9",
+            password_blocklist_file="/dev/fd/8",
         )
     )
     create_app(Settings(environment="development", database_url=SecretStr(UNUSED_DATABASE)))
     assert seen == [derive_sign_in_try_key(bytes.fromhex(KEY_HEX)), None]
     assert protection_keys == [bytes.fromhex(KEY_HEX), None]
+    # Login sub-slice L4: the flow also gets the blocklist, and none without the file.
+    assert blocklists == [BLOCKLIST, frozenset()]
 
 
 def start_and_stop(app: FastAPI) -> None:
@@ -194,6 +205,7 @@ def test_a_start_with_a_database_and_no_key_file_logs_a_warning_without_secrets(
     warning."""
     monkeypatch.delenv("APP_TOTP_KEY_FILE", raising=False)
     monkeypatch.setattr(app_module, "read_protected_totp_key", lambda _: bytes.fromhex(KEY_HEX))
+    monkeypatch.setattr(app_module, "read_password_blocklist", lambda _: BLOCKLIST)
     for settings, warned in (
         (Settings(database_url=SecretStr(UNUSED_DATABASE)), True),
         (Settings(environment="test", database_url=SecretStr(UNUSED_DATABASE)), True),
@@ -202,6 +214,7 @@ def test_a_start_with_a_database_and_no_key_file_logs_a_warning_without_secrets(
                 environment="production",
                 database_url=SecretStr(UNUSED_DATABASE),
                 totp_key_file="/dev/fd/9",
+                password_blocklist_file="/dev/fd/8",
             ),
             False,
         ),
@@ -223,5 +236,64 @@ def test_a_start_with_a_database_and_no_key_file_logs_a_warning_without_secrets(
             "application.started",
             "application.stopping",
         ]
-        for secret in (UNUSED_DATABASE, KEY_HEX, "/dev/fd/9"):
+        for secret in (UNUSED_DATABASE, KEY_HEX, "/dev/fd/9", "/dev/fd/8"):
             assert secret not in stream.getvalue()
+
+
+def test_the_password_blocklist_is_read_once_and_needed_with_a_database_outside_development(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Login sub-slice L4 (owner answer (a) to Q-2026-10-21-155): the blocklist is a regular
+    file of one password per line; a missing, empty, too large or non-regular file refuses
+    without its content, and with a database every environment but `development` and `test`
+    refuses to start without it (an empty setting counts as unset)."""
+    blocklist = tmp_path / "blocklist.txt"
+    blocklist.write_bytes(b"Password1234567\n\ncorrecthorsebatterystaple\r\n")
+    assert read_password_blocklist(str(blocklist)) == {
+        "password1234567",
+        "correcthorsebatterystaple",
+    }
+    empty = tmp_path / "empty.txt"
+    empty.write_bytes(b"\n\r\n\n")
+    large = tmp_path / "large.txt"
+    large.write_bytes(b"a" * (MAX_BLOCKLIST_BYTES + 1))
+    fifo = tmp_path / "fifo"
+    os.mkfifo(fifo)
+    for path in (tmp_path / "missing.txt", empty, large, fifo, tmp_path):
+        with pytest.raises(PasswordBlocklistUnavailable) as refused:
+            read_password_blocklist(str(path))
+        assert str(path) not in str(refused.value)
+        assert "correcthorse" not in str(refused.value)
+
+    monkeypatch.delenv("APP_PASSWORD_BLOCKLIST_FILE", raising=False)
+    monkeypatch.setattr(app_module, "read_protected_totp_key", lambda _: bytes.fromhex(KEY_HEX))
+    for blocklist_file in (None, ""):
+        with pytest.raises(PasswordBlocklistUnavailable):
+            create_app(
+                Settings(
+                    environment="production",
+                    database_url=SecretStr(UNUSED_DATABASE),
+                    totp_key_file="/dev/fd/9",
+                    password_blocklist_file=blocklist_file,
+                )
+            )
+    assert (
+        create_app(
+            Settings(
+                environment="production",
+                database_url=SecretStr(UNUSED_DATABASE),
+                totp_key_file="/dev/fd/9",
+                password_blocklist_file=str(blocklist),
+            )
+        )
+        is not None
+    )
+    with pytest.raises(PasswordBlocklistUnavailable):
+        create_app(Settings(password_blocklist_file=str(empty)))
+    for environment in ("development", "test"):
+        assert (
+            create_app(Settings(environment=environment, database_url=SecretStr(UNUSED_DATABASE)))
+            is not None
+        )
+    assert create_app(Settings(environment="production")) is not None

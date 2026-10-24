@@ -5030,6 +5030,8 @@ algorithm/work-factor metadata, change time, and lifecycle/audit provenance. Pla
 reversibly encrypted passwords, security questions, password values in audit snapshots,
 and reusable bootstrap secrets are prohibited.
 
+Amended by DL-081 (login sub-slice L4, Q-2026-10-24-185, decided by Claude under the owner's 2026-10-23 22:30 rule; migration 20270204_192): a one-time password is one append-only row (`app.one_time_passwords`: the account, the Owner, the reason, the issue time and its end 24 hours later on the database clock) and its Argon2id verifier on the account's password row, which names it (`one_time_password_id`) until the person chooses a new password. The change step is a 10-minute pre-authentication record with no session and no actor, completed once; each change is one append-only row. The runtime role reads only `one_time_password_id` of the password row (column grant) and never writes a password row: every write runs in `app.issue_one_time_password` or `app.change_one_time_password`, which take the `password-credential:` lock (the issue first takes `recovery-codes:`) and end every session of the account in the same step. The password itself is never stored or logged.
+
 ## DB-AUTH-003 — MFA and recovery-code state
 
 MFA enrollment state and protected verifier material are stored separately from role
@@ -5133,6 +5135,8 @@ produce immutable security audit events without secrets. A database invariant or
 equivalently strong transactional guard prevents initial-Owner bootstrap after the
 initial Owner is established and prevents bootstrap from becoming an additional-Owner
 backdoor.
+
+Amended by DL-081 (login sub-slice L4): the Owner's reset, the first password of a new account and the one-time password given when a Staff account's required MFA is turned off each write one completed administrative row in the recovery audit and one `identity.account.one_time_password_given` event in the administration history, with the reason; a forced change writes one change row. None holds the password or its verifier. The old administrative mode of `app.perform_account_recovery` is refused; its emergency mode resets a sign-in code only together with a new password.
 
 ## DB-AUTH-006 — Capability catalog
 

@@ -1,6 +1,7 @@
 """API-079/080 account and configurable capability administration tests."""
 
 import asyncio
+import json
 from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
@@ -21,6 +22,7 @@ from property_rental.access_admin_api import (
     AdministrativeRecoveryView,
     AuthorizationHistoryView,
     CapabilityView,
+    OneTimePasswordView,
     RoleAssignmentView,
     RoleBundleView,
     UserAccountView,
@@ -36,6 +38,9 @@ OTHER_PROPERTY_ID = "property-other"
 ACTOR_ID = "access-administrator"
 USER_ID = UUID("11111111-1111-4111-8111-111111111111")
 CREATED_USER_ID = UUID("22222222-2222-4222-8222-222222222222")
+ONE_TIME_PASSWORD = OneTimePasswordView(
+    value="k7m2-x9qp-4hrt-w3nd", expires_at=datetime(2026, 10, 25, 3, 0, tzinfo=UTC)
+)
 ROLE_BUNDLE_ID = UUID("33333333-3333-4333-8333-333333333333")
 OTHER_ROLE_BUNDLE_ID = UUID("44444444-4444-4444-8444-444444444444")
 VERSION = 4
@@ -54,6 +59,7 @@ class RecordingAccessAdministrationFlow(AccessAdministrationFlow):
     created_account: UserAccountView | None = None
     assignment_property_id: str | None = None
     settings_access_result: bool | None = None
+    update_one_time_password: OneTimePasswordView | None = None
     account: UserAccountView = field(
         default_factory=lambda: UserAccountView(
             user_id=USER_ID,
@@ -127,6 +133,7 @@ class RecordingAccessAdministrationFlow(AccessAdministrationFlow):
             version=1,
             account_class=account_class,
             settings_access=False,
+            one_time_password=ONE_TIME_PASSWORD,
         )
 
     def user_property_id(self, *, user_id: UUID) -> str | None:
@@ -172,6 +179,7 @@ class RecordingAccessAdministrationFlow(AccessAdministrationFlow):
             lifecycle_state=lifecycle_state or self.account.lifecycle_state,
             mfa_policy_class=mfa_policy_class or self.account.mfa_policy_class,
             version=expected_version + 1,
+            one_time_password=self.update_one_time_password,
         )
 
     def revoke_user_sessions(
@@ -412,7 +420,6 @@ class RecordingAccessAdministrationFlow(AccessAdministrationFlow):
         *,
         user_id: UUID,
         property_id: str,
-        new_password: str,
         reset_mfa: bool,
         reason: str,
         audit_context: AdministrationAuditContext,
@@ -423,7 +430,6 @@ class RecordingAccessAdministrationFlow(AccessAdministrationFlow):
                 (
                     user_id,
                     property_id,
-                    new_password,
                     reset_mfa,
                     reason,
                     audit_context.actor_id,
@@ -436,6 +442,7 @@ class RecordingAccessAdministrationFlow(AccessAdministrationFlow):
             password_changed=True,
             mfa_reset=reset_mfa,
             sessions_revoked=3,
+            one_time_password=ONE_TIME_PASSWORD,
         )
 
 
@@ -902,8 +909,17 @@ def test_account_list_and_creation_are_scoped_audited_and_never_return_credentia
     assert created.json()["data"]["user_id"] == str(CREATED_USER_ID)
     assert created.json()["data"]["lifecycle_state"] == "active"
     assert created.json()["data"]["version"] == 1
-    assert "password" not in created.text.lower()
+    # Login sub-slice L4: the new account's first one-time password is answered once, beside the
+    # account and never cached; no stored credential is ever answered.
+    assert created.json()["one_time_password"] == {
+        "value": ONE_TIME_PASSWORD.value,
+        "expires_at": "2026-10-25T03:00:00Z",
+    }
+    assert created.headers["cache-control"] == "no-store"
+    assert "password" not in json.dumps(created.json()["data"]).lower()
+    assert "password" not in listed.text.lower()
     assert "credential" not in created.text.lower()
+    assert "argon" not in created.text.lower()
     assert flow.calls == [
         ("list_users", (PROPERTY_ID, None, 50, ACTOR_ID, "accounts-list")),
         (
@@ -1448,11 +1464,7 @@ def test_authorized_administrator_can_inspect_secret_free_authorization_history(
 
 def test_administrative_recovery_requires_scope_csrf_and_explicit_audit_reason() -> None:
     flow = RecordingAccessAdministrationFlow()
-    payload = {
-        "new_password": "a sufficiently long replacement password",
-        "reset_mfa": True,
-        "reason": "approved account recovery",
-    }
+    payload = {"reset_mfa": True, "reason": "approved account recovery"}
 
     response = request(
         authorized_app(flow),
@@ -1469,20 +1481,36 @@ def test_administrative_recovery_requires_scope_csrf_and_explicit_audit_reason()
         request_id="administrative-recovery-denied",
     )
 
+    # Login sub-slice L4: the app makes the one-time password and answers it once, never cached;
+    # the Owner no longer types a password, so the old request shape is refused.
+    old_shape = request(
+        authorized_app(flow),
+        "POST",
+        f"/api/v1/users/{USER_ID}/administrative-recovery",
+        payload={**payload, "new_password": "a sufficiently long replacement password"},
+        request_id="administrative-recovery-old-shape",
+    )
+
     assert response.status_code == 200
     assert response.json()["data"] == {
         "user_id": str(USER_ID),
         "password_changed": True,
         "mfa_reset": True,
         "sessions_revoked": 3,
+        "one_time_password": {
+            "value": ONE_TIME_PASSWORD.value,
+            "expires_at": "2026-10-25T03:00:00Z",
+        },
     }
+    assert response.headers["cache-control"] == "no-store"
     assert denied.status_code == 403
+    assert old_shape.status_code == 422
+    assert ONE_TIME_PASSWORD.value not in repr(flow.calls)
     assert (
         "administratively_recover_user",
         (
             USER_ID,
             PROPERTY_ID,
-            "a sufficiently long replacement password",
             True,
             "approved account recovery",
             ACTOR_ID,
@@ -1742,7 +1770,9 @@ def test_settings_access_and_assignment_removal_need_a_valid_reason_and_known_fi
 def test_administration_results_must_match_the_change_that_was_asked() -> None:
     """Review round 1 (independent and security): a result that does not show the change asked
     for, or that names another account, bundle or Property, fails closed (503)."""
-    account = RecordingAccessAdministrationFlow().account
+    account = replace(
+        RecordingAccessAdministrationFlow().account, one_time_password=ONE_TIME_PASSWORD
+    )
     staff_payload = {
         "username": "new.operator",
         "display_name": "New Operator",
@@ -1771,6 +1801,18 @@ def test_administration_results_must_match_the_change_that_was_asked() -> None:
         payload=staff_payload,
     )
     assert created.status_code == 201
+    # Login sub-slice L4: a new account without its first one-time password fails closed too.
+    created = request(
+        authorized_app(
+            RecordingAccessAdministrationFlow(
+                created_account=replace(right, one_time_password=None)
+            )
+        ),
+        "POST",
+        f"/api/v1/properties/{PROPERTY_ID}/users",
+        payload=staff_payload,
+    )
+    assert created.status_code == 503
 
     for path, stale in ((SETTINGS_ACCESS_PATH, False), (SETTINGS_ACCESS_REMOVE_PATH, True)):
         response = request(
@@ -1998,12 +2040,9 @@ def test_names_with_odd_or_double_spaces_reach_the_flow_tidied() -> None:
     )
     assert only_spaces.status_code == 422
     assert len(flow.calls) == calls
-    # Review round 1: the Owner's reset reason is free text, not a name; its spaces stay as typed
-    # (only U+200B is removed) until L4 moves it to the reason rule.
-    recovery = AdministrativeRecoveryRequest(
-        new_password="correct horse battery staple",
-        reason="forgot  password\u200b again",
-    )
+    # Review round 1: the Owner's reset reason is free text, not a name; since L4 it follows the
+    # reason rule, so its spaces stay as typed and only U+200B is removed.
+    recovery = AdministrativeRecoveryRequest(reason="forgot  password\u200b again")
     assert recovery.reason == "forgot  password again"
 
 
@@ -2060,3 +2099,44 @@ def test_the_routes_pass_both_browser_cookies_to_the_flow_and_never_show_them() 
         (None, None),
     ]
     assert "cookie-secret" not in repr(seen[0])
+
+
+def test_turning_a_staff_accounts_mfa_off_answers_its_one_time_password_once() -> None:
+    """Login sub-slice L4 (Q-2026-10-23-180 (a)): turning off the MFA of an account whose MFA was
+    required gives it a one-time password, answered once and never cached; a one-time password
+    with any other change fails closed (503), and other changes are answered without one."""
+    flow = RecordingAccessAdministrationFlow(update_one_time_password=ONE_TIME_PASSWORD)
+    turned_off = request(
+        authorized_app(flow),
+        "PATCH",
+        f"/api/v1/users/{USER_ID}",
+        payload={"mfa_policy_class": "optional"},
+        request_id="mfa-off",
+    )
+    assert turned_off.status_code == 200
+    assert turned_off.headers["cache-control"] == "no-store"
+    assert turned_off.json()["data"]["mfa_policy_class"] == "optional"
+    assert turned_off.json()["one_time_password"] == {
+        "value": ONE_TIME_PASSWORD.value,
+        "expires_at": "2026-10-25T03:00:00Z",
+    }
+
+    for payload in ({"display_name": "Renamed"}, {"mfa_policy_class": "required"}):
+        unexpected = request(
+            authorized_app(
+                RecordingAccessAdministrationFlow(update_one_time_password=ONE_TIME_PASSWORD)
+            ),
+            "PATCH",
+            f"/api/v1/users/{USER_ID}",
+            payload=payload,
+        )
+        assert unexpected.status_code == 503, payload
+        assert ONE_TIME_PASSWORD.value not in unexpected.text
+    renamed = request(
+        authorized_app(RecordingAccessAdministrationFlow()),
+        "PATCH",
+        f"/api/v1/users/{USER_ID}",
+        payload={"display_name": "Renamed"},
+    )
+    assert renamed.status_code == 200
+    assert renamed.json()["one_time_password"] is None

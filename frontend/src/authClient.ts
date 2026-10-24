@@ -1,7 +1,8 @@
 export type AuthenticationPhase =
   | "authenticated"
   | "mfa_required"
-  | "mfa_enrollment_required";
+  | "mfa_enrollment_required"
+  | "password_change_required";
 
 export type MfaMethod = "totp" | "recovery_code";
 
@@ -75,6 +76,7 @@ export type LocalSignIn = (
 
 export interface AuthenticationApi {
   signIn: LocalSignIn;
+  changePassword: (newPassword: string) => Promise<AuthenticationData>;
   completeMfa: (challenge: MfaChallenge) => Promise<AuthenticationData>;
   beginMfaEnrollment: () => Promise<MfaEnrollmentData>;
   confirmMfaEnrollment: (code: string) => Promise<AuthenticationData>;
@@ -92,7 +94,12 @@ const authenticationPhases: ReadonlySet<string> = new Set([
   "authenticated",
   "mfa_required",
   "mfa_enrollment_required",
+  "password_change_required",
 ]);
+
+// Login sub-slice L4: the server's one rule for every new password.
+export const PASSWORD_RULE_MESSAGE =
+  "Choose a password of 15 to 128 characters that is not a common password, not your name and not the one-time password.";
 
 export class AuthenticationError extends Error {
   constructor() {
@@ -105,6 +112,32 @@ export class SessionExpiredError extends AuthenticationError {
   constructor() {
     super();
     this.name = "SessionExpiredError";
+  }
+}
+
+/** A new password the server refused by its rule (422 `PASSWORD_RULE`). */
+export class PasswordRuleError extends Error {
+  constructor() {
+    super(PASSWORD_RULE_MESSAGE);
+    this.name = "PasswordRuleError";
+  }
+}
+
+async function isPasswordRuleRefusal(response: Response): Promise<boolean> {
+  if (response.status !== 422) return false;
+  try {
+    const body: unknown = await response.json();
+    return (
+      typeof body === "object" &&
+      body !== null &&
+      "error" in body &&
+      typeof body.error === "object" &&
+      body.error !== null &&
+      "code" in body.error &&
+      body.error.code === "PASSWORD_RULE"
+    );
+  } catch {
+    return false;
   }
 }
 
@@ -267,6 +300,12 @@ async function requestJson(
     if (response.status === 401 && path !== "/api/v1/auth/login") {
       throw new SessionExpiredError();
     }
+    if (
+      path === "/api/v1/auth/password-change" &&
+      (await isPasswordRuleRefusal(response))
+    ) {
+      throw new PasswordRuleError();
+    }
     throw new AuthenticationError();
   }
   try {
@@ -287,6 +326,27 @@ export async function signIn(
       credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(credentials),
+    },
+    fetchImplementation,
+  );
+  if (!isAuthenticationResponse(payload)) {
+    throw new AuthenticationError();
+  }
+  return payload.data;
+}
+
+/** Login sub-slice L4: replaces a one-time password before the sign-in continues. */
+export async function changePassword(
+  newPassword: string,
+  fetchImplementation: typeof fetch = fetch,
+): Promise<AuthenticationData> {
+  const payload = await requestJson(
+    "/api/v1/auth/password-change",
+    {
+      method: "POST",
+      credentials: "include",
+      headers: mutationHeaders(true),
+      body: JSON.stringify({ new_password: newPassword }),
     },
     fetchImplementation,
   );
@@ -446,6 +506,7 @@ export async function logout(
 
 export const authenticationApi: AuthenticationApi = {
   signIn,
+  changePassword,
   completeMfa,
   beginMfaEnrollment,
   confirmMfaEnrollment,

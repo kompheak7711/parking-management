@@ -35,11 +35,23 @@ export interface AuthorizationHistoryEvent {
   outcome: "completed" | "rejected";
 }
 
+/** A one-time password the server made (login sub-slice L4): shown once, never stored. */
+export interface OneTimePassword {
+  value: string;
+  expires_at: string;
+}
+
+export interface CreatedUserAccount {
+  account: UserAccount;
+  one_time_password: OneTimePassword;
+}
+
 export interface AdministrativeRecoveryResult {
   user_id: string;
   password_changed: boolean;
   mfa_reset: boolean;
   sessions_revoked: number;
+  one_time_password: OneTimePassword;
 }
 
 export interface AccessAdministrationSnapshot {
@@ -63,7 +75,10 @@ export interface NewRoleBundle {
 
 export interface AccessAdministrationApi {
   load: (propertyId: string) => Promise<AccessAdministrationSnapshot>;
-  createUser: (propertyId: string, user: NewUser) => Promise<UserAccount>;
+  createUser: (
+    propertyId: string,
+    user: NewUser,
+  ) => Promise<CreatedUserAccount>;
   disableUser: (user: UserAccount) => Promise<UserAccount>;
   revokeSessions: (userId: string) => Promise<number>;
   createRoleBundle: (
@@ -73,7 +88,7 @@ export interface AccessAdministrationApi {
   assignRoleBundle: (userId: string, roleBundleId: string) => Promise<void>;
   administrativelyRecoverUser: (
     userId: string,
-    request: { new_password: string; reset_mfa: boolean; reason: string },
+    request: { reset_mfa: boolean; reason: string },
   ) => Promise<AdministrativeRecoveryResult>;
 }
 
@@ -232,6 +247,19 @@ function userAccount(value: unknown): UserAccount {
   };
 }
 
+function oneTimePassword(value: unknown): OneTimePassword {
+  if (
+    !isObject(value) ||
+    typeof value.value !== "string" ||
+    value.value.length === 0 ||
+    value.value.length > 256 ||
+    typeof value.expires_at !== "string"
+  ) {
+    throw new AdministrationError();
+  }
+  return { value: value.value, expires_at: value.expires_at };
+}
+
 function capability(value: unknown): Capability {
   if (
     !isObject(value) ||
@@ -321,7 +349,12 @@ export const accessAdministrationApi: AccessAdministrationApi = {
         body: JSON.stringify(user),
       },
     );
-    return userAccount(oneData(payload));
+    const account = userAccount(oneData(payload));
+    if (!isObject(payload)) throw new AdministrationError();
+    return {
+      account,
+      one_time_password: oneTimePassword(payload.one_time_password),
+    };
   },
 
   async disableUser(user) {
@@ -394,6 +427,7 @@ export const accessAdministrationApi: AccessAdministrationApi = {
       password_changed: data.password_changed,
       mfa_reset: data.mfa_reset,
       sessions_revoked: data.sessions_revoked,
+      one_time_password: oneTimePassword(data.one_time_password),
     };
   },
 };

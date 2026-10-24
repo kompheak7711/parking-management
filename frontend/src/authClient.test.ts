@@ -3,8 +3,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   AUTHENTICATION_ERROR_MESSAGE,
   AuthenticationError,
+  PasswordRuleError,
   SessionExpiredError,
   beginMfaEnrollment,
+  changePassword,
   completeMfa,
   inspectSession,
   issueRecoveryCodes,
@@ -241,5 +243,67 @@ describe("local authentication client", () => {
         body: JSON.stringify({ prior_set_id: "set-1" }),
       }),
     );
+  });
+
+  it("TEST-FE-AUTH-011 changes a one-time password and tells a rule refusal from others", async () => {
+    vi.spyOn(document, "cookie", "get").mockReturnValue(
+      "__Host-prm_csrf=csrf-token",
+    );
+    const json = (body: unknown, status = 200) =>
+      new Response(JSON.stringify(body), {
+        status,
+        headers: { "Content-Type": "application/json" },
+      });
+    const fetchImplementation = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        json({
+          data: { phase: "mfa_required", session: null },
+          meta: { request_id: "request" },
+        }),
+      )
+      .mockResolvedValueOnce(
+        json(
+          { error: { code: "PASSWORD_RULE", fields: ["new_password"] } },
+          422,
+        ),
+      )
+      .mockResolvedValueOnce(json({ error: { code: "VALIDATION_ERROR" } }, 422))
+      .mockResolvedValueOnce(new Response(null, { status: 401 }))
+      .mockResolvedValueOnce(
+        json({
+          data: { phase: "password_change_required", session: null },
+          meta: { request_id: "request" },
+        }),
+      );
+
+    await expect(
+      changePassword("a long new password of mine", fetchImplementation),
+    ).resolves.toEqual({ phase: "mfa_required", session: null });
+    expect(fetchImplementation).toHaveBeenCalledWith(
+      "/api/v1/auth/password-change",
+      {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRF-Token": "csrf-token",
+        },
+        body: JSON.stringify({ new_password: "a long new password of mine" }),
+      },
+    );
+    await expect(
+      changePassword("password1234567", fetchImplementation),
+    ).rejects.toBeInstanceOf(PasswordRuleError);
+    const other = changePassword("x", fetchImplementation);
+    await expect(other).rejects.toBeInstanceOf(AuthenticationError);
+    await expect(other).rejects.not.toBeInstanceOf(PasswordRuleError);
+    await expect(
+      changePassword("a long new password of mine", fetchImplementation),
+    ).rejects.toBeInstanceOf(SessionExpiredError);
+    // The phase is read like any sign-in answer; the server never answers this one (503).
+    await expect(
+      changePassword("a long new password of mine", fetchImplementation),
+    ).resolves.toEqual({ phase: "password_change_required", session: null });
   });
 });

@@ -274,7 +274,11 @@ def test_the_flow_creates_lists_and_changes_accounts_through_the_audited_functio
     assert (created.lifecycle_state, created.settings_access) == ("active", False)
     assert created.property_id == database.property_id
     # A request id that is not a UUID becomes a stable UUID5 correlation id.
-    assert audit_actions(database, "create-dara") == ["identity.account.created"]
+    # Login sub-slice L4: the first one-time password is given in the same step (same time).
+    assert sorted(audit_actions(database, "create-dara")) == [
+        "identity.account.created",
+        "identity.account.one_time_password_given",
+    ]
     staff = new_staff(database, flow, "Sokha")
     assert (staff.account_class, staff.mfa_policy_class) == ("staff", "optional")
 
@@ -572,7 +576,7 @@ def test_the_flow_gives_and_removes_settings_access_with_the_sign_in_code_rule(
     )
 
 
-def test_a_non_owner_or_unknown_actor_is_refused_and_recovery_stays_unavailable(
+def test_a_non_owner_or_unknown_actor_is_refused_including_the_owners_reset(
     admin_database: AdminDatabase,
 ) -> None:
     database = admin_database
@@ -602,6 +606,20 @@ def test_a_non_owner_or_unknown_actor_is_refused_and_recovery_stays_unavailable(
             display_name="Denied",
             audit_name="Denied",
             account_class="staff",
+            audit_context=context(actor),
+        )
+        # Login sub-slice L4: the Owner's reset works now, and only for the Owner, with the same
+        # order of checks.
+        refused(
+            "REAUTHENTICATION_REQUIRED"
+            if isinstance(actor, uuid.UUID) and actor != database.manager
+            else "FORBIDDEN",
+            403,
+            flow.administratively_recover_user,
+            user_id=database.manager,
+            property_id=database.property_id,
+            reset_mfa=False,
+            reason="Not allowed",
             audit_context=context(actor),
         )
         # Review round 1 (security): the reads the runtime role could do alone are checked too.
@@ -636,15 +654,6 @@ def test_a_non_owner_or_unknown_actor_is_refused_and_recovery_stays_unavailable(
         actor_id=str(database.owner),
         request_id="cursor",
     )
-    with pytest.raises(AccessAdministrationUnavailable):
-        flow.administratively_recover_user(
-            user_id=database.manager,
-            property_id=database.property_id,
-            new_password="",
-            reset_mfa=False,
-            reason="Not before L4",
-            audit_context=context(database.owner),
-        )
 
 
 ADD_PASSWORD_REAUTHENTICATION = (

@@ -29,6 +29,8 @@ class AuthenticationPhase(StrEnum):
     AUTHENTICATED = "authenticated"
     MFA_REQUIRED = "mfa_required"
     MFA_ENROLLMENT_REQUIRED = "mfa_enrollment_required"
+    # A one-time password of the Owner's reset is changed first (login sub-slice L4).
+    PASSWORD_CHANGE_REQUIRED = "password_change_required"
 
 
 @dataclass(frozen=True, slots=True)
@@ -121,6 +123,14 @@ class AuthenticationFlow(Protocol):
         request_id: str,
     ) -> MfaEnrollmentResult: ...
 
+    def change_password(
+        self,
+        *,
+        preauth_token: str,
+        new_password: str,
+        request_id: str,
+    ) -> AuthenticationResult: ...
+
     def confirm_mfa_enrollment(
         self,
         *,
@@ -187,6 +197,11 @@ class AuthenticationUnavailable(RuntimeError):
     """Fail-closed signal when atomic authentication persistence is unavailable."""
 
 
+class NewPasswordRejected(RuntimeError):
+    """The new password does not meet the shared rule or is the one-time password itself
+    (login sub-slice L4); the answer names the rule, never the reason."""
+
+
 class UnavailableAuthenticationFlow:
     """Expose the stable API while refusing authentication without a runtime adapter."""
 
@@ -222,6 +237,16 @@ class UnavailableAuthenticationFlow:
         preauth_token: str,
         request_id: str,
     ) -> MfaEnrollmentResult:
+        self._unavailable()
+        raise AssertionError
+
+    def change_password(
+        self,
+        *,
+        preauth_token: str,
+        new_password: str,
+        request_id: str,
+    ) -> AuthenticationResult:
         self._unavailable()
         raise AssertionError
 
@@ -291,6 +316,15 @@ class LoginRequest(BaseModel):
     # the NFC step of the sign-in lookup never runs on a long input.
     username: str = Field(min_length=1, max_length=128)
     password: str = Field(min_length=1, max_length=1024)
+
+
+class PasswordChangeRequest(BaseModel):
+    """The new password that replaces a one-time password (login sub-slice L4); the rule is
+    checked by the flow, so a refusal names the rule."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    new_password: str = Field(min_length=1, max_length=1024, repr=False)
 
 
 class MfaChallengeRequest(BaseModel):
@@ -470,6 +504,59 @@ def _set_reauthentication_cookie(response: Response, token: str | None) -> None:
         response.delete_cookie(REAUTHENTICATION_COOKIE_NAME, path="/", secure=True, httponly=True)
 
 
+def _signed_in_or_next_step(
+    result: AuthenticationResult, request: Request, response: Response
+) -> AuthenticationResponse:
+    """The answer of a checked password (a sign-in, or the change of a one-time password): the
+    session cookie, or the pre-authentication cookie of the next step (the password change, the
+    sign-in code or its set-up), and a new CSRF cookie."""
+    if not result.csrf_token:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
+    response.headers["Cache-Control"] = "no-store"
+    if result.phase is AuthenticationPhase.AUTHENTICATED:
+        if result.session_token is None or result.session is None:
+            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
+        response.delete_cookie(PREAUTH_COOKIE_NAME, path="/", secure=True, httponly=True)
+        _set_secret_cookie(
+            response,
+            name=SESSION_COOKIE_NAME,
+            value=result.session_token,
+            httponly=True,
+            samesite="lax",
+        )
+    else:
+        if result.preauth_token is None or result.session is not None:
+            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
+        response.delete_cookie(SESSION_COOKIE_NAME, path="/", secure=True, httponly=True)
+        _set_secret_cookie(
+            response,
+            name=PREAUTH_COOKIE_NAME,
+            value=result.preauth_token,
+            httponly=True,
+            samesite="strict",
+            # The password change step lasts 10 minutes (login sub-slice L4).
+            max_age=600 if result.phase is AuthenticationPhase.PASSWORD_CHANGE_REQUIRED else 300,
+        )
+    _set_secret_cookie(
+        response,
+        name=CSRF_COOKIE_NAME,
+        value=result.csrf_token,
+        httponly=False,
+        samesite="strict",
+    )
+    return AuthenticationResponse(
+        data=AuthenticationData(
+            phase=result.phase,
+            session=(
+                SessionData.model_validate(result.session, from_attributes=True)
+                if result.session is not None
+                else None
+            ),
+        ),
+        meta=ResponseMeta(request_id=request.state.request_id),
+    )
+
+
 def create_auth_router(settings: Settings, flow: AuthenticationFlow) -> APIRouter:
     """Create local authentication routes around an atomic application boundary."""
     router = APIRouter(prefix="/api/v1/auth", tags=["authentication"])
@@ -494,50 +581,34 @@ def create_auth_router(settings: Settings, flow: AuthenticationFlow) -> APIRoute
             )
         except AuthenticationRejected:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED) from None
-        if not result.csrf_token:
+        return _signed_in_or_next_step(result, request, response)
+
+    @router.post(
+        "/password-change",
+        response_model=AuthenticationResponse,
+        summary="Replace a one-time password before the sign-in continues",
+    )
+    def change_password(
+        payload: PasswordChangeRequest,
+        request: Request,
+        response: Response,
+    ) -> AuthenticationResponse:
+        _require_browser_origin(request, settings)
+        _require_csrf(request)
+        preauth_token = request.cookies.get(PREAUTH_COOKIE_NAME)
+        if preauth_token is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+        try:
+            result = flow.change_password(
+                preauth_token=preauth_token,
+                new_password=payload.new_password,
+                request_id=request.state.request_id,
+            )
+        except AuthenticationRejected:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED) from None
+        if result.phase is AuthenticationPhase.PASSWORD_CHANGE_REQUIRED:
             raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
-        response.headers["Cache-Control"] = "no-store"
-        if result.phase is AuthenticationPhase.AUTHENTICATED:
-            if result.session_token is None or result.session is None:
-                raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
-            response.delete_cookie(PREAUTH_COOKIE_NAME, path="/", secure=True, httponly=True)
-            _set_secret_cookie(
-                response,
-                name=SESSION_COOKIE_NAME,
-                value=result.session_token,
-                httponly=True,
-                samesite="lax",
-            )
-        else:
-            if result.preauth_token is None or result.session is not None:
-                raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
-            response.delete_cookie(SESSION_COOKIE_NAME, path="/", secure=True, httponly=True)
-            _set_secret_cookie(
-                response,
-                name=PREAUTH_COOKIE_NAME,
-                value=result.preauth_token,
-                httponly=True,
-                samesite="strict",
-                max_age=300,
-            )
-        _set_secret_cookie(
-            response,
-            name=CSRF_COOKIE_NAME,
-            value=result.csrf_token,
-            httponly=False,
-            samesite="strict",
-        )
-        return AuthenticationResponse(
-            data=AuthenticationData(
-                phase=result.phase,
-                session=(
-                    SessionData.model_validate(result.session, from_attributes=True)
-                    if result.session is not None
-                    else None
-                ),
-            ),
-            meta=ResponseMeta(request_id=request.state.request_id),
-        )
+        return _signed_in_or_next_step(result, request, response)
 
     @router.post(
         "/mfa/challenge",
