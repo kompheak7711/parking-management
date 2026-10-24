@@ -49635,7 +49635,7 @@
       "notes": "V1-058 R2c: Customer date of birth, gender and nationality, all optional (DL-078 answer 3; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/V1_058_PLAN.md)."
     },
     {
-      "test_id": "test_v1_058_r2c_is_the_forward_only_head",
+      "test_id": "test_v1_058_r2c_is_forward_only_and_follows_v1_059_part_b",
       "upstream_ids": [
         "DL-078",
         "DB-CUST-001"
@@ -49699,6 +49699,155 @@
       "test_path": "backend/tests/test_customer_details_migration.py",
       "status": "implemented",
       "notes": "V1-058 R2c: the Customers page search finds a Customer by the whole ID or passport number (any capitals, spaces or dashes), a part of a number finds nothing, and the list never shows the number (DL-078 answer 4 and its reading; whole number only decided by Claude under the owner's 2026-10-23 22:30 rule)."
+    },
+    {
+      "test_id": "test_unit_details_are_saved_kept_and_cleared_and_the_unit_number_never_changes",
+      "upstream_ids": [
+        "DL-078",
+        "BR-UNIT-001"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_unit_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R2a: Unit details (size, bedrooms, bathrooms, View, Kitchen, notes, Room features) are saved, a detail left out is kept and one sent as null is cleared, and a patch with a different Unit number is refused (DL-078 answer 1; owner 2026-10-24 19:24 'Yes, add both checks')."
+    },
+    {
+      "test_id": "test_unit_setup_lists_are_read_with_units_read_and_changed_only_with_settings_access",
+      "upstream_ids": [
+        "DL-075",
+        "SEC-041"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_unit_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R2a: the Unit setup lists are read with units.read or settings.manage, removed items show only to Settings users, and only settings.manage may add, change or remove an item; an item in use gives 409 (DL-075 answer 10)."
+    },
+    {
+      "test_id": "test_every_property_gets_the_default_unit_types_and_balcony",
+      "upstream_ids": [
+        "DL-075",
+        "BR-UNIT-001",
+        "DB-UNIT-001"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_unit_setup_lists_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R2a: every Property has the four default Unit Types and the Balcony Room feature, seeded by a trigger when a Property is created (DL-075 answer 10)."
+    },
+    {
+      "test_id": "test_list_items_get_codes_from_their_names_and_are_audited",
+      "upstream_ids": [
+        "DL-075",
+        "DB-UNIT-001"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_unit_setup_lists_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R2a: a new list item gets a fixed code made from its English name (unique in its list), a stale version changes nothing, and every change is written to the audit history (DL-075 answer 10)."
+    },
+    {
+      "test_id": "test_units_save_keep_and_clear_details_and_room_features",
+      "upstream_ids": [
+        "DL-078",
+        "DB-UNIT-001"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_unit_setup_lists_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R2a: the new create_unit and update_unit save, change and clear the Unit details and Room features (DL-078 answer 1)."
+    },
+    {
+      "test_id": "test_unit_types_and_items_must_come_from_the_property_lists",
+      "upstream_ids": [
+        "DL-075",
+        "DL-078",
+        "BR-UNIT-001",
+        "DB-UNIT-001"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_unit_setup_lists_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R2a: a Unit Type must be a Unit Types item of the Property, and the Floor, View, Kitchen and Room features must be items of their own lists (owner 2026-10-24 19:24 'Yes, add both checks')."
+    },
+    {
+      "test_id": "test_the_unit_number_never_changes_after_creation",
+      "upstream_ids": [
+        "DL-078",
+        "BR-UNIT-001",
+        "DB-UNIT-001"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_unit_setup_lists_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R2a: the Unit number cannot change after creation, through the earlier update_unit or a direct update; the same number still saves (owner 2026-10-24 19:24 'Yes, add both checks')."
+    },
+    {
+      "test_id": "test_items_in_use_cannot_be_removed_and_removed_items_cannot_be_picked",
+      "upstream_ids": [
+        "DL-075",
+        "DB-UNIT-001"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_unit_setup_lists_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R2a: an item used by a Unit cannot be removed, an unused one can, a removed item cannot be picked or changed, and items are never deleted and keep their code (DL-075 answer 10)."
+    },
+    {
+      "test_id": "test_runtime_role_reads_lists_and_writes_only_through_functions",
+      "upstream_ids": [
+        "DL-075",
+        "DB-UNIT-001"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_unit_setup_lists_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R2a: the runtime role reads the lists and Room features but writes only through the definer functions; helper functions stay closed."
+    },
+    {
+      "test_id": "test_the_existing_property_gets_the_defaults_and_its_floors_linked",
+      "upstream_ids": [
+        "DL-075",
+        "DL-078",
+        "DB-UNIT-001"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_unit_setup_lists_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R2a: the migration gives the existing Property the defaults and a Floor item for each Floor its Units use, linked to those Units, without changing the Units' versions or history."
+    },
+    {
+      "test_id": "test_v1_058_r2a_is_forward_only_and_follows_r2c",
+      "upstream_ids": [
+        "DL-078",
+        "TEST-022"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_unit_setup_lists_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R2a: migration 20270209_197 follows 20270208_196 and refuses a downgrade."
+    },
+    {
+      "test_id": "TEST-FE-817",
+      "upstream_ids": [
+        "DL-075",
+        "DL-078"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/unitClient.test.ts",
+      "status": "implemented",
+      "notes": "V1-058 R2a: the Unit client reads the Unit details and the setup lists, an update never sends a Unit number, a refused pick (422) is named, and a list item in the wrong list is refused."
+    },
+    {
+      "test_id": "TEST-FE-818",
+      "upstream_ids": [
+        "DL-075",
+        "DL-078",
+        "BR-UNIT-001"
+      ],
+      "test_level": "UI",
+      "test_path": "frontend/src/UnitManagement.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R2a: the Unit screen picks the Floor and Unit Type from the Settings lists (removed items hidden), shows the Unit Type name, saves the optional details, and the edit form shows the Unit number as fixed and never sends it."
     }
   ]
 }

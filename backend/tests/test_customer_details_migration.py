@@ -174,10 +174,9 @@ def test_the_details_are_kept_in_the_command_replay(migrated_database_url: str) 
     assert detail.customer.nationality == "Thai"
 
 
-def test_v1_058_r2c_is_the_forward_only_head(migrated_database_url: str) -> None:
+def test_v1_058_r2c_is_forward_only_and_follows_v1_059_part_b(migrated_database_url: str) -> None:
     config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
     scripts = ScriptDirectory.from_config(config)
-    assert scripts.get_heads() == ["20270208_196"]
     revision = scripts.get_revision("20270208_196")
     assert revision is not None and revision.down_revision == "20270207_195"
     with pytest.raises(RuntimeError, match="forward-only"):

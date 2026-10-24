@@ -112,6 +112,7 @@ database_test_suites='
   tests/test_audit_migration.py
   tests/test_property_migration.py
   tests/test_unit_migration.py
+  tests/test_unit_setup_lists_migration.py
   tests/test_customer_migration.py
   tests/test_configuration_migration.py
   tests/test_reservation_migration.py
