@@ -61,8 +61,10 @@ import {
 import type { CustomerLedgerApi } from "./customerLedgerClient";
 import { type Language, storeLanguage, storedLanguage } from "./signInText";
 import { AppShell } from "./shell/AppShell";
-import { ComingSoon, HomePage, PropertyNeeded } from "./shell/pages";
-import { useHashPage } from "./shell/useHashPage";
+import { ComingSoon, HomePage, NoAccess, PropertyNeeded } from "./shell/pages";
+import { openPageInAddress, useHashPage } from "./shell/useHashPage";
+import { type ActorAccessApi, actorAccessApi } from "./shell/accessClient";
+import { pageAllowed, type PageId } from "./shell/navigation";
 
 export interface AppProps {
   environment: string;
@@ -82,6 +84,7 @@ export interface AppProps {
   financialServices?: FinancialUiServices;
   enforcementServices?: EnforcementServices;
   ledgerApi?: CustomerLedgerApi;
+  accessApi?: ActorAccessApi;
   now?: () => number;
 }
 
@@ -529,6 +532,7 @@ export function App({
   financialServices,
   enforcementServices,
   ledgerApi,
+  accessApi = actorAccessApi,
   now = Date.now,
 }: AppProps) {
   const client = useMemo<AuthenticationApi>(
@@ -538,6 +542,12 @@ export function App({
   // V1-058 R1: the page named by the address, and the screen language chosen on this device
   // (shared with the sign-in screens).
   const page = useHashPage();
+  // V1-058 R1b: the person's capabilities, so the menu shows only what they may use; null while
+  // unknown or unreadable (the server still checks every action).
+  const [capabilities, setCapabilities] = useState<ReadonlySet<string> | null>(
+    null,
+  );
+  const accessSequence = useRef(0);
   const [language, setLanguage] = useState<Language>(storedLanguage);
   function changeLanguage(next: Language) {
     setLanguage(next);
@@ -642,6 +652,39 @@ export function App({
     };
   }, [session]);
 
+  const sessionActorId = session?.actor_id ?? null;
+  useEffect(() => {
+    if (sessionActorId === null) return;
+    const ticket = ++accessSequence.current;
+    const controller = new AbortController();
+    void accessApi
+      .read(controller.signal)
+      .then((access) => {
+        if (ticket !== accessSequence.current) return;
+        if (access.actor_id !== sessionActorId) return;
+        setCapabilities(
+          new Set(access.capabilities.map((grant) => grant.capability)),
+        );
+        // V1 has one Property: fill the Property boxes once, so nobody types its identifier.
+        const properties = new Set(
+          access.capabilities.flatMap((grant) => grant.property_ids),
+        );
+        if (properties.size === 1) {
+          const only = [...properties][0] ?? "";
+          setConfigurationPropertyId((current) =>
+            current === "" ? only : current,
+          );
+          setPropertyId((current) => (current === "" ? only : current));
+        }
+      })
+      .catch(() => {
+        // Unreadable access shows the whole menu; the server still refuses what is not allowed.
+      });
+    return () => {
+      controller.abort();
+    };
+  }, [accessApi, sessionActorId]);
+
   function invalidatePropertyConfiguration() {
     propertyOperationSequence.current += 1;
     setPropertyConfiguration(null);
@@ -680,6 +723,10 @@ export function App({
   }
 
   function returnToSignIn(entry: SignInEntry) {
+    // V1-058 R1: the next person starts on Home, not on the page the last person left open.
+    openPageInAddress("home", true);
+    accessSequence.current += 1;
+    setCapabilities(null);
     setEnforcementDraftsDirty(false);
     setFinancialDraftsDirty(false);
     setCustomerDraftsDirty(false);
@@ -833,6 +880,8 @@ export function App({
       setNotice(
         "Sign out was cancelled; unsaved Customer values were preserved.",
       );
+      // V1-058 R1: show the page that holds the unsaved form.
+      openPageInAddress("customers");
       return;
     }
     if (
@@ -842,6 +891,8 @@ export function App({
       setNotice(
         "Sign out was cancelled; unsaved financial values were preserved.",
       );
+      // V1-058 R1: show the page that holds the unsaved form.
+      openPageInAddress("payments");
       return;
     }
     if (
@@ -853,6 +904,8 @@ export function App({
       setNotice(
         "Sign out was cancelled; unsaved Lease enforcement values were preserved.",
       );
+      // V1-058 R1: show the page that holds the unsaved form.
+      openPageInAddress("letters");
       return;
     }
     setEnforcementDraftsDirty(false);
@@ -1299,9 +1352,14 @@ export function App({
     );
   }
 
+  // V1-058 R1b: a page opens only when it is the address and the person may use it.
+  const allowed = pageAllowed(page, capabilities);
+  const shown = (candidate: PageId) => candidate === page && allowed;
+
   return (
     <AppShell
       buildId={buildId}
+      capabilities={capabilities}
       displayName={session.display_name ?? null}
       environment={environment}
       language={language}
@@ -1318,13 +1376,15 @@ export function App({
       page={page}
       signOutDisabled={isSubmitting}
     >
-      <div className="shell-page" data-page="home" hidden={page !== "home"}>
+      {!allowed && <NoAccess language={language} />}
+      <div className="shell-page" data-page="home" hidden={!shown("home")}>
         <HomePage language={language} name={session.display_name ?? null} />
       </div>
       <div
         className="shell-page"
         data-page="payments"
-        hidden={page !== "payments"}
+        hidden={!shown("payments")}
+        lang="en"
       >
         {!logoutPending && (
           <FinancialManagement
@@ -1338,7 +1398,8 @@ export function App({
       <div
         className="shell-page"
         data-page="invoices"
-        hidden={page !== "invoices"}
+        hidden={!shown("invoices")}
+        lang="en"
       >
         {propertyConfiguration === null && (
           <PropertyNeeded language={language} />
@@ -1354,7 +1415,8 @@ export function App({
       <div
         className="shell-page"
         data-page="utilities"
-        hidden={page !== "utilities"}
+        hidden={!shown("utilities")}
+        lang="en"
       >
         {propertyConfiguration === null && (
           <PropertyNeeded language={language} />
@@ -1370,17 +1432,23 @@ export function App({
       <div
         className="shell-page"
         data-page="approvals"
-        hidden={page !== "approvals"}
+        hidden={!shown("approvals")}
       >
         <ComingSoon language={language} step="R7" />
       </div>
-      <div className="shell-page" data-page="units" hidden={page !== "units"}>
+      <div
+        className="shell-page"
+        data-page="units"
+        hidden={!shown("units")}
+        lang="en"
+      >
         <UnitManagement api={unitApi} />
       </div>
       <div
         className="shell-page"
         data-page="customers"
-        hidden={page !== "customers"}
+        hidden={!shown("customers")}
+        lang="en"
       >
         {!logoutPending && (
           <CustomerAccountLedger
@@ -1477,17 +1545,24 @@ export function App({
       <div
         className="shell-page"
         data-page="reservations"
-        hidden={page !== "reservations"}
+        hidden={!shown("reservations")}
+        lang="en"
       >
         <ReservationManagement api={reservationApi} />
       </div>
-      <div className="shell-page" data-page="leases" hidden={page !== "leases"}>
+      <div
+        className="shell-page"
+        data-page="leases"
+        hidden={!shown("leases")}
+        lang="en"
+      >
         <LeaseManagement api={leaseApi} />
       </div>
       <div
         className="shell-page"
         data-page="letters"
-        hidden={page !== "letters"}
+        hidden={!shown("letters")}
+        lang="en"
       >
         {!logoutPending && (
           <LeaseEnforcementManagement
@@ -1501,28 +1576,30 @@ export function App({
       <div
         className="shell-page"
         data-page="moveout"
-        hidden={page !== "moveout"}
+        hidden={!shown("moveout")}
+        lang="en"
       >
         <DepositManagement api={depositApi} />
       </div>
       <div
         className="shell-page"
         data-page="reports"
-        hidden={page !== "reports"}
+        hidden={!shown("reports")}
       >
         <ComingSoon language={language} step="V1-057" />
       </div>
       <div
         className="shell-page"
         data-page="history"
-        hidden={page !== "history"}
+        hidden={!shown("history")}
       >
         <ComingSoon language={language} step="R7" />
       </div>
       <div
         className="shell-page"
-        data-page="settings"
-        hidden={page !== "settings"}
+        data-page="account"
+        hidden={!shown("account")}
+        lang="en"
       >
         <section className="workspace-panel">
           <div className="workspace-heading">
@@ -1699,6 +1776,15 @@ export function App({
               </div>
             )}
           </section>
+        </section>
+      </div>
+      <div
+        className="shell-page"
+        data-page="settings"
+        hidden={!shown("settings")}
+        lang="en"
+      >
+        <section className="workspace-panel">
           <section
             aria-labelledby="business-configuration-heading"
             className="information-card"

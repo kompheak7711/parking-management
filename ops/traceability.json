@@ -49465,7 +49465,7 @@
       "test_level": "UI component",
       "test_path": "frontend/src/shell/AppShell.test.tsx",
       "status": "implemented",
-      "notes": "On narrow screens the menu slides in from the menu button and closes with Escape (V1-058 R1 app shell, DESIGN.md 0.29; non-money design points decided by Claude under the owner's 2026-10-23 22:30 rule, DL-074)."
+      "notes": "On narrow screens the menu slides in as a dialog: the focus starts on its first link, the page behind is inert, and its close button or Escape closes it and returns the focus to the menu button (review round 1 of V1-058 R1; V1-058 R1 app shell, DESIGN.md 0.29; non-money design points decided by Claude under the owner's 2026-10-23 22:30 rule, DL-074)."
     },
     {
       "test_id": "TEST-FE-808",
@@ -49487,6 +49487,84 @@
       "test_path": "frontend/src/shell/AppShell.test.tsx",
       "status": "implemented",
       "notes": "Letters and Move-out are tabs of Leases (the Leases menu item stays marked); Bookings shows no tab bar while it has one tab (V1-058 R1 app shell, owner menu approval of 24/10/2026)."
+    },
+    {
+      "test_id": "test_actor_access_lists_the_actors_own_capabilities_and_properties_for_the_menu",
+      "upstream_ids": [
+        "UI-008",
+        "UI-004",
+        "DL-074"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_auth_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R1b: GET /api/v1/identity/me/access lists the actor's own capabilities with their Properties, merged and sorted, not cached, so the menu shows only what the person may use (owner menu approval of 24/10/2026); display only, every route still checks."
+    },
+    {
+      "test_id": "test_actor_access_needs_a_session_and_the_read_self_capability",
+      "upstream_ids": [
+        "UI-008",
+        "SEC-002"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_auth_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R1b: the access read answers 401 without a session and 403 without identity.read_self for the actor's own scope, and then shows no capability."
+    },
+    {
+      "test_id": "TEST-FE-810",
+      "upstream_ids": [
+        "UI-008",
+        "UI-004"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shell/AppShell.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R1b: the menu and the page tabs show only what the person's capabilities allow; an empty group is left out and a menu item opens its first allowed tab (owner menu approval of 24/10/2026; page-to-capability map decided by Claude under the owner's 2026-10-23 22:30 rule)."
+    },
+    {
+      "test_id": "TEST-FE-811",
+      "upstream_ids": [
+        "UI-009"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shell/AppShell.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R1b: the signed-in name at the foot of the menu opens My account (the person's session, sign-in check and recovery codes), so Settings can show only to allowed users."
+    },
+    {
+      "test_id": "TEST-FE-812",
+      "upstream_ids": [
+        "UI-007",
+        "UI-011"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shell/AppShell.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R1 review round 1: a page change moves the focus to the new page and starts it at the top; the first page does not take the focus."
+    },
+    {
+      "test_id": "TEST-FE-813",
+      "upstream_ids": [
+        "UI-008",
+        "UI-003"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/shell/accessClient.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R1b: the access read sends the session cookie and accepts only the documented shape; a refusal, a network failure or another shape counts as unreadable (the menu then shows every item and the server still refuses what is not allowed)."
+    },
+    {
+      "test_id": "TEST-FE-814",
+      "upstream_ids": [
+        "UI-008",
+        "UI-004",
+        "UI-011"
+      ],
+      "test_level": "UI",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R1b: after sign-in the menu shows only the allowed pages, a closed page is mounted but not visible, a page the person may not use says so and shows nothing of it, and the one Property fills the Property boxes."
     }
   ]
 }

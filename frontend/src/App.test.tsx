@@ -845,7 +845,7 @@ describe("local sign-in", () => {
   });
 
   it("TEST-FE-013 presents recovery codes once and clears accessible material on acknowledgement", async () => {
-    openPage("settings");
+    openPage("account");
     const api = mockAuthenticationApi();
     render(
       <App
@@ -883,7 +883,7 @@ describe("local sign-in", () => {
   });
 
   it("TEST-FE-707 shows the live recovery-code set and replaces it by its id, and a refused read keeps the person signed in", async () => {
-    openPage("settings");
+    openPage("account");
     let answerLiveSet!: (value: RecoveryCodeSetSummary) => void;
     const api = mockAuthenticationApi({
       liveRecoveryCodeSet: vi
@@ -979,7 +979,7 @@ describe("local sign-in", () => {
     expect(
       await screen.findByText(/Your recovery codes could not be checked/),
     ).toBeInTheDocument();
-    expect(screen.getByRole("main")).toHaveAccessibleName("Settings");
+    expect(screen.getByRole("main")).toHaveAccessibleName("My account");
     expect(refused.logout).not.toHaveBeenCalled();
   });
 
@@ -1291,7 +1291,7 @@ describe("local sign-in", () => {
   );
 
   it("TEST-FE-015 restores a valid server session after a browser refresh", async () => {
-    openPage("settings");
+    openPage("account");
     const restoredSession = {
       ...session,
       idle_expires_at: "2099-08-22T10:30:00Z",
@@ -1620,6 +1620,8 @@ describe("local sign-in", () => {
     expect(
       await screen.findByText(/A Customer command outcome is unknown/),
     ).toBeInTheDocument();
+    // A new sign-in starts on Home.
+    openPage("customers");
     fireEvent.click(
       screen.getByRole("button", {
         name: "Check the prior Customer command status",
@@ -2122,6 +2124,8 @@ describe("local sign-in", () => {
       resultFingerprint: "b".repeat(64),
       requestFingerprint: "a".repeat(64),
     });
+    // Review round 1 of V1-058 R1: open the Customers page, so the check is not met by a hidden page.
+    openPage("customers");
     const otherActor = { ...session, actor_id: "actor-2" };
     render(
       <App
@@ -2151,9 +2155,66 @@ describe("local sign-in", () => {
     expect(
       screen.queryByText(/A prior Customer command may have completed/),
     ).not.toBeInTheDocument();
+    expect(screen.getByRole("main")).toHaveAccessibleName("Customers");
     expect(
       screen.queryByRole("button", { name: "Create Customer" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("TEST-FE-814 shows only the open page and the menu items the person may use, and fills the one Property", async () => {
+    const read = vi.fn().mockResolvedValue({
+      actor_id: session.actor_id,
+      capabilities: [
+        { capability: "identity.read_self", property_ids: [] },
+        { capability: "units.read", property_ids: ["property-1"] },
+        { capability: "customers.read", property_ids: ["property-1"] },
+      ],
+    });
+    render(
+      <App
+        accessApi={{ read }}
+        api={mockAuthenticationApi()}
+        buildId="test-build"
+        environment="development"
+        now={() => new Date("2026-08-22T10:10:00Z").getTime()}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText("Username"), {
+      target: { value: "staff" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "password" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    await waitFor(() => {
+      expect(read).toHaveBeenCalledTimes(1);
+    });
+    const menu = screen.getByRole("navigation", { name: "Menu" });
+    await waitFor(() => {
+      expect(
+        within(menu)
+          .getAllByRole("link")
+          .map((link) => link.textContent),
+      ).toEqual(["Home", "Customers", "Units"]);
+    });
+    // On Home, the Units page is mounted but neither shown nor in the accessibility tree.
+    const unitsPage = document.querySelector('[data-page="units"]');
+    expect(unitsPage).not.toBeNull();
+    expect(unitsPage).not.toBeVisible();
+    openPage("units");
+    expect(unitsPage).toBeVisible();
+    expect(screen.getByRole("main")).toHaveAccessibleName("Units");
+    // A page the person may not use says so and shows nothing of it.
+    openPage("settings");
+    expect(screen.getByText(/Your account cannot use this page/)).toBeVisible();
+    expect(document.querySelector('[data-page="settings"]')).not.toBeVisible();
+    // The Property boxes of Settings (hidden here) are filled with the one Property.
+    expect(screen.getByLabelText("Property identifier")).toHaveValue(
+      "property-1",
+    );
+    expect(
+      screen.getByLabelText("Configuration Property identifier"),
+    ).toHaveValue("property-1");
   });
 
   it("TEST-FE-088 synchronizes an actor's unresolved command gate across tabs", async () => {
@@ -3241,6 +3302,8 @@ describe("Customer ledger App integration", () => {
     releaseLogout();
     await screen.findByLabelText("Username");
     await signIn();
+    // A new sign-in starts on Home.
+    openPage("customers");
     expect(read).toHaveBeenCalledTimes(1);
     expect(
       screen.getByRole("button", { name: "Open Customer account ledger" }),

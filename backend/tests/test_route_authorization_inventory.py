@@ -29,6 +29,7 @@ OPEN_OPERATIONS = frozenset(
         ("get", "/api/v1/health/live"),
         ("get", "/api/v1/health/ready"),
         ("get", "/api/v1/identity/me"),
+        ("get", "/api/v1/identity/me/access"),
         ("post", "/api/v1/auth/login"),
         ("post", "/api/v1/auth/password-change"),
         ("post", "/api/v1/auth/mfa/challenge"),

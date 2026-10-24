@@ -17,7 +17,8 @@ export type PageId =
   | "moveout"
   | "reports"
   | "history"
-  | "settings";
+  | "settings"
+  | "account";
 
 export type IconName =
   | "home"
@@ -116,7 +117,51 @@ const PAGE_NAMES: Record<PageId, readonly [string, string]> = {
   reports: ["Reports", "របាយការណ៍"],
   history: ["History", "ប្រវត្តិ"],
   settings: ["Settings", "ការកំណត់"],
+  // new
+  account: ["My account", "គណនីរបស់ខ្ញុំ"],
 };
+
+// V1-058 R1b (UI-008, owner 24/10/2026): a menu item shows only to a person who holds one of
+// these capabilities; null means everyone who is signed in. Display only: every route still
+// checks the capability on the server. Decided by Claude under the owner's 2026-10-23 22:30
+// rule, except Waiting for approval and Settings, which follow the owner's words.
+const PAGE_NEEDS: Record<PageId, readonly string[] | null> = {
+  home: null,
+  payments: ["payments.read", "receipts.read", "credits.read", "refunds.read"],
+  invoices: ["invoices.read"],
+  utilities: ["utility.read"],
+  approvals: ["financial.approve"],
+  units: ["units.read"],
+  customers: ["customers.read"],
+  reservations: ["reservations.read"],
+  leases: ["leases.read"],
+  letters: ["rent_nonpayment.read", "leases.warn"],
+  moveout: ["deposits.read", "final_settlements.prepare", "leases.move_out"],
+  reports: ["payments.read", "invoices.read"],
+  history: ["audit.view"],
+  settings: ["settings.manage", "identity.manage_access"],
+  account: null,
+};
+
+/** May the person see this page? Unknown access (null) shows everything. */
+export function pageAllowed(
+  page: PageId,
+  capabilities: ReadonlySet<string> | null,
+): boolean {
+  const needs = PAGE_NEEDS[page];
+  if (needs === null || capabilities === null) return true;
+  return needs.some((capability) => capabilities.has(capability));
+}
+
+/** The pages of a menu item the person may see, in tab order. */
+export function allowedPagesOf(
+  item: MenuItem,
+  capabilities: ReadonlySet<string> | null,
+): PageId[] {
+  return (item.tabs ?? [item.page]).filter((page) =>
+    pageAllowed(page, capabilities),
+  );
+}
 
 export const PAGE_IDS = Object.keys(PAGE_NAMES) as PageId[];
 
@@ -130,14 +175,14 @@ export function menuItemName(item: MenuItem, language: Language): string {
     : item.label[language === "en" ? 0 : 1];
 }
 
-/** The menu item that holds a page, directly or as one of its tabs. */
-export function menuItemFor(page: PageId): MenuItem {
+/** The menu item that holds a page, directly or as one of its tabs; null for My account. */
+export function menuItemFor(page: PageId): MenuItem | null {
   for (const group of MENU) {
     for (const item of group.items) {
       if (item.page === page || item.tabs?.includes(page) === true) return item;
     }
   }
-  throw new Error(`Page ${page} is not in the menu`);
+  return null;
 }
 
 export function groupLabel(group: MenuGroup, language: Language): string {

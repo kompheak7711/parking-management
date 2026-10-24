@@ -380,7 +380,7 @@ html[lang="km"] .shell-group-label {
 
 .shell-lang button {
   min-width: 52px;
-  height: 42px;
+  min-height: 44px;
   padding: 0 10px;
   border: 0;
   background: var(--surface);
@@ -634,4 +634,32 @@ html[lang="km"] .shell-head h1 {
 .shell-view .shell-tab[aria-current="page"] {
   border-bottom-color: var(--primary);
   color: var(--heading);
+}
+
+/* The name at the foot of the menu opens My account. */
+a.shell-me-text {
+  display: grid;
+  min-height: 44px;
+  align-content: center;
+  border-radius: 7px;
+  color: var(--nav-text);
+  text-decoration: none;
+}
+
+a.shell-me-text small {
+  color: var(--nav-muted);
+  font-size: 0.78rem;
+}
+
+a.shell-me-text:hover b,
+a.shell-me-text[aria-current="page"] b {
+  text-decoration: underline;
+}
+
+/* The close button inside the open slide-in menu (narrow screens only). */
+.shell-nav-close {
+  align-self: flex-end;
+  border-color: rgb(242 238 229 / 40%);
+  background: transparent;
+  color: var(--nav-text);
 }

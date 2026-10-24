@@ -2,13 +2,14 @@
 // search"): the green menu on the left, the top bar with Phnom Penh time and the language
 // switch, and the work area. Pages are drawn by App; the shell only frames them.
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import logoUrl from "../assets/brand/CHETANA_Logo_Horizontal_Reverse.svg";
 import type { Language } from "../signInText";
 import { Icon } from "./icons";
 import {
   MENU,
+  allowedPagesOf,
   groupLabel,
   hashForPage,
   menuItemFor,
@@ -92,6 +93,8 @@ export interface AppShellProps {
   onSignOut: () => void;
   notice: ReactNode;
   children: ReactNode;
+  /** The person's capabilities; null while unknown (then every item shows). */
+  capabilities: ReadonlySet<string> | null;
 }
 
 export function AppShell({
@@ -106,6 +109,7 @@ export function AppShell({
   onSignOut,
   notice,
   children,
+  capabilities,
 }: AppShellProps) {
   const t = (key: TextKey) => TEXT[key][language === "en" ? 0 : 1];
   const [menuOpen, setMenuOpen] = useState(false);
@@ -127,15 +131,37 @@ export function AppShell({
     };
   }, [language]);
 
-  // A page change closes the slide-in menu (narrow screens).
+  const menuButton = useRef<HTMLButtonElement>(null);
+  const firstMenuLink = useRef<HTMLAnchorElement>(null);
+  const view = useRef<HTMLElement>(null);
+  const shownPage = useRef(page);
+
+  // A page change closes the slide-in menu, starts the new page at the top and moves the focus
+  // to it, so keyboard and screen-reader users are not left on a link that was hidden (review
+  // round 1).
   useEffect(() => {
+    if (shownPage.current === page) return;
+    shownPage.current = page;
     setMenuOpen(false);
+    document.documentElement.scrollTop = 0;
+    view.current?.focus();
   }, [page]);
 
+  function closeMenu() {
+    setMenuOpen(false);
+    menuButton.current?.focus();
+  }
+
+  // The open slide-in menu acts as a dialog: the focus starts on its first link, the page
+  // behind is inert, and Escape closes it.
   useEffect(() => {
     if (!menuOpen) return;
+    firstMenuLink.current?.focus();
     function closeOnEscape(event: KeyboardEvent) {
-      if (event.key === "Escape") setMenuOpen(false);
+      if (event.key === "Escape") {
+        setMenuOpen(false);
+        menuButton.current?.focus();
+      }
     }
     window.addEventListener("keydown", closeOnEscape);
     return () => {
@@ -145,7 +171,19 @@ export function AppShell({
 
   const clock = phnomPenhClock(instant, language);
   const openItem = menuItemFor(page);
-  const tabs = openItem.tabs ?? [];
+  const tabs = openItem === null ? [] : allowedPagesOf(openItem, capabilities);
+  const title =
+    openItem === null
+      ? pageName(page, language)
+      : menuItemName(openItem, language);
+  const menu = MENU.map((group) => ({
+    group,
+    items: group.items.flatMap((item) => {
+      const pages = allowedPagesOf(item, capabilities);
+      const first = pages[0];
+      return first === undefined ? [] : [{ item, first }];
+    }),
+  })).filter((entry) => entry.items.length > 0);
   const name =
     displayName !== null && displayName.trim().length > 0
       ? displayName.trim()
@@ -153,11 +191,17 @@ export function AppShell({
 
   return (
     <div className="shell">
-      <aside
-        aria-label={t("menu")}
-        className={menuOpen ? "shell-nav open" : "shell-nav"}
-        id="shell-nav"
-      >
+      <div className={menuOpen ? "shell-nav open" : "shell-nav"} id="shell-nav">
+        {menuOpen && (
+          <button
+            aria-label={t("close_menu")}
+            className="shell-iconbtn shell-nav-close"
+            onClick={closeMenu}
+            type="button"
+          >
+            <Icon name="x" />
+          </button>
+        )}
         <div className="shell-brand">
           <div className="shell-appname">
             <img alt="CHETANA" src={logoUrl} />
@@ -174,7 +218,7 @@ export function AppShell({
           </div>
         </div>
         <nav aria-label={t("menu")}>
-          {MENU.map((group, index) => (
+          {menu.map(({ group, items }, index) => (
             <div className="shell-group" key={index}>
               {group.label !== null && (
                 <span className="shell-group-label">
@@ -182,12 +226,17 @@ export function AppShell({
                 </span>
               )}
               <ul>
-                {group.items.map((item) => (
+                {items.map(({ item, first }) => (
                   <li key={item.page}>
                     <a
+                      ref={
+                        item === menu[0]?.items[0]?.item
+                          ? firstMenuLink
+                          : undefined
+                      }
                       aria-current={item === openItem ? "page" : undefined}
                       className="shell-item"
-                      href={hashForPage(item.page)}
+                      href={hashForPage(first)}
                     >
                       <Icon name={item.icon} />
                       <span>{menuItemName(item, language)}</span>
@@ -202,13 +251,18 @@ export function AppShell({
           <span aria-hidden="true" className="shell-avatar">
             {initials(name ?? "?")}
           </span>
-          <div className="shell-me-text">
+          <a
+            aria-current={page === "account" ? "page" : undefined}
+            className="shell-me-text"
+            href={hashForPage("account")}
+          >
             {name !== null ? (
               <b className="signed-in-name">{name}</b>
             ) : (
               <b>{t("signed_in")}</b>
             )}
-          </div>
+            <small>{pageName("account", language)}</small>
+          </a>
           <button
             className="shell-signout"
             disabled={signOutDisabled}
@@ -222,29 +276,24 @@ export function AppShell({
         <p className="shell-build" lang="en">
           Build {buildId}
         </p>
-      </aside>
+      </div>
       {menuOpen && (
-        <div
-          aria-hidden="true"
-          className="shell-scrim"
-          onClick={() => {
-            setMenuOpen(false);
-          }}
-        />
+        <div aria-hidden="true" className="shell-scrim" onClick={closeMenu} />
       )}
-      <div className="shell-main">
+      <div className="shell-main" inert={menuOpen}>
         <header className="shell-topbar">
           <button
             aria-controls="shell-nav"
             aria-expanded={menuOpen}
-            aria-label={menuOpen ? t("close_menu") : t("menu")}
+            aria-label={t("menu")}
             className="shell-iconbtn shell-menu-button"
             onClick={() => {
-              setMenuOpen((open) => !open);
+              setMenuOpen(true);
             }}
+            ref={menuButton}
             type="button"
           >
-            <Icon name={menuOpen ? "x" : "menu"} />
+            <Icon name="menu" />
           </button>
           <p className="shell-clock">
             <b>
@@ -280,16 +329,14 @@ export function AppShell({
           aria-labelledby="page-title"
           className="shell-view"
           id="shell-view"
+          ref={view}
           tabIndex={-1}
         >
           <div className="shell-head">
-            <h1 id="page-title">{menuItemName(openItem, language)}</h1>
+            <h1 id="page-title">{title}</h1>
           </div>
           {tabs.length > 1 && (
-            <nav
-              aria-label={menuItemName(openItem, language)}
-              className="shell-tabs"
-            >
+            <nav aria-label={title} className="shell-tabs">
               {tabs.map((tab) => (
                 <a
                   aria-current={tab === page ? "page" : undefined}

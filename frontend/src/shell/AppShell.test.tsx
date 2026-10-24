@@ -38,6 +38,7 @@ function renderShell(
       onSignOut={onSignOut}
       page={page}
       signOutDisabled={false}
+      capabilities={null}
       {...overrides}
     >
       <p>Page body</p>
@@ -140,18 +141,76 @@ describe("V1-058 R1 app shell", () => {
     expect(screen.getByRole("button", { name: "Sign out" })).toBeDisabled();
   });
 
-  it("TEST-FE-807 opens and closes the slide-in menu from the menu button and with Escape", () => {
+  it("TEST-FE-807 opens the slide-in menu as a dialog and closes it with its button or Escape", () => {
     renderShell();
     const button = screen.getByRole("button", { name: "Menu" });
     expect(button).toHaveAttribute("aria-expanded", "false");
     fireEvent.click(button);
-    const close = screen.getByRole("button", { name: "Close the menu" });
-    expect(close).toHaveAttribute("aria-expanded", "true");
+    expect(button).toHaveAttribute("aria-expanded", "true");
+    // The focus starts on the first menu link and the page behind is inert.
+    expect(screen.getByRole("link", { name: "Home" })).toHaveFocus();
+    expect(document.querySelector(".shell-main")).toHaveAttribute("inert");
+    fireEvent.click(screen.getByRole("button", { name: "Close the menu" }));
+    expect(button).toHaveAttribute("aria-expanded", "false");
+    expect(button).toHaveFocus();
+    fireEvent.click(button);
     fireEvent.keyDown(window, { key: "Escape" });
-    expect(screen.getByRole("button", { name: "Menu" })).toHaveAttribute(
-      "aria-expanded",
-      "false",
-    );
+    expect(button).toHaveAttribute("aria-expanded", "false");
+    expect(button).toHaveFocus();
+    expect(document.querySelector(".shell-main")).not.toHaveAttribute("inert");
+  });
+
+  it("TEST-FE-810 shows only the menu items and tabs the person may use", () => {
+    renderShell("moveout", "en", {
+      capabilities: new Set(["units.read", "deposits.read", "audit.view"]),
+    });
+    const menu = screen.getByRole("navigation", { name: "Menu" });
+    expect(
+      within(menu)
+        .getAllByRole("link")
+        .map((link) => [link.textContent, link.getAttribute("href")]),
+    ).toEqual([
+      ["Home", "#/home"],
+      ["Leases", "#/moveout"],
+      ["Units", "#/units"],
+      ["History", "#/history"],
+    ]);
+    expect(within(menu).queryByText("Daily work")).not.toBeInTheDocument();
+    // One allowed tab: no tab bar.
+    expect(
+      screen.queryByRole("navigation", { name: "Leases" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("TEST-FE-811 opens My account from the name at the foot of the menu", () => {
+    renderShell("account");
+    const link = screen.getByRole("link", { name: /Sokha Chan/ });
+    expect(link).toHaveAttribute("href", "#/account");
+    expect(link).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("main")).toHaveAccessibleName("My account");
+  });
+
+  it("TEST-FE-812 moves the focus to the new page and starts it at the top", () => {
+    const props = {
+      buildId: "b",
+      capabilities: null,
+      displayName: null,
+      environment: "production",
+      language: "en" as const,
+      notice: null,
+      now: () => NOW,
+      onLanguageChange: vi.fn(),
+      onSignOut: vi.fn(),
+      signOutDisabled: false,
+      children: <p>Body</p>,
+    };
+    const { rerender } = render(<AppShell {...props} page="home" />);
+    // The first page does not take the focus.
+    expect(screen.getByRole("main")).not.toHaveFocus();
+    document.documentElement.scrollTop = 500;
+    rerender(<AppShell {...props} page="units" />);
+    expect(screen.getByRole("main")).toHaveFocus();
+    expect(document.documentElement.scrollTop).toBe(0);
   });
 
   it("TEST-FE-809 shows Letters and Move-out as tabs of Leases and keeps Leases marked in the menu", () => {
