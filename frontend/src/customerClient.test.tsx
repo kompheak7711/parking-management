@@ -59,6 +59,7 @@ describe("Customer API client", () => {
               {
                 customer_id: "customer-1",
                 legal_name: "Dara Sok",
+                phone_number: "012 345 678",
                 active: true,
                 relationship_indicators: [],
               },
@@ -76,6 +77,7 @@ describe("Customer API client", () => {
         {
           customer_id: "customer-1",
           legal_name: "Dara Sok",
+          phone_number: "012 345 678",
           active: true,
           relationship_indicators: [],
         },

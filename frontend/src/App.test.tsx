@@ -2192,9 +2192,16 @@ describe("local sign-in", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
 
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      "coordination is unavailable",
-    );
+    // V1-058 R2: the Customers page has its own status line, so find the notice by its words.
+    await waitFor(() => {
+      expect(
+        screen
+          .getAllByRole("status")
+          .some((element) =>
+            element.textContent.includes("coordination is unavailable"),
+          ),
+      ).toBe(true);
+    });
     expect(
       screen.queryByText(/A prior Customer command may have completed/),
     ).not.toBeInTheDocument();
@@ -2307,9 +2314,16 @@ describe("local sign-in", () => {
         screen.queryByText(/A prior Customer command may have completed/),
       ).not.toBeInTheDocument();
     });
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      "resolved in another tab",
-    );
+    // V1-058 R2: the Customers page has its own status line, so find the notice by its words.
+    await waitFor(() => {
+      expect(
+        screen
+          .getAllByRole("status")
+          .some((element) =>
+            element.textContent.includes("resolved in another tab"),
+          ),
+      ).toBe(true);
+    });
     fireEvent.change(screen.getByLabelText("Customer Property identifier"), {
       target: { value: "property-1" },
     });
@@ -2370,9 +2384,16 @@ describe("local sign-in", () => {
         newValue: null,
       }),
     );
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      "resolved in another tab",
-    );
+    // V1-058 R2: the Customers page has its own status line, so find the notice by its words.
+    await waitFor(() => {
+      expect(
+        screen
+          .getAllByRole("status")
+          .some((element) =>
+            element.textContent.includes("resolved in another tab"),
+          ),
+      ).toBe(true);
+    });
     releaseRead();
     await act(async () => {
       await Promise.resolve();

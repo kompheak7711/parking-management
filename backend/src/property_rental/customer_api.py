@@ -1871,9 +1871,12 @@ def _required_idempotency_key(value: str | None) -> UUID:
 
 
 def _minimal(record: CustomerRecord) -> dict[str, object]:
+    # V1-058 R2: the Customers list shows the phone (DESIGN.md "Customers (round 2)", recorded
+    # by DL-074); email, address and the ID number still need the Customer page (SEC-041).
     return {
         "customer_id": str(record.customer.customer_id),
         "legal_name": record.customer.legal_name,
+        "phone_number": record.customer.phone_number,
         "active": record.active,
         "relationship_indicators": [],
     }

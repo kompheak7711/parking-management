@@ -576,12 +576,14 @@ def test_customer_list_is_authenticated_minimized_and_capability_sensitive() -> 
         {
             "customer_id": str(record.customer.customer_id),
             "legal_name": "Dara Sok",
+            "phone_number": record.customer.phone_number,
             "active": True,
             "relationship_indicators": [],
         }
     ]
     assert "email_address" not in response.text
-    assert "phone_number" not in response.text
+    assert "contact_address" not in response.text
+    assert "id_document_number" not in response.text
     assert (
         client.get(f"/api/v1/properties/{property_id}/customers?customer_type=TENANT").status_code
         == 400

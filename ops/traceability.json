@@ -11930,12 +11930,13 @@
         "API-030",
         "UI-028",
         "SEC-041",
-        "TEST-023"
+        "TEST-023",
+        "DL-074"
       ],
       "test_level": "API",
       "test_path": "backend/tests/test_customer_api.py",
       "status": "implemented",
-      "notes": "V1-026 requires authentication, bounded results, server-derived capability, and a minimized Customer list without contact details."
+      "notes": "V1-026 requires authentication, bounded results, server-derived capability, and a minimized Customer list. V1-058 R2 (DL-074, owner-approved design: Phone column): the list carries the phone number; email, address and the ID or passport number stay off it."
     },
     {
       "test_id": "test_customer_create_requires_scope_and_an_explicit_reuse_decision",
@@ -50084,6 +50085,68 @@
       "test_path": "backend/tests/test_unit_api.py",
       "status": "implemented",
       "notes": "V1-058 R2: PATCH /units/{id} takes a Change status reason of 1 to 500 characters (trimmed); a blank or too long reason is refused with 422."
+    },
+    {
+      "test_id": "TEST-FE-826",
+      "upstream_ids": [
+        "DL-074",
+        "UI-028",
+        "BR-CUST-001"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/customers/CustomersPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R2: the Customers list shows Legal name, Phone, Unit and a Relationship chip worked out from the Leases and active Reservations (Tenant, Signer or occupant, Reservation, Former, No Lease yet), four count cards and Deactivated under the name; an occupant who moved out of a running Lease shows as Former."
+    },
+    {
+      "test_id": "TEST-FE-827",
+      "upstream_ids": [
+        "DL-074",
+        "DL-078",
+        "UI-028",
+        "SEC-041"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/customers/CustomersPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R2: count cards filter the list; typing filters by name, phone digits or Unit; Search asks the server, which finds a whole ID or passport number without the list showing it."
+    },
+    {
+      "test_id": "TEST-FE-828",
+      "upstream_ids": [
+        "DL-074",
+        "UI-028"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/customers/CustomersPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R2: without Lease or Reservation access the list shows a note and dashes and hides the count cards; a Customer opens at its own address (#/customers/<id>)."
+    },
+    {
+      "test_id": "TEST-FE-829",
+      "upstream_ids": [
+        "DL-074",
+        "DL-078",
+        "UI-029",
+        "UI-030",
+        "UI-104"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/customers/CustomersPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R2: the Customer page shows Contact and identity, Leases and Reservations with role, period and chip, Money (Unpaid, Customer Credit, Security Deposit, Pet Deposit only when held) from the read-only Account Ledger position, History, and opens the Account Ledger."
+    },
+    {
+      "test_id": "TEST-FE-830",
+      "upstream_ids": [
+        "DL-074",
+        "UI-029",
+        "UI-030"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/customers/CustomersPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R2: when the ledger cannot be read the Money card says so and the ledger button is hidden; a Customer that is not found shows a notice and Back returns to the list."
     }
   ]
 }

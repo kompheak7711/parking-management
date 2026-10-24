@@ -1,6 +1,8 @@
 export interface CustomerListItem {
   customer_id: string;
   legal_name: string;
+  // V1-058 R2: the Customers list shows the phone (DESIGN.md "Customers (round 2)").
+  phone_number?: string | null;
   active: boolean;
   relationship_indicators: string[];
 }
@@ -380,6 +382,8 @@ function listItem(value: unknown): CustomerListItem {
   return {
     customer_id: value.customer_id,
     legal_name: value.legal_name,
+    phone_number:
+      typeof value.phone_number === "string" ? value.phone_number : null,
     active: value.active,
     relationship_indicators: stringArray(value.relationship_indicators),
   };

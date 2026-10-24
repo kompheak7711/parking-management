@@ -273,6 +273,19 @@
   font-weight: 700;
 }
 
+.shell-view input.ui-search {
+  flex: 1 1 280px;
+  min-width: 0;
+  max-width: 460px;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--input);
+  color: var(--text);
+  font: inherit;
+}
+
 .shell-view select.ui-sel {
   width: auto;
   min-height: 42px;
@@ -811,4 +824,16 @@ table.ui-table a.ui-no {
 .ui-dlg [aria-invalid="true"] {
   border-color: var(--err);
   box-shadow: 0 0 0 1px var(--err);
+}
+
+/* V1-058 R2: the earlier Customer forms stay under the new page until step C2. */
+.ui-records {
+  margin-top: 28px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
+.ui-records h2 {
+  margin: 0 0 4px;
+  font-size: 1.05rem;
 }
