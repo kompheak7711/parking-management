@@ -513,3 +513,96 @@ DEPOSIT_RECEIPT_OVER_PAYMENT = Refusal(
     ("BR-DEP-013",),
     ("amount_usd_cents",),
 )
+
+# V1-056 slice 11d: the wrong-Unit Payment move draft (BR-PAY-042).
+PAYMENT_MOVE_NOT_INVOICE_ALLOCATION = Refusal(
+    409,
+    "PAYMENT_MOVE_NOT_INVOICE_ALLOCATION",
+    "Only an allocation to an Invoice can be moved.",
+    ("BR-PAY-042",),
+)
+PAYMENT_MOVE_TARGET_SAME_UNIT = Refusal(
+    422,
+    "PAYMENT_MOVE_TARGET_SAME_UNIT",
+    "Choose an Invoice of a Lease on another Unit as the correct Invoice.",
+    ("BR-PAY-042",),
+    ("target_invoice_id",),
+)
+PAYMENT_MOVE_TARGET_NOT_FOUND = Refusal(
+    422,
+    "PAYMENT_MOVE_TARGET_NOT_FOUND",
+    "No Invoice with this id is in this Property.",
+    ("BR-PAY-042",),
+    ("target_invoice_id",),
+)
+PAYMENT_MOVE_TARGET_NOTHING_OWED = Refusal(
+    422,
+    "PAYMENT_MOVE_TARGET_NOTHING_OWED",
+    "The correct Invoice has nothing left to pay.",
+    ("BR-PAY-042",),
+    ("target_invoice_id",),
+)
+PAYMENT_MOVE_TARGET_TOO_LARGE = Refusal(
+    409,
+    "PAYMENT_MOVE_TARGET_TOO_LARGE",
+    "The correct Invoice has too many lines to move this Payment in one draft.",
+    ("BR-PAY-042",),
+)
+PAYMENT_MOVE_PAYMENT_REVERSED = Refusal(
+    409,
+    "PAYMENT_MOVE_PAYMENT_REVERSED",
+    "This Payment is reversed, so it cannot be moved.",
+    ("BR-PAY-042",),
+)
+PAYMENT_MOVE_ALREADY_MOVED = Refusal(
+    409,
+    "PAYMENT_MOVE_ALREADY_MOVED",
+    "This allocation has been moved already.",
+    ("BR-PAY-042",),
+)
+PAYMENT_MOVE_RELEASED_BY_ADJUSTMENT = Refusal(
+    409,
+    "PAYMENT_MOVE_RELEASED_BY_ADJUSTMENT",
+    "This allocation was released by a credit Adjustment, so it cannot be moved.",
+    ("BR-PAY-042",),
+)
+PAYMENT_MOVE_CREDIT_OR_REFUND_FIRST = Refusal(
+    409,
+    "PAYMENT_MOVE_CREDIT_OR_REFUND_FIRST",
+    "Part of this Payment became Customer Credit or a Refund. Reverse that first.",
+    ("BR-PAY-042",),
+)
+PAYMENT_MOVE_VALUE_GONE = Refusal(
+    409,
+    "PAYMENT_MOVE_VALUE_GONE",
+    "This Payment no longer holds the money to move.",
+    ("BR-PAY-042",),
+)
+PAYMENT_MOVE_DRAFT_WAITING = Refusal(
+    409,
+    "PAYMENT_MOVE_DRAFT_WAITING",
+    "A move draft for this allocation waits for a decision. Decide it first.",
+    ("BR-AUTH-010",),
+)
+PAYMENT_MOVE_THROUGH_CORRECTION = Refusal(
+    409,
+    "PAYMENT_MOVE_THROUGH_CORRECTION",
+    "A closed Final Settlement relied on this allocation. Move it through a correction of that "
+    "Final Settlement.",
+    ("BR-SETTLE-012",),
+)
+PAYMENT_MOVE_TOO_LARGE = Refusal(
+    422,
+    "PAYMENT_MOVE_TOO_LARGE",
+    "This move is too large for one draft (the acknowledgements and the correct Invoice's "
+    "lines). Shorten the acknowledgements.",
+    ("BR-PAY-042",),
+    ("source_acknowledgement", "target_acknowledgement"),
+)
+ALLOCATION_MOVED = Refusal(
+    409,
+    "ALLOCATION_MOVED",
+    "This allocation was moved to another Unit's Invoice. Correct it with another move draft or "
+    "a credit Adjustment.",
+    ("BR-PAY-042",),
+)

@@ -50331,6 +50331,144 @@
       "test_path": "backend/tests/test_deposit_record_api_migration.py",
       "status": "implemented",
       "notes": "On real PostgreSQL an expired Reservation, a Payment confirmed for an owed Invoice, a Lease whose termination ground keeps the Deposit, an active forfeiture and a closed Final Settlement each refuse a receipt by name and write nothing (V1-056 slice 11c-4, walk-in Security Deposit and Deposit receipt routes, review round 1; ops/reviews/V1-056-slice-11c-4.md)."
+    },
+    {
+      "test_id": "test_a_move_draft_is_recorded_with_its_capability_and_command",
+      "upstream_ids": [
+        "API-101",
+        "BR-PAY-042"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_payment_move_api.py",
+      "status": "implemented",
+      "notes": "The move draft route records a PAYMENT_MOVE draft with the allocation, the correct Invoice, the reason and both acknowledgements (V1-056 slice 11d, wrong-Unit Payment move draft route; ops/reviews/V1-056-slice-11d.md)."
+    },
+    {
+      "test_id": "test_a_move_draft_needs_its_capability_sign_in_and_csrf",
+      "upstream_ids": [
+        "API-101",
+        "BR-PAY-042",
+        "BR-AUTH-010"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_payment_move_api.py",
+      "status": "implemented",
+      "notes": "Without payments.allocations.reverse in the Property the route is a hidden 404; no sign-in answers 401 and no CSRF 403, before any command (V1-056 slice 11d, wrong-Unit Payment move draft route; ops/reviews/V1-056-slice-11d.md)."
+    },
+    {
+      "test_id": "test_a_bad_move_form_is_refused_before_any_command",
+      "upstream_ids": [
+        "API-101",
+        "API-013"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_payment_move_api.py",
+      "status": "implemented",
+      "notes": "A blank reason or acknowledgement, a long acknowledgement, a bad or missing correct Invoice id and an unknown field answer 422 before any command (V1-056 slice 11d, wrong-Unit Payment move draft route; ops/reviews/V1-056-slice-11d.md)."
+    },
+    {
+      "test_id": "test_each_named_move_refusal_answers_its_own_code",
+      "upstream_ids": [
+        "API-101",
+        "API-013",
+        "BR-PAY-042"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_payment_move_api.py",
+      "status": "implemented",
+      "notes": "Each named database refusal of the move answers its own code, status, rule ids and fields, never the database text (V1-056 slice 11d, wrong-Unit Payment move draft route; ops/reviews/V1-056-slice-11d.md)."
+    },
+    {
+      "test_id": "test_the_move_codes_are_pinned",
+      "upstream_ids": [
+        "API-101",
+        "API-013",
+        "BR-PAY-042"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_payment_move_api.py",
+      "status": "implemented",
+      "notes": "The 422 refusals on the correct Invoice, the confirm codes and the one-call reversal codes are pinned (V1-056 slice 11d, wrong-Unit Payment move draft route; ops/reviews/V1-056-slice-11d.md)."
+    },
+    {
+      "test_id": "test_unnamed_move_refusals_keep_their_plain_answers",
+      "upstream_ids": [
+        "API-101",
+        "API-013"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_payment_move_api.py",
+      "status": "implemented",
+      "notes": "Move refusals with no name keep their plain 422, 404 or 409 answer (V1-056 slice 11d, wrong-Unit Payment move draft route; ops/reviews/V1-056-slice-11d.md)."
+    },
+    {
+      "test_id": "test_a_reused_move_key_answers_idempotency_key_reused",
+      "upstream_ids": [
+        "API-016"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_payment_move_api.py",
+      "status": "implemented",
+      "notes": "A reused Idempotency-Key with another form answers IDEMPOTENCY_KEY_REUSED (V1-056 slice 11d, wrong-Unit Payment move draft route; ops/reviews/V1-056-slice-11d.md)."
+    },
+    {
+      "test_id": "test_a_move_answer_for_another_allocation_or_kind_is_never_shown",
+      "upstream_ids": [
+        "API-101",
+        "BR-AUTH-010"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_payment_move_api.py",
+      "status": "implemented",
+      "notes": "A recorded answer of another allocation, without the WRONG_UNIT_MOVE variant, of another variant, of another Property or of another kind answers 503 and is never shown; the right answer is shown (V1-056 slice 11d, wrong-Unit Payment move draft route; ops/reviews/V1-056-slice-11d.md)."
+    },
+    {
+      "test_id": "test_a_wrong_unit_move_is_recorded_over_http_and_confirmed_by_an_approver",
+      "upstream_ids": [
+        "API-059",
+        "API-101",
+        "BR-PAY-042",
+        "BR-AUTH-010"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_payment_move_api_migration.py",
+      "status": "implemented",
+      "notes": "On real PostgreSQL a same-Unit or unknown correct Invoice is refused by name, the draft replays by key, a second draft waits, an approver confirms through the shared route, the moved allocation refuses a second move and the one-call reversal answers ALLOCATION_MOVED (V1-056 slice 11d, wrong-Unit Payment move draft route; ops/reviews/V1-056-slice-11d.md)."
+    },
+    {
+      "test_id": "test_a_move_draft_whose_correct_invoice_was_paid_meanwhile_is_out_of_date",
+      "upstream_ids": [
+        "API-101",
+        "BR-PAY-042"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_payment_move_api_migration.py",
+      "status": "implemented",
+      "notes": "On real PostgreSQL a move draft whose correct Invoice was paid after it was recorded answers DRAFT_OUT_OF_DATE at the shared confirm, stays undecided and moves nothing; the approver then rejects it (V1-056 slice 11d, wrong-Unit Payment move draft route; ops/reviews/V1-056-slice-11d.md)."
+    },
+    {
+      "test_id": "test_the_one_call_reversal_names_a_moved_or_relied_on_allocation",
+      "upstream_ids": [
+        "API-059",
+        "API-101",
+        "BR-PAY-042",
+        "BR-SETTLE-012"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_payment_move_api.py",
+      "status": "implemented",
+      "notes": "POST /payment-allocations/{id}/reverse answers 409 ALLOCATION_MOVED and FINAL_SETTLEMENT_CLOSED for their database messages, keeps a plain 409 for another conflict and IDEMPOTENCY_KEY_REUSED for a reused key (V1-056 slice 11d review round 1; ops/reviews/V1-056-slice-11d.md)."
+    },
+    {
+      "test_id": "test_a_payment_move_draft_confirm_names_its_database_refusals",
+      "upstream_ids": [
+        "API-101",
+        "BR-PAY-042"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "The shared confirm of a PAYMENT_MOVE draft names a reversed Payment, a stale draft, a paid correct Invoice and a Final Settlement closed meanwhile; a Final Settlement correction of variant PAYMENT_MOVE keeps DRAFT_CONFIRM_REFUSED (V1-056 slice 11d review round 1; ops/reviews/V1-056-slice-11d.md)."
     }
   ]
 }

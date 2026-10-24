@@ -10,6 +10,9 @@ financial effect until a ``financial.approve`` holder confirms it through the sh
 - A Deposit receipt reversal draft (``deposits.correct``) records that money recorded as received
   for a Deposit was not received (Q-2026-10-05-22).
 - A returned-Payment draft (``payments.reverse``; BR-SETTLE-013) returns one received Payment.
+- A wrong-Unit Payment move draft (``payments.allocations.reverse``; BR-PAY-042; slice 11d) moves
+  one Invoice allocation to the correct Invoice on another Unit, with how each Customer
+  acknowledged the mistake.
 
 A named business-state refusal answers 409 with its own code (owner answer of 2026-10-05); a
 refusal that is not named keeps the plain answer of its service error. No answer shows database
@@ -41,6 +44,19 @@ from property_rental.api_refusals import (
     DRAFT_RECORD_ID_IN_USE,
     FINAL_SETTLEMENT_CLOSED,
     IDEMPOTENCY_KEY_REUSED,
+    PAYMENT_MOVE_ALREADY_MOVED,
+    PAYMENT_MOVE_CREDIT_OR_REFUND_FIRST,
+    PAYMENT_MOVE_DRAFT_WAITING,
+    PAYMENT_MOVE_NOT_INVOICE_ALLOCATION,
+    PAYMENT_MOVE_PAYMENT_REVERSED,
+    PAYMENT_MOVE_RELEASED_BY_ADJUSTMENT,
+    PAYMENT_MOVE_TARGET_NOT_FOUND,
+    PAYMENT_MOVE_TARGET_NOTHING_OWED,
+    PAYMENT_MOVE_TARGET_SAME_UNIT,
+    PAYMENT_MOVE_TARGET_TOO_LARGE,
+    PAYMENT_MOVE_THROUGH_CORRECTION,
+    PAYMENT_MOVE_TOO_LARGE,
+    PAYMENT_MOVE_VALUE_GONE,
     PAYMENT_RETURN_DEPOSIT_USED,
     PAYMENT_RETURN_DRAFT_WAITING,
     PAYMENT_RETURN_FORFEITURE_ACTIVE,
@@ -85,7 +101,18 @@ from property_rental.lease_deposit_forfeiture import (
     RecordLeaseDepositForfeitureCommand,
     RecordLeaseDepositReversalCommand,
 )
-from property_rental.payment_api import Evidence, Identity, _actor, _queries
+from property_rental.payment_api import Evidence, Identity, Memo, _actor, _queries
+from property_rental.payment_move import (
+    PAYMENT_MOVE_PREPARE_CAPABILITY,
+    PaymentMoveAuthorizationError,
+    PaymentMoveConflictError,
+    PaymentMoveInvalidError,
+    PaymentMoveKeyReused,
+    PaymentMoveNotFoundError,
+    PaymentMoveService,
+    PaymentMoveUnavailableError,
+    RecordPaymentMoveCommand,
+)
 from property_rental.payment_return import (
     PAYMENT_RETURN_PREPARE_CAPABILITY,
     PaymentReturnAuthorizationError,
@@ -120,6 +147,12 @@ class PaymentReturnDraftInput(ReversalInput):
     evidence_reference: Evidence
 
 
+class PaymentMoveDraftInput(ReversalInput):
+    target_invoice_id: Identity
+    source_acknowledgement: Memo
+    target_acknowledgement: Memo
+
+
 class DraftRecordFlow(Protocol):
     def forfeiture(
         self,
@@ -146,6 +179,13 @@ class DraftRecordFlow(Protocol):
         self,
         property_id: UUID,
         command: RecordPaymentReturnCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]: ...
+    def payment_move(
+        self,
+        property_id: UUID,
+        command: RecordPaymentMoveCommand,
         *,
         actor: AuthenticatedActor,
     ) -> dict[str, object]: ...
@@ -202,37 +242,52 @@ class PostgresDraftRecordFlow:
     ) -> dict[str, object]:
         return PaymentReturnService(self._url()).record(property_id, command, actor=actor)
 
+    def payment_move(
+        self,
+        property_id: UUID,
+        command: RecordPaymentMoveCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        return PaymentMoveService(self._url()).record(property_id, command, actor=actor)
+
 
 NOT_FOUND_ERRORS: Final = (
     LeaseDepositForfeitureNotFoundError,
     DepositReceiptReversalNotFoundError,
     PaymentReturnNotFoundError,
+    PaymentMoveNotFoundError,
 )
 AUTHORIZATION_ERRORS: Final = (
     LeaseDepositForfeitureAuthorizationError,
     DepositReceiptReversalAuthorizationError,
     PaymentReturnAuthorizationError,
+    PaymentMoveAuthorizationError,
 )
 INVALID_ERRORS: Final = (
     LeaseDepositForfeitureInvalidError,
     DepositReceiptReversalInvalidError,
     PaymentReturnInvalidError,
+    PaymentMoveInvalidError,
 )
 KEY_REUSED_ERRORS: Final = (
     LeaseDepositForfeitureKeyReused,
     DepositReceiptReversalKeyReused,
     PaymentReturnKeyReused,
+    PaymentMoveKeyReused,
 )
 CONFLICT_ERRORS: Final = (
     LeaseDepositForfeitureConflictError,
     DepositReceiptReversalConflictError,
     PaymentReturnConflictError,
+    PaymentMoveConflictError,
 )
 UNAVAILABLE_ERRORS: Final = (
     LeaseDepositForfeitureUnavailableError,
     DepositReceiptReversalUnavailableError,
     PaymentReturnUnavailableError,
     DraftRecordUnavailable,
+    PaymentMoveUnavailableError,
 )
 
 # The database messages each route names (migrations 83, 84, 87, 108, 109, 116 to 118, 157, 167).
@@ -303,6 +358,50 @@ PAYMENT_RETURN_REFUSALS: Final[Mapping[str, Refusal]] = MappingProxyType(
         ),
         "The return draft exceeds the stored draft size of 16000 bytes (the Payment's records)": (
             PAYMENT_RETURN_TOO_LARGE
+        ),
+    }
+)
+# Slice 11d (messages read from the head catalog: migration 85 and later patches). A correct
+# Invoice the form chose that is wrong is bad input (422 on its field); the rest is business state.
+PAYMENT_MOVE_STATE_REFUSALS: Final[Mapping[str, Refusal]] = MappingProxyType(
+    {
+        "Only an Invoice allocation can move": PAYMENT_MOVE_NOT_INVOICE_ALLOCATION,
+        "The Payment is reversed": PAYMENT_MOVE_PAYMENT_REVERSED,
+        "This allocation was already moved": PAYMENT_MOVE_ALREADY_MOVED,
+        "A credit Adjustment released this allocation": PAYMENT_MOVE_RELEASED_BY_ADJUSTMENT,
+        "Reverse the Customer Credit or Refund from this Payment first": (
+            PAYMENT_MOVE_CREDIT_OR_REFUND_FIRST
+        ),
+        "The Payment no longer holds the value to move": PAYMENT_MOVE_VALUE_GONE,
+        "The correct Invoice has too many lines for one move": PAYMENT_MOVE_TARGET_TOO_LARGE,
+        "A closed Final Settlement relied on this allocation; move it through a correction of "
+        "that Final Settlement": PAYMENT_MOVE_THROUGH_CORRECTION,
+    }
+)
+PAYMENT_MOVE_REFUSALS: Final[Mapping[str, Refusal]] = MappingProxyType(
+    {
+        **PAYMENT_MOVE_STATE_REFUSALS,
+        "Invoice was not found": PAYMENT_MOVE_TARGET_NOT_FOUND,
+        "The correct Invoice must belong to a Lease of another Unit": (
+            PAYMENT_MOVE_TARGET_SAME_UNIT
+        ),
+        "The correct Invoice has nothing outstanding": PAYMENT_MOVE_TARGET_NOTHING_OWED,
+        "A move draft for this allocation is already waiting": PAYMENT_MOVE_DRAFT_WAITING,
+        "The move draft exceeds the stored draft size of 16000 bytes (acknowledgements and the "
+        "line split of the correct Invoice)": PAYMENT_MOVE_TOO_LARGE,
+    }
+)
+# At the shared confirm the correct Invoice was checked at record, so a change there means the
+# draft is out of date; the confirm's own stale refusal (55000) too. The table applies to the
+# plain move only (kind PAYMENT_MOVE); a Final Settlement correction keeps its plain answers.
+PAYMENT_MOVE_CONFIRM_REFUSALS: Final[Mapping[str, Refusal]] = MappingProxyType(
+    {
+        **PAYMENT_MOVE_STATE_REFUSALS,
+        "The correct Invoice has nothing outstanding": DRAFT_OUT_OF_DATE,
+        "Payment move draft is stale": DRAFT_OUT_OF_DATE,
+        # A Final Settlement closed after the check and before the reversal was written.
+        "A closed Final Settlement changes only through a post-settlement correction": (
+            PAYMENT_MOVE_THROUGH_CORRECTION
         ),
     }
 )
@@ -526,6 +625,47 @@ def create_draft_record_router(
         return envelope(
             request,
             _pending_draft(result, property_id, "PAYMENT_RETURN", None, ("payment_id", payment_id)),
+        )
+
+    @router.post(
+        "/properties/{property_id}/payment-allocations/{allocation_id}/move-drafts",
+        status_code=201,
+        dependencies=[Depends(_financial_json)],
+    )
+    def record_payment_move(
+        property_id: Identity,
+        allocation_id: Identity,
+        body: PaymentMoveDraftInput,
+        request: Request,
+        idempotency_key: Key,
+    ) -> dict[str, object]:
+        """Record a draft that moves one Invoice allocation made on the wrong Unit's Invoice to
+        the correct Invoice on another Unit (BR-PAY-042; slice 11d)."""
+        actor = context(request, property_id, PAYMENT_MOVE_PREPARE_CAPABILITY)
+        command = _invoke(
+            lambda: RecordPaymentMoveCommand(
+                idempotency_key,
+                allocation_id,
+                body.target_invoice_id,
+                body.reason,
+                body.source_acknowledgement,
+                body.target_acknowledgement,
+            ),
+            PAYMENT_MOVE_REFUSALS,
+        )
+        result = _invoke(
+            lambda: flow.payment_move(property_id, command, actor=actor),
+            PAYMENT_MOVE_REFUSALS,
+        )
+        return envelope(
+            request,
+            _pending_draft(
+                result,
+                property_id,
+                "PAYMENT_MOVE",
+                "WRONG_UNIT_MOVE",
+                ("source_allocation_id", allocation_id),
+            ),
         )
 
     return router

@@ -37,6 +37,7 @@ from property_rental.lease_deposit_forfeiture import (
     RecordLeaseDepositForfeitureCommand,
     RecordLeaseDepositReversalCommand,
 )
+from property_rental.payment_move import RecordPaymentMoveCommand
 from property_rental.payment_return import (
     PaymentReturnConflictError,
     PaymentReturnInvalidError,
@@ -48,23 +49,28 @@ FORFEIT = "forfeiture"
 REVERSE = "forfeiture_reversal"
 RECEIPT = "receipt_reversal"
 RETURN = "payment_return"
+# Slice 11d: the wrong-Unit Payment move (its tests are in test_payment_move_api.py).
+MOVE = "payment_move"
 CAPABILITY = {
     FORFEIT: "deposits.dispose",
     REVERSE: "deposits.correct",
     RECEIPT: "deposits.correct",
     RETURN: "payments.reverse",
+    MOVE: "payments.allocations.reverse",
 }
 KIND = {
     FORFEIT: ("DEPOSIT_FORFEITURE", "LEASE_FORFEITURE"),
     REVERSE: ("DEPOSIT_FORFEITURE", "LEASE_FORFEITURE_REVERSAL"),
     RECEIPT: ("DEPOSIT_FORFEITURE", "DEPOSIT_RECEIPT_REVERSAL"),
     RETURN: ("PAYMENT_RETURN", None),
+    MOVE: ("PAYMENT_MOVE", "WRONG_UNIT_MOVE"),
 }
 SUBJECT_KEY = {
     FORFEIT: "deposit_id",
     REVERSE: "disposition_id",
     RECEIPT: "receipt_id",
     RETURN: "payment_id",
+    MOVE: "source_allocation_id",
 }
 
 
@@ -132,6 +138,15 @@ class Flow:
     ) -> dict[str, object]:
         return self._record(RETURN, property_id, command, actor)
 
+    def payment_move(
+        self,
+        property_id: UUID,
+        command: RecordPaymentMoveCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        return self._record(MOVE, property_id, command, actor)
+
 
 SUBJECT = uuid4()
 BODY: dict[str, dict[str, str]] = {
@@ -143,6 +158,12 @@ BODY: dict[str, dict[str, str]] = {
     },
     RECEIPT: {"reversal_id": str(uuid4()), "reason": "The transfer came back"},
     RETURN: {"reason": "The transfer came back", "evidence_reference": "ABA return notice 4471"},
+    MOVE: {
+        "target_invoice_id": str(uuid4()),
+        "reason": "Paid for Unit 204 by mistake",
+        "source_acknowledgement": "Sokha, by phone, 24/10",
+        "target_acknowledgement": "Dara, in person, 24/10",
+    },
 }
 
 
@@ -153,6 +174,7 @@ def _path(flow: Flow, route: str) -> str:
         REVERSE: f"{base}/deposit-dispositions/{SUBJECT}/reversal-drafts",
         RECEIPT: f"{base}/deposit-receipts/{SUBJECT}/reversal-drafts",
         RETURN: f"{base}/payments/{SUBJECT}/return-drafts",
+        MOVE: f"{base}/payment-allocations/{SUBJECT}/move-drafts",
     }[route]
 
 

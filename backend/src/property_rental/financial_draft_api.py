@@ -42,6 +42,7 @@ from property_rental.credit_refund_api import (
 from property_rental.draft_record_api import (
     DEPOSIT_DRAFT_CONFIRM_REFUSALS,
     DEPOSIT_DRAFT_VARIANTS,
+    PAYMENT_MOVE_CONFIRM_REFUSALS,
     PAYMENT_RETURN_REFUSALS,
 )
 from property_rental.financial_context import bind_financial_property, financial_metadata
@@ -187,6 +188,8 @@ CONFIRM_REFUSALS: Final[Mapping[str, Mapping[str, Refusal]]] = MappingProxyType(
         "REFUND": REFUND_REFUSALS_BY_DATABASE_MESSAGE,
         "DEPOSIT_FORFEITURE": DEPOSIT_DRAFT_CONFIRM_REFUSALS,
         "PAYMENT_RETURN": PAYMENT_RETURN_REFUSALS,
+        # Slice 11d: the wrong-Unit Payment move.
+        "PAYMENT_MOVE": PAYMENT_MOVE_CONFIRM_REFUSALS,
     }
 )
 

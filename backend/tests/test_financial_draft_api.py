@@ -28,6 +28,7 @@ from property_rental.financial_draft import (
 from property_rental.financial_draft_confirm import DraftConfirmNotAvailable, DraftPayloadInvalid
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
 from property_rental.lease_deposit_forfeiture import LeaseDepositForfeitureConflictError
+from property_rental.payment_move import PaymentMoveConflictError
 from property_rental.payment_return import PaymentReturnConflictError, PaymentReturnStaleDraftError
 from property_rental.refund import (
     RefundAuthorizationError,
@@ -585,6 +586,46 @@ def test_a_deposit_or_returned_payment_draft_confirm_names_its_database_refusals
         path(stale, "confirm"), json={}, headers=mutation_headers()
     )
     assert answer.json()["error"]["code"] == "DRAFT_OUT_OF_DATE"
+
+
+def test_a_payment_move_draft_confirm_names_its_database_refusals() -> None:
+    """Slice 11d: the plain move names its refusals at the shared confirm; a Final Settlement
+    correction of variant PAYMENT_MOVE keeps its plain answer."""
+    cases = [
+        (
+            PaymentMoveConflictError("4471"),
+            "The Payment is reversed",
+            "PAYMENT_MOVE_PAYMENT_REVERSED",
+        ),
+        # The database raises the stale move draft as 55000, a conflict, not as P5S02.
+        (PaymentMoveConflictError("4471"), "Payment move draft is stale", "DRAFT_OUT_OF_DATE"),
+        (
+            PaymentMoveConflictError("4471"),
+            "The correct Invoice has nothing outstanding",
+            "DRAFT_OUT_OF_DATE",
+        ),
+        (
+            PaymentMoveConflictError("4471"),
+            "A closed Final Settlement changes only through a post-settlement correction",
+            "PAYMENT_MOVE_THROUGH_CORRECTION",
+        ),
+    ]
+    for error, message, code in cases:
+        flow = Flow(kind="PAYMENT_MOVE", variant="WRONG_UNIT_MOVE")
+        flow.error = _caused(error, message)
+        answer = api(flow, actor(flow.prop, APPROVE)).post(
+            path(flow, "confirm"), json={}, headers=mutation_headers()
+        )
+        assert (answer.status_code, answer.json()["error"]["code"]) == (409, code), message
+        assert message not in answer.text
+    correction = Flow(kind="SETTLEMENT_CORRECTION", variant="PAYMENT_MOVE")
+    correction.error = _caused(
+        PaymentMoveConflictError("4471"), "This allocation was already moved"
+    )
+    answer = api(correction, actor(correction.prop, APPROVE)).post(
+        path(correction, "confirm"), json={}, headers=mutation_headers()
+    )
+    assert (answer.status_code, answer.json()["error"]["code"]) == (409, "DRAFT_CONFIRM_REFUSED")
 
 
 def test_an_out_of_date_refund_draft_stays_out_of_date_whatever_the_cause() -> None:

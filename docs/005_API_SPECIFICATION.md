@@ -1063,6 +1063,10 @@ only through a correction of the Settlement whose correction wrote it.
 
 Amended by DL-077 (owner, 2026-10-20): the proposal is ticked on the Receive payment screen and saved with the Payment in one step; this route stays for money that waits and for paying again after a reversal. Not built yet (screen rebuild).
 
+Amended by V1-056 slice 11d (2026-10-24): `POST /payment-allocations/{allocation_id}/reverse`
+answers 409 `ALLOCATION_MOVED` and 409 `FINAL_SETTLEMENT_CLOSED` with their codes; see the
+paragraph "V1-056 slice 11d" at the end of API-101.
+
 ## API-060 — Payment Reversal
 
 `POST /payments/{payment_id}/reverse` requires reason, expected current state,
@@ -1689,6 +1693,36 @@ identity; the key is not stored). A draft already confirmed, rejected or withdra
 
 Refusals with a stable code (slice 11): a refused command whose cause staff need answers with
 the API-013 envelope and a fixed `code` and `message`, never database text.
+
+V1-056 slice 11d (2026-10-24; no migration; BR-PAY-042): the wrong-Unit Payment move draft.
+`POST /properties/{property_id}/payment-allocations/{allocation_id}/move-drafts`
+(`payments.allocations.reverse`; others a hidden 404; Origin, CSRF, `Idempotency-Key`; body
+`target_invoice_id`, `reason` of up to 1,000 characters, and `source_acknowledgement` and
+`target_acknowledgement` of up to 2,000 characters each: who acknowledged for each Customer, the
+date and how) records a `PAYMENT_MOVE` draft of variant `WRONG_UNIT_MOVE` and answers 201 with
+the draft. It moves nothing until a `financial.approve` holder confirms it through the confirm
+route above. An allocation that a closed Final Settlement relied on moves only through a
+`PAYMENT_MOVE` correction of that Settlement (slice 11e).
+
+- Named refusals at record: 409 `PAYMENT_MOVE_NOT_INVOICE_ALLOCATION`,
+  `PAYMENT_MOVE_PAYMENT_REVERSED`, `PAYMENT_MOVE_ALREADY_MOVED`,
+  `PAYMENT_MOVE_RELEASED_BY_ADJUSTMENT`, `PAYMENT_MOVE_CREDIT_OR_REFUND_FIRST`,
+  `PAYMENT_MOVE_VALUE_GONE`, `PAYMENT_MOVE_TARGET_TOO_LARGE`, `PAYMENT_MOVE_THROUGH_CORRECTION`,
+  and `PAYMENT_MOVE_DRAFT_WAITING`; 422 on `target_invoice_id`:
+  `PAYMENT_MOVE_TARGET_NOT_FOUND`, `PAYMENT_MOVE_TARGET_SAME_UNIT` and
+  `PAYMENT_MOVE_TARGET_NOTHING_OWED`; 422 on both acknowledgements: `PAYMENT_MOVE_TOO_LARGE`
+  (the acknowledgements and the correct Invoice's line split are over 16,000 bytes). An unknown
+  allocation answers 404.
+- At the confirm route the same business-state codes apply, except `PAYMENT_MOVE_DRAFT_WAITING`
+  and `PAYMENT_MOVE_TOO_LARGE`, which only recording raises. A Final Settlement that closed after
+  the draft was recorded answers `PAYMENT_MOVE_THROUGH_CORRECTION`. A correct Invoice with nothing
+  left to pay, or a draft the database finds stale, answers 409 `DRAFT_OUT_OF_DATE` (the draft
+  stays pending: reject it, and record a new draft if the move is still needed). Final Settlement
+  correction drafts of variant `PAYMENT_MOVE` keep their plain confirm answers.
+- `POST /payment-allocations/{allocation_id}/reverse` now answers 409 `ALLOCATION_MOVED` for an
+  allocation a move created (it changes only through another move draft or a credit Adjustment)
+  and 409 `FINAL_SETTLEMENT_CLOSED` for one a closed Final Settlement relied on; its other
+  answers are unchanged.
 
 ## API-102 — Move-out Cleaning Charge, Hand-back Month and the Lease End Date Refusal
 

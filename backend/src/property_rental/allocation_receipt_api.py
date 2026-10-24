@@ -5,9 +5,10 @@ from __future__ import annotations
 import base64
 import binascii
 import json
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from typing import Annotated, Literal, Protocol, TypeVar, cast
+from types import MappingProxyType
+from typing import Annotated, Final, Literal, Protocol, TypeVar, cast
 from uuid import UUID
 
 import psycopg
@@ -17,6 +18,13 @@ from pydantic import AfterValidator, Field
 from starlette.types import Message, Receive, Scope, Send
 
 from property_rental.allocation_read import AllocationHistoryPage, AllocationReadService
+from property_rental.api_refusals import (
+    ALLOCATION_MOVED,
+    FINAL_SETTLEMENT_CLOSED,
+    Refusal,
+    RefusedRequest,
+    database_refusal,
+)
 from property_rental.browser_security import require_browser_mutation
 from property_rental.financial_context import bind_financial_property, financial_metadata
 from property_rental.identity import ActorResolver, AuthenticatedActor
@@ -322,6 +330,30 @@ class PostgresAllocationReceiptFlow:
         )
 
 
+# V1-056 slice 11d: the one-call allocation reversal names a moved allocation and a closed Final
+# Settlement (business state, 409) by their database message.
+ALLOCATION_REVERSAL_REFUSALS: Final[Mapping[str, Refusal]] = MappingProxyType(
+    {
+        "A moved allocation changes only through another move draft or a credit Adjustment": (
+            ALLOCATION_MOVED
+        ),
+        "A closed Final Settlement changes only through a post-settlement correction": (
+            FINAL_SETTLEMENT_CLOSED
+        ),
+    }
+)
+
+
+def _named_reversal(call: Callable[[], T]) -> T:
+    try:
+        return call()
+    except AllocationConflictError as exc:
+        refusal = database_refusal(exc, ALLOCATION_REVERSAL_REFUSALS)
+        if refusal is not None:
+            raise RefusedRequest(refusal) from exc
+        raise
+
+
 def _invoke(call: Callable[[], T], *, query: bool = False) -> T:
     try:
         return call()
@@ -538,7 +570,11 @@ def create_allocation_receipt_router(
         command = _invoke(lambda: ReverseAllocationCommand(idempotency_key, body.reason))
         return envelope(
             request,
-            _invoke(lambda: flow.reverse_allocation(prop, allocation_id, command, actor=actor)),
+            _invoke(
+                lambda: _named_reversal(
+                    lambda: flow.reverse_allocation(prop, allocation_id, command, actor=actor)
+                )
+            ),
         )
 
     @router.post("/payments/{payment_id}/reverse", dependencies=[Depends(_strict_json)])

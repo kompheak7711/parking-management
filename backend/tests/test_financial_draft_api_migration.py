@@ -123,6 +123,15 @@ def test_every_named_refusal_message_is_still_raised_at_head(
     messages |= {*DEPOSIT_DRAFT_CONFIRM_REFUSALS, *PAYMENT_RETURN_REFUSALS}
     # Slice 11c-4: the walk-in Security Deposit create and the Deposit receipt.
     messages |= {*SECURITY_DEPOSIT_REFUSALS, *DEPOSIT_RECEIPT_REFUSALS}
+    # Slice 11d: the wrong-Unit Payment move and the one-call allocation reversal.
+    from property_rental.allocation_receipt_api import ALLOCATION_REVERSAL_REFUSALS
+    from property_rental.draft_record_api import (
+        PAYMENT_MOVE_CONFIRM_REFUSALS,
+        PAYMENT_MOVE_REFUSALS,
+    )
+
+    messages |= {*PAYMENT_MOVE_REFUSALS, *PAYMENT_MOVE_CONFIRM_REFUSALS}
+    messages |= set(ALLOCATION_REVERSAL_REFUSALS)
     messages.add(END_DATE_NOT_MONTH_END)
     with psycopg.connect(migrated_database_url) as connection:
         missing = [
