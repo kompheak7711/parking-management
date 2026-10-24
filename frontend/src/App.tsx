@@ -1714,16 +1714,17 @@ export function App({
               </h3>
               {propertyConfigurationAuthorized ? (
                 <p>
-                  The server authorized this Property with{" "}
-                  <code>property.manage</code> and checks the current version
-                  for every change. The fixed timezone is shown as an
-                  authoritative value, not an editable source field.
+                  The server authorized this Property. A change needs{" "}
+                  <code>settings.manage</code>, and the server checks the
+                  current version for every change. The fixed timezone is shown
+                  as an authoritative value, not an editable source field.
                 </p>
               ) : (
                 <p>
                   Enter the exact Property identifier. The server must confirm
-                  <code> property.manage</code> for that Property before any
-                  management screen or editing control is shown.
+                  <code> settings.manage</code> or <code>property.manage</code>{" "}
+                  for that Property before any management screen or editing
+                  control is shown.
                 </p>
               )}
               <form

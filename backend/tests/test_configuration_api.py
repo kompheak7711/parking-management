@@ -251,29 +251,36 @@ def test_service_rate_requires_scoped_read_and_manage_capabilities() -> None:
 
 def test_service_rate_creation_requires_origin_csrf_and_idempotency() -> None:
     flow = InMemoryConfigurationFlow(uuid4())
-    client = client_for(flow, "service_rates.manage")
+    client = client_for(flow, "settings.manage")
     body = {
         "property_service_id": str(flow.service_id),
         "monthly_rate_usd_cents": 1250,
         "effective_date": "2026-09-01",
     }
-    assert (
-        client.post(f"/api/v1/properties/{flow.property_id}/service-rates", json=body).status_code
-        == 422
-    )
+    # Login sub-slice L5: the Origin and the CSRF pair are checked before the request is read,
+    # so a change without them is refused even without its Idempotency-Key.
+    for headers in ({}, {"Idempotency-Key": str(uuid4())}):
+        assert (
+            client.post(
+                f"/api/v1/properties/{flow.property_id}/service-rates",
+                headers=headers,
+                json=body,
+            ).status_code
+            == 403
+        )
     assert (
         client.post(
             f"/api/v1/properties/{flow.property_id}/service-rates",
-            headers={"Idempotency-Key": str(uuid4())},
+            headers=browser_headers(),
             json=body,
         ).status_code
-        == 403
+        == 422
     )
 
 
 def test_service_rate_replay_is_stable_and_changed_input_conflicts() -> None:
     flow = InMemoryConfigurationFlow(uuid4())
-    client = client_for(flow, "service_rates.manage")
+    client = client_for(flow, "settings.manage")
     key = uuid4()
     body = {
         "property_service_id": str(flow.service_id),
@@ -305,7 +312,7 @@ def test_service_rate_replay_is_stable_and_changed_input_conflicts() -> None:
 
 def test_utility_rate_preserves_notice_and_effective_date() -> None:
     flow = InMemoryConfigurationFlow(uuid4())
-    client = client_for(flow, "utility_rates.manage", "configuration.read")
+    client = client_for(flow, "settings.manage", "configuration.read")
     response = client.post(
         f"/api/v1/properties/{flow.property_id}/utility-rates",
         headers=browser_headers(uuid4()),
@@ -401,7 +408,7 @@ def test_detail_routes_do_not_disclose_record_existence_without_scope() -> None:
 
 def test_utility_notice_and_manual_exchange_evidence_fail_before_flow() -> None:
     flow = InMemoryConfigurationFlow(uuid4())
-    client = client_for(flow, "utility_rates.manage", "exchange_rates.manage")
+    client = client_for(flow, "settings.manage", "exchange_rates.manage")
     utility = client.post(
         f"/api/v1/properties/{flow.property_id}/utility-rates",
         headers=browser_headers(uuid4()),

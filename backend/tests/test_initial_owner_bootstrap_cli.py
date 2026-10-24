@@ -776,13 +776,8 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
     openapi_operations = {
         path: set(path_item) & http_methods for path, path_item in app.openapi()["paths"].items()
     }
-    expected_runtime_operations = {
-        "/openapi.json": {"get", "head"},
-        "/docs": {"get", "head"},
-        "/docs/oauth2-redirect": {"get", "head"},
-        "/redoc": {"get", "head"},
-        **expected_api_operations,
-    }
+    # Login sub-slice L5 (Q-2026-10-24-186): the generated documentation pages are turned off.
+    expected_runtime_operations = expected_api_operations
     runtime_operations = _collect_runtime_http_operations(app.routes)
 
     assert openapi_operations == expected_api_operations

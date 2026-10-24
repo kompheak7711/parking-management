@@ -76,6 +76,8 @@ without revealing account or resource existence. The API boundary remains indepe
 of password-hashing and MFA library details, but production normal operation does not
 depend on an external identity provider.
 
+Amended by DL-081 (login sub-slice L5, owner answers (a) to Q-2026-10-21-151 and Q-2026-10-21-160; technical points Q-2026-10-24-186, decided by Claude under the owner's 2026-10-23 22:30 rule): every route except `GET /health/live`, `GET /health/ready`, `GET /api/v1/identity/me` and the sign-in routes of API-096 to API-098 (13 operations, kept in `backend/tests/test_route_authorization_inventory.py`) first needs a signed-in user, before the request body is validated: 401 without one, whatever JSON body it gets (a body that is not JSON answers 400, because the JSON is parsed first). A change (any method but GET, HEAD and OPTIONS) then needs the configured Origin and the CSRF pair (403) before its body is validated. The generated documentation pages (`/docs`, `/redoc`, `/openapi.json`) are turned off. The route's own capability checks run after it. The customer ledger reads still refuse any GET body first (400).
+
 ## API-009 — Capability Checks
 
 Each endpoint declares a capability family. The server checks capability, Property
@@ -257,6 +259,8 @@ requires `property.manage` plus version precondition.
 Configuration includes accepted Payment Methods and other approved configurable
 business data. Historical effective-dated rates use their own resources.
 
+Amended by DL-081 (login sub-slice L5, owner answers (a) to Q-2026-10-21-151 and Q-2026-10-21-160; technical points Q-2026-10-24-186, decided by Claude under the owner's 2026-10-23 22:30 rule): `GET /properties/{property_id}` needs `property.read` for the Property. `PATCH /properties/{property_id}` and `PATCH /properties/{property_id}/configuration` need `settings.manage` (Settings access; the Owner always has it) instead of `property.manage`. `GET /properties/{property_id}/configuration` accepts `settings.manage` or `property.manage`.
+
 # 9. Unit Endpoints
 
 ## API-028 — Units
@@ -275,6 +279,8 @@ attributes only.
 `GET /units/{unit_id}/timeline` returns paginated authorized Reservation, Lease,
 Occupancy, Meter, Reading, billing, and audit summaries without flattening event
 history.
+
+Amended by DL-081 (login sub-slice L5, owner answers (a) to Q-2026-10-21-151 and Q-2026-10-21-160; technical points Q-2026-10-24-186, decided by Claude under the owner's 2026-10-23 22:30 rule): the Unit list, `GET /units/{unit_id}` and the Unit timeline need `units.read` for the Unit's Property (checked before the Unit is read, then again for its Property); a caller with `units.read` for no Property gets 403 at once. `POST /properties/{property_id}/units` and `PATCH /units/{unit_id}` keep `property.manage` and now need the configured Origin and the CSRF pair.
 
 # 10. Customer Endpoints
 
@@ -666,6 +672,8 @@ separate authoritative Owner-approved rule and explicit approval period before b
 Historical rate records are not overwritten. No generic one-time Service endpoint is
 authorized.
 
+Amended by DL-081 (login sub-slice L5, owner answers (a) to Q-2026-10-21-151 and Q-2026-10-21-160; technical points Q-2026-10-24-186, decided by Claude under the owner's 2026-10-23 22:30 rule): creating a Service rate and a Utility Rate needs `settings.manage` instead of `service_rates.manage` and `utility_rates.manage`; the old names stay in the catalog and open no route. The configuration capability summary answers `manage_service_rates` and `manage_utility_rates` from `settings.manage`. The riel rate keeps `exchange_rates.manage`.
+
 # 15. Utility Meter and Reading Endpoints
 
 ## API-044 — Meters
@@ -780,6 +788,8 @@ Slice 9b routes (capabilities reuse existing ones; no new capability):
 - `POST /invoices/{id}/issue` accepts the optional `due_date` and `due_date_reason` pair (both or neither).
 - `POST /properties/{id}/leases/{lease_id}/initial-rent-due-date` (`invoices.issue`, owner decision 2026-10-02) records an authorized Initial Rent Due Date before the Initial Rent Invoice is issued: `override_id`, `due_date`, `reason`; actor and timestamp are recorded and it is fixed once issued; an exact replay returns the saved result and a reused identity is a conflict. Since migration `20261009_74` the stored audit evidence names the capability the caller was authorized under: this route records `invoices.issue`, while the billing service path keeps `billing.generate`; earlier records are unchanged.
 - `GET /properties/{id}/billing-capabilities` visibility now also lists `damage_charges.bill` and `property.manage` so the staff screen can show the one-time charge and due-days forms. Visibility only; each route still authorizes.
+
+Amended by DL-081 (login sub-slice L5, owner answers (a) to Q-2026-10-21-151 and Q-2026-10-21-160; technical points Q-2026-10-24-186, decided by Claude under the owner's 2026-10-23 22:30 rule): `POST /properties/{id}/one-time-charge-due-days` needs `settings.manage` instead of `property.manage`, and `billing-capabilities` also lists `settings.manage`. The move-out cleaning rate keeps `property.manage` until the DL-075 Settings screen.
 
 Issue accepts an optional Due Date override with a mandatory reason; without it, the
 server applies the proposed Due Date (Lease Start Date plus five for Initial Rent, issue

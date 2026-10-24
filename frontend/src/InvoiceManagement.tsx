@@ -1193,7 +1193,7 @@ function BillingWorkspace({
             )}
           </section>
         )}
-        {can("property.manage") && (
+        {can("settings.manage") && (
           <section aria-label="One-time charge due days">
             <h3>One-time charge due days</h3>
             <p>

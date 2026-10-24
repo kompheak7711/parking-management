@@ -520,7 +520,15 @@ def test_install_requires_capability_csrf_idempotency_and_boundary_evidence() ->
             "source_evidence": "Photograph 1",
         },
     }
-    assert client.post(f"/api/v1/units/{flow.unit_id}/meters", json=payload).status_code == 422
+    # Login sub-slice L5 (Q-2026-10-24-186): the Origin and the CSRF pair are checked before the
+    # body and the headers, so without them the answer is 403 and with them a missing key is 422.
+    assert client.post(f"/api/v1/units/{flow.unit_id}/meters", json=payload).status_code == 403
+    assert (
+        client.post(
+            f"/api/v1/units/{flow.unit_id}/meters", json=payload, headers=browser_headers()
+        ).status_code
+        == 422
+    )
     assert (
         client.post(
             f"/api/v1/units/{flow.unit_id}/meters",

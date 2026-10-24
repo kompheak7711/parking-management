@@ -47,15 +47,17 @@ def test_billing_action_metadata_denies_by_default_and_uses_exact_property() -> 
     )
 
 
-def test_billing_visibility_lists_damage_billing_and_property_management() -> None:
+def test_billing_visibility_lists_damage_billing_property_management_and_settings_access() -> None:
     property_id = uuid4()
     flow = InMemoryInvoiceFlow(property_id, invoice_resource(property_id))
-    visibility = api(flow, actor(property_id, "damage_charges.bill", "property.manage")).get(
-        f"/api/v1/properties/{property_id}/billing-capabilities"
-    )
+    visibility = api(
+        flow, actor(property_id, "damage_charges.bill", "property.manage", "settings.manage")
+    ).get(f"/api/v1/properties/{property_id}/billing-capabilities")
+    # Login sub-slice L5: `settings.manage` shows the one-time charge due days form.
     assert visibility.json()["data"]["billing_capabilities"] == [
         "damage_charges.bill",
         "property.manage",
+        "settings.manage",
     ]
 
 
@@ -225,18 +227,22 @@ def test_one_time_charge_route_needs_the_category_capability_and_validates_the_b
     assert client.post(path, headers=mutation_headers(), json=damage).status_code == 403
 
 
-def test_one_time_charge_due_days_route_needs_property_manage_and_the_exact_version() -> None:
+def test_one_time_charge_due_days_route_needs_settings_access_and_the_exact_version() -> None:
+    """Login sub-slice L5 (owner answer (a) to Q-2026-10-21-151): the due days are a Settings
+    item, so `property.manage` no longer changes them."""
     from test_invoice import mutation_headers
 
     property_id = uuid4()
     flow = InMemoryInvoiceFlow(property_id, invoice_resource(property_id))
     path = f"/api/v1/properties/{property_id}/one-time-charge-due-days"
     body = {"days": 10, "reason": "Owner changed the policy"}
-    denied = api(flow, actor(property_id, "invoices.issue")).post(
-        path, headers=mutation_headers(version=3), json=body
-    )
-    assert denied.status_code == 403
-    client = api(flow, actor(property_id, "property.manage"))
+    for capability in ("invoices.issue", "property.manage"):
+        denied = api(flow, actor(property_id, capability)).post(
+            path, headers=mutation_headers(version=3), json=body
+        )
+        assert denied.status_code == 403
+    assert flow.commands == []
+    client = api(flow, actor(property_id, "settings.manage"))
     assert client.post(path, headers=mutation_headers(), json=body).status_code == 412
     assert (
         client.post(

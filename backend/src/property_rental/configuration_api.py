@@ -18,6 +18,7 @@ from fastapi import APIRouter, Header, HTTPException, Query, Request, Response, 
 from psycopg.types.json import Jsonb
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from property_rental.access_control import SETTINGS_MANAGE_CAPABILITY
 from property_rental.browser_security import require_browser_mutation
 from property_rental.identity import (
     ActorResolver,
@@ -28,8 +29,10 @@ from property_rental.identity import (
 from property_rental.settings import Settings
 
 CONFIGURATION_READ_CAPABILITY = "configuration.read"
-SERVICE_RATE_MANAGE_CAPABILITY = "service_rates.manage"
-UTILITY_RATE_MANAGE_CAPABILITY = "utility_rates.manage"
+# Login sub-slice L5 (owner answer (a) to Q-2026-10-21-151): Service and Utility Rates are
+# Settings; `service_rates.manage` and `utility_rates.manage` stay in the catalog, unused.
+SERVICE_RATE_MANAGE_CAPABILITY = SETTINGS_MANAGE_CAPABILITY
+UTILITY_RATE_MANAGE_CAPABILITY = SETTINGS_MANAGE_CAPABILITY
 EXCHANGE_RATE_MANAGE_CAPABILITY = "exchange_rates.manage"
 MAX_PAGE_SIZE = 100
 

@@ -2298,7 +2298,7 @@ describe("V1-055 one-time charge due days", () => {
     await screen.findByText("Authorized invoices loaded.");
   };
   it("TEST-FE-633 changes the due days with the exact Property version only after confirmation and shows the new version", async () => {
-    const { api, journal } = renderDueDays(["property.manage"]);
+    const { api, journal } = renderDueDays(["settings.manage"]);
     await open();
     fill("Due days for one-time charges (1 to 90)", "14");
     fill("Current Property version", "7");
@@ -2321,15 +2321,23 @@ describe("V1-055 one-time charge due days", () => {
     expect(screen.getByLabelText("Current Property version")).toHaveValue(8);
     expect(journal.clear).toHaveBeenCalledTimes(1);
   });
-  it("TEST-FE-634 hides the due days form without property.manage", async () => {
+  it("TEST-FE-634 hides the due days form without settings.manage", async () => {
     renderDueDays(["invoices.issue"]);
     await open();
     expect(
       screen.queryByRole("button", { name: "Review due days change" }),
     ).not.toBeInTheDocument();
   });
+  // Login sub-slice L5 (owner answer (a) to Q-2026-10-21-151): the due days are a Settings item.
+  it("TEST-FE-685 hides the due days form with property.manage alone", async () => {
+    renderDueDays(["property.manage"]);
+    await open();
+    expect(
+      screen.queryByRole("button", { name: "Review due days change" }),
+    ).not.toBeInTheDocument();
+  });
   it("TEST-FE-635 refuses days outside 1 to 90 and a malformed version before any review", async () => {
-    const { api } = renderDueDays(["property.manage"]);
+    const { api } = renderDueDays(["settings.manage"]);
     await open();
     fill("Due days change reason", "Owner policy");
     for (const [days, version] of [
@@ -2348,7 +2356,7 @@ describe("V1-055 one-time charge due days", () => {
     expect(api.setDueDays).not.toHaveBeenCalled();
   });
   it("TEST-FE-636 clears a retried due days command rejected for a stale Property version so the gate cannot stick", async () => {
-    const { api } = setup("DRAFT", ["property.manage"]);
+    const { api } = setup("DRAFT", ["settings.manage"]);
     const journal = memoryJournal({
       key: "due-key",
       command: {

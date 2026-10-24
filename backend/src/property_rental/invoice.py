@@ -15,6 +15,7 @@ from uuid import UUID, uuid4
 import psycopg
 from psycopg import IsolationLevel
 
+from property_rental.access_control import SETTINGS_MANAGE_CAPABILITY
 from property_rental.billing import SetInitialRentDueDateCommand
 from property_rental.identity import AuthenticatedActor, AuthorizationRequirement, is_authorized
 
@@ -834,7 +835,8 @@ class PostgresInvoiceService:
         actor: AuthenticatedActor,
     ) -> dict[str, object]:
         """Change the Property setting; issued Invoices keep their fixed Due Dates."""
-        self._authorize(actor, property_id, PROPERTY_MANAGE_CAPABILITY)
+        # Login sub-slice L5 (owner answer (a) to Q-2026-10-21-151): a Settings item.
+        self._authorize(actor, property_id, SETTINGS_MANAGE_CAPABILITY)
         try:
             with self._read_connection() as connection:
                 self._bound_query(connection)

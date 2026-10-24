@@ -11,6 +11,10 @@ from fastapi import APIRouter, Header, HTTPException, Request, Response, status
 from psycopg.types.json import Jsonb
 from pydantic import BaseModel, ConfigDict, Field
 
+from property_rental.access_control import (
+    PROPERTY_READ_CAPABILITY,
+    SETTINGS_MANAGE_CAPABILITY,
+)
 from property_rental.browser_security import require_browser_mutation
 from property_rental.identity import (
     ActorResolver,
@@ -22,6 +26,9 @@ from property_rental.property import PropertyConfiguration
 from property_rental.settings import Settings
 
 PROPERTY_MANAGE_CAPABILITY = "property.manage"
+# Login sub-slice L5 (owner answer (a) to Q-2026-10-21-151): the Property update and its
+# configuration are Settings; reading the Property needs `property.read` (Q-2026-10-21-160).
+PROPERTY_SETTINGS_CAPABILITY = SETTINGS_MANAGE_CAPABILITY
 INITIAL_PROPERTY_VERSION = 1
 
 
@@ -357,17 +364,20 @@ def _require_actor(request: Request, actor_resolver: ActorResolver) -> Authentic
     return actor
 
 
-def _require_property_manager(
+def _allowed(actor: AuthenticatedActor, capability: str, property_id: UUID) -> bool:
+    return is_authorized(
+        actor,
+        AuthorizationRequirement(capability=capability, property_id=str(property_id)),
+    )
+
+
+def _require_capability(
     actor: AuthenticatedActor,
     property_id: UUID,
+    *capabilities: str,
 ) -> None:
-    if not is_authorized(
-        actor,
-        AuthorizationRequirement(
-            capability=PROPERTY_MANAGE_CAPABILITY,
-            property_id=str(property_id),
-        ),
-    ):
+    """403 unless the actor holds one of `capabilities` for this Property."""
+    if not any(_allowed(actor, capability, property_id) for capability in capabilities):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
 
@@ -518,7 +528,8 @@ def create_property_router(
         request: Request,
         response: Response,
     ) -> dict[str, object]:
-        _require_actor(request, actor_resolver)
+        actor = _require_actor(request, actor_resolver)
+        _require_capability(actor, property_id, PROPERTY_READ_CAPABILITY)
         resource = _get_resource(flow, property_id)
         response.headers["ETag"] = f'"{resource.version}"'
         return _resource_body(resource, request)
@@ -532,7 +543,7 @@ def create_property_router(
         if_match: str | None = Header(default=None, alias="If-Match"),
     ) -> dict[str, object]:
         actor = _require_actor(request, actor_resolver)
-        _require_property_manager(actor, property_id)
+        _require_capability(actor, property_id, PROPERTY_SETTINGS_CAPABILITY)
         require_browser_mutation(request, settings)
         resource = _patch_resource(flow, property_id, patch, if_match, actor)
         response.headers["ETag"] = f'"{resource.version}"'
@@ -545,7 +556,11 @@ def create_property_router(
         response: Response,
     ) -> dict[str, object]:
         actor = _require_actor(request, actor_resolver)
-        _require_property_manager(actor, property_id)
+        # Login sub-slice L5 (Q-2026-10-24-186): the person who changes it, or a Property
+        # manager as before, may read it.
+        _require_capability(
+            actor, property_id, PROPERTY_SETTINGS_CAPABILITY, PROPERTY_MANAGE_CAPABILITY
+        )
         resource = _get_resource(flow, property_id)
         response.headers["ETag"] = f'"{resource.version}"'
         return _configuration_body(resource, request)
@@ -559,7 +574,7 @@ def create_property_router(
         if_match: str | None = Header(default=None, alias="If-Match"),
     ) -> dict[str, object]:
         actor = _require_actor(request, actor_resolver)
-        _require_property_manager(actor, property_id)
+        _require_capability(actor, property_id, PROPERTY_SETTINGS_CAPABILITY)
         require_browser_mutation(request, settings)
         resource = _patch_configuration(flow, property_id, patch, if_match, actor)
         response.headers["ETag"] = f'"{resource.version}"'

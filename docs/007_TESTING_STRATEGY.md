@@ -1107,6 +1107,8 @@ secret-free logs, and immutable audit evidence.
 
 Amended by DL-081 (login sub-slice L4): covered on PostgreSQL by `test_one_time_password_migration.py` (the records, the reset with and without MFA, who may reset whom, the change, the 24-hour end, append-only, the lock order) and `test_one_time_password_flow_migration.py` (through the flows: first password, the Owner's reset, a Staff account that kept its own sign-in code, the 24-hour edge, Staff MFA off, a sign-in, a reauthentication or a forced change that meets a reset, a change step of an account disabled meanwhile); without a database by the API, password-rule, local-authentication and blocklist tests; on the screen by TEST-FE-682, TEST-FE-683, TEST-FE-684 and TEST-FE-AUTH-011.
 
+Amended by DL-081 (login sub-slice L5, Q-2026-10-24-186): TEST-084, TEST-085 and TEST-109 are covered without a database by `test_route_authorization_inventory.py`, which walks every operation of the app's OpenAPI document and keeps the list of the 13 open operations (every other one answers 401 without a session whatever its body, every change 403 without the Origin or the CSRF pair, and nothing succeeds or is read for a signed-in user with no capability), and on PostgreSQL by `test_settings_access_routes_migration.py` (the five Settings changes through `create_app` with real sessions: refused for the default Manager bundle, allowed with Settings access and for the Owner).
+
 ## TEST-131 — Session Time Boundaries
 
 With controlled clocks, verify expiration immediately after 30 minutes of inactivity and

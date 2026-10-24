@@ -32486,7 +32486,7 @@
       "test_level": "integration",
       "test_path": "backend/tests/test_one_time_charges_migration.py",
       "status": "implemented",
-      "notes": "The Property one_time_charge_due_days setting needs property.manage, is versioned and audited, and never changes issued Invoice Due Dates."
+      "notes": "The Property one_time_charge_due_days setting needs property.manage, is versioned and audited, and never changes issued Invoice Due Dates. Login slice sub-slice L5 (owner answer (a) to Q-2026-10-21-151, DL-081): the setting needs settings.manage; property.manage alone is also refused."
     },
     {
       "test_id": "test_governing_source_obligation_keeps_its_recorded_due_date",
@@ -33546,7 +33546,7 @@
       "notes": "The one-time charge route needs the category capability and validates integer cents, reason and evidence."
     },
     {
-      "test_id": "test_one_time_charge_due_days_route_needs_property_manage_and_the_exact_version",
+      "test_id": "test_one_time_charge_due_days_route_needs_settings_access_and_the_exact_version",
       "upstream_ids": [
         "API-052",
         "BR-INV-018",
@@ -33555,7 +33555,7 @@
       "test_level": "integration",
       "test_path": "backend/tests/test_invoice_api.py",
       "status": "implemented",
-      "notes": "The Property one-time charge due-days route needs property.manage, the exact version and a bounded value."
+      "notes": "The Property one-time charge due-days route needs property.manage, the exact version and a bounded value. Login slice sub-slice L5 (owner answer (a) to Q-2026-10-21-151, DL-075, DL-081): renamed from the name ending `needs_property_manage_and_the_exact_version`; the route now needs settings.manage, and invoices.issue or property.manage alone is refused."
     },
     {
       "test_id": "test_initial_rent_due_date_route_uses_invoices_issue_with_a_mandatory_reason",
@@ -33630,7 +33630,7 @@
       "notes": "Recovers a sealed one-time charge with its exact charge identity."
     },
     {
-      "test_id": "test_billing_visibility_lists_damage_billing_and_property_management",
+      "test_id": "test_billing_visibility_lists_damage_billing_property_management_and_settings_access",
       "upstream_ids": [
         "API-052",
         "BR-INV-018",
@@ -33639,7 +33639,7 @@
       "test_level": "integration",
       "test_path": "backend/tests/test_invoice_api.py",
       "status": "implemented",
-      "notes": "Billing capability visibility lists damage_charges.bill and property.manage so the one-time charge and due-days forms can appear."
+      "notes": "Billing capability visibility lists damage_charges.bill and property.manage so the one-time charge and due-days forms can appear. Login slice sub-slice L5 (DL-081): renamed; the visibility also lists settings.manage, which the due-days form now needs."
     },
     {
       "test_id": "TEST-FE-633",
@@ -33663,7 +33663,7 @@
       "test_level": "UI component",
       "test_path": "frontend/src/InvoiceManagement.test.tsx",
       "status": "implemented",
-      "notes": "Hides the due days form without property.manage; synthetic fixtures only."
+      "notes": "Hides the due days form without property.manage; synthetic fixtures only. Login slice sub-slice L5 (owner answer (a) to Q-2026-10-21-151, DL-081): the form now needs settings.manage; the title says so."
     },
     {
       "test_id": "TEST-FE-635",
@@ -44550,7 +44550,7 @@
       "test_level": "unit",
       "test_path": "backend/tests/test_access_control.py",
       "status": "implemented",
-      "notes": "Every dotted string constant in backend/src (except access_control.py) is a catalog capability or one of the listed request-digest, audit-action, log-event, message-type and function labels; no listed label is a capability and every listed label is still used; 70 capabilities are checked today; every dotted constant in access_control.py is a catalog name (review round 1) (login slice sub-slice L1b-1; owner answers (a) to Q-2026-10-21-151, Q-2026-10-21-158, Q-2026-10-21-160 and Q-2026-10-21-161, (b) to Q-2026-10-21-162, DL-081)."
+      "notes": "Every dotted string constant in backend/src (except access_control.py) is a catalog capability or one of the listed request-digest, audit-action, log-event, message-type and function labels; no listed label is a capability and every listed label is still used; 70 capabilities are checked today; every dotted constant in access_control.py is a catalog name (review round 1) (login slice sub-slice L1b-1; owner answers (a) to Q-2026-10-21-151, Q-2026-10-21-158, Q-2026-10-21-160 and Q-2026-10-21-161, (b) to Q-2026-10-21-162, DL-081). Login slice sub-slice L5: 68 capabilities are checked, because service_rates.manage and utility_rates.manage no longer open a route."
     },
     {
       "test_id": "test_the_catalog_holds_the_approved_new_names",
@@ -47836,6 +47836,176 @@
       "test_path": "backend/tests/test_one_time_password_flow_migration.py",
       "status": "implemented",
       "notes": "Starting a sign-in code set-up takes the account's password lock shared like every other sign-in write, so a set-up from before a reset waits for it and is then refused, with no pending sign-in code written (login slice sub-slice L4 review round 3, Q-2026-10-24-185, DL-081)."
+    },
+    {
+      "test_id": "TEST-FE-685",
+      "upstream_ids": [
+        "UI-053",
+        "API-052",
+        "BR-INV-018",
+        "DL-075",
+        "DL-081"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Hides the due days form with property.manage alone, because the due days are a Settings item (owner answer (a) to Q-2026-10-21-151); synthetic fixtures only (login slice sub-slice L5, Q-2026-10-24-186, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "test_get_property_needs_property_read_for_this_property",
+      "upstream_ids": [
+        "API-026",
+        "SEC-002",
+        "SEC-003",
+        "DL-081"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_property_api.py",
+      "status": "implemented",
+      "notes": "GET of a Property needs property.read for that Property: no capability, property.read for another Property, or property.manage with settings.manage answer 403 (owner answer (a) to Q-2026-10-21-160) (login slice sub-slice L5, Q-2026-10-24-186, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "test_unit_reads_need_units_read_for_the_units_property",
+      "upstream_ids": [
+        "API-028",
+        "API-029",
+        "SEC-002",
+        "SEC-003",
+        "DL-081"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_unit_api.py",
+      "status": "implemented",
+      "notes": "The Unit list, a Unit and its timeline need units.read for the Unit's Property: property.manage without it, or units.read for another Property, answer 403; without any units.read a missing Unit is refused the same way as a present one (owner answer (a) to Q-2026-10-21-160) (login slice sub-slice L5, Q-2026-10-24-186, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "test_unit_changes_need_the_origin_and_the_csrf_pair",
+      "upstream_ids": [
+        "API-028",
+        "SEC-019",
+        "SEC-023",
+        "DL-081"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_unit_api.py",
+      "status": "implemented",
+      "notes": "Creating and updating a Unit with property.manage is refused (403) without the configured Origin or the CSRF pair and nothing is written (login slice sub-slice L5, Q-2026-10-24-186, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "test_the_settings_routes_need_settings_access_and_the_owner_always_has_it",
+      "upstream_ids": [
+        "API-008",
+        "API-026",
+        "API-027",
+        "API-043",
+        "API-052",
+        "DL-074",
+        "DL-075",
+        "DL-081",
+        "SEC-002",
+        "SEC-003",
+        "SEC-016"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_settings_access_routes_migration.py",
+      "status": "implemented",
+      "notes": "Through create_app and real sessions on a throwaway database: the default Manager bundle is refused the Service rate, Utility Rate, Property, configuration and due-days changes and nothing changes; with Settings access from the Owner all five succeed; the Owner succeeds without a grant; a Staff account with a sign-in code and Settings access succeeds; before any Settings access the Manager creates and updates a Unit with property.manage; the Staff account without units.read cannot read it (owner answer (a) to Q-2026-10-21-151, L1c review round 2) (login slice sub-slice L5, Q-2026-10-24-186, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "test_the_listed_open_operations_exist_and_the_app_serves_nothing_else",
+      "upstream_ids": [
+        "SEC-002",
+        "SEC-003",
+        "SEC-016",
+        "API-008",
+        "DL-081",
+        "TEST-084"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_route_authorization_inventory.py",
+      "status": "implemented",
+      "notes": "The 13 operations that run without a session (health, identity/me, sign-in) all exist, every other operation of the OpenAPI document (more than 150) is guarded, the app serves no route outside that document and the generated documentation pages answer 404 (review round 1) (login slice sub-slice L5, Q-2026-10-24-186, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "test_every_guarded_operation_answers_401_without_a_session",
+      "upstream_ids": [
+        "SEC-002",
+        "SEC-003",
+        "SEC-016",
+        "API-008",
+        "DL-081",
+        "TEST-084",
+        "TEST-109"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_route_authorization_inventory.py",
+      "status": "implemented",
+      "notes": "Every guarded operation answers 401 without a session with no body, an empty body or an unexpected body; only the two customer ledger reads refuse a GET body first (400) (login slice sub-slice L5, Q-2026-10-24-186, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "test_every_guarded_change_needs_the_origin_and_the_csrf_pair_first",
+      "upstream_ids": [
+        "SEC-002",
+        "SEC-003",
+        "SEC-016",
+        "API-008",
+        "DL-081",
+        "SEC-019",
+        "SEC-023",
+        "TEST-085"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_route_authorization_inventory.py",
+      "status": "implemented",
+      "notes": "Every guarded change by a signed-in user answers 403 with no headers, another Origin, no CSRF header or a CSRF token that differs from the cookie, before its body is validated (login slice sub-slice L5, Q-2026-10-24-186, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "test_no_guarded_read_gives_anything_to_a_user_without_capabilities",
+      "upstream_ids": [
+        "SEC-002",
+        "SEC-003",
+        "SEC-016",
+        "API-008",
+        "DL-081",
+        "TEST-084"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_route_authorization_inventory.py",
+      "status": "implemented",
+      "notes": "A signed-in user with no capability gets nothing from any guarded read (403, 404, a request error or 503 that fails closed without a database); the two capability summaries answer that nothing is allowed (login slice sub-slice L5, Q-2026-10-24-186, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "test_the_property_and_unit_reads_answer_403_without_their_capability",
+      "upstream_ids": [
+        "SEC-002",
+        "SEC-003",
+        "SEC-016",
+        "API-008",
+        "DL-081",
+        "API-026",
+        "API-027",
+        "API-028",
+        "API-029"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_route_authorization_inventory.py",
+      "status": "implemented",
+      "notes": "The Property, its configuration, the Unit list, a Unit and its timeline answer 403 to a signed-in user without their capability (owner answer (a) to Q-2026-10-21-160) (login slice sub-slice L5, Q-2026-10-24-186, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "test_no_guarded_change_succeeds_for_a_user_without_capabilities",
+      "upstream_ids": [
+        "SEC-002",
+        "SEC-003",
+        "SEC-016",
+        "API-008",
+        "DL-081",
+        "TEST-084"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_route_authorization_inventory.py",
+      "status": "implemented",
+      "notes": "With the Origin and the CSRF pair, no guarded change by a signed-in user with no capability succeeds or fails open; the Occupancy end route answers its fixed 409 (login slice sub-slice L5, Q-2026-10-24-186, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
     }
   ]
 }

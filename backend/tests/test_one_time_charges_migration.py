@@ -40,6 +40,8 @@ ALL_CAPABILITIES = (
     "invoices.issue",
     "damage_charges.bill",
     "property.manage",
+    # Login sub-slice L5 (owner answer (a) to Q-2026-10-21-151): the due days need Settings access.
+    "settings.manage",
 )
 
 
@@ -276,10 +278,9 @@ def test_due_days_setting_is_authorized_audited_and_never_changes_issued_invoice
     before = draft_and_issue(prop, first.charge_id, who)
     version = property_version(migrated_database_url, prop)
     change = SetOneTimeChargeDueDaysCommand(10, "Owner policy change", version)
-    with pytest.raises(InvoiceAuthorizationError):
-        invoices().set_one_time_charge_due_days(
-            prop, change, actor=staff(human, prop, "invoices.issue")
-        )
+    for refused in ("invoices.issue", "property.manage"):
+        with pytest.raises(InvoiceAuthorizationError):
+            invoices().set_one_time_charge_due_days(prop, change, actor=staff(human, prop, refused))
     with pytest.raises(InvoiceVersionConflict):
         invoices().set_one_time_charge_due_days(
             prop, replace(change, expected_version=version + 5), actor=who

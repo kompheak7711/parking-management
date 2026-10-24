@@ -298,6 +298,7 @@ database_test_suites='
   tests/test_reauthentication_migration.py
   tests/test_one_time_password_migration.py
   tests/test_one_time_password_flow_migration.py
+  tests/test_settings_access_routes_migration.py
 '
 
 for database_test_file in $database_test_suites; do

@@ -68,3 +68,19 @@ def is_authorized(
 def deny_unauthenticated_actor(_: Request) -> None:
     """Deny when no external authentication provider establishes an actor."""
     return None
+
+
+def remembered_actor(resolver: ActorResolver) -> ActorResolver:
+    """The actor of a request resolved once (login sub-slice L5): the route guard and the route
+    read the same answer, and the session is looked up once per request."""
+
+    def resolve(request: Request) -> AuthenticatedActor | None:
+        remembered: tuple[AuthenticatedActor | None] | None = getattr(
+            request.state, "prm_resolved_actor", None
+        )
+        if remembered is None:
+            remembered = (resolver(request),)
+            request.state.prm_resolved_actor = remembered
+        return remembered[0]
+
+    return resolve

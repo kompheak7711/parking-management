@@ -11,6 +11,7 @@ from fastapi import APIRouter, Header, HTTPException, Query, Request, Response, 
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 
+from property_rental.access_control import SETTINGS_MANAGE_CAPABILITY
 from property_rental.api import require_billing_actor
 from property_rental.billing import SetInitialRentDueDateCommand
 from property_rental.browser_security import require_browser_mutation
@@ -341,6 +342,7 @@ def billing_capabilities(actor: AuthenticatedActor, property_id: UUID) -> list[s
             "billing.generate",
             DAMAGE_CHARGE_BILL_CAPABILITY,
             PROPERTY_MANAGE_CAPABILITY,
+            SETTINGS_MANAGE_CAPABILITY,
             "late_payment.review",
             "late_payment.final_decision",
             "late_payment.charge_correction",
@@ -569,7 +571,8 @@ def create_invoice_router(
         if request.query_params:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
         actor = _actor(request, resolver)
-        _authorize(actor, property_id, PROPERTY_MANAGE_CAPABILITY)
+        # Login sub-slice L5 (owner answer (a) to Q-2026-10-21-151): a Settings item.
+        _authorize(actor, property_id, SETTINGS_MANAGE_CAPABILITY)
         require_browser_mutation(request, settings)
         expected_version = _version(if_match)
         resource = _invoke(

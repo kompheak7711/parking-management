@@ -14,12 +14,15 @@ from fastapi import APIRouter, Header, HTTPException, Query, Request, Response, 
 from psycopg.types.json import Jsonb
 from pydantic import BaseModel, ConfigDict, Field
 
+from property_rental.access_control import UNITS_READ_CAPABILITY
+from property_rental.browser_security import require_browser_mutation
 from property_rental.identity import (
     ActorResolver,
     AuthenticatedActor,
     AuthorizationRequirement,
     is_authorized,
 )
+from property_rental.settings import Settings
 from property_rental.unit import Unit, UnitStatus, UnitType
 
 UNIT_MANAGE_CAPABILITY: Final = "property.manage"
@@ -546,6 +549,25 @@ def _require_manager(actor: AuthenticatedActor, property_id: UUID) -> None:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
 
+def _require_reader(actor: AuthenticatedActor, property_id: UUID | None) -> None:
+    """Login sub-slice L5 (owner answer (a) to Q-2026-10-21-160): `units.read` for the Property.
+    Without a Property (a Unit not read yet), any `units.read` grant, so a person without it
+    learns nothing about which Units exist."""
+    if property_id is not None:
+        allowed = is_authorized(
+            actor,
+            AuthorizationRequirement(
+                capability=UNITS_READ_CAPABILITY, property_id=str(property_id)
+            ),
+        )
+    else:
+        allowed = any(
+            grant.capability == UNITS_READ_CAPABILITY for grant in actor.capability_grants
+        )
+    if not allowed:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
+
 def _expected_version(value: str | None, current: int) -> int:
     if value is None:
         raise UnitVersionConflict(current)
@@ -589,7 +611,9 @@ def _body(unit: Unit) -> dict[str, object]:
     }
 
 
-def create_unit_router(resolver: ActorResolver, flow: UnitResourceFlow) -> APIRouter:
+def create_unit_router(
+    resolver: ActorResolver, flow: UnitResourceFlow, settings: Settings
+) -> APIRouter:
     """Create Unit collection, detail, mutation, and timeline routes."""
     router = APIRouter(tags=["units"])
 
@@ -611,6 +635,7 @@ def create_unit_router(resolver: ActorResolver, flow: UnitResourceFlow) -> APIRo
         cursor: str | None = None,
     ) -> dict[str, object]:
         actor = _require_actor(request, resolver)
+        _require_reader(actor, property_id)
         try:
             page = flow.list(
                 property_id,
@@ -641,6 +666,7 @@ def create_unit_router(resolver: ActorResolver, flow: UnitResourceFlow) -> APIRo
     ) -> dict[str, object]:
         actor = _require_actor(request, resolver)
         _require_manager(actor, property_id)
+        require_browser_mutation(request, settings)
         try:
             unit = flow.create(
                 property_id,
@@ -660,7 +686,9 @@ def create_unit_router(resolver: ActorResolver, flow: UnitResourceFlow) -> APIRo
     @router.get("/units/{unit_id}")
     def get_unit(unit_id: UUID, request: Request, response: Response) -> dict[str, object]:
         actor = _require_actor(request, resolver)
+        _require_reader(actor, None)
         unit = get_unit_or_http(unit_id)
+        _require_reader(actor, unit.property_id)
         response.headers["ETag"] = f'"{unit.version}"'
         body = _body(unit)
         body["can_manage"] = _can_manage(actor, unit.property_id)
@@ -677,6 +705,7 @@ def create_unit_router(resolver: ActorResolver, flow: UnitResourceFlow) -> APIRo
         actor = _require_actor(request, resolver)
         current = get_unit_or_http(unit_id)
         _require_manager(actor, current.property_id)
+        require_browser_mutation(request, settings)
         if not patch.model_fields_set:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT)
         if any(getattr(patch, field_name) is None for field_name in patch.model_fields_set):
@@ -708,7 +737,9 @@ def create_unit_router(resolver: ActorResolver, flow: UnitResourceFlow) -> APIRo
         limit: Annotated[int, Query(ge=1, le=MAX_PAGE_SIZE)] = DEFAULT_PAGE_SIZE,
         cursor: str | None = None,
     ) -> dict[str, object]:
-        _require_actor(request, resolver)
+        actor = _require_actor(request, resolver)
+        _require_reader(actor, None)
+        _require_reader(actor, get_unit_or_http(unit_id).property_id)
         try:
             page = flow.timeline(unit_id, limit=limit, cursor=cursor)
         except UnitResourceNotFound as exc:

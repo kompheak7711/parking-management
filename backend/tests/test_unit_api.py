@@ -7,7 +7,7 @@ from uuid import UUID, uuid4
 from fastapi.testclient import TestClient
 
 from property_rental.app import create_app
-from property_rental.identity import AuthenticatedActor, CapabilityGrant
+from property_rental.identity import ActorResolver, AuthenticatedActor, CapabilityGrant
 from property_rental.unit import Unit, UnitStatus, UnitType
 from property_rental.unit_api import (
     UnitPage,
@@ -90,18 +90,32 @@ class InMemoryUnitFlow:
         return UnitTimelinePage(self.events.get(unit_id, ())[:limit], None)
 
 
-def manager(property_id: UUID) -> AuthenticatedActor:
+def resolving(actor: AuthenticatedActor) -> ActorResolver:
+    return lambda _: actor
+
+
+def actor_with(property_id: UUID, *capabilities: str) -> AuthenticatedActor:
     return AuthenticatedActor(
         actor_id=str(uuid4()),
         capability_grants=frozenset(
-            {
-                CapabilityGrant(
-                    capability="property.manage",
-                    property_ids=frozenset({str(property_id)}),
-                )
-            }
+            CapabilityGrant(capability=capability, property_ids=frozenset({str(property_id)}))
+            for capability in capabilities
         ),
     )
+
+
+def manager(property_id: UUID) -> AuthenticatedActor:
+    # Login sub-slice L5 (owner answer (a) to Q-2026-10-21-160): reading Units needs
+    # `units.read`; creating and updating them still needs `property.manage`.
+    return actor_with(property_id, "property.manage", "units.read")
+
+
+# Login sub-slice L5: every change needs the configured Origin and the CSRF pair.
+BROWSER = {
+    "Origin": "https://localhost",
+    "Cookie": "__Host-prm_csrf=csrf-test-token",
+    "X-CSRF-Token": "csrf-test-token",
+}
 
 
 def sample_unit(property_id: UUID, *, version: int = 1) -> Unit:
@@ -153,13 +167,16 @@ def test_unit_create_rejects_unscoped_actor_and_unknown_fields() -> None:
         "status": "VACANT",
     }
 
-    assert reader.post(f"/properties/{property_id}/units", json=payload).status_code == 403
+    assert (
+        reader.post(f"/properties/{property_id}/units", json=payload, headers=BROWSER).status_code
+        == 403
+    )
 
     client = TestClient(
         create_app(actor_resolver=lambda _: manager(property_id), unit_resource_flow=flow)
     )
     payload["customer_type"] = "TENANT"
-    response = client.post(f"/properties/{property_id}/units", json=payload)
+    response = client.post(f"/properties/{property_id}/units", json=payload, headers=BROWSER)
 
     assert response.status_code == 422
     assert flow.units == {}
@@ -174,6 +191,7 @@ def test_unit_create_detail_and_version_checked_patch() -> None:
 
     created = client.post(
         f"/properties/{property_id}/units",
+        headers=BROWSER,
         json={
             "unit_number": "101",
             "floor": "1",
@@ -189,18 +207,20 @@ def test_unit_create_detail_and_version_checked_patch() -> None:
     assert detail.status_code == 200
     assert detail.json()["data"]["can_manage"] is True
 
-    stale = client.patch(f"/units/{unit_id}", headers={"If-Match": '"0"'}, json={"floor": "2"})
+    stale = client.patch(
+        f"/units/{unit_id}", headers={**BROWSER, "If-Match": '"0"'}, json={"floor": "2"}
+    )
     assert stale.status_code == 412
     assert stale.json()["error"]["current_version"] == 1
 
     explicit_null = client.patch(
-        f"/units/{unit_id}", headers={"If-Match": '"1"'}, json={"floor": None}
+        f"/units/{unit_id}", headers={**BROWSER, "If-Match": '"1"'}, json={"floor": None}
     )
     assert explicit_null.status_code == 422
 
     updated = client.patch(
         f"/units/{unit_id}",
-        headers={"If-Match": '"1"'},
+        headers={**BROWSER, "If-Match": '"1"'},
         json={"floor": "2", "status": "CLEANING"},
     )
     assert updated.status_code == 200
@@ -227,7 +247,7 @@ def test_unit_timeline_preserves_event_identity_and_has_no_delete_route() -> Non
     flow = InMemoryUnitFlow({unit.unit_id: unit}, {unit.unit_id: (event,)})
     client = TestClient(
         create_app(
-            actor_resolver=lambda _: AuthenticatedActor(actor_id=str(uuid4())),
+            actor_resolver=lambda _: actor_with(property_id, "units.read"),
             unit_resource_flow=flow,
         )
     )
@@ -248,3 +268,69 @@ def test_unit_timeline_preserves_event_identity_and_has_no_delete_route() -> Non
         "outcome": "SUCCEEDED",
     }
     assert client.delete(f"/units/{unit.unit_id}").status_code == 405
+
+
+def test_unit_reads_need_units_read_for_the_units_property() -> None:
+    """Login sub-slice L5 (owner answer (a) to Q-2026-10-21-160): the Unit list, a Unit and its
+    timeline need `units.read` for the Unit's Property; without any `units.read` a missing
+    Unit is refused the same way as a present one, so nothing tells which Units exist."""
+    property_id = uuid4()
+    unit = sample_unit(property_id)
+    flow = InMemoryUnitFlow({unit.unit_id: unit})
+    paths = (
+        f"/properties/{property_id}/units",
+        f"/units/{unit.unit_id}",
+        f"/units/{unit.unit_id}/timeline",
+    )
+    for actor in (
+        actor_with(property_id, "property.manage", "property.read"),
+        actor_with(uuid4(), "units.read"),
+    ):
+        client = TestClient(create_app(actor_resolver=resolving(actor), unit_resource_flow=flow))
+        for path in paths:
+            assert client.get(path).status_code == 403, path
+    nobody = TestClient(
+        create_app(
+            actor_resolver=lambda _: actor_with(property_id, "property.read"),
+            unit_resource_flow=flow,
+        )
+    )
+    assert nobody.get(f"/units/{uuid4()}").status_code == 403
+    assert nobody.get(f"/units/{uuid4()}/timeline").status_code == 403
+    reader = TestClient(
+        create_app(
+            actor_resolver=lambda _: actor_with(property_id, "units.read"),
+            unit_resource_flow=flow,
+        )
+    )
+    for path in paths:
+        assert reader.get(path).status_code == 200, path
+    assert reader.get(f"/units/{uuid4()}").status_code == 404
+    assert reader.get(f"/properties/{property_id}/units").json()["data"]["can_manage"] is False
+
+
+def test_unit_changes_need_the_origin_and_the_csrf_pair() -> None:
+    """Login sub-slice L5 (owner answer (a) to Q-2026-10-21-160): creating or changing a Unit
+    without the configured Origin or the CSRF pair is refused and changes nothing."""
+    property_id = uuid4()
+    unit = sample_unit(property_id)
+    flow = InMemoryUnitFlow({unit.unit_id: unit})
+    client = TestClient(
+        create_app(actor_resolver=lambda _: manager(property_id), unit_resource_flow=flow)
+    )
+    payload = {"unit_number": "102", "floor": "1", "unit_type": "STUDIO", "status": "VACANT"}
+    for headers in (
+        {},
+        {**BROWSER, "Origin": "https://elsewhere.example"},
+        {key: value for key, value in BROWSER.items() if key != "X-CSRF-Token"},
+    ):
+        created = client.post(f"/properties/{property_id}/units", json=payload, headers=headers)
+        assert created.status_code == 403
+        changed = client.patch(
+            f"/units/{unit.unit_id}",
+            json={"floor": "2"},
+            headers={**headers, "If-Match": '"1"'},
+        )
+        assert changed.status_code == 403
+    assert list(flow.units) == [unit.unit_id]
+    assert flow.units[unit.unit_id].floor == "1"
