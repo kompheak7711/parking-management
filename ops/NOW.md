@@ -351,4 +351,6 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md.
 
 - From 2026-10-24 the login slice continues in a cloud session from GitHub. Unfinished L3d-1 is on branch wip/login-L3d-1. Do not commit on these branches on the Mac until the owner says the cloud work is pulled back.
 
+- Login L3d-1 DONE (2026-10-24, cloud session; migration `20270203_191`; record ops/reviews/V1-056-login-L3d-1.md): high-risk reauthentication (password and, when MFA is needed, the sign-in code; one at a time per account; wrong tries counted), a new CSRF token and the separate reauthentication cookie `__Host-prm_reauth` (owner answer of 2026-10-24 to Q-2026-10-24-183; only its digest kept), `reauthenticated_at` shown only with that cookie, 60 seconds between password-only reauthentications; bindings for L3d-2 and L4; reviews rounds 1 to 3 (rounds 2 and 3 in the cloud); U2 3,923, P3 2,652 passed. Work continues in the cloud on `implementation/foundation`, pushed to GitHub after each finished sub-slice (owner, 2026-10-23: cloud sessions may push their own work branches). NEXT: L3d-2 (the 15-minute check on the high-risk routes).
+
 - Updated: 2026-10-24.
