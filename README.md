@@ -280,14 +280,17 @@ screen.
    Choose your own username and names (a display name in Khmer is fine; type it without the
    invisible space some Khmer keyboards add, or the set-up refuses it). Type the Owner password
    twice (15 to 128 characters; nothing shows while you type). The set-up shows a key of
-   letters and digits: in Google Authenticator tap +, then "Enter a setup key", type the key,
-   choose "Time based", and type the 6-digit code it shows. Write the 10 recovery codes on paper,
+   letters and digits: in Google Authenticator tap +, then "Enter a setup key", name it CHETANA,
+   type the key, choose "Time based", and type the 6-digit code it shows. Write the 10 recovery codes on paper,
    and type the acknowledgement it asks for. You have 15 minutes from the key to the
-   acknowledgement; if time runs out, nothing is saved and you start again. The
+   acknowledgement; if time runs out, nothing is saved and you start again. At the end the
+   window is cleared and says either "The first Owner account is made" (close the window and go
+   on) or "The set-up stopped and saved nothing" (delete the new CHETANA entry in Google
+   Authenticator, throw away the codes you wrote, and run this step again). The
    set-up can run only once; after it, the Owner makes every other account in the app.
 6. **Make the HTTPS certificate** (once a year): `sh scripts/local/make-certificate.sh`. It covers
    `https://NAME.local:5173` (NAME is the Mac's local network name, System Settings, General,
-   Sharing, shown in lower case) and `https://localhost:5173`. Trust its authority once (it
+   Sharing, shown in lower case); sign in only at that address. Trust its authority once (it
    lasts 10 years; the script warns 60 days before it ends):
    - on the Mac: `sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain .local/https/local-ca.pem`;
    - on the iPad: `open -R .local/https/local-ca.pem` shows the file in Finder (`.local` is

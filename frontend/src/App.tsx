@@ -920,10 +920,14 @@ export function App({
         returnToSignIn({ kind: "sign_in", signedOut: true });
       })
       .catch(() => {
-        returnToSignIn({
-          kind: "sign_in",
-          note: "Your local session was cleared. Sign in again to continue.",
-        });
+        // The server did not confirm the sign-out, so its session may still be alive: stay
+        // signed in and say so, rather than show the sign-in screen to the next person (login
+        // L8 review).
+        setLogoutPending(false);
+        setSubmissionState("idle");
+        setNotice(
+          "Sign out did not reach the office computer. Check the connection and sign out again.",
+        );
       });
   }
 

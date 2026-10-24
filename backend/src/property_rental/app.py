@@ -938,6 +938,9 @@ def create_app(
                 r"/api/v1/properties/[^/]+/(?:lease-enforcement-leases|rent-nonpayment-alerts|initial-rent-unpaid-alerts)",
                 request.url.path,
             )
+            # Every other API answer that sets no caching rule of its own (login L8 review: the
+            # account administration, audit, Property and Unit reads) is per person as well.
+            or (request.url.path.startswith("/api/v1/") and "Cache-Control" not in response.headers)
         ):
             response.headers["Cache-Control"] = "private, no-store"
             response.headers["Vary"] = "Cookie"

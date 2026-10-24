@@ -904,6 +904,9 @@ def test_account_list_and_creation_are_scoped_audited_and_never_return_credentia
         }
     ]
     assert listed.json()["page"] == {"next_cursor": "next-users", "limit": 50}
+    # Login L8 review: the account list is per person, so no browser or proxy keeps a copy.
+    assert listed.headers["cache-control"] == "private, no-store"
+    assert listed.headers["vary"] == "Cookie"
     assert created.status_code == 201
     assert created.headers["Location"] == f"/api/v1/users/{CREATED_USER_ID}"
     assert created.json()["data"]["user_id"] == str(CREATED_USER_ID)

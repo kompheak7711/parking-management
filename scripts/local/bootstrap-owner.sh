@@ -39,8 +39,21 @@ shift 2
 [ "${PRM_PROTECTED_KEY_FD:-}" = 4 ] || prm_fail "Start it with: sh scripts/local/bootstrap-owner.sh"
 ( : <&4 ) 2>/dev/null || prm_fail "Start it with: sh scripts/local/bootstrap-owner.sh"
 cd "$PRM_ROOT/backend"
-exec "$uv_path" run python -m property_rental.bootstrap_cli "$@" \
+status=0
+"$uv_path" run python -m property_rental.bootstrap_cli "$@" \
   --totp-key-identifier local-mac-owner-bootstrap \
   --ceremony-timeout-seconds 900 \
   3< "$PRM_SECRETS/bootstrap_database_url" \
-  5< "$PRM_BLOCKLIST"
+  5< "$PRM_BLOCKLIST" || status=$?
+# The key and the recovery codes were shown in this window: clear it and its scrollback (login
+# L8 review), then say plainly what happened, since the set-up itself prints no result.
+printf '\033[3J\033[2J\033[H' 2>/dev/null > /dev/tty || true
+if [ "$status" -eq 0 ]; then
+  printf 'The first Owner account is made. Close this window, then go on with step 6.\n'
+else
+  printf 'The set-up stopped and saved nothing (or the Owner was already made).\n' >&2
+  printf 'Check the password rule (15 to 128 characters, not a common password), the 6-digit\n' >&2
+  printf 'code and the sentence; delete the new CHETANA entry in Google Authenticator; then run\n' >&2
+  printf 'step 5 again. Throw away the recovery codes you wrote: they were not saved.\n' >&2
+fi
+exit "$status"

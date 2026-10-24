@@ -49848,6 +49848,67 @@
       "test_path": "frontend/src/UnitManagement.test.tsx",
       "status": "implemented",
       "notes": "V1-058 R2a: the Unit screen picks the Floor and Unit Type from the Settings lists (removed items hidden), shows the Unit Type name, saves the optional details, and the edit form shows the Unit number as fixed and never sends it."
+    },
+    {
+      "test_id": "test_acknowledgement_in_lower_case_or_with_extra_spaces_commits",
+      "upstream_ids": [
+        "SEC-073",
+        "API-100",
+        "DL-081"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_initial_owner_bootstrap_cli.py",
+      "status": "implemented",
+      "notes": "The first-Owner set-up accepts the recovery-code sentence typed in lower case or with extra spaces (login sub-slice L8, final review of the login slice, decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-056-login-L8.md; DL-081)."
+    },
+    {
+      "test_id": "test_set_up_code_of_this_or_the_previous_step_is_accepted_and_spaces_are_removed",
+      "upstream_ids": [
+        "SEC-073",
+        "API-100",
+        "DL-081"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_initial_owner_bootstrap_cli.py",
+      "status": "implemented",
+      "notes": "The first-Owner set-up accepts the TOTP code of this or the previous 30-second step, as sign-in does, removes spaces typed inside it, and refuses an older or a later code (login sub-slice L8, final review of the login slice, decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-056-login-L8.md; DL-081)."
+    },
+    {
+      "test_id": "test_the_owner_set_up_says_whether_the_owner_was_made",
+      "upstream_ids": [
+        "SEC-073",
+        "DEPLOY-019",
+        "DL-081"
+      ],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_local_run_scripts.py",
+      "status": "implemented",
+      "notes": "scripts/local/bootstrap-owner.sh says the first Owner is made, or that the set-up stopped and saved nothing, and keeps the set-up's exit status (login sub-slice L8, final review of the login slice, decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-056-login-L8.md; DL-081)."
+    },
+    {
+      "test_id": "test_request_and_enrollment_models_never_print_a_password_code_or_key",
+      "upstream_ids": [
+        "API-096",
+        "API-097",
+        "SEC-071",
+        "DL-081"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_authentication_api.py",
+      "status": "implemented",
+      "notes": "A printed sign-in, MFA, reauthentication or enrollment model shows no password, code or TOTP key (login sub-slice L8, final review of the login slice, decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-056-login-L8.md; DL-081)."
+    },
+    {
+      "test_id": "TEST-FE-710",
+      "upstream_ids": [
+        "UI-111",
+        "API-096",
+        "DL-081"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "When sign-out does not reach the office computer, the screen stays signed in and says so, instead of showing the sign-in screen while the server session lives on (login sub-slice L8, final review of the login slice, decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-056-login-L8.md; DL-081)."
     }
   ]
 }
