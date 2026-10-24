@@ -10,6 +10,7 @@ never of the test machine.
 
 from __future__ import annotations
 
+import time
 import uuid
 
 import psycopg
@@ -106,15 +107,92 @@ def test_the_password_and_a_new_sign_in_code_reauthenticate_a_session(
         request_id="r",
     )
     assert result.csrf_token and result.session.reauthenticated_at is not None
+    assert result.reauthentication_token and result.reauthentication_token != result.csrf_token
     assert result.session.actor_id == str(account.actor_id)
     assert (
-        flow.inspect_session(session_token=session, request_id="r").reauthenticated_at
+        flow.inspect_session(
+            session_token=session,
+            request_id="r",
+            reauthentication_token=result.reauthentication_token,
+        ).reauthenticated_at
         == result.session.reauthenticated_at
     )
     assert read(code_database, REAUTHENTICATIONS_OF, account.actor_id) == [
         ("totp", account.enrollment_id, step)
     ]
     assert read(code_database, USED_STEPS_OF, account.enrollment_id) == [(step - 1,), (step,)]
+
+
+def test_a_reauthentication_shows_only_with_its_own_reauthentication_cookie(
+    code_database: CodeDatabase,
+) -> None:
+    """Review round 2 (security S-1), owner answer of 2026-10-24 to Q-2026-10-24-183: each
+    reauthentication answers a new reauthentication cookie; only its sha256 digest is kept on
+    the row, never the cookie itself. The session shows `reauthenticated_at` only with the
+    cookie made for it: a copied session cookie alone shows none, nor does a reauthentication
+    cookie of another session, a made-up, empty or too long one (which never refuses the live
+    session either). A later reauthentication answers a new cookie; each cookie shows its own
+    row."""
+    flow = flow_of(code_database)
+    account = add_account(code_database, "l3d-1.cookie")
+    other = add_account(code_database, "l3d-1.cookie-other")
+    step = fresh_step(code_database)
+    session = signed_in(flow, code_database, account, step - 1)
+    other_session = signed_in(flow, code_database, other, step - 1)
+    first = flow.reauthenticate(
+        session_token=session,
+        password=PASSWORD,
+        second_factor_method="totp",
+        second_factor_code=code_for(account, step),
+        request_id="c",
+    )
+    other_result = flow.reauthenticate(
+        session_token=other_session,
+        password=PASSWORD,
+        second_factor_method="totp",
+        second_factor_code=code_for(other, step),
+        request_id="c",
+    )
+    kept = read(
+        code_database,
+        "SELECT token_verifier FROM app.browser_session_reauthentications WHERE actor_id = %s",
+        account.actor_id,
+    )
+    assert kept == [(digest(first.reauthentication_token),)]
+
+    def shown(token: str | None) -> object:
+        return flow.inspect_session(
+            session_token=session, request_id="c", reauthentication_token=token
+        ).reauthenticated_at
+
+    assert shown(first.reauthentication_token) == first.session.reauthenticated_at
+    assert shown(None) is None
+    assert shown(other_result.reauthentication_token) is None
+    assert shown("made-up-" + first.reauthentication_token) is None
+    # A missing or malformed cookie shows none and never refuses the live session.
+    assert shown("") is None
+    assert shown("x" * 129) is None
+    # Each reauthentication answers its own cookie (review round 2): at the next time step a
+    # second one is not limited (only password-only ones are), and each cookie shows its own row.
+    while fresh_step(code_database) <= step:
+        time.sleep(1)
+    later = flow.reauthenticate(
+        session_token=session,
+        password=PASSWORD,
+        second_factor_method="totp",
+        second_factor_code=code_for(account, step + 1),
+        request_id="c",
+    )
+    assert later.reauthentication_token != first.reauthentication_token
+    assert later.session.reauthenticated_at is not None
+    assert first.session.reauthenticated_at is not None
+    assert later.session.reauthenticated_at > first.session.reauthenticated_at
+    assert shown(later.reauthentication_token) == later.session.reauthenticated_at
+    assert shown(first.reauthentication_token) == first.session.reauthenticated_at
+    assert read(code_database, REAUTHENTICATIONS_OF, account.actor_id) == [
+        ("totp", account.enrollment_id, step),
+        ("totp", account.enrollment_id, step + 1),
+    ]
 
 
 def test_wrong_passwords_and_codes_count_and_a_wait_refuses_before_any_check(
@@ -192,7 +270,8 @@ def test_an_account_without_mfa_reauthenticates_with_its_password_only(
 ) -> None:
     """A Staff account with MFA `optional` and no sign-in code reauthenticates with the password
     alone (method `password`); a second factor given anyway is refused; a wrong password is
-    counted (review round 1); a second reauthentication moves `reauthenticated_at` on."""
+    counted (review round 1); a second one within a minute answers 429, for that account only
+    (review round 2)."""
     flow = flow_of(code_database)
     account = add_account(
         code_database, "l3d-1.staff", account_class="staff", mfa="optional", sign_in_code=False
@@ -206,15 +285,39 @@ def test_an_account_without_mfa_reauthenticates_with_its_password_only(
     with pytest.raises(AuthenticationRejected):
         reauthenticate(flow, result.session_token, password=WRONG, method=None)
     assert read(code_database, TRIES_OF, username_key(account)) == [("password",)]
-    reauthenticate(flow, result.session_token, method=None)
-    first = flow.inspect_session(session_token=result.session_token, request_id="p")
-    reauthenticate(flow, result.session_token, method=None)
-    second = flow.inspect_session(session_token=result.session_token, request_id="p")
-    assert first.reauthenticated_at is not None and second.reauthenticated_at is not None
-    assert second.reauthenticated_at > first.reauthenticated_at
-    assert read(code_database, REAUTHENTICATIONS_OF, account.actor_id) == [
-        ("password", None, None),
-        ("password", None, None),
+    first = flow.reauthenticate(
+        session_token=result.session_token,
+        password=PASSWORD,
+        second_factor_method=None,
+        second_factor_code=None,
+        request_id="p",
+    )
+    assert first.session.reauthenticated_at is not None
+    # Review round 2 (security S-3): a second password-only reauthentication of the account
+    # within a minute answers 429 before any password check, a wrong password included, and
+    # writes and counts nothing.
+    for password in (PASSWORD, WRONG):
+        with pytest.raises(AuthenticationRateLimited) as limited:
+            reauthenticate(flow, result.session_token, password=password, method=None)
+        assert limited.value.retry_after_seconds is not None
+        assert 1 <= limited.value.retry_after_seconds <= 60
+    assert read(code_database, TRIES_OF, username_key(account)) == [("password",)]
+    assert read(code_database, REAUTHENTICATIONS_OF, account.actor_id) == [("password", None, None)]
+    # The minute is per account: another password-only account is not limited.
+    neighbour = add_account(
+        code_database,
+        "l3d-1.staff-neighbour",
+        account_class="staff",
+        mfa="optional",
+        sign_in_code=False,
+    )
+    other = flow.login(
+        username=neighbour.username, password=PASSWORD, request_source="l3d-1", request_id="p"
+    )
+    assert other.session_token is not None
+    reauthenticate(flow, other.session_token, method=None)
+    assert read(code_database, REAUTHENTICATIONS_OF, neighbour.actor_id) == [
+        ("password", None, None)
     ]
 
 
@@ -316,8 +419,9 @@ def test_the_reauthentication_route_answers_the_session_and_a_new_csrf_cookie(
     code_database: CodeDatabase,
 ) -> None:
     """API-097 over HTTP: `POST /auth/reauthenticate` with the password and the sign-in code
-    answers the session with `reauthenticated_at`, `Cache-Control: no-store` and a new CSRF
-    cookie; a wrong password answers 401."""
+    answers the session with `reauthenticated_at`, `Cache-Control: no-store`, a new CSRF cookie
+    and the reauthentication cookie (review round 2); `GET /auth/session` shows the
+    reauthentication only with that cookie; a wrong password answers 401."""
     flow = flow_of(code_database)
     app = create_app(
         Settings(database_url=SecretStr(code_database.runtime_url), allowed_browser_origin=ORIGIN),
@@ -363,6 +467,34 @@ def test_the_reauthentication_route_answers_the_session_and_a_new_csrf_cookie(
         assert answer.json()["data"]["reauthenticated_at"] is not None
         assert answer.headers["Cache-Control"] == "no-store"
         assert client.cookies["__Host-prm_csrf"] != before
+        # Review round 2 (security S-1): the separate reauthentication cookie. This browser's
+        # session shows the reauthentication; a second browser with a copy of the session
+        # cookie alone shows none.
+        reauthentication_cookie = client.cookies["__Host-prm_reauth"]
+        assert reauthentication_cookie not in answer.text
+        session_cookie = client.cookies["__Host-prm_session"]
+        mine = client.get("/api/v1/auth/session", headers={"X-Request-ID": "l3d-1-http"})
+        assert mine.status_code == 200
+        assert (
+            mine.json()["data"]["reauthenticated_at"] == answer.json()["data"]["reauthenticated_at"]
+        )
+    with TestClient(app, base_url="https://testserver") as copied:
+        copied.cookies.set("__Host-prm_session", session_cookie)
+        theirs = copied.get("/api/v1/auth/session", headers={"X-Request-ID": "l3d-1-http"})
+        assert theirs.status_code == 200
+        assert theirs.json()["data"]["reauthenticated_at"] is None
+        # A malformed reauthentication cookie never turns the live session away (round 2).
+        copied.cookies.clear()
+        for bad in ("", "x" * 129):
+            answered = copied.get(
+                "/api/v1/auth/session",
+                headers={
+                    "X-Request-ID": "l3d-1-http",
+                    "Cookie": f"__Host-prm_session={session_cookie}; __Host-prm_reauth={bad}",
+                },
+            )
+            assert answered.status_code == 200
+            assert answered.json()["data"]["reauthenticated_at"] is None
 
 
 def test_a_reauthentication_is_guarded_in_the_database(code_database: CodeDatabase) -> None:
@@ -398,7 +530,8 @@ def test_a_reauthentication_is_guarded_in_the_database(code_database: CodeDataba
         connection.commit()
     add_row = (
         "INSERT INTO app.browser_session_reauthentications (reauthentication_id, session_id, "
-        "actor_id, method, enrollment_id, time_step) VALUES (%s, %s, %s, %s, %s, %s)"
+        "actor_id, method, enrollment_id, time_step, token_verifier) "
+        "VALUES (%s, %s, %s, %s, %s, %s, sha256(gen_random_uuid()::text::bytea))"
     )
     cases = (
         ((session_id, other.actor_id, "password", None, None), "live session of its account"),
@@ -431,9 +564,13 @@ def test_a_reauthentication_is_guarded_in_the_database(code_database: CodeDataba
             "'reauthenticated_at', 'INSERT'), has_column_privilege('prm_runtime', "
             "'app.browser_session_reauthentications', 'method', 'UPDATE'), "
             "has_table_privilege('prm_runtime', 'app.browser_session_reauthentications', "
-            "'DELETE')"
+            "'DELETE'), has_column_privilege('prm_runtime', "
+            "'app.browser_session_reauthentications', 'token_verifier', 'INSERT'), "
+            "has_column_privilege('prm_runtime', 'app.browser_session_reauthentications', "
+            "'token_verifier', 'SELECT'), has_column_privilege('prm_runtime', "
+            "'app.browser_session_reauthentications', 'token_verifier', 'UPDATE')"
         ).fetchone()
-    assert privileges == (True, False, False, False)
+    assert privileges == (True, False, False, False, True, True, False)
     assert read(code_database, REAUTHENTICATIONS_OF, account.actor_id) == [
         ("totp", account.enrollment_id, step)
     ]
@@ -487,6 +624,27 @@ def test_a_reauthentication_is_guarded_in_the_database(code_database: CodeDataba
         connection.execute(add_row, (uuid.uuid4(), *row))
         with pytest.raises(errors.UniqueViolation, match="one_per_step"):
             connection.execute(add_row, (uuid.uuid4(), *row))
+    # Review round 2: one row per reauthentication cookie, and a digest of 32 bytes, each on a
+    # raw row that passes the guard.
+    add_row_with = (
+        "INSERT INTO app.browser_session_reauthentications (reauthentication_id, session_id, "
+        "actor_id, method, enrollment_id, time_step, token_verifier) "
+        "VALUES (%s, %s, %s, %s, %s, %s, %s)"
+    )
+    taken = read(
+        code_database,
+        "SELECT token_verifier FROM app.browser_session_reauthentications WHERE actor_id = %s",
+        account.actor_id,
+    )[0][0]
+    row = (other_session_id, other.actor_id, "totp", other.enrollment_id, other_step)
+    with psycopg.connect(code_database.owner_url) as connection:
+        connection.execute(use_step, (other.enrollment_id, other_step))
+        with pytest.raises(errors.UniqueViolation, match="one_per_cookie"):
+            connection.execute(add_row_with, (uuid.uuid4(), *row, taken))
+    with psycopg.connect(code_database.owner_url) as connection:
+        connection.execute(use_step, (other.enrollment_id, other_step))
+        with pytest.raises(errors.CheckViolation, match="token_verifier"):
+            connection.execute(add_row_with, (uuid.uuid4(), *row, bytes(1)))
     with psycopg.connect(code_database.owner_url) as connection:
         connection.execute(use_step, (other.enrollment_id, other_step))
         connection.execute(

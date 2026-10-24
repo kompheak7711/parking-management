@@ -6,10 +6,12 @@ writes one row of `app.browser_session_reauthentications` (append-only). Its ins
 that the session is live and of the row's account, that a `totp` reauthentication names the
 account's active sign-in code with a step of it used since its transaction began (one row per
 step), and that a
-`password` reauthentication is only for an account that needs no MFA. The session's
-`reauthenticated_at` is the time of its latest row. The row names its session without a foreign
-key, checked by the insert guard instead, so the existing truncate refusal of
-`app.browser_sessions` stays as it is. A purely additive change.
+`password` reauthentication is only for an account that needs no MFA. Each
+row also keeps the sha256 digest of the reauthentication cookie set at that moment (review round
+2, owner answer of 2026-10-24 to Q-2026-10-24-183: a separate reauthentication cookie, so a
+copied session cookie alone never carries a reauthentication); the raw cookie is never stored.
+The row names its session without a foreign key, checked by the insert guard instead, so the
+existing truncate refusal of `app.browser_sessions` stays as it is. A purely additive change.
 """
 
 from alembic import op
@@ -37,6 +39,7 @@ def upgrade() -> None:
             method text NOT NULL CHECK (method IN ('password', 'totp')),
             enrollment_id uuid,
             time_step bigint,
+            token_verifier bytea NOT NULL CHECK (octet_length(token_verifier) = 32),
             reauthenticated_at timestamptz NOT NULL DEFAULT statement_timestamp()
                 CHECK (isfinite(reauthenticated_at)),
             CHECK (
@@ -52,6 +55,21 @@ def upgrade() -> None:
         CREATE UNIQUE INDEX browser_session_reauthentications_one_per_step
         ON app.browser_session_reauthentications (enrollment_id, time_step)
         WHERE method = 'totp'
+        """
+    )
+    # One row per reauthentication cookie (review round 2).
+    op.execute(
+        """
+        CREATE UNIQUE INDEX browser_session_reauthentications_one_per_cookie
+        ON app.browser_session_reauthentications (token_verifier)
+        """
+    )
+    # The minute between password-only reauthentications of an account (review round 2).
+    op.execute(
+        """
+        CREATE INDEX browser_session_reauthentications_password_idx
+        ON app.browser_session_reauthentications (actor_id, reauthenticated_at)
+        WHERE method = 'password'
         """
     )
     op.execute(
@@ -152,14 +170,16 @@ def upgrade() -> None:
         """
         GRANT SELECT (
             reauthentication_id, session_id, actor_id, method, enrollment_id, time_step,
-            reauthenticated_at
+            token_verifier, reauthenticated_at
         ) ON app.browser_session_reauthentications TO prm_runtime
         """
     )
     op.execute(
         """
-        GRANT INSERT (reauthentication_id, session_id, actor_id, method, enrollment_id, time_step)
-        ON app.browser_session_reauthentications TO prm_runtime
+        GRANT INSERT (
+            reauthentication_id, session_id, actor_id, method, enrollment_id, time_step,
+            token_verifier
+        ) ON app.browser_session_reauthentications TO prm_runtime
         """
     )
 

@@ -153,6 +153,9 @@ SESSION_MFA_SATISFIED: Final = f"""
 # The live session of a token digest: not revoked, before both expiries by the database clock,
 # of an active, classified account, and with an MFA proof when the account needs MFA. The
 # `mfa_assurance` is the proof's method while it counts, else `none` (login sub-slice L3c-2b).
+# The last column is always NULL here: a session's reauthentication time is read only with its
+# reauthentication cookie (`REAUTHENTICATION_OF_COOKIE`, L3d-1 review round 2), so a copied
+# session cookie alone never shows or carries one.
 LIVE_SESSION: Final = f"""
     SELECT browser.session_id, browser.actor_id::text, account.display_name, browser.created_at,
            browser.last_activity_at, browser.idle_expires_at, browser.absolute_expires_at,
@@ -163,9 +166,7 @@ LIVE_SESSION: Final = f"""
                   AND {PROOF_COUNTS}),
                'none'
            ),
-           (SELECT max(reauthentication.reauthenticated_at)
-            FROM app.browser_session_reauthentications AS reauthentication
-            WHERE reauthentication.session_id = browser.session_id)
+           NULL::timestamptz
     FROM app.browser_sessions AS browser
     JOIN app.user_accounts AS account ON account.actor_id = browser.actor_id
     JOIN app.user_account_classes AS classification ON classification.actor_id = browser.actor_id
@@ -449,8 +450,32 @@ REAUTHENTICATION_ACCOUNT: Final = f"""
 """
 INSERT_REAUTHENTICATION: Final = """
     INSERT INTO app.browser_session_reauthentications (
-        reauthentication_id, session_id, actor_id, method, enrollment_id, time_step
-    ) VALUES (%s, %s, %s, %s, %s, %s)
+        reauthentication_id, session_id, actor_id, method, enrollment_id, time_step, token_verifier
+    ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+    RETURNING reauthenticated_at
+"""
+# The reauthentication of a session made with this reauthentication cookie (its sha256 digest;
+# L3d-1 review round 2, owner answer of 2026-10-24 to Q-2026-10-24-183).
+REAUTHENTICATION_OF_COOKIE: Final = """
+    SELECT reauthentication.reauthenticated_at
+    FROM app.browser_session_reauthentications AS reauthentication
+    WHERE reauthentication.session_id = %s
+      AND reauthentication.token_verifier = %s
+"""
+# A password-only reauthentication of the account within the last minute: the seconds left
+# (L3d-1 review round 2, security S-3: each one costs an Argon2id check and a kept row).
+PASSWORD_REAUTHENTICATION_INTERVAL_SECONDS: Final = 60
+RECENT_PASSWORD_REAUTHENTICATION: Final = f"""
+    SELECT ceil(extract(epoch FROM (
+               max(reauthentication.reauthenticated_at)
+               + interval '{PASSWORD_REAUTHENTICATION_INTERVAL_SECONDS} seconds'
+               - statement_timestamp()
+           )))::integer
+    FROM app.browser_session_reauthentications AS reauthentication
+    WHERE reauthentication.actor_id = %s
+      AND reauthentication.method = 'password'
+    HAVING max(reauthentication.reauthenticated_at)
+           > statement_timestamp() - interval '{PASSWORD_REAUTHENTICATION_INTERVAL_SECONDS} seconds'
 """
 # One reauthentication of an account at a time (review round 1), a lock of the connection ended
 # when it closes.
@@ -834,13 +859,34 @@ class PostgresAuthenticationFlow:
             session=session_view(row),
         )
 
-    def inspect_session(self, *, session_token: str, request_id: str) -> SessionView:
+    def inspect_session(
+        self,
+        *,
+        session_token: str,
+        request_id: str,
+        reauthentication_token: str | None = None,
+    ) -> SessionView:
+        """The live session; `reauthenticated_at` only with the reauthentication cookie made for
+        this session (L3d-1 review round 2). It is the time of that cookie's row, whatever its
+        method or age: for display only; L3d-2 checks its own window in the action's
+        transaction."""
         digest = session_token_digest(session_token)
         with self._transaction() as connection:
             row = connection.execute(LIVE_SESSION, (digest,)).fetchone()
-        if row is None:
-            raise AuthenticationRejected
-        return session_view(row)
+            if row is None:
+                raise AuthenticationRejected
+            view = session_view(row)
+            # A missing or malformed reauthentication cookie only means no reauthentication; it
+            # never turns a live session away (review round 2).
+            if not reauthentication_token or len(reauthentication_token) > MAX_SESSION_TOKEN_LENGTH:
+                return view
+            reauthentication = connection.execute(
+                REAUTHENTICATION_OF_COOKIE,
+                (row[0], session_token_digest(reauthentication_token)),
+            ).fetchone()
+        if reauthentication is None:
+            return view
+        return replace(view, reauthenticated_at=cast(datetime, reauthentication[0]))
 
     def logout(self, *, session_token: str, request_id: str) -> None:
         digest = session_token_digest(session_token)
@@ -1319,7 +1365,11 @@ class PostgresAuthenticationFlow:
         first, the sign-in code's step recorded, the password verifier compared with the one
         checked, the reauthentication written and the session locked and read last (review
         round 1: the account and the sign-in code before the session, the order of the Owner's
-        functions); a new CSRF token is answered."""
+        functions); a new CSRF token and a new reauthentication cookie are answered, and only
+        the cookie's sha256 digest is kept on the row (review round 2, owner answer of
+        2026-10-24 to Q-2026-10-24-183). A password-only reauthentication of the account within
+        the last minute answers 429 under the lock, before any password check (review round 2,
+        security S-3)."""
         digest = session_token_digest(session_token)
         if not password or len(password) > MAX_REAUTHENTICATION_PASSWORD_LENGTH:
             raise AuthenticationRejected
@@ -1354,6 +1404,17 @@ class PostgresAuthenticationFlow:
                     extra={"outcome": "rejected", "request_id": request_id},
                 )
                 raise AuthenticationRejected
+            if not needs_mfa:
+                recent = connection.execute(
+                    RECENT_PASSWORD_REAUTHENTICATION, (actor_id,)
+                ).fetchone()
+                connection.commit()
+                if recent is not None:
+                    logger.info(
+                        "reauthentication decision",
+                        extra={"outcome": "rate_limited", "request_id": request_id},
+                    )
+                    raise AuthenticationRateLimited(max(1, int(str(recent[0]))))
             username_key = sign_in_username_digest(str(username), self._sign_in_try_key)
             source_key = sign_in_source_digest(f"session:{session_id}", self._sign_in_try_key)
             self._refuse_during_wait(username_key, source_key)
@@ -1389,8 +1450,9 @@ class PostgresAuthenticationFlow:
                 verifier_digest(str(current[0])), verifier_digest(str(verifier))
             ):
                 raise AuthenticationRejected
+            reauthentication_token = secrets.token_urlsafe(SESSION_TOKEN_BYTES)
             try:
-                connection.execute(
+                written = connection.execute(
                     INSERT_REAUTHENTICATION,
                     (
                         uuid4(),
@@ -1399,21 +1461,24 @@ class PostgresAuthenticationFlow:
                         "password" if step is None else "totp",
                         enrollment_id if step is not None else None,
                         step,
+                        session_token_digest(reauthentication_token),
                     ),
-                )
+                ).fetchone()
             except psycopg.errors.IntegrityConstraintViolation:
                 # The guard refuses a change committed meanwhile (the account disabled, its MFA
                 # policy raised): the generic rejection (review round 1).
                 raise AuthenticationRejected from None
             row = connection.execute(LOCK_LIVE_SESSION, (digest,)).fetchone()
-            if row is None or row[0] != session_id:
+            if row is None or row[0] != session_id or written is None:
                 raise AuthenticationRejected
         logger.info(
             "reauthentication decision",
             extra={"outcome": "authenticated", "request_id": request_id},
         )
         return ReauthenticationResult(
-            session=session_view(row), csrf_token=secrets.token_urlsafe(SESSION_TOKEN_BYTES)
+            session=replace(session_view(row), reauthenticated_at=cast(datetime, written[0])),
+            csrf_token=secrets.token_urlsafe(SESSION_TOKEN_BYTES),
+            reauthentication_token=reauthentication_token,
         )
 
     def _refuse_wrong_try(

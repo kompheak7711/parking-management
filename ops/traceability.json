@@ -47217,7 +47217,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_reauthentication_migration.py",
       "status": "implemented",
-      "notes": "An account that needs no MFA reauthenticates with the password alone; a second factor given anyway is refused (login slice sub-slice L3d-1, DL-081)."
+      "notes": "An account that needs no MFA reauthenticates with the password alone; a second factor given anyway is refused (login slice sub-slice L3d-1, DL-081). Review round 2: a second password-only reauthentication of the account within 60 seconds answers 429 before any password check, uncounted, and another password-only account is not limited."
     },
     {
       "test_id": "test_a_change_before_the_reauthentication_refuses_and_writes_nothing",
@@ -47239,7 +47239,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_reauthentication_migration.py",
       "status": "implemented",
-      "notes": "Over HTTP the reauthentication answers the session with reauthenticated_at, no-store and a new CSRF cookie; a wrong password answers 401 (login slice sub-slice L3d-1, DL-081)."
+      "notes": "Over HTTP the reauthentication answers the session with reauthenticated_at, no-store and a new CSRF cookie; a wrong password answers 401 (login slice sub-slice L3d-1, DL-081). Review round 2: the route also sets the reauthentication cookie; GET /auth/session shows the reauthentication with it, a copied session cookie alone shows none, and an empty or too long reauthentication cookie still answers the live session."
     },
     {
       "test_id": "test_a_reauthentication_is_guarded_in_the_database",
@@ -47249,7 +47249,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_reauthentication_migration.py",
       "status": "implemented",
-      "notes": "A reauthentication row needs a live session of its account; a totp row a step of the active sign-in code used in the same transaction; a password row is refused for an MFA account; append-only; insert-only column privileges (login slice sub-slice L3d-1, DL-081)."
+      "notes": "A reauthentication row needs a live session of its account; a totp row a step of the active sign-in code used in the same transaction; a password row is refused for an MFA account; append-only; insert-only column privileges (login slice sub-slice L3d-1, DL-081). Review round 2: the runtime role inserts and reads token_verifier but cannot update it; one row per reauthentication cookie and a 32-byte digest are enforced."
     },
     {
       "test_id": "test_the_session_reauthentication_migration_follows_l3c_2c_2_and_is_forward_only",
@@ -47271,6 +47271,18 @@
       "test_path": "backend/tests/test_reauthentication_migration.py",
       "status": "implemented",
       "notes": "While one reauthentication of the account checks its password a second is refused at once, without a password check and uncounted; the first is counted once (login slice sub-slice L3d-1 review round 1, DL-081)."
+    },
+    {
+      "test_id": "test_a_reauthentication_shows_only_with_its_own_reauthentication_cookie",
+      "upstream_ids": [
+        "SEC-018",
+        "API-097",
+        "DB-AUTH-004"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reauthentication_migration.py",
+      "status": "implemented",
+      "notes": "Each reauthentication answers a new reauthentication cookie whose sha256 digest only is kept on its row; the session shows its reauthentication only with that cookie, not with a copied session cookie alone, another session's cookie, a made-up one or a malformed one, and a later reauthentication answers its own cookie (login slice sub-slice L3d-1 review round 2, owner answer of 2026-10-24 to Q-2026-10-24-183, DL-081)."
     }
   ]
 }

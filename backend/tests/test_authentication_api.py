@@ -73,7 +73,13 @@ class StubAuthenticationFlow(AuthenticationFlow):
     ) -> AuthenticationResult:
         raise NotImplementedError
 
-    def inspect_session(self, *, session_token: str, request_id: str) -> SessionView:
+    def inspect_session(
+        self,
+        *,
+        session_token: str,
+        request_id: str,
+        reauthentication_token: str | None = None,
+    ) -> SessionView:
         raise NotImplementedError
 
     def logout(self, *, session_token: str, request_id: str) -> None:
@@ -515,9 +521,17 @@ def test_confirmed_mfa_enrollment_activates_totp_and_establishes_session() -> No
 
 def test_authenticated_session_inspection_returns_only_bounded_non_secret_state() -> None:
     class InspectionFlow(StubAuthenticationFlow):
-        def inspect_session(self, *, session_token: str, request_id: str) -> SessionView:
+        def inspect_session(
+            self,
+            *,
+            session_token: str,
+            request_id: str,
+            reauthentication_token: str | None = None,
+        ) -> SessionView:
             assert session_token == "session-token-secret"
             assert request_id == "session-inspect"
+            # The reauthentication cookie is passed on (login sub-slice L3d-1, review round 2).
+            assert reauthentication_token == "reauthentication-token-secret"
             session = authenticated_result().session
             assert session is not None
             return session
@@ -532,7 +546,10 @@ def test_authenticated_session_inspection_returns_only_bounded_non_secret_state(
         "GET",
         "/api/v1/auth/session",
         headers={
-            "Cookie": "__Host-prm_session=session-token-secret",
+            "Cookie": (
+                "__Host-prm_session=session-token-secret; "
+                "__Host-prm_reauth=reauthentication-token-secret"
+            ),
             "X-Request-ID": "session-inspect",
         },
     )
@@ -551,6 +568,7 @@ def test_authenticated_session_inspection_returns_only_bounded_non_secret_state(
         "display_name",
     }
     assert "session-token-secret" not in response.text
+    assert "reauthentication-token-secret" not in response.text
 
 
 def test_logout_requires_csrf_revokes_current_session_and_clears_browser_material() -> None:
@@ -585,6 +603,7 @@ def test_logout_requires_csrf_revokes_current_session_and_clears_browser_materia
     assert any('__Host-prm_session=""' in value and "Max-Age=0" in value for value in cookies)
     assert any('__Host-prm_preauth=""' in value and "Max-Age=0" in value for value in cookies)
     assert any('__Host-prm_csrf=""' in value and "Max-Age=0" in value for value in cookies)
+    assert any('__Host-prm_reauth=""' in value and "Max-Age=0" in value for value in cookies)
 
 
 def test_reauthentication_records_additional_evidence_without_granting_authority() -> None:
@@ -616,6 +635,7 @@ def test_reauthentication_records_additional_evidence_without_granting_authority
                     reauthenticated_at=datetime(2026, 8, 19, 9, 10, tzinfo=UTC),
                 ),
                 csrf_token="rotated-csrf-secret",
+                reauthentication_token="reauthentication-token-secret",
             )
 
     app = create_app(
@@ -648,6 +668,18 @@ def test_reauthentication_records_additional_evidence_without_granting_authority
         "__Host-prm_csrf=rotated-csrf-secret" in value
         for value in response.headers.get_list("set-cookie")
     )
+    # The separate reauthentication cookie (login sub-slice L3d-1, review round 2): HttpOnly,
+    # Secure, SameSite=Strict, the whole site, 15 minutes; never in the body.
+    reauthentication_cookie = [
+        value
+        for value in response.headers.get_list("set-cookie")
+        if value.startswith("__Host-prm_reauth=")
+    ]
+    assert len(reauthentication_cookie) == 1
+    assert reauthentication_cookie[0].startswith("__Host-prm_reauth=reauthentication-token-secret;")
+    for attribute in ("HttpOnly", "Secure", "SameSite=strict", "Path=/", "Max-Age=900"):
+        assert attribute in reauthentication_cookie[0]
+    assert "reauthentication-token-secret" not in response.text
 
     forbidden_administration = request(
         app,

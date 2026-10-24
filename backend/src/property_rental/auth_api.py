@@ -16,6 +16,11 @@ from property_rental.settings import Settings
 SESSION_COOKIE_NAME = "__Host-prm_session"
 PREAUTH_COOKIE_NAME = "__Host-prm_preauth"
 CSRF_COOKIE_NAME = "__Host-prm_csrf"
+# Set only by a successful reauthentication (login sub-slice L3d-1, review round 2, owner answer
+# of 2026-10-24 to Q-2026-10-24-183); the server keeps only its sha256 digest. It lives as long
+# as the reauthentication window of Q-2026-10-21-157 (a), which L3d-2 checks on the database clock.
+REAUTHENTICATION_COOKIE_NAME = "__Host-prm_reauth"
+REAUTHENTICATION_COOKIE_MAX_AGE_SECONDS = 15 * 60
 
 
 class AuthenticationPhase(StrEnum):
@@ -69,6 +74,7 @@ class ReauthenticationResult:
 
     session: SessionView
     csrf_token: str = field(repr=False)
+    reauthentication_token: str = field(default="", repr=False)
 
 
 @dataclass(frozen=True, slots=True)
@@ -121,7 +127,13 @@ class AuthenticationFlow(Protocol):
         request_id: str,
     ) -> AuthenticationResult: ...
 
-    def inspect_session(self, *, session_token: str, request_id: str) -> SessionView: ...
+    def inspect_session(
+        self,
+        *,
+        session_token: str,
+        request_id: str,
+        reauthentication_token: str | None = None,
+    ) -> SessionView: ...
 
     def logout(self, *, session_token: str, request_id: str) -> None: ...
 
@@ -219,7 +231,13 @@ class UnavailableAuthenticationFlow:
         self._unavailable()
         raise AssertionError
 
-    def inspect_session(self, *, session_token: str, request_id: str) -> SessionView:
+    def inspect_session(
+        self,
+        *,
+        session_token: str,
+        request_id: str,
+        reauthentication_token: str | None = None,
+    ) -> SessionView:
         self._unavailable()
         raise AssertionError
 
@@ -647,6 +665,7 @@ def create_auth_router(settings: Settings, flow: AuthenticationFlow) -> APIRoute
             session = flow.inspect_session(
                 session_token=session_token,
                 request_id=request.state.request_id,
+                reauthentication_token=request.cookies.get(REAUTHENTICATION_COOKIE_NAME),
             )
         except AuthenticationRejected:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED) from None
@@ -679,6 +698,7 @@ def create_auth_router(settings: Settings, flow: AuthenticationFlow) -> APIRoute
         response.delete_cookie(SESSION_COOKIE_NAME, path="/", secure=True, httponly=True)
         response.delete_cookie(PREAUTH_COOKIE_NAME, path="/", secure=True, httponly=True)
         response.delete_cookie(CSRF_COOKIE_NAME, path="/", secure=True)
+        response.delete_cookie(REAUTHENTICATION_COOKIE_NAME, path="/", secure=True, httponly=True)
         response.status_code = status.HTTP_204_NO_CONTENT
         return response
 
@@ -708,7 +728,7 @@ def create_auth_router(settings: Settings, flow: AuthenticationFlow) -> APIRoute
             )
         except AuthenticationRejected:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED) from None
-        if not result.csrf_token:
+        if not result.csrf_token or not result.reauthentication_token:
             raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
         response.headers["Cache-Control"] = "no-store"
         _set_secret_cookie(
@@ -717,6 +737,14 @@ def create_auth_router(settings: Settings, flow: AuthenticationFlow) -> APIRoute
             value=result.csrf_token,
             httponly=False,
             samesite="strict",
+        )
+        _set_secret_cookie(
+            response,
+            name=REAUTHENTICATION_COOKIE_NAME,
+            value=result.reauthentication_token,
+            httponly=True,
+            samesite="strict",
+            max_age=REAUTHENTICATION_COOKIE_MAX_AGE_SECONDS,
         )
         return SessionResponse(
             data=SessionData.model_validate(result.session, from_attributes=True),

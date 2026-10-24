@@ -5110,6 +5110,13 @@ account that needs no MFA; the insert guard checks a live session of the row's a
 refuses `password` for an account that needs MFA); the session's `reauthenticated_at` is its
 latest row's time.
 
+Amended by DL-081 (login sub-slice L3d-1 review round 2, owner answer of 2026-10-24 to
+Q-2026-10-24-183): each row also keeps `token_verifier`, the sha256 digest (32 bytes, one row per
+digest) of the separate reauthentication cookie set by that reauthentication; the cookie itself
+is never stored. A session shows `reauthenticated_at` only for the row of the cookie the browser
+sends with it, so a copied session cookie alone shows none. This replaces "the session's
+`reauthenticated_at` is its latest row's time".
+
 ## DB-AUTH-005 — Recovery and bootstrap audit
 
 Administrative recovery, emergency Owner recovery, MFA enrollment/reset/disablement,

@@ -118,3 +118,80 @@ commit hash is in `git log` (this record is part of that commit).
 | U2 | 3,924 passed | unit suite |
 | M2 | pass | migration-only check |
 | P2 | 2,651 passed | full PostgreSQL run (after round 1) |
+
+## Cloud session (2026-10-24): round 2 finished
+
+The work moved to a cloud session from GitHub (`wip/login-L3d-1`, with `implementation/foundation`
+9e99316 merged in). Docker and the `postgres:17.6` image (from Google's mirror of the official
+image, as Docker Hub answered 429) with the owner's yes. Logs in the cloud container, prefix
+`cloud-L3d-1-`. This section replaces what the record above says about round 2 being "not yet
+done", about `LIVE_SESSION` answering `reauthenticated_at`, and the entry counts.
+
+- **S-1 built** (owner answer of 2026-10-24 to Q-2026-10-24-183): every reauthentication sets the
+  cookie `__Host-prm_reauth` (HttpOnly, Secure, SameSite=Strict, Path=/, Max-Age 900); the row keeps
+  only its sha256 digest (`token_verifier`, 32 bytes, unique); `LIVE_SESSION` answers no
+  reauthentication time; `inspect_session` takes the cookie and shows the time of its row for the
+  same session only; sign-out clears the cookie; a missing or malformed cookie only means none.
+- **S-2 (text)**: the L4 binding in the plan now says every write to the password credentials
+  revokes the account's sessions in the same transaction, with the second-pass test set-ups.
+- **S-3 built**: 60 seconds between password-only reauthentications of an account, answered 429
+  with `Retry-After`. Decided by Claude under the owner's 2026-10-23 22:30 rule: the check runs
+  under the account's one-at-a-time lock (the reviewer proposed before it), so two reauthentications
+  one after the other cannot both pass; it still comes before the wait check and Argon2id. An index
+  on `(actor_id, reauthenticated_at) WHERE method = 'password'` serves it.
+- **Committed tests changed** (besides the head revision strings): `test_authentication_api.py`
+  (the two fake flows take `reauthentication_token`; the reauthentication fake returns a token;
+  stronger expectations for the cookie and the sign-out clear). Confirmed by the independent
+  reviewer: nothing got weaker.
+- Traceability: 9 entries in L3d-1 so far plus 1 new (the cookie test); three notes extended.
+
+### Round 2 reviews (cloud, read-only agents, each told to write no files)
+
+- **Independent** (the one blocked on the Mac): no blocker. Should-fixes: a malformed reauthentication
+  cookie turned `GET /auth/session` into 401 (fixed: treated as absent, tests flow and HTTP); this
+  record and the plan described the state before round 2 (this section; plan text). Notes done: the
+  traceability notes; tests for a cookie per reauthentication (two `totp` reauthentications at back
+  to back steps, not limited, each cookie its own row), another password-only account not limited,
+  the `token_verifier` privileges, and the unique cookie index and 32-byte check by behaviour; the
+  missing index. Notes kept: `test_auth_flow.py::test_the_mfa_reauthentication_and_recovery_code_methods_stay_unavailable`
+  is true only because its database host cannot be resolved (older than L3d-1; slice 12 list for a
+  rename); the edited WIP migration means any database that ran the WIP version must be rebuilt
+  (throwaway databases only so far).
+- **Security, second pass**: no blocker. S-1 and S-3 closed; round 1 fixes not weakened.
+  Should-fixes (plan text, done): the L3d-2 binding no longer counts the session's own sign-in proof
+  (a copied session cookie would pass in the first 15 minutes after each sign-in), only a `totp` row
+  found through the request's reauthentication cookie; the same for the recovery-code window; the L4
+  test set-ups rewritten as two interleaved connections. Notes kept: the limit is per account (a
+  second device within a minute gets 429); an expired session keeps the cookie until Max-Age, useless;
+  the deployment note on direct PostgreSQL connections stays.
+
+### Round 3 (cloud, read-only agents, each told to write no files)
+
+- **Independent**: clean, no blocker. One text should-fix (the plan's L3d-1 build bullets still
+  described the state before round 2: committed tests, counts), done. Notes: a `match` added to the
+  32-byte check (a new assertion in a green test, under the round-3 rule); the traceability note of
+  the cookie test and the API-097 wording made exact (text); the wait for the next time step in the
+  cookie test adds up to about 30 seconds to the database run, bounded and needed (one account needs
+  three distinct steps).
+- **Security**: clean, no blocker. One text should-fix: the round 1 "Binding for L4" bullet still
+  offered "or L3d-2 ignores older rows", and the L4 section had no L3d-1 binding; both fixed in the
+  plan. Notes kept: a session of the account can tell that another of its sessions made a
+  password-only reauthentication in the last minute (only someone who already has a session); an
+  older reauthentication cookie of the same session stays usable for its 15 minutes after a newer
+  one (L3d-2 may accept only the latest `totp` row); "made after the latest password change" is an
+  extra check only, the L4 revocation is the guarantee (plan wording changed).
+- Under the round-3 text and assertion rules these fixes are committed without a round 4.
+
+### Runs in the cloud (container logs, prefix `cloud-L3d-1-`; ruff format, ruff check and mypy pass)
+
+| Run | Result | Cause |
+|---|---|---|
+| U1 | 3,923 passed | unit suite, baseline before the round 2 fixes |
+| M3 | pass | migration-only check |
+| T4 | 130 passed | the seven sign-in and reauthentication modules, after S-1 and S-3 |
+| M4 | pass | migration-only check, after the round 2 review fixes |
+| T5 | 28 passed | the reauthentication module and `test_auth_flow_migration.py` |
+| P3 | 2,652 passed | full PostgreSQL run (58 minutes in the cloud container) |
+| T6 | 20 passed | the reauthentication module, after the round 3 assertion |
+| U2 | 3,923 passed | unit suite on the final code |
+
