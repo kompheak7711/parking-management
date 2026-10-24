@@ -46890,7 +46890,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_recovery_code_flow_migration.py",
       "status": "implemented",
-      "notes": "A live session whose sign-in code was given 16 minutes ago by the database clock gets no first codes and cannot regenerate; 14 minutes ago both work (login slice sub-slice L3c-2c-1 review round 1, DL-081)."
+      "notes": "A live session whose sign-in code was given 16 minutes ago by the database clock gets no first codes and cannot regenerate; 14 minutes ago both work (login slice sub-slice L3c-2c-1 review round 1, DL-081). Login slice sub-slice L3d-2b: the time is now that of the session's reauthentication, set up with the same age."
     },
     {
       "test_id": "test_two_parallel_first_sets_leave_one_live_set",
@@ -47341,6 +47341,18 @@
       "test_path": "backend/tests/test_access_admin_flow_migration.py",
       "status": "implemented",
       "notes": "A session past its 30 idle minutes or its 24 hours (then past both, by the table check) is refused like a signed-out one; the check holds the session FOR SHARE, so a sign-out from another connection waits (lock wait limit) while the same transaction may still end it; a stale reauthentication is refused before a stale version (login slice sub-slice L3d-2 review round 1, DL-081)."
+    },
+    {
+      "test_id": "test_new_codes_need_the_reauthentication_cookie_of_the_session",
+      "upstream_ids": [
+        "API-098",
+        "DL-058",
+        "SEC-018"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_recovery_code_flow_migration.py",
+      "status": "implemented",
+      "notes": "Right after a sign-in with the sign-in code, the session cookie alone, another session's reauthentication cookie, an empty or too long cookie get no first recovery codes; the session's own cookie does; after a later reauthentication with the password and the code only its new cookie regenerates (login slice sub-slice L3d-2b, Q-2026-10-24-184 point 8, DL-081)."
     }
   ]
 }

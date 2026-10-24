@@ -70,13 +70,24 @@ ADD_SET = (
 )
 
 
+# Login sub-slice L3d-2b: new recovery codes need the reauthentication cookie a sign-in with the
+# sign-in code answers, so the sessions of these tests keep theirs here.
+REAUTHENTICATION_COOKIES: dict[str, str] = {}
+
+
+def cookie_of(session: str) -> str | None:
+    """The reauthentication cookie of a session these tests made, if it has one."""
+    return REAUTHENTICATION_COOKIES.get(session)
+
+
 def signed_in(
     flow: PostgresAuthenticationFlow,
     database: CodeDatabase,
     account: Account,
     step: int | None = None,
 ) -> str:
-    """A session made with the account's sign-in code (of `step`, else of the current step)."""
+    """A session made with the account's sign-in code (of `step`, else of the current step);
+    its reauthentication cookie is kept for `cookie_of` (login sub-slice L3d-2b)."""
     token = challenge_token(flow, account, f"{account.username}-desk")
     done = flow.complete_mfa(
         preauth_token=token,
@@ -86,6 +97,8 @@ def signed_in(
     )
     assert done.session_token is not None and done.session is not None
     assert done.session.mfa_assurance == "totp"
+    assert done.reauthentication_token is not None
+    REAUTHENTICATION_COOKIES[done.session_token] = done.reauthentication_token
     return done.session_token
 
 
@@ -129,13 +142,17 @@ def test_the_first_recovery_codes_are_shown_once_after_the_sign_in_code(
     flow = PostgresAuthenticationFlow(code_database.runtime_url, totp_protection_key=KEY)
     account = add_account(code_database, "l3c-2c-1.manager")
     session = signed_in(flow, code_database, account)
-    result = flow.issue_recovery_codes(session_token=session, request_id="i")
+    result = flow.issue_recovery_codes(
+        session_token=session, reauthentication_token=cookie_of(session), request_id="i"
+    )
     assert_codes_stored_only_as_verifiers(code_database, result, "auth-recovery-codes")
     assert read(code_database, SETS_OF, account.actor_id) == [
         (result.set_id, account.actor_id, "auth-recovery-codes", False, None, None)
     ]
     with pytest.raises(AuthenticationRejected):
-        flow.issue_recovery_codes(session_token=session, request_id="i")
+        flow.issue_recovery_codes(
+            session_token=session, reauthentication_token=cookie_of(session), request_id="i"
+        )
     assert len(read(code_database, SETS_OF, account.actor_id)) == 1
 
     enrolled = new_account(code_database, "l3c-2c-1.new-staff", account_class="staff")
@@ -145,7 +162,11 @@ def test_the_first_recovery_codes_are_shown_once_after_the_sign_in_code(
         preauth_token=preauth, code=code_of(secret, fresh_step(code_database)), request_id="i"
     )
     assert done.session_token is not None
-    first = flow.issue_recovery_codes(session_token=done.session_token, request_id="i")
+    first = flow.issue_recovery_codes(
+        session_token=done.session_token,
+        reauthentication_token=done.reauthentication_token,
+        request_id="i",
+    )
     assert_codes_stored_only_as_verifiers(code_database, first, "auth-recovery-codes")
 
 
@@ -181,7 +202,10 @@ def test_recovery_codes_need_a_session_proven_with_a_sign_in_code_and_no_live_se
         session = result.session_token
     else:
         account = add_account(code_database, f"l3c-2c-1.refused-{case}")
-        session = signed_in(flow, code_database, account)
+        # L3d-2b review: the recovery-code case signs in with the previous step, so that its
+        # later reauthentication can use the current one.
+        earlier = fresh_step(code_database) - 1 if case == "recovery_code" else None
+        session = signed_in(flow, code_database, account, earlier)
         if case == "unknown":
             session = "u" * 43
         elif case == "signed_out":
@@ -202,9 +226,16 @@ def test_recovery_codes_need_a_session_proven_with_a_sign_in_code_and_no_live_se
             assert flow.inspect_session(session_token=session, request_id="n").mfa_assurance == (
                 "recovery_code"
             )
+            # Login sub-slice L3d-2b review: a recent reauthentication with the sign-in code and
+            # its cookie, so only the session's recovery-code proof can refuse.
+            REAUTHENTICATION_COOKIES[session] = totp_reauthentication(
+                code_database, account, session
+            )
     before = read(code_database, SETS_OF, account.actor_id)
     with pytest.raises(AuthenticationRejected):
-        flow.issue_recovery_codes(session_token=session, request_id="n")
+        flow.issue_recovery_codes(
+            session_token=session, reauthentication_token=cookie_of(session), request_id="n"
+        )
     if case != "live_set":
         # Review round 2: a real live set, so only the session can refuse the regeneration
         # (the recovery-code case names the set its code came from).
@@ -217,9 +248,37 @@ def test_recovery_codes_need_a_session_proven_with_a_sign_in_code_and_no_live_se
         before = read(code_database, SETS_OF, account.actor_id)
         with pytest.raises(AuthenticationRejected):
             flow.regenerate_recovery_codes(
-                session_token=session, prior_set_id=prior, request_id="n"
+                session_token=session,
+                reauthentication_token=cookie_of(session),
+                prior_set_id=prior,
+                request_id="n",
             )
     assert read(code_database, SETS_OF, account.actor_id) == before
+
+
+def totp_reauthentication(database: CodeDatabase, account: Account, session: str) -> str:
+    """A reauthentication of the session with the account's sign-in code just now (a new used
+    step), written as the table owner through the table's guard; its cookie value."""
+    cookie = f"cookie-{uuid.uuid4().hex}"
+    with psycopg.connect(database.owner_url) as connection:
+        step = connection.execute(
+            "SELECT max(time_step) + 1 FROM app.totp_used_steps WHERE enrollment_id = %s",
+            (account.enrollment_id,),
+        ).fetchone()
+        assert step is not None
+        connection.execute(
+            "INSERT INTO app.totp_used_steps (enrollment_id, time_step) VALUES (%s, %s)",
+            (account.enrollment_id, step[0]),
+        )
+        connection.execute(
+            "INSERT INTO app.browser_session_reauthentications (reauthentication_id, "
+            "session_id, actor_id, method, enrollment_id, time_step, token_verifier) "
+            "SELECT %s, session_id, actor_id, 'totp', %s, %s, %s FROM app.browser_sessions "
+            "WHERE token_verifier = %s",
+            (uuid.uuid4(), account.enrollment_id, step[0], digest(cookie), digest(session)),
+        )
+        connection.commit()
+    return cookie
 
 
 def recovery_code_session(
@@ -229,7 +288,9 @@ def recovery_code_session(
     L3c-2c-2: a `recovery_code` proof must name a consumed code, so the hand-written proof of
     L3c-2c-1 is refused now; the session comes from the real path (the first codes from the
     session made with the sign-in code, then a sign-in with one of them)."""
-    codes = flow.issue_recovery_codes(session_token=session, request_id="n").codes
+    codes = flow.issue_recovery_codes(
+        session_token=session, reauthentication_token=cookie_of(session), request_id="n"
+    ).codes
     token = challenge_token(flow, account, f"{account.username}-recovery")
     done = flow.complete_mfa(
         preauth_token=token, method="recovery_code", code=codes[0], request_id="n"
@@ -248,12 +309,20 @@ def test_regeneration_invalidates_the_prior_set_and_shows_10_new_codes_once(
     account = add_account(code_database, "l3c-2c-1.regenerate")
     other = add_account(code_database, "l3c-2c-1.regenerate-other")
     session = signed_in(flow, code_database, account)
-    first = flow.issue_recovery_codes(session_token=session, request_id="r")
+    first = flow.issue_recovery_codes(
+        session_token=session, reauthentication_token=cookie_of(session), request_id="r"
+    )
+    other_session = signed_in(flow, code_database, other)
     other_set = flow.issue_recovery_codes(
-        session_token=signed_in(flow, code_database, other), request_id="r"
+        session_token=other_session,
+        reauthentication_token=cookie_of(other_session),
+        request_id="r",
     )
     second = flow.regenerate_recovery_codes(
-        session_token=session, prior_set_id=first.set_id, request_id="r"
+        session_token=session,
+        reauthentication_token=cookie_of(session),
+        prior_set_id=first.set_id,
+        request_id="r",
     )
     assert second.set_id != first.set_id and not set(second.codes) & set(first.codes)
     assert_codes_stored_only_as_verifiers(code_database, second, "auth-recovery-codes-regenerated")
@@ -278,7 +347,10 @@ def test_regeneration_invalidates_the_prior_set_and_shows_10_new_codes_once(
     for prior in (first.set_id, other_set.set_id, uuid.uuid4()):
         with pytest.raises(AuthenticationRejected):
             flow.regenerate_recovery_codes(
-                session_token=session, prior_set_id=prior, request_id="r"
+                session_token=session,
+                reauthentication_token=cookie_of(session),
+                prior_set_id=prior,
+                request_id="r",
             )
     assert len(read(code_database, SETS_OF, account.actor_id)) == 2
     assert [row[3] for row in read(code_database, SETS_OF, other.actor_id)] == [False]
@@ -288,7 +360,9 @@ def proven_session(database: CodeDatabase, account: Account, proof_age: str) -> 
     """A session of the account with a `totp` proof made `proof_age` ago, written as the table
     owner: a completed challenge and a used step of now (the proof guard's conditions), and
     only the proof's time in the past (so the proof is older than its challenge's completion,
-    which the proof guard does not read; review round 1)."""
+    which the proof guard does not read; review round 1). Login sub-slice L3d-2b: the window is
+    now the session's reauthentication, so the sign-in's reauthentication row is written with
+    the same age (the table's triggers off for that one insert) and its cookie kept."""
     token = f"proven-{uuid.uuid4().hex}"[:43]
     challenge_id = uuid.uuid4()
     session_id = uuid.uuid4()
@@ -319,7 +393,27 @@ def proven_session(database: CodeDatabase, account: Account, proof_age: str) -> 
             "statement_timestamp() - %s::interval)",
             (session_id, challenge_id, account.enrollment_id, proof_age),
         )
+        cookie = f"cookie-{uuid.uuid4().hex}"
+        connection.execute("ALTER TABLE app.browser_session_reauthentications DISABLE TRIGGER USER")
+        connection.execute(
+            "INSERT INTO app.browser_session_reauthentications (reauthentication_id, "
+            "session_id, actor_id, method, enrollment_id, time_step, token_verifier, "
+            "reauthenticated_at) SELECT %s, %s, %s, 'totp', %s, max(time_step), %s, "
+            "statement_timestamp() - %s::interval FROM app.totp_used_steps "
+            "WHERE enrollment_id = %s",
+            (
+                uuid.uuid4(),
+                session_id,
+                account.actor_id,
+                account.enrollment_id,
+                digest(cookie),
+                proof_age,
+                account.enrollment_id,
+            ),
+        )
+        connection.execute("ALTER TABLE app.browser_session_reauthentications ENABLE TRIGGER USER")
         connection.commit()
+    REAUTHENTICATION_COOKIES[token] = cookie
     return token
 
 
@@ -329,16 +423,21 @@ def test_new_codes_need_a_sign_in_code_given_within_15_minutes(
     """Decided under the owner's 2026-10-22 rule, for the first codes too (review round 1,
     security): a live session whose sign-in code was given 16 minutes ago by the database clock
     gets no first codes and cannot regenerate, and changes nothing; with the code given 14
-    minutes ago both work."""
+    minutes ago both work. Login sub-slice L3d-2b: the time is now that of the session's
+    reauthentication (a sign-in with the code writes one), set up with the same age."""
     flow = PostgresAuthenticationFlow(code_database.runtime_url, totp_protection_key=KEY)
     for age, allowed in (("16 minutes", False), ("14 minutes", True)):
         first = add_account(code_database, f"l3c-2c-1.first-window-{age[:2]}")
         session = proven_session(code_database, first, age)
         if allowed:
-            flow.issue_recovery_codes(session_token=session, request_id="w")
+            flow.issue_recovery_codes(
+                session_token=session, reauthentication_token=cookie_of(session), request_id="w"
+            )
         else:
             with pytest.raises(AuthenticationRejected):
-                flow.issue_recovery_codes(session_token=session, request_id="w")
+                flow.issue_recovery_codes(
+                    session_token=session, reauthentication_token=cookie_of(session), request_id="w"
+                )
         assert len(read(code_database, SETS_OF, first.actor_id)) == (1 if allowed else 0)
         account = add_account(code_database, f"l3c-2c-1.window-{age[:2]}")
         prior = uuid.uuid4()
@@ -349,7 +448,10 @@ def test_new_codes_need_a_sign_in_code_given_within_15_minutes(
         assert flow.inspect_session(session_token=session, request_id="w").mfa_assurance == "totp"
         if allowed:
             flow.regenerate_recovery_codes(
-                session_token=session, prior_set_id=prior, request_id="w"
+                session_token=session,
+                reauthentication_token=cookie_of(session),
+                prior_set_id=prior,
+                request_id="w",
             )
             assert [row[3] for row in read(code_database, SETS_OF, account.actor_id)] == [
                 True,
@@ -358,7 +460,10 @@ def test_new_codes_need_a_sign_in_code_given_within_15_minutes(
         else:
             with pytest.raises(AuthenticationRejected):
                 flow.regenerate_recovery_codes(
-                    session_token=session, prior_set_id=prior, request_id="w"
+                    session_token=session,
+                    reauthentication_token=cookie_of(session),
+                    prior_set_id=prior,
+                    request_id="w",
                 )
             assert [row[3] for row in read(code_database, SETS_OF, account.actor_id)] == [False]
 
@@ -379,7 +484,9 @@ def test_two_parallel_first_sets_leave_one_live_set(code_database: CodeDatabase)
 
     def issue(session: str) -> None:
         try:
-            flow.issue_recovery_codes(session_token=session, request_id="p")
+            flow.issue_recovery_codes(
+                session_token=session, reauthentication_token=cookie_of(session), request_id="p"
+            )
             outcomes.append("issued")
         except AuthenticationRejected:
             outcomes.append("rejected")
@@ -418,7 +525,9 @@ def test_a_request_refused_by_its_set_costs_no_hashing(
     flow = PostgresAuthenticationFlow(code_database.runtime_url, totp_protection_key=KEY)
     account = add_account(code_database, "l3c-2c-1.no-hashing")
     session = signed_in(flow, code_database, account)
-    flow.issue_recovery_codes(session_token=session, request_id="h")
+    flow.issue_recovery_codes(
+        session_token=session, reauthentication_token=cookie_of(session), request_id="h"
+    )
 
     def no_hashing() -> None:
         raise AssertionError("recovery codes were hashed for a refused request")
@@ -426,10 +535,15 @@ def test_a_request_refused_by_its_set_costs_no_hashing(
     monkeypatch.setattr(flow, "_new_recovery_codes", no_hashing)
     with pytest.raises(AuthenticationRejected):
         flow.regenerate_recovery_codes(
-            session_token=session, prior_set_id=uuid.uuid4(), request_id="h"
+            session_token=session,
+            reauthentication_token=cookie_of(session),
+            prior_set_id=uuid.uuid4(),
+            request_id="h",
         )
     with pytest.raises(AuthenticationRejected):
-        flow.issue_recovery_codes(session_token=session, request_id="h")
+        flow.issue_recovery_codes(
+            session_token=session, reauthentication_token=cookie_of(session), request_id="h"
+        )
 
 
 @pytest.mark.parametrize("call", ["issue", "regenerate"])
@@ -447,7 +561,9 @@ def test_a_sign_out_while_the_codes_are_made_writes_nothing(
     session = signed_in(flow, code_database, account)
     prior = None
     if call == "regenerate":
-        prior = flow.issue_recovery_codes(session_token=session, request_id="s").set_id
+        prior = flow.issue_recovery_codes(
+            session_token=session, reauthentication_token=cookie_of(session), request_id="s"
+        ).set_id
     real = flow._new_recovery_codes
 
     def hashed_then_signed_out() -> tuple[tuple[str, ...], list[tuple[uuid.UUID, str, str, str]]]:
@@ -459,10 +575,15 @@ def test_a_sign_out_while_the_codes_are_made_writes_nothing(
     before = read(code_database, SETS_OF, account.actor_id)
     with pytest.raises(AuthenticationRejected):
         if prior is None:
-            flow.issue_recovery_codes(session_token=session, request_id="s")
+            flow.issue_recovery_codes(
+                session_token=session, reauthentication_token=cookie_of(session), request_id="s"
+            )
         else:
             flow.regenerate_recovery_codes(
-                session_token=session, prior_set_id=prior, request_id="s"
+                session_token=session,
+                reauthentication_token=cookie_of(session),
+                prior_set_id=prior,
+                request_id="s",
             )
     assert read(code_database, SETS_OF, account.actor_id) == before
 
@@ -479,14 +600,19 @@ def test_two_parallel_regenerations_of_one_set_make_one_new_set(
     account = add_account(code_database, "l3c-2c-1.parallel-regenerate")
     step = fresh_step(code_database)
     sessions = [signed_in(flow, code_database, account, used) for used in (step - 1, step)]
-    first = flow.issue_recovery_codes(session_token=sessions[0], request_id="g")
+    first = flow.issue_recovery_codes(
+        session_token=sessions[0], reauthentication_token=cookie_of(sessions[0]), request_id="g"
+    )
     outcomes: list[str] = []
     hashed = count_hashing(flow)
 
     def regenerate(session: str) -> None:
         try:
             flow.regenerate_recovery_codes(
-                session_token=session, prior_set_id=first.set_id, request_id="g"
+                session_token=session,
+                reauthentication_token=cookie_of(session),
+                prior_set_id=first.set_id,
+                request_id="g",
             )
             outcomes.append("regenerated")
         except AuthenticationRejected:
@@ -526,9 +652,14 @@ def test_a_code_of_a_replaced_set_does_not_recover_the_account(
     flow = PostgresAuthenticationFlow(code_database.runtime_url, totp_protection_key=KEY)
     account = add_account(code_database, "l3c-2c-1.replaced")
     session = signed_in(flow, code_database, account)
-    first = flow.issue_recovery_codes(session_token=session, request_id="c")
+    first = flow.issue_recovery_codes(
+        session_token=session, reauthentication_token=cookie_of(session), request_id="c"
+    )
     second = flow.regenerate_recovery_codes(
-        session_token=session, prior_set_id=first.set_id, request_id="c"
+        session_token=session,
+        reauthentication_token=cookie_of(session),
+        prior_set_id=first.set_id,
+        request_id="c",
     )
     recover = (
         "SELECT * FROM app.perform_account_recovery(%s, %s, %s, 'recovery_code', NULL, "
@@ -575,9 +706,14 @@ def test_the_codes_never_reach_the_log(
     # loggers off; the flow's own logger is turned on again for this test.
     monkeypatch.setattr(logging.getLogger("property_rental.auth_flow"), "disabled", False)
     with caplog.at_level(logging.DEBUG):
-        first = flow.issue_recovery_codes(session_token=session, request_id="l")
+        first = flow.issue_recovery_codes(
+            session_token=session, reauthentication_token=cookie_of(session), request_id="l"
+        )
         second = flow.regenerate_recovery_codes(
-            session_token=session, prior_set_id=first.set_id, request_id="l"
+            session_token=session,
+            reauthentication_token=cookie_of(session),
+            prior_set_id=first.set_id,
+            request_id="l",
         )
     logged = " ".join(
         f"{record.getMessage()} {record.__dict__} {record.exc_text or ''}"
@@ -625,12 +761,20 @@ def test_at_most_5_sets_of_one_account_in_15_minutes(code_database: CodeDatabase
         session = signed_in(flow, code_database, account)
         hashed = count_hashing(flow)
         if allowed:
-            flow.regenerate_recovery_codes(session_token=session, prior_set_id=live, request_id="m")
+            flow.regenerate_recovery_codes(
+                session_token=session,
+                reauthentication_token=cookie_of(session),
+                prior_set_id=live,
+                request_id="m",
+            )
             assert hashed == [1]
         else:
             with pytest.raises(AuthenticationRejected):
                 flow.regenerate_recovery_codes(
-                    session_token=session, prior_set_id=live, request_id="m"
+                    session_token=session,
+                    reauthentication_token=cookie_of(session),
+                    prior_set_id=live,
+                    request_id="m",
                 )
             assert hashed == [0]
             assert [row[3] for row in read(code_database, SETS_OF, account.actor_id)] == [
@@ -640,6 +784,60 @@ def test_at_most_5_sets_of_one_account_in_15_minutes(code_database: CodeDatabase
                 True,
                 False,
             ]
+
+
+def test_new_codes_need_the_reauthentication_cookie_of_the_session(
+    code_database: CodeDatabase,
+) -> None:
+    """Login sub-slice L3d-2b (Q-2026-10-24-184 point 8): right after a sign-in with the sign-in
+    code, the session cookie alone (copied into another client) gets no first codes and cannot
+    regenerate, and neither does the cookie of another session of the account; with its own
+    cookie the session gets them. A later reauthentication with the password and the code of a
+    session opens the window again with its new cookie."""
+    flow = PostgresAuthenticationFlow(code_database.runtime_url, totp_protection_key=KEY)
+    account = add_account(code_database, "l3d-2b.manager")
+    step = fresh_step(code_database)
+    session = signed_in(flow, code_database, account, step - 1)
+    other = signed_in(flow, code_database, account, step)
+    for cookie in (None, "", cookie_of(other), "x" * 129):
+        with pytest.raises(AuthenticationRejected):
+            flow.issue_recovery_codes(
+                session_token=session, reauthentication_token=cookie, request_id="b"
+            )
+    assert read(code_database, SETS_OF, account.actor_id) == []
+    first = flow.issue_recovery_codes(
+        session_token=session, reauthentication_token=cookie_of(session), request_id="b"
+    )
+    with pytest.raises(AuthenticationRejected):
+        flow.regenerate_recovery_codes(
+            session_token=session, prior_set_id=first.set_id, request_id="b"
+        )
+    while fresh_step(code_database) <= step:
+        time.sleep(1)
+    again = flow.reauthenticate(
+        session_token=session,
+        password=PASSWORD,
+        second_factor_method="totp",
+        second_factor_code=code_for(account, step + 1),
+        request_id="b",
+    )
+    with pytest.raises(AuthenticationRejected):
+        flow.regenerate_recovery_codes(
+            session_token=session,
+            reauthentication_token=cookie_of(session),
+            prior_set_id=first.set_id,
+            request_id="b",
+        )
+    second = flow.regenerate_recovery_codes(
+        session_token=session,
+        reauthentication_token=again.reauthentication_token,
+        prior_set_id=first.set_id,
+        request_id="b",
+    )
+    assert [row[0] for row in read(code_database, SETS_OF, account.actor_id)] == [
+        first.set_id,
+        second.set_id,
+    ]
 
 
 def test_the_recovery_code_routes_answer_the_codes_once_with_no_store(

@@ -482,11 +482,42 @@ RECENT_PASSWORD_REAUTHENTICATION: Final = f"""
 REAUTHENTICATION_TRY_LOCK: Final = (
     "SELECT pg_try_advisory_lock(hashtextextended('reauthentication:' || %s::text, 0))"
 )
-# The MFA proof of a live session was made within the regeneration window (database clock).
-RECENT_PROOF: Final = f"""
-    SELECT statement_timestamp() - proof.proven_at <= interval '{RECOVERY_CODE_REGENERATION_WINDOW}'
-    FROM app.browser_session_mfa_proofs AS proof
-    WHERE proof.session_id = %s
+# Login sub-slice L3d-2 (owner answer (a) to Q-2026-10-21-157, Q-2026-10-24-184): a recent
+# reauthentication of a live session with the password and the sign-in code, found through the
+# request's reauthentication cookie (L3d-1 review rounds 2 and 3): the session's latest `totp`
+# row, made in the last 15 minutes on the database clock, while its sign-in code is still the
+# account's active one. A sign-in with the sign-in code writes such a row too. Parameters: the
+# session cookie's digest, the account, the reauthentication cookie's digest. Used for the
+# high-risk administration actions (`access_admin_flow.py`, with the session held) and, from
+# L3d-2b, for new recovery codes.
+REAUTHENTICATION_WINDOW: Final = "15 minutes"
+RECENT_SESSION_REAUTHENTICATION: Final = f"""
+    SELECT 1
+    FROM app.browser_sessions AS browser
+    JOIN app.browser_session_reauthentications AS reauthentication
+      ON reauthentication.session_id = browser.session_id
+     AND reauthentication.actor_id = browser.actor_id
+    JOIN app.totp_mfa_enrollments AS enrollment
+      ON enrollment.enrollment_id = reauthentication.enrollment_id
+     AND enrollment.actor_id = browser.actor_id
+     AND enrollment.enrollment_state = 'active'
+    WHERE browser.token_verifier = %s
+      AND browser.verifier_algorithm = 'sha256'
+      AND browser.actor_id = %s
+      AND browser.revoked_at IS NULL
+      AND statement_timestamp() < browser.idle_expires_at
+      AND statement_timestamp() < browser.absolute_expires_at
+      AND reauthentication.token_verifier = %s
+      AND reauthentication.method = 'totp'
+      AND reauthentication.reauthenticated_at
+          > statement_timestamp() - interval '{REAUTHENTICATION_WINDOW}'
+      AND NOT EXISTS (
+          SELECT 1
+          FROM app.browser_session_reauthentications AS newer
+          WHERE newer.session_id = browser.session_id
+            AND newer.method = 'totp'
+            AND newer.reauthenticated_at > reauthentication.reauthenticated_at
+      )
 """
 # The account's recovery-code set that is not invalidated (at most one, migration 20270201_189).
 LIVE_RECOVERY_SET: Final = """
@@ -1542,16 +1573,26 @@ class PostgresAuthenticationFlow:
 
     @staticmethod
     def _recently_signed_in_with_code(
-        connection: psycopg.Connection[tuple[object, ...]], digest: bytes
+        connection: psycopg.Connection[tuple[object, ...]],
+        digest: bytes,
+        reauthentication_token: str | None,
     ) -> object:
         """The account of a live session proven with its sign-in code, which is still active,
-        within the last 15 minutes (review round 1: for the first codes too, so a session left
-        open cannot take them later)."""
+        reauthenticated with the password and the sign-in code (a sign-in with the code counts)
+        within the last 15 minutes, shown by the request's reauthentication cookie (login
+        sub-slice L3d-2b, Q-2026-10-24-184 point 8; before it the session's sign-in proof
+        alone, so a copied session cookie could take new codes). For the first codes too, so a
+        session left open cannot take them later (L3c-2c-1 review round 1)."""
         row = connection.execute(LIVE_SESSION, (digest,)).fetchone()
         if row is None or row[7] != "totp":
             raise AuthenticationRejected
-        recent = connection.execute(RECENT_PROOF, (row[0],)).fetchone()
-        if recent is None or recent[0] is not True:
+        if not reauthentication_token or len(reauthentication_token) > MAX_SESSION_TOKEN_LENGTH:
+            raise AuthenticationRejected
+        recent = connection.execute(
+            RECENT_SESSION_REAUTHENTICATION,
+            (digest, row[1], session_token_digest(reauthentication_token)),
+        ).fetchone()
+        if recent is None:
             raise AuthenticationRejected
         return row[1]
 
@@ -1641,9 +1682,11 @@ class PostgresAuthenticationFlow:
         *,
         session_token: str,
         request_id: str,
+        reauthentication_token: str | None = None,
     ) -> RecoveryCodeSetResult:
         """The first 10 recovery codes of an account (login sub-slice L3c-2c-1, DL-058, API-098):
-        a live session proven with the account's sign-in code within the last 15 minutes, while
+        a live session proven with the account's sign-in code and reauthenticated with it within
+        the last 15 minutes (L3d-2b: its reauthentication cookie), while
         the account has no recovery-code set that is not invalidated; shown once and stored
         only as Argon2id verifiers. Later sets come only by regeneration. One READ COMMITTED
         transaction: every check before the slow hashing, then the set, then the session read
@@ -1651,7 +1694,9 @@ class PostgresAuthenticationFlow:
         digest = session_token_digest(session_token)
         set_id = uuid4()
         with self._transaction() as connection:
-            actor_id = self._recently_signed_in_with_code(connection, digest)
+            actor_id = self._recently_signed_in_with_code(
+                connection, digest, reauthentication_token
+            )
             # The account's lock first (review round 2): every later check then sees what a
             # parallel request of the account committed.
             self._one_generation_at_a_time(connection, actor_id)
@@ -1676,16 +1721,20 @@ class PostgresAuthenticationFlow:
         session_token: str,
         prior_set_id: UUID,
         request_id: str,
+        reauthentication_token: str | None = None,
     ) -> RecoveryCodeSetResult:
         """Replace the account's live recovery-code set (login sub-slice L3c-2c-1, API-098,
-        TEST-129): a live session proven with the account's sign-in code within the last 15
-        minutes names the set it replaces; in one READ COMMITTED transaction the prior set is
+        TEST-129): a live session proven with the account's sign-in code and reauthenticated
+        with it within the last 15 minutes (L3d-2b: its reauthentication cookie) names the set it
+        replaces; in one READ COMMITTED transaction the prior set is
         locked before the slow hashing (review round 1), then invalidated, so none of its codes
         works again, and 10 new codes are written and shown once."""
         digest = session_token_digest(session_token)
         set_id = uuid4()
         with self._transaction() as connection:
-            actor_id = self._recently_signed_in_with_code(connection, digest)
+            actor_id = self._recently_signed_in_with_code(
+                connection, digest, reauthentication_token
+            )
             self._one_generation_at_a_time(connection, actor_id)
             if (
                 connection.execute(LOCK_PRIOR_RECOVERY_SET, (prior_set_id, actor_id)).fetchone()

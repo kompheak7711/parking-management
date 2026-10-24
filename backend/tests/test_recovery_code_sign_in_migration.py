@@ -31,7 +31,7 @@ from property_rental.auth_flow import PostgresAuthenticationFlow
 from property_rental.recovery_code_security import Argon2idRecoveryCodeVerifierProvider
 from property_rental.session_actor import PostgresSessionActorResolver
 from property_rental.settings import Settings
-from test_recovery_code_flow_migration import signed_in
+from test_recovery_code_flow_migration import cookie_of, signed_in
 from test_sign_in_code_enrollment_migration import enrollment_token
 from test_sign_in_code_migration import (
     ADD_SESSION,
@@ -90,7 +90,9 @@ def with_codes(
 ) -> tuple[str, tuple[str, ...]]:
     """A session made with the sign-in code and the account's first 10 recovery codes."""
     session = signed_in(flow, database, account)
-    return session, flow.issue_recovery_codes(session_token=session, request_id="w").codes
+    return session, flow.issue_recovery_codes(
+        session_token=session, reauthentication_token=cookie_of(session), request_id="w"
+    ).codes
 
 
 def consumed_codes(database: CodeDatabase, account: Account) -> list[uuid.UUID]:
@@ -210,9 +212,14 @@ def test_a_code_of_a_replaced_set_is_a_wrong_code(code_database: CodeDatabase) -
     flow = flow_of(code_database)
     account = add_account(code_database, "l3c-2c-2.replaced")
     session = signed_in(flow, code_database, account)
-    first = flow.issue_recovery_codes(session_token=session, request_id="p")
+    first = flow.issue_recovery_codes(
+        session_token=session, reauthentication_token=cookie_of(session), request_id="p"
+    )
     second = flow.regenerate_recovery_codes(
-        session_token=session, prior_set_id=first.set_id, request_id="p"
+        session_token=session,
+        reauthentication_token=cookie_of(session),
+        prior_set_id=first.set_id,
+        request_id="p",
     )
     preauth = challenge_token(flow, account, "l3c-2c-2-replaced")
     with pytest.raises(AuthenticationRejected):
@@ -531,7 +538,9 @@ def test_replacing_the_codes_ends_a_session_made_with_one_of_them(
     # second.
     step = fresh_step(code_database)
     first = signed_in(flow, code_database, account, step - 1)
-    codes = flow.issue_recovery_codes(session_token=first, request_id="r").codes
+    codes = flow.issue_recovery_codes(
+        session_token=first, reauthentication_token=cookie_of(first), request_id="r"
+    ).codes
     recovered = flow.complete_mfa(
         preauth_token=challenge_token(flow, account, "l3c-2c-2-replace"),
         method="recovery_code",
@@ -545,7 +554,12 @@ def test_replacing_the_codes_ends_a_session_made_with_one_of_them(
         account.actor_id,
     )[0][0]
     signed = signed_in(flow, code_database, account, step)
-    flow.regenerate_recovery_codes(session_token=signed, prior_set_id=set_id, request_id="r")
+    flow.regenerate_recovery_codes(
+        session_token=signed,
+        reauthentication_token=cookie_of(signed),
+        prior_set_id=set_id,
+        request_id="r",
+    )
     with pytest.raises(AuthenticationRejected):
         flow.inspect_session(session_token=recovered.session_token, request_id="r")
     assert flow.inspect_session(session_token=signed, request_id="r").mfa_assurance == "totp"

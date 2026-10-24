@@ -1092,6 +1092,11 @@ Verify secure generation and one-time presentation, protected/non-plaintext serv
 verification material, successful use, reuse rejection, regeneration invalidation,
 rate limiting, enumeration resistance, appropriate session revocation, and audit.
 
+Amended by DL-081 (login sub-slice L3d-2b): right after a sign-in with the sign-in code, the
+session cookie alone, another session's reauthentication cookie, an empty or too long one get
+no recovery codes; the session's own cookie does; after a later reauthentication only the new
+cookie works.
+
 ## TEST-130 — Administrative and Emergency Recovery
 
 Verify Owner can recover/reset Manager and Staff; ordinary Staff cannot recover Owner or

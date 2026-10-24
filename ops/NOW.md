@@ -355,4 +355,6 @@ New sessions: read AGENTS.md, ops/NOW.md, ops/V1_055_RUN_RULES.md.
 
 - Login L3d-2 DONE (2026-10-24, cloud session; no migration; record ops/reviews/V1-056-login-L3d-2.md): the actions that change who may do what (create or disable an account, MFA on or off, create or change a bundle, give or remove one, give or remove Settings access) need a reauthentication with the password and the sign-in code of the same session in the last 15 minutes, shown by the reauthentication cookie (owner answer (a) to Q-2026-10-21-157; technical points Q-2026-10-24-184, decided by Claude under the owner's 2026-10-23 22:30 rule); a sign-in with the sign-in code counts as one; 403 `REAUTHENTICATION_REQUIRED` otherwise; reviews rounds 1 and 2 (no blocker); U1 3,924, P1 2,656 passed. NEXT: L3d-2b (the recovery-code window uses the reauthentication cookie), then L4.
 
+- Login L3d-2b DONE (2026-10-24, cloud session; no migration; record ops/reviews/V1-056-login-L3d-2b.md): new recovery codes (the first 10 and a regeneration) also need the session's own reauthentication cookie of the last 15 minutes, so a copied session cookie cannot take them (Q-2026-10-24-184 point 8); review no blocker; U1 3,924, P1 2,657 passed. L3d is complete. NEXT: L4 (the Owner's reset with a one-time password).
+
 - Updated: 2026-10-24.

@@ -154,6 +154,7 @@ class AuthenticationFlow(Protocol):
         *,
         session_token: str,
         request_id: str,
+        reauthentication_token: str | None = None,
     ) -> RecoveryCodeSetResult: ...
 
     def regenerate_recovery_codes(
@@ -162,6 +163,7 @@ class AuthenticationFlow(Protocol):
         session_token: str,
         prior_set_id: UUID,
         request_id: str,
+        reauthentication_token: str | None = None,
     ) -> RecoveryCodeSetResult: ...
 
 
@@ -263,6 +265,7 @@ class UnavailableAuthenticationFlow:
         *,
         session_token: str,
         request_id: str,
+        reauthentication_token: str | None = None,
     ) -> RecoveryCodeSetResult:
         self._unavailable()
         raise AssertionError
@@ -273,6 +276,7 @@ class UnavailableAuthenticationFlow:
         session_token: str,
         prior_set_id: UUID,
         request_id: str,
+        reauthentication_token: str | None = None,
     ) -> RecoveryCodeSetResult:
         self._unavailable()
         raise AssertionError
@@ -783,6 +787,7 @@ def create_auth_router(settings: Settings, flow: AuthenticationFlow) -> APIRoute
             result = flow.issue_recovery_codes(
                 session_token=session_token,
                 request_id=request.state.request_id,
+                reauthentication_token=request.cookies.get(REAUTHENTICATION_COOKIE_NAME),
             )
         except AuthenticationRejected:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED) from None
@@ -812,6 +817,7 @@ def create_auth_router(settings: Settings, flow: AuthenticationFlow) -> APIRoute
                 session_token=session_token,
                 prior_set_id=payload.prior_set_id,
                 request_id=request.state.request_id,
+                reauthentication_token=request.cookies.get(REAUTHENTICATION_COOKIE_NAME),
             )
         except AuthenticationRejected:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED) from None

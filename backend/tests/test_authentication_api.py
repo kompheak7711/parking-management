@@ -101,6 +101,7 @@ class StubAuthenticationFlow(AuthenticationFlow):
         *,
         session_token: str,
         request_id: str,
+        reauthentication_token: str | None = None,
     ) -> RecoveryCodeSetResult:
         raise NotImplementedError
 
@@ -110,6 +111,7 @@ class StubAuthenticationFlow(AuthenticationFlow):
         session_token: str,
         prior_set_id: UUID,
         request_id: str,
+        reauthentication_token: str | None = None,
     ) -> RecoveryCodeSetResult:
         raise NotImplementedError
 
@@ -735,9 +737,12 @@ def test_recovery_code_sets_are_returned_once_only_through_protected_session_rou
             *,
             session_token: str,
             request_id: str,
+            reauthentication_token: str | None = None,
         ) -> RecoveryCodeSetResult:
             assert session_token == "session-token-secret"
             assert request_id == "issue-recovery-codes"
+            # Login sub-slice L3d-2b: the reauthentication cookie is passed on.
+            assert reauthentication_token == "reauthentication-token-secret"
             return RecoveryCodeSetResult(set_id=prior_set_id, codes=("one-time-1", "one-time-2"))
 
         def regenerate_recovery_codes(
@@ -746,8 +751,10 @@ def test_recovery_code_sets_are_returned_once_only_through_protected_session_rou
             session_token: str,
             prior_set_id: UUID,
             request_id: str,
+            reauthentication_token: str | None = None,
         ) -> RecoveryCodeSetResult:
             assert session_token == "session-token-secret"
+            assert reauthentication_token == "reauthentication-token-secret"
             assert prior_set_id == UUID("11111111-1111-4111-8111-111111111111")
             assert request_id == "replace-recovery-codes"
             return RecoveryCodeSetResult(
@@ -760,7 +767,10 @@ def test_recovery_code_sets_are_returned_once_only_through_protected_session_rou
         authentication_flow=RecoveryCodesFlow(authenticated_result()),
     )
     protected_headers = {
-        "Cookie": ("__Host-prm_session=session-token-secret; __Host-prm_csrf=csrf-token-secret"),
+        "Cookie": (
+            "__Host-prm_session=session-token-secret; __Host-prm_csrf=csrf-token-secret; "
+            "__Host-prm_reauth=reauthentication-token-secret"
+        ),
         "Origin": "https://property.test",
         "X-CSRF-Token": "csrf-token-secret",
     }

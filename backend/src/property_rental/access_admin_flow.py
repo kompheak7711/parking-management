@@ -36,6 +36,7 @@ from property_rental.access_admin_api import (
 from property_rental.auth_flow import (
     CONNECT_TIMEOUT_SECONDS,
     MAX_SESSION_TOKEN_LENGTH,
+    RECENT_SESSION_REAUTHENTICATION,
     STATEMENT_TIMEOUT_OPTION,
     session_token_digest,
 )
@@ -62,36 +63,8 @@ BUNDLES: Final = (
 # reauthentication cookie (L3d-1 review rounds 2 and 3), and only while its sign-in code is still
 # the account's active one. The session is held `FOR SHARE` until the action commits, so a
 # sign-out waits for it.
-REAUTHENTICATION_WINDOW: Final = "15 minutes"
 LOCK_TIMEOUT_OPTION: Final = "-c lock_timeout=3000"
-RECENT_REAUTHENTICATION: Final = f"""
-    SELECT 1
-    FROM app.browser_sessions AS browser
-    JOIN app.browser_session_reauthentications AS reauthentication
-      ON reauthentication.session_id = browser.session_id
-     AND reauthentication.actor_id = browser.actor_id
-    JOIN app.totp_mfa_enrollments AS enrollment
-      ON enrollment.enrollment_id = reauthentication.enrollment_id
-     AND enrollment.actor_id = browser.actor_id
-     AND enrollment.enrollment_state = 'active'
-    WHERE browser.token_verifier = %s
-      AND browser.verifier_algorithm = 'sha256'
-      AND browser.actor_id = %s
-      AND browser.revoked_at IS NULL
-      AND statement_timestamp() < browser.idle_expires_at
-      AND statement_timestamp() < browser.absolute_expires_at
-      AND reauthentication.token_verifier = %s
-      AND reauthentication.method = 'totp'
-      AND reauthentication.reauthenticated_at
-          > statement_timestamp() - interval '{REAUTHENTICATION_WINDOW}'
-      AND NOT EXISTS (
-          SELECT 1
-          FROM app.browser_session_reauthentications AS newer
-          WHERE newer.session_id = browser.session_id
-            AND newer.method = 'totp'
-            AND newer.reauthenticated_at > reauthentication.reauthenticated_at
-      )
-    FOR SHARE OF browser
+RECENT_REAUTHENTICATION: Final = f"""{RECENT_SESSION_REAUTHENTICATION}    FOR SHARE OF browser
 """
 REAUTHENTICATION_REQUIRED_MESSAGE: Final = (
     "Please enter your password and sign-in code again, then try again."
