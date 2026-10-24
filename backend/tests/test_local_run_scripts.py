@@ -208,6 +208,37 @@ def test_the_inner_parts_refuse_to_start_without_the_key_descriptor(
         assert "Start it with: sh scripts/local/bootstrap-owner.sh" in result.stderr
 
 
+def test_the_owner_set_up_says_whether_the_owner_was_made(copied_repository: Path) -> None:
+    """The set-up prints no result itself, so the script says it (login L8 review): made, or
+    stopped with nothing saved and what to do next."""
+    script = copied_repository / "scripts" / "local" / "bootstrap-owner.sh"
+    secrets = copied_repository / ".local" / "secrets"
+    secrets.mkdir(parents=True)
+    (secrets / "bootstrap_database_url").write_text("unused\n", encoding="ascii")
+    (copied_repository / "backend").mkdir()
+    environment = {**os.environ, "PRM_PROTECTED_KEY_FD": "4"}
+    for uv_stand_in, expected, code in (
+        ("/bin/true", "The first Owner account is made", 0),
+        ("/bin/false", "The set-up stopped and saved nothing", 1),
+    ):
+        # Descriptor 4 stands for the key: any open file passes the script's own check.
+        result = subprocess.run(
+            [
+                "sh",
+                "-c",
+                'exec sh "$0" --inner "$1" --username owner 4< "$0"',
+                str(script),
+                uv_stand_in,
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+            env=environment,
+        )
+        assert result.returncode == code
+        assert expected in result.stdout + result.stderr
+
+
 def test_the_owner_set_up_refuses_the_options_it_sets_itself(copied_repository: Path) -> None:
     script = copied_repository / "scripts" / "local" / "bootstrap-owner.sh"
     for option in ("--totp-key-fd=9", "--database-url-fd", "--ceremony-timeout-seconds=60"):

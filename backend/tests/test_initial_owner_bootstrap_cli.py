@@ -7,7 +7,7 @@ import stat
 import threading
 import time
 import tty
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from types import SimpleNamespace
 from typing import cast
 from uuid import UUID
@@ -27,6 +27,7 @@ from property_rental.initial_owner_bootstrap import (
     InitialOwnerBootstrapService,
 )
 from property_rental.settings import Settings
+from property_rental.totp_security import TotpSecret, TotpService
 
 
 @dataclass
@@ -242,6 +243,60 @@ def test_presentation_acknowledgement_timeout_or_totp_failure_rolls_back_complet
     assert repository.events[-1] == "rollback"
     assert "recovery-0" not in repr(failure.value)
     assert failure.value.__cause__ is None
+
+
+@pytest.mark.parametrize(
+    "typed",
+    [
+        BOOTSTRAP_ACKNOWLEDGEMENT.lower(),
+        "  " + BOOTSTRAP_ACKNOWLEDGEMENT.replace(" ", "   ") + "  ",
+    ],
+)
+def test_acknowledgement_in_lower_case_or_with_extra_spaces_commits(typed: str) -> None:
+    # Login L8 review: the sentence is compared without case and with runs of spaces made one.
+    repository = RecordingRepository()
+    terminal = RecordingTerminal(acknowledgement=typed)
+
+    _service(repository, terminal).run(REQUEST)
+
+    assert repository.events == ["begin", "establish", "commit"]
+
+
+def _real_factory_bundle(now: float) -> tuple[bootstrap_cli.RealBootstrapMaterialFactory, str]:
+    factory = bootstrap_cli.RealBootstrapMaterialFactory(
+        totp_key=b"k" * 32, totp_key_identifier="bootstrap-test-key", clock=lambda: now
+    )
+    return factory, TotpSecret.from_bytes(b"s" * 20).get_base32_value()
+
+
+def _bundle_with_totp(totp_plaintext: str) -> BootstrapSecretBundle:
+    bundle = DeterministicMaterialFactory().create(
+        request=REQUEST, normalized_password="correct horse battery staple"
+    )
+    return replace(bundle, totp_plaintext=totp_plaintext)
+
+
+def test_set_up_code_of_this_or_the_previous_step_is_accepted_and_spaces_are_removed() -> None:
+    # Login L8 review: as sign-in, a code read just before the 30-second step changes is accepted.
+    now = 1_800_000_015.0
+    factory, encoded = _real_factory_bundle(now)
+    bundle = _bundle_with_totp(encoded)
+    secret = TotpSecret.from_base32(encoded)
+    service = TotpService()
+    current = service.generate_code(secret, at_time=int(now))
+    previous = service.generate_code(secret, at_time=int(now) - 30)
+    older = service.generate_code(secret, at_time=int(now) - 60)
+    following = service.generate_code(secret, at_time=int(now) + 30)
+    assert len({current, previous, older, following}) == 4
+
+    assert factory.verify_totp(bundle, current)
+    assert factory.verify_totp(bundle, previous)
+    assert factory.verify_totp(bundle, f"{current[:3]} {current[3:]}")
+    assert factory.verify_totp(bundle, f" {previous} ")
+    assert not factory.verify_totp(bundle, older)
+    assert not factory.verify_totp(bundle, following)
+    assert not factory.verify_totp(bundle, current[:5])
+    assert not factory.verify_totp(bundle, "")
 
 
 @pytest.mark.parametrize("failure_mode", ["establish", "commit"])

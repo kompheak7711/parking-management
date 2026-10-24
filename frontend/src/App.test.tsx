@@ -767,6 +767,41 @@ describe("local sign-in", () => {
     vi.useRealTimers();
   });
 
+  it("TEST-FE-710 stays signed in and says so when sign-out does not reach the server", async () => {
+    const api = mockAuthenticationApi({
+      logout: vi.fn().mockRejectedValue(new Error("offline")),
+    });
+    render(
+      <App
+        api={api}
+        environment="development"
+        buildId="test-build"
+        now={() => new Date("2026-08-22T10:01:00Z").getTime()}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText("Username"), {
+      target: { value: "local-user" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "password" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    await waitFor(() => {
+      expect(screen.getByRole("main")).toHaveAccessibleName(
+        "Account and access",
+      );
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+    // Login L8 review: the server's session may still be alive, so the next person must not
+    // get a sign-in screen that hides it.
+    expect(
+      await screen.findByText(/Sign out did not reach the office computer/),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("main")).toHaveAccessibleName("Account and access");
+    expect(screen.getByRole("button", { name: "Sign out" })).toBeEnabled();
+    expect(api.logout).toHaveBeenCalledOnce();
+  });
+
   it("TEST-FE-012 exposes account commands only after server capability and recent-auth checks with explicit consequence confirmation", async () => {
     const user: UserAccount = {
       user_id: "user-1",

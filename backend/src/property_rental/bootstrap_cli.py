@@ -33,7 +33,9 @@ from property_rental.recovery_code_security import (
     SecureRecoveryCodeGenerator,
 )
 from property_rental.totp_security import (
+    TOTP_DEFAULT_PERIOD_SECONDS,
     Aes256GcmTotpSecretProtector,
+    TotpSecret,
     TotpSecretGenerator,
     TotpService,
 )
@@ -244,12 +246,17 @@ class RealBootstrapMaterialFactory:
         )
 
     def verify_totp(self, bundle: BootstrapSecretBundle, candidate: str) -> bool:
-        from property_rental.totp_security import TotpSecret
-
-        return self._totp_service.verify_code(
-            candidate,
-            TotpSecret.from_base32(bundle.totp_plaintext),
-            at_time=int(self._clock()),
+        """The code of the current or the previous 30-second step, as sign-in accepts (login
+        L8 review: a code read at second 27 and sent at second 31 is not refused); spaces typed
+        inside the code, such as "123 456", are removed."""
+        code = "".join(candidate.split())
+        secret = TotpSecret.from_base32(bundle.totp_plaintext)
+        now = int(self._clock())
+        return any(
+            self._totp_service.verify_code(
+                code, secret, at_time=now - steps_back * TOTP_DEFAULT_PERIOD_SECONDS
+            )
+            for steps_back in (0, 1)
         )
 
 

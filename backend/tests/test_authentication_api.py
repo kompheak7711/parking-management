@@ -18,8 +18,14 @@ from property_rental.auth_api import (
     AuthenticationRejected,
     AuthenticationResult,
     AuthenticationUnavailable,
+    LoginRequest,
+    MfaChallengeRequest,
+    MfaEnrollmentConfirmationRequest,
+    MfaEnrollmentData,
     MfaEnrollmentResult,
     NewPasswordRejected,
+    ReauthenticationFactor,
+    ReauthenticationRequest,
     ReauthenticationResult,
     RecoveryCodeSetResult,
     RecoveryCodeSetSummary,
@@ -1224,3 +1230,27 @@ def test_the_password_change_answers_a_wait_with_429_and_an_outage_with_503() ->
         if status_code == 429:
             assert response.headers["Retry-After"] == "300"
             assert response.headers["Cache-Control"] == "no-store"
+
+
+def test_request_and_enrollment_models_never_print_a_password_code_or_key() -> None:
+    """Login L8 review: a printed or logged request model shows no secret."""
+    printed = " ".join(
+        repr(model)
+        for model in (
+            LoginRequest(username="owner", password="secret-password-value"),
+            MfaChallengeRequest(method="totp", code="secret-code-value"),
+            MfaEnrollmentConfirmationRequest(code="97531864"),
+            ReauthenticationRequest(
+                password="secret-password-value",
+                second_factor=ReauthenticationFactor(method="totp", code="secret-code-value"),
+            ),
+            MfaEnrollmentData(
+                provisioning_uri="otpauth://totp/x?secret=SECRETKEYVALUE",
+                qr_code_svg="<svg>SECRETKEYVALUE</svg>",
+            ),
+        )
+    )
+
+    assert "owner" in printed
+    for secret in ("secret-password-value", "secret-code-value", "97531864", "SECRETKEYVALUE"):
+        assert secret not in printed

@@ -338,7 +338,7 @@ class LoginRequest(BaseModel):
     # At most 128 characters, the longest saved username (login sub-slice L3a-1; L2c note), so
     # the NFC step of the sign-in lookup never runs on a long input.
     username: str = Field(min_length=1, max_length=128)
-    password: str = Field(min_length=1, max_length=1024)
+    password: str = Field(min_length=1, max_length=1024, repr=False)
 
 
 class PasswordChangeRequest(BaseModel):
@@ -356,7 +356,7 @@ class MfaChallengeRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     method: Literal["totp", "recovery_code"]
-    code: str = Field(min_length=1, max_length=256)
+    code: str = Field(min_length=1, max_length=256, repr=False)
 
 
 class MfaEnrollmentConfirmationRequest(BaseModel):
@@ -364,7 +364,7 @@ class MfaEnrollmentConfirmationRequest(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    code: str = Field(min_length=6, max_length=8, pattern=r"^[0-9]+$")
+    code: str = Field(min_length=6, max_length=8, pattern=r"^[0-9]+$", repr=False)
 
 
 class ReauthenticationFactor(BaseModel):
@@ -373,7 +373,7 @@ class ReauthenticationFactor(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     method: Literal["totp", "recovery_code"]
-    code: str = Field(min_length=1, max_length=256)
+    code: str = Field(min_length=1, max_length=256, repr=False)
 
 
 class ReauthenticationRequest(BaseModel):
@@ -381,7 +381,7 @@ class ReauthenticationRequest(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    password: str = Field(min_length=1, max_length=1024)
+    password: str = Field(min_length=1, max_length=1024, repr=False)
     second_factor: ReauthenticationFactor | None = None
 
 
@@ -441,9 +441,9 @@ class MfaEnrollmentData(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     method: Literal["totp"] = "totp"
-    provisioning_uri: str
+    provisioning_uri: str = Field(repr=False)
     # The same link as a QR picture for the authenticator app (login sub-slice L6).
-    qr_code_svg: str
+    qr_code_svg: str = Field(repr=False)
 
 
 class MfaEnrollmentResponse(BaseModel):

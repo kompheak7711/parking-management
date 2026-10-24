@@ -647,6 +647,7 @@ export function SignInScreens({
           aria-describedby={describedBy(field, helpId)}
           aria-invalid={errors[field] !== undefined}
           autoCapitalize="off"
+          autoCorrect="off"
           autoComplete={field === "username" ? "username" : "one-time-code"}
           className={
             numeric ? "sign-in-input sign-in-code-input" : "sign-in-input"
@@ -685,6 +686,7 @@ export function SignInScreens({
             aria-describedby={describedBy(field, helpId)}
             aria-invalid={errors[field] !== undefined}
             autoCapitalize="off"
+            autoCorrect="off"
             autoComplete={autoComplete}
             className="sign-in-input"
             id={id}

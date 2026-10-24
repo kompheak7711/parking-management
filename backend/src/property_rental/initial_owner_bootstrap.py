@@ -317,7 +317,9 @@ class InitialOwnerBootstrapService:
             self._terminal.present_recovery_codes(bundle.recovery_plaintexts, deadline=deadline)
             self._require_before_deadline(deadline)
             acknowledgement = self._terminal.read_acknowledgement(deadline=deadline)
-            if acknowledgement != BOOTSTRAP_ACKNOWLEDGEMENT:
+            # Spaces at the ends and the case do not matter (login L8 review): a small slip must
+            # not throw away the codes the Owner has just written down.
+            if " ".join(acknowledgement.split()).upper() != BOOTSTRAP_ACKNOWLEDGEMENT:
                 raise RuntimeError("bootstrap acknowledgement failed")
             self._require_before_deadline(deadline)
             self._repository.commit()
