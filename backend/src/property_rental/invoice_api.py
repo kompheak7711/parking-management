@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from datetime import date
-from typing import Annotated, Literal, Protocol
+from typing import Annotated, Final, Literal, Protocol
 from uuid import UUID
 
 from fastapi import APIRouter, Header, HTTPException, Query, Request, Response, status
@@ -13,6 +13,29 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from property_rental.access_control import SETTINGS_MANAGE_CAPABILITY
 from property_rental.api import require_billing_actor
+from property_rental.api_refusals import (
+    CLEANING_CHARGE_ALREADY_RECORDED,
+    CLEANING_CHARGE_NEEDS_MOVE_OUT,
+    CLEANING_CHARGE_NOT_MOVED_IN,
+    CLEANING_RATE_CHANGED,
+    CLEANING_RATE_NOT_SET,
+    CLEANING_RATE_ZERO,
+    FINAL_SETTLEMENT_CLOSED,
+    HAND_BACK_ALREADY_RESOLVED,
+    HAND_BACK_ASSESSMENT_CHANGED,
+    HAND_BACK_INVOICE_NOT_ISSUED,
+    HAND_BACK_MONTH_NOT_COVERED,
+    HAND_BACK_MOVE_OUT_UNCLEAR,
+    HAND_BACK_NEEDS_MOVE_OUT,
+    HAND_BACK_NOT_EARLY_TERMINATION,
+    HAND_BACK_NOT_MONTHLY_RENT,
+    HAND_BACK_PAID_INVOICE_KEPT,
+    HAND_BACK_VOID_BLOCKED,
+    IDEMPOTENCY_KEY_REUSED,
+    Refusal,
+    RefusedRequest,
+    database_refusal,
+)
 from property_rental.billing import SetInitialRentDueDateCommand
 from property_rental.browser_security import require_browser_mutation
 from property_rental.identity import (
@@ -28,6 +51,7 @@ from property_rental.invoice import (
     INVOICE_ISSUE_CAPABILITY,
     INVOICE_READ_CAPABILITY,
     INVOICE_VOID_CAPABILITY,
+    LEASE_READ_CAPABILITY,
     MAX_INVOICE_EXPECTED_VERSION,
     MAX_INVOICE_PAGE_SIZE,
     ONE_TIME_CHARGE_CAPABILITIES,
@@ -47,7 +71,10 @@ from property_rental.invoice import (
     InvoiceVersionConflict,
     IssueInvoiceCommand,
     RecordOneTimeChargeCommand,
+    RecordUnitCleaningChargeCommand,
+    ResolveHandBackRentCommand,
     SetOneTimeChargeDueDaysCommand,
+    SetUnitCleaningRateCommand,
     VoidInvoiceCommand,
     validate_invoice_cursor,
 )
@@ -657,6 +684,269 @@ def create_invoice_router(
             )
         )
         _etag(response, resource)
+        return _envelope(resource, request)
+
+    return router
+
+
+# V1-056 slice 11a: the move-out cleaning charge (BR-UNIT-014, BR-MOVEOUT-013) and the
+# hand-back month actions (BR-RENT-030). Each database refusal of business state below
+# answers 409 with its own code (owner answer of 2026-10-05); no database text is shown.
+REFUSALS_BY_DATABASE_MESSAGE: Final[dict[str, Refusal]] = {
+    "No Unit cleaning charge: the Customer never moved in": CLEANING_CHARGE_NOT_MOVED_IN,
+    "Unit cleaning charge needs a recorded move-out": CLEANING_CHARGE_NEEDS_MOVE_OUT,
+    "The Unit cleaning charge is already recorded for this Lease": (
+        CLEANING_CHARGE_ALREADY_RECORDED
+    ),
+    "The Unit has no cleaning rate": CLEANING_RATE_NOT_SET,
+    "The Unit cleaning rate is zero; there is no cleaning charge": CLEANING_RATE_ZERO,
+    "Unit cleaning rate changed": CLEANING_RATE_CHANGED,
+    "The hand-back rule covers only monthly Rent Invoices generated on the 25th": (
+        HAND_BACK_NOT_MONTHLY_RENT
+    ),
+    "The hand-back rule covers only an issued Invoice that is not VOID": (
+        HAND_BACK_INVOICE_NOT_ISSUED
+    ),
+    "The hand-back rule covers only a verified voluntary early termination": (
+        HAND_BACK_NOT_EARLY_TERMINATION
+    ),
+    "The hand-back rule needs a recorded move-out": HAND_BACK_NEEDS_MOVE_OUT,
+    "The current move-out record is ambiguous": HAND_BACK_MOVE_OUT_UNCLEAR,
+    "The Invoice month is not covered by the hand-back date": HAND_BACK_MONTH_NOT_COVERED,
+    "The Invoice already has a hand-back resolution": HAND_BACK_ALREADY_RESOLVED,
+    "A fully paid hand-back Invoice is kept as issued": HAND_BACK_PAID_INVOICE_KEPT,
+    "The hand-back assessment changed": HAND_BACK_ASSESSMENT_CHANGED,
+    # Raised by app.void_invoice inside the hand-back VOID; reason and status are already valid.
+    "Invoice VOID dependencies are not resolved": HAND_BACK_VOID_BLOCKED,
+    # Migration 92 and its later forms: nothing changes a closed Final Settlement's records.
+    "A closed Final Settlement changes only through a post-settlement correction": (
+        FINAL_SETTLEMENT_CLOSED
+    ),
+    "A Deposit application paid this obligation at Final Settlement": FINAL_SETTLEMENT_CLOSED,
+    # The identity is the idempotency key of these commands (API-016).
+    "Unit cleaning rate identity was reused": IDEMPOTENCY_KEY_REUSED,
+    "Unit cleaning charge identity was reused": IDEMPOTENCY_KEY_REUSED,
+    "One-time charge identity was reused": IDEMPOTENCY_KEY_REUSED,
+}
+
+
+class MoveOutBillingFlow(Protocol):
+    def property_for_invoice(self, invoice_id: UUID) -> UUID: ...
+
+    def unit_cleaning_rate(
+        self, property_id: UUID, unit_id: UUID, *, actor: AuthenticatedActor
+    ) -> dict[str, object] | None: ...
+
+    def set_unit_cleaning_rate(
+        self,
+        property_id: UUID,
+        command: SetUnitCleaningRateCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]: ...
+
+    def record_unit_cleaning_charge(
+        self,
+        property_id: UUID,
+        command: RecordUnitCleaningChargeCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]: ...
+
+    def hand_back_rent_assessment(
+        self, property_id: UUID, invoice_id: UUID, *, actor: AuthenticatedActor
+    ) -> dict[str, object]: ...
+
+    def resolve_hand_back_rent(
+        self,
+        property_id: UUID,
+        invoice_id: UUID,
+        command: ResolveHandBackRentCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]: ...
+
+
+class CleaningRateInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    rate_id: UUID
+    # Required, and null only for a Unit that has no rate yet: the rate the screen showed.
+    expected_current_rate_id: UUID | None
+    rate_usd_cents: int = Field(strict=True, ge=0, le=9_000_000_000_000_000)
+    reason: str = Field(min_length=1, max_length=500, pattern=r"^\S(?:.*\S)?$")
+
+
+class CleaningChargeInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    charge_id: UUID
+    expected_rate_id: UUID
+
+
+class HandBackResolutionInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    action: Literal["VOID", "CREDIT_ADJUSTMENT"]
+    expected_outstanding_usd_cents: int = Field(strict=True, ge=1, le=9_000_000_000_000_000)
+    reason: str = Field(min_length=1, max_length=500, pattern=r"^\S(?:.*\S)?$")
+
+
+def _move_out_invoke(command: Callable[[], dict[str, object]]) -> dict[str, object]:
+    try:
+        return _invoke(command)
+    except HTTPException as exc:
+        refusal = (
+            database_refusal(exc.__cause__, REFUSALS_BY_DATABASE_MESSAGE)
+            if exc.__cause__ is not None
+            else None
+        )
+        if refusal is not None:
+            raise RefusedRequest(refusal) from exc
+        raise
+
+
+def create_move_out_billing_router(
+    resolver: ActorResolver,
+    flow: MoveOutBillingFlow,
+    settings: Settings,
+) -> APIRouter:
+    router = APIRouter(prefix="/api/v1", tags=["invoices"])
+
+    @router.get("/properties/{property_id}/units/{unit_id}/cleaning-rate")
+    def get_unit_cleaning_rate(
+        property_id: UUID, unit_id: UUID, request: Request
+    ) -> dict[str, object]:
+        if request.query_params:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+        actor = _actor(request, resolver)
+        # The cleaning charge form reads it (invoices.create); so does the rate form.
+        if not any(
+            is_authorized(
+                actor,
+                AuthorizationRequirement(capability=capability, property_id=str(property_id)),
+            )
+            for capability in (INVOICE_CREATE_CAPABILITY, PROPERTY_MANAGE_CAPABILITY)
+        ):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+        current = _invoke(
+            lambda: {"rate": flow.unit_cleaning_rate(property_id, unit_id, actor=actor)}
+        )
+        return {
+            "data": {
+                "property_id": str(property_id),
+                "unit_id": str(unit_id),
+                "rate": current["rate"],
+            },
+            "meta": {"request_id": request.state.request_id},
+        }
+
+    @router.post(
+        "/properties/{property_id}/units/{unit_id}/cleaning-rates",
+        status_code=status.HTTP_201_CREATED,
+    )
+    def set_unit_cleaning_rate(
+        property_id: UUID, unit_id: UUID, body: CleaningRateInput, request: Request
+    ) -> dict[str, object]:
+        if request.query_params:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+        actor = _actor(request, resolver)
+        # DL-075 and the L5 entry of docs/010: property.manage sets the per-Unit rate until
+        # the Settings screens move cleaning rates to Unit Type rate groups.
+        _authorize(actor, property_id, PROPERTY_MANAGE_CAPABILITY)
+        require_browser_mutation(request, settings)
+        resource = _move_out_invoke(
+            lambda: flow.set_unit_cleaning_rate(
+                property_id,
+                SetUnitCleaningRateCommand(
+                    body.rate_id,
+                    unit_id,
+                    body.expected_current_rate_id,
+                    body.rate_usd_cents,
+                    body.reason,
+                ),
+                actor=actor,
+            )
+        )
+        return _envelope(resource, request)
+
+    @router.post(
+        "/properties/{property_id}/leases/{lease_id}/cleaning-charge",
+        status_code=status.HTTP_201_CREATED,
+    )
+    def record_unit_cleaning_charge(
+        property_id: UUID, lease_id: UUID, body: CleaningChargeInput, request: Request
+    ) -> dict[str, object]:
+        if request.query_params:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+        actor = _actor(request, resolver)
+        _authorize(actor, property_id, INVOICE_CREATE_CAPABILITY)
+        require_browser_mutation(request, settings)
+        resource = _move_out_invoke(
+            lambda: flow.record_unit_cleaning_charge(
+                property_id,
+                RecordUnitCleaningChargeCommand(body.charge_id, lease_id, body.expected_rate_id),
+                actor=actor,
+            )
+        )
+        return _envelope(resource, request)
+
+    def invoice_property(invoice_id: UUID) -> UUID:
+        try:
+            return flow.property_for_invoice(invoice_id)
+        except (InvoiceNotFoundError, InvoiceAuthorizationError) as exc:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND) from exc
+        except InvoiceServiceUnavailableError as exc:
+            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE) from exc
+
+    @router.get("/invoices/{invoice_id}/hand-back-assessment")
+    def get_hand_back_assessment(invoice_id: UUID, request: Request) -> dict[str, object]:
+        if request.query_params:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+        actor = _actor(request, resolver)
+        property_id = invoice_property(invoice_id)
+        # The answer shows the Lease's termination basis, so it needs leases.read too.
+        _authorize(actor, property_id, INVOICE_READ_CAPABILITY, hide=True)
+        _authorize(actor, property_id, LEASE_READ_CAPABILITY, hide=True)
+        resource = _move_out_invoke(
+            lambda: flow.hand_back_rent_assessment(property_id, invoice_id, actor=actor)
+        )
+        return _envelope(resource, request)
+
+    @router.post("/invoices/{invoice_id}/hand-back-resolution")
+    def resolve_hand_back_rent(
+        invoice_id: UUID,
+        body: HandBackResolutionInput,
+        request: Request,
+        response: Response,
+        idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
+        if_match: Annotated[str | None, Header(alias="If-Match")] = None,
+    ) -> dict[str, object]:
+        if request.query_params:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+        actor = _actor(request, resolver)
+        property_id = invoice_property(invoice_id)
+        capability = INVOICE_VOID_CAPABILITY if body.action == "VOID" else INVOICE_ADJUST_CAPABILITY
+        _authorize(actor, property_id, capability, hide=True)
+        require_browser_mutation(request, settings)
+        expected_version = _version(if_match)
+        resource = _move_out_invoke(
+            lambda: flow.resolve_hand_back_rent(
+                property_id,
+                invoice_id,
+                ResolveHandBackRentCommand(
+                    idempotency_key,
+                    body.action,
+                    body.expected_outstanding_usd_cents,
+                    body.reason,
+                    expected_version,
+                ),
+                actor=actor,
+            )
+        )
+        invoice = resource.get("invoice")
+        if isinstance(invoice, dict) and "version" in invoice:
+            _etag(response, invoice)
         return _envelope(resource, request)
 
     return router

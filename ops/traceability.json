@@ -49451,6 +49451,577 @@
       "test_path": "frontend/src/App.test.tsx",
       "status": "implemented",
       "notes": "When sign-out does not reach the office computer, the screen stays signed in and says so, instead of showing the sign-in screen while the server session lives on (login sub-slice L8, final review of the login slice, decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-056-login-L8.md; DL-081)."
+    },
+    {
+      "test_id": "test_a_reader_lists_drafts_with_a_cursor_bound_to_the_property_and_state",
+      "upstream_ids": [
+        "API-101",
+        "BR-AUTH-010",
+        "DL-069",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "The draft list answers one Property's drafts of one state, newest first, with a cursor bound to that Property and state (V1-056 slice 11b, shared draft routes; ops/reviews/V1-056-slice-11b.md; DL-084)."
+    },
+    {
+      "test_id": "test_drafts_are_hidden_without_a_draft_capability_and_need_sign_in",
+      "upstream_ids": [
+        "API-101",
+        "BR-AUTH-010",
+        "DL-084"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "A person with no draft capability of the Property gets a hidden 404, and no sign-in gets 401 (V1-056 slice 11b, shared draft routes; ops/reviews/V1-056-slice-11b.md; DL-084)."
+    },
+    {
+      "test_id": "test_the_detail_answers_one_draft_and_maps_not_found_and_outage",
+      "upstream_ids": [
+        "API-101",
+        "API-013",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "One draft is read by id; a missing draft is 404 and a database outage is 503 without database text (V1-056 slice 11b, shared draft routes; ops/reviews/V1-056-slice-11b.md; DL-084)."
+    },
+    {
+      "test_id": "test_only_financial_approve_rejects_and_a_decided_draft_says_so",
+      "upstream_ids": [
+        "API-101",
+        "BR-AUTH-010",
+        "DL-069",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "Only financial.approve rejects a draft; a decided draft answers DRAFT_ALREADY_DECIDED (V1-056 slice 11b, shared draft routes; ops/reviews/V1-056-slice-11b.md; DL-084)."
+    },
+    {
+      "test_id": "test_reject_needs_csrf_origin_idempotency_key_and_a_trimmed_reason",
+      "upstream_ids": [
+        "API-101",
+        "API-016",
+        "DL-084"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "Reject needs Origin, CSRF, an Idempotency-Key and a non-blank trimmed reason (V1-056 slice 11b, shared draft routes; ops/reviews/V1-056-slice-11b.md; DL-084)."
+    },
+    {
+      "test_id": "test_only_the_preparer_withdraws_with_the_drafts_own_capability",
+      "upstream_ids": [
+        "API-101",
+        "DL-069",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "Only the person who prepared a draft withdraws it, holding that draft kind's own capability (V1-056 slice 11b, shared draft routes; ops/reviews/V1-056-slice-11b.md; DL-084)."
+    },
+    {
+      "test_id": "test_withdraw_refusals_never_call_the_flow_and_show_no_database_text",
+      "upstream_ids": [
+        "API-101",
+        "API-013",
+        "DL-084"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "A refused withdraw never reaches the database command and shows no database text (V1-056 slice 11b, shared draft routes; ops/reviews/V1-056-slice-11b.md; DL-084)."
+    },
+    {
+      "test_id": "test_reject_maps_authorization_and_a_draft_of_another_property",
+      "upstream_ids": [
+        "API-101",
+        "BR-AUTH-010",
+        "DL-084"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "Reject answers 403 for a refused authorization and a hidden 404 for a draft of another Property (V1-056 slice 11b, shared draft routes; ops/reviews/V1-056-slice-11b.md; DL-084)."
+    },
+    {
+      "test_id": "test_reservation_deposit_drafts_need_reservations_read",
+      "upstream_ids": [
+        "API-101",
+        "BR-AUTH-010",
+        "DL-084"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "Reservation Deposit drafts are listed only for a person who also holds reservations.read (decided by Claude under the owner's 2026-10-23 22:30 rule) (V1-056 slice 11b, shared draft routes; ops/reviews/V1-056-slice-11b.md; DL-084)."
+    },
+    {
+      "test_id": "test_financial_approve_confirms_any_draft_through_its_own_command",
+      "upstream_ids": [
+        "API-101",
+        "BR-AUTH-010",
+        "DL-069",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "financial.approve confirms a draft of any kind through that kind's own confirm command (V1-056 slice 11b, shared draft routes; ops/reviews/V1-056-slice-11b.md; DL-084)."
+    },
+    {
+      "test_id": "test_confirm_refusals_have_stable_codes",
+      "upstream_ids": [
+        "API-101",
+        "API-013",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "Confirm refusals answer stable codes such as DRAFT_OUT_OF_DATE and DRAFT_CONFIRM_REFUSED (V1-056 slice 11b, shared draft routes; ops/reviews/V1-056-slice-11b.md; DL-084)."
+    },
+    {
+      "test_id": "test_a_rejected_or_withdrawn_draft_is_not_sent_to_its_confirm",
+      "upstream_ids": [
+        "API-101",
+        "DL-069",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "A rejected or withdrawn draft answers DRAFT_ALREADY_DECIDED and never reaches its confirm command (V1-056 slice 11b, shared draft routes; ops/reviews/V1-056-slice-11b.md; DL-084)."
+    },
+    {
+      "test_id": "test_only_the_approver_who_confirmed_a_draft_gets_its_result_again",
+      "upstream_ids": [
+        "API-101",
+        "BR-AUTH-010",
+        "DL-069",
+        "DL-084"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "Only the approver who confirmed a draft gets its result again; anyone else gets DRAFT_ALREADY_DECIDED (V1-056 slice 11b, shared draft routes; ops/reviews/V1-056-slice-11b.md; DL-084)."
+    },
+    {
+      "test_id": "test_a_draft_decided_during_the_confirm_says_it_was_already_decided",
+      "upstream_ids": [
+        "API-101",
+        "DL-069",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "A draft another person decides while a confirm runs answers DRAFT_ALREADY_DECIDED (V1-056 slice 11b, shared draft routes; ops/reviews/V1-056-slice-11b.md; DL-084)."
+    },
+    {
+      "test_id": "test_an_actor_id_that_is_not_a_uuid_is_refused_not_a_server_error",
+      "upstream_ids": [
+        "API-101",
+        "API-013",
+        "DL-084"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "A signed-in actor id that is not a UUID is refused with 403, not a server error (V1-056 slice 11b, shared draft routes; ops/reviews/V1-056-slice-11b.md; DL-084)."
+    },
+    {
+      "test_id": "test_a_named_refusal_of_the_kinds_confirm_keeps_its_own_code",
+      "upstream_ids": [
+        "API-101",
+        "BR-REFUND-003",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "A named refusal from a Refund confirm keeps its own code through the shared confirm route (V1-056 slice 11c-2, Refund draft refusal codes; ops/reviews/V1-056-slice-11c-2.md; DL-084)."
+    },
+    {
+      "test_id": "test_each_kind_and_variant_reaches_its_own_confirm",
+      "upstream_ids": [
+        "API-101",
+        "DL-069",
+        "DL-084"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_financial_draft_confirm.py",
+      "status": "implemented",
+      "notes": "Each draft kind and variant reaches its own service's confirm method, with the real method's argument count (V1-056 slice 11b, shared draft routes; ops/reviews/V1-056-slice-11b.md; DL-084)."
+    },
+    {
+      "test_id": "test_a_draft_without_a_shared_confirm_is_refused_before_any_command",
+      "upstream_ids": [
+        "API-101",
+        "DL-084"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_financial_draft_confirm.py",
+      "status": "implemented",
+      "notes": "A companion draft or an unknown kind or variant is refused before any command runs (V1-056 slice 11b, shared draft routes; ops/reviews/V1-056-slice-11b.md; DL-084)."
+    },
+    {
+      "test_id": "test_a_missing_identifier_is_a_server_contract_error",
+      "upstream_ids": [
+        "API-101",
+        "DL-084"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_financial_draft_confirm.py",
+      "status": "implemented",
+      "notes": "A draft payload without a valid identifier is a server contract error and runs no command (V1-056 slice 11b, shared draft routes; ops/reviews/V1-056-slice-11b.md; DL-084)."
+    },
+    {
+      "test_id": "test_the_shared_reads_leave_out_the_transaction_id_of_a_confirmed_draft",
+      "upstream_ids": [
+        "API-101",
+        "DL-084"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_draft_reads_transaction_id_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20270208_196: the shared draft reads leave out the transaction id of a confirmed draft (V1-056 slice 11b, shared draft routes; ops/reviews/V1-056-slice-11b.md; DL-084)."
+    },
+    {
+      "test_id": "test_the_migration_changes_only_the_two_shared_reads",
+      "upstream_ids": [
+        "API-101",
+        "DL-084"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_draft_reads_transaction_id_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20270208_196 replaces only the two shared draft read functions (V1-056 slice 11b, shared draft routes; ops/reviews/V1-056-slice-11b.md; DL-084)."
+    },
+    {
+      "test_id": "test_drafts_are_listed_confirmed_rejected_and_withdrawn_through_the_shared_routes",
+      "upstream_ids": [
+        "API-101",
+        "BR-AUTH-010",
+        "DL-069",
+        "DL-084"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_financial_draft_api_migration.py",
+      "status": "implemented",
+      "notes": "On real PostgreSQL, Refund drafts are listed, confirmed once, rejected and withdrawn through the shared routes (V1-056 slice 11b, shared draft routes; ops/reviews/V1-056-slice-11b.md; DL-084)."
+    },
+    {
+      "test_id": "test_the_cleaning_rate_is_read_by_the_charge_or_rate_form_only",
+      "upstream_ids": [
+        "API-102",
+        "BR-UNIT-014",
+        "DL-075",
+        "DL-084"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_move_out_billing_api.py",
+      "status": "implemented",
+      "notes": "The Unit cleaning rate is read only with invoices.create or property.manage (V1-056 slice 11a, move-out cleaning and hand-back routes; ops/reviews/V1-056-slice-11a.md; DL-084)."
+    },
+    {
+      "test_id": "test_property_manage_sets_a_unit_cleaning_rate_with_csrf",
+      "upstream_ids": [
+        "API-102",
+        "BR-UNIT-014",
+        "DL-075",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_move_out_billing_api.py",
+      "status": "implemented",
+      "notes": "property.manage sets a Unit cleaning rate with Origin and CSRF (decided by Claude under the owner's 2026-10-23 22:30 rule until DL-075 rate groups exist) (V1-056 slice 11a, move-out cleaning and hand-back routes; ops/reviews/V1-056-slice-11a.md; DL-084)."
+    },
+    {
+      "test_id": "test_invoices_create_records_the_cleaning_charge_from_the_rate_shown",
+      "upstream_ids": [
+        "API-102",
+        "BR-MOVEOUT-013",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_move_out_billing_api.py",
+      "status": "implemented",
+      "notes": "invoices.create records the move-out cleaning charge from the rate the form showed (V1-056 slice 11a, move-out cleaning and hand-back routes; ops/reviews/V1-056-slice-11a.md; DL-084)."
+    },
+    {
+      "test_id": "test_each_business_state_refusal_answers_its_own_code",
+      "upstream_ids": [
+        "API-102",
+        "API-013",
+        "BR-MOVEOUT-013",
+        "BR-RENT-030",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_move_out_billing_api.py",
+      "status": "implemented",
+      "notes": "Each cleaning and hand-back business-state refusal answers 409 with its own code and no database text (V1-056 slice 11a, move-out cleaning and hand-back routes; ops/reviews/V1-056-slice-11a.md; DL-084)."
+    },
+    {
+      "test_id": "test_an_unnamed_database_refusal_stays_a_plain_answer_without_its_text",
+      "upstream_ids": [
+        "API-102",
+        "API-013",
+        "DL-084"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_move_out_billing_api.py",
+      "status": "implemented",
+      "notes": "A database refusal with no named code stays a plain answer that shows no database text (V1-056 slice 11a, move-out cleaning and hand-back routes; ops/reviews/V1-056-slice-11a.md; DL-084)."
+    },
+    {
+      "test_id": "test_the_hand_back_assessment_needs_invoice_and_lease_reads",
+      "upstream_ids": [
+        "API-102",
+        "BR-RENT-030",
+        "DL-084"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_move_out_billing_api.py",
+      "status": "implemented",
+      "notes": "The hand-back assessment needs invoices.read and leases.read, else a hidden 404 (V1-056 slice 11a, move-out cleaning and hand-back routes; ops/reviews/V1-056-slice-11a.md; DL-084)."
+    },
+    {
+      "test_id": "test_the_hand_back_action_needs_its_own_capability_a_version_and_a_key",
+      "upstream_ids": [
+        "API-102",
+        "API-016",
+        "BR-RENT-030",
+        "DL-084"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_move_out_billing_api.py",
+      "status": "implemented",
+      "notes": "The hand-back action needs invoices.void or invoices.adjust by action, If-Match and an Idempotency-Key (V1-056 slice 11a, move-out cleaning and hand-back routes; ops/reviews/V1-056-slice-11a.md; DL-084)."
+    },
+    {
+      "test_id": "test_the_cleaning_rate_and_charge_routes_record_one_charge_from_the_rate_shown",
+      "upstream_ids": [
+        "API-102",
+        "BR-UNIT-014",
+        "BR-MOVEOUT-013",
+        "DL-084"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_move_out_billing_api_migration.py",
+      "status": "implemented",
+      "notes": "On real PostgreSQL, a rate is set, a stale form is told the rate changed, and one cleaning charge is recorded; a replay answers the same charge (V1-056 slice 11a, move-out cleaning and hand-back routes; ops/reviews/V1-056-slice-11a.md; DL-084)."
+    },
+    {
+      "test_id": "test_the_hand_back_routes_assess_and_void_an_unpaid_invoice_once",
+      "upstream_ids": [
+        "API-102",
+        "BR-RENT-030",
+        "API-016",
+        "DL-084"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_move_out_billing_api_migration.py",
+      "status": "implemented",
+      "notes": "On real PostgreSQL, an unpaid hand-back month Invoice is assessed and voided once; a replay answers the stored result (V1-056 slice 11a, move-out cleaning and hand-back routes; ops/reviews/V1-056-slice-11a.md; DL-084)."
+    },
+    {
+      "test_id": "test_an_end_date_that_is_not_a_month_end_answers_its_own_code",
+      "upstream_ids": [
+        "BR-LEASE-031",
+        "API-013",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_lease_api.py",
+      "status": "implemented",
+      "notes": "A Lease End Date that is not a month end answers LEASE_END_DATE_NOT_MONTH_END on the end_date field (V1-056 slice 11a, move-out cleaning and hand-back routes; ops/reviews/V1-056-slice-11a.md; DL-084)."
+    },
+    {
+      "test_id": "test_refund_draft_http_credit_customer_variant_records_only_for_a_credit",
+      "upstream_ids": [
+        "BR-CREDIT-014",
+        "BR-REFUND-014",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "The CREDIT_CUSTOMER Refund draft variant is accepted only with a Credit source and records through its own command (V1-056 slice 11c-2, Refund draft refusal codes; ops/reviews/V1-056-slice-11c-2.md; DL-084)."
+    },
+    {
+      "test_id": "test_refund_command_refusals_answer_their_own_code",
+      "upstream_ids": [
+        "BR-REFUND-003",
+        "BR-REFUND-014",
+        "API-013",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "Refund business-state refusals answer 409 with their own code, and a method, recipient or return evidence from the form answers 422 with its field, per route and without database text (V1-056 slice 11c-2, Refund draft refusal codes; ops/reviews/V1-056-slice-11c-2.md; DL-084)."
+    },
+    {
+      "test_id": "test_the_primary_tenant_agreement_refusal_stays_bad_input",
+      "upstream_ids": [
+        "BR-REFUND-014",
+        "API-013",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "The primary tenant agreement refusal stays a 422 bad-input answer (V1-056 slice 11c-2, Refund draft refusal codes; ops/reviews/V1-056-slice-11c-2.md; DL-084)."
+    },
+    {
+      "test_id": "test_a_credit_command_refused_by_a_closed_final_settlement_names_it",
+      "upstream_ids": [
+        "BR-SETTLE-012",
+        "API-013",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "A Credit command refused by a closed Final Settlement answers FINAL_SETTLEMENT_CLOSED (V1-056 slice 11c-2, Refund draft refusal codes; ops/reviews/V1-056-slice-11c-2.md; DL-084)."
+    },
+    {
+      "test_id": "test_a_read_is_never_answered_with_a_command_refusal",
+      "upstream_ids": [
+        "API-013",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "A Refund read is never answered with a command's refusal code (V1-056 slice 11c-2, Refund draft refusal codes; ops/reviews/V1-056-slice-11c-2.md; DL-084)."
+    },
+    {
+      "test_id": "test_every_named_refusal_message_is_still_raised_at_head",
+      "upstream_ids": [
+        "API-013",
+        "API-101",
+        "API-102",
+        "DL-084"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_financial_draft_api_migration.py",
+      "status": "implemented",
+      "notes": "Every database message a route names as a refusal is still raised by a function at the migration head (V1-056 slice 11c-2, Refund draft refusal codes; ops/reviews/V1-056-slice-11c-2.md; DL-084)."
+    },
+    {
+      "test_id": "test_only_a_refund_draft_confirm_names_its_database_refusals",
+      "upstream_ids": [
+        "API-101",
+        "API-013",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "The shared confirm names database refusals only for Refund drafts; other kinds keep their plain answers (V1-056 slice 11c-2, Refund draft refusal codes; ops/reviews/V1-056-slice-11c-2.md; DL-084)."
+    },
+    {
+      "test_id": "test_an_out_of_date_refund_draft_stays_out_of_date_whatever_the_cause",
+      "upstream_ids": [
+        "API-101",
+        "DL-069",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "An out-of-date draft answers DRAFT_OUT_OF_DATE even when its cause is a named refusal (V1-056 slice 11c-2, Refund draft refusal codes; ops/reviews/V1-056-slice-11c-2.md; DL-084)."
+    },
+    {
+      "test_id": "test_a_named_conflict_is_answered_without_reading_the_draft_again",
+      "upstream_ids": [
+        "API-101",
+        "BR-AUTH-010",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "A named confirm conflict answers its own code without a second read of the draft (V1-056 slice 11c-2, Refund draft refusal codes; ops/reviews/V1-056-slice-11c-2.md; DL-084)."
+    },
+    {
+      "test_id": "test_each_draft_record_answers_a_method_from_the_form_as_bad_input",
+      "upstream_ids": [
+        "BR-REFUND-014",
+        "BR-REFUND-015",
+        "API-013",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "A Pet Deposit or CREDIT_CUSTOMER Refund draft with a method that is off or a recipient who is not a Signer answers 422 on that field (V1-056 slice 11c-2, Refund draft refusal codes; ops/reviews/V1-056-slice-11c-2.md; DL-084)."
+    },
+    {
+      "test_id": "test_refund_methods_are_listed_for_a_refund_reader_preparer_or_property_manager",
+      "upstream_ids": [
+        "BR-REFUND-014",
+        "API-013",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "The Refund method list answers a refunds.read, refunds.create or property.manage holder of the Property, and a hidden 404 to anyone else (V1-056 slice 11c-1, Refund reads; ops/reviews/V1-056-slice-11c-1.md; DL-084)."
+    },
+    {
+      "test_id": "test_a_released_credit_names_its_customer_and_the_credit_customer_variant",
+      "upstream_ids": [
+        "BR-CREDIT-014",
+        "DL-084"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_reads_variant_recovery_migration.py",
+      "status": "implemented",
+      "notes": "The Refund source read of a Credit released to another Customer names that Customer and the CREDIT_CUSTOMER variant (V1-056 slice 11c-1, Refund reads; ops/reviews/V1-056-slice-11c-1.md; DL-084)."
+    },
+    {
+      "test_id": "test_a_payment_or_its_own_credit_names_the_payer_and_the_usd_variant",
+      "upstream_ids": [
+        "BR-CREDIT-014",
+        "BR-REFUND-002",
+        "DL-084"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_reads_variant_recovery_migration.py",
+      "status": "implemented",
+      "notes": "The Refund source read of a Payment or the payer's own Credit names the payer and the USD variant (V1-056 slice 11c-1, Refund reads; ops/reviews/V1-056-slice-11c-1.md; DL-084)."
+    },
+    {
+      "test_id": "test_the_refund_read_migration_adds_one_internal_function_and_is_forward_only",
+      "upstream_ids": [
+        "DB-REFUND-002",
+        "DL-084"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_reads_variant_recovery_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20270209_197 adds one internal function no role may call, changes only the two Refund reads exactly as written, and is forward-only; the recovery read itself is checked in test_payment_return_recovery_migration.py::test_a_payment_refund_with_no_lease_is_charged_with_no_lease (V1-056 slice 11c-1, Refund reads; ops/reviews/V1-056-slice-11c-1.md; DL-084)."
+    },
+    {
+      "test_id": "test_a_recovery_billed_again_after_its_invoice_was_void_shows_the_new_invoice",
+      "upstream_ids": [
+        "DB-REFUND-002",
+        "DL-084"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_reads_variant_recovery_migration.py",
+      "status": "implemented",
+      "notes": "When a recovery Invoice is VOID and its charge is billed again, the Refund read's recovery takes every Invoice field from the Invoice that is not VOID (V1-056 slice 11c-1, Refund reads, review round 1; ops/reviews/V1-056-slice-11c-1.md; DL-084)."
     }
   ]
 }

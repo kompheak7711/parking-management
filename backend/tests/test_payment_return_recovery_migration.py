@@ -105,7 +105,8 @@ PATCHED = {
     "app.financial_action_context_page(uuid,uuid,text,uuid,uuid,text,uuid,integer,integer,uuid)",
     "app.refund_resource(uuid,uuid,uuid,integer,timestamp with time zone,uuid)",
 }
-# The keys of a Refund correction in the whole-row reads (the staff screens accept exactly these).
+# The keys of a Refund correction in the whole-row reads (the staff screens accept exactly these;
+# from V1-056 slice 11c-1 the Refund read adds `recovery`).
 CORRECTION_KEYS = {
     "id",
     "refund_id",
@@ -424,7 +425,8 @@ def test_a_payment_refund_with_no_lease_is_charged_with_no_lease(
     payer, 100 of that verified returned; the Payment bounces. The return charges the 200 still
     out (the net amount, not the original) to the payer as a Miscellaneous one-time charge with no
     Lease (nothing is refused), and reverses the Payment. The Refund's corrections read with
-    exactly the keys the staff screens accept (review round 1)."""
+    exactly the keys the staff screens accept (review round 1), plus `recovery` from V1-056 slice
+    11c-1."""
     url = migrated_database_url
     with psycopg.connect(url) as connection:
         human, prop, _, customer = setup_reservation_sources(connection)
@@ -470,7 +472,46 @@ def test_a_payment_refund_with_no_lease_is_charged_with_no_lease(
         "RECOVERED_BY_CHARGE",
         "VALUE_CORRECTION",
     ]
-    assert all(set(item) == CORRECTION_KEYS for item in items)
+    # V1-056 slice 11c-1 (migration 20270209_197): each correction also names its recovery
+    # charge, or null.
+    assert all(set(item) == CORRECTION_KEYS | {"recovery"} for item in items)
+    recovery = cast(dict[str, Any], items[0]["recovery"])
+    assert items[1]["recovery"] is None
+    assert (
+        recovery["refund_correction_id"],
+        recovery["authorized_nonrecurring_obligation_id"],
+        recovery["invoice_id"],
+        recovery["customer_id"],
+        recovery["lease_id"],
+        recovery["amount_usd_cents"],
+        recovery["charge"],
+        recovery["invoice_status"],
+    ) == (
+        items[0]["id"],
+        recovered["authorized_nonrecurring_obligation_id"],
+        recovered["invoice_id"],
+        str(customer),
+        None,
+        200,
+        "NO_LEASE",
+        "UNPAID",
+    )
+    assert recovery["invoice_number"]
+    assert set(recovery) == {
+        "refund_correction_id",
+        "refund_id",
+        "customer_id",
+        "lease_id",
+        "amount_usd_cents",
+        "charge",
+        "authorized_nonrecurring_obligation_id",
+        "invoice_id",
+        "invoice_number",
+        "invoice_status",
+        "due_date",
+        "occurred_at",
+    }
+    assert recovery["refund_id"] == str(refund)
     reconciled(url, customer)
 
 

@@ -21,6 +21,7 @@ from property_rental.lease import (
     LEASE_DRAFT_CAPABILITY,
     LEASE_SIGN_CAPABILITY,
     LeaseCommandInvalidError,
+    LeaseEndDateNotMonthEndError,
     LeaseSignCommand,
     LeaseUpdateDraftCommand,
     PostgresLeaseService,
@@ -56,6 +57,9 @@ MONTH_END_MESSAGE = "Lease End Date must be the last day of a calendar month"
 
 
 def _cause(failure: pytest.ExceptionInfo[Exception]) -> str:
+    # Slice 11a: the service names this refusal, so the route answers its own code.
+    if isinstance(failure.value, LeaseCommandInvalidError):
+        assert isinstance(failure.value, LeaseEndDateNotMonthEndError)
     cause = failure.value.__cause__
     assert isinstance(cause, psycopg.Error)
     return str(cause.diag.message_primary)

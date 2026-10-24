@@ -64,6 +64,10 @@ class FinancialDraftAuthorizationError(PermissionError):
     pass
 
 
+class FinancialDraftNotPreparerError(FinancialDraftAuthorizationError):
+    """The database refused a withdrawal by anyone but the preparer (slice 11b)."""
+
+
 class FinancialDraftNotFoundError(LookupError):
     pass
 
@@ -74,6 +78,10 @@ class FinancialDraftInvalidError(ValueError):
 
 class FinancialDraftConflictError(RuntimeError):
     pass
+
+
+class FinancialDraftDecidedError(FinancialDraftConflictError):
+    """The draft already has its decision (slice 11b: the screen says so)."""
 
 
 class FinancialDraftUnavailableError(RuntimeError):
@@ -179,6 +187,12 @@ class FinancialDraftService:
         except psycopg.Error as exc:
             if exc.sqlstate in {"P0002", "P4501"}:
                 raise FinancialDraftNotFoundError("Financial draft was not found") from exc
+            if exc.sqlstate == "42501" and (
+                exc.diag.message_primary == "Only the preparer may withdraw a draft"
+            ):
+                raise FinancialDraftNotPreparerError(
+                    "Only the preparer may withdraw a draft"
+                ) from exc
             if exc.sqlstate in {"42501", "P4506"}:
                 raise FinancialDraftAuthorizationError(
                     "Financial draft actor is not authorized"
@@ -186,7 +200,7 @@ class FinancialDraftService:
             if exc.sqlstate == "22023":
                 raise FinancialDraftInvalidError("Financial draft command is invalid") from exc
             if exc.sqlstate == "55000":
-                raise FinancialDraftConflictError("Financial draft is already decided") from exc
+                raise FinancialDraftDecidedError("Financial draft is already decided") from exc
             # A refusal by a database rule (for example a decision the draft's recorded
             # capability does not allow) is a conflict, not unavailable storage.
             if exc.sqlstate in {"23514", "23505"}:

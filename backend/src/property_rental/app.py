@@ -30,6 +30,7 @@ from property_rental.allocation_receipt_api import (
     create_allocation_receipt_router,
 )
 from property_rental.api import create_api_router
+from property_rental.api_refusals import RefusedRequest
 from property_rental.audit_api import (
     AuditEventQueryFlow,
     AuditQueryForbidden,
@@ -103,6 +104,11 @@ from property_rental.financial_action_context_api import (
     FinancialActionContextFlow,
     create_financial_action_context_router,
 )
+from property_rental.financial_draft_api import (
+    FinancialDraftFlow,
+    PostgresFinancialDraftFlow,
+    create_financial_draft_router,
+)
 from property_rental.financial_reference import FinancialReferenceService
 from property_rental.financial_reference_api import (
     FinancialReferenceFlow,
@@ -121,8 +127,10 @@ from property_rental.invoice import (
 )
 from property_rental.invoice_api import (
     InvoiceFlow,
+    MoveOutBillingFlow,
     UnavailableInvoiceFlow,
     create_invoice_router,
+    create_move_out_billing_router,
     invoice_idempotency_key_reused_response,
     invoice_line_fully_paid_response,
 )
@@ -455,6 +463,7 @@ def create_app(
     utility_resource_flow: UtilityResourceFlow | None = None,
     billing_run_flow: BillingRunFlow | None = None,
     invoice_flow: InvoiceFlow | None = None,
+    move_out_billing_flow: MoveOutBillingFlow | None = None,
     late_payment_flow: LatePaymentFlow | None = None,
     unpaid_initial_flow: UnpaidInitialFlow | None = None,
     utility_lease_flow: UtilityLeaseFlow | None = None,
@@ -466,6 +475,7 @@ def create_app(
     financial_action_context_flow: FinancialActionContextFlow | None = None,
     allocation_receipt_flow: AllocationReceiptFlow | None = None,
     credit_refund_flow: CreditRefundFlow | None = None,
+    financial_draft_flow: FinancialDraftFlow | None = None,
     customer_ledger_flow: CustomerLedgerFlow | None = None,
 ) -> FastAPI:
     """Build an application instance from validated settings."""
@@ -572,6 +582,29 @@ def create_app(
             ),
             fields=["serial_number"],
             rule_ids=["DB-UTIL-001"],
+        )
+
+    @app.exception_handler(RefusedRequest)
+    async def refused_request(request: Request, exc: RefusedRequest) -> JSONResponse:
+        refusal = exc.refusal
+        request_id = request.state.request_id
+        return JSONResponse(
+            status_code=refusal.status_code,
+            content={
+                "error": {
+                    "code": refusal.code,
+                    "message": refusal.message,
+                    "fields": list(refusal.fields),
+                    "rule_ids": list(refusal.rule_ids),
+                    "current_version": None,
+                },
+                "meta": {"request_id": request_id},
+            },
+            headers={
+                REQUEST_ID_HEADER: request_id,
+                "Cache-Control": "private, no-store",
+                "Vary": "Cookie",
+            },
         )
 
     @app.exception_handler(ReservationDepositDraftRequired)
@@ -1155,25 +1188,29 @@ def create_app(
             resolved_settings,
         )
     )
+    postgres_invoice_service = (
+        PostgresInvoiceService(
+            resolved_settings.database_url.get_secret_value(),
+            (
+                resolved_settings.financial_database_url.get_secret_value()
+                if resolved_settings.financial_database_url is not None
+                else None
+            ),
+        )
+        if resolved_settings.database_url is not None
+        else UnavailableInvoiceFlow()
+    )
     include_signed_in(
         create_invoice_router(
             actor_resolver,
-            invoice_flow
-            or cast(
-                InvoiceFlow,
-                (
-                    PostgresInvoiceService(
-                        resolved_settings.database_url.get_secret_value(),
-                        (
-                            resolved_settings.financial_database_url.get_secret_value()
-                            if resolved_settings.financial_database_url is not None
-                            else None
-                        ),
-                    )
-                    if resolved_settings.database_url is not None
-                    else UnavailableInvoiceFlow()
-                ),
-            ),
+            invoice_flow or cast(InvoiceFlow, postgres_invoice_service),
+            resolved_settings,
+        )
+    )
+    include_signed_in(
+        create_move_out_billing_router(
+            actor_resolver,
+            move_out_billing_flow or cast(MoveOutBillingFlow, postgres_invoice_service),
             resolved_settings,
         )
     )
@@ -1341,6 +1378,21 @@ def create_app(
             actor_resolver,
             credit_refund_flow
             or PostgresCreditRefundFlow(
+                resolved_settings.database_url.get_secret_value()
+                if resolved_settings.database_url is not None
+                else None,
+                resolved_settings.financial_database_url.get_secret_value()
+                if resolved_settings.financial_database_url is not None
+                else None,
+            ),
+            resolved_settings,
+        )
+    )
+    include_signed_in(
+        create_financial_draft_router(
+            actor_resolver,
+            financial_draft_flow
+            or PostgresFinancialDraftFlow(
                 resolved_settings.database_url.get_secret_value()
                 if resolved_settings.database_url is not None
                 else None,

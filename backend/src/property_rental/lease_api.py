@@ -13,6 +13,7 @@ import psycopg
 from fastapi import APIRouter, Header, HTTPException, Query, Request, Response, status
 from pydantic import BaseModel, ConfigDict, Field
 
+from property_rental.api_refusals import LEASE_END_DATE_NOT_MONTH_END, RefusedRequest
 from property_rental.browser_security import require_browser_mutation
 from property_rental.identity import (
     ActorResolver,
@@ -32,6 +33,7 @@ from property_rental.lease import (
     LeaseCommandInvalidError,
     LeaseDraftCommand,
     LeaseDraftSigner,
+    LeaseEndDateNotMonthEndError,
     LeaseNotFoundError,
     LeasePetTerm,
     LeaseRecordSignatureCommand,
@@ -1065,9 +1067,11 @@ def _body(resource: LeaseResource, actor: AuthenticatedActor) -> dict[str, objec
     return result
 
 
-def _translate(exc: Exception) -> HTTPException:
-    if isinstance(exc, HTTPException):
+def _translate(exc: Exception) -> HTTPException | RefusedRequest:
+    if isinstance(exc, (HTTPException, RefusedRequest)):
         return exc
+    if isinstance(exc, LeaseEndDateNotMonthEndError):
+        return RefusedRequest(LEASE_END_DATE_NOT_MONTH_END)
     if isinstance(exc, (LeaseResourceNotFound, LeaseNotFoundError, MoveInNotFoundError)):
         return HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     if isinstance(exc, (LeaseVersionConflictError, MoveInVersionConflictError)):

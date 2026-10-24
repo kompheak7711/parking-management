@@ -787,6 +787,18 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/properties/{property_id}/one-time-charges": {"post"},
         "/api/v1/properties/{property_id}/one-time-charge-due-days": {"post"},
         "/api/v1/properties/{property_id}/leases/{lease_id}/initial-rent-due-date": {"post"},
+        # V1-056 slice 11a: the move-out cleaning charge and the hand-back month (API-102).
+        "/api/v1/properties/{property_id}/units/{unit_id}/cleaning-rate": {"get"},
+        "/api/v1/properties/{property_id}/units/{unit_id}/cleaning-rates": {"post"},
+        "/api/v1/properties/{property_id}/leases/{lease_id}/cleaning-charge": {"post"},
+        "/api/v1/invoices/{invoice_id}/hand-back-assessment": {"get"},
+        "/api/v1/invoices/{invoice_id}/hand-back-resolution": {"post"},
+        # V1-056 slice 11b: the shared financial draft routes (API-101).
+        "/api/v1/properties/{property_id}/financial-drafts": {"get"},
+        "/api/v1/properties/{property_id}/financial-drafts/{draft_id}": {"get"},
+        "/api/v1/properties/{property_id}/financial-drafts/{draft_id}/reject": {"post"},
+        "/api/v1/properties/{property_id}/financial-drafts/{draft_id}/withdraw": {"post"},
+        "/api/v1/properties/{property_id}/financial-drafts/{draft_id}/confirm": {"post"},
         "/api/v1/properties/{property_id}/leases/{lease_id}/utility-baseline": {"get", "post"},
         "/api/v1/properties/{property_id}/leases/{lease_id}/move-out-final-utility-inputs": {
             "get",
@@ -827,6 +839,8 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/properties/{property_id}/refunds": {"get"},
         "/api/v1/refunds/{refund_id}": {"get"},
         "/api/v1/refund-sources/{source_type}/{source_id}": {"get"},
+        # V1-056 slice 11c-1: the Refund methods a draft may name.
+        "/api/v1/properties/{property_id}/refund-methods": {"get"},
         "/api/v1/refunds": {"post"},
         "/api/v1/refund-drafts": {"post"},
         "/api/v1/properties/{property_id}/refund-drafts/{draft_id}/confirm": {"post"},

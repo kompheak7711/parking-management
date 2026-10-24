@@ -6,13 +6,16 @@ import asyncio
 import json
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from types import SimpleNamespace
 from typing import cast
 from unittest.mock import MagicMock, patch
 from uuid import UUID, uuid4
 
+import psycopg
 import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
+from httpx import Response
 from starlette.types import Message, Scope
 
 from property_rental.app import create_app
@@ -1099,3 +1102,334 @@ def test_refund_draft_http_signer_recipient_needs_a_pet_source_and_the_agreement
     recipient = flow.refund_service.record_pet_draft.call_args.kwargs["recipient"]
     assert recipient.customer_id == signer
     assert recipient.agreement == "All Signers agreed in writing on 2026-10-04"
+
+
+class _DatabaseRefusal(psycopg.Error):
+    """A database error whose primary message the route reads (no server needed)."""
+
+    @property
+    def diag(self) -> SimpleNamespace:  # type: ignore[override]
+        return SimpleNamespace(message_primary=str(self.args[0]))
+
+
+def _refused(message: str, error: type[Exception]) -> Exception:
+    mapped = error("Refund command is invalid")
+    mapped.__cause__ = _DatabaseRefusal(message)
+    return mapped
+
+
+def test_refund_draft_http_credit_customer_variant_records_only_for_a_credit() -> None:
+    """V1-056 slice 11c (BR-CREDIT-014): a released Credit is refunded to its own Customer."""
+    flow = Flow()
+    flow.refund_service.record_credit_customer_draft.return_value = {
+        "draft_id": str(uuid4()),
+        "property_id": str(flow.prop),
+        "kind": "REFUND",
+        "payload": {"variant": "CREDIT_CUSTOMER"},
+    }
+    who = actor(flow.prop, "refunds.create")
+    body = {
+        **_draft_body(flow),
+        "source_type": "CREDIT",
+        "source_id": str(flow.credit),
+        "variant": "CREDIT_CUSTOMER",
+    }
+    for wrong in (
+        {**body, "source_type": "PAYMENT"},
+        {**body, "variant": "USD"},
+        {**body, "recipient_customer_id": str(uuid4()), "signer_agreement": "Signed note"},
+    ):
+        refused = api(flow, who).post(
+            "/api/v1/refund-drafts", json=wrong, headers=mutation_headers()
+        )
+        assert refused.status_code == 422, refused.text
+    flow.refund_service.record_credit_customer_draft.assert_not_called()
+    key = uuid4()
+    response = api(flow, who).post(
+        "/api/v1/refund-drafts", json=body, headers=mutation_headers(key=key)
+    )
+    assert response.status_code == 201, response.text
+    call = flow.refund_service.record_credit_customer_draft.call_args
+    assert call.args[0] == flow.prop and call.kwargs["actor"] == who
+    assert (call.args[1].idempotency_key, call.args[1].credit_id) == (key, flow.credit)
+    assert call.args[1].amount_usd_cents == 1000
+    flow.refund_service.record_usd_draft.assert_not_called()
+    # A command answer that is not this variant's draft is a server fault, not a success.
+    for answer in (
+        {"draft_id": str(uuid4()), "property_id": str(flow.prop), "kind": "DEPOSIT_FORFEITURE"},
+        {"draft_id": str(uuid4()), "property_id": str(flow.prop), "kind": "REFUND"},
+    ):
+        flow.refund_service.record_credit_customer_draft.return_value = answer
+        wrong_answer = api(flow, who).post(
+            "/api/v1/refund-drafts", json=body, headers=mutation_headers()
+        )
+        assert wrong_answer.status_code == 503
+
+
+_RETURN_BODY = {
+    "currency": "USD",
+    "returned_amount_minor": 1000,
+    "returned_at": "2026-10-24T10:00:00Z",
+    "return_method_reference": "Cash back at the office",
+    "evidence_reference": "Signed slip",
+    "reason": "The Customer returned the money",
+}
+_RECORD = "record"
+_CONFIRM = "confirm"
+_VERIFY = "verify"
+_REVERSE = "reverse"
+
+
+def _refund_answer(flow: Flow, route: str, failure: Exception) -> Response:
+    """Each Refund route, its service method failing with ``failure``."""
+    answer: Response
+    if route == _RECORD:
+        flow.refund_service.record_usd_draft.side_effect = failure
+        answer = api(flow, actor(flow.prop, "refunds.create")).post(
+            "/api/v1/refund-drafts", json=_draft_body(flow), headers=mutation_headers()
+        )
+        return answer
+    if route == _CONFIRM:
+        flow.refund_service.confirm_draft.side_effect = failure
+        answer = api(flow, actor(flow.prop, "financial.approve")).post(
+            f"/api/v1/properties/{flow.prop}/refund-drafts/{uuid4()}/confirm",
+            headers=mutation_headers(),
+        )
+        return answer
+    corrector = api(flow, actor(flow.prop, "refunds.correct", "refunds.corrections.reverse"))
+    if route == _VERIFY:
+        flow.refund_service.verify_usd_return.side_effect = failure
+        answer = corrector.post(
+            f"/api/v1/refunds/{flow.refund}/verified-returns",
+            json=_RETURN_BODY,
+            headers=mutation_headers(),
+        )
+        return answer
+    flow.refund_service.reverse_correction.side_effect = failure
+    answer = corrector.post(
+        f"/api/v1/refunds/{flow.refund}/verified-returns/{flow.correction}/reverse",
+        json={"evidence_reference": "Bank statement", "reason": "Recorded in error"},
+        headers=mutation_headers(),
+    )
+    return answer
+
+
+@pytest.mark.parametrize(
+    ("route", "message", "error", "status", "code"),
+    [
+        # A method or recipient chosen on the form is bad input; at confirm it is state.
+        (
+            _RECORD,
+            "Refund Method is not active",
+            RefundInvalidError,
+            422,
+            "REFUND_METHOD_NOT_AVAILABLE",
+        ),
+        (_CONFIRM, "Refund Method is not active", RefundInvalidError, 409, "REFUND_METHOD_OFF"),
+        (
+            _RECORD,
+            "The Refund recipient must be a Signer of the Lease",
+            RefundInvalidError,
+            422,
+            "REFUND_RECIPIENT_NOT_A_SIGNER",
+        ),
+        (
+            _CONFIRM,
+            "The Refund recipient must be a Signer of the Lease",
+            RefundConflictError,
+            409,
+            "REFUND_RECIPIENT_NOT_SIGNER",
+        ),
+        (
+            _CONFIRM,
+            "Refund draft is stale: the payer has unpaid obligations",
+            RefundInvalidError,
+            409,
+            "REFUND_PAYER_HAS_UNPAID",
+        ),
+        (
+            _CONFIRM,
+            "Refund draft amount is no longer available",
+            RefundInvalidError,
+            409,
+            "REFUND_AMOUNT_NOT_AVAILABLE",
+        ),
+        (
+            _CONFIRM,
+            "Financial draft is already decided",
+            RefundConflictError,
+            409,
+            "DRAFT_ALREADY_DECIDED",
+        ),
+        (
+            _CONFIRM,
+            "A Deposit receipt reversal draft for this Deposit is waiting",
+            RefundConflictError,
+            409,
+            "REFUND_DEPOSIT_RECEIPT_REVERSAL_WAITING",
+        ),
+        (
+            _CONFIRM,
+            "Refund Credit recipient mismatch",
+            RefundUnavailableError,
+            409,
+            "REFUND_CREDIT_FOR_ANOTHER_CUSTOMER",
+        ),
+        (
+            _RECORD,
+            "Only a Credit that a credit Adjustment released to a Customer other than the payer "
+            "is refunded to that Customer",
+            RefundConflictError,
+            409,
+            "REFUND_CREDIT_CUSTOMER_ONLY",
+        ),
+        (
+            _VERIFY,
+            "Refund requires its source-specific coordinated correction path",
+            RefundInvalidError,
+            409,
+            "REFUND_RETURN_THROUGH_CORRECTION",
+        ),
+        (
+            _VERIFY,
+            "A closed Final Settlement's Pet Deposit Refund is corrected only through a "
+            "post-settlement correction",
+            RefundConflictError,
+            409,
+            "REFUND_RETURN_THROUGH_CORRECTION",
+        ),
+        (
+            _VERIFY,
+            "Refund correction requires exact demonstrated return evidence",
+            RefundUnavailableError,
+            422,
+            "REFUND_RETURN_EVIDENCE_NOT_EXACT",
+        ),
+        (
+            _REVERSE,
+            "Returned Refund value is no longer available to reverse",
+            RefundUnavailableError,
+            409,
+            "REFUND_RETURN_REVERSAL_REFUSED",
+        ),
+        (
+            _REVERSE,
+            "Refund correction reversal must reverse one active exact correction",
+            RefundUnavailableError,
+            409,
+            "REFUND_RETURN_ALREADY_REVERSED",
+        ),
+    ],
+)
+def test_refund_command_refusals_answer_their_own_code(
+    route: str, message: str, error: type[Exception], status: int, code: str
+) -> None:
+    answer = _refund_answer(Flow(), route, _refused(message, error))
+    assert answer.status_code == status, answer.text
+    assert answer.json()["error"]["code"] == code
+    assert message not in answer.text
+
+
+def test_each_draft_record_answers_a_method_from_the_form_as_bad_input() -> None:
+    """Slice 11c-2 review round 2: the record table covers the Pet and CREDIT_CUSTOMER drafts."""
+    flow = Flow()
+    off = _refused("Refund Method is not active", RefundInvalidError)
+    not_signer = _refused("The Refund recipient must be a Signer of the Lease", RefundInvalidError)
+    drafter = api(flow, actor(flow.prop, "refunds.create"))
+    flow.refund_service.record_credit_customer_draft.side_effect = off
+    credit = drafter.post(
+        "/api/v1/refund-drafts",
+        json={
+            **_draft_body(flow),
+            "source_type": "CREDIT",
+            "source_id": str(flow.credit),
+            "variant": "CREDIT_CUSTOMER",
+        },
+        headers=mutation_headers(),
+    )
+    assert credit.status_code == 422
+    assert credit.json()["error"]["code"] == "REFUND_METHOD_NOT_AVAILABLE"
+    assert credit.json()["error"]["fields"] == ["refund_method_id"]
+    pet_body = {
+        **_draft_body(flow),
+        "source_type": "PET_DEPOSIT",
+        "source_id": str(uuid4()),
+        "pet_refund_review_id": str(uuid4()),
+        "recipient_customer_id": str(uuid4()),
+        "signer_agreement": "Written agreement of every Signer",
+    }
+    for failure, code, field_name in (
+        (off, "REFUND_METHOD_NOT_AVAILABLE", "refund_method_id"),
+        (not_signer, "REFUND_RECIPIENT_NOT_A_SIGNER", "recipient_customer_id"),
+    ):
+        flow.refund_service.record_pet_draft.side_effect = failure
+        pet = drafter.post("/api/v1/refund-drafts", json=pet_body, headers=mutation_headers())
+        assert pet.status_code == 422, pet.text
+        assert pet.json()["error"]["code"] == code
+        assert pet.json()["error"]["fields"] == [field_name]
+
+
+def test_a_credit_command_refused_by_a_closed_final_settlement_names_it() -> None:
+    flow = Flow()
+    flow.credit_service.reverse.side_effect = _refused(
+        "A closed Final Settlement changes only through a post-settlement correction",
+        CreditConflictError,
+    )
+    answer = api(flow, actor(flow.prop, "credits.reverse")).post(
+        f"/api/v1/customer-credits/{flow.credit}/reverse",
+        json={"reason": "Correct recognition"},
+        headers=mutation_headers(),
+    )
+    assert answer.status_code == 409
+    assert answer.json()["error"]["code"] == "FINAL_SETTLEMENT_CLOSED"
+
+
+def test_a_read_is_never_answered_with_a_command_refusal() -> None:
+    flow = Flow()
+    flow.refund_service.get.side_effect = _refused(
+        "Refund Method is not active", RefundUnavailableError
+    )
+    answer = api(flow, actor(flow.prop, "refunds.read")).get(f"/api/v1/refunds/{flow.refund}")
+    assert answer.status_code == 503
+    assert "REFUND_METHOD" not in answer.text
+
+
+def test_the_primary_tenant_agreement_refusal_stays_bad_input() -> None:
+    flow = Flow()
+    flow.refund_service.record_usd_draft.side_effect = _refused(
+        "The Primary Tenant needs no Signer agreement", RefundInvalidError
+    )
+    answer = api(flow, actor(flow.prop, "refunds.create")).post(
+        "/api/v1/refund-drafts", json=_draft_body(flow), headers=mutation_headers()
+    )
+    assert answer.status_code == 422
+    assert "Primary Tenant" not in answer.text
+
+
+def test_refund_methods_are_listed_for_a_refund_reader_preparer_or_property_manager() -> None:
+    """V1-056 slice 11c-1 (BR-REFUND-014): the methods a Refund draft may name."""
+    flow = Flow()
+    method = {
+        "id": str(uuid4()),
+        "code": "CASH",
+        "display_name": "Cash",
+        "active": True,
+        "seeded": True,
+        "updated_at": "2026-10-24T10:00:00+00:00",
+    }
+    flow.refund_service.refund_methods.return_value = {"items": [method]}
+    path = f"/api/v1/properties/{flow.prop}/refund-methods"
+    assert api(flow, None).get(path).status_code == 401
+    assert api(flow, actor(flow.prop, "payments.read")).get(path).status_code == 404
+    assert api(flow, actor(uuid4(), "refunds.read")).get(path).status_code == 404
+    flow.refund_service.refund_methods.assert_not_called()
+    for capability in ("refunds.read", "refunds.create", "property.manage"):
+        who = actor(flow.prop, capability)
+        answer = api(flow, who).get(path)
+        assert answer.status_code == 200, answer.text
+        assert answer.json()["data"] == [method]
+        assert answer.headers["cache-control"] == "private, no-store"
+        flow.refund_service.refund_methods.assert_called_with(flow.prop, actor=who)
+    assert api(flow, actor(flow.prop, "refunds.read")).get(f"{path}?x=1").status_code == 400
+    flow.refund_service.refund_methods.return_value = {"items": [{"active": "yes"}]}
+    assert api(flow, actor(flow.prop, "refunds.read")).get(path).status_code == 503
