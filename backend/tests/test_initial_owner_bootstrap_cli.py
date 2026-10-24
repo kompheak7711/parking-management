@@ -848,6 +848,9 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         },
         "/api/v1/properties/{property_id}/deposit-receipts/{receipt_id}/reversal-drafts": {"post"},
         "/api/v1/properties/{property_id}/payments/{payment_id}/return-drafts": {"post"},
+        # V1-056 slice 11c-4: the walk-in Security Deposit and a receipt into a Deposit.
+        "/api/v1/leases/{lease_id}/security-deposit": {"post"},
+        "/api/v1/deposits/{deposit_id}/receipts": {"post"},
         "/api/v1/refunds": {"post"},
         "/api/v1/refund-drafts": {"post"},
         "/api/v1/properties/{property_id}/refund-drafts/{draft_id}/confirm": {"post"},

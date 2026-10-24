@@ -50203,6 +50203,134 @@
       "test_path": "backend/tests/test_draft_record_api.py",
       "status": "implemented",
       "notes": "A used disposition id and a closed Final Settlement are named through the forfeiture service's own errors (V1-056 slice 11c-3, Deposit and returned-Payment draft routes, review round 1; ops/reviews/V1-056-slice-11c-3.md)."
+    },
+    {
+      "test_id": "test_a_walk_in_security_deposit_is_created_with_deposits_manage_and_csrf",
+      "upstream_ids": [
+        "API-040",
+        "BR-DEP-004",
+        "BR-DEP-005"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_deposit_record_api.py",
+      "status": "implemented",
+      "notes": "The walk-in Security Deposit create needs deposits.manage (hidden 404), CSRF and Origin, and answers 201 with the Deposit and its Location (V1-056 slice 11c-4, walk-in Security Deposit and Deposit receipt routes; ops/reviews/V1-056-slice-11c-4.md)."
+    },
+    {
+      "test_id": "test_a_deposit_receipt_needs_payments_allocate_and_answers_only_the_receipt",
+      "upstream_ids": [
+        "API-040",
+        "BR-DEP-013"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_deposit_record_api.py",
+      "status": "implemented",
+      "notes": "A receipt into a Deposit needs payments.allocate (hidden 404 for deposits.read or deposits.manage alone) and answers the receipt and the Deposit's money only (V1-056 slice 11c-4, walk-in Security Deposit and Deposit receipt routes; ops/reviews/V1-056-slice-11c-4.md)."
+    },
+    {
+      "test_id": "test_bad_input_answers_422_before_any_command",
+      "upstream_ids": [
+        "API-040",
+        "API-013"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_deposit_record_api.py",
+      "status": "implemented",
+      "notes": "A blank or long reason, an unknown field and an amount that is not a positive whole number of cents within bigint answer 422 before any command (V1-056 slice 11c-4, walk-in Security Deposit and Deposit receipt routes; ops/reviews/V1-056-slice-11c-4.md)."
+    },
+    {
+      "test_id": "test_each_named_deposit_refusal_answers_its_own_code",
+      "upstream_ids": [
+        "API-040",
+        "API-013",
+        "BR-DEP-004",
+        "BR-DEP-013"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_deposit_record_api.py",
+      "status": "implemented",
+      "notes": "Each named database refusal of the create and the receipt answers its own code, status, rule ids and fields, never the database text (V1-056 slice 11c-4, walk-in Security Deposit and Deposit receipt routes; ops/reviews/V1-056-slice-11c-4.md)."
+    },
+    {
+      "test_id": "test_the_named_codes_are_pinned",
+      "upstream_ids": [
+        "API-040",
+        "API-013"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_deposit_record_api.py",
+      "status": "implemented",
+      "notes": "The codes, the 422 refusals and their fields are pinned by database message (V1-056 slice 11c-4, walk-in Security Deposit and Deposit receipt routes; ops/reviews/V1-056-slice-11c-4.md)."
+    },
+    {
+      "test_id": "test_unnamed_refusals_keep_their_plain_answers",
+      "upstream_ids": [
+        "API-040",
+        "API-013"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_deposit_record_api.py",
+      "status": "implemented",
+      "notes": "Refusals with no name keep their plain 422, 409 or 404 answer (V1-056 slice 11c-4, walk-in Security Deposit and Deposit receipt routes; ops/reviews/V1-056-slice-11c-4.md)."
+    },
+    {
+      "test_id": "test_a_reused_key_answers_idempotency_key_reused",
+      "upstream_ids": [
+        "API-016"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_deposit_record_api.py",
+      "status": "implemented",
+      "notes": "A reused Idempotency-Key with another body answers IDEMPOTENCY_KEY_REUSED (V1-056 slice 11c-4, walk-in Security Deposit and Deposit receipt routes; ops/reviews/V1-056-slice-11c-4.md)."
+    },
+    {
+      "test_id": "test_a_receipt_for_a_deposit_of_another_property_is_hidden",
+      "upstream_ids": [
+        "API-040",
+        "BR-AUTH-001"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_deposit_record_api.py",
+      "status": "implemented",
+      "notes": "A receipt into a Deposit of another Property answers 404 and records nothing (V1-056 slice 11c-4, walk-in Security Deposit and Deposit receipt routes; ops/reviews/V1-056-slice-11c-4.md)."
+    },
+    {
+      "test_id": "test_a_walk_in_security_deposit_is_created_and_takes_receipts_over_http",
+      "upstream_ids": [
+        "API-040",
+        "BR-DEP-004",
+        "BR-DEP-013"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_record_api_migration.py",
+      "status": "implemented",
+      "notes": "On real PostgreSQL the walk-in create replays by key and refuses a second Security Deposit by name; receipts reach the required total, and a reused Payment, a Payment with too little left, an amount over the required total, an unknown Payment, another Customer's Payment and a person without payments.allocate are refused by name or hidden (V1-056 slice 11c-4, walk-in Security Deposit and Deposit receipt routes; ops/reviews/V1-056-slice-11c-4.md)."
+    },
+    {
+      "test_id": "test_a_lease_signed_from_a_reservation_keeps_its_reservation_security_deposit",
+      "upstream_ids": [
+        "API-040",
+        "BR-DEP-005"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_record_api_migration.py",
+      "status": "implemented",
+      "notes": "On real PostgreSQL a Lease signed from a Reservation answers DEPOSIT_SECURITY_NOT_WALK_IN and an unknown Lease 404 (V1-056 slice 11c-4, walk-in Security Deposit and Deposit receipt routes; ops/reviews/V1-056-slice-11c-4.md)."
+    },
+    {
+      "test_id": "test_the_named_receipt_refusals_come_from_the_database_over_http",
+      "upstream_ids": [
+        "API-040",
+        "BR-DEP-002",
+        "BR-DEP-013",
+        "BR-DEP-022",
+        "BR-DEP-026",
+        "BR-SETTLE-012"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_record_api_migration.py",
+      "status": "implemented",
+      "notes": "On real PostgreSQL an expired Reservation, a Payment confirmed for an owed Invoice, a Lease whose termination ground keeps the Deposit, an active forfeiture and a closed Final Settlement each refuse a receipt by name and write nothing (V1-056 slice 11c-4, walk-in Security Deposit and Deposit receipt routes, review round 1; ops/reviews/V1-056-slice-11c-4.md)."
     }
   ]
 }

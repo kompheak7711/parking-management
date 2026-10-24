@@ -412,3 +412,104 @@ PAYMENT_RETURN_TOO_LARGE = Refusal(
     "This Payment has too many records to return in one draft.",
     ("BR-SETTLE-013",),
 )
+
+# V1-056 slice 11c-4: the walk-in Lease's Security Deposit and a receipt into an existing Deposit.
+DEPOSIT_SECURITY_LEASE_NOT_SIGNED = Refusal(
+    409,
+    "DEPOSIT_SECURITY_LEASE_NOT_SIGNED",
+    "The Security Deposit is created here only for a signed Lease.",
+    ("BR-DEP-004",),
+)
+DEPOSIT_SECURITY_NOT_WALK_IN = Refusal(
+    409,
+    "DEPOSIT_SECURITY_NOT_WALK_IN",
+    "This Lease was not signed as a walk-in Lease, so its Security Deposit is not created on "
+    "this form.",
+    ("BR-DEP-005",),
+)
+DEPOSIT_SECURITY_RENEWAL = Refusal(
+    409,
+    "DEPOSIT_SECURITY_RENEWAL",
+    "This Lease renews an earlier Lease, so its Security Deposit is not created on this form.",
+    ("BR-DEP-005",),
+)
+DEPOSIT_SECURITY_ALREADY_EXISTS = Refusal(
+    409,
+    "DEPOSIT_SECURITY_ALREADY_EXISTS",
+    "This Lease already has a Security Deposit.",
+    ("BR-DEP-004",),
+)
+DEPOSIT_RECEIPT_LEASE_NOT_SIGNED = Refusal(
+    409,
+    "DEPOSIT_RECEIPT_LEASE_NOT_SIGNED",
+    "The Lease of this Deposit is not signed, so no receipt is recorded here.",
+    ("BR-DEP-011",),
+)
+DEPOSIT_RECEIPT_RESERVATION_NOT_ACTIVE = Refusal(
+    409,
+    "DEPOSIT_RECEIPT_RESERVATION_NOT_ACTIVE",
+    "The Reservation of this Deposit is not active or has expired, so no receipt is recorded here.",
+    ("BR-DEP-002",),
+)
+DEPOSIT_RECEIPT_GROUND_KEEPS_DEPOSIT = Refusal(
+    409,
+    "DEPOSIT_RECEIPT_GROUND_KEEPS_DEPOSIT",
+    "The termination of this Lease keeps this Deposit. Record this money as a normal Payment.",
+    ("BR-DEP-022", "BR-DEP-023"),
+)
+DEPOSIT_RECEIPT_FORFEITURE_ACTIVE = Refusal(
+    409,
+    "DEPOSIT_RECEIPT_FORFEITURE_ACTIVE",
+    "This Deposit is forfeited. Reverse the forfeiture first.",
+    ("BR-DEP-026",),
+)
+DEPOSIT_RECEIPT_PAYMENT_OWED = Refusal(
+    409,
+    "DEPOSIT_RECEIPT_PAYMENT_OWED",
+    "This Payment still pays an Invoice or a Late-payment Charge that is owed. Only what is left "
+    "after that may go into a Deposit.",
+    ("BR-DEP-013",),
+)
+DEPOSIT_RECEIPT_PAYMENT_INELIGIBLE = Refusal(
+    422,
+    "DEPOSIT_RECEIPT_PAYMENT_INELIGIBLE",
+    "This Payment cannot pay this Deposit. It must be a received Payment of this Property from "
+    "the Deposit's Customer or for its Lease.",
+    ("BR-DEP-013",),
+    ("payment_id",),
+)
+DEPOSIT_RECEIPT_PAYMENT_ALREADY_USED = Refusal(
+    409,
+    "DEPOSIT_RECEIPT_PAYMENT_ALREADY_USED",
+    "This Deposit already holds a receipt from this Payment.",
+    ("BR-DEP-004",),
+)
+DEPOSIT_RECEIPT_PAYMENT_NOT_FOUND = Refusal(
+    422,
+    "DEPOSIT_RECEIPT_PAYMENT_NOT_FOUND",
+    "No Payment with this id is in this Property.",
+    ("BR-DEP-013",),
+    ("payment_id",),
+)
+DEPOSIT_RECEIPT_OVER_REQUIRED = Refusal(
+    422,
+    "DEPOSIT_RECEIPT_OVER_REQUIRED",
+    "This amount is more than the Pet Deposit still needs.",
+    ("BR-DEP-009",),
+    ("amount_usd_cents",),
+)
+DEPOSIT_RECEIPT_AMOUNT_NOT_ALLOWED = Refusal(
+    422,
+    "DEPOSIT_RECEIPT_AMOUNT_NOT_ALLOWED",
+    "This amount does not fit this Deposit. It may not be more than the Deposit still needs, and "
+    "a Reservation's Deposit with no active receipt takes exactly its accepted amount.",
+    ("BR-DEP-002", "BR-DEP-004"),
+    ("amount_usd_cents",),
+)
+DEPOSIT_RECEIPT_OVER_PAYMENT = Refusal(
+    422,
+    "DEPOSIT_RECEIPT_OVER_PAYMENT",
+    "This amount is more than this Payment still has available.",
+    ("BR-DEP-013",),
+    ("amount_usd_cents",),
+)

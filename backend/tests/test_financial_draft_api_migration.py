@@ -110,6 +110,7 @@ def test_every_named_refusal_message_is_still_raised_at_head(
 ) -> None:
     """The routes name a refusal by the database's exact message (slice 11c-2 review round 1)."""
     from property_rental.credit_refund_api import REFUND_REFUSALS_BY_DATABASE_MESSAGE
+    from property_rental.deposit_api import DEPOSIT_RECEIPT_REFUSALS, SECURITY_DEPOSIT_REFUSALS
     from property_rental.draft_record_api import (
         DEPOSIT_DRAFT_CONFIRM_REFUSALS,
         PAYMENT_RETURN_REFUSALS,
@@ -120,6 +121,8 @@ def test_every_named_refusal_message_is_still_raised_at_head(
     messages = {*REFUND_REFUSALS_BY_DATABASE_MESSAGE, *REFUSALS_BY_DATABASE_MESSAGE}
     # Slice 11c-3: the Deposit and returned-Payment draft routes and their confirm.
     messages |= {*DEPOSIT_DRAFT_CONFIRM_REFUSALS, *PAYMENT_RETURN_REFUSALS}
+    # Slice 11c-4: the walk-in Security Deposit create and the Deposit receipt.
+    messages |= {*SECURITY_DEPOSIT_REFUSALS, *DEPOSIT_RECEIPT_REFUSALS}
     messages.add(END_DATE_NOT_MONTH_END)
     with psycopg.connect(migrated_database_url) as connection:
         missing = [

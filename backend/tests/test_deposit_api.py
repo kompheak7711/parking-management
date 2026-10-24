@@ -1,5 +1,6 @@
 """Corrected bounded V1-038 Deposit HTTP contracts."""
 
+import re
 from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
 from typing import cast
@@ -12,10 +13,13 @@ from fastapi.testclient import TestClient
 
 from property_rental.app import create_app
 from property_rental.deposit import (
+    CreateLeaseSecurityDepositCommand,
     CreatePetDepositCommand,
+    DepositReceiptRecord,
     DepositSnapshot,
     DepositType,
     QualifyPetDepositRefundReviewCommand,
+    RecordDepositReceiptCommand,
     RecordPetDepartureCommand,
     ReverseDepositDispositionCommand,
     ReverseDepositReceiptCommand,
@@ -68,6 +72,8 @@ class InMemoryDepositFlow:
     last_command: object | None = None
     replacement_disposition_id: UUID | None = None
     expected_reservation_version: int | None = None
+    # V1-056 slice 11c-4: the error the create and receipt commands raise, if any.
+    error: Exception | None = None
 
     def property_for_reservation(self, _: UUID) -> UUID:
         return self.value.property_id
@@ -139,6 +145,43 @@ class InMemoryDepositFlow:
             held_refundable_usd_cents=0,
         )
         return self.value
+
+    def create_lease_security_deposit(
+        self, _: UUID, command: CreateLeaseSecurityDepositCommand, *, actor: AuthenticatedActor
+    ) -> DepositSnapshot:
+        del actor
+        if self.error is not None:
+            raise self.error
+        self.last_command = command
+        self.value = replace(
+            self.value,
+            deposit_id=command.deposit_id,
+            deposit_type=DepositType.SECURITY,
+            reservation_id=None,
+            lease_id=command.lease_id,
+            pet_approval_id=None,
+            required_usd_cents=command.required_usd_cents,
+            received_usd_cents=0,
+            held_refundable_usd_cents=0,
+            outstanding_required_usd_cents=command.required_usd_cents,
+        )
+        return self.value
+
+    def record_receipt(
+        self, _: UUID, command: RecordDepositReceiptCommand, *, actor: AuthenticatedActor
+    ) -> DepositReceiptRecord:
+        del actor
+        if self.error is not None:
+            raise self.error
+        self.last_command = command
+        return DepositReceiptRecord(
+            self.value,
+            command.receipt_id,
+            command.payment_id,
+            command.amount_usd_cents,
+            datetime(2026, 8, 26, tzinfo=UTC),
+            5_000,
+        )
 
     def reverse_receipt(
         self, _: UUID, command: ReverseDepositReceiptCommand, *, actor: AuthenticatedActor
@@ -299,11 +342,18 @@ def test_deposit_reads_are_property_scoped_bounded_and_private() -> None:
 
 
 def test_scope_correction_exposes_no_provisional_receipt_or_final_settlement_command() -> None:
+    """V1-056 slice 11c-4 built the decided receipt command (Q-2026-10-12-92,
+    `payments.allocate`); this test now pins that it is the only receipts command and that no
+    Final Settlement Deposit disposition route exists (review round 1)."""
     property_id = uuid4()
     api = client(InMemoryDepositFlow(snapshot(property_id)), actor(property_id, "deposits.read"))
     routes = cast(FastAPI, api.app).openapi()["paths"]
-    assert "/api/v1/deposits/{id}/receipts" not in routes
-    assert "/api/v1/final-settlements/{id}/deposit-dispositions" not in routes
+    shapes = {re.sub(r"\{[^}]+\}", "{}", path) for path in routes}
+    assert [path for path in routes if path.endswith("/receipts")] == [
+        "/api/v1/deposits/{deposit_id}/receipts"
+    ]
+    assert set(routes["/api/v1/deposits/{deposit_id}/receipts"]) == {"post"}
+    assert "/api/v1/final-settlements/{}/deposit-dispositions" not in shapes
 
 
 def test_pet_liability_requires_csrf_and_exact_management_capability() -> None:

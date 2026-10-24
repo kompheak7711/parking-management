@@ -563,6 +563,51 @@ money as a normal Payment); after any lock refusal (55P03, also a lock
 timeout) the service replays the same command at most three times and then
 answers unavailable (DL-067; at worst about 14 seconds).
 
+V1-056 slice 11c-4 (2026-10-24; no migration): two of the routes above are built, each with
+`Idempotency-Key` (the same key and body answer the same result again; the same key with another
+body answers 409 `IDEMPOTENCY_KEY_REUSED`), the browser mutation rules and a strict JSON body; a
+person without the route's capability in the Property gets a hidden 404. These replace the route
+list above for what exists: the separate Reservation and Pet Deposit receipt paths named above
+are not built, because `POST /deposits/{deposit_id}/receipts` records a receipt into any existing
+Deposit, a Pet Deposit and an ACTIVE Reservation's Security Deposit before signing included.
+
+- `POST /leases/{lease_id}/security-deposit` (`deposits.manage`; body `deposit_id`, a new id the
+  form chooses, `required_usd_cents` above 0 and `reason` of up to 1,000 characters): a walk-in
+  Lease's Security Deposit. Answers 201 with the Deposit resource and its `Location`. Named
+  refusals (409): `DEPOSIT_SECURITY_LEASE_NOT_SIGNED`, `DEPOSIT_SECURITY_NOT_WALK_IN` (the Lease
+  was signed from a Reservation or through the old path, BR-DEP-005), `DEPOSIT_SECURITY_RENEWAL`
+  (Q-2026-10-18-129 is still open), `DEPOSIT_SECURITY_ALREADY_EXISTS` and, fail-closed,
+  `FINAL_SETTLEMENT_CLOSED`. The Deposit is listed by `GET /leases/{lease_id}/deposits`; the Lease
+  resource's `security_deposit_id` stays the one its draft named (none for a walk-in Lease).
+- `POST /deposits/{deposit_id}/receipts` (`payments.allocate`, no draft; body `receipt_id`,
+  `payment_id`, `amount_usd_cents` above 0 and `reason` of up to 1,000 characters): a receipt
+  from a received Payment into an existing Deposit. Answers 201 with the receipt and the
+  Deposit's money only, with no `Location` (`deposit_receipt_id`, `deposit_id`, `payment_id`, `amount_usd_cents`,
+  `occurred_at`, `payment_available_usd_cents`, `required_usd_cents`,
+  `held_refundable_usd_cents`, `outstanding_required_usd_cents`, `version`), not the Deposit
+  resource, because a holder of `payments.allocate` alone may not read Deposits (decided by
+  Claude under the owner's 2026-10-23 22:30 rule); the answer still shows that person the
+  Deposit's required, held and outstanding money. Named refusals: 409
+  `DEPOSIT_RECEIPT_LEASE_NOT_SIGNED`, `DEPOSIT_RECEIPT_RESERVATION_NOT_ACTIVE`,
+  `DEPOSIT_RECEIPT_GROUND_KEEPS_DEPOSIT`, `DEPOSIT_RECEIPT_FORFEITURE_ACTIVE`,
+  `DEPOSIT_RECEIPT_PAYMENT_OWED`, `DEPOSIT_RECEIPT_PAYMENT_ALREADY_USED` and
+  `FINAL_SETTLEMENT_CLOSED`; 422 on `payment_id`: `DEPOSIT_RECEIPT_PAYMENT_NOT_FOUND` and
+  `DEPOSIT_RECEIPT_PAYMENT_INELIGIBLE` (not a received Payment of the Deposit's Customer or for
+  its Lease); 422 on `amount_usd_cents`: `DEPOSIT_RECEIPT_OVER_PAYMENT`,
+  `DEPOSIT_RECEIPT_AMOUNT_NOT_ALLOWED` (a Security Deposit: more than it still needs, or a
+  Reservation's Deposit with no active receipt and an amount other than its accepted amount) and
+  `DEPOSIT_RECEIPT_OVER_REQUIRED` (a Pet Deposit). A Payment with nothing left answers
+  `DEPOSIT_RECEIPT_OVER_PAYMENT` before `DEPOSIT_RECEIPT_PAYMENT_ALREADY_USED`.
+
+Other refusals keep their plain status. The Deposit resource still carries
+`new_receipt_creation_deferred: true` for the current screens; the rebuilt screens use the
+receipt route. No route adjusts a Deposit's required total yet: the database command has no
+closed-Final-Settlement refusal, so the route waits for that check (decided by Claude under the
+owner's 2026-10-23 22:30 rule; ops/V1_056_PLAN.md, "11c-4 as built"). Until then a walk-in
+Deposit's required total cannot be corrected through the API, and a second receipt into a
+Reservation's Security Deposit before signing is refused whenever its required total equals its
+accepted amount.
+
 ## API-041 — Pet Deposit Preconditions
 
 Pet Deposit creation/receipt is accepted only when the pet is approved and the

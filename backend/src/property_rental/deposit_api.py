@@ -14,6 +14,27 @@ from fastapi import APIRouter, Header, HTTPException, Query, Request, Response, 
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 
+from property_rental.api_refusals import (
+    DEPOSIT_RECEIPT_AMOUNT_NOT_ALLOWED,
+    DEPOSIT_RECEIPT_FORFEITURE_ACTIVE,
+    DEPOSIT_RECEIPT_GROUND_KEEPS_DEPOSIT,
+    DEPOSIT_RECEIPT_LEASE_NOT_SIGNED,
+    DEPOSIT_RECEIPT_OVER_PAYMENT,
+    DEPOSIT_RECEIPT_OVER_REQUIRED,
+    DEPOSIT_RECEIPT_PAYMENT_ALREADY_USED,
+    DEPOSIT_RECEIPT_PAYMENT_INELIGIBLE,
+    DEPOSIT_RECEIPT_PAYMENT_NOT_FOUND,
+    DEPOSIT_RECEIPT_PAYMENT_OWED,
+    DEPOSIT_RECEIPT_RESERVATION_NOT_ACTIVE,
+    DEPOSIT_SECURITY_ALREADY_EXISTS,
+    DEPOSIT_SECURITY_LEASE_NOT_SIGNED,
+    DEPOSIT_SECURITY_NOT_WALK_IN,
+    DEPOSIT_SECURITY_RENEWAL,
+    FINAL_SETTLEMENT_CLOSED,
+    Refusal,
+    RefusedRequest,
+    database_refusal,
+)
 from property_rental.browser_security import require_browser_mutation
 from property_rental.deposit import (
     DEPOSIT_CONNECT_TIMEOUT_SECONDS,
@@ -22,18 +43,22 @@ from property_rental.deposit import (
     DEPOSIT_MANAGE_CAPABILITY,
     DEPOSIT_QUERY_TIMEOUT_MS,
     DEPOSIT_REFUND_QUALIFY_CAPABILITY,
+    PAYMENT_ALLOCATE_CAPABILITY,
+    CreateLeaseSecurityDepositCommand,
     CreatePetDepositCommand,
     DepositAuthorizationError,
     DepositConflictError,
     DepositIdempotencyKeyReused,
     DepositInvalidError,
     DepositNotFoundError,
+    DepositReceiptRecord,
     DepositReceiptReversalDraftRequired,
     DepositServiceUnavailableError,
     DepositSnapshot,
     LeaseDepositDraftRequired,
     PostgresDepositService,
     QualifyPetDepositRefundReviewCommand,
+    RecordDepositReceiptCommand,
     RecordPetDepartureCommand,
     ReverseDepositDispositionCommand,
     ReverseDepositReceiptCommand,
@@ -61,6 +86,45 @@ from property_rental.settings import Settings
 
 DEPOSIT_READ_CAPABILITY: Final = "deposits.read"
 MAX_LEDGER_PAGE_SIZE: Final = 100
+
+_CLOSED_SETTLEMENT = "A closed Final Settlement changes only through a post-settlement correction"
+# V1-056 slice 11c-4: the business-state refusals of the walk-in Security Deposit create and of a
+# receipt into an existing Deposit, by their database message (read from the head catalog).
+SECURITY_DEPOSIT_REFUSALS: Final[dict[str, Refusal]] = {
+    "Signed Lease was not found": DEPOSIT_SECURITY_LEASE_NOT_SIGNED,
+    "Only a walk-in Lease's Security Deposit is created here": DEPOSIT_SECURITY_NOT_WALK_IN,
+    "A renewal Lease's Security Deposit is not created here": DEPOSIT_SECURITY_RENEWAL,
+    "The Lease already has a Security Deposit": DEPOSIT_SECURITY_ALREADY_EXISTS,
+    _CLOSED_SETTLEMENT: FINAL_SETTLEMENT_CLOSED,
+}
+DEPOSIT_RECEIPT_REFUSALS: Final[dict[str, Refusal]] = {
+    "Payment was not found": DEPOSIT_RECEIPT_PAYMENT_NOT_FOUND,
+    "The Deposit's Lease is not signed": DEPOSIT_RECEIPT_LEASE_NOT_SIGNED,
+    "The Deposit's Reservation is not active; this receipt is not recorded here": (
+        DEPOSIT_RECEIPT_RESERVATION_NOT_ACTIVE
+    ),
+    "The Lease's termination ground keeps this Deposit; this receipt is not recorded here": (
+        DEPOSIT_RECEIPT_GROUND_KEEPS_DEPOSIT
+    ),
+    "The Deposit has an active forfeiture; reverse the forfeiture first": (
+        DEPOSIT_RECEIPT_FORFEITURE_ACTIVE
+    ),
+    "Applicable obligations must be handled before excess disposition": (
+        DEPOSIT_RECEIPT_PAYMENT_OWED
+    ),
+    "Deposit receipt Payment source is ineligible": DEPOSIT_RECEIPT_PAYMENT_INELIGIBLE,
+    "Deposit receipt exceeds Payment availability": DEPOSIT_RECEIPT_OVER_PAYMENT,
+    "A Deposit holds at most one active receipt from each Payment": (
+        DEPOSIT_RECEIPT_PAYMENT_ALREADY_USED
+    ),
+    # A Reservation's Security Deposit with no active receipt takes exactly its accepted amount,
+    # so this message also covers an amount below it (review round 1).
+    "Deposit receipt does not preserve the accepted or required amount": (
+        DEPOSIT_RECEIPT_AMOUNT_NOT_ALLOWED
+    ),
+    "Pet Deposit receipt exceeds its approved liability": DEPOSIT_RECEIPT_OVER_REQUIRED,
+    _CLOSED_SETTLEMENT: FINAL_SETTLEMENT_CLOSED,
+}
 
 
 class DepositResourceNotFound(LookupError):
@@ -174,6 +238,18 @@ class DepositResourceFlow(Protocol):
     def create_pet_deposit(
         self, property_id: UUID, command: CreatePetDepositCommand, *, actor: AuthenticatedActor
     ) -> DepositSnapshot: ...
+
+    def create_lease_security_deposit(
+        self,
+        property_id: UUID,
+        command: CreateLeaseSecurityDepositCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> DepositSnapshot: ...
+
+    def record_receipt(
+        self, property_id: UUID, command: RecordDepositReceiptCommand, *, actor: AuthenticatedActor
+    ) -> DepositReceiptRecord: ...
 
     def reverse_receipt(
         self, receipt_id: UUID, command: ReverseDepositReceiptCommand, *, actor: AuthenticatedActor
@@ -675,6 +751,20 @@ class PostgresDepositResourceFlow:
     ) -> DepositSnapshot:
         return self._service(property_id, actor).create_pet_deposit(command, actor=actor)
 
+    def create_lease_security_deposit(
+        self,
+        property_id: UUID,
+        command: CreateLeaseSecurityDepositCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> DepositSnapshot:
+        return self._service(property_id, actor).create_lease_security_deposit(command, actor=actor)
+
+    def record_receipt(
+        self, property_id: UUID, command: RecordDepositReceiptCommand, *, actor: AuthenticatedActor
+    ) -> DepositReceiptRecord:
+        return self._service(property_id, actor).record_receipt(command, actor=actor)
+
     def reverse_receipt(
         self, receipt_id: UUID, command: ReverseDepositReceiptCommand, *, actor: AuthenticatedActor
     ) -> DepositSnapshot:
@@ -801,6 +891,21 @@ class PetDepositCreate(BaseModel):
     reason: Annotated[str, Field(min_length=1, max_length=500)]
 
 
+class SecurityDepositCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    deposit_id: UUID
+    required_usd_cents: Annotated[int, Field(gt=0, le=9_223_372_036_854_775_807)]
+    reason: Annotated[str, Field(min_length=1, max_length=1000)]
+
+
+class DepositReceiptCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    receipt_id: UUID
+    payment_id: UUID
+    amount_usd_cents: Annotated[int, Field(gt=0, le=9_223_372_036_854_775_807)]
+    reason: Annotated[str, Field(min_length=1, max_length=1000)]
+
+
 class ReversalCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     reversal_id: UUID
@@ -886,6 +991,12 @@ def _translate(exc: Exception) -> Exception:
     if isinstance(exc, ReservationServiceUnavailableError):
         return HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
     return HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+
+def _named(exc: Exception, refusals: dict[str, Refusal]) -> Exception:
+    """A named business-state refusal answers its own code (slice 11c-4); others as before."""
+    refusal = database_refusal(exc, refusals)
+    return _translate(exc) if refusal is None else RefusedRequest(refusal)
 
 
 def _snapshot_body(value: DepositSnapshot, actor: AuthenticatedActor) -> dict[str, object]:
@@ -1063,6 +1174,89 @@ def create_deposit_router(
         response.headers["Cache-Control"] = "private, no-store"
         return {
             "data": _snapshot_body(value, actor),
+            "meta": {"request_id": request.state.request_id},
+        }
+
+    @router.post("/leases/{lease_id}/security-deposit", status_code=status.HTTP_201_CREATED)
+    def create_security_deposit_route(
+        lease_id: UUID,
+        source: SecurityDepositCreate,
+        request: Request,
+        response: Response,
+        idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
+    ) -> dict[str, object]:
+        """A walk-in Lease's Security Deposit (V1-056 slice 11c-4; Q-2026-10-17-124 point 1)."""
+        actor = _require_actor(request, resolver)
+        try:
+            property_id = flow.property_for_lease(lease_id)
+            _require(actor, property_id, DEPOSIT_MANAGE_CAPABILITY)
+            require_browser_mutation(request, settings)
+            value = flow.create_lease_security_deposit(
+                property_id,
+                CreateLeaseSecurityDepositCommand(
+                    idempotency_key,
+                    source.deposit_id,
+                    lease_id,
+                    source.required_usd_cents,
+                    source.reason,
+                ),
+                actor=actor,
+            )
+        except Exception as exc:
+            raise _named(exc, SECURITY_DEPOSIT_REFUSALS) from exc
+        response.headers["Location"] = f"/api/v1/deposits/{value.deposit_id}"
+        response.headers["Cache-Control"] = "private, no-store"
+        return {
+            "data": _snapshot_body(value, actor),
+            "meta": {"request_id": request.state.request_id},
+        }
+
+    @router.post("/deposits/{deposit_id}/receipts", status_code=status.HTTP_201_CREATED)
+    def record_receipt_route(
+        deposit_id: UUID,
+        source: DepositReceiptCreate,
+        request: Request,
+        response: Response,
+        idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
+    ) -> dict[str, object]:
+        """A receipt from a received Payment into an existing Deposit (V1-056 slice 11c-4;
+        Q-2026-10-12-92: payments.allocate, no draft). The answer carries the receipt and the
+        Deposit's money only, not the Deposit resource: a holder of payments.allocate alone may
+        not read Deposits (decided by Claude under the owner's 2026-10-23 22:30 rule)."""
+        actor = _require_actor(request, resolver)
+        try:
+            property_id = flow.get(deposit_id).property_id
+            _require(actor, property_id, PAYMENT_ALLOCATE_CAPABILITY)
+            require_browser_mutation(request, settings)
+            value = flow.record_receipt(
+                property_id,
+                RecordDepositReceiptCommand(
+                    idempotency_key,
+                    source.receipt_id,
+                    deposit_id,
+                    source.payment_id,
+                    source.amount_usd_cents,
+                    source.reason,
+                ),
+                actor=actor,
+            )
+        except Exception as exc:
+            raise _named(exc, DEPOSIT_RECEIPT_REFUSALS) from exc
+        # No Location: a holder of payments.allocate alone may not read the Deposit (round 1).
+        response.headers["Cache-Control"] = "private, no-store"
+        return {
+            "data": {
+                "deposit_receipt_id": str(value.deposit_receipt_id),
+                "deposit_id": str(value.deposit.deposit_id),
+                "payment_id": str(value.payment_id),
+                "amount_usd_cents": value.amount_usd_cents,
+                "occurred_at": value.occurred_at.isoformat(),
+                "payment_available_usd_cents": value.payment_available_usd_cents,
+                "required_usd_cents": value.deposit.required_usd_cents,
+                "held_refundable_usd_cents": value.deposit.held_refundable_usd_cents,
+                "outstanding_required_usd_cents": value.deposit.outstanding_required_usd_cents,
+                "version": value.deposit.version,
+            },
             "meta": {"request_id": request.state.request_id},
         }
 
