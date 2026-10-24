@@ -125,11 +125,11 @@ def test_the_provisioning_link_of_a_new_sign_in_code_is_the_standard_otpauth_lin
     secret = TotpSecret.from_bytes(bytes(range(20)))
     link = urlsplit(provisioning_uri("sokha chan ស", secret))
     assert (link.scheme, link.netloc) == ("otpauth", "totp")
-    assert link.path == "/Property%20Rental:sokha%20chan%20%E1%9E%9F"
-    assert unquote(link.path) == "/Property Rental:sokha chan ស"
+    assert link.path == "/CHETANA%20Residence:sokha%20chan%20%E1%9E%9F"
+    assert unquote(link.path) == "/CHETANA Residence:sokha chan ស"
     assert parse_qs(link.query, strict_parsing=True) == {
         "secret": [secret.get_base32_value()],
-        "issuer": ["Property Rental"],
+        "issuer": ["CHETANA Residence"],
         "algorithm": ["SHA1"],
         "digits": ["6"],
         "period": ["30"],

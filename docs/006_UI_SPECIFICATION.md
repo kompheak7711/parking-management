@@ -985,12 +985,16 @@ Amended by DL-080 (owner, 2026-10-20): after 5 wrong tries the person waits 15 m
 
 Amended by DL-081 (owner's wait rule, recorded 2026-10-23 with login sub-slice L3b; replaces the values above): after 3 wrong tries in a row the person waits 5 minutes; after 2 more wrong tries (5 in a row) 15 minutes; after that every 2 more wrong tries mean another 15-minute wait, until a correct sign-in. The wait message is the same whether or not the account exists; the sign-in screen shows it from the API's 429 answer (L6).
 
+Amended by DL-081 (login sub-slice L6, Q-2026-10-24-187): the sign-in screens of the owner's mock-up in the CHETANA brand, in Khmer and English (a ខ្មែរ | EN switch kept on the device). A full-screen layer hides the whole app until the server says the sign-in is complete; a brand panel (logo, "Residence Management", three facts) sits beside one card, and below 900px the panel becomes a top bar. Every field has a visible label; a missing or badly shaped field shows its error under it (aria-invalid, aria-describedby) and gets focus, and nothing is sent; an answer from the server shows one notice (role alert) that gets focus. A wrong username or password gives one message ("The username or password is not right. Check both and try again."); a 429 gives "Too many tries. Wait N minutes, then try again." from the seconds of `Retry-After` (1 minute, or more rounded up). Password and code fields are cleared after every failed try. "Forgot your password?" explains that the Owner resets a Manager's or Staff member's password in person and that only the server emergency procedure resets the Owner's; it sends nothing.
+
 ## UI-110 — MFA Enrollment and Challenge
 
 Owner and Manager are directed through protected standards-based MFA enrollment before
 normal privileged use. Staff can operate without MFA unless enabled and can securely
 enroll when authorized. Enrollment, verification, reset, disablement, and recovery
 surfaces protect secret material and never imply authorization from a role label alone.
+
+Amended by DL-081 (login sub-slice L6, Q-2026-10-24-187): the "Two-step sign-in" screen asks for the 6-digit code (numbers only, `one-time-code`) and can switch to a recovery code; a wrong code gives "That code is not right. Type the newest code from your phone."; a code step older than 5 minutes (10 for a new password) sends the person back to sign in. "Set up two-step sign-in" shows three numbered steps with the QR code the server makes and the key in groups of four; the key and the picture are dropped as soon as the code is confirmed. The first 10 recovery codes then show once in a numbered list with "Copy codes" and a box to tick before "Finish and open the app".
 
 ## UI-111 — Session Expiration and Reauthentication
 
@@ -1004,6 +1008,8 @@ Amended by DL-081 (login sub-slice L3d-2): when an administration action answers
 (`POST /auth/reauthenticate`), keeps what the user typed, and sends the action again; the screens
 come with login sub-slice L6.
 
+Amended by DL-081 (login sub-slice L6, Q-2026-10-24-187): the session timer opens "You were signed out" with the text for 30 minutes without use, or for the 24-hour limit when that comes first, and "Sign in again"; Sign out opens the sign-in screen with "You are signed out." Before either signed-out screen the app asks the server, and a session it still holds for the same person keeps the app open (every request moves the 30 minutes on). The person's display name shows beside Sign out. A 401 on another page still shows that page's own message until the screen rebuild. While a request runs, its button reads "Please wait…" (`aria-busy` on the form), and "Back to sign in" drops the answer of a request still running; while the set-up picture is fetched the set-up screen says "Getting your QR code…" and shows no code box, and a set-up that cannot start sends the person back to sign in with the wait or the "could not reach" message. Passwords and codes are read from their boxes and never kept in the screen's state, so they never appear in the page's HTML. The account screen shows the live recovery-code set ("Your recovery codes: N still work.", with when and how they were made) and "Replace my recovery codes", which names that set, or "Generate one-time recovery codes" when there is none.
+
 ## UI-112 — Recovery Codes and Administrative Recovery
 
 Recovery codes are presented once in a protected flow with secure-storage and single-use
@@ -1015,6 +1021,8 @@ implied.
 Amended by DL-080 (owner, 2026-10-20): after an Owner reset, the one-time password works for 24 hours and must be changed at the first sign-in; the new password follows the 15 to 128 character rule.
 
 Amended by DL-081 (login sub-slice L4): the account form shows a new account's one-time password, and the reset its new one, once in a "One-time password" box with its end time and the button "I gave it to the person—clear it"; the reset form asks only for the reason and "also reset MFA", and its confirmation says the person gets a one-time password. After a sign-in with a one-time password the sign-in screen asks "Choose your own password" (the new password twice); a rule refusal shows the server's rule and keeps the form; if the change did not finish, sign-in returns with "The password change did not finish. Sign in with your new password. If it is not accepted, sign in with your one-time password." The designed screens come with L6.
+
+Amended by DL-081 (login sub-slice L6, Q-2026-10-24-187): the one-time password screen is "Choose a new password" with a live list (at least 15 characters with the count, no more than 128, not a common password checked when saving, both boxes match), characters counted as Unicode code points after NFC like the server; the server's rule refusal shows "This password is too common or too easy to guess. Choose another." under the field. After a sign-in with a recovery code the app shows "Recovery code used. If your phone is lost, ask the Owner to reset your two-step sign-in. Make new recovery codes after you sign in with your phone again." (the server does not give the number left at sign-in, and a recovery-code session cannot make new codes).
 
 ## UI-113 — No First-Owner Web Bootstrap
 

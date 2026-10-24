@@ -884,6 +884,68 @@ def test_the_recovery_code_routes_answer_the_codes_once_with_no_store(
         assert regenerated.status_code == 200
         assert regenerated.headers["Cache-Control"] == "no-store"
         assert len(regenerated.json()["data"]["codes"]) == 10
+        # Login sub-slice L6: the read shows the new set without its codes, with no-store.
+        live = client.get("/api/v1/auth/recovery-codes")
+        assert live.status_code == 200
+        assert live.headers["Cache-Control"] == "no-store"
+        assert live.json()["data"]["set_id"] == regenerated.json()["data"]["set_id"]
+        assert (live.json()["data"]["made_by"], live.json()["data"]["usable_count"]) == (
+            "regenerated",
+            10,
+        )
+        assert "codes" not in live.json()["data"]
+
+
+def test_the_live_set_read_shows_its_id_time_origin_and_usable_codes(
+    code_database: CodeDatabase,
+) -> None:
+    """Login sub-slice L6 (API-098; plan bindings of L3c-2c-1 rounds 1 and 2): any live session
+    of the account reads its live set without the codes: the id a regeneration names, when it
+    was made, how (`issued`, `regenerated`, else `other`, as for the bootstrap's set) and how
+    many of its codes still work; none before the first codes; another account's set is never
+    shown; a signed-out session is refused."""
+    flow = PostgresAuthenticationFlow(code_database.runtime_url, totp_protection_key=KEY)
+    account = add_account(code_database, "l6.live-set")
+    other = add_account(code_database, "l6.live-set-other")
+    session = signed_in(flow, code_database, account, fresh_step(code_database) - 1)
+    assert flow.live_recovery_code_set(session_token=session, request_id="l6") is None
+    with psycopg.connect(code_database.owner_url) as connection:
+        connection.execute(ADD_SET, (uuid.uuid4(), other.actor_id, other.actor_id))
+        connection.commit()
+    assert flow.live_recovery_code_set(session_token=session, request_id="l6") is None
+
+    recovery_session = recovery_code_session(flow, code_database, account, session)
+    first = read(code_database, SETS_OF, account.actor_id)[0][0]
+    summary = flow.live_recovery_code_set(session_token=recovery_session, request_id="l6")
+    assert summary is not None
+    assert (summary.set_id, summary.made_by, summary.usable_count) == (first, "issued", 9)
+    created = read(
+        code_database, "SELECT created_at FROM app.recovery_code_sets WHERE set_id = %s", first
+    )
+    assert summary.created_at == created[0][0]
+
+    session = signed_in(flow, code_database, account)
+    second = flow.regenerate_recovery_codes(
+        session_token=session,
+        reauthentication_token=cookie_of(session),
+        prior_set_id=first,
+        request_id="l6",
+    )
+    summary = flow.live_recovery_code_set(session_token=session, request_id="l6")
+    assert summary is not None
+    assert (summary.set_id, summary.made_by, summary.usable_count) == (
+        second.set_id,
+        "regenerated",
+        10,
+    )
+
+    other_session = signed_in(flow, code_database, other)
+    summary = flow.live_recovery_code_set(session_token=other_session, request_id="l6")
+    assert summary is not None and (summary.made_by, summary.usable_count) == ("other", 0)
+
+    flow.logout(session_token=session, request_id="l6")
+    with pytest.raises(AuthenticationRejected):
+        flow.live_recovery_code_set(session_token=session, request_id="l6")
 
 
 def test_an_account_has_at_most_one_live_recovery_code_set(code_database: CodeDatabase) -> None:

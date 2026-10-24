@@ -1,19 +1,16 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
 import {
-  AUTHENTICATION_ERROR_MESSAGE,
   AuthenticationApi,
   AuthenticationData,
   LocalSignIn,
-  MfaEnrollmentData,
-  MfaMethod,
-  PASSWORD_RULE_MESSAGE,
-  PasswordRuleError,
   RecoveryCodeSetData,
+  RecoveryCodeSetSummary,
   SessionData,
   authenticationApi,
   signIn,
 } from "./authClient";
+import { SignInEntry, SignInScreens } from "./SignInScreens";
 import {
   AccessAdministrationApi,
   AccessAdministrationSnapshot,
@@ -85,23 +82,12 @@ export interface AppProps {
 }
 
 type SubmissionState = "idle" | "submitting" | "succeeded" | "failed";
-type Screen =
-  | "sign_in"
-  | "mfa_required"
-  | "mfa_enrollment_required"
-  | "password_change_required"
-  | "authenticated";
+// Login sub-slice L6: every step before the session lives in the sign-in layer.
+type Screen = "sign_in" | "authenticated";
 
 function formatDateTime(value: string): string {
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? "Unavailable" : parsed.toISOString();
-}
-
-const PASSWORD_CHANGE_NOT_FINISHED =
-  "The password change did not finish. Sign in with your new password. If it is not accepted, sign in with your one-time password.";
-
-function phaseScreen(result: AuthenticationData): Screen {
-  return result.phase;
 }
 
 const CUSTOMER_RECONCILIATION_STORAGE_KEY =
@@ -550,10 +536,20 @@ export function App({
   const [submissionState, setSubmissionState] =
     useState<SubmissionState>("idle");
   const [notice, setNotice] = useState<string | null>(null);
-  const [enrollment, setEnrollment] = useState<MfaEnrollmentData | null>(null);
+  const [signInEntry, setSignInEntry] = useState<SignInEntry>({
+    kind: "sign_in",
+  });
+  // A new sign-in layer (cleared fields and steps) each time the app returns to it.
+  const [signInSequence, setSignInSequence] = useState(0);
   const [recoveryCodes, setRecoveryCodes] =
     useState<RecoveryCodeSetData | null>(null);
-  const [mfaMethod, setMfaMethod] = useState<MfaMethod>("totp");
+  // Login sub-slice L6: the account's live recovery-code set without its codes; undefined until
+  // the server answers (or when it could not).
+  const [liveRecoverySet, setLiveRecoverySet] = useState<
+    RecoveryCodeSetSummary | null | undefined
+  >(undefined);
+  const [liveRecoverySetFailed, setLiveRecoverySetFailed] = useState(false);
+  const liveRecoverySetSequence = useRef(0);
   const [showReauthentication, setShowReauthentication] = useState(false);
   const [administration, setAdministration] =
     useState<AccessAdministrationSnapshot | null>(null);
@@ -566,7 +562,6 @@ export function App({
     value: string;
     expires_at: string;
   } | null>(null);
-  const [passwordRuleRefused, setPasswordRuleRefused] = useState(false);
   const [propertyId, setPropertyId] = useState("");
   const [configurationPropertyId, setConfigurationPropertyId] = useState("");
   const [propertyConfiguration, setPropertyConfiguration] =
@@ -643,12 +638,13 @@ export function App({
 
   async function acceptAuthentication(
     result: AuthenticationData,
+    welcome: string,
     operation = ++authenticationOperationSequence.current,
   ) {
-    const stored =
-      result.phase === "authenticated" && result.session !== null
-        ? await readStoredCustomerReconciliation(result.session.actor_id)
-        : ({ status: "empty", requirement: null } as const);
+    if (result.phase !== "authenticated" || result.session === null) return;
+    const stored = await readStoredCustomerReconciliation(
+      result.session.actor_id,
+    );
     if (operation !== authenticationOperationSequence.current) return;
     const reconciliation = stored.requirement;
     invalidatePropertyConfiguration();
@@ -658,20 +654,18 @@ export function App({
       stored.status !== "unavailable" && stored.status !== "invalid",
     );
     setCustomerReconciliationRequirement(reconciliation);
-    setScreen(phaseScreen(result));
+    setScreen("authenticated");
     setSubmissionState("succeeded");
     setNotice(
-      result.phase !== "authenticated"
-        ? null
-        : stored.status === "unavailable" || stored.status === "invalid"
-          ? "Customer command coordination is unavailable. Customer commands remain blocked without exposing another actor's reconciliation metadata."
-          : reconciliation !== null
-            ? "A Customer command outcome is unknown. Reload the applicable Customer list and verify the result before retrying."
-            : "Your sign-in was accepted.",
+      stored.status === "unavailable" || stored.status === "invalid"
+        ? "Customer command coordination is unavailable. Customer commands remain blocked without exposing another actor's reconciliation metadata."
+        : reconciliation !== null
+          ? "A Customer command outcome is unknown. Reload the applicable Customer list and verify the result before retrying."
+          : welcome,
     );
   }
 
-  function returnToSignIn(message: string | null) {
+  function returnToSignIn(entry: SignInEntry) {
     setEnforcementDraftsDirty(false);
     setFinancialDraftsDirty(false);
     setCustomerDraftsDirty(false);
@@ -681,15 +675,15 @@ export function App({
     setLedgerSelection(null);
     setScreen("sign_in");
     setSession(null);
-    setEnrollment(null);
     setRecoveryCodes(null);
     setIssuedPassword(null);
-    setPasswordRuleRefused(false);
     invalidatePropertyConfiguration();
     setPropertyConfigurationStatus(null);
     setSubmissionState("idle");
     setShowReauthentication(false);
-    setNotice(message);
+    setNotice(null);
+    setSignInEntry(entry);
+    setSignInSequence((sequence) => sequence + 1);
   }
 
   useEffect(() => {
@@ -729,124 +723,61 @@ export function App({
       new Date(session.absolute_expires_at).getTime(),
     );
     const delay = Math.min(2_147_483_647, Math.max(0, expiresAt - now()));
+    // Login sub-slice L6: the session's 24-hour limit comes first or the 30 minutes without use.
+    const dayLimit =
+      new Date(session.absolute_expires_at).getTime() <=
+      new Date(session.idle_expires_at).getTime();
+    let active = true;
+    const ended = () => {
+      returnToSignIn({
+        kind: dayLimit ? "day" : "idle",
+        note:
+          customerCommandBusy || customerReconciliationRequirement !== null
+            ? "Your session expired while a Customer command was pending. Its outcome is unknown; sign in, reload Customers, and reconcile before retrying."
+            : null,
+      });
+    };
     const timer = window.setTimeout(() => {
-      returnToSignIn(
-        customerCommandBusy || customerReconciliationRequirement !== null
-          ? "Your session expired while a Customer command was pending. Its outcome is unknown; sign in, reload Customers, and reconcile before retrying."
-          : "Your session expired. Any unsaved command was not submitted. Sign in again to continue.",
-      );
+      // L6 review round 1: every request moves the server's 30 minutes on, so the server is
+      // asked first; a session it still holds for this person keeps the app open.
+      const operation = authenticationOperationSequence.current;
+      void client
+        .inspectSession()
+        .then((current) => {
+          if (
+            !active ||
+            operation !== authenticationOperationSequence.current
+          ) {
+            return;
+          }
+          const currentEnd = Math.min(
+            new Date(current.idle_expires_at).getTime(),
+            new Date(current.absolute_expires_at).getTime(),
+          );
+          if (current.actor_id === session.actor_id && currentEnd > now()) {
+            setSession(current);
+          } else {
+            ended();
+          }
+        })
+        .catch(() => {
+          if (active && operation === authenticationOperationSequence.current) {
+            ended();
+          }
+        });
     }, delay);
     return () => {
+      active = false;
       window.clearTimeout(timer);
     };
   }, [
+    client,
     customerCommandBusy,
     customerReconciliationRequirement,
     now,
     screen,
     session,
   ]);
-
-  function handleSignIn(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const formData = new FormData(form);
-    const username = formData.get("username");
-    const password = formData.get("password");
-
-    setNotice(null);
-    setSubmissionState("submitting");
-    const operation = ++authenticationOperationSequence.current;
-    void client
-      .signIn({
-        username: typeof username === "string" ? username : "",
-        password: typeof password === "string" ? password : "",
-      })
-      .then((result) => {
-        if (result.phase === "authenticated") {
-          form.reset();
-        }
-        void acceptAuthentication(result, operation);
-      })
-      .catch(() => {
-        setSubmissionState("failed");
-      });
-  }
-
-  function handleMfaChallenge(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    const code = data.get("mfa-code");
-    setSubmissionState("submitting");
-    void client
-      .completeMfa({
-        method: mfaMethod,
-        code: typeof code === "string" ? code : "",
-      })
-      .then((result) => acceptAuthentication(result))
-      .catch(() => {
-        setSubmissionState("failed");
-      });
-  }
-
-  function handlePasswordChange(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    const newPassword = data.get("new-password");
-    const repeated = data.get("new-password-again");
-    setPasswordRuleRefused(false);
-    if (
-      typeof newPassword !== "string" ||
-      newPassword.length === 0 ||
-      newPassword !== repeated
-    ) {
-      setSubmissionState("failed");
-      return;
-    }
-    setSubmissionState("submitting");
-    void client
-      .changePassword(newPassword)
-      .then((result) => acceptAuthentication(result))
-      .catch((error: unknown) => {
-        if (error instanceof PasswordRuleError) {
-          setPasswordRuleRefused(true);
-          setSubmissionState("idle");
-        } else {
-          // The change may have been saved before a later step failed (review round 1), so
-          // the person is told to try the new password first.
-          returnToSignIn(PASSWORD_CHANGE_NOT_FINISHED);
-        }
-      });
-  }
-
-  function beginEnrollment() {
-    setSubmissionState("submitting");
-    void client
-      .beginMfaEnrollment()
-      .then((result) => {
-        setEnrollment(result);
-        setSubmissionState("idle");
-      })
-      .catch(() => {
-        setSubmissionState("failed");
-      });
-  }
-
-  function confirmEnrollment(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    const code = data.get("enrollment-code");
-    setSubmissionState("submitting");
-    void client
-      .confirmMfaEnrollment(typeof code === "string" ? code : "")
-      .then((result) => {
-        setEnrollment(null);
-        void acceptAuthentication(result);
-      })
-      .catch(() => {
-        setSubmissionState("failed");
-      });
-  }
 
   function handleReauthentication(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -919,14 +850,43 @@ export function App({
     void client
       .logout()
       .then(() => {
-        returnToSignIn("You signed out.");
+        returnToSignIn({ kind: "sign_in", signedOut: true });
       })
       .catch(() => {
-        returnToSignIn(
-          "Your local session was cleared. Sign in again to continue.",
-        );
+        returnToSignIn({
+          kind: "sign_in",
+          note: "Your local session was cleared. Sign in again to continue.",
+        });
       });
   }
+
+  function loadLiveRecoverySet() {
+    const sequence = ++liveRecoverySetSequence.current;
+    setLiveRecoverySetFailed(false);
+    void client
+      .liveRecoveryCodeSet()
+      .then((summary) => {
+        if (sequence === liveRecoverySetSequence.current) {
+          setLiveRecoverySet(summary);
+        }
+      })
+      .catch(() => {
+        // A refusal of this read does not mean signed out (plan binding of L3c-2c-1).
+        if (sequence === liveRecoverySetSequence.current) {
+          setLiveRecoverySet(undefined);
+          setLiveRecoverySetFailed(true);
+        }
+      });
+  }
+
+  const sessionActor = session?.actor_id ?? null;
+  useEffect(() => {
+    liveRecoverySetSequence.current += 1;
+    setLiveRecoverySet(undefined);
+    setLiveRecoverySetFailed(false);
+    if (screen !== "authenticated" || sessionActor === null) return;
+    loadLiveRecoverySet();
+  }, [client, screen, sessionActor]);
 
   function issueRecoveryCodes() {
     setSubmissionState("submitting");
@@ -934,6 +894,7 @@ export function App({
       .issueRecoveryCodes()
       .then((result) => {
         setRecoveryCodes(result);
+        loadLiveRecoverySet();
         setSubmissionState("succeeded");
         setNotice(
           "Recovery codes were generated. Save them now; they will not be shown again.",
@@ -946,12 +907,16 @@ export function App({
   }
 
   function regenerateRecoveryCodes() {
-    if (recoveryCodes === null) return;
+    // The set on screen, else the live set the server reports (for example the first Owner's
+    // set from the server set-up, whose codes this screen never showed).
+    const priorSetId = recoveryCodes?.set_id ?? liveRecoverySet?.set_id;
+    if (priorSetId === undefined) return;
     setSubmissionState("submitting");
     void client
-      .regenerateRecoveryCodes(recoveryCodes.set_id)
+      .regenerateRecoveryCodes(priorSetId)
       .then((result) => {
         setRecoveryCodes(result);
+        loadLiveRecoverySet();
         setSubmissionState("succeeded");
         setNotice(
           "The prior recovery-code set was invalidated. Save this replacement set now.",
@@ -1290,7 +1255,35 @@ export function App({
   }
 
   const isSubmitting = submissionState === "submitting";
-  const hasError = submissionState === "failed";
+
+  const buildInformation = (
+    <footer aria-label="Build information" className="app-footer">
+      {environment !== "production" && (
+        <span className="environment">{environment}</span>
+      )}
+      <span>Build {buildId}</span>
+    </footer>
+  );
+
+  if (screen !== "authenticated" || session === null) {
+    return (
+      <SignInScreens
+        api={client}
+        entry={signInEntry}
+        footer={buildInformation}
+        key={signInSequence}
+        now={now}
+        onAuthenticated={(result, welcome) => {
+          void acceptAuthentication(result, welcome);
+        }}
+        onSignInStarted={() => {
+          // L6 review round 1 (TEST-FE-110): a session restore still running must not open
+          // the app for another person while this sign-in is on its way.
+          authenticationOperationSequence.current += 1;
+        }}
+      />
+    );
+  }
 
   return (
     <div className="app-shell">
@@ -1306,254 +1299,18 @@ export function App({
           </p>
         )}
 
-        {screen === "sign_in" && (
-          <section className="auth-panel">
+        <section className="workspace-panel">
+          <div className="workspace-heading">
             <div>
-              <p className="eyebrow">Secure access</p>
-              <h2 id="screen-heading">Sign in</h2>
-              <p className="panel-introduction">
-                Use your local staff username and password.
-              </p>
+              <p className="eyebrow">Authenticated workspace</p>
+              <h2 id="screen-heading">Account and access</h2>
             </div>
-            <form
-              aria-describedby={hasError ? "authentication-error" : undefined}
-              className="form-stack"
-              onSubmit={handleSignIn}
-            >
-              <div className="form-field">
-                <label htmlFor="username">Username</label>
-                <input
-                  aria-describedby={
-                    hasError ? "authentication-error" : undefined
-                  }
-                  aria-invalid={hasError}
-                  autoComplete="username"
-                  disabled={isSubmitting}
-                  id="username"
-                  name="username"
-                  required
-                  type="text"
-                />
-              </div>
-              <div className="form-field">
-                <label htmlFor="password">Password</label>
-                <input
-                  aria-describedby={
-                    hasError ? "authentication-error" : undefined
-                  }
-                  aria-invalid={hasError}
-                  autoComplete="current-password"
-                  disabled={isSubmitting}
-                  id="password"
-                  name="password"
-                  required
-                  type="password"
-                />
-              </div>
-              {hasError && (
-                <p
-                  className="authentication-error"
-                  id="authentication-error"
-                  role="alert"
-                >
-                  {AUTHENTICATION_ERROR_MESSAGE}
-                </p>
-              )}
-              <button disabled={isSubmitting} type="submit">
-                {isSubmitting ? "Signing in…" : "Sign in"}
-              </button>
-            </form>
-            <p className="panel-help">
-              Need help signing in? Contact your administrator.
-            </p>
-          </section>
-        )}
-
-        {screen === "password_change_required" && (
-          <section className="auth-panel">
-            <p className="eyebrow">One-time password</p>
-            <h2 id="screen-heading">Choose your own password</h2>
-            <p className="panel-introduction">
-              You signed in with a one-time password. Choose a new password to
-              continue.
-            </p>
-            <form className="form-stack" onSubmit={handlePasswordChange}>
-              {/* 128 code points may be 256 UTF-16 units; the server checks the rule. */}
-              <div className="form-field">
-                <label htmlFor="new-password">New password</label>
-                <input
-                  aria-describedby="password-rule"
-                  autoComplete="new-password"
-                  disabled={isSubmitting}
-                  id="new-password"
-                  maxLength={256}
-                  minLength={15}
-                  name="new-password"
-                  required
-                  type="password"
-                />
-              </div>
-              <div className="form-field">
-                <label htmlFor="new-password-again">New password again</label>
-                <input
-                  autoComplete="new-password"
-                  disabled={isSubmitting}
-                  id="new-password-again"
-                  maxLength={256}
-                  minLength={15}
-                  name="new-password-again"
-                  required
-                  type="password"
-                />
-              </div>
-              <p className="panel-help" id="password-rule">
-                {PASSWORD_RULE_MESSAGE}
-              </p>
-              {passwordRuleRefused && (
-                <p className="authentication-error" role="alert">
-                  This password was not accepted. {PASSWORD_RULE_MESSAGE}
-                </p>
-              )}
-              {hasError && (
-                <p className="authentication-error" role="alert">
-                  The two passwords must match.
-                </p>
-              )}
-              <button disabled={isSubmitting} type="submit">
-                Save the new password
-              </button>
-            </form>
-          </section>
-        )}
-
-        {screen === "mfa_required" && (
-          <section className="auth-panel">
-            <p className="eyebrow">Protected verification</p>
-            <h2 id="screen-heading">Complete multi-factor authentication</h2>
-            <p className="panel-introduction">
-              Enter a current authenticator code or one unused recovery code.
-            </p>
-            <form className="form-stack" onSubmit={handleMfaChallenge}>
-              <fieldset>
-                <legend>Verification method</legend>
-                <label>
-                  <input
-                    checked={mfaMethod === "totp"}
-                    name="mfa-method"
-                    onChange={() => {
-                      setMfaMethod("totp");
-                    }}
-                    type="radio"
-                  />
-                  Authenticator code
-                </label>
-                <label>
-                  <input
-                    checked={mfaMethod === "recovery_code"}
-                    name="mfa-method"
-                    onChange={() => {
-                      setMfaMethod("recovery_code");
-                    }}
-                    type="radio"
-                  />
-                  Recovery code
-                </label>
-              </fieldset>
-              <div className="form-field">
-                <label htmlFor="mfa-code">
-                  {mfaMethod === "totp"
-                    ? "Authenticator code"
-                    : "Unused recovery code"}
-                </label>
-                <input
-                  autoComplete="one-time-code"
-                  id="mfa-code"
-                  inputMode={mfaMethod === "totp" ? "numeric" : "text"}
-                  name="mfa-code"
-                  required
-                />
-              </div>
-              {hasError && (
-                <p className="authentication-error" role="alert">
-                  Verification was not accepted. Try again or contact your
-                  administrator.
-                </p>
-              )}
-              <button disabled={isSubmitting} type="submit">
-                Verify
-              </button>
-            </form>
-            <p className="panel-help">
-              A recovery code is single-use. Store remaining codes outside this
-              application.
-            </p>
-          </section>
-        )}
-
-        {screen === "mfa_enrollment_required" && (
-          <section className="auth-panel protected-material">
-            <p className="eyebrow">Required enrollment</p>
-            <h2 id="screen-heading">Enroll an authenticator</h2>
-            {enrollment === null ? (
-              <>
-                <p className="panel-introduction">
-                  Enrollment material is shown once. Continue only in a private
-                  location.
-                </p>
-                <button
-                  disabled={isSubmitting}
-                  onClick={beginEnrollment}
-                  type="button"
-                >
-                  Begin protected enrollment
-                </button>
-              </>
-            ) : (
-              <>
-                <div
-                  className="one-time-material"
-                  role="region"
-                  aria-label="One-time enrollment material"
-                >
-                  <p>
-                    <strong>Show once:</strong> add this TOTP address to your
-                    authenticator.
-                  </p>
-                  <code>{enrollment.provisioning_uri}</code>
-                </div>
-                <form className="form-stack" onSubmit={confirmEnrollment}>
-                  <div className="form-field">
-                    <label htmlFor="enrollment-code">Authenticator code</label>
-                    <input
-                      autoComplete="one-time-code"
-                      id="enrollment-code"
-                      inputMode="numeric"
-                      name="enrollment-code"
-                      pattern="[0-9]{6,8}"
-                      required
-                    />
-                  </div>
-                  <button disabled={isSubmitting} type="submit">
-                    Confirm enrollment
-                  </button>
-                </form>
-              </>
-            )}
-            {hasError && (
-              <p className="authentication-error" role="alert">
-                Enrollment could not be completed. Restart the protected flow.
-              </p>
-            )}
-          </section>
-        )}
-
-        {screen === "authenticated" && session !== null && (
-          <section className="workspace-panel">
-            <div className="workspace-heading">
-              <div>
-                <p className="eyebrow">Authenticated workspace</p>
-                <h2 id="screen-heading">Account and access</h2>
-              </div>
+            <div className="signed-in-person">
+              {session.display_name !== undefined &&
+                session.display_name !== null &&
+                session.display_name.trim().length > 0 && (
+                  <p className="signed-in-name">{session.display_name}</p>
+                )}
               <button
                 disabled={isSubmitting}
                 onClick={handleLogout}
@@ -1562,100 +1319,114 @@ export function App({
                 Sign out
               </button>
             </div>
-            <section
-              aria-labelledby="session-heading"
-              className="information-card"
+          </div>
+          <section
+            aria-labelledby="session-heading"
+            className="information-card"
+          >
+            <h3 id="session-heading">Current session</h3>
+            <dl className="detail-list">
+              <div>
+                <dt>Inactivity expiry</dt>
+                <dd>{formatDateTime(session.idle_expires_at)}</dd>
+              </div>
+              <div>
+                <dt>Absolute expiry</dt>
+                <dd>{formatDateTime(session.absolute_expires_at)}</dd>
+              </div>
+              <div>
+                <dt>MFA assurance</dt>
+                <dd>{session.mfa_assurance.replace("_", " ")}</dd>
+              </div>
+              <div>
+                <dt>Recent authentication</dt>
+                <dd>
+                  {session.reauthenticated_at === null
+                    ? "Not recorded"
+                    : formatDateTime(session.reauthenticated_at)}
+                </dd>
+              </div>
+            </dl>
+            <p className="panel-help">
+              The application returns to sign-in after 30 minutes of inactivity
+              or 24 hours total. Unsaved commands are never reported as
+              successful. Session timestamps are shown in UTC.
+            </p>
+            <button
+              onClick={() => {
+                setShowReauthentication((shown) => !shown);
+              }}
+              type="button"
             >
-              <h3 id="session-heading">Current session</h3>
-              <dl className="detail-list">
-                <div>
-                  <dt>Inactivity expiry</dt>
-                  <dd>{formatDateTime(session.idle_expires_at)}</dd>
-                </div>
-                <div>
-                  <dt>Absolute expiry</dt>
-                  <dd>{formatDateTime(session.absolute_expires_at)}</dd>
-                </div>
-                <div>
-                  <dt>MFA assurance</dt>
-                  <dd>{session.mfa_assurance.replace("_", " ")}</dd>
-                </div>
-                <div>
-                  <dt>Recent authentication</dt>
-                  <dd>
-                    {session.reauthenticated_at === null
-                      ? "Not recorded"
-                      : formatDateTime(session.reauthenticated_at)}
-                  </dd>
-                </div>
-              </dl>
-              <p className="panel-help">
-                The application returns to sign-in after 30 minutes of
-                inactivity or 24 hours total. Unsaved commands are never
-                reported as successful. Session timestamps are shown in UTC.
-              </p>
-              <button
-                onClick={() => {
-                  setShowReauthentication((shown) => !shown);
-                }}
-                type="button"
+              {showReauthentication
+                ? "Cancel reauthentication"
+                : "Reauthenticate for protected administration"}
+            </button>
+            {showReauthentication && (
+              <form
+                className="form-stack nested-form"
+                onSubmit={handleReauthentication}
               >
-                {showReauthentication
-                  ? "Cancel reauthentication"
-                  : "Reauthenticate for protected administration"}
-              </button>
-              {showReauthentication && (
-                <form
-                  className="form-stack nested-form"
-                  onSubmit={handleReauthentication}
-                >
-                  <div className="form-field">
-                    <label htmlFor="reauth-password">Password</label>
-                    <input
-                      autoComplete="current-password"
-                      id="reauth-password"
-                      name="reauth-password"
-                      required
-                      type="password"
-                    />
-                  </div>
-                  <div className="form-field">
-                    <label htmlFor="reauth-code">
-                      Authenticator code, when required
-                    </label>
-                    <input
-                      autoComplete="one-time-code"
-                      id="reauth-code"
-                      inputMode="numeric"
-                      name="reauth-code"
-                    />
-                  </div>
-                  <button disabled={isSubmitting} type="submit">
-                    Confirm recent authentication
-                  </button>
-                </form>
-              )}
-            </section>
-            <section
-              aria-labelledby="recovery-heading"
-              className="information-card"
-            >
-              <h3 id="recovery-heading">Recovery safety</h3>
+                <div className="form-field">
+                  <label htmlFor="reauth-password">Password</label>
+                  <input
+                    autoComplete="current-password"
+                    id="reauth-password"
+                    name="reauth-password"
+                    required
+                    type="password"
+                  />
+                </div>
+                <div className="form-field">
+                  <label htmlFor="reauth-code">
+                    Authenticator code, when required
+                  </label>
+                  <input
+                    autoComplete="one-time-code"
+                    id="reauth-code"
+                    inputMode="numeric"
+                    name="reauth-code"
+                  />
+                </div>
+                <button disabled={isSubmitting} type="submit">
+                  Confirm recent authentication
+                </button>
+              </form>
+            )}
+          </section>
+          <section
+            aria-labelledby="recovery-heading"
+            className="information-card"
+          >
+            <h3 id="recovery-heading">Recovery safety</h3>
+            <p>
+              Recovery codes are single-use and are never displayed again after
+              issuance. Authorized administrative recovery requires explicit
+              consequence and audit confirmation.
+            </p>
+            <p className="panel-help">
+              Staff are not granted recovery authority for Owner or Manager
+              accounts. Role labels never replace server-side capability checks.
+            </p>
+            {liveRecoverySet !== undefined && recoveryCodes === null && (
               <p>
-                Recovery codes are single-use and are never displayed again
-                after issuance. Authorized administrative recovery requires
-                explicit consequence and audit confirmation.
+                {liveRecoverySet === null
+                  ? "You have no recovery codes."
+                  : `Your recovery codes: ${String(liveRecoverySet.usable_count)} still work. ${
+                      liveRecoverySet.made_by === "issued"
+                        ? "First made"
+                        : liveRecoverySet.made_by === "regenerated"
+                          ? "Replaced"
+                          : "Made by the server set-up"
+                    } ${formatDateTime(liveRecoverySet.created_at)}.`}
               </p>
-              <p className="panel-help">
-                Staff are not granted recovery authority for Owner or Manager
-                accounts. Role labels never replace server-side capability
-                checks.
+            )}
+            {session.reauthenticated_at === null ? (
+              <p className="muted">
+                Reauthenticate before generating or replacing recovery codes.
               </p>
-              {session.reauthenticated_at === null ? (
-                <p className="muted">
-                  Reauthenticate before generating or replacing recovery codes.
-                </p>
-              ) : recoveryCodes === null ? (
+            ) : recoveryCodes === null ? (
+              liveRecoverySet === null ? (
                 <button
                   disabled={isSubmitting}
                   onClick={issueRecoveryCodes}
@@ -1663,631 +1434,582 @@ export function App({
                 >
                   Generate one-time recovery codes
                 </button>
+              ) : liveRecoverySet === undefined ? (
+                // Nothing while the read runs (review round 2).
+                liveRecoverySetFailed && (
+                  <p className="muted">
+                    Your recovery codes could not be checked. Reload the page to
+                    try again.
+                  </p>
+                )
               ) : (
-                <div
-                  aria-label="One-time recovery codes"
-                  className="one-time-material"
-                  role="region"
+                <button
+                  disabled={isSubmitting}
+                  onClick={regenerateRecoveryCodes}
+                  type="button"
                 >
-                  <p>
-                    <strong>Shown once:</strong> save each code outside this
-                    application. Each code can be used only once.
-                  </p>
-                  <ol>
-                    {recoveryCodes.codes.map((code) => (
-                      <li key={code}>
-                        <code>{code}</code>
-                      </li>
-                    ))}
-                  </ol>
-                  <div className="button-row">
-                    <button
-                      disabled={isSubmitting}
-                      onClick={regenerateRecoveryCodes}
-                      type="button"
-                    >
-                      Invalidate and replace this set
-                    </button>
-                    <button
-                      onClick={() => {
-                        setRecoveryCodes(null);
-                        setNotice(
-                          "Recovery codes were cleared from this screen and cannot be displayed again.",
-                        );
-                      }}
-                      type="button"
-                    >
-                      I saved these codes—clear them
-                    </button>
-                  </div>
-                </div>
-              )}
-            </section>
-            <section
-              aria-labelledby="business-configuration-heading"
-              className="information-card"
-            >
-              <h3 id="business-configuration-heading">
-                {propertyConfigurationAuthorized
-                  ? "Business configuration"
-                  : "Business configuration access"}
-              </h3>
-              {propertyConfigurationAuthorized ? (
-                <p>
-                  The server authorized this Property. A change needs{" "}
-                  <code>settings.manage</code>, and the server checks the
-                  current version for every change. The fixed timezone is shown
-                  as an authoritative value, not an editable source field.
-                </p>
-              ) : (
-                <p>
-                  Enter the exact Property identifier. The server must confirm
-                  <code> settings.manage</code> or <code>property.manage</code>{" "}
-                  for that Property before any management screen or editing
-                  control is shown.
-                </p>
-              )}
-              <form
-                className="form-stack inline-form"
-                onSubmit={loadPropertyConfiguration}
+                  Replace my recovery codes
+                </button>
+              )
+            ) : (
+              <div
+                aria-label="One-time recovery codes"
+                className="one-time-material"
+                role="region"
               >
-                <div className="form-field">
-                  <label htmlFor="configuration-property-id">
-                    Configuration Property identifier
-                  </label>
-                  <input
-                    id="configuration-property-id"
-                    onChange={(event) => {
-                      invalidatePropertyConfiguration();
-                      setPropertyConfigurationStatus(null);
-                      setConfigurationPropertyId(event.currentTarget.value);
-                    }}
-                    required
-                    value={configurationPropertyId}
-                  />
-                </div>
-                <button type="submit">Load business configuration</button>
-              </form>
-              {propertyConfigurationStatus !== null && (
-                <p role="status">{propertyConfigurationStatus}</p>
-              )}
-              {propertyConfiguration !== null && (
-                <div className="administration-grid">
-                  <section aria-labelledby="property-source-heading">
-                    <h4 id="property-source-heading">Property source data</h4>
-                    <dl className="detail-list">
-                      <div>
-                        <dt>Timezone</dt>
-                        <dd>{propertyConfiguration.timezone_name}</dd>
-                      </div>
-                      <div>
-                        <dt>Version</dt>
-                        <dd>{propertyConfiguration.version}</dd>
-                      </div>
-                    </dl>
-                    <form
-                      className="form-stack"
-                      key={`property-source-${String(propertyConfiguration.version)}`}
-                      onSubmit={updatePropertySource}
-                    >
-                      <div className="form-field">
-                        <label htmlFor="property-name">Property name</label>
-                        <input
-                          defaultValue={propertyConfiguration.name}
-                          id="property-name"
-                          name="property-name"
-                          required
-                        />
-                      </div>
-                      <div className="form-field">
-                        <label htmlFor="property-address">
-                          Property address
-                        </label>
-                        <textarea
-                          defaultValue={
-                            propertyConfiguration.address_text ?? ""
-                          }
-                          id="property-address"
-                          name="property-address"
-                        />
-                      </div>
-                      <button type="submit">Save Property source data</button>
-                    </form>
-                  </section>
-                  <section aria-labelledby="payment-methods-heading">
-                    <h4 id="payment-methods-heading">Payment Methods</h4>
-                    {propertyConfiguration.payment_methods.length === 0 ? (
-                      <p>No Payment Methods are configured.</p>
-                    ) : (
-                      <ul className="record-list">
-                        {propertyConfiguration.payment_methods.map((method) => (
-                          <li key={method.code}>
-                            <label>
-                              <input
-                                checked={method.accepted}
-                                onChange={(event) => {
-                                  const accepted = event.currentTarget.checked;
-                                  setPropertyConfiguration({
-                                    ...propertyConfiguration,
-                                    payment_methods:
-                                      propertyConfiguration.payment_methods.map(
-                                        (candidate) =>
-                                          candidate.code === method.code
-                                            ? { ...candidate, accepted }
-                                            : candidate,
-                                      ),
-                                  });
-                                }}
-                                type="checkbox"
-                              />
-                              {method.display_name} ({method.code}) accepted
-                            </label>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                    <form className="form-stack" onSubmit={addPaymentMethod}>
-                      <div className="form-field">
-                        <label htmlFor="payment-method-code">Method code</label>
-                        <input
-                          id="payment-method-code"
-                          name="payment-method-code"
-                          required
-                        />
-                      </div>
-                      <div className="form-field">
-                        <label htmlFor="payment-method-name">
-                          Method display name
-                        </label>
-                        <input
-                          id="payment-method-name"
-                          name="payment-method-name"
-                          required
-                        />
-                      </div>
-                      <button type="submit">Add Payment Method</button>
-                    </form>
-                    <button onClick={savePaymentMethods} type="button">
-                      Save Payment Method configuration
-                    </button>
-                    <p className="panel-help">
-                      Retired methods remain visible and are never deleted from
-                      configuration history.
-                    </p>
-                  </section>
-                </div>
-              )}
-            </section>
-            <ConfigurationManagement
-              api={effectiveConfigApi}
-              propertyId={propertyConfiguration?.property_id ?? ""}
-            />
-            <UtilityManagement
-              api={utilityApi}
-              propertyId={propertyConfiguration?.property_id ?? ""}
-            />
-            <UtilityLeaseWorkflows
-              propertyId={propertyConfiguration?.property_id ?? ""}
-            />
-            <UnitManagement api={unitApi} />
-            {!logoutPending && (
-              <InvoiceManagement
-                api={invoiceApi}
-                actorId={session.actor_id}
-                propertyId={propertyConfiguration?.property_id ?? ""}
-              />
-            )}
-            {!logoutPending && (
-              <FinancialManagement
-                key={session.actor_id}
-                actorId={session.actor_id}
-                services={financialServices}
-                onDirtyStateChange={setFinancialDraftsDirty}
-              />
-            )}
-            {!logoutPending && (
-              <CustomerAccountLedger
-                key={`customer-ledger:${session.actor_id}`}
-                actorId={session.actor_id}
-                api={ledgerApi}
-                requested={
-                  ledgerSelection?.actorId === session.actor_id
-                    ? ledgerSelection
-                    : undefined
-                }
-              />
-            )}
-            <ReservationManagement api={reservationApi} />
-            <LeaseManagement api={leaseApi} />
-            {!logoutPending && (
-              <LeaseEnforcementManagement
-                key={`lease-enforcement:${session.actor_id}`}
-                actorId={session.actor_id}
-                services={enforcementServices}
-                onDirtyStateChange={setEnforcementDraftsDirty}
-              />
-            )}
-            <DepositManagement api={depositApi} />
-            {!logoutPending && (
-              <CustomerManagement
-                actorId={session.actor_id}
-                api={customerApi}
-                onOpenAccountLedger={(selection) => {
-                  setLedgerSelection({
-                    ...selection,
-                    actorId: session.actor_id,
-                    sequence: ++ledgerSequence.current,
-                  });
-                }}
-                mutationCoordinationAvailable={customerCoordinationAvailable}
-                onCommandBusyChange={setCustomerCommandBusy}
-                onDirtyStateChange={setCustomerDraftsDirty}
-                onReconciled={async (requirement) => {
-                  const clearance =
-                    await clearCustomerReconciliation(requirement);
-                  if (clearance.status === "cleared") {
-                    setCustomerCoordinationAvailable(true);
-                    setCustomerReconciliationRequirement((current) =>
-                      sameCustomerReconciliation(current, requirement)
-                        ? null
-                        : current,
-                    );
-                    return true;
-                  } else if (clearance.status === "superseded") {
-                    if (clearance.requirement === null) {
-                      setCustomerCoordinationAvailable(true);
-                      setCustomerReconciliationRequirement(null);
-                      setNotice(
-                        "The Customer reconciliation gate was already resolved in another tab.",
-                      );
-                      return true;
-                    }
-                    setCustomerReconciliationRequirement(clearance.requirement);
-                    setNotice(
-                      "A newer Customer command gate remains active. Reconcile that exact command before retrying.",
-                    );
-                    return false;
-                  } else {
-                    setNotice(
-                      "The Customer result is known, but its durable command gate could not be cleared. Customer commands remain blocked.",
-                    );
-                    return false;
-                  }
-                }}
-                onReconciliationRequired={async (requirement) => {
-                  const reservation =
-                    await reserveCustomerReconciliation(requirement);
-                  if (reservation.existing !== null) {
-                    setCustomerCoordinationAvailable(true);
-                    setCustomerReconciliationRequirement(reservation.existing);
-                    return false;
-                  }
-                  if (!reservation.reserved) {
-                    setNotice(
-                      reservation.storageAvailable
-                        ? "Another tab already reserved the Customer command gate. Reconcile it before retrying."
-                        : "Customer command coordination is unavailable. No command was sent; restore durable browser coordination before retrying.",
-                    );
-                    return false;
-                  }
-                  setCustomerCoordinationAvailable(true);
-                  setCustomerReconciliationRequirement(requirement);
-                  return true;
-                }}
-                reconciliationRequirement={customerReconciliationRequirement}
-              />
-            )}
-            {!logoutPending && !customerCoordinationAvailable && (
-              <section className="information-card">
-                <h3>Customer command coordination unavailable</h3>
                 <p>
-                  Customer commands are blocked because the opaque
-                  reconciliation handle cannot be matched to this authenticated
-                  browser session. No confidential Customer or actor metadata
-                  was read from local storage.
+                  <strong>Shown once:</strong> save each code outside this
+                  application. Each code can be used only once.
                 </p>
-              </section>
-            )}
-            <section
-              aria-labelledby="administration-heading"
-              className="information-card"
-            >
-              <h3 id="administration-heading">
-                Capability-checked administration
-              </h3>
-              <p>
-                Enter the exact property identifier. The server decides whether
-                this session has the required capability; role labels are never
-                treated as authority.
-              </p>
-              <form
-                className="form-stack inline-form"
-                onSubmit={loadAdministration}
-              >
-                <div className="form-field">
-                  <label htmlFor="property-id">Property identifier</label>
-                  <input
-                    id="property-id"
-                    name="property-id"
-                    onChange={(event) => {
-                      setPropertyId(event.currentTarget.value);
-                    }}
-                    required
-                    value={propertyId}
-                  />
-                </div>
-                <button type="submit">Check administration access</button>
-              </form>
-              {administrationStatus !== null && (
-                <p role="status">{administrationStatus}</p>
-              )}
-              {issuedPassword !== null && (
-                <section
-                  aria-label="One-time password"
-                  className="protected-material"
-                >
-                  <p>
-                    One-time password for {issuedPassword.username}:{" "}
-                    <code>{issuedPassword.value}</code>
-                  </p>
-                  <p className="panel-help">
-                    Give it to the person directly. It works until{" "}
-                    {formatDateTime(issuedPassword.expires_at)}, and the person
-                    must choose a new password when they sign in. It is shown
-                    only once.
-                  </p>
+                <ol>
+                  {recoveryCodes.codes.map((code) => (
+                    <li key={code}>
+                      <code>{code}</code>
+                    </li>
+                  ))}
+                </ol>
+                <div className="button-row">
+                  <button
+                    disabled={isSubmitting}
+                    onClick={regenerateRecoveryCodes}
+                    type="button"
+                  >
+                    Invalidate and replace this set
+                  </button>
                   <button
                     onClick={() => {
-                      setIssuedPassword(null);
+                      setRecoveryCodes(null);
+                      setNotice(
+                        "Recovery codes were cleared from this screen and cannot be displayed again.",
+                      );
                     }}
                     type="button"
                   >
-                    I gave it to the person—clear it
+                    I saved these codes—clear them
                   </button>
+                </div>
+              </div>
+            )}
+          </section>
+          <section
+            aria-labelledby="business-configuration-heading"
+            className="information-card"
+          >
+            <h3 id="business-configuration-heading">
+              {propertyConfigurationAuthorized
+                ? "Business configuration"
+                : "Business configuration access"}
+            </h3>
+            {propertyConfigurationAuthorized ? (
+              <p>
+                The server authorized this Property. A change needs{" "}
+                <code>settings.manage</code>, and the server checks the current
+                version for every change. The fixed timezone is shown as an
+                authoritative value, not an editable source field.
+              </p>
+            ) : (
+              <p>
+                Enter the exact Property identifier. The server must confirm
+                <code> settings.manage</code> or <code>property.manage</code>{" "}
+                for that Property before any management screen or editing
+                control is shown.
+              </p>
+            )}
+            <form
+              className="form-stack inline-form"
+              onSubmit={loadPropertyConfiguration}
+            >
+              <div className="form-field">
+                <label htmlFor="configuration-property-id">
+                  Configuration Property identifier
+                </label>
+                <input
+                  id="configuration-property-id"
+                  onChange={(event) => {
+                    invalidatePropertyConfiguration();
+                    setPropertyConfigurationStatus(null);
+                    setConfigurationPropertyId(event.currentTarget.value);
+                  }}
+                  required
+                  value={configurationPropertyId}
+                />
+              </div>
+              <button type="submit">Load business configuration</button>
+            </form>
+            {propertyConfigurationStatus !== null && (
+              <p role="status">{propertyConfigurationStatus}</p>
+            )}
+            {propertyConfiguration !== null && (
+              <div className="administration-grid">
+                <section aria-labelledby="property-source-heading">
+                  <h4 id="property-source-heading">Property source data</h4>
+                  <dl className="detail-list">
+                    <div>
+                      <dt>Timezone</dt>
+                      <dd>{propertyConfiguration.timezone_name}</dd>
+                    </div>
+                    <div>
+                      <dt>Version</dt>
+                      <dd>{propertyConfiguration.version}</dd>
+                    </div>
+                  </dl>
+                  <form
+                    className="form-stack"
+                    key={`property-source-${String(propertyConfiguration.version)}`}
+                    onSubmit={updatePropertySource}
+                  >
+                    <div className="form-field">
+                      <label htmlFor="property-name">Property name</label>
+                      <input
+                        defaultValue={propertyConfiguration.name}
+                        id="property-name"
+                        name="property-name"
+                        required
+                      />
+                    </div>
+                    <div className="form-field">
+                      <label htmlFor="property-address">Property address</label>
+                      <textarea
+                        defaultValue={propertyConfiguration.address_text ?? ""}
+                        id="property-address"
+                        name="property-address"
+                      />
+                    </div>
+                    <button type="submit">Save Property source data</button>
+                  </form>
                 </section>
-              )}
+                <section aria-labelledby="payment-methods-heading">
+                  <h4 id="payment-methods-heading">Payment Methods</h4>
+                  {propertyConfiguration.payment_methods.length === 0 ? (
+                    <p>No Payment Methods are configured.</p>
+                  ) : (
+                    <ul className="record-list">
+                      {propertyConfiguration.payment_methods.map((method) => (
+                        <li key={method.code}>
+                          <label>
+                            <input
+                              checked={method.accepted}
+                              onChange={(event) => {
+                                const accepted = event.currentTarget.checked;
+                                setPropertyConfiguration({
+                                  ...propertyConfiguration,
+                                  payment_methods:
+                                    propertyConfiguration.payment_methods.map(
+                                      (candidate) =>
+                                        candidate.code === method.code
+                                          ? { ...candidate, accepted }
+                                          : candidate,
+                                    ),
+                                });
+                              }}
+                              type="checkbox"
+                            />
+                            {method.display_name} ({method.code}) accepted
+                          </label>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <form className="form-stack" onSubmit={addPaymentMethod}>
+                    <div className="form-field">
+                      <label htmlFor="payment-method-code">Method code</label>
+                      <input
+                        id="payment-method-code"
+                        name="payment-method-code"
+                        required
+                      />
+                    </div>
+                    <div className="form-field">
+                      <label htmlFor="payment-method-name">
+                        Method display name
+                      </label>
+                      <input
+                        id="payment-method-name"
+                        name="payment-method-name"
+                        required
+                      />
+                    </div>
+                    <button type="submit">Add Payment Method</button>
+                  </form>
+                  <button onClick={savePaymentMethods} type="button">
+                    Save Payment Method configuration
+                  </button>
+                  <p className="panel-help">
+                    Retired methods remain visible and are never deleted from
+                    configuration history.
+                  </p>
+                </section>
+              </div>
+            )}
+          </section>
+          <ConfigurationManagement
+            api={effectiveConfigApi}
+            propertyId={propertyConfiguration?.property_id ?? ""}
+          />
+          <UtilityManagement
+            api={utilityApi}
+            propertyId={propertyConfiguration?.property_id ?? ""}
+          />
+          <UtilityLeaseWorkflows
+            propertyId={propertyConfiguration?.property_id ?? ""}
+          />
+          <UnitManagement api={unitApi} />
+          {!logoutPending && (
+            <InvoiceManagement
+              api={invoiceApi}
+              actorId={session.actor_id}
+              propertyId={propertyConfiguration?.property_id ?? ""}
+            />
+          )}
+          {!logoutPending && (
+            <FinancialManagement
+              key={session.actor_id}
+              actorId={session.actor_id}
+              services={financialServices}
+              onDirtyStateChange={setFinancialDraftsDirty}
+            />
+          )}
+          {!logoutPending && (
+            <CustomerAccountLedger
+              key={`customer-ledger:${session.actor_id}`}
+              actorId={session.actor_id}
+              api={ledgerApi}
+              requested={
+                ledgerSelection?.actorId === session.actor_id
+                  ? ledgerSelection
+                  : undefined
+              }
+            />
+          )}
+          <ReservationManagement api={reservationApi} />
+          <LeaseManagement api={leaseApi} />
+          {!logoutPending && (
+            <LeaseEnforcementManagement
+              key={`lease-enforcement:${session.actor_id}`}
+              actorId={session.actor_id}
+              services={enforcementServices}
+              onDirtyStateChange={setEnforcementDraftsDirty}
+            />
+          )}
+          <DepositManagement api={depositApi} />
+          {!logoutPending && (
+            <CustomerManagement
+              actorId={session.actor_id}
+              api={customerApi}
+              onOpenAccountLedger={(selection) => {
+                setLedgerSelection({
+                  ...selection,
+                  actorId: session.actor_id,
+                  sequence: ++ledgerSequence.current,
+                });
+              }}
+              mutationCoordinationAvailable={customerCoordinationAvailable}
+              onCommandBusyChange={setCustomerCommandBusy}
+              onDirtyStateChange={setCustomerDraftsDirty}
+              onReconciled={async (requirement) => {
+                const clearance =
+                  await clearCustomerReconciliation(requirement);
+                if (clearance.status === "cleared") {
+                  setCustomerCoordinationAvailable(true);
+                  setCustomerReconciliationRequirement((current) =>
+                    sameCustomerReconciliation(current, requirement)
+                      ? null
+                      : current,
+                  );
+                  return true;
+                } else if (clearance.status === "superseded") {
+                  if (clearance.requirement === null) {
+                    setCustomerCoordinationAvailable(true);
+                    setCustomerReconciliationRequirement(null);
+                    setNotice(
+                      "The Customer reconciliation gate was already resolved in another tab.",
+                    );
+                    return true;
+                  }
+                  setCustomerReconciliationRequirement(clearance.requirement);
+                  setNotice(
+                    "A newer Customer command gate remains active. Reconcile that exact command before retrying.",
+                  );
+                  return false;
+                } else {
+                  setNotice(
+                    "The Customer result is known, but its durable command gate could not be cleared. Customer commands remain blocked.",
+                  );
+                  return false;
+                }
+              }}
+              onReconciliationRequired={async (requirement) => {
+                const reservation =
+                  await reserveCustomerReconciliation(requirement);
+                if (reservation.existing !== null) {
+                  setCustomerCoordinationAvailable(true);
+                  setCustomerReconciliationRequirement(reservation.existing);
+                  return false;
+                }
+                if (!reservation.reserved) {
+                  setNotice(
+                    reservation.storageAvailable
+                      ? "Another tab already reserved the Customer command gate. Reconcile it before retrying."
+                      : "Customer command coordination is unavailable. No command was sent; restore durable browser coordination before retrying.",
+                  );
+                  return false;
+                }
+                setCustomerCoordinationAvailable(true);
+                setCustomerReconciliationRequirement(requirement);
+                return true;
+              }}
+              reconciliationRequirement={customerReconciliationRequirement}
+            />
+          )}
+          {!logoutPending && !customerCoordinationAvailable && (
+            <section className="information-card">
+              <h3>Customer command coordination unavailable</h3>
+              <p>
+                Customer commands are blocked because the opaque reconciliation
+                handle cannot be matched to this authenticated browser session.
+                No confidential Customer or actor metadata was read from local
+                storage.
+              </p>
+            </section>
+          )}
+          <section
+            aria-labelledby="administration-heading"
+            className="information-card"
+          >
+            <h3 id="administration-heading">
+              Capability-checked administration
+            </h3>
+            <p>
+              Enter the exact property identifier. The server decides whether
+              this session has the required capability; role labels are never
+              treated as authority.
+            </p>
+            <form
+              className="form-stack inline-form"
+              onSubmit={loadAdministration}
+            >
+              <div className="form-field">
+                <label htmlFor="property-id">Property identifier</label>
+                <input
+                  id="property-id"
+                  name="property-id"
+                  onChange={(event) => {
+                    setPropertyId(event.currentTarget.value);
+                  }}
+                  required
+                  value={propertyId}
+                />
+              </div>
+              <button type="submit">Check administration access</button>
+            </form>
+            {administrationStatus !== null && (
+              <p role="status">{administrationStatus}</p>
+            )}
+            {issuedPassword !== null && (
+              <section
+                aria-label="One-time password"
+                className="protected-material"
+              >
+                <p>
+                  One-time password for {issuedPassword.username}:{" "}
+                  <code>{issuedPassword.value}</code>
+                </p>
+                <p className="panel-help">
+                  Give it to the person directly. It works until{" "}
+                  {formatDateTime(issuedPassword.expires_at)}, and the person
+                  must choose a new password when they sign in. It is shown only
+                  once.
+                </p>
+                <button
+                  onClick={() => {
+                    setIssuedPassword(null);
+                  }}
+                  type="button"
+                >
+                  I gave it to the person—clear it
+                </button>
+              </section>
+            )}
 
-              {administration !== null && (
-                <div className="administration-grid">
-                  <section aria-labelledby="users-heading">
-                    <h4 id="users-heading">Accounts</h4>
-                    {administration.users.length === 0 ? (
-                      <p>No accounts were returned for this property.</p>
-                    ) : (
-                      <ul className="record-list">
-                        {administration.users.map((user) => (
-                          <li key={user.user_id}>
-                            <div>
-                              <strong>{user.display_name}</strong>
-                              <span>
-                                {user.username} · {user.lifecycle_state} · MFA{" "}
-                                {user.mfa_policy_class}
-                              </span>
-                            </div>
-                            {session.reauthenticated_at === null ? (
-                              <span className="muted">
-                                Reauthenticate before protected commands.
-                              </span>
-                            ) : (
-                              <div className="button-row">
-                                {user.lifecycle_state === "active" && (
-                                  <button
-                                    onClick={() => {
-                                      setPendingCommand({
-                                        kind: "disable",
-                                        user,
-                                      });
-                                    }}
-                                    type="button"
-                                  >
-                                    Disable account
-                                  </button>
-                                )}
+            {administration !== null && (
+              <div className="administration-grid">
+                <section aria-labelledby="users-heading">
+                  <h4 id="users-heading">Accounts</h4>
+                  {administration.users.length === 0 ? (
+                    <p>No accounts were returned for this property.</p>
+                  ) : (
+                    <ul className="record-list">
+                      {administration.users.map((user) => (
+                        <li key={user.user_id}>
+                          <div>
+                            <strong>{user.display_name}</strong>
+                            <span>
+                              {user.username} · {user.lifecycle_state} · MFA{" "}
+                              {user.mfa_policy_class}
+                            </span>
+                          </div>
+                          {session.reauthenticated_at === null ? (
+                            <span className="muted">
+                              Reauthenticate before protected commands.
+                            </span>
+                          ) : (
+                            <div className="button-row">
+                              {user.lifecycle_state === "active" && (
                                 <button
                                   onClick={() => {
-                                    setPendingCommand({ kind: "revoke", user });
+                                    setPendingCommand({
+                                      kind: "disable",
+                                      user,
+                                    });
                                   }}
                                   type="button"
                                 >
-                                  Revoke sessions
+                                  Disable account
                                 </button>
-                              </div>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </section>
+                              )}
+                              <button
+                                onClick={() => {
+                                  setPendingCommand({ kind: "revoke", user });
+                                }}
+                                type="button"
+                              >
+                                Revoke sessions
+                              </button>
+                            </div>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </section>
 
-                  <section aria-labelledby="authorization-heading">
-                    <h4 id="authorization-heading">
-                      Authorization configuration
-                    </h4>
-                    <p className="panel-help">
-                      This current configuration is audit context, not proof of
-                      authority. Historical authorization events remain
-                      immutable on the server. Event timestamps are shown in
-                      UTC.
-                    </p>
-                    <ul className="record-list">
-                      {administration.roleBundles.map((bundle) => (
-                        <li key={bundle.role_bundle_id}>
+                <section aria-labelledby="authorization-heading">
+                  <h4 id="authorization-heading">
+                    Authorization configuration
+                  </h4>
+                  <p className="panel-help">
+                    This current configuration is audit context, not proof of
+                    authority. Historical authorization events remain immutable
+                    on the server. Event timestamps are shown in UTC.
+                  </p>
+                  <ul className="record-list">
+                    {administration.roleBundles.map((bundle) => (
+                      <li key={bundle.role_bundle_id}>
+                        <div>
+                          <strong>{bundle.name}</strong>
+                          <span>
+                            {bundle.capability_ids.length} configured
+                            capabilities
+                          </span>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                  <h5>Authorization history</h5>
+                  {administration.authorizationHistory.length === 0 ? (
+                    <p>No authorization events were returned.</p>
+                  ) : (
+                    <ol className="record-list">
+                      {administration.authorizationHistory.map((event) => (
+                        <li key={event.event_id}>
                           <div>
-                            <strong>{bundle.name}</strong>
+                            <strong>{event.action}</strong>
                             <span>
-                              {bundle.capability_ids.length} configured
-                              capabilities
+                              {formatDateTime(event.occurred_at)} ·{" "}
+                              {event.outcome}
+                              {" · actor "}
+                              {event.actor_id}
+                              {" · target "}
+                              {event.target_id}
                             </span>
                           </div>
                         </li>
                       ))}
+                    </ol>
+                  )}
+                  <details>
+                    <summary>Capability catalog</summary>
+                    <ul>
+                      {administration.capabilities.map((capability) => (
+                        <li key={capability.capability_id}>
+                          <strong>{capability.name}</strong> —{" "}
+                          {capability.description}
+                        </li>
+                      ))}
                     </ul>
-                    <h5>Authorization history</h5>
-                    {administration.authorizationHistory.length === 0 ? (
-                      <p>No authorization events were returned.</p>
-                    ) : (
-                      <ol className="record-list">
-                        {administration.authorizationHistory.map((event) => (
-                          <li key={event.event_id}>
-                            <div>
-                              <strong>{event.action}</strong>
-                              <span>
-                                {formatDateTime(event.occurred_at)} ·{" "}
-                                {event.outcome}
-                                {" · actor "}
-                                {event.actor_id}
-                                {" · target "}
-                                {event.target_id}
-                              </span>
-                            </div>
-                          </li>
-                        ))}
-                      </ol>
-                    )}
-                    <details>
-                      <summary>Capability catalog</summary>
-                      <ul>
-                        {administration.capabilities.map((capability) => (
-                          <li key={capability.capability_id}>
-                            <strong>{capability.name}</strong> —{" "}
-                            {capability.description}
-                          </li>
-                        ))}
-                      </ul>
-                    </details>
-                  </section>
+                  </details>
+                </section>
 
-                  {session.reauthenticated_at !== null && (
-                    <section aria-labelledby="protected-admin-heading">
-                      <h4 id="protected-admin-heading">
-                        Protected account and capability commands
-                      </h4>
-                      <form className="form-stack" onSubmit={createUser}>
-                        <h5>Create account</h5>
-                        <div className="form-field">
-                          <label htmlFor="new-username">Username</label>
-                          <input
-                            id="new-username"
-                            name="new-username"
-                            required
-                          />
-                        </div>
-                        <div className="form-field">
-                          <label htmlFor="new-display-name">Display name</label>
-                          <input
-                            id="new-display-name"
-                            name="new-display-name"
-                            required
-                          />
-                        </div>
-                        <div className="form-field">
-                          <label htmlFor="new-audit-name">Audit name</label>
-                          <input
-                            id="new-audit-name"
-                            name="new-audit-name"
-                            required
-                          />
-                        </div>
-                        <div className="form-field">
-                          <label htmlFor="new-account-class">
-                            Account class
+                {session.reauthenticated_at !== null && (
+                  <section aria-labelledby="protected-admin-heading">
+                    <h4 id="protected-admin-heading">
+                      Protected account and capability commands
+                    </h4>
+                    <form className="form-stack" onSubmit={createUser}>
+                      <h5>Create account</h5>
+                      <div className="form-field">
+                        <label htmlFor="new-username">Username</label>
+                        <input id="new-username" name="new-username" required />
+                      </div>
+                      <div className="form-field">
+                        <label htmlFor="new-display-name">Display name</label>
+                        <input
+                          id="new-display-name"
+                          name="new-display-name"
+                          required
+                        />
+                      </div>
+                      <div className="form-field">
+                        <label htmlFor="new-audit-name">Audit name</label>
+                        <input
+                          id="new-audit-name"
+                          name="new-audit-name"
+                          required
+                        />
+                      </div>
+                      <div className="form-field">
+                        <label htmlFor="new-account-class">Account class</label>
+                        <select id="new-account-class" name="new-account-class">
+                          <option value="staff">Staff</option>
+                          <option value="manager">Manager</option>
+                        </select>
+                      </div>
+                      <button type="submit">Create audited account</button>
+                    </form>
+                    <form
+                      className="form-stack nested-form"
+                      onSubmit={createRoleBundle}
+                    >
+                      <h5>Create role bundle</h5>
+                      <div className="form-field">
+                        <label htmlFor="bundle-name">Bundle name</label>
+                        <input id="bundle-name" name="bundle-name" required />
+                      </div>
+                      <fieldset>
+                        <legend>Explicit capabilities</legend>
+                        {administration.capabilities.map((capability) => (
+                          <label key={capability.capability_id}>
+                            <input
+                              name="bundle-capability"
+                              type="checkbox"
+                              value={capability.capability_id}
+                            />
+                            {capability.name}
                           </label>
-                          <select
-                            id="new-account-class"
-                            name="new-account-class"
-                          >
-                            <option value="staff">Staff</option>
-                            <option value="manager">Manager</option>
-                          </select>
-                        </div>
-                        <button type="submit">Create audited account</button>
-                      </form>
-                      <form
-                        className="form-stack nested-form"
-                        onSubmit={createRoleBundle}
-                      >
-                        <h5>Create role bundle</h5>
-                        <div className="form-field">
-                          <label htmlFor="bundle-name">Bundle name</label>
-                          <input id="bundle-name" name="bundle-name" required />
-                        </div>
-                        <fieldset>
-                          <legend>Explicit capabilities</legend>
-                          {administration.capabilities.map((capability) => (
-                            <label key={capability.capability_id}>
-                              <input
-                                name="bundle-capability"
-                                type="checkbox"
-                                value={capability.capability_id}
-                              />
-                              {capability.name}
-                            </label>
-                          ))}
-                        </fieldset>
-                        <button type="submit">
-                          Create audited role bundle
-                        </button>
-                      </form>
-                      {administration.users.length > 0 &&
-                        administration.roleBundles.length > 0 && (
-                          <form
-                            className="form-stack nested-form"
-                            onSubmit={assignRoleBundle}
-                          >
-                            <h5>Assign configured role bundle</h5>
-                            <div className="form-field">
-                              <label htmlFor="assignment-user">Account</label>
-                              <select
-                                id="assignment-user"
-                                name="assignment-user"
-                              >
-                                {administration.users.map((user) => (
-                                  <option
-                                    key={user.user_id}
-                                    value={user.user_id}
-                                  >
-                                    {user.display_name}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                            <div className="form-field">
-                              <label htmlFor="assignment-bundle">
-                                Role bundle
-                              </label>
-                              <select
-                                id="assignment-bundle"
-                                name="assignment-bundle"
-                              >
-                                {administration.roleBundles.map((bundle) => (
-                                  <option
-                                    key={bundle.role_bundle_id}
-                                    value={bundle.role_bundle_id}
-                                  >
-                                    {bundle.name}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                            <button type="submit">
-                              Assign audited role bundle
-                            </button>
-                          </form>
-                        )}
-                      {administration.users.length > 0 && (
+                        ))}
+                      </fieldset>
+                      <button type="submit">Create audited role bundle</button>
+                    </form>
+                    {administration.users.length > 0 &&
+                      administration.roleBundles.length > 0 && (
                         <form
                           className="form-stack nested-form"
-                          onSubmit={prepareAdministrativeRecovery}
+                          onSubmit={assignRoleBundle}
                         >
-                          <h5>Owner-authorized account recovery</h5>
-                          <p className="panel-help">
-                            The server permits only Owner recovery of Manager or
-                            Staff. It rejects Staff recovery of Owner or Manager
-                            and does not grant Manager recovery of Staff.
-                          </p>
+                          <h5>Assign configured role bundle</h5>
                           <div className="form-field">
-                            <label htmlFor="recovery-user">Account</label>
-                            <select id="recovery-user" name="recovery-user">
+                            <label htmlFor="assignment-user">Account</label>
+                            <select id="assignment-user" name="assignment-user">
                               {administration.users.map((user) => (
                                 <option key={user.user_id} value={user.user_id}>
                                   {user.display_name}
@@ -2296,79 +2018,112 @@ export function App({
                             </select>
                           </div>
                           <div className="form-field">
-                            <label htmlFor="recovery-reason">
-                              Audit reason
+                            <label htmlFor="assignment-bundle">
+                              Role bundle
                             </label>
-                            <input
-                              id="recovery-reason"
-                              maxLength={500}
-                              name="recovery-reason"
-                              required
-                            />
+                            <select
+                              id="assignment-bundle"
+                              name="assignment-bundle"
+                            >
+                              {administration.roleBundles.map((bundle) => (
+                                <option
+                                  key={bundle.role_bundle_id}
+                                  value={bundle.role_bundle_id}
+                                >
+                                  {bundle.name}
+                                </option>
+                              ))}
+                            </select>
                           </div>
-                          <label>
-                            <input
-                              name="recovery-reset-mfa"
-                              type="checkbox"
-                              value="yes"
-                            />
-                            Reset current MFA enrollment
-                          </label>
                           <button type="submit">
-                            Review recovery consequences
+                            Assign audited role bundle
                           </button>
                         </form>
                       )}
-                    </section>
-                  )}
-                </div>
-              )}
+                    {administration.users.length > 0 && (
+                      <form
+                        className="form-stack nested-form"
+                        onSubmit={prepareAdministrativeRecovery}
+                      >
+                        <h5>Owner-authorized account recovery</h5>
+                        <p className="panel-help">
+                          The server permits only Owner recovery of Manager or
+                          Staff. It rejects Staff recovery of Owner or Manager
+                          and does not grant Manager recovery of Staff.
+                        </p>
+                        <div className="form-field">
+                          <label htmlFor="recovery-user">Account</label>
+                          <select id="recovery-user" name="recovery-user">
+                            {administration.users.map((user) => (
+                              <option key={user.user_id} value={user.user_id}>
+                                {user.display_name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="form-field">
+                          <label htmlFor="recovery-reason">Audit reason</label>
+                          <input
+                            id="recovery-reason"
+                            maxLength={500}
+                            name="recovery-reason"
+                            required
+                          />
+                        </div>
+                        <label>
+                          <input
+                            name="recovery-reset-mfa"
+                            type="checkbox"
+                            value="yes"
+                          />
+                          Reset current MFA enrollment
+                        </label>
+                        <button type="submit">
+                          Review recovery consequences
+                        </button>
+                      </form>
+                    )}
+                  </section>
+                )}
+              </div>
+            )}
 
-              {pendingCommand !== null && (
-                <div
-                  aria-labelledby="confirmation-heading"
-                  aria-modal="true"
-                  className="confirmation-panel"
-                  role="alertdialog"
-                >
-                  <h4 id="confirmation-heading">Confirm protected command</h4>
-                  <p>
-                    {pendingCommand.kind === "disable"
-                      ? "Disabling this account also revokes every applicable session."
-                      : pendingCommand.kind === "recover"
-                        ? "Recovery gives the selected account a one-time password, may reset MFA, and revokes every applicable session."
-                        : "This revokes every applicable session for the selected account."}{" "}
-                    The server records the acting account and request for audit.
-                  </p>
-                  <div className="button-row">
-                    <button
-                      onClick={confirmAdministrativeCommand}
-                      type="button"
-                    >
-                      Confirm command
-                    </button>
-                    <button
-                      onClick={() => {
-                        setPendingCommand(null);
-                      }}
-                      type="button"
-                    >
-                      Cancel
-                    </button>
-                  </div>
+            {pendingCommand !== null && (
+              <div
+                aria-labelledby="confirmation-heading"
+                aria-modal="true"
+                className="confirmation-panel"
+                role="alertdialog"
+              >
+                <h4 id="confirmation-heading">Confirm protected command</h4>
+                <p>
+                  {pendingCommand.kind === "disable"
+                    ? "Disabling this account also revokes every applicable session."
+                    : pendingCommand.kind === "recover"
+                      ? "Recovery gives the selected account a one-time password, may reset MFA, and revokes every applicable session."
+                      : "This revokes every applicable session for the selected account."}{" "}
+                  The server records the acting account and request for audit.
+                </p>
+                <div className="button-row">
+                  <button onClick={confirmAdministrativeCommand} type="button">
+                    Confirm command
+                  </button>
+                  <button
+                    onClick={() => {
+                      setPendingCommand(null);
+                    }}
+                    type="button"
+                  >
+                    Cancel
+                  </button>
                 </div>
-              )}
-            </section>
+              </div>
+            )}
           </section>
-        )}
+        </section>
       </main>
 
-      <footer aria-label="Build information" className="app-footer">
-        {environment !== "production" && (
-          <span className="environment">{environment}</span>
-        )}
-        <span>Build {buildId}</span>
-      </footer>
+      {buildInformation}
     </div>
   );
 }

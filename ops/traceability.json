@@ -48006,6 +48006,370 @@
       "test_path": "backend/tests/test_route_authorization_inventory.py",
       "status": "implemented",
       "notes": "With the Origin and the CSRF pair, no guarded change by a signed-in user with no capability succeeds or fails open; the Occupancy end route answers its fixed 409 (login slice sub-slice L5, Q-2026-10-24-186, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "TEST-FE-686",
+      "upstream_ids": [
+        "UI-007",
+        "UI-109",
+        "DL-074",
+        "DL-081"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/SignInScreens.test.tsx",
+      "status": "implemented",
+      "notes": "The sign-in screens switch every label between English and Khmer with a pressed language button, set the page language, keep only the language choice on the device and show the app name in English in both languages (login slice sub-slice L6, Q-2026-10-24-187, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "TEST-FE-687",
+      "upstream_ids": [
+        "UI-007",
+        "UI-094",
+        "UI-109",
+        "DL-081"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/SignInScreens.test.tsx",
+      "status": "implemented",
+      "notes": "A missing username or password shows its error under the field (aria-invalid, aria-describedby), focuses the first wrong field and sends nothing (login slice sub-slice L6, Q-2026-10-24-187, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "TEST-FE-688",
+      "upstream_ids": [
+        "UI-109",
+        "API-096",
+        "SEC-011",
+        "DL-080",
+        "DL-081"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/SignInScreens.test.tsx",
+      "status": "implemented",
+      "notes": "A wait answer (429) shows the minutes left from Retry-After (5, 1, 10 in Khmer digits), clears the password and keeps the button usable (login slice sub-slice L6, Q-2026-10-24-187, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "TEST-FE-689",
+      "upstream_ids": [
+        "UI-109",
+        "UI-014",
+        "DL-081"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/SignInScreens.test.tsx",
+      "status": "implemented",
+      "notes": "An unreachable server gets its own message and wrong details get the one message that never names the account (login slice sub-slice L6, Q-2026-10-24-187, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "TEST-FE-690",
+      "upstream_ids": [
+        "UI-110",
+        "API-096",
+        "DL-058",
+        "DL-081"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/SignInScreens.test.tsx",
+      "status": "implemented",
+      "notes": "The two-step sign-in screen focuses the 6-digit code field, checks its shape, clears it after a wrong code, shows a wait, then opens the app only on the server's authenticated answer with the person's name (login slice sub-slice L6, Q-2026-10-24-187, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "TEST-FE-691",
+      "upstream_ids": [
+        "UI-110",
+        "UI-111",
+        "API-096",
+        "DL-081"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/SignInScreens.test.tsx",
+      "status": "implemented",
+      "notes": "A code step older than its 5 minutes sends the person back to sign in with the step-time message, keeping the username and clearing the password (login slice sub-slice L6, Q-2026-10-24-187, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "TEST-FE-692",
+      "upstream_ids": [
+        "UI-109",
+        "UI-112",
+        "SEC-075",
+        "DL-081"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/SignInScreens.test.tsx",
+      "status": "implemented",
+      "notes": "The forgotten-password screen explains the Owner's in-person reset for Managers and Staff and the emergency procedure for the Owner, offers no reset button and sends nothing (login slice sub-slice L6, Q-2026-10-24-187, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "TEST-FE-693",
+      "upstream_ids": [
+        "UI-112",
+        "API-099",
+        "SEC-014",
+        "DL-080",
+        "DL-081"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/SignInScreens.test.tsx",
+      "status": "implemented",
+      "notes": "The new-password screen ticks its live rules as the person types, counts characters as code points after NFC like the server and refuses too short or too long passwords before sending (login slice sub-slice L6, Q-2026-10-24-187, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "TEST-FE-694",
+      "upstream_ids": [
+        "UI-110",
+        "UI-112",
+        "API-096",
+        "API-098",
+        "DL-058",
+        "DL-081"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/SignInScreens.test.tsx",
+      "status": "implemented",
+      "notes": "The set-up screen shows the server's QR picture and the key in groups of four, refuses a wrong code, drops the key after confirmation, then shows the recovery codes once with Copy codes and the kept-codes box before the app opens (login slice sub-slice L6, Q-2026-10-24-187, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "TEST-FE-695",
+      "upstream_ids": [
+        "UI-110",
+        "UI-112",
+        "API-098",
+        "DL-081"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/SignInScreens.test.tsx",
+      "status": "implemented",
+      "notes": "When the first recovery codes cannot be made after the set-up, the app opens with the reminder to make them (login slice sub-slice L6, Q-2026-10-24-187, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "TEST-FE-696",
+      "upstream_ids": [
+        "UI-111",
+        "UI-109",
+        "DL-081"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/SignInScreens.test.tsx",
+      "status": "implemented",
+      "notes": "The signed-out screens show the 30-minute and 24-hour texts in both languages with Sign in again, and a sign-out shows the signed-out note (login slice sub-slice L6, Q-2026-10-24-187, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "TEST-FE-697",
+      "upstream_ids": [
+        "UI-007",
+        "UI-109",
+        "DL-081"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/SignInScreens.test.tsx",
+      "status": "implemented",
+      "notes": "The Show and Hide password button changes the field type with aria-pressed and its label (login slice sub-slice L6, Q-2026-10-24-187, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "TEST-FE-698",
+      "upstream_ids": [
+        "UI-109",
+        "UI-110",
+        "UI-112",
+        "SEC-017",
+        "DL-081"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/SignInScreens.test.tsx",
+      "status": "implemented",
+      "notes": "Through the one-time password, set-up and recovery-code flow no password, code, set-up key or recovery code reaches browser storage, the address or the page after its step (login slice sub-slice L6, Q-2026-10-24-187, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "TEST-FE-699",
+      "upstream_ids": [
+        "UI-110",
+        "UI-112",
+        "API-096",
+        "API-099",
+        "DL-081"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/SignInScreens.test.tsx",
+      "status": "implemented",
+      "notes": "The screens follow the server's order: the one-time password, then the new password, then the sign-in code, and the app opens only after the code (login slice sub-slice L6, Q-2026-10-24-187, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "TEST-FE-700",
+      "upstream_ids": [
+        "UI-111",
+        "API-097",
+        "DL-081"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/SignInScreens.test.tsx",
+      "status": "implemented",
+      "notes": "In the app the person's display name shows beside Sign out, and when the server ends the session the timer opens the screen for 30 minutes without use or for the 24-hour limit, whichever comes first (login slice sub-slice L6, Q-2026-10-24-187, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "TEST-FE-701",
+      "upstream_ids": [
+        "UI-111",
+        "API-096",
+        "DL-081"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/SignInScreens.test.tsx",
+      "status": "implemented",
+      "notes": "Sign out opens the sign-in screen with the signed-out note and an empty password field (login slice sub-slice L6, Q-2026-10-24-187, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "test_the_picture_draws_exactly_the_dark_modules_of_the_link",
+      "upstream_ids": [
+        "API-096",
+        "UI-110",
+        "DL-081"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_totp_qr.py",
+      "status": "implemented",
+      "notes": "The set-up QR picture draws exactly the dark modules the qrcode library gives for the provisioning link, on white, with the four-module quiet zone (login slice sub-slice L6, Q-2026-10-24-187, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "test_the_picture_is_plain_svg_without_a_script_a_link_or_the_secret_as_text",
+      "upstream_ids": [
+        "API-096",
+        "UI-110",
+        "SEC-017",
+        "DL-081"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_totp_qr.py",
+      "status": "implemented",
+      "notes": "The set-up QR picture is plain SVG without a script, a link, an XML header or the secret as text, and is the same for the same link (login slice sub-slice L6, Q-2026-10-24-187, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "test_the_picture_is_refused_for_anything_but_a_totp_link",
+      "upstream_ids": [
+        "API-096",
+        "UI-110",
+        "DL-081"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_totp_qr.py",
+      "status": "implemented",
+      "notes": "The set-up QR picture is refused for anything but an otpauth://totp/ link (login slice sub-slice L6, Q-2026-10-24-187, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "TEST-FE-702",
+      "upstream_ids": [
+        "UI-110",
+        "SEC-017",
+        "DL-081"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/SignInScreens.test.tsx",
+      "status": "implemented",
+      "notes": "A typed password or sign-in code never appears in the page's HTML while it is typed or sent; the boxes are read directly, never kept in the screen's state (review round 1) (login slice sub-slice L6, Q-2026-10-24-187, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "TEST-FE-703",
+      "upstream_ids": [
+        "UI-110",
+        "DL-081"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/SignInScreens.test.tsx",
+      "status": "implemented",
+      "notes": "A running request shows Please wait… with aria-busy, and Back to sign in drops its late answer, so the app does not open and no message shows (review round 1) (login slice sub-slice L6, Q-2026-10-24-187, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "TEST-FE-704",
+      "upstream_ids": [
+        "UI-110",
+        "UI-112",
+        "DL-081"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/SignInScreens.test.tsx",
+      "status": "implemented",
+      "notes": "The set-up screen says the QR code is coming and shows no code box until it arrives; a set-up that cannot start sends the person back to sign in with the wait (review round 1) (login slice sub-slice L6, Q-2026-10-24-187, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "TEST-FE-705",
+      "upstream_ids": [
+        "UI-111",
+        "API-096",
+        "DL-081"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/SignInScreens.test.tsx",
+      "status": "implemented",
+      "notes": "Before a signed-out screen the app asks the server; a session it still holds for the same person keeps the app open (review round 1) (login slice sub-slice L6, Q-2026-10-24-187, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "TEST-FE-706",
+      "upstream_ids": [
+        "UI-110",
+        "API-096",
+        "DL-081"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "A session restore that answers while a sign-in is on its way does not open the app for the older session; the sign-in's session opens it (review round 1, TEST-FE-110) (login slice sub-slice L6, Q-2026-10-24-187, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "TEST-FE-707",
+      "upstream_ids": [
+        "UI-112",
+        "API-098",
+        "DL-081"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "The account screen shows the live recovery-code set and replaces it by its id (the server set-up's set too); a refused read of it keeps the person signed in (login slice sub-slice L6, Q-2026-10-24-187, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "test_the_live_recovery_code_set_is_read_without_codes_with_no_store",
+      "upstream_ids": [
+        "API-098",
+        "DL-081"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_authentication_api.py",
+      "status": "implemented",
+      "notes": "GET /api/v1/auth/recovery-codes answers the live set's id, time, origin and usable count, or null, with no-store; no session cookie or a refused session is 401 (login slice sub-slice L6, Q-2026-10-24-187, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "test_the_live_set_read_shows_its_id_time_origin_and_usable_codes",
+      "upstream_ids": [
+        "API-098",
+        "TEST-129",
+        "DL-081"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_recovery_code_flow_migration.py",
+      "status": "implemented",
+      "notes": "Any live session of the account reads its live set without codes: none before the first codes, issued with 9 usable after a recovery-code sign-in, regenerated with 10, other for a set not made by these routes; another account's set is never shown; a signed-out session is refused (login slice sub-slice L6, Q-2026-10-24-187, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "TEST-FE-708",
+      "upstream_ids": [
+        "UI-110",
+        "UI-112",
+        "DL-081"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/SignInScreens.test.tsx",
+      "status": "implemented",
+      "notes": "Every code and password box opens empty after the step before it (the code box never keeps the username), with no React warning (review round 2) (login slice sub-slice L6, Q-2026-10-24-187, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
+    },
+    {
+      "test_id": "TEST-FE-709",
+      "upstream_ids": [
+        "UI-111",
+        "API-096",
+        "DL-081"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/SignInScreens.test.tsx",
+      "status": "implemented",
+      "notes": "The session timer ends the app when the server answers with another person's session or cannot be reached (review round 2) (login slice sub-slice L6, Q-2026-10-24-187, decided by Claude under the owner's 2026-10-23 22:30 rule, DL-081)."
     }
   ]
 }

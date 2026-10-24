@@ -39,6 +39,7 @@ from property_rental.auth_api import (
     NewPasswordRejected,
     ReauthenticationResult,
     RecoveryCodeSetResult,
+    RecoveryCodeSetSummary,
     SessionView,
 )
 from property_rental.initial_owner_bootstrap import RECOVERY_CODE_COUNT
@@ -91,9 +92,16 @@ RECOVERY_CODES_REGENERATED_PROVENANCE: Final = "auth-recovery-codes-regenerated"
 # answer to Q-2026-10-21-157).
 RECOVERY_CODE_REGENERATION_WINDOW: Final = "15 minutes"
 # The name an authenticator app shows for the sign-in code (decided under the owner's
-# 2026-10-22 rule, login sub-slice L3c-2b).
-TOTP_ISSUER: Final = "Property Rental"
+# 2026-10-22 rule, login sub-slice L3c-2b); the Property's name since L6, so the app shows the
+# code "for CHETANA" as the sign-in screen says (Q-2026-10-24-187).
+TOTP_ISSUER: Final = "CHETANA Residence"
 LOGOUT_PROVENANCE: Final = "auth-logout"
+# How a live recovery-code set was made, as the sign-in screens show it (login sub-slice L6);
+# any other provenance (the first Owner's bootstrap, the older services) reads "other".
+RECOVERY_SET_ORIGINS: Final[dict[str, Literal["issued", "regenerated"]]] = {
+    RECOVERY_CODES_PROVENANCE: "issued",
+    RECOVERY_CODES_REGENERATED_PROVENANCE: "regenerated",
+}
 # A database that does not answer must not hold a request thread for long (review round 1).
 CONNECT_TIMEOUT_SECONDS: Final = 5
 # No statement of the sign-in or the session check may run longer than 5 seconds (login
@@ -569,6 +577,19 @@ LIVE_RECOVERY_SET: Final = """
     SELECT recovery_set.set_id
     FROM app.recovery_code_sets AS recovery_set
     WHERE recovery_set.actor_id = %s
+      AND recovery_set.invalidated_at IS NULL
+"""
+# The live set without its codes for the sign-in screens (login sub-slice L6): when and how it
+# was made, and its codes neither used nor invalidated.
+LIVE_RECOVERY_SET_SUMMARY: Final = """
+    SELECT recovery_set.set_id, recovery_set.created_at, recovery_set.provenance,
+           (SELECT count(*)
+            FROM app.recovery_codes AS recovery_code
+            WHERE recovery_code.set_id = recovery_set.set_id
+              AND recovery_code.consumed_at IS NULL
+              AND recovery_code.invalidated_at IS NULL)
+    FROM app.recovery_code_sets AS recovery_set
+    WHERE recovery_set.actor_id = %s::uuid
       AND recovery_set.invalidated_at IS NULL
 """
 # One generation of recovery codes per account at a time (review round 1, security); the lock
@@ -1859,6 +1880,28 @@ class PostgresAuthenticationFlow:
                     for code_id, encoding, algorithm, work_factors in rows
                 ],
             )
+
+    def live_recovery_code_set(
+        self, *, session_token: str, request_id: str
+    ) -> RecoveryCodeSetSummary | None:
+        """The account's live recovery-code set without its codes, or None (login sub-slice L6,
+        API-098): any live session of the account may read it, so a person can replace the
+        bootstrap's set and see a set whose codes they never received."""
+        digest = session_token_digest(session_token)
+        with self._transaction() as connection:
+            session = connection.execute(LIVE_SESSION, (digest,)).fetchone()
+            if session is None:
+                raise AuthenticationRejected
+            row = connection.execute(LIVE_RECOVERY_SET_SUMMARY, (session[1],)).fetchone()
+        if row is None:
+            return None
+        set_id, created_at, provenance, usable = row
+        return RecoveryCodeSetSummary(
+            set_id=cast(UUID, set_id),
+            created_at=cast(datetime, created_at),
+            made_by=RECOVERY_SET_ORIGINS.get(str(provenance), "other"),
+            usable_count=cast(int, usable),
+        )
 
     def issue_recovery_codes(
         self,

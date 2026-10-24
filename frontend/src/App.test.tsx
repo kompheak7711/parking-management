@@ -28,10 +28,10 @@ import {
 } from "./financialReferenceClient";
 import { AccessAdministrationApi, UserAccount } from "./adminClient";
 import {
-  AUTHENTICATION_ERROR_MESSAGE,
   AuthenticationApi,
-  PASSWORD_RULE_MESSAGE,
+  AuthenticationError,
   PasswordRuleError,
+  RecoveryCodeSetSummary,
   SessionData,
   SessionExpiredError,
 } from "./authClient";
@@ -233,7 +233,10 @@ function mockAuthenticationApi(
     completeMfa: vi.fn().mockResolvedValue({ phase: "authenticated", session }),
     beginMfaEnrollment: vi.fn().mockResolvedValue({
       method: "totp",
-      provisioning_uri: "otpauth://totp/PropertyRental:test?secret=protected",
+      provisioning_uri:
+        "otpauth://totp/PropertyRental:test?secret=JBSWY3DPEHPK3PXP",
+      qr_code_svg:
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"></svg>',
     }),
     confirmMfaEnrollment: vi
       .fn()
@@ -248,6 +251,7 @@ function mockAuthenticationApi(
       set_id: "set-2",
       codes: ["replacement-one", "replacement-two"],
     }),
+    liveRecoveryCodeSet: vi.fn().mockResolvedValue(null),
     logout: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   };
@@ -422,9 +426,9 @@ describe("local sign-in", () => {
   it("TEST-FE-001 renders an accessible local username and password form", () => {
     render(<App environment="development" buildId="test-build" />);
 
-    expect(
-      screen.getByRole("heading", { name: "Property Rental Management" }),
-    ).toBeInTheDocument();
+    // Login sub-slice L6: the full-screen sign-in layer in the CHETANA brand.
+    expect(screen.getByRole("img", { name: "CHETANA" })).toBeInTheDocument();
+    expect(screen.getByText("Residence Management")).toBeInTheDocument();
     expect(screen.getByRole("main")).toHaveAccessibleName("Sign in");
     expect(screen.getByLabelText("Username")).toHaveAttribute(
       "autocomplete",
@@ -490,7 +494,7 @@ describe("local sign-in", () => {
       });
     });
     expect(await screen.findByRole("status")).toHaveTextContent(
-      "Your sign-in was accepted.",
+      "Signed in as local-user.",
     );
   });
 
@@ -543,18 +547,12 @@ describe("local sign-in", () => {
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
 
     const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent(AUTHENTICATION_ERROR_MESSAGE);
+    expect(alert).toHaveTextContent(
+      "The username or password is not right. Check both and try again.",
+    );
     expect(alert).not.toHaveTextContent("disabled");
-    expect(screen.getByLabelText("Username")).toHaveAccessibleDescription(
-      AUTHENTICATION_ERROR_MESSAGE,
-    );
-    expect(screen.getByLabelText("Password")).toHaveAccessibleDescription(
-      AUTHENTICATION_ERROR_MESSAGE,
-    );
-    expect(screen.getByLabelText("Username")).toHaveAttribute(
-      "aria-invalid",
-      "true",
-    );
+    expect(alert).toHaveFocus();
+    expect(screen.getByRole("main")).toHaveAccessibleName("Sign in");
   });
 
   it("TEST-FE-006 exposes no first-Owner, external-provider, SMS, or security-question flow", () => {
@@ -568,7 +566,7 @@ describe("local sign-in", () => {
       screen.queryByText(/sms|security question/i),
     ).not.toBeInTheDocument();
     expect(
-      screen.getByText("Need help signing in? Contact your administrator."),
+      screen.getByRole("button", { name: "Forgot your password?" }),
     ).toBeInTheDocument();
   });
 
@@ -577,6 +575,7 @@ describe("local sign-in", () => {
 
     const username = screen.getByLabelText("Username");
     const password = screen.getByLabelText("Password");
+    const show = screen.getByRole("button", { name: "Show password" });
     const submit = screen.getByRole("button", { name: "Sign in" });
     const form = submit.closest("form");
 
@@ -585,18 +584,19 @@ describe("local sign-in", () => {
       expect.objectContaining({
         0: username,
         1: password,
-        2: submit,
-        length: 3,
+        2: show,
+        3: submit,
+        length: 4,
       }),
     );
 
-    for (const control of [username, password, submit]) {
+    for (const control of [username, password, show, submit]) {
       control.focus();
       expect(control).toHaveFocus();
     }
   });
 
-  it("TEST-FE-008 allows retry after a generic failure without clearing credentials", async () => {
+  it("TEST-FE-008 allows retry after a generic failure, keeping the username and clearing the password", async () => {
     const authenticate = vi
       .fn()
       .mockRejectedValueOnce(new Error("unknown account"))
@@ -619,15 +619,19 @@ describe("local sign-in", () => {
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      AUTHENTICATION_ERROR_MESSAGE,
+      "The username or password is not right.",
     );
+    // Login sub-slice L6: a password field is cleared after every failed try.
     expect(screen.getByLabelText("Username")).toHaveValue("local-user");
-    expect(screen.getByLabelText("Password")).toHaveValue("local-password");
+    expect(screen.getByLabelText("Password")).toHaveValue("");
 
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "local-password" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
 
     expect(await screen.findByRole("status")).toHaveTextContent(
-      "Your sign-in was accepted.",
+      "Signed in as local-user.",
     );
     expect(authenticate).toHaveBeenCalledTimes(2);
   });
@@ -642,7 +646,14 @@ describe("local sign-in", () => {
         .mockResolvedValue({ phase: "mfa_required", session: null }),
       completeMfa,
     });
-    render(<App api={api} environment="development" buildId="test-build" />);
+    render(
+      <App
+        api={api}
+        environment="development"
+        buildId="test-build"
+        now={() => new Date("2026-08-22T10:10:00Z").getTime()}
+      />,
+    );
 
     fireEvent.change(screen.getByLabelText("Username"), {
       target: { value: "local-user" },
@@ -652,16 +663,18 @@ describe("local sign-in", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
     expect(
-      await screen.findByRole("heading", {
-        name: "Complete multi-factor authentication",
-      }),
+      await screen.findByRole("heading", { name: "Two-step sign-in" }),
     ).toBeInTheDocument();
 
-    fireEvent.click(screen.getByLabelText("Recovery code"));
-    fireEvent.change(screen.getByLabelText("Unused recovery code"), {
-      target: { value: "one-time-code" },
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Lost your phone? Use a recovery code",
+      }),
+    );
+    fireEvent.change(screen.getByLabelText("Recovery code"), {
+      target: { value: " one-time-code " },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Verify" }));
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 
     await waitFor(() => {
       expect(completeMfa).toHaveBeenCalledWith({
@@ -669,6 +682,9 @@ describe("local sign-in", () => {
         code: "one-time-code",
       });
     });
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "Recovery code used. If your phone is lost, ask the Owner to reset your two-step sign-in.",
+    );
     expect(screen.queryByText(/account disabled/i)).not.toBeInTheDocument();
   });
 
@@ -686,26 +702,35 @@ describe("local sign-in", () => {
       target: { value: "password" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
-    fireEvent.click(
-      await screen.findByRole("button", { name: "Begin protected enrollment" }),
-    );
     expect(
-      await screen.findByRole("region", {
-        name: "One-time enrollment material",
+      await screen.findByRole("heading", { name: "Set up two-step sign-in" }),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByRole("img", {
+        name: "QR code for your authenticator app",
       }),
-    ).toHaveTextContent("otpauth://totp/");
-    fireEvent.change(screen.getByLabelText("Authenticator code"), {
+    ).toBeInTheDocument();
+    expect(screen.getByText("JBSW Y3DP EHPK 3PXP")).toBeInTheDocument();
+    expect(api.beginMfaEnrollment).toHaveBeenCalledTimes(1);
+    fireEvent.change(screen.getByLabelText("6-digit code"), {
       target: { value: "123456" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Confirm enrollment" }));
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     await waitFor(() => {
       expect(api.confirmMfaEnrollment).toHaveBeenCalledWith("123456");
     });
+    expect(
+      await screen.findByRole("heading", { name: "Your recovery codes" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("JBSW Y3DP EHPK 3PXP")).not.toBeInTheDocument();
   });
 
   it("TEST-FE-011 returns expired sessions to sign-in without claiming unsaved commands succeeded", async () => {
     vi.useFakeTimers();
-    const api = mockAuthenticationApi();
+    const api = mockAuthenticationApi({
+      // L6 review round 1: the server is asked first and says the session ended.
+      inspectSession: vi.fn().mockRejectedValue(new AuthenticationError()),
+    });
     render(
       <App
         api={api}
@@ -728,10 +753,16 @@ describe("local sign-in", () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1000);
     });
-    expect(screen.getByRole("main")).toHaveAccessibleName("Sign in");
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "unsaved command was not submitted",
+    // Login sub-slice L6: the signed-out screen for 30 minutes without use.
+    expect(screen.getByRole("main")).toHaveAccessibleName(
+      "You were signed out",
     );
+    expect(
+      screen.getByText(/Nobody used the app on this computer for 30 minutes/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Anything you had not saved was not saved/),
+    ).toBeInTheDocument();
     vi.useRealTimers();
   });
 
@@ -836,6 +867,106 @@ describe("local sign-in", () => {
       screen.queryByRole("region", { name: "One-time recovery codes" }),
     ).not.toBeInTheDocument();
     expect(screen.queryByText("code-one")).not.toBeInTheDocument();
+  });
+
+  it("TEST-FE-707 shows the live recovery-code set and replaces it by its id, and a refused read keeps the person signed in", async () => {
+    let answerLiveSet!: (value: RecoveryCodeSetSummary) => void;
+    const api = mockAuthenticationApi({
+      liveRecoveryCodeSet: vi
+        .fn()
+        .mockReturnValueOnce(
+          new Promise<RecoveryCodeSetSummary>((resolve) => {
+            answerLiveSet = resolve;
+          }),
+        )
+        .mockResolvedValue({
+          set_id: "set-2",
+          created_at: "2026-08-22T10:10:00Z",
+          made_by: "regenerated",
+          usable_count: 2,
+        }),
+    });
+    render(
+      <App
+        api={api}
+        environment="development"
+        buildId="test-build"
+        now={() => new Date("2026-08-22T10:10:00Z").getTime()}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText("Username"), {
+      target: { value: "owner" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "password" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    expect(
+      await screen.findByRole("heading", { name: "Recovery safety" }),
+    ).toBeInTheDocument();
+    // Review round 2: nothing about the codes while the read runs.
+    expect(
+      screen.queryByText(/Your recovery codes could not be checked/),
+    ).not.toBeInTheDocument();
+    await act(async () => {
+      answerLiveSet({
+        set_id: "bootstrap-set",
+        created_at: "2026-08-20T08:00:00Z",
+        made_by: "other",
+        usable_count: 10,
+      });
+      await Promise.resolve();
+    });
+    expect(
+      await screen.findByText(
+        "Your recovery codes: 10 still work. Made by the server set-up 2026-08-20T08:00:00.000Z.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", {
+        name: "Generate one-time recovery codes",
+      }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Replace my recovery codes" }),
+    );
+    await waitFor(() => {
+      expect(api.regenerateRecoveryCodes).toHaveBeenCalledWith("bootstrap-set");
+    });
+    expect(
+      await screen.findByRole("region", { name: "One-time recovery codes" }),
+    ).toHaveTextContent("replacement-one");
+    fireEvent.click(
+      screen.getByRole("button", { name: "I saved these codes—clear them" }),
+    );
+    expect(
+      await screen.findByText(/Your recovery codes: 2 still work\. Replaced/),
+    ).toBeInTheDocument();
+    cleanup();
+
+    const refused = mockAuthenticationApi({
+      liveRecoveryCodeSet: vi.fn().mockRejectedValue(new AuthenticationError()),
+    });
+    render(
+      <App
+        api={refused}
+        environment="development"
+        buildId="test-build"
+        now={() => new Date("2026-08-22T10:10:00Z").getTime()}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText("Username"), {
+      target: { value: "owner" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "password" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    expect(
+      await screen.findByText(/Your recovery codes could not be checked/),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("main")).toHaveAccessibleName("Account and access");
+    expect(refused.logout).not.toHaveBeenCalled();
   });
 
   it("TEST-FE-014 requires consequence confirmation before administrative recovery", async () => {
@@ -1056,33 +1187,48 @@ describe("local sign-in", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
     expect(
-      await screen.findByRole("heading", { name: "Choose your own password" }),
+      await screen.findByRole("heading", { name: "Choose a new password" }),
     ).toBeInTheDocument();
-    expect(screen.getByText(PASSWORD_RULE_MESSAGE)).toBeInTheDocument();
+    expect(screen.getByText("At least 15 characters")).toBeInTheDocument();
+    expect(screen.getByText("No more than 128 characters")).toBeInTheDocument();
 
-    const save = screen.getByRole("button", { name: "Save the new password" });
+    const save = screen.getByRole("button", { name: "Save new password" });
     fireEvent.change(screen.getByLabelText("New password"), {
       target: { value: "a long new password of mine" },
     });
-    fireEvent.change(screen.getByLabelText("New password again"), {
+    fireEvent.change(screen.getByLabelText("Type the new password again"), {
       target: { value: "a different long password" },
     });
     fireEvent.click(save);
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      "The two passwords must match",
-    );
+    expect(
+      await screen.findByText("The two new passwords are not the same."),
+    ).toBeInTheDocument();
     expect(changePassword).not.toHaveBeenCalled();
 
-    fireEvent.change(screen.getByLabelText("New password again"), {
+    fireEvent.change(screen.getByLabelText("Type the new password again"), {
       target: { value: "a long new password of mine" },
     });
     fireEvent.click(save);
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      "This password was not accepted.",
-    );
+    expect(
+      await screen.findByText(
+        "This password is too common or too easy to guess. Choose another.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("New password")).toHaveValue("");
+    fireEvent.change(screen.getByLabelText("New password"), {
+      target: { value: "a long new password of mine" },
+    });
+    fireEvent.change(screen.getByLabelText("Type the new password again"), {
+      target: { value: "a long new password of mine" },
+    });
     fireEvent.click(save);
     expect(
-      await screen.findByRole("button", { name: "Begin protected enrollment" }),
+      await screen.findByRole("heading", { name: "Set up two-step sign-in" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Password changed. You are signed out on every other computer.",
+      ),
     ).toBeInTheDocument();
     expect(changePassword).toHaveBeenCalledTimes(2);
     expect(changePassword).toHaveBeenLastCalledWith(
@@ -1111,11 +1257,11 @@ describe("local sign-in", () => {
       fireEvent.change(await screen.findByLabelText("New password"), {
         target: { value: "a long new password of mine" },
       });
-      fireEvent.change(screen.getByLabelText("New password again"), {
+      fireEvent.change(screen.getByLabelText("Type the new password again"), {
         target: { value: "a long new password of mine" },
       });
       fireEvent.click(
-        screen.getByRole("button", { name: "Save the new password" }),
+        screen.getByRole("button", { name: "Save new password" }),
       );
       expect(
         await screen.findByText(
@@ -1482,6 +1628,8 @@ describe("local sign-in", () => {
         phase: "authenticated",
         session: expiringSession,
       }),
+      // L6 review round 1: the server is asked first and says the session ended.
+      inspectSession: vi.fn().mockRejectedValue(new AuthenticationError()),
     });
     const customers = customerApiDouble({
       create: vi.fn().mockReturnValue(pendingCreate),
@@ -1531,7 +1679,9 @@ describe("local sign-in", () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1000);
     });
-    expect(screen.getByLabelText("Username")).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "You were signed out" }),
+    ).toBeInTheDocument();
     expect(
       screen.getByText(/session expired while a Customer command was pending/),
     ).toBeInTheDocument();
@@ -1580,6 +1730,8 @@ describe("local sign-in", () => {
         phase: "authenticated",
         session: expiringSession,
       }),
+      // L6 review round 1: the server is asked first and says the session ended.
+      inspectSession: vi.fn().mockRejectedValue(new AuthenticationError()),
     });
     const customers = customerApiDouble({
       create: vi
@@ -1631,7 +1783,9 @@ describe("local sign-in", () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1000);
     });
-    expect(screen.getByLabelText("Username")).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "You were signed out" }),
+    ).toBeInTheDocument();
     expect(
       screen.getByText(/session expired while a Customer command was pending/),
     ).toBeInTheDocument();
@@ -2474,6 +2628,78 @@ describe("local sign-in", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("TEST-FE-706 keeps a session restore that finishes during a sign-in from opening the app", async () => {
+    const newerSession: SessionData = {
+      ...session,
+      actor_id: "actor-2",
+      idle_expires_at: "2026-08-22T11:30:00Z",
+      absolute_expires_at: "2026-08-24T10:00:00Z",
+    };
+    const answers: Record<string, (data: unknown) => void> = {};
+    const fetchMock = vi.fn((input: RequestInfo | URL) => {
+      const path =
+        typeof input === "string"
+          ? input
+          : input instanceof URL
+            ? input.href
+            : input.url;
+      return new Promise<Response>((resolve) => {
+        answers[path.endsWith("/auth/session") ? "restore" : "login"] = (
+          data,
+        ) => {
+          resolve(
+            new Response(
+              JSON.stringify({ data, meta: { request_id: "request-1" } }),
+              {
+                status: 200,
+                headers: { "Content-Type": "application/json" },
+              },
+            ),
+          );
+        };
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(
+      <App
+        buildId="test-build"
+        environment="development"
+        now={() => new Date("2026-08-22T10:10:00Z").getTime()}
+      />,
+    );
+    await waitFor(() => {
+      expect(answers.restore).toBeDefined();
+    });
+    fireEvent.change(screen.getByLabelText("Username"), {
+      target: { value: "manager" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "password" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    await waitFor(() => {
+      expect(answers.login).toBeDefined();
+    });
+
+    // L6 review round 1: the older session answers while the sign-in is on its way.
+    await act(async () => {
+      answers.restore?.(session);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(screen.getByRole("main")).toHaveAccessibleName("Sign in");
+    expect(
+      screen.queryByText("2026-08-23T10:00:00.000Z"),
+    ).not.toBeInTheDocument();
+
+    await act(async () => {
+      answers.login?.({ phase: "authenticated", session: newerSession });
+      await Promise.resolve();
+    });
+    expect(
+      await screen.findByText("2026-08-24T10:00:00.000Z"),
+    ).toBeInTheDocument();
+  });
+
   it("TEST-FE-073 removes Customer commands while logout is pending", async () => {
     let finishLogout!: () => void;
     const pendingLogout = new Promise<void>((resolve) => {
@@ -2795,7 +3021,7 @@ describe("financial drafts during App logout and expiry", () => {
               now={() => new Date("2026-08-24T10:10:00Z").getTime()}
             />,
           );
-          await screen.findByLabelText("Username");
+          await screen.findByRole("heading", { name: "You were signed out" });
           expect(discard).not.toHaveBeenCalled();
           expect(authentication.logout).not.toHaveBeenCalled();
         } else {
@@ -3017,7 +3243,7 @@ describe("Lease enforcement drafts during App logout and expiry", () => {
               now={() => new Date("2026-08-24T10:10:00Z").getTime()}
             />,
           );
-          await screen.findByLabelText("Username");
+          await screen.findByRole("heading", { name: "You were signed out" });
           expect(discard).not.toHaveBeenCalled();
           expect(authentication.logout).not.toHaveBeenCalled();
         } else {

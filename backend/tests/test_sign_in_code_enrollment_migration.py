@@ -36,6 +36,7 @@ from property_rental.password_security import PasswordHashService
 from property_rental.runtime_secrets import derive_totp_key_identifier
 from property_rental.session_actor import PostgresSessionActorResolver
 from property_rental.settings import Settings
+from property_rental.totp_qr import provisioning_qr_svg
 from property_rental.totp_security import TotpSecret, TotpService
 from test_sign_in_code_migration import (
     CHALLENGES_OF,
@@ -166,10 +167,10 @@ def test_an_account_without_a_sign_in_code_sets_one_up_and_its_first_right_code_
         preauth = enrollment_token(flow, account, f"{username}-desk")
         result = flow.begin_mfa_enrollment(preauth_token=preauth, request_id="l3c-2b")
         link = urlsplit(result.provisioning_uri)
-        assert unquote(link.path) == f"/Property Rental:{username}"
+        assert unquote(link.path) == f"/CHETANA Residence:{username}"
         query = parse_qs(link.query)
         assert (query["issuer"], query["digits"], query["period"]) == (
-            ["Property Rental"],
+            ["CHETANA Residence"],
             ["6"],
             ["30"],
         )
@@ -815,6 +816,9 @@ def test_the_set_up_routes_answer_the_link_once_then_401_and_set_the_session_coo
         assert started.status_code == 200
         assert started.headers["Cache-Control"] == "no-store"
         assert started.json()["data"]["method"] == "totp"
+        assert started.json()["data"]["qr_code_svg"] == provisioning_qr_svg(
+            started.json()["data"]["provisioning_uri"]
+        )
         link = urlsplit(started.json()["data"]["provisioning_uri"])
         secret = TotpSecret.from_base32(parse_qs(link.query)["secret"][0])
         assert client.post("/api/v1/auth/mfa/enrollment", headers=headers).status_code == 401

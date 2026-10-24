@@ -1,0 +1,498 @@
+/* Login sub-slice L6: the sign-in layer in the CHETANA brand (DESIGN.md tokens, the owner's
+   mock-up signin-styles.css). The fonts are hosted with the app (OFL files beside them), kept
+   outside src because the source scans read every file there as text. */
+
+@font-face {
+  font-family: "Montserrat";
+  src: url("../assets/fonts/Montserrat-Variable.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Kantumruy Pro";
+  src: url("../assets/fonts/KantumruyPro-Variable.ttf") format("truetype");
+  font-weight: 100 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+.sign-in-layer {
+  --si-primary: #4d6153;
+  --si-primary-hover: #445549;
+  --si-on-primary: #faf8f3;
+  --si-neutral: #f2eee5;
+  --si-surface: #faf8f3;
+  --si-sunken: #e4ded2;
+  --si-border: #cec7ba;
+  --si-border-strong: #79776f;
+  --si-text: #252a28;
+  --si-text-2: #5c625e;
+  --si-heading: #4d6153;
+  --si-focus: #836547;
+  --si-nav-text: #f2eee5;
+  --si-nav-muted: #dee0d9;
+  --si-success: #2f6b4a;
+  --si-success-bg: #e6ede9;
+  --si-warning: #8f5b0f;
+  --si-warning-bg: #f2ebe2;
+  --si-error: #9e3a2f;
+  --si-error-bg: #f3e7e6;
+
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  overflow: auto;
+  background: var(--si-neutral);
+  color: var(--si-text);
+  font-family: "Montserrat", "Kantumruy Pro", "Segoe UI", Arial, sans-serif;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+html[lang="km"] .sign-in-layer {
+  font-family:
+    "Kantumruy Pro", "Noto Sans Khmer", "Khmer OS Siemreap", "Khmer UI",
+    "Montserrat", sans-serif;
+}
+
+.sign-in-layer :focus-visible {
+  outline: 3px solid var(--si-focus);
+  outline-offset: 2px;
+}
+
+.sign-in-wrap {
+  min-height: 100%;
+  display: grid;
+  grid-template-columns: minmax(300px, 38%) minmax(0, 1fr);
+}
+
+.sign-in-brand {
+  background: var(--si-primary);
+  color: var(--si-nav-text);
+  padding: 48px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  justify-content: center;
+}
+
+.sign-in-brand img {
+  width: min(260px, 100%);
+  height: auto;
+}
+
+.sign-in-brand p {
+  margin: 0;
+}
+
+.sign-in-app {
+  font-family: "Montserrat", "Segoe UI", Arial, sans-serif;
+  font-size: 0.82rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.sign-in-where {
+  color: var(--si-nav-muted);
+  font-size: 0.9rem;
+}
+
+.sign-in-facts {
+  list-style: none;
+  margin: 22px 0 0;
+  padding: 18px 0 0;
+  border-top: 1px solid rgb(242 238 229 / 18%);
+  display: grid;
+  gap: 12px;
+  font-size: 0.9rem;
+  color: var(--si-nav-muted);
+}
+
+.sign-in-facts li {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.sign-in-facts svg {
+  flex: none;
+  margin-top: 4px;
+}
+
+.sign-in-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 20px 24px 28px;
+  min-width: 0;
+}
+
+.sign-in-top {
+  align-self: stretch;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.sign-in-language {
+  display: flex;
+  border: 1px solid var(--si-border-strong);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.sign-in-language button {
+  min-height: 44px;
+  min-width: 56px;
+  border: 0;
+  background: var(--si-surface);
+  color: var(--si-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sign-in-language button[aria-pressed="true"] {
+  background: var(--si-primary);
+  color: var(--si-on-primary);
+}
+
+.sign-in-card {
+  width: min(440px, 100%);
+  margin-block: auto;
+  background: var(--si-surface);
+  border: 1px solid var(--si-border);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgb(37 42 40 / 12%);
+  padding: 30px 28px;
+  display: grid;
+  gap: 16px;
+}
+
+.sign-in-card h1 {
+  margin: 0;
+  color: var(--si-heading);
+  font-size: 1.625rem;
+  line-height: 1.3;
+  font-weight: 600;
+}
+
+.sign-in-card h1:focus {
+  outline: none;
+}
+
+.sign-in-card p {
+  margin: 0;
+}
+
+.sign-in-muted {
+  color: var(--si-text-2);
+}
+
+.sign-in-small {
+  font-size: 0.875rem;
+}
+
+.sign-in-form {
+  display: grid;
+  gap: 16px;
+}
+
+.sign-in-field {
+  display: grid;
+  gap: 6px;
+}
+
+.sign-in-field label {
+  font-weight: 600;
+}
+
+.sign-in-input {
+  min-height: 44px;
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--si-border-strong);
+  border-radius: 8px;
+  background: var(--si-surface);
+  color: var(--si-text);
+  font: inherit;
+}
+
+.sign-in-input[aria-invalid="true"] {
+  border-color: var(--si-error);
+}
+
+.sign-in-code-input {
+  font-family: "Montserrat", "Segoe UI", Arial, sans-serif;
+  font-variant-numeric: tabular-nums lining-nums;
+  font-size: 1.25rem;
+  letter-spacing: 0.3em;
+  font-weight: 600;
+}
+
+.sign-in-password-row {
+  display: flex;
+  gap: 8px;
+}
+
+.sign-in-password-row .sign-in-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.sign-in-help {
+  color: var(--si-text-2);
+  font-size: 0.875rem;
+}
+
+.sign-in-field-error {
+  color: var(--si-error);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.sign-in-button {
+  min-height: 44px;
+  padding: 8px 16px;
+  border: 1px solid var(--si-border-strong);
+  border-radius: 8px;
+  background: var(--si-surface);
+  color: var(--si-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sign-in-show {
+  min-width: 76px;
+}
+
+.sign-in-primary {
+  width: 100%;
+  border-color: var(--si-primary);
+  background: var(--si-primary);
+  color: var(--si-on-primary);
+}
+
+.sign-in-primary:hover {
+  background: var(--si-primary-hover);
+}
+
+.sign-in-links {
+  display: flex;
+  justify-content: center;
+}
+
+.sign-in-link {
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: var(--si-primary);
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.sign-in-notice,
+.sign-in-alert {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: var(--si-sunken);
+}
+
+.sign-in-notice-ok {
+  background: var(--si-success-bg);
+  color: var(--si-success);
+}
+
+.sign-in-notice-warn {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: var(--si-warning-bg);
+  color: var(--si-warning);
+}
+
+.sign-in-alert {
+  background: var(--si-error-bg);
+  color: var(--si-error);
+  font-weight: 600;
+}
+
+.sign-in-alert:focus {
+  outline: 3px solid var(--si-focus);
+}
+
+.sign-in-box {
+  border: 1px solid var(--si-border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  display: grid;
+  gap: 10px;
+}
+
+.sign-in-box h2 {
+  margin: 0;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 1rem;
+}
+
+.sign-in-rules {
+  list-style: none;
+  margin: -6px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+  font-size: 0.86rem;
+  color: var(--si-text-2);
+}
+
+.sign-in-rules li {
+  display: flex;
+  gap: 8px;
+}
+
+.sign-in-rule-met {
+  color: var(--si-success);
+}
+
+.sign-in-steps {
+  margin: 0;
+  padding-left: 22px;
+  display: grid;
+  gap: 16px;
+}
+
+.sign-in-steps li::marker {
+  font-weight: 700;
+  color: var(--si-heading);
+}
+
+.sign-in-qr-box {
+  margin-top: 10px;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.sign-in-qr {
+  width: 200px;
+  height: 200px;
+  border: 1px solid var(--si-border);
+  border-radius: 6px;
+  flex: none;
+  background: #fff;
+}
+
+.sign-in-key {
+  font-family: "Montserrat", "Segoe UI", Arial, sans-serif;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  overflow-wrap: anywhere;
+}
+
+.sign-in-recovery-codes {
+  margin: 0;
+  padding: 14px 16px 14px 40px;
+  background: var(--si-sunken);
+  border-radius: 8px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 22px;
+  font-family: "Montserrat", "Segoe UI", Arial, sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  overflow-wrap: anywhere;
+}
+
+.sign-in-copy {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.sign-in-check {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  min-height: 44px;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.sign-in-check input {
+  width: 22px;
+  height: 22px;
+  margin-top: 2px;
+  flex: none;
+}
+
+.sign-in-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--si-sunken);
+  display: grid;
+  place-items: center;
+  color: var(--si-heading);
+}
+
+.sign-in-footer {
+  display: flex;
+  gap: 12px;
+  color: var(--si-text-2);
+  font-size: 0.8rem;
+}
+
+@media (max-width: 900px) {
+  .sign-in-wrap {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+
+  .sign-in-brand {
+    padding: 18px 20px;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    justify-content: flex-start;
+  }
+
+  .sign-in-brand img {
+    width: 150px;
+  }
+
+  .sign-in-where,
+  .sign-in-facts {
+    display: none;
+  }
+
+  .sign-in-main {
+    padding: 14px 16px 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .sign-in-card {
+    padding: 22px 18px;
+  }
+
+  .sign-in-recovery-codes {
+    grid-template-columns: 1fr;
+    padding-left: 34px;
+  }
+}

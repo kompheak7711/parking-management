@@ -625,7 +625,7 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/auth/session": {"get"},
         "/api/v1/auth/logout": {"post"},
         "/api/v1/auth/reauthenticate": {"post"},
-        "/api/v1/auth/recovery-codes": {"post"},
+        "/api/v1/auth/recovery-codes": {"get", "post"},
         "/api/v1/auth/recovery-codes/regenerate": {"post"},
         "/api/v1/properties/{property_id}/users": {"get", "post"},
         "/api/v1/users/{user_id}": {"patch"},

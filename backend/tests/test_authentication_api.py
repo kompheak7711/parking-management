@@ -22,10 +22,12 @@ from property_rental.auth_api import (
     NewPasswordRejected,
     ReauthenticationResult,
     RecoveryCodeSetResult,
+    RecoveryCodeSetSummary,
     SessionView,
 )
 from property_rental.identity import AuthenticatedActor
 from property_rental.settings import Settings
+from property_rental.totp_qr import provisioning_qr_svg
 
 
 @dataclass
@@ -124,6 +126,11 @@ class StubAuthenticationFlow(AuthenticationFlow):
         request_id: str,
         reauthentication_token: str | None = None,
     ) -> RecoveryCodeSetResult:
+        raise NotImplementedError
+
+    def live_recovery_code_set(
+        self, *, session_token: str, request_id: str
+    ) -> RecoveryCodeSetSummary | None:
         raise NotImplementedError
 
 
@@ -519,6 +526,7 @@ def test_required_mfa_enrollment_returns_one_time_totp_provisioning_material() -
     assert response.json()["data"] == {
         "method": "totp",
         "provisioning_uri": "otpauth://totp/Property:operator?secret=ONETIMESECRET",
+        "qr_code_svg": provisioning_qr_svg("otpauth://totp/Property:operator?secret=ONETIMESECRET"),
     }
 
 
@@ -811,6 +819,57 @@ def test_recovery_code_sets_are_returned_once_only_through_protected_session_rou
         "set_id": str(replacement_set_id),
         "codes": ["replacement-1", "replacement-2"],
     }
+
+
+def test_the_live_recovery_code_set_is_read_without_codes_with_no_store() -> None:
+    """Login sub-slice L6 (API-098): `GET /auth/recovery-codes` answers the live set's id,
+    time, origin and usable count, or null; no session cookie or a refused session is 401."""
+    made = datetime(2026, 10, 24, 9, 0, tzinfo=UTC)
+    summaries: list[RecoveryCodeSetSummary | None] = [
+        RecoveryCodeSetSummary(
+            set_id=UUID("33333333-3333-4333-8333-333333333333"),
+            created_at=made,
+            made_by="other",
+            usable_count=7,
+        ),
+        None,
+    ]
+
+    class LiveSetFlow(StubAuthenticationFlow):
+        def live_recovery_code_set(
+            self, *, session_token: str, request_id: str
+        ) -> RecoveryCodeSetSummary | None:
+            if session_token != "session-token-secret":
+                raise AuthenticationRejected
+            assert request_id == "live-set"
+            return summaries.pop(0)
+
+    app = create_app(
+        Settings(allowed_browser_origin="https://property.test"),
+        authentication_flow=LiveSetFlow(authenticated_result()),
+    )
+    headers = {"Cookie": "__Host-prm_session=session-token-secret", "X-Request-ID": "live-set"}
+
+    live = request(app, "GET", "/api/v1/auth/recovery-codes", headers=headers)
+    none = request(app, "GET", "/api/v1/auth/recovery-codes", headers=headers)
+    unknown = request(
+        app,
+        "GET",
+        "/api/v1/auth/recovery-codes",
+        headers={"Cookie": "__Host-prm_session=other", "X-Request-ID": "live-set"},
+    )
+    missing = request(app, "GET", "/api/v1/auth/recovery-codes")
+
+    assert live.status_code == 200
+    assert live.headers["Cache-Control"] == "no-store"
+    assert live.json()["data"] == {
+        "set_id": "33333333-3333-4333-8333-333333333333",
+        "created_at": "2026-10-24T09:00:00Z",
+        "made_by": "other",
+        "usable_count": 7,
+    }
+    assert none.status_code == 200 and none.json()["data"] is None
+    assert (unknown.status_code, missing.status_code) == (401, 401)
 
 
 def test_recovery_code_routes_reject_missing_browser_protection_before_flow() -> None:

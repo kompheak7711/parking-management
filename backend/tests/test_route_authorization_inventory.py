@@ -37,6 +37,7 @@ OPEN_OPERATIONS = frozenset(
         ("get", "/api/v1/auth/session"),
         ("post", "/api/v1/auth/logout"),
         ("post", "/api/v1/auth/reauthenticate"),
+        ("get", "/api/v1/auth/recovery-codes"),
         ("post", "/api/v1/auth/recovery-codes"),
         ("post", "/api/v1/auth/recovery-codes/regenerate"),
     }
