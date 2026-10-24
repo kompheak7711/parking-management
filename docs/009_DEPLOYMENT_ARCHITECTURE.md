@@ -128,6 +128,8 @@ Credentials and sessions must use TLS even on the LAN. A locally trusted
 certificate authority, managed device trust, or another reviewed certificate
 strategy may be used. Certificate renewal must be documented and monitored.
 
+Amended by DL-081 (login sub-slice L7c; Q-2026-10-24-189): until the server deployment, the app runs on the Mac mini (README, "Local run on the Mac mini"). The LAN entry point (DEPLOY-012) is the HTTPS screen server on port 5173 (`npm run dev:local`, which refuses to start without the certificate), which forwards `/api` to the API; the screen server adds X-Forwarded-For, which the API's server trusts from 127.0.0.1 only, so sign-in waits and audit sources see each device; the API listens on 127.0.0.1:8000 only and PostgreSQL on 127.0.0.1 only (DEPLOY-013). TLS uses a local certificate authority made on the Mac (10 years; the script warns 60 days before it ends) that the owner trusts once on the Mac and on the iPad, and a server certificate for the Mac's `.local` name, `localhost` and 127.0.0.1 (365 days), renewed yearly by running `scripts/local/make-certificate.sh` again. Local secrets (DEPLOY-019) are files in the ignored `.local/secrets` folder (0700; the database password files 0444 so the database container can read them; the address files 0600); the TOTP protection key is the root-only file of SEC-073.
+
 ## DEPLOY-015 — Optional Remote Access
 
 Remote access is disabled by default. If enabled, it uses a controlled encrypted

@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "vite --host 127.0.0.1",
+    "dev:local": "PRM_LOCAL_HTTPS=1 vite --host 0.0.0.0 --strictPort",
     "format": "prettier --write --ignore-unknown .",
     "format:check": "prettier --check --ignore-unknown .",
     "lint": "eslint . --max-warnings 0",

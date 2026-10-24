@@ -9,6 +9,7 @@ the protection key itself only protects sign-in code secrets. No key is ever pri
 """
 
 import os
+import re
 import stat
 from typing import Final
 
@@ -59,17 +60,28 @@ def read_password_blocklist(path: str) -> frozenset[str]:
     return blocked
 
 
+_INHERITED_DESCRIPTOR: Final = re.compile(r"/dev/fd/([0-9]{1,4})")
+
+
 def read_protected_totp_key(path: str) -> bytes:
     """Read the 32-byte TOTP protection key from a protected file, or refuse."""
     try:
-        # Not blocking on a FIFO and not taking a terminal (review round 1); the checks below
-        # refuse anything but a protected regular file.
-        descriptor = os.open(path, os.O_RDONLY | os.O_NONBLOCK | os.O_NOCTTY)
+        inherited = _INHERITED_DESCRIPTOR.fullmatch(path)
+        if inherited is not None:
+            # An inherited descriptor (the local run passes the root-only key on descriptor 4,
+            # login sub-slice L7c review round 2): copy it, because opening `/dev/fd/<n>` by path
+            # on Linux opens the file again with the permission check of the user the helper
+            # dropped to, which a root-only key refuses.
+            descriptor = os.dup(int(inherited.group(1)))
+        else:
+            # Not blocking on a FIFO and not taking a terminal (review round 1); the checks
+            # below refuse anything but a protected regular file.
+            descriptor = os.open(path, os.O_RDONLY | os.O_NONBLOCK | os.O_NOCTTY)
     except (OSError, ValueError):
         raise ProtectedKeyUnavailable("the protected key file cannot be opened") from None
     try:
-        # A `/dev/fd/<n>` path shares the inherited descriptor's offset on macOS; read from the
-        # start every time.
+        # A copied descriptor shares the inherited descriptor's offset; read from the start
+        # every time.
         os.lseek(descriptor, 0, os.SEEK_SET)
         return read_root_controlled_totp_key(descriptor)
     except (OSError, ValueError):

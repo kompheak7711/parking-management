@@ -254,7 +254,9 @@ class RealBootstrapMaterialFactory:
 
 
 def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description=__doc__)
+    # No shortened option names, so `scripts/local/bootstrap-owner.sh` can refuse the options it
+    # sets itself (login sub-slice L7c).
+    parser = argparse.ArgumentParser(description=__doc__, allow_abbrev=False)
     parser.add_argument("--username", required=True)
     parser.add_argument("--display-name", required=True)
     parser.add_argument("--audit-name", required=True)

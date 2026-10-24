@@ -42,7 +42,8 @@ make frontend-install
 make frontend
 ```
 
-The development UI listens on `http://127.0.0.1:5173`. Only public values prefixed
+The development UI listens on `http://127.0.0.1:5173` (on HTTPS once the local certificate of
+"Local run on the Mac mini" exists). Only public values prefixed
 with `VITE_` are exposed by Vite. `VITE_APP_BUILD_ID` accepts a non-secret version or
 commit identifier; `VITE_APP_ENVIRONMENT` accepts a public environment label. Neither
 variable is required for local development.
@@ -230,6 +231,84 @@ discovers that actual port, runs the real migration gate, and removes its contai
 and volume on exit. Credentials are generated inside the wrapper and are neither
 printed nor persisted. Direct test invocation still refuses non-loopback hosts,
 unexpected database/role names, missing passwords, or reused identity passwords.
+
+## Local run on the Mac mini
+
+Login sub-slice L7c (owner answers (a) to Q-2026-10-21-155 and Q-2026-10-21-159; technical
+points Q-2026-10-24-189). This is how the owner runs the app on the Mac mini, makes the first
+Owner account once, and opens the screens on the Mac and on an iPad on the same Wi-Fi. Every
+step is typed in Terminal from the repository folder. No password, key or database address is
+ever typed as a command argument or shown on screen, except the Owner set-up's own one-time
+screen.
+
+0. **Before you start** (once): the Prerequisites above, Docker Desktop running, then
+   `make install`. It and the first database start (which gets
+   the `postgres:17.6` image) download what the project's lock files name; nothing else does.
+   `/usr/bin/python3 --version` must answer (the first time, macOS asks to install the command
+   line tools; say yes).
+1. **Make the local secrets** (once): `sh scripts/local/make-secrets.sh`. It makes the eight
+   database password files and four database address files in `.local/secrets` (ignored by Git;
+   only your account can open the folder). A file that is already there is kept.
+2. **Make the protected key and install the helper** (once; sudo asks for your Mac password).
+   First `ls -ld /usr/local /usr/local/etc /usr/local/libexec` (the ones that exist): each must
+   show `root` as its owner. If one shows your own name (an Intel Mac with Homebrew), stop and
+   ask, because then a program running as you could swap the helper that sudo runs. Then:
+
+       sudo install -d -o root -g wheel -m 0755 /usr/local/etc/prm /usr/local/libexec/prm
+       sudo sh -c 'umask 077; set -C; openssl rand -hex 32 > /usr/local/etc/prm/totp_protection_key'
+       sudo chown root:wheel /usr/local/etc/prm/totp_protection_key
+       sudo install -o root -g wheel -m 0755 scripts/local/with-protected-key.py \
+           /usr/local/libexec/prm/with-protected-key.py
+
+   The key protects every sign-in code: never copy it anywhere else, and keep it in the Mac's
+   backup. `set -C` makes the command refuse to replace a key that is already there: a new key
+   would lock every account out of its sign-in codes. The helper is the only part that runs as
+   root: it opens the key and then runs the API or the Owner set-up as you. After a `git pull`,
+   if `cmp scripts/local/with-protected-key.py /usr/local/libexec/prm/with-protected-key.py`
+   reports a difference, run the last install line again.
+3. **Start the database**: `sh scripts/local/database.sh` (Docker Desktop must be running). The
+   first start makes the database identities. If an older `property-rental-management` volume
+   exists without them, stop and ask; never delete the volume. If the first start stops with
+   an error, stop and ask too: the database keeps its half-made first state. Stop it later with
+   `sh scripts/local/database.sh stop`.
+4. **Apply the migrations**: `sh scripts/local/migrate.sh`.
+5. **Make the first Owner account** (once, before anyone else):
+
+       sh scripts/local/bootstrap-owner.sh --username owner \
+           --display-name "CHETANA Owner" --audit-name chetana-owner
+
+   Choose your own username and names (a display name in Khmer is fine; type it without the
+   invisible space some Khmer keyboards add, or the set-up refuses it). Type the Owner password
+   twice (15 to 128 characters; nothing shows while you type). The set-up shows a key of
+   letters and digits: in Google Authenticator tap +, then "Enter a setup key", type the key,
+   choose "Time based", and type the 6-digit code it shows. Write the 10 recovery codes on paper,
+   and type the acknowledgement it asks for. You have 15 minutes from the key to the
+   acknowledgement; if time runs out, nothing is saved and you start again. The
+   set-up can run only once; after it, the Owner makes every other account in the app.
+6. **Make the HTTPS certificate** (once a year): `sh scripts/local/make-certificate.sh`. It covers
+   `https://NAME.local:5173` (NAME is the Mac's local network name, System Settings, General,
+   Sharing, shown in lower case) and `https://localhost:5173`. Trust its authority once (it
+   lasts 10 years; the script warns 60 days before it ends):
+   - on the Mac: `sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain .local/https/local-ca.pem`;
+   - on the iPad: `open -R .local/https/local-ca.pem` shows the file in Finder (`.local` is
+     hidden); AirDrop it to the iPad, install it in Settings,
+     General, VPN & Device Management, then turn it on in Settings, General, About, Certificate
+     Trust Settings.
+7. **Start the API** in one Terminal window: `sh scripts/local/start-api.sh` (sudo asks for your
+   Mac password). It listens on 127.0.0.1:8000 only, with `APP_ENVIRONMENT=production`.
+8. **Start the screens** in a second Terminal window: `cd frontend && npm run dev:local`. If
+   macOS asks whether "node" may accept incoming network connections, choose Allow (the iPad
+   needs it).
+9. **Open** `https://NAME.local:5173` on the Mac or the iPad and sign in. Use this address on
+   the Mac too: the API accepts sign-ins only from this one address.
+
+Stop with Control-C in both windows. The passwords never leave `.local/secrets`; the password
+blocklist is `config/password-blocklist.txt` (not a secret; add lines to it, one password each).
+
+Every day after that (or after the Mac restarts): open Docker Desktop, then steps 3, 7 and 8,
+then step 9. Each year: step 6 again, then restart step 8. If the Mac's local network name
+changes (macOS may add "-2" after a name clash on the Wi-Fi), do step 6 again and restart steps 7
+and 8. Use Safari or Chrome; Firefox does not use the Mac's trusted certificates.
 
 ## Development workflow
 

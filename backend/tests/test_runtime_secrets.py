@@ -89,6 +89,74 @@ def test_the_key_reader_accepts_a_root_controlled_file_through_the_bootstrap_che
         os.close(inherited)
 
 
+def test_an_inherited_descriptor_that_is_closed_a_pipe_or_not_root_owned_is_refused(
+    tmp_path: Path,
+) -> None:
+    """The copy of an inherited `/dev/fd/<n>` (login sub-slice L7c review round 3) keeps the old
+    refusals: a closed descriptor, a pipe (refused at once, never waiting), and, when not run as
+    root, a private file the person owns."""
+    closed = os.open(tmp_path, os.O_RDONLY)
+    os.close(closed)
+    with pytest.raises(ProtectedKeyUnavailable, match="cannot be opened"):
+        read_protected_totp_key(f"/dev/fd/{closed}")
+    reading, writing = os.pipe()
+    try:
+        with pytest.raises(ProtectedKeyUnavailable, match="not usable"):
+            read_protected_totp_key(f"/dev/fd/{reading}")
+    finally:
+        os.close(reading)
+        os.close(writing)
+    if os.geteuid() != 0:
+        own = tmp_path / "totp_protection_key"
+        own.write_text(KEY_HEX + "\n", encoding="ascii")
+        os.chmod(own, 0o600)
+        inherited = os.open(own, os.O_RDONLY)
+        try:
+            with pytest.raises(ProtectedKeyUnavailable, match="not usable"):
+                read_protected_totp_key(f"/dev/fd/{inherited}")
+        finally:
+            os.close(inherited)
+
+
+@pytest.mark.skipif(os.geteuid() != 0, reason="only root can make a root-only key and drop")
+def test_an_inherited_root_only_key_is_read_after_the_drop_to_another_user(
+    tmp_path: Path,
+) -> None:
+    """The local run (login sub-slice L7c review round 2): the helper opens the root-only key as
+    root, puts it on a descriptor and drops to the person who ran sudo; the API then reads
+    `/dev/fd/<n>`. Opening that path again is refused on Linux (the file is root-only), so the
+    reader copies the descriptor instead."""
+    key_file = tmp_path / "totp_protection_key"
+    key_file.write_text(KEY_HEX + "\n", encoding="ascii")
+    os.chmod(key_file, 0o600)
+    reading, writing = os.pipe()
+    child = os.fork()
+    if child == 0:  # pragma: no cover - runs in the child
+        outcome = b"failed"
+        try:
+            inherited = os.open(key_file, os.O_RDONLY)
+            os.setgroups([])
+            os.setgid(65534)
+            os.setuid(65534)
+            try:
+                os.open(f"/dev/fd/{inherited}", os.O_RDONLY)
+                reopened = b"reopened"
+            except PermissionError:
+                reopened = b"refused"
+            key = read_protected_totp_key(f"/dev/fd/{inherited}")
+            outcome = reopened + (b" key" if key == bytes.fromhex(KEY_HEX) else b" wrong")
+        finally:
+            os.write(writing, outcome)
+            os._exit(0)
+    os.close(writing)
+    os.waitpid(child, 0)
+    with os.fdopen(reading, "rb") as answer:
+        result = answer.read()
+    assert result.endswith(b" key")
+    if os.uname().sysname == "Linux":
+        assert result == b"refused key"
+
+
 def test_the_wrong_try_key_is_derived_and_never_the_protection_key() -> None:
     """HKDF-SHA256 with a fixed purpose: 32 bytes, the same for the same key, different for
     another key, and never the protection key itself."""

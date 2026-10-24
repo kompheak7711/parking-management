@@ -49011,6 +49011,150 @@
       "test_path": "backend/tests/test_initial_owner_bootstrap_cli.py",
       "status": "implemented",
       "notes": "The bootstrap refuses a hidden but printable character, a stored username over 128 characters (also after lower case grows it), and a display or audit name that is not NFC, holds a hidden character or two spaces in a row, as account creation does; 128 characters and an NFC accented display name are accepted (login slice sub-slice L7b review round 2, DL-081)."
+    },
+    {
+      "test_id": "test_every_local_script_parses_and_reads_secrets_only_from_files",
+      "upstream_ids": [
+        "SEC-073",
+        "DEPLOY-019",
+        "DL-081"
+      ],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_local_run_scripts.py",
+      "status": "implemented",
+      "notes": "Every script of scripts/local parses, never expands a secret from `cat` into a command argument and never traces; the API reads its database addresses from their files and starts in production mode with the key on descriptor 4 on 127.0.0.1:8000; the Owner set-up opens the bootstrap address on descriptor 3 and the blocklist on 5 (login slice sub-slice L7c, Q-2026-10-24-189, DL-081)."
+    },
+    {
+      "test_id": "test_the_secrets_script_makes_private_files_and_prints_no_secret",
+      "upstream_ids": [
+        "DEPLOY-019",
+        "DL-081"
+      ],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_local_run_scripts.py",
+      "status": "implemented",
+      "notes": "make-secrets.sh makes the 0700 folder, eight distinct 48-character password files (0444, read by the database container; the folder is 0700) and four 0600 address files for the right roles and port, prints no password, and a second run changes nothing (login slice sub-slice L7c, Q-2026-10-24-189, DL-081)."
+    },
+    {
+      "test_id": "test_the_certificate_covers_the_local_name_and_localhost_and_chains_to_the_local_authority",
+      "upstream_ids": [
+        "DEPLOY-014",
+        "DL-081"
+      ],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_local_run_scripts.py",
+      "status": "implemented",
+      "notes": "make-certificate.sh makes 0600 private keys, a server certificate for NAME.local, localhost and 127.0.0.1 with server authentication that is not a certificate authority and verifies against the local authority, and refuses a hostname with spaces or shell signs (login slice sub-slice L7c, Q-2026-10-24-189, DL-081)."
+    },
+    {
+      "test_id": "test_the_owner_set_up_refuses_to_run_without_a_terminal",
+      "upstream_ids": [
+        "SEC-073",
+        "DL-081"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_local_run_scripts.py",
+      "status": "implemented",
+      "notes": "bootstrap-owner.sh refuses to start when its input is not a terminal, before sudo or the helper is reached (login slice sub-slice L7c, Q-2026-10-24-189, DL-081)."
+    },
+    {
+      "test_id": "test_the_helper_runs_the_command_as_the_sudo_user_with_only_the_key_descriptor",
+      "upstream_ids": [
+        "SEC-073",
+        "DL-081"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_local_run_scripts.py",
+      "status": "implemented",
+      "notes": "Run as root, the helper runs the command as the sudo user (user, effective user and group), with the 65-byte key readable on descriptor 4, no other descriptor than 0 to 2 and 4 even when another one is passed to it, no SUDO_, USERNAME or MAIL variable, the person's groups and shell, and never prints the key (login slice sub-slice L7c, Q-2026-10-24-189, DL-081)."
+    },
+    {
+      "test_id": "test_the_helper_refuses_an_unprotected_key_root_itself_a_missing_sudo_user_and_other_files",
+      "upstream_ids": [
+        "SEC-073",
+        "DL-081"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_local_run_scripts.py",
+      "status": "implemented",
+      "notes": "The helper refuses a key file the group can read or that root does not own, a sudo user who is root, a run without SUDO_UID and SUDO_GID, a descriptor outside 3 to 9, a sudo group that does not match, a root-only file not called totp_protection_key, and under that name a hard link, a symbolic link, a folder, or a key in a folder others can change (login slice sub-slice L7c review round 1; sub-slice L7c, Q-2026-10-24-189, DL-081)."
+    },
+    {
+      "test_id": "test_the_helper_refuses_to_run_without_root",
+      "upstream_ids": [
+        "SEC-073",
+        "DL-081"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_local_run_scripts.py",
+      "status": "implemented",
+      "notes": "The helper refuses to run when it is not root (login slice sub-slice L7c, Q-2026-10-24-189, DL-081)."
+    },
+    {
+      "test_id": "test_the_local_address_is_lower_case_as_browsers_send_it",
+      "upstream_ids": [
+        "DEPLOY-012",
+        "DL-081"
+      ],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_local_run_scripts.py",
+      "status": "implemented",
+      "notes": "A Mac name with capitals such as Soks-Mac-mini gives the origin https://soks-mac-mini.local:5173, the lower-case form browsers send and the API compares exactly, and a name with a space is refused with no address given (login slice sub-slice L7c review rounds 1 and 2, DL-081)."
+    },
+    {
+      "test_id": "test_the_inner_parts_refuse_to_start_without_the_key_descriptor",
+      "upstream_ids": [
+        "SEC-073",
+        "DL-081"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_local_run_scripts.py",
+      "status": "implemented",
+      "notes": "The inner parts of start-api.sh and bootstrap-owner.sh refuse to start without the helper's PRM_PROTECTED_KEY_FD=4, and with it when descriptor 4 is not open (login slice sub-slice L7c review rounds 1 to 3, DL-081)."
+    },
+    {
+      "test_id": "test_the_owner_set_up_refuses_the_options_it_sets_itself",
+      "upstream_ids": [
+        "SEC-073",
+        "DL-081"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_local_run_scripts.py",
+      "status": "implemented",
+      "notes": "In a terminal, bootstrap-owner.sh refuses the descriptor, key-identifier and time options it sets itself, and the set-up's own parser takes no shortened option that could slip past that check (login slice sub-slice L7c review round 1, DL-081)."
+    },
+    {
+      "test_id": "test_the_helper_is_python_3_9_syntax_for_macos",
+      "upstream_ids": [
+        "SEC-073",
+        "DL-081"
+      ],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_local_run_scripts.py",
+      "status": "implemented",
+      "notes": "The helper parses as Python 3.9, the system Python of macOS that sudo runs, and its first line runs it isolated (-I) from the person's Python settings (login slice sub-slice L7c review round 1, DL-081)."
+    },
+    {
+      "test_id": "test_an_inherited_root_only_key_is_read_after_the_drop_to_another_user",
+      "upstream_ids": [
+        "SEC-073",
+        "DL-081"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_runtime_secrets.py",
+      "status": "implemented",
+      "notes": "Run as root: a child opens a root-only key, drops to user nobody, and the key reader still reads it through /dev/fd/<n> by copying the descriptor, while opening that path again is refused on Linux; fails with the old reader (login slice sub-slice L7c review round 2 blocker, DL-081)."
+    },
+    {
+      "test_id": "test_an_inherited_descriptor_that_is_closed_a_pipe_or_not_root_owned_is_refused",
+      "upstream_ids": [
+        "SEC-073",
+        "DL-081"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_runtime_secrets.py",
+      "status": "implemented",
+      "notes": "The key reader's copy of an inherited /dev/fd/<n> refuses a closed descriptor, a pipe (at once, never waiting) and, when not run as root, a private file the person owns (login slice sub-slice L7c review round 3, DL-081)."
     }
   ]
 }
