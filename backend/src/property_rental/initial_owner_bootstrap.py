@@ -3,14 +3,16 @@
 import json
 import math
 import time
+import unicodedata
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from typing import Final, Protocol
 from uuid import UUID
 
+from property_rental.local_authentication import normalize_local_username
 from property_rental.password_security import blocked_passwords as shared_blocked_passwords
 from property_rental.password_security import validate_new_password
-from property_rental.visible_text import tidy_spaces
+from property_rental.visible_text import HIDDEN_NAME_CHARACTERS, tidy_spaces
 
 RECOVERY_CODE_COUNT: Final = 10
 BOOTSTRAP_ACKNOWLEDGEMENT: Final = "I HAVE STORED THE RECOVERY CODES"
@@ -144,8 +146,26 @@ class BootstrapRequest:
             raise ValueError("invalid initial Owner bootstrap identity")
         # Login sub-slice L2d review round 1 (security): sign-in tidies the typed username
         # (Q-2026-10-22-170 (a)), so a username that tidying would change, such as one with two
-        # spaces in a row, is refused until L7 makes the bootstrap store the sign-in form.
+        # spaces in a row, is refused. Since L7b the stored username is also the sign-in form
+        # (`normalize_local_username`); the refusal stays, so the Owner signs in with what
+        # they typed here.
         if tidy_spaces(self.username) != self.username:
+            raise ValueError("invalid initial Owner bootstrap identity")
+        # L7b review round 1: lower case can undo NFC (J with a combining caron becomes a
+        # decomposed j-caron), so a username whose stored form is not NFC is refused, as
+        # account creation refuses it (`app.assert_account_names`).
+        # L7b review round 2: the rest of the account name rule of account creation
+        # (`app.assert_account_names`, which the bootstrap SQL does not run): 1 to 128
+        # characters, NFC, no two spaces in a row (round 3) and none of the hidden characters,
+        # for the stored username and for the display and audit names as stored.
+        stored = normalize_local_username(self.username)
+        if any(
+            not 1 <= len(name) <= 128
+            or unicodedata.normalize("NFC", name) != name
+            or "  " in name
+            or HIDDEN_NAME_CHARACTERS.search(name) is not None
+            for name in (stored, self.display_name, self.audit_name)
+        ):
             raise ValueError("invalid initial Owner bootstrap identity")
 
 
@@ -351,7 +371,7 @@ class PostgresInitialOwnerBootstrapRepository:
                     request.correlation_id,
                     request.enrollment_id,
                     request.recovery_set_id,
-                    request.username.casefold(),
+                    normalize_local_username(request.username),
                     request.display_name,
                     request.audit_name,
                     bundle.password_verifier,

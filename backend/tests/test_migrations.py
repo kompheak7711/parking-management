@@ -49,6 +49,11 @@ from property_rental.initial_owner_bootstrap import (
     InitialOwnerBootstrapService,
     PostgresInitialOwnerBootstrapRepository,
 )
+from property_rental.local_authentication import (
+    ConnectionBoundary,
+    PostgresLocalAccountRepository,
+    normalize_local_username,
+)
 from property_rental.password_security import PasswordHashService
 from property_rental.recovery_code_consumption import (
     PostgresRecoveryCodeConsumptionRepository,
@@ -4255,6 +4260,78 @@ def test_production_recovery_factory_persists_random_codes_with_independent_salt
         assert first.reason == "code_consumed"
         assert repeated.completed is False
         assert repeated.reason == "code_rejected"
+
+
+def test_the_bootstrap_stores_the_owner_username_as_sign_in_looks_it_up() -> None:
+    """DL-081 (login sub-slice L7b; the L2c binding of Q-2026-10-22-169 (a)): the server set-up
+    stores the Owner's username in the sign-in form (`normalize_local_username`: U+200B removed,
+    NFC, spaces tidied, lower case), not `casefold()`, so the first Owner is found by sign-in.
+    Before L7b, "Sokha\u0301 Straße" was stored as "sokhá strasse" (casefold, not NFC) while
+    sign-in looks up "sokhá straße"."""
+    fixed_totp_time = 1_700_000_000
+    typed = "Sokha\u0301 Stra\u00dfe"
+
+    class ConfirmingTerminal:
+        def read_password(self) -> str:
+            return "correct horse battery staple"
+
+        def present_totp_and_read_code(self, secret: str, *, deadline: float) -> str:
+            assert deadline > time.monotonic()
+            return TotpService().generate_code(
+                TotpSecret.from_base32(secret), at_time=fixed_totp_time
+            )
+
+        def present_recovery_codes(self, codes: tuple[str, ...], *, deadline: float) -> None:
+            assert deadline > time.monotonic()
+
+        def read_acknowledgement(self, *, deadline: float) -> str:
+            assert deadline > time.monotonic()
+            return BOOTSTRAP_ACKNOWLEDGEMENT
+
+    with _temporary_migration_database("prm_bootstrap_sign_in_username") as migration_url:
+        assert _run_alembic("upgrade", "head").returncode == 0
+        database = urlsplit(migration_url).path.removeprefix("/")
+        bootstrap_url = _url_with_database(_required_url(BOOTSTRAP_URL_ENV), database)
+        base = _bootstrap_service_request()
+        request = BootstrapRequest(
+            actor_id=base.actor_id,
+            correlation_id=base.correlation_id,
+            enrollment_id=base.enrollment_id,
+            recovery_set_id=base.recovery_set_id,
+            recovery_code_ids=base.recovery_code_ids,
+            username=typed,
+            display_name=base.display_name,
+            audit_name=base.audit_name,
+        )
+        with psycopg.connect(bootstrap_url) as bootstrap_connection:
+            InitialOwnerBootstrapService(
+                repository=PostgresInitialOwnerBootstrapRepository(
+                    cast(InitialOwnerBootstrapClosureConnection, bootstrap_connection)
+                ),
+                terminal=ConfirmingTerminal(),
+                password_policy=BootstrapPasswordPolicy(blocked_passwords=set()),
+                material_factory=RealBootstrapMaterialFactory(
+                    totp_key=b"k" * 32,
+                    totp_key_identifier="bootstrap-sign-in-username-test",
+                    clock=lambda: fixed_totp_time,
+                ),
+                ceremony_timeout_seconds=120,
+            ).run(request)
+
+        with psycopg.connect(migration_url) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT normalized_username FROM app.user_accounts")
+                assert cursor.fetchall() == [("sokh\u00e1 stra\u00dfe",)]
+        assert normalize_local_username(typed) == "sokh\u00e1 stra\u00dfe"
+
+        runtime_url = _url_with_database(_required_url(RUNTIME_URL_ENV), database)
+        with psycopg.connect(runtime_url) as runtime_connection:
+            accounts = PostgresLocalAccountRepository(cast(ConnectionBoundary, runtime_connection))
+            for spelling in (typed, "SOKH\u00c1 STRA\u00dfE", " sokh\u00e1  stra\u00dfe "):
+                found = accounts.find_by_username(spelling)
+                assert found is not None, spelling
+                assert found.actor_id == str(request.actor_id)
+            assert accounts.find_by_username("sokha strasse") is None
 
 
 def test_v1_027_upgrade_preserves_v1_022_payment_configuration() -> None:

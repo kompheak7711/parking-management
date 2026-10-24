@@ -338,8 +338,9 @@ def test_request_requires_exactly_ten_distinct_recovery_code_identifiers() -> No
 
 def test_request_refuses_a_username_that_sign_in_would_tidy() -> None:
     """DL-081, Q-2026-10-22-170 (a) (login sub-slice L2d review round 1, security): sign-in
-    tidies the typed username, so the bootstrap refuses a username with two spaces in a row,
-    which it would store as typed, until L7 makes it store the sign-in form."""
+    tidies the typed username, so the bootstrap refuses a username with two spaces in a row.
+    Since login sub-slice L7b the bootstrap stores the sign-in form; the refusal stays, so the
+    Owner signs in with what they typed."""
 
     def request_for(username: str) -> BootstrapRequest:
         return BootstrapRequest(
@@ -357,6 +358,69 @@ def test_request_refuses_a_username_that_sign_in_would_tidy() -> None:
         with pytest.raises(ValueError, match="invalid initial Owner bootstrap identity"):
             request_for(refused)
     assert request_for("sokha chan").username == "sokha chan"
+
+
+def test_request_refuses_a_username_whose_stored_form_would_not_be_nfc() -> None:
+    """DL-081 (login sub-slice L7b review round 1): the bootstrap stores the lower-case sign-in
+    form, and lower case can undo NFC: "J\u030cohn" is NFC, but its lower case "j\u030cohn" is
+    not (NFC makes it "\u01f0ohn"). Account creation refuses such a name, so the bootstrap
+    refuses it too; an NFC-safe accented name is still accepted."""
+
+    def request_for(username: str) -> BootstrapRequest:
+        return BootstrapRequest(
+            actor_id=REQUEST.actor_id,
+            correlation_id=REQUEST.correlation_id,
+            enrollment_id=REQUEST.enrollment_id,
+            recovery_set_id=REQUEST.recovery_set_id,
+            recovery_code_ids=REQUEST.recovery_code_ids,
+            username=username,
+            display_name="Initial Owner",
+            audit_name="initial-owner",
+        )
+
+    for refused in ("J\u030cohn", "W\u030aill"):
+        with pytest.raises(ValueError, match="invalid initial Owner bootstrap identity"):
+            request_for(refused)
+    assert request_for("Sokha\u0301 Stra\u00dfe").username == "Sokha\u0301 Stra\u00dfe"
+
+
+def test_request_refuses_names_that_account_creation_refuses() -> None:
+    """DL-081 (login sub-slice L7b review round 2): the bootstrap applies the rest of the
+    account name rule of account creation (`app.assert_account_names`): a hidden but printable
+    character (U+3164 Hangul filler, which looks like nothing, or U+034F), more than 128
+    characters in the stored username (100 dotted capital I become 200 after lower case), and a
+    display or audit name that is not NFC, holds a hidden character or two spaces in a row
+    (review round 3), are refused."""
+
+    def request_for(
+        username: str, display_name: str = "Initial Owner", audit_name: str = "initial-owner"
+    ) -> BootstrapRequest:
+        return BootstrapRequest(
+            actor_id=REQUEST.actor_id,
+            correlation_id=REQUEST.correlation_id,
+            enrollment_id=REQUEST.enrollment_id,
+            recovery_set_id=REQUEST.recovery_set_id,
+            recovery_code_ids=REQUEST.recovery_code_ids,
+            username=username,
+            display_name=display_name,
+            audit_name=audit_name,
+        )
+
+    for refused in (
+        {"username": "admin\u3164"},
+        {"username": "ad\u034fmin"},
+        {"username": "\u0130" * 100},
+        {"username": "o" * 129},
+        {"username": "owner", "display_name": "Initial\u3164Owner"},
+        {"username": "owner", "display_name": "Cafe\u0301"},
+        {"username": "owner", "audit_name": "initial\u2800owner"},
+        {"username": "owner", "display_name": "Sok  Pheak"},
+        {"username": "owner", "audit_name": "Owner  X"},
+    ):
+        with pytest.raises(ValueError, match="invalid initial Owner bootstrap identity"):
+            request_for(**refused)
+    assert request_for("o" * 128).username == "o" * 128
+    assert request_for("owner", display_name="Caf\u00e9").display_name == "Caf\u00e9"
 
 
 def test_recovery_codes_are_written_to_the_dedicated_tty_descriptor_not_stdout(
