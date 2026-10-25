@@ -40,6 +40,7 @@ import {
   terminateDraft,
   type TerminateDraft,
 } from "./TerminateDialogs";
+import { stepOf } from "../moveout/moveoutData";
 import { daysBetween, initialRent, kindOf } from "./leasesData";
 import { hasLeaseText, lt } from "./text";
 
@@ -474,6 +475,15 @@ export function LeaseDetail({
                 {lt(language, "record_move_in")}
               </button>
             )}
+          {stepOf(lease, today, successorId !== null) !== null && (
+            <a
+              className="ui-btn primary"
+              href={hashForPage("moveout", lease.lease_id)}
+            >
+              <Icon name="moveout" />
+              {lt(language, "open_moveout")}
+            </a>
+          )}
         </div>
       </div>
       {failure}

@@ -55478,6 +55478,70 @@
       "test_path": "backend/tests/test_reports_home_migration.py",
       "status": "implemented",
       "notes": "V1-057 (traced at the V1-058 merge): Test the home page checks the person the property and the sections."
+    },
+    {
+      "test_id": "TEST-FE-962",
+      "upstream_ids": [
+        "BR-MOVEOUT-001",
+        "DL-074",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M2: the list shows Leases ending within 60 days or terminated with someone still in, handed-back rows first, with Deposits held; the cards filter the list."
+    },
+    {
+      "test_id": "TEST-FE-963",
+      "upstream_ids": [
+        "BR-MOVEOUT-001",
+        "BR-MOVEOUT-003",
+        "BR-LEASE-023",
+        "BR-OCC-009",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M2: Record hand-back ends a Lease past its End Date on that End Date as signed, then records the move-out with the new Lease version, Unit version and every open Occupancy; Try again sends the same request."
+    },
+    {
+      "test_id": "TEST-FE-964",
+      "upstream_ids": [
+        "BR-MOVEOUT-001",
+        "BR-MOVEOUT-003",
+        "DL-074",
+        "SEC-019"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M2: a terminated Lease uses its termination; a handed-back Lease shows the day and the Rent rule; never moved in skips the hand-back; without leases.terminate a running Lease says a Manager records it."
+    },
+    {
+      "test_id": "TEST-FE-965",
+      "upstream_ids": [
+        "BR-MOVEOUT-001",
+        "SEC-019",
+        "SEC-020",
+        "DL-074"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/moveout/moveoutClient.test.ts",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M2: the client reads move-outs and open Occupancies, records one with the Idempotency-Key and CSRF token, and maps 401/403/404, 409, 5xx and bad answers."
+    },
+    {
+      "test_id": "TEST-FE-966",
+      "upstream_ids": [
+        "BR-MOVEOUT-001",
+        "BR-LEASE-023",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M2: Try again after no answer on ending the Lease sends the same request; a Unit read failure is not called a refusal; Close reads the page again; a signed renewal shows no hand-back."
     }
   ]
 }

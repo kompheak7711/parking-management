@@ -242,6 +242,19 @@ def test_traceability_manifest_covers_executable_tests() -> None:
         "CustomerAccountLedger.test.tsx",
     ):
         executable_ids.update(collect_financial_unit_test_ids(FRONTEND_TEST_DIRECTORY / name))
+    # V1-058 screen rebuild: client tests that carry numbered TEST-FE ids beside older names.
+    for name in (
+        "unitClient.test.ts",
+        "adminClient.test.ts",
+        "invoiceClient.test.ts",
+        "history/historyClient.test.ts",
+        "moveout/moveoutClient.test.ts",
+    ):
+        executable_ids.update(
+            identifier
+            for identifier in collect_financial_unit_test_ids(FRONTEND_TEST_DIRECTORY / name)
+            if re.fullmatch(r"TEST-FE-\d+", identifier)
+        )
     executable_ids.update(
         collect_financial_browser_test_ids(
             FRONTEND_TEST_DIRECTORY / "test" / "financialRecovery.browser.ts"

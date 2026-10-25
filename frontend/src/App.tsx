@@ -68,6 +68,12 @@ import {
   lettersApi as lettersClient,
 } from "./letters/lettersClient";
 import { ltr } from "./letters/text";
+import { MoveoutPage } from "./moveout/MoveoutPage";
+import {
+  type MoveOutApi,
+  moveOutApi as moveOutClient,
+} from "./moveout/moveoutClient";
+import { mt } from "./moveout/text";
 import { lt } from "./leases/text";
 import { LeaseApi, leaseApi as leaseClient } from "./leaseClient";
 import { DepositManagement } from "./DepositManagement";
@@ -144,6 +150,7 @@ export interface AppProps {
   reservationApi?: ReservationApi;
   leaseApi?: LeaseApi;
   lettersApi?: LettersApi;
+  moveOutApi?: MoveOutApi;
   depositApi?: DepositApi;
   utilityApi?: UtilityApi;
   invoiceApi?: InvoiceApi;
@@ -600,6 +607,7 @@ export function App({
   reservationApi = reservationClient,
   leaseApi = leaseClient,
   lettersApi = lettersClient,
+  moveOutApi = moveOutClient,
   depositApi = depositClient,
   utilityApi = utilityClient,
   invoiceApi = invoiceClient,
@@ -1903,9 +1911,31 @@ export function App({
         className="shell-page"
         data-page="moveout"
         hidden={!shown("moveout")}
-        lang="en"
       >
-        <DepositManagement api={depositApi} />
+        <MoveoutPage
+          active={shown("moveout")}
+          capabilities={capabilities}
+          depositApi={depositApi}
+          language={language}
+          leaseApi={leaseApi}
+          moveOutApi={moveOutApi}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+          today={todayInPhnomPenh()}
+          unitApi={unitApi ?? defaultUnitApi}
+        />
+        {/* V1-058 R3 Move-out: the earlier English Deposit forms stay, folded, until the
+            Final Settlement steps replace them. */}
+        <details className="ui-records">
+          <summary lang={language}>
+            <span className="ui-records-title">{mt(language, "records")}</span>
+            <span className="ui-small ui-muted">
+              {mt(language, "records_note")}
+            </span>
+          </summary>
+          <div lang="en">
+            <DepositManagement api={depositApi} />
+          </div>
+        </details>
       </div>
       <div
         className="shell-page"

@@ -1912,3 +1912,72 @@ a.ui-kpi.ui-home-kpi {
   color: var(--heading);
   font-weight: 700;
 }
+
+/* V1-058 R3 Move-out: the numbered steps of one move-out (mock-up app.css .msteps). */
+.ui-msteps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+.ui-mstep {
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.ui-mstep:last-child {
+  border-bottom: 0;
+}
+.ui-mstep .ui-mark {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--border-strong);
+  color: var(--text-2);
+  font-weight: 700;
+  margin-top: 2px;
+}
+.ui-mstep .ui-mark svg {
+  width: 16px;
+  height: 16px;
+}
+.ui-mstep .ui-mark.done {
+  background: var(--ok);
+  border-color: var(--ok);
+  color: #fff;
+}
+.ui-mstep .ui-mark.now {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--selected);
+}
+.ui-mstep .ui-mark.skip {
+  border-style: dashed;
+}
+.ui-mstep.s-todo .ui-mbody,
+.ui-mstep.s-todo .ui-mbody h3 {
+  color: var(--text-2);
+}
+.ui-mbody {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.ui-mbody p {
+  margin: 0;
+}
+.ui-mhead {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+}
+.ui-mhead h3 {
+  margin: 0;
+  font-size: 1.02rem;
+  color: var(--heading);
+}

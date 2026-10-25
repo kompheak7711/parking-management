@@ -445,6 +445,7 @@ const TEXT = {
   // L2b-2: New Lease and Renew
   new_lease: ["New Lease", "កិច្ចសន្យាថ្មី"],
   renew: ["Renew", "បន្ត"],
+  open_moveout: ["Open move-out", "បើកការចាកចេញ"],
   new_title: ["New Lease", "កិច្ចសន្យាថ្មី"],
   // new
   renew_title: ["Renew Lease", "បន្តកិច្ចសន្យា"],
