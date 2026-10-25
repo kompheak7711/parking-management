@@ -1,7 +1,7 @@
 // V1-058 R5: the Invoices page of the rebuilt app. "#/invoices" shows the list;
 // "#/invoices/inv:<id>" one Invoice; "#/invoices/for:<Customer id>" the list for one Customer;
-// "#/invoices/new" Create Invoice. Adjust, void and the billing runs stay in the earlier forms
-// that App shows under this page until the next steps move them into the design.
+// "#/invoices/new" Create Invoice. The billing runs and the Due Date settings stay in the earlier
+// forms that App shows under this page until Settings and Home take them over.
 
 import "../shell/screens.css";
 
@@ -27,7 +27,13 @@ export interface InvoicesPageProps {
   active: boolean;
   invoiceApi: Pick<
     InvoiceApi,
-    "list" | "get" | "issue" | "recordOneTimeCharge" | "create"
+    | "list"
+    | "get"
+    | "issue"
+    | "recordOneTimeCharge"
+    | "create"
+    | "adjust"
+    | "void"
   >;
   leaseApi: Pick<LeaseApi, "list">;
   customerApi: Pick<CustomerApi, "list">;

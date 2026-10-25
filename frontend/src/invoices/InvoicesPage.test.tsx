@@ -148,12 +148,20 @@ function invoices(): InvoiceResource[] {
 
 type PageApi = Pick<
   InvoiceApi,
-  "list" | "get" | "issue" | "recordOneTimeCharge" | "create"
+  | "list"
+  | "get"
+  | "issue"
+  | "recordOneTimeCharge"
+  | "create"
+  | "adjust"
+  | "void"
 >;
 
 function invoiceApi(list = invoices()): PageApi {
   return {
     issue: vi.fn(),
+    adjust: vi.fn(),
+    void: vi.fn(),
     recordOneTimeCharge: vi.fn(),
     create: vi.fn(),
     list: vi.fn().mockResolvedValue({
@@ -805,5 +813,206 @@ describe("Invoices page (V1-058 R5)", () => {
     });
     expect(await screen.findByRole("heading", { name: "Draft" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Issue Invoice" })).toBeNull();
+  });
+
+  it("TEST-FE-906 Adjust lowers or raises one line with a reason and what approves it, shows the new amount, saves once after no answer, and names a fully paid line", async () => {
+    const list = invoices();
+    const partPaid = list[1];
+    if (partPaid === undefined) throw new Error("No Invoice");
+    const adjusted: InvoiceResource = {
+      ...partPaid,
+      adjusted_total: usd(40000),
+      outstanding_balance: usd(20000),
+      version: 2,
+      adjustments: [
+        { reason: "Agreed discount", occurred_at: "2026-10-25T03:00:00Z" },
+      ],
+    };
+    const api = invoiceApi(list);
+    const adjust = vi
+      .fn()
+      .mockRejectedValueOnce(new InvoiceClientError(null, "NETWORK", true))
+      .mockRejectedValueOnce(
+        new InvoiceClientError(409, "INVOICE_LINE_FULLY_PAID", false),
+      )
+      .mockResolvedValue(adjusted);
+    api.adjust = adjust;
+    window.location.hash = "#/invoices/inv:inv-r2";
+    show({ invoices: api, capabilities: new Set(["invoices.adjust"]) });
+    fireEvent.click(await screen.findByRole("button", { name: "Adjust" }));
+    const dialog = screen.getByRole("dialog", { name: "Adjust INV260002" });
+    fireEvent.change(within(dialog).getByLabelText("Amount"), {
+      target: { value: "500" },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save Adjustment" }),
+    );
+    expect(
+      within(dialog).getByText("Choose Lower the amount or Raise the amount."),
+    ).toBeTruthy();
+    expect(within(dialog).getByText("Write the reason.")).toBeTruthy();
+    expect(
+      within(dialog).getByText("Write what approves this Adjustment."),
+    ).toBeTruthy();
+    fireEvent.click(within(dialog).getByLabelText("Lower the amount"));
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save Adjustment" }),
+    );
+    expect(
+      within(dialog).getByText(
+        "Enter an amount up to $450.00, what the line is now.",
+      ),
+    ).toBeTruthy();
+    fireEvent.change(within(dialog).getByLabelText("Amount"), {
+      target: { value: "50" },
+    });
+    expect(
+      within(dialog).getByText("Rent, October goes from $450.00 to $400.00."),
+    ).toBeTruthy();
+    fireEvent.change(within(dialog).getByLabelText("Reason"), {
+      target: { value: "Agreed discount" },
+    });
+    fireEvent.change(within(dialog).getByLabelText("What approves it"), {
+      target: { value: "Owner message 25/10/2026" },
+    });
+    expect(adjust).not.toHaveBeenCalled();
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save Adjustment" }),
+    );
+    expect(
+      await within(dialog).findByText(
+        "We could not tell if this was saved. Press the button again: it is saved only once.",
+      ),
+    ).toBeTruthy();
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save Adjustment" }),
+    );
+    expect(
+      await within(dialog).findByText(
+        "This line is paid in full, so it cannot be raised. Bill the missed amount with Create Invoice instead.",
+      ),
+    ).toBeTruthy();
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save Adjustment" }),
+    );
+    expect(await screen.findByText("Adjustment saved.")).toBeTruthy();
+    const calls = adjust.mock.calls as unknown[][];
+    expect(calls[0]).toEqual(calls[2]);
+    expect(calls[0]).toEqual([
+      "inv-r2",
+      {
+        invoice_line_id: "inv-r2-line",
+        adjustment_type: "CREDIT",
+        amount: { currency: "USD", minor_units: 5000 },
+        source_reference: "Owner message 25/10/2026",
+        reason: "Agreed discount",
+      },
+      1,
+      expect.any(String),
+    ]);
+    expect(screen.getByText("Total after adjustments")).toBeTruthy();
+    expect(screen.getByText("Adjusted: Agreed discount")).toBeTruthy();
+  });
+
+  it("TEST-FE-907 Void ends what is owed with a reason; a paid Invoice cannot be voided; a change meanwhile reads it again; Adjust and Void need their rights and show only on an issued Invoice", async () => {
+    const list = invoices();
+    const unpaid = list[0];
+    if (unpaid === undefined) throw new Error("No Invoice");
+    const voided: InvoiceResource = {
+      ...unpaid,
+      status: "VOID",
+      outstanding_balance: usd(0),
+      version: 2,
+      void_event: {
+        reason: "Billed the wrong Customer",
+        occurred_at: "2026-10-25T03:00:00Z",
+      },
+    };
+    const api = invoiceApi(list);
+    const cancel = vi
+      .fn()
+      .mockRejectedValueOnce(
+        new InvoiceClientError(412, "PRECONDITION_FAILED", false),
+      )
+      .mockResolvedValue(voided);
+    api.void = cancel;
+    const rights = new Set(["invoices.adjust", "invoices.void"]);
+    window.location.hash = "#/invoices/inv:inv-r1";
+    show({ invoices: api, capabilities: rights });
+    fireEvent.click(await screen.findByRole("button", { name: "Void" }));
+    let dialog = screen.getByRole("dialog", { name: "Void INV260001?" });
+    expect(
+      within(dialog).getByText(
+        "Nobody owes this Invoice after this; $450.00 stops being owed. It stays in the list and its History, marked Void. This cannot be undone.",
+      ),
+    ).toBeTruthy();
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Void Invoice" }),
+    );
+    expect(
+      within(dialog).getByText("Write why this Invoice is voided."),
+    ).toBeTruthy();
+    fireEvent.change(within(dialog).getByLabelText("Reason"), {
+      target: { value: "Billed the wrong Customer" },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Void Invoice" }),
+    );
+    expect(
+      await screen.findByText(
+        "This Invoice changed meanwhile. It is shown again as it is now; check it and try again.",
+      ),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Void" }));
+    dialog = screen.getByRole("dialog", { name: "Void INV260001?" });
+    fireEvent.change(within(dialog).getByLabelText("Reason"), {
+      target: { value: "Billed the wrong Customer" },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Void Invoice" }),
+    );
+    expect(await screen.findByText("The Invoice is void.")).toBeTruthy();
+    expect(cancel).toHaveBeenLastCalledWith(
+      "inv-r1",
+      "Billed the wrong Customer",
+      1,
+      expect.any(String),
+    );
+    expect(screen.getByText("Voided: Billed the wrong Customer")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Void" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Adjust" })).toBeNull();
+    cleanup();
+
+    window.location.hash = "#/invoices/inv:inv-r2";
+    show({ invoices: invoiceApi(list), capabilities: rights });
+    fireEvent.click(await screen.findByRole("button", { name: "Void" }));
+    dialog = screen.getByRole("dialog", { name: "Void INV260002?" });
+    expect(
+      within(dialog).getByText(
+        "Money was already paid toward this Invoice, so it cannot be voided. Move or return that payment first.",
+      ),
+    ).toBeTruthy();
+    expect(
+      within(dialog).queryByRole("button", { name: "Void Invoice" }),
+    ).toBeNull();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Close" }));
+    cleanup();
+
+    show({
+      invoices: invoiceApi(list),
+      capabilities: new Set(["invoices.read"]),
+    });
+    expect(
+      await screen.findByRole("button", { name: "Print Invoice" }),
+    ).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Adjust" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Void" })).toBeNull();
+    cleanup();
+
+    window.location.hash = "#/invoices/inv:inv-d1";
+    show({ invoices: invoiceApi(list), capabilities: rights });
+    expect(await screen.findByRole("heading", { name: "Draft" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Adjust" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Void" })).toBeNull();
   });
 });

@@ -1,7 +1,7 @@
 // V1-058 R5: one Invoice (DESIGN.md "Invoice page"): the head with its number, status and
 // Print Invoice, the overdue, void or draft notice, the printed Invoice, the Invoice status card
-// with the bar from the issue date to the Due Date, the Customer, and the History. Receive
-// payment, Adjust, Void and the late-payment card come in the next steps.
+// with the bar from the issue date to the Due Date, the Customer, and the History; Issue for a
+// Draft, Adjust and Void for an issued one. Receive payment and the late-payment card come next.
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -16,6 +16,7 @@ import { Icon } from "../shell/icons";
 import { hashForPage } from "../shell/navigation";
 import { openPageInAddress } from "../shell/useHashPage";
 import type { Language } from "../signInText";
+import { AdjustDialog, VoidDialog } from "./ChangeDialogs";
 import { InvoiceDocument, SheetFrame } from "./InvoiceDocument";
 import { InvoiceChip } from "./InvoicesList";
 import { IssueDialog } from "./IssueDialog";
@@ -227,7 +228,7 @@ export function InvoiceDetail({
   onChanged,
 }: {
   language: Language;
-  api: Pick<InvoiceApi, "get" | "issue">;
+  api: Pick<InvoiceApi, "get" | "issue" | "adjust" | "void">;
   /** Something was saved; the list reads again. */
   onChanged: () => void;
   invoiceId: string;
@@ -240,9 +241,13 @@ export function InvoiceDetail({
 }) {
   const [invoice, setInvoice] = useState<InvoiceResource | null>(null);
   const [problem, setProblem] = useState<"missing" | "failed" | null>(null);
-  const [dialog, setDialog] = useState<"issue" | null>(null);
+  const [dialog, setDialog] = useState<"issue" | "adjust" | "void" | null>(
+    null,
+  );
   const [notice, setNotice] = useState<
-    { kind: "issued"; number: string; due: string } | { kind: "changed" } | null
+    | { kind: "issued"; number: string; due: string }
+    | { kind: "changed" | "adjusted" | "voided" }
+    | null
   >(null);
   const sequence = useRef(0);
   const may = (capability: string) =>
@@ -384,20 +389,51 @@ export function InvoiceDetail({
             <Icon name="print" />
             {ivt(language, "act_print")}
           </button>
+          {state !== "draft" && state !== "void" && may("invoices.adjust") && (
+            <button
+              className="ui-btn"
+              onClick={() => {
+                setNotice(null);
+                setDialog("adjust");
+              }}
+              type="button"
+            >
+              {ivt(language, "act_adjust")}
+            </button>
+          )}
+          {state !== "draft" && state !== "void" && may("invoices.void") && (
+            <button
+              className="ui-btn"
+              onClick={() => {
+                setNotice(null);
+                setDialog("void");
+              }}
+              type="button"
+            >
+              {ivt(language, "act_void")}
+            </button>
+          )}
         </div>
       </div>
       {notice !== null && (
         <div
           className={
-            notice.kind === "issued" ? "ui-notice ok" : "ui-notice warn"
+            notice.kind === "changed" ? "ui-notice warn" : "ui-notice ok"
           }
           role="status"
         >
-          <Icon name={notice.kind === "issued" ? "check" : "alert"} />
+          <Icon name={notice.kind === "changed" ? "alert" : "check"} />
           <p>
             {notice.kind === "issued"
               ? ivt(language, "iss_done", notice.number, dayText(notice.due))
-              : ivt(language, "changed")}
+              : ivt(
+                  language,
+                  notice.kind === "adjusted"
+                    ? "adj_done"
+                    : notice.kind === "voided"
+                      ? "void_done"
+                      : "changed",
+                )}
           </p>
         </div>
       )}
@@ -433,6 +469,34 @@ export function InvoiceDetail({
           today={today}
         />
       )}
+      {(dialog === "adjust" || dialog === "void") &&
+        (() => {
+          const props = {
+            api,
+            invoice,
+            language,
+            onChanged: () => {
+              setDialog(null);
+              setNotice({ kind: "changed" });
+              load();
+              onChanged();
+            },
+            onClose: () => {
+              setDialog(null);
+            },
+            onSaved: (saved: InvoiceResource) => {
+              setDialog(null);
+              setInvoice(saved);
+              setNotice({ kind: dialog === "adjust" ? "adjusted" : "voided" });
+              onChanged();
+            },
+          };
+          return dialog === "adjust" ? (
+            <AdjustDialog {...props} />
+          ) : (
+            <VoidDialog {...props} />
+          );
+        })()}
       {state === "overdue" && invoice.due_date !== null && (
         <div className="ui-notice err" role="note">
           <Icon name="alert" />

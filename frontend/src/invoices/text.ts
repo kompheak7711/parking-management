@@ -355,8 +355,8 @@ const TEXT = {
   records: ["Earlier forms", "ទម្រង់មុន"],
   // new
   records_note: [
-    "Adjust, void, billing runs and Due Date settings, in English, until the next steps move them into this screen.",
-    "កែតម្រូវ ទុកជាមោឃៈ ការចេញវិក្កយបត្រ និងការកំណត់ថ្ងៃកំណត់បង់ ជាភាសាអង់គ្លេស រហូតដល់ជំហានបន្ទាប់ផ្លាស់វាមកអេក្រង់នេះ។",
+    "Billing runs and Due Date settings, in English, until the next steps move them into this screen.",
+    "ការចេញវិក្កយបត្រ និងការកំណត់ថ្ងៃកំណត់បង់ ជាភាសាអង់គ្លេស រហូតដល់ជំហានបន្ទាប់ផ្លាស់វាមកអេក្រង់នេះ។",
   ],
 } as const satisfies Record<string, readonly [string, string]>;
 

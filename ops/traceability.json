@@ -51330,6 +51330,28 @@
       "test_path": "frontend/src/invoices/InvoicesPage.test.tsx",
       "status": "implemented",
       "notes": "V1-058 R5b-2 Issue Invoice: a Draft gets its number with the Settings Due Date, or another date from today on with a reason; a change meanwhile reads the Invoice again; Issue needs invoices.issue."
+    },
+    {
+      "test_id": "TEST-FE-906",
+      "upstream_ids": [
+        "DL-074",
+        "UI-057"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/invoices/InvoicesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5b-3 Adjust: lowers or raises one line with a reason and what approves it, shows the new line amount, cannot lower below $0.00, saves once after no answer, and names a fully paid line that cannot be raised."
+    },
+    {
+      "test_id": "TEST-FE-907",
+      "upstream_ids": [
+        "DL-074",
+        "UI-057"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/invoices/InvoicesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5b-3 Void: ends what is owed with a reason; an Invoice with money paid toward it cannot be voided; a change meanwhile reads it again; Adjust and Void need invoices.adjust and invoices.void and show only on an issued Invoice."
     }
   ]
 }

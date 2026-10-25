@@ -63,3 +63,11 @@ Run rules: frontend-only steps run the frontend gates (format, typecheck, lint, 
 - R7 list: a read route for the one-time-charge Due Date days (Settings); the Draft page "Reason and approval" card needs the charge's reason and approval on the Invoice resource; correcting a Draft stays in the earlier forms.
 - Tests TEST-FE-904, 905; screenshots /mnt/project-files/v1-058/r5b-create/.
 
+## R5b-3 Adjust and Void (2026-10-25)
+- The Invoice page head of an issued Invoice has Adjust (invoices.adjust) and Void (invoices.void) beside Print Invoice. The issued Invoice is never edited.
+- Adjust: which line (when there are more), Lower or Raise the amount, Amount, Reason, What approves it, all required; a live line "Rent goes from $400.00 to $350.00."; a line cannot go below $0.00; a fully paid line cannot be raised (the server's INVOICE_LINE_FULLY_PAID, with "bill the missed amount with Create Invoice").
+- Void: a reason; says what stops being owed and that it cannot be undone. An Invoice with money paid toward it shows "Move or return that payment first" and no Void button (the server refuses it too).
+- Decided by Claude under the owner's 2026-10-23 22:30 rule: the words "Lower the amount" and "Raise the amount" for credit and debit; Void is a plain button (no red), like Terminate.
+- The folded earlier forms now keep only the billing runs and the Due Date settings.
+- Tests TEST-FE-906, 907; screenshots /mnt/project-files/v1-058/r5b-change/.
+

@@ -1432,3 +1432,11 @@ table.ui-table.ui-invlist .ui-phone {
   padding-left: 22px;
   color: var(--text-2);
 }
+/* The live line of a dialog: what the change makes of the amount. */
+.ui-live {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--sunken);
+  font-weight: 600;
+}
