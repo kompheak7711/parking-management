@@ -16,13 +16,30 @@ MOVED_TEST_PATHS: Final = {
     "TEST-FE-029": "frontend/src/UnitManagement.test.tsx",
     "TEST-FE-030": "frontend/src/UnitManagement.test.tsx",
 }
+# V1-058 R7b-6e bills every Service, so this test's name and notes changed; the history checks
+# below read the entry as first recorded.
+CHANGED_ENTRIES: Final[dict[str, dict[str, object]]] = {
+    "test_initial_invoice_preserves_rent_service_components_and_bills_every_service": {
+        "test_id": (
+            "test_initial_invoice_preserves_rent_service_components_and_excludes_unapproved_type"
+        ),
+        "notes": (
+            "A real authenticated financial-role call creates one issued Initial Rent Invoice "
+            "with reconstructable July proration and August full-month components for Rent and "
+            "Trash Collection. Distinct effective Service rates remain linked at component level, "
+            "while equally configured Internet is not billed."
+        ),
+    },
+}
 
 
 def as_first_recorded(entries: list[dict[str, object]]) -> list[dict[str, object]]:
-    """Return the entries with each moved test path put back as first recorded."""
+    """Return the entries with each moved test path and changed entry put back as first recorded."""
     return [
         {**entry, "test_path": MOVED_TEST_PATHS[str(entry["test_id"])]}
         if entry["test_id"] in MOVED_TEST_PATHS
+        else {**entry, **CHANGED_ENTRIES[str(entry["test_id"])]}
+        if entry["test_id"] in CHANGED_ENTRIES
         else entry
         for entry in entries
     ]

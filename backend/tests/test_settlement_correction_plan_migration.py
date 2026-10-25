@@ -1955,7 +1955,9 @@ def test_credit_after_closure_follows_the_rent_first_proposal_or_the_designation
         assert plan_refusal(
             url, case, plan(*(credit_step(credit, line, owed[line]) for line in order)), shape
         ) == ("55000", RENT_FIRST)
-    designation = "Primary Tenant asked on 2026-10-07, by signed note, to clear Internet first"
+    designation = (
+        "Primary Tenant asked on 2026-10-07, by signed note, to clear the Service line first"
+    )
     steps = plan(
         {**credit_step(credit, internet, owed[internet]), "customer_designation": designation},
         credit_step(credit, rent, owed[rent]),

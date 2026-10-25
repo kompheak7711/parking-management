@@ -73,8 +73,8 @@ const TEXT = {
   // new
   none_here: ["No letters here.", "គ្មានលិខិតនៅទីនេះទេ។"],
   how_count: [
-    "Day 1 is the 1st of the Rent month. November Rent gives the day-20 letter on 20/11 and the day-30 letter on 30/11. Only unpaid Rent counts, not Trash or Utilities. The Invoice Due Date is a different date: it starts the late-payment charge.",
-    "ថ្ងៃទី១ គឺថ្ងៃទី១ នៃខែថ្លៃឈ្នួល។ ថ្លៃឈ្នួលខែវិច្ឆិកា ផ្តល់លិខិតថ្ងៃទី២០ នៅ 20/11 និងលិខិតថ្ងៃទី៣០ នៅ 30/11។ គិតតែថ្លៃឈ្នួលមិនទាន់បង់ មិនគិតសំរាម ឬទឹកភ្លើងទេ។ ថ្ងៃផុតកំណត់វិក្កយបត្រ ជាថ្ងៃផ្សេង៖ វាចាប់ផ្តើមថ្លៃពិន័យបង់យឺត។",
+    "Day 1 is the 1st of the Rent month. November Rent gives the day-20 letter on 20/11 and the day-30 letter on 30/11. Only unpaid Rent counts, not Services or Utilities. The Invoice Due Date is a different date: it starts the late-payment charge.",
+    "ថ្ងៃទី១ គឺថ្ងៃទី១ នៃខែថ្លៃឈ្នួល។ ថ្លៃឈ្នួលខែវិច្ឆិកា ផ្តល់លិខិតថ្ងៃទី២០ នៅ 20/11 និងលិខិតថ្ងៃទី៣០ នៅ 30/11។ គិតតែថ្លៃឈ្នួលមិនទាន់បង់ មិនគិតសេវា ឬទឹកភ្លើងទេ។ ថ្ងៃផុតកំណត់វិក្កយបត្រ ជាថ្ងៃផ្សេង៖ វាចាប់ផ្តើមថ្លៃពិន័យបង់យឺត។",
   ],
   nothing: [
     "A letter never ends the Lease, adds a fee or changes the Unit by itself. The Owner or a Manager decides each next step.",

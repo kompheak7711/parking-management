@@ -794,8 +794,10 @@ def test_a_deposit_application_on_another_line_of_the_invoice_stays(
         )
         sign_lease(connection, lease, human)
         for code, name, first_rate, second_rate in (
+            # Trash Collection alone gives the two Service lines (the July part month and
+            # August). Since V1-058 R7b-6e an Internet term would be billed too, so it is left out
+            # to keep this Invoice as it was.
             ("TRASH_COLLECTION", "Trash Collection", 1_000, 1_200),
-            ("INTERNET", "Internet", 2_500, 2_700),
         ):
             add_service(
                 connection,

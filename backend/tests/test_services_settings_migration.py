@@ -113,8 +113,8 @@ def test_a_service_is_added_with_its_first_rate_and_approval_and_a_repeat_answer
     added = add_service(
         connection, property_id, actor_id, "Trash Collection", trash["service_type_id"], service_id
     )
-    # Billing knows only TRASH_COLLECTION: the first "Trash Collection" gets it (if the Property
-    # has none yet); any other Service gets a code from its id that no billing rule reads.
+    # The first "Trash Collection" gets TRASH_COLLECTION (if the Property has none yet); any other
+    # Service gets a code from its id (since R7b-6e it is billed like Trash Collection).
     trash_code = value(
         connection,
         "SELECT count(*) FROM app.property_services WHERE property_id=%s "

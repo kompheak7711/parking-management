@@ -17434,7 +17434,7 @@
       "notes": "The bounded final fixed-Service calculation applies the approved partial-month coverage with actual-day half-up proration or preserves the complete configured monthly rate for an approved full-month treatment."
     },
     {
-      "test_id": "test_initial_invoice_preserves_rent_service_components_and_excludes_unapproved_type",
+      "test_id": "test_initial_invoice_preserves_rent_service_components_and_bills_every_service",
       "upstream_ids": [
         "BR-RENT-005",
         "BR-RENT-006",
@@ -17457,7 +17457,7 @@
       "test_level": "integration",
       "test_path": "backend/tests/test_billing_service_migration.py",
       "status": "implemented",
-      "notes": "A real authenticated financial-role call creates one issued Initial Rent Invoice with reconstructable July proration and August full-month components for Rent and Trash Collection. Distinct effective Service rates remain linked at component level, while equally configured Internet is not billed."
+      "notes": "A real authenticated financial-role call creates one issued Initial Rent Invoice with reconstructable July proration and August full-month components for Rent and Trash Collection. Distinct effective Service rates remain linked at component level. Since V1-058 R7b-6e (DL-075) a configured Internet Service the Lease holds is billed the same way on its own lines after Trash Collection."
     },
     {
       "test_id": "test_initial_invoice_bills_service_that_becomes_eligible_only_in_second_month",
@@ -56266,6 +56266,71 @@
       "test_path": "frontend/src/settings/serviceSettingsClient.test.ts",
       "status": "implemented",
       "notes": "V1-058 R7b-6d: the cleaning settings client reads the answer strictly, sends a new rate with its id, a change with its version and a removal with the CSRF token, and maps UNIT_TYPE_NEEDS_CLEANING_RATE."
+    },
+    {
+      "test_id": "test_a_service_that_covers_only_part_of_a_month_is_refused_like_trash_collection",
+      "upstream_ids": [
+        "BR-SVC-001",
+        "BR-SVC-012",
+        "BR-SVC-014",
+        "DL-075"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_billing_service_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6e: a Service other than Trash Collection whose Lease term covers only part of a billed month is refused like Trash Collection, with no Invoice written."
+    },
+    {
+      "test_id": "test_a_service_approval_that_ends_mid_month_is_refused_like_trash_collection",
+      "upstream_ids": [
+        "BR-SVC-001",
+        "BR-SVC-012",
+        "BR-SVC-014",
+        "DL-075"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_billing_service_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6e: a Service whose approval period ends in the middle of a billed month is refused like Trash Collection, with no Invoice written."
+    },
+    {
+      "test_id": "test_a_service_with_no_rate_for_the_month_is_refused",
+      "upstream_ids": [
+        "BR-SVC-001",
+        "BR-SVC-012",
+        "BR-SVC-014",
+        "DL-075"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_billing_service_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6e: a Service with no rate in force on the first day of a billed month is refused (Applicable Service rate is missing), with no Invoice written."
+    },
+    {
+      "test_id": "test_two_other_services_without_trash_are_billed_by_month_then_name",
+      "upstream_ids": [
+        "BR-SVC-001",
+        "BR-SVC-012",
+        "BR-SVC-014",
+        "DL-075"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_billing_service_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6e: two Services other than Trash Collection are billed on their own lines, the first month's lines then the following month's, by Service name within a month, with prorated and full amounts."
+    },
+    {
+      "test_id": "test_trash_only_in_the_second_month_keeps_its_line_before_the_other_services",
+      "upstream_ids": [
+        "BR-SVC-001",
+        "BR-SVC-012",
+        "BR-SVC-014",
+        "DL-075"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_billing_service_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6e: when Trash Collection starts only in the following month, its one line comes before the other Service lines and the line numbers stay in order."
     }
   ]
 }

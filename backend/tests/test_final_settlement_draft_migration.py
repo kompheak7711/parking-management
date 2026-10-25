@@ -884,7 +884,7 @@ def test_credit_on_a_rent_invoice_follows_the_rent_first_proposal_order(
 
 def mixed_rent_case(url: str) -> dict[str, Any]:
     """A Lease that never moved in, whose Initial Rent Invoice has a Rent line and two recurring
-    Service lines (the billing fixture's Trash Collection and Internet terms, without its
+    Service lines (the billing fixture's Trash Collection term for July and August, without its
     occupancy), terminated with no ground; the Primary Tenant holds 500,000 of Credit, more than
     the Invoice owes, so the Credit must pay the whole Invoice (owner answer 2 to Q-2026-10-05-29).
     Initial Rent has no Late-payment review (migration 68)."""
@@ -900,8 +900,10 @@ def mixed_rent_case(url: str) -> dict[str, Any]:
         )
         sign_lease(connection, lease, human)
         for code, name, first_rate, second_rate in (
+            # Trash Collection alone gives the two Service lines (the July part month and
+            # August). Since V1-058 R7b-6e an Internet term would be billed too, so it is left out
+            # to keep this Invoice as it was.
             ("TRASH_COLLECTION", "Trash Collection", 1_000, 1_200),
-            ("INTERNET", "Internet", 2_500, 2_700),
         ):
             add_service(
                 connection,
@@ -986,7 +988,9 @@ def test_credit_on_a_mixed_rent_invoice_follows_the_proposal_or_a_designation(
     assert cast(dict[str, Any], proposed["payload"])["closing_balance_usd_cents"] == 0
     withdraw(case, proposed)
     # The Customer's designation lets staff pay a Service line first; the text is kept.
-    designation = "Primary Tenant asked on 2026-10-05, by signed note, to clear Internet first"
+    designation = (
+        "Primary Tenant asked on 2026-10-05, by signed note, to clear the Service line first"
+    )
     designated = record(case, (credit(internet, designation), credit(rent), credit(trash)))
     stored = cast(dict[str, Any], designated["payload"])["steps"]
     assert [step["customer_designation"] for step in stored] == [designation, None, None]

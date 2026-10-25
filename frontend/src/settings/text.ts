@@ -667,10 +667,6 @@ const TEXT = {
   ],
   sv_added: ["{0} added.", "បានបន្ថែម {0}។"],
   sv_changed: ["{0} saved.", "បានរក្សាទុក {0}។"],
-  sv_bill_gap: [
-    "For now only Trash Collection is billed on the Rent Invoice. Other Services are saved, and are billed after a later update.",
-    "សម្រាប់ពេលនេះ មានតែសេវាប្រមូលសំរាមប៉ុណ្ណោះ ដែលគិតថ្លៃលើវិក្កយបត្រថ្លៃឈ្នួល។ សេវាផ្សេងទៀតត្រូវបានរក្សាទុក ហើយនឹងគិតថ្លៃបន្ទាប់ពីការធ្វើបច្ចុប្បន្នភាពនៅពេលក្រោយ។",
-  ],
   sv_read_failed: [
     "The Service names and types could not be read just now, so they cannot be changed. The rates still show.",
     "មិនអាចអានឈ្មោះ និងប្រភេទសេវាបានទេឥឡូវនេះ ដូច្នេះមិនអាចប្តូរបានទេ។ អត្រានៅតែបង្ហាញ។",

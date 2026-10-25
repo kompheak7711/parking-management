@@ -438,10 +438,11 @@ def test_a_put_back_goes_on_the_adjustment_s_line_even_when_an_earlier_line_owes
     before): a credit Adjustment on a paid Service line released its value as Credit while the
     Rent line still owes. The Rent-first order would put that Credit on the Rent line; the
     reversal puts it back on the Service line with the label put back by a correction, and the
-    Rent line still owes all of its amount."""
+    Rent line still owes all of its amount. The Internet lines (billed since V1-058 R7b-6e) owe
+    too and are not touched."""
     url = migrated_database_url
     with psycopg.connect(url) as connection:
-        human, prop, customer, lease, _ = setup_billing_source(connection)
+        human, prop, customer, lease, _ = setup_billing_source(connection, configure_internet=True)
     invoice = (
         PostgresRentBillingService(financial_database_url(), prop, human)
         .generate(initial_command(lease, uuid4()), actor=authenticated(human, prop))
@@ -482,6 +483,14 @@ def test_a_put_back_goes_on_the_adjustment_s_line_even_when_an_earlier_line_owes
         "PUT_BACK_BY_CORRECTION",
     )
     assert outstanding(url, service) == 0 and outstanding(url, rent) == rent_due
+    internet = rows(
+        url,
+        "SELECT line.id FROM app.invoice_lines AS line JOIN app.property_services AS service "
+        "ON service.id=line.property_service_id WHERE line.invoice_id=%s "
+        "AND service.service_code='INTERNET' ORDER BY line.line_sequence",
+        invoice,
+    )
+    assert [outstanding(url, UUID(str(found))) for (found,) in internet] == [403, 2_700]
     reconciled(url, invoice)
 
 

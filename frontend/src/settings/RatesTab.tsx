@@ -706,9 +706,7 @@ export function RatesTab({
             </details>
           )}
           <div className="ui-tfoot">
-            <span>
-              {sst(language, "se_svc_n")} {sst(language, "sv_bill_gap")}
-            </span>
+            <span>{sst(language, "se_svc_n")}</span>
           </div>
         </section>
 

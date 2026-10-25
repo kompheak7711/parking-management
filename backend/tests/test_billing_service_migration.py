@@ -181,7 +181,7 @@ def setup_billing_source(
     connection: Connection[tuple[object, ...]],
     *,
     configure_trash: bool = True,
-    configure_internet: bool = True,
+    configure_internet: bool = False,
     move_in_date: date = date(2026, 7, 27),
     lease_end_date: date = date(2027, 6, 30),
 ) -> tuple[UUID, UUID, UUID, UUID, UUID]:
@@ -258,20 +258,24 @@ def recurring_command(lease_id: UUID, **changes: object) -> GenerateRentInvoiceC
     return GenerateRentInvoiceCommand(**values)  # type: ignore[arg-type]
 
 
-def test_initial_invoice_preserves_rent_service_components_and_excludes_unapproved_type(
+def test_initial_invoice_preserves_rent_service_components_and_bills_every_service(
     connection: Connection[tuple[object, ...]],
 ) -> None:
-    actor_id, property_id, _, lease_id, occupancy_id = setup_billing_source(connection)
+    # V1-058 R7b-6e: every Service the Lease holds is billed like Trash Collection, each on its
+    # own lines after the Trash Collection lines.
+    actor_id, property_id, _, lease_id, occupancy_id = setup_billing_source(
+        connection, configure_internet=True
+    )
     service = PostgresRentBillingService(financial_database_url(), property_id, actor_id)
     result = service.generate(
         initial_command(lease_id, occupancy_id), actor=authenticated(actor_id, property_id)
     )
     assert result.rent_usd_cents == 92_903
-    assert result.service_usd_cents == 1_361
-    assert result.total_usd_cents == 94_264
+    assert result.service_usd_cents == 1_361 + 3_103
+    assert result.total_usd_cents == 92_903 + 1_361 + 3_103
     assert result.due_date == date(2026, 8, 1)
     assert result.period_end == date(2026, 8, 31)
-    assert result.service_line_count == 2
+    assert result.service_line_count == 4
     assert result.status == "UNPAID"
     audit_row = connection.execute(
         "SELECT invoice.invoice_date,invoice.issued_at,invoice.created_at,command.completed_at,"
@@ -300,6 +304,8 @@ def test_initial_invoice_preserves_rent_service_components_and_excludes_unapprov
     ).fetchall() == [
         (2, "TRASH_COLLECTION", 161, True, 1_000),
         (3, "TRASH_COLLECTION", 1_200, True, 1_200),
+        (4, "INTERNET", 403, True, 2_500),
+        (5, "INTERNET", 2_700, True, 2_700),
     ]
     assert connection.execute(
         "SELECT line.line_sequence,component_sequence,component_kind,"
@@ -313,6 +319,225 @@ def test_initial_invoice_preserves_rent_service_components_and_excludes_unapprov
     ).fetchall() == [
         (2, 1, "PRORATED_MOVE_IN_MONTH", 1_000, 5, 31, 161),
         (3, 1, "FULL_FOLLOWING_MONTH", 1_200, 31, 31, 1_200),
+        (4, 1, "PRORATED_MOVE_IN_MONTH", 2_500, 5, 31, 403),
+        (5, 1, "FULL_FOLLOWING_MONTH", 2_700, 31, 31, 2_700),
+    ]
+    # Each line is named by its Service and keeps its own term and approval period.
+    assert connection.execute(
+        "SELECT line.description,line.period_start,line.period_end,"
+        "line.lease_service_term_id IS NOT NULL,line.service_approval_period_id IS NOT NULL,"
+        "line.calculation_trace->>'service_code' FROM app.invoice_lines AS line "
+        "WHERE line.invoice_id=%s AND line.line_sequence>=4 ORDER BY line.line_sequence",
+        (result.invoice_id,),
+    ).fetchall() == [
+        ("Internet", date(2026, 7, 27), date(2026, 7, 31), True, True, "INTERNET"),
+        ("Internet", date(2026, 8, 1), date(2026, 8, 31), True, True, "INTERNET"),
+    ]
+    # A recurring month bills each Service in full at the rate in force on the 1st.
+    recurring = service.generate(
+        recurring_command(lease_id), actor=authenticated(actor_id, property_id)
+    )
+    assert connection.execute(
+        "SELECT line.line_sequence,line.description,line.amount_usd_cents,component.component_kind "
+        "FROM app.invoice_lines AS line JOIN app.invoice_line_calculation_components AS component "
+        "ON component.invoice_line_id=line.id WHERE line.invoice_id=%s "
+        "AND line.category='SERVICE_CHARGES' ORDER BY line.line_sequence",
+        (recurring.invoice_id,),
+    ).fetchall() == [
+        (2, "Trash Collection", 1_200, "FULL_RECURRING_MONTH"),
+        (3, "Internet", 2_700, "FULL_RECURRING_MONTH"),
+    ]
+
+
+def test_a_service_that_covers_only_part_of_a_month_is_refused_like_trash_collection(
+    connection: Connection[tuple[object, ...]],
+) -> None:
+    actor_id, property_id, _, lease_id, occupancy_id = setup_billing_source(
+        connection, configure_trash=False
+    )
+    add_service(
+        connection,
+        actor_id=actor_id,
+        property_id=property_id,
+        lease_id=lease_id,
+        code="INTERNET",
+        display_name="Internet",
+        first_rate=2_500,
+        second_rate=2_700,
+        applicable_from=date(2026, 8, 15),
+    )
+    connection.commit()
+    _assert_refused_without_invoice(
+        connection,
+        actor_id,
+        property_id,
+        lease_id,
+        occupancy_id,
+        "Partial-month Service configuration is unsupported",
+    )
+
+
+def _assert_refused_without_invoice(
+    connection: Connection[tuple[object, ...]],
+    actor_id: UUID,
+    property_id: UUID,
+    lease_id: UUID,
+    occupancy_id: UUID,
+    message: str,
+) -> None:
+    with pytest.raises(BillingInvalidError) as refused:
+        PostgresRentBillingService(financial_database_url(), property_id, actor_id).generate(
+            initial_command(lease_id, occupancy_id), actor=authenticated(actor_id, property_id)
+        )
+    assert message in str(refused.value.__cause__)
+    assert connection.execute(
+        "SELECT count(*) FROM app.invoices WHERE lease_id=%s", (lease_id,)
+    ).fetchone() == (0,)
+
+
+def test_a_service_approval_that_ends_mid_month_is_refused_like_trash_collection(
+    connection: Connection[tuple[object, ...]],
+) -> None:
+    actor_id, property_id, _, lease_id, occupancy_id = setup_billing_source(connection)
+    add_service(
+        connection,
+        actor_id=actor_id,
+        property_id=property_id,
+        lease_id=lease_id,
+        code="INTERNET_HALF",
+        display_name="Internet half month",
+        first_rate=2_500,
+        second_rate=2_700,
+        approval_through=date(2026, 8, 15),
+        applicable_through=date(2026, 8, 15),
+    )
+    connection.commit()
+    _assert_refused_without_invoice(
+        connection,
+        actor_id,
+        property_id,
+        lease_id,
+        occupancy_id,
+        "Partial-month Service configuration is unsupported",
+    )
+
+
+def test_a_service_with_no_rate_for_the_month_is_refused(
+    connection: Connection[tuple[object, ...]],
+) -> None:
+    actor_id, property_id, _, lease_id, occupancy_id = setup_billing_source(connection)
+    add_service(
+        connection,
+        actor_id=actor_id,
+        property_id=property_id,
+        lease_id=lease_id,
+        code="INTERNET_LATE",
+        display_name="Internet late rate",
+        first_rate=2_500,
+        second_rate=2_700,
+        first_rate_effective=date(2026, 8, 1),
+        second_rate_effective=date(2026, 9, 1),
+    )
+    connection.commit()
+    _assert_refused_without_invoice(
+        connection,
+        actor_id,
+        property_id,
+        lease_id,
+        occupancy_id,
+        "Applicable Service rate is missing",
+    )
+
+
+def test_two_other_services_without_trash_are_billed_by_month_then_name(
+    connection: Connection[tuple[object, ...]],
+) -> None:
+    actor_id, property_id, _, lease_id, occupancy_id = setup_billing_source(
+        connection, configure_trash=False
+    )
+    for code, name, first, second in (
+        ("INTERNET", "Internet", 2_500, 2_700),
+        ("CABLE_TV", "Cable TV", 1_500, 1_600),
+    ):
+        add_service(
+            connection,
+            actor_id=actor_id,
+            property_id=property_id,
+            lease_id=lease_id,
+            code=code,
+            display_name=name,
+            first_rate=first,
+            second_rate=second,
+        )
+    connection.commit()
+    result = PostgresRentBillingService(financial_database_url(), property_id, actor_id).generate(
+        initial_command(lease_id, occupancy_id), actor=authenticated(actor_id, property_id)
+    )
+    assert result.service_usd_cents == 242 + 403 + 1_600 + 2_700
+    assert result.service_line_count == 4
+    assert connection.execute(
+        "SELECT line.line_sequence,line.description,line.period_start,line.amount_usd_cents "
+        "FROM app.invoice_lines AS line WHERE line.invoice_id=%s "
+        "AND line.category='SERVICE_CHARGES' ORDER BY line.line_sequence",
+        (result.invoice_id,),
+    ).fetchall() == [
+        (2, "Cable TV", date(2026, 7, 27), 242),
+        (3, "Internet", date(2026, 7, 27), 403),
+        (4, "Cable TV", date(2026, 8, 1), 1_600),
+        (5, "Internet", date(2026, 8, 1), 2_700),
+    ]
+
+
+def test_trash_only_in_the_second_month_keeps_its_line_before_the_other_services(
+    connection: Connection[tuple[object, ...]],
+) -> None:
+    # 2024 dates: the test database keeps each Service's approval periods between tests.
+    actor_id, property_id, _, lease_id, occupancy_id = setup_billing_source(
+        connection,
+        configure_trash=False,
+        move_in_date=date(2024, 7, 27),
+        lease_end_date=date(2025, 6, 30),
+    )
+    for code, name, first, second, start in (
+        ("INTERNET", "Internet", 2_500, 2_700, date(2024, 7, 1)),
+        ("TRASH_COLLECTION", "Trash Collection", 1_000, 1_200, date(2024, 8, 1)),
+    ):
+        add_service(
+            connection,
+            actor_id=actor_id,
+            property_id=property_id,
+            lease_id=lease_id,
+            code=code,
+            display_name=name,
+            first_rate=first,
+            second_rate=second,
+            approval_from=start,
+            approval_through=date(2024, 12, 31),
+            applicable_from=max(start, date(2024, 7, 27)),
+            applicable_through=date(2024, 12, 31),
+            first_rate_effective=date(2024, 7, 1),
+            second_rate_effective=date(2024, 8, 1),
+        )
+    connection.commit()
+    result = PostgresRentBillingService(financial_database_url(), property_id, actor_id).generate(
+        initial_command(
+            lease_id,
+            occupancy_id,
+            period_start=date(2024, 7, 27),
+            issued_at=datetime(2024, 7, 26, 17, 0, 1, tzinfo=UTC),
+        ),
+        actor=authenticated(actor_id, property_id),
+    )
+    assert result.service_usd_cents == 1_200 + 403 + 2_700
+    assert connection.execute(
+        "SELECT line.line_sequence,line.description,line.period_start,line.amount_usd_cents "
+        "FROM app.invoice_lines AS line WHERE line.invoice_id=%s "
+        "AND line.category='SERVICE_CHARGES' ORDER BY line.line_sequence",
+        (result.invoice_id,),
+    ).fetchall() == [
+        (2, "Trash Collection", date(2024, 8, 1), 1_200),
+        (3, "Internet", date(2024, 7, 27), 403),
+        (4, "Internet", date(2024, 8, 1), 2_700),
     ]
 
 
@@ -1420,7 +1645,7 @@ def test_v1_040_is_forward_only_and_is_the_migration_head(
     connection: Connection[tuple[object, ...]],
 ) -> None:
     assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-        "20270317_236",
+        "20270318_237",
     )
     with pytest.raises(RuntimeError, match="forward-only"):
         command.downgrade(Config(str(Path(__file__).parents[1] / "alembic.ini")), "-1")

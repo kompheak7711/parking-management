@@ -281,7 +281,11 @@ const TEXT = {
   c_UTIL: ["Utilities", "ទឹកភ្លើង"],
   c_UTIL_s: ["Electricity and water", "ភ្លើង និងទឹក"],
   c_SVC: ["Services", "សេវា"],
-  c_SVC_s: ["Trash Collection", "ការប្រមូលសំរាម"],
+  // R7b-6e: every Service is billed, not only Trash Collection.
+  c_SVC_s: [
+    "Trash Collection and other Services",
+    "ការប្រមូលសំរាម និងសេវាផ្សេងទៀត",
+  ],
   c_LATE: ["Late-payment charges", "ថ្លៃពិន័យបង់យឺត"],
   // new: the app adds the charge itself (DL-076, slice 11g); no manager confirms it.
   c_LATE_s: [
