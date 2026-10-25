@@ -29,7 +29,12 @@ export type TodoKind =
   | "refund_due";
 
 export interface HomeCards {
-  units_occupied?: { occupied: number; total: number };
+  units_occupied?: {
+    occupied: number;
+    reserved: number;
+    vacant: number;
+    total: number;
+  };
   pending_payment?: { amount_usd_cents: number; invoice_count: number };
   overdue?: { amount_usd_cents: number; invoice_count: number };
   // "Paid for this month": the billed fields come with Invoices, the received fields with
@@ -42,7 +47,12 @@ export interface HomeCards {
     payment_count?: number;
   };
   lease_renewal?: { count: number; end_on_or_before: string };
-  waiting_for_approval?: { count: number };
+  // Money out: Refund and Payment return drafts, which pay money when confirmed.
+  waiting_for_approval?: {
+    count: number;
+    money_out_usd_cents: number;
+    money_out_count: number;
+  };
   meter_readings_missing?: { count: number; reading_date: string };
   letters_due?: { count: number; day_20: number; day_30: number };
 }
@@ -68,14 +78,83 @@ export interface TodoItem {
   count?: number;
 }
 
+// The line under the to-do list. The billing fields come with Invoices, the rate with Payments.
+export interface HomeJobs {
+  last_billing_at?: string | null;
+  next_billing_date?: string;
+  rate_updated_at?: string | null;
+}
+
 export interface HomePage {
   as_of: string;
   business_date: string;
   timezone: string;
   sections: HomeSection[];
   cards: HomeCards;
+  jobs: HomeJobs;
   todo: TodoItem[];
   todo_counts: Record<TodoGroup, number>;
+}
+
+export type TotalsReport =
+  | "total_income"
+  | "total_payment"
+  | "total_electricity"
+  | "total_water";
+
+export interface TotalsFilter {
+  unitId?: string;
+  floor?: string;
+  // dd/mm/yyyy on screen; ISO yyyy-mm-dd here. Only the month of each date counts.
+  from?: string;
+  to?: string;
+}
+
+// One year of a Totals table: twelve months, January first; null is a month with no record
+// (shown blank, never zero). Utility tables add the quantity as exact decimal text.
+export interface TotalsYear {
+  year: number;
+  months: (number | null)[];
+  total: number;
+  quantities?: (string | null)[];
+  total_quantity?: string;
+  estimate_months?: boolean[];
+}
+
+export interface TotalsPage {
+  report: TotalsReport;
+  currency: "USD";
+  filter: {
+    unit_id: string | null;
+    unit_number: string | null;
+    floor: string | null;
+    from: string | null;
+    to: string | null;
+  };
+  years: TotalsYear[];
+  summary: {
+    total: number;
+    highest_month: { month: string; amount: number } | null;
+    highest_unit: {
+      unit_id: string;
+      unit_number: string | null;
+      amount: number;
+    } | null;
+    // Money that belongs to no Unit; it counts only in the whole-Property table.
+    no_unit_amount: number;
+    total_quantity?: string;
+    measurement_unit?: "KWH" | "M3";
+  };
+  chart: {
+    // parts: Income rent, utilities, move_out_and_damage, other; Payments paid_to_invoices,
+    // deposits, other; Utilities reading, estimate.
+    months: { month: string; parts: Record<string, number> }[];
+    top_units: {
+      unit_id: string;
+      unit_number: string | null;
+      amount: number;
+    }[];
+  };
 }
 
 export class ReportsUnavailableError extends Error {
@@ -128,6 +207,7 @@ function homePage(data: Record<string, unknown>): HomePage {
     typeof data.business_date !== "string" ||
     !Array.isArray(data.sections) ||
     !isObject(data.cards) ||
+    !isObject(data.jobs) ||
     !Array.isArray(data.todo) ||
     !isObject(data.todo_counts) ||
     !data.todo.every(
@@ -143,9 +223,54 @@ function homePage(data: Record<string, unknown>): HomePage {
   return data as unknown as HomePage;
 }
 
+function totalsPage(data: Record<string, unknown>): TotalsPage {
+  if (
+    typeof data.report !== "string" ||
+    !Array.isArray(data.years) ||
+    !isObject(data.summary) ||
+    !isObject(data.chart) ||
+    !isObject(data.filter) ||
+    !data.years.every(
+      (year) =>
+        isObject(year) &&
+        typeof year.year === "number" &&
+        Array.isArray(year.months) &&
+        year.months.length === 12,
+    )
+  ) {
+    throw new ReportsUnavailableError();
+  }
+  return data as unknown as TotalsPage;
+}
+
+function query(values: Record<string, string | undefined>): string {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(values)) {
+    if (value !== undefined && value !== "") search.set(key, value);
+  }
+  const text = search.toString();
+  return text ? `?${text}` : "";
+}
+
 export const reportsApi = {
   home: async (propertyId: string): Promise<HomePage> =>
     homePage(
       await read(`/api/v1/properties/${encodeURIComponent(propertyId)}/home`),
+    ),
+  totals: async (
+    propertyId: string,
+    report: TotalsReport,
+    filter: TotalsFilter = {},
+  ): Promise<TotalsPage> =>
+    totalsPage(
+      await read(
+        `/api/v1/properties/${encodeURIComponent(propertyId)}/reports/totals/${report}` +
+          query({
+            unit_id: filter.unitId,
+            floor: filter.floor,
+            from: filter.from,
+            to: filter.to,
+          }),
+      ),
     ),
 };

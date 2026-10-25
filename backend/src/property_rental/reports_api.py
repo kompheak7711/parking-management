@@ -7,12 +7,14 @@ Property. A person without the right gets 403 and nothing else; a store failure 
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import TypeVar
+from datetime import date
+from typing import Annotated, TypeVar
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Request, Response, status
+from fastapi import APIRouter, HTTPException, Query, Request, Response, status
 
 from property_rental.identity import ActorResolver, AuthenticatedActor
+from property_rental.report_totals import TotalsFilter, TotalsReport
 from property_rental.reports import (
     ReportForbiddenError,
     ReportInvalidError,
@@ -55,6 +57,27 @@ def create_reports_router(resolver: ActorResolver, service: ReportService) -> AP
         _no_query(request)
         actor = _actor(request, resolver)
         page = _call(lambda: service.home_page(actor, property_id))
+        response.headers["Cache-Control"] = "private, no-store"
+        return {"data": page, "meta": {"request_id": request.state.request_id}}
+
+    @router.get(
+        "/properties/{property_id}/reports/totals/{report}",
+        summary="A Totals by Unit and month report",
+    )
+    def totals(
+        property_id: UUID,
+        report: TotalsReport,
+        request: Request,
+        response: Response,
+        unit_id: UUID | None = None,
+        floor: Annotated[str | None, Query(min_length=1, max_length=40)] = None,
+        from_date: Annotated[date | None, Query(alias="from")] = None,
+        to_date: Annotated[date | None, Query(alias="to")] = None,
+    ) -> dict[str, object]:
+        _no_query(request, frozenset({"unit_id", "floor", "from", "to"}))
+        actor = _actor(request, resolver)
+        chosen = TotalsFilter(unit_id, floor, from_date, to_date)
+        page = _call(lambda: service.totals(actor, property_id, report, chosen))
         response.headers["Cache-Control"] = "private, no-store"
         return {"data": page, "meta": {"request_id": request.state.request_id}}
 

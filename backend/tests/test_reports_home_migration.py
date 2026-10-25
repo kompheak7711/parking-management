@@ -140,10 +140,10 @@ def test_the_home_page_lists_a_lease_near_its_end_and_leaves_out_unpassed_sectio
     assert mine[0]["date"] == end.isoformat() and mine[0]["unit_number"]
     assert page["cards"]["lease_renewal"]["count"] >= 1
     assert page["cards"]["lease_renewal"]["end_on_or_before"] == (now + timedelta(60)).isoformat()
-    grouped = group_home_page(page)
+    grouped = cast(dict[str, Any], group_home_page(page))
     assert {item["group"] for item in grouped["todo"]} <= {"today", "this_week", "later"}
     nothing = home(runtime_database_url(), actor, prop, [])
-    assert nothing["cards"] == {} and nothing["todo"] == []
+    assert nothing["cards"] == {} and nothing["todo"] == [] and nothing["jobs"] == {}
     every = home(runtime_database_url(), actor, prop, list(HOME_SECTIONS))
     assert {
         "units_occupied",
@@ -162,6 +162,15 @@ def test_the_home_page_lists_a_lease_near_its_end_and_leaves_out_unpassed_sectio
         "received_usd_cents",
         "payment_count",
     }
+    units = every["cards"]["units_occupied"]
+    assert set(units) == {"occupied", "reserved", "vacant", "total"}
+    assert units["occupied"] + units["reserved"] + units["vacant"] <= units["total"]
+    waiting = every["cards"]["waiting_for_approval"]
+    assert set(waiting) == {"count", "money_out_usd_cents", "money_out_count"}
+    assert waiting["money_out_count"] <= waiting["count"]
+    assert set(every["jobs"]) == {"last_billing_at", "next_billing_date", "rate_updated_at"}
+    next_billing = date.fromisoformat(every["jobs"]["next_billing_date"])
+    assert next_billing.day == 25 and now <= next_billing <= now + timedelta(31)
 
 
 def test_the_home_page_checks_the_person_the_property_and_the_sections(

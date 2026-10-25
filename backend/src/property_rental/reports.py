@@ -18,10 +18,20 @@ from typing import Final, Protocol, cast
 from uuid import UUID
 
 import psycopg
+from psycopg import sql
 from psycopg.types.json import set_json_loads
 
 from property_rental.access_control import UNITS_READ_CAPABILITY
 from property_rental.identity import AuthenticatedActor, AuthorizationRequirement, is_authorized
+from property_rental.report_totals import (
+    UTILITY_TYPES,
+    TotalsFilter,
+    TotalsReport,
+    build_totals,
+    income_facts,
+    payment_facts,
+    utility_facts,
+)
 
 REPORTS_READ_CAPABILITY: Final = "reports.read"
 AUDIT_EXPORT_CAPABILITY: Final = "audit.export"
@@ -102,10 +112,24 @@ def group_home_page(page: Mapping[str, object]) -> dict[str, object]:
     return {**page, "todo": grouped, "todo_counts": counts}
 
 
+# The bounded definer reads a report may call, by name (migration `20270302_221` and later).
+REPORT_READS: Final = frozenset(
+    {
+        "report_income_facts",
+        "report_payment_facts",
+        "report_utility_facts",
+    }
+)
+
+
 class ReportStore(Protocol):
     def home_page(
         self, actor_id: UUID, property_id: UUID, sections: Sequence[str]
     ) -> dict[str, object]: ...
+
+    def rows(self, read: str, actor_id: UUID, property_id: UUID) -> list[dict[str, object]]: ...
+
+    def units(self, property_id: UUID) -> list[dict[str, object]]: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -143,12 +167,41 @@ class PostgresReportStore:
             raise ReportUnavailableError("Home page answer is invalid")
         return cast(dict[str, object], row[0])
 
+    def rows(self, read: str, actor_id: UUID, property_id: UUID) -> list[dict[str, object]]:
+        if read not in REPORT_READS:
+            raise ReportInvalidError("Unknown report read")
+        with self._read() as connection:
+            cursor = connection.execute(
+                sql.SQL("SELECT * FROM app.{}(%s,%s,%s::uuid[])").format(sql.Identifier(read)),
+                (actor_id, property_id, [property_id]),
+            )
+            names = [column.name for column in cursor.description or ()]
+            return [dict(zip(names, row, strict=True)) for row in cursor.fetchall()]
+
+    def units(self, property_id: UUID) -> list[dict[str, object]]:
+        with self._read() as connection:
+            cursor = connection.execute(
+                "SELECT id,unit_number,floor,unit_type,status FROM app.units "
+                "WHERE property_id=%s ORDER BY unit_number,id",
+                (property_id,),
+            )
+            names = [column.name for column in cursor.description or ()]
+            return [dict(zip(names, row, strict=True)) for row in cursor.fetchall()]
+
 
 class UnavailableReportStore:
     def home_page(
         self, actor_id: UUID, property_id: UUID, sections: Sequence[str]
     ) -> dict[str, object]:
         del actor_id, property_id, sections
+        raise ReportUnavailableError("Reports are unavailable")
+
+    def rows(self, read: str, actor_id: UUID, property_id: UUID) -> list[dict[str, object]]:
+        del read, actor_id, property_id
+        raise ReportUnavailableError("Reports are unavailable")
+
+    def units(self, property_id: UUID) -> list[dict[str, object]]:
+        del property_id
         raise ReportUnavailableError("Reports are unavailable")
 
 
@@ -162,3 +215,36 @@ class ReportService:
             raise ReportForbiddenError("Home page needs a read right")
         page = self.store.home_page(UUID(actor.actor_id), property_id, sections)
         return {**group_home_page(page), "sections": list(sections)}
+
+    def totals(
+        self,
+        actor: AuthenticatedActor,
+        property_id: UUID,
+        report: TotalsReport,
+        chosen: TotalsFilter,
+    ) -> dict[str, object]:
+        """One of the four "Totals by Unit and month" reports (DL-079 answers 1 to 4)."""
+        if not has_capability(actor, REPORTS_READ_CAPABILITY, property_id):
+            raise ReportForbiddenError("Totals need reports.read")
+        if (
+            chosen.from_date is not None
+            and chosen.to_date is not None
+            and chosen.from_date > chosen.to_date
+        ):
+            raise ReportInvalidError("From is after To")
+        actor_id = UUID(actor.actor_id)
+        if report == "total_income":
+            facts = income_facts(self.store.rows("report_income_facts", actor_id, property_id))
+        elif report == "total_payment":
+            facts = payment_facts(self.store.rows("report_payment_facts", actor_id, property_id))
+        else:
+            facts = utility_facts(
+                self.store.rows("report_utility_facts", actor_id, property_id),
+                UTILITY_TYPES[report],
+            )
+        units = self.store.units(property_id)
+        if chosen.unit_id is not None and all(
+            str(unit["id"]) != str(chosen.unit_id) for unit in units
+        ):
+            raise ReportInvalidError("Unknown Unit")
+        return build_totals(report, facts, units, chosen)

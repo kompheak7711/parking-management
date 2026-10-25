@@ -48,6 +48,17 @@ database step, one full run at the end, one review round per step).
   reading day (the 24th, DESIGN.md; no reading-day setting is stored yet). The to-do item shows
   from six days before the reading day.
 - To-do groups: Overdue (before today), Today, This week (the next six days), Later.
+- Totals by Unit and month (DL-079 open points): the four tables need `reports.read`. A month's
+  Payment money is split as the records are now; the month's total never changes. A Late-payment
+  Charge reduction or waiver is a minus in the charge's own month. A kept Deposit (Security or
+  Pet) counts as income in the month it is kept. Utility amounts and quantities count in the
+  month the reading period ends. Money with no Unit (a Payment not tied to a Lease) counts only
+  in the whole-Property table and is shown as its own summary figure. Charts need no package:
+  the server sends each month's parts and the top five Units.
+- Home extras for the screens thread: reserved and vacant Unit counts; "money out" on Waiting
+  for approval is the Refund and Payment return drafts; the line under the to-do list gives the
+  last finished billing run, the next Rent billing day (the 25th, the DL-075 default, until a
+  billing-day setting is stored) and when the exchange rate was last entered.
 
 ## Step log
 
@@ -56,3 +67,9 @@ database step, one full run at the end, one review round per step).
   `GET /api/v1/properties/{property_id}/home`; client `reportsApi.home`. The access-control test
   now lists the four `sign_in_prune.*` log event names as non-capability labels: that test
   failed on foundation 141e363 since slice 12c added them.
+- Step 2 (2026-10-25): migration `20270302_221` (`app.report_income_facts`,
+  `app.report_payment_facts`, `app.report_utility_facts`); `report_totals.py` builds the tables;
+  route `GET /api/v1/properties/{property_id}/reports/totals/{report}` with `unit_id`, `floor`,
+  `from`, `to`; client `reportsApi.totals`. Migration `20270303_222` adds the Home extras and
+  finds an Invoice's Property with `app.invoice_property_id`. The head checks in seven older
+  test files now name `20270303_222`.

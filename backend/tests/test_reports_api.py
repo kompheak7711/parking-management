@@ -54,6 +54,14 @@ class FakeStore:
             ],
         }
 
+    def rows(
+        self, read: str, actor_id: uuid.UUID, property_id: uuid.UUID
+    ) -> list[dict[str, object]]:
+        raise AssertionError("not used")
+
+    def units(self, property_id: uuid.UUID) -> list[dict[str, object]]:
+        raise AssertionError("not used")
+
 
 def client(person: AuthenticatedActor | None, store: FakeStore) -> TestClient:
     return TestClient(

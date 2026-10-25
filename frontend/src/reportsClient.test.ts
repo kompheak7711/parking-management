@@ -21,6 +21,7 @@ const home = {
   timezone: "Asia/Phnom_Penh",
   sections: ["leases"],
   cards: { lease_renewal: { count: 1, end_on_or_before: "2026-12-24" } },
+  jobs: {},
   todo: [
     {
       kind: "lease_ending",
@@ -77,5 +78,57 @@ describe("reportsClient", () => {
     await expect(reportsApi.home(PROPERTY)).rejects.toBeInstanceOf(
       ReportsUnavailableError,
     );
+  });
+
+  it("TEST-FE-V57-004 reads a Totals report with only the filters given", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      answer({
+        data: {
+          report: "total_income",
+          currency: "USD",
+          filter: {
+            unit_id: null,
+            unit_number: null,
+            floor: "2",
+            from: null,
+            to: null,
+          },
+          years: [{ year: 2026, months: Array(12).fill(null), total: 0 }],
+          summary: {
+            total: 0,
+            highest_month: null,
+            highest_unit: null,
+            no_unit_amount: 0,
+          },
+          chart: { months: [], top_units: [] },
+        },
+      }),
+    );
+    const page = await reportsApi.totals(PROPERTY, "total_income", {
+      floor: "2",
+      from: "",
+    });
+    expect(page.years[0]?.months).toHaveLength(12);
+    const [path] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(path).toBe(
+      `/api/v1/properties/${PROPERTY}/reports/totals/total_income?floor=2`,
+    );
+  });
+
+  it("TEST-FE-V57-005 refuses a Totals year without twelve months", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      answer({
+        data: {
+          report: "total_water",
+          filter: {},
+          years: [{ year: 2026, months: [1, 2], total: 3 }],
+          summary: {},
+          chart: {},
+        },
+      }),
+    );
+    await expect(
+      reportsApi.totals(PROPERTY, "total_water"),
+    ).rejects.toBeInstanceOf(ReportsUnavailableError);
   });
 });
