@@ -516,3 +516,30 @@ def test_stored_capability_lists_and_odd_filters_read_back_on_the_history_page()
     kept = public_audit_filters({"action": "foo bar", "resource_type": "unit", "to_date": None})
     assert kept == {"resource_type": "unit", "filters_not_recorded_count": 1}
     assert _freeze_loaded({"filters": kept})
+
+
+def test_a_malformed_grant_is_refused_before_the_audit_search_reads() -> None:
+    """Review round 3: a grant with a wrong Property id gives 403, not a server error."""
+    from property_rental.audit_api import (
+        AuditPageRequest,
+        AuditQueryForbidden,
+        PostgresAuditEventQueryFlow,
+        PropertyAuditQuery,
+    )
+    from property_rental.identity import AuthenticatedActor, CapabilityGrant
+
+    prop = uuid4()
+    actor = AuthenticatedActor(
+        str(uuid4()),
+        frozenset(
+            {
+                CapabilityGrant("audit.view", frozenset({str(prop)})),
+                CapabilityGrant("units.read", frozenset({"not-a-property"})),
+            }
+        ),
+    )
+    flow = PostgresAuditEventQueryFlow("postgresql://unused.invalid/none")
+    with pytest.raises(AuditQueryForbidden):
+        flow.search_property(
+            actor, PropertyAuditQuery(property_id=prop, page=AuditPageRequest(limit=1))
+        )

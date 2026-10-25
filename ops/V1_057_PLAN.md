@@ -156,3 +156,6 @@ Register summaries (fields over every row of the filter):
   capability of migration 72's authorization evidence; the client types mark Rent as present
   only for people with `reports.read`. Nits fixed: the audit search uses `report_actor` for its
   Property list, a details fault answers 503, the file heading says "Property local time".
+- Review round 3 (2026-10-25): no blocker; one should-fix fixed: a grant with a wrong Property
+  id is refused (403) before the audit search reads, with a test. Nit left as is: the `also`
+  key is accepted in any audit field (only migration 72 writes it).

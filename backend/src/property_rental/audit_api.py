@@ -35,7 +35,7 @@ from property_rental.identity import (
     AuthorizationRequirement,
     is_authorized,
 )
-from property_rental.reports import report_actor
+from property_rental.reports import ReportForbiddenError, report_actor
 
 AUDIT_VIEW_CAPABILITY: Final = "audit.view"
 DEFAULT_AUDIT_PAGE_SIZE: Final = 50
@@ -436,13 +436,17 @@ class PostgresAuditEventQueryFlow:
         self, actor: AuthenticatedActor, query: PropertyAuditQuery
     ) -> AuditEventPage:
         try:
+            granted = report_actor(actor).property_ids
+        except ReportForbiddenError as error:
+            raise AuditQueryForbidden from error
+        try:
             with psycopg.connect(self._database_url) as connection:
                 page = AuthorizedAuditEventQueryService(
                     PostgresAuditEventQueryRepository(connection),
                     self._resource_scope_resolver,
                 ).search_property(actor, query)
                 if query.page.cursor is None:
-                    record_audit_search(connection, actor, query, len(page.events))
+                    record_audit_search(connection, actor, query, len(page.events), granted)
                 return page
         except psycopg.Error as error:
             raise AuditQueryUnavailable from error
@@ -490,6 +494,7 @@ def record_audit_search(
     actor: AuthenticatedActor,
     query: PropertyAuditQuery,
     first_page_count: int,
+    granted: Sequence[UUID],
 ) -> None:
     """Write the `audit.searched` event in the search's own transaction (DL-072 answer 14)."""
     connection.execute(
@@ -498,7 +503,7 @@ def record_audit_search(
         (
             UUID(actor.actor_id),
             query.property_id,
-            list(report_actor(actor).property_ids),
+            list(granted),
             json.dumps(audit_search_details(query, first_page_count)),
             uuid4(),
         ),
