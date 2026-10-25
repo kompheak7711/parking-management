@@ -157,6 +157,264 @@ export interface TotalsPage {
   };
 }
 
+export type RegisterName =
+  | "invoice_register"
+  | "payments"
+  | "utility_consumption"
+  | "credit_ledger"
+  | "deposits"
+  | "final_settlements"
+  | "unit_occupancy"
+  | "lease_dates"
+  | "audit_activity";
+
+export interface RegisterFilter {
+  floor?: string;
+  from?: string;
+  to?: string;
+  offset?: number;
+  limit?: number;
+}
+
+// Every row with a Unit carries unit_id, unit_number and floor.
+interface UnitPart {
+  unit_id: string | null;
+  unit_number: string | null;
+  floor: string | null;
+}
+
+export type OverdueGroup = "days_1_19" | "days_20_29" | "days_30_plus";
+
+export interface InvoiceRegisterRow extends UnitPart {
+  invoice_id: string;
+  invoice_number: string;
+  status: string;
+  customer_id: string;
+  customer_name: string;
+  lease_id: string | null;
+  primary_category: string;
+  rent_billing_kind: string | null;
+  invoice_date: string;
+  due_date: string;
+  total_usd_cents: number;
+  paid_usd_cents: number;
+  other_settled_usd_cents: number;
+  owed_usd_cents: number;
+  overdue_days: number | null;
+  overdue_group?: OverdueGroup;
+}
+
+export type PaymentLine =
+  | "INVOICES"
+  | "LATE_PAYMENT_CHARGES"
+  | "DEPOSITS"
+  | "CREDIT"
+  | "REFUNDED"
+  | "NOT_ALLOCATED"
+  | "REVERSED_LATER";
+
+export interface PaymentRegisterRow extends UnitPart {
+  payment_id: string;
+  receipt_number: string;
+  payment_date: string;
+  status: string;
+  customer_id: string;
+  customer_name: string;
+  method_name: string;
+  // Information only; never added to USD.
+  received_currency: string;
+  received_amount_minor: number;
+  rate_khr_per_usd: number | null;
+  amount_usd_cents: number;
+  reversed_on: string | null;
+  parts: {
+    kind: PaymentLine;
+    category: string | null;
+    unit_id: string | null;
+    amount_usd_cents: number;
+  }[];
+  not_allocated_usd_cents: number;
+}
+
+export interface UtilityConsumptionRow extends UnitPart {
+  period_id: string;
+  utility_type: "ELECTRICITY" | "WATER";
+  period_start: string;
+  period_end: string;
+  quantity: string;
+  is_estimate: boolean;
+  billed: boolean;
+  // Only for people who may read the money reports.
+  amount_usd_cents?: number;
+}
+
+export interface CreditLedgerRow extends UnitPart {
+  credit_id: string;
+  customer_id: string;
+  customer_name: string;
+  source_payment_id: string;
+  receipt_number: string;
+  recognized_on: string;
+  recognized_usd_cents: number;
+  applied_usd_cents: number;
+  refunded_usd_cents: number;
+  reversed_usd_cents: number;
+  available_usd_cents: number;
+}
+
+export interface DepositRow extends UnitPart {
+  deposit_id: string;
+  deposit_type: "SECURITY" | "PET";
+  lease_id: string | null;
+  reservation_id: string | null;
+  customer_id: string;
+  customer_name: string;
+  required_usd_cents: number;
+  received_usd_cents: number;
+  applied_usd_cents: number;
+  kept_usd_cents: number;
+  refunded_usd_cents: number;
+  held_usd_cents: number;
+  record_status: string;
+  settlement_closed: boolean;
+}
+
+export interface FinalSettlementRow extends UnitPart {
+  final_settlement_id: string;
+  lease_id: string;
+  customer_id: string;
+  customer_name: string;
+  started_on: string;
+  move_out_date: string | null;
+  closed_on: string | null;
+  status: "OPEN" | "CLOSED";
+  deposits_applied_usd_cents: number;
+  credit_applied_usd_cents: number;
+  deposits_kept_usd_cents: number;
+  refunded_usd_cents: number;
+  balance_due_usd_cents: number | null;
+}
+
+export interface UnitOccupancyRow extends UnitPart {
+  unit_status: string;
+  unit_type: string;
+  lease_id: string | null;
+  reservation_id: string | null;
+  customer_id: string | null;
+  customer_name: string | null;
+  // Only for people who may read the money reports.
+  monthly_rent_usd_cents?: number | null;
+  until_date: string | null;
+}
+
+export interface LeaseDatesRow extends UnitPart {
+  lease_id: string;
+  customer_id: string;
+  customer_name: string;
+  status: "SIGNED" | "TERMINATED";
+  start_date: string;
+  // The actual termination date when the Lease was ended early.
+  end_date: string;
+  actual_termination_date: string | null;
+  // Only for people who may read the money reports.
+  monthly_rent_usd_cents?: number;
+  days_to_end: number | null;
+  renewal_drafted: boolean;
+}
+
+export interface AuditActivityRow {
+  day: string;
+  count: number;
+}
+
+export interface RegisterRows {
+  invoice_register: InvoiceRegisterRow;
+  payments: PaymentRegisterRow;
+  utility_consumption: UtilityConsumptionRow;
+  credit_ledger: CreditLedgerRow;
+  deposits: DepositRow;
+  final_settlements: FinalSettlementRow;
+  unit_occupancy: UnitOccupancyRow;
+  lease_dates: LeaseDatesRow;
+  audit_activity: AuditActivityRow;
+}
+
+// The summary, chart and totals are worked out over every row of the filter, not only this
+// page. Their fields differ by register; see ops/V1_057_PLAN.md.
+export interface RegisterPage<N extends RegisterName> {
+  report: N;
+  currency: "USD";
+  filter: {
+    floor: string | null;
+    from: string | null;
+    to: string | null;
+    // Unit occupancy and Deposit liability show today; the period does not apply to them.
+    period_applies: boolean;
+  };
+  summary: Record<string, unknown>;
+  chart: Record<string, unknown>;
+  totals: Record<string, unknown> | null;
+  rows: RegisterRows[N][];
+  row_count: number;
+  offset: number;
+  limit: number;
+  // Utility consumption only, for people who may read the money reports.
+  rates?: {
+    utility_type: string;
+    measurement_unit_code: string;
+    rate_usd: string;
+    effective_date: string;
+  }[];
+}
+
+export type ExportFileType = "xlsx" | "pdf";
+
+// A report file: one of the four Totals tables or the nine registers, with the report page's
+// filters (unitId only for the Totals tables).
+export interface ExportRequest {
+  report: TotalsReport | RegisterName;
+  fileType: ExportFileType;
+  floor?: string;
+  unitId?: string;
+  from?: string;
+  to?: string;
+}
+
+export interface AuditExportRequest {
+  fileType: ExportFileType;
+  from?: string;
+  to?: string;
+  actorId?: string;
+  action?: string;
+  unitId?: string;
+}
+
+// A small file comes at once; a larger one is kept 24 hours as an export job and is fetched
+// with reportsApi.download. The SHA-256 fingerprint is the one written to History.
+export type ExportAnswer =
+  | {
+      kind: "file";
+      exportId: string;
+      fileName: string;
+      sha256: string;
+      rowCount: number;
+      file: Blob;
+    }
+  | {
+      kind: "job";
+      exportId: string;
+      fileName: string;
+      sha256: string;
+      rowCount: number;
+      expiresAt: string;
+    };
+
+export interface DownloadedFile {
+  fileName: string;
+  sha256: string;
+  file: Blob;
+}
+
 export class ReportsUnavailableError extends Error {
   constructor() {
     super("This information is not available right now.");
@@ -169,6 +427,118 @@ export class ReportsNotAllowedError extends Error {
     super("Your account cannot see this.");
     this.name = "ReportsNotAllowedError";
   }
+}
+
+export class ExportRefusedError extends Error {
+  constructor() {
+    super("This file cannot be made with these choices.");
+    this.name = "ExportRefusedError";
+  }
+}
+
+export class ExportGoneError extends Error {
+  constructor() {
+    super("This file is no longer kept. Please export it again.");
+    this.name = "ExportGoneError";
+  }
+}
+
+function csrfToken(cookie = document.cookie): string | null {
+  const prefix = "__Host-prm_csrf=";
+  const entry = cookie
+    .split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(prefix));
+  return entry === undefined
+    ? null
+    : decodeURIComponent(entry.slice(prefix.length));
+}
+
+// The file name from Content-Disposition (filename="..."), or a fallback.
+function fileNameOf(response: Response, fallback: string): string {
+  const header = response.headers.get("Content-Disposition") ?? "";
+  const match = /filename="([^"]+)"/.exec(header);
+  return match?.[1] ?? fallback;
+}
+
+async function send(path: string, init: RequestInit): Promise<Response> {
+  let response: Response;
+  try {
+    response = await fetch(path, { credentials: "include", ...init });
+  } catch {
+    throw new ReportsUnavailableError();
+  }
+  if (response.status === 401 || response.status === 403) {
+    throw new ReportsNotAllowedError();
+  }
+  if (response.status === 404) throw new ExportGoneError();
+  if (response.status === 422) throw new ExportRefusedError();
+  if (!response.ok) throw new ReportsUnavailableError();
+  return response;
+}
+
+async function postExport(
+  path: string,
+  body: Record<string, string | undefined>,
+): Promise<ExportAnswer> {
+  const token = csrfToken();
+  if (token === null || token.length === 0) throw new ReportsNotAllowedError();
+  const response = await send(path, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      "X-CSRF-Token": token,
+    },
+    body: JSON.stringify(
+      Object.fromEntries(
+        Object.entries(body).filter(
+          ([, value]) => value !== undefined && value !== "",
+        ),
+      ),
+    ),
+  });
+  if (response.status === 201) {
+    let payload: unknown;
+    try {
+      payload = await response.json();
+    } catch {
+      throw new ReportsUnavailableError();
+    }
+    const data = isObject(payload) ? payload.data : null;
+    if (
+      !isObject(data) ||
+      typeof data.export_id !== "string" ||
+      typeof data.file_name !== "string" ||
+      typeof data.sha256 !== "string" ||
+      typeof data.row_count !== "number" ||
+      typeof data.expires_at !== "string"
+    ) {
+      throw new ReportsUnavailableError();
+    }
+    return {
+      kind: "job",
+      exportId: data.export_id,
+      fileName: data.file_name,
+      sha256: data.sha256,
+      rowCount: data.row_count,
+      expiresAt: data.expires_at,
+    };
+  }
+  const exportId = response.headers.get("X-Export-Id");
+  const sha256 = response.headers.get("X-Export-SHA256");
+  const rows = Number(response.headers.get("X-Export-Rows"));
+  if (exportId === null || sha256 === null || !Number.isInteger(rows)) {
+    throw new ReportsUnavailableError();
+  }
+  return {
+    kind: "file",
+    exportId,
+    fileName: fileNameOf(response, "report"),
+    sha256,
+    rowCount: rows,
+    file: await response.blob(),
+  };
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -243,6 +613,22 @@ function totalsPage(data: Record<string, unknown>): TotalsPage {
   return data as unknown as TotalsPage;
 }
 
+function registerPage<N extends RegisterName>(
+  data: Record<string, unknown>,
+): RegisterPage<N> {
+  if (
+    typeof data.report !== "string" ||
+    !Array.isArray(data.rows) ||
+    typeof data.row_count !== "number" ||
+    !isObject(data.summary) ||
+    !isObject(data.chart) ||
+    !isObject(data.filter)
+  ) {
+    throw new ReportsUnavailableError();
+  }
+  return data as unknown as RegisterPage<N>;
+}
+
 function query(values: Record<string, string | undefined>): string {
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(values)) {
@@ -273,4 +659,57 @@ export const reportsApi = {
           }),
       ),
     ),
+  register: async <N extends RegisterName>(
+    propertyId: string,
+    name: N,
+    filter: RegisterFilter = {},
+  ): Promise<RegisterPage<N>> =>
+    registerPage<N>(
+      await read(
+        `/api/v1/properties/${encodeURIComponent(propertyId)}/reports/${name}` +
+          query({
+            floor: filter.floor,
+            from: filter.from,
+            to: filter.to,
+            offset: filter.offset?.toString(),
+            limit: filter.limit?.toString(),
+          }),
+      ),
+    ),
+  // Every export writes its own History row (DL-072 answer 14).
+  exportFile: (propertyId: string, request: ExportRequest) =>
+    postExport(`/api/v1/properties/${encodeURIComponent(propertyId)}/exports`, {
+      report: request.report,
+      file_type: request.fileType,
+      floor: request.floor,
+      unit_id: request.unitId,
+      from: request.from,
+      to: request.to,
+    }),
+  exportAudit: (propertyId: string, request: AuditExportRequest) =>
+    postExport(
+      `/api/v1/properties/${encodeURIComponent(propertyId)}/audit-exports`,
+      {
+        file_type: request.fileType,
+        from: request.from,
+        to: request.to,
+        actor_id: request.actorId,
+        action: request.action,
+        unit_id: request.unitId,
+      },
+    ),
+  download: async (
+    propertyId: string,
+    exportId: string,
+  ): Promise<DownloadedFile> => {
+    const response = await send(
+      `/api/v1/properties/${encodeURIComponent(propertyId)}/exports/${encodeURIComponent(exportId)}`,
+      {},
+    );
+    return {
+      fileName: fileNameOf(response, "report"),
+      sha256: response.headers.get("X-Export-SHA256") ?? "",
+      file: await response.blob(),
+    };
+  },
 };

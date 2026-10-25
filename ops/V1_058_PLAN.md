@@ -268,3 +268,12 @@ Run rules: frontend-only steps run the frontend gates (format, typecheck, lint, 
 - Review round 1: no blocker; fixed all should-fix items (key per values, busy freed on a Property change here and in Business, error mapping, conflict keeps the form) and nits (min dates, 8 decimals, repeated-cursor guard). Not changed: a failed reload after a save replaces the success note; today is read on render.
 - Server gaps for R7b-6: no route to add or rename a Service (and no Khmer name), no Service types, move-out cleaning rates are per Unit on the server (owner wants them per Unit Type). Riel rate confirm stays in the earlier forms.
 - Gates: prettier, tsc, eslint clean; vitest all passed (TEST-FE-955..957). Screenshots 24-28 in /mnt/project-files/v1-058/r7b-settings/.
+
+### R7c History (2026-10-25)
+
+- History page rebuilt to mock-up v43 (app4.js vHistory) over GET /properties/{id}/audit-events: When (Today, 7 days, 30 days, All; days count today), Who (names from the user list when the account may read it, otherwise a short id; "you" for the signed-in person), Unit, Search; table When / Who / Action (kind of record from the server's entity type) / What happened (the server's action words, the reason, Refused) / Record (Unit number or short id; Units, Leases, Customers, Reservations and Invoices link to their pages); Show more reads the next page.
+- One search per opening of the page (also under React StrictMode): on foundation the first page of each search writes an audit.searched event. Export audit (audit.export) makes .xlsx or PDF with the filters of the list on screen; a job answer is fetched with download.
+- frontend/src/reportsClient.ts copied unchanged from implementation/foundation 9450473 (V1-057 merged). Merging foundation into this branch was blocked by the session's permission check; the merge and the migration re-chain (207-210 after 225) wait for the owner.
+- Decided by Claude under the owner's 2026-10-23 22:30 rule: no free-text record search (the server has none; the mock-up's box is left out), no Kind filter (the export has none), action words in English from the server's codes until a word list exists.
+- Review round 1: one blocker (StrictMode effect reset hid the list in dev), fixed with the should-fix items (Show more after a new search, export kept across a new search, filter kept for Show more and Export) and nits (inclusive day windows, aria, refused-export advice).
+- Gates: prettier, tsc, eslint clean; vitest 1,815 passed (TEST-FE-958..961). Screenshots in /mnt/project-files/v1-058/r7c-history/.

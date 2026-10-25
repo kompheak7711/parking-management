@@ -1,4 +1,12 @@
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import {
+  FormEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { todayInPhnomPenh } from "./shell/format";
 
 import {
   type ApprovalsApi,
@@ -74,6 +82,11 @@ import { InvoicesPage } from "./invoices/InvoicesPage";
 import { PaymentsPage } from "./payments/PaymentsPage";
 import { type HomeApi, HomeScreen } from "./home/HomeScreen";
 import { reportsApi } from "./reportsClient";
+import {
+  type HistoryApi,
+  historyApi as historyClient,
+} from "./history/historyClient";
+import { type HistoryExportApi, HistoryPage } from "./history/HistoryPage";
 import { settlementApi } from "./settlementClient";
 import {
   type HealthApi,
@@ -136,6 +149,8 @@ export interface AppProps {
   invoiceApi?: InvoiceApi;
   paymentsApi?: PaymentsApi;
   homeApi?: HomeApi;
+  historyApi?: HistoryApi;
+  historyExportApi?: HistoryExportApi;
   healthApi?: HealthApi;
   approvalsApi?: ApprovalsApi;
   draftDecisionApi?: DraftDecisionApi;
@@ -590,6 +605,8 @@ export function App({
   invoiceApi = invoiceClient,
   paymentsApi = paymentsClient,
   homeApi = reportsApi,
+  historyApi = historyClient,
+  historyExportApi = reportsApi,
   healthApi = healthClient,
   dueDaysApi = dueDaysClient,
   approvalsApi = approvalsClient,
@@ -600,6 +617,12 @@ export function App({
   accessApi = actorAccessApi,
   now = Date.now,
 }: AppProps) {
+  // V1-058 R7c: History names people from the user list when this account may read it.
+  const historyPeople = useCallback(
+    (id: string) =>
+      administrationApi.load(id).then((snapshot) => snapshot.users),
+    [administrationApi],
+  );
   // V1-058 R7b-4: one object, so the Business tab does not read again on every render.
   const businessApi = useMemo(
     () => ({
@@ -1896,7 +1919,21 @@ export function App({
         data-page="history"
         hidden={!shown("history")}
       >
-        <ComingSoon language={language} step="R7" />
+        <HistoryPage
+          active={shown("history")}
+          api={historyApi}
+          capabilities={capabilities}
+          exporter={historyExportApi}
+          language={language}
+          me={{
+            id: session.actor_id,
+            name: session.display_name ?? session.actor_id.slice(0, 8),
+          }}
+          people={historyPeople}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+          today={todayInPhnomPenh()}
+          units={unitApi ?? defaultUnitApi}
+        />
       </div>
       <div
         className="shell-page"

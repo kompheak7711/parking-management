@@ -54671,6 +54671,53 @@
       "test_path": "frontend/src/settings/RatesTab.test.tsx",
       "status": "implemented",
       "notes": "V1-058 R7b-5: a conflict says so and reads again; no right to change hides the buttons; no right to read says so; Retry; Khmer words."
+    },
+    {
+      "test_id": "TEST-FE-958",
+      "upstream_ids": [
+        "DL-072",
+        "DL-074",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/history/HistoryPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7c: History opens on the last 7 days with one search; shows when, who, the kind, what happened with the reason, links the record; Show more reads the next page."
+    },
+    {
+      "test_id": "TEST-FE-959",
+      "upstream_ids": [
+        "DL-072",
+        "DL-074",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/history/HistoryPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7c: Search sends period, person and Unit; Export audit sends the same filters and saves the file; a refused export says why; no audit.export hides it."
+    },
+    {
+      "test_id": "TEST-FE-960",
+      "upstream_ids": [
+        "DL-072",
+        "DL-074",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/history/HistoryPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7c: no right says so; failed read offers Retry; no events says so; unreadable names show a short id."
+    },
+    {
+      "test_id": "TEST-FE-961",
+      "upstream_ids": [
+        "DL-072",
+        "UI-008"
+      ],
+      "test_level": "Unit",
+      "test_path": "frontend/src/history/historyClient.test.ts",
+      "status": "implemented",
+      "notes": "V1-058 R7c: the History client reads audit events with the filters as query values and maps refusals."
     }
   ]
 }
