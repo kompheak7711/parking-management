@@ -6,6 +6,7 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
+import type { ServiceSettingsApi } from "../settings/serviceSettingsClient";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { CustomerApi, CustomerDetail } from "../customerClient";
@@ -243,6 +244,14 @@ function show(
   },
   unitClient: Partial<UnitApi> = {},
   lettersClient: Partial<LettersApi> = {},
+  servicesClient: Pick<ServiceSettingsApi, "read"> = {
+    read: vi.fn<ServiceSettingsApi["read"]>().mockResolvedValue({
+      services: [],
+      service_types: [],
+      today: "2026-10-25",
+      can_manage: false,
+    }),
+  },
 ) {
   const letters = {
     warnings: vi.fn<LettersApi["warnings"]>().mockResolvedValue([]),
@@ -262,6 +271,7 @@ function show(
       reservationApi={reservationClient as ReservationApi}
       unitApi={unitClient as UnitApi}
       lettersApi={letters}
+      servicesApi={servicesClient}
     />,
   );
 }
@@ -1170,6 +1180,207 @@ describe("New Lease and Renew", () => {
     ]);
     expect(create.mock.calls[1]?.[1]).toEqual(sent);
     expect(create.mock.calls[1]?.[2]).toBe(create.mock.calls[0]?.[2]);
+  });
+
+  it("TEST-FE-1004 New Lease picks Services by type: None first for an Only one type, Trash Collection by default, tick boxes for One or more, a later Service greyed; they are saved as terms from the Start Date; a failed read waits with Retry", async () => {
+    const period = (id: string, from: string) => [
+      { approval_period_id: id, effective_from: from, effective_through: null },
+    ];
+    const settings = {
+      services: [
+        {
+          service_id: "svc-trash",
+          service_code: "TRASH_COLLECTION",
+          name_en: "Trash Collection",
+          name_km: null,
+          service_type_id: "type-trash",
+          version: 1,
+          rate_today_usd_cents: 300,
+          next_rate: {
+            monthly_rate_usd_cents: 350,
+            effective_date: "2027-01-01",
+          },
+          rates: [
+            { monthly_rate_usd_cents: 300, effective_date: "2026-01-01" },
+            { monthly_rate_usd_cents: 350, effective_date: "2027-01-01" },
+          ],
+          approval_periods: period("ap-trash", "2026-01-01"),
+          leases_using: 0,
+        },
+        {
+          service_id: "svc-trash-big",
+          service_code: "SVC_B",
+          name_en: "Trash, large bin",
+          name_km: null,
+          service_type_id: "type-trash",
+          version: 1,
+          rate_today_usd_cents: 600,
+          next_rate: null,
+          rates: [
+            { monthly_rate_usd_cents: 600, effective_date: "2026-01-01" },
+          ],
+          approval_periods: period("ap-big", "2026-01-01"),
+          leases_using: 0,
+        },
+        {
+          service_id: "svc-car",
+          service_code: "SVC_C",
+          name_en: "Car park",
+          name_km: null,
+          service_type_id: "type-park",
+          version: 1,
+          rate_today_usd_cents: 2000,
+          next_rate: null,
+          rates: [
+            { monthly_rate_usd_cents: 2000, effective_date: "2026-01-01" },
+          ],
+          approval_periods: period("ap-car", "2026-01-01"),
+          leases_using: 0,
+        },
+        {
+          service_id: "svc-bike",
+          service_code: "SVC_D",
+          name_en: "Bike park",
+          name_km: null,
+          service_type_id: "type-park",
+          version: 1,
+          rate_today_usd_cents: null,
+          next_rate: {
+            monthly_rate_usd_cents: 500,
+            effective_date: "2027-03-01",
+          },
+          rates: [
+            { monthly_rate_usd_cents: 500, effective_date: "2027-03-01" },
+          ],
+          approval_periods: period("ap-bike", "2027-03-01"),
+          leases_using: 0,
+        },
+      ],
+      service_types: [
+        {
+          service_type_id: "type-trash",
+          name_en: "Trash",
+          name_km: null,
+          one_per_lease: true,
+          removed: false,
+          version: 1,
+          services: 2,
+        },
+        {
+          service_type_id: "type-park",
+          name_en: "Parking",
+          name_km: null,
+          one_per_lease: false,
+          removed: false,
+          version: 1,
+          services: 2,
+        },
+      ],
+      today: "2026-10-25",
+      can_manage: false,
+    };
+    let fail = true;
+    const read = vi.fn<ServiceSettingsApi["read"]>(() =>
+      fail ? Promise.reject(new Error("down")) : Promise.resolve(settings),
+    );
+    const create = vi
+      .fn<LeaseApi["create"]>()
+      .mockImplementation((_property, source) =>
+        Promise.resolve(
+          lease("U402", { lease_id: source.lease_id, status: "DRAFTED" }),
+        ),
+      );
+    show(
+      api({ create }),
+      deposits(),
+      null,
+      undefined,
+      people(),
+      units,
+      {},
+      { read },
+    );
+    fireEvent.click(await screen.findByRole("link", { name: "New Lease" }));
+    await screen.findByLabelText("Unit");
+    pickIn("Unit", "unit-U402");
+    pickIn("Primary Tenant", "customer-a");
+    fireEvent.change(screen.getByLabelText("Start Date"), {
+      target: { value: "2027-01-10" },
+    });
+    fireEvent.change(screen.getByLabelText("Monthly Rent"), {
+      target: { value: "310" },
+    });
+    // The Services could not be read: the draft waits, Retry reads them again.
+    expect(
+      await screen.findByText(/The Services could not be read just now/),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
+    expect(
+      screen.getByText("The Services are not read yet. Press Retry above."),
+    ).toBeInTheDocument();
+    fail = false;
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    const trash = await screen.findByRole("group", { name: /^Trash/ });
+    expect(
+      within(trash)
+        .getAllByRole("radio")
+        .map((radio) => radio.closest("label")?.textContent),
+    ).toEqual([
+      "None",
+      "Trash Collection$3.50 a month",
+      "Trash, large bin$6.00 a month",
+    ]);
+    // Trash Collection is chosen by default; its rate on the Start Date is the January one.
+    expect(
+      within(trash).getByRole("radio", { name: /^Trash Collection/ }),
+    ).toBeChecked();
+    const parking = screen.getByRole("group", { name: /^Parking/ });
+    expect(within(parking).getAllByRole("checkbox")).toHaveLength(2);
+    const bike = within(parking).getByRole("checkbox", { name: /^Bike park/ });
+    expect(bike).toBeDisabled();
+    expect(bike.closest("label")).toHaveTextContent("Starts 01/03/2027");
+    fireEvent.click(
+      within(parking).getByRole("checkbox", { name: /^Car park/ }),
+    );
+    // Choosing the large bin leaves out Trash Collection.
+    fireEvent.click(
+      within(trash).getByRole("radio", { name: /^Trash, large/ }),
+    );
+    expect(
+      within(trash).getByRole("radio", { name: /^Trash Collection/ }),
+    ).not.toBeChecked();
+    const preview = screen.getByRole("region", { name: "What will be billed" });
+    expect(preview).toHaveTextContent(
+      "Trash, large bin: $6.00 a month from the Start Date",
+    );
+    expect(preview).toHaveTextContent("Car park: $20.00 a month");
+    fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
+    const dialog = screen.getByRole("dialog", {
+      name: "Save the draft · U402?",
+    });
+    expect(dialog).toHaveTextContent("Services: Trash, large bin, Car park.");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save draft" }));
+    await waitFor(() => {
+      expect(create).toHaveBeenCalled();
+    });
+    expect(create.mock.calls[0]?.[1].service_terms).toEqual([
+      {
+        term_id: expect.any(String) as string,
+        property_service_id: "svc-trash-big",
+        applicable_from: "2027-01-10",
+        applicable_through: null,
+        service_approval_period_id: "ap-big",
+        terms_reference: "Chosen on the New Lease form",
+      },
+      {
+        term_id: expect.any(String) as string,
+        property_service_id: "svc-car",
+        applicable_from: "2027-01-10",
+        applicable_through: null,
+        service_approval_period_id: "ap-car",
+        terms_reference: "Chosen on the New Lease form",
+      },
+    ]);
   });
 
   it("TEST-FE-858 a Lease from a Booking takes its Unit, Customer, Rent and Security Deposit", async () => {

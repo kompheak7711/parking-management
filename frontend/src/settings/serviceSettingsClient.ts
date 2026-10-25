@@ -12,6 +12,8 @@ export interface ServiceSetting {
   version: number;
   rate_today_usd_cents: number | null;
   next_rate: { monthly_rate_usd_cents: number; effective_date: string } | null;
+  /** Every rate, oldest first. */
+  rates: { monthly_rate_usd_cents: number; effective_date: string }[];
   approval_periods: {
     approval_period_id: string;
     effective_from: string;
@@ -196,6 +198,16 @@ function nextOf(value: unknown): ServiceSetting["next_rate"] {
   };
 }
 
+function ratesOf(value: unknown): ServiceSetting["rates"] {
+  if (value === undefined) return [];
+  if (!Array.isArray(value)) throw new ServiceSettingsError("unknown");
+  return value.map((rate: unknown) => {
+    const read = nextOf(rate);
+    if (read === null) throw new ServiceSettingsError("unknown");
+    return read;
+  });
+}
+
 function serviceOf(value: unknown): ServiceSetting {
   if (!isObject(value)) throw new ServiceSettingsError("unknown");
   const next = value.next_rate;
@@ -213,6 +225,7 @@ function serviceOf(value: unknown): ServiceSetting {
         ? null
         : count(value.rate_today_usd_cents),
     next_rate: nextOf(next),
+    rates: ratesOf(value.rates),
     approval_periods: periods.map((period: unknown) => {
       if (!isObject(period)) throw new ServiceSettingsError("unknown");
       return {

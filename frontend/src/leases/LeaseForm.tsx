@@ -2,6 +2,8 @@
 // form makes a walk-in draft, a draft from a Booking (its Unit, Customer, Rent and deposit) or a
 // renewal draft (the day after the old End Date, linked to the old Lease). The right column
 // previews what will be billed; saving asks once more, then makes the draft and opens it.
+// R7b-6c: the Services are picked by type (leaseServices.ts) and saved as the Lease's Service
+// terms from the Start Date with no end of their own (the server runs them to the End Date).
 
 import { FormEvent, ReactNode, useEffect, useRef, useState } from "react";
 
@@ -13,6 +15,11 @@ import {
   type LeaseResource,
 } from "../leaseClient";
 import type { ReservationApi, ReservationResource } from "../reservationClient";
+import {
+  type ServiceSettings,
+  type ServiceSettingsApi,
+  serviceSettingsApi,
+} from "../settings/serviceSettingsClient";
 import { dayText, todayInPhnomPenh, usdFromCents } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { openPageInAddress } from "../shell/useHashPage";
@@ -20,6 +27,12 @@ import { Dialog } from "../shell/ui";
 import type { Language } from "../signInText";
 import type { UnitApi, UnitResource } from "../unitClient";
 import { addDays, initialRent } from "./leasesData";
+import {
+  choose,
+  defaultChosen,
+  type ServiceGroup,
+  serviceGroups,
+} from "./leaseServices";
 import { lt } from "./text";
 
 export type LeaseFormMode =
@@ -98,6 +111,8 @@ export interface LeaseFormProps {
   unitApi: Pick<UnitApi, "list">;
   customerApi: Pick<CustomerApi, "list">;
   reservationApi: Pick<ReservationApi, "get">;
+  /** The Services from Settings; the real server when not given. */
+  servicesApi?: Pick<ServiceSettingsApi, "read">;
 }
 
 export function LeaseForm({
@@ -108,6 +123,7 @@ export function LeaseForm({
   unitApi,
   customerApi,
   reservationApi,
+  servicesApi = serviceSettingsApi,
 }: LeaseFormProps) {
   const today = todayInPhnomPenh();
   const [sources, setSources] = useState<Sources | null>(null);
@@ -120,6 +136,11 @@ export function LeaseForm({
   const [end, setEnd] = useState(oneYearEnd(today));
   const [rent, setRent] = useState("");
   const [pet, setPet] = useState(false);
+  // "failed": the draft waits until they are read (Retry).
+  const [services, setServices] = useState<ServiceSettings | "failed" | null>(
+    null,
+  );
+  const [chosen, setChosen] = useState<Set<string>>(new Set());
   const [petText, setPetText] = useState("");
   const [problems, setProblems] = useState<Record<string, string>>({});
   const [confirm, setConfirm] = useState<LeaseDraftSource | null>(null);
@@ -132,10 +153,44 @@ export function LeaseForm({
     primarySigner: crypto.randomUUID(),
     pet: crypto.randomUUID(),
     signers: new Map<string, string>(),
+    terms: new Map<string, string>(),
   });
   const request = useRef<{ fingerprint: string; key: string; event: string }>(
     null,
   );
+
+  const servicesRead = useRef(0);
+  /** Reads the Services and chooses the defaults for these dates; the newest read wins. */
+  const loadServices = (
+    previousLease: LeaseResource | null,
+    from: string,
+    until: string,
+  ) => {
+    const operation = ++servicesRead.current;
+    setServices(null);
+    servicesApi
+      .read(propertyId)
+      .then((found) => {
+        if (operation !== servicesRead.current) return;
+        setServices(found);
+        setChosen(
+          defaultChosen(
+            found,
+            from,
+            until,
+            previousLease === null
+              ? null
+              : {
+                  terms: previousLease.service_terms,
+                  endDate: previousLease.end_date,
+                },
+          ),
+        );
+      })
+      .catch(() => {
+        if (operation === servicesRead.current) setServices("failed");
+      });
+  };
 
   const load = () => {
     setFailed(false);
@@ -197,6 +252,14 @@ export function LeaseForm({
         setPet(previous.pet_deposit_required);
         setPetText(previous.pet_description ?? "");
       }
+      // A renewal starts with the Services the Lease it renews still had at its end.
+      const from =
+        previous === null
+          ? start
+          : previous.end_date === null
+            ? today
+            : addDays(previous.end_date, 1);
+      loadServices(previous, from, previous === null ? end : oneYearEnd(from));
     })().catch(() => {
       setFailed(true);
     });
@@ -273,6 +336,18 @@ export function LeaseForm({
   const cents = centsOf(rent);
   const startOk = /^\d{4}-\d{2}-\d{2}$/.test(start);
   const preview = startOk && cents !== null ? initialRent(start, cents) : null;
+  const endOk = /^\d{4}-\d{2}-\d{2}$/.test(end) && end > start;
+  const groups =
+    services !== null && services !== "failed" && startOk && endOk
+      ? serviceGroups(services, start, end)
+      : [];
+  const picked = groups
+    .flatMap((group) => group.choices)
+    .filter((choice) => chosen.has(choice.service.service_id));
+  const serviceName = (choice: (typeof picked)[number]) =>
+    language === "km" && choice.service.name_km !== null
+      ? choice.service.name_km
+      : choice.service.name_en;
   const heldDeposit =
     reservation === null
       ? null
@@ -353,6 +428,11 @@ export function LeaseForm({
       found.end = lt(language, "err_end");
     if (cents === null) found.rent = lt(language, "err_rent");
     if (pet && petText.trim() === "") found.pet = lt(language, "err_pet");
+    if (services === null || services === "failed")
+      found.services = lt(language, "err_svc_wait");
+    else if (picked.some((choice) => choice.approvalPeriodId === null))
+      found.services = lt(language, "err_svc_greyed");
+    else if (picked.length > 20) found.services = lt(language, "err_svc_many");
     setProblems(found);
     if (cents === null || Object.keys(found).length > 0) return;
     const signerIds = ids.current.signers;
@@ -376,7 +456,19 @@ export function LeaseForm({
         tenantId,
         ...occupants.filter((id) => id !== tenantId),
       ],
-      service_terms: [],
+      service_terms: picked.map((choice) => {
+        const serviceId = choice.service.service_id;
+        const termId = ids.current.terms.get(serviceId) ?? crypto.randomUUID();
+        ids.current.terms.set(serviceId, termId);
+        return {
+          term_id: termId,
+          property_service_id: serviceId,
+          applicable_from: start,
+          applicable_through: null,
+          service_approval_period_id: choice.approvalPeriodId ?? "",
+          terms_reference: "Chosen on the New Lease form",
+        };
+      }),
       pet_term: pet
         ? {
             approval_id: ids.current.pet,
@@ -612,7 +704,25 @@ export function LeaseForm({
               problems.pet,
               lt(language, "pet_help"),
             )}
-          <p className="ui-small ui-muted">{lt(language, "services_later")}</p>
+          <ServicesField
+            chosen={chosen}
+            groups={groups}
+            language={language}
+            onChange={setChosen}
+            onRetry={() => {
+              loadServices(previous, start, end);
+            }}
+            problem={problems.services}
+            state={
+              services === null
+                ? "loading"
+                : services === "failed"
+                  ? "failed"
+                  : startOk && endOk
+                    ? "ready"
+                    : "dates"
+            }
+          />
           <div className="ui-dlg-buttons">
             <button className="ui-btn primary" type="submit">
               {lt(language, "save_draft")}
@@ -671,6 +781,18 @@ export function LeaseForm({
                           dayText(preview.due),
                         )}
               </li>
+              {picked.map((choice) => (
+                <li key={choice.service.service_id}>
+                  {choice.rateCents === null
+                    ? lt(language, "pv_service_no_rate", serviceName(choice))
+                    : lt(
+                        language,
+                        "pv_service",
+                        serviceName(choice),
+                        usdFromCents(choice.rateCents),
+                      )}
+                </li>
+              ))}
               {pet && <li>{lt(language, "pv_pet")}</li>}
               <li>{lt(language, "pv_end", dayText(end))}</li>
             </ul>
@@ -703,6 +825,15 @@ export function LeaseForm({
             {lt(language, "from_to", dayText(start), dayText(end))} ·{" "}
             {lt(language, "rent_month", usdFromCents(cents ?? 0))}
           </p>
+          <p className="ui-small">
+            {picked.length === 0
+              ? lt(language, "confirm_no_services")
+              : lt(
+                  language,
+                  "confirm_services",
+                  picked.map(serviceName).join(", "),
+                )}
+          </p>
           <p className="ui-small">{lt(language, "confirm_note")}</p>
           {outcome !== null && (
             <div className="ui-notice warn" role="alert">
@@ -718,5 +849,148 @@ export function LeaseForm({
         </Dialog>
       )}
     </>
+  );
+}
+
+function ServicesField({
+  language,
+  state,
+  groups,
+  chosen,
+  problem,
+  onChange,
+  onRetry,
+}: {
+  language: Language;
+  state: "loading" | "failed" | "dates" | "ready";
+  groups: ServiceGroup[];
+  chosen: ReadonlySet<string>;
+  problem: string | undefined;
+  onChange: (next: Set<string>) => void;
+  onRetry: () => void;
+}) {
+  const groupName = (group: ServiceGroup) =>
+    group.nameEn === null
+      ? lt(language, "svc_other")
+      : language === "km" && group.nameKm !== null
+        ? group.nameKm
+        : group.nameEn;
+  return (
+    <section aria-labelledby="lease-form-services" className="ui-svcpick">
+      <h3 className="ui-small" id="lease-form-services">
+        {lt(language, "services_t")}
+      </h3>
+      {state === "loading" && (
+        <p className="ui-small ui-muted" role="status">
+          {lt(language, "svc_loading")}
+        </p>
+      )}
+      {state === "failed" && (
+        <div className="ui-notice warn" role="status">
+          <Icon name="alert" />
+          <p>{lt(language, "svc_failed")}</p>
+          <button className="ui-btn" onClick={onRetry} type="button">
+            {lt(language, "retry")}
+          </button>
+        </div>
+      )}
+      {state === "dates" && (
+        <p className="ui-small ui-muted">{lt(language, "svc_dates")}</p>
+      )}
+      {state === "ready" && groups.length === 0 && (
+        <p className="ui-small ui-muted">{lt(language, "svc_none")}</p>
+      )}
+      {state === "ready" &&
+        groups.map((group) => {
+          const name = `lease-svc-${group.typeId ?? "other"}`;
+          return (
+            <fieldset
+              aria-describedby={
+                problem === undefined ? undefined : "lease-form-services-e"
+              }
+              className="ui-radios"
+              key={name}
+            >
+              <legend>
+                {groupName(group)}
+                <span className="ui-sub2">
+                  {lt(language, group.onePerLease ? "svc_one" : "svc_many")}
+                </span>
+              </legend>
+              {group.onePerLease && (
+                <label className="ui-chk">
+                  <input
+                    checked={group.choices.every(
+                      (choice) => !chosen.has(choice.service.service_id),
+                    )}
+                    name={name}
+                    onChange={() => {
+                      onChange(choose(chosen, group, null, true));
+                    }}
+                    type="radio"
+                  />
+                  <span>{lt(language, "svc_none_pick")}</span>
+                </label>
+              )}
+              {group.choices.map((choice) => {
+                const id = choice.service.service_id;
+                const closed = choice.approvalPeriodId === null;
+                const on = chosen.has(id);
+                const label =
+                  language === "km" && choice.service.name_km !== null
+                    ? choice.service.name_km
+                    : choice.service.name_en;
+                return (
+                  <label className={closed ? "ui-chk off" : "ui-chk"} key={id}>
+                    <input
+                      checked={on}
+                      // A greyed Service that is still ticked can be unticked.
+                      disabled={closed && !on}
+                      name={name}
+                      onChange={(event) => {
+                        onChange(
+                          choose(
+                            chosen,
+                            group,
+                            id,
+                            event.currentTarget.checked,
+                          ),
+                        );
+                      }}
+                      type={group.onePerLease ? "radio" : "checkbox"}
+                    />
+                    <span>
+                      {label}
+                      <span className="ui-sub2 ui-num">
+                        {closed
+                          ? choice.startsLater !== null
+                            ? lt(
+                                language,
+                                "svc_starts",
+                                dayText(choice.startsLater),
+                              )
+                            : lt(language, "svc_closed")
+                          : choice.rateCents === null
+                            ? lt(language, "svc_no_rate")
+                            : lt(
+                                language,
+                                "svc_rate",
+                                usdFromCents(choice.rateCents),
+                              )}
+                      </span>
+                    </span>
+                  </label>
+                );
+              })}
+            </fieldset>
+          );
+        })}
+      {problem !== undefined && (
+        <p className="ui-error" id="lease-form-services-e" role="alert">
+          <Icon name="alert" small />
+          <span>{problem}</span>
+        </p>
+      )}
+    </section>
   );
 }

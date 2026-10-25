@@ -56146,6 +56146,34 @@
       "test_path": "frontend/src/settings/serviceSettingsClient.test.ts",
       "status": "implemented",
       "notes": "V1-058 R7b-6b: the Service settings client reads the answer strictly, sends changes only with the CSRF token, and maps each refusal code."
+    },
+    {
+      "test_id": "TEST-FE-1003",
+      "upstream_ids": [
+        "BR-SVC-001",
+        "BR-SVC-005",
+        "BR-SVC-014",
+        "DL-075",
+        "DL-074"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/leases/leaseServices.test.ts",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6c: New Lease Services grouped by type; only Services approved for the whole Lease can be picked (a later start is shown); rate on the Start Date; Trash Collection or the renewed Lease's Services by default; one per Only one type."
+    },
+    {
+      "test_id": "TEST-FE-1004",
+      "upstream_ids": [
+        "BR-SVC-001",
+        "BR-SVC-012",
+        "BR-SVC-014",
+        "DL-075",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6c: the New Lease form shows None first for an Only one type, Trash Collection chosen by default, tick boxes for One or more, a later Service greyed with its start; chosen Services are saved as Service terms from the Start Date with their approval period; a failed read waits with Retry."
     }
   ]
 }

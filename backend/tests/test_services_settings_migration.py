@@ -306,6 +306,10 @@ def test_the_settings_read_gives_rates_approvals_and_leases_using_each_service(
     found = next(item for item in read["services"] if item["service_id"] == service["service_id"])
     assert found["rate_today_usd_cents"] == 500
     assert found["next_rate"] == {"monthly_rate_usd_cents": 700, "effective_date": "2027-09-01"}
+    assert found["rates"] == [
+        {"monthly_rate_usd_cents": 500, "effective_date": "2027-01-01"},
+        {"monthly_rate_usd_cents": 700, "effective_date": "2027-09-01"},
+    ]
     assert found["leases_using"] == 1
     assert [period["effective_from"] for period in found["approval_periods"]] == ["2027-01-01"]
     assert (

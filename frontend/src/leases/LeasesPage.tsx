@@ -17,6 +17,7 @@ import { useHashDetail } from "../shell/useHashPage";
 import type { Language } from "../signInText";
 import type { LettersApi } from "../letters/lettersClient";
 import { LeaseDetail } from "./LeaseDetail";
+import type { ServiceSettingsApi } from "../settings/serviceSettingsClient";
 import { LeaseForm, formModeOf } from "./LeaseForm";
 import { LeasesList } from "./LeasesList";
 import {
@@ -39,6 +40,8 @@ export interface LeasesPageProps {
   unitApi: Pick<UnitApi, "list">;
   lettersApi: Pick<LettersApi, "warnings" | "notices" | "recordNotice">;
   capabilities: ReadonlySet<string> | null;
+  /** The Services from Settings for the New Lease form; the real server when not given. */
+  servicesApi?: Pick<ServiceSettingsApi, "read">;
 }
 
 export function LeasesPage({
@@ -52,6 +55,7 @@ export function LeasesPage({
   unitApi,
   lettersApi,
   capabilities,
+  servicesApi,
 }: LeasesPageProps) {
   const detail = useHashDetail("leases");
   const [data, setData] = useState<LeasesData | null>(null);
@@ -115,6 +119,7 @@ export function LeasesPage({
         mode={formMode}
         propertyId={propertyId}
         reservationApi={reservationApi}
+        servicesApi={servicesApi}
         unitApi={unitApi}
       />
     );

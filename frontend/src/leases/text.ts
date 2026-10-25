@@ -506,10 +506,51 @@ const TEXT = {
   // new
   err_tenant: ["Choose the Primary Tenant.", "សូមជ្រើសអ្នកជួលចម្បង។"],
   // new
-  services_later: [
-    "Services such as Trash Collection are added when Settings lists them (a later step).",
-    "សេវាដូចជាការប្រមូលសំរាម ត្រូវបន្ថែមពេលការកំណត់មានវា (ជំហានក្រោយ)។",
+  // new (R7b-6c)
+  services_t: ["Services", "សេវា"],
+  svc_loading: ["Reading the Services…", "កំពុងអានសេវា…"],
+  svc_failed: [
+    "The Services could not be read just now. Press Retry; the draft waits for them.",
+    "មិនអាចអានសេវាបានទេឥឡូវនេះ។ សូមចុចព្យាយាមម្តងទៀត សេចក្តីព្រាងរង់ចាំវា។",
   ],
+  svc_dates: [
+    "Enter the Start Date and End Date to choose the Services.",
+    "សូមបញ្ចូលថ្ងៃចាប់ផ្តើម និងថ្ងៃបញ្ចប់ ដើម្បីជ្រើសសេវា។",
+  ],
+  svc_none: [
+    "No Services are set up in Settings yet.",
+    "មិនទាន់មានសេវាក្នុងការកំណត់នៅឡើយទេ។",
+  ],
+  svc_one: ["Only one", "តែមួយ"],
+  svc_many: ["One or more", "មួយ ឬច្រើន"],
+  svc_none_pick: ["None", "គ្មាន"],
+  svc_rate: ["{0} a month", "{0} ក្នុងមួយខែ"],
+  svc_no_rate: ["No rate yet", "មិនទាន់មានអត្រា"],
+  svc_starts: ["Starts {0}", "ចាប់ផ្តើម {0}"],
+  svc_closed: ["Not open for these dates", "មិនបើកសម្រាប់កាលបរិច្ឆេទទាំងនេះ"],
+  err_svc_wait: [
+    "The Services are not read yet. Press Retry above.",
+    "សេវាមិនទាន់បានអានទេ។ សូមចុចព្យាយាមម្តងទៀតខាងលើ។",
+  ],
+  err_svc_greyed: [
+    "A chosen Service cannot run for the whole Lease. Untick it or change the dates.",
+    "សេវាដែលបានជ្រើសមិនអាចដំណើរការពេញកិច្ចសន្យាបានទេ។ សូមដកធីក ឬប្តូរកាលបរិច្ឆេទ។",
+  ],
+  pv_service: [
+    "{0}: {1} a month from the Start Date, on the Rent Invoice.",
+    "{0}៖ {1} ក្នុងមួយខែ ចាប់ពីថ្ងៃចាប់ផ្តើម នៅលើវិក្កយបត្រថ្លៃឈ្នួល។",
+  ],
+  pv_service_no_rate: [
+    "{0}: no rate is set yet.",
+    "{0}៖ មិនទាន់កំណត់អត្រានៅឡើយទេ។",
+  ],
+  confirm_services: ["Services: {0}.", "សេវា៖ {0}។"],
+  svc_other: ["Other Services", "សេវាផ្សេងទៀត"],
+  err_svc_many: [
+    "A Lease can have at most 20 Services.",
+    "កិច្ចសន្យាមួយអាចមានសេវាបានច្រើនបំផុត 20។",
+  ],
+  confirm_no_services: ["No Services.", "គ្មានសេវា។"],
   // new
   save_draft: ["Save draft", "រក្សាទុកសេចក្តីព្រាង"],
   preview: ["What will be billed", "អ្វីដែលនឹងចេញវិក្កយបត្រ"],

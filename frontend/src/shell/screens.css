@@ -666,6 +666,17 @@ table.ui-table a.ui-no {
   accent-color: var(--primary);
 }
 
+/* V1-058 R7b-6c: Services on the New Lease form, one group per Service type. */
+.ui-svcpick {
+  display: grid;
+  gap: 12px;
+}
+
+.ui-chk.off {
+  color: var(--text-2);
+  cursor: not-allowed;
+}
+
 .ui-photo {
   display: grid;
   place-items: center;

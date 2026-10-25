@@ -579,6 +579,13 @@ def upgrade() -> None:
                             WHERE rate.property_service_id = service.id
                               AND rate.effective_date <= p_today
                             ORDER BY rate.effective_date DESC LIMIT 1),
+                        'rates', coalesce((
+                            SELECT jsonb_agg(jsonb_build_object(
+                                'monthly_rate_usd_cents', rate.monthly_rate_usd_cents,
+                                'effective_date', rate.effective_date)
+                                ORDER BY rate.effective_date)
+                            FROM app.service_rates AS rate
+                            WHERE rate.property_service_id = service.id), '[]'::jsonb),
                         'next_rate', (
                             SELECT jsonb_build_object(
                                 'monthly_rate_usd_cents', rate.monthly_rate_usd_cents,
