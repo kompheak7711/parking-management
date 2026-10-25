@@ -85,3 +85,11 @@ Run rules: frontend-only steps run the frontend gates (format, typecheck, lint, 
 - Decided by Claude under the owner's 2026-10-23 22:30 rule: Receive payment takes only the payer's own money with nothing named on the Payment (a third party's money stays in the earlier form); more than 100 unpaid items is refused with its own message (name what the money pays).
 - Review round 1: blocker fixed (a Payment that named a charge could leave money waiting); added the too-many refusal, riel retry, two-presses and SQLSTATE tests. Round 2 skipped under the round rule (fixes are new checks and tests).
 - Runs: route tests 37 passed; PostgreSQL receive suite 12 passed; head-pin suites 531 passed, 2 failed in the combined run (financial action context 500-line page timed out while a second database run was going; utility meter rate unique key, order-dependent) and both passed alone (63).
+
+## 2026-10-25 R5c-2 Receive payment screen
+
+- New Payments page head with Receive payment (frontend/src/payments/): Customer, US dollar or riel, amount, method, Received on (Phnom Penh time), reference (not for cash), payer note, and "What this money pays for" with the oldest Due Date ticked first and a late-payment charge right after its own Invoice. Ticking by hand sets the amount; "Back to oldest first" undoes it. A confirm dialog, one key per request, and a done panel with the Receipt number and what was paid. Uses POST /payments/receive and GET /payments/payable from R5c-1.
+- An Invoice that is issued and still owed shows "Receive payment" to a person with payments.record.
+- The Payments menu item now also shows to a person with only payments.record, so a cashier can open Receive payment (display only; the server checks each route). Decided by Claude under the owner's 2026-10-23 22:30 rule.
+- The earlier payment forms stay folded under "Earlier forms" until R5c-3.
+- Tests TEST-FE-908 to 913. Full frontend run 1,765 of 1,767; the 2 failures were TEST-FE-087 and TEST-FE-488 (known intermittent, V1-060), both passed when run again. Screenshots in /mnt/project-files/v1-058/r5c-receive/.

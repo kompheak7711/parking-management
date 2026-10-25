@@ -1,7 +1,8 @@
 // V1-058 R5: one Invoice (DESIGN.md "Invoice page"): the head with its number, status and
 // Print Invoice, the overdue, void or draft notice, the printed Invoice, the Invoice status card
 // with the bar from the issue date to the Due Date, the Customer, and the History; Issue for a
-// Draft, Adjust and Void for an issued one. Receive payment and the late-payment card come next.
+// Draft, Adjust and Void for an issued one, and Receive payment while something is owed (R5c).
+// The late-payment card comes next.
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -385,6 +386,18 @@ export function InvoiceDetail({
               {ivt(language, "act_issue")}
             </button>
           )}
+          {state !== "draft" &&
+            state !== "void" &&
+            cents(invoice.outstanding_balance) > 0 &&
+            may("payments.record") && (
+              <a
+                className="ui-btn primary"
+                href={hashForPage("payments", `receive:${invoice.customer_id}`)}
+              >
+                <Icon name="payments" />
+                {ivt(language, "act_receive")}
+              </a>
+            )}
           <button className="ui-btn" onClick={printSheet} type="button">
             <Icon name="print" />
             {ivt(language, "act_print")}

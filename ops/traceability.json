@@ -53930,6 +53930,78 @@
       "test_path": "backend/tests/test_receive_payment_migration.py",
       "status": "implemented",
       "notes": "V1-058 R5c-1 Receive payment in one step: two presses at once with the same key save one Payment, one Receipt and one set of allocations."
+    },
+    {
+      "test_id": "TEST-FE-908",
+      "upstream_ids": [
+        "DL-074",
+        "DL-077",
+        "BR-PAY-024"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/payments/ReceivePayment.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5c-2 Receive payment: ticks the oldest Due Date first, a late-payment charge right after its own Invoice, and names what cannot be saved."
+    },
+    {
+      "test_id": "TEST-FE-909",
+      "upstream_ids": [
+        "DL-074",
+        "DL-077",
+        "BR-PAY-024"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/payments/ReceivePayment.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5c-2 Receive payment: pays oldest first, confirms in a dialog, sends one command and shows the Receipt."
+    },
+    {
+      "test_id": "TEST-FE-910",
+      "upstream_ids": [
+        "DL-074",
+        "DL-077",
+        "BR-PAY-024"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/payments/ReceivePayment.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5c-2 Receive payment: a tick by hand sets the amount, sends named ticks, and money may not wait while something is owed."
+    },
+    {
+      "test_id": "TEST-FE-911",
+      "upstream_ids": [
+        "DL-074",
+        "DL-077",
+        "BR-PAY-024"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/payments/ReceivePayment.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5c-2 Receive payment: names each missing value, needs a reference except for cash, refuses a later time, and lets money wait from a Customer who owes nothing."
+    },
+    {
+      "test_id": "TEST-FE-912",
+      "upstream_ids": [
+        "DL-074",
+        "DL-077",
+        "BR-PAY-024"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/payments/ReceivePayment.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5c-2 Receive payment: a change meanwhile reads the list again, and pressing again after no answer keeps the same key."
+    },
+    {
+      "test_id": "TEST-FE-913",
+      "upstream_ids": [
+        "DL-074",
+        "DL-077",
+        "BR-PAY-024"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/payments/ReceivePayment.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5c-2 Receive payment: riel counts at the app rate and is sent with its dollar value."
     }
   ]
 }

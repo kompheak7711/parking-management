@@ -127,7 +127,13 @@ const PAGE_NAMES: Record<PageId, readonly [string, string]> = {
 // rule, except Waiting for approval and Settings, which follow the owner's words.
 const PAGE_NEEDS: Record<PageId, readonly string[] | null> = {
   home: null,
-  payments: ["payments.read", "receipts.read", "credits.read", "refunds.read"],
+  payments: [
+    "payments.read",
+    "payments.record",
+    "receipts.read",
+    "credits.read",
+    "refunds.read",
+  ],
   invoices: ["invoices.read"],
   utilities: ["utility.read"],
   approvals: ["financial.approve"],

@@ -15,6 +15,7 @@ const TEXT = {
     "មិនអាចអានវិក្កយបត្របានទេឥឡូវនេះ។ សូមពិនិត្យការតភ្ជាប់ ហើយព្យាយាមម្តងទៀត។",
   ],
   retry: ["Retry", "ព្យាយាមម្តងទៀត"],
+  act_receive: ["Receive payment", "ទទួលការបង់ប្រាក់"],
   // new
   no_property: [
     "Choose the Property in Settings first.",

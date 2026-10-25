@@ -1440,3 +1440,85 @@ table.ui-table.ui-invlist .ui-phone {
   background: var(--sunken);
   font-weight: 600;
 }
+
+/* V1-058 R5c-2: "What this money pays for" on Receive payment (mock-up .payfor). */
+.ui-payfor {
+  border: 1px solid var(--border);
+  border-radius: var(--r, 12px);
+  padding: 12px 14px 14px;
+  margin: 0;
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.ui-payfor legend {
+  font-weight: 600;
+  padding: 0 6px;
+  margin-left: -6px;
+}
+.ui-payfor > .help {
+  margin: 0;
+}
+.ui-pf-list {
+  display: grid;
+  margin: 2px 0 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  min-width: 0;
+}
+.ui-pf-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  min-height: 44px;
+}
+.shell-view .ui-pf-row input {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--primary);
+}
+.ui-pf-name small {
+  display: block;
+  color: var(--text-2);
+  font-size: 0.8rem;
+}
+.ui-pf-row.late .ui-pf-name b {
+  font-weight: 600;
+}
+.ui-pf-pays {
+  font-weight: 700;
+  white-space: nowrap;
+}
+.ui-pf-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+}
+@media (max-width: 620px) {
+  .ui-pf-row {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .ui-pf-pays {
+    grid-column: 2;
+  }
+}
+
+/* Receive payment: the form gets the wider column, the Customer card the narrower one. */
+@media (min-width: 1081px) {
+  .ui-split.ui-split-form {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  }
+}
+
+.ui-seg button {
+  white-space: nowrap;
+}

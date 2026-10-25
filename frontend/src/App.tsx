@@ -62,6 +62,12 @@ import { UtilitiesPage } from "./utilities/UtilitiesPage";
 import { utt } from "./utilities/text";
 import { InvoiceManagement } from "./InvoiceManagement";
 import { InvoicesPage } from "./invoices/InvoicesPage";
+import { PaymentsPage } from "./payments/PaymentsPage";
+import {
+  type PaymentsApi,
+  paymentsApi as paymentsClient,
+} from "./payments/paymentsClient";
+import { pyt } from "./payments/text";
 import { ivt } from "./invoices/text";
 import { InvoiceApi, invoiceApi as invoiceClient } from "./invoiceClient";
 import { LeaseEnforcementManagement } from "./LeaseEnforcementManagement";
@@ -105,6 +111,7 @@ export interface AppProps {
   depositApi?: DepositApi;
   utilityApi?: UtilityApi;
   invoiceApi?: InvoiceApi;
+  paymentsApi?: PaymentsApi;
   financialServices?: FinancialUiServices;
   enforcementServices?: EnforcementServices;
   ledgerApi?: CustomerLedgerApi;
@@ -554,6 +561,7 @@ export function App({
   depositApi = depositClient,
   utilityApi = utilityClient,
   invoiceApi = invoiceClient,
+  paymentsApi = paymentsClient,
   financialServices,
   enforcementServices,
   ledgerApi,
@@ -1481,16 +1489,37 @@ export function App({
         className="shell-page"
         data-page="payments"
         hidden={!shown("payments")}
-        lang="en"
       >
-        {!logoutPending && (
-          <FinancialManagement
-            key={session.actor_id}
-            actorId={session.actor_id}
-            services={financialServices}
-            onDirtyStateChange={setFinancialDraftsDirty}
-          />
-        )}
+        <PaymentsPage
+          active={shown("payments")}
+          capabilities={capabilities}
+          customerApi={customerApi ?? defaultCustomerApi}
+          invoiceApi={invoiceApi}
+          language={language}
+          leaseApi={leaseApi}
+          paymentsApi={paymentsApi}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+        />
+        {/* V1-058 R5c: the payment list, matching, Credit and refunds stay in the earlier English
+            forms, folded, until the next steps move them into the Payments screens. */}
+        <details className="ui-records">
+          <summary lang={language}>
+            <span className="ui-records-title">{pyt(language, "records")}</span>
+            <span className="ui-small ui-muted">
+              {pyt(language, "records_note")}
+            </span>
+          </summary>
+          <div lang="en">
+            {!logoutPending && (
+              <FinancialManagement
+                key={session.actor_id}
+                actorId={session.actor_id}
+                services={financialServices}
+                onDirtyStateChange={setFinancialDraftsDirty}
+              />
+            )}
+          </div>
+        </details>
       </div>
       <div
         className="shell-page"
