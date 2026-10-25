@@ -84,6 +84,23 @@ const setupApi = {
   removeSetupItem: vi.fn(),
 };
 
+const usersApi = {
+  load: vi.fn(() =>
+    Promise.resolve({
+      users: [],
+      capabilities: [],
+      roleBundles: [],
+      authorizationHistory: [],
+    }),
+  ),
+  createUser: vi.fn(),
+  disableUser: vi.fn(),
+  revokeSessions: vi.fn(),
+  administrativelyRecoverUser: vi.fn(),
+  giveSettingsAccess: vi.fn(),
+  removeSettingsAccess: vi.fn(),
+};
+
 function show(
   status: () => Promise<HealthStatus>,
   {
@@ -102,8 +119,11 @@ function show(
       }}
       healthApi={api}
       language={language}
+      myUserId="owner-1"
       propertyId="property-1"
+      reauthenticate={vi.fn()}
       unitApi={setupApi}
+      usersApi={usersApi}
     />,
   );
   return api;

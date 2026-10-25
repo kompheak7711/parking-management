@@ -2,7 +2,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   AdministrationError,
+  AdministrationRefusedError,
   AdministrationUnavailableError,
+  ReauthenticationRequiredError,
   UserAccount,
   accessAdministrationApi,
 } from "./adminClient";
@@ -307,5 +309,66 @@ describe("access administration client", () => {
       "/api/v1/properties/property-1/authorization-history?limit=100&cursor=next-page",
       expect.objectContaining({ method: "GET", credentials: "include" }),
     );
+  });
+
+  it("TEST-FE-948 tells a request for the password and code again, a refusal with its code and words, and gives or removes Settings access with a reason", async () => {
+    vi.spyOn(document, "cookie", "get").mockReturnValue(
+      "__Host-prm_csrf=csrf-token",
+    );
+    const refusal = (status: number, code: string, message: string) =>
+      new Response(JSON.stringify({ error: { code, message } }), {
+        status,
+        headers: { "Content-Type": "application/json" },
+      });
+    const fetchImplementation = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        refusal(403, "REAUTHENTICATION_REQUIRED", "Please enter ..."),
+      )
+      .mockResolvedValueOnce(refusal(403, "FORBIDDEN", "Not permitted."))
+      .mockResolvedValueOnce(
+        refusal(412, "STALE_VERSION", "The record changed since it was read."),
+      )
+      .mockResolvedValueOnce(new Response("not json", { status: 409 }))
+      .mockResolvedValueOnce(jsonResponse({ ...user, settings_access: true }))
+      .mockResolvedValueOnce(jsonResponse(user));
+    vi.stubGlobal("fetch", fetchImplementation);
+
+    const first = accessAdministrationApi.disableUser(user);
+    await expect(first).rejects.toBeInstanceOf(ReauthenticationRequiredError);
+    // Still an unavailable answer for the earlier forms.
+    await expect(first).rejects.toBeInstanceOf(AdministrationUnavailableError);
+    const second = accessAdministrationApi.disableUser(user);
+    await expect(second).rejects.toBeInstanceOf(AdministrationUnavailableError);
+    await expect(second).rejects.not.toBeInstanceOf(
+      ReauthenticationRequiredError,
+    );
+    const third = accessAdministrationApi
+      .disableUser(user)
+      .catch((error: unknown) => error);
+    const stale = await third;
+    expect(stale).toBeInstanceOf(AdministrationRefusedError);
+    expect(stale).toMatchObject({
+      status: 412,
+      code: "STALE_VERSION",
+      serverMessage: "The record changed since it was read.",
+    });
+    const fourth = accessAdministrationApi.disableUser(user);
+    await expect(fourth).rejects.toBeInstanceOf(AdministrationError);
+    await expect(fourth).rejects.not.toBeInstanceOf(AdministrationRefusedError);
+
+    expect(
+      await accessAdministrationApi.giveSettingsAccess("user-1", "Night shift"),
+    ).toMatchObject({ settings_access: true });
+    await accessAdministrationApi.removeSettingsAccess("user-1", "Left");
+    const calls = fetchImplementation.mock.calls.slice(4);
+    expect(calls.map(([url]) => url)).toEqual([
+      "/api/v1/users/user-1/settings-access",
+      "/api/v1/users/user-1/settings-access/remove",
+    ]);
+    expect(calls.map(([, init]) => init?.body)).toEqual([
+      JSON.stringify({ reason: "Night shift" }),
+      JSON.stringify({ reason: "Left" }),
+    ]);
   });
 });

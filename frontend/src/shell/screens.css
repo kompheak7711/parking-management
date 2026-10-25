@@ -1869,3 +1869,31 @@ a.ui-kpi.ui-home-kpi {
   gap: 4px 12px;
   align-items: baseline;
 }
+
+/* V1-058 R7b-3: Settings → Users and sign-in (mock-up .okv, .temppw, the table foot with a
+   button). */
+.ui-okv {
+  color: var(--ok);
+}
+.ui-tfoot.ui-tfoot-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.ui-otp {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: var(--sunken);
+}
+.ui-otp code {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  word-break: break-all;
+}

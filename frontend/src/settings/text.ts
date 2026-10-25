@@ -26,6 +26,11 @@ const TEXT = {
     "This tab is rebuilt in a later step. Until then the earlier forms below still work.",
     "ផ្ទាំងនេះនឹងរៀបចំឡើងវិញនៅជំហានក្រោយ។ រហូតដល់ពេលនោះ ទម្រង់មុនខាងក្រោមនៅតែប្រើបាន។",
   ],
+  // new: the Users tab is rebuilt; role bundles are not in the mock-up.
+  earlier_kept: [
+    "Role bundles and the full list of access changes are still in the earlier forms below.",
+    "កញ្ចប់តួនាទី និងបញ្ជីពេញនៃការប្តូរសិទ្ធិ នៅតែមាននៅក្នុងទម្រង់មុនខាងក្រោម។",
+  ],
   // new
   no_tab: [
     "Your account cannot open this tab.",
@@ -170,6 +175,258 @@ const TEXT = {
     "You can read these lists. Only the Owner or a user the Owner allows can change them.",
     "អ្នកអាចអានបញ្ជីទាំងនេះ។ មានតែម្ចាស់ ឬអ្នកប្រើដែលម្ចាស់អនុញ្ញាតទេ ដែលអាចប្តូរបាន។",
   ],
+
+  // R7b-3 Users and sign-in
+  se_users: ["Users", "អ្នកប្រើ"],
+  se_user: ["Name", "ឈ្មោះ"],
+  se_role: ["Role", "តួនាទី"],
+  se_mfa: ["MFA", "MFA"],
+  ua_col: ["Can change settings", "អាចប្តូរការកំណត់"],
+  se_state: ["State", "ស្ថានភាព"],
+  ur_col: ["Sign-in help", "ជំនួយការចូល"],
+  se_active: ["Active", "សកម្ម"],
+  se_disabled: ["Disabled", "បានបិទ"],
+  se_mfa_off: ["Not needed", "មិនចាំបាច់"],
+  // new: the server knows the account must use MFA, not whether it is set up yet.
+  mfa_needed: ["Needed", "ត្រូវការ"],
+  role_owner: ["Owner", "ម្ចាស់"],
+  role_manager: ["Manager", "អ្នកគ្រប់គ្រង"],
+  role_staff: ["Staff", "បុគ្គលិក"],
+  // new: an account made before the three roles.
+  role_other: ["Other", "ផ្សេងទៀត"],
+  se_new_user: ["Add user", "បន្ថែមអ្នកប្រើ"],
+  ua_btn: ["Settings access", "សិទ្ធិការកំណត់"],
+  se_revoke: ["End all sessions", "បញ្ចប់វគ្គទាំងអស់"],
+  se_revoke_q: [
+    "Everyone except you is signed out now. They can sign in again.",
+    "អ្នករាល់គ្នាលើកលែងតែអ្នក ត្រូវចេញពីប្រព័ន្ធឥឡូវ។ ពួកគេអាចចូលម្តងទៀតបាន។",
+  ],
+  se_revoke_done: [
+    "Everyone else is signed out.",
+    "អ្នកផ្សេងទាំងអស់បានចេញពីប្រព័ន្ធ។",
+  ],
+  // new
+  revoke_some: [
+    "Not everyone could be signed out. Try again.",
+    "មិនអាចឲ្យអ្នកទាំងអស់ចេញពីប្រព័ន្ធបានទេ។ សូមព្យាយាមម្តងទៀត។",
+  ],
+  // new: replaces the mock-up's note, because only the Owner can open this tab.
+  users_note: [
+    "Only the Owner sees and changes this tab. Every change is kept in History.",
+    "មានតែម្ចាស់ទេ ដែលឃើញ និងប្តូរផ្ទាំងនេះ។ ការប្តូរនីមួយៗរក្សាទុកក្នុងប្រវត្តិ។",
+  ],
+  se_bundles: ["What each role can do", "តួនាទីនីមួយៗធ្វើអ្វីបាន"],
+  se_cap: ["Work", "ការងារ"],
+  cap_daily: [
+    "Daily work: Payments, Invoices, readings, Units, Customers, Reservations, Leases, move-out steps",
+    "ការងារប្រចាំថ្ងៃ៖ ការបង់ប្រាក់ វិក្កយបត្រ អំណាន បន្ទប់ អតិថិជន ការកក់ កិច្ចសន្យា ជំហានចាកចេញ",
+  ],
+  cap_drafts: [
+    "Prepare drafts: Final Settlements, Refunds, corrections",
+    "រៀបចំសេចក្តីព្រាង៖ ការទូទាត់ចុងក្រោយ ការសងវិញ ការកែ",
+  ],
+  cap_approve: [
+    "Financial approval: void, adjust, late charges, deposit variances, sign and terminate Leases, confirm Settlements and Refunds",
+    "ការអនុម័តហិរញ្ញវត្ថុ៖ លុបចោល កែតម្រូវ ថ្លៃពិន័យ ប្រាក់កក់ខុសគ្នា ចុះហត្ថលេខា និងបញ្ចប់កិច្ចសន្យា បញ្ជាក់ការទូទាត់ និងការសងវិញ",
+  ],
+  cap_reports: [
+    "All reports, History and exports",
+    "របាយការណ៍ទាំងអស់ ប្រវត្តិ និងការនាំចេញ",
+  ],
+  cap_ops: [
+    "Operational reports only (no money totals)",
+    "របាយការណ៍ប្រតិបត្តិការប៉ុណ្ណោះ (គ្មានសរុបលុយ)",
+  ],
+  cap_health: ["System health page", "ទំព័រសុខភាពប្រព័ន្ធ"],
+  cap_settings: [
+    "Business settings, users and roles",
+    "ការកំណត់អាជីវកម្ម អ្នកប្រើ និងតួនាទី",
+  ],
+  ua_if: ["If the Owner allows", "បើម្ចាស់អនុញ្ញាត"],
+  // new
+  yes: ["Yes", "បាទ/ចាស"],
+  // new
+  no: ["No", "ទេ"],
+  se_signin: ["Sign-in rules", "ច្បាប់ចូល"],
+  se_signin_1: [
+    "Local sign-in with name and password; no first Owner created from the web.",
+    "ចូលក្នុងមូលដ្ឋានដោយឈ្មោះ និងពាក្យសម្ងាត់; គ្មានម្ចាស់ដំបូងបង្កើតពីវេប។",
+  ],
+  se_signin_2: [
+    "Owner and Managers must use a second code (MFA app), with recovery codes kept safe.",
+    "ម្ចាស់ និងអ្នកគ្រប់គ្រង ត្រូវប្រើកូដទីពីរ (កម្មវិធី MFA) ជាមួយកូដសង្គ្រោះរក្សាសុវត្ថិភាព។",
+  ],
+  se_signin_3: [
+    "A session ends after 30 minutes without activity, and always after 24 hours.",
+    "វគ្គបញ្ចប់បន្ទាប់ពី 30 នាទីគ្មានសកម្មភាព និងជានិច្ចបន្ទាប់ពី 24 ម៉ោង។",
+  ],
+  se_signin_5: [
+    "After 3 wrong passwords the person waits 5 minutes. After 2 more, they wait 15 minutes, and again after every 2 more.",
+    "បន្ទាប់ពីពាក្យសម្ងាត់ខុស ៣ ដង ត្រូវរង់ចាំ ៥ នាទី។ ខុស ២ ដងទៀត ត្រូវរង់ចាំ ១៥ នាទី ហើយម្តងទៀតរាល់ ២ ដងបន្ថែម។",
+  ],
+  se_signin_4: [
+    "Disabling a user ends their sessions at once. Nothing is ever deleted.",
+    "ការបិទអ្នកប្រើ បញ្ចប់វគ្គរបស់គេភ្លាម។ គ្មានអ្វីលុបទេ។",
+  ],
+  // Add user
+  // new
+  username: ["Username", "ឈ្មោះអ្នកប្រើ"],
+  // new
+  username_h: [
+    "The person types this to sign in. It cannot be changed later.",
+    "អ្នកនោះវាយឈ្មោះនេះដើម្បីចូល។ មិនអាចប្តូរនៅពេលក្រោយបានទេ។",
+  ],
+  // new: the server makes only Staff and Managers; there is one Owner.
+  owner_one: [
+    "There is one Owner. Add Staff or Managers here.",
+    "មានម្ចាស់តែម្នាក់។ បន្ថែមបុគ្គលិក ឬអ្នកគ្រប់គ្រងនៅទីនេះ។",
+  ],
+  se_user_note: [
+    "The new user sets a password at first sign-in. Owners and Managers must also set up the MFA app.",
+    "អ្នកប្រើថ្មីកំណត់ពាក្យសម្ងាត់ពេលចូលលើកដំបូង។ ម្ចាស់ និងអ្នកគ្រប់គ្រងត្រូវរៀបចំកម្មវិធី MFA ផងដែរ។",
+  ],
+  // new
+  e_username: ["Type a username.", "សូមវាយឈ្មោះអ្នកប្រើ។"],
+  se_e_dup: ["{0} already exists.", "{0} មានរួចហើយ។"],
+  se_user_saved: ["{0} added.", "បានបន្ថែម {0}។"],
+  // One-time password
+  ur_done_t: ["One-time password for {0}", "ពាក្យសម្ងាត់ប្រើម្តងសម្រាប់ {0}"],
+  ur_done_s: [
+    "Give it to {0} in person. Do not send it by chat. It works once, within 24 hours. They choose their own password when they sign in.",
+    "ផ្តល់ឱ្យ {0} ដោយផ្ទាល់។ កុំផ្ញើតាមការជជែក។ ប្រើបានម្តង ក្នុងរយៈពេល ២៤ ម៉ោង។ គាត់ជ្រើសពាក្យសម្ងាត់ផ្ទាល់ខ្លួនពេលចូល។",
+  ],
+  // new
+  otp_until: ["Works until {0}.", "ប្រើបានរហូតដល់ {0}។"],
+  ur_done_once: [
+    "The app shows this only now. If it is lost, reset again.",
+    "កម្មវិធីបង្ហាញតែឥឡូវនេះ។ បើបាត់ សូមកំណត់ឡើងវិញម្តងទៀត។",
+  ],
+  ur_copy: ["Copy", "ចម្លង"],
+  ur_copied: ["Copied.", "បានចម្លង។"],
+  // new
+  copy_failed: [
+    "Could not copy. Write it down instead.",
+    "មិនអាចចម្លងបានទេ។ សូមសរសេរវាទុកជំនួសវិញ។",
+  ],
+  ur_close: ["Done", "រួចរាល់"],
+  // Reset
+  ur_btn: ["Reset", "កំណត់ឡើងវិញ"],
+  ur_t: ["Reset sign-in for {0}", "កំណត់ការចូលឡើងវិញសម្រាប់ {0}"],
+  ur_what: ["What to reset", "អ្វីដែលត្រូវកំណត់ឡើងវិញ"],
+  ur_pw: ["Password", "ពាក្យសម្ងាត់"],
+  ur_pw_s: [
+    "They forgot it. The app makes a one-time password for you to give them.",
+    "គាត់ភ្លេច។ កម្មវិធីបង្កើតពាក្យសម្ងាត់ប្រើម្តង ឱ្យអ្នកផ្តល់ទៅគាត់។",
+  ],
+  ur_mfa: ["Two-step sign-in", "ការចូលពីរជំហាន"],
+  ur_mfa_s: [
+    "They lost or changed their phone. They set it up again at the next sign-in.",
+    "គាត់បាត់ ឬប្តូរទូរស័ព្ទ។ គាត់រៀបចំម្តងទៀតពេលចូលលើកក្រោយ។",
+  ],
+  // new: the server's reset always replaces the password too (L4).
+  ur_mfa_pw: [
+    "The password is replaced too: give them the one-time password.",
+    "ពាក្យសម្ងាត់ក៏ត្រូវប្តូរដែរ៖ សូមផ្តល់ពាក្យសម្ងាត់ប្រើម្តងទៅគាត់។",
+  ],
+  ur_reason: ["Reason", "មូលហេតុ"],
+  ur_choose: ["Choose a reason", "ជ្រើសមូលហេតុ"],
+  ur_r_forgot: ["Forgot password", "ភ្លេចពាក្យសម្ងាត់"],
+  ur_r_phone: ["Lost or new phone", "បាត់ ឬប្តូរទូរស័ព្ទ"],
+  ur_r_risk: [
+    "Password may be known by someone else",
+    "ពាក្យសម្ងាត់ប្រហែលជាអ្នកផ្សេងដឹង",
+  ],
+  ur_r_other: ["Other", "ផ្សេងទៀត"],
+  ur_note: ["Note", "កំណត់ចំណាំ"],
+  ur_note_ph: [
+    "For example: asked at reception, 19/10 08:10",
+    "ឧទាហរណ៍៖ បានសួរនៅកន្លែងទទួលភ្ញៀវ 19/10 08:10",
+  ],
+  ur_conseq: [
+    "{0} is signed out everywhere at once. This is written to History.",
+    "{0} ត្រូវចាកចេញពីគ្រប់កន្លែងភ្លាមៗ។ វាត្រូវកត់ក្នុងប្រវត្តិ។",
+  ],
+  ur_ok: ["Reset now", "កំណត់ឡើងវិញឥឡូវ"],
+  ur_e_what: ["Choose what to reset.", "សូមជ្រើសអ្វីដែលត្រូវកំណត់ឡើងវិញ។"],
+  ur_e_reason: ["Choose a reason.", "សូមជ្រើសមូលហេតុ។"],
+  ur_e_note: ["Write what happened.", "សូមសរសេរអ្វីដែលបានកើតឡើង។"],
+  // Disable (new: the mock-up names it only in the sign-in rules)
+  dis_btn: ["Disable", "បិទ"],
+  dis_t: ["Disable {0}", "បិទ {0}"],
+  dis_q: [
+    "{0} is signed out at once and can no longer sign in. Nothing is deleted. The app cannot turn the account on again.",
+    "{0} ត្រូវចេញពីប្រព័ន្ធភ្លាម ហើយមិនអាចចូលបានទៀតទេ។ គ្មានអ្វីលុបទេ។ កម្មវិធីមិនអាចបើកគណនីនេះវិញបានទេ។",
+  ],
+  dis_done: ["{0} is disabled.", "បានបិទ {0}។"],
+  // Settings access
+  ua_title: ["Who can change settings", "អ្នកដែលអាចប្តូរការកំណត់"],
+  ua_note: [
+    "The Owner can always change settings. Tick the users you trust to change them too. Every change is kept in History.",
+    "ម្ចាស់អាចប្តូរការកំណត់ជានិច្ច។ សូមធីកអ្នកប្រើដែលអ្នកទុកចិត្ត ឲ្យប្តូរបានដែរ។ ការប្តូរនីមួយៗរក្សាទុកក្នុងប្រវត្តិ។",
+  ],
+  // new: the server keeps a reason with each change.
+  ua_reason_h: [
+    "Kept in History with each change.",
+    "រក្សាទុកក្នុងប្រវត្តិ ជាមួយការប្តូរនីមួយៗ។",
+  ],
+  // new
+  ua_e_reason: ["Write the reason.", "សូមសរសេរមូលហេតុ។"],
+  // new
+  ua_e_none: ["Nothing was changed.", "គ្មានអ្វីត្រូវបានប្តូរទេ។"],
+  // new
+  ua_e_code: [
+    "{0}: a Staff account gets Settings access only after it has set up its sign-in code.",
+    "{0}៖ គណនីបុគ្គលិកទទួលបានសិទ្ធិការកំណត់ លុះត្រាតែបានរៀបចំកូដចូលរួចហើយ។",
+  ],
+  // new
+  ua_e_one: ["{0}: not changed.", "{0}៖ មិនបានប្តូរទេ។"],
+  se_saved: ["Saved.", "បានរក្សាទុក។"],
+  // Confirm it is you (new: the server asks for the password and code again after 15 minutes)
+  ra_t: ["Confirm it is you", "បញ្ជាក់ថាជាអ្នក"],
+  ra_s: [
+    "This changes who may use the app. Type your password and the 6-digit code from your phone. The app asks again after 15 minutes.",
+    "សកម្មភាពនេះប្តូរអ្នកដែលអាចប្រើកម្មវិធី។ សូមវាយពាក្យសម្ងាត់ និងលេខកូដ ៦ ខ្ទង់ពីទូរស័ព្ទរបស់អ្នក។ កម្មវិធីសួរម្តងទៀតបន្ទាប់ពី ១៥ នាទី។",
+  ],
+  ra_pw: ["Your password", "ពាក្យសម្ងាត់របស់អ្នក"],
+  ra_code: ["6-digit code", "លេខកូដ ៦ ខ្ទង់"],
+  ra_e_pw: ["Type your password.", "សូមវាយពាក្យសម្ងាត់។"],
+  ra_e_code: [
+    "Type the 6 digits from your phone.",
+    "សូមវាយលេខ ៦ ខ្ទង់ពីទូរស័ព្ទ។",
+  ],
+  ra_bad: [
+    "The password or code is not right, or you were signed out. Check both and try again.",
+    "ពាក្យសម្ងាត់ ឬលេខកូដមិនត្រឹមត្រូវ ឬអ្នកបានចេញពីប្រព័ន្ធ។ សូមពិនិត្យទាំងពីរ ហើយព្យាយាមម្តងទៀត។",
+  ],
+  ra_wait: [
+    "Too many tries. Wait {0} minutes, then try again.",
+    "ព្យាយាមច្រើនដងពេក។ សូមរង់ចាំ {0} នាទី រួចព្យាយាមម្តងទៀត។",
+  ],
+  ra_down: [
+    "The office computer did not answer. Try again.",
+    "កុំព្យូទ័រការិយាល័យមិនបានឆ្លើយតបទេ។ សូមព្យាយាមម្តងទៀត។",
+  ],
+  ra_ok: ["Continue", "បន្ត"],
+  // Users answers (new)
+  users_loading: ["Reading the users…", "កំពុងអានអ្នកប្រើ…"],
+  users_failed: [
+    "The users could not be read just now. Check the connection and try again.",
+    "មិនអាចអានអ្នកប្រើបានទេឥឡូវនេះ។ សូមពិនិត្យការតភ្ជាប់ ហើយព្យាយាមម្តងទៀត។",
+  ],
+  users_changed: [
+    "Someone changed this account. The list was read again; check and try again.",
+    "មាននរណាម្នាក់បានប្តូរគណនីនេះ។ បញ្ជីត្រូវបានអានម្តងទៀត សូមពិនិត្យ ហើយព្យាយាមម្តងទៀត។",
+  ],
+  users_refused: [
+    "Not done. The server said:",
+    "មិនបានធ្វើទេ។ ម៉ាស៊ីនមេនិយាយថា៖",
+  ],
+  users_unknown: [
+    "The answer did not come back. The list was read again; check before trying again.",
+    "ចម្លើយមិនបានត្រឡប់មកវិញទេ។ បញ្ជីត្រូវបានអានម្តងទៀត សូមពិនិត្យមុននឹងព្យាយាមម្តងទៀត។",
+  ],
+  // new: a disabled account shows no buttons.
+  none: ["—", "—"],
 } as const satisfies Record<string, readonly [string, string]>;
 
 export type SettingsTextKey = keyof typeof TEXT;

@@ -846,6 +846,8 @@ describe("local sign-in", () => {
       createRoleBundle: vi.fn(),
       assignRoleBundle: vi.fn(),
       administrativelyRecoverUser: vi.fn(),
+      giveSettingsAccess: vi.fn(),
+      removeSettingsAccess: vi.fn(),
     };
     render(
       <App
@@ -1059,6 +1061,8 @@ describe("local sign-in", () => {
       createRoleBundle: vi.fn(),
       assignRoleBundle: vi.fn(),
       administrativelyRecoverUser,
+      giveSettingsAccess: vi.fn(),
+      removeSettingsAccess: vi.fn(),
     };
     render(
       <App
@@ -1156,6 +1160,8 @@ describe("local sign-in", () => {
       createRoleBundle: vi.fn(),
       assignRoleBundle: vi.fn(),
       administrativelyRecoverUser: vi.fn(),
+      giveSettingsAccess: vi.fn(),
+      removeSettingsAccess: vi.fn(),
     };
     render(
       <App
@@ -1211,11 +1217,13 @@ describe("local sign-in", () => {
     // Review round 2: loading the administration again clears a password not cleared by hand.
     createAccount();
     await screen.findByRole("region", { name: "One-time password" });
+    // The rebuilt Users tab reads the users too, so only this button's read is counted.
+    const loadsBefore = load.mock.calls.length;
     fireEvent.click(
       screen.getByRole("button", { name: "Check administration access" }),
     );
     await waitFor(() => {
-      expect(load).toHaveBeenCalledTimes(2);
+      expect(load).toHaveBeenCalledTimes(loadsBefore + 1);
     });
     expect(
       screen.queryByRole("region", { name: "One-time password" }),

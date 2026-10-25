@@ -13,6 +13,7 @@ import {
   AuthenticationData,
   LocalSignIn,
   RecoveryCodeSetData,
+  ReauthenticationRequest,
   RecoveryCodeSetSummary,
   SessionData,
   authenticationApi,
@@ -926,6 +927,13 @@ export function App({
       .catch(() => {
         setSubmissionState("failed");
       });
+  }
+
+  /** V1-058 R7b-3: the Users tab asks for the password and code again itself. */
+  async function reauthenticateForSettings(request: ReauthenticationRequest) {
+    // The Property configuration is kept: clearing it could move the tab to no Property while
+    // the action runs again.
+    setSession(await client.reauthenticate(request));
   }
 
   function handleLogout() {
@@ -2651,6 +2659,9 @@ export function App({
           }}
           healthApi={healthApi}
           language={language}
+          myUserId={session.actor_id}
+          reauthenticate={reauthenticateForSettings}
+          usersApi={administrationApi}
         />
       </div>
     </AppShell>

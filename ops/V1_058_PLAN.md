@@ -240,3 +240,14 @@ Run rules: frontend-only steps run the frontend gates (format, typecheck, lint, 
 - Gates: prettier, tsc, eslint clean; vitest run below; traceability audit passed. Pictures 07 to
   10 in /mnt/project-files/v1-058/r7b-settings/.
 - Full vitest run after the review fixes: 1,797 passed.
+
+### R7b-3 Users and sign-in (2026-10-25)
+
+- Settings → Users and sign-in rebuilt to the mock-up (frontend/src/settings/UsersTab.tsx): users table (name and username, role, MFA, can change settings, state, sign-in help), Add user (Staff or Manager; one-time password shown once with Copy), Settings access dialog (ticks plus a reason, one call per changed user), Reset (password, or two-step sign-in for an MFA account; reason list with Other needing a note; always gives a one-time password), Disable (asks first), End all sessions (every active user except the signed-in Owner), What each role can do, Sign-in rules.
+- When the server answers REAUTHENTICATION_REQUIRED, the tab asks for the password and 6-digit code (Confirm it is you), then runs the action once more; the open form stays hidden underneath so a later refusal keeps what was typed. A Settings access run stopped part-way does only the rest.
+- adminClient.ts: ReauthenticationRequiredError (a kind of AdministrationUnavailableError, so the earlier forms are unchanged), AdministrationRefusedError (status, code, server words), giveSettingsAccess / removeSettingsAccess.
+- Decided by Claude under the owner's 2026-10-23 22:30 rule (not money): no Last sign-in column (server gap); MFA shows Needed / Not needed (the server knows the policy, not whether it is set up); Disable added as a row button (the mock-up names it only in the rules); the mock-up's 6-digit code inside Reset is replaced by the server's password-and-code check every 15 minutes; Add user has a Username field and offers Staff or Manager only (one Owner); the role table sits under the users, full width.
+- Server gaps (later): last sign-in and MFA set-up state in the user list; a "one-time password given" state; no way to turn a disabled account on again (by design today).
+- Role bundles and the authorization history stay in the folded earlier forms on this tab.
+- Tests TEST-FE-944 to 949. Review round 1 (no blocker): form lost after the check, retry repeated done changes, one-time password dropped after a Property change, client mapping tests; all fixed. Full frontend run 1,803 passed.
+- Screenshots /mnt/project-files/v1-058/r7b-settings/11 to 18.

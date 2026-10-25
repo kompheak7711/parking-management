@@ -54503,6 +54503,77 @@
       "test_path": "frontend/src/settings/UnitSetupTab.test.tsx",
       "status": "implemented",
       "notes": "V1-058 R7b-2: Khmer shows the Khmer list names and mock-up words; without the Units list an item shows only that a Unit uses it."
+    },
+    {
+      "test_id": "TEST-FE-944",
+      "upstream_ids": [
+        "DL-074",
+        "DL-081",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/UsersTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-3: Users lists role, MFA, Settings access and state; only active users who are not the Owner get Reset and Disable; End all sessions leaves the signed-in Owner; role table and sign-in rules show."
+    },
+    {
+      "test_id": "TEST-FE-945",
+      "upstream_ids": [
+        "DL-074",
+        "DL-081",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/UsersTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-3: Add user checks name and username, makes Staff or Manager and shows the one-time password once; Reset asks what and why (Other needs a note), then shows the one-time password."
+    },
+    {
+      "test_id": "TEST-FE-946",
+      "upstream_ids": [
+        "DL-074",
+        "DL-081",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/UsersTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-3: an action the server refuses for missing reauthentication asks for password and code, then runs once more; wrong code and wait messages; cancel changes nothing; a per-user Settings access refusal names the user; a stale account reads the list again; other refusals show the server's English words."
+    },
+    {
+      "test_id": "TEST-FE-947",
+      "upstream_ids": [
+        "DL-074",
+        "DL-081",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/UsersTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-3: Khmer words from the mock-up; a failed read offers Retry; without the right the tab says so."
+    },
+    {
+      "test_id": "TEST-FE-948",
+      "upstream_ids": [
+        "DL-081",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/adminClient.test.ts",
+      "status": "implemented",
+      "notes": "V1-058 R7b-3: the admin client tells a request for the password and code again (still an unavailable answer for the earlier forms), a refusal with its code and English words, a non-JSON refusal as a plain error, and gives or removes Settings access with a reason."
+    },
+    {
+      "test_id": "TEST-FE-949",
+      "upstream_ids": [
+        "DL-074",
+        "DL-081",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/UsersTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-3 review round 1: after the password and code, a refused form keeps what was typed; a Settings access run stopped part-way does only the rest; a one-time password still shows after the Property changed."
     }
   ]
 }

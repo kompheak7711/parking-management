@@ -18,6 +18,7 @@ import { Icon, type ShellIcon } from "../shell/icons";
 import { hashForPage } from "../shell/navigation";
 import { useHashDetail } from "../shell/useHashPage";
 import { Chip } from "../shell/ui";
+import type { ReauthenticationRequest } from "../authClient";
 import type { Language } from "../signInText";
 import {
   type HealthApi,
@@ -27,6 +28,7 @@ import {
 } from "./healthClient";
 import { type SettingsTextKey, sst } from "./text";
 import { type SetupApi, UnitSetupTab } from "./UnitSetupTab";
+import { type UsersApi, UsersTab } from "./UsersTab";
 
 export type SettingsTab = "business" | "rates" | "units" | "users" | "health";
 
@@ -75,22 +77,29 @@ export interface SettingsPageProps {
   unitApi: SetupApi;
   capabilities: ReadonlySet<string> | null;
   healthApi: HealthApi;
+  usersApi: UsersApi;
+  /** The signed-in person. */
+  myUserId: string | null;
+  /** The password and sign-in code again, for an action that changes who may use the app. */
+  reauthenticate: (request: ReauthenticationRequest) => Promise<void>;
   /** The earlier forms of the tabs not rebuilt yet (English only). */
   earlier: Partial<Record<SettingsTab, ReactNode>>;
 }
 
 function Earlier({
   language,
+  note,
   children,
 }: {
   language: Language;
+  note: SettingsTextKey;
   children: ReactNode;
 }) {
   return (
     <>
       <div className="ui-notice info" role="note">
         <Icon name="info" />
-        <p>{sst(language, "earlier_note")}</p>
+        <p>{sst(language, note)}</p>
       </div>
       <details className="ui-records">
         <summary lang={language}>
@@ -291,6 +300,9 @@ export function SettingsPage({
   unitApi,
   capabilities,
   healthApi,
+  usersApi,
+  myUserId,
+  reauthenticate,
   earlier,
 }: SettingsPageProps) {
   const detail = useHashDetail("settings");
@@ -341,13 +353,28 @@ export function SettingsPage({
           propertyId={propertyId}
         />
       )}
+      {tab === "users" && (
+        <UsersTab
+          active={active}
+          api={usersApi}
+          language={language}
+          myUserId={myUserId}
+          propertyId={propertyId}
+          reauthenticate={reauthenticate}
+        />
+      )}
       {/* The earlier forms stay mounted, so what was typed in one survives a tab change; each
           checks its own rights with the server. */}
       {TABS.map(
         (item) =>
           earlier[item.tab] !== undefined && (
             <div hidden={item.tab !== tab} key={item.tab}>
-              <Earlier language={language}>{earlier[item.tab]}</Earlier>
+              <Earlier
+                language={language}
+                note={item.tab === "users" ? "earlier_kept" : "earlier_note"}
+              >
+                {earlier[item.tab]}
+              </Earlier>
             </div>
           ),
       )}
