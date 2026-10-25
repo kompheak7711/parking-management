@@ -49912,6 +49912,2300 @@
       "notes": "When sign-out does not reach the office computer, the screen stays signed in and says so, instead of showing the sign-in screen while the server session lives on (login sub-slice L8, final review of the login slice, decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-056-login-L8.md; DL-081)."
     },
     {
+      "test_id": "test_a_reader_lists_drafts_with_a_cursor_bound_to_the_property_and_state",
+      "upstream_ids": [
+        "API-101",
+        "BR-AUTH-010",
+        "DL-069",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "The draft list answers one Property's drafts of one state, newest first, with a cursor bound to that Property and state (V1-056 slice 11b, shared draft routes; ops/reviews/V1-056-slice-11b.md; DL-084)."
+    },
+    {
+      "test_id": "test_drafts_are_hidden_without_a_draft_capability_and_need_sign_in",
+      "upstream_ids": [
+        "API-101",
+        "BR-AUTH-010",
+        "DL-084"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "A person with no draft capability of the Property gets a hidden 404, and no sign-in gets 401 (V1-056 slice 11b, shared draft routes; ops/reviews/V1-056-slice-11b.md; DL-084)."
+    },
+    {
+      "test_id": "test_the_detail_answers_one_draft_and_maps_not_found_and_outage",
+      "upstream_ids": [
+        "API-101",
+        "API-013",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "One draft is read by id; a missing draft is 404 and a database outage is 503 without database text (V1-056 slice 11b, shared draft routes; ops/reviews/V1-056-slice-11b.md; DL-084)."
+    },
+    {
+      "test_id": "test_only_financial_approve_rejects_and_a_decided_draft_says_so",
+      "upstream_ids": [
+        "API-101",
+        "BR-AUTH-010",
+        "DL-069",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "Only financial.approve rejects a draft; a decided draft answers DRAFT_ALREADY_DECIDED (V1-056 slice 11b, shared draft routes; ops/reviews/V1-056-slice-11b.md; DL-084)."
+    },
+    {
+      "test_id": "test_reject_needs_csrf_origin_idempotency_key_and_a_trimmed_reason",
+      "upstream_ids": [
+        "API-101",
+        "API-016",
+        "DL-084"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "Reject needs Origin, CSRF, an Idempotency-Key and a non-blank trimmed reason (V1-056 slice 11b, shared draft routes; ops/reviews/V1-056-slice-11b.md; DL-084)."
+    },
+    {
+      "test_id": "test_only_the_preparer_withdraws_with_the_drafts_own_capability",
+      "upstream_ids": [
+        "API-101",
+        "DL-069",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "Only the person who prepared a draft withdraws it, holding that draft kind's own capability (V1-056 slice 11b, shared draft routes; ops/reviews/V1-056-slice-11b.md; DL-084)."
+    },
+    {
+      "test_id": "test_withdraw_refusals_never_call_the_flow_and_show_no_database_text",
+      "upstream_ids": [
+        "API-101",
+        "API-013",
+        "DL-084"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "A refused withdraw never reaches the database command and shows no database text (V1-056 slice 11b, shared draft routes; ops/reviews/V1-056-slice-11b.md; DL-084)."
+    },
+    {
+      "test_id": "test_reject_maps_authorization_and_a_draft_of_another_property",
+      "upstream_ids": [
+        "API-101",
+        "BR-AUTH-010",
+        "DL-084"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "Reject answers 403 for a refused authorization and a hidden 404 for a draft of another Property (V1-056 slice 11b, shared draft routes; ops/reviews/V1-056-slice-11b.md; DL-084)."
+    },
+    {
+      "test_id": "test_reservation_deposit_drafts_need_reservations_read",
+      "upstream_ids": [
+        "API-101",
+        "BR-AUTH-010",
+        "DL-084"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "Reservation Deposit drafts are listed only for a person who also holds reservations.read (decided by Claude under the owner's 2026-10-23 22:30 rule) (V1-056 slice 11b, shared draft routes; ops/reviews/V1-056-slice-11b.md; DL-084)."
+    },
+    {
+      "test_id": "test_financial_approve_confirms_any_draft_through_its_own_command",
+      "upstream_ids": [
+        "API-101",
+        "BR-AUTH-010",
+        "DL-069",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "financial.approve confirms a draft of any kind through that kind's own confirm command (V1-056 slice 11b, shared draft routes; ops/reviews/V1-056-slice-11b.md; DL-084)."
+    },
+    {
+      "test_id": "test_confirm_refusals_have_stable_codes",
+      "upstream_ids": [
+        "API-101",
+        "API-013",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "Confirm refusals answer stable codes such as DRAFT_OUT_OF_DATE and DRAFT_CONFIRM_REFUSED (V1-056 slice 11b, shared draft routes; ops/reviews/V1-056-slice-11b.md; DL-084)."
+    },
+    {
+      "test_id": "test_a_rejected_or_withdrawn_draft_is_not_sent_to_its_confirm",
+      "upstream_ids": [
+        "API-101",
+        "DL-069",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "A rejected or withdrawn draft answers DRAFT_ALREADY_DECIDED and never reaches its confirm command (V1-056 slice 11b, shared draft routes; ops/reviews/V1-056-slice-11b.md; DL-084)."
+    },
+    {
+      "test_id": "test_only_the_approver_who_confirmed_a_draft_gets_its_result_again",
+      "upstream_ids": [
+        "API-101",
+        "BR-AUTH-010",
+        "DL-069",
+        "DL-084"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "Only the approver who confirmed a draft gets its result again; anyone else gets DRAFT_ALREADY_DECIDED (V1-056 slice 11b, shared draft routes; ops/reviews/V1-056-slice-11b.md; DL-084)."
+    },
+    {
+      "test_id": "test_a_draft_decided_during_the_confirm_says_it_was_already_decided",
+      "upstream_ids": [
+        "API-101",
+        "DL-069",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "A draft another person decides while a confirm runs answers DRAFT_ALREADY_DECIDED (V1-056 slice 11b, shared draft routes; ops/reviews/V1-056-slice-11b.md; DL-084)."
+    },
+    {
+      "test_id": "test_an_actor_id_that_is_not_a_uuid_is_refused_not_a_server_error",
+      "upstream_ids": [
+        "API-101",
+        "API-013",
+        "DL-084"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "A signed-in actor id that is not a UUID is refused with 403, not a server error (V1-056 slice 11b, shared draft routes; ops/reviews/V1-056-slice-11b.md; DL-084)."
+    },
+    {
+      "test_id": "test_a_named_refusal_of_the_kinds_confirm_keeps_its_own_code",
+      "upstream_ids": [
+        "API-101",
+        "BR-REFUND-003",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "A named refusal from a Refund confirm keeps its own code through the shared confirm route (V1-056 slice 11c-2, Refund draft refusal codes; ops/reviews/V1-056-slice-11c-2.md; DL-084)."
+    },
+    {
+      "test_id": "test_each_kind_and_variant_reaches_its_own_confirm",
+      "upstream_ids": [
+        "API-101",
+        "DL-069",
+        "DL-084"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_financial_draft_confirm.py",
+      "status": "implemented",
+      "notes": "Each draft kind and variant reaches its own service's confirm method, with the real method's argument count (V1-056 slice 11b, shared draft routes; ops/reviews/V1-056-slice-11b.md; DL-084)."
+    },
+    {
+      "test_id": "test_a_draft_without_a_shared_confirm_is_refused_before_any_command",
+      "upstream_ids": [
+        "API-101",
+        "DL-084"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_financial_draft_confirm.py",
+      "status": "implemented",
+      "notes": "A companion draft or an unknown kind or variant is refused before any command runs (V1-056 slice 11b, shared draft routes; ops/reviews/V1-056-slice-11b.md; DL-084)."
+    },
+    {
+      "test_id": "test_a_missing_identifier_is_a_server_contract_error",
+      "upstream_ids": [
+        "API-101",
+        "DL-084"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_financial_draft_confirm.py",
+      "status": "implemented",
+      "notes": "A draft payload without a valid identifier is a server contract error and runs no command (V1-056 slice 11b, shared draft routes; ops/reviews/V1-056-slice-11b.md; DL-084)."
+    },
+    {
+      "test_id": "test_the_shared_reads_leave_out_the_transaction_id_of_a_confirmed_draft",
+      "upstream_ids": [
+        "API-101",
+        "DL-084"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_draft_reads_transaction_id_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20270208_196: the shared draft reads leave out the transaction id of a confirmed draft (V1-056 slice 11b, shared draft routes; ops/reviews/V1-056-slice-11b.md; DL-084)."
+    },
+    {
+      "test_id": "test_the_migration_changes_only_the_two_shared_reads",
+      "upstream_ids": [
+        "API-101",
+        "DL-084"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_draft_reads_transaction_id_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20270208_196 replaces only the two shared draft read functions (V1-056 slice 11b, shared draft routes; ops/reviews/V1-056-slice-11b.md; DL-084)."
+    },
+    {
+      "test_id": "test_drafts_are_listed_confirmed_rejected_and_withdrawn_through_the_shared_routes",
+      "upstream_ids": [
+        "API-101",
+        "BR-AUTH-010",
+        "DL-069",
+        "DL-084"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_financial_draft_api_migration.py",
+      "status": "implemented",
+      "notes": "On real PostgreSQL, Refund drafts are listed, confirmed once, rejected and withdrawn through the shared routes (V1-056 slice 11b, shared draft routes; ops/reviews/V1-056-slice-11b.md; DL-084)."
+    },
+    {
+      "test_id": "test_the_cleaning_rate_is_read_by_the_charge_or_rate_form_only",
+      "upstream_ids": [
+        "API-102",
+        "BR-UNIT-014",
+        "DL-075",
+        "DL-084"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_move_out_billing_api.py",
+      "status": "implemented",
+      "notes": "The Unit cleaning rate is read only with invoices.create or property.manage (V1-056 slice 11a, move-out cleaning and hand-back routes; ops/reviews/V1-056-slice-11a.md; DL-084)."
+    },
+    {
+      "test_id": "test_property_manage_sets_a_unit_cleaning_rate_with_csrf",
+      "upstream_ids": [
+        "API-102",
+        "BR-UNIT-014",
+        "DL-075",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_move_out_billing_api.py",
+      "status": "implemented",
+      "notes": "property.manage sets a Unit cleaning rate with Origin and CSRF (decided by Claude under the owner's 2026-10-23 22:30 rule until DL-075 rate groups exist) (V1-056 slice 11a, move-out cleaning and hand-back routes; ops/reviews/V1-056-slice-11a.md; DL-084)."
+    },
+    {
+      "test_id": "test_invoices_create_records_the_cleaning_charge_from_the_rate_shown",
+      "upstream_ids": [
+        "API-102",
+        "BR-MOVEOUT-013",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_move_out_billing_api.py",
+      "status": "implemented",
+      "notes": "invoices.create records the move-out cleaning charge from the rate the form showed (V1-056 slice 11a, move-out cleaning and hand-back routes; ops/reviews/V1-056-slice-11a.md; DL-084)."
+    },
+    {
+      "test_id": "test_each_business_state_refusal_answers_its_own_code",
+      "upstream_ids": [
+        "API-102",
+        "API-013",
+        "BR-MOVEOUT-013",
+        "BR-RENT-030",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_move_out_billing_api.py",
+      "status": "implemented",
+      "notes": "Each cleaning and hand-back business-state refusal answers 409 with its own code and no database text (V1-056 slice 11a, move-out cleaning and hand-back routes; ops/reviews/V1-056-slice-11a.md; DL-084)."
+    },
+    {
+      "test_id": "test_an_unnamed_database_refusal_stays_a_plain_answer_without_its_text",
+      "upstream_ids": [
+        "API-102",
+        "API-013",
+        "DL-084"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_move_out_billing_api.py",
+      "status": "implemented",
+      "notes": "A database refusal with no named code stays a plain answer that shows no database text (V1-056 slice 11a, move-out cleaning and hand-back routes; ops/reviews/V1-056-slice-11a.md; DL-084)."
+    },
+    {
+      "test_id": "test_the_hand_back_assessment_needs_invoice_and_lease_reads",
+      "upstream_ids": [
+        "API-102",
+        "BR-RENT-030",
+        "DL-084"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_move_out_billing_api.py",
+      "status": "implemented",
+      "notes": "The hand-back assessment needs invoices.read and leases.read, else a hidden 404 (V1-056 slice 11a, move-out cleaning and hand-back routes; ops/reviews/V1-056-slice-11a.md; DL-084)."
+    },
+    {
+      "test_id": "test_the_hand_back_action_needs_its_own_capability_a_version_and_a_key",
+      "upstream_ids": [
+        "API-102",
+        "API-016",
+        "BR-RENT-030",
+        "DL-084"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_move_out_billing_api.py",
+      "status": "implemented",
+      "notes": "The hand-back action needs invoices.void or invoices.adjust by action, If-Match and an Idempotency-Key (V1-056 slice 11a, move-out cleaning and hand-back routes; ops/reviews/V1-056-slice-11a.md; DL-084)."
+    },
+    {
+      "test_id": "test_the_cleaning_rate_and_charge_routes_record_one_charge_from_the_rate_shown",
+      "upstream_ids": [
+        "API-102",
+        "BR-UNIT-014",
+        "BR-MOVEOUT-013",
+        "DL-084"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_move_out_billing_api_migration.py",
+      "status": "implemented",
+      "notes": "On real PostgreSQL, a rate is set, a stale form is told the rate changed, and one cleaning charge is recorded; a replay answers the same charge (V1-056 slice 11a, move-out cleaning and hand-back routes; ops/reviews/V1-056-slice-11a.md; DL-084)."
+    },
+    {
+      "test_id": "test_the_hand_back_routes_assess_and_void_an_unpaid_invoice_once",
+      "upstream_ids": [
+        "API-102",
+        "BR-RENT-030",
+        "API-016",
+        "DL-084"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_move_out_billing_api_migration.py",
+      "status": "implemented",
+      "notes": "On real PostgreSQL, an unpaid hand-back month Invoice is assessed and voided once; a replay answers the stored result (V1-056 slice 11a, move-out cleaning and hand-back routes; ops/reviews/V1-056-slice-11a.md; DL-084)."
+    },
+    {
+      "test_id": "test_an_end_date_that_is_not_a_month_end_answers_its_own_code",
+      "upstream_ids": [
+        "BR-LEASE-031",
+        "API-013",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_lease_api.py",
+      "status": "implemented",
+      "notes": "A Lease End Date that is not a month end answers LEASE_END_DATE_NOT_MONTH_END on the end_date field (V1-056 slice 11a, move-out cleaning and hand-back routes; ops/reviews/V1-056-slice-11a.md; DL-084)."
+    },
+    {
+      "test_id": "test_refund_draft_http_credit_customer_variant_records_only_for_a_credit",
+      "upstream_ids": [
+        "BR-CREDIT-014",
+        "BR-REFUND-014",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "The CREDIT_CUSTOMER Refund draft variant is accepted only with a Credit source and records through its own command (V1-056 slice 11c-2, Refund draft refusal codes; ops/reviews/V1-056-slice-11c-2.md; DL-084)."
+    },
+    {
+      "test_id": "test_refund_command_refusals_answer_their_own_code",
+      "upstream_ids": [
+        "BR-REFUND-003",
+        "BR-REFUND-014",
+        "API-013",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "Refund business-state refusals answer 409 with their own code, and a method, recipient or return evidence from the form answers 422 with its field, per route and without database text (V1-056 slice 11c-2, Refund draft refusal codes; ops/reviews/V1-056-slice-11c-2.md; DL-084)."
+    },
+    {
+      "test_id": "test_the_primary_tenant_agreement_refusal_stays_bad_input",
+      "upstream_ids": [
+        "BR-REFUND-014",
+        "API-013",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "The primary tenant agreement refusal stays a 422 bad-input answer (V1-056 slice 11c-2, Refund draft refusal codes; ops/reviews/V1-056-slice-11c-2.md; DL-084)."
+    },
+    {
+      "test_id": "test_a_credit_command_refused_by_a_closed_final_settlement_names_it",
+      "upstream_ids": [
+        "BR-SETTLE-012",
+        "API-013",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "A Credit command refused by a closed Final Settlement answers FINAL_SETTLEMENT_CLOSED (V1-056 slice 11c-2, Refund draft refusal codes; ops/reviews/V1-056-slice-11c-2.md; DL-084)."
+    },
+    {
+      "test_id": "test_a_read_is_never_answered_with_a_command_refusal",
+      "upstream_ids": [
+        "API-013",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "A Refund read is never answered with a command's refusal code (V1-056 slice 11c-2, Refund draft refusal codes; ops/reviews/V1-056-slice-11c-2.md; DL-084)."
+    },
+    {
+      "test_id": "test_every_named_refusal_message_is_still_raised_at_head",
+      "upstream_ids": [
+        "API-013",
+        "API-101",
+        "API-102",
+        "DL-084"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_financial_draft_api_migration.py",
+      "status": "implemented",
+      "notes": "Every database message a route names as a refusal is still raised by a function at the migration head (V1-056 slice 11c-2, Refund draft refusal codes; ops/reviews/V1-056-slice-11c-2.md; DL-084)."
+    },
+    {
+      "test_id": "test_only_a_refund_draft_confirm_names_its_database_refusals",
+      "upstream_ids": [
+        "API-101",
+        "API-013",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "The shared confirm names database refusals only for Refund drafts; other kinds keep their plain answers (V1-056 slice 11c-2, Refund draft refusal codes; ops/reviews/V1-056-slice-11c-2.md; DL-084)."
+    },
+    {
+      "test_id": "test_an_out_of_date_refund_draft_stays_out_of_date_whatever_the_cause",
+      "upstream_ids": [
+        "API-101",
+        "DL-069",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "An out-of-date draft answers DRAFT_OUT_OF_DATE even when its cause is a named refusal (V1-056 slice 11c-2, Refund draft refusal codes; ops/reviews/V1-056-slice-11c-2.md; DL-084)."
+    },
+    {
+      "test_id": "test_a_named_conflict_is_answered_without_reading_the_draft_again",
+      "upstream_ids": [
+        "API-101",
+        "BR-AUTH-010",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "A named confirm conflict answers its own code without a second read of the draft (V1-056 slice 11c-2, Refund draft refusal codes; ops/reviews/V1-056-slice-11c-2.md; DL-084)."
+    },
+    {
+      "test_id": "test_each_draft_record_answers_a_method_from_the_form_as_bad_input",
+      "upstream_ids": [
+        "BR-REFUND-014",
+        "BR-REFUND-015",
+        "API-013",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "A Pet Deposit or CREDIT_CUSTOMER Refund draft with a method that is off or a recipient who is not a Signer answers 422 on that field (V1-056 slice 11c-2, Refund draft refusal codes; ops/reviews/V1-056-slice-11c-2.md; DL-084)."
+    },
+    {
+      "test_id": "test_refund_methods_are_listed_for_a_refund_reader_preparer_or_property_manager",
+      "upstream_ids": [
+        "BR-REFUND-014",
+        "API-013",
+        "DL-084"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "The Refund method list answers a refunds.read, refunds.create or property.manage holder of the Property, and a hidden 404 to anyone else (V1-056 slice 11c-1, Refund reads; ops/reviews/V1-056-slice-11c-1.md; DL-084)."
+    },
+    {
+      "test_id": "test_a_released_credit_names_its_customer_and_the_credit_customer_variant",
+      "upstream_ids": [
+        "BR-CREDIT-014",
+        "DL-084"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_reads_variant_recovery_migration.py",
+      "status": "implemented",
+      "notes": "The Refund source read of a Credit released to another Customer names that Customer and the CREDIT_CUSTOMER variant (V1-056 slice 11c-1, Refund reads; ops/reviews/V1-056-slice-11c-1.md; DL-084)."
+    },
+    {
+      "test_id": "test_a_payment_or_its_own_credit_names_the_payer_and_the_usd_variant",
+      "upstream_ids": [
+        "BR-CREDIT-014",
+        "BR-REFUND-002",
+        "DL-084"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_reads_variant_recovery_migration.py",
+      "status": "implemented",
+      "notes": "The Refund source read of a Payment or the payer's own Credit names the payer and the USD variant (V1-056 slice 11c-1, Refund reads; ops/reviews/V1-056-slice-11c-1.md; DL-084)."
+    },
+    {
+      "test_id": "test_the_refund_read_migration_adds_one_internal_function_and_is_forward_only",
+      "upstream_ids": [
+        "DB-REFUND-002",
+        "DL-084"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_reads_variant_recovery_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20270209_197 adds one internal function no role may call, changes only the two Refund reads exactly as written, and is forward-only; the recovery read itself is checked in test_payment_return_recovery_migration.py::test_a_payment_refund_with_no_lease_is_charged_with_no_lease (V1-056 slice 11c-1, Refund reads; ops/reviews/V1-056-slice-11c-1.md; DL-084)."
+    },
+    {
+      "test_id": "test_a_recovery_billed_again_after_its_invoice_was_void_shows_the_new_invoice",
+      "upstream_ids": [
+        "DB-REFUND-002",
+        "DL-084"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_reads_variant_recovery_migration.py",
+      "status": "implemented",
+      "notes": "When a recovery Invoice is VOID and its charge is billed again, the Refund read's recovery takes every Invoice field from the Invoice that is not VOID (V1-056 slice 11c-1, Refund reads, review round 1; ops/reviews/V1-056-slice-11c-1.md; DL-084)."
+    },
+    {
+      "test_id": "test_each_draft_is_recorded_with_its_own_capability_and_command",
+      "upstream_ids": [
+        "API-042",
+        "API-040",
+        "API-101",
+        "BR-AUTH-010"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_draft_record_api.py",
+      "status": "implemented",
+      "notes": "Each record route sends its own command to its own draft service and answers 201 with the draft (V1-056 slice 11c-3, Deposit and returned-Payment draft routes; ops/reviews/V1-056-slice-11c-3.md)."
+    },
+    {
+      "test_id": "test_a_draft_is_recorded_only_by_a_signed_in_holder_of_its_capability",
+      "upstream_ids": [
+        "API-101",
+        "BR-AUTH-010"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_draft_record_api.py",
+      "status": "implemented",
+      "notes": "A draft is recorded only after sign-in, the browser mutation checks and the route's prepare capability in the Property (else a hidden 404) (V1-056 slice 11c-3, Deposit and returned-Payment draft routes; ops/reviews/V1-056-slice-11c-3.md)."
+    },
+    {
+      "test_id": "test_a_bad_form_is_refused_before_any_command",
+      "upstream_ids": [
+        "API-101",
+        "BR-AUTH-010"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_draft_record_api.py",
+      "status": "implemented",
+      "notes": "A missing key, an unknown or missing field, an empty reason or a NUL answers 422 before any command (V1-056 slice 11c-3, Deposit and returned-Payment draft routes; ops/reviews/V1-056-slice-11c-3.md)."
+    },
+    {
+      "test_id": "test_a_reversal_id_equal_to_its_subject_is_bad_input",
+      "upstream_ids": [
+        "API-042",
+        "API-040"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_draft_record_api.py",
+      "status": "implemented",
+      "notes": "A reversal id equal to the reversed record answers 422 (V1-056 slice 11c-3, Deposit and returned-Payment draft routes; ops/reviews/V1-056-slice-11c-3.md)."
+    },
+    {
+      "test_id": "test_each_named_refusal_answers_its_own_code",
+      "upstream_ids": [
+        "API-042",
+        "API-040",
+        "BR-DEP-026",
+        "BR-SETTLE-013"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_draft_record_api.py",
+      "status": "implemented",
+      "notes": "Each named database refusal answers 409 with its own code and rule ids and never the database text (V1-056 slice 11c-3, Deposit and returned-Payment draft routes; ops/reviews/V1-056-slice-11c-3.md)."
+    },
+    {
+      "test_id": "test_the_named_codes_are_the_ones_the_screens_expect",
+      "upstream_ids": [
+        "API-042",
+        "BR-DEP-026"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_draft_record_api.py",
+      "status": "implemented",
+      "notes": "Pins a few codes by name and the closed-Final-Settlement codes (V1-056 slice 11c-3, Deposit and returned-Payment draft routes; ops/reviews/V1-056-slice-11c-3.md)."
+    },
+    {
+      "test_id": "test_an_id_reused_by_another_command_is_named_before_the_key_reuse_answer",
+      "upstream_ids": [
+        "API-040",
+        "API-016"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_draft_record_api.py",
+      "status": "implemented",
+      "notes": "An id the form chose that another record uses answers DRAFT_RECORD_ID_IN_USE; a reused key with other input answers IDEMPOTENCY_KEY_REUSED (V1-056 slice 11c-3, Deposit and returned-Payment draft routes; ops/reviews/V1-056-slice-11c-3.md)."
+    },
+    {
+      "test_id": "test_a_refusal_that_is_not_named_keeps_its_plain_answer",
+      "upstream_ids": [
+        "API-101"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_draft_record_api.py",
+      "status": "implemented",
+      "notes": "A refusal with no named code keeps its plain status (404, 403, 422, 409, 503) (V1-056 slice 11c-3, Deposit and returned-Payment draft routes; ops/reviews/V1-056-slice-11c-3.md)."
+    },
+    {
+      "test_id": "test_a_reused_key_with_other_input_answers_idempotency_key_reused",
+      "upstream_ids": [
+        "API-016"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_draft_record_api.py",
+      "status": "implemented",
+      "notes": "A reused Idempotency-Key with other input answers IDEMPOTENCY_KEY_REUSED (V1-056 slice 11c-3, Deposit and returned-Payment draft routes; ops/reviews/V1-056-slice-11c-3.md)."
+    },
+    {
+      "test_id": "test_a_draft_answer_of_another_property_kind_or_record_is_never_shown",
+      "upstream_ids": [
+        "API-101",
+        "BR-AUTH-010"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_draft_record_api.py",
+      "status": "implemented",
+      "notes": "A service answer of another Property, kind, variant or record answers 503 and is never shown (V1-056 slice 11c-3, Deposit and returned-Payment draft routes; ops/reviews/V1-056-slice-11c-3.md)."
+    },
+    {
+      "test_id": "test_a_lease_forfeiture_and_its_reversal_are_drafts_recorded_over_http",
+      "upstream_ids": [
+        "API-042",
+        "BR-DEP-026",
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_draft_record_api_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL a Lease forfeiture draft is refused before termination, replays for the same key, refuses a second waiting draft, takes effect only when confirmed through the shared route, and its reversal draft returns the money and cannot be recorded twice (V1-056 slice 11c-3, Deposit and returned-Payment draft routes; ops/reviews/V1-056-slice-11c-3.md)."
+    },
+    {
+      "test_id": "test_a_deposit_receipt_reversal_is_a_draft_recorded_over_http",
+      "upstream_ids": [
+        "API-040",
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_draft_record_api_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL a Deposit receipt reversal draft refuses a second waiting draft, frees the Payment's value only when confirmed, and a reversed receipt or a used reversal id is refused with its code (V1-056 slice 11c-3, Deposit and returned-Payment draft routes; ops/reviews/V1-056-slice-11c-3.md)."
+    },
+    {
+      "test_id": "test_a_returned_payment_is_a_draft_recorded_over_http",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-AUTH-010",
+        "API-101"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_draft_record_api_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL a returned-Payment draft refuses a second waiting draft, reverses the Payment only when confirmed (no transaction id shown), then answers PAYMENT_RETURN_NOT_RECEIVED; without payments.reverse the Property is hidden (V1-056 slice 11c-3, Deposit and returned-Payment draft routes; ops/reviews/V1-056-slice-11c-3.md)."
+    },
+    {
+      "test_id": "test_a_deposit_or_returned_payment_draft_confirm_names_its_database_refusals",
+      "upstream_ids": [
+        "API-101",
+        "BR-AUTH-010",
+        "BR-SETTLE-013"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "The shared confirm of a Deposit or returned-Payment draft answers the named codes of the record routes and a stale returned-Payment draft stays DRAFT_OUT_OF_DATE (V1-056 slice 11c-3, Deposit and returned-Payment draft routes; ops/reviews/V1-056-slice-11c-3.md)."
+    },
+    {
+      "test_id": "test_a_billing_actor_other_than_the_signed_in_person_is_refused",
+      "upstream_ids": [
+        "API-101",
+        "BR-AUTH-010"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_draft_record_api.py",
+      "status": "implemented",
+      "notes": "An X-Billing-Actor-ID other than the signed-in person answers 403 before any command (V1-056 slice 11c-3, Deposit and returned-Payment draft routes, review round 1; ops/reviews/V1-056-slice-11c-3.md)."
+    },
+    {
+      "test_id": "test_a_forfeiture_id_in_use_or_a_closed_settlement_is_named_through_its_own_error",
+      "upstream_ids": [
+        "API-042",
+        "BR-SETTLE-012"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_draft_record_api.py",
+      "status": "implemented",
+      "notes": "A used disposition id and a closed Final Settlement are named through the forfeiture service's own errors (V1-056 slice 11c-3, Deposit and returned-Payment draft routes, review round 1; ops/reviews/V1-056-slice-11c-3.md)."
+    },
+    {
+      "test_id": "test_a_walk_in_security_deposit_is_created_with_deposits_manage_and_csrf",
+      "upstream_ids": [
+        "API-040",
+        "BR-DEP-004",
+        "BR-DEP-005"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_deposit_record_api.py",
+      "status": "implemented",
+      "notes": "The walk-in Security Deposit create needs deposits.manage (hidden 404), CSRF and Origin, and answers 201 with the Deposit and its Location (V1-056 slice 11c-4, walk-in Security Deposit and Deposit receipt routes; ops/reviews/V1-056-slice-11c-4.md)."
+    },
+    {
+      "test_id": "test_a_deposit_receipt_needs_payments_allocate_and_answers_only_the_receipt",
+      "upstream_ids": [
+        "API-040",
+        "BR-DEP-013"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_deposit_record_api.py",
+      "status": "implemented",
+      "notes": "A receipt into a Deposit needs payments.allocate (hidden 404 for deposits.read or deposits.manage alone) and answers the receipt and the Deposit's money only (V1-056 slice 11c-4, walk-in Security Deposit and Deposit receipt routes; ops/reviews/V1-056-slice-11c-4.md)."
+    },
+    {
+      "test_id": "test_bad_input_answers_422_before_any_command",
+      "upstream_ids": [
+        "API-040",
+        "API-013"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_deposit_record_api.py",
+      "status": "implemented",
+      "notes": "A blank or long reason, an unknown field and an amount that is not a positive whole number of cents within bigint answer 422 before any command (V1-056 slice 11c-4, walk-in Security Deposit and Deposit receipt routes; ops/reviews/V1-056-slice-11c-4.md)."
+    },
+    {
+      "test_id": "test_each_named_deposit_refusal_answers_its_own_code",
+      "upstream_ids": [
+        "API-040",
+        "API-013",
+        "BR-DEP-004",
+        "BR-DEP-013"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_deposit_record_api.py",
+      "status": "implemented",
+      "notes": "Each named database refusal of the create and the receipt answers its own code, status, rule ids and fields, never the database text (V1-056 slice 11c-4, walk-in Security Deposit and Deposit receipt routes; ops/reviews/V1-056-slice-11c-4.md)."
+    },
+    {
+      "test_id": "test_the_named_codes_are_pinned",
+      "upstream_ids": [
+        "API-040",
+        "API-013"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_deposit_record_api.py",
+      "status": "implemented",
+      "notes": "The codes, the 422 refusals and their fields are pinned by database message (V1-056 slice 11c-4, walk-in Security Deposit and Deposit receipt routes; ops/reviews/V1-056-slice-11c-4.md)."
+    },
+    {
+      "test_id": "test_unnamed_refusals_keep_their_plain_answers",
+      "upstream_ids": [
+        "API-040",
+        "API-013"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_deposit_record_api.py",
+      "status": "implemented",
+      "notes": "Refusals with no name keep their plain 422, 409 or 404 answer (V1-056 slice 11c-4, walk-in Security Deposit and Deposit receipt routes; ops/reviews/V1-056-slice-11c-4.md)."
+    },
+    {
+      "test_id": "test_a_reused_key_answers_idempotency_key_reused",
+      "upstream_ids": [
+        "API-016"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_deposit_record_api.py",
+      "status": "implemented",
+      "notes": "A reused Idempotency-Key with another body answers IDEMPOTENCY_KEY_REUSED (V1-056 slice 11c-4, walk-in Security Deposit and Deposit receipt routes; ops/reviews/V1-056-slice-11c-4.md)."
+    },
+    {
+      "test_id": "test_a_receipt_for_a_deposit_of_another_property_is_hidden",
+      "upstream_ids": [
+        "API-040",
+        "BR-AUTH-001"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_deposit_record_api.py",
+      "status": "implemented",
+      "notes": "A receipt into a Deposit of another Property answers 404 and records nothing (V1-056 slice 11c-4, walk-in Security Deposit and Deposit receipt routes; ops/reviews/V1-056-slice-11c-4.md)."
+    },
+    {
+      "test_id": "test_a_walk_in_security_deposit_is_created_and_takes_receipts_over_http",
+      "upstream_ids": [
+        "API-040",
+        "BR-DEP-004",
+        "BR-DEP-013"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_record_api_migration.py",
+      "status": "implemented",
+      "notes": "On real PostgreSQL the walk-in create replays by key and refuses a second Security Deposit by name; receipts reach the required total, and a reused Payment, a Payment with too little left, an amount over the required total, an unknown Payment, another Customer's Payment and a person without payments.allocate are refused by name or hidden (V1-056 slice 11c-4, walk-in Security Deposit and Deposit receipt routes; ops/reviews/V1-056-slice-11c-4.md)."
+    },
+    {
+      "test_id": "test_a_lease_signed_from_a_reservation_keeps_its_reservation_security_deposit",
+      "upstream_ids": [
+        "API-040",
+        "BR-DEP-005"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_record_api_migration.py",
+      "status": "implemented",
+      "notes": "On real PostgreSQL a Lease signed from a Reservation answers DEPOSIT_SECURITY_NOT_WALK_IN and an unknown Lease 404 (V1-056 slice 11c-4, walk-in Security Deposit and Deposit receipt routes; ops/reviews/V1-056-slice-11c-4.md)."
+    },
+    {
+      "test_id": "test_the_named_receipt_refusals_come_from_the_database_over_http",
+      "upstream_ids": [
+        "API-040",
+        "BR-DEP-002",
+        "BR-DEP-013",
+        "BR-DEP-022",
+        "BR-DEP-026",
+        "BR-SETTLE-012"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_record_api_migration.py",
+      "status": "implemented",
+      "notes": "On real PostgreSQL an expired Reservation, a Payment confirmed for an owed Invoice, a Lease whose termination ground keeps the Deposit, an active forfeiture and a closed Final Settlement each refuse a receipt by name and write nothing (V1-056 slice 11c-4, walk-in Security Deposit and Deposit receipt routes, review round 1; ops/reviews/V1-056-slice-11c-4.md)."
+    },
+    {
+      "test_id": "test_a_move_draft_is_recorded_with_its_capability_and_command",
+      "upstream_ids": [
+        "API-101",
+        "BR-PAY-042"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_payment_move_api.py",
+      "status": "implemented",
+      "notes": "The move draft route records a PAYMENT_MOVE draft with the allocation, the correct Invoice, the reason and both acknowledgements (V1-056 slice 11d, wrong-Unit Payment move draft route; ops/reviews/V1-056-slice-11d.md)."
+    },
+    {
+      "test_id": "test_a_move_draft_needs_its_capability_sign_in_and_csrf",
+      "upstream_ids": [
+        "API-101",
+        "BR-PAY-042",
+        "BR-AUTH-010"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_payment_move_api.py",
+      "status": "implemented",
+      "notes": "Without payments.allocations.reverse in the Property the route is a hidden 404; no sign-in answers 401 and no CSRF 403, before any command (V1-056 slice 11d, wrong-Unit Payment move draft route; ops/reviews/V1-056-slice-11d.md)."
+    },
+    {
+      "test_id": "test_a_bad_move_form_is_refused_before_any_command",
+      "upstream_ids": [
+        "API-101",
+        "API-013"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_payment_move_api.py",
+      "status": "implemented",
+      "notes": "A blank reason or acknowledgement, a long acknowledgement, a bad or missing correct Invoice id and an unknown field answer 422 before any command (V1-056 slice 11d, wrong-Unit Payment move draft route; ops/reviews/V1-056-slice-11d.md)."
+    },
+    {
+      "test_id": "test_each_named_move_refusal_answers_its_own_code",
+      "upstream_ids": [
+        "API-101",
+        "API-013",
+        "BR-PAY-042"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_payment_move_api.py",
+      "status": "implemented",
+      "notes": "Each named database refusal of the move answers its own code, status, rule ids and fields, never the database text (V1-056 slice 11d, wrong-Unit Payment move draft route; ops/reviews/V1-056-slice-11d.md)."
+    },
+    {
+      "test_id": "test_the_move_codes_are_pinned",
+      "upstream_ids": [
+        "API-101",
+        "API-013",
+        "BR-PAY-042"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_payment_move_api.py",
+      "status": "implemented",
+      "notes": "The 422 refusals on the correct Invoice, the confirm codes and the one-call reversal codes are pinned (V1-056 slice 11d, wrong-Unit Payment move draft route; ops/reviews/V1-056-slice-11d.md)."
+    },
+    {
+      "test_id": "test_unnamed_move_refusals_keep_their_plain_answers",
+      "upstream_ids": [
+        "API-101",
+        "API-013"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_payment_move_api.py",
+      "status": "implemented",
+      "notes": "Move refusals with no name keep their plain 422, 404 or 409 answer (V1-056 slice 11d, wrong-Unit Payment move draft route; ops/reviews/V1-056-slice-11d.md)."
+    },
+    {
+      "test_id": "test_a_reused_move_key_answers_idempotency_key_reused",
+      "upstream_ids": [
+        "API-016"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_payment_move_api.py",
+      "status": "implemented",
+      "notes": "A reused Idempotency-Key with another form answers IDEMPOTENCY_KEY_REUSED (V1-056 slice 11d, wrong-Unit Payment move draft route; ops/reviews/V1-056-slice-11d.md)."
+    },
+    {
+      "test_id": "test_a_move_answer_for_another_allocation_or_kind_is_never_shown",
+      "upstream_ids": [
+        "API-101",
+        "BR-AUTH-010"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_payment_move_api.py",
+      "status": "implemented",
+      "notes": "A recorded answer of another allocation, without the WRONG_UNIT_MOVE variant, of another variant, of another Property or of another kind answers 503 and is never shown; the right answer is shown (V1-056 slice 11d, wrong-Unit Payment move draft route; ops/reviews/V1-056-slice-11d.md)."
+    },
+    {
+      "test_id": "test_a_wrong_unit_move_is_recorded_over_http_and_confirmed_by_an_approver",
+      "upstream_ids": [
+        "API-059",
+        "API-101",
+        "BR-PAY-042",
+        "BR-AUTH-010"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_payment_move_api_migration.py",
+      "status": "implemented",
+      "notes": "On real PostgreSQL a same-Unit or unknown correct Invoice is refused by name, the draft replays by key, a second draft waits, an approver confirms through the shared route, the moved allocation refuses a second move and the one-call reversal answers ALLOCATION_MOVED (V1-056 slice 11d, wrong-Unit Payment move draft route; ops/reviews/V1-056-slice-11d.md)."
+    },
+    {
+      "test_id": "test_a_move_draft_whose_correct_invoice_was_paid_meanwhile_is_out_of_date",
+      "upstream_ids": [
+        "API-101",
+        "BR-PAY-042"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_payment_move_api_migration.py",
+      "status": "implemented",
+      "notes": "On real PostgreSQL a move draft whose correct Invoice was paid after it was recorded answers DRAFT_OUT_OF_DATE at the shared confirm, stays undecided and moves nothing; the approver then rejects it (V1-056 slice 11d, wrong-Unit Payment move draft route; ops/reviews/V1-056-slice-11d.md)."
+    },
+    {
+      "test_id": "test_the_one_call_reversal_names_a_moved_or_relied_on_allocation",
+      "upstream_ids": [
+        "API-059",
+        "API-101",
+        "BR-PAY-042",
+        "BR-SETTLE-012"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_payment_move_api.py",
+      "status": "implemented",
+      "notes": "POST /payment-allocations/{id}/reverse answers 409 ALLOCATION_MOVED and FINAL_SETTLEMENT_CLOSED for their database messages, keeps a plain 409 for another conflict and IDEMPOTENCY_KEY_REUSED for a reused key (V1-056 slice 11d review round 1; ops/reviews/V1-056-slice-11d.md)."
+    },
+    {
+      "test_id": "test_a_payment_move_draft_confirm_names_its_database_refusals",
+      "upstream_ids": [
+        "API-101",
+        "BR-PAY-042"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "The shared confirm of a PAYMENT_MOVE draft names a reversed Payment, a stale draft, a paid correct Invoice and a Final Settlement closed meanwhile; a Final Settlement correction of variant PAYMENT_MOVE keeps DRAFT_CONFIRM_REFUSED (V1-056 slice 11d review round 1; ops/reviews/V1-056-slice-11d.md)."
+    },
+    {
+      "test_id": "test_a_settlement_is_started_for_the_path_lease_by_a_preparer",
+      "upstream_ids": [
+        "API-070",
+        "BR-SETTLE-001"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_final_settlement_api.py",
+      "status": "implemented",
+      "notes": "POST /properties/{p}/leases/{lease_id}/final-settlement starts (201) or returns (200) the Lease's one Final Settlement for a final_settlements.prepare holder (V1-056 slice 11e-1, Final Settlement routes; ops/reviews/V1-056-slice-11e-1.md)."
+    },
+    {
+      "test_id": "test_the_preview_is_read_by_a_preparer_or_an_approver_only",
+      "upstream_ids": [
+        "API-071",
+        "BR-SETTLE-011"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_final_settlement_api.py",
+      "status": "implemented",
+      "notes": "GET .../final-settlements/{id}/preview answers a final_settlements.prepare or financial.approve holder; others get a hidden 404, no sign-in 401 (V1-056 slice 11e-1, Final Settlement routes; ops/reviews/V1-056-slice-11e-1.md)."
+    },
+    {
+      "test_id": "test_a_settlement_draft_is_recorded_with_its_steps_in_order",
+      "upstream_ids": [
+        "API-072",
+        "BR-SETTLE-004",
+        "BR-AUTH-010"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_final_settlement_api.py",
+      "status": "implemented",
+      "notes": "POST .../final-settlements/{id}/drafts turns the Credit, Deposit and Deposit Refund steps and the Pet Deposit remainder decision into the draft command in order (V1-056 slice 11e-1, Final Settlement routes; ops/reviews/V1-056-slice-11e-1.md)."
+    },
+    {
+      "test_id": "test_the_commands_need_their_capability_sign_in_and_csrf",
+      "upstream_ids": [
+        "API-070",
+        "API-072",
+        "BR-AUTH-010"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_final_settlement_api.py",
+      "status": "implemented",
+      "notes": "Start and draft need final_settlements.prepare in the Property (an approver gets a hidden 404), sign-in and CSRF, and the draft an Idempotency-Key, before any command (V1-056 slice 11e-1, Final Settlement routes; ops/reviews/V1-056-slice-11e-1.md)."
+    },
+    {
+      "test_id": "test_a_bad_draft_form_is_refused_before_any_command",
+      "upstream_ids": [
+        "API-072"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_final_settlement_api.py",
+      "status": "implemented",
+      "notes": "A blank reason, an unknown step kind, a zero or text amount, an unknown target kind, a blank note, an unknown field, over 200 steps, an untrimmed reason or staff reason answers 422 before any command (V1-056 slice 11e-1, Final Settlement routes; ops/reviews/V1-056-slice-11e-1.md)."
+    },
+    {
+      "test_id": "test_each_named_settlement_refusal_answers_its_own_code",
+      "upstream_ids": [
+        "API-072",
+        "BR-SETTLE-004",
+        "BR-SETTLE-008"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_final_settlement_api.py",
+      "status": "implemented",
+      "notes": "Each named database refusal of the draft answers its own code, status, rules and field, without database text (V1-056 slice 11e-1, Final Settlement routes; ops/reviews/V1-056-slice-11e-1.md)."
+    },
+    {
+      "test_id": "test_start_and_preview_name_the_lease_and_settlement_state",
+      "upstream_ids": [
+        "API-070",
+        "API-071",
+        "BR-SETTLE-001"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_final_settlement_api.py",
+      "status": "implemented",
+      "notes": "Start and preview answer 409 with the named code for a Lease that is not terminated, an unclear termination or move-out record, blocking issues and a closed Settlement (V1-056 slice 11e-1, Final Settlement routes; ops/reviews/V1-056-slice-11e-1.md)."
+    },
+    {
+      "test_id": "test_the_codes_are_pinned",
+      "upstream_ids": [
+        "API-072"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_final_settlement_api.py",
+      "status": "implemented",
+      "notes": "State refusals are 409, step refusals 422 on steps or pet_remainder, and at the shared confirm every step refusal is DRAFT_OUT_OF_DATE (V1-056 slice 11e-1, Final Settlement routes; ops/reviews/V1-056-slice-11e-1.md)."
+    },
+    {
+      "test_id": "test_unnamed_settlement_refusals_keep_their_plain_answers",
+      "upstream_ids": [
+        "API-072"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_final_settlement_api.py",
+      "status": "implemented",
+      "notes": "An unnamed not-found, invalid, conflict or unavailable error keeps its plain answer and a reused key answers IDEMPOTENCY_KEY_REUSED (V1-056 slice 11e-1, Final Settlement routes; ops/reviews/V1-056-slice-11e-1.md)."
+    },
+    {
+      "test_id": "test_an_answer_for_another_property_lease_or_settlement_is_never_shown",
+      "upstream_ids": [
+        "API-070",
+        "API-071",
+        "API-072"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_final_settlement_api.py",
+      "status": "implemented",
+      "notes": "A start, preview or draft answer of another Property, Lease, Settlement, variant or kind answers 503 and is never shown (V1-056 slice 11e-1, Final Settlement routes; ops/reviews/V1-056-slice-11e-1.md)."
+    },
+    {
+      "test_id": "test_a_settlement_is_started_previewed_drafted_and_closed_over_http",
+      "upstream_ids": [
+        "API-070",
+        "API-071",
+        "API-072",
+        "BR-SETTLE-004",
+        "BR-SETTLE-012",
+        "BR-AUTH-010"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_final_settlement_api_migration.py",
+      "status": "implemented",
+      "notes": "On real PostgreSQL a preparer starts, previews and records the Settlement draft over HTTP (a Deposit before Credit answers FINAL_SETTLEMENT_CREDIT_FIRST; replay; key reuse; DRAFT_WAITING); an approver previews, cannot prepare, confirms through the shared route and the Settlement closes; a later draft answers FINAL_SETTLEMENT_BLOCKING_ISSUES (V1-056 slice 11e-1, Final Settlement routes; ops/reviews/V1-056-slice-11e-1.md)."
+    },
+    {
+      "test_id": "test_a_settlement_starts_only_for_a_terminated_lease",
+      "upstream_ids": [
+        "API-070",
+        "BR-SETTLE-001"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_final_settlement_api_migration.py",
+      "status": "implemented",
+      "notes": "On real PostgreSQL a signed Lease answers FINAL_SETTLEMENT_LEASE_NOT_TERMINATED and an unknown Lease 404 (V1-056 slice 11e-1, Final Settlement routes; ops/reviews/V1-056-slice-11e-1.md)."
+    },
+    {
+      "test_id": "test_a_final_settlement_draft_confirm_names_its_database_refusals",
+      "upstream_ids": [
+        "API-072",
+        "BR-SETTLE-011",
+        "BR-SETTLE-012"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "The shared confirm of a Final Settlement draft names blocking issues and a closed Settlement, and answers DRAFT_OUT_OF_DATE for a step the plan now refuses (V1-056 slice 11e-1, Final Settlement routes; ops/reviews/V1-056-slice-11e-1.md)."
+    },
+    {
+      "test_id": "test_a_wrong_pet_remainder_decision_is_refused_on_its_field",
+      "upstream_ids": [
+        "API-072",
+        "BR-SETTLE-017"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_final_settlement_api.py",
+      "status": "implemented",
+      "notes": "A Customer choice with the STAFF_REASON basis, or none with CUSTOMER_CHOICE, answers 422 on pet_remainder before any command (V1-056 slice 11e-1 review round 1, Final Settlement routes; ops/reviews/V1-056-slice-11e-1.md)."
+    },
+    {
+      "test_id": "test_the_preview_capabilities_fit_the_database_limit",
+      "upstream_ids": [
+        "API-071"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_final_settlement_api.py",
+      "status": "implemented",
+      "notes": "The preview passes at most 10 capabilities (every prepare capability and financial.approve), the database function's limit (V1-056 slice 11e-1 review round 1, Final Settlement routes; ops/reviews/V1-056-slice-11e-1.md)."
+    },
+    {
+      "test_id": "test_each_correction_draft_is_recorded_from_its_form",
+      "upstream_ids": [
+        "API-072",
+        "BR-SETTLE-013",
+        "BR-AUTH-010"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_correction_api.py",
+      "status": "implemented",
+      "notes": "Each of the seven record routes (extra charge, charge reduction, Late-payment Charge reduction, returned Payment, Payment move, Adjustment reversal correction, plain Adjustment reversal) turns its form into the service command and answers 201 with the recorded draft (V1-056 slice 11e-2, post-settlement correction routes; ops/reviews/V1-056-slice-11e-2.md)."
+    },
+    {
+      "test_id": "test_a_miscellaneous_charge_needs_no_finding_or_due_date",
+      "upstream_ids": [
+        "API-072",
+        "BR-INV-044"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_correction_api.py",
+      "status": "implemented",
+      "notes": "A Miscellaneous extra charge is recorded with no inspection finding and no Due Date override (V1-056 slice 11e-2, post-settlement correction routes; ops/reviews/V1-056-slice-11e-2.md)."
+    },
+    {
+      "test_id": "test_each_route_needs_its_capability_sign_in_csrf_and_key",
+      "upstream_ids": [
+        "API-072",
+        "BR-AUTH-010"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_correction_api.py",
+      "status": "implemented",
+      "notes": "The correction routes need final_settlements.prepare and the plain Adjustment reversal invoices.adjust in the Property (others get a hidden 404), sign-in (401), CSRF (403) and an Idempotency-Key (422), before any command (V1-056 slice 11e-2, post-settlement correction routes; ops/reviews/V1-056-slice-11e-2.md)."
+    },
+    {
+      "test_id": "test_a_bad_form_is_refused_on_its_field_before_any_command",
+      "upstream_ids": [
+        "API-072"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_correction_api.py",
+      "status": "implemented",
+      "notes": "An unknown category, a zero, negative or text amount, a reason over 500 characters, a blank or untrimmed text, a bad date, a bad id or an unknown field answers 422 on that field before any command (V1-056 slice 11e-2, post-settlement correction routes; ops/reviews/V1-056-slice-11e-2.md)."
+    },
+    {
+      "test_id": "test_a_cross_field_mistake_is_refused_on_its_field",
+      "upstream_ids": [
+        "API-072"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_correction_api.py",
+      "status": "implemented",
+      "notes": "A Damage charge without its finding, a Miscellaneous charge with one, or a Due Date override without its reason (or the reverse) answers 422 on that field before any command (V1-056 slice 11e-2, post-settlement correction routes; ops/reviews/V1-056-slice-11e-2.md)."
+    },
+    {
+      "test_id": "test_each_named_correction_refusal_answers_its_own_code",
+      "upstream_ids": [
+        "API-072",
+        "BR-SETTLE-013",
+        "BR-INV-044",
+        "BR-PAY-042"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_correction_api.py",
+      "status": "implemented",
+      "notes": "Each database message a correction route names answers its own status, code, rule ids and fields, with only the refusal's own words (V1-056 slice 11e-2, post-settlement correction routes; ops/reviews/V1-056-slice-11e-2.md)."
+    },
+    {
+      "test_id": "test_the_correction_codes_are_pinned",
+      "upstream_ids": [
+        "API-072"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_correction_api.py",
+      "status": "implemented",
+      "notes": "Every correction route names the closed-Settlement refusal with the same answer; the plain Adjustment reversal does not; every named refusal is 409 or a 422 with its fields; an unknown body-chosen Adjustment is 422 on adjustment_id (V1-056 slice 11e-2, post-settlement correction routes; ops/reviews/V1-056-slice-11e-2.md)."
+    },
+    {
+      "test_id": "test_unnamed_correction_refusals_keep_their_plain_answers",
+      "upstream_ids": [
+        "API-072"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_correction_api.py",
+      "status": "implemented",
+      "notes": "An unnamed not-found, invalid, conflict, reused key or unavailable answer keeps its plain 404, 422, 409, IDEMPOTENCY_KEY_REUSED or 503 with no database text (V1-056 slice 11e-2, post-settlement correction routes; ops/reviews/V1-056-slice-11e-2.md)."
+    },
+    {
+      "test_id": "test_no_financial_database_answers_503",
+      "upstream_ids": [
+        "API-072"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_correction_api.py",
+      "status": "implemented",
+      "notes": "Without the financial database the correction routes answer 503 (V1-056 slice 11e-2, post-settlement correction routes; ops/reviews/V1-056-slice-11e-2.md)."
+    },
+    {
+      "test_id": "test_an_answer_for_another_record_is_never_shown",
+      "upstream_ids": [
+        "API-072",
+        "BR-AUTH-010"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_correction_api.py",
+      "status": "implemented",
+      "notes": "A recorded draft of another Property, kind, variant, Settlement or record than the path and form name is never shown (503) (V1-056 slice 11e-2, post-settlement correction routes; ops/reviews/V1-056-slice-11e-2.md)."
+    },
+    {
+      "test_id": "test_an_invoice_reduction_and_a_late_charge_reduction_are_told_apart",
+      "upstream_ids": [
+        "API-072"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_correction_api.py",
+      "status": "implemented",
+      "notes": "The Invoice line and Late-payment Charge reduction routes each refuse to show the other's CHARGE_REDUCTION draft (V1-056 slice 11e-2, post-settlement correction routes; ops/reviews/V1-056-slice-11e-2.md)."
+    },
+    {
+      "test_id": "test_an_extra_charge_correction_is_recorded_and_confirmed_over_http",
+      "upstream_ids": [
+        "API-072",
+        "BR-SETTLE-013",
+        "BR-AUTH-010"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_settlement_correction_api_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL an open Settlement answers CORRECTION_SETTLEMENT_NOT_CLOSED; after closure an unknown damage finding answers 422 on its field, the extra charge records a pending draft, replays and refuses a reused key; an approver cannot record but confirms it through the shared draft route (V1-056 slice 11e-2, post-settlement correction routes; ops/reviews/V1-056-slice-11e-2.md)."
+    },
+    {
+      "test_id": "test_a_charge_reduction_and_its_adjustment_reversal_are_recorded_over_http",
+      "upstream_ids": [
+        "API-072",
+        "BR-SETTLE-013"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_settlement_correction_api_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL after closure a charge reduction of another Invoice answers 422 on invoice_id; the reduction records, passes the answer check and is confirmed; the plain draft refuses its Adjustment (409); the Adjustment reversal correction records and an unknown Adjustment, Payment or allocation answers 422 on its field with no database text (V1-056 slice 11e-2, post-settlement correction routes; ops/reviews/V1-056-slice-11e-2.md)."
+    },
+    {
+      "test_id": "test_a_plain_adjustment_reversal_draft_is_recorded_over_http",
+      "upstream_ids": [
+        "API-072",
+        "BR-INV-044"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_settlement_correction_api_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL an invoices.adjust holder records the Adjustment reversal draft (a final_settlements.prepare holder gets 404), a second answers ADJUSTMENT_REVERSAL_DRAFT_WAITING, an unknown Adjustment 404, and the approver rejects it (V1-056 slice 11e-2, post-settlement correction routes; ops/reviews/V1-056-slice-11e-2.md)."
+    },
+    {
+      "test_id": "test_each_plan_correction_draft_is_recorded_from_its_form",
+      "upstream_ids": [
+        "API-072",
+        "BR-SETTLE-013",
+        "BR-SETTLE-008",
+        "BR-REFUND-014"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_plan_correction_api.py",
+      "status": "implemented",
+      "notes": "Each of the eight routes (Refund, Late-payment Charge Refund, pet classification, returned Refund, held-value Refund, forfeiture reversal, Deposit receipt correction, return reversal) turns its form and its DL-032 steps into the service command and answers 201 with the recorded draft (V1-056 slice 11e-3, post-settlement correction routes with a DL-032 plan; ops/reviews/V1-056-slice-11e-3.md)."
+    },
+    {
+      "test_id": "test_a_refund_return_records_the_instant_it_was_returned",
+      "upstream_ids": [
+        "API-072"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_plan_correction_api.py",
+      "status": "implemented",
+      "notes": "The return instant with its offset reaches the command as the same instant (V1-056 slice 11e-3, post-settlement correction routes with a DL-032 plan; ops/reviews/V1-056-slice-11e-3.md)."
+    },
+    {
+      "test_id": "test_each_plan_route_needs_final_settlements_prepare",
+      "upstream_ids": [
+        "API-072",
+        "BR-AUTH-010"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_plan_correction_api.py",
+      "status": "implemented",
+      "notes": "An approver or a preparer of another Property gets a hidden 404 before any command (V1-056 slice 11e-3, post-settlement correction routes with a DL-032 plan; ops/reviews/V1-056-slice-11e-3.md)."
+    },
+    {
+      "test_id": "test_a_bad_plan_form_is_refused_on_its_field_before_any_command",
+      "upstream_ids": [
+        "API-072"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_plan_correction_api.py",
+      "status": "implemented",
+      "notes": "A zero amount, a reason over 500 characters, an unknown step kind, over 200 steps, a blank or untrimmed text, a text pet classification, a return time with no offset, a number or a space separator, a new Refund method without its note, more than two receipts, an unknown outcome or an outcome without its reason, two receipts into one Deposit, a plan with no new receipt, or steps on a return reversal answers 422 on that field before any command (V1-056 slice 11e-3, post-settlement correction routes with a DL-032 plan; ops/reviews/V1-056-slice-11e-3.md)."
+    },
+    {
+      "test_id": "test_a_correction_with_no_steps_is_recorded_with_an_empty_plan",
+      "upstream_ids": [
+        "API-072",
+        "BR-SETTLE-013"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_plan_correction_api.py",
+      "status": "implemented",
+      "notes": "A correction whose released value pays nothing records no step and no Pet Deposit remainder decision (V1-056 slice 11e-3, post-settlement correction routes with a DL-032 plan; ops/reviews/V1-056-slice-11e-3.md)."
+    },
+    {
+      "test_id": "test_each_named_plan_correction_refusal_answers_its_own_code",
+      "upstream_ids": [
+        "API-072",
+        "BR-SETTLE-013",
+        "BR-SETTLE-008",
+        "BR-DEP-027"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_plan_correction_api.py",
+      "status": "implemented",
+      "notes": "Each database message a plan correction route names answers its own status, code, rule ids and fields, with only the refusal's own words (V1-056 slice 11e-3, post-settlement correction routes with a DL-032 plan; ops/reviews/V1-056-slice-11e-3.md)."
+    },
+    {
+      "test_id": "test_the_plan_correction_codes_are_pinned",
+      "upstream_ids": [
+        "API-072",
+        "BR-SETTLE-008"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_plan_correction_api.py",
+      "status": "implemented",
+      "notes": "Every plan correction names the shared plan refusals; the DL-032 rules answer as the Final Settlement draft does; a Refund method named in the form answers on that field (CORRECTION_REFUND_METHOD_OFF or CORRECTION_NEW_REFUND_METHOD_OFF), one named only in a step answers on steps; the return reversal has no plan refusal; every named refusal is 409 or a 422 with its fields (V1-056 slice 11e-3, post-settlement correction routes with a DL-032 plan; ops/reviews/V1-056-slice-11e-3.md)."
+    },
+    {
+      "test_id": "test_an_answer_for_another_plan_correction_is_never_shown",
+      "upstream_ids": [
+        "API-072",
+        "BR-AUTH-010"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_plan_correction_api.py",
+      "status": "implemented",
+      "notes": "A recorded draft of another Property, kind, variant, Settlement or record than the path and form name is never shown (503) (V1-056 slice 11e-3, post-settlement correction routes with a DL-032 plan; ops/reviews/V1-056-slice-11e-3.md)."
+    },
+    {
+      "test_id": "test_an_invoice_line_refund_and_a_late_charge_refund_are_told_apart",
+      "upstream_ids": [
+        "API-072"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_plan_correction_api.py",
+      "status": "implemented",
+      "notes": "The Invoice line and Late-payment Charge Refund routes each refuse to show the other's REFUND draft (V1-056 slice 11e-3, post-settlement correction routes with a DL-032 plan; ops/reviews/V1-056-slice-11e-3.md)."
+    },
+    {
+      "test_id": "test_a_refund_correction_is_recorded_and_confirmed_over_http_and_records_are_checked",
+      "upstream_ids": [
+        "API-072",
+        "BR-SETTLE-013",
+        "BR-REFUND-014",
+        "BR-AUTH-010"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_settlement_plan_correction_api_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL an open Settlement answers CORRECTION_SETTLEMENT_NOT_CLOSED; after the real closure an inactive or unknown method answers 422 CORRECTION_REFUND_METHOD_OFF on refund_method_id and too large an amount 422 on its field; the Refund correction records, passes the answer check and is confirmed through the shared route; each other route's unknown or unfit record answers 422 on its field with no database text (V1-056 slice 11e-3, post-settlement correction routes with a DL-032 plan; ops/reviews/V1-056-slice-11e-3.md)."
+    },
+    {
+      "test_id": "TEST-FE-S11-001",
+      "upstream_ids": [
+        "API-072",
+        "API-015"
+      ],
+      "test_level": "UI",
+      "test_path": "frontend/src/settlementClient.test.tsx",
+      "status": "implemented",
+      "notes": "A correction is sent to its route with its Idempotency-Key, the CSRF token and the selected Property, and its form as the JSON body (V1-056 slice 11f, slice 11 browser client; ops/reviews/V1-056-slice-11f.md)."
+    },
+    {
+      "test_id": "TEST-FE-S11-002",
+      "upstream_ids": [
+        "API-072",
+        "API-013"
+      ],
+      "test_level": "UI",
+      "test_path": "frontend/src/settlementClient.test.tsx",
+      "status": "implemented",
+      "notes": "A named refusal reaches the screen with its code, plain text, form fields and rule ids (V1-056 slice 11f, slice 11 browser client; ops/reviews/V1-056-slice-11f.md)."
+    },
+    {
+      "test_id": "TEST-FE-S11-003",
+      "upstream_ids": [
+        "API-072",
+        "API-014"
+      ],
+      "test_level": "UI",
+      "test_path": "frontend/src/settlementClient.test.tsx",
+      "status": "implemented",
+      "notes": "A 503 or a network failure is told apart from a refusal; an answer with no error body keeps a plain text and no code (V1-056 slice 11f, slice 11 browser client; ops/reviews/V1-056-slice-11f.md)."
+    },
+    {
+      "test_id": "TEST-FE-S11-004",
+      "upstream_ids": [
+        "API-101"
+      ],
+      "test_level": "UI",
+      "test_path": "frontend/src/settlementClient.test.tsx",
+      "status": "implemented",
+      "notes": "The shared draft list is read by state and limit and keeps the server's continuation cursor (V1-056 slice 11f, slice 11 browser client; ops/reviews/V1-056-slice-11f.md)."
+    },
+    {
+      "test_id": "TEST-FE-S11-005",
+      "upstream_ids": [
+        "API-101",
+        "API-015"
+      ],
+      "test_level": "UI",
+      "test_path": "frontend/src/settlementClient.test.tsx",
+      "status": "implemented",
+      "notes": "A draft is confirmed with an empty body and its Idempotency-Key (V1-056 slice 11f, slice 11 browser client; ops/reviews/V1-056-slice-11f.md)."
+    },
+    {
+      "test_id": "TEST-FE-S11-006",
+      "upstream_ids": [
+        "API-072"
+      ],
+      "test_level": "UI",
+      "test_path": "frontend/src/settlementClient.test.tsx",
+      "status": "implemented",
+      "notes": "The Final Settlement draft and each of the fourteen post-settlement corrections go to their own route (V1-056 slice 11f, slice 11 browser client; ops/reviews/V1-056-slice-11f.md)."
+    },
+    {
+      "test_id": "TEST-FE-S11-007",
+      "upstream_ids": [
+        "API-040",
+        "API-059",
+        "API-101",
+        "API-102",
+        "API-018"
+      ],
+      "test_level": "UI",
+      "test_path": "frontend/src/settlementClient.test.tsx",
+      "status": "implemented",
+      "notes": "The Deposit, Payment and Adjustment drafts go to the route of their own record and the hand-back resolution names no Property header but its Invoice version as If-Match (V1-056 slice 11f, slice 11 browser client; ops/reviews/V1-056-slice-11f.md)."
+    },
+    {
+      "test_id": "TEST-FE-S11-008",
+      "upstream_ids": [
+        "SEC-016",
+        "API-013"
+      ],
+      "test_level": "UI",
+      "test_path": "frontend/src/settlementClient.test.tsx",
+      "status": "implemented",
+      "notes": "No command is sent without exactly one CSRF cookie (V1-056 slice 11f, slice 11 browser client; ops/reviews/V1-056-slice-11f.md)."
+    },
+    {
+      "test_id": "test_the_settlement_forms_match_the_request_models",
+      "upstream_ids": [
+        "API-072",
+        "API-101",
+        "API-102"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_forms_ts.py",
+      "status": "implemented",
+      "notes": "frontend/src/settlementForms.ts equals the forms written from the OpenAPI request models of the slice 11 routes, so a model change without a new forms file fails (V1-056 slice 11f, slice 11 browser client; ops/reviews/V1-056-slice-11f.md)."
+    },
+    {
+      "test_id": "test_every_slice_11_form_is_exported",
+      "upstream_ids": [
+        "API-072",
+        "API-101",
+        "API-102"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_forms_ts.py",
+      "status": "implemented",
+      "notes": "Every slice 11 route's request model is exported by the forms file (V1-056 slice 11f, slice 11 browser client; ops/reviews/V1-056-slice-11f.md)."
+    },
+    {
+      "test_id": "TEST-FE-S11-009",
+      "upstream_ids": [
+        "API-072",
+        "API-102",
+        "API-013",
+        "API-018"
+      ],
+      "test_level": "UI",
+      "test_path": "frontend/src/settlementClient.test.tsx",
+      "status": "implemented",
+      "notes": "Form fields of a plain form check lose the body prefix and repeat names are dropped; a stale-version refusal keeps its current version (V1-056 slice 11f, slice 11 browser client; ops/reviews/V1-056-slice-11f.md)."
+    },
+    {
+      "test_id": "TEST-FE-S11-010",
+      "upstream_ids": [
+        "API-102",
+        "API-015"
+      ],
+      "test_level": "UI",
+      "test_path": "frontend/src/settlementClient.test.tsx",
+      "status": "implemented",
+      "notes": "The cleaning rate and charge are sent with the CSRF token and no Idempotency-Key; their own ids make a retry safe (V1-056 slice 11f, slice 11 browser client; ops/reviews/V1-056-slice-11f.md)."
+    },
+    {
+      "test_id": "test_an_invoice_late_before_the_first_pass_gets_no_charge_and_a_day_is_done_once",
+      "upstream_ids": [
+        "DL-076",
+        "BR-INV-053",
+        "BR-LATE-001",
+        "DB-INV-007",
+        "DB-INV-008",
+        "TEST-123"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_automatic_late_payment_charge_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL an Invoice already overdue before the first pass gets no charge (owner card of 2026-10-25, \"No charge\"), and the database refuses it too (NOT_IN_WINDOW); the day is recorded once, a done day is not read again, and an instant more than one hour old is refused (22023) (V1-056 slice 11g-1, the automatic late-payment charge; DL-085; ops/reviews/V1-056-slice-11g-1.md)."
+    },
+    {
+      "test_id": "test_the_charge_is_ten_percent_of_the_amount_unpaid_at_midnight_rounded_half_up",
+      "upstream_ids": [
+        "DL-076",
+        "DL-075",
+        "BR-INV-052",
+        "BR-INV-053",
+        "BR-MONEY-012",
+        "DB-INV-007",
+        "DB-INV-008",
+        "TEST-123"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_automatic_late_payment_charge_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL the charge is 10 percent of the amount unpaid at 00:00 rounded half-up (8,000, 1,235, 1 cent); money received after 00:00 does not lower it; a zero result writes nothing; the decision names the billing service principal and the automatic reference; one SCHEDULED audit event; a second try adds nothing (V1-056 slice 11g-1, the automatic late-payment charge; DL-085; ops/reviews/V1-056-slice-11g-1.md)."
+    },
+    {
+      "test_id": "test_a_missed_day_is_caught_up_with_the_balance_of_its_own_midnight",
+      "upstream_ids": [
+        "DL-076",
+        "BR-INV-053",
+        "BR-LATE-001",
+        "DB-INV-007",
+        "DB-INV-008",
+        "TEST-123"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_automatic_late_payment_charge_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL a pass after missed days covers every day since the last pass and charges the amount unpaid at that day's 00:00, not the amount unpaid now; a last pass on the charge day leaves it out, a last pass on the Due Date covers it (V1-056 slice 11g-1, the automatic late-payment charge; DL-085; ops/reviews/V1-056-slice-11g-1.md)."
+    },
+    {
+      "test_id": "test_the_pass_skips_invoices_the_rule_does_not_charge",
+      "upstream_ids": [
+        "DL-076",
+        "BR-INV-051",
+        "BR-INV-053",
+        "BR-SETTLE-012",
+        "DB-INV-007",
+        "TEST-123"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_automatic_late_payment_charge_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL an Invoice issued after its charge moment, a draft Invoice, Initial Rent and an Invoice of a closed Final Settlement get no charge and write nothing (V1-056 slice 11g-1, the automatic late-payment charge; DL-085; ops/reviews/V1-056-slice-11g-1.md)."
+    },
+    {
+      "test_id": "test_two_passes_at_once_add_one_charge",
+      "upstream_ids": [
+        "DL-076",
+        "BR-INV-053",
+        "BR-LATE-001",
+        "DB-INV-007",
+        "DB-INV-008",
+        "TEST-123"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_automatic_late_payment_charge_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL two passes recording the same Invoice at once add one charge; the other answers ALREADY_ASSESSED (V1-056 slice 11g-1, the automatic late-payment charge; DL-085; ops/reviews/V1-056-slice-11g-1.md)."
+    },
+    {
+      "test_id": "test_the_billing_worker_runs_the_pass_only_while_it_holds_its_lock",
+      "upstream_ids": [
+        "DL-076",
+        "BR-INV-053",
+        "BR-LATE-001",
+        "DB-INV-007",
+        "DB-INV-008",
+        "TEST-123"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_automatic_late_payment_charge_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL the scheduled billing worker runs the charge pass after its billing runs with the real time, not while another worker holds the Property lock, and reports a pass it could not run by its SQLSTATE only (V1-056 slice 11g-1, the automatic late-payment charge; DL-085; ops/reviews/V1-056-slice-11g-1.md)."
+    },
+    {
+      "test_id": "test_only_the_property_s_billing_service_runs_the_pass_and_records_are_checked",
+      "upstream_ids": [
+        "DL-076",
+        "BR-LATE-001",
+        "DB-INV-007",
+        "DB-INV-008",
+        "SEC-001",
+        "TEST-123"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_automatic_late_payment_charge_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL a person or a disabled service principal is refused (42501) by every pass function; bad limits and ids answer 22023; the run table is append-only and not writable by prm_financial; an automatic decision that does not match the rule and a service principal's manual decision are refused (23514); the rate check takes a whole percent from 0 to 10; prm_runtime runs nothing (V1-056 slice 11g-1, the automatic late-payment charge; DL-085; ops/reviews/V1-056-slice-11g-1.md)."
+    },
+    {
+      "test_id": "test_the_pass_pages_by_invoice_counts_each_outcome_and_marks_the_day_done",
+      "upstream_ids": [
+        "DL-076",
+        "BR-INV-053",
+        "TEST-123"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_late_payment_job.py",
+      "status": "implemented",
+      "notes": "The pass pages through the candidates by the last Invoice id, counts charged, no-amount and skipped outcomes (not one another pass charged first) and marks the day done (V1-056 slice 11g-1, the automatic late-payment charge; DL-085; ops/reviews/V1-056-slice-11g-1.md)."
+    },
+    {
+      "test_id": "test_a_failed_invoice_is_logged_by_code_only_and_leaves_the_day_open",
+      "upstream_ids": [
+        "DL-076",
+        "BR-INV-053",
+        "TEST-123"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_late_payment_job.py",
+      "status": "implemented",
+      "notes": "An Invoice refused by a lock wait, a timeout or a check, and an outcome the code does not know, are counted as failed and logged by SQLSTATE (or unknown_outcome) only; the other Invoices are still recorded and the day is not marked done (V1-056 slice 11g-1, the automatic late-payment charge; DL-085; ops/reviews/V1-056-slice-11g-1.md)."
+    },
+    {
+      "test_id": "test_a_day_that_is_not_ready_or_already_done_reads_no_invoice",
+      "upstream_ids": [
+        "DL-076",
+        "BR-INV-053",
+        "TEST-123"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_late_payment_job.py",
+      "status": "implemented",
+      "notes": "A day whose charge moment has not settled, or that is already done, reads no Invoice (V1-056 slice 11g-1, the automatic late-payment charge; DL-085; ops/reviews/V1-056-slice-11g-1.md)."
+    },
+    {
+      "test_id": "test_the_pass_needs_an_aware_instant_and_a_bounded_page",
+      "upstream_ids": [
+        "DL-076",
+        "TEST-123"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_late_payment_job.py",
+      "status": "implemented",
+      "notes": "The pass refuses an instant with no offset and a page size outside 1 to 1000 (V1-056 slice 11g-1, the automatic late-payment charge; DL-085; ops/reviews/V1-056-slice-11g-1.md)."
+    },
+    {
+      "test_id": "test_the_worker_loop_reports_the_late_charge_pass_and_fails_on_a_failed_invoice",
+      "upstream_ids": [
+        "DL-076",
+        "TEST-123"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_late_payment_job.py",
+      "status": "implemented",
+      "notes": "The worker loop keeps its succeeded line, adds a late_charges line with the counts, and reports failure when an Invoice failed (V1-056 slice 11g-1, the automatic late-payment charge; DL-085; ops/reviews/V1-056-slice-11g-1.md)."
+    },
+    {
+      "test_id": "test_a_pass_far_behind_says_so_in_the_log",
+      "upstream_ids": [
+        "DL-076",
+        "BR-INV-053",
+        "TEST-123"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_late_payment_job.py",
+      "status": "implemented",
+      "notes": "A pass more than three days behind its last finished day says how many days in the log, with no Invoice data (V1-056 slice 11g-1, the automatic late-payment charge; DL-085; ops/reviews/V1-056-slice-11g-1.md)."
+    },
+    {
+      "test_id": "test_a_lost_connection_stops_the_pass_instead_of_counting_a_failure",
+      "upstream_ids": [
+        "DL-076",
+        "BR-INV-053",
+        "TEST-123"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_late_payment_job.py",
+      "status": "implemented",
+      "notes": "A lost database connection stops the pass at once instead of counting each later Invoice as failed; a lock wait on one Invoice is still only that Invoice's failure (V1-056 slice 11g-1, the automatic late-payment charge; DL-085; ops/reviews/V1-056-slice-11g-1.md)."
+    },
+    {
+      "test_id": "test_the_worker_loop_fails_and_logs_only_the_code_when_the_pass_cannot_run",
+      "upstream_ids": [
+        "DL-076",
+        "BR-INV-053",
+        "TEST-123"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_late_payment_job.py",
+      "status": "implemented",
+      "notes": "When the pass cannot run, the worker loop reports failure and logs only the SQLSTATE code (V1-056 slice 11g-1, the automatic late-payment charge; DL-085; ops/reviews/V1-056-slice-11g-1.md)."
+    },
+    {
+      "test_id": "test_a_refusal_every_invoice_would_get_stops_the_pass",
+      "upstream_ids": [
+        "DL-076",
+        "BR-INV-053",
+        "TEST-123"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_late_payment_job.py",
+      "status": "implemented",
+      "notes": "A refusal every later Invoice would get too (no privilege, a bad argument) stops the pass at once instead of being counted per Invoice (V1-056 slice 11g-1, the automatic late-payment charge; DL-085; ops/reviews/V1-056-slice-11g-1.md)."
+    },
+    {
+      "test_id": "test_a_window_in_an_unexpected_shape_is_a_pass_error",
+      "upstream_ids": [
+        "DL-076",
+        "BR-INV-053",
+        "TEST-123"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_late_payment_job.py",
+      "status": "implemented",
+      "notes": "A pass window in an unexpected shape stops the pass with LateChargePassError, which the worker reports by name (V1-056 slice 11g-1, the automatic late-payment charge; DL-085; ops/reviews/V1-056-slice-11g-1.md)."
+    },
+    {
+      "test_id": "test_an_unpaid_charge_only_goes_down_and_a_waived_charge_takes_no_more_change",
+      "upstream_ids": [
+        "DL-076",
+        "BR-LATE-005",
+        "DB-INV-009",
+        "API-091",
+        "TEST-124"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_payment_charge_reduction_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL an unpaid charge is reduced with a fixed reason and what happened, an exact repeat answers the same, a reused key is refused, an amount that is not lower is refused, 0 waives it (CHARGE_REVERSAL) and a waived charge takes no more change; the charge read names each reduction (V1-056 slice 11g-2, reduce or waive a Late-payment Charge; DL-086; ops/reviews/V1-056-slice-11g-2.md)."
+    },
+    {
+      "test_id": "test_paid_value_above_the_new_amount_becomes_credit_of_the_charge_s_customer",
+      "upstream_ids": [
+        "DL-076",
+        "BR-LATE-005",
+        "DB-INV-009",
+        "API-091",
+        "TEST-124",
+        "BR-CREDIT-014"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_payment_charge_reduction_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL paid value above the new amount is released newest source first, the rest of a partly released allocation is posted again, released Payment value becomes Credit of the charge's Customer also when a third party paid, and the audit event names the released value and reason (V1-056 slice 11g-2, reduce or waive a Late-payment Charge; DL-086; ops/reviews/V1-056-slice-11g-2.md)."
+    },
+    {
+      "test_id": "test_released_credit_value_returns_to_its_own_credit",
+      "upstream_ids": [
+        "DL-076",
+        "BR-LATE-005",
+        "DB-INV-009",
+        "API-091",
+        "TEST-124",
+        "BR-CREDIT-014"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_payment_charge_reduction_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL a Credit application on the charge is reversed whole and its value goes back to its own Credit; no new Credit is made (V1-056 slice 11g-2, reduce or waive a Late-payment Charge; DL-086; ops/reviews/V1-056-slice-11g-2.md)."
+    },
+    {
+      "test_id": "test_two_reductions_at_once_lower_the_charge_once",
+      "upstream_ids": [
+        "DL-076",
+        "BR-LATE-005",
+        "DB-INV-009",
+        "API-091",
+        "TEST-124"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_payment_charge_reduction_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL two reductions at once lower the charge once and release its paid value once (V1-056 slice 11g-2, reduce or waive a Late-payment Charge; DL-086; ops/reviews/V1-056-slice-11g-2.md)."
+    },
+    {
+      "test_id": "test_bad_input_an_unknown_charge_and_a_closed_settlement_are_refused",
+      "upstream_ids": [
+        "DL-076",
+        "BR-LATE-005",
+        "DB-INV-009",
+        "API-091",
+        "TEST-124",
+        "BR-SETTLE-012"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_payment_charge_reduction_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL an unknown charge is not found, bad input is refused by the database (P4602), and a charge of a closed Final Settlement is refused (conflict) (V1-056 slice 11g-2, reduce or waive a Late-payment Charge; DL-086; ops/reviews/V1-056-slice-11g-2.md)."
+    },
+    {
+      "test_id": "test_reductions_are_append_only_checked_and_run_only_through_the_financial_role",
+      "upstream_ids": [
+        "DL-076",
+        "BR-LATE-005",
+        "DB-INV-009",
+        "API-091",
+        "TEST-124",
+        "SEC-001"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_late_payment_charge_reduction_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL the reduction table is append-only, a reduction row that does not match its correction is refused at commit (23514), only prm_financial runs the command, and no role reads the table or runs the internal functions (V1-056 slice 11g-2, reduce or waive a Late-payment Charge; DL-086; ops/reviews/V1-056-slice-11g-2.md)."
+    },
+    {
+      "test_id": "test_the_reduce_command_takes_a_bounded_amount_a_fixed_reason_and_a_normalized_text",
+      "upstream_ids": [
+        "DL-076",
+        "BR-LATE-005",
+        "API-091",
+        "TEST-124"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_late_payment_reduction.py",
+      "status": "implemented",
+      "notes": "The reduce command refuses a nil key, an amount outside 0 to the USD bound, a reason outside the three fixed ones and a blank, padded or too long what-happened text (V1-056 slice 11g-2, reduce or waive a Late-payment Charge; DL-086; ops/reviews/V1-056-slice-11g-2.md)."
+    },
+    {
+      "test_id": "test_only_a_holder_of_the_correction_capability_reduces_with_csrf_and_a_clean_body",
+      "upstream_ids": [
+        "DL-076",
+        "API-091",
+        "TEST-124",
+        "SEC-001"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_late_payment_reduction.py",
+      "status": "implemented",
+      "notes": "The reductions route needs sign-in, late_payment.charge_correction on the charge's Property and CSRF, refuses extra fields, other currencies, negative amounts, other reasons and bad text, and takes a waiver with a multi-line what-happened text (V1-056 slice 11g-2, reduce or waive a Late-payment Charge; DL-086; ops/reviews/V1-056-slice-11g-2.md)."
+    },
+    {
+      "test_id": "test_a_refused_reduction_answers_with_its_code_and_only_the_authorized_charge_state",
+      "upstream_ids": [
+        "DL-076",
+        "API-091",
+        "TEST-124"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_late_payment_reduction.py",
+      "status": "implemented",
+      "notes": "A refused reduction answers 409 IDEMPOTENCY_KEY_REUSED, 409 CONFLICT with only the authorized charge state, 422 or 404, with no exception text (V1-056 slice 11g-2, reduce or waive a Late-payment Charge; DL-086; ops/reviews/V1-056-slice-11g-2.md)."
+    },
+    {
+      "test_id": "test_a_credit_application_released_in_part_keeps_its_rest_on_the_charge",
+      "upstream_ids": [
+        "DL-076",
+        "BR-LATE-005",
+        "DB-INV-009",
+        "API-091",
+        "TEST-124",
+        "BR-CREDIT-014"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_payment_charge_reduction_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL a Credit application released in part goes back to its Credit for the released value and its rest is applied again to the charge (V1-056 slice 11g-2, reduce or waive a Late-payment Charge; DL-086; ops/reviews/V1-056-slice-11g-2.md)."
+    },
+    {
+      "test_id": "test_a_reduction_waits_for_another_writer_of_the_same_payment",
+      "upstream_ids": [
+        "DL-076",
+        "BR-LATE-005",
+        "DB-INV-009",
+        "API-091",
+        "TEST-124"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_payment_charge_reduction_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL a reduction takes each paying Payment's serializer before its row lock, so it waits for another Payment writer without holding the Payment row (V1-056 slice 11g-2, reduce or waive a Late-payment Charge; DL-086; ops/reviews/V1-056-slice-11g-2.md)."
+    },
+    {
+      "test_id": "test_the_old_route_does_not_reverse_a_reduction_and_shares_its_keys",
+      "upstream_ids": [
+        "DL-076",
+        "BR-LATE-005",
+        "API-091",
+        "TEST-124"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_payment_charge_reduction_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL the corrections route refuses to reverse a reduction made by the reductions route, and a key used by one route is refused on the other (V1-056 slice 11g-2, reduce or waive a Late-payment Charge; DL-086; ops/reviews/V1-056-slice-11g-2.md)."
+    },
+    {
+      "test_id": "test_only_a_rolled_back_lock_conflict_answers_conflict_on_the_real_service",
+      "upstream_ids": [
+        "DL-076",
+        "API-091",
+        "TEST-124"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_late_payment_reduction.py",
+      "status": "implemented",
+      "notes": "Through the real service a detected deadlock or serialization failure answers 409 CONFLICT with the charge state, and every other database fault answers 503 with no state (V1-056 slice 11g-2, reduce or waive a Late-payment Charge; DL-086; ops/reviews/V1-056-slice-11g-2.md)."
+    },
+    {
+      "test_id": "test_after_the_first_pass_a_manual_decision_is_refused_but_a_repeat_replays",
+      "upstream_ids": [
+        "DL-076",
+        "BR-LATE-001",
+        "API-091",
+        "TEST-123"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_manual_late_payment_closed_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL, after the Property's first finished automatic pass a person's late-payment decision is refused and writes nothing, while an exact repeat of a decision made before replays its stored answer (V1-056 slice 11g-3, no manual late-payment decision and no free charge correction; DL-087; ops/reviews/V1-056-slice-11g-3.md)."
+    },
+    {
+      "test_id": "test_after_the_first_pass_only_a_reduction_with_a_fixed_reason_changes_a_charge",
+      "upstream_ids": [
+        "DL-076",
+        "BR-LATE-005",
+        "API-091",
+        "TEST-124"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_manual_late_payment_closed_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL, after the first finished automatic pass a free reduction, a free waiver and a reduction reversal are refused, an exact repeat of an earlier correction replays, and a reduction with a fixed reason still lowers the charge (V1-056 slice 11g-3, no manual late-payment decision and no free charge correction; DL-087; ops/reviews/V1-056-slice-11g-3.md)."
+    },
+    {
+      "test_id": "test_after_the_first_pass_a_final_settlement_waits_for_no_manual_decision",
+      "upstream_ids": [
+        "DL-076",
+        "BR-SETTLE-012",
+        "API-091",
+        "TEST-123"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_manual_late_payment_closed_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL, after the first finished automatic pass once a finished pass has covered its charge day the Final Settlement preview no longer lists an overdue Invoice without a charge as waiting for a late-payment decision, and before that it still does (V1-056 slice 11g-3, no manual late-payment decision and no free charge correction; DL-087; ops/reviews/V1-056-slice-11g-3.md)."
+    },
+    {
+      "test_id": "TEST-FE-S11G-001",
+      "upstream_ids": [
+        "DL-076",
+        "API-091",
+        "UI-105"
+      ],
+      "test_level": "UI",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "The old Invoices screen hides the free charge correction form when the charge read says manual corrections are closed (V1-056 slice 11g-3, no manual late-payment decision and no free charge correction; DL-087; ops/reviews/V1-056-slice-11g-3.md)."
+    },
+    {
+      "test_id": "test_a_payer_s_own_payment_pays_the_charge_right_after_its_invoice",
+      "upstream_ids": [
+        "DL-076",
+        "BR-PAY-020",
+        "BR-PAY-040",
+        "API-059",
+        "TEST-060"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_charge_payment_proposal_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL, a payer's own Payment that names nothing is proposed to the oldest Invoice, then that Invoice's late-payment charge, then the newer Invoice, and posting the proposal writes the charge part as a direct charge allocation whose detail trace names the batch (V1-056 slice 11g-4, the late-payment charge right after its own Invoice in the payment proposal; DL-088; ops/reviews/V1-056-slice-11g-4.md)."
+    },
+    {
+      "test_id": "test_money_that_runs_out_pays_part_of_the_charge_before_any_newer_invoice",
+      "upstream_ids": [
+        "DL-076",
+        "BR-PAY-020",
+        "BR-PAY-040",
+        "API-059",
+        "TEST-060"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_charge_payment_proposal_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL, money that runs out after the oldest Invoice pays part of its charge and nothing of the newer Invoice (V1-056 slice 11g-4, the late-payment charge right after its own Invoice in the payment proposal; DL-088; ops/reviews/V1-056-slice-11g-4.md)."
+    },
+    {
+      "test_id": "test_the_charge_of_a_paid_invoice_comes_before_newer_invoices",
+      "upstream_ids": [
+        "DL-076",
+        "BR-PAY-020",
+        "BR-PAY-040",
+        "API-059",
+        "TEST-060"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_charge_payment_proposal_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL, the charge of an Invoice already paid keeps its Due Date place before a newer Invoice (V1-056 slice 11g-4, the late-payment charge right after its own Invoice in the payment proposal; DL-088; ops/reviews/V1-056-slice-11g-4.md)."
+    },
+    {
+      "test_id": "test_a_third_party_or_named_payment_is_proposed_as_before",
+      "upstream_ids": [
+        "DL-076",
+        "DL-029",
+        "BR-PAY-024",
+        "BR-PAY-026",
+        "API-059",
+        "TEST-060"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_charge_payment_proposal_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL, a third-party Payment and a Payment that names an Invoice get no charge target and the earlier policy (V1-056 slice 11g-4, the late-payment charge right after its own Invoice in the payment proposal; DL-088; ops/reviews/V1-056-slice-11g-4.md)."
+    },
+    {
+      "test_id": "test_a_proposal_whose_charge_was_paid_meanwhile_is_refused_and_writes_nothing",
+      "upstream_ids": [
+        "DL-076",
+        "BR-PAY-029",
+        "API-059",
+        "TEST-060"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_charge_payment_proposal_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL, a proposal whose charge was paid in part meanwhile is refused and writes nothing, and a fresh proposal names what is still unpaid (V1-056 slice 11g-4, the late-payment charge right after its own Invoice in the payment proposal; DL-088; ops/reviews/V1-056-slice-11g-4.md)."
+    },
+    {
+      "test_id": "test_a_payment_that_names_the_charge_or_a_reduced_or_waived_charge_is_proposed_right",
+      "upstream_ids": [
+        "DL-076",
+        "BR-PAY-024",
+        "BR-LATE-005",
+        "API-059",
+        "TEST-060"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_charge_payment_proposal_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL, a Payment that names a charge gets no proposal targets, a reduced charge is proposed at what is still unpaid and a waived charge is left out (V1-056 slice 11g-4, the late-payment charge right after its own Invoice in the payment proposal; DL-088; ops/reviews/V1-056-slice-11g-4.md)."
+    },
+    {
+      "test_id": "test_each_charge_follows_its_own_invoice",
+      "upstream_ids": [
+        "DL-076",
+        "BR-PAY-020",
+        "BR-PAY-040",
+        "API-059",
+        "TEST-060"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_charge_payment_proposal_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL, with two charged Invoices each charge comes right after its own Invoice (V1-056 slice 11g-4, the late-payment charge right after its own Invoice in the payment proposal; DL-088; ops/reviews/V1-056-slice-11g-4.md)."
+    },
+    {
+      "test_id": "test_a_charge_allocation_from_a_proposal_is_reversed_like_a_direct_one",
+      "upstream_ids": [
+        "DL-076",
+        "BR-PAY-040",
+        "API-059",
+        "TEST-061"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_charge_payment_proposal_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL, a charge allocation posted from a proposal is reversed like a direct one and the charge is proposed again (V1-056 slice 11g-4, the late-payment charge right after its own Invoice in the payment proposal; DL-088; ops/reviews/V1-056-slice-11g-4.md)."
+    },
+    {
+      "test_id": "TEST-FE-S11G-003",
+      "upstream_ids": [
+        "TEST-117",
+        "DL-076",
+        "API-059",
+        "UI-005"
+      ],
+      "test_level": "UI",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "The allocation proposal view shows a late-payment charge target as a charge of its Invoice, without Invoice-only facts or duplicate keys (V1-056 slice 11g-4, the late-payment charge right after its own Invoice in the payment proposal; DL-088; ops/reviews/V1-056-slice-11g-4.md)."
+    },
+    {
+      "test_id": "test_settings_access_adds_a_refund_method_that_starts_on_and_is_audited",
+      "upstream_ids": [
+        "BR-REFUND-014",
+        "DB-REFUND-001",
+        "TEST-066",
+        "DL-089"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_refund_method_settings_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL, Settings access adds a Refund method that starts on, is audited and listed; a repeat answers the same method and writes nothing more; a used code or reused id is refused with its own message; other capabilities and bad input are refused (V1-056 slice 11h, Refund methods with Settings access; DL-089; ops/reviews/V1-056-slice-11h.md)."
+    },
+    {
+      "test_id": "test_a_method_is_turned_off_and_on_again_with_each_change_audited",
+      "upstream_ids": [
+        "BR-REFUND-014",
+        "DB-REFUND-001",
+        "TEST-066",
+        "DL-089"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_refund_method_settings_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL, a method is turned off and on again with each real change audited (previous and resulting state); a repeat writes nothing; other capabilities and an unknown method are refused (V1-056 slice 11h, Refund methods with Settings access; DL-089; ops/reviews/V1-056-slice-11h.md)."
+    },
+    {
+      "test_id": "test_the_last_method_that_is_on_stays_on",
+      "upstream_ids": [
+        "BR-REFUND-014",
+        "DB-REFUND-001",
+        "TEST-066",
+        "DL-089"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_refund_method_settings_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL, turning off the last Refund method that is on is refused (55000, At least one Refund Method stays on) (V1-056 slice 11h, Refund methods with Settings access; DL-089; ops/reviews/V1-056-slice-11h.md)."
+    },
+    {
+      "test_id": "test_two_people_turning_off_the_last_two_methods_at_once_leave_one_on",
+      "upstream_ids": [
+        "BR-REFUND-014",
+        "DB-REFUND-001",
+        "TEST-066",
+        "DL-089"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_refund_method_settings_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL, two people turning off the last two methods at once leave one on: the second waits and is refused at READ COMMITTED (55000) or fails to serialize at REPEATABLE READ (40001) (V1-056 slice 11h, Refund methods with Settings access; DL-089; ops/reviews/V1-056-slice-11h.md)."
+    },
+    {
+      "test_id": "test_a_refund_method_is_added_only_with_settings_access",
+      "upstream_ids": [
+        "BR-REFUND-014",
+        "API-013",
+        "DL-089"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "Adding a Refund method needs a session, settings.manage (other capabilities get a hidden 404), the Origin and CSRF pair; the body is checked; a repeat answers the method as it is now, turned off included; an answer for another id is 503 (V1-056 slice 11h, Refund methods with Settings access; DL-089; ops/reviews/V1-056-slice-11h.md)."
+    },
+    {
+      "test_id": "test_a_refund_method_is_turned_off_or_on_only_with_settings_access",
+      "upstream_ids": [
+        "BR-REFUND-014",
+        "API-013",
+        "DL-089"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "Turning a Refund method off or on needs settings.manage, the Origin and CSRF pair; an answer that does not match the request is 503 (V1-056 slice 11h, Refund methods with Settings access; DL-089; ops/reviews/V1-056-slice-11h.md)."
+    },
+    {
+      "test_id": "test_a_refused_refund_method_change_answers_409_with_its_code",
+      "upstream_ids": [
+        "BR-REFUND-014",
+        "API-013",
+        "DL-089"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "A used code, a reused id and the last method that is on answer 409 with their refusal codes and no database text (V1-056 slice 11h, Refund methods with Settings access; DL-089; ops/reviews/V1-056-slice-11h.md)."
+    },
+    {
+      "test_id": "test_a_settings_access_holder_reads_the_refund_methods",
+      "upstream_ids": [
+        "BR-REFUND-014",
+        "API-013",
+        "DL-089"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "A holder of settings.manage reads the Refund method list (V1-056 slice 11h, Refund methods with Settings access; DL-089; ops/reviews/V1-056-slice-11h.md)."
+    },
+    {
+      "test_id": "test_the_refund_method_service_maps_each_database_answer",
+      "upstream_ids": [
+        "BR-REFUND-014",
+        "API-013",
+        "DL-089"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "The Refund method service maps each database answer (not found, invalid, not authorized, conflict, unavailable) and needs no writer URL (V1-056 slice 11h, Refund methods with Settings access; DL-089; ops/reviews/V1-056-slice-11h.md)."
+    },
+    {
+      "test_id": "TEST-FE-S11H-001",
+      "upstream_ids": [
+        "API-013",
+        "BR-REFUND-014"
+      ],
+      "test_level": "UI",
+      "test_path": "frontend/src/settlementClient.test.tsx",
+      "status": "implemented",
+      "notes": "The client adds a Refund method and turns one off with the CSRF token, the selected Property and no Idempotency-Key (V1-056 slice 11h, Refund methods with Settings access; DL-089; ops/reviews/V1-056-slice-11h.md)."
+    },
+    {
       "test_id": "test_the_inventory_is_saved_as_numbered_records_and_an_item_left_out_is_gone",
       "upstream_ids": [
         "DL-078",

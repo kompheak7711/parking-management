@@ -666,7 +666,7 @@ def test_a_forfeiture_reversal_refuses_other_forfeitures_waiting_drafts_and_stal
                 method,
                 f"FIX_{method.hex[:8].upper()}",
                 "Forfeiture reversal test",
-                "property.manage",
+                "settings.manage",
             ),
         )
     counts = one(url, COUNTS)
@@ -739,7 +739,7 @@ def test_a_forfeiture_reversal_refuses_other_forfeitures_waiting_drafts_and_stal
     with psycopg.connect(runtime_database_url()) as connection:
         connection.execute(
             "SELECT app.set_refund_method_active(%s,%s,%s,false,%s)",
-            (prop, human, method, "property.manage"),
+            (prop, human, method, "settings.manage"),
         )
     counts = one(url, COUNTS)
     with pytest.raises(FinalSettlementConflictError) as inactive:

@@ -136,6 +136,8 @@ database_test_suites='
   tests/test_lease_enforcement_migration.py
   tests/test_lease_enforcement_api_migration.py
   tests/test_lease_notices_migration.py
+  tests/test_lease_notice_api_migration.py
+  tests/test_staff_rent_letters_migration.py
   tests/test_lease_termination_migration.py
   tests/test_termination_deposit_migration.py
   tests/test_termination_invoice_migration.py
@@ -150,6 +152,11 @@ database_test_suites='
   tests/test_deposit_api_migration.py
   tests/test_invoice_migration.py
   tests/test_late_payment_migration.py
+  tests/test_automatic_late_payment_charge_migration.py
+  tests/test_late_payment_charge_reduction_migration.py
+  tests/test_manual_late_payment_closed_migration.py
+  tests/test_late_charge_payment_proposal_migration.py
+  tests/test_refund_method_settings_migration.py
   tests/test_payment_migration.py
   tests/test_payment_read_migration.py
   tests/test_financial_reference_migration.py
@@ -305,6 +312,16 @@ database_test_suites='
   tests/test_customer_id_document_number_migration.py
   tests/test_customer_details_migration.py
   tests/test_document_numbers_migration.py
+  tests/test_draft_reads_transaction_id_migration.py
+  tests/test_financial_draft_api_migration.py
+  tests/test_move_out_billing_api_migration.py
+  tests/test_refund_reads_variant_recovery_migration.py
+  tests/test_draft_record_api_migration.py
+  tests/test_deposit_record_api_migration.py
+  tests/test_payment_move_api_migration.py
+  tests/test_final_settlement_api_migration.py
+  tests/test_settlement_correction_api_migration.py
+  tests/test_settlement_plan_correction_api_migration.py
 '
 
 for database_test_file in $database_test_suites; do

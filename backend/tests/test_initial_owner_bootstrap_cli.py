@@ -790,6 +790,18 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/properties/{property_id}/one-time-charges": {"post"},
         "/api/v1/properties/{property_id}/one-time-charge-due-days": {"post"},
         "/api/v1/properties/{property_id}/leases/{lease_id}/initial-rent-due-date": {"post"},
+        # V1-056 slice 11a: the move-out cleaning charge and the hand-back month (API-102).
+        "/api/v1/properties/{property_id}/units/{unit_id}/cleaning-rate": {"get"},
+        "/api/v1/properties/{property_id}/units/{unit_id}/cleaning-rates": {"post"},
+        "/api/v1/properties/{property_id}/leases/{lease_id}/cleaning-charge": {"post"},
+        "/api/v1/invoices/{invoice_id}/hand-back-assessment": {"get"},
+        "/api/v1/invoices/{invoice_id}/hand-back-resolution": {"post"},
+        # V1-056 slice 11b: the shared financial draft routes (API-101).
+        "/api/v1/properties/{property_id}/financial-drafts": {"get"},
+        "/api/v1/properties/{property_id}/financial-drafts/{draft_id}": {"get"},
+        "/api/v1/properties/{property_id}/financial-drafts/{draft_id}/reject": {"post"},
+        "/api/v1/properties/{property_id}/financial-drafts/{draft_id}/withdraw": {"post"},
+        "/api/v1/properties/{property_id}/financial-drafts/{draft_id}/confirm": {"post"},
         "/api/v1/properties/{property_id}/leases/{lease_id}/utility-baseline": {"get", "post"},
         "/api/v1/properties/{property_id}/leases/{lease_id}/move-out-final-utility-inputs": {
             "get",
@@ -831,6 +843,62 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/properties/{property_id}/refunds": {"get"},
         "/api/v1/refunds/{refund_id}": {"get"},
         "/api/v1/refund-sources/{source_type}/{source_id}": {"get"},
+        # V1-056 slice 11c-1: the Refund methods a draft may name.
+        # V1-056 slice 11h: adding a Refund method and turning one off or on (Settings access).
+        "/api/v1/properties/{property_id}/refund-methods": {"get", "post"},
+        "/api/v1/properties/{property_id}/refund-methods/{refund_method_id}/state": {"post"},
+        # V1-056 slice 11c-3: Deposit forfeiture, Deposit correction and returned-Payment drafts.
+        "/api/v1/properties/{property_id}/deposits/{deposit_id}/forfeiture-drafts": {"post"},
+        "/api/v1/properties/{property_id}/deposit-dispositions/{disposition_id}/reversal-drafts": {
+            "post"
+        },
+        "/api/v1/properties/{property_id}/deposit-receipts/{receipt_id}/reversal-drafts": {"post"},
+        "/api/v1/properties/{property_id}/payments/{payment_id}/return-drafts": {"post"},
+        # V1-056 slice 11c-4: the walk-in Security Deposit and a receipt into a Deposit.
+        "/api/v1/leases/{lease_id}/security-deposit": {"post"},
+        "/api/v1/deposits/{deposit_id}/receipts": {"post"},
+        # V1-056 slice 11d: the wrong-Unit Payment move draft.
+        "/api/v1/properties/{property_id}/payment-allocations/{allocation_id}/move-drafts": {
+            "post"
+        },
+        # V1-056 slice 11e-1: the Final Settlement start, preview and draft routes.
+        "/api/v1/properties/{property_id}/leases/{lease_id}/final-settlement": {"post"},
+        "/api/v1/properties/{property_id}/final-settlements/{settlement_id}/preview": {"get"},
+        "/api/v1/properties/{property_id}/final-settlements/{settlement_id}/drafts": {"post"},
+        # V1-056 slice 11e-2: the post-settlement correction drafts and the Adjustment reversal.
+        "/api/v1/properties/{property_id}/final-settlements/{settlement_id}"
+        "/corrections/extra-charges": {"post"},
+        "/api/v1/properties/{property_id}/final-settlements/{settlement_id}"
+        "/corrections/charge-reductions": {"post"},
+        "/api/v1/properties/{property_id}/final-settlements/{settlement_id}"
+        "/corrections/late-charge-reductions": {"post"},
+        "/api/v1/properties/{property_id}/final-settlements/{settlement_id}"
+        "/corrections/returned-payments": {"post"},
+        "/api/v1/properties/{property_id}/final-settlements/{settlement_id}"
+        "/corrections/payment-moves": {"post"},
+        "/api/v1/properties/{property_id}/final-settlements/{settlement_id}"
+        "/corrections/adjustment-reversals": {"post"},
+        # V1-056 slice 11e-3: the corrections with a DL-032 plan and the return reversal.
+        "/api/v1/properties/{property_id}/final-settlements/{settlement_id}/corrections/refunds": {
+            "post"
+        },
+        "/api/v1/properties/{property_id}/final-settlements/{settlement_id}"
+        "/corrections/late-charge-refunds": {"post"},
+        "/api/v1/properties/{property_id}/final-settlements/{settlement_id}"
+        "/corrections/pet-classifications": {"post"},
+        "/api/v1/properties/{property_id}/final-settlements/{settlement_id}"
+        "/corrections/refund-returns": {"post"},
+        "/api/v1/properties/{property_id}/final-settlements/{settlement_id}"
+        "/corrections/held-value-refunds": {"post"},
+        "/api/v1/properties/{property_id}/final-settlements/{settlement_id}"
+        "/corrections/forfeiture-reversals": {"post"},
+        "/api/v1/properties/{property_id}/final-settlements/{settlement_id}"
+        "/corrections/deposit-receipt-corrections": {"post"},
+        "/api/v1/properties/{property_id}/final-settlements/{settlement_id}"
+        "/corrections/return-reversals": {"post"},
+        "/api/v1/properties/{property_id}/invoice-adjustments/{adjustment_id}/reversal-drafts": {
+            "post"
+        },
         "/api/v1/refunds": {"post"},
         "/api/v1/refund-drafts": {"post"},
         "/api/v1/properties/{property_id}/refund-drafts/{draft_id}/confirm": {"post"},
@@ -844,6 +912,8 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/invoices/{invoice_id}/late-payment-decision": {"get", "post"},
         "/api/v1/late-payment-charges/{charge_id}": {"get"},
         "/api/v1/late-payment-charges/{charge_id}/corrections": {"post"},
+        # V1-056 slice 11g-2: reduce or waive a Late-payment Charge (DL-076 answer 4).
+        "/api/v1/late-payment-charges/{charge_id}/reductions": {"post"},
         "/api/v1/properties/{property_id}/exchange-rates": {"get"},
         "/api/v1/properties/{property_id}/exchange-rates:confirm": {"post"},
         "/properties/{property_id}/units": {"get", "post"},

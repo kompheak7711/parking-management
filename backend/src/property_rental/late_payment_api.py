@@ -35,6 +35,8 @@ from property_rental.late_payment import (
     LatePaymentInvalidError,
     LatePaymentNotFoundError,
     LatePaymentServiceUnavailableError,
+    ReduceLatePaymentChargeCommand,
+    ReductionReason,
 )
 from property_rental.settings import Settings
 
@@ -73,6 +75,16 @@ class LatePaymentFlow(Protocol):
         property_id: UUID,
         charge_id: UUID,
         command: CorrectLatePaymentChargeCommand,
+        *,
+        actor: AuthenticatedActor,
+        request_id: str,
+    ) -> LatePaymentCommandResponse: ...
+
+    def reduce_charge(
+        self,
+        property_id: UUID,
+        charge_id: UUID,
+        command: ReduceLatePaymentChargeCommand,
         *,
         actor: AuthenticatedActor,
         request_id: str,
@@ -122,6 +134,26 @@ class ChargeCorrectionInput(BaseModel):
         elif self.amount is not None or self.reverses_correction_id is None:
             raise ValueError("REDUCTION_REVERSAL requires only its source correction")
         return self
+
+
+class LatePaymentReductionInput(BaseModel):
+    """V1-056 slice 11g-2 (DL-076 answer 4): the new, lower amount (0 waives the Charge), one of
+    the three fixed reasons and what happened, in the staff member's words."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    new_amount: MoneyInput
+    reason: ReductionReason
+    # No leading or trailing white space; no C0 or C1 control character but tab, line feed and
+    # carriage return.
+    what_happened: str = Field(
+        min_length=1,
+        max_length=500,
+        pattern=(
+            r"^[^\s\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]"
+            r"(?:[^\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]*[^\s\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f])?$"
+        ),
+    )
 
 
 def late_payment_idempotency_key_reused_response(request: Request) -> JSONResponse:
@@ -362,6 +394,45 @@ def create_late_payment_router(
                         body.reason,
                         body.amount.minor_units if body.amount is not None else None,
                         body.reverses_correction_id,
+                    ),
+                    actor=actor,
+                    request_id=request.state.request_id,
+                ),
+                preserve_conflict=True,
+            )
+        except (LatePaymentIdempotencyKeyReused, LatePaymentApplicationReversalRequired):
+            raise
+        except LatePaymentConflictError:
+            current_state = _invoke(lambda: flow.charge_conflict_state(charge_id, actor=actor))
+            return late_payment_conflict_response(request, current_state)
+        response.status_code = resource.status_code
+        return resource.body
+
+    @router.post(
+        "/late-payment-charges/{charge_id}/reductions",
+        status_code=status.HTTP_200_OK,
+        response_model=None,
+    )
+    def reduce_charge(
+        charge_id: UUID,
+        body: LatePaymentReductionInput,
+        request: Request,
+        response: Response,
+        idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
+    ) -> dict[str, object] | JSONResponse:
+        actor, property_id = charge_context(
+            charge_id, request, LATE_PAYMENT_CORRECTION_CAPABILITY, mutation=True
+        )
+        try:
+            resource = _invoke(
+                lambda: flow.reduce_charge(
+                    property_id,
+                    charge_id,
+                    ReduceLatePaymentChargeCommand(
+                        idempotency_key,
+                        body.new_amount.minor_units,
+                        body.reason,
+                        body.what_happened,
                     ),
                     actor=actor,
                     request_id=request.state.request_id,

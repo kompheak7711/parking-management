@@ -1341,6 +1341,55 @@ describe("V1-047 staff billing workflows", () => {
       cleanup();
     }
   });
+  it("TEST-FE-S11G-001 hides the free charge correction form once the automatic pass runs", async () => {
+    const { api, journal } = setup("UNPAID");
+    vi.mocked(api.charge).mockResolvedValue({
+      id: "charge",
+      property_id: propertyId,
+      customer_id: "customer-one",
+      original_amount: parseUsd("15"),
+      adjusted_obligation: parseUsd("15"),
+      remaining_balance: parseUsd("15"),
+      corrections: [],
+      evidence: { id: "charge" },
+      manual_corrections_open: false,
+    });
+    render(
+      <InvoiceManagement
+        api={api}
+        journal={journal}
+        actorId="actor"
+        propertyId={propertyId}
+      />,
+    );
+    await loadInvoice();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Review late payment" }),
+    );
+    await screen.findByRole("heading", { name: "Late-payment review" });
+    fill("Final decision", "REDUCED");
+    fill("Exact reduced amount (USD; REDUCED only)", "15");
+    fill("Late-payment decision reason", "Approved");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Review final decision" }),
+    );
+    await confirm();
+    const open = await screen.findByRole("button", {
+      name: "Open separate Late-payment Charge",
+    });
+    await waitFor(() => {
+      expect(open).not.toBeDisabled();
+    });
+    fireEvent.click(open);
+    await screen.findByRole("heading", {
+      name: "Separate Late-payment Charge",
+    });
+    expect(screen.queryByLabelText("Charge correction kind")).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Review charge correction" }),
+    ).toBeNull();
+  });
+
   it("TEST-FE-252 rejects a credit below zero before sending and previews a zero-balance PAID result", async () => {
     const { api, journal } = setup("UNPAID");
     render(

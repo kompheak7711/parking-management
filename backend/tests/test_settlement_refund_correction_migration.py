@@ -787,14 +787,14 @@ def test_a_changed_line_is_stale_an_inactive_method_conflicts_and_a_deposit_paid
                 method,
                 f"FIX_{method.hex[:8].upper()}",
                 "Correction test",
-                "property.manage",
+                "settings.manage",
             ),
         )
     third = record(case, correction(case, invoice, line, 1_000, refund_method_id=method))
     with psycopg.connect(runtime_database_url()) as connection:
         connection.execute(
             "SELECT app.set_refund_method_active(%s,%s,%s,false,%s)",
-            (prop, human, method, "property.manage"),
+            (prop, human, method, "settings.manage"),
         )
     with pytest.raises(FinalSettlementConflictError) as inactive:
         confirm(case, person, third)

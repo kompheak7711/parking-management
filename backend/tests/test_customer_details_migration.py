@@ -1,7 +1,7 @@
 """Real PostgreSQL coverage for the Customer date of birth, gender and nationality.
 
 DL-078 answer 3 (owner, 2026-10-20), SEC-006, DB-CUST-001, BR-CUST-003 (V1-058 R2c, migration
-`20270208_196`).
+`20270215_203`).
 """
 
 from __future__ import annotations
@@ -177,8 +177,8 @@ def test_the_details_are_kept_in_the_command_replay(migrated_database_url: str) 
 def test_v1_058_r2c_is_forward_only_and_follows_v1_059_part_b(migrated_database_url: str) -> None:
     config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
     scripts = ScriptDirectory.from_config(config)
-    revision = scripts.get_revision("20270208_196")
-    assert revision is not None and revision.down_revision == "20270207_195"
+    revision = scripts.get_revision("20270215_203")
+    assert revision is not None and revision.down_revision == "20270214_202"
     with pytest.raises(RuntimeError, match="forward-only"):
         revision.module.downgrade()
     with psycopg.connect(migrated_database_url) as admin:

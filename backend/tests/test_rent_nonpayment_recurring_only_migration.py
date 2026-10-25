@@ -411,6 +411,24 @@ def recorded(url: str) -> dict[str, Any]:
         }
 
 
+def kept(after: dict[str, Any], before: dict[str, Any]) -> dict[str, Any]:
+    """The rows after the upgrade, limited to the columns they had before. A column a later
+    migration added is null on these rows (slice 11g-1 added the service actor columns)."""
+    result: dict[str, Any] = {}
+    for table, (rows,) in after.items():
+        (old_rows,) = before[table]
+        assert len(rows) == len(old_rows)
+        for row, old_row in zip(rows, old_rows, strict=True):
+            assert all(row[key] is None for key in row.keys() - old_row.keys())
+        result[table] = (
+            [
+                {key: row[key] for key in old_row}
+                for row, old_row in zip(rows, old_rows, strict=True)
+            ],
+        )
+    return result
+
+
 def test_forward_upgrade_keeps_recorded_history_and_limits_initial_cases(
     migrated_database_url: str,
 ) -> None:
@@ -447,7 +465,7 @@ def test_forward_upgrade_keeps_recorded_history_and_limits_initial_cases(
         record(flow, i_prop, i_lease, i_case, i_human, NonpaymentEventKind.TWENTY_DAY_WARNING)
         before = recorded(temporary)
         alembic_command.upgrade(config, "head")
-        assert recorded(temporary) == before
+        assert kept(recorded(temporary), before) == before
         with pytest.raises(LeaseEnforcementConflictError):
             record(
                 flow,

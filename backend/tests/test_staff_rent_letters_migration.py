@@ -1,4 +1,4 @@
-"""Staff record the day-20 and day-30 Rent letters (migration 20270211_199, owner 2026-10-25)."""
+"""Staff record the day-20 and day-30 Rent letters (migration 20270218_206, owner 2026-10-25)."""
 
 from __future__ import annotations
 
@@ -25,8 +25,8 @@ from test_migrations import _run_alembic, _temporary_migration_database
 from test_move_in_migration import migrated_database_url as migrated_database_url
 from test_role_bundle_migration import add_account, assign, grants, next_version, the_property
 
-REVISION = "20270211_199"
-PREVIOUS = "20270210_198"
+REVISION = "20270218_206"
+PREVIOUS = "20270217_205"
 
 
 def version(connection: psycopg.Connection[Any], bundle: uuid.UUID) -> int:

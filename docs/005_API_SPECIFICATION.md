@@ -563,6 +563,51 @@ money as a normal Payment); after any lock refusal (55P03, also a lock
 timeout) the service replays the same command at most three times and then
 answers unavailable (DL-067; at worst about 14 seconds).
 
+V1-056 slice 11c-4 (2026-10-24; no migration): two of the routes above are built, each with
+`Idempotency-Key` (the same key and body answer the same result again; the same key with another
+body answers 409 `IDEMPOTENCY_KEY_REUSED`), the browser mutation rules and a strict JSON body; a
+person without the route's capability in the Property gets a hidden 404. These replace the route
+list above for what exists: the separate Reservation and Pet Deposit receipt paths named above
+are not built, because `POST /deposits/{deposit_id}/receipts` records a receipt into any existing
+Deposit, a Pet Deposit and an ACTIVE Reservation's Security Deposit before signing included.
+
+- `POST /leases/{lease_id}/security-deposit` (`deposits.manage`; body `deposit_id`, a new id the
+  form chooses, `required_usd_cents` above 0 and `reason` of up to 1,000 characters): a walk-in
+  Lease's Security Deposit. Answers 201 with the Deposit resource and its `Location`. Named
+  refusals (409): `DEPOSIT_SECURITY_LEASE_NOT_SIGNED`, `DEPOSIT_SECURITY_NOT_WALK_IN` (the Lease
+  was signed from a Reservation or through the old path, BR-DEP-005), `DEPOSIT_SECURITY_RENEWAL`
+  (Q-2026-10-18-129 is still open), `DEPOSIT_SECURITY_ALREADY_EXISTS` and, fail-closed,
+  `FINAL_SETTLEMENT_CLOSED`. The Deposit is listed by `GET /leases/{lease_id}/deposits`; the Lease
+  resource's `security_deposit_id` stays the one its draft named (none for a walk-in Lease).
+- `POST /deposits/{deposit_id}/receipts` (`payments.allocate`, no draft; body `receipt_id`,
+  `payment_id`, `amount_usd_cents` above 0 and `reason` of up to 1,000 characters): a receipt
+  from a received Payment into an existing Deposit. Answers 201 with the receipt and the
+  Deposit's money only, with no `Location` (`deposit_receipt_id`, `deposit_id`, `payment_id`, `amount_usd_cents`,
+  `occurred_at`, `payment_available_usd_cents`, `required_usd_cents`,
+  `held_refundable_usd_cents`, `outstanding_required_usd_cents`, `version`), not the Deposit
+  resource, because a holder of `payments.allocate` alone may not read Deposits (decided by
+  Claude under the owner's 2026-10-23 22:30 rule); the answer still shows that person the
+  Deposit's required, held and outstanding money. Named refusals: 409
+  `DEPOSIT_RECEIPT_LEASE_NOT_SIGNED`, `DEPOSIT_RECEIPT_RESERVATION_NOT_ACTIVE`,
+  `DEPOSIT_RECEIPT_GROUND_KEEPS_DEPOSIT`, `DEPOSIT_RECEIPT_FORFEITURE_ACTIVE`,
+  `DEPOSIT_RECEIPT_PAYMENT_OWED`, `DEPOSIT_RECEIPT_PAYMENT_ALREADY_USED` and
+  `FINAL_SETTLEMENT_CLOSED`; 422 on `payment_id`: `DEPOSIT_RECEIPT_PAYMENT_NOT_FOUND` and
+  `DEPOSIT_RECEIPT_PAYMENT_INELIGIBLE` (not a received Payment of the Deposit's Customer or for
+  its Lease); 422 on `amount_usd_cents`: `DEPOSIT_RECEIPT_OVER_PAYMENT`,
+  `DEPOSIT_RECEIPT_AMOUNT_NOT_ALLOWED` (a Security Deposit: more than it still needs, or a
+  Reservation's Deposit with no active receipt and an amount other than its accepted amount) and
+  `DEPOSIT_RECEIPT_OVER_REQUIRED` (a Pet Deposit). A Payment with nothing left answers
+  `DEPOSIT_RECEIPT_OVER_PAYMENT` before `DEPOSIT_RECEIPT_PAYMENT_ALREADY_USED`.
+
+Other refusals keep their plain status. The Deposit resource still carries
+`new_receipt_creation_deferred: true` for the current screens; the rebuilt screens use the
+receipt route. No route adjusts a Deposit's required total yet: the database command has no
+closed-Final-Settlement refusal, so the route waits for that check (decided by Claude under the
+owner's 2026-10-23 22:30 rule; ops/V1_056_PLAN.md, "11c-4 as built"). Until then a walk-in
+Deposit's required total cannot be corrected through the API, and a second receipt into a
+Reservation's Security Deposit before signing is refused whenever its required total equals its
+accepted amount.
+
 ## API-041 — Pet Deposit Preconditions
 
 Pet Deposit creation/receipt is accepted only when the pet is approved and the
@@ -635,6 +680,43 @@ not built yet). After its review round 1 (owner answers 1 and 4 to Q-2026-10-08-
 reversal draft is recorded only at READ COMMITTED, and recording a Lease Deposit forfeiture draft
 after the Lease's Final Settlement is closed is refused as a conflict too (the forfeiture service
 maps P5S01 to a conflict; its routes come in slice 11c).
+
+V1-056 slice 11c-3 (2026-10-24; no migration): the draft routes of this section. Each needs the
+browser mutation rules, a strict JSON body and `Idempotency-Key` (the same key and body answer the
+same draft again; the same key with another body answers 409 `IDEMPOTENCY_KEY_REUSED`), and
+answers 201 with the draft as API-101 shows it. A person without the route's capability in the
+Property gets a hidden 404. The draft has no financial effect until a `financial.approve` holder
+confirms it through `POST /properties/{property_id}/financial-drafts/{draft_id}/confirm`; it is
+rejected or withdrawn there too (API-101).
+
+- `POST /properties/{property_id}/deposits/{deposit_id}/forfeiture-drafts` (`deposits.dispose`;
+  body `disposition_id`, a new id the form chooses, and `reason`): a `DEPOSIT_FORFEITURE` draft
+  of variant `LEASE_FORFEITURE` that forfeits the whole held Deposit of a terminated Lease on the
+  ground the database works out from the termination record (BR-DEP-026).
+- `POST /properties/{property_id}/deposit-dispositions/{disposition_id}/reversal-drafts`
+  (`deposits.correct`; body `reversal_id`, `reason` of up to 500 characters and
+  `evidence_reference`): variant `LEASE_FORFEITURE_REVERSAL`.
+- `POST /properties/{property_id}/deposit-receipts/{receipt_id}/reversal-drafts`
+  (`deposits.correct`; body `reversal_id` and `reason` of up to 500 characters): variant
+  `DEPOSIT_RECEIPT_REVERSAL`, for a Lease or a Reservation Deposit.
+- `POST /properties/{property_id}/payments/{payment_id}/return-drafts` (`payments.reverse`; body
+  `reason` and `evidence_reference`): a `PAYMENT_RETURN` draft (BR-SETTLE-013).
+
+A business-state refusal answers 409 with its own code, at record and, for the same rule, at the
+shared confirm: `DEPOSIT_FORFEITURE_LEASE_NOT_TERMINATED`, `DEPOSIT_FORFEITURE_NO_GROUND`,
+`DEPOSIT_FORFEITURE_PET_AT_SETTLEMENT`, `DEPOSIT_FORFEITURE_NOTHING_HELD`,
+`DEPOSIT_FORFEITURE_DRAFT_WAITING`, `DEPOSIT_FORFEITURE_ALREADY_REVERSED`,
+`DEPOSIT_FORFEITURE_REVERSAL_DRAFT_WAITING`, `DEPOSIT_RECEIPT_ALREADY_REVERSED`,
+`DEPOSIT_DRAFT_WAITING`, `PAYMENT_RETURN_NOT_RECEIVED`, `PAYMENT_RETURN_THROUGH_CORRECTION`,
+`PAYMENT_RETURN_REFUND_NOT_RETURNED`, `PAYMENT_RETURN_REFUND_NO_RECOVERY`,
+`PAYMENT_RETURN_SETTLEMENT_NOT_CORRECTABLE`, `PAYMENT_RETURN_FORFEITURE_ACTIVE`,
+`PAYMENT_RETURN_DEPOSIT_USED`, `PAYMENT_RETURN_DRAFT_WAITING`, `PAYMENT_RETURN_TOO_LARGE` and
+`FINAL_SETTLEMENT_CLOSED`; a `disposition_id` or `reversal_id` that is already used answers 409
+`DRAFT_RECORD_ID_IN_USE`. At the shared confirm a Deposit draft whose Deposit changed since it
+was recorded answers 409 `DRAFT_OUT_OF_DATE` and stays pending; Reservation Deposit drafts (the
+same kind) keep their earlier answers. Other refusals keep their plain status. The one-call routes
+`POST /deposit-receipts/{id}/reverse` and `POST /deposit-dispositions/{id}/reverse` still record
+nothing and answer their draft-required 409.
 
 ## API-094 — Active-Lease Pet Deposit Refund Qualification
 
@@ -837,6 +919,7 @@ sequence. A generic API cannot attach an unsupported fee, penalty, or category.
 - `GET /invoices/{invoice_id}/late-payment-decision`
 - `GET /late-payment-charges/{charge_id}`
 - `POST /late-payment-charges/{charge_id}/corrections`
+- `POST /late-payment-charges/{charge_id}/reductions` (V1-056 slice 11g-2, DL-086)
 
 The review endpoint returns the authoritative overdue balance at assessment, exact
 default 10% proposal, calculated default amount, prior-decision state, and blocking
@@ -887,6 +970,12 @@ Charge corrections use only DB-INV-009's authorized reduction/reversal mechanism
 must not reopen, supplement, replace, or recalculate the final decision.
 
 Amended by DL-076 (owner, 2026-10-20): no manual decision route; the charge is added by the 00:00 job. A route reduces or waives a charge with one of three fixed reasons and a required "What happened" text. Not built yet (V1-056 slice 11).
+
+V1-056 slice 11g-1 (DL-085): the 00:00 charge pass runs inside the scheduled billing worker (`property_rental.late_payment_job`); it has no HTTP route. The manual decision route stays until slice 11g-3 removes it.
+
+V1-056 slice 11g-2 (DL-086): `POST /api/v1/late-payment-charges/{charge_id}/reductions` under `late_payment.charge_correction` (CSRF, `Idempotency-Key`), body `{new_amount: {currency: USD, minor_units}, reason: WRONG_INVOICE | PAID_ON_TIME_RECORDED_LATE | OTHER_STAFF_MISTAKE, what_happened}` (1 to 500 characters, no white space at either end, no C0 or C1 control character other than tab, line feed and carriage return); `new_amount` 0 waives the charge. 200 with the charge read; each correction item has `reduction` (`reason_code`, `what_happened`, `released`, `customer_credit_ids`, `recorded_at`) or null. 409 `CONFLICT` with the charge state when the amount is not lower, the charge is waived, a Deposit application paid it, it was paid again meanwhile, or its Final Settlement is closed; 409 `CONFLICT` also after a detected deadlock or serialization failure on this route only (nothing was written; retry with the same `Idempotency-Key`); 409 `IDEMPOTENCY_KEY_REUSED` (the key space is shared with the corrections route); 422 for bad input; 404 for an unknown charge or a caller without the capability on its Property; 403 without CSRF, from another Origin or for an inactive actor; 503 when the database is unavailable. The corrections route stays until slice 11g-3 and answers 409 `CONFLICT` to a `REDUCTION_REVERSAL` of a reduction made by this route.
+
+V1-056 slice 11g-3 (DL-087): from the Property's first finished automatic pass on, `POST /invoices/{invoice_id}/late-payment-decision` and `POST /late-payment-charges/{charge_id}/corrections` answer 409 `CONFLICT` with the current state (an exact repeat of an earlier request still gets its stored answer). The routes stay for that replay and for history reads; the GET routes and the reductions route are unchanged. Clients use the reductions route. Once a finished pass has covered the Invoice's charge day (the day after its Due Date), the review read lists the blocker `AUTOMATIC_CHARGE_ONLY` (`eligible: false`); from the first pass the charge read has `manual_corrections_open: false` (absent before).
 
 # 17. Scheduled Billing Endpoints
 
@@ -980,6 +1069,12 @@ that a post-settlement correction of another Lease's closed Final Settlement wro
 only through a correction of the Settlement whose correction wrote it.
 
 Amended by DL-077 (owner, 2026-10-20): the proposal is ticked on the Receive payment screen and saved with the Payment in one step; this route stays for money that waits and for paying again after a reversal. Not built yet (screen rebuild).
+
+Amended by V1-056 slice 11d (2026-10-24): `POST /payment-allocations/{allocation_id}/reverse`
+answers 409 `ALLOCATION_MOVED` and 409 `FINAL_SETTLEMENT_CLOSED` with their codes; see the
+paragraph "V1-056 slice 11d" at the end of API-101.
+
+V1-056 slice 11g-4 (DL-088; DL-076 answer 5): for a payer's own Payment that names nothing, `GET /payments/{payment_id}/allocation-proposal` also lists each open late-payment charge of the payer right after its own Invoice. A charge target has `late_payment_charge_id`, `target_customer_id`, `source_invoice_id`, the source Invoice's `due_date`, `issued_at` and `invoice_number`, `sequence`, `outstanding_usd_cents` and `amount_usd_cents`, and no `invoice_id` or `details`; `policy` is then `DUE_ISSUED_NUMBER_ID_CHARGE_AFTER_INVOICE/RENT_SERVICE_SOURCE_ORDER`. Posting the proposal unchanged (`mode: PROPOSAL`) writes the charge part as a direct charge allocation. A named or third-party Payment is proposed as before.
 
 ## API-060 — Payment Reversal
 
@@ -1122,6 +1217,59 @@ and answers 409 with error code `REFUND_DRAFT_REQUIRED`.
   taken) answers 409 instead of 503; the command rolled back and the draft stays pending. A lock
   timeout or a lost reply still answers 503.
 
+V1-056 slice 11c (2026-10-24; owner answer of 2026-10-05: business-state refusals are
+conflicts): on `POST /refund-drafts`, both confirm routes (this one and API-101 for drafts of
+kind `REFUND`, Reservation outcome drafts included; the Reservation's own confirm route keeps its
+422 until a later slice lines it up), `POST /refunds/{id}/verified-returns` and its reverse route, a named business-state
+refusal answers 409 with its own code: `REFUND_METHOD_OFF` (at confirm),
+`REFUND_AMOUNT_NOT_AVAILABLE`, `REFUND_PAYER_HAS_UNPAID`, `REFUND_PET_SOURCE_NOT_QUALIFIED` (these
+four replace the 422 for a stale draft above), `REFUND_RECIPIENT_NOT_SIGNER` (at confirm),
+`REFUND_RETURN_THROUGH_CORRECTION` (a Refund paid by a Final Settlement or a post-settlement
+correction, or a Reservation Refund, corrected only there, was 422; a closed Final Settlement's
+Pet Deposit Refund, was a plain 409), `REFUND_CREDIT_CUSTOMER_ONLY`, `REFUND_CREDIT_FOR_ANOTHER_CUSTOMER` (an
+ordinary Credit draft for a Credit released to another Customer; prepare a `CREDIT_CUSTOMER`
+draft), `REFUND_DEPOSIT_RECEIPT_REVERSAL_WAITING`, `REFUND_THROUGH_HELD_VALUE_CORRECTION`,
+`REFUND_RETURN_REVERSAL_REFUSED` (the money of a return is no longer available to reverse; was
+503), `REFUND_RETURN_ALREADY_REVERSED` (was 503), `DRAFT_ALREADY_DECIDED` and
+`FINAL_SETTLEMENT_CLOSED`. Bad input answers 422 with its field: on `POST /refund-drafts` a
+method that is off or unknown is `REFUND_METHOD_NOT_AVAILABLE` (`refund_method_id`) and a
+recipient who is not a Signer is `REFUND_RECIPIENT_NOT_A_SIGNER` (`recipient_customer_id`); a
+verified return above what the Refund still holds, or dated before the Refund or in the future, is
+`REFUND_RETURN_EVIDENCE_NOT_EXACT` (`returned_amount_minor`, `returned_at`; was 503). "The
+Primary Tenant needs no Signer agreement" stays 422. `POST /refund-drafts` also takes
+`"variant": "CREDIT_CUSTOMER"` with `source_type` `CREDIT` and no recipient fields: a Credit that
+a credit Adjustment released to a Customer other than the payer is refunded to that Customer
+(BR-CREDIT-014, `refunds.create`). The draft id is derived from the Property, the preparer, the
+variant and the Idempotency-Key, so one key used for an ordinary and a `CREDIT_CUSTOMER` draft
+records two drafts, as for a USD and a Pet Deposit draft.
+
+V1-056 slice 11c-1 (2026-10-24; migration `20270209_197`): `GET
+/properties/{property_id}/refund-methods` answers the Refund methods a draft may name, turned-off
+ones included (`id`, `code`, `display_name`, `active`, `seeded`, `updated_at`; BR-REFUND-014),
+to a holder of `refunds.read`, `refunds.create` or `property.manage` of the Property (otherwise
+a hidden 404). `GET /refund-sources/{CREDIT|PAYMENT}/{id}` adds `refund_variant`:
+`CREDIT_CUSTOMER` for a Credit that a credit Adjustment released to a Customer other than the
+payer, whose `recipient_customer_id` is then that Customer (BR-CREDIT-014), and `USD` otherwise.
+`GET /refunds/{id}` adds `recovery` to each correction: for a `RECOVERED_BY_CHARGE` correction the
+recovery charge (`refund_correction_id`, `refund_id`, `customer_id`, `lease_id` or null,
+`amount_usd_cents`, `charge` `LEASE`, `EXTRA_CHARGE` or `NO_LEASE`,
+`authorized_nonrecurring_obligation_id`, `invoice_id`, `invoice_number`, `invoice_status`,
+`due_date`, `occurred_at`; the Invoice fields come from the charge's Invoice that is not VOID,
+else its newest), otherwise null.
+
+V1-056 slice 11h (2026-10-25; migration `20270214_202`; DL-089): the Refund method list is
+also read with `settings.manage`. `POST /properties/{property_id}/refund-methods` (body
+`refund_method_id`, `code` `^[A-Z][A-Z0-9_]{1,39}$`, `display_name` 1 to 120 characters with no
+space at either end) adds a method that starts on (201, the method as in the list); a repeat of
+the same body by the same person answers the method as it is now (another person gets
+`REFUND_METHOD_ID_REUSED`). `POST
+/properties/{property_id}/refund-methods/{refund_method_id}/state` (body `active`, a boolean)
+turns a method off or on again (200, the method). Both need `settings.manage` of the Property
+(otherwise a hidden 404), the Origin and the CSRF pair, and no Idempotency-Key (the client
+chooses the id; a state change is a repeatable set). Refusals (409): `REFUND_METHOD_CODE_USED`
+(`code`), `REFUND_METHOD_ID_REUSED` (`refund_method_id`), `REFUND_METHOD_LAST_ON` (at least one
+method stays on); a change at the same moment answers 409 and the screen reads the list again.
+
 A Pet Deposit Refund draft may add `recipient_customer_id` (another signed Signer of the
 Lease) and `signer_agreement` (the written agreement of all Signers, 1 to 2,000
 characters), always together (BR-REFUND-015, slice 3a-2); otherwise the Refund goes to
@@ -1130,6 +1278,9 @@ owner's ledger and names the paid Signer in `source_audit.paid_to_customer_id`.
 
 The Refund methods routes (BR-REFUND-014) and the Reservation Refund drafts come with
 later V1-056 slices.
+
+Amended by V1-056 slices 11c-1 and 11h (DL-089): the Refund methods routes are built (the list
+read since 11c-1, adding and turning off or on since 11h).
 
 V1-056 sub-slice 8f (BR-CREDIT-014): a Customer Credit that a credit Adjustment released to a
 Customer other than the payer is refunded to that Customer through a `CREDIT_CUSTOMER` Refund
@@ -1322,6 +1473,166 @@ changed is refused as stale (409) and stays pending; a blocking issue, a pending
 Settlement source, a decided draft or a closed Settlement is 409; a missing or inactive approver
 is 403; an exact repeat by the same approver returns the stored result. The route is built in
 slice 11e.
+
+V1-056 slice 11e-1 (2026-10-24; no migration; BR-SETTLE-001 to BR-SETTLE-017, BR-REFUND-014,
+BR-REFUND-015, BR-CREDIT-006, BR-CREDIT-008, BR-DEP-027, BR-AUTH-010): the
+Final Settlement routes. Decided by Claude under the owner's 2026-10-23 22:30 rule: the routes
+carry the Property in the path like the other draft routes, and the preview is a `GET` because
+it writes nothing; the list and the single read of API-070 and the separate deposit-application
+and deposit-refund actions of API-072 are not built (the Settlement draft and its confirm replace
+the actions; the start route returns the Lease's Settlement).
+
+- `POST /properties/{property_id}/leases/{lease_id}/final-settlement`
+  (`final_settlements.prepare`; others a hidden 404; Origin, CSRF, `Idempotency-Key`; a JSON
+  body, sent as `{}` and ignored) opens the one Final Settlement of a terminated Lease, or returns
+  the one that exists, open or closed: 201 when this call opened it (`created` true), else 200,
+  with `id`, `lease_id`, `created`, `closed`, `closing_balance_due_usd_cents` and the dates.
+- `GET /properties/{property_id}/final-settlements/{settlement_id}/preview`
+  (`final_settlements.prepare` or `financial.approve`) answers the DB-SETTLE-001 preview:
+  `settlement`, `lease`, `customers`, `deposits`, `steps`, `open_total_usd_cents`,
+  `blocking_issues`, `information`, `ready` and `previewed_at`.
+- `POST /properties/{property_id}/final-settlements/{settlement_id}/drafts`
+  (`final_settlements.prepare`; Origin, CSRF, `Idempotency-Key`) records the Settlement draft and answers 201
+  with the draft (kind and variant `FINAL_SETTLEMENT`). Body: `reason` (1 to 1,000 characters),
+  `steps` (up to 200, in the DL-032 order; each `CUSTOMER_CREDIT` with `customer_credit_id`,
+  `target_kind` `INVOICE_LINE` or `LATE_PAYMENT_CHARGE`, `target_id`, `amount_usd_cents` and an
+  optional `customer_designation`; `PET_DEPOSIT_PET_DAMAGE`, `SECURITY_DEPOSIT` or
+  `PET_DEPOSIT_REMAINDER` with `deposit_id`, `target_kind`, `target_id` and `amount_usd_cents`;
+  `DEPOSIT_REFUNDS` with `deposit_id`, `amount_usd_cents`, `refund_method_id`, `reference_note`,
+  `recipient_customer_id` and an optional `signer_agreement`) and an optional `pet_remainder`
+  (`basis` `CUSTOMER_CHOICE` or `STAFF_REASON`, `staff_reason`, and `customer_choice` with
+  `CUSTOMER_CHOICE` only). A `financial.approve` holder confirms it through
+  `POST /properties/{property_id}/financial-drafts/{draft_id}/confirm`, which closes the
+  Settlement in one transaction.
+- Named refusals: 409 `FINAL_SETTLEMENT_LEASE_NOT_TERMINATED`, `FINAL_SETTLEMENT_RECORD_UNCLEAR`,
+  `FINAL_SETTLEMENT_BLOCKING_ISSUES` (a closed Settlement is the preview's `SETTLEMENT_CLOSED`
+  issue), `FINAL_SETTLEMENT_CLOSED` and, at record, `FINAL_SETTLEMENT_DRAFT_WAITING`; 422 on
+  `steps` for a step that breaks a DL-032 rule (`FINAL_SETTLEMENT_STEP_ORDER`,
+  `_CREDIT_OTHER_CUSTOMER`, `_CREDIT_FIRST`, `_CREDIT_RENT_FIRST`, `_CREDIT_NOT_AVAILABLE`,
+  `_CREDIT_OVER`, `_DEPOSIT_NOT_USABLE`, `_DEPOSIT_WRONG_STEP`, `_DEPOSIT_OVER`,
+  `_OBLIGATION_OVER`, `_TARGET_NOT_OPEN`, `_PET_DAMAGE_ONLY`, `_PET_DAMAGE_FIRST`,
+  `_PET_REMAINDER_AFTER_SECURITY`, `_DEPOSIT_LEFT`, `_REFUND_WHILE_DEBT`,
+  `_ONE_REFUND_PER_DEPOSIT`, `_REFUND_RECIPIENT`, `_SIGNER_AGREEMENT`,
+  `_NO_AGREEMENT_FOR_PRIMARY`, `_REFUND_METHOD_OFF`, `_TOO_LARGE`) and on `pet_remainder`
+  (`_PET_REMAINDER_CUSTOMER_ONLY`, `_PET_REMAINDER_REASON`, `_PET_REMAINDER_NO_STEP`). At the
+  confirm the state codes apply; a step the plan now refuses, or a stale draft, answers 409
+  `DRAFT_OUT_OF_DATE` (the draft stays pending: reject it and prepare a new one).
+
+V1-056 slice 11e-2 (2026-10-24; no migration; BR-SETTLE-012, BR-SETTLE-013, BR-SETTLE-016,
+BR-INV-044, BR-PAY-042, BR-CREDIT-006, BR-AUTH-010): the post-settlement correction routes with
+no DL-032 plan, and the plain Adjustment reversal draft. Decided by Claude under the owner's
+2026-10-23 22:30 rule: one route per correction kind under the Settlement, so each form is checked
+on its own fields; the corrections with a DL-032 plan for released value (Refund, Late-payment
+Charge Refund, pet classification, Refund return, held value Refund, forfeiture reversal, return
+reversal, Deposit receipt correction) follow in slice 11e-3.
+
+- Every route below is `POST`, needs Origin, CSRF and an `Idempotency-Key`, and answers 201 with
+  the recorded pending draft; an exact repeat returns it, and a reused key with another body is
+  409 `IDEMPOTENCY_KEY_REUSED`. The correction routes need `final_settlements.prepare` in the
+  Property (others a hidden 404) and record a `SETTLEMENT_CORRECTION` draft; a `financial.approve`
+  holder confirms it through `POST /properties/{property_id}/financial-drafts/{draft_id}/confirm`.
+  Base: `/properties/{property_id}/final-settlements/{settlement_id}/corrections`.
+- `/extra-charges` (variant `EXTRA_CHARGE`): `category` `MISCELLANEOUS_CHARGES` or
+  `DAMAGE_CHARGES`, `description`, `amount_usd_cents`, `evidence_reference`, `reason` (up to 500
+  characters), and the optional `inspection_damage_finding_id` (a Damage charge),
+  `corrects_invoice_id`, `due_date` and `due_date_reason` (the last two together).
+- `/charge-reductions` (variant `CHARGE_REDUCTION`): `invoice_id`, `invoice_line_id`,
+  `amount_usd_cents`, `reason` (up to 500 characters).
+- `/late-charge-reductions` (variant `CHARGE_REDUCTION`, target kind `LATE_PAYMENT_CHARGE`):
+  `late_payment_charge_id`, `amount_usd_cents`, `reason`.
+- `/returned-payments` (variant `RETURNED_PAYMENT`): `payment_id`, `reason`,
+  `evidence_reference`.
+- `/payment-moves` (variant `PAYMENT_MOVE`): `allocation_id`, `target_invoice_id`, `reason`,
+  `source_acknowledgement`, `target_acknowledgement`.
+- `/adjustment-reversals` (variant `ADJUSTMENT_REVERSAL`): `adjustment_id`, `reason`.
+- `POST /properties/{property_id}/invoice-adjustments/{adjustment_id}/reversal-drafts`
+  (`invoices.adjust`; body `reason`) records the plain `ADJUSTMENT_REVERSAL` draft of a credit
+  Adjustment recorded by mistake before closure; a `financial.approve` holder confirms it through
+  the same shared route.
+- A Damage charge without its finding, a Miscellaneous charge with one, or a Due Date override
+  without its reason (or the reverse) answers 422 on that field.
+- Named refusals: 409 `CORRECTION_SETTLEMENT_NOT_CLOSED` on every correction route; 422 on the
+  field that chose a wrong record (`CORRECTION_DAMAGE_TO_PRIMARY`, `_CORRECTED_INVOICE_NOT_OF_SETTLEMENT`,
+  `_FINDING_NOT_CURRENT`, `_DUE_DATE_BEFORE_ISSUE`, `_REDUCED_INVOICE_NOT_OF_SETTLEMENT`,
+  `_INVOICE_LINE_NOT_FOUND`, `_LATE_CHARGE_NOT_OF_SETTLEMENT`, `RETURNED_PAYMENT_NOT_FOUND`,
+  `MOVE_CORRECTION_NOT_OF_SETTLEMENT`, `_ALLOCATION_NOT_FOUND`,
+  `ADJUSTMENT_REVERSAL_NOT_OF_SETTLEMENT`, `ADJUSTMENT_REVERSAL_CORRECTION_NOT_FOUND`, and
+  `PAYMENT_MOVE_TARGET_NOT_FOUND`, `_TARGET_SAME_UNIT`, `_TARGET_NOTHING_OWED` and `_TOO_LARGE` of
+  slice 11d); 409 for a business state (`CORRECTION_FINDING_BILLED`,
+  `_PAID_BY_DEPOSIT`, `_WOULD_RELEASE_PAID`, the `RETURNED_PAYMENT_` and `MOVE_CORRECTION_` state
+  codes, the Payment return and Payment move state codes of slices 11c-3 and 11d, and
+  `ADJUSTMENT_REVERSAL_NOT_CREDIT`, `_ALREADY_REVERSED`, `_INVOICE_NOT_ISSUED`,
+  `_BY_RESOLUTION`, `_OF_CORRECTION`, `_THROUGH_CORRECTION`, `_ONLY_CHARGE_REDUCTION`,
+  `_DRAFT_WAITING`, `_TOO_LARGE`). No answer shows database text.
+
+V1-056 slice 11e-3 (2026-10-25; no migration; BR-SETTLE-008, BR-SETTLE-012, BR-SETTLE-013,
+BR-REFUND-014, BR-CREDIT-008, BR-DEP-027, BR-AUTH-010): the post-settlement correction routes
+with a DL-032 plan for the value they release, the Deposit receipt correction and the return
+reversal. Decided by Claude under the owner's 2026-10-23 22:30 rule: one route per correction
+kind, as in slice 11e-2; the plan uses the Final Settlement `steps` and `pet_remainder` format of
+slice 11e-1, and both may be left out when the released value pays nothing.
+
+- Every route is `POST` under
+  `/properties/{property_id}/final-settlements/{settlement_id}/corrections`, needs
+  `final_settlements.prepare` (others a hidden 404), Origin, CSRF and an `Idempotency-Key`, and
+  answers 201 with the pending `SETTLEMENT_CORRECTION` draft. Every text of the correction form is
+  1 to 500 characters; the plan's `staff_reason` is up to 1000 and its `customer_choice` and
+  `signer_agreement` up to 2000, as in slice 11e-1.
+  A `financial.approve` holder confirms it through the shared draft confirm.
+- `/refunds` (variant `REFUND`): `invoice_id`, `invoice_line_id`, `amount_usd_cents`,
+  `refund_method_id`, `reference_note`, `reason`, plan.
+- `/late-charge-refunds` (variant `REFUND`, target kind `LATE_PAYMENT_CHARGE`):
+  `late_payment_charge_id`, `amount_usd_cents`, `refund_method_id`, `reference_note`, `reason`,
+  plan.
+- `/pet-classifications` (variant `PET_DAMAGE_RECLASSIFICATION`): `invoice_id`,
+  `invoice_line_id`, `pet_related` (true or false), `evidence_reference`, `reason`, plan.
+- `/refund-returns` (variant `REFUND_RETURN`): `refund_id`, `returned_amount_usd_cents`,
+  `returned_at` (an instant with its offset), `return_method_reference`, `evidence_reference`,
+  `reason`, optional `new_refund_method_id` with `new_refund_reference_note` (together), plan.
+- `/held-value-refunds` (variant `HELD_VALUE_REFUND`): `held_from_correction_id`, `reason`,
+  `new_refund_method_id`, `new_refund_reference_note`, plan.
+- `/forfeiture-reversals` (variant `FORFEITURE_REVERSAL`): `deposit_disposition_id`, `reason`,
+  `evidence_reference`, `refund_method_id`, `reference_note`, plan.
+- `/deposit-receipt-corrections` (variant `DEPOSIT_RECEIPT_CORRECTION`): `deposit_receipt_id`,
+  `reason`, `evidence_reference`, optional `receipts` (at most 2, each `deposit_id`,
+  `amount_usd_cents` and an optional `outcome` `DL_032` or `FORFEIT` with `outcome_reason`; each
+  into a different Deposit), plan only with a new receipt.
+- `/return-reversals` (variant `RETURN_REVERSAL`): `earlier_correction_id`, `reason`,
+  `evidence_reference`; no plan.
+- Named refusals: every plan route answers the closed-Settlement code, 409
+  `CORRECTION_SOURCE_DRAFT_WAITING`, the Final Settlement state codes and the slice 11e-1 plan
+  codes on `steps` or `pet_remainder`, plus 422 `CORRECTION_ONE_REFUND_CHOICE`,
+  `_RETURNED_MONEY_PAYS_DEBT`, `_RELEASED_CREDIT_FIRST`, `_HELD_VALUE_OVER` (on `steps`),
+  `_NEW_CUSTOMER_CHOICE` (on `pet_remainder`) and 409 `_STEP_OUTSIDE_SETTLEMENT`. An inactive or
+  unknown Refund method is 422 `CORRECTION_REFUND_METHOD_OFF` on `refund_method_id` (refunds,
+  late-charge refunds, forfeiture reversals), `CORRECTION_NEW_REFUND_METHOD_OFF` on
+  `new_refund_method_id` (refund returns, held-value refunds), or the slice 11e-1
+  `FINAL_SETTLEMENT_REFUND_METHOD_OFF` on `steps` where only a step names it. On
+  `/deposit-receipt-corrections` a new receipt into a Deposit of no Lease or of another Lease
+  that is not terminated is 422 `RECEIPT_CORRECTION_DEPOSIT_NOT_OF_LEASE` on `receipts`. Each
+  route adds its own: 422 on the field that chose an unknown or unfit record (`CORRECTION_REFUND_OVER_CHARGE`, `_REFUND_OVER_PAID`,
+  `_REFUNDED_LATE_CHARGE_NOT_OF_SETTLEMENT`, `_PET_LINE_NOT_DAMAGE`, `_PET_SAME`,
+  `_REFUND_NOT_FOUND`, `_REFUND_NOT_RETURNABLE`, `_RETURN_OVER_REFUND`, `_RETURN_DATE`,
+  `_RETURN_ONLY_NO_STEPS`, `_HELD_FROM_NOT_FOUND`, `_HELD_FROM_NOT_RETURN_ONLY`,
+  `_FORFEITURE_NOT_FOUND`, the `RECEIPT_CORRECTION_` codes on `deposit_receipt_id`, `receipts`
+  or `steps`, `RETURN_REVERSAL_NOT_FOUND`) and 409 for a business state
+  (`CORRECTION_REFUND_RELEASES_NOTHING`, `_RETURNED_DEPOSIT_OFF_PATH`,
+  `_HELD_VALUE_NOTHING_LEFT`, `_FORFEITURE_ALREADY_REVERSED`, `_FORFEITURE_OTHER_ACTIVE`, the
+  other `RECEIPT_CORRECTION_` and `RETURN_REVERSAL_` codes; a return reversal the database cannot
+  follow yet is `RETURN_REVERSAL_WAITS_FOR_OWNER`). At the shared confirm a correction draft
+  keeps the plain answers for now. No answer shows database text.
+
+V1-056 slice 11f (2026-10-25; no migration; no new route): the browser client of the slice 11
+routes, `frontend/src/settlementClient.ts`, with the request forms in
+`frontend/src/settlementForms.ts`, written from the routes' request models (a backend test fails
+when they differ). Every command sends its `X-CSRF-Token` and, where the route takes one, its
+`Idempotency-Key` (the cleaning rate and charge use their own `rate_id` and `charge_id`); the
+hand-back resolution sends the Invoice version as `If-Match`; a financial draft, Final
+Settlement or correction route also sends `X-Financial-Property-ID`. A refusal reaches the screen
+with its `code`, `message`, `fields` (without the `body.` prefix of a plain form check),
+`rule_ids` and `current_version`; a 503 or a network failure is a separate unavailable error.
+Decided by Claude under the owner's 2026-10-23 22:30 rule: one new client module for the slice,
+so the screen work changes no existing client.
 
 # 23. Audit Endpoints
 
@@ -1526,6 +1837,116 @@ Amended by DL-081 (login sub-slice L3d-2 review round 1, Q-2026-10-24-184): the 
 Amended by DL-074 (owner, 2026-10-04): the detailed status is for the Owner and the Manager by default, through a capability in their bundles.
 
 Built in V1-059 part A (2026-10-24; DL-081 Q-2026-10-21-158 (a)): `GET /api/v1/operations/status` needs a signed-in user (401) holding `operations.status.read` (403 otherwise; the Owner and Manager bundles hold it) and answers `Cache-Control: private, no-store` with `data`: `build_version`, `environment`, `generated_at`, `database` (`ok`, `unavailable` or `not_configured`), the `backup`, `offhost_daily`, `offhost_weekly`, `restore_test` and `migration` records (times, outcome, fixed failure code, backup name, schema revision), `last_check_at`, `schema_revision`, `scheduled_jobs` (last successful billing run attempt and Reservation expiration run), `telegram` (`configured`, `last_delivery_outcome`, `last_attempt_at`) and `warnings` (`code`, a fixed plain `message`, `critical`); and `meta.request_id`. It never shows a secret, a database address, a file path or a Customer detail. Without `APP_OPERATIONS_STATUS_DIRECTORY` the only warning is `operations_status_not_set_up`.
+
+## API-101 — Financial Drafts: List, Detail, Reject, Withdraw and Confirm
+
+Built in V1-056 slice 11b (2026-10-24; BR-AUTH-010, DL-069). Every draft kind (Refund, Deposit
+forfeiture and its reversals, Payment move, Final Settlement and its corrections, returned
+Payment, Adjustment reversal) is read and decided through these Property routes; each kind keeps
+its own record and confirm routes.
+
+- `GET /properties/{property_id}/financial-drafts?state=&limit=&cursor=`: drafts newest first.
+  `state` is `PENDING`, `CONFIRMED`, `REJECTED` or `WITHDRAWN`; `limit` 1 to 100 (50); the
+  cursor is bound to the Property and the state filter. A holder of `financial.approve` sees every
+  draft; anyone else sees only drafts prepared under a capability they hold. With no draft
+  capability the Property's drafts answer 404.
+- `GET /properties/{property_id}/financial-drafts/{draft_id}`: one draft, with its state and
+  decision. The decision result never carries the database transaction id.
+- `POST /properties/{property_id}/financial-drafts/{draft_id}/reject` `{"reason"}`: only a
+  `financial.approve` holder (others 404); it moves no money.
+- `POST /properties/{property_id}/financial-drafts/{draft_id}/withdraw` `{"reason"}`: only the
+  person who prepared the draft and still holds its prepare capability; anyone else 403
+  `DRAFT_WITHDRAW_PREPARER_ONLY`. It moves no money.
+- `POST /properties/{property_id}/financial-drafts/{draft_id}/confirm` `{}`: only a
+  `financial.approve` holder (others 404). It calls the draft kind's own confirm command, which
+  checks every rule again, and answers `{"draft", "result"}` with that command's result (never a
+  database transaction id). The approver who confirmed a draft gets its first result again;
+  anyone else, and anyone confirming a rejected or withdrawn draft, gets 409
+  `DRAFT_ALREADY_DECIDED`. Other refusals: 409
+  `DRAFT_OUT_OF_DATE` (the records changed after the draft was prepared: reject it and record it
+  again), 409 `DRAFT_CONFIRM_REFUSED` (a business rule refuses it now), 409
+  `DRAFT_CONFIRM_NOT_AVAILABLE` (a draft confirmed only inside another command, such as a return
+  reversal's companion). The kind's own confirm routes stay.
+- A Reservation Deposit draft (it names the Customer) is listed, shown and decided only with
+  `reservations.read` as well, as on the Reservation's own draft routes.
+
+Confirm, reject and withdraw need Origin, CSRF and `Idempotency-Key` (the draft id is the idempotency
+identity; the key is not stored). A draft already confirmed, rejected or withdrawn answers 409
+`DRAFT_ALREADY_DECIDED`; another refusal by the draft's rules answers 409
+`DRAFT_DECISION_NOT_ALLOWED`. The reason is 1 to 1000 characters, trimmed. Answers are
+`private, no-store`.
+
+Refusals with a stable code (slice 11): a refused command whose cause staff need answers with
+the API-013 envelope and a fixed `code` and `message`, never database text.
+
+V1-056 slice 11d (2026-10-24; no migration; BR-PAY-042): the wrong-Unit Payment move draft.
+`POST /properties/{property_id}/payment-allocations/{allocation_id}/move-drafts`
+(`payments.allocations.reverse`; others a hidden 404; Origin, CSRF, `Idempotency-Key`; body
+`target_invoice_id`, `reason` of up to 1,000 characters, and `source_acknowledgement` and
+`target_acknowledgement` of up to 2,000 characters each: who acknowledged for each Customer, the
+date and how) records a `PAYMENT_MOVE` draft of variant `WRONG_UNIT_MOVE` and answers 201 with
+the draft. It moves nothing until a `financial.approve` holder confirms it through the confirm
+route above. An allocation that a closed Final Settlement relied on moves only through a
+`PAYMENT_MOVE` correction of that Settlement (slice 11e).
+
+- Named refusals at record: 409 `PAYMENT_MOVE_NOT_INVOICE_ALLOCATION`,
+  `PAYMENT_MOVE_PAYMENT_REVERSED`, `PAYMENT_MOVE_ALREADY_MOVED`,
+  `PAYMENT_MOVE_RELEASED_BY_ADJUSTMENT`, `PAYMENT_MOVE_CREDIT_OR_REFUND_FIRST`,
+  `PAYMENT_MOVE_VALUE_GONE`, `PAYMENT_MOVE_TARGET_TOO_LARGE`, `PAYMENT_MOVE_THROUGH_CORRECTION`,
+  and `PAYMENT_MOVE_DRAFT_WAITING`; 422 on `target_invoice_id`:
+  `PAYMENT_MOVE_TARGET_NOT_FOUND`, `PAYMENT_MOVE_TARGET_SAME_UNIT` and
+  `PAYMENT_MOVE_TARGET_NOTHING_OWED`; 422 on both acknowledgements: `PAYMENT_MOVE_TOO_LARGE`
+  (the acknowledgements and the correct Invoice's line split are over 16,000 bytes). An unknown
+  allocation answers 404.
+- At the confirm route the same business-state codes apply, except `PAYMENT_MOVE_DRAFT_WAITING`
+  and `PAYMENT_MOVE_TOO_LARGE`, which only recording raises. A Final Settlement that closed after
+  the draft was recorded answers `PAYMENT_MOVE_THROUGH_CORRECTION`. A correct Invoice with nothing
+  left to pay, or a draft the database finds stale, answers 409 `DRAFT_OUT_OF_DATE` (the draft
+  stays pending: reject it, and record a new draft if the move is still needed). Final Settlement
+  correction drafts of variant `PAYMENT_MOVE` keep their plain confirm answers.
+- `POST /payment-allocations/{allocation_id}/reverse` now answers 409 `ALLOCATION_MOVED` for an
+  allocation a move created (it changes only through another move draft or a credit Adjustment)
+  and 409 `FINAL_SETTLEMENT_CLOSED` for one a closed Final Settlement relied on; its other
+  answers are unchanged.
+
+## API-102 — Move-out Cleaning Charge, Hand-back Month and the Lease End Date Refusal
+
+Built in V1-056 slice 11a (2026-10-24; BR-UNIT-014, BR-MOVEOUT-013, BR-RENT-030, BR-LEASE-031,
+DL-065, DL-069, DL-075). Mutations need Origin, CSRF and, where named, `Idempotency-Key`; an
+optional `X-Billing-Actor-ID` must name the signed-in person. Answers are `private, no-store`.
+
+- `GET /properties/{property_id}/units/{unit_id}/cleaning-rate`: the Unit's current cleaning rate
+  or `null` (`invoices.create` or `property.manage`, else 403).
+- `POST /properties/{property_id}/units/{unit_id}/cleaning-rates` `{"rate_id",
+  "expected_current_rate_id", "rate_usd_cents", "reason"}` (201): a new dated per-Unit rate in USD
+  cents (0 or more), under `property.manage` until the DL-075 Settings screens move cleaning rates
+  to Unit Type rate groups. `expected_current_rate_id` is required (null when the Unit has no rate);
+  the rate id is the idempotency identity. A rate changed since the form was read answers 409
+  `CLEANING_RATE_CHANGED`.
+- `POST /properties/{property_id}/leases/{lease_id}/cleaning-charge` `{"charge_id",
+  "expected_rate_id"}` (201, `invoices.create`): records the move-out cleaning charge from the rate
+  shown; the Invoice draft is then created and issued through the Invoice routes. Refusals (409):
+  `CLEANING_CHARGE_NOT_MOVED_IN`, `CLEANING_CHARGE_NEEDS_MOVE_OUT`,
+  `CLEANING_CHARGE_ALREADY_RECORDED`, `CLEANING_RATE_NOT_SET`, `CLEANING_RATE_ZERO`,
+  `CLEANING_RATE_CHANGED`. A Manager reduces it with a credit Adjustment and a reason (DL-065).
+- `GET /invoices/{invoice_id}/hand-back-assessment` (`invoices.read` and `leases.read`, else 404):
+  which BR-RENT-030 action applies to a monthly Rent Invoice (`VOID`, `CREDIT_ADJUSTMENT` or
+  `KEEP`), the coverage (`HAND_BACK_MONTH` or `NEXT_MONTH`), the applied and outstanding cents and
+  each line; no Lease, move-out or date identities. It changes nothing.
+- `POST /invoices/{invoice_id}/hand-back-resolution` `{"action", "expected_outstanding_usd_cents",
+  "reason"}` with `If-Match` and `Idempotency-Key`: `VOID` needs `invoices.void`,
+  `CREDIT_ADJUSTMENT` needs `invoices.adjust` (else 404). The answer's ETag is the Invoice version
+  the resolution recorded (a repeat with the same key answers the stored result). Refusals (409):
+  `HAND_BACK_VOID_BLOCKED` (an Adjustment, Late-payment Charge or billing run not settled or
+  reversed), `HAND_BACK_NOT_MONTHLY_RENT`, `HAND_BACK_INVOICE_NOT_ISSUED`,
+  `HAND_BACK_NOT_EARLY_TERMINATION`, `HAND_BACK_NEEDS_MOVE_OUT`, `HAND_BACK_MOVE_OUT_UNCLEAR`,
+  `HAND_BACK_MONTH_NOT_COVERED`, `HAND_BACK_ALREADY_RESOLVED`, `HAND_BACK_PAID_INVOICE_KEPT`,
+  `HAND_BACK_ASSESSMENT_CHANGED`; the assessment read answers the same codes. A stale version
+  answers 412.
+- On these routes a closed Final Settlement answers 409 `FINAL_SETTLEMENT_CLOSED` (BR-SETTLE-012),
+  and a rate or charge id reused with different input answers 409 `IDEMPOTENCY_KEY_REUSED`.
+- Lease draft, draft update, renewal and signing: an End Date that is not the last day of its month
+  answers 422 `LEASE_END_DATE_NOT_MONTH_END` with `fields` `["end_date"]` (BR-LEASE-031).
 
 # 26. Validation Rules
 

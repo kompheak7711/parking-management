@@ -3004,6 +3004,8 @@ timestamp.
 
 Replaced by DL-076 (owner, 2026-10-20): no management decision. At 00:00 Property time on the first day after the Due Date, the app adds the late-payment charge by itself, at the Settings rate (DL-075, default 10%) of the amount unpaid at that moment, rounded half-up; no management decision is needed. The Owner or a Manager may only reduce or waive it after the Customer complains that it is wrong because of a staff mistake, with one of three fixed reasons ("Staff recorded the payment on the wrong Invoice", "Paid on time but recorded late", "Other staff mistake") and a required "What happened" text. The amount only goes down.
 
+Built in V1-056 slice 11g-1 (DL-085): the billing worker runs the charge pass after its billing runs, under the same lock, as the Property's billing service principal. Owner answer of 2026-10-25 ("No charge"): an Invoice already overdue on the day the pass first runs gets no charge. Readings recorded: an Invoice issued after its charge moment gets no charge; a missed day is caught up by the next pass with the amount unpaid at that day's 00:00; an Invoice of a Lease whose Final Settlement is closed gets no charge (BR-SETTLE-012); a charge that rounds to zero writes nothing. The database itself refuses a charge for a day before the pass's first day. The pass starts 10 seconds after 00:00; the amount is the one unpaid at 00:00, because a payment allocation dated before an earlier charge decision is refused.
+
 ---
 
 ### BR-INV-054 — One Final Non-compounding Decision per Invoice
@@ -3106,6 +3108,10 @@ Correction must obey the approved maximum and final-decision rules and must not 
 to supplement a reduced charge or replace a waived decision.
 
 Amended by the owner's answer to Q-2026-10-07-38 (2026-10-07): after the Lease's Final Settlement is closed, a Late-payment Charge correction is made only as a post-settlement correction (BR-SETTLE-013). When the corrected Charge was paid, the released value follows BR-CREDIT-014.
+
+Built in V1-056 slice 11g-2 (DL-086; DL-076 answer 4): before the Final Settlement is closed, the Owner or a Manager (`late_payment.charge_correction`) reduces or waives a charge with one of three fixed reasons and a "What happened" text; the amount only goes down. Paid value above the new amount is released at once: the paying Payment allocations and Credit applications are reversed whole, newest first, their unreleased rest is posted again to the charge, released Payment value becomes Customer Credit of the charge's Customer (BR-CREDIT-014) and released Credit value returns to its Credit. A charge a Deposit application paid is refused; after closure this command is refused and the post-settlement corrections apply.
+
+Built in V1-056 slice 11g-3 (DL-087; DL-076 answers 1 and 4): from the Property's first finished automatic pass on, a person's late-payment decision is refused and the charge changes only by a reduction or waiver with a fixed reason (BR-LATE-005 as built in 11g-2); a free reduction, a free waiver and a reduction reversal (which would raise the amount) are refused. Decisions and corrections recorded before stay as history.
 
 ---
 
@@ -3654,6 +3660,8 @@ may show both the $100 Payment and the confirmed $31 application.
 
 Replaced by DL-076 (owner, 2026-10-20): the proposal pays oldest Due Date first, and a late-payment charge right after its own Invoice, before newer Invoices. Staff change the ticks only when the Customer names what to pay (BR-PAY-024) and confirm with Receive payment (DL-029). A third-party payer's money gets no automatic ticks.
 
+Built in V1-056 slice 11g-4 (DL-088; DL-076 answer 5): the payment proposal of a payer's own Payment that names nothing pays oldest Due Date first and each open late-payment charge of the payer right after its own Invoice, before newer Invoices; the charge of an Invoice already paid keeps its Due Date place. A Payment that names an Invoice or a charge, and a third-party Payment, are proposed as before (no charge targets). The charge part is posted as a direct charge allocation.
+
 ---
 
 ## BR-PAY-042 — Payment Allocated to the Wrong Unit's Invoice
@@ -4020,6 +4028,8 @@ Refund methods are a configured list, like Payment Methods, starting with Cash a
 Amended by DL-073 (owner, 2026-10-20): there is still no Refund deadline or block in the system. While a Deposit Refund is not made, a to-do reminder shows "Refund due by" with the date 7 days after the later of the final inspection and the final Utility Invoice (the Lease's 7-day promise). Not built yet.
 
 Amended by DL-080 (owner, 2026-10-20): for a cash Refund, the reference note says who took the money. Refund methods stay their own list, not the Payment Methods list.
+
+Amended by DL-089 (owner, 2026-10-25): Refund methods are managed with Settings access. Only the Owner and people ticked for Settings access (`settings.manage`) may add a Refund method or turn one off or on again, and at least one Refund method always stays on. A method turned off is kept (old Refunds still name it) and can be turned on again; a new Refund cannot use it. Each change is recorded in the audit history with who made it.
 
 ---
 

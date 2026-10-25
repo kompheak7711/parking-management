@@ -1290,29 +1290,63 @@ export function FinancialProposalEvidence({
       {credit ? (
         <IntentLines value={proposal.details} atProposal />
       ) : targets.length ? (
-        targets.map((target) => (
-          <section
-            key={financialLabel(target.invoice_id)}
-            aria-label={`Proposed Invoice ${financialLabel(target.invoice_number)}`}
-          >
-            <h5>{financialLabel(target.invoice_number)}</h5>
-            <FinancialFacts
-              rows={[
-                ["Invoice reference", financialLabel(target.invoice_id)],
-                [
-                  "Target Customer reference",
-                  financialLabel(target.target_customer_id),
-                ],
-                ["FIFO sequence", exact(target.sequence)],
-                ["Due date", financialLabel(target.due_date)],
-                ["Original issue time", financialTimestamp(target.issued_at)],
-                ["Invoice version at proposal", exact(target.version)],
-                ["This target USD", money(target.amount_usd_cents)],
-              ]}
-            />
-            <IntentLines value={target.details} atProposal />
-          </section>
-        ))
+        targets.map((target) =>
+          // V1-056 slice 11g-4 (DL-076 answer 5): a late-payment charge comes right after
+          // its own Invoice; its target names the charge and its source Invoice.
+          target.late_payment_charge_id !== undefined ? (
+            <section
+              key={financialLabel(target.late_payment_charge_id)}
+              aria-label={`Proposed late-payment charge of Invoice ${financialLabel(target.invoice_number)}`}
+            >
+              <h5>
+                Late-payment charge of {financialLabel(target.invoice_number)}
+              </h5>
+              <FinancialFacts
+                rows={[
+                  [
+                    "Late-payment charge reference",
+                    financialLabel(target.late_payment_charge_id),
+                  ],
+                  [
+                    "Source Invoice reference",
+                    financialLabel(target.source_invoice_id),
+                  ],
+                  [
+                    "Target Customer reference",
+                    financialLabel(target.target_customer_id),
+                  ],
+                  ["FIFO sequence", exact(target.sequence)],
+                  ["Due date", financialLabel(target.due_date)],
+                  ["Original issue time", financialTimestamp(target.issued_at)],
+                  ["Unpaid at proposal", money(target.outstanding_usd_cents)],
+                  ["This target USD", money(target.amount_usd_cents)],
+                ]}
+              />
+            </section>
+          ) : (
+            <section
+              key={financialLabel(target.invoice_id)}
+              aria-label={`Proposed Invoice ${financialLabel(target.invoice_number)}`}
+            >
+              <h5>{financialLabel(target.invoice_number)}</h5>
+              <FinancialFacts
+                rows={[
+                  ["Invoice reference", financialLabel(target.invoice_id)],
+                  [
+                    "Target Customer reference",
+                    financialLabel(target.target_customer_id),
+                  ],
+                  ["FIFO sequence", exact(target.sequence)],
+                  ["Due date", financialLabel(target.due_date)],
+                  ["Original issue time", financialTimestamp(target.issued_at)],
+                  ["Invoice version at proposal", exact(target.version)],
+                  ["This target USD", money(target.amount_usd_cents)],
+                ]}
+              />
+              <IntentLines value={target.details} atProposal />
+            </section>
+          ),
+        )
       ) : (
         <p>No eligible targets were returned.</p>
       )}

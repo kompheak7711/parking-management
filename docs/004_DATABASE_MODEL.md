@@ -1120,6 +1120,8 @@ the row cannot be repeated, replaced, supplemented, updated, or deleted.
 
 Amended by DL-076 (owner, 2026-10-20): no manual decision any more: the app adds the charge at 00:00 on the first day after the Due Date with a system actor as `finalized_by`, and the rate comes from Settings instead of `CHECK (= 1000)`. Not built yet (V1-056 slice 11).
 
+Built in V1-056 slice 11g-1 (migration `20270210_198`, DL-085): `default_rate_basis_points` takes a whole percent from 0 to 1000 basis points (`late_payment_decisions_rate_whole_percent`); `finalized_by` may be empty when the new column `finalized_by_service` (references `app.actor_identities`) names the service principal; exactly one of the two is set (`late_payment_decisions_one_actor`). The new columns avoid any lock on `app.user_accounts`. A decision with `authorization_reference` `late_payment.automatic_charge` is checked by `app.validate_automatic_late_payment_decision`: the Property's active `billing.generate` service principal, `assessed_at` at 00:00 Property time on the day after the Due Date, the amount unpaid at that moment, the rate of `app.late_payment_rate_basis_points` (10 percent until the Settings rate is built), half-up rounding, its one charge, and a charge day not before `app.late_payment_first_charge_day` (the day after the last finished pass, or the pass's first day). Any other decision must be a person's. New append-only table `app.late_payment_charge_runs`: one row per Property and business day the pass finished, with its counts; the next pass covers the charge days after the last row.
+
 ## DB-INV-008 — `late_payment_charges`
 
 Separate positive confirmed obligation: `id uuid PK`, `customer_id uuid NOT NULL FK`,
@@ -1135,6 +1137,8 @@ Miscellaneous Charge. It never changes source Invoice principal, lines, balance,
 status and is not eligible to produce another late-payment decision or Charge.
 
 Amended by DL-076 (owner, 2026-10-20): `payable_at` is the time the app adds the charge, and `created_by` is the system actor. Not built yet (V1-056 slice 11).
+
+Built in V1-056 slice 11g-1 (migration `20270210_198`, DL-085): `created_by` may be empty when the new column `created_by_service` (references `app.actor_identities`) is set; exactly one of the two is set (`late_payment_charges_one_actor`). An automatic charge is created by the Property's billing service principal, the same actor as its decision, and is payable at its decision's `finalized_at`.
 
 ## DB-INV-009 — `late_payment_charge_corrections`
 
@@ -1153,6 +1157,12 @@ Credit applications to be explicitly reversed in the same correlated transaction
 correction may supplement the final decision or create a new Charge.
 
 Amended by DL-076 (owner, 2026-10-20): reductions and waivers after a Customer complaint go in a new append-only table with one of three fixed reasons and a required "What happened" text; the amount only goes down, and paid money above the new amount becomes Customer Credit of the charge's Customer under BR-CREDIT-014, before or after closure. Not built yet (V1-056 slice 11).
+
+Built in V1-056 slice 11g-2 (migration `20270211_199`, DL-086): new append-only table `app.late_payment_charge_reductions` (`late_payment_charge_correction_id uuid PK FK`, `late_payment_charge_id uuid NOT NULL FK`, `reason_code` one of `WRONG_INVOICE`, `PAID_ON_TIME_RECORDED_LATE`, `OTHER_STAFF_MISTAKE`, `what_happened text` 1 to 500 characters, `released_usd_cents bigint >= 0`, `recorded_at`); a deferred check ties each row to a REDUCTION or CHARGE_REVERSAL of the same charge under `late_payment.charge_correction` with the fixed reason's words and the sum of its release rows. `app.reduce_late_payment_charge` writes the reversals, the correction, the posted-again rests, the release rows of `app.invoice_credit_excess_releases` (with `late_payment_charge_correction_id`), the released Customer Credit and the reduction row in one READ COMMITTED transaction; it locks the paying Payments, then their Credits, then the charge and its source Invoice. The charge read names each correction's reduction.
+
+Built in V1-056 slice 11g-3 (migration `20270212_200`, DL-087): `app.finalize_late_payment_decision` and `app.correct_late_payment_charge` refuse (P4603) once `app.late_payment_charge_runs` has a row for the Property, after their replay check; `app.late_payment_review_snapshot` adds the blocker `AUTOMATIC_CHARGE_ONLY` once a finished run covers the Invoice's charge day (`business_date` at least the Due Date plus one), and from the first run `app.late_payment_charge_snapshot` adds `manual_corrections_open: false`; no table, grant or data change.
+
+Built in V1-056 slice 11g-4 (migration `20270213_201`, DL-088): `app.payment_allocation_proposal` is replaced (same signature, settings and grants): for a `NORMAL_CUSTOMER` Payment with no identified Invoice or charge it also proposes each open late-payment charge of the payer (`app.late_payment_charge_financial_position.remaining_balance_usd_cents` above zero, source Invoice not VOID) right after its source Invoice, ordered by Due Date, issue time, Invoice number, Invoice id, then the Invoice before its charge; a charge counts against the same bounds (100 targets, 500 details, the size limit). `app.post_payment_allocations` is patched by exact text so a proposed charge target posts as a `LATE_PAYMENT_CHARGE` allocation with no proposal batch fields (`DIRECT_LATE_PAYMENT_CHARGE`, `NOT_APPLICABLE`), its detail trace naming `proposal_batch_id` and `proposal_sequence`; no table or grant change.
 
 ## DB-INV-010 — `invoice_adjustment_reversals`
 
@@ -4394,6 +4404,21 @@ correction draft (Q-41 answer 3). The one-call Refund corrections refuse such a 
 Refund delivery methods or operational pending/failed states are deferred technical
 workflow choices. This logical model records only the approved completed Refund event
 and does not invent business statuses.
+
+V1-056 slice 11h (migration `20270214_202`; DL-089): `app.create_refund_method` and
+`app.set_refund_method_active` (same signatures and grants as migration `20261013_78`) need the
+authorization reference `settings.manage` (42501 otherwise) and take the Refund method list
+lock (`pg_advisory_xact_lock` on `refund-method-list`) so changes run one at a time. Adding
+checks the code (`^[A-Z][A-Z0-9_]{1,39}$`) and a trimmed name of 1 to 120 characters (22023),
+answers a repeat with the same id, code, name and creator as the method is now, and refuses a
+reused id (`Refund Method identity was reused`) or a used code (`Refund Method code is already
+used`, both 23505); names need not be unique. A new method starts on and not seeded. Turning a
+method off locks the other methods that are on `FOR SHARE` and refuses when none is left (`At
+least one Refund Method stays on`, 55000); a change at the same moment is seen at READ
+COMMITTED and is a serialization failure (40001) at REPEATABLE READ. A repeat that changes
+nothing returns the method and writes nothing. Each change writes an audit event
+(`refund_method.added`, `refund_method.turned_off`, `refund_method.turned_on`; authorization
+`settings.manage`, previous and resulting state).
 
 ## DB-REFUND-002 — `refund_corrections`
 

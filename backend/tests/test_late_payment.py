@@ -32,6 +32,7 @@ from property_rental.late_payment import (
     LatePaymentIdempotencyKeyReused,
     LatePaymentNotFoundError,
     PostgresLatePaymentService,
+    ReduceLatePaymentChargeCommand,
     late_payment_request_digest,
 )
 
@@ -109,6 +110,8 @@ class InMemoryLatePaymentFlow:
     correction_responses: dict[
         UUID, tuple[CorrectLatePaymentChargeCommand, LatePaymentCommandResponse]
     ] = field(default_factory=dict)
+    reductions: list[ReduceLatePaymentChargeCommand] = field(default_factory=list)
+    reduction_error: Exception | None = None
 
     def _authorize(self, resolved_actor: AuthenticatedActor, capability: str) -> None:
         if not is_authorized(
@@ -224,6 +227,29 @@ class InMemoryLatePaymentFlow:
         )
         self.correction_responses[command.idempotency_key] = (command, response)
         return response
+
+    def reduce_charge(
+        self,
+        property_id: UUID,
+        charge_id: UUID,
+        command: ReduceLatePaymentChargeCommand,
+        *,
+        actor: AuthenticatedActor,
+        request_id: str,
+    ) -> LatePaymentCommandResponse:
+        self._authorize(actor, "late_payment.charge_correction")
+        assert property_id == self.property_id
+        assert charge_id == self.charge_id
+        if self.reduction_error is not None:
+            raise self.reduction_error
+        self.reductions.append(command)
+        return LatePaymentCommandResponse(
+            200,
+            {
+                "data": charge_resource(self.property_id, self.invoice_id, self.charge_id),
+                "meta": {"request_id": request_id},
+            },
+        )
 
 
 def api(flow: InMemoryLatePaymentFlow, resolved_actor: AuthenticatedActor | None) -> TestClient:

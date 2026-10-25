@@ -1,4 +1,7 @@
-"""Bounded Property-local catch-up worker for scheduled billing runs."""
+"""Bounded Property-local catch-up worker for scheduled billing runs.
+
+Since V1-056 slice 11g-1 (DL-076) each pass also runs the automatic late-payment charge pass
+(`property_rental.late_payment_job`) after the billing runs, while it holds the same lock."""
 
 from __future__ import annotations
 
@@ -21,12 +24,21 @@ from property_rental.billing_run import (
     PostgresBillingRunService,
 )
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
+from property_rental.late_payment_job import (
+    AutomaticLatePaymentChargeJob,
+    LateChargePass,
+    LateChargePassError,
+    LateChargePassResult,
+)
 
 
 @dataclass(frozen=True, slots=True)
 class BillingWorkerResult:
     current_business_date: date
     runs: tuple[BillingRunDetail, ...]
+    late_charges: LateChargePassResult | None = None
+    # The charge pass failed as a whole; the billing runs above are still reported.
+    late_charges_error: str | None = None
 
 
 class BillingWorker(Protocol):
@@ -59,6 +71,7 @@ class ScheduledBillingWorker:
         actor_id: UUID,
         max_catchup_runs: int = 12,
         service: PostgresBillingRunService | None = None,
+        late_charges: LateChargePass | None = None,
     ) -> None:
         if not 1 <= max_catchup_runs <= 100:
             raise ValueError("max_catchup_runs must be between 1 and 100")
@@ -67,6 +80,9 @@ class ScheduledBillingWorker:
         self._actor_id = actor_id
         self._max_catchup_runs = max_catchup_runs
         self._service = service or PostgresBillingRunService(financial_database_url)
+        self._late_charges = late_charges or AutomaticLatePaymentChargeJob(
+            financial_database_url, property_id=property_id, actor_id=actor_id
+        )
 
     def run_once(self, *, as_of: datetime | None = None) -> BillingWorkerResult:
         instant = as_of or datetime.now(UTC)
@@ -136,7 +152,15 @@ class ScheduledBillingWorker:
                         invocation_source="SCHEDULED",
                     )
                 )
-        return BillingWorkerResult(current_business_date, tuple(results))
+            # DL-076: after the day's Invoices exist, still under the worker lock. The charge
+            # pass always runs at the real time: the database refuses an instant older than an
+            # hour, so a billing catch-up instant is not used for it.
+            try:
+                late_charges = self._late_charges.run(as_of=datetime.now(UTC))
+            except (psycopg.Error, LateChargePassError) as exc:
+                code = getattr(exc, "sqlstate", None) or type(exc).__name__
+                return BillingWorkerResult(current_business_date, tuple(results), None, code)
+        return BillingWorkerResult(current_business_date, tuple(results), late_charges)
 
 
 def run_bounded_loop(
@@ -165,6 +189,19 @@ def run_bounded_loop(
             continue
         consecutive_failures = 0
         print(f"succeeded:{len(result.runs)}", flush=True)
+        if result.late_charges_error is not None:
+            all_succeeded = False
+            print(f"late_charges:error:{result.late_charges_error}", file=sys.stderr, flush=True)
+        if result.late_charges is not None:
+            late = result.late_charges
+            print(
+                f"late_charges:charged={late.charged},no_amount={late.no_amount},"
+                f"skipped={late.skipped},failed={late.failed},done={late.done}",
+                flush=True,
+            )
+            # An Invoice the pass could not record is tried again; the pass still reports it.
+            if late.failed:
+                all_succeeded = False
         if iteration + 1 < max_iterations:
             sleep(poll_interval_seconds)
     return all_succeeded

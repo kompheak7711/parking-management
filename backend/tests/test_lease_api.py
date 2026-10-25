@@ -763,3 +763,43 @@ def test_cancel_draft_and_lease_move_in_routes_need_capability_and_version() -> 
         (occupancy_id, occupant_id)
     ]
     assert command.authorization_reference == "reservations.complete"
+
+
+def test_an_end_date_that_is_not_a_month_end_answers_its_own_code() -> None:
+    """V1-056 slice 11a: the database refusal of BR-LEASE-031 reaches the screen by name."""
+    from property_rental.lease import END_DATE_NOT_MONTH_END, LeaseEndDateNotMonthEndError
+
+    property_id = uuid4()
+    current = resource(property_id)
+
+    class RefusingFlow(InMemoryLeaseFlow):
+        def update_draft(
+            self, command: LeaseUpdateDraftCommand, *, actor: AuthenticatedActor
+        ) -> LeaseResource:
+            raise LeaseEndDateNotMonthEndError(END_DATE_NOT_MONTH_END)
+
+        def sign(self, command: LeaseSignCommand, *, actor: AuthenticatedActor) -> LeaseResource:
+            raise LeaseEndDateNotMonthEndError(END_DATE_NOT_MONTH_END)
+
+    api = client(
+        RefusingFlow({current.lease_id: current}),
+        actor(property_id, "leases.read", "leases.draft", "leases.sign"),
+    )
+    updated = api.patch(
+        f"/api/v1/leases/{current.lease_id}",
+        headers=headers(version=1),
+        json={"event_id": str(uuid4()), "end_date": "2027-08-30", "reason": "Shorter Lease"},
+    )
+    signed = api.post(
+        f"/api/v1/leases/{current.lease_id}/sign",
+        headers=headers(version=1),
+        json={"event_id": str(uuid4()), "reason": "All required Signers completed"},
+    )
+    for answer in (updated, signed):
+        assert answer.status_code == 422
+        error = answer.json()["error"]
+        assert error["code"] == "LEASE_END_DATE_NOT_MONTH_END"
+        assert error["fields"] == ["end_date"]
+        assert error["rule_ids"] == ["BR-LEASE-031"]
+        assert "calendar" not in answer.text
+        assert answer.headers["cache-control"] == "private, no-store"

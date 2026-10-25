@@ -16,8 +16,8 @@ inventory charges nothing by itself. Technical points decided by Claude under th
 
 from alembic import op
 
-revision = "20270210_198"
-down_revision = "20270209_197"
+revision = "20270217_205"
+down_revision = "20270216_204"
 branch_labels = None
 depends_on = None
 

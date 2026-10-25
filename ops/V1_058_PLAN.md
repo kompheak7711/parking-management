@@ -71,3 +71,9 @@ Run rules: frontend-only steps run the frontend gates (format, typecheck, lint, 
 - The folded earlier forms now keep only the billing runs and the Due Date settings.
 - Tests TEST-FE-906, 907; screenshots /mnt/project-files/v1-058/r5b-change/.
 
+## Slice 11 merged in, migrations re-chained (2026-10-25)
+- V1-056 slice 11 reached implementation/foundation (head 20270214_202). It is merged into this branch; as agreed ("whichever merges second re-chains"), the four V1-058 migrations are renamed and follow it: 20270208_196 customer details -> 20270215_203, 20270209_197 Unit setup lists -> 20270216_204, 20270210_198 Unit inventory -> 20270217_205, 20270211_199 Staff Rent letters -> 20270218_206 (head). Test files that pin the head now say 20270218_206. Earlier lines of this log keep the old ids.
+- scripts/database-test.sh now lists test_lease_notice_api_migration.py and test_staff_rent_letters_migration.py (left out in R3 L3b and the Staff letters step; the script refuses an unlisted suite).
+- One slice 11 test needed a guard for the stricter type check of this branch (FinancialWorkspaces.test.tsx).
+- Runs: frontend gates and 1,761 tests passed; PostgreSQL: the four renamed suites, test_migrations, the slice 11 late-charge suites, the sign-in wait and ID number suites: 222 passed, 1 failed (test_invoice_migration billing-run test refused by a closed Final Settlement made by an earlier suite in the same database); test_invoice_migration alone: 35 passed. Order-dependent, from slice 11 data; the full run before the V1-058 merge will show it again.
+

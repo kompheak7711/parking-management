@@ -106,6 +106,8 @@ export interface LatePaymentCharge {
   remaining_balance: Money;
   corrections: Evidence[];
   evidence: Evidence;
+  /** V1-056 slice 11g-3: false once the automatic pass runs (DL-087). */
+  manual_corrections_open?: false;
 }
 export interface BillingRunInput {
   logical_run_key: string;
@@ -487,6 +489,9 @@ function charge(value: unknown): LatePaymentCharge {
     remaining_balance: money(row.remaining_balance),
     corrections: array(row.corrections).map(evidence),
     evidence: evidence(row),
+    ...(row.manual_corrections_open === false
+      ? { manual_corrections_open: false as const }
+      : {}),
   };
 }
 /** Only immutable reversal evidence proves this correction can never succeed. */

@@ -349,7 +349,7 @@ def test_settlement_refund_refusals_change_nothing(migrated_database_url: str) -
                 method,
                 f"SETTLE_{method.hex[:8].upper()}",
                 "Settlement test",
-                "property.manage",
+                "settings.manage",
             ),
         )
     inactive = record(
@@ -359,7 +359,7 @@ def test_settlement_refund_refusals_change_nothing(migrated_database_url: str) -
     with psycopg.connect(runtime_database_url()) as connection:
         connection.execute(
             "SELECT app.set_refund_method_active(%s,%s,%s,false,%s)",
-            (prop, human, method, "property.manage"),
+            (prop, human, method, "settings.manage"),
         )
     assert refused(url, case, inactive["draft_id"], "security", 10_000, method=method) == (
         conflict,

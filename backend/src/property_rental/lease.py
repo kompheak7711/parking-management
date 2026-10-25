@@ -51,6 +51,13 @@ class LeaseCommandInvalidError(ValueError):
     """Raised when a command violates a Lease lifecycle invariant."""
 
 
+class LeaseEndDateNotMonthEndError(LeaseCommandInvalidError):
+    """Raised when a Lease End Date is not the last day of its month (BR-LEASE-031)."""
+
+
+END_DATE_NOT_MONTH_END: Final = "Lease End Date must be the last day of a calendar month"
+
+
 class LeaseAuthorizationError(PermissionError):
     """Raised before persistence when trusted capability evidence is absent."""
 
@@ -512,6 +519,9 @@ class PostgresLeaseService:
                 raise LeaseVersionConflictError("Lease version precondition was not met") from exc
             if exc.sqlstate in {"23505", "23P01"}:
                 raise LeaseCommandConflictError("Lease command conflicted") from exc
+            # Migration 76: draft, update and signing refuse an End Date that is not a month end.
+            if exc.sqlstate == "22023" and exc.diag.message_primary == END_DATE_NOT_MONTH_END:
+                raise LeaseEndDateNotMonthEndError(END_DATE_NOT_MONTH_END) from exc
             if exc.sqlstate in {"22023", "23514", "55000"}:
                 raise LeaseCommandInvalidError("Lease command is invalid") from exc
             raise LeaseServiceUnavailableError("Lease persistence is unavailable") from exc

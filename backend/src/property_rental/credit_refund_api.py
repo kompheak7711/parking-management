@@ -5,22 +5,49 @@ from __future__ import annotations
 import base64
 import binascii
 import json
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Annotated, Literal, Protocol, TypeVar, cast
+from types import MappingProxyType
+from typing import Annotated, Final, Literal, Protocol, TypeVar, cast
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, Response
 from fastapi.responses import JSONResponse
-from pydantic import Field, model_validator
+from pydantic import AfterValidator, Field, model_validator
 from starlette.types import Receive, Scope, Send
 
+from property_rental.access_control import SETTINGS_MANAGE_CAPABILITY
 from property_rental.allocation_receipt_api import (
     AllocationReceiptRequestRoute,
     ReversalInput,
     _mutation,
     _strict_json,
+)
+from property_rental.api_refusals import (
+    DRAFT_ALREADY_DECIDED,
+    FINAL_SETTLEMENT_CLOSED,
+    REFUND_AMOUNT_NOT_AVAILABLE,
+    REFUND_CREDIT_CUSTOMER_ONLY,
+    REFUND_CREDIT_FOR_ANOTHER_CUSTOMER,
+    REFUND_DEPOSIT_RECEIPT_REVERSAL_WAITING,
+    REFUND_METHOD_CODE_USED,
+    REFUND_METHOD_ID_REUSED,
+    REFUND_METHOD_LAST_ON,
+    REFUND_METHOD_NOT_AVAILABLE,
+    REFUND_METHOD_OFF,
+    REFUND_PAYER_HAS_UNPAID,
+    REFUND_PET_SOURCE_NOT_QUALIFIED,
+    REFUND_RECIPIENT_NOT_A_SIGNER,
+    REFUND_RECIPIENT_NOT_SIGNER,
+    REFUND_RETURN_ALREADY_REVERSED,
+    REFUND_RETURN_EVIDENCE_NOT_EXACT,
+    REFUND_RETURN_REVERSAL_REFUSED,
+    REFUND_RETURN_THROUGH_CORRECTION,
+    REFUND_THROUGH_HELD_VALUE_CORRECTION,
+    Refusal,
+    RefusedRequest,
+    database_refusal,
 )
 from property_rental.credit import (
     CREDIT_EVENT_KINDS,
@@ -47,7 +74,12 @@ from property_rental.credit_refund_read import (
     Resource,
 )
 from property_rental.financial_context import bind_financial_property, financial_metadata
-from property_rental.identity import ActorResolver, AuthenticatedActor
+from property_rental.identity import (
+    ActorResolver,
+    AuthenticatedActor,
+    AuthorizationRequirement,
+    is_authorized,
+)
 from property_rental.payment_api import (
     Evidence,
     Identity,
@@ -58,10 +90,14 @@ from property_rental.payment_api import (
     _actor,
     _authorize,
     _cursor,
+    _evidence,
     _queries,
     _timestamp,
 )
 from property_rental.refund import (
+    REFUND_METHOD_READ_CAPABILITIES,
+    AddRefundMethodCommand,
+    CreateCreditCustomerRefundCommand,
     CreatePetRefundCommand,
     CreateUsdRefundCommand,
     RefundAuthorizationError,
@@ -85,6 +121,18 @@ Binding = dict[str, str | None]
 PageLimit = Annotated[int, Query(ge=1, le=100)]
 Cursor = Annotated[str | None, Query(max_length=1024)]
 Key = Annotated[Identity, Header(alias="Idempotency-Key")]
+
+
+class AddRefundMethodInput(StrictInput):
+    refund_method_id: Identity
+    code: Annotated[str, Field(strict=True, max_length=40, pattern=r"^[A-Z][A-Z0-9_]{1,39}$")]
+    display_name: Annotated[
+        str, Field(strict=True, min_length=1, max_length=120), AfterValidator(_evidence)
+    ]
+
+
+class RefundMethodStateInput(StrictInput):
+    active: Annotated[bool, Field(strict=True)]
 
 
 class RecognizeInput(ReversalInput):
@@ -117,6 +165,9 @@ class CreateRefundDraftInput(CreateRefundInput):
     reference_note: Evidence
     recipient_customer_id: Identity | None = None
     signer_agreement: Memo | None = None
+    # Slice 11c (BR-CREDIT-014): a Credit a credit Adjustment released to a Customer who is
+    # not the payer is refunded to that Customer.
+    variant: Literal["CREDIT_CUSTOMER"] | None = None
 
     @model_validator(mode="after")
     def signer_recipient(self) -> CreateRefundDraftInput:
@@ -125,6 +176,8 @@ class CreateRefundDraftInput(CreateRefundInput):
             raise ValueError("A Signer recipient needs the written agreement")
         if self.recipient_customer_id is not None and self.source_type != "PET_DEPOSIT":
             raise ValueError("Only a Deposit Refund may go to another Signer")
+        if self.variant is not None and self.source_type != "CREDIT":
+            raise ValueError("Only a Credit is refunded to the Credit's own Customer")
         return self
 
 
@@ -185,6 +238,8 @@ class PostgresCreditRefundFlow:
         return CustomerCreditService(self._runtime(), self._financial() if mutation else "")
 
     def refunds(self, *, mutation: bool = False) -> RefundService:
+        # As credits(); the Refund method writers of slice 11h run as the runtime role and
+        # need neither mutation=True nor the writer URL.
         return RefundService(self._runtime(), self._financial() if mutation else "")
 
     def source_audit(
@@ -200,7 +255,92 @@ class PostgresCreditRefundFlow:
         )
 
 
-def _invoke(call: Callable[[], T], *, query: bool = False) -> T:
+# V1-056 slice 11c: business-state refusals of the Refund commands answer 409 with their own
+# code (owner answer of 2026-10-05); "the Primary Tenant needs no Signer agreement" stays
+# bad input (422). The messages are the database's own (migrations 41, 77, 78 to 80, 88, 90,
+# 95, 109, 155, 166); a migration test checks each one is still raised at head.
+REFUND_REFUSALS_BY_DATABASE_MESSAGE: Final[Mapping[str, Refusal]] = MappingProxyType(
+    {
+        "Refund Method is not active": REFUND_METHOD_OFF,
+        "Refund draft amount is no longer available": REFUND_AMOUNT_NOT_AVAILABLE,
+        "Refund draft is stale: the payer has unpaid obligations": REFUND_PAYER_HAS_UNPAID,
+        "Refund draft is stale: the Pet Refund source is no longer qualified": (
+            REFUND_PET_SOURCE_NOT_QUALIFIED
+        ),
+        "The Refund recipient must be a Signer of the Lease": REFUND_RECIPIENT_NOT_SIGNER,
+        # Plan note to 11c (10c-2b-1): was 422 on verified-returns and its reverse route.
+        "Refund requires its source-specific coordinated correction path": (
+            REFUND_RETURN_THROUGH_CORRECTION
+        ),
+        "Only a Credit that a credit Adjustment released to a Customer other than the payer is "
+        "refunded to that Customer": REFUND_CREDIT_CUSTOMER_ONLY,
+        "The Credit holds money a post-settlement correction brought back; refund that money "
+        "through a held-value correction of that Final Settlement": (
+            REFUND_THROUGH_HELD_VALUE_CORRECTION
+        ),
+        "A closed Final Settlement's Pet Deposit Refund is corrected only through a "
+        "post-settlement correction": REFUND_RETURN_THROUGH_CORRECTION,
+        # These three answered 503 before (23514 read as a service fault). The reversal of a
+        # return is refused this way only when that return was already reversed.
+        "Returned Refund value is no longer available to reverse": REFUND_RETURN_REVERSAL_REFUSED,
+        "Refund correction reversal must reverse one active exact correction": (
+            REFUND_RETURN_ALREADY_REVERSED
+        ),
+        "Refund correction requires exact demonstrated return evidence": (
+            REFUND_RETURN_EVIDENCE_NOT_EXACT
+        ),
+        "A closed Final Settlement changes only through a post-settlement correction": (
+            FINAL_SETTLEMENT_CLOSED
+        ),
+        # Confirm only.
+        "Financial draft is already decided": DRAFT_ALREADY_DECIDED,
+        "A Deposit receipt reversal draft for this Deposit is waiting": (
+            REFUND_DEPOSIT_RECEIPT_REVERSAL_WAITING
+        ),
+        "Refund Credit recipient mismatch": REFUND_CREDIT_FOR_ANOTHER_CUSTOMER,
+    }
+)
+# On a draft's record the method and the recipient come from the form: bad input (422).
+REFUND_RECORD_REFUSALS: Final[Mapping[str, Refusal]] = MappingProxyType(
+    {
+        **REFUND_REFUSALS_BY_DATABASE_MESSAGE,
+        "Refund Method is not active": REFUND_METHOD_NOT_AVAILABLE,
+        "The Refund recipient must be a Signer of the Lease": REFUND_RECIPIENT_NOT_A_SIGNER,
+    }
+)
+
+
+# V1-056 slice 11c-1: who may read the Refund method list (as RefundService.refund_methods);
+# slice 11h adds Settings access.
+REFUND_METHOD_READERS: Final = REFUND_METHOD_READ_CAPABILITIES
+# V1-056 slice 11h: the database messages of the two Refund method writers (migration
+# 20270214_202).
+REFUND_METHOD_CHANGE_REFUSALS: Final[Mapping[str, Refusal]] = MappingProxyType(
+    {
+        "Refund Method code is already used": REFUND_METHOD_CODE_USED,
+        "Refund Method identity was reused": REFUND_METHOD_ID_REUSED,
+        "At least one Refund Method stays on": REFUND_METHOD_LAST_ON,
+    }
+)
+
+
+def _invoke(
+    call: Callable[[], T],
+    *,
+    query: bool = False,
+    refusals: Mapping[str, Refusal] = REFUND_REFUSALS_BY_DATABASE_MESSAGE,
+) -> T:
+    try:
+        return _plain_invoke(call, query=query)
+    except HTTPException as exc:
+        cause = exc.__cause__
+        refusal = None if query or cause is None else database_refusal(cause, refusals)
+        if refusal is not None:
+            raise RefusedRequest(refusal) from exc
+        raise
+
+
+def _plain_invoke(call: Callable[[], T], *, query: bool = False) -> T:
     try:
         return call()
     except (CreditIdempotencyKeyReused, RefundIdempotencyKeyReused):
@@ -619,6 +759,76 @@ def create_credit_refund_router(
             raise HTTPException(503)
         return envelope(request, result)
 
+    @router.get("/properties/{property_id}/refund-methods")
+    def refund_methods(property_id: Identity, request: Request) -> dict[str, object]:
+        """The Refund methods a draft may name, turned off ones included (BR-REFUND-014)."""
+        queries(request, set())
+        actor = _actor(request, resolver)
+        held = [
+            capability
+            for capability in REFUND_METHOD_READERS
+            if is_authorized(actor, AuthorizationRequirement(capability, str(property_id)))
+        ]
+        if not held:
+            raise HTTPException(404)
+        actor, prop = context(request, "property", property_id, held[0])
+        result = _invoke(lambda: flow.refunds().refund_methods(prop, actor=actor), query=True)
+        items = result.get("items")
+        if not isinstance(items, list) or not all(
+            isinstance(item, dict) and isinstance(item.get("active"), bool) for item in items
+        ):
+            raise HTTPException(503)
+        return envelope(request, items)
+
+    @router.post(
+        "/properties/{property_id}/refund-methods",
+        status_code=201,
+        dependencies=[Depends(_financial_json)],
+    )
+    def add_refund_method(
+        property_id: Identity, body: AddRefundMethodInput, request: Request
+    ) -> dict[str, object]:
+        """Add a Refund method in Settings; it starts turned on (V1-056 slice 11h).
+
+        The client chooses the id, so a repeat of the same request answers the same method, as
+        it is now (it may have been turned off since).
+        """
+        queries(request, set())
+        actor, prop = context(request, "property", property_id, SETTINGS_MANAGE_CAPABILITY)
+        command = _invoke(
+            lambda: AddRefundMethodCommand(body.refund_method_id, body.code, body.display_name)
+        )
+        result = _invoke(
+            lambda: flow.refunds().add_refund_method(prop, command, actor=actor),
+            refusals=REFUND_METHOD_CHANGE_REFUSALS,
+        )
+        if result.get("id") != str(body.refund_method_id):
+            raise HTTPException(503)
+        return envelope(request, result)
+
+    @router.post(
+        "/properties/{property_id}/refund-methods/{refund_method_id}/state",
+        dependencies=[Depends(_financial_json)],
+    )
+    def set_refund_method_state(
+        property_id: Identity,
+        refund_method_id: Identity,
+        body: RefundMethodStateInput,
+        request: Request,
+    ) -> dict[str, object]:
+        """Turn a Refund method off or on again in Settings; one always stays on (slice 11h)."""
+        queries(request, set())
+        actor, prop = context(request, "property", property_id, SETTINGS_MANAGE_CAPABILITY)
+        result = _invoke(
+            lambda: flow.refunds().set_refund_method_on(
+                prop, refund_method_id, body.active, actor=actor
+            ),
+            refusals=REFUND_METHOD_CHANGE_REFUSALS,
+        )
+        if result.get("id") != str(refund_method_id) or result.get("active") is not body.active:
+            raise HTTPException(503)
+        return envelope(request, result)
+
     @router.post("/refunds", status_code=201, dependencies=[Depends(_financial_json)])
     def create_refund(
         body: CreateRefundInput, request: Request, idempotency_key: Key
@@ -672,7 +882,20 @@ def create_credit_refund_router(
             result = _invoke(
                 lambda: flow.refunds(mutation=True).record_pet_draft(
                     prop, pet_command, method, actor=actor, recipient=signer
+                ),
+                refusals=REFUND_RECORD_REFUSALS,
+            )
+        elif body.variant == "CREDIT_CUSTOMER":
+            credit_command = _invoke(
+                lambda: CreateCreditCustomerRefundCommand(
+                    idempotency_key, body.source_id, body.amount_usd_cents, body.reason
                 )
+            )
+            result = _invoke(
+                lambda: flow.refunds(mutation=True).record_credit_customer_draft(
+                    prop, credit_command, method, actor=actor
+                ),
+                refusals=REFUND_RECORD_REFUSALS,
             )
         else:
             usd_command = _invoke(
@@ -687,10 +910,15 @@ def create_credit_refund_router(
             result = _invoke(
                 lambda: flow.refunds(mutation=True).record_usd_draft(
                     prop, usd_command, method, actor=actor
-                )
+                ),
+                refusals=REFUND_RECORD_REFUSALS,
             )
         if result.get("property_id") != str(prop) or result.get("kind") != "REFUND":
             raise HTTPException(503)
+        if body.variant == "CREDIT_CUSTOMER":
+            payload = result.get("payload")
+            if not isinstance(payload, dict) or payload.get("variant") != "CREDIT_CUSTOMER":
+                raise HTTPException(503)
         # No Location header: the draft read routes come with the draft screens (slice 11b).
         return envelope(request, result)
 

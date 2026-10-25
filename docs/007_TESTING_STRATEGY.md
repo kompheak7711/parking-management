@@ -489,6 +489,8 @@ debit Adjustment recorded after the final decision is allowed but does not chang
 
 Amended by DL-076 (owner, 2026-10-20): tests cover the automatic 00:00 charge (eligibility, one per Invoice, Settings rate, rounding, no charge on Initial Rent, no-Lease Invoices or charges) instead of a manual decision.
 
+V1-056 slice 11g-1: `backend/tests/test_automatic_late_payment_charge_migration.py` (PostgreSQL: the first-day window, rounding, the 00:00 amount, catch-up, skipped Invoices, one charge per Invoice, the worker, least privilege) and `backend/tests/test_late_payment_job.py` (paging, counts, failures and the log lines).
+
 ## TEST-124 — Late-payment Charge Corrections and Applications
 
 Verify DB-INV-009/API-091 authorized Charge reduction/reversal behavior preserves the
@@ -501,6 +503,14 @@ Invoice. Test direct designation, availability limits, over-application rejectio
 reversal, concurrency, and historical reconstruction.
 
 Amended by DL-076 (owner, 2026-10-20): tests cover reductions and waivers after a complaint (three fixed reasons, "What happened", only down) and the paid part going to Customer Credit under BR-CREDIT-014.
+
+V1-056 slice 11g-2: `backend/tests/test_late_payment_charge_reduction_migration.py` (PostgreSQL: only down, waiver, replay, released Payment value as Credit of the charge's Customer newest first with the rest posted again, released Credit value back to its Credit, two at once, a Credit application released in part, waiting for another writer's Payment serializer, the corrections route refusing to reverse a reduction and sharing its keys, closed Final Settlement, append-only and least privilege) and `backend/tests/test_late_payment_reduction.py` (the command, the route and the real service's answer to database faults).
+
+V1-056 slice 11g-3: `backend/tests/test_manual_late_payment_closed_migration.py` (PostgreSQL: after the first pass a manual decision and every free correction are refused, an exact repeat of an earlier request replays, a reduction with a fixed reason still works, the review and charge reads close the old forms, and a Final Settlement no longer waits for a decision no one can record once a pass has covered the charge day, but still waits before that); `frontend/src/InvoiceManagement.test.tsx` TEST-FE-S11G-001 (the old screen hides the free correction form).
+
+V1-056 slice 11g-4: `backend/tests/test_late_charge_payment_proposal_migration.py` (PostgreSQL: the charge right after its own Invoice, part of a charge before a newer Invoice, the charge of a paid Invoice, each charge after its own Invoice, a named, third-party, reduced or waived charge, a stale proposal refused, a proposal charge allocation reversed like a direct one); `backend/tests/test_credit_migration.py` keeps its meaning by naming the Invoice; `frontend/src/FinancialWorkspaces.test.tsx` TEST-FE-S11G-003 (the proposal view shows a charge target as a charge).
+
+V1-056 slice 11h: `backend/tests/test_refund_method_settings_migration.py` (PostgreSQL: adding with Settings access, its audit and replay, a used code or reused id refused, other capabilities and bad input refused; turning off and on again, each audited; the last method that is on stays on; two people turning off the last two methods at once leave one on, at READ COMMITTED and REPEATABLE READ); `backend/tests/test_credit_refund_api.py` (the two routes need `settings.manage`, the Origin and the CSRF pair; refusal codes; the list read with Settings access; the service maps each database answer); `frontend/src/settlementClient.test.tsx` TEST-FE-S11H-001 (the client sends both changes with no key).
 
 # 12. Payment, Allocation, Credit, Refund, and Reversal Coverage
 
