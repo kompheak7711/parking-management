@@ -239,7 +239,7 @@ def test_the_lists_count_today_and_ignore_the_period_where_it_does_not_apply() -
         "unit_count": 2,
     }
     assert page["rows"][0]["unit_type"] == "STUDIO"
-    leases = [
+    leases: list[dict[str, object]] = [
         {
             "lease_id": uuid.uuid4(),
             "unit_id": U1,
