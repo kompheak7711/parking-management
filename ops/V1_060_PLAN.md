@@ -106,4 +106,11 @@ candidate is the code that will be used.
   Part A is done except the owner items (GitHub Actions billing; the OpenClaw step in CI) and the
   owner test script, which follows the V1-058 screens. Part B starts when V1-058 merges; this
   branch's 207 to 209 then re-chain after V1-058's head (20270314_233 on its branch today).
+- 2026-10-25 A2 owner answers: the repository is private on a free GitHub plan (2,000 Actions
+  minutes a month; about 480 runs of up to two hours each used them up, so jobs stop at once until
+  the monthly reset). Owner yes (17:02): the OpenClaw supervisor routing step is removed from CI
+  (the Makefile target and the OpenClaw files stay as they are). Decided by Claude under the
+  owner's 2026-10-23 22:30 rule: CI runs on pushes to `main` and `implementation/foundation`, on
+  pull requests and by hand (`workflow_dispatch`), not on every work-branch push; the cloud
+  threads run the same gates locally before each merge.
 

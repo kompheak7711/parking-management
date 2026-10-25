@@ -1,8 +1,14 @@
 name: CI
 
+# V1-060: the free plan has 2,000 Actions minutes a month and one run takes about two hours,
+# so CI runs on the shared branches, on pull requests and by hand, not on every work-branch push.
 on:
   push:
+    branches:
+      - main
+      - implementation/foundation
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -54,9 +60,6 @@ jobs:
         env:
           TRACEABILITY_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: python3 scripts/traceability-audit.py --base "$TRACEABILITY_BASE"
-
-      - name: Test deterministic supervisor routing
-        run: make automation-test
 
       - name: Build and import backend package
         run: make backend-build backend-import-check
