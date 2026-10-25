@@ -166,3 +166,6 @@ Register summaries (fields over every row of the filter):
   migration `20270306_225` returns `app.report_income_facts` and `app.report_payment_facts` as
   one row per part and the application adds them up (same totals). Rerun of the 29 failed or
   changed suites on a fresh database: all pass (706 + 43). Frontend: 1,663 tests pass, build ok.
+- Owner 2026-10-25 13:30 "all recommended": merge V1-057 into implementation/foundation; keep
+  each Unit's Rent hidden from people without `reports.read` in Unit occupancy and Lease dates
+  (screens and files).
