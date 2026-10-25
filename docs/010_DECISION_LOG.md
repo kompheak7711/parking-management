@@ -2184,3 +2184,12 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Points the owner may change:** DL-090 (the BR-RENT-030 reading), DL-091 (a late Utility Invoice is due on the later of the on-time Due Date and the issue date plus the configured days; the Due Date drives late-payment charges), DL-092 (uncleared wrong sign-in tries older than 30 days no longer count once removed). DL-093 is a tightening (a new 55000 hold) that the owner approved with answer (a) to Q-2026-10-20-149. The slice 12b worker bills every earlier late Utility period with no age limit on its first pass after deploy (no live history exists before go-live).
 - **Migration head:** `20270218_206`.
 - **Decision date:** 2026-10-25.
+
+## DL-095 — Owner answers to the four DL-094 questions before go-live
+
+- **Type:** `OWNER BUSINESS DECISION`
+- **Status:** `APPROVED; NOTHING TO BUILD FOR V1`
+- **Source:** the owner, 2026-10-25 12:17 ("ok all recommended"), after the plain explanation of the four DL-094 items in the V1-056 thread.
+- **Answers (each the recommendation):** (1) the two 10e-4 known limits stay as built for V1: a Payment used after closure on two closed Leases may be returned through either Settlement's `RETURNED_PAYMENT` correction (nothing either Settlement relied on changes), and a Payment with recoveries charged on two closed Settlements' Leases stays refused by every correction (no money moves wrongly); its refusal message is fixed after V1. (2) Q-2026-10-04-10: a physical move-out correction stays refused once a hand-back resolution (BR-RENT-030) relies on it; an Owner or Manager correction may be added after V1 if a case happens. (3) Sub-slice 6b round 2: a confirmed Lease forfeiture, its reversal and a wrong-Unit Payment move keep naming the approver with the one-call capability label; the draft and its decision record `financial.approve`; the earlier functions do not change. (4) Sub-slice 10e-1a: the pending-draft check of a returned Payment keeps matching ids in the draft text for V1 (it only makes a return wait); it matches structured keys after V1.
+- **Links:** DL-094, ops/V1_056_PLAN.md slice 12 list.
+- **Decision date:** 2026-10-25.
