@@ -113,4 +113,7 @@ candidate is the code that will be used.
   owner's 2026-10-23 22:30 rule: CI runs on pushes to `main` and `implementation/foundation`, on
   pull requests and by hand (`workflow_dispatch`), not on every work-branch push; the cloud
   threads run the same gates locally before each merge.
+- 2026-10-25 owner (17:30): when a CI job fails, the run's other jobs stop. Each job ends with a
+  step that runs only after a failure and cancels the run (`gh run cancel`, workflow permission
+  `actions: write`).
 
