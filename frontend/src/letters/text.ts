@@ -106,7 +106,11 @@ const TEXT = {
   d_how_e: ["Choose how it was given.", "សូមជ្រើសរបៀបផ្តល់។"],
   h_HAND: ["Handed to the tenant", "ប្រគល់ដល់អ្នកជួល"],
   h_DOOR: ["Left at the Unit with a witness", "ទុកនៅបន្ទប់ ដោយមានសាក្សី"],
+  // new (owner 2026-10-25)
+  h_EMAIL: ["Sent by email", "ផ្ញើតាមអ៊ីមែល"],
   h_TG: ["Sent by Telegram", "ផ្ញើតាម Telegram"],
+  // new (owner 2026-10-25)
+  h_WA: ["Sent by WhatsApp", "ផ្ញើតាម WhatsApp"],
   h_OTHER: ["Other", "ផ្សេងទៀត"],
   d_detail: ["Details", "ព័ត៌មានលម្អិត"],
   d_detail_h: [

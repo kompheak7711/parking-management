@@ -26,6 +26,7 @@ from alembic.script import ScriptDirectory
 from property_rental.access_control import (
     BUNDLE_CAPABILITIES,
     STAFF_DEFAULT_BUNDLE_CAPABILITIES,
+    STAFF_L1C_BUNDLE_CAPABILITIES,
     GrantConnection,
     PostgresCapabilityGrantReader,
 )
@@ -344,7 +345,7 @@ def test_the_property_setup_seeds_the_default_bundles_in_its_transaction() -> No
                 ("Owner",),
                 ("Staff",),
             ]
-            assert bundle_capabilities(check, seeded[2]) == set(STAFF_DEFAULT_BUNDLE_CAPABILITIES)
+            assert bundle_capabilities(check, seeded[2]) == set(STAFF_L1C_BUNDLE_CAPABILITIES)
             assert assignments(check, owner) == [(seeded[0], None, PROVENANCE)]
 
 
@@ -495,7 +496,7 @@ def test_the_default_bundles_migration_seeds_an_existing_property_least_privileg
             assert seeded[3] == PROVENANCE
             assert bundle_capabilities(check, seeded[0]) == every_bundle_capability
             assert bundle_capabilities(check, seeded[1]) == every_bundle_capability
-            assert bundle_capabilities(check, seeded[2]) == set(STAFF_DEFAULT_BUNDLE_CAPABILITIES)
+            assert bundle_capabilities(check, seeded[2]) == set(STAFF_L1C_BUNDLE_CAPABILITIES)
             assert assignments(check, owner) == [(seeded[0], None, PROVENANCE)]
             assert assignments(check, manager) == []
             assert {capability for capability, _ in grants(check, owner)} == (

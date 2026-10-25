@@ -50795,6 +50795,45 @@
       "test_path": "frontend/src/leases/LeasesPage.test.tsx",
       "status": "implemented",
       "notes": "V1-058 R3 Terminate and termination notice: Try again after an unknown result sends the same body, key and id; a changed value gets a new key and id; the notice text follows the end date; the Initial-unpaid ground waits until Start Date + 5 days; the terminate address is dropped once done."
+    },
+    {
+      "test_id": "test_the_staff_letter_rights_are_the_two_rent_case_rights",
+      "upstream_ids": [
+        "DL-081",
+        "SEC-021",
+        "DL-073",
+        "DB-AUTH-009"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_staff_rent_letters_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R3 Staff Rent letters: The owner's 2026-10-25 answer adds only rent_nonpayment.case_manage and rent_nonpayment.event_post to the default Staff list; Terminate and rule warnings stay out."
+    },
+    {
+      "test_id": "test_a_new_property_seeds_staff_with_the_letter_rights",
+      "upstream_ids": [
+        "DL-081",
+        "SEC-021",
+        "DL-073",
+        "DB-AUTH-009"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_staff_rent_letters_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R3 Staff Rent letters: Real PostgreSQL: a Property seeded after migration 199 gets a Staff bundle with the two Rent letter rights."
+    },
+    {
+      "test_id": "test_the_upgrade_adds_the_rights_only_to_an_untouched_default_staff_bundle",
+      "upstream_ids": [
+        "DL-081",
+        "SEC-021",
+        "DL-073",
+        "DB-AUTH-009"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_staff_rent_letters_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R3 Staff Rent letters: Real PostgreSQL upgrade 198 to 199: an untouched default Staff bundle gets version 2 with the two rights and an audit event naming the Owner; a Staff bundle the Owner changed stays as it is; forward-only."
     }
   ]
 }

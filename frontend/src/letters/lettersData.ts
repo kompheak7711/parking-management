@@ -10,7 +10,8 @@ import type {
 } from "./lettersClient";
 import { storedText } from "./text";
 
-export const HOWS = ["HAND", "DOOR", "TG", "OTHER"] as const;
+// Owner 2026-10-25: a letter may be given on paper, or sent by email, Telegram or WhatsApp.
+export const HOWS = ["HAND", "DOOR", "EMAIL", "TG", "WA", "OTHER"] as const;
 export type How = (typeof HOWS)[number];
 
 /** How a letter or warning was given, kept with the record as "Handed to the tenant: …". */

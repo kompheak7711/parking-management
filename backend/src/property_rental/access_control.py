@@ -122,10 +122,10 @@ BUNDLE_CAPABILITIES: Final = frozenset(
     capability for capability in CAPABILITY_CATALOG if capability_grant_path(capability) == "bundle"
 )
 
-# The default Staff bundle of each Property (sub-slice L1c, migration `20270122_179`): owner
-# answer (a) to Q-2026-10-21-150 with G7, and (a) to Q-2026-10-21-164 (DL-081). The default
-# Owner and Manager bundles hold every bundle capability of the catalog when they are seeded.
-STAFF_DEFAULT_BUNDLE_CAPABILITIES: Final = frozenset(
+# The default Staff bundle as sub-slice L1c seeded it (migration `20270122_179`): owner answer
+# (a) to Q-2026-10-21-150 with G7, and (a) to Q-2026-10-21-164 (DL-081). The default Owner and
+# Manager bundles hold every bundle capability of the catalog when they are seeded.
+STAFF_L1C_BUNDLE_CAPABILITIES: Final = frozenset(
     {
         "configuration.read",
         "credits.read",
@@ -159,6 +159,16 @@ STAFF_DEFAULT_BUNDLE_CAPABILITIES: Final = frozenset(
         "utility.read",
         "utility_readings.record",
     }
+)
+
+# Owner answer 2026-10-25 (V1-058 R3, DESIGN.md Letters): Staff may record the day-20 and day-30
+# Rent letters, so they may open the Rent case and post its letter events (migration
+# `20270211_199`). The Termination notice and Terminate stay with the Owner and Managers.
+STAFF_RENT_LETTER_CAPABILITIES: Final = frozenset(
+    {"rent_nonpayment.case_manage", "rent_nonpayment.event_post"}
+)
+STAFF_DEFAULT_BUNDLE_CAPABILITIES: Final = (
+    STAFF_L1C_BUNDLE_CAPABILITIES | STAFF_RENT_LETTER_CAPABILITIES
 )
 
 

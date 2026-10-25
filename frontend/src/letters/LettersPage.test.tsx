@@ -369,6 +369,21 @@ describe("Letters page (V1-058 R3)", () => {
     ).toBeTruthy();
     expect(api.openCase).not.toHaveBeenCalled();
 
+    // Owner 2026-10-25: on paper, or by email, Telegram or WhatsApp.
+    expect(
+      Array.from(
+        within(dialog).getByLabelText<HTMLSelectElement>(/How it was given/)
+          .options,
+      ).map((option) => option.textContent),
+    ).toEqual([
+      "—",
+      "Handed to the tenant",
+      "Left at the Unit with a witness",
+      "Sent by email",
+      "Sent by Telegram",
+      "Sent by WhatsApp",
+      "Other",
+    ]);
     fireEvent.change(within(dialog).getByLabelText(/How it was given/), {
       target: { value: "HAND" },
     });

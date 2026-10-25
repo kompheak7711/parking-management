@@ -93,6 +93,7 @@ NON_CAPABILITY_LABELS = frozenset(
         "security.protected_key_file_missing",
         "unit.created",
         "unit.updated",
+        "unit.status_changed",
         "unpaid_initial.moved_in_credit",
         "unpaid_initial.never_moved_in",
         "utility.baseline.record",
@@ -252,6 +253,9 @@ STAFF_APPROVED = frozenset(
         "refunds.read",
         "customer_ledger.read",
         "rent_nonpayment.read",
+        # Owner answer 2026-10-25: Staff record the day-20 and day-30 Rent letters.
+        "rent_nonpayment.case_manage",
+        "rent_nonpayment.event_post",
         "configuration.read",
         "units.read",
         "property.read",
@@ -292,8 +296,6 @@ STAFF_NEVER = frozenset(
         "credits.reverse",
         "credits.applications.reverse",
         "late_payment.review",
-        "rent_nonpayment.case_manage",
-        "rent_nonpayment.event_post",
         "exchange_rates.manage",
         "leases.sign",
         "reservations.extend",
@@ -322,7 +324,7 @@ RATE_CAPABILITIES = frozenset({"service_rates.manage", "utility_rates.manage"})
 
 def test_the_default_staff_bundle_holds_exactly_the_approved_daily_work() -> None:
     assert STAFF_DEFAULT_BUNDLE_CAPABILITIES == STAFF_APPROVED
-    assert len(STAFF_APPROVED) == 31
+    assert len(STAFF_APPROVED) == 33
     assert STAFF_APPROVED <= BUNDLE_CAPABILITIES
     groups = (STAFF_APPROVED, STAFF_NEVER, STAFF_NOT_NAMED, RATE_CAPABILITIES)
     # Every bundle capability is in exactly one group, so a new bundle capability must be
