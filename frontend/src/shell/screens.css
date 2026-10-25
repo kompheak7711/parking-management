@@ -941,3 +941,46 @@ table.ui-table a.ui-no {
   margin: 0;
   padding-left: 20px;
 }
+
+/* V1-058 R3 L2b-2: people picked in a form, each with a remove button. */
+.ui-picked {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ui-picked li {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 4px 2px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+}
+
+/* V1-058 R3 L2b-2: the New Lease form page uses the dialog fields. */
+.ui-leaseform input:not([type="checkbox"], [type="radio"]),
+.ui-leaseform select {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--input);
+  color: var(--text);
+  font: inherit;
+}
+
+.ui-leaseform input[readonly] {
+  background: transparent;
+  font-weight: 600;
+}
+
+.ui-leaseform [aria-invalid="true"] {
+  border-color: var(--err);
+  box-shadow: 0 0 0 1px var(--err);
+}

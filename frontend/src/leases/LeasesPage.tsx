@@ -10,11 +10,13 @@ import type { DepositApi } from "../depositClient";
 import type { LeaseApi } from "../leaseClient";
 import type { CustomerApi } from "../customerClient";
 import type { ReservationApi } from "../reservationClient";
+import type { UnitApi } from "../unitClient";
 import { todayInPhnomPenh } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { useHashDetail } from "../shell/useHashPage";
 import type { Language } from "../signInText";
 import { LeaseDetail } from "./LeaseDetail";
+import { LeaseForm, formModeOf } from "./LeaseForm";
 import { LeasesList } from "./LeasesList";
 import {
   DepositCell,
@@ -31,8 +33,9 @@ export interface LeasesPageProps {
   active: boolean;
   api: LeaseApi;
   depositApi: DepositApi;
-  reservationApi: Pick<ReservationApi, "list">;
-  customerApi: Pick<CustomerApi, "get">;
+  reservationApi: Pick<ReservationApi, "list" | "get">;
+  customerApi: Pick<CustomerApi, "get" | "list">;
+  unitApi: Pick<UnitApi, "list">;
   capabilities: ReadonlySet<string> | null;
 }
 
@@ -44,6 +47,7 @@ export function LeasesPage({
   depositApi,
   reservationApi,
   customerApi,
+  unitApi,
   capabilities,
 }: LeasesPageProps) {
   const detail = useHashDetail("leases");
@@ -96,6 +100,23 @@ export function LeasesPage({
     );
   }
 
+  // New Lease and Renew read what they need themselves.
+  const formMode = detail === null ? null : formModeOf(detail);
+  if (formMode !== null) {
+    return (
+      <LeaseForm
+        api={api}
+        customerApi={customerApi}
+        key={`${detail ?? ""}:${propertyId}`}
+        language={language}
+        mode={formMode}
+        propertyId={propertyId}
+        reservationApi={reservationApi}
+        unitApi={unitApi}
+      />
+    );
+  }
+
   // The Lease page reads its own record, so it does not wait for the list.
   if (detail !== null) {
     return (
@@ -135,6 +156,10 @@ export function LeasesPage({
     <>
       {failure}
       <LeasesList
+        canCreate={
+          data.canCreate &&
+          (capabilities === null || capabilities.has("leases.draft"))
+        }
         data={data}
         deposits={deposits}
         language={language}

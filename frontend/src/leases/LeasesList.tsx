@@ -5,7 +5,7 @@ import { useState } from "react";
 
 import type { LeaseResource } from "../leaseClient";
 import { dayText, usdFromCents } from "../shell/format";
-import type { ShellIcon } from "../shell/icons";
+import { Icon, type ShellIcon } from "../shell/icons";
 import { hashForPage } from "../shell/navigation";
 import { openPageInAddress } from "../shell/useHashPage";
 import { Chip, CountCard, type Tone } from "../shell/ui";
@@ -74,11 +74,13 @@ function DepositText({
 
 export function LeasesList({
   language,
+  canCreate,
   data,
   deposits,
   today,
 }: {
   language: Language;
+  canCreate: boolean;
   data: LeasesData;
   deposits: Map<string, DepositCell> | null;
   today: string;
@@ -99,6 +101,14 @@ export function LeasesList({
     <>
       <div className="ui-head">
         <p>{lt(language, "sub")}</p>
+        {canCreate && (
+          <div className="ui-actions">
+            <a className="ui-btn primary" href={hashForPage("leases", "new")}>
+              <Icon name="lease" />
+              {lt(language, "new_lease")}
+            </a>
+          </div>
+        )}
       </div>
       <div className="ui-kpis">
         {CARDS.map(([value, icon, tone]) => (

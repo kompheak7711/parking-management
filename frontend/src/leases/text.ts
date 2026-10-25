@@ -440,6 +440,152 @@ const TEXT = {
   ],
   // new
   err_who: ["Tick who moves in.", "សូមធីកអ្នកដែលចូលស្នាក់នៅ។"],
+  // L2b-2: New Lease and Renew
+  new_lease: ["New Lease", "កិច្ចសន្យាថ្មី"],
+  renew: ["Renew", "បន្ត"],
+  new_title: ["New Lease", "កិច្ចសន្យាថ្មី"],
+  // new
+  renew_title: ["Renew Lease", "បន្តកិច្ចសន្យា"],
+  // new
+  new_sub: [
+    "A draft first; it is signed when every Signer has signed the paper Lease.",
+    "ជាសេចក្តីព្រាងសិន វាចុះហត្ថលេខាពេលអ្នកចុះហត្ថលេខាទាំងអស់បានចុះលើក្រដាស។",
+  ],
+  // new
+  from_booking: [
+    "From the Booking of {0}: the Unit, the Customer, the agreed Rent and the deposit come from it.",
+    "ពីការកក់របស់ {0}៖ បន្ទប់ អតិថិជន ថ្លៃឈ្នួលដែលបានព្រមព្រៀង និងប្រាក់កក់ មកពីវា។",
+  ],
+  // new
+  renew_sub: [
+    "The new Lease for {0} starts the day after the old End Date and is linked to it. The Unit stays Occupied.",
+    "កិច្ចសន្យាថ្មីសម្រាប់ {0} ចាប់ផ្តើមថ្ងៃបន្ទាប់ពីថ្ងៃបញ្ចប់ចាស់ ហើយភ្ជាប់ទៅវា។ បន្ទប់នៅតែមានអ្នកជួល។",
+  ],
+  // new
+  form_failed: [
+    "The Units and Customers could not be read just now. Check the connection and your access, and try again.",
+    "មិនអាចអានបន្ទប់ និងអតិថិជនបានទេឥឡូវនេះ។ សូមពិនិត្យការតភ្ជាប់ និងសិទ្ធិរបស់អ្នក ហើយព្យាយាមម្តងទៀត។",
+  ],
+  terms: ["Lease terms", "លក្ខខណ្ឌកិច្ចសន្យា"],
+  // new
+  choose_unit: ["Choose a Unit", "ជ្រើសបន្ទប់"],
+  // new
+  unit_help: [
+    "Vacant, cleaning or maintenance Units. A Reserved Unit gets its Lease from its Booking.",
+    "បន្ទប់ទំនេរ កំពុងសម្អាត ឬកំពុងជួសជុល។ បន្ទប់ដែលបានកក់ ទទួលកិច្ចសន្យាពីការកក់របស់វា។",
+  ],
+  // new
+  choose_customer: ["Choose a Customer", "ជ្រើសអតិថិជន"],
+  other_signers: ["Other Signers", "អ្នកចុះហត្ថលេខាផ្សេងទៀត"],
+  other_occupants: ["Other occupants", "អ្នករស់នៅផ្សេងទៀត"],
+  // new
+  add_person: ["Add a Customer…", "បន្ថែមអតិថិជន…"],
+  // new
+  remove: ["Remove {0}", "ដក {0}"],
+  // new
+  end_help: [
+    "Filled in as one year, to the last day of a month.",
+    "បំពេញជាមួយឆ្នាំ ដល់ថ្ងៃចុងក្រោយនៃខែ។",
+  ],
+  pet_ok: ["A pet is approved", "សត្វចិញ្ចឹមត្រូវបានអនុញ្ញាត"],
+  // new
+  pet_what: ["Which pet", "សត្វចិញ្ចឹមអ្វី"],
+  // new
+  pet_help: [
+    "A Pet Deposit is required; its amount is entered on the Lease after saving.",
+    "ត្រូវការប្រាក់កក់សត្វចិញ្ចឹម ចំនួនរបស់វាបញ្ចូលលើកិច្ចសន្យាក្រោយរក្សាទុក។",
+  ],
+  // new
+  err_pet: ["Say which pet.", "សូមប្រាប់សត្វចិញ្ចឹមអ្វី។"],
+  // new
+  err_unit: ["Choose the Unit.", "សូមជ្រើសបន្ទប់។"],
+  // new
+  err_tenant: ["Choose the Primary Tenant.", "សូមជ្រើសអ្នកជួលចម្បង។"],
+  // new
+  services_later: [
+    "Services such as Trash Collection are added when Settings lists them (a later step).",
+    "សេវាដូចជាការប្រមូលសំរាម ត្រូវបន្ថែមពេលការកំណត់មានវា (ជំហានក្រោយ)។",
+  ],
+  // new
+  save_draft: ["Save draft", "រក្សាទុកសេចក្តីព្រាង"],
+  preview: ["What will be billed", "អ្វីដែលនឹងចេញវិក្កយបត្រ"],
+  // new
+  preview_wait: [
+    "Enter the Start Date and the Rent to see it.",
+    "សូមបញ្ចូលថ្ងៃចាប់ផ្តើម និងថ្លៃឈ្នួល ដើម្បីមើល។",
+  ],
+  pv_initial: [
+    "Initial Rent {0}, due {1}, with the rest of the Security Deposit.",
+    "ថ្លៃឈ្នួលដំបូង {0} ត្រូវបង់ត្រឹម {1} រួមនឹងប្រាក់កក់សុវត្ថិភាពដែលនៅសល់។",
+  ],
+  pv_initial_how: [
+    "{0} × {1} ÷ {2} days = {3}.",
+    "{0} × {1} ÷ {2} ថ្ងៃ = {3}។",
+  ],
+  pv_next_month: [
+    "It starts on day 21 or later, so the whole next month ({0}) is added.",
+    "វាចាប់ផ្តើមថ្ងៃទី២១ ឬក្រោយ ដូច្នេះបន្ថែមខែបន្ទាប់ទាំងមូល ({0})។",
+  ],
+  pv_monthly: [
+    "Then {0} on the 25th each month, due on the 5th.",
+    "បន្ទាប់មក {0} នៅថ្ងៃទី២៥ រៀងរាល់ខែ ត្រូវបង់ត្រឹមថ្ងៃទី៥។",
+  ],
+  // new
+  pv_deposit_walkin: [
+    "Security Deposit: one month's Rent ({0}), entered after signing.",
+    "ប្រាក់កក់សុវត្ថិភាព៖ ថ្លៃឈ្នួលមួយខែ ({0}) បញ្ចូលក្រោយចុះហត្ថលេខា។",
+  ],
+  // new
+  pv_deposit_booking: [
+    "Security Deposit: {0} received of {1} from the Booking; {2} still due by {3}.",
+    "ប្រាក់កក់សុវត្ថិភាព៖ បានទទួល {0} នៃ {1} ពីការកក់ នៅត្រូវបង់ {2} ត្រឹម {3}។",
+  ],
+  // new
+  booking_not_active: [
+    "The Booking of {0} is no longer active, so a Lease cannot be made from it. Make a New Lease from the Leases page.",
+    "ការកក់របស់ {0} លែងដំណើរការហើយ ដូច្នេះមិនអាចធ្វើកិច្ចសន្យាពីវាបានទេ។ សូមធ្វើកិច្ចសន្យាថ្មីពីទំព័រកិច្ចសន្យា។",
+  ],
+  // new
+  err_renew_start: [
+    "A renewal starts after the old End Date ({0}).",
+    "ការបន្តចាប់ផ្តើមក្រោយថ្ងៃបញ្ចប់ចាស់ ({0})។",
+  ],
+  // new
+  limit_reached: [
+    "{0} is the most a Lease can have.",
+    "{0} គឺច្រើនបំផុតដែលកិច្ចសន្យាអាចមាន។",
+  ],
+  // new
+  pv_deposit_full: [
+    "Security Deposit: {0} received in full from the Booking.",
+    "ប្រាក់កក់សុវត្ថិភាព៖ បានទទួល {0} គ្រប់ចំនួនពីការកក់។",
+  ],
+  // new
+  pv_renewal: [
+    "Security Deposit: the old Lease's deposit does not move by itself.",
+    "ប្រាក់កក់សុវត្ថិភាព៖ ប្រាក់កក់របស់កិច្ចសន្យាចាស់មិនផ្លាស់ទីដោយខ្លួនឯងទេ។",
+  ],
+  // new
+  pv_pet: [
+    "Pet Deposit as entered on the Lease.",
+    "ប្រាក់កក់សត្វចិញ្ចឹមតាមដែលបញ្ចូលលើកិច្ចសន្យា។",
+  ],
+  pv_end: [
+    "Nothing after {0} without a signed renewal.",
+    "គ្មានអ្វីក្រោយ {0} ដោយគ្មានការបន្តដែលបានចុះហត្ថលេខា។",
+  ],
+  // new
+  confirm_title: ["Save the draft · {0}?", "រក្សាទុកសេចក្តីព្រាង · {0}?"],
+  // new
+  confirm_note: [
+    "Nothing is billed until the Lease is signed. The draft can still be changed or cancelled.",
+    "គ្មានអ្វីចេញវិក្កយបត្ររហូតដល់កិច្ចសន្យាចុះហត្ថលេខា។ សេចក្តីព្រាងនៅតែអាចប្តូរ ឬលុបបាន។",
+  ],
+  // new
+  draft_refused: [
+    "The server refused the draft. Another Lease may already cover this Unit for these dates, or the details do not fit the rules. Nothing more was saved.",
+    "ម៉ាស៊ីនមេបានបដិសេធសេចក្តីព្រាង។ កិច្ចសន្យាផ្សេងប្រហែលគ្របដណ្តប់បន្ទប់នេះសម្រាប់ថ្ងៃទាំងនេះរួចហើយ ឬព័ត៌មានមិនត្រូវតាមច្បាប់។ គ្មានអ្វីបន្ថែមត្រូវបានរក្សាទុកទេ។",
+  ],
 } as const;
 
 export type LeaseTextKey = keyof typeof TEXT;

@@ -19,6 +19,7 @@ import {
 } from "../leaseClient";
 import type { ReservationApi, ReservationResource } from "../reservationClient";
 import { dayText, todayInPhnomPenh } from "../shell/format";
+import type { UnitApi, UnitResource } from "../unitClient";
 import { LeasesPage } from "./LeasesPage";
 import { addDays, endingLimit, initialRent } from "./leasesData";
 
@@ -224,16 +225,17 @@ function show(
   client: LeaseApi,
   depositClient: DepositApi = deposits(),
   capabilities: ReadonlySet<string> | null = null,
-  reservationClient: Pick<ReservationApi, "list"> = {
+  reservationClient: Partial<ReservationApi> = {
     list: vi.fn<ReservationApi["list"]>().mockResolvedValue({
       items: [],
       next_cursor: null,
       can_create: false,
     }),
   },
-  customerClient: Pick<CustomerApi, "get"> = {
+  customerClient: Partial<CustomerApi> = {
     get: vi.fn<CustomerApi["get"]>().mockRejectedValue(new Error("no")),
   },
+  unitClient: Partial<UnitApi> = {},
 ) {
   return render(
     <LeasesPage
@@ -243,8 +245,9 @@ function show(
       depositApi={depositClient}
       language="en"
       propertyId="property-1"
-      customerApi={customerClient}
-      reservationApi={reservationClient}
+      customerApi={customerClient as CustomerApi}
+      reservationApi={reservationClient as ReservationApi}
+      unitApi={unitClient as UnitApi}
     />,
   );
 }
@@ -941,5 +944,295 @@ describe("Lease actions", () => {
         screen.queryByRole("button", { name: "Record move-in" }) !== null,
       ).toBe(Object.keys(extra).length === 0);
     }
+  });
+});
+
+describe("New Lease and Renew", () => {
+  const unit = (number: string, status: UnitResource["status"]) =>
+    ({
+      unit_id: `unit-${number}`,
+      unit_number: number,
+      status,
+    }) as UnitResource;
+  const units: Partial<UnitApi> = {
+    list: vi.fn<UnitApi["list"]>().mockResolvedValue({
+      items: [
+        unit("U402", "VACANT"),
+        unit("U401", "CLEANING"),
+        unit("U101", "OCCUPIED"),
+        unit("U403", "RESERVED"),
+      ],
+      next_cursor: null,
+      can_manage: true,
+    }),
+  };
+  const people = (): Partial<CustomerApi> => ({
+    list: vi.fn<CustomerApi["list"]>().mockResolvedValue({
+      items: [
+        {
+          customer_id: "customer-b",
+          legal_name: "Bopha",
+          active: true,
+          relationship_indicators: [],
+        },
+        {
+          customer_id: "customer-a",
+          legal_name: "Arun",
+          phone_number: "012 345 678",
+          active: true,
+          relationship_indicators: [],
+        },
+        {
+          customer_id: "customer-c",
+          legal_name: "Chenda",
+          active: true,
+          relationship_indicators: [],
+        },
+      ],
+      next_cursor: null,
+      can_manage: true,
+    }),
+  });
+  const pickIn = (label: string, value: string) => {
+    fireEvent.change(screen.getByLabelText(label), { target: { value } });
+  };
+
+  it("TEST-FE-857 New Lease offers open Units, fills a one-year End Date, previews the bill, asks before saving and keeps the Lease id on Try again", async () => {
+    const create = vi
+      .fn<LeaseApi["create"]>()
+      .mockRejectedValueOnce(new LeaseUnavailableError())
+      .mockImplementationOnce((_property, source) =>
+        Promise.resolve(
+          lease("U402", { lease_id: source.lease_id, status: "DRAFTED" }),
+        ),
+      );
+    show(api({ create }), deposits(), null, undefined, people(), units);
+
+    fireEvent.click(await screen.findByRole("link", { name: "New Lease" }));
+    const unitBox = await screen.findByLabelText("Unit");
+    expect(
+      within(unitBox)
+        .getAllByRole("option")
+        .map((option) => option.textContent),
+    ).toEqual(["Choose a Unit", "U401", "U402"]);
+    pickIn("Unit", "unit-U402");
+    pickIn("Primary Tenant", "customer-a");
+    pickIn("Other Signers", "customer-b");
+    pickIn("Other occupants", "customer-c");
+    fireEvent.change(screen.getByLabelText("Start Date"), {
+      target: { value: "2026-12-22" },
+    });
+    expect(screen.getByLabelText("End Date")).toHaveValue("2027-12-31");
+    fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
+    expect(screen.getByText("Enter the monthly Rent.")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Monthly Rent"), {
+      target: { value: "310" },
+    });
+    const preview = screen.getByRole("region", { name: "What will be billed" });
+    // 22 to 31 December is 10 of 31 days; day 21 or later adds January.
+    expect(preview).toHaveTextContent(
+      "Initial Rent $410.00, due 27/12/2026, with the rest of the Security Deposit.",
+    );
+    expect(preview).toHaveTextContent("$310.00 × 10 ÷ 31 days = $100.00.");
+    expect(preview).toHaveTextContent(
+      "Security Deposit: one month's Rent ($310.00), entered after signing.",
+    );
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: "A pet is approved" }),
+    );
+    fireEvent.change(screen.getByLabelText("Which pet"), {
+      target: { value: "One small cat" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
+    const dialog = screen.getByRole("dialog", {
+      name: "Save the draft · U402?",
+    });
+    expect(create).not.toHaveBeenCalled();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save draft" }));
+    fireEvent.click(
+      await within(dialog).findByRole("button", { name: "Try again" }),
+    );
+    await waitFor(() => {
+      expect(window.location.hash).toBe(
+        `#/leases/${create.mock.calls[0]?.[1].lease_id ?? ""}`,
+      );
+    });
+    const sent = create.mock.calls[0]?.[1];
+    expect(sent).toMatchObject({
+      unit_id: "unit-U402",
+      primary_tenant_id: "customer-a",
+      start_date: "2026-12-22",
+      end_date: "2027-12-31",
+      monthly_rent_usd_cents: 31000,
+      predecessor_lease_id: null,
+      planned_occupant_customer_ids: ["customer-a", "customer-c"],
+      security_deposit_id: null,
+      service_terms: [],
+      pet_term: {
+        deposit_required_by_signed_terms: true,
+        pet_description: "One small cat",
+      },
+    });
+    expect(sent?.additional_signers.map((item) => item.customer_id)).toEqual([
+      "customer-b",
+    ]);
+    expect(create.mock.calls[1]?.[1]).toEqual(sent);
+    expect(create.mock.calls[1]?.[2]).toBe(create.mock.calls[0]?.[2]);
+  });
+
+  it("TEST-FE-858 a Lease from a Booking takes its Unit, Customer, Rent and Security Deposit", async () => {
+    window.location.hash = "#/leases/new%3Aresv-1";
+    const get = vi.fn<ReservationApi["get"]>().mockResolvedValue({
+      reservation_id: "resv-1",
+      status: "ACTIVE",
+      unit_id: "unit-U403",
+      unit_number: "U403",
+      customer_id: "customer-b",
+      customer_name: "Bopha",
+      agreed_monthly_rent_usd_cents: 40000,
+      deposit_id: "deposit-resv-1",
+      deposit_required_usd_cents: 40000,
+      deposit_received_usd_cents: 8000,
+    } as ReservationResource);
+    const create = vi
+      .fn<LeaseApi["create"]>()
+      .mockImplementation((_property, source) =>
+        Promise.resolve(lease("U403", { lease_id: source.lease_id })),
+      );
+    show(api({ create }), deposits(), null, { get }, people(), units);
+
+    expect(await screen.findByLabelText("Unit")).toHaveValue("U403");
+    expect(screen.getByLabelText("Primary Tenant")).toHaveValue("Bopha");
+    expect(screen.getByLabelText("Monthly Rent")).toHaveValue("400.00");
+    expect(
+      screen.getByRole("region", { name: "What will be billed" }),
+    ).toHaveTextContent(
+      "Security Deposit: $80.00 received of $400.00 from the Booking; $320.00 still due by",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
+    fireEvent.click(
+      within(screen.getByRole("dialog")).getByRole("button", {
+        name: "Save draft",
+      }),
+    );
+    await waitFor(() => {
+      expect(create).toHaveBeenCalledTimes(1);
+    });
+    expect(create.mock.calls[0]?.[1]).toMatchObject({
+      unit_id: "unit-U403",
+      primary_tenant_id: "customer-b",
+      monthly_rent_usd_cents: 40000,
+      security_deposit_id: "deposit-resv-1",
+      reason: "Lease drafted from the Booking",
+    });
+  });
+
+  it("TEST-FE-859 Renew starts the day after the old End Date with the same Unit, tenant and other Signers, linked to the old Lease", async () => {
+    window.location.hash = "#/leases/lease-U101";
+    const create = vi
+      .fn<LeaseApi["create"]>()
+      .mockImplementation((_property, source) =>
+        Promise.resolve(lease("U101", { lease_id: source.lease_id })),
+      );
+    show(api({ create }), deposits(), null, undefined, people(), units);
+
+    fireEvent.click(await screen.findByRole("link", { name: "Renew" }));
+    expect(await screen.findByLabelText("Unit")).toHaveValue("U101");
+    const next = addDays(running.end_date ?? today, 1);
+    expect(screen.getByLabelText("Start Date")).toHaveValue(next);
+    expect(screen.getByText("Guarantor")).toBeInTheDocument();
+    expect(
+      screen.getByRole("region", { name: "What will be billed" }),
+    ).toHaveTextContent(
+      "Security Deposit: the old Lease's deposit does not move by itself.",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
+    fireEvent.click(
+      within(screen.getByRole("dialog")).getByRole("button", {
+        name: "Save draft",
+      }),
+    );
+    await waitFor(() => {
+      expect(create).toHaveBeenCalledTimes(1);
+    });
+    expect(create.mock.calls[0]?.[1]).toMatchObject({
+      unit_id: "unit-U101",
+      primary_tenant_id: "customer-U101",
+      start_date: next,
+      predecessor_lease_id: "lease-U101",
+      monthly_rent_usd_cents: 50000,
+    });
+    expect(
+      create.mock.calls[0]?.[1].additional_signers.map(
+        (item) => item.customer_id,
+      ),
+    ).toEqual(["customer-guarantor"]);
+  });
+
+  it("TEST-FE-860 a refused save after a lost answer opens the draft that was saved, and a Booking that is no longer active makes no Lease", async () => {
+    let savedId = "";
+    const create = vi
+      .fn<LeaseApi["create"]>()
+      .mockImplementationOnce((_property, source) => {
+        savedId = source.lease_id;
+        return Promise.reject(new LeaseUnavailableError());
+      })
+      .mockRejectedValueOnce(new LeaseConflictError());
+    const get = vi.fn((id: string) =>
+      id === savedId
+        ? Promise.resolve(lease("U402", { lease_id: id, status: "DRAFTED" }))
+        : Promise.reject(new LeaseRequestError()),
+    );
+    window.location.hash = "#/leases/new";
+    show(api({ create, get }), deposits(), null, undefined, people(), units);
+
+    await screen.findByLabelText("Unit");
+    pickIn("Unit", "unit-U402");
+    await waitFor(() => {
+      expect(screen.getByLabelText("Unit")).toHaveValue("unit-U402");
+    });
+    pickIn("Primary Tenant", "customer-a");
+    fireEvent.change(screen.getByLabelText("Monthly Rent"), {
+      target: { value: "300" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
+    fireEvent.click(
+      within(screen.getByRole("dialog")).getByRole("button", {
+        name: "Save draft",
+      }),
+    );
+    await within(screen.getByRole("dialog")).findByRole("button", {
+      name: "Try again",
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    fireEvent.change(screen.getByLabelText("Monthly Rent"), {
+      target: { value: "320" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
+    fireEvent.click(
+      within(screen.getByRole("dialog")).getByRole("button", {
+        name: "Save draft",
+      }),
+    );
+    await waitFor(() => {
+      expect(window.location.hash).toBe(`#/leases/${savedId}`);
+    });
+    expect(create.mock.calls[1]?.[1].lease_id).toBe(savedId);
+
+    cleanup();
+    window.location.hash = "#/leases/new%3Aresv-old";
+    const reservations = {
+      get: vi.fn<ReservationApi["get"]>().mockResolvedValue({
+        reservation_id: "resv-old",
+        status: "EXPIRED",
+        customer_name: "Bopha",
+      } as unknown as ReservationResource),
+    };
+    show(api({ create }), deposits(), null, reservations, people(), units);
+    expect(
+      await screen.findByText(/The Booking of Bopha is no longer active/),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Save draft" })).toBeNull();
   });
 });

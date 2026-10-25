@@ -241,13 +241,22 @@ export function ReservationDetail({
         </div>
         <div className="ui-actions">
           {active && may("leases.draft") && (
-            <a className="ui-btn primary" href={hashForPage("leases")}>
+            <a
+              className="ui-btn primary"
+              href={hashForPage("leases", `new:${reservation.reservation_id}`)}
+            >
               <Icon name="lease" />
               {rt(language, "new_lease")}
             </a>
           )}
           {reservation.status === "COMPLETED" && may("leases.read") && (
-            <a className="ui-btn" href={hashForPage("leases")}>
+            <a
+              className="ui-btn"
+              href={hashForPage(
+                "leases",
+                reservation.resulting_lease_id ?? undefined,
+              )}
+            >
               <Icon name="lease" />
               {rt(language, "open_lease")}
             </a>

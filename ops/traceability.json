@@ -50508,6 +50508,59 @@
       "test_path": "frontend/src/leases/LeasesPage.test.tsx",
       "status": "implemented",
       "notes": "V1-058 R3 L2b: Record move-in is offered only from the Start Date and not on a renewal (its Occupancies continue from the earlier Lease, so the move-in route would refuse it)."
+    },
+    {
+      "test_id": "TEST-FE-857",
+      "upstream_ids": [
+        "DL-074",
+        "DL-066",
+        "BR-LEASE-014",
+        "BR-RENT-005",
+        "BR-RENT-009",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 L2b-2: New Lease (from the list) offers only Vacant, Cleaning and Maintenance Units, fills the End Date as one year to a month end, previews the Initial Rent with its sum (day 21 or later adds the next month) and the walk-in Security Deposit, asks once more before saving, sends the Primary Tenant first among the planned occupants, the other Signers and the pet term, keeps the Lease id and request on Try again and opens the new draft."
+    },
+    {
+      "test_id": "TEST-FE-858",
+      "upstream_ids": [
+        "DL-074",
+        "DL-066",
+        "BR-DEP-005",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 L2b-2: a Lease from a Booking takes the Booking's Unit, Customer and agreed Rent (fixed), shows the deposit received of required and the rest due, and links the Booking's Security Deposit."
+    },
+    {
+      "test_id": "TEST-FE-859",
+      "upstream_ids": [
+        "DL-074",
+        "DL-066",
+        "BR-LEASE-017",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 L2b-2: Renew (a signed Lease with no renewal) opens the same form with the same Unit and Primary Tenant, the day after the old End Date, the old Rent and the other Signers, says the old deposit does not move by itself, and links the draft to the old Lease."
+    },
+    {
+      "test_id": "TEST-FE-860",
+      "upstream_ids": [
+        "DL-074",
+        "DL-066",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 L2b-2: after a save whose answer was lost, a later save with changed values is refused because the draft already exists (same Lease id); the form then opens that draft instead of saying nothing was saved. A Booking that is no longer ACTIVE makes no Lease and says so."
     }
   ]
 }

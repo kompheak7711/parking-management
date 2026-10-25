@@ -401,6 +401,14 @@ export function LeaseDetail({
               {lt(language, "cancel_draft")}
             </button>
           )}
+          {signed && lease.can_renew && successorId === null && (
+            <a
+              className="ui-btn"
+              href={hashForPage("leases", `renew:${lease.lease_id}`)}
+            >
+              {lt(language, "renew")}
+            </a>
+          )}
           {/* A renewal continues the earlier Lease's Occupancies, and a move-in is recorded
               from the Start Date, so neither shows the button. */}
           {signed &&
