@@ -94,3 +94,12 @@ candidate is the code that will be used.
   After: 10 of 10 busy runs passed. This is a product code change: commit 7575ea0 stays on the work
   branch until the owner says yes (decision card of 2026-10-25). Docs (docs/004, DL entry) follow
   the owner's answer.
+- 2026-10-25 PG run 2 (Python 3.11, at 3d8be33, before 208 and 209): 2,763 passed, none failed.
+- 2026-10-25 A4 rerun on a quiet machine: 24 of 25 reads passed; the Rent nonpayment alerts page
+  still took 1.6 s. Cause: the per-line balance subqueries ran 33,000 times, the day-zero function
+  ran once per Invoice, and the high cost estimate switched on JIT compiling (about 0.6 s). 207
+  (not merged anywhere yet, so changed in place) now joins one grouped sum per money table with
+  the same conditions and writes day zero as `billing_period_start - 1` for RECURRING Invoices;
+  the exact function check still runs after it. Second rerun: all 25 reads and the Rent run pass
+  (alerts middle 0.44 s, slowest 0.48 s; Rent run 3.9 s). Report: ops/reviews/V1-060-speed-test.md.
+
