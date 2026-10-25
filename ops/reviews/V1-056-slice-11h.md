@@ -59,3 +59,8 @@ Round 2 had one text-only should-fix, so no round 3 (run rule).
 - Related database files: 185 passed; the new file: 5 passed, again after the round 2 tests.
 - Unit: 466 passed (refund API, traceability, forms, route inventory), 431 again after round 2; ruff, mypy clean;
   frontend tsc, eslint, prettier clean, settlementClient tests 11 passed.
+- Full PostgreSQL run of c95de5d (slice 11 complete, 2026-10-25, about 60 min): 2,750 passed, 1
+  failed. `test_drafts_are_listed_confirmed_rejected_and_withdrawn_through_the_shared_routes`
+  read the whole second page of pending drafts of the shared Property and found an older
+  pending draft another module left. Test-only fix: the second page starts with this test's
+  draft. The file passes alone (2 passed). No code change.
