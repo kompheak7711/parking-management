@@ -313,6 +313,10 @@ then step 9. Each year: step 6 again, then restart step 8. If the Mac's local ne
 changes (macOS may add "-2" after a name clash on the Wi-Fi), do step 6 again and restart steps 7
 and 8. Use Safari or Chrome; Firefox does not use the Mac's trusted certificates.
 
+Once a month, with the database started: `sh scripts/local/prune-sign-in-tries.sh` removes the
+wrong sign-in tries older than 30 days (owner answer (a) to Q-2026-10-23-175). It prints only how
+many rows it removed.
+
 ## Development workflow
 
 1. Create or select a Git branch.

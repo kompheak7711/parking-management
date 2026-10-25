@@ -5368,6 +5368,20 @@ written before the key existed, or under an earlier key, no longer match, so the
 start again when the key is introduced or changed. Removing rows older than 30 days is on the
 slice 12 list.
 
+Amended by DL-092 (V1-056 slice 12c, migration `20270217_205`, owner answer (a) to
+Q-2026-10-23-175): `app.prune_sign_in_wrong_tries(after, limit)` (no application role may run it;
+the Owner runs `make prune-sign-in-tries` or `sh scripts/local/prune-sign-in-tries.sh` with the
+migration address, which calls it in batches of 500 usernames until none is left) removes the
+waits that ended, the clears made and the tries made more than 30 days ago by database time,
+taking the username lock of the sign-in functions for each username whose tries or clears it
+removes (old waits go first, with no lock: they change nothing), and returns the counts. It runs
+only at READ COMMITTED. A username's latest clear stays while a try it covers is recent or named
+by a wait, and a try that a remaining wait or clear names stays, so a count never grows. The guard of the three relations still
+refuses every UPDATE and TRUNCATE, and refuses a DELETE unless `prm.sign_in_prune` is on in the
+transaction (the function sets it; only the table owner may delete at all) and the row is older
+than 30 days. Two new indexes cover the foreign keys to the tries. Once removed, a username's
+uncleared wrong tries older than 30 days no longer count toward a wait.
+
 ---
 
 # 21. Deferred Technical and Configuration Decisions

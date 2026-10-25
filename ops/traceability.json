@@ -51803,6 +51803,40 @@
       "test_path": "backend/tests/test_billing_run.py",
       "status": "implemented",
       "notes": "The scheduled worker runs late Utility candidates after its ordinary runs within the same bound, resumes an unfinished late run with its own key, and still runs the late-payment charge pass when a late run fails (V1-056 slice 12b, the scheduled worker bills a late Utility period; DL-091; ops/reviews/V1-056-slice-12b.md)."
+    },
+    {
+      "test_id": "test_the_prune_removes_only_rows_older_than_30_days",
+      "upstream_ids": [
+        "DB-AUTH-011",
+        "DL-081",
+        "DL-092"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_sign_in_prune_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL, the prune command removes old waits, old clears and the old wrong tries no remaining row names, removes a lone old try, keeps a try a newer clear names and a latest clear whose try a remaining wait names so no count grows, works in batches, prints only the counts and removes nothing on a second run (V1-056 slice 12c, removal of wrong sign-in tries older than 30 days; DL-092; ops/reviews/V1-056-slice-12c.md)."
+    },
+    {
+      "test_id": "test_rows_are_removed_only_by_the_prune_and_only_when_old",
+      "upstream_ids": [
+        "DB-AUTH-011",
+        "DL-092",
+        "SEC-002"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_sign_in_prune_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL, a DELETE outside the prune or of a row of the last 30 days, an UPDATE and a TRUNCATE are refused, and no application role may run the prune or delete a row (V1-056 slice 12c, removal of wrong sign-in tries older than 30 days; DL-092; ops/reviews/V1-056-slice-12c.md)."
+    },
+    {
+      "test_id": "test_the_prune_command_takes_no_arguments_and_needs_a_database",
+      "upstream_ids": [
+        "DL-092"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_sign_in_prune_migration.py",
+      "status": "implemented",
+      "notes": "The prune command refuses arguments and a missing database address without printing it (V1-056 slice 12c, removal of wrong sign-in tries older than 30 days; DL-092; ops/reviews/V1-056-slice-12c.md)."
     }
   ]
 }

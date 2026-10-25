@@ -2159,3 +2159,11 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Decided by Claude under the owner's 2026-10-23 22:30 rule:** the late Invoice is due on the later of the on-time Due Date (the 5th after the period, BR-UTIL-022) and the day it is issued (the Property's date) plus the Property's configured days (the catch-up command's rule, BR-UTIL-021). A Customer never gets an earlier Due Date than on time, and never an Invoice that is already overdue when issued, also when a late run that stopped on an error is resumed on a later day. The amount is unchanged. The owner may change this.
 - **Migration head:** `20270216_204`.
 - **Decision date:** 2026-10-25.
+
+## DL-092 — V1-056 slice 12c: the Owner removes wrong sign-in tries older than 30 days
+
+- **Type:** `IMPLEMENTATION RECORD`
+- **Built (migration `20270217_205`):** owner answer (a) to Q-2026-10-23-175. `app.prune_sign_in_wrong_tries`, which no application role may run, removes the waits that ended, the clears made and the wrong tries made more than 30 days ago, under the username lock of the sign-in functions, in batches of usernames; old waits go first with no lock; it keeps a username's latest clear while a try it covers is recent or named by a wait, and a try that a remaining wait or clear names, so a count never grows. The Owner runs it with `make prune-sign-in-tries` or `sh scripts/local/prune-sign-in-tries.sh`; it prints only the three counts. The three relations stay append-only for everything else.
+- **Decided by Claude under the owner's 2026-10-23 22:30 rule:** once removed, a username's uncleared wrong tries older than 30 days no longer count toward a wait (Q-2026-10-23-176 counts "in a row" with no time limit; the removal the owner chose ends that after 30 days). Removal is by hand, once a month suggested in the README; no automatic job.
+- **Migration head:** `20270217_205`.
+- **Decision date:** 2026-10-25.

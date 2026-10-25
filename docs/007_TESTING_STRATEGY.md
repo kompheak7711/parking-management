@@ -516,6 +516,8 @@ V1-056 slice 12a: `backend/tests/test_settings_evidence_hand_back_keep_migration
 
 V1-056 slice 12b: `backend/tests/test_late_utility_run_migration.py` (PostgreSQL: a late run is refused before any run of its dates succeeded and through the API; a period the first run skipped as not moved in is not billed by the late run after the move-in; a period finalized after a SUCCEEDED run is listed once, billed once by a late run linked to that run, due the configured days after issue when the on-time Due Date has passed, and never billed again by a replay or another late run; the candidate function is `prm_financial` only and bounded); `backend/tests/test_billing_run.py` (the worker runs late candidates after the ordinary runs within its bound and resumes an unfinished late run with its own key; a failed late run does not stop the charge pass).
 
+V1-056 slice 12c: `backend/tests/test_sign_in_prune_migration.py` (PostgreSQL: the prune command, one username per batch, removes old waits, old clears and the old tries no remaining row names, a lone old try included, keeps a try a newer clear names and a latest clear whose try a remaining wait names, leaves every cleared count at 0, and removes nothing on a second run; bad bounds are refused; a DELETE outside the prune or of a recent row, an UPDATE and a TRUNCATE are refused; no application role may run the prune or delete; the command takes no arguments and needs a database); `backend/tests/test_local_run_scripts.py` lists the new local script.
+
 # 12. Payment, Allocation, Credit, Refund, and Reversal Coverage
 
 ## TEST-059 — Payment Confirmation
