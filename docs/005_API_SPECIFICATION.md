@@ -919,6 +919,7 @@ sequence. A generic API cannot attach an unsupported fee, penalty, or category.
 - `GET /invoices/{invoice_id}/late-payment-decision`
 - `GET /late-payment-charges/{charge_id}`
 - `POST /late-payment-charges/{charge_id}/corrections`
+- `POST /late-payment-charges/{charge_id}/reductions` (V1-056 slice 11g-2, DL-086)
 
 The review endpoint returns the authoritative overdue balance at assessment, exact
 default 10% proposal, calculated default amount, prior-decision state, and blocking
@@ -971,6 +972,8 @@ must not reopen, supplement, replace, or recalculate the final decision.
 Amended by DL-076 (owner, 2026-10-20): no manual decision route; the charge is added by the 00:00 job. A route reduces or waives a charge with one of three fixed reasons and a required "What happened" text. Not built yet (V1-056 slice 11).
 
 V1-056 slice 11g-1 (DL-085): the 00:00 charge pass runs inside the scheduled billing worker (`property_rental.late_payment_job`); it has no HTTP route. The manual decision route stays until slice 11g-3 removes it.
+
+V1-056 slice 11g-2 (DL-086): `POST /api/v1/late-payment-charges/{charge_id}/reductions` under `late_payment.charge_correction` (CSRF, `Idempotency-Key`), body `{new_amount: {currency: USD, minor_units}, reason: WRONG_INVOICE | PAID_ON_TIME_RECORDED_LATE | OTHER_STAFF_MISTAKE, what_happened}` (1 to 500 characters, no white space at either end, no C0 or C1 control character other than tab, line feed and carriage return); `new_amount` 0 waives the charge. 200 with the charge read; each correction item has `reduction` (`reason_code`, `what_happened`, `released`, `customer_credit_ids`, `recorded_at`) or null. 409 `CONFLICT` with the charge state when the amount is not lower, the charge is waived, a Deposit application paid it, it was paid again meanwhile, or its Final Settlement is closed; 409 `CONFLICT` also after a detected deadlock or serialization failure on this route only (nothing was written; retry with the same `Idempotency-Key`); 409 `IDEMPOTENCY_KEY_REUSED` (the key space is shared with the corrections route); 422 for bad input; 404 for an unknown charge or a caller without the capability on its Property; 403 without CSRF, from another Origin or for an inactive actor; 503 when the database is unavailable. The corrections route stays until slice 11g-3 and answers 409 `CONFLICT` to a `REDUCTION_REVERSAL` of a reduction made by this route.
 
 # 17. Scheduled Billing Endpoints
 

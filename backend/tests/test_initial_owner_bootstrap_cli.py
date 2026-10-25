@@ -906,6 +906,8 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/invoices/{invoice_id}/late-payment-decision": {"get", "post"},
         "/api/v1/late-payment-charges/{charge_id}": {"get"},
         "/api/v1/late-payment-charges/{charge_id}/corrections": {"post"},
+        # V1-056 slice 11g-2: reduce or waive a Late-payment Charge (DL-076 answer 4).
+        "/api/v1/late-payment-charges/{charge_id}/reductions": {"post"},
         "/api/v1/properties/{property_id}/exchange-rates": {"get"},
         "/api/v1/properties/{property_id}/exchange-rates:confirm": {"post"},
         "/properties/{property_id}/units": {"get", "post"},

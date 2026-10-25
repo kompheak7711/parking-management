@@ -1158,6 +1158,8 @@ correction may supplement the final decision or create a new Charge.
 
 Amended by DL-076 (owner, 2026-10-20): reductions and waivers after a Customer complaint go in a new append-only table with one of three fixed reasons and a required "What happened" text; the amount only goes down, and paid money above the new amount becomes Customer Credit of the charge's Customer under BR-CREDIT-014, before or after closure. Not built yet (V1-056 slice 11).
 
+Built in V1-056 slice 11g-2 (migration `20270211_199`, DL-086): new append-only table `app.late_payment_charge_reductions` (`late_payment_charge_correction_id uuid PK FK`, `late_payment_charge_id uuid NOT NULL FK`, `reason_code` one of `WRONG_INVOICE`, `PAID_ON_TIME_RECORDED_LATE`, `OTHER_STAFF_MISTAKE`, `what_happened text` 1 to 500 characters, `released_usd_cents bigint >= 0`, `recorded_at`); a deferred check ties each row to a REDUCTION or CHARGE_REVERSAL of the same charge under `late_payment.charge_correction` with the fixed reason's words and the sum of its release rows. `app.reduce_late_payment_charge` writes the reversals, the correction, the posted-again rests, the release rows of `app.invoice_credit_excess_releases` (with `late_payment_charge_correction_id`), the released Customer Credit and the reduction row in one READ COMMITTED transaction; it locks the paying Payments, then their Credits, then the charge and its source Invoice. The charge read names each correction's reduction.
+
 ## DB-INV-010 — `invoice_adjustment_reversals`
 
 Append-only explicit reversal: `id uuid PK`, `invoice_adjustment_id uuid NOT NULL UNIQUE

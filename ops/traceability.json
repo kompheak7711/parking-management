@@ -51267,6 +51267,186 @@
       "test_path": "backend/tests/test_late_payment_job.py",
       "status": "implemented",
       "notes": "A pass window in an unexpected shape stops the pass with LateChargePassError, which the worker reports by name (V1-056 slice 11g-1, the automatic late-payment charge; DL-085; ops/reviews/V1-056-slice-11g-1.md)."
+    },
+    {
+      "test_id": "test_an_unpaid_charge_only_goes_down_and_a_waived_charge_takes_no_more_change",
+      "upstream_ids": [
+        "DL-076",
+        "BR-LATE-005",
+        "DB-INV-009",
+        "API-091",
+        "TEST-124"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_payment_charge_reduction_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL an unpaid charge is reduced with a fixed reason and what happened, an exact repeat answers the same, a reused key is refused, an amount that is not lower is refused, 0 waives it (CHARGE_REVERSAL) and a waived charge takes no more change; the charge read names each reduction (V1-056 slice 11g-2, reduce or waive a Late-payment Charge; DL-086; ops/reviews/V1-056-slice-11g-2.md)."
+    },
+    {
+      "test_id": "test_paid_value_above_the_new_amount_becomes_credit_of_the_charge_s_customer",
+      "upstream_ids": [
+        "DL-076",
+        "BR-LATE-005",
+        "DB-INV-009",
+        "API-091",
+        "TEST-124",
+        "BR-CREDIT-014"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_payment_charge_reduction_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL paid value above the new amount is released newest source first, the rest of a partly released allocation is posted again, released Payment value becomes Credit of the charge's Customer also when a third party paid, and the audit event names the released value and reason (V1-056 slice 11g-2, reduce or waive a Late-payment Charge; DL-086; ops/reviews/V1-056-slice-11g-2.md)."
+    },
+    {
+      "test_id": "test_released_credit_value_returns_to_its_own_credit",
+      "upstream_ids": [
+        "DL-076",
+        "BR-LATE-005",
+        "DB-INV-009",
+        "API-091",
+        "TEST-124",
+        "BR-CREDIT-014"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_payment_charge_reduction_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL a Credit application on the charge is reversed whole and its value goes back to its own Credit; no new Credit is made (V1-056 slice 11g-2, reduce or waive a Late-payment Charge; DL-086; ops/reviews/V1-056-slice-11g-2.md)."
+    },
+    {
+      "test_id": "test_two_reductions_at_once_lower_the_charge_once",
+      "upstream_ids": [
+        "DL-076",
+        "BR-LATE-005",
+        "DB-INV-009",
+        "API-091",
+        "TEST-124"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_payment_charge_reduction_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL two reductions at once lower the charge once and release its paid value once (V1-056 slice 11g-2, reduce or waive a Late-payment Charge; DL-086; ops/reviews/V1-056-slice-11g-2.md)."
+    },
+    {
+      "test_id": "test_bad_input_an_unknown_charge_and_a_closed_settlement_are_refused",
+      "upstream_ids": [
+        "DL-076",
+        "BR-LATE-005",
+        "DB-INV-009",
+        "API-091",
+        "TEST-124",
+        "BR-SETTLE-012"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_payment_charge_reduction_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL an unknown charge is not found, bad input is refused by the database (P4602), and a charge of a closed Final Settlement is refused (conflict) (V1-056 slice 11g-2, reduce or waive a Late-payment Charge; DL-086; ops/reviews/V1-056-slice-11g-2.md)."
+    },
+    {
+      "test_id": "test_reductions_are_append_only_checked_and_run_only_through_the_financial_role",
+      "upstream_ids": [
+        "DL-076",
+        "BR-LATE-005",
+        "DB-INV-009",
+        "API-091",
+        "TEST-124",
+        "SEC-001"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_late_payment_charge_reduction_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL the reduction table is append-only, a reduction row that does not match its correction is refused at commit (23514), only prm_financial runs the command, and no role reads the table or runs the internal functions (V1-056 slice 11g-2, reduce or waive a Late-payment Charge; DL-086; ops/reviews/V1-056-slice-11g-2.md)."
+    },
+    {
+      "test_id": "test_the_reduce_command_takes_a_bounded_amount_a_fixed_reason_and_a_normalized_text",
+      "upstream_ids": [
+        "DL-076",
+        "BR-LATE-005",
+        "API-091",
+        "TEST-124"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_late_payment_reduction.py",
+      "status": "implemented",
+      "notes": "The reduce command refuses a nil key, an amount outside 0 to the USD bound, a reason outside the three fixed ones and a blank, padded or too long what-happened text (V1-056 slice 11g-2, reduce or waive a Late-payment Charge; DL-086; ops/reviews/V1-056-slice-11g-2.md)."
+    },
+    {
+      "test_id": "test_only_a_holder_of_the_correction_capability_reduces_with_csrf_and_a_clean_body",
+      "upstream_ids": [
+        "DL-076",
+        "API-091",
+        "TEST-124",
+        "SEC-001"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_late_payment_reduction.py",
+      "status": "implemented",
+      "notes": "The reductions route needs sign-in, late_payment.charge_correction on the charge's Property and CSRF, refuses extra fields, other currencies, negative amounts, other reasons and bad text, and takes a waiver with a multi-line what-happened text (V1-056 slice 11g-2, reduce or waive a Late-payment Charge; DL-086; ops/reviews/V1-056-slice-11g-2.md)."
+    },
+    {
+      "test_id": "test_a_refused_reduction_answers_with_its_code_and_only_the_authorized_charge_state",
+      "upstream_ids": [
+        "DL-076",
+        "API-091",
+        "TEST-124"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_late_payment_reduction.py",
+      "status": "implemented",
+      "notes": "A refused reduction answers 409 IDEMPOTENCY_KEY_REUSED, 409 CONFLICT with only the authorized charge state, 422 or 404, with no exception text (V1-056 slice 11g-2, reduce or waive a Late-payment Charge; DL-086; ops/reviews/V1-056-slice-11g-2.md)."
+    },
+    {
+      "test_id": "test_a_credit_application_released_in_part_keeps_its_rest_on_the_charge",
+      "upstream_ids": [
+        "DL-076",
+        "BR-LATE-005",
+        "DB-INV-009",
+        "API-091",
+        "TEST-124",
+        "BR-CREDIT-014"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_payment_charge_reduction_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL a Credit application released in part goes back to its Credit for the released value and its rest is applied again to the charge (V1-056 slice 11g-2, reduce or waive a Late-payment Charge; DL-086; ops/reviews/V1-056-slice-11g-2.md)."
+    },
+    {
+      "test_id": "test_a_reduction_waits_for_another_writer_of_the_same_payment",
+      "upstream_ids": [
+        "DL-076",
+        "BR-LATE-005",
+        "DB-INV-009",
+        "API-091",
+        "TEST-124"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_payment_charge_reduction_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL a reduction takes each paying Payment's serializer before its row lock, so it waits for another Payment writer without holding the Payment row (V1-056 slice 11g-2, reduce or waive a Late-payment Charge; DL-086; ops/reviews/V1-056-slice-11g-2.md)."
+    },
+    {
+      "test_id": "test_the_old_route_does_not_reverse_a_reduction_and_shares_its_keys",
+      "upstream_ids": [
+        "DL-076",
+        "BR-LATE-005",
+        "API-091",
+        "TEST-124"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_payment_charge_reduction_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL the corrections route refuses to reverse a reduction made by the reductions route, and a key used by one route is refused on the other (V1-056 slice 11g-2, reduce or waive a Late-payment Charge; DL-086; ops/reviews/V1-056-slice-11g-2.md)."
+    },
+    {
+      "test_id": "test_only_a_rolled_back_lock_conflict_answers_conflict_on_the_real_service",
+      "upstream_ids": [
+        "DL-076",
+        "API-091",
+        "TEST-124"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_late_payment_reduction.py",
+      "status": "implemented",
+      "notes": "Through the real service a detected deadlock or serialization failure answers 409 CONFLICT with the charge state, and every other database fault answers 503 with no state (V1-056 slice 11g-2, reduce or waive a Late-payment Charge; DL-086; ops/reviews/V1-056-slice-11g-2.md)."
     }
   ]
 }

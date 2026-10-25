@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from dataclasses import dataclass
 from enum import StrEnum
 from typing import Final, cast, overload
@@ -34,6 +35,14 @@ class CorrectionKind(StrEnum):
     REDUCTION = "REDUCTION"
     CHARGE_REVERSAL = "CHARGE_REVERSAL"
     REDUCTION_REVERSAL = "REDUCTION_REVERSAL"
+
+
+class ReductionReason(StrEnum):
+    """The three fixed reasons of DL-076 answer 4; the database stores their words."""
+
+    WRONG_INVOICE = "WRONG_INVOICE"
+    PAID_ON_TIME_RECORDED_LATE = "PAID_ON_TIME_RECORDED_LATE"
+    OTHER_STAFF_MISTAKE = "OTHER_STAFF_MISTAKE"
 
 
 class LatePaymentNotFoundError(LookupError):
@@ -72,6 +81,11 @@ def _identity(value: UUID, field: str) -> None:
 def _normalized(value: str, field: str, *, maximum: int = 500) -> None:
     if not value.strip() or value != value.strip() or len(value) > maximum:
         raise ValueError(f"{field} must be normalized, nonblank, and bounded")
+
+
+# C0 and C1 control characters other than tab, line feed and carriage return (V1-056 slice
+# 11g-2).
+CONTROL_CHARACTERS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]")
 
 
 @dataclass(frozen=True, slots=True)
@@ -120,6 +134,34 @@ class CorrectLatePaymentChargeCommand:
             if self.amount_usd_cents is not None or self.reverses_correction_id is None:
                 raise ValueError("REDUCTION_REVERSAL requires its source correction")
             _identity(self.reverses_correction_id, "reverses_correction_id")
+
+
+@dataclass(frozen=True, slots=True)
+class ReduceLatePaymentChargeCommand:
+    """DL-076 answer 4: the new, lower amount (0 waives the Charge), one fixed reason and what
+    happened."""
+
+    idempotency_key: UUID
+    new_amount_usd_cents: int
+    reason: ReductionReason
+    what_happened: str
+
+    def __post_init__(self) -> None:
+        _identity(self.idempotency_key, "idempotency_key")
+        if (
+            type(self.new_amount_usd_cents) is not int
+            or not 0 <= self.new_amount_usd_cents <= MAX_USD_MINOR_UNITS
+        ):
+            raise ValueError("new_amount_usd_cents must be bounded USD minor units")
+        if not isinstance(self.reason, ReductionReason):
+            raise ValueError("reason is invalid")
+        _normalized(self.what_happened, "what_happened")
+        if CONTROL_CHARACTERS.search(self.what_happened):
+            raise ValueError("what_happened must not hold control characters")
+        try:
+            self.what_happened.encode("utf-8")
+        except UnicodeEncodeError as exc:
+            raise ValueError("what_happened must be valid text") from exc
 
 
 def late_payment_request_digest(
@@ -329,7 +371,13 @@ class PostgresLatePaymentService:
         )
         return resource
 
-    def _execute(self, query: str, parameters: tuple[object, ...]) -> LatePaymentCommandResponse:
+    def _execute(
+        self,
+        query: str,
+        parameters: tuple[object, ...],
+        *,
+        lock_conflicts: bool = False,
+    ) -> LatePaymentCommandResponse:
         try:
             with self._command_connection() as connection:
                 self._bound_query(connection)
@@ -337,6 +385,13 @@ class PostgresLatePaymentService:
         except (LatePaymentServiceUnavailableError, LatePaymentAuthorizationError):
             raise
         except psycopg.Error as exc:
+            # V1-056 slice 11g-2: on the reduction route a detected deadlock (or a
+            # serialization failure, not expected at READ COMMITTED) answers as a conflict. The
+            # transaction was rolled back, so nothing was written; the client reads the Charge
+            # and retries with the same Idempotency-Key, which replays any receipt a concurrent
+            # duplicate wrote.
+            if lock_conflicts and exc.sqlstate in {"40P01", "40001"}:
+                raise LatePaymentConflictError("Late-payment command conflicted") from exc
             raise self._map_error(exc) from exc
         if row is None:
             raise LatePaymentServiceUnavailableError("Late-payment command returned no result")
@@ -483,6 +538,71 @@ class PostgresLatePaymentService:
                 uuid4(),
                 uuid4(),
             ),
+        )
+        if request_id is None:
+            return self._resource(response.body.get("data"))
+        return response
+
+    @overload
+    def reduce_charge(
+        self,
+        property_id: UUID,
+        charge_id: UUID,
+        command: ReduceLatePaymentChargeCommand,
+        *,
+        actor: AuthenticatedActor,
+        request_id: None = None,
+    ) -> dict[str, object]: ...
+
+    @overload
+    def reduce_charge(
+        self,
+        property_id: UUID,
+        charge_id: UUID,
+        command: ReduceLatePaymentChargeCommand,
+        *,
+        actor: AuthenticatedActor,
+        request_id: str,
+    ) -> LatePaymentCommandResponse: ...
+
+    def reduce_charge(
+        self,
+        property_id: UUID,
+        charge_id: UUID,
+        command: ReduceLatePaymentChargeCommand,
+        *,
+        actor: AuthenticatedActor,
+        request_id: str | None = None,
+    ) -> dict[str, object] | LatePaymentCommandResponse:
+        """V1-056 slice 11g-2: reduce or waive the Charge; paid value above the new amount becomes
+        Customer Credit (DL-076 answer 4 and reading (d))."""
+        self._authorize(actor, property_id, LATE_PAYMENT_CORRECTION_CAPABILITY)
+        digest = late_payment_request_digest(
+            action="reduction",
+            property_id=property_id,
+            target_id=charge_id,
+            payload={
+                "new_amount": {"currency": "USD", "minor_units": command.new_amount_usd_cents},
+                "reason": command.reason.value,
+                "what_happened": command.what_happened,
+            },
+        )
+        response = self._execute(
+            "SELECT app.reduce_late_payment_charge(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            (
+                property_id,
+                charge_id,
+                self._actor_id(actor),
+                command.idempotency_key,
+                digest,
+                request_id or "late-payment-service",
+                command.new_amount_usd_cents,
+                command.reason.value,
+                command.what_happened,
+                uuid4(),
+                uuid4(),
+            ),
+            lock_conflicts=True,
         )
         if request_id is None:
             return self._resource(response.body.get("data"))

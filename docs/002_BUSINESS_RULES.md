@@ -3109,6 +3109,8 @@ to supplement a reduced charge or replace a waived decision.
 
 Amended by the owner's answer to Q-2026-10-07-38 (2026-10-07): after the Lease's Final Settlement is closed, a Late-payment Charge correction is made only as a post-settlement correction (BR-SETTLE-013). When the corrected Charge was paid, the released value follows BR-CREDIT-014.
 
+Built in V1-056 slice 11g-2 (DL-086; DL-076 answer 4): before the Final Settlement is closed, the Owner or a Manager (`late_payment.charge_correction`) reduces or waives a charge with one of three fixed reasons and a "What happened" text; the amount only goes down. Paid value above the new amount is released at once: the paying Payment allocations and Credit applications are reversed whole, newest first, their unreleased rest is posted again to the charge, released Payment value becomes Customer Credit of the charge's Customer (BR-CREDIT-014) and released Credit value returns to its Credit. A charge a Deposit application paid is refused; after closure this command is refused and the post-settlement corrections apply.
+
 ---
 
 ### BR-LATE-006 — No Recursive Charge

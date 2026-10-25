@@ -504,6 +504,8 @@ reversal, concurrency, and historical reconstruction.
 
 Amended by DL-076 (owner, 2026-10-20): tests cover reductions and waivers after a complaint (three fixed reasons, "What happened", only down) and the paid part going to Customer Credit under BR-CREDIT-014.
 
+V1-056 slice 11g-2: `backend/tests/test_late_payment_charge_reduction_migration.py` (PostgreSQL: only down, waiver, replay, released Payment value as Credit of the charge's Customer newest first with the rest posted again, released Credit value back to its Credit, two at once, a Credit application released in part, waiting for another writer's Payment serializer, the corrections route refusing to reverse a reduction and sharing its keys, closed Final Settlement, append-only and least privilege) and `backend/tests/test_late_payment_reduction.py` (the command, the route and the real service's answer to database faults).
+
 # 12. Payment, Allocation, Credit, Refund, and Reversal Coverage
 
 ## TEST-059 — Payment Confirmation
