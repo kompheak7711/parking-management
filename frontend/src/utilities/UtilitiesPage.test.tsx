@@ -11,8 +11,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { LeaseApi, LeaseResource } from "../leaseClient";
 import type { UnitApi, UnitResource } from "../unitClient";
 import {
+  MeterSerialNumberInUseError,
   UtilityClientError,
   UtilityConflictError,
+  type MeterInstallInput,
+  type MeterReplaceInput,
   type ReadingInput,
   type UtilityApi,
   type UtilityMeter,
@@ -66,6 +69,8 @@ const UNITS = [
   unit("U201", "2", "OCCUPIED"),
   unit("U101", "1", "OCCUPIED"),
   unit("U102", "1", "VACANT"),
+  // A new Unit with no meters yet.
+  unit("U301", "3", "VACANT"),
 ];
 
 function meter(
@@ -135,8 +140,20 @@ function meters(): UtilityMeter[] {
       current: false,
       failure_date: "2026-08-20",
       deactivated_date: "2026-08-24",
+      replacement: {
+        replaced_meter_id: null,
+        replacement_meter_id: "el-201",
+        replacement_date: "2026-08-24",
+      },
     }),
-    meter("el-201", "U201", "ELECTRICITY", { installed_date: "2026-08-24" }),
+    meter("el-201", "U201", "ELECTRICITY", {
+      installed_date: "2026-08-24",
+      replacement: {
+        replaced_meter_id: "el-201-old",
+        replacement_meter_id: null,
+        replacement_date: "2026-08-24",
+      },
+    }),
     meter("wa-201", "U201", "WATER"),
   ];
 }
@@ -425,7 +442,8 @@ describe("Utilities page (V1-058 R4)", () => {
     await waitFor(() => {
       expect(units.list).toHaveBeenCalledTimes(2);
     });
-    expect(api.loadMeters).toHaveBeenCalledTimes(6);
+    // Four Units, read twice.
+    expect(api.loadMeters).toHaveBeenCalledTimes(8);
   });
 
   it("TEST-FE-878 Before reading day This month shows the month's readings; Pick a month lists one month; 6 months shows a grid with the use under each reading", async () => {
@@ -553,9 +571,7 @@ describe("Utilities page (V1-058 R4)", () => {
 
     window.location.hash = "#/utilities/meters";
     window.dispatchEvent(new HashChangeEvent("hashchange"));
-    expect(
-      await screen.findByText(/The new Meters list comes in the next step/),
-    ).toBeTruthy();
+    expect(await screen.findByText("Electricity meters")).toBeTruthy();
     expect(
       screen.getByRole("link", { name: "Meters" }).getAttribute("aria-current"),
     ).toBe("page");
@@ -665,5 +681,374 @@ describe("Utilities page (V1-058 R4)", () => {
     expect(screen.queryByRole("button", { name: "All Units" })).toBeNull();
     fireEvent.change(box, { target: { value: "U101" } });
     expect(screen.getByRole("button", { name: "All Units" })).toBeTruthy();
+  });
+});
+
+describe("Utilities Meters tab (V1-058 R4b)", () => {
+  function openMeters(hash = "#/utilities/meters") {
+    window.location.hash = hash;
+  }
+
+  it("TEST-FE-883 The Meters list counts the meters in use, shows replaced meters last, and filters by card, status and Unit", async () => {
+    openMeters();
+    show();
+    expect(
+      await screen.findByRole("button", {
+        name: "Electricity meters: 3. In use, one per Unit · All working",
+      }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: "Broken meters: 0. None broken" }),
+    ).toBeTruthy();
+    const serials = () =>
+      screen
+        .getAllByRole("link")
+        .map((link) => link.textContent)
+        .filter((text) => text.startsWith("EL-") || text.startsWith("WA-"));
+    expect(serials()).toEqual([
+      "EL-U101",
+      "WA-U101",
+      "EL-U102",
+      "WA-U102",
+      "EL-U201",
+      "WA-U201",
+      "EL-OLD-201",
+    ]);
+    expect(screen.getByText("Replaced 24/08/2026")).toBeTruthy();
+    expect(screen.getByText("7 meters")).toBeTruthy();
+    expect(
+      screen.getByRole("link", { name: "EL-OLD-201" }).getAttribute("href"),
+    ).toBe("#/utilities/meter%3Ael-201-old");
+
+    fireEvent.click(screen.getByRole("button", { name: /^Water meters: 3/ }));
+    expect(serials()).toEqual(["WA-U101", "WA-U102", "WA-U201"]);
+    expect(screen.getByText("Showing: Water meters.")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Show all" }));
+    fireEvent.change(screen.getByLabelText("Status"), {
+      target: { value: "replaced" },
+    });
+    expect(serials()).toEqual(["EL-OLD-201"]);
+    fireEvent.change(screen.getByLabelText("Status"), {
+      target: { value: "all" },
+    });
+    fireEvent.change(screen.getByLabelText("Unit"), {
+      target: { value: "U102" },
+    });
+    expect(serials()).toEqual(["EL-U102", "WA-U102"]);
+  });
+
+  it("TEST-FE-884 Add meter refuses a second working meter of a kind, sends the meter with its first reading on the day it is put in, and names a serial already used", async () => {
+    openMeters();
+    const installMeter = vi
+      .fn()
+      .mockRejectedValueOnce(new MeterSerialNumberInUseError([], "req-2"))
+      .mockResolvedValueOnce(meter("el-301", "U301", "ELECTRICITY"));
+    const { units } = show({ api: utilityApi({ installMeter }) });
+    fireEvent.click(await screen.findByRole("button", { name: /Add meter/ }));
+    const dialog = screen.getByRole("dialog");
+    fireEvent.change(within(dialog).getByLabelText(/^Unit/), {
+      target: { value: "unit-U101" },
+    });
+    fireEvent.change(within(dialog).getByLabelText(/^Serial/), {
+      target: { value: "EL-U101-B" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Add meter" }));
+    expect(
+      within(dialog).getByText(
+        "U101 already has a working electricity meter (EL-U101). A Unit can have only one.",
+      ),
+    ).toBeTruthy();
+    expect(installMeter).not.toHaveBeenCalled();
+
+    fireEvent.change(within(dialog).getByLabelText(/^Unit/), {
+      target: { value: "unit-U301" },
+    });
+    expect(
+      within(dialog).getByText(
+        "The number printed on the meter. If it has none, use a code such as EL-U301.",
+      ),
+    ).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Add meter" }));
+    expect(
+      await within(dialog).findByText(
+        "EL-U101-B is already used by another meter.",
+      ),
+    ).toBeTruthy();
+    fireEvent.change(within(dialog).getByLabelText(/^Serial/), {
+      target: { value: "EL-U301" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Add meter" }));
+    expect(await screen.findByText("EL-U301 added to U301.")).toBeTruthy();
+    expect(installMeter).toHaveBeenLastCalledWith(
+      "unit-U301",
+      {
+        utility_type: "ELECTRICITY",
+        serial_number: "EL-U301",
+        measurement_unit_code: "KWH",
+        description: null,
+        installed_date: READING_DAY,
+        memo: null,
+        initial_reading: {
+          reading_date: READING_DAY,
+          reading_value: "0",
+          source_evidence: "Typed in the Add meter dialog",
+        },
+      } satisfies MeterInstallInput,
+      expect.stringMatching(/^[0-9a-f-]{36}$/) as string,
+    );
+    await waitFor(() => {
+      expect(units.list).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it("TEST-FE-885 A meter's page shows its facts, its readings and the meter it replaced or was replaced by, with a Back link instead of tabs", async () => {
+    openMeters("#/utilities/meter%3Ael-201-old");
+    show();
+    expect(
+      await screen.findByRole("heading", { name: "EL-OLD-201" }),
+    ).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "Meter readings" })).toBeNull();
+    expect(
+      screen.getByRole("link", { name: /Back to Meters/ }).getAttribute("href"),
+    ).toBe("#/utilities/meters");
+    expect(screen.getByText("Found broken")).toBeTruthy();
+    expect(screen.getByText("20/08/2026")).toBeTruthy();
+    expect(
+      screen.getByRole("link", { name: "EL-U201" }).getAttribute("href"),
+    ).toBe("#/utilities/meter%3Ael-201");
+    expect(screen.getByText("100 kWh")).toBeTruthy();
+    // A replaced meter cannot be replaced again.
+    expect(screen.queryByRole("button", { name: /Replace meter/ })).toBeNull();
+
+    window.location.hash = "#/utilities/meter%3Ael-201";
+    window.dispatchEvent(new HashChangeEvent("hashchange"));
+    expect(
+      await screen.findByRole("heading", { name: "EL-U201" }),
+    ).toBeTruthy();
+    expect(screen.getByText("Replaced")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "EL-OLD-201" })).toBeTruthy();
+  });
+
+  it("TEST-FE-886 Replace meter checks the dates against the last good reading and today, keeps the key for Try again, and opens the new meter", async () => {
+    openMeters("#/utilities/meter%3Ael-101");
+    const replaceMeter = vi
+      .fn()
+      .mockRejectedValueOnce(new UtilityClientError())
+      .mockResolvedValueOnce(
+        meter("el-101-new", "U101", "ELECTRICITY", {
+          serial_number: "EL-U101-B",
+        }),
+      );
+    show({ api: utilityApi({ replaceMeter }) });
+    fireEvent.click(
+      await screen.findByRole("button", { name: /Replace meter/ }),
+    );
+    const dialog = screen.getByRole("dialog", { name: "Replace EL-U101?" });
+    const submit = () => {
+      fireEvent.click(
+        within(dialog).getByRole("button", { name: /Replace meter|Try again/ }),
+      );
+    };
+    fireEvent.change(within(dialog).getByLabelText(/^Found broken on/), {
+      target: { value: "2026-09-20" },
+    });
+    submit();
+    expect(
+      within(dialog).getByText("The date cannot be before 24/09/2026."),
+    ).toBeTruthy();
+    expect(within(dialog).getByText("Write the serial.")).toBeTruthy();
+    expect(within(dialog).getByText("Write what is wrong.")).toBeTruthy();
+    fireEvent.change(within(dialog).getByLabelText(/^Found broken on/), {
+      target: { value: READING_DAY },
+    });
+    fireEvent.change(within(dialog).getByLabelText(/^New meter serial/), {
+      target: { value: "EL-U101-B" },
+    });
+    fireEvent.change(within(dialog).getByLabelText(/^Reason/), {
+      target: { value: "Display is blank" },
+    });
+    submit();
+    expect(
+      within(dialog).getByText(
+        "The new meter must be put in at least one day after the old one was found broken.",
+      ),
+    ).toBeTruthy();
+    fireEvent.change(within(dialog).getByLabelText(/^Found broken on/), {
+      target: { value: "2026-10-20" },
+    });
+    submit();
+    expect(await within(dialog).findByText(/No answer came back/)).toBeTruthy();
+    submit();
+    await waitFor(() => {
+      expect(window.location.hash).toBe("#/utilities/meter%3Ael-101-new");
+    });
+    const expected: MeterReplaceInput = {
+      expected_version: 4,
+      failed_boundary_reading_id: "reading-el-101-2026-09-24",
+      failure_date: "2026-10-20",
+      replacement_date: READING_DAY,
+      reason: "Display is blank",
+      replacement_meter: {
+        serial_number: "EL-U101-B",
+        description: null,
+        memo: null,
+      },
+      replacement_initial_reading: {
+        reading_date: READING_DAY,
+        reading_value: "0",
+        source_evidence: "Typed in the Replace meter dialog",
+      },
+    };
+    expect(replaceMeter).toHaveBeenCalledTimes(2);
+    const calls = replaceMeter.mock.calls as [
+      string,
+      MeterReplaceInput,
+      string,
+    ][];
+    expect(calls[0]?.[1]).toEqual(expected);
+    expect(calls[1]?.[2]).toBe(calls[0]?.[2]);
+  });
+
+  it("TEST-FE-887 A person who may not manage meters sees the list and the meter page but no Add meter or Replace meter", async () => {
+    openMeters();
+    show({
+      capabilities: new Set(["utility.read", "utility_readings.record"]),
+    });
+    await screen.findByText("7 meters");
+    expect(screen.queryByRole("button", { name: /Add meter/ })).toBeNull();
+    window.location.hash = "#/utilities/meter%3Ael-101";
+    window.dispatchEvent(new HashChangeEvent("hashchange"));
+    expect(
+      await screen.findByRole("heading", { name: "EL-U101" }),
+    ).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Replace meter/ })).toBeNull();
+  });
+  it("TEST-FE-888 A broken meter comes first, is counted with the next reading day, opens with its found-broken day filled, and is replaced from its newest checked reading; a changed meter reads the list again", async () => {
+    openMeters();
+    const list = meters().map((item) =>
+      item.id === "wa-101" ? { ...item, failure_date: "2026-10-20" } : item,
+    );
+    const readings = (meterId: string) =>
+      meterId === "wa-101"
+        ? [
+            // Not checked yet: the server never uses it as the boundary.
+            reading("wa-101", "2026-10-19", "44", {
+              validated: false,
+              validated_at: null,
+              validated_by: null,
+            } as Partial<UtilityReading>),
+            reading("wa-101", "2026-09-24", "40"),
+          ]
+        : (READINGS[meterId] ?? []);
+    const replaceMeter = vi.fn().mockRejectedValue(new UtilityConflictError());
+    const { units } = show({
+      api: utilityApi(
+        {
+          replaceMeter,
+          loadReadings: vi.fn((meterId: string) =>
+            Promise.resolve({ items: readings(meterId), nextCursor: null }),
+          ),
+        },
+        list,
+      ),
+    });
+    expect(
+      await screen.findByRole("button", {
+        name: "Broken meters: 1. Replace before 24/11/2026",
+      }),
+    ).toBeTruthy();
+    const first = screen
+      .getAllByRole("link")
+      .find((link) => link.textContent.startsWith("WA-"));
+    expect(first?.textContent).toBe("WA-U101");
+    expect(screen.getByText("Broken since 20/10/2026")).toBeTruthy();
+
+    window.location.hash = "#/utilities/meter%3Awa-101";
+    window.dispatchEvent(new HashChangeEvent("hashchange"));
+    expect(
+      await screen.findByText(
+        "A broken meter cannot be read. Replace it first.",
+      ),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /Replace meter/ }));
+    const dialog = screen.getByRole("dialog");
+    const found =
+      within(dialog).getByLabelText<HTMLInputElement>(/^Found broken on/);
+    expect(found.value).toBe("2026-10-20");
+    expect(
+      within(dialog).getByText(
+        "Not before the last good reading (24/09/2026).",
+      ),
+    ).toBeTruthy();
+    fireEvent.change(within(dialog).getByLabelText(/^New meter serial/), {
+      target: { value: "WA-U101-B" },
+    });
+    fireEvent.change(within(dialog).getByLabelText(/^Reason/), {
+      target: { value: "Dial stuck" },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Replace meter" }),
+    );
+    expect(
+      await screen.findByText(
+        "The meters changed while the form was open, so the list was read again. Check and try again.",
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByRole("dialog")).toBeNull();
+    const sent = (
+      replaceMeter.mock.calls as [string, MeterReplaceInput, string][]
+    )[0];
+    expect(sent?.[1].failed_boundary_reading_id).toBe(
+      "reading-wa-101-2026-09-24",
+    );
+    await waitFor(() => {
+      expect(units.list).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it("TEST-FE-889 Add meter says when it was refused, gives changed values a new key, and reads the list again when closed after a lost answer", async () => {
+    openMeters();
+    const installMeter = vi
+      .fn()
+      .mockRejectedValueOnce(new UtilityClientError(undefined, [], "req-3"))
+      .mockRejectedValueOnce(new UtilityClientError())
+      .mockRejectedValueOnce(new UtilityClientError());
+    const { units } = show({ api: utilityApi({ installMeter }) });
+    fireEvent.click(await screen.findByRole("button", { name: /Add meter/ }));
+    const dialog = screen.getByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Add meter" }));
+    // Nothing chosen: the cursor goes to the Unit and its error is linked to it.
+    const unitBox = within(dialog).getByLabelText(/^Unit/);
+    expect(unitBox.getAttribute("aria-describedby")).toBe("add-unit-err");
+    await waitFor(() => {
+      expect(document.activeElement).toBe(unitBox);
+    });
+    fireEvent.change(unitBox, { target: { value: "unit-U301" } });
+    fireEvent.change(within(dialog).getByLabelText(/^Serial/), {
+      target: { value: "EL-U301" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Add meter" }));
+    expect(
+      await within(dialog).findByText(
+        "It was not saved. Check the values and try again.",
+      ),
+    ).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Add meter" }));
+    await within(dialog).findByText(/No answer came back/);
+    fireEvent.change(within(dialog).getByLabelText(/^Serial/), {
+      target: { value: "EL-U301-A" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
+    await waitFor(() => {
+      expect(installMeter).toHaveBeenCalledTimes(3);
+    });
+    const keys = installMeter.mock.calls.map((call) => String(call[2]));
+    expect(keys[0]).toBe(keys[1]);
+    expect(keys[2]).not.toBe(keys[1]);
+    await within(dialog).findByText(/No answer came back/);
+    fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    await waitFor(() => {
+      expect(units.list).toHaveBeenCalledTimes(2);
+    });
   });
 });

@@ -50948,6 +50948,95 @@
       "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
       "status": "implemented",
       "notes": "V1-058 R4 Meter readings: A Unit whose meters or readings cannot be read is named, left out of the count, and the list is never called done without it; the Unit box waits while U10 may still become U101."
+    },
+    {
+      "test_id": "TEST-FE-883",
+      "upstream_ids": [
+        "DL-074",
+        "UI-056",
+        "BR-UTIL-005",
+        "BR-UTIL-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4b Meters: The Meters list counts meters in use per type and broken meters, lists broken first and replaced meters last, links each meter to its page, and filters by card, status and Unit."
+    },
+    {
+      "test_id": "TEST-FE-884",
+      "upstream_ids": [
+        "DL-074",
+        "UI-057",
+        "BR-UTIL-005",
+        "DL-071"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4b Meters: Add meter refuses a second working meter of one type in a Unit, sends the meter with its first reading on the day it is put in, and shows a serial already used in the Property under the serial."
+    },
+    {
+      "test_id": "TEST-FE-885",
+      "upstream_ids": [
+        "DL-074",
+        "UI-056",
+        "BR-UTIL-006",
+        "BR-UTIL-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4b Meters: A meter's page shows its facts, its readings and the meter it replaced or was replaced by, with a Back link instead of tabs; a replaced meter cannot be replaced again."
+    },
+    {
+      "test_id": "TEST-FE-886",
+      "upstream_ids": [
+        "DL-074",
+        "UI-057",
+        "BR-UTIL-006",
+        "BR-UTIL-007"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4b Meters: Replace meter checks the found-broken day against the last good reading and today and the put-in day after it, sends the boundary reading and the meter version, keeps the key for Try again, and opens the new meter."
+    },
+    {
+      "test_id": "TEST-FE-887",
+      "upstream_ids": [
+        "DL-074",
+        "UI-056",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4b Meters: A person without utility_meters.manage sees the Meters list and meter page but no Add meter or Replace meter."
+    },
+    {
+      "test_id": "TEST-FE-888",
+      "upstream_ids": [
+        "DL-074",
+        "UI-056",
+        "UI-057",
+        "BR-UTIL-006",
+        "BR-UTIL-007"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4b Meters: A broken meter is listed first and counted with the next reading day, its page warns that it cannot be read, Replace opens with the found-broken day filled and sends the newest checked reading as the boundary; a version conflict closes the dialog and reads the list again."
+    },
+    {
+      "test_id": "TEST-FE-889",
+      "upstream_ids": [
+        "DL-074",
+        "UI-057"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4b Meters: Add meter links each field error and moves the cursor to the first one, says when the server refused, keeps the key for Try again but gives changed values a new key, and reads the list again when closed after a lost answer."
     }
   ]
 }

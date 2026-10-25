@@ -1200,3 +1200,16 @@ table.ui-table.ui-grid th[scope="row"] {
     display: none;
   }
 }
+/* On a phone the Meters list keeps Meter, Last reading and Status; the serial says the type. */
+@media (max-width: 640px) {
+  table.ui-table.ui-meters {
+    min-width: 0;
+  }
+  table.ui-table.ui-meters .ui-wide {
+    display: none;
+  }
+  table.ui-table.ui-meters td,
+  table.ui-table.ui-meters th {
+    padding: 10px 8px;
+  }
+}

@@ -141,17 +141,137 @@ const TEXT = {
   // new
   rd_corrected: ["Corrected from {0}.", "បានកែពី {0}។"],
   // new
-  soon_meters: [
-    "The new Meters list comes in the next step. Until then, the earlier forms below show and change the meters.",
-    "បញ្ជីនាឡិកាស្ទង់ថ្មីនឹងមកក្នុងជំហានបន្ទាប់។ រហូតដល់ពេលនោះ ទម្រង់មុនខាងក្រោមបង្ហាញ និងប្តូរនាឡិកាស្ទង់។",
-  ],
-  // new
   records: ["Earlier forms", "ទម្រង់មុន"],
   // new
   records_note: [
     "Meters, rates, corrections and move-in or move-out readings, in English, until the next steps move them into this screen.",
     "នាឡិកាស្ទង់ អត្រា ការកែ និងអំណានពេលចូល ឬចេញ ជាភាសាអង់គ្លេស រហូតដល់ជំហានបន្ទាប់ផ្លាស់វាមកអេក្រង់នេះ។",
   ],
+  // R4b Meters
+  mt_c_el: ["Electricity meters", "នាឡិកាស្ទង់អគ្គិសនី"],
+  mt_c_wa: ["Water meters", "នាឡិកាស្ទង់ទឹក"],
+  mt_c_inuse: ["In use, one per Unit", "កំពុងប្រើ មួយក្នុងមួយបន្ទប់"],
+  mt_c_nbroken: ["{0} broken", "ខូច {0}"],
+  mt_c_allok: ["All working", "ដំណើរការទាំងអស់"],
+  mt_c_broken: ["Broken meters", "នាឡិកាស្ទង់ខូច"],
+  mt_c_before: ["Replace before {0}", "ប្តូរមុនថ្ងៃ {0}"],
+  // new
+  mt_c_none: ["None broken", "គ្មានខូច"],
+  mt_f_all: ["All meters", "នាឡិកាស្ទង់ទាំងអស់"],
+  mt_f_working: ["Working", "ដំណើរការ"],
+  mt_f_broken: ["Broken", "ខូច"],
+  mt_f_replaced: ["Replaced (history)", "បានប្តូរ (ប្រវត្តិ)"],
+  mt_st_ok: ["Working", "ដំណើរការ"],
+  mt_broken_since: ["Broken since {0}", "ខូចតាំងពី {0}"],
+  mt_replaced_on: ["Replaced {0}", "បានប្តូរ {0}"],
+  col_type: ["Type", "ប្រភេទ"],
+  col_status: ["Status", "ស្ថានភាព"],
+  mt_installed: ["Put in on", "ដាក់ថ្ងៃ"],
+  mt_last: ["Last reading", "អំណានចុងក្រោយ"],
+  mt_showing: ["{0} meters", "នាឡិកាស្ទង់ {0}"],
+  mt_none: [
+    "No meters match these filters.",
+    "គ្មាននាឡិកាស្ទង់ត្រូវនឹងតម្រងនេះទេ។",
+  ],
+  ic_showing: ["Showing: {0}.", "កំពុងបង្ហាញ៖ {0}។"],
+  pc_clear: ["Show all", "បង្ហាញទាំងអស់"],
+  mt_add: ["Add meter", "បន្ថែមនាឡិកាស្ទង់"],
+  manager: ["Manager", "អ្នកគ្រប់គ្រង"],
+  mt_add_intro: [
+    "For a Unit that has no meter of this kind, such as a new Unit. A Unit has one electricity meter and one water meter. To change a broken meter, open it and choose Replace meter.",
+    "សម្រាប់បន្ទប់ដែលគ្មាននាឡិកាស្ទង់ប្រភេទនេះ ដូចជាបន្ទប់ថ្មី។ បន្ទប់មួយមាននាឡិកាស្ទង់អគ្គិសនីមួយ និងទឹកមួយ។ ដើម្បីប្តូរនាឡិកាស្ទង់ខូច សូមបើកវា ហើយជ្រើស ប្តូរនាឡិកាស្ទង់។",
+  ],
+  mt_e_unit: ["Choose a Unit.", "សូមជ្រើសបន្ទប់។"],
+  // new
+  mt_pick_unit: ["Choose a Unit", "ជ្រើសបន្ទប់"],
+  mt_e_have: [
+    "{0} already has a working {1} meter ({2}). A Unit can have only one.",
+    "{0} មាននាឡិកាស្ទង់{1}កំពុងប្រើរួចហើយ ({2})។ បន្ទប់មួយអាចមានតែមួយ។",
+  ],
+  mt_add_done: ["{0} added to {1}.", "បានបន្ថែម {0} ទៅ {1}។"],
+  mt_serial: ["Serial", "លេខសៀរៀល"],
+  mt_serial_help: [
+    "The number printed on the meter. If it has none, use a code such as {0}.",
+    "លេខដែលបោះពុម្ពលើនាឡិកាស្ទង់។ បើគ្មាន សូមប្រើកូដដូចជា {0}។",
+  ],
+  mt_new_serial: ["New meter serial", "លេខសៀរៀលនាឡិកាស្ទង់ថ្មី"],
+  mt_new_start: ["First reading", "អំណានដំបូង"],
+  mt_start_help: [
+    "The number on the new meter now. Often 0.",
+    "លេខលើនាឡិកាស្ទង់ថ្មីឥឡូវនេះ។ ជាធម្មតា 0។",
+  ],
+  mt_why: ["Reason", "មូលហេតុ"],
+  mt_why_help: ["Saved in History.", "រក្សាទុកក្នុងប្រវត្តិ។"],
+  mt_e_serial: ["Write the serial.", "សូមសរសេរលេខសៀរៀល។"],
+  mt_e_used: [
+    "{0} is already used by another meter.",
+    "{0} ប្រើដោយនាឡិកាស្ទង់ផ្សេងរួចហើយ។",
+  ],
+  mt_e_date: ["Write the date.", "សូមសរសេរថ្ងៃ។"],
+  mt_e_future: ["The date cannot be after today.", "ថ្ងៃមិនអាចក្រោយថ្ងៃនេះ។"],
+  mt_e_before: ["The date cannot be before {0}.", "ថ្ងៃមិនអាចមុន {0}។"],
+  // new (server rule: the new meter starts at least one day after the old one was found broken)
+  mt_e_after: [
+    "The new meter must be put in at least one day after the old one was found broken.",
+    "នាឡិកាស្ទង់ថ្មីត្រូវដាក់យ៉ាងហោចណាស់មួយថ្ងៃក្រោយរកឃើញនាឡិកាស្ទង់ចាស់ខូច។",
+  ],
+  mt_e_why: ["Write what is wrong.", "សូមសរសេរបញ្ហា។"],
+  mt_replace_t: ["Replace {0}?", "ប្តូរ {0}?"],
+  mt_found: ["Found broken on", "រកឃើញខូចថ្ងៃ"],
+  // new
+  mt_found_help: [
+    "Not before the last good reading ({0}).",
+    "មិនមុនអំណានល្អចុងក្រោយ ({0})។",
+  ],
+  mt_new_day: ["Put in on", "ដាក់ថ្ងៃ"],
+  // changed: V1 has no estimate screen yet.
+  mt_replace_c: [
+    "{0} stops on the day the new meter is put in. It stays in the history with all its readings. Use from the day after the last good reading until the new meter starts is estimated from earlier months. This is saved in History.",
+    "{0} ឈប់នៅថ្ងៃដាក់នាឡិកាស្ទង់ថ្មី។ វានៅក្នុងប្រវត្តិ ជាមួយអំណានទាំងអស់។ ការប្រើតាំងពីថ្ងៃបន្ទាប់ពីអំណានល្អចុងក្រោយ រហូតនាឡិកាស្ទង់ថ្មីចាប់ផ្តើម ត្រូវប៉ាន់ស្មានពីខែមុនៗ។ ការនេះរក្សាទុកក្នុងប្រវត្តិ។",
+  ],
+  mt_replace_done: ["{0} replaced by {1}.", "បានប្តូរ {0} ដោយ {1}។"],
+  // new
+  mt_no_reading: [
+    "This meter has no reading yet, so it cannot be replaced here.",
+    "នាឡិកាស្ទង់នេះមិនទាន់មានអំណាន ដូច្នេះមិនអាចប្តូរនៅទីនេះបានទេ។",
+  ],
+  mt_reads: ["Readings", "អំណាន"],
+  mt_facts: ["About this meter", "អំពីនាឡិកាស្ទង់នេះ"],
+  // new
+  mt_new_meter: ["Replaced by", "ប្តូរដោយ"],
+  // new
+  mt_old_meter: ["Replaced", "ជំនួស"],
+  mt_failed: ["Found broken", "រកឃើញខូច"],
+  mt_keep: [
+    "Meters are never deleted. A replaced meter stays here with all its readings.",
+    "នាឡិកាស្ទង់មិនដែលលុបទេ។ នាឡិកាស្ទង់ដែលបានប្តូរនៅទីនេះ ជាមួយអំណានទាំងអស់។",
+  ],
+  // new
+  back: ["Back to Meters", "ត្រឡប់ទៅនាឡិកាស្ទង់"],
+  // new
+  mt_not_found: ["This meter was not found.", "រកមិនឃើញនាឡិកាស្ទង់នេះទេ។"],
+  close: ["Cancel", "បោះបង់"],
+  // new
+  saving: ["Saving…", "កំពុងរក្សាទុក…"],
+  // new
+  try_again: ["Try again", "ព្យាយាមម្តងទៀត"],
+  // new
+  unknown: [
+    "No answer came back, so it may or may not be saved. Try again: the same request is saved only once.",
+    "គ្មានចម្លើយត្រឡប់មកវិញ ដូច្នេះប្រហែលបាន ឬមិនបានរក្សាទុក។ សូមព្យាយាមម្តងទៀត៖ សំណើដដែលរក្សាទុកតែម្តង។",
+  ],
+  // new
+  m_refused: [
+    "It was not saved. Check the values and try again.",
+    "មិនបានរក្សាទុកទេ។ សូមពិនិត្យតម្លៃ ហើយព្យាយាមម្តងទៀត។",
+  ],
+  // new
+  m_conflict: [
+    "The meters changed while the form was open, so the list was read again. Check and try again.",
+    "នាឡិកាស្ទង់បានផ្លាស់ប្តូរ ពេលទម្រង់កំពុងបើក ដូច្នេះបញ្ជីត្រូវបានអានម្តងទៀត។ សូមពិនិត្យ ហើយព្យាយាមម្តងទៀត។",
+  ],
+  required: ["Required", "ត្រូវការ"],
+  optional: ["Optional", "ស្រេចចិត្ត"],
 } as const satisfies Record<string, readonly [string, string]>;
 
 export type UtilitiesTextKey = keyof typeof TEXT;
