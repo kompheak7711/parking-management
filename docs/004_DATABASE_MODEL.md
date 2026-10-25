@@ -4405,6 +4405,21 @@ Refund delivery methods or operational pending/failed states are deferred techni
 workflow choices. This logical model records only the approved completed Refund event
 and does not invent business statuses.
 
+V1-056 slice 11h (migration `20270214_202`; DL-089): `app.create_refund_method` and
+`app.set_refund_method_active` (same signatures and grants as migration `20261013_78`) need the
+authorization reference `settings.manage` (42501 otherwise) and take the Refund method list
+lock (`pg_advisory_xact_lock` on `refund-method-list`) so changes run one at a time. Adding
+checks the code (`^[A-Z][A-Z0-9_]{1,39}$`) and a trimmed name of 1 to 120 characters (22023),
+answers a repeat with the same id, code, name and creator as the method is now, and refuses a
+reused id (`Refund Method identity was reused`) or a used code (`Refund Method code is already
+used`, both 23505); names need not be unique. A new method starts on and not seeded. Turning a
+method off locks the other methods that are on `FOR SHARE` and refuses when none is left (`At
+least one Refund Method stays on`, 55000); a change at the same moment is seen at READ
+COMMITTED and is a serialization failure (40001) at REPEATABLE READ. A repeat that changes
+nothing returns the method and writes nothing. Each change writes an audit event
+(`refund_method.added`, `refund_method.turned_off`, `refund_method.turned_on`; authorization
+`settings.manage`, previous and resulting state).
+
 ## DB-REFUND-002 — `refund_corrections`
 
 Append-only generic linked correction: `id uuid PK`, `refund_id uuid NOT NULL FK`,

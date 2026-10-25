@@ -1257,6 +1257,19 @@ recovery charge (`refund_correction_id`, `refund_id`, `customer_id`, `lease_id` 
 `due_date`, `occurred_at`; the Invoice fields come from the charge's Invoice that is not VOID,
 else its newest), otherwise null.
 
+V1-056 slice 11h (2026-10-25; migration `20270214_202`; DL-089): the Refund method list is
+also read with `settings.manage`. `POST /properties/{property_id}/refund-methods` (body
+`refund_method_id`, `code` `^[A-Z][A-Z0-9_]{1,39}$`, `display_name` 1 to 120 characters with no
+space at either end) adds a method that starts on (201, the method as in the list); a repeat of
+the same body by the same person answers the method as it is now (another person gets
+`REFUND_METHOD_ID_REUSED`). `POST
+/properties/{property_id}/refund-methods/{refund_method_id}/state` (body `active`, a boolean)
+turns a method off or on again (200, the method). Both need `settings.manage` of the Property
+(otherwise a hidden 404), the Origin and the CSRF pair, and no Idempotency-Key (the client
+chooses the id; a state change is a repeatable set). Refusals (409): `REFUND_METHOD_CODE_USED`
+(`code`), `REFUND_METHOD_ID_REUSED` (`refund_method_id`), `REFUND_METHOD_LAST_ON` (at least one
+method stays on); a change at the same moment answers 409 and the screen reads the list again.
+
 A Pet Deposit Refund draft may add `recipient_customer_id` (another signed Signer of the
 Lease) and `signer_agreement` (the written agreement of all Signers, 1 to 2,000
 characters), always together (BR-REFUND-015, slice 3a-2); otherwise the Refund goes to
@@ -1265,6 +1278,9 @@ owner's ledger and names the paid Signer in `source_audit.paid_to_customer_id`.
 
 The Refund methods routes (BR-REFUND-014) and the Reservation Refund drafts come with
 later V1-056 slices.
+
+Amended by V1-056 slices 11c-1 and 11h (DL-089): the Refund methods routes are built (the list
+read since 11c-1, adding and turning off or on since 11h).
 
 V1-056 sub-slice 8f (BR-CREDIT-014): a Customer Credit that a credit Adjustment released to a
 Customer other than the payer is refunded to that Customer through a `CREDIT_CUSTOMER` Refund

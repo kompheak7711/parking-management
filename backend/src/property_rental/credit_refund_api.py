@@ -14,9 +14,10 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, Response
 from fastapi.responses import JSONResponse
-from pydantic import Field, model_validator
+from pydantic import AfterValidator, Field, model_validator
 from starlette.types import Receive, Scope, Send
 
+from property_rental.access_control import SETTINGS_MANAGE_CAPABILITY
 from property_rental.allocation_receipt_api import (
     AllocationReceiptRequestRoute,
     ReversalInput,
@@ -30,6 +31,9 @@ from property_rental.api_refusals import (
     REFUND_CREDIT_CUSTOMER_ONLY,
     REFUND_CREDIT_FOR_ANOTHER_CUSTOMER,
     REFUND_DEPOSIT_RECEIPT_REVERSAL_WAITING,
+    REFUND_METHOD_CODE_USED,
+    REFUND_METHOD_ID_REUSED,
+    REFUND_METHOD_LAST_ON,
     REFUND_METHOD_NOT_AVAILABLE,
     REFUND_METHOD_OFF,
     REFUND_PAYER_HAS_UNPAID,
@@ -86,10 +90,13 @@ from property_rental.payment_api import (
     _actor,
     _authorize,
     _cursor,
+    _evidence,
     _queries,
     _timestamp,
 )
 from property_rental.refund import (
+    REFUND_METHOD_READ_CAPABILITIES,
+    AddRefundMethodCommand,
     CreateCreditCustomerRefundCommand,
     CreatePetRefundCommand,
     CreateUsdRefundCommand,
@@ -114,6 +121,18 @@ Binding = dict[str, str | None]
 PageLimit = Annotated[int, Query(ge=1, le=100)]
 Cursor = Annotated[str | None, Query(max_length=1024)]
 Key = Annotated[Identity, Header(alias="Idempotency-Key")]
+
+
+class AddRefundMethodInput(StrictInput):
+    refund_method_id: Identity
+    code: Annotated[str, Field(strict=True, max_length=40, pattern=r"^[A-Z][A-Z0-9_]{1,39}$")]
+    display_name: Annotated[
+        str, Field(strict=True, min_length=1, max_length=120), AfterValidator(_evidence)
+    ]
+
+
+class RefundMethodStateInput(StrictInput):
+    active: Annotated[bool, Field(strict=True)]
 
 
 class RecognizeInput(ReversalInput):
@@ -219,6 +238,8 @@ class PostgresCreditRefundFlow:
         return CustomerCreditService(self._runtime(), self._financial() if mutation else "")
 
     def refunds(self, *, mutation: bool = False) -> RefundService:
+        # As credits(); the Refund method writers of slice 11h run as the runtime role and
+        # need neither mutation=True nor the writer URL.
         return RefundService(self._runtime(), self._financial() if mutation else "")
 
     def source_audit(
@@ -289,8 +310,18 @@ REFUND_RECORD_REFUSALS: Final[Mapping[str, Refusal]] = MappingProxyType(
 )
 
 
-# V1-056 slice 11c-1: who may read the Refund method list (as RefundService.refund_methods).
-REFUND_METHOD_READERS: Final = ("refunds.read", "refunds.create", "property.manage")
+# V1-056 slice 11c-1: who may read the Refund method list (as RefundService.refund_methods);
+# slice 11h adds Settings access.
+REFUND_METHOD_READERS: Final = REFUND_METHOD_READ_CAPABILITIES
+# V1-056 slice 11h: the database messages of the two Refund method writers (migration
+# 20270214_202).
+REFUND_METHOD_CHANGE_REFUSALS: Final[Mapping[str, Refusal]] = MappingProxyType(
+    {
+        "Refund Method code is already used": REFUND_METHOD_CODE_USED,
+        "Refund Method identity was reused": REFUND_METHOD_ID_REUSED,
+        "At least one Refund Method stays on": REFUND_METHOD_LAST_ON,
+    }
+)
 
 
 def _invoke(
@@ -748,6 +779,55 @@ def create_credit_refund_router(
         ):
             raise HTTPException(503)
         return envelope(request, items)
+
+    @router.post(
+        "/properties/{property_id}/refund-methods",
+        status_code=201,
+        dependencies=[Depends(_financial_json)],
+    )
+    def add_refund_method(
+        property_id: Identity, body: AddRefundMethodInput, request: Request
+    ) -> dict[str, object]:
+        """Add a Refund method in Settings; it starts turned on (V1-056 slice 11h).
+
+        The client chooses the id, so a repeat of the same request answers the same method, as
+        it is now (it may have been turned off since).
+        """
+        queries(request, set())
+        actor, prop = context(request, "property", property_id, SETTINGS_MANAGE_CAPABILITY)
+        command = _invoke(
+            lambda: AddRefundMethodCommand(body.refund_method_id, body.code, body.display_name)
+        )
+        result = _invoke(
+            lambda: flow.refunds().add_refund_method(prop, command, actor=actor),
+            refusals=REFUND_METHOD_CHANGE_REFUSALS,
+        )
+        if result.get("id") != str(body.refund_method_id):
+            raise HTTPException(503)
+        return envelope(request, result)
+
+    @router.post(
+        "/properties/{property_id}/refund-methods/{refund_method_id}/state",
+        dependencies=[Depends(_financial_json)],
+    )
+    def set_refund_method_state(
+        property_id: Identity,
+        refund_method_id: Identity,
+        body: RefundMethodStateInput,
+        request: Request,
+    ) -> dict[str, object]:
+        """Turn a Refund method off or on again in Settings; one always stays on (slice 11h)."""
+        queries(request, set())
+        actor, prop = context(request, "property", property_id, SETTINGS_MANAGE_CAPABILITY)
+        result = _invoke(
+            lambda: flow.refunds().set_refund_method_on(
+                prop, refund_method_id, body.active, actor=actor
+            ),
+            refusals=REFUND_METHOD_CHANGE_REFUSALS,
+        )
+        if result.get("id") != str(refund_method_id) or result.get("active") is not body.active:
+            raise HTTPException(503)
+        return envelope(request, result)
 
     @router.post("/refunds", status_code=201, dependencies=[Depends(_financial_json)])
     def create_refund(

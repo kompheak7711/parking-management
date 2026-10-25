@@ -87,7 +87,7 @@ def test_refund_methods_start_with_cash_and_bank_transfer_and_are_configurable(
     created = uuid4()
     code = f"WING_{created.hex[:8].upper()}"
     with psycopg.connect(runtime_database_url()) as connection:
-        for reference in ("refunds.create", None):
+        for reference in ("refunds.create", "property.manage", None):
             with pytest.raises(psycopg.Error) as refused:
                 connection.execute(
                     "SELECT app.create_refund_method(%s,%s,%s,%s,%s,%s)",
@@ -97,11 +97,11 @@ def test_refund_methods_start_with_cash_and_bank_transfer_and_are_configurable(
             connection.rollback()
         connection.execute(
             "SELECT app.create_refund_method(%s,%s,%s,%s,%s,%s)",
-            (prop, human, created, code, "Wing transfer", "property.manage"),
+            (prop, human, created, code, "Wing transfer", "settings.manage"),
         )
         connection.execute(
             "SELECT app.set_refund_method_active(%s,%s,%s,false,%s)",
-            (prop, human, created, "property.manage"),
+            (prop, human, created, "settings.manage"),
         )
         connection.commit()
     assert method_id(service(), prop, manager, code) == created
@@ -354,7 +354,7 @@ def test_a_method_turned_off_after_drafting_blocks_confirmation_but_not_replay(
     with psycopg.connect(runtime_database_url()) as connection:
         connection.execute(
             "SELECT app.create_refund_method(%s,%s,%s,%s,%s,%s)",
-            (prop, human, method, f"TEMP_{method.hex[:8].upper()}", "Temporary", "property.manage"),
+            (prop, human, method, f"TEMP_{method.hex[:8].upper()}", "Temporary", "settings.manage"),
         )
         connection.commit()
     choice = RefundMethodChoice(method, "Temporary method note")
@@ -371,7 +371,7 @@ def test_a_method_turned_off_after_drafting_blocks_confirmation_but_not_replay(
             connection.rollback()
         connection.execute(
             "SELECT app.set_refund_method_active(%s,%s,%s,false,%s)",
-            (prop, human, method, "property.manage"),
+            (prop, human, method, "settings.manage"),
         )
         connection.commit()
     # The exact repeat still replays the recorded draft.

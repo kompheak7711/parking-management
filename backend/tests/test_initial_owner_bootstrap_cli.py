@@ -840,7 +840,9 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/refunds/{refund_id}": {"get"},
         "/api/v1/refund-sources/{source_type}/{source_id}": {"get"},
         # V1-056 slice 11c-1: the Refund methods a draft may name.
-        "/api/v1/properties/{property_id}/refund-methods": {"get"},
+        # V1-056 slice 11h: adding a Refund method and turning one off or on (Settings access).
+        "/api/v1/properties/{property_id}/refund-methods": {"get", "post"},
+        "/api/v1/properties/{property_id}/refund-methods/{refund_method_id}/state": {"post"},
         # V1-056 slice 11c-3: Deposit forfeiture, Deposit correction and returned-Payment drafts.
         "/api/v1/properties/{property_id}/deposits/{deposit_id}/forfeiture-drafts": {"post"},
         "/api/v1/properties/{property_id}/deposit-dispositions/{disposition_id}/reversal-drafts": {

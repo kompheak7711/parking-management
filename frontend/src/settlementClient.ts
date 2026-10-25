@@ -3,6 +3,7 @@
 // financial drafts and the draft routes of slices 11c and 11d, and the Final Settlement and its
 // corrections (11e). Screens build on it; it shows a named refusal's code, text and fields.
 import type {
+  AddRefundMethodInput,
   AdjustmentReversalCorrectionInput,
   AdjustmentReversalInput,
   ChargeReductionInput,
@@ -25,6 +26,7 @@ import type {
   PetClassificationCorrectionInput,
   ReceiptReversalDraftInput,
   RefundCorrectionInput,
+  RefundMethodStateInput,
   RefundReturnCorrectionInput,
   ReturnReversalCorrectionInput,
   ReturnedPaymentInput,
@@ -303,6 +305,17 @@ export interface SettlementApi {
     key: string,
   ) => Promise<SettlementRecord>;
   refundMethods: (propertyId: string) => Promise<SettlementRecord[]>;
+  // Slice 11h: adding a Refund method and turning one off or on (Settings access). The id is
+  // chosen by the client, so sending the same form again answers the same method.
+  addRefundMethod: (
+    propertyId: string,
+    form: AddRefundMethodInput,
+  ) => Promise<SettlementRecord>;
+  setRefundMethodState: (
+    propertyId: string,
+    refundMethodId: string,
+    form: RefundMethodStateInput,
+  ) => Promise<SettlementRecord>;
   // Slices 11c-3, 11d and 11e-2: drafts recorded on their own record.
   forfeitureDraft: (
     propertyId: string,
@@ -479,6 +492,15 @@ export const settlementApi: SettlementApi = {
       throw new SettlementRequestError(200, null, FALLBACK);
     return body.data.map(record);
   },
+  addRefundMethod: (propertyId, form) =>
+    post(`${property(propertyId)}/refund-methods`, form, null, propertyId),
+  setRefundMethodState: (propertyId, refundMethodId, form) =>
+    post(
+      `${property(propertyId)}/refund-methods/${id(refundMethodId)}/state`,
+      form,
+      null,
+      propertyId,
+    ),
   forfeitureDraft: draftOn("deposits", "forfeiture-drafts"),
   forfeitureReversalDraft: draftOn("deposit-dispositions", "reversal-drafts"),
   receiptReversalDraft: draftOn("deposit-receipts", "reversal-drafts"),

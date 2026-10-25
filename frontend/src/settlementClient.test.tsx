@@ -333,4 +333,50 @@ describe("settlementClient", () => {
       expect(headers.get("X-CSRF-Token")).toBe("csrf-value");
     }
   });
+
+  it("TEST-FE-S11H-001 adds a Refund method and turns one off with no key", async () => {
+    const method = {
+      id: KEY,
+      code: "WING",
+      display_name: "Wing money transfer",
+      active: true,
+      seeded: false,
+      updated_at: "2026-10-25T10:00:00+07:00",
+    };
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(answer({ data: method, meta: {} }))
+      .mockResolvedValueOnce(
+        answer({ data: { ...method, active: false }, meta: {} }, 200),
+      );
+    const added = await settlementApi.addRefundMethod(PROPERTY, {
+      refund_method_id: KEY,
+      code: "WING",
+      display_name: "Wing money transfer",
+    });
+    expect(added).toEqual(method);
+    const turned = await settlementApi.setRefundMethodState(PROPERTY, KEY, {
+      active: false,
+    });
+    expect(turned.active).toBe(false);
+    const first = sent(fetchMock, 0);
+    expect(first.path).toBe(`/api/v1/properties/${PROPERTY}/refund-methods`);
+    expect(JSON.parse(first.init.body as string)).toEqual({
+      refund_method_id: KEY,
+      code: "WING",
+      display_name: "Wing money transfer",
+    });
+    const second = sent(fetchMock, 1);
+    expect(second.path).toBe(
+      `/api/v1/properties/${PROPERTY}/refund-methods/${KEY}/state`,
+    );
+    expect(JSON.parse(second.init.body as string)).toEqual({ active: false });
+    for (const call of [0, 1]) {
+      const { headers, init } = sent(fetchMock, call);
+      expect(init.method).toBe("POST");
+      expect(headers.has("Idempotency-Key")).toBe(false);
+      expect(headers.get("X-CSRF-Token")).toBe("csrf-value");
+      expect(headers.get("X-Financial-Property-ID")).toBe(PROPERTY);
+    }
+  });
 });

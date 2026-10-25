@@ -4029,6 +4029,8 @@ Amended by DL-073 (owner, 2026-10-20): there is still no Refund deadline or bloc
 
 Amended by DL-080 (owner, 2026-10-20): for a cash Refund, the reference note says who took the money. Refund methods stay their own list, not the Payment Methods list.
 
+Amended by DL-089 (owner, 2026-10-25): Refund methods are managed with Settings access. Only the Owner and people ticked for Settings access (`settings.manage`) may add a Refund method or turn one off or on again, and at least one Refund method always stays on. A method turned off is kept (old Refunds still name it) and can be turned on again; a new Refund cannot use it. Each change is recorded in the audit history with who made it.
+
 ---
 
 ## BR-REFUND-015 — Deposit Refund Recipient for Joint Signers

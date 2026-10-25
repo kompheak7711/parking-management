@@ -48,6 +48,11 @@ ROUTES: Final[dict[str, str]] = {
     "POST /api/v1/properties/{property_id}/final-settlements/{settlement_id}/drafts": (
         "FinalSettlementDraftInput"
     ),
+    # V1-056 slice 11h: Refund methods in Settings.
+    "POST /api/v1/properties/{property_id}/refund-methods": "AddRefundMethodInput",
+    "POST /api/v1/properties/{property_id}/refund-methods/{refund_method_id}/state": (
+        "RefundMethodStateInput"
+    ),
     **{
         "POST /api/v1/properties/{property_id}/final-settlements/{settlement_id}/corrections/"
         f"{route}": model

@@ -200,6 +200,28 @@ REFUND_METHOD_OFF = Refusal(
     "This Refund method is turned off. Choose another.",
     ("BR-REFUND-014",),
 )
+# V1-056 slice 11h: adding and turning off Refund methods in Settings (owner answer of
+# 2026-10-25).
+REFUND_METHOD_CODE_USED = Refusal(
+    409,
+    "REFUND_METHOD_CODE_USED",
+    "Another Refund method already has this code.",
+    ("BR-REFUND-014",),
+    ("code",),
+)
+REFUND_METHOD_ID_REUSED = Refusal(
+    409,
+    "REFUND_METHOD_ID_REUSED",
+    "This Refund method id was already used with other details.",
+    ("BR-REFUND-014",),
+    ("refund_method_id",),
+)
+REFUND_METHOD_LAST_ON = Refusal(
+    409,
+    "REFUND_METHOD_LAST_ON",
+    "At least one Refund method stays on. Turn another one on first.",
+    ("BR-REFUND-014",),
+)
 REFUND_AMOUNT_NOT_AVAILABLE = Refusal(
     409,
     "REFUND_AMOUNT_NOT_AVAILABLE",

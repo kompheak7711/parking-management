@@ -9,6 +9,7 @@ Qualified Deposit sources retain their separate eligibility checks.
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Final, cast
@@ -17,6 +18,7 @@ from uuid import UUID, uuid5
 import psycopg
 from psycopg.types.json import set_json_loads
 
+from property_rental.access_control import SETTINGS_MANAGE_CAPABILITY
 from property_rental.identity import AuthenticatedActor, AuthorizationRequirement, is_authorized
 from property_rental.lock_retry import retry_lock_not_available
 
@@ -43,6 +45,15 @@ class RefundIdempotencyKeyReused(RefundConflictError):
 
 class RefundUnavailableError(RuntimeError):
     """An outcome may be unknown: preserve and replay the original command."""
+
+
+# Who may read the Refund method list; V1-056 slice 11h adds Settings access, which changes it.
+REFUND_METHOD_READ_CAPABILITIES: Final = (
+    "refunds.read",
+    "refunds.create",
+    "property.manage",
+    SETTINGS_MANAGE_CAPABILITY,
+)
 
 
 def _uuid(value: UUID) -> None:
@@ -138,6 +149,27 @@ class RefundMethodChoice:
     def __post_init__(self) -> None:
         _uuid(self.refund_method_id)
         _text(self.reference_note, 500)
+
+
+REFUND_METHOD_CODE: Final = re.compile(r"[A-Z][A-Z0-9_]{1,39}")
+
+
+@dataclass(frozen=True, slots=True)
+class AddRefundMethodCommand:
+    """A new Refund method in Settings (V1-056 slice 11h; owner answer of 2026-10-25).
+
+    The id is chosen by the client, so a repeat of the same request gets the same method.
+    """
+
+    refund_method_id: UUID
+    code: str
+    display_name: str
+
+    def __post_init__(self) -> None:
+        _uuid(self.refund_method_id)
+        if not isinstance(self.code, str) or REFUND_METHOD_CODE.fullmatch(self.code) is None:
+            raise RefundInvalidError("A Refund method code is 2 to 40 capital letters, digits or _")
+        _text(self.display_name, 120)
 
 
 @dataclass(frozen=True, slots=True)
@@ -346,7 +378,7 @@ class RefundService:
         _uuid(property_id)
         if not any(
             is_authorized(actor, AuthorizationRequirement(capability, str(property_id)))
-            for capability in ("refunds.read", "refunds.create", "property.manage")
+            for capability in REFUND_METHOD_READ_CAPABILITIES
         ):
             raise RefundAuthorizationError("Refund method read is not authorized")
         try:
@@ -356,6 +388,59 @@ class RefundService:
         return self._query(
             "SELECT app.list_refund_methods(%s,%s)", (property_id, actor_id), mutation=False
         )
+
+    def add_refund_method(
+        self, property_id: UUID, command: AddRefundMethodCommand, *, actor: AuthenticatedActor
+    ) -> dict[str, object]:
+        """Add a Refund method; it starts turned on (V1-056 slice 11h, Settings access)."""
+        actor_id = self._authorize(actor, property_id, SETTINGS_MANAGE_CAPABILITY)
+        checked = AddRefundMethodCommand(
+            command.refund_method_id, command.code, command.display_name
+        )
+        return self._method_change(
+            "SELECT app.create_refund_method(%s,%s,%s,%s,%s,%s)",
+            (
+                property_id,
+                actor_id,
+                checked.refund_method_id,
+                checked.code,
+                checked.display_name,
+                SETTINGS_MANAGE_CAPABILITY,
+            ),
+        )
+
+    def set_refund_method_on(
+        self, property_id: UUID, method_id: UUID, on: bool, *, actor: AuthenticatedActor
+    ) -> dict[str, object]:
+        """Turn a Refund method off or on again; the last method that is on stays on."""
+        actor_id = self._authorize(actor, property_id, SETTINGS_MANAGE_CAPABILITY)
+        _uuid(method_id)
+        if type(on) is not bool:
+            raise RefundInvalidError("A Refund method is turned on or off")
+        return self._method_change(
+            "SELECT app.set_refund_method_active(%s,%s,%s,%s,%s)",
+            (property_id, actor_id, method_id, on, SETTINGS_MANAGE_CAPABILITY),
+        )
+
+    def _method_change(self, sql: str, parameters: tuple[object, ...]) -> dict[str, object]:
+        # The two writers are granted to the runtime role (migration 20261013_78).
+        try:
+            row = retry_lock_not_available(lambda: self._attempt(sql, parameters, False))
+        except psycopg.Error as exc:
+            if exc.sqlstate in {"P0002", "P4501"}:
+                raise RefundNotFoundError("Refund method was not found") from exc
+            if exc.sqlstate == "22023":
+                raise RefundInvalidError("Refund method input is invalid") from exc
+            if exc.sqlstate in {"42501", "P4506"}:
+                raise RefundAuthorizationError("Refund method change is not authorized") from exc
+            if exc.sqlstate in {"23505", "55000", "40P01", "40001"}:
+                # A used code or id, the last method that is on, or a change at the same
+                # moment: read the list again and try again.
+                raise RefundConflictError("Refund method change conflicts") from exc
+            raise RefundUnavailableError("Refund method change is unresolved") from exc
+        if row is None or not isinstance(row[0], dict):
+            raise RefundUnavailableError("Refund method change is unresolved")
+        return cast(dict[str, object], row[0])
 
     def _draft_call(
         self,

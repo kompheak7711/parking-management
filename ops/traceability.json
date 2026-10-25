@@ -51622,6 +51622,129 @@
       "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
       "status": "implemented",
       "notes": "The allocation proposal view shows a late-payment charge target as a charge of its Invoice, without Invoice-only facts or duplicate keys (V1-056 slice 11g-4, the late-payment charge right after its own Invoice in the payment proposal; DL-088; ops/reviews/V1-056-slice-11g-4.md)."
+    },
+    {
+      "test_id": "test_settings_access_adds_a_refund_method_that_starts_on_and_is_audited",
+      "upstream_ids": [
+        "BR-REFUND-014",
+        "DB-REFUND-001",
+        "TEST-066",
+        "DL-089"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_refund_method_settings_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL, Settings access adds a Refund method that starts on, is audited and listed; a repeat answers the same method and writes nothing more; a used code or reused id is refused with its own message; other capabilities and bad input are refused (V1-056 slice 11h, Refund methods with Settings access; DL-089; ops/reviews/V1-056-slice-11h.md)."
+    },
+    {
+      "test_id": "test_a_method_is_turned_off_and_on_again_with_each_change_audited",
+      "upstream_ids": [
+        "BR-REFUND-014",
+        "DB-REFUND-001",
+        "TEST-066",
+        "DL-089"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_refund_method_settings_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL, a method is turned off and on again with each real change audited (previous and resulting state); a repeat writes nothing; other capabilities and an unknown method are refused (V1-056 slice 11h, Refund methods with Settings access; DL-089; ops/reviews/V1-056-slice-11h.md)."
+    },
+    {
+      "test_id": "test_the_last_method_that_is_on_stays_on",
+      "upstream_ids": [
+        "BR-REFUND-014",
+        "DB-REFUND-001",
+        "TEST-066",
+        "DL-089"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_refund_method_settings_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL, turning off the last Refund method that is on is refused (55000, At least one Refund Method stays on) (V1-056 slice 11h, Refund methods with Settings access; DL-089; ops/reviews/V1-056-slice-11h.md)."
+    },
+    {
+      "test_id": "test_two_people_turning_off_the_last_two_methods_at_once_leave_one_on",
+      "upstream_ids": [
+        "BR-REFUND-014",
+        "DB-REFUND-001",
+        "TEST-066",
+        "DL-089"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_refund_method_settings_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL, two people turning off the last two methods at once leave one on: the second waits and is refused at READ COMMITTED (55000) or fails to serialize at REPEATABLE READ (40001) (V1-056 slice 11h, Refund methods with Settings access; DL-089; ops/reviews/V1-056-slice-11h.md)."
+    },
+    {
+      "test_id": "test_a_refund_method_is_added_only_with_settings_access",
+      "upstream_ids": [
+        "BR-REFUND-014",
+        "API-013",
+        "DL-089"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "Adding a Refund method needs a session, settings.manage (other capabilities get a hidden 404), the Origin and CSRF pair; the body is checked; a repeat answers the method as it is now, turned off included; an answer for another id is 503 (V1-056 slice 11h, Refund methods with Settings access; DL-089; ops/reviews/V1-056-slice-11h.md)."
+    },
+    {
+      "test_id": "test_a_refund_method_is_turned_off_or_on_only_with_settings_access",
+      "upstream_ids": [
+        "BR-REFUND-014",
+        "API-013",
+        "DL-089"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "Turning a Refund method off or on needs settings.manage, the Origin and CSRF pair; an answer that does not match the request is 503 (V1-056 slice 11h, Refund methods with Settings access; DL-089; ops/reviews/V1-056-slice-11h.md)."
+    },
+    {
+      "test_id": "test_a_refused_refund_method_change_answers_409_with_its_code",
+      "upstream_ids": [
+        "BR-REFUND-014",
+        "API-013",
+        "DL-089"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "A used code, a reused id and the last method that is on answer 409 with their refusal codes and no database text (V1-056 slice 11h, Refund methods with Settings access; DL-089; ops/reviews/V1-056-slice-11h.md)."
+    },
+    {
+      "test_id": "test_a_settings_access_holder_reads_the_refund_methods",
+      "upstream_ids": [
+        "BR-REFUND-014",
+        "API-013",
+        "DL-089"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "A holder of settings.manage reads the Refund method list (V1-056 slice 11h, Refund methods with Settings access; DL-089; ops/reviews/V1-056-slice-11h.md)."
+    },
+    {
+      "test_id": "test_the_refund_method_service_maps_each_database_answer",
+      "upstream_ids": [
+        "BR-REFUND-014",
+        "API-013",
+        "DL-089"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "The Refund method service maps each database answer (not found, invalid, not authorized, conflict, unavailable) and needs no writer URL (V1-056 slice 11h, Refund methods with Settings access; DL-089; ops/reviews/V1-056-slice-11h.md)."
+    },
+    {
+      "test_id": "TEST-FE-S11H-001",
+      "upstream_ids": [
+        "API-013",
+        "BR-REFUND-014"
+      ],
+      "test_level": "UI",
+      "test_path": "frontend/src/settlementClient.test.tsx",
+      "status": "implemented",
+      "notes": "The client adds a Refund method and turns one off with the CSRF token, the selected Property and no Idempotency-Key (V1-056 slice 11h, Refund methods with Settings access; DL-089; ops/reviews/V1-056-slice-11h.md)."
     }
   ]
 }

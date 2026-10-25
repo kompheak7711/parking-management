@@ -39,6 +39,7 @@ from property_rental.credit_refund_read import (
 from property_rental.identity import AuthenticatedActor
 from property_rental.payment_api import _cursor
 from property_rental.refund import (
+    AddRefundMethodCommand,
     RefundAuthorizationError,
     RefundConflictError,
     RefundIdempotencyKeyReused,
@@ -1433,3 +1434,176 @@ def test_refund_methods_are_listed_for_a_refund_reader_preparer_or_property_mana
     assert api(flow, actor(flow.prop, "refunds.read")).get(f"{path}?x=1").status_code == 400
     flow.refund_service.refund_methods.return_value = {"items": [{"active": "yes"}]}
     assert api(flow, actor(flow.prop, "refunds.read")).get(path).status_code == 503
+
+
+def _method(identity: UUID, *, active: bool = True) -> dict[str, object]:
+    return {
+        "id": str(identity),
+        "code": "WING",
+        "display_name": "Wing money transfer",
+        "active": active,
+        "seeded": False,
+        "updated_at": "2026-10-25T10:00:00+00:00",
+    }
+
+
+def test_a_refund_method_is_added_only_with_settings_access() -> None:
+    """V1-056 slice 11h (owner answer of 2026-10-25; BR-REFUND-014): only the Owner and people
+    ticked for Settings access add a Refund method; it starts turned on."""
+    flow = Flow()
+    identity = uuid4()
+    flow.refund_service.add_refund_method.return_value = _method(identity)
+    path = f"/api/v1/properties/{flow.prop}/refund-methods"
+    body = {
+        "refund_method_id": str(identity),
+        "code": "WING",
+        "display_name": "Wing money transfer",
+    }
+    assert api(flow, None).post(path, json=body, headers=mutation_headers()).status_code == 401
+    for capability in ("property.manage", "refunds.create", "financial.approve"):
+        refused = api(flow, actor(flow.prop, capability)).post(
+            path, json=body, headers=mutation_headers()
+        )
+        assert refused.status_code == 404
+    assert api(flow, actor(flow.prop, "settings.manage")).post(path, json=body).status_code == 403
+    flow.refund_service.add_refund_method.assert_not_called()
+    who = actor(flow.prop, "settings.manage")
+    answer = api(flow, who).post(path, json=body, headers=mutation_headers())
+    assert answer.status_code == 201, answer.text
+    assert answer.json()["data"] == _method(identity)
+    command = flow.refund_service.add_refund_method.call_args.args[1]
+    assert (command.refund_method_id, command.code, command.display_name) == (
+        identity,
+        "WING",
+        "Wing money transfer",
+    )
+    for bad in (
+        {**body, "code": "wing"},
+        {**body, "code": "W"},
+        {**body, "display_name": " Wing"},
+        {**body, "display_name": ""},
+        {**body, "display_name": "x" * 121},
+        {**body, "extra": 1},
+        {key: value for key, value in body.items() if key != "code"},
+    ):
+        assert api(flow, who).post(path, json=bad, headers=mutation_headers()).status_code == 422
+    # A repeat of the request answers the method as it is now, turned off since included.
+    flow.refund_service.add_refund_method.return_value = _method(identity, active=False)
+    replay = api(flow, who).post(path, json=body, headers=mutation_headers())
+    assert replay.status_code == 201, replay.text
+    assert replay.json()["data"]["active"] is False
+    flow.refund_service.add_refund_method.return_value = _method(uuid4())
+    assert api(flow, who).post(path, json=body, headers=mutation_headers()).status_code == 503
+
+
+def test_a_refund_method_is_turned_off_or_on_only_with_settings_access() -> None:
+    """V1-056 slice 11h: turning a Refund method off or on again needs Settings access."""
+    flow = Flow()
+    identity = uuid4()
+    flow.refund_service.set_refund_method_on.return_value = _method(identity, active=False)
+    path = f"/api/v1/properties/{flow.prop}/refund-methods/{identity}/state"
+    assert (
+        api(flow, actor(flow.prop, "property.manage"))
+        .post(path, json={"active": False}, headers=mutation_headers())
+        .status_code
+        == 404
+    )
+    flow.refund_service.set_refund_method_on.assert_not_called()
+    who = actor(flow.prop, "settings.manage")
+    answer = api(flow, who).post(path, json={"active": False}, headers=mutation_headers())
+    assert answer.status_code == 200, answer.text
+    assert answer.json()["data"]["active"] is False
+    flow.refund_service.set_refund_method_on.assert_called_with(
+        flow.prop, identity, False, actor=who
+    )
+    for bad in ({"active": "false"}, {"active": 0}, {}, {"active": False, "reason": "x"}):
+        assert api(flow, who).post(path, json=bad, headers=mutation_headers()).status_code == 422
+    # The answer must show the state that was asked for.
+    assert (
+        api(flow, who).post(path, json={"active": True}, headers=mutation_headers()).status_code
+        == 503
+    )
+
+
+@pytest.mark.parametrize(
+    ("message", "code", "fields"),
+    [
+        ("Refund Method code is already used", "REFUND_METHOD_CODE_USED", ["code"]),
+        ("Refund Method identity was reused", "REFUND_METHOD_ID_REUSED", ["refund_method_id"]),
+        ("At least one Refund Method stays on", "REFUND_METHOD_LAST_ON", []),
+    ],
+)
+def test_a_refused_refund_method_change_answers_409_with_its_code(
+    message: str, code: str, fields: list[str]
+) -> None:
+    flow = Flow()
+    identity = uuid4()
+    error = _refused(message, RefundConflictError)
+    flow.refund_service.add_refund_method.side_effect = error
+    flow.refund_service.set_refund_method_on.side_effect = error
+    who = actor(flow.prop, "settings.manage")
+    client = api(flow, who)
+    for path, body in (
+        (
+            f"/api/v1/properties/{flow.prop}/refund-methods",
+            {"refund_method_id": str(identity), "code": "WING", "display_name": "Wing"},
+        ),
+        (f"/api/v1/properties/{flow.prop}/refund-methods/{identity}/state", {"active": False}),
+    ):
+        answer = client.post(path, json=body, headers=mutation_headers())
+        assert answer.status_code == 409, answer.text
+        assert answer.json()["error"]["code"] == code
+        assert answer.json()["error"]["fields"] == fields
+
+
+def test_a_settings_access_holder_reads_the_refund_methods() -> None:
+    """V1-056 slice 11h: the Settings screen lists the methods it changes."""
+    flow = Flow()
+    flow.refund_service.refund_methods.return_value = {"items": [_method(uuid4())]}
+    who = actor(flow.prop, "settings.manage")
+    answer = api(flow, who).get(f"/api/v1/properties/{flow.prop}/refund-methods")
+    assert answer.status_code == 200, answer.text
+
+
+class _Sqlstate(psycopg.Error):
+    def __init__(self, sqlstate: str) -> None:
+        self._sqlstate = sqlstate
+        super().__init__("refused")
+
+    @property
+    def sqlstate(self) -> str:  # type: ignore[override]
+        return self._sqlstate
+
+
+@pytest.mark.parametrize(
+    ("sqlstate", "error"),
+    [
+        ("P0002", RefundNotFoundError),
+        ("22023", RefundInvalidError),
+        ("42501", RefundAuthorizationError),
+        ("23505", RefundConflictError),
+        ("55000", RefundConflictError),
+        ("40P01", RefundConflictError),
+        ("40001", RefundConflictError),
+        ("57014", RefundUnavailableError),
+    ],
+)
+def test_the_refund_method_service_maps_each_database_answer(
+    sqlstate: str, error: type[Exception]
+) -> None:
+    prop = uuid4()
+    service = RefundService("runtime", "")
+    who = actor(prop, "settings.manage")
+    with patch.object(RefundService, "_attempt", side_effect=_Sqlstate(sqlstate)):
+        with pytest.raises(error):
+            service.set_refund_method_on(prop, uuid4(), False, actor=who)
+        with pytest.raises(error):
+            service.add_refund_method(
+                prop, AddRefundMethodCommand(uuid4(), "WING", "Wing"), actor=who
+            )
+    with pytest.raises(RefundAuthorizationError):
+        service.set_refund_method_on(prop, uuid4(), False, actor=actor(prop, "property.manage"))
+    with pytest.raises(RefundInvalidError):
+        AddRefundMethodCommand(uuid4(), "wing", "Wing")
+    with pytest.raises(RefundInvalidError):
+        AddRefundMethodCommand(uuid4(), "WING", " Wing")

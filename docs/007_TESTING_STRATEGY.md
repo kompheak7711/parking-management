@@ -510,6 +510,8 @@ V1-056 slice 11g-3: `backend/tests/test_manual_late_payment_closed_migration.py`
 
 V1-056 slice 11g-4: `backend/tests/test_late_charge_payment_proposal_migration.py` (PostgreSQL: the charge right after its own Invoice, part of a charge before a newer Invoice, the charge of a paid Invoice, each charge after its own Invoice, a named, third-party, reduced or waived charge, a stale proposal refused, a proposal charge allocation reversed like a direct one); `backend/tests/test_credit_migration.py` keeps its meaning by naming the Invoice; `frontend/src/FinancialWorkspaces.test.tsx` TEST-FE-S11G-003 (the proposal view shows a charge target as a charge).
 
+V1-056 slice 11h: `backend/tests/test_refund_method_settings_migration.py` (PostgreSQL: adding with Settings access, its audit and replay, a used code or reused id refused, other capabilities and bad input refused; turning off and on again, each audited; the last method that is on stays on; two people turning off the last two methods at once leave one on, at READ COMMITTED and REPEATABLE READ); `backend/tests/test_credit_refund_api.py` (the two routes need `settings.manage`, the Origin and the CSRF pair; refusal codes; the list read with Settings access; the service maps each database answer); `frontend/src/settlementClient.test.tsx` TEST-FE-S11H-001 (the client sends both changes with no key).
+
 # 12. Payment, Allocation, Credit, Refund, and Reversal Coverage
 
 ## TEST-059 — Payment Confirmation

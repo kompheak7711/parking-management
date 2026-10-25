@@ -5,6 +5,12 @@
 // a due_date is a plain YYYY-MM-DD date. Rules between fields (a reason that comes with its
 // choice, a finding a Damage charge needs) are checked by the server and answer 422 on the field.
 
+export interface AddRefundMethodInput {
+  refund_method_id: string;
+  code: string;
+  display_name: string;
+}
+
 export interface AdjustmentReversalCorrectionInput {
   adjustment_id: string;
   reason: string;
@@ -203,6 +209,10 @@ export interface RefundCorrectionInput {
   refund_method_id: string;
   reference_note: string;
   reason: string;
+}
+
+export interface RefundMethodStateInput {
+  active: boolean;
 }
 
 export interface RefundReturnCorrectionInput {
