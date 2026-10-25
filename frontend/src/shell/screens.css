@@ -965,7 +965,9 @@ table.ui-table a.ui-no {
 
 /* V1-058 R3 L2b-2: the New Lease form page uses the dialog fields. */
 .ui-leaseform input:not([type="checkbox"], [type="radio"]),
-.ui-leaseform select {
+.ui-leaseform select,
+.ui-pageform input:not([type="checkbox"], [type="radio"]),
+.ui-pageform select {
   width: 100%;
   min-height: 46px;
   padding: 0 12px;
@@ -981,7 +983,8 @@ table.ui-table a.ui-no {
   font-weight: 600;
 }
 
-.ui-leaseform [aria-invalid="true"] {
+.ui-leaseform [aria-invalid="true"],
+.ui-pageform [aria-invalid="true"] {
   border-color: var(--err);
   box-shadow: 0 0 0 1px var(--err);
 }
@@ -1402,4 +1405,30 @@ table.ui-table.ui-invlist .ui-phone {
     display: block;
     white-space: normal;
   }
+}
+
+/* V1-058 R5b: Create Invoice. A dollar box with "$" before the number, numbered next steps. */
+.ui-field .lbl {
+  font-weight: 600;
+}
+.ui-money {
+  position: relative;
+}
+.ui-money > span {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  transform: translateY(-50%);
+  color: var(--text-2);
+}
+.shell-view .ui-money input {
+  width: 100%;
+  padding-left: 28px;
+}
+.ui-steps {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 22px;
+  color: var(--text-2);
 }

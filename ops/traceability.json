@@ -51305,6 +51305,31 @@
       "test_path": "frontend/src/invoices/InvoicesPage.test.tsx",
       "status": "implemented",
       "notes": "V1-058 R5b-1 printed Invoice: Print Invoice prints only the sheet; a Utility line shows its use and rate; a Draft or void sheet is stamped; a paid, Draft or void sheet has no QR code. TEST-FE-898/899 now check the printed Invoice on the Invoice page."
+    },
+    {
+      "test_id": "TEST-FE-904",
+      "upstream_ids": [
+        "DL-074",
+        "UI-057",
+        "BR-INV-018"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/invoices/InvoicesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5b-2 Create Invoice: every box is checked with a summary, a confirmation dialog, the one-time charge is recorded and a Draft made once even when pressed again after no answer; Damage points to Move-out; Create Invoice needs invoices.create."
+    },
+    {
+      "test_id": "TEST-FE-905",
+      "upstream_ids": [
+        "DL-074",
+        "UI-057",
+        "BR-INV-011",
+        "BR-INV-018"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/invoices/InvoicesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5b-2 Issue Invoice: a Draft gets its number with the Settings Due Date, or another date from today on with a reason; a change meanwhile reads the Invoice again; Issue needs invoices.issue."
     }
   ]
 }

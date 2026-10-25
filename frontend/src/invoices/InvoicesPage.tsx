@@ -1,7 +1,7 @@
 // V1-058 R5: the Invoices page of the rebuilt app. "#/invoices" shows the list;
-// "#/invoices/inv:<id>" one Invoice; "#/invoices/for:<Customer id>" the list for one Customer.
-// Create Invoice, issue, adjust, void and the billing runs stay in the earlier forms that App
-// shows under this page until the next steps move them into the design.
+// "#/invoices/inv:<id>" one Invoice; "#/invoices/for:<Customer id>" the list for one Customer;
+// "#/invoices/new" Create Invoice. Adjust, void and the billing runs stay in the earlier forms
+// that App shows under this page until the next steps move them into the design.
 
 import "../shell/screens.css";
 
@@ -14,6 +14,7 @@ import { todayInPhnomPenh } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { openPageInAddress, useHashDetail } from "../shell/useHashPage";
 import type { Language } from "../signInText";
+import { CreateInvoice } from "./CreateInvoice";
 import { InvoiceDetail } from "./InvoiceDetail";
 import { InvoicesList } from "./InvoicesList";
 import { type InvoicesData, loadInvoicesData } from "./invoicesData";
@@ -24,7 +25,10 @@ export interface InvoicesPageProps {
   propertyId: string;
   /** Only the page that is shown loads; a hidden page waits until it is opened. */
   active: boolean;
-  invoiceApi: Pick<InvoiceApi, "list" | "get">;
+  invoiceApi: Pick<
+    InvoiceApi,
+    "list" | "get" | "issue" | "recordOneTimeCharge" | "create"
+  >;
   leaseApi: Pick<LeaseApi, "list">;
   customerApi: Pick<CustomerApi, "list">;
   capabilities: ReadonlySet<string> | null;
@@ -48,6 +52,8 @@ export function InvoicesPage({
   const customerId =
     detail?.startsWith("for:") === true ? detail.slice(4) : null;
   const today = fixedToday ?? todayInPhnomPenh();
+  const may = (capability: string) =>
+    capabilities === null || capabilities.has(capability);
   const [data, setData] = useState<InvoicesData | null>(null);
   const [failed, setFailed] = useState(false);
   const sequence = useRef(0);
@@ -94,6 +100,7 @@ export function InvoicesPage({
         data={data}
         invoiceId={invoiceId}
         key={`${invoiceId}:${propertyId}`}
+        onChanged={load}
         propertyId={propertyId}
         language={language}
         today={today}
@@ -119,10 +126,23 @@ export function InvoicesPage({
       )
     );
   }
+  if (detail === "new" && may("invoices.create")) {
+    return (
+      <CreateInvoice
+        api={invoiceApi}
+        data={data}
+        key={propertyId}
+        language={language}
+        onSaved={load}
+        propertyId={propertyId}
+      />
+    );
+  }
   return (
     <>
       {failure}
       <InvoicesList
+        canCreate={may("invoices.create")}
         customerId={customerId}
         data={data}
         language={language}

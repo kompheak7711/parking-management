@@ -18,6 +18,7 @@ import { openPageInAddress } from "../shell/useHashPage";
 import type { Language } from "../signInText";
 import { InvoiceDocument, SheetFrame } from "./InvoiceDocument";
 import { InvoiceChip } from "./InvoicesList";
+import { IssueDialog } from "./IssueDialog";
 import {
   type InvoicesData,
   cents,
@@ -223,9 +224,12 @@ export function InvoiceDetail({
   today,
   capabilities,
   propertyId,
+  onChanged,
 }: {
   language: Language;
-  api: Pick<InvoiceApi, "get">;
+  api: Pick<InvoiceApi, "get" | "issue">;
+  /** Something was saved; the list reads again. */
+  onChanged: () => void;
   invoiceId: string;
   /** An Invoice of another Property is not shown here. */
   propertyId: string;
@@ -236,6 +240,10 @@ export function InvoiceDetail({
 }) {
   const [invoice, setInvoice] = useState<InvoiceResource | null>(null);
   const [problem, setProblem] = useState<"missing" | "failed" | null>(null);
+  const [dialog, setDialog] = useState<"issue" | null>(null);
+  const [notice, setNotice] = useState<
+    { kind: "issued"; number: string; due: string } | { kind: "changed" } | null
+  >(null);
   const sequence = useRef(0);
   const may = (capability: string) =>
     capabilities === null || capabilities.has(capability);
@@ -359,12 +367,72 @@ export function InvoiceDetail({
           </p>
         </div>
         <div className="ui-actions">
+          {state === "draft" && may("invoices.issue") && (
+            <button
+              className="ui-btn primary"
+              onClick={() => {
+                setNotice(null);
+                setDialog("issue");
+              }}
+              type="button"
+            >
+              <Icon name="check" />
+              {ivt(language, "act_issue")}
+            </button>
+          )}
           <button className="ui-btn" onClick={printSheet} type="button">
             <Icon name="print" />
             {ivt(language, "act_print")}
           </button>
         </div>
       </div>
+      {notice !== null && (
+        <div
+          className={
+            notice.kind === "issued" ? "ui-notice ok" : "ui-notice warn"
+          }
+          role="status"
+        >
+          <Icon name={notice.kind === "issued" ? "check" : "alert"} />
+          <p>
+            {notice.kind === "issued"
+              ? ivt(language, "iss_done", notice.number, dayText(notice.due))
+              : ivt(language, "changed")}
+          </p>
+        </div>
+      )}
+      {dialog === "issue" && (
+        <IssueDialog
+          api={api}
+          invoice={invoice}
+          language={language}
+          name={name}
+          onChanged={() => {
+            setDialog(null);
+            setNotice({ kind: "changed" });
+            load();
+            onChanged();
+          }}
+          onClose={() => {
+            setDialog(null);
+          }}
+          onSaved={(issued) => {
+            setDialog(null);
+            setInvoice(issued);
+            setNotice(
+              issued.due_date === null
+                ? null
+                : {
+                    kind: "issued",
+                    number: issued.invoice_number,
+                    due: issued.due_date,
+                  },
+            );
+            onChanged();
+          }}
+          today={today}
+        />
+      )}
       {state === "overdue" && invoice.due_date !== null && (
         <div className="ui-notice err" role="note">
           <Icon name="alert" />

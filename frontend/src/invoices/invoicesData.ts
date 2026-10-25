@@ -21,6 +21,8 @@ export interface InvoicesData {
   leaseUnits: ReadonlyMap<string, string>;
   /** Customer id → the Unit of their newest signed Lease, for an Invoice with no Lease. */
   customerUnits: ReadonlyMap<string, string>;
+  /** Customer id → their newest signed Lease, which a one-time charge is billed under. */
+  customerLeases: ReadonlyMap<string, string>;
   /** What the person may do with Invoices, from the server. */
   capabilities: readonly string[];
 }
@@ -86,6 +88,7 @@ export async function loadInvoicesData(
   }
   const leaseUnits = new Map<string, string>();
   const customerUnits = new Map<string, string>();
+  const customerLeases = new Map<string, string>();
   // Oldest first, so the newest signed Lease of a Customer is the one kept.
   const byStart = [...leases].sort((left, right) =>
     (left.start_date ?? "").localeCompare(right.start_date ?? ""),
@@ -94,10 +97,29 @@ export async function loadInvoicesData(
     leaseUnits.set(lease.lease_id, lease.unit_number);
     if (!names.has(lease.primary_tenant_id))
       names.set(lease.primary_tenant_id, lease.primary_tenant_name);
-    if (lease.status !== "DRAFTED" && lease.status !== "CANCELLED")
+    if (lease.status !== "DRAFTED" && lease.status !== "CANCELLED") {
       customerUnits.set(lease.primary_tenant_id, lease.unit_number);
+      customerLeases.set(lease.primary_tenant_id, lease.lease_id);
+    }
   }
-  return { invoices, names, phones, leaseUnits, customerUnits, capabilities };
+  return {
+    invoices,
+    names,
+    phones,
+    leaseUnits,
+    customerUnits,
+    customerLeases,
+    capabilities,
+  };
+}
+
+/** "500.00" or "500" as cents; null when it is not a whole-cent amount above zero. */
+export function centsOf(text: string): number | null {
+  const value = text.trim();
+  if (!/^\d{1,7}(\.\d{1,2})?$/.test(value)) return null;
+  const [dollars = "0", part = ""] = value.split(".");
+  const amount = Number(dollars) * 100 + Number(part.padEnd(2, "0"));
+  return amount > 0 ? amount : null;
 }
 
 /** Whole cents of an amount; the server sends at most a few thousand dollars per Invoice. */

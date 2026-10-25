@@ -143,6 +143,206 @@ const TEXT = {
   open_customer: ["Open Customer", "បើកអតិថិជន"],
   // new
   act_print: ["Print Invoice", "បោះពុម្ពវិក្កយបត្រ"],
+  ni_btn: ["Create Invoice", "បង្កើតវិក្កយបត្រ"],
+  ni_intro: [
+    "For a one-time charge only. Rent and Utility Invoices are made by the app on the 25th.",
+    "សម្រាប់ថ្លៃមួយដងប៉ុណ្ណោះ។ វិក្កយបត្រថ្លៃឈ្នួល និងទឹកភ្លើង កម្មវិធីចេញនៅថ្ងៃទី25។",
+  ],
+  ni_kind: ["Kind of charge", "ប្រភេទថ្លៃ"],
+  // Changed from the mock-up: Move-out is built after slice 11, not "in round 3".
+  ni_damage: [
+    "A Damage charge comes from a finding in a Move-out inspection, and is entered there.",
+    "ថ្លៃការខូចខាតមកពីការរកឃើញក្នុងការត្រួតពិនិត្យពេលចាកចេញ ហើយបញ្ចូលនៅទីនោះ។",
+  ],
+  f_customer: ["Customer", "អតិថិជន"],
+  f_choose: ["Choose a Customer", "ជ្រើសរើសអតិថិជន"],
+  // new
+  ni_cust_help: [
+    "Customers with a signed Lease. The charge goes on their newest Lease.",
+    "អតិថិជនដែលមានកិច្ចសន្យាបានចុះហត្ថលេខា។ ថ្លៃនេះដាក់លើកិច្ចសន្យាថ្មីបំផុតរបស់គេ។",
+  ],
+  required: ["Required", "ចាំបាច់"],
+  ni_desc: ["What is charged", "ថ្លៃអ្វី"],
+  ni_desc_help: [
+    "Printed on the Invoice. For example: Replacement key card.",
+    "បោះពុម្ពលើវិក្កយបត្រ។ ឧទាហរណ៍៖ កាតសោជំនួស។",
+  ],
+  ni_amt: ["Amount", "ចំនួនទឹកប្រាក់"],
+  ni_amt_help: [
+    "One-time charges are in US dollars.",
+    "ថ្លៃមួយដងគិតជាដុល្លារអាមេរិក។",
+  ],
+  ni_reason: ["Reason", "មូលហេតុ"],
+  ni_src: ["What approves it", "អ្វីដែលអនុម័ត"],
+  ni_src_help: [
+    "The paper or message that allows this charge. For example: Signed key-card form, 02/11/2026.",
+    "ឯកសារ ឬសារដែលអនុញ្ញាតថ្លៃនេះ។ ឧទាហរណ៍៖ ទម្រង់កាតសោដែលបានចុះហត្ថលេខា 02/11/2026។",
+  ],
+  ni_err_cust: ["Choose the Customer.", "សូមជ្រើសរើសអតិថិជន។"],
+  ni_err_desc: ["Write what is charged.", "សូមសរសេរថ្លៃអ្វី។"],
+  err_amount: [
+    "Enter the amount in dollars and cents, for example 353.00.",
+    "សូមបញ្ចូលចំនួនជាដុល្លារ និងសេន ឧទាហរណ៍ 353.00។",
+  ],
+  ni_err_reason: ["Write the reason.", "សូមសរសេរមូលហេតុ។"],
+  ni_err_src: [
+    "Write what approves this charge.",
+    "សូមសរសេរអ្វីដែលអនុម័តថ្លៃនេះ។",
+  ],
+  // Changed from the mock-up: "saving" instead of "recording".
+  err_sum: [
+    "Fix {0} thing(s) before saving.",
+    "សូមកែ {0} ចំណុច មុនពេលរក្សាទុក។",
+  ],
+  ni_submit: ["Save Draft Invoice", "រក្សាទុកសេចក្តីព្រាងវិក្កយបត្រ"],
+  cancel: ["Cancel", "បោះបង់"],
+  ni_what_t: ["What happens next", "អ្វីកើតឡើងបន្ទាប់"],
+  ni_w1: [
+    "The Invoice is saved as a Draft. It is not sent and not owed yet.",
+    "វិក្កយបត្ររក្សាទុកជាសេចក្តីព្រាង។ មិនទាន់ផ្ញើ ហើយមិនទាន់ជំពាក់។",
+  ],
+  ni_w2: [
+    "A Manager checks it and issues it. Then it gets its Invoice number.",
+    "អ្នកគ្រប់គ្រងពិនិត្យ ហើយចេញវា។ ពេលនោះវាទទួលលេខវិក្កយបត្រ។",
+  ],
+  // Changed from the mock-up: the number of days is a Settings value the screen cannot read yet.
+  ni_w3: [
+    "The Due Date follows the Settings rule for one-time charges (7 days after the issue date unless it was changed). A Manager can choose another date, with a reason.",
+    "ថ្ងៃកំណត់បង់តាមច្បាប់ក្នុងការកំណត់សម្រាប់ថ្លៃមួយដង (7 ថ្ងៃក្រោយថ្ងៃចេញ លើកលែងតែបានប្តូរ)។ អ្នកគ្រប់គ្រងអាចជ្រើសថ្ងៃផ្សេង ដោយមានមូលហេតុ។",
+  ],
+  ni_w4: [
+    "Everything is saved in History.",
+    "អ្វីៗទាំងអស់រក្សាទុកក្នុងប្រវត្តិ។",
+  ],
+  ni_dlg_t: ["Save this Draft Invoice?", "រក្សាទុកសេចក្តីព្រាងវិក្កយបត្រនេះ?"],
+  ni_dlg_c: [
+    "The Customer does not owe it until a Manager issues it. This is saved in History.",
+    "អតិថិជនមិនទាន់ជំពាក់ រហូតដល់អ្នកគ្រប់គ្រងចេញវា។ ការនេះរក្សាទុកក្នុងប្រវត្តិ។",
+  ],
+  ni_done_t: ["Draft Invoice saved", "បានរក្សាទុកសេចក្តីព្រាងវិក្កយបត្រ"],
+  ni_done_b: [
+    "Draft for {0}, {1}: {2}, {3}. A Manager checks it and issues it.",
+    "សេចក្តីព្រាងសម្រាប់ {0} {1}៖ {2} {3}។ អ្នកគ្រប់គ្រងពិនិត្យ ហើយចេញវា។",
+  ],
+  ni_open: ["Open Draft", "បើកសេចក្តីព្រាង"],
+  ni_to_list: ["Back to Invoices", "ត្រឡប់ទៅវិក្កយបត្រ"],
+  // new
+  ni_none: [
+    "No Customer has a signed Lease yet, so there is no one to charge.",
+    "មិនទាន់មានអតិថិជនណាមានកិច្ចសន្យាបានចុះហត្ថលេខាទេ ដូច្នេះគ្មាននរណាត្រូវគិតថ្លៃ។",
+  ],
+  // new
+  unknown: [
+    "We could not tell if this was saved. Press the button again: it is saved only once.",
+    "យើងមិនដឹងថាបានរក្សាទុកឬនៅ។ សូមចុចប៊ូតុងម្តងទៀត៖ វារក្សាទុកតែម្តងប៉ុណ្ណោះ។",
+  ],
+  // new
+  refused: [
+    "This was not saved. The app did not accept it. Check what you typed, or ask the Owner if you may do this.",
+    "ការនេះមិនបានរក្សាទុកទេ។ កម្មវិធីមិនទទួលយក។ សូមពិនិត្យអ្វីដែលបានវាយ ឬសួរម្ចាស់ថាអ្នកអាចធ្វើការនេះបានឬទេ។",
+  ],
+  // new
+  changed: [
+    "This Invoice changed meanwhile. It is shown again as it is now; check it and try again.",
+    "វិក្កយបត្រនេះបានផ្លាស់ប្តូរក្នុងពេលនេះ។ វាបង្ហាញម្តងទៀតតាមស្ថានភាពឥឡូវ សូមពិនិត្យ ហើយព្យាយាមម្តងទៀត។",
+  ],
+  act_issue: ["Issue Invoice", "ចេញវិក្កយបត្រ"],
+  // new
+  iss_t: ["Issue this Invoice?", "ចេញវិក្កយបត្រនេះ?"],
+  // new
+  iss_b: [
+    "It gets its Invoice number now, and {0} owes {1}. An issued Invoice cannot be changed, only adjusted or voided.",
+    "វាទទួលលេខវិក្កយបត្រឥឡូវនេះ ហើយ {0} ជំពាក់ {1}។ វិក្កយបត្រដែលបានចេញមិនអាចកែបានទេ មានតែកែតម្រូវ ឬទុកជាមោឃៈ។",
+  ],
+  // new
+  iss_rule: [
+    "The Due Date follows the Settings rule.",
+    "ថ្ងៃកំណត់បង់តាមច្បាប់ក្នុងការកំណត់។",
+  ],
+  // new
+  iss_other: ["Choose another Due Date", "ជ្រើសថ្ងៃកំណត់បង់ផ្សេង"],
+  // new
+  iss_date: ["Due Date", "ថ្ងៃកំណត់បង់"],
+  // new
+  iss_reason: ["Why this date", "ហេតុអ្វីថ្ងៃនេះ"],
+  // new
+  iss_err_date: [
+    "Choose a Due Date from today on.",
+    "សូមជ្រើសថ្ងៃកំណត់បង់ចាប់ពីថ្ងៃនេះទៅ។",
+  ],
+  // new
+  iss_err_reason: [
+    "Write why the Invoice has this Due Date.",
+    "សូមសរសេរហេតុអ្វីវិក្កយបត្រមានថ្ងៃកំណត់បង់នេះ។",
+  ],
+  // new
+  iss_done: ["Issued as {0}. Due on {1}.", "បានចេញជា {0}។ ត្រូវបង់ថ្ងៃ {1}។"],
+  act_adjust: ["Adjust", "កែតម្រូវ"],
+  act_void: ["Void", "ទុកជាមោឃៈ"],
+  // new
+  close: ["Close", "បិទ"],
+  // new
+  adj_t: ["Adjust {0}", "កែតម្រូវ {0}"],
+  // new
+  adj_note: [
+    "The issued Invoice stays as it is. The Adjustment is a new record that raises or lowers one line, with its reason, in History.",
+    "វិក្កយបត្រដែលបានចេញនៅដដែល។ ការកែតម្រូវជាកំណត់ត្រាថ្មីដែលបង្កើន ឬបន្ថយបន្ទាត់មួយ ជាមួយមូលហេតុ ក្នុងប្រវត្តិ។",
+  ],
+  // new
+  adj_line: ["Which line", "បន្ទាត់ណា"],
+  // new
+  adj_dir: ["Change", "ការផ្លាស់ប្តូរ"],
+  // new
+  adj_credit: ["Lower the amount", "បន្ថយចំនួន"],
+  // new
+  adj_debit: ["Raise the amount", "បង្កើនចំនួន"],
+  // new
+  adj_live: ["{0} goes from {1} to {2}.", "{0} ប្តូរពី {1} ទៅ {2}។"],
+  // new
+  adj_save: ["Save Adjustment", "រក្សាទុកការកែតម្រូវ"],
+  // new
+  adj_err_dir: [
+    "Choose Lower the amount or Raise the amount.",
+    "សូមជ្រើសបន្ថយចំនួន ឬបង្កើនចំនួន។",
+  ],
+  // new
+  adj_err_more: [
+    "Enter an amount up to {0}, what the line is now.",
+    "សូមបញ្ចូលចំនួនមិនលើស {0} ដែលបន្ទាត់មានឥឡូវ។",
+  ],
+  // new
+  adj_err_src: [
+    "Write what approves this Adjustment.",
+    "សូមសរសេរអ្វីដែលអនុម័តការកែតម្រូវនេះ។",
+  ],
+  // new
+  adj_err_paid: [
+    "This line is paid in full, so it cannot be raised. Bill the missed amount with Create Invoice instead.",
+    "បន្ទាត់នេះបានបង់គ្រប់ ដូច្នេះមិនអាចបង្កើនបានទេ។ សូមចេញវិក្កយបត្រសម្រាប់ចំនួនដែលខ្វះ ដោយប្រើបង្កើតវិក្កយបត្រ។",
+  ],
+  // new
+  void_t: ["Void {0}?", "ទុក {0} ជាមោឃៈ?"],
+  // new
+  void_b: [
+    "Nobody owes this Invoice after this; {0} stops being owed. It stays in the list and its History, marked Void. This cannot be undone.",
+    "បន្ទាប់ពីនេះ គ្មាននរណាជំពាក់វិក្កយបត្រនេះទេ៖ {0} លែងជំពាក់។ វានៅក្នុងបញ្ជី និងប្រវត្តិ ដោយសម្គាល់ថាមោឃៈ។ មិនអាចត្រឡប់វិញបានទេ។",
+  ],
+  // new
+  void_paid: [
+    "Money was already paid toward this Invoice, so it cannot be voided. Move or return that payment first.",
+    "មានប្រាក់បានបង់សម្រាប់វិក្កយបត្រនេះរួចហើយ ដូច្នេះមិនអាចទុកជាមោឃៈបានទេ។ សូមផ្លាស់ ឬប្រគល់ការបង់ប្រាក់នោះជាមុនសិន។",
+  ],
+  // new
+  void_save: ["Void Invoice", "ទុកវិក្កយបត្រជាមោឃៈ"],
+  // new
+  void_err_reason: [
+    "Write why this Invoice is voided.",
+    "សូមសរសេរហេតុអ្វីវិក្កយបត្រនេះទុកជាមោឃៈ។",
+  ],
+  // new
+  adj_done: ["Adjustment saved.", "បានរក្សាទុកការកែតម្រូវ។"],
+  // new
+  void_done: ["The Invoice is void.", "វិក្កយបត្រទុកជាមោឃៈហើយ។"],
   open_lease: ["Open Lease", "បើកកិច្ចសន្យា"],
   // new
   all_for: ["All Invoices for {0}", "វិក្កយបត្រទាំងអស់សម្រាប់ {0}"],
@@ -155,8 +355,8 @@ const TEXT = {
   records: ["Earlier forms", "ទម្រង់មុន"],
   // new
   records_note: [
-    "Create Invoice, issue, adjust, void and billing runs, in English, until the next steps move them into this screen.",
-    "បង្កើតវិក្កយបត្រ ចេញ កែតម្រូវ ទុកជាមោឃៈ និងការចេញវិក្កយបត្រ ជាភាសាអង់គ្លេស រហូតដល់ជំហានបន្ទាប់ផ្លាស់វាមកអេក្រង់នេះ។",
+    "Adjust, void, billing runs and Due Date settings, in English, until the next steps move them into this screen.",
+    "កែតម្រូវ ទុកជាមោឃៈ ការចេញវិក្កយបត្រ និងការកំណត់ថ្ងៃកំណត់បង់ ជាភាសាអង់គ្លេស រហូតដល់ជំហានបន្ទាប់ផ្លាស់វាមកអេក្រង់នេះ។",
   ],
 } as const satisfies Record<string, readonly [string, string]>;
 

@@ -81,6 +81,7 @@ export function InvoicesList({
   today,
   customerId,
   onClearCustomer,
+  canCreate,
 }: {
   language: Language;
   data: InvoicesData;
@@ -88,6 +89,8 @@ export function InvoicesList({
   /** Only this Customer's Invoices, from "All Invoices for U201" on an Invoice page. */
   customerId: string | null;
   onClearCustomer: () => void;
+  /** Create Invoice shows only to a person who may create one. */
+  canCreate: boolean;
 }) {
   const [period, setPeriod] = useState<InvoicePeriod>("all");
   const [picked, setPicked] = useState(today.slice(0, 7));
@@ -240,6 +243,14 @@ export function InvoicesList({
             ? ivt(language, "inv_sub")
             : ivt(language, "inv_sub_m", monthText(language, month))}
         </p>
+        {canCreate && (
+          <div className="ui-actions">
+            <a className="ui-btn primary" href={hashForPage("invoices", "new")}>
+              <Icon name="plus" />
+              {ivt(language, "ni_btn")}
+            </a>
+          </div>
+        )}
       </div>
       <div className="ui-filters">
         <div

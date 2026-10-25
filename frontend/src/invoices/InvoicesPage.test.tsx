@@ -146,8 +146,16 @@ function invoices(): InvoiceResource[] {
   ];
 }
 
-function invoiceApi(list = invoices()): Pick<InvoiceApi, "list" | "get"> {
+type PageApi = Pick<
+  InvoiceApi,
+  "list" | "get" | "issue" | "recordOneTimeCharge" | "create"
+>;
+
+function invoiceApi(list = invoices()): PageApi {
   return {
+    issue: vi.fn(),
+    recordOneTimeCharge: vi.fn(),
+    create: vi.fn(),
     list: vi.fn().mockResolvedValue({
       items: list,
       next_cursor: null,
@@ -211,7 +219,7 @@ function customerApi(): Pick<CustomerApi, "list"> {
 
 function show(
   options: {
-    invoices?: Pick<InvoiceApi, "list" | "get">;
+    invoices?: PageApi;
     leases?: Pick<LeaseApi, "list">;
     customers?: Pick<CustomerApi, "list">;
     capabilities?: ReadonlySet<string> | null;
@@ -454,7 +462,7 @@ describe("Invoices page (V1-058 R5)", () => {
         next_cursor: null,
         capabilities: [],
       });
-    show({ invoices: { list, get: vi.fn() } });
+    show({ invoices: { ...invoiceApi(), list } });
     fireEvent.click(await screen.findByRole("button", { name: "Retry" }));
     expect(await screen.findByText("All Invoices")).toBeTruthy();
     expect(list).toHaveBeenCalledTimes(2);
@@ -490,7 +498,7 @@ describe("Invoices page (V1-058 R5)", () => {
         next_cursor: null,
         capabilities: [],
       });
-    show({ invoices: { list, get: vi.fn() } });
+    show({ invoices: { ...invoiceApi(), list } });
     expect(await screen.findByText("All Invoices")).toBeTruthy();
     expect(list).toHaveBeenLastCalledWith("property-1", { cursor: "page-2" });
     // Overpaid counts as its total; due today is not overdue yet.
@@ -586,5 +594,216 @@ describe("Invoices page (V1-058 R5)", () => {
     expect(within(sheet).getByText("VOID · ទុកជាមោឃៈ")).toBeTruthy();
     expect(sheet.querySelector(".due .n")?.textContent).toBe("$0.00");
     expect(within(sheet).queryByRole("img", { name: /KHQR/ })).toBeNull();
+  });
+
+  it("TEST-FE-904 Create Invoice checks every box, confirms, records the charge and makes a Draft once even when pressed again after no answer; Damage points to Move-out; it needs invoices.create", async () => {
+    const api = invoiceApi();
+    const draft = invoice("inv-new", "INV260099", {
+      customer: "cust-chan",
+      lease: "lease-201",
+      category: "MISCELLANEOUS_CHARGES",
+      status: "DRAFT",
+      due: null,
+      total: 1250,
+    });
+    const record = vi
+      .fn()
+      .mockRejectedValueOnce(new InvoiceClientError(null, "NETWORK", true))
+      .mockImplementation((_property: string, input: { charge_id: string }) =>
+        Promise.resolve({ obligation_id: input.charge_id }),
+      );
+    const create = vi.fn().mockResolvedValue(draft);
+    api.recordOneTimeCharge = record;
+    api.create = create;
+    show({ invoices: api, capabilities: new Set(["invoices.create"]) });
+    fireEvent.click(
+      await screen.findByRole("link", { name: "Create Invoice" }),
+    );
+    expect(
+      await screen.findByRole("heading", { name: "Create Invoice" }),
+    ).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Damage" }));
+    expect(
+      screen.getByText(
+        "A Damage charge comes from a finding in a Move-out inspection, and is entered there.",
+      ),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Miscellaneous" }));
+
+    fireEvent.change(screen.getByLabelText(/^Amount/), {
+      target: { value: "12.505" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save Draft Invoice" }));
+    expect(
+      await screen.findByText("Fix 5 thing(s) before saving."),
+    ).toBeTruthy();
+    expect(
+      screen.getAllByText(
+        "Enter the amount in dollars and cents, for example 353.00.",
+      ),
+    ).toHaveLength(2);
+
+    const customer = screen.getByLabelText(/^Customer/);
+    expect(
+      within(customer)
+        .getAllByRole("option")
+        .map((option) => option.textContent),
+    ).toEqual(["Choose a Customer", "Sok Dara · U101", "Chan Vanna · U201"]);
+    fireEvent.change(customer, { target: { value: "cust-chan" } });
+    fireEvent.change(screen.getByLabelText(/^What is charged/), {
+      target: { value: " Replacement key card " },
+    });
+    fireEvent.change(screen.getByLabelText(/^Amount/), {
+      target: { value: "12.5" },
+    });
+    fireEvent.change(screen.getByLabelText(/^Reason/), {
+      target: { value: "Lost key card" },
+    });
+    fireEvent.change(screen.getByLabelText(/^What approves it/), {
+      target: { value: "Signed key-card form" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save Draft Invoice" }));
+    const dialog = await screen.findByRole("dialog", {
+      name: "Save this Draft Invoice?",
+    });
+    expect(within(dialog).getByText("Chan Vanna · U201")).toBeTruthy();
+    expect(within(dialog).getByText("$12.50")).toBeTruthy();
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save Draft Invoice" }),
+    );
+    expect(
+      await within(dialog).findByText(
+        "We could not tell if this was saved. Press the button again: it is saved only once.",
+      ),
+    ).toBeTruthy();
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save Draft Invoice" }),
+    );
+    expect(await screen.findByText("Draft Invoice saved")).toBeTruthy();
+    expect(record).toHaveBeenCalledTimes(2);
+    const [first, second] = record.mock.calls as [
+      string,
+      Record<string, unknown>,
+      string,
+    ][];
+    expect(second).toEqual(first);
+    expect(first?.[1]).toMatchObject({
+      category: "MISCELLANEOUS_CHARGES",
+      customer_id: "cust-chan",
+      lease_id: "lease-201",
+      description: "Replacement key card",
+      amount: { currency: "USD", minor_units: 1250 },
+      reason: "Lost key card",
+      evidence_reference: "Signed key-card form",
+    });
+    expect(create).toHaveBeenCalledWith(
+      "property-1",
+      first?.[1].charge_id,
+      expect.any(String),
+    );
+    expect(
+      screen.getByText(
+        "Draft for Chan Vanna, U201: Replacement key card, $12.50. A Manager checks it and issues it.",
+      ),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("link", { name: "Open Draft" }).getAttribute("href"),
+    ).toBe("#/invoices/inv%3Ainv-new");
+    cleanup();
+
+    window.location.hash = "#/invoices";
+    show({ capabilities: new Set(["invoices.read"]) });
+    expect(await screen.findByText("All Invoices")).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "Create Invoice" })).toBeNull();
+  });
+
+  it("TEST-FE-905 Issue Invoice gives a Draft its number with the Settings Due Date, or another date with a reason; a change meanwhile reads the Invoice again; it needs invoices.issue", async () => {
+    const list = invoices();
+    const draft = list[3];
+    if (draft === undefined) throw new Error("No Draft");
+    const issued: InvoiceResource = {
+      ...draft,
+      status: "UNPAID",
+      invoice_number: "INV260004",
+      invoice_date: TODAY,
+      due_date: "2026-11-01",
+      outstanding_balance: draft.adjusted_total,
+      version: 2,
+    };
+    const api = invoiceApi(list);
+    const issue = vi
+      .fn()
+      .mockRejectedValueOnce(new InvoiceClientError(409, "CONFLICT", false))
+      .mockResolvedValue(issued);
+    api.issue = issue;
+    window.location.hash = "#/invoices/inv:inv-d1";
+    show({ invoices: api, capabilities: new Set(["invoices.issue"]) });
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Issue Invoice" }),
+    );
+    let dialog = screen.getByRole("dialog", { name: "Issue this Invoice?" });
+    expect(
+      within(dialog).getByText(
+        "It gets its Invoice number now, and Sok Dara owes $15.00. An issued Invoice cannot be changed, only adjusted or voided.",
+      ),
+    ).toBeTruthy();
+    fireEvent.click(within(dialog).getByLabelText("Choose another Due Date"));
+    fireEvent.change(within(dialog).getByLabelText("Due Date"), {
+      target: { value: "2026-10-20" },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Issue Invoice" }),
+    );
+    expect(
+      within(dialog).getByText("Choose a Due Date from today on."),
+    ).toBeTruthy();
+    expect(
+      within(dialog).getByText("Write why the Invoice has this Due Date."),
+    ).toBeTruthy();
+    expect(issue).not.toHaveBeenCalled();
+    fireEvent.change(within(dialog).getByLabelText("Due Date"), {
+      target: { value: "2026-11-01" },
+    });
+    fireEvent.change(within(dialog).getByLabelText("Why this date"), {
+      target: { value: "Customer is paid on the 1st" },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Issue Invoice" }),
+    );
+    expect(
+      await screen.findByText(
+        "This Invoice changed meanwhile. It is shown again as it is now; check it and try again.",
+      ),
+    ).toBeTruthy();
+    expect(issue).toHaveBeenLastCalledWith("inv-d1", 1, expect.any(String), {
+      due_date: "2026-11-01",
+      due_date_reason: "Customer is paid on the 1st",
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Issue Invoice" }));
+    dialog = screen.getByRole("dialog", { name: "Issue this Invoice?" });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Issue Invoice" }),
+    );
+    expect(
+      await screen.findByText("Issued as INV260004. Due on 01/11/2026."),
+    ).toBeTruthy();
+    expect(issue).toHaveBeenLastCalledWith(
+      "inv-d1",
+      1,
+      expect.any(String),
+      undefined,
+    );
+    expect(screen.getByRole("heading", { name: "INV260004" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Issue Invoice" })).toBeNull();
+    cleanup();
+
+    show({
+      invoices: invoiceApi(list),
+      capabilities: new Set(["invoices.read"]),
+    });
+    expect(await screen.findByRole("heading", { name: "Draft" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Issue Invoice" })).toBeNull();
   });
 });

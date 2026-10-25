@@ -1506,7 +1506,7 @@ export function App({
           leaseApi={leaseApi}
           propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
         />
-        {/* V1-058 R5: Create Invoice, issue, adjust, void and the billing runs stay in the
+        {/* V1-058 R5: adjust, void, the billing runs and the Due Date settings stay in the
             earlier English forms, folded, until the next steps move them into the design. */}
         <details className="ui-records">
           <summary lang={language}>

@@ -55,3 +55,11 @@ Run rules: frontend-only steps run the frontend gates (format, typecheck, lint, 
 - R7 list: the server does not record prints, so there is no "Printed by" History line or reprint mark on an Invoice; Utility lines show use × rate but not the two meter readings (the line evidence has no reading values).
 - Tests TEST-FE-903 (+ 898/899 updated); frontend 1,744 passed; screenshots /mnt/project-files/v1-058/r5b-print/.
 
+## R5b-2 Create Invoice, Draft and Issue (2026-10-25)
+- "Create Invoice" (green, on the Invoices list, only with invoices.create) opens #/invoices/new: Kind (Miscellaneous or Damage), Customer, What is charged, Amount, Reason, What approves it, all required, with an error summary; a confirmation dialog; then the done screen with Open Draft. Damage shows only the note that it comes from a Move-out inspection finding.
+- Saving sends two requests: record the one-time charge, then make the Draft Invoice from it. Both keep their ids and keys while the values are unchanged, so pressing again after no answer is saved once.
+- A Draft's page has "Issue Invoice" (invoices.issue). The Due Date follows the Settings rule, or "Choose another Due Date" with a date from today on and a reason; the server checks it. A change meanwhile reads the Invoice again.
+- Decided by Claude under the owner's 2026-10-23 22:30 rule: the Customer list is everyone with a signed Lease (any time), and the charge goes on their newest signed Lease; the "What happens next" card says the Settings rule (7 days unless changed) because the screen cannot read the number of days yet; the issue date cannot be before today.
+- R7 list: a read route for the one-time-charge Due Date days (Settings); the Draft page "Reason and approval" card needs the charge's reason and approval on the Invoice resource; correcting a Draft stays in the earlier forms.
+- Tests TEST-FE-904, 905; screenshots /mnt/project-files/v1-058/r5b-create/.
+
