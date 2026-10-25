@@ -53646,6 +53646,290 @@
       "test_path": "frontend/src/invoices/InvoicesPage.test.tsx",
       "status": "implemented",
       "notes": "V1-058 R5b-3 Void: ends what is owed with a reason; an Invoice with money paid toward it cannot be voided; a change meanwhile reads it again; Adjust and Void need invoices.adjust and invoices.void and show only on an issued Invoice."
+    },
+    {
+      "test_id": "test_receive_payment_sends_the_payment_and_the_ticks_as_one_command",
+      "upstream_ids": [
+        "DL-077",
+        "DL-029",
+        "BR-PAY-019",
+        "BR-PAY-024"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_receive_payment_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-1 Receive payment in one step: the route sends the USD or KHR payment and the ticks (an Invoice or a late-payment charge with what each gets) as one command and answers 201 with the Payment's Location."
+    },
+    {
+      "test_id": "test_receive_payment_needs_record_and_allocate_only_when_something_is_ticked",
+      "upstream_ids": [
+        "DL-077",
+        "DL-029",
+        "BR-PAY-019",
+        "BR-PAY-024"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_receive_payment_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-1 Receive payment in one step: Receive payment needs payments.record, and payments.allocate as soon as anything is ticked; money from a Customer who owes nothing needs recording only."
+    },
+    {
+      "test_id": "test_receive_payment_refuses_unclear_ticks_before_anything_is_saved",
+      "upstream_ids": [
+        "DL-077",
+        "DL-029",
+        "BR-PAY-019",
+        "BR-PAY-024"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_receive_payment_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-1 Receive payment in one step: unclear ticks (no target, both targets, zero or inexact cents, a target twice, more than 100, NAMED with none, an unknown field) are refused with 422 before anything is saved."
+    },
+    {
+      "test_id": "test_receive_payment_without_ticks_field_or_csrf_is_refused",
+      "upstream_ids": [
+        "DL-077",
+        "DL-029",
+        "BR-PAY-019",
+        "BR-PAY-024"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_receive_payment_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-1 Receive payment in one step: a body without the ticks, or a request without the CSRF token, is refused before dispatch."
+    },
+    {
+      "test_id": "test_receive_payment_refusals_name_what_the_screen_explains",
+      "upstream_ids": [
+        "DL-077",
+        "DL-029",
+        "BR-PAY-019",
+        "BR-PAY-024"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_receive_payment_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-1 Receive payment in one step: refusals answer 409 with RECEIVE_PAYMENT_CHANGED, RECEIVE_PAYMENT_LEFT_WHILE_OWING or IDEMPOTENCY_KEY_REUSED and no private detail."
+    },
+    {
+      "test_id": "test_oldest_first_saves_the_payment_its_receipt_and_what_it_pays_together",
+      "upstream_ids": [
+        "DL-077",
+        "DL-076",
+        "BR-PAY-019",
+        "BR-PAY-021",
+        "BR-PAY-024",
+        "BR-PAY-030"
+      ],
+      "test_level": "Integration",
+      "test_path": "backend/tests/test_receive_payment_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-1 Receive payment in one step: the Payment, its Receipt and the oldest-first allocations (Invoice, its late-payment charge, the newer Invoice) are saved in one transaction; the answer names each Invoice number and the money left; the same press again saves nothing new; the same key with another request is refused."
+    },
+    {
+      "test_id": "test_ticks_that_differ_from_the_proposal_save_nothing",
+      "upstream_ids": [
+        "DL-077",
+        "DL-076",
+        "BR-PAY-019",
+        "BR-PAY-021",
+        "BR-PAY-024",
+        "BR-PAY-030"
+      ],
+      "test_level": "Integration",
+      "test_path": "backend/tests/test_receive_payment_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-1 Receive payment in one step: ticks that differ from the database proposal, or no ticks while the Customer owes, save no Payment, Receipt or allocation, and the key is not used up."
+    },
+    {
+      "test_id": "test_money_from_a_customer_who_owes_nothing_waits_on_the_receipt",
+      "upstream_ids": [
+        "DL-077",
+        "DL-076",
+        "BR-PAY-019",
+        "BR-PAY-021",
+        "BR-PAY-024",
+        "BR-PAY-030"
+      ],
+      "test_level": "Integration",
+      "test_path": "backend/tests/test_receive_payment_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-1 Receive payment in one step: money from a Customer who owes nothing waits on the Receipt with no allocation."
+    },
+    {
+      "test_id": "test_named_ticks_pay_what_the_payer_named",
+      "upstream_ids": [
+        "DL-077",
+        "DL-076",
+        "BR-PAY-019",
+        "BR-PAY-021",
+        "BR-PAY-024",
+        "BR-PAY-030"
+      ],
+      "test_level": "Integration",
+      "test_path": "backend/tests/test_receive_payment_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-1 Receive payment in one step: named ticks pay the named Invoice line by line (customer designated) or the named late-payment charge directly; older Invoices stay unpaid."
+    },
+    {
+      "test_id": "test_named_ticks_never_leave_money_waiting_while_something_is_owed",
+      "upstream_ids": [
+        "DL-077",
+        "DL-076",
+        "BR-PAY-019",
+        "BR-PAY-021",
+        "BR-PAY-024",
+        "BR-PAY-030"
+      ],
+      "test_level": "Integration",
+      "test_path": "backend/tests/test_receive_payment_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-1 Receive payment in one step: named ticks that leave money while something is still owed, or name more than an Invoice owes, save nothing."
+    },
+    {
+      "test_id": "test_khr_money_pays_oldest_first_in_the_same_step",
+      "upstream_ids": [
+        "DL-077",
+        "DL-076",
+        "BR-PAY-019",
+        "BR-PAY-021",
+        "BR-PAY-024",
+        "BR-PAY-030"
+      ],
+      "test_level": "Integration",
+      "test_path": "backend/tests/test_receive_payment_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-1 Receive payment in one step: riel money is converted at the system rate and pays oldest first in the same transaction."
+    },
+    {
+      "test_id": "test_named_ticks_need_allocate_and_only_the_financial_role_may_call_the_command",
+      "upstream_ids": [
+        "DL-077",
+        "DL-076",
+        "BR-PAY-019",
+        "BR-PAY-021",
+        "BR-PAY-024",
+        "BR-PAY-030"
+      ],
+      "test_level": "Integration",
+      "test_path": "backend/tests/test_receive_payment_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-1 Receive payment in one step: named ticks need payments.allocate; only prm_financial may run the command and its replay; nobody reads the command table directly; the head is 20270219_207."
+    },
+    {
+      "test_id": "test_receive_payment_commands_are_append_only",
+      "upstream_ids": [
+        "DL-077",
+        "DL-076",
+        "BR-PAY-019",
+        "BR-PAY-021",
+        "BR-PAY-024",
+        "BR-PAY-030"
+      ],
+      "test_level": "Integration",
+      "test_path": "backend/tests/test_receive_payment_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-1 Receive payment in one step: Receive payment command rows cannot be updated or deleted."
+    },
+    {
+      "test_id": "test_the_payable_list_needs_recording_and_one_customer",
+      "upstream_ids": [
+        "DL-077",
+        "DL-029",
+        "BR-PAY-019",
+        "BR-PAY-024"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_receive_payment_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-1 Receive payment in one step: the payable list needs payments.record, exactly one customer_id and no other query."
+    },
+    {
+      "test_id": "test_receive_payment_takes_only_the_payer_s_own_money",
+      "upstream_ids": [
+        "DL-077",
+        "DL-029",
+        "BR-PAY-019",
+        "BR-PAY-024"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_receive_payment_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-1 Receive payment in one step: a Payment that names an Invoice or a charge, or a third party's money, is refused with 422 (review round 1 blocker)."
+    },
+    {
+      "test_id": "test_each_database_refusal_becomes_its_own_answer",
+      "upstream_ids": [
+        "DL-077",
+        "DL-029",
+        "BR-PAY-019",
+        "BR-PAY-024"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_receive_payment_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-1 Receive payment in one step: each database refusal becomes its own answer: changed, left while owing, too many, key reused, not found, bad request, conflict, or unknown outcome to replay."
+    },
+    {
+      "test_id": "test_the_payable_list_is_in_the_order_oldest_first_ticks_pay_it",
+      "upstream_ids": [
+        "DL-077",
+        "DL-076",
+        "BR-PAY-019",
+        "BR-PAY-021",
+        "BR-PAY-024",
+        "BR-PAY-030"
+      ],
+      "test_level": "Integration",
+      "test_path": "backend/tests/test_receive_payment_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-1 Receive payment in one step: the payable list holds the unpaid Invoices and open late-payment charges in the proposal's order with what is still owed, and needs payments.record."
+    },
+    {
+      "test_id": "test_a_payment_that_names_an_invoice_is_refused_by_the_database_too",
+      "upstream_ids": [
+        "DL-077",
+        "DL-076",
+        "BR-PAY-019",
+        "BR-PAY-021",
+        "BR-PAY-024",
+        "BR-PAY-030"
+      ],
+      "test_level": "Integration",
+      "test_path": "backend/tests/test_receive_payment_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-1 Receive payment in one step: the database refuses a Payment that names an Invoice or a charge, or a third party's money, and saves nothing."
+    },
+    {
+      "test_id": "test_a_khr_retry_keeps_the_first_rate_and_asks_for_no_new_one",
+      "upstream_ids": [
+        "DL-077",
+        "DL-076",
+        "BR-PAY-019",
+        "BR-PAY-021",
+        "BR-PAY-024",
+        "BR-PAY-030"
+      ],
+      "test_level": "Integration",
+      "test_path": "backend/tests/test_receive_payment_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-1 Receive payment in one step: a riel retry returns the first answer with the first rate and does not ask the rate source again."
+    },
+    {
+      "test_id": "test_two_presses_at_once_save_one_payment",
+      "upstream_ids": [
+        "DL-077",
+        "DL-076",
+        "BR-PAY-019",
+        "BR-PAY-021",
+        "BR-PAY-024",
+        "BR-PAY-030"
+      ],
+      "test_level": "Integration",
+      "test_path": "backend/tests/test_receive_payment_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-1 Receive payment in one step: two presses at once with the same key save one Payment, one Receipt and one set of allocations."
     }
   ]
 }
