@@ -442,6 +442,13 @@ export function ReceivePayment({
               <Icon name="payments" />
               {pyt(language, "done_again")}
             </button>
+            <a
+              className="ui-btn"
+              href={hashForPage("payments", `receipt:${done.paymentId}`)}
+            >
+              <Icon name="invoice" />
+              {pyt(language, "view_receipt")}
+            </a>
             <a className="ui-btn" href={hashForPage("payments")}>
               {pyt(language, "back")}
             </a>

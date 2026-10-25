@@ -210,6 +210,170 @@ const TEXT = {
     "These values changed after a press with no answer. Press Clear and enter the payment again.",
     "តម្លៃបានប្តូរក្រោយការចុចដែលគ្មានចម្លើយ។ សូមចុចសម្អាត ហើយបញ្ចូលការបង់ប្រាក់ម្តងទៀត។",
   ],
+  // R5c-3: the Payments list and the Receipt page (mock-up i18n.js unless marked "new").
+  pc_period: ["Period", "រយៈពេល"],
+  pc_today: ["Today", "ថ្ងៃនេះ"],
+  pc_month: ["This month", "ខែនេះ"],
+  pc_last: ["Last month", "ខែមុន"],
+  pc_pick: ["Pick dates", "ជ្រើសថ្ងៃ"],
+  f_all: ["All", "ទាំងអស់"],
+  pc_from: ["From", "ពី"],
+  pc_to: ["To", "ដល់"],
+  pc_apply: ["Show", "បង្ហាញ"],
+  pc_range: ["{0} to {1}", "{0} ដល់ {1}"],
+  pc_bad: [
+    "Write both dates as dd/mm/yyyy, with From on or before To.",
+    "សូមសរសេរថ្ងៃទាំងពីរជា dd/mm/yyyy ហើយថ្ងៃ ពី មិនក្រោយថ្ងៃ ដល់។",
+  ],
+  pc_none: [
+    "No payments in this period.",
+    "គ្មានការបង់ប្រាក់ក្នុងរយៈពេលនេះទេ។",
+  ],
+  pc_addup: [
+    "The seven category cards ({0}) and {1} not matched yet add up to {2}.",
+    "ប័ណ្ណប្រភេទទាំងប្រាំពីរ ({0}) និង {1} ដែលមិនទាន់ផ្គូផ្គង ស្មើនឹង {2}។",
+  ],
+  pc_addup0: [
+    "The seven category cards add up to {0}.",
+    "ប័ណ្ណប្រភេទទាំងប្រាំពីរ ស្មើនឹង {0}។",
+  ],
+  // new: money refunded straight from a payment is in none of the seven cards (decided by
+  // Claude, 25/10/2026).
+  pc_addup_r: [
+    "The seven category cards ({0}), {1} refunded and {2} not matched yet add up to {3}.",
+    "ប័ណ្ណប្រភេទទាំងប្រាំពីរ ({0}) {1} ដែលបានសងវិញ និង {2} ដែលមិនទាន់ផ្គូផ្គង ស្មើនឹង {3}។",
+  ],
+  // new: shown when the cards, refunds and money left do not add up to Total received.
+  pc_addup_bad: [
+    "The seven category cards ({0}), {1} refunded and {2} not matched yet add up to {3}, not {4}. Tell the Owner.",
+    "ប័ណ្ណប្រភេទទាំងប្រាំពីរ ({0}) {1} ដែលបានសងវិញ និង {2} ដែលមិនទាន់ផ្គូផ្គង ស្មើនឹង {3} មិនមែន {4} ទេ។ សូមប្រាប់ម្ចាស់។",
+  ],
+  pc_rev_note: ["{0} reversed, not counted", "{0} បានត្រឡប់វិញ មិនរាប់ទេ"],
+  pc_none_left: [
+    "No payment in this list is waiting to be matched.",
+    "គ្មានការបង់ប្រាក់ក្នុងបញ្ជីនេះកំពុងរង់ចាំការផ្គូផ្គងទេ។",
+  ],
+  pc_basis: [
+    "Riel payments ({0}) count at the dollar value recorded when they were received ({1}).",
+    "ការបង់ជារៀល ({0}) គិតតាមតម្លៃដុល្លារដែលបានកត់ត្រាពេលទទួល ({1})។",
+  ],
+  pc_left: ["{0} left", "នៅសល់ {0}"],
+  pc_showing: ["Showing payments with {0}.", "បង្ហាញការបង់ប្រាក់ដែលមាន {0}។"],
+  pc_clear: ["Show all", "បង្ហាញទាំងអស់"],
+  // new
+  pc_more: [
+    "The list shows the newest 500 payments of this period; the cards count them all.",
+    "បញ្ជីបង្ហាញការបង់ប្រាក់ថ្មីបំផុត 500 ក្នុងរយៈពេលនេះ ប័ណ្ណរាប់ទាំងអស់។",
+  ],
+  col_receipt: ["Receipt", "បង្កាន់ដៃ"],
+  col_received: ["Received on", "កាលបរិច្ឆេទទទួល"],
+  col_cust: ["Customer", "អតិថិជន"],
+  col_amount: ["Amount", "ចំនួនទឹកប្រាក់"],
+  col_for: ["Paid for", "បង់សម្រាប់"],
+  col_status: ["Status", "ស្ថានភាព"],
+  c_total: ["Total received", "ប្រាក់ទទួលសរុប"],
+  c_unm: ["{0} not matched yet", "{0} មិនទាន់ផ្គូផ្គង"],
+  c_allm: ["Nothing left to match", "គ្មានប្រាក់ត្រូវផ្គូផ្គងទៀត"],
+  c_n: ["{0} payments", "ការបង់ប្រាក់ {0}"],
+  c_n1: ["1 payment", "ការបង់ប្រាក់ 1"],
+  c_RENT: ["Rent", "ថ្លៃឈ្នួល"],
+  c_RENT_s: ["Rent lines", "ជួរថ្លៃឈ្នួល"],
+  c_UTIL: ["Utilities", "ទឹកភ្លើង"],
+  c_UTIL_s: ["Electricity and water", "ភ្លើង និងទឹក"],
+  c_SVC: ["Services", "សេវា"],
+  c_SVC_s: ["Trash Collection", "ការប្រមូលសំរាម"],
+  c_LATE: ["Late-payment charges", "ថ្លៃពិន័យបង់យឺត"],
+  // new: the app adds the charge itself (DL-076, slice 11g); no manager confirms it.
+  c_LATE_s: [
+    "Added by the app after the Due Date",
+    "កម្មវិធីបន្ថែមក្រោយថ្ងៃកំណត់",
+  ],
+  c_DEPOSIT: ["Deposits", "ប្រាក់កក់"],
+  c_DEPOSIT_s: ["Held, not income", "រក្សាទុក មិនមែនចំណូល"],
+  c_MOVEOUT: ["Move-out charges", "ថ្លៃពេលចាកចេញ"],
+  // new: other one-time charges count here too (decided by Claude, 25/10/2026).
+  c_MOVEOUT_s: [
+    "Cleaning, damage and other one-time charges",
+    "ការសម្អាត ការខូចខាត និងថ្លៃមួយដងផ្សេងទៀត",
+  ],
+  c_CREDIT: ["Customer Credit", "ឥណទានអតិថិជន"],
+  c_CREDIT_s: ["Overpayments kept as Credit", "ប្រាក់បង់លើស រក្សាទុកជាឥណទាន"],
+  st_matched: ["Matched", "បានផ្គូផ្គង"],
+  st_partmatched: ["Part matched", "ផ្គូផ្គងបានខ្លះ"],
+  st_notmatched: ["Not matched", "មិនទាន់ផ្គូផ្គង"],
+  // new
+  st_reversed: ["Reversed", "បានត្រឡប់វិញ"],
+  rc_title: ["Receipt {0}", "បង្កាន់ដៃ {0}"],
+  rc_print: ["Print Receipt", "បោះពុម្ពបង្កាន់ដៃ"],
+  rc_reprint: ["Reprint", "បោះពុម្ពម្តងទៀត"],
+  rc_not_matched: [
+    "Not matched to an Invoice yet.",
+    "មិនទាន់ផ្គូផ្គងនឹងវិក្កយបត្រ។",
+  ],
+  rc_reprints: ["Reprints", "ការបោះពុម្ពម្តងទៀត"],
+  rc_noreprints: ["Not reprinted.", "មិនទាន់បោះពុម្ពម្តងទៀត។"],
+  rc_one: [
+    "One Receipt per payment. It never changes. A reprint keeps the same number.",
+    "បង្កាន់ដៃមួយសម្រាប់ការបង់ប្រាក់មួយ។ វាមិនផ្លាស់ប្តូរទេ។ ការបោះពុម្ពម្តងទៀតរក្សាលេខដដែល។",
+  ],
+  dlg_rp_t: ["Reprint Receipt {0}?", "បោះពុម្ពបង្កាន់ដៃ {0} ម្តងទៀត?"],
+  dlg_rp_c: [
+    "The copy keeps number {0} and is marked REPRINT. It does not record new money.",
+    "ច្បាប់ចម្លងរក្សាលេខ {0} ហើយមានសញ្ញា REPRINT។ វាមិនកត់ត្រាប្រាក់ថ្មីទេ។",
+  ],
+  reason: ["Reason", "មូលហេតុ"],
+  reason_pick: ["Choose a reason", "ជ្រើសរើសមូលហេតុ"],
+  reason_lost: ["Customer lost the Receipt", "អតិថិជនបាត់បង្កាន់ដៃ"],
+  reason_copy: [
+    "Customer asked for another copy",
+    "អតិថិជនសុំច្បាប់ចម្លងមួយទៀត",
+  ],
+  reason_other: ["Other", "ផ្សេងទៀត"],
+  reason_more: ["More detail", "ព័ត៌មានបន្ថែម"],
+  // new
+  err_reason: ["Choose a reason.", "សូមជ្រើសរើសមូលហេតុ។"],
+  // new
+  err_reason_more: [
+    "Write what happened when the reason is Other.",
+    "សូមសរសេរអ្វីដែលបានកើតឡើង ពេលមូលហេតុជា ផ្សេងទៀត។",
+  ],
+  rp_row: ["{0} by {1}: {2}", "{0} ដោយ {1}៖ {2}"],
+  mt_left: ["Not matched yet", "មិនទាន់ផ្គូផ្គង"],
+  // new
+  rc_on: ["on", "លើ"],
+  // new
+  rc_refunded: ["Refunded", "ប្រាក់សងវិញ"],
+  view_receipt: ["View Receipt", "មើលបង្កាន់ដៃ"],
+  // new
+  rc_missing: [
+    "This payment was not found. It may belong to another Property.",
+    "រកមិនឃើញការបង់ប្រាក់នេះទេ។ វាអាចជារបស់អគារផ្សេង។",
+  ],
+  // new
+  rc_reversed: [
+    "This payment was reversed. The Receipt stays with its number; the money pays nothing.",
+    "ការបង់ប្រាក់នេះត្រូវបានត្រឡប់វិញ។ បង្កាន់ដៃនៅរក្សាលេខ ប្រាក់មិនបង់អ្វីទេ។",
+  ],
+  // new
+  rp_saved: [
+    "Reprint recorded. Print the copy now.",
+    "បានកត់ត្រាការបោះពុម្ពម្តងទៀត។ សូមបោះពុម្ពច្បាប់ចម្លងឥឡូវ។",
+  ],
+  // new
+  rp_unknown: [
+    "No answer came back, so the reprint may already be recorded. Press Reprint again: it records once.",
+    "គ្មានចម្លើយត្រឡប់មកវិញ ដូច្នេះការបោះពុម្ពម្តងទៀតប្រហែលជាបានកត់ត្រារួចហើយ។ សូមចុច បោះពុម្ពម្តងទៀត ម្តងទៀត៖ វាកត់ត្រាតែម្តងប៉ុណ្ណោះ។",
+  ],
+  // new
+  rc_names_failed: [
+    "The Customer names could not be read, so the Receipt cannot print yet.",
+    "មិនអាចអានឈ្មោះអតិថិជនបានទេ ដូច្នេះមិនទាន់អាចបោះពុម្ពបង្កាន់ដៃបាន។",
+  ],
+  // new
+  rp_failed: [
+    "The reprint was not recorded. Try again.",
+    "មិនបានកត់ត្រាការបោះពុម្ពម្តងទៀតទេ។ សូមព្យាយាមម្តងទៀត។",
+  ],
   RENT: ["Rent", "ថ្លៃឈ្នួល"],
   UTILITIES: ["Utilities", "ថ្លៃទឹកភ្លើង"],
   // new

@@ -54002,6 +54002,185 @@
       "test_path": "frontend/src/payments/ReceivePayment.test.tsx",
       "status": "implemented",
       "notes": "V1-058 R5c-2 Receive payment: riel counts at the app rate and is sent with its dollar value."
+    },
+    {
+      "test_id": "TEST-FE-914",
+      "upstream_ids": [
+        "DL-074",
+        "UI-068",
+        "BR-PAY-036"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/payments/PaymentsList.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5c-3b Payments list and Receipt: shows Total received and the seven cards, the add-up line, and filters the list by a card or by money not matched yet."
+    },
+    {
+      "test_id": "TEST-FE-915",
+      "upstream_ids": [
+        "DL-074",
+        "UI-068",
+        "BR-PAY-036"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/payments/PaymentsList.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5c-3b Payments list and Receipt: reads each period from the server, and Pick dates needs two real days in order."
+    },
+    {
+      "test_id": "TEST-FE-916",
+      "upstream_ids": [
+        "DL-074",
+        "UI-068",
+        "BR-PAY-036"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/payments/PaymentsList.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5c-3b Payments list and Receipt: adds refunded money to the add-up line, and a failed read offers Retry."
+    },
+    {
+      "test_id": "TEST-FE-917",
+      "upstream_ids": [
+        "DL-074",
+        "UI-068",
+        "BR-PAY-036"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/payments/PaymentsList.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5c-3b Payments list and Receipt: prints what the payment paid line by line, an Invoice before its late-payment charge, and the money not used yet."
+    },
+    {
+      "test_id": "TEST-FE-918",
+      "upstream_ids": [
+        "DL-074",
+        "UI-068",
+        "BR-PAY-036"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/payments/PaymentsList.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5c-3b Payments list and Receipt: a reprint needs a reason, keeps one key for one reason, records it and prints a copy marked REPRINT."
+    },
+    {
+      "test_id": "TEST-FE-919",
+      "upstream_ids": [
+        "DL-074",
+        "UI-068",
+        "BR-PAY-036"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/payments/PaymentsList.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5c-3b Payments list and Receipt: a missing payment is named, a reversed one is stamped, and Reprint shows only to a person who may reprint."
+    },
+    {
+      "test_id": "test_the_period_read_needs_payments_read_and_two_dates",
+      "upstream_ids": [
+        "DL-074",
+        "UI-068",
+        "BR-PAY-036"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_payments_summary_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-3a: the Payments period read needs payments.read and two dates at most two years apart."
+    },
+    {
+      "test_id": "test_the_period_read_hides_database_failures",
+      "upstream_ids": [
+        "DL-074",
+        "UI-068",
+        "BR-PAY-036"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_payments_summary_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-3a: a failed period read answers 503 without database words."
+    },
+    {
+      "test_id": "test_the_receipt_lines_need_receipts_read_and_hide_a_missing_payment",
+      "upstream_ids": [
+        "DL-074",
+        "UI-068",
+        "BR-PAY-036"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_payments_summary_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-3a: the Receipt lines need receipts.read and a missing payment answers 404."
+    },
+    {
+      "test_id": "test_each_payment_is_split_by_what_it_paid_and_the_cards_add_up",
+      "upstream_ids": [
+        "DL-074",
+        "UI-068",
+        "BR-PAY-036"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payments_summary_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-3a: each payment is split by what it paid and the cards add up to what was received."
+    },
+    {
+      "test_id": "test_the_period_read_is_bounded_and_needs_payments_read",
+      "upstream_ids": [
+        "DL-074",
+        "UI-068",
+        "BR-PAY-036"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payments_summary_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-3a: the period read is bounded (500 rows, two years) and needs payments.read."
+    },
+    {
+      "test_id": "test_the_receipt_lines_name_what_one_payment_paid",
+      "upstream_ids": [
+        "DL-074",
+        "UI-068",
+        "BR-PAY-036"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payments_summary_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-3a: the Receipt lines name what one payment paid, with its reprints."
+    },
+    {
+      "test_id": "TEST-FE-920",
+      "upstream_ids": [
+        "DL-074",
+        "UI-068"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/payments/PaymentsList.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5c-3b review round 1: the add-up line warns when the cards do not add up, and the Not matched filter names why the list is empty."
+    },
+    {
+      "test_id": "TEST-FE-921",
+      "upstream_ids": [
+        "DL-074",
+        "UI-068",
+        "BR-PAY-036"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/payments/PaymentsList.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5c-3b review round 1: once reprinted, Print Receipt prints a copy marked REPRINT on A5, and each new reprint prints again."
+    },
+    {
+      "test_id": "TEST-FE-922",
+      "upstream_ids": [
+        "DL-074",
+        "UI-068",
+        "BR-PAY-036"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/payments/PaymentsList.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5c-3b review round 1: the Receipt does not print without the Customer names, and a reversed Receipt shows no money waiting."
     }
   ]
 }

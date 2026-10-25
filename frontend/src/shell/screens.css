@@ -1522,3 +1522,82 @@ table.ui-table.ui-invlist .ui-phone {
 .ui-seg button {
   white-space: nowrap;
 }
+
+/* V1-058 R5c-3: the Payments list (eight cards, Pick dates, the list) and the Receipt page. */
+.ui-pick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+}
+.ui-pick label {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  color: var(--text-2);
+}
+.ui-inp {
+  width: 130px;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--input);
+  color: var(--text);
+  font: inherit;
+}
+.ui-inp[aria-invalid="true"] {
+  border-color: var(--err);
+}
+.ui-perr {
+  flex-basis: 100%;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin: 0;
+  color: var(--err);
+  font-size: 0.9rem;
+}
+.ui-showing {
+  margin-left: auto;
+}
+.ui-nw {
+  white-space: nowrap;
+}
+.ui-warnv {
+  color: var(--warn);
+}
+table.ui-table.ui-paylist .ui-pf {
+  display: block;
+}
+table.ui-table.ui-paylist .ui-chip {
+  white-space: nowrap;
+}
+table.ui-table.ui-paylist .ui-phone {
+  display: none;
+}
+@media (max-width: 760px) {
+  /* Only Receipt and Customer stay on a phone, so the list fits without scrolling sideways. */
+  table.ui-table.ui-paylist {
+    min-width: 0;
+  }
+  table.ui-table.ui-paylist .ui-wide {
+    display: none;
+  }
+  table.ui-table.ui-paylist .ui-phone {
+    display: block;
+    white-space: normal;
+  }
+}
+.ui-split.ui-split-receipt {
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+}
+@media (max-width: 1080px) {
+  .ui-split.ui-split-receipt {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.ui-stack h3 {
+  margin: 0 0 12px;
+  color: var(--heading);
+}

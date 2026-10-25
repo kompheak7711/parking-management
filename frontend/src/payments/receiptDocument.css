@@ -1,0 +1,114 @@
+/* V1-058 R5c-3: the printed Receipt, from the approved template
+   brand-kit/05_Templates/receipt-template.html (A5, mm sizes). The shared document rules are in
+   invoices/invoiceDocument.css; these are the Receipt's own. */
+
+.doc.a5 {
+  width: 148mm;
+  min-height: 210mm;
+  padding: 10mm 11mm 9mm;
+  font-size: 9pt;
+}
+.doc.a5 .logo {
+  height: 12mm;
+}
+.doc.a5 .title > .kh {
+  font-size: 13pt;
+}
+.doc.a5 .title > .en {
+  font-size: 15pt;
+}
+.doc.a5 hr {
+  margin: 4mm 0;
+}
+.doc.a5 .foot {
+  left: 11mm;
+  right: 11mm;
+  bottom: 7mm;
+}
+.doc.a5 .push {
+  flex: 1 0 5mm;
+}
+.doc .amount {
+  margin-top: 4mm;
+  background: var(--soft);
+  border-left: 1.2mm solid var(--green);
+  padding: 3mm 5mm;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 4mm;
+}
+.doc .amount .n {
+  font-size: 20pt;
+  font-weight: 700;
+  color: var(--green);
+  line-height: 1;
+  text-align: right;
+}
+.doc .amount .khr {
+  font-size: 8.3pt;
+  color: var(--ink2);
+  text-align: right;
+  margin-top: 1.5mm;
+  line-height: 1.5;
+}
+.doc.a5 table.paidfor {
+  margin-top: 4mm;
+}
+.doc.a5 table.paidfor td {
+  padding: 1.5mm 2mm 1.5mm 0;
+}
+.doc.a5 table.paidfor th.r {
+  white-space: nowrap;
+}
+.doc.a5 table.paidfor.many td {
+  padding: 1mm 2mm 1mm 0;
+}
+.doc.a5 table.paidfor.many .cat,
+.doc.a5 table.paidfor.many .det {
+  display: inline;
+}
+.doc.a5 table.paidfor.many .det {
+  margin-left: 2mm;
+}
+.doc .rows {
+  margin-top: 4mm;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1.6mm 6mm;
+  align-items: baseline;
+}
+.doc .rows dd {
+  margin: 0;
+  font-weight: 600;
+}
+.doc .rows dd small {
+  font-weight: 400;
+  color: var(--ink2);
+}
+.doc .sign {
+  margin: 0 0 9mm;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8mm;
+  font-size: 8pt;
+  color: var(--ink2);
+}
+.doc .sign div {
+  border-top: 0.2mm solid var(--ink);
+  padding-top: 1.5mm;
+}
+.doc .reprint {
+  display: inline-block;
+  margin-top: 2mm;
+  font-size: 7.5pt;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--err);
+  border: 0.3mm solid var(--err);
+  padding: 0.3mm 2mm;
+  border-radius: 1mm;
+}
+
+/* A Receipt prints on A5 paper (owner: Receipt A5, everything else A4): ReceiptPage adds the
+   page size only while it prints. */

@@ -93,3 +93,25 @@ Run rules: frontend-only steps run the frontend gates (format, typecheck, lint, 
 - The Payments menu item now also shows to a person with only payments.record, so a cashier can open Receive payment (display only; the server checks each route). Decided by Claude under the owner's 2026-10-23 22:30 rule.
 - The earlier payment forms stay folded under "Earlier forms" until R5c-3.
 - Tests TEST-FE-908 to 913. Full frontend run 1,765 of 1,767; the 2 failures were TEST-FE-087 and TEST-FE-488 (known intermittent, V1-060), both passed when run again. Screenshots in /mnt/project-files/v1-058/r5c-receive/.
+
+## 2026-10-25 R5c-3 Payments list and Receipt page (step log)
+
+- R5c-3a (1f6ee1a): migration 20270220_208 adds app.payments_period_summary and
+  app.payment_receipt_lines (read-only, actor checked without locks); routes
+  GET /payments/summary (payments.read) and GET /payments/{id}/receipt-lines (receipts.read).
+- R5c-3b: Payments list (periods All/Today/This month/Last month/Pick dates, Total received and
+  seven cards, add-up line, All/Not matched filter, phone fold) and the Receipt page (A5 Receipt,
+  Paid for, Reprints, Print Receipt, Reprint with a reason). TEST-FE-914 to 922.
+- Decided by Claude under the owner's 2026-10-23 22:30 rule: refunded money is named in the
+  add-up line, not a card; the Move-out card also counts other one-time charges; the Late card
+  note reads "Added by the app after the Due Date"; "All" means the last two years (server limit
+  731 days); users with payments.record see the Payments menu.
+- Review round 1 (no files written by the reviewer): fixed Print Receipt printing an unmarked copy
+  after a reprint (now REPRINT with the last reprint day, as the mock-up); A5 size added only while
+  printing (a named page never applied); a second reprint the same day now prints; the reason is
+  locked after a press with no answer (one key, one record); a reversed Receipt shows no money
+  waiting; Print and Reprint wait for the Customer names (Retry on failure); the app checks the
+  add-up and warns when it does not match; the list names reversed rows that are not counted; a
+  422 Payment id shows as not found; Khmer spans carry lang="km"; phone list fits without sideways
+  scroll. Left for later: today's date refresh after midnight while the page stays open.
+- Gates: prettier, tsc, eslint clean; vitest 1,776 passed; traceability audit passed.

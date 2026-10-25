@@ -1,6 +1,7 @@
-// V1-058 R5c: the Payments page of the rebuilt app. "#/payments/receive" (or
-// "#/payments/receive:<Customer id>") is Receive payment. The payment list, matching, Credit and
-// refunds stay in the earlier forms that App shows under this page until the next steps.
+// V1-058 R5c: the Payments page of the rebuilt app: the list with its eight cards,
+// "#/payments/receive" (or "#/payments/receive:<Customer id>") for Receive payment, and
+// "#/payments/receipt:<Payment id>" for a Receipt. Matching, Credit and refunds stay in the
+// earlier forms that App shows under this page until the next steps.
 
 import "../shell/screens.css";
 
@@ -11,10 +12,13 @@ import type { InvoiceApi } from "../invoiceClient";
 import { type InvoicesData, loadInvoicesData } from "../invoices/invoicesData";
 import type { LeaseApi } from "../leaseClient";
 import { Icon } from "../shell/icons";
+import { todayInPhnomPenh } from "../shell/format";
 import { hashForPage } from "../shell/navigation";
 import { useHashDetail } from "../shell/useHashPage";
 import type { Language } from "../signInText";
 import type { PaymentsApi } from "./paymentsClient";
+import { PaymentsList } from "./PaymentsList";
+import { ReceiptPage } from "./ReceiptPage";
 import { ReceivePayment } from "./ReceivePayment";
 import { pyt } from "./text";
 
@@ -45,8 +49,12 @@ export function PaymentsPage({
     detail === "receive" || detail?.startsWith("receive:") === true;
   const customerId =
     detail?.startsWith("receive:") === true ? detail.slice(8) : "";
-  const mayReceive =
-    capabilities === null || capabilities.has("payments.record");
+  const receiptOf =
+    detail?.startsWith("receipt:") === true ? detail.slice(8) : null;
+  const may = (capability: string) =>
+    capabilities === null || capabilities.has(capability);
+  const mayReceive = may("payments.record");
+  const mayList = may("payments.read");
   const [data, setData] = useState<InvoicesData | null>(null);
   const [failed, setFailed] = useState(false);
   const sequence = useRef(0);
@@ -70,9 +78,10 @@ export function PaymentsPage({
     setData(null);
   }, [propertyId]);
 
+  // The list and the Receipt use the Customer names and Units too.
   useEffect(() => {
-    if (active && receiving) load();
-  }, [active, load, receiving]);
+    if (active) load();
+  }, [active, load]);
 
   if (propertyId === "") {
     return (
@@ -112,6 +121,34 @@ export function PaymentsPage({
       />
     );
   }
+
+  if (receiptOf !== null && may("receipts.read"))
+    return (
+      <ReceiptPage
+        api={paymentsApi}
+        data={data}
+        key={`${propertyId}:${receiptOf}`}
+        language={language}
+        mayReprint={may("receipts.reprint")}
+        namesFailed={failed}
+        onRetryNames={load}
+        paymentId={receiptOf}
+        propertyId={propertyId}
+      />
+    );
+
+  if (mayList && active)
+    return (
+      <PaymentsList
+        api={paymentsApi}
+        data={data}
+        key={propertyId}
+        language={language}
+        mayReceive={mayReceive}
+        propertyId={propertyId}
+        today={todayInPhnomPenh()}
+      />
+    );
 
   return (
     <div className="ui-head">
