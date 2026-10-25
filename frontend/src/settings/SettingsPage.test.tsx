@@ -130,6 +130,15 @@ const businessApi = {
   rates: { load: vi.fn(() => Promise.reject(new Error("no rates"))) },
 };
 
+const ratesApi = {
+  load: vi.fn(() => Promise.reject(new Error("no rates"))),
+  loadConfiguredServices: vi.fn(),
+  loadServiceRates: vi.fn(),
+  loadUtilityRates: vi.fn(),
+  createServiceRate: vi.fn(),
+  createUtilityRate: vi.fn(),
+};
+
 function show(
   status: () => Promise<HealthStatus>,
   {
@@ -154,6 +163,7 @@ function show(
       unitApi={setupApi}
       usersApi={usersApi}
       businessApi={businessApi}
+      ratesApi={ratesApi}
     />,
   );
   return api;

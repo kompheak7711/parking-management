@@ -1897,3 +1897,18 @@ a.ui-kpi.ui-home-kpi {
   letter-spacing: 0.04em;
   word-break: break-all;
 }
+
+/* V1-058 R7b-5: a folded history inside a table card (Service rate history). */
+.ui-card.pad0 > details.ui-hist {
+  border-top: 1px solid var(--border);
+}
+
+.ui-hist summary {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 14px;
+  cursor: pointer;
+  color: var(--heading);
+  font-weight: 700;
+}

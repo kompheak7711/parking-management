@@ -82,7 +82,7 @@ function Rows({ rows }: { rows: [string, ReactNode][] }) {
   );
 }
 
-function Card({
+export function Card({
   id,
   title,
   action,
@@ -104,7 +104,7 @@ function Card({
   );
 }
 
-function FieldError({ id, text }: { id: string; text: string | null }) {
+export function FieldError({ id, text }: { id: string; text: string | null }) {
   if (text === null) return null;
   return (
     <p className="ui-error" id={id} role="alert">
@@ -114,7 +114,7 @@ function FieldError({ id, text }: { id: string; text: string | null }) {
   );
 }
 
-function Problem({ text }: { text: string | null }) {
+export function Problem({ text }: { text: string | null }) {
   if (text === null) return null;
   return (
     <div className="ui-notice warn" role="alert">
@@ -216,6 +216,7 @@ export function BusinessTab({
     setOpen(null);
     setProblem(null);
     setToast(null);
+    setBusy(false);
   }, [propertyId]);
 
   useEffect(() => {

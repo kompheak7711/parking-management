@@ -2680,6 +2680,7 @@ export function App({
           reauthenticate={reauthenticateForSettings}
           usersApi={administrationApi}
           businessApi={businessApi}
+          ratesApi={effectiveConfigApi}
         />
       </div>
     </AppShell>

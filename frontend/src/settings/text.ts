@@ -555,6 +555,133 @@ const TEXT = {
     "Someone changed these settings. They were read again; check and try again.",
     "មាននរណាម្នាក់បានប្តូរការកំណត់ទាំងនេះ។ បានអានម្តងទៀត សូមពិនិត្យ ហើយព្យាយាមម្តងទៀត។",
   ],
+  // V1-058 R7b-5: Rates and services.
+  earlier_rates: [
+    "Confirming the riel exchange rate is still in the earlier forms below. They go when the old screens are removed.",
+    "ការបញ្ជាក់អត្រាប្តូរប្រាក់រៀល នៅតែមាននៅក្នុងទម្រង់មុនខាងក្រោម។ វានឹងដកចេញ ពេលអេក្រង់ចាស់ត្រូវដកចេញ។",
+  ],
+  se_util: ["Utility Rates", "អត្រាទឹកភ្លើង"],
+  se_util_add: ["Schedule a new Rate", "កំណត់អត្រាថ្មី"],
+  se_util_n: [
+    "Effective-dated. A new Rate starts on a reading day after notice; readings before it keep the old Rate.",
+    "មានកាលបរិច្ឆេទប្រសិទ្ធភាព។ អត្រាថ្មីចាប់ផ្តើមនៅថ្ងៃអាន បន្ទាប់ពីជូនដំណឹង; អំណានមុនរក្សាអត្រាចាស់។",
+  ],
+  ro_kind: ["Kind", "ប្រភេទ"],
+  ro_rate: ["Rate", "អត្រា"],
+  ro_since: ["Since", "ចាប់ពី"],
+  ro_until: ["Until", "ដល់"],
+  // new: the server keeps when and how the tenants were told.
+  ro_told: ["Tenants told", "ជូនដំណឹងអ្នកជួល"],
+  k_EL: ["Electricity", "អគ្គិសនី"],
+  k_WA: ["Water", "ទឹក"],
+  se_sched: ["Starts later", "ចាប់ផ្តើមពេលក្រោយ"],
+  se_util_per: ["Rate per kWh or m³", "អត្រាក្នុង kWh ឬ m³"],
+  se_starts: ["Starts on", "ចាប់ផ្តើមនៅ"],
+  se_util_day_help: [
+    "A reading day (the 24th) after today.",
+    "ថ្ងៃអាន (ថ្ងៃទី 24) បន្ទាប់ពីថ្ងៃនេះ។",
+  ],
+  se_e_read: [
+    "Enter a 24th after today, like 24/11/2026.",
+    "បញ្ចូលថ្ងៃទី 24 បន្ទាប់ពីថ្ងៃនេះ ដូចជា 24/11/2026។",
+  ],
+  se_e_same: [
+    "A rate already starts on that day.",
+    "មានអត្រាចាប់ផ្តើមនៅថ្ងៃនោះរួចហើយ។",
+  ],
+  // new
+  told_on: ["Tenants told on", "ថ្ងៃជូនដំណឹងអ្នកជួល"],
+  // new
+  told_h: [
+    "Before the start day, and not after today.",
+    "មុនថ្ងៃចាប់ផ្តើម ហើយមិនក្រោយថ្ងៃនេះ។",
+  ],
+  // new
+  e_told: [
+    "Enter a day before the start day and not after today.",
+    "បញ្ចូលថ្ងៃមុនថ្ងៃចាប់ផ្តើម ហើយមិនក្រោយថ្ងៃនេះ។",
+  ],
+  // new
+  told_how: ["How the tenants were told", "របៀបជូនដំណឹងអ្នកជួល"],
+  // new
+  told_how_h: [
+    "For example: a letter under each door, and the Telegram group.",
+    "ឧទាហរណ៍៖ លិខិតដាក់ក្រោមទ្វារនីមួយៗ និងក្រុម Telegram។",
+  ],
+  // new
+  e_told_how: [
+    "Write how the tenants were told.",
+    "សូមសរសេររបៀបជូនដំណឹងអ្នកជួល។",
+  ],
+  // new
+  e_util_rate: [
+    "Enter the rate in dollars, for example 0.25.",
+    "សូមបញ្ចូលអត្រាជាដុល្លារ ឧទាហរណ៍ 0.25។",
+  ],
+  err_amount: [
+    "Enter the amount in dollars and cents, for example 353.00.",
+    "សូមបញ្ចូលចំនួនជាដុល្លារ និងសេន ឧទាហរណ៍ 353.00។",
+  ],
+  se_util_saved: ["New {0} Rate from {1}.", "អត្រា{0}ថ្មី ចាប់ពី {1}។"],
+  se_svc: ["Services", "សេវា"],
+  se_svc_n: [
+    "Billed in advance on the Rent Invoice. Each Lease ticks its Services on the New Lease form. A new rate starts on the first day of a month and never changes Invoices already issued.",
+    "គិតថ្លៃជាមុននៅលើវិក្កយបត្រថ្លៃឈ្នួល។ កិច្ចសន្យានីមួយៗធីកសេវារបស់ខ្លួននៅលើទម្រង់កិច្ចសន្យាថ្មី។ អត្រាថ្មីចាប់ផ្តើមនៅថ្ងៃទីមួយនៃខែ ហើយមិនប្តូរវិក្កយបត្រដែលចេញរួចទេ។",
+  ],
+  se_svc_name: ["Service", "សេវា"],
+  sv_rate_now: ["Monthly rate now", "អត្រាប្រចាំខែឥឡូវ"],
+  sv_next: ["Next change", "ការប្តូរបន្ទាប់"],
+  sv_hist: ["Rate history", "ប្រវត្តិអត្រា"],
+  se_svc_rate_h: ["Monthly rate", "អត្រាប្រចាំខែ"],
+  // new: the server keeps a Service's name; only a new rate is added here.
+  sv_new: ["New rate", "អត្រាថ្មី"],
+  set_from_help: [
+    "The first day of a month after today.",
+    "ថ្ងៃទីមួយនៃខែ បន្ទាប់ពីថ្ងៃនេះ។",
+  ],
+  se_e_first: [
+    "Enter the first day of a month after today, like 01/12/2026.",
+    "បញ្ចូលថ្ងៃទីមួយនៃខែ បន្ទាប់ពីថ្ងៃនេះ ដូចជា 01/12/2026។",
+  ],
+  sv_rate_h: [
+    "The old rate stays on Invoices already issued.",
+    "អត្រាចាស់នៅលើវិក្កយបត្រដែលចេញរួច។",
+  ],
+  se_svc_not_yet: ["starts {0}", "ចាប់ផ្តើម {0}"],
+  // new
+  sv_none: ["No Services yet.", "មិនទាន់មានសេវា។"],
+  // new
+  util_none: ["No Utility Rates yet.", "មិនទាន់មានអត្រាទឹកភ្លើង។"],
+  // new
+  sv_later: [
+    "Adding a Service, changing its name, Service types and move-out cleaning rates come in the next step.",
+    "ការបន្ថែមសេវា ការប្តូរឈ្មោះ ប្រភេទសេវា និងអត្រាសម្អាតពេលចាកចេញ នឹងមកនៅជំហានបន្ទាប់។",
+  ],
+  // new
+  note_l: ["Note", "កំណត់ចំណាំ"],
+  optional: ["Optional", "មិនចាំបាច់"],
+  // new
+  rates_loading: ["Reading the rates…", "កំពុងអានអត្រា…"],
+  // new
+  rates_failed: [
+    "The rates could not be read just now. Check the connection and try again.",
+    "មិនអាចអានអត្រាបានទេឥឡូវនេះ។ សូមពិនិត្យការតភ្ជាប់ ហើយព្យាយាមម្តងទៀត។",
+  ],
+  // new: the same key makes a second Save safe.
+  rates_unknown: [
+    "The answer did not come back, so it may be saved already. Press Save again without changing anything: it is not saved twice.",
+    "ចម្លើយមិនបានត្រឡប់មកវិញទេ ដូច្នេះវាប្រហែលជាបានរក្សាទុករួចហើយ។ ចុចរក្សាទុកម្តងទៀត ដោយមិនប្តូរអ្វីទាំងអស់៖ វាមិនរក្សាទុកពីរដងទេ។",
+  ],
+  // new
+  rates_refused: [
+    "The server did not accept this. Check the values and try again.",
+    "ម៉ាស៊ីនមេមិនទទួលយកទេ។ សូមពិនិត្យតម្លៃ ហើយព្យាយាមម្តងទៀត។",
+  ],
+  // new
+  rates_changed: [
+    "A rate already starts on that day, or someone else changed the rates. They were read again; check and try again.",
+    "មានអត្រាចាប់ផ្តើមនៅថ្ងៃនោះរួចហើយ ឬនរណាម្នាក់បានប្តូរអត្រា។ បានអានម្តងទៀត សូមពិនិត្យ ហើយព្យាយាមម្តងទៀត។",
+  ],
 } as const satisfies Record<string, readonly [string, string]>;
 
 export type SettingsTextKey = keyof typeof TEXT;

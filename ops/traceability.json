@@ -54635,6 +54635,42 @@
       "test_path": "frontend/src/invoiceClient.test.ts",
       "status": "implemented",
       "notes": "V1-058 R7b-4: the days after issue are read with GET and no body; a 403 refusal keeps its status."
+    },
+    {
+      "test_id": "TEST-FE-955",
+      "upstream_ids": [
+        "DL-074",
+        "DL-075",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/RatesTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-5: Rates and services lists every page of Utility Rates newest first with until, Starts later or Active and when the tenants were told; Services show the rate today, the next change and the rate history."
+    },
+    {
+      "test_id": "TEST-FE-956",
+      "upstream_ids": [
+        "DL-074",
+        "DL-075",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/RatesTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-5: a new Utility Rate starts on a 24th after today, after the tenants were told, with the fixed unit and one idempotency key per form; a new Service rate starts on the 1st of a later month."
+    },
+    {
+      "test_id": "TEST-FE-957",
+      "upstream_ids": [
+        "DL-074",
+        "DL-075",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/RatesTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-5: a conflict says so and reads again; no right to change hides the buttons; no right to read says so; Retry; Khmer words."
     }
   ]
 }
