@@ -50834,6 +50834,120 @@
       "test_path": "backend/tests/test_staff_rent_letters_migration.py",
       "status": "implemented",
       "notes": "V1-058 R3 Staff Rent letters: Real PostgreSQL upgrade 198 to 199: an untouched default Staff bundle gets version 2 with the two rights and an audit event naming the Owner; a Staff bundle the Owner changed stays as it is; forward-only."
+    },
+    {
+      "test_id": "TEST-FE-874",
+      "upstream_ids": [
+        "DL-074",
+        "UI-058",
+        "BR-UTIL-005",
+        "BR-UTIL-009"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4 Meter readings: On reading day This month lists every working current meter with its last reading, the read count and progress, the Customer or vacant note, and the floor, Only not read and Electricity/Water filters."
+    },
+    {
+      "test_id": "TEST-FE-875",
+      "upstream_ids": [
+        "DL-074",
+        "UI-058",
+        "BR-UTIL-009",
+        "BR-UTIL-010"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4 Meter readings: Saving one reading sends today's date, the meter version and an Idempotency-Key, marks the line Saved, counts it, and moves the cursor to the next meter not read."
+    },
+    {
+      "test_id": "TEST-FE-876",
+      "upstream_ids": [
+        "DL-074",
+        "UI-058",
+        "BR-UTIL-009",
+        "BR-UTIL-010"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4 Meter readings: A reading lower than the last or not a whole number is refused on the screen without a request; much more than usual asks to check first and Save anyway sends it."
+    },
+    {
+      "test_id": "TEST-FE-877",
+      "upstream_ids": [
+        "DL-074",
+        "UI-058",
+        "BR-UTIL-009"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4 Meter readings: A changed meter reads the whole list again; a lost answer keeps the same key for the next try; a server refusal says so."
+    },
+    {
+      "test_id": "TEST-FE-878",
+      "upstream_ids": [
+        "DL-074",
+        "UI-058",
+        "BR-UTIL-008",
+        "BR-UTIL-011"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4 Meter readings: Before reading day This month shows the month's saved readings; Pick a month lists one month with use and corrections; 6 months shows the Units-by-month grid (a late reading goes in its month's column) where the current meter wins on a replacement day."
+    },
+    {
+      "test_id": "TEST-FE-879",
+      "upstream_ids": [
+        "DL-074",
+        "UI-058",
+        "BR-UTIL-006",
+        "BR-UTIL-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4 Meter readings: The Unit box accepts 201 or U201, shows that Unit's readings with the meter on each line including the replaced meter, and names a Unit that does not exist."
+    },
+    {
+      "test_id": "TEST-FE-880",
+      "upstream_ids": [
+        "DL-074",
+        "UI-058",
+        "UI-008",
+        "BR-UTIL-007"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4 Meter readings: Without utility_readings.record there is no Save and the boxes are disabled; a broken meter cannot be read and links to Replace meter; the Meters tab has its own address."
+    },
+    {
+      "test_id": "TEST-FE-881",
+      "upstream_ids": [
+        "DL-074",
+        "UI-058",
+        "BR-UTIL-009"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4 Meter readings: Two saves that finish close together both stay and both count; a changed value gets a new Idempotency-Key; after the last meter of the list the cursor goes to the count."
+    },
+    {
+      "test_id": "TEST-FE-882",
+      "upstream_ids": [
+        "DL-074",
+        "UI-058",
+        "BR-UTIL-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4 Meter readings: A Unit whose meters or readings cannot be read is named, left out of the count, and the list is never called done without it; the Unit box waits while U10 may still become U101."
     }
   ]
 }

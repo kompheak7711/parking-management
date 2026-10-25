@@ -1054,3 +1054,149 @@ table.ui-table td.ui-letters {
   flex: 1;
   min-width: 0;
 }
+
+/* V1-058 R4 Utilities: the Unit box, the reading-day progress and the reading lines. */
+.ui-combo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  align-items: center;
+}
+.ui-combo label {
+  font-weight: 600;
+}
+.shell-view .ui-combo input.ui-search {
+  flex: 0 1 220px;
+}
+.ui-combo .ui-error {
+  flex-basis: 100%;
+}
+
+.ui-progline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.ui-progress {
+  flex: 1 1 160px;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--selected);
+}
+.ui-progress span {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: var(--primary);
+}
+
+.shell-view input.ui-rdinput {
+  width: 8.5rem;
+  min-height: 46px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--input);
+  color: var(--text);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.shell-view input.ui-rdinput[aria-invalid="true"] {
+  border-color: var(--err);
+}
+.ui-rdcell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  align-items: center;
+}
+.ui-rdmsg {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 0.86rem;
+}
+.ui-rdmsg.err {
+  color: var(--err);
+}
+.ui-rdmsg.warn {
+  color: var(--warn);
+}
+
+/* The readings grid keeps the Unit column in place while it scrolls sideways. */
+table.ui-table.ui-grid th[scope="row"],
+table.ui-table.ui-grid thead th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--surface);
+  text-align: left;
+  font-weight: 400;
+}
+table.ui-table.ui-grid th[scope="row"] {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.ui-subtabs a {
+  gap: 6px;
+}
+.ui-progline + p,
+.ui-progline + .ui-notice {
+  margin: 0;
+}
+table.ui-table.ui-grid th[scope="row"] {
+  white-space: nowrap;
+}
+.ui-rdlast-inline {
+  display: none;
+}
+/* On a phone the reading list keeps Unit, New reading and Result; Last reading folds under
+   the Unit and Used is left out, so the box to type in stays on the screen. */
+@media (max-width: 640px) {
+  table.ui-table.ui-entry {
+    min-width: 0;
+  }
+  table.ui-table.ui-entry .ui-rdlast,
+  table.ui-table.ui-entry .ui-rdused {
+    display: none;
+  }
+  table.ui-table.ui-entry .ui-rdlast-inline {
+    display: block;
+  }
+  table.ui-table.ui-entry td,
+  table.ui-table.ui-entry th {
+    padding: 10px 8px;
+  }
+  .shell-view input.ui-rdinput {
+    width: 6.5rem;
+  }
+}
+/* On a phone each reading line puts its Result and Save under the Unit and the box. */
+@media (max-width: 640px) {
+  table.ui-table.ui-entry tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    border-bottom: 1px solid var(--border);
+  }
+  table.ui-table.ui-entry thead tr {
+    border-bottom-color: var(--border-strong);
+  }
+  table.ui-table.ui-entry td,
+  table.ui-table.ui-entry th {
+    border-bottom: 0;
+  }
+  table.ui-table.ui-entry th.ui-rdres {
+    display: none;
+  }
+  table.ui-table.ui-entry td.ui-rdres {
+    grid-column: 1 / -1;
+    padding-top: 0;
+  }
+  table.ui-table.ui-entry td.ui-rdres:empty {
+    display: none;
+  }
+}

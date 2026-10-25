@@ -58,6 +58,8 @@ import { DepositApi, depositApi as depositClient } from "./depositClient";
 import { UtilityManagement } from "./UtilityManagement";
 import { UtilityLeaseWorkflows } from "./UtilityLeaseWorkflows";
 import { UtilityApi, utilityApi as utilityClient } from "./utilityClient";
+import { UtilitiesPage } from "./utilities/UtilitiesPage";
+import { utt } from "./utilities/text";
 import { InvoiceManagement } from "./InvoiceManagement";
 import { InvoiceApi, invoiceApi as invoiceClient } from "./invoiceClient";
 import { LeaseEnforcementManagement } from "./LeaseEnforcementManagement";
@@ -1509,18 +1511,39 @@ export function App({
         className="shell-page"
         data-page="utilities"
         hidden={!shown("utilities")}
-        lang="en"
       >
-        {propertyConfiguration === null && (
-          <PropertyNeeded language={language} />
-        )}
-        <UtilityManagement
-          api={utilityApi}
-          propertyId={propertyConfiguration?.property_id ?? ""}
+        <UtilitiesPage
+          active={shown("utilities")}
+          capabilities={capabilities}
+          language={language}
+          leaseApi={leaseApi}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+          unitApi={unitApi ?? defaultUnitApi}
+          utilityApi={utilityApi}
         />
-        <UtilityLeaseWorkflows
-          propertyId={propertyConfiguration?.property_id ?? ""}
-        />
+        {/* V1-058 R4: meters, rates, corrections and move-in or move-out readings stay in the
+            earlier English forms, folded, until the next steps move them into the design. */}
+        <details className="ui-records">
+          <summary lang={language}>
+            <span className="ui-records-title">{utt(language, "records")}</span>
+            <span className="ui-small ui-muted">
+              {utt(language, "records_note")}
+            </span>
+          </summary>
+          <div lang="en">
+            <UtilityManagement
+              api={utilityApi}
+              propertyId={
+                propertyId || (propertyConfiguration?.property_id ?? "")
+              }
+            />
+            <UtilityLeaseWorkflows
+              propertyId={
+                propertyId || (propertyConfiguration?.property_id ?? "")
+              }
+            />
+          </div>
+        </details>
       </div>
       <div
         className="shell-page"
