@@ -50905,6 +50905,143 @@
       "test_path": "backend/tests/test_settlement_plan_correction_api_migration.py",
       "status": "implemented",
       "notes": "On PostgreSQL an open Settlement answers CORRECTION_SETTLEMENT_NOT_CLOSED; after the real closure an inactive or unknown method answers 422 CORRECTION_REFUND_METHOD_OFF on refund_method_id and too large an amount 422 on its field; the Refund correction records, passes the answer check and is confirmed through the shared route; each other route's unknown or unfit record answers 422 on its field with no database text (V1-056 slice 11e-3, post-settlement correction routes with a DL-032 plan; ops/reviews/V1-056-slice-11e-3.md)."
+    },
+    {
+      "test_id": "TEST-FE-S11-001",
+      "upstream_ids": [
+        "API-072",
+        "API-015"
+      ],
+      "test_level": "UI",
+      "test_path": "frontend/src/settlementClient.test.tsx",
+      "status": "implemented",
+      "notes": "A correction is sent to its route with its Idempotency-Key, the CSRF token and the selected Property, and its form as the JSON body (V1-056 slice 11f, slice 11 browser client; ops/reviews/V1-056-slice-11f.md)."
+    },
+    {
+      "test_id": "TEST-FE-S11-002",
+      "upstream_ids": [
+        "API-072",
+        "API-013"
+      ],
+      "test_level": "UI",
+      "test_path": "frontend/src/settlementClient.test.tsx",
+      "status": "implemented",
+      "notes": "A named refusal reaches the screen with its code, plain text, form fields and rule ids (V1-056 slice 11f, slice 11 browser client; ops/reviews/V1-056-slice-11f.md)."
+    },
+    {
+      "test_id": "TEST-FE-S11-003",
+      "upstream_ids": [
+        "API-072",
+        "API-014"
+      ],
+      "test_level": "UI",
+      "test_path": "frontend/src/settlementClient.test.tsx",
+      "status": "implemented",
+      "notes": "A 503 or a network failure is told apart from a refusal; an answer with no error body keeps a plain text and no code (V1-056 slice 11f, slice 11 browser client; ops/reviews/V1-056-slice-11f.md)."
+    },
+    {
+      "test_id": "TEST-FE-S11-004",
+      "upstream_ids": [
+        "API-101"
+      ],
+      "test_level": "UI",
+      "test_path": "frontend/src/settlementClient.test.tsx",
+      "status": "implemented",
+      "notes": "The shared draft list is read by state and limit and keeps the server's continuation cursor (V1-056 slice 11f, slice 11 browser client; ops/reviews/V1-056-slice-11f.md)."
+    },
+    {
+      "test_id": "TEST-FE-S11-005",
+      "upstream_ids": [
+        "API-101",
+        "API-015"
+      ],
+      "test_level": "UI",
+      "test_path": "frontend/src/settlementClient.test.tsx",
+      "status": "implemented",
+      "notes": "A draft is confirmed with an empty body and its Idempotency-Key (V1-056 slice 11f, slice 11 browser client; ops/reviews/V1-056-slice-11f.md)."
+    },
+    {
+      "test_id": "TEST-FE-S11-006",
+      "upstream_ids": [
+        "API-072"
+      ],
+      "test_level": "UI",
+      "test_path": "frontend/src/settlementClient.test.tsx",
+      "status": "implemented",
+      "notes": "The Final Settlement draft and each of the fourteen post-settlement corrections go to their own route (V1-056 slice 11f, slice 11 browser client; ops/reviews/V1-056-slice-11f.md)."
+    },
+    {
+      "test_id": "TEST-FE-S11-007",
+      "upstream_ids": [
+        "API-040",
+        "API-059",
+        "API-101",
+        "API-102",
+        "API-018"
+      ],
+      "test_level": "UI",
+      "test_path": "frontend/src/settlementClient.test.tsx",
+      "status": "implemented",
+      "notes": "The Deposit, Payment and Adjustment drafts go to the route of their own record and the hand-back resolution names no Property header but its Invoice version as If-Match (V1-056 slice 11f, slice 11 browser client; ops/reviews/V1-056-slice-11f.md)."
+    },
+    {
+      "test_id": "TEST-FE-S11-008",
+      "upstream_ids": [
+        "SEC-016",
+        "API-013"
+      ],
+      "test_level": "UI",
+      "test_path": "frontend/src/settlementClient.test.tsx",
+      "status": "implemented",
+      "notes": "No command is sent without exactly one CSRF cookie (V1-056 slice 11f, slice 11 browser client; ops/reviews/V1-056-slice-11f.md)."
+    },
+    {
+      "test_id": "test_the_settlement_forms_match_the_request_models",
+      "upstream_ids": [
+        "API-072",
+        "API-101",
+        "API-102"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_forms_ts.py",
+      "status": "implemented",
+      "notes": "frontend/src/settlementForms.ts equals the forms written from the OpenAPI request models of the slice 11 routes, so a model change without a new forms file fails (V1-056 slice 11f, slice 11 browser client; ops/reviews/V1-056-slice-11f.md)."
+    },
+    {
+      "test_id": "test_every_slice_11_form_is_exported",
+      "upstream_ids": [
+        "API-072",
+        "API-101",
+        "API-102"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_forms_ts.py",
+      "status": "implemented",
+      "notes": "Every slice 11 route's request model is exported by the forms file (V1-056 slice 11f, slice 11 browser client; ops/reviews/V1-056-slice-11f.md)."
+    },
+    {
+      "test_id": "TEST-FE-S11-009",
+      "upstream_ids": [
+        "API-072",
+        "API-102",
+        "API-013",
+        "API-018"
+      ],
+      "test_level": "UI",
+      "test_path": "frontend/src/settlementClient.test.tsx",
+      "status": "implemented",
+      "notes": "Form fields of a plain form check lose the body prefix and repeat names are dropped; a stale-version refusal keeps its current version (V1-056 slice 11f, slice 11 browser client; ops/reviews/V1-056-slice-11f.md)."
+    },
+    {
+      "test_id": "TEST-FE-S11-010",
+      "upstream_ids": [
+        "API-102",
+        "API-015"
+      ],
+      "test_level": "UI",
+      "test_path": "frontend/src/settlementClient.test.tsx",
+      "status": "implemented",
+      "notes": "The cleaning rate and charge are sent with the CSRF token and no Idempotency-Key; their own ids make a retry safe (V1-056 slice 11f, slice 11 browser client; ops/reviews/V1-056-slice-11f.md)."
     }
   ]
 }

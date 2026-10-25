@@ -1597,6 +1597,18 @@ slice 11e-1, and both may be left out when the released value pays nothing.
   follow yet is `RETURN_REVERSAL_WAITS_FOR_OWNER`). At the shared confirm a correction draft
   keeps the plain answers for now. No answer shows database text.
 
+V1-056 slice 11f (2026-10-25; no migration; no new route): the browser client of the slice 11
+routes, `frontend/src/settlementClient.ts`, with the request forms in
+`frontend/src/settlementForms.ts`, written from the routes' request models (a backend test fails
+when they differ). Every command sends its `X-CSRF-Token` and, where the route takes one, its
+`Idempotency-Key` (the cleaning rate and charge use their own `rate_id` and `charge_id`); the
+hand-back resolution sends the Invoice version as `If-Match`; a financial draft, Final
+Settlement or correction route also sends `X-Financial-Property-ID`. A refusal reaches the screen
+with its `code`, `message`, `fields` (without the `body.` prefix of a plain form check),
+`rule_ids` and `current_version`; a 503 or a network failure is a separate unavailable error.
+Decided by Claude under the owner's 2026-10-23 22:30 rule: one new client module for the slice,
+so the screen work changes no existing client.
+
 # 23. Audit Endpoints
 
 ## API-073 — Record Audit
