@@ -334,6 +334,7 @@ database_test_suites='
   tests/test_final_settlement_api_migration.py
   tests/test_settlement_correction_api_migration.py
   tests/test_settlement_plan_correction_api_migration.py
+  tests/test_services_settings_migration.py
 '
 
 for database_test_file in $database_test_suites; do

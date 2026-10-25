@@ -54,8 +54,8 @@ from test_move_in_migration import runtime_database_url
 
 REVISION = "20270128_185"
 PREVIOUS = "20270127_184"
-# The head since V1-058 R3 Move-out M5 (migration 20270315_234, the Final Settlement list read).
-HEAD = "20270315_234"
+# The head since V1-058 R7b-6a (migration 20270316_235, Services and Service types).
+HEAD = "20270316_235"
 # The migration of login sub-slice L3c-1.
 KEYED_CLEAR = "20270129_186"
 PASSWORD = "correct horse battery staple"
@@ -435,7 +435,7 @@ def test_the_try_relations_are_append_only_and_only_the_functions_are_open_to_th
     role has no privilege on them and EXECUTE only on the three definer functions (pinned
     `search_path`, no PUBLIC EXECUTE); the functions refuse a transaction that is not READ
     COMMITTED, a key that is not a sha256 digest and an unknown try kind; the migration follows
-    `20270127_184` and refuses a downgrade (the head is `20270315_234` since V1-058 joined V1-057,
+    `20270127_184` and refuses a downgrade (the head is `20270316_235` since V1-058 joined V1-057,
     the Waiting for approval read)."""
     tries = add_tries(wait_database, "l3b.guard", "l3b-guard", 1, "1 minute")
     key = username_key("l3b.guard")

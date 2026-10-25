@@ -55985,6 +55985,118 @@
       "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
       "status": "implemented",
       "notes": "V1-058 R3 Move-out M6: step 6 waits before closure; without the preparer right no actions; approvers get the Waiting for approval link."
+    },
+    {
+      "test_id": "test_a_service_is_added_with_its_first_rate_and_approval_and_a_repeat_answers_it",
+      "upstream_ids": [
+        "BR-SVC-001",
+        "BR-SVC-005",
+        "BR-SVC-014",
+        "BR-SVC-015",
+        "SEC-016",
+        "DL-075"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_services_settings_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6a: a Service is added with its first rate and open approval period from the 1st; a repeat answers it; other values, a non-1st start, an unknown type and a missing Settings reference are refused; audited."
+    },
+    {
+      "test_id": "test_a_lease_holds_only_one_service_of_an_only_one_type",
+      "upstream_ids": [
+        "BR-SVC-001",
+        "BR-SVC-014",
+        "DL-075"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_services_settings_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6a: a Lease holds at most one Service of an 'Only one per Lease' type at a time; a type change, a Service move and removing a used type are refused; rename keeps version rules."
+    },
+    {
+      "test_id": "test_the_settings_read_gives_rates_approvals_and_leases_using_each_service",
+      "upstream_ids": [
+        "BR-SVC-005",
+        "BR-SVC-007",
+        "BR-SVC-015",
+        "DL-075"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_services_settings_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6a: the Settings read gives today's rate, the next rate, approval periods and the Leases using each Service."
+    },
+    {
+      "test_id": "test_the_runtime_role_may_only_call_the_settings_functions",
+      "upstream_ids": [
+        "SEC-016",
+        "DL-075"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_services_settings_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6a: the runtime role may not write Service type rows directly, only call the Settings functions."
+    },
+    {
+      "test_id": "test_reading_needs_settings_access_configuration_read_or_lease_drafting",
+      "upstream_ids": [
+        "SEC-002",
+        "SEC-016",
+        "DL-075"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_service_settings_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6a: the Service settings read needs settings.manage, configuration.read or leases.draft and takes no query values."
+    },
+    {
+      "test_id": "test_every_change_needs_settings_access_origin_and_csrf_and_strict_fields",
+      "upstream_ids": [
+        "SEC-002",
+        "SEC-003",
+        "SEC-016",
+        "DL-075"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_service_settings_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6a: every Services change needs settings.manage, Origin and CSRF, and strict body fields."
+    },
+    {
+      "test_id": "test_refusals_answer_their_status",
+      "upstream_ids": [
+        "BR-SVC-014",
+        "SEC-016",
+        "DL-075"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_service_settings_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6a: database refusals map to 409, 422, 404, 403 and 503 with coded details."
+    },
+    {
+      "test_id": "test_service_history_and_reused_type_ids_are_refused",
+      "upstream_ids": [
+        "BR-SVC-006",
+        "BR-SVC-008",
+        "SEC-016",
+        "DL-075"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_services_settings_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6a: Service code, creator and version history cannot be changed directly and Services are never deleted; a Service type id reused with other values is refused; Service types are never truncated."
+    },
+    {
+      "test_id": "test_database_refusals_map_by_their_own_code",
+      "upstream_ids": [
+        "BR-SVC-014",
+        "DL-075"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_service_settings_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6a: each database refusal maps by its own code (P5V01 Lease holds two of the type, P5V02 type has Services); another 55000 is not taken as a rule refusal."
     }
   ]
 }

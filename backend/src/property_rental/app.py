@@ -239,6 +239,11 @@ from property_rental.runtime_secrets import (
     read_password_blocklist,
     read_protected_totp_key,
 )
+from property_rental.service_settings_api import (
+    PostgresServiceSettingsFlow,
+    ServiceSettingsFlow,
+    create_service_settings_router,
+)
 from property_rental.session_actor import PostgresSessionActorResolver
 from property_rental.settings import Settings
 from property_rental.settlement_correction_api import (
@@ -535,6 +540,7 @@ def create_app(
     customer_ledger_flow: CustomerLedgerFlow | None = None,
     report_store: ReportStore | None = None,
     export_store: ExportStore | None = None,
+    service_settings_flow: ServiceSettingsFlow | None = None,
 ) -> FastAPI:
     """Build an application instance from validated settings."""
     resolved_settings = settings or Settings()
@@ -1127,6 +1133,18 @@ def create_app(
             ),
             resolved_settings,
             exchange_rate_provider,
+        )
+    )
+    include_signed_in(
+        create_service_settings_router(
+            actor_resolver,
+            service_settings_flow
+            or PostgresServiceSettingsFlow(
+                resolved_settings.database_url.get_secret_value()
+                if resolved_settings.database_url is not None
+                else None
+            ),
+            resolved_settings,
         )
     )
     include_signed_in(

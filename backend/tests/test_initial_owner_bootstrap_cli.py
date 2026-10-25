@@ -884,6 +884,13 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         # V1-056 slice 11e-1: the Final Settlement start, preview and draft routes.
         "/api/v1/properties/{property_id}/leases/{lease_id}/final-settlement": {"post"},
         "/api/v1/properties/{property_id}/final-settlements": {"get"},
+        # V1-058 R7b-6a: Services and Service types in Settings.
+        "/api/v1/properties/{property_id}/service-settings": {"get"},
+        "/api/v1/properties/{property_id}/services": {"post"},
+        "/api/v1/properties/{property_id}/services/{service_id}": {"post"},
+        "/api/v1/properties/{property_id}/service-types": {"post"},
+        "/api/v1/properties/{property_id}/service-types/{type_id}": {"post"},
+        "/api/v1/properties/{property_id}/service-types/{type_id}/remove": {"post"},
         "/api/v1/properties/{property_id}/final-settlements/{settlement_id}/preview": {"get"},
         "/api/v1/properties/{property_id}/final-settlements/{settlement_id}/drafts": {"post"},
         # V1-056 slice 11e-2: the post-settlement correction drafts and the Adjustment reversal.
