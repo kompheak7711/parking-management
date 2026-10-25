@@ -14,6 +14,12 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Query, Request, Response, status
 
 from property_rental.identity import ActorResolver, AuthenticatedActor
+from property_rental.report_registers import (
+    DEFAULT_LIMIT,
+    MAX_LIMIT,
+    RegisterFilter,
+    RegisterName,
+)
 from property_rental.report_totals import TotalsFilter, TotalsReport
 from property_rental.reports import (
     ReportForbiddenError,
@@ -78,6 +84,28 @@ def create_reports_router(resolver: ActorResolver, service: ReportService) -> AP
         actor = _actor(request, resolver)
         chosen = TotalsFilter(unit_id, floor, from_date, to_date)
         page = _call(lambda: service.totals(actor, property_id, report, chosen))
+        response.headers["Cache-Control"] = "private, no-store"
+        return {"data": page, "meta": {"request_id": request.state.request_id}}
+
+    @router.get(
+        "/properties/{property_id}/reports/{name}",
+        summary="One of the nine registers and lists",
+    )
+    def register(
+        property_id: UUID,
+        name: RegisterName,
+        request: Request,
+        response: Response,
+        floor: Annotated[str | None, Query(min_length=1, max_length=40)] = None,
+        from_date: Annotated[date | None, Query(alias="from")] = None,
+        to_date: Annotated[date | None, Query(alias="to")] = None,
+        offset: Annotated[int, Query(ge=0, le=1_000_000)] = 0,
+        limit: Annotated[int, Query(ge=1, le=MAX_LIMIT)] = DEFAULT_LIMIT,
+    ) -> dict[str, object]:
+        _no_query(request, frozenset({"floor", "from", "to", "offset", "limit"}))
+        actor = _actor(request, resolver)
+        chosen = RegisterFilter(floor, from_date, to_date, offset, limit)
+        page = _call(lambda: service.register(actor, property_id, name, chosen))
         response.headers["Cache-Control"] = "private, no-store"
         return {"data": page, "meta": {"request_id": request.state.request_id}}
 

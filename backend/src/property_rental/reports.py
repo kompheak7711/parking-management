@@ -23,6 +23,12 @@ from psycopg.types.json import set_json_loads
 
 from property_rental.access_control import UNITS_READ_CAPABILITY
 from property_rental.identity import AuthenticatedActor, AuthorizationRequirement, is_authorized
+from property_rental.report_registers import (
+    REGISTER_READS,
+    RegisterFilter,
+    RegisterName,
+    build_register,
+)
 from property_rental.report_totals import (
     UTILITY_TYPES,
     TotalsFilter,
@@ -52,6 +58,9 @@ HOME_SECTIONS: Final[Mapping[str, tuple[str, ...]]] = {
     "settlements": ("final_settlements.prepare", "financial.approve"),
 }
 TODO_GROUPS: Final = ("overdue", "today", "this_week", "later")
+# Items dated by when a wait began (not a due day) stay under Today while they wait; the screen
+# shows how long ago (DESIGN.md Home).
+WAITING_KINDS: Final = frozenset({"draft_waiting", "deposit_decision", "settlement_open"})
 
 
 class ReportUnavailableError(RuntimeError):
@@ -106,7 +115,11 @@ def group_home_page(page: Mapping[str, object]) -> dict[str, object]:
     for item in items:
         if not isinstance(item, dict) or not isinstance(item.get("date"), str):
             raise ReportUnavailableError("Home page answer is invalid")
-        group = todo_group(date.fromisoformat(cast(str, item["date"])), today)
+        day = date.fromisoformat(cast(str, item["date"]))
+        if item.get("kind") in WAITING_KINDS and day <= today:
+            group = "today"
+        else:
+            group = todo_group(day, today)
         counts[group] += 1
         grouped.append({**cast(dict[str, object], item), "group": group})
     return {**page, "todo": grouped, "todo_counts": counts}
@@ -118,8 +131,23 @@ REPORT_READS: Final = frozenset(
         "report_income_facts",
         "report_payment_facts",
         "report_utility_facts",
+        *REGISTER_READS.values(),
     }
 )
+# The rights each register needs (all of them). Money registers need `reports.read`; the Staff
+# reports need the read rights of their records (DL-072 answer 5); Audit activity needs the
+# audit search right. Utility consumption shows amounts and Rates only with `reports.read`.
+REGISTER_RIGHTS: Final[Mapping[str, tuple[str, ...]]] = {
+    "invoice_register": (REPORTS_READ_CAPABILITY,),
+    "payments": (REPORTS_READ_CAPABILITY,),
+    "credit_ledger": (REPORTS_READ_CAPABILITY,),
+    "deposits": (REPORTS_READ_CAPABILITY,),
+    "final_settlements": (REPORTS_READ_CAPABILITY,),
+    "utility_consumption": ("utility.read",),
+    "unit_occupancy": (UNITS_READ_CAPABILITY, "leases.read", "reservations.read"),
+    "lease_dates": ("leases.read",),
+    "audit_activity": ("audit.view",),
+}
 
 
 class ReportStore(Protocol):
@@ -127,9 +155,13 @@ class ReportStore(Protocol):
         self, actor_id: UUID, property_id: UUID, sections: Sequence[str]
     ) -> dict[str, object]: ...
 
-    def rows(self, read: str, actor_id: UUID, property_id: UUID) -> list[dict[str, object]]: ...
+    def rows(
+        self, read: str, actor_id: UUID, property_id: UUID, extra: Sequence[object] = ()
+    ) -> list[dict[str, object]]: ...
 
     def units(self, property_id: UUID) -> list[dict[str, object]]: ...
+
+    def utility_rates(self, property_id: UUID) -> list[dict[str, object]]: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -167,13 +199,16 @@ class PostgresReportStore:
             raise ReportUnavailableError("Home page answer is invalid")
         return cast(dict[str, object], row[0])
 
-    def rows(self, read: str, actor_id: UUID, property_id: UUID) -> list[dict[str, object]]:
+    def rows(
+        self, read: str, actor_id: UUID, property_id: UUID, extra: Sequence[object] = ()
+    ) -> list[dict[str, object]]:
         if read not in REPORT_READS:
             raise ReportInvalidError("Unknown report read")
+        arguments = sql.SQL("%s,%s,%s::uuid[]") + sql.SQL("").join(sql.SQL(",%s") for _ in extra)
         with self._read() as connection:
             cursor = connection.execute(
-                sql.SQL("SELECT * FROM app.{}(%s,%s,%s::uuid[])").format(sql.Identifier(read)),
-                (actor_id, property_id, [property_id]),
+                sql.SQL("SELECT * FROM app.{}({})").format(sql.Identifier(read), arguments),
+                (actor_id, property_id, [property_id], *extra),
             )
             names = [column.name for column in cursor.description or ()]
             return [dict(zip(names, row, strict=True)) for row in cursor.fetchall()]
@@ -188,6 +223,17 @@ class PostgresReportStore:
             names = [column.name for column in cursor.description or ()]
             return [dict(zip(names, row, strict=True)) for row in cursor.fetchall()]
 
+    def utility_rates(self, property_id: UUID) -> list[dict[str, object]]:
+        with self._read() as connection:
+            cursor = connection.execute(
+                "SELECT utility_type,measurement_unit_code,rate_usd_per_unit::text AS rate_usd,"
+                "effective_date FROM app.utility_rates WHERE property_id=%s "
+                "ORDER BY effective_date DESC,utility_type,id",
+                (property_id,),
+            )
+            names = [column.name for column in cursor.description or ()]
+            return [dict(zip(names, row, strict=True)) for row in cursor.fetchall()]
+
 
 class UnavailableReportStore:
     def home_page(
@@ -196,11 +242,17 @@ class UnavailableReportStore:
         del actor_id, property_id, sections
         raise ReportUnavailableError("Reports are unavailable")
 
-    def rows(self, read: str, actor_id: UUID, property_id: UUID) -> list[dict[str, object]]:
-        del read, actor_id, property_id
+    def rows(
+        self, read: str, actor_id: UUID, property_id: UUID, extra: Sequence[object] = ()
+    ) -> list[dict[str, object]]:
+        del read, actor_id, property_id, extra
         raise ReportUnavailableError("Reports are unavailable")
 
     def units(self, property_id: UUID) -> list[dict[str, object]]:
+        del property_id
+        raise ReportUnavailableError("Reports are unavailable")
+
+    def utility_rates(self, property_id: UUID) -> list[dict[str, object]]:
         del property_id
         raise ReportUnavailableError("Reports are unavailable")
 
@@ -248,3 +300,30 @@ class ReportService:
         ):
             raise ReportInvalidError("Unknown Unit")
         return build_totals(report, facts, units, chosen)
+
+    def register(
+        self,
+        actor: AuthenticatedActor,
+        property_id: UUID,
+        name: RegisterName,
+        chosen: RegisterFilter,
+    ) -> dict[str, object]:
+        """One of the nine registers and lists (DL-079 answer 5)."""
+        if not all(has_capability(actor, right, property_id) for right in REGISTER_RIGHTS[name]):
+            raise ReportForbiddenError("The register needs its read rights")
+        if (
+            chosen.from_date is not None
+            and chosen.to_date is not None
+            and chosen.from_date > chosen.to_date
+        ):
+            raise ReportInvalidError("From is after To")
+        actor_id = UUID(actor.actor_id)
+        extra: tuple[object, ...] = ()
+        if name == "audit_activity":
+            extra = (chosen.from_date, chosen.to_date)
+        rows = self.store.rows(REGISTER_READS[name], actor_id, property_id, extra)
+        money = has_capability(actor, REPORTS_READ_CAPABILITY, property_id)
+        page = build_register(name, rows, self.store.units(property_id), chosen, money=money)
+        if name == "utility_consumption" and money:
+            page["rates"] = self.store.utility_rates(property_id)
+        return page

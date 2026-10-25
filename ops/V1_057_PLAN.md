@@ -59,6 +59,44 @@ database step, one full run at the end, one review round per step).
   for approval is the Refund and Payment return drafts; the line under the to-do list gives the
   last finished billing run, the next Rent billing day (the 25th, the DL-075 default, until a
   billing-day setting is stored) and when the exchange rate was last entered.
+- Home to-do: drafts waiting, Deposits waiting for a decision and open Final Settlements are
+  dated by when the wait began, so they stay under Today while they wait (the screen shows how
+  long ago), as the mock-up does.
+- Register rights: the five money registers need `reports.read`; Utility consumption needs
+  `utility.read` and shows amounts and Rates only with `reports.read`; Unit occupancy needs
+  `units.read`, `leases.read` and `reservations.read`; Lease dates needs `leases.read`; Audit
+  activity needs `audit.view`, the audit search right (SEC-032).
+- Register periods: Invoice register by Invoice date, Payments by the day the money came in (a
+  reversal line by its own day), Utility consumption by the day the reading period ends, Credit
+  ledger by the day the Credit was recorded, Final Settlements by the day they were started,
+  Lease dates by the End Date (the actual termination date for a Lease ended early), Audit
+  activity by the event's business day. Unit occupancy and Deposit liability show today, so the
+  period does not apply. The floor filter keeps the rows of that floor's Units.
+- Invoice register: VOID Invoices are listed but not added up. "Paid" is the part paid by
+  Payments, the same records as the Payments report's Paid to Invoices; the rest settled
+  another way (Customer Credit or a Deposit) is its own column. The Final Settlement register
+  shows the Deposits and Credit used, the Deposits kept, the refunds and the balance due when it
+  closed; it has no separate "charges" column, because the charges are those amounts together.
+- A Refund that came back counts at its net value (`app.refund_net_value_at`) in the Payments
+  lines, the Deposit register and the Final Settlement register.
+
+Register summaries (fields over every row of the filter):
+
+- invoice_register: issued, paid_to_invoices, other_settled, owed (USD cents), invoice_count,
+  void_count, overdue_groups (days_1_19, days_20_29, days_30_plus: count and owed), by_status;
+  chart months with paid, other_settled, owed.
+- payments: received, lines (INVOICES, LATE_PAYMENT_CHARGES, DEPOSITS, CREDIT, REFUNDED,
+  NOT_ALLOCATED, REVERSED_LATER), paid_to_invoices_by_category, reversals (minus), net,
+  payment_count, received_other_currency_minor (KHR, information only); chart months
+  (paid_to_invoices, deposits, other) and month_lines.
+- utility_consumption: electricity_kwh, water_m3, estimate_count, period_count, and with
+  `reports.read` electricity_usd_cents and water_usd_cents; chart months with kWh and m³.
+- credit_ledger, deposits, final_settlements: the money columns added up, with bars; deposits
+  add held_by_type, final_settlements open_count and closed_count.
+- unit_occupancy: occupied, reserved, vacant, not_available, unit_count.
+- lease_dates: current_count, ending_60_days_count, ending_without_renewal_count,
+  terminated_count; chart months of End Dates.
+- audit_activity: event_count, by_actor, by_kind; rows are days with their counts.
 
 ## Step log
 
@@ -73,3 +111,7 @@ database step, one full run at the end, one review round per step).
   `from`, `to`; client `reportsApi.totals`. Migration `20270303_222` adds the Home extras and
   finds an Invoice's Property with `app.invoice_property_id`. The head checks in seven older
   test files now name `20270303_222`.
+- Step 3 (2026-10-25): migration `20270304_223` (`app.report_payment_parts`, internal, and
+  `app.report_payment_facts` rebuilt on it; the register reads); `report_registers.py`; route
+  `GET /api/v1/properties/{property_id}/reports/{name}` with `floor`, `from`, `to`, `offset`,
+  `limit`; client `reportsApi.register`.

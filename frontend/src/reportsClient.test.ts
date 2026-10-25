@@ -131,4 +131,44 @@ describe("reportsClient", () => {
       reportsApi.totals(PROPERTY, "total_water"),
     ).rejects.toBeInstanceOf(ReportsUnavailableError);
   });
+
+  it("TEST-FE-V57-006 reads a register page with its filters and page", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      answer({
+        data: {
+          report: "lease_dates",
+          currency: "USD",
+          filter: { floor: null, from: null, to: null, period_applies: true },
+          summary: { current_count: 1 },
+          chart: { months: [] },
+          totals: null,
+          rows: [],
+          row_count: 0,
+          offset: 200,
+          limit: 100,
+        },
+      }),
+    );
+    const page = await reportsApi.register(PROPERTY, "lease_dates", {
+      offset: 200,
+      limit: 100,
+      to: "2026-12-31",
+    });
+    expect(page.row_count).toBe(0);
+    const [path] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(path).toBe(
+      `/api/v1/properties/${PROPERTY}/reports/lease_dates?to=2026-12-31&offset=200&limit=100`,
+    );
+  });
+
+  it("TEST-FE-V57-007 refuses a register answer without its rows", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      answer({
+        data: { report: "payments", summary: {}, chart: {}, filter: {} },
+      }),
+    );
+    await expect(
+      reportsApi.register(PROPERTY, "payments"),
+    ).rejects.toBeInstanceOf(ReportsUnavailableError);
+  });
 });

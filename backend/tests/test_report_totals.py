@@ -199,13 +199,20 @@ class FakeStore:
         raise AssertionError("not used")
 
     def rows(
-        self, read: str, actor_id: uuid.UUID, property_id: uuid.UUID
+        self,
+        read: str,
+        actor_id: uuid.UUID,
+        property_id: uuid.UUID,
+        extra: Sequence[object] = (),
     ) -> list[dict[str, object]]:
         self.reads.append(read)
         return list(INCOME) if read == "report_income_facts" else []
 
     def units(self, property_id: uuid.UUID) -> list[dict[str, object]]:
         return list(UNITS)
+
+    def utility_rates(self, property_id: uuid.UUID) -> list[dict[str, object]]:
+        return []
 
 
 def person(*capabilities: str) -> AuthenticatedActor:

@@ -178,7 +178,7 @@ def add_rate(
 
 def test_v1_041_remains_forward_only_after_successor() -> None:
     config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
-    assert ScriptDirectory.from_config(config).get_current_head() == "20270303_222"
+    assert ScriptDirectory.from_config(config).get_current_head() == "20270304_223"
     source = (
         Path(__file__).parents[1] / "migrations/versions/20260828_31_utility_meter_persistence.py"
     ).read_text()

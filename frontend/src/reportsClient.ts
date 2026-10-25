@@ -157,6 +157,214 @@ export interface TotalsPage {
   };
 }
 
+export type RegisterName =
+  | "invoice_register"
+  | "payments"
+  | "utility_consumption"
+  | "credit_ledger"
+  | "deposits"
+  | "final_settlements"
+  | "unit_occupancy"
+  | "lease_dates"
+  | "audit_activity";
+
+export interface RegisterFilter {
+  floor?: string;
+  from?: string;
+  to?: string;
+  offset?: number;
+  limit?: number;
+}
+
+// Every row with a Unit carries unit_id, unit_number and floor.
+interface UnitPart {
+  unit_id: string | null;
+  unit_number: string | null;
+  floor: string | null;
+}
+
+export type OverdueGroup = "days_1_19" | "days_20_29" | "days_30_plus";
+
+export interface InvoiceRegisterRow extends UnitPart {
+  invoice_id: string;
+  invoice_number: string;
+  status: string;
+  customer_id: string;
+  customer_name: string;
+  lease_id: string | null;
+  primary_category: string;
+  rent_billing_kind: string | null;
+  invoice_date: string;
+  due_date: string;
+  total_usd_cents: number;
+  paid_usd_cents: number;
+  other_settled_usd_cents: number;
+  owed_usd_cents: number;
+  overdue_days: number | null;
+  overdue_group?: OverdueGroup;
+}
+
+export type PaymentLine =
+  | "INVOICES"
+  | "LATE_PAYMENT_CHARGES"
+  | "DEPOSITS"
+  | "CREDIT"
+  | "REFUNDED"
+  | "NOT_ALLOCATED"
+  | "REVERSED_LATER";
+
+export interface PaymentRegisterRow extends UnitPart {
+  payment_id: string;
+  receipt_number: string;
+  payment_date: string;
+  status: string;
+  customer_id: string;
+  customer_name: string;
+  method_name: string;
+  // Information only; never added to USD.
+  received_currency: string;
+  received_amount_minor: number;
+  rate_khr_per_usd: number | null;
+  amount_usd_cents: number;
+  reversed_on: string | null;
+  parts: {
+    kind: PaymentLine;
+    category: string | null;
+    unit_id: string | null;
+    amount_usd_cents: number;
+  }[];
+  not_allocated_usd_cents: number;
+}
+
+export interface UtilityConsumptionRow extends UnitPart {
+  period_id: string;
+  utility_type: "ELECTRICITY" | "WATER";
+  period_start: string;
+  period_end: string;
+  quantity: string;
+  is_estimate: boolean;
+  billed: boolean;
+  // Only for people who may read the money reports.
+  amount_usd_cents?: number;
+}
+
+export interface CreditLedgerRow extends UnitPart {
+  credit_id: string;
+  customer_id: string;
+  customer_name: string;
+  source_payment_id: string;
+  receipt_number: string;
+  recognized_on: string;
+  recognized_usd_cents: number;
+  applied_usd_cents: number;
+  refunded_usd_cents: number;
+  reversed_usd_cents: number;
+  available_usd_cents: number;
+}
+
+export interface DepositRow extends UnitPart {
+  deposit_id: string;
+  deposit_type: "SECURITY" | "PET";
+  lease_id: string | null;
+  reservation_id: string | null;
+  customer_id: string;
+  customer_name: string;
+  required_usd_cents: number;
+  received_usd_cents: number;
+  applied_usd_cents: number;
+  kept_usd_cents: number;
+  refunded_usd_cents: number;
+  held_usd_cents: number;
+  record_status: string;
+  settlement_closed: boolean;
+}
+
+export interface FinalSettlementRow extends UnitPart {
+  final_settlement_id: string;
+  lease_id: string;
+  customer_id: string;
+  customer_name: string;
+  started_on: string;
+  move_out_date: string | null;
+  closed_on: string | null;
+  status: "OPEN" | "CLOSED";
+  deposits_applied_usd_cents: number;
+  credit_applied_usd_cents: number;
+  deposits_kept_usd_cents: number;
+  refunded_usd_cents: number;
+  balance_due_usd_cents: number | null;
+}
+
+export interface UnitOccupancyRow extends UnitPart {
+  unit_status: string;
+  unit_type: string;
+  lease_id: string | null;
+  reservation_id: string | null;
+  customer_id: string | null;
+  customer_name: string | null;
+  monthly_rent_usd_cents: number | null;
+  until_date: string | null;
+}
+
+export interface LeaseDatesRow extends UnitPart {
+  lease_id: string;
+  customer_id: string;
+  customer_name: string;
+  status: "SIGNED" | "TERMINATED";
+  start_date: string;
+  // The actual termination date when the Lease was ended early.
+  end_date: string;
+  actual_termination_date: string | null;
+  monthly_rent_usd_cents: number;
+  days_to_end: number | null;
+  renewal_drafted: boolean;
+}
+
+export interface AuditActivityRow {
+  day: string;
+  count: number;
+}
+
+export interface RegisterRows {
+  invoice_register: InvoiceRegisterRow;
+  payments: PaymentRegisterRow;
+  utility_consumption: UtilityConsumptionRow;
+  credit_ledger: CreditLedgerRow;
+  deposits: DepositRow;
+  final_settlements: FinalSettlementRow;
+  unit_occupancy: UnitOccupancyRow;
+  lease_dates: LeaseDatesRow;
+  audit_activity: AuditActivityRow;
+}
+
+// The summary, chart and totals are worked out over every row of the filter, not only this
+// page. Their fields differ by register; see ops/V1_057_PLAN.md.
+export interface RegisterPage<N extends RegisterName> {
+  report: N;
+  currency: "USD";
+  filter: {
+    floor: string | null;
+    from: string | null;
+    to: string | null;
+    // Unit occupancy and Deposit liability show today; the period does not apply to them.
+    period_applies: boolean;
+  };
+  summary: Record<string, unknown>;
+  chart: Record<string, unknown>;
+  totals: Record<string, unknown> | null;
+  rows: RegisterRows[N][];
+  row_count: number;
+  offset: number;
+  limit: number;
+  // Utility consumption only, for people who may read the money reports.
+  rates?: {
+    utility_type: string;
+    measurement_unit_code: string;
+    rate_usd: string;
+    effective_date: string;
+  }[];
+}
+
 export class ReportsUnavailableError extends Error {
   constructor() {
     super("This information is not available right now.");
@@ -243,6 +451,22 @@ function totalsPage(data: Record<string, unknown>): TotalsPage {
   return data as unknown as TotalsPage;
 }
 
+function registerPage<N extends RegisterName>(
+  data: Record<string, unknown>,
+): RegisterPage<N> {
+  if (
+    typeof data.report !== "string" ||
+    !Array.isArray(data.rows) ||
+    typeof data.row_count !== "number" ||
+    !isObject(data.summary) ||
+    !isObject(data.chart) ||
+    !isObject(data.filter)
+  ) {
+    throw new ReportsUnavailableError();
+  }
+  return data as unknown as RegisterPage<N>;
+}
+
 function query(values: Record<string, string | undefined>): string {
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(values)) {
@@ -270,6 +494,23 @@ export const reportsApi = {
             floor: filter.floor,
             from: filter.from,
             to: filter.to,
+          }),
+      ),
+    ),
+  register: async <N extends RegisterName>(
+    propertyId: string,
+    name: N,
+    filter: RegisterFilter = {},
+  ): Promise<RegisterPage<N>> =>
+    registerPage<N>(
+      await read(
+        `/api/v1/properties/${encodeURIComponent(propertyId)}/reports/${name}` +
+          query({
+            floor: filter.floor,
+            from: filter.from,
+            to: filter.to,
+            offset: filter.offset?.toString(),
+            limit: filter.limit?.toString(),
           }),
       ),
     ),

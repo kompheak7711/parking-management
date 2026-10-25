@@ -51,15 +51,23 @@ class FakeStore:
                 {"kind": "reservation_expiring", "date": "2026-10-25"},
                 {"kind": "lease_ending", "date": "2026-10-31"},
                 {"kind": "lease_ending", "date": "2026-11-30"},
+                {"kind": "draft_waiting", "date": "2026-10-20"},
             ],
         }
 
     def rows(
-        self, read: str, actor_id: uuid.UUID, property_id: uuid.UUID
+        self,
+        read: str,
+        actor_id: uuid.UUID,
+        property_id: uuid.UUID,
+        extra: Sequence[object] = (),
     ) -> list[dict[str, object]]:
         raise AssertionError("not used")
 
     def units(self, property_id: uuid.UUID) -> list[dict[str, object]]:
+        raise AssertionError("not used")
+
+    def utility_rates(self, property_id: uuid.UUID) -> list[dict[str, object]]:
         raise AssertionError("not used")
 
 
@@ -87,8 +95,9 @@ def test_the_home_page_passes_only_the_sections_the_person_may_read() -> None:
     assert store.calls[0][1:] == (PROPERTY, ("units", "invoices", "leases"))
     data = answer.json()["data"]
     assert data["sections"] == ["units", "invoices", "leases"]
-    assert [item["group"] for item in data["todo"]] == ["overdue", "today", "this_week", "later"]
-    assert data["todo_counts"] == {"overdue": 1, "today": 1, "this_week": 1, "later": 1}
+    groups = ["overdue", "today", "this_week", "later", "today"]
+    assert [item["group"] for item in data["todo"]] == groups
+    assert data["todo_counts"] == {"overdue": 1, "today": 2, "this_week": 1, "later": 1}
     manager = actor("financial.approve")
     client(manager, store).get(PATH)
     assert store.calls[1][2] == ("approvals", "deposit_decisions", "settlements")
