@@ -461,8 +461,10 @@ describe("DepositManagement", () => {
         /Authoritative amount: \$200\.00\. Source: reservation-1.*changes the held Deposit balance/,
       ),
     );
+    // The success line renders after the command's promise settles, which can be after the call
+    // is seen; wait for it instead of reading the screen at once (failed once under heavy load).
     expect(
-      screen.getByText(
+      await screen.findByText(
         /reopen history to view the original and correction together/,
       ),
     ).toBeInTheDocument();

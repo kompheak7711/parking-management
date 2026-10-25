@@ -46,5 +46,9 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: "./src/test/setup.ts",
+    // V1-060 (DL-071 answer 13): the longest test takes about 2.5 seconds on an idle machine and
+    // timed out at the default 5 seconds when the machine was busy (TEST-FE-087, 128, 258, 420,
+    // 488 and others). 60 seconds keeps a stuck test failing while a busy machine passes.
+    testTimeout: 60_000,
   },
 });

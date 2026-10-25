@@ -1922,11 +1922,9 @@ describe("local sign-in", () => {
       }),
     );
     expect(
-      await screen.findByRole(
-        "button",
-        { name: "I verified the prior Customer command result" },
-        { timeout: 5000 },
-      ),
+      await screen.findByRole("button", {
+        name: "I verified the prior Customer command result",
+      }),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Create Customer" }),
@@ -2485,11 +2483,9 @@ describe("local sign-in", () => {
       expect(checkStatus).toBeEnabled();
     });
     fireEvent.click(checkStatus);
-    const reconcile = await screen.findByRole(
-      "button",
-      { name: "I verified the prior Customer command result" },
-      { timeout: 5000 },
-    );
+    const reconcile = await screen.findByRole("button", {
+      name: "I verified the prior Customer command result",
+    });
     await waitFor(() => {
       expect(reconcile).toBeEnabled();
     });
