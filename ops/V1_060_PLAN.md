@@ -102,4 +102,8 @@ candidate is the code that will be used.
   the same conditions and writes day zero as `billing_period_start - 1` for RECURRING Invoices;
   the exact function check still runs after it. Second rerun: all 25 reads and the Rent run pass
   (alerts middle 0.44 s, slowest 0.48 s; Rent run 3.9 s). Report: ops/reviews/V1-060-speed-test.md.
+- 2026-10-25 PG run 3 (Python 3.11, at 4932274, with 207 to 209): 2,766 passed, none failed.
+  Part A is done except the owner items (GitHub Actions billing; the OpenClaw step in CI) and the
+  owner test script, which follows the V1-058 screens. Part B starts when V1-058 merges; this
+  branch's 207 to 209 then re-chain after V1-058's head (20270314_233 on its branch today).
 
