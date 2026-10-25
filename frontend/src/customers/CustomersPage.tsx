@@ -12,9 +12,11 @@ import type { LeaseApi } from "../leaseClient";
 import type { ReservationApi } from "../reservationClient";
 import { todayInPhnomPenh } from "../shell/format";
 import { Icon } from "../shell/icons";
-import { useHashDetail } from "../shell/useHashPage";
+import { openPageInAddress, useHashDetail } from "../shell/useHashPage";
 import type { Language } from "../signInText";
 import { CustomerDetail } from "./CustomerDetail";
+import { AddCustomerPage } from "./CustomerDialogs";
+import type { CustomerCommandGate } from "./commands";
 import { CustomersList, ServerMatch } from "./CustomersList";
 import { ct } from "./text";
 import { CustomersData, loadCustomersData, standingOf } from "./customersData";
@@ -31,6 +33,9 @@ export interface CustomersPageProps {
   reservationApi: ReservationApi;
   capabilities: ReadonlySet<string> | null;
   onOpenLedger: ((customerId: string) => void) | null;
+  gate: CustomerCommandGate;
+  /** Typed values not saved yet, so signing out can warn first. */
+  onDirty: (dirty: boolean) => void;
 }
 
 export function CustomersPage({
@@ -44,6 +49,8 @@ export function CustomersPage({
   reservationApi,
   capabilities,
   onOpenLedger,
+  gate,
+  onDirty,
 }: CustomersPageProps) {
   const detail = useHashDetail("customers");
   const [data, setData] = useState<CustomersData | null>(null);
@@ -51,6 +58,8 @@ export function CustomersPage({
   const [serverMatch, setServerMatch] = useState<ServerMatch | null>(null);
   const [searching, setSearching] = useState(false);
   const [searchFailed, setSearchFailed] = useState(false);
+  // The line the next Customer page shows first, after Add Customer saved it.
+  const [added, setAdded] = useState<{ id: string; text: string } | null>(null);
   const sequence = useRef(0);
   const searchSequence = useRef(0);
 
@@ -153,6 +162,36 @@ export function CustomersPage({
     );
   }
 
+  if (detail === "new") {
+    if (!data.canManage)
+      return (
+        <div className="ui-notice warn" role="status">
+          <Icon name="alert" />
+          <p>{ct(language, "missing")}</p>
+        </div>
+      );
+    return (
+      <AddCustomerPage
+        api={customerApi}
+        gate={gate}
+        language={language}
+        onCancel={() => {
+          openPageInAddress("customers");
+        }}
+        onDirty={onDirty}
+        onSaved={(customer) => {
+          setAdded({
+            id: customer.customer_id,
+            text: ct(language, "saved_new", customer.legal_name),
+          });
+          load();
+          openPageInAddress("customers", false, customer.customer_id);
+        }}
+        propertyId={propertyId}
+      />
+    );
+  }
+
   if (detail !== null) {
     return (
       <CustomerDetail
@@ -161,7 +200,10 @@ export function CustomersPage({
         customerApi={customerApi}
         customerId={detail}
         data={data}
+        firstNotice={added?.id === detail ? added.text : null}
+        gate={gate}
         key={detail}
+        onChanged={load}
         language={language}
         ledgerApi={ledgerApi}
         onOpenLedger={onOpenLedger}
@@ -190,6 +232,13 @@ export function CustomersPage({
       <CustomersList
         data={data}
         language={language}
+        onAdd={
+          data.canManage
+            ? () => {
+                openPageInAddress("customers", false, "new");
+              }
+            : null
+        }
         onSearch={search}
         searching={searching}
         serverMatch={serverMatch}

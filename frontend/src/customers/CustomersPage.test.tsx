@@ -8,15 +8,19 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type {
-  CustomerApi,
-  CustomerDetail,
-  CustomerListItem,
+import {
+  CustomerConflictError,
+  CustomerIdNumberInUseError,
+  CustomerRequestError,
+  type CustomerApi,
+  type CustomerDetail,
+  type CustomerListItem,
 } from "../customerClient";
 import type { CustomerLedgerApi } from "../customerLedgerClient";
 import type { LeaseApi, LeaseResource } from "../leaseClient";
 import type { ReservationApi, ReservationResource } from "../reservationClient";
 import { CustomersPage } from "./CustomersPage";
+import type { CustomerCommandGate } from "./commands";
 
 afterEach(() => {
   cleanup();
@@ -249,8 +253,19 @@ function ledgerApi(
   return { read } as unknown as CustomerLedgerApi;
 }
 
+function commandGate(open = true): CustomerCommandGate {
+  return {
+    actorId: "actor-1",
+    open,
+    reserve: vi.fn().mockResolvedValue(true),
+    release: vi.fn().mockResolvedValue(true),
+    setBusy: vi.fn(),
+  };
+}
+
 function show(
   options: {
+    gate?: CustomerCommandGate;
     customers?: CustomerApi;
     leases?: LeaseApi;
     reservations?: ReservationApi;
@@ -264,6 +279,8 @@ function show(
       actorId="actor-1"
       capabilities={null}
       customerApi={options.customers ?? customerApi()}
+      gate={options.gate ?? commandGate()}
+      onDirty={vi.fn()}
       language="en"
       leaseApi={options.leases ?? leaseApi()}
       ledgerApi={options.ledger ?? ledgerApi()}
@@ -476,5 +493,323 @@ describe("Customer page", () => {
     ).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Back" }));
     expect(window.location.hash).toBe("#/customers");
+  });
+});
+
+describe("Customer dialogs", () => {
+  function field(name: string | RegExp): HTMLElement {
+    return screen.getByLabelText(name);
+  }
+
+  it("TEST-FE-831 adds a Customer on the form page through the command gate and opens the new Customer", async () => {
+    const created = detail({
+      customer_id: "customer-new",
+      legal_name: "Chea Sophal",
+      id_document_number: "P7788",
+      audit_history: [],
+    });
+    const create = vi.fn().mockResolvedValue(created);
+    const client = customerApi({
+      create,
+      get: vi.fn().mockResolvedValue(created),
+    });
+    const gate = commandGate();
+    show({ customers: client, gate });
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Add Customer" }),
+    );
+    expect(window.location.hash).toBe("#/customers/new");
+    const form = await screen.findByRole("form", { name: "Add Customer" });
+    fireEvent.click(
+      within(form).getByRole("button", { name: "Save Customer" }),
+    );
+    expect(within(form).getByText("Enter the legal name.")).toBeInTheDocument();
+    expect(
+      within(form).getByText("Enter the ID number or passport number."),
+    ).toBeInTheDocument();
+    expect(create).not.toHaveBeenCalled();
+
+    fireEvent.change(field(/^Legal name/), {
+      target: { value: "  Chea Sophal " },
+    });
+    fireEvent.change(field(/^ID number/), { target: { value: "P7788" } });
+    fireEvent.change(field("Phone"), { target: { value: "012 888 999" } });
+    fireEvent.change(field("Gender"), { target: { value: "MALE" } });
+    fireEvent.click(
+      within(form).getByRole("button", { name: "Save Customer" }),
+    );
+
+    expect(
+      await screen.findByText("Chea Sophal was added."),
+    ).toBeInTheDocument();
+    expect(window.location.hash).toBe("#/customers/customer-new");
+    expect(create).toHaveBeenCalledTimes(1);
+    const [propertyId, customerId, source, key] = create.mock.calls[0] as [
+      string,
+      string,
+      Record<string, unknown>,
+      string,
+    ];
+    expect(propertyId).toBe("property-1");
+    expect(source).toMatchObject({
+      legal_name: "Chea Sophal",
+      id_document_number: "P7788",
+      phone_number: "012 888 999",
+      gender: "MALE",
+      email_address: null,
+    });
+    const reserved = vi.mocked(gate.reserve).mock.calls[0]?.[0];
+    expect(reserved).toMatchObject({
+      kind: "create",
+      customerId,
+      commandNonce: key,
+      propertyId: "property-1",
+    });
+    expect(gate.release).toHaveBeenCalledWith(reserved);
+  });
+
+  it("TEST-FE-832 warns about a Customer with the same name or phone and saves only after the tick; a used ID number is an error", async () => {
+    const create = vi
+      .fn()
+      .mockRejectedValueOnce(
+        new CustomerConflictError([
+          item("customer-1", "Sok Dara", "012 345 678"),
+        ]),
+      )
+      .mockResolvedValueOnce(
+        detail({ customer_id: "customer-new", legal_name: "Sok Dara" }),
+      );
+    const gate = commandGate();
+    window.location.hash = "#/customers/new";
+    show({ customers: customerApi({ create }), gate });
+
+    const form = await screen.findByRole("form", { name: "Add Customer" });
+    fireEvent.change(field(/^Legal name/), { target: { value: "Sok Dara" } });
+    fireEvent.change(field(/^ID number/), { target: { value: "P1" } });
+    fireEvent.click(
+      within(form).getByRole("button", { name: "Save Customer" }),
+    );
+    expect(
+      await within(form).findByText(/A Customer with the same name or phone/),
+    ).toBeInTheDocument();
+    expect(
+      within(form).getByRole("link", { name: "Sok Dara" }),
+    ).toHaveAttribute("href", "#/customers/customer-1");
+    expect(gate.release).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(
+      within(form).getByRole("button", { name: "Save Customer" }),
+    );
+    expect(
+      within(form).getByText(/Tick “This is a different person”/),
+    ).toBeInTheDocument();
+    expect(create).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(
+      within(form).getByRole("checkbox", {
+        name: "This is a different person; save anyway",
+      }),
+    );
+    fireEvent.click(
+      within(form).getByRole("button", { name: "Save Customer" }),
+    );
+    await waitFor(() => {
+      expect(create).toHaveBeenCalledTimes(2);
+    });
+    expect(create.mock.calls[1]?.[2]).toMatchObject({
+      confirmed_distinct: true,
+    });
+    cleanup();
+
+    window.location.hash = "#/customers/new";
+    show({
+      customers: customerApi({
+        create: vi
+          .fn()
+          .mockRejectedValue(
+            new CustomerIdNumberInUseError([item("customer-4", "Keo Mony")]),
+          ),
+      }),
+    });
+    const second = await screen.findByRole("form", { name: "Add Customer" });
+    fireEvent.change(field(/^Legal name/), { target: { value: "Keo M" } });
+    fireEvent.change(field(/^ID number/), { target: { value: "N9" } });
+    fireEvent.click(
+      within(second).getByRole("button", { name: "Save Customer" }),
+    );
+    expect(
+      await within(second).findByText(
+        "Another Customer already has this ID number or passport number.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(second).getByRole("link", { name: "Keo Mony" }),
+    ).toBeInTheDocument();
+  });
+
+  it("TEST-FE-833 Edit contact sends only the changed fields with the version, and reloads when someone else changed the Customer first", async () => {
+    window.location.hash = "#/customers/customer-1";
+    const update = vi
+      .fn()
+      .mockResolvedValueOnce(
+        detail({ phone_number: "011 222 333", version: 4 }),
+      )
+      .mockRejectedValueOnce(new CustomerConflictError());
+    const get = vi.fn().mockResolvedValue(detail());
+    show({ customers: customerApi({ update, get }) });
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Edit contact" }),
+    );
+    let dialog = screen.getByRole("dialog", {
+      name: "Edit contact · Sok Dara",
+    });
+    expect(within(dialog).getByLabelText("Phone")).toHaveValue("012 345 678");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(
+      within(dialog).getByText("Nothing was changed."),
+    ).toBeInTheDocument();
+    fireEvent.change(within(dialog).getByLabelText("Phone"), {
+      target: { value: " 011 222 333 " },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(
+      await screen.findByText("The contact details of Sok Dara were saved."),
+    ).toBeInTheDocument();
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({ customer_id: "customer-1", version: 3 }),
+      { phone_number: "011 222 333" },
+      expect.any(String),
+    );
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit contact" }));
+    dialog = screen.getByRole("dialog", { name: "Edit contact · Sok Dara" });
+    fireEvent.change(within(dialog).getByLabelText("Email"), {
+      target: { value: "new@example.com" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(
+      await screen.findByText(/Someone else changed this Customer first/),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(get.mock.calls.length).toBeGreaterThanOrEqual(3);
+    });
+  });
+
+  it("TEST-FE-834 keeps the gate when the result is unknown, and Try again sends the very same save", async () => {
+    window.location.hash = "#/customers/customer-1";
+    const update = vi
+      .fn()
+      .mockRejectedValueOnce(
+        new CustomerRequestError("unknown", [], null, true),
+      )
+      .mockResolvedValueOnce(detail({ memo: "Late riser", version: 4 }));
+    const gate = commandGate();
+    show({ customers: customerApi({ update }), gate });
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Edit contact" }),
+    );
+    const dialog = screen.getByRole("dialog", {
+      name: "Edit contact · Sok Dara",
+    });
+    fireEvent.change(within(dialog).getByLabelText("Memo"), {
+      target: { value: "Late riser" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(
+      await within(dialog).findByText(
+        /We could not tell whether this was saved/,
+      ),
+    ).toBeInTheDocument();
+    expect(gate.release).not.toHaveBeenCalled();
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
+    expect(
+      await screen.findByText("The contact details of Sok Dara were saved."),
+    ).toBeInTheDocument();
+    expect(update).toHaveBeenCalledTimes(2);
+    expect(update.mock.calls[1]?.[2]).toBe(update.mock.calls[0]?.[2]);
+    expect(gate.reserve).toHaveBeenCalledTimes(1);
+    expect(gate.release).toHaveBeenCalledTimes(1);
+  });
+
+  it("TEST-FE-835 deactivates with a required reason, and sends nothing while another save waits to be checked", async () => {
+    window.location.hash = "#/customers/customer-1";
+    const deactivate = vi
+      .fn()
+      .mockResolvedValue(detail({ active: false, version: 4 }));
+    show({ customers: customerApi({ deactivate }) });
+
+    fireEvent.click(await screen.findByRole("button", { name: "Deactivate" }));
+    const dialog = screen.getByRole("dialog", {
+      name: "Deactivate · Sok Dara",
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Deactivate" }));
+    expect(within(dialog).getByText("Enter the reason.")).toBeInTheDocument();
+    fireEvent.change(within(dialog).getByLabelText(/^Reason/), {
+      target: { value: "Moved abroad" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Deactivate" }));
+    expect(
+      await screen.findByText("Sok Dara was deactivated."),
+    ).toBeInTheDocument();
+    expect(deactivate).toHaveBeenCalledWith(
+      expect.objectContaining({ customer_id: "customer-1" }),
+      "Moved abroad",
+      expect.any(String),
+    );
+    cleanup();
+
+    window.location.hash = "#/customers/customer-1";
+    const update = vi.fn();
+    show({ customers: customerApi({ update }), gate: commandGate(false) });
+    expect(
+      await screen.findByText(/A Customer save is waiting to be checked/),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Edit contact" }));
+    const blocked = screen.getByRole("dialog", {
+      name: "Edit contact · Sok Dara",
+    });
+    fireEvent.change(within(blocked).getByLabelText("Memo"), {
+      target: { value: "x" },
+    });
+    fireEvent.click(within(blocked).getByRole("button", { name: "Save" }));
+    expect(
+      await within(blocked).findByText(/^Nothing was sent/),
+    ).toBeInTheDocument();
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it("TEST-FE-836 hides Add Customer, Edit contact and Deactivate without the server's permission", async () => {
+    show({
+      customers: customerApi({
+        list: vi.fn().mockResolvedValue({
+          items: customers,
+          next_cursor: null,
+          can_manage: false,
+        }),
+        get: vi
+          .fn()
+          .mockResolvedValue(
+            detail({ can_manage: false, can_deactivate: false }),
+          ),
+      }),
+    });
+    await screen.findByText("6 Customers");
+    expect(
+      screen.queryByRole("button", { name: "Add Customer" }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("link", { name: "Sok Dara" }));
+    await screen.findByRole("heading", { name: "Sok Dara" });
+    expect(
+      screen.queryByRole("button", { name: "Edit contact" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Deactivate" }),
+    ).not.toBeInTheDocument();
   });
 });

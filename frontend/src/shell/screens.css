@@ -833,7 +833,48 @@ table.ui-table a.ui-no {
   border-top: 1px solid var(--border);
 }
 
-.ui-records h2 {
-  margin: 0 0 4px;
+.ui-records summary {
+  display: grid;
+  gap: 2px;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.ui-records-title {
+  color: var(--heading);
   font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.ui-records[open] summary {
+  margin-bottom: 16px;
+}
+
+/* V1-058 R2 step C2: the Add Customer form page and the lists of matching Customers. */
+.ui-formpage {
+  max-width: 760px;
+}
+
+.ui-formpage input:not([type="checkbox"], [type="radio"]),
+.ui-formpage select,
+.ui-formpage textarea,
+.ui-dlg textarea {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--input);
+  color: var(--text);
+  font: inherit;
+}
+
+.ui-matches {
+  margin: 6px 0;
+  padding-left: 20px;
+}
+
+.ui-matches a {
+  color: inherit;
+  font-weight: 600;
 }

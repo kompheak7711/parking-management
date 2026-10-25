@@ -174,13 +174,101 @@ const TEXT = {
   h_deactivated: ["Customer deactivated: {0}", "បានបិទអតិថិជន៖ {0}"],
   // new
   h_other: ["{0}", "{0}"],
+  // V1-058 R2 step C2: Add Customer, Edit contact, Deactivate.
+  add_sub: [
+    "One person, one record. Check the list first so the same person is not added twice.",
+    "មនុស្សម្នាក់ កំណត់ត្រាមួយ។ សូមពិនិត្យបញ្ជីជាមុនសិន ដើម្បីកុំឱ្យបន្ថែមមនុស្សដដែលពីរដង។",
+  ],
+  required: ["required", "ត្រូវតែបំពេញ"],
+  name_full: [
+    "Legal name (last name, middle name, first name)",
+    "ឈ្មោះតាមច្បាប់ (នាមត្រកូល នាមកណ្តាល នាមខ្លួន)",
+  ],
+  not_recorded: ["Not recorded", "មិនបានកត់ត្រា"],
+  nationality_ph: ["Cambodian", "ខ្មែរ"],
+  e_name: ["Enter the legal name.", "សូមបញ្ចូលឈ្មោះតាមច្បាប់។"],
+  e_id: [
+    "Enter the ID number or passport number.",
+    "សូមបញ្ចូលលេខអត្តសញ្ញាណ ឬលេខលិខិតឆ្លងដែន។",
+  ],
+  e_phone: [
+    "Use digits, spaces and + ( ) . - only.",
+    "សូមប្រើតែលេខ ដកឃ្លា និង + ( ) . - ប៉ុណ្ណោះ។",
+  ],
+  e_email: [
+    "Enter an email like name@example.com.",
+    "សូមបញ្ចូលអ៊ីមែលដូចជា name@example.com។",
+  ],
+  e_dob: ["Pick a date.", "សូមជ្រើសរើសកាលបរិច្ឆេទ។"],
+  e_id_taken: [
+    "Another Customer already has this ID number or passport number.",
+    "អតិថិជនម្នាក់ទៀតមានលេខអត្តសញ្ញាណ ឬលេខលិខិតឆ្លងដែននេះរួចហើយ។",
+  ],
+  id_taken_open: [
+    "Use the existing Customer instead:",
+    "សូមប្រើអតិថិជនដែលមានស្រាប់ជំនួសវិញ៖",
+  ],
+  maybe_same: [
+    "A Customer with the same name or phone number already exists. Open that record if it is the same person:",
+    "មានអតិថិជនដែលមានឈ្មោះ ឬលេខទូរស័ព្ទដូចគ្នារួចហើយ។ សូមបើកកំណត់ត្រានោះ ប្រសិនបើជាមនុស្សដដែល៖",
+  ],
+  distinct: [
+    "This is a different person; save anyway",
+    "នេះជាមនុស្សផ្សេង សូមរក្សាទុក",
+  ],
+  tick_distinct: [
+    "Tick “This is a different person” or open the existing Customer.",
+    "សូមធីក “នេះជាមនុស្សផ្សេង” ឬបើកអតិថិជនដែលមានស្រាប់។",
+  ],
+  blocked: [
+    "Nothing was sent. Another Customer save is still waiting to be checked, or this browser cannot keep Customer saves safe. See “Earlier Customer form” below.",
+    "មិនបានផ្ញើអ្វីទេ។ ការរក្សាទុកអតិថិជនមួយទៀតកំពុងរង់ចាំការពិនិត្យ ឬកម្មវិធីរុករកនេះមិនអាចរក្សាសុវត្ថិភាពការរក្សាទុកបានទេ។ សូមមើល “ទម្រង់អតិថិជនពីមុន” ខាងក្រោម។",
+  ],
+  unknown: [
+    "We could not tell whether this was saved. “Try again” sends the very same save; it is never saved twice.",
+    "យើងមិនអាចដឹងថាវាត្រូវបានរក្សាទុកឬអត់ទេ។ “ព្យាយាមម្តងទៀត” ផ្ញើការរក្សាទុកដដែល វាមិនត្រូវបានរក្សាទុកពីរដងទេ។",
+  ],
+  refused: [
+    "The Customer was not saved. Check the details and try again.",
+    "មិនបានរក្សាទុកអតិថិជនទេ។ សូមពិនិត្យព័ត៌មាន ហើយព្យាយាមម្តងទៀត។",
+  ],
+  cancel: ["Cancel", "បោះបង់"],
+  saving: ["Saving…", "កំពុងរក្សាទុក…"],
+  try_again: ["Try again", "ព្យាយាមម្តងទៀត"],
+  save_customer: ["Save Customer", "រក្សាទុកអតិថិជន"],
+  save: ["Save", "រក្សាទុក"],
+  edit_title: ["Edit contact · {0}", "កែទំនាក់ទំនង · {0}"],
+  nothing_changed: ["Nothing was changed.", "គ្មានអ្វីត្រូវបានកែទេ។"],
+  deactivate: ["Deactivate", "បិទ"],
+  deactivate_title: ["Deactivate · {0}", "បិទ · {0}"],
+  deactivate_note: [
+    "The Customer stays in the records with every Lease, Invoice and Receipt; nothing is deleted. A deactivated Customer cannot be changed again.",
+    "អតិថិជននៅតែមានក្នុងកំណត់ត្រា ជាមួយកិច្ចសន្យា វិក្កយបត្រ និងបង្កាន់ដៃទាំងអស់ គ្មានអ្វីត្រូវលុបទេ។ អតិថិជនដែលបានបិទ មិនអាចកែម្តងទៀតបានទេ។",
+  ],
+  reason: ["Reason", "មូលហេតុ"],
+  e_reason: ["Enter the reason.", "សូមបញ្ចូលមូលហេតុ។"],
+  saved_new: ["{0} was added.", "បានបន្ថែម {0}។"],
+  saved_edit: [
+    "The contact details of {0} were saved.",
+    "បានរក្សាទុកទំនាក់ទំនងរបស់ {0}។",
+  ],
+  saved_deactivated: ["{0} was deactivated.", "បានបិទ {0}។"],
+  conflict: [
+    "Someone else changed this Customer first. The page now shows the newest details; make your change again.",
+    "មានអ្នកផ្សេងបានកែអតិថិជននេះមុន។ ទំព័រនេះបង្ហាញព័ត៌មានថ្មីបំផុតហើយ សូមកែម្តងទៀត។",
+  ],
+  waiting_check: [
+    "A Customer save is waiting to be checked. Check it in the “Earlier Customer form” below before saving another.",
+    "ការរក្សាទុកអតិថិជនមួយកំពុងរង់ចាំការពិនិត្យ។ សូមពិនិត្យវានៅ “ទម្រង់អតិថិជនពីមុន” ខាងក្រោម មុនពេលរក្សាទុកមួយទៀត។",
+  ],
   // new
-  records: ["Add or change Customers", "បន្ថែម ឬកែអតិថិជន"],
+  records: ["Earlier Customer form", "ទម្រង់អតិថិជនពីមុន"],
   // new
   records_note: [
-    "Adding a Customer, Edit contact and deactivating still use the earlier form below. They move into dialogs in the next step (C2).",
-    "ការបន្ថែមអតិថិជន ការកែទំនាក់ទំនង និងការបិទ នៅតែប្រើទម្រង់ពីមុនខាងក្រោម។ ពួកវានឹងផ្លាស់ទៅប្រអប់ក្នុងជំហានបន្ទាប់ (C2)។",
+    "The earlier Customer form, in English. Use it to check a save whose result was not known, and for the full Account Ledger.",
+    "ទម្រង់អតិថិជនពីមុន ជាភាសាអង់គ្លេស។ ប្រើវាដើម្បីពិនិត្យការរក្សាទុកដែលមិនដឹងលទ្ធផល និងសម្រាប់បញ្ជីគណនីពេញលេញ។",
   ],
+  records_open: ["Show the earlier form", "បង្ហាញទម្រង់ពីមុន"],
 } as const;
 
 export type CustomerTextKey = keyof typeof TEXT;

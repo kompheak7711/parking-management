@@ -68,6 +68,7 @@ import { type Language, storeLanguage, storedLanguage } from "./signInText";
 import { AppShell } from "./shell/AppShell";
 import { ComingSoon, HomePage, NoAccess, PropertyNeeded } from "./shell/pages";
 import { openPageInAddress, useHashPage } from "./shell/useHashPage";
+import type { CustomerCommandGate } from "./customers/commands";
 import { CustomersPage } from "./customers/CustomersPage";
 import { ct } from "./customers/text";
 import { UnitsPage } from "./units/UnitsPage";
@@ -601,6 +602,9 @@ export function App({
   const [propertyConfigurationAuthorized, setPropertyConfigurationAuthorized] =
     useState(false);
   const [customerDraftsDirty, setCustomerDraftsDirty] = useState(false);
+  // V1-058 R2 step C2: the new Customer form page has its own unsaved values.
+  const [customerPageDirty, setCustomerPageDirty] = useState(false);
+  const [customerRecordsOpen, setCustomerRecordsOpen] = useState(false);
   const [financialDraftsDirty, setFinancialDraftsDirty] = useState(false);
   const [enforcementDraftsDirty, setEnforcementDraftsDirty] = useState(false);
   const [customerCommandBusy, setCustomerCommandBusy] = useState(false);
@@ -878,7 +882,10 @@ export function App({
 
   function handleLogout() {
     if (
-      customerDraftsDirty &&
+      (customerDraftsDirty ||
+        customerPageDirty ||
+        customerCommandBusy ||
+        customerReconciliationRequirement !== null) &&
       !window.confirm(
         customerCommandBusy
           ? "A Customer command is still pending and its outcome will be unknown. Discard other unsaved Customer values and sign out?"
@@ -1365,6 +1372,68 @@ export function App({
   }
 
   // V1-058 R1b: a page opens only when it is the address and the person may use it.
+  // The one Customer command gate, shared by the earlier form and the V1-058 dialogs.
+  const releaseCustomerGate = async (
+    requirement: CustomerReconciliationRequirement,
+  ): Promise<boolean> => {
+    const clearance = await clearCustomerReconciliation(requirement);
+    if (clearance.status === "cleared") {
+      setCustomerCoordinationAvailable(true);
+      setCustomerReconciliationRequirement((current) =>
+        sameCustomerReconciliation(current, requirement) ? null : current,
+      );
+      return true;
+    } else if (clearance.status === "superseded") {
+      if (clearance.requirement === null) {
+        setCustomerCoordinationAvailable(true);
+        setCustomerReconciliationRequirement(null);
+        setNotice(
+          "The Customer reconciliation gate was already resolved in another tab.",
+        );
+        return true;
+      }
+      setCustomerReconciliationRequirement(clearance.requirement);
+      setNotice(
+        "A newer Customer command gate remains active. Reconcile that exact command before retrying.",
+      );
+      return false;
+    } else {
+      setNotice(
+        "The Customer result is known, but its durable command gate could not be cleared. Customer commands remain blocked.",
+      );
+      return false;
+    }
+  };
+  const reserveCustomerGate = async (
+    requirement: CustomerReconciliationRequirement,
+  ): Promise<boolean> => {
+    const reservation = await reserveCustomerReconciliation(requirement);
+    if (reservation.existing !== null) {
+      setCustomerCoordinationAvailable(true);
+      setCustomerReconciliationRequirement(reservation.existing);
+      return false;
+    }
+    if (!reservation.reserved) {
+      setNotice(
+        reservation.storageAvailable
+          ? "Another tab already reserved the Customer command gate. Reconcile it before retrying."
+          : "Customer command coordination is unavailable. No command was sent; restore durable browser coordination before retrying.",
+      );
+      return false;
+    }
+    setCustomerCoordinationAvailable(true);
+    setCustomerReconciliationRequirement(requirement);
+    return true;
+  };
+  const customerGate: CustomerCommandGate = {
+    actorId: session.actor_id,
+    open:
+      customerCoordinationAvailable &&
+      customerReconciliationRequirement === null,
+    reserve: reserveCustomerGate,
+    release: releaseCustomerGate,
+    setBusy: setCustomerCommandBusy,
+  };
   const allowed = pageAllowed(page, capabilities);
   const shown = (candidate: PageId) => candidate === page && allowed;
 
@@ -1470,6 +1539,8 @@ export function App({
             actorId={session.actor_id}
             capabilities={capabilities}
             customerApi={customerApi ?? defaultCustomerApi}
+            gate={customerGate}
+            onDirty={setCustomerPageDirty}
             language={language}
             leaseApi={leaseApi}
             ledgerApi={ledgerApi ?? customerLedgerClient}
@@ -1483,6 +1554,7 @@ export function App({
                 actorId: session.actor_id,
                 sequence: ++ledgerSequence.current,
               });
+              setCustomerRecordsOpen(true);
               window.setTimeout(() => {
                 document
                   .getElementById("customer-records")
@@ -1495,110 +1567,71 @@ export function App({
             reservationApi={reservationApi}
           />
         )}
-        <section
-          aria-labelledby="customer-records-title"
+        {/* V1-058 R2 step C2: the earlier form stays folded away. It opens by itself while a
+            Customer save waits to be checked, and for the full Account Ledger. */}
+        <details
           className="ui-records"
           id="customer-records"
-          lang={language}
+          onToggle={(event) => {
+            // A waiting save opens it by itself; only the person's own click is remembered.
+            if (customerReconciliationRequirement === null)
+              setCustomerRecordsOpen(event.currentTarget.open);
+          }}
+          open={
+            customerRecordsOpen || customerReconciliationRequirement !== null
+          }
         >
-          <h2 id="customer-records-title">{ct(language, "records")}</h2>
-          <p className="ui-small ui-muted">{ct(language, "records_note")}</p>
-        </section>
-        {/* The earlier forms are in English only (until step C2). */}
-        <div lang="en">
-          {!logoutPending && (
-            <CustomerAccountLedger
-              key={`customer-ledger:${session.actor_id}`}
-              actorId={session.actor_id}
-              api={ledgerApi}
-              requested={
-                ledgerSelection?.actorId === session.actor_id
-                  ? ledgerSelection
-                  : undefined
-              }
-            />
-          )}
-          {!logoutPending && (
-            <CustomerManagement
-              actorId={session.actor_id}
-              api={customerApi}
-              onOpenAccountLedger={(selection) => {
-                setLedgerSelection({
-                  ...selection,
-                  actorId: session.actor_id,
-                  sequence: ++ledgerSequence.current,
-                });
-              }}
-              mutationCoordinationAvailable={customerCoordinationAvailable}
-              onCommandBusyChange={setCustomerCommandBusy}
-              onDirtyStateChange={setCustomerDraftsDirty}
-              onReconciled={async (requirement) => {
-                const clearance =
-                  await clearCustomerReconciliation(requirement);
-                if (clearance.status === "cleared") {
-                  setCustomerCoordinationAvailable(true);
-                  setCustomerReconciliationRequirement((current) =>
-                    sameCustomerReconciliation(current, requirement)
-                      ? null
-                      : current,
-                  );
-                  return true;
-                } else if (clearance.status === "superseded") {
-                  if (clearance.requirement === null) {
-                    setCustomerCoordinationAvailable(true);
-                    setCustomerReconciliationRequirement(null);
-                    setNotice(
-                      "The Customer reconciliation gate was already resolved in another tab.",
-                    );
-                    return true;
-                  }
-                  setCustomerReconciliationRequirement(clearance.requirement);
-                  setNotice(
-                    "A newer Customer command gate remains active. Reconcile that exact command before retrying.",
-                  );
-                  return false;
-                } else {
-                  setNotice(
-                    "The Customer result is known, but its durable command gate could not be cleared. Customer commands remain blocked.",
-                  );
-                  return false;
+          <summary lang={language}>
+            <span className="ui-records-title">{ct(language, "records")}</span>
+            <span className="ui-small ui-muted">
+              {ct(language, "records_note")}
+            </span>
+          </summary>
+          <div lang="en">
+            {!logoutPending && (
+              <CustomerAccountLedger
+                key={`customer-ledger:${session.actor_id}`}
+                actorId={session.actor_id}
+                api={ledgerApi}
+                requested={
+                  ledgerSelection?.actorId === session.actor_id
+                    ? ledgerSelection
+                    : undefined
                 }
-              }}
-              onReconciliationRequired={async (requirement) => {
-                const reservation =
-                  await reserveCustomerReconciliation(requirement);
-                if (reservation.existing !== null) {
-                  setCustomerCoordinationAvailable(true);
-                  setCustomerReconciliationRequirement(reservation.existing);
-                  return false;
-                }
-                if (!reservation.reserved) {
-                  setNotice(
-                    reservation.storageAvailable
-                      ? "Another tab already reserved the Customer command gate. Reconcile it before retrying."
-                      : "Customer command coordination is unavailable. No command was sent; restore durable browser coordination before retrying.",
-                  );
-                  return false;
-                }
-                setCustomerCoordinationAvailable(true);
-                setCustomerReconciliationRequirement(requirement);
-                return true;
-              }}
-              reconciliationRequirement={customerReconciliationRequirement}
-            />
-          )}
-          {!logoutPending && !customerCoordinationAvailable && (
-            <section className="information-card">
-              <h3>Customer command coordination unavailable</h3>
-              <p>
-                Customer commands are blocked because the opaque reconciliation
-                handle cannot be matched to this authenticated browser session.
-                No confidential Customer or actor metadata was read from local
-                storage.
-              </p>
-            </section>
-          )}
-        </div>
+              />
+            )}
+            {!logoutPending && (
+              <CustomerManagement
+                actorId={session.actor_id}
+                api={customerApi}
+                onOpenAccountLedger={(selection) => {
+                  setLedgerSelection({
+                    ...selection,
+                    actorId: session.actor_id,
+                    sequence: ++ledgerSequence.current,
+                  });
+                }}
+                mutationCoordinationAvailable={customerCoordinationAvailable}
+                onCommandBusyChange={setCustomerCommandBusy}
+                onDirtyStateChange={setCustomerDraftsDirty}
+                onReconciled={releaseCustomerGate}
+                onReconciliationRequired={reserveCustomerGate}
+                reconciliationRequirement={customerReconciliationRequirement}
+              />
+            )}
+            {!logoutPending && !customerCoordinationAvailable && (
+              <section className="information-card">
+                <h3>Customer command coordination unavailable</h3>
+                <p>
+                  Customer commands are blocked because the opaque
+                  reconciliation handle cannot be matched to this authenticated
+                  browser session. No confidential Customer or actor metadata
+                  was read from local storage.
+                </p>
+              </section>
+            )}
+          </div>
+        </details>
       </div>
       <div
         className="shell-page"

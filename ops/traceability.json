@@ -50147,6 +50147,77 @@
       "test_path": "frontend/src/customers/CustomersPage.test.tsx",
       "status": "implemented",
       "notes": "V1-058 R2: when the ledger cannot be read the Money card says so and the ledger button is hidden; a Customer that is not found shows a notice and Back returns to the list."
+    },
+    {
+      "test_id": "TEST-FE-831",
+      "upstream_ids": [
+        "DL-074",
+        "DL-071",
+        "UI-029",
+        "BR-CUST-001"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/customers/CustomersPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R2 C2: Add Customer is a form page (#/customers/new); legal name and ID or passport number are required; the save reserves the browser's Customer command gate, sends one idempotency key, releases the gate on the known result and opens the new Customer."
+    },
+    {
+      "test_id": "TEST-FE-832",
+      "upstream_ids": [
+        "DL-074",
+        "DL-071",
+        "BR-CUST-002"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/customers/CustomersPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R2 C2: a Customer with the same name or phone is named with a link and the save needs the 'different person' tick (sent as confirmed_distinct); a used ID or passport number is an error naming the existing Customer."
+    },
+    {
+      "test_id": "TEST-FE-833",
+      "upstream_ids": [
+        "DL-074",
+        "BR-CUST-003",
+        "UI-029"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/customers/CustomersPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R2 C2: Edit contact is a dialog that sends only the changed, trimmed fields with the version; when someone else changed the Customer first, the page reads it again and says so."
+    },
+    {
+      "test_id": "TEST-FE-834",
+      "upstream_ids": [
+        "DL-074",
+        "SEC-041"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/customers/CustomersPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R2 C2: when the result of a save is unknown the gate stays reserved, and Try again resends the same request with the same idempotency key; the gate is released once the result is known."
+    },
+    {
+      "test_id": "TEST-FE-835",
+      "upstream_ids": [
+        "DL-074",
+        "BR-CUST-003",
+        "UI-029"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/customers/CustomersPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R2 C2: Deactivate is a dialog with a required reason; while another Customer save waits to be checked, the page says so and a save sends nothing."
+    },
+    {
+      "test_id": "TEST-FE-836",
+      "upstream_ids": [
+        "DL-074",
+        "UI-029"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/customers/CustomersPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R2 C2: without the server's manage or deactivate permission, Add Customer, Edit contact and Deactivate are not shown."
     }
   ]
 }

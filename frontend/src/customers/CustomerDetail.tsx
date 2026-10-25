@@ -21,7 +21,9 @@ import { hashForPage } from "../shell/navigation";
 import { openPageInAddress } from "../shell/useHashPage";
 import { Chip, type Tone } from "../shell/ui";
 import type { Language } from "../signInText";
+import { DeactivateDialog, EditContactDialog } from "./CustomerDialogs";
 import { KindChip } from "./CustomersList";
+import type { CustomerCommandGate } from "./commands";
 import { ct } from "./text";
 import {
   CustomersData,
@@ -80,6 +82,11 @@ export interface CustomerDetailProps {
   capabilities: ReadonlySet<string> | null;
   /** Opens this Customer in the Account Ledger below the page; null when it is not shown. */
   onOpenLedger: ((customerId: string) => void) | null;
+  gate: CustomerCommandGate;
+  /** A saved change; the list reads the Customers again. */
+  onChanged: () => void;
+  /** A line to show first, such as "Sok Dara was added." */
+  firstNotice?: string | null;
 }
 
 export function CustomerDetail({
@@ -92,6 +99,9 @@ export function CustomerDetail({
   data,
   capabilities,
   onOpenLedger,
+  gate,
+  onChanged,
+  firstNotice = null,
 }: CustomerDetailProps) {
   const [customer, setCustomer] = useState<CustomerRecord | null>(null);
   const [missing, setMissing] = useState(false);
@@ -99,6 +109,9 @@ export function CustomerDetail({
   const [position, setPosition] = useState<LedgerPosition | null | undefined>(
     undefined,
   );
+  const [dialog, setDialog] = useState<"edit" | "deactivate" | null>(null);
+  const [notice, setNotice] = useState<string | null>(firstNotice);
+  const [warning, setWarning] = useState<string | null>(null);
   const sequence = useRef(0);
   const today = todayInPhnomPenh();
   const may = (capability: string) =>
@@ -217,8 +230,22 @@ export function CustomerDetail({
           </div>
           {sub !== "" && <p>{sub}</p>}
         </div>
-        {onOpenLedger !== null && position !== null && (
-          <div className="ui-actions">
+        <div className="ui-actions">
+          {customer.active && customer.can_manage && (
+            <button
+              className="ui-btn primary"
+              onClick={() => {
+                setNotice(null);
+                setWarning(null);
+                setDialog("edit");
+              }}
+              type="button"
+            >
+              <Icon name="customers" />
+              {ct(language, "edit")}
+            </button>
+          )}
+          {onOpenLedger !== null && position !== null && (
             <button
               className="ui-btn"
               onClick={() => {
@@ -229,9 +256,43 @@ export function CustomerDetail({
               <Icon name="invoice" />
               {ct(language, "open_ledger")}
             </button>
+          )}
+          {customer.active && customer.can_deactivate && (
+            <button
+              className="ui-btn"
+              onClick={() => {
+                setNotice(null);
+                setWarning(null);
+                setDialog("deactivate");
+              }}
+              type="button"
+            >
+              <Icon name="x" />
+              {ct(language, "deactivate")}
+            </button>
+          )}
+        </div>
+      </div>
+      {(customer.can_manage || customer.can_deactivate) &&
+        customer.active &&
+        !gate.open && (
+          <div className="ui-notice warn" role="status">
+            <Icon name="alert" />
+            <p>{ct(language, "waiting_check")}</p>
           </div>
         )}
-      </div>
+      {warning !== null && (
+        <div className="ui-notice warn" role="alert">
+          <Icon name="alert" />
+          <p>{warning}</p>
+        </div>
+      )}
+      {notice !== null && (
+        <div className="ui-notice ok" role="status">
+          <Icon name="check" />
+          <p>{notice}</p>
+        </div>
+      )}
       <div className="ui-split">
         <div className="ui-stack">
           <section aria-labelledby="customer-contact" className="ui-card">
@@ -445,6 +506,52 @@ export function CustomerDetail({
           </section>
         </div>
       </div>
+      {dialog === "edit" && (
+        <EditContactDialog
+          api={customerApi}
+          customer={customer}
+          gate={gate}
+          language={language}
+          onClose={() => {
+            setDialog(null);
+          }}
+          onConflict={() => {
+            setDialog(null);
+            setWarning(ct(language, "conflict"));
+            load();
+          }}
+          onSaved={(saved) => {
+            setDialog(null);
+            setNotice(ct(language, "saved_edit", saved.legal_name));
+            onChanged();
+            load();
+          }}
+          propertyId={propertyId}
+        />
+      )}
+      {dialog === "deactivate" && (
+        <DeactivateDialog
+          api={customerApi}
+          customer={customer}
+          gate={gate}
+          language={language}
+          onClose={() => {
+            setDialog(null);
+          }}
+          onConflict={() => {
+            setDialog(null);
+            setWarning(ct(language, "conflict"));
+            load();
+          }}
+          onSaved={(saved) => {
+            setDialog(null);
+            setNotice(ct(language, "saved_deactivated", saved.legal_name));
+            onChanged();
+            load();
+          }}
+          propertyId={propertyId}
+        />
+      )}
     </>
   );
 }

@@ -61,6 +61,7 @@ export function CustomersList({
   serverMatch,
   searching,
   onSearch,
+  onAdd,
 }: {
   language: Language;
   data: CustomersData;
@@ -69,6 +70,8 @@ export function CustomersList({
   serverMatch: ServerMatch | null;
   searching: boolean;
   onSearch: (text: string) => void;
+  /** Null when the person may not add Customers. */
+  onAdd: (() => void) | null;
 }) {
   const [text, setText] = useState("");
   const [card, setCard] = useState<Exclude<CustomerKind, "none"> | "all">(
@@ -115,6 +118,14 @@ export function CustomersList({
     <>
       <div className="ui-head">
         <p>{ct(language, "sub", data.customers.length)}</p>
+        {onAdd !== null && (
+          <div className="ui-actions">
+            <button className="ui-btn primary" onClick={onAdd} type="button">
+              <Icon name="plus" />
+              {ct(language, "add")}
+            </button>
+          </div>
+        )}
       </div>
       <form className="ui-filters" onSubmit={submit} role="search">
         <label className="ui-sr" htmlFor="customers-search">
