@@ -417,6 +417,9 @@ def test_the_pass_skips_invoices_the_rule_does_not_charge(migrated_database_url:
     assert record(initial_case, initial["invoice"]) == {"outcome": "INITIAL_RENT"}
     assert decision_of(url, initial["invoice"]) is None
 
+    # The closed Settlement case records a person's decision, so no pass has finished yet
+    # (slice 11g-3).
+    clear_runs(url)
     case = overdue_case(url)
     undecided = case["undecided"]
     due = cast(date, one(url, "SELECT due_date FROM app.invoices WHERE id=%s", undecided)[0])

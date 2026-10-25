@@ -3111,6 +3111,8 @@ Amended by the owner's answer to Q-2026-10-07-38 (2026-10-07): after the Lease's
 
 Built in V1-056 slice 11g-2 (DL-086; DL-076 answer 4): before the Final Settlement is closed, the Owner or a Manager (`late_payment.charge_correction`) reduces or waives a charge with one of three fixed reasons and a "What happened" text; the amount only goes down. Paid value above the new amount is released at once: the paying Payment allocations and Credit applications are reversed whole, newest first, their unreleased rest is posted again to the charge, released Payment value becomes Customer Credit of the charge's Customer (BR-CREDIT-014) and released Credit value returns to its Credit. A charge a Deposit application paid is refused; after closure this command is refused and the post-settlement corrections apply.
 
+Built in V1-056 slice 11g-3 (DL-087; DL-076 answers 1 and 4): from the Property's first finished automatic pass on, a person's late-payment decision is refused and the charge changes only by a reduction or waiver with a fixed reason (BR-LATE-005 as built in 11g-2); a free reduction, a free waiver and a reduction reversal (which would raise the amount) are refused. Decisions and corrections recorded before stay as history.
+
 ---
 
 ### BR-LATE-006 — No Recursive Charge

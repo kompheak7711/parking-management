@@ -464,7 +464,9 @@ def test_bad_input_an_unknown_charge_and_a_closed_settlement_are_refused(
     assert position(url, case["charge"]) == (8_000, 8_000)
     assert issubclass(LatePaymentInvalidError, ValueError)
 
-    # A closed Final Settlement refuses the command (P5S01) and nothing is written.
+    # A closed Final Settlement refuses the command (P5S01) and nothing is written. Its charge
+    # comes from a person's decision, so no pass has finished yet (slice 11g-3).
+    clear_runs(url)
     closed = closed_overdue_case(url)
     before = (charge_corrections(url, closed["charge"]), position(url, closed["charge"]))
     with pytest.raises(LatePaymentConflictError):
@@ -643,7 +645,8 @@ def test_the_old_route_does_not_reverse_a_reduction_and_shares_its_keys(
     migrated_database_url: str,
 ) -> None:
     """Round 1 security review S1: a reduction released its paid value as Credit, so the old
-    correction route refuses to reverse it (P4603). Both routes share the idempotency keys."""
+    correction route refuses to reverse it (P4603), also before any automatic pass (slice 11g-3
+    refuses every free correction after one). Both routes share the idempotency keys."""
     url = migrated_database_url
     case = charged(url, 17)
     key = uuid4()
@@ -654,6 +657,7 @@ def test_the_old_route_does_not_reverse_a_reduction_and_shares_its_keys(
         "WHERE late_payment_charge_id=%s",
         case["charge"],
     )[0]
+    clear_runs(url)
     with pytest.raises(LatePaymentConflictError):
         late_payments().correct_charge(
             case["prop"],

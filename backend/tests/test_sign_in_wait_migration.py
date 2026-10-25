@@ -55,7 +55,7 @@ from test_move_in_migration import runtime_database_url
 REVISION = "20270128_185"
 PREVIOUS = "20270127_184"
 # The head after V1-056 slice 11c-1 (migration 20270210_198).
-HEAD = "20270211_199"
+HEAD = "20270212_200"
 # The migration of login sub-slice L3c-1.
 KEYED_CLEAR = "20270129_186"
 PASSWORD = "correct horse battery staple"

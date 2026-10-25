@@ -1615,70 +1615,71 @@ function BillingWorkspace({
               {formatUsd(charge.remaining_balance)}
             </p>
             <EvidenceView value={charge.evidence} />
-            {can("late_payment.charge_correction") && (
-              <form
-                onSubmit={(event) => {
-                  formReview(
-                    event,
-                    (data) => {
-                      const kind = value(
-                          data,
-                          "kind",
-                        ) as ChargeCorrectionInput["kind"],
-                        reason = value(data, "reason");
-                      const input: ChargeCorrectionInput =
-                        kind === "REDUCTION"
-                          ? { kind, amount: positive(data), reason }
-                          : kind === "REDUCTION_REVERSAL"
-                            ? {
-                                kind,
-                                reverses_correction_id: value(data, "source"),
-                                reason,
-                              }
-                            : { kind, reason };
-                      if (
-                        kind === "REDUCTION_REVERSAL" &&
-                        !value(data, "source")
-                      )
-                        throw new Error("Source correction required");
-                      return {
-                        action: "correctCharge",
-                        propertyId,
-                        id: charge.id,
-                        input,
-                      };
-                    },
-                    charge.evidence,
-                  );
-                }}
-              >
-                <p>
-                  Append-only correction. Original charge, source invoice and
-                  applications remain in history. Required application reversals
-                  are enforced by the server.
-                </p>
-                <label>
-                  Charge correction kind
-                  <select name="kind">
-                    <option>REDUCTION</option>
-                    <option>CHARGE_REVERSAL</option>
-                    <option>REDUCTION_REVERSAL</option>
-                  </select>
-                </label>
-                <Field
-                  name="amount"
-                  label="Charge reduction amount (USD)"
-                  required={false}
-                />
-                <Field
-                  name="source"
-                  label="Reduction correction ID to reverse"
-                  required={false}
-                />
-                <Field name="reason" label="Charge correction reason" />
-                <button type="submit">Review charge correction</button>
-              </form>
-            )}
+            {can("late_payment.charge_correction") &&
+              charge.manual_corrections_open !== false && (
+                <form
+                  onSubmit={(event) => {
+                    formReview(
+                      event,
+                      (data) => {
+                        const kind = value(
+                            data,
+                            "kind",
+                          ) as ChargeCorrectionInput["kind"],
+                          reason = value(data, "reason");
+                        const input: ChargeCorrectionInput =
+                          kind === "REDUCTION"
+                            ? { kind, amount: positive(data), reason }
+                            : kind === "REDUCTION_REVERSAL"
+                              ? {
+                                  kind,
+                                  reverses_correction_id: value(data, "source"),
+                                  reason,
+                                }
+                              : { kind, reason };
+                        if (
+                          kind === "REDUCTION_REVERSAL" &&
+                          !value(data, "source")
+                        )
+                          throw new Error("Source correction required");
+                        return {
+                          action: "correctCharge",
+                          propertyId,
+                          id: charge.id,
+                          input,
+                        };
+                      },
+                      charge.evidence,
+                    );
+                  }}
+                >
+                  <p>
+                    Append-only correction. Original charge, source invoice and
+                    applications remain in history. Required application
+                    reversals are enforced by the server.
+                  </p>
+                  <label>
+                    Charge correction kind
+                    <select name="kind">
+                      <option>REDUCTION</option>
+                      <option>CHARGE_REVERSAL</option>
+                      <option>REDUCTION_REVERSAL</option>
+                    </select>
+                  </label>
+                  <Field
+                    name="amount"
+                    label="Charge reduction amount (USD)"
+                    required={false}
+                  />
+                  <Field
+                    name="source"
+                    label="Reduction correction ID to reverse"
+                    required={false}
+                  />
+                  <Field name="reason" label="Charge correction reason" />
+                  <button type="submit">Review charge correction</button>
+                </form>
+              )}
           </section>
         )}
         {can("billing.generate") && (
