@@ -2123,3 +2123,12 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Not changed:** the Final Settlement late-charge commands (they do not use these functions), the reads, the decision check of DL-085.
 - **Migration head:** `20270212_200` (the V1-058 branch also uses ids from 196; whichever merges second re-chains).
 - **Decision date:** 2026-10-25.
+
+## DL-088 — V1-056 slice 11g-4: the late-payment charge right after its own Invoice in the payment proposal (DL-076 answer 5)
+
+- **Type:** `IMPLEMENTATION RECORD`
+- **Built (migration `20270213_201`):** the payment proposal of a payer's own Payment that names nothing (`NORMAL_CUSTOMER`, no identified Invoice or charge) lists each open late-payment charge of the payer right after its own Invoice, before newer Invoices: order Due Date, issue time, Invoice number, Invoice id, then the Invoice before its charge. The charge of an Invoice already paid keeps its Due Date place. A charge counts against the same bounds as an Invoice. Posting the proposal unchanged writes the charge part as a direct charge allocation (the table keeps proposal batches for Invoice targets); its detail trace names the batch. A reduced charge is proposed at what is still unpaid; a waived or fully paid charge is left out.
+- **Not changed (DL-029 stays):** a Payment that names an Invoice or a charge, and a third-party Payment, are proposed exactly as before, with no charge targets. Staff still confirm the proposal (Receive payment); the Customer naming what to pay still changes the order (BR-PAY-024).
+- **Readings decided by Claude under the owner's 2026-10-23 22:30 rule (how, not who or how much):** a charge target carries its source Invoice's Due Date, issue time and number so the screen can show where it sits; the old allocation screen shows a charge target as "Late-payment charge of" its Invoice; a charge whose source Invoice is VOID is never proposed (voiding an Invoice with a standing charge is already refused). Two posts at once of batches with both charges and Invoices can end in a detected deadlock (no money moves; the service answers unavailable and the client replays the same command with the same key), as designated batches already could. The audit event of a charge allocation posted from a proposal names no proposal batch; its detail trace does.
+- **Migration head:** `20270213_201` (the V1-058 branch also uses ids from 196; whichever merges second re-chains).
+- **Decision date:** 2026-10-25.

@@ -5,6 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from threading import Barrier
+from typing import Any, cast
 from uuid import UUID, uuid4
 
 import psycopg
@@ -775,10 +776,39 @@ def test_credit_true_excess_requires_separate_charge_as_well_as_invoice_settled(
     allocation_service = PaymentAllocationService(runtime_database_url(), financial_database_url())
     staff = actor(human, prop, "payments.allocate")
     proposal = allocation_service.proposal(prop, payment, actor=staff)
+    # V1-056 slice 11g-4: the proposal now also pays the charge right after its Invoice
+    # (DL-076 answer 5), so the Customer names the Invoice alone to leave the charge open.
+    proposed = cast(list[dict[str, Any]], proposal["targets"])
+    assert [
+        ("invoice_id" in target, "late_payment_charge_id" in target) for target in proposed
+    ] == [
+        (True, False),
+        (False, True),
+    ]
+    invoice_target = proposed[0]
     paid = allocation_service.post(
         prop,
         payment,
-        PostAllocationsCommand(uuid4(), {"mode": "PROPOSAL", "proposal": proposal}),
+        PostAllocationsCommand(
+            uuid4(),
+            {
+                "mode": "DESIGNATED",
+                "designation_reference": "The Customer named the Rent Invoice only",
+                "targets": [
+                    {
+                        "invoice_id": invoice_target["invoice_id"],
+                        "amount_usd_cents": invoice_target["amount_usd_cents"],
+                        "details": [
+                            {
+                                "invoice_line_id": detail["invoice_line_id"],
+                                "amount_usd_cents": detail["amount_usd_cents"],
+                            }
+                            for detail in invoice_target["details"]
+                        ],
+                    }
+                ],
+            },
+        ),
         actor=staff,
     )
     assert paid["available_usd_cents"] == 20000

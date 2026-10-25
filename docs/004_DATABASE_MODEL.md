@@ -1162,6 +1162,8 @@ Built in V1-056 slice 11g-2 (migration `20270211_199`, DL-086): new append-only 
 
 Built in V1-056 slice 11g-3 (migration `20270212_200`, DL-087): `app.finalize_late_payment_decision` and `app.correct_late_payment_charge` refuse (P4603) once `app.late_payment_charge_runs` has a row for the Property, after their replay check; `app.late_payment_review_snapshot` adds the blocker `AUTOMATIC_CHARGE_ONLY` once a finished run covers the Invoice's charge day (`business_date` at least the Due Date plus one), and from the first run `app.late_payment_charge_snapshot` adds `manual_corrections_open: false`; no table, grant or data change.
 
+Built in V1-056 slice 11g-4 (migration `20270213_201`, DL-088): `app.payment_allocation_proposal` is replaced (same signature, settings and grants): for a `NORMAL_CUSTOMER` Payment with no identified Invoice or charge it also proposes each open late-payment charge of the payer (`app.late_payment_charge_financial_position.remaining_balance_usd_cents` above zero, source Invoice not VOID) right after its source Invoice, ordered by Due Date, issue time, Invoice number, Invoice id, then the Invoice before its charge; a charge counts against the same bounds (100 targets, 500 details, the size limit). `app.post_payment_allocations` is patched by exact text so a proposed charge target posts as a `LATE_PAYMENT_CHARGE` allocation with no proposal batch fields (`DIRECT_LATE_PAYMENT_CHARGE`, `NOT_APPLICABLE`), its detail trace naming `proposal_batch_id` and `proposal_sequence`; no table or grant change.
+
 ## DB-INV-010 — `invoice_adjustment_reversals`
 
 Append-only explicit reversal: `id uuid PK`, `invoice_adjustment_id uuid NOT NULL UNIQUE

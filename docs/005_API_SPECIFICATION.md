@@ -1074,6 +1074,8 @@ Amended by V1-056 slice 11d (2026-10-24): `POST /payment-allocations/{allocation
 answers 409 `ALLOCATION_MOVED` and 409 `FINAL_SETTLEMENT_CLOSED` with their codes; see the
 paragraph "V1-056 slice 11d" at the end of API-101.
 
+V1-056 slice 11g-4 (DL-088; DL-076 answer 5): for a payer's own Payment that names nothing, `GET /payments/{payment_id}/allocation-proposal` also lists each open late-payment charge of the payer right after its own Invoice. A charge target has `late_payment_charge_id`, `target_customer_id`, `source_invoice_id`, the source Invoice's `due_date`, `issued_at` and `invoice_number`, `sequence`, `outstanding_usd_cents` and `amount_usd_cents`, and no `invoice_id` or `details`; `policy` is then `DUE_ISSUED_NUMBER_ID_CHARGE_AFTER_INVOICE/RENT_SERVICE_SOURCE_ORDER`. Posting the proposal unchanged (`mode: PROPOSAL`) writes the charge part as a direct charge allocation. A named or third-party Payment is proposed as before.
+
 ## API-060 — Payment Reversal
 
 `POST /payments/{payment_id}/reverse` requires reason, expected current state,

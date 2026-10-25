@@ -2857,6 +2857,56 @@ describe("financial reads after another confirmed action", () => {
       errors.mockRestore();
     }
   });
+  it("TEST-FE-S11G-003 shows a proposed late-payment charge after its Invoice as a charge", () => {
+    const sample = allocationSample("INVOICE"),
+      proposal = allocationProposal(sample);
+    const invoice = financialObject((proposal.targets as FinancialObject[])[0]);
+    const charges = ["a", "b"].map((letter, index) => ({
+      late_payment_charge_id: `${letter.repeat(8)}-${letter.repeat(4)}-4${letter.repeat(3)}-8${letter.repeat(3)}-${letter.repeat(12)}`,
+      target_customer_id: invoice.target_customer_id,
+      source_invoice_id: invoice.invoice_id,
+      due_date: invoice.due_date,
+      issued_at: invoice.issued_at,
+      invoice_number: invoice.invoice_number,
+      sequence: index + 2,
+      outstanding_usd_cents: 8000,
+      amount_usd_cents: 8000,
+    }));
+    const errors = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    try {
+      render(
+        <FinancialProposalEvidence
+          value={{
+            ...proposal,
+            policy:
+              "DUE_ISSUED_NUMBER_ID_CHARGE_AFTER_INVOICE/RENT_SERVICE_SOURCE_ORDER",
+            targets: [invoice, ...charges],
+          }}
+        />,
+      );
+      expect(
+        screen.getAllByRole("region", { name: /^Proposed Invoice/ }),
+      ).toHaveLength(1);
+      const shown = screen.getAllByRole("region", {
+        name: /^Proposed late-payment charge of Invoice/,
+      });
+      expect(shown).toHaveLength(2);
+      expect(
+        within(shown[0]).getByText(charges[0].late_payment_charge_id),
+      ).toBeVisible();
+      expect(
+        within(shown[0]).getByText(invoice.invoice_id as string),
+      ).toBeVisible();
+      expect(
+        within(shown[0]).queryByText("Invoice version at proposal"),
+      ).toBeNull();
+      expect(errors.mock.calls.flat().join(" ")).not.toMatch(/same key/);
+    } finally {
+      errors.mockRestore();
+    }
+  });
 });
 
 describe("original Payment receipt evidence and authorized handoff", () => {

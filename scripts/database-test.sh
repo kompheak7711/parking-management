@@ -151,6 +151,7 @@ database_test_suites='
   tests/test_automatic_late_payment_charge_migration.py
   tests/test_late_payment_charge_reduction_migration.py
   tests/test_manual_late_payment_closed_migration.py
+  tests/test_late_charge_payment_proposal_migration.py
   tests/test_payment_migration.py
   tests/test_payment_read_migration.py
   tests/test_financial_reference_migration.py

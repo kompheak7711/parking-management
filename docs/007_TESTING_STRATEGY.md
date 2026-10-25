@@ -508,6 +508,8 @@ V1-056 slice 11g-2: `backend/tests/test_late_payment_charge_reduction_migration.
 
 V1-056 slice 11g-3: `backend/tests/test_manual_late_payment_closed_migration.py` (PostgreSQL: after the first pass a manual decision and every free correction are refused, an exact repeat of an earlier request replays, a reduction with a fixed reason still works, the review and charge reads close the old forms, and a Final Settlement no longer waits for a decision no one can record once a pass has covered the charge day, but still waits before that); `frontend/src/InvoiceManagement.test.tsx` TEST-FE-S11G-001 (the old screen hides the free correction form).
 
+V1-056 slice 11g-4: `backend/tests/test_late_charge_payment_proposal_migration.py` (PostgreSQL: the charge right after its own Invoice, part of a charge before a newer Invoice, the charge of a paid Invoice, each charge after its own Invoice, a named, third-party, reduced or waived charge, a stale proposal refused, a proposal charge allocation reversed like a direct one); `backend/tests/test_credit_migration.py` keeps its meaning by naming the Invoice; `frontend/src/FinancialWorkspaces.test.tsx` TEST-FE-S11G-003 (the proposal view shows a charge target as a charge).
+
 # 12. Payment, Allocation, Credit, Refund, and Reversal Coverage
 
 ## TEST-059 — Payment Confirmation

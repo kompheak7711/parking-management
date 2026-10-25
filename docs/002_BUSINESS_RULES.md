@@ -3660,6 +3660,8 @@ may show both the $100 Payment and the confirmed $31 application.
 
 Replaced by DL-076 (owner, 2026-10-20): the proposal pays oldest Due Date first, and a late-payment charge right after its own Invoice, before newer Invoices. Staff change the ticks only when the Customer names what to pay (BR-PAY-024) and confirm with Receive payment (DL-029). A third-party payer's money gets no automatic ticks.
 
+Built in V1-056 slice 11g-4 (DL-088; DL-076 answer 5): the payment proposal of a payer's own Payment that names nothing pays oldest Due Date first and each open late-payment charge of the payer right after its own Invoice, before newer Invoices; the charge of an Invoice already paid keeps its Due Date place. A Payment that names an Invoice or a charge, and a third-party Payment, are proposed as before (no charge targets). The charge part is posted as a direct charge allocation.
+
 ---
 
 ## BR-PAY-042 — Payment Allocated to the Wrong Unit's Invoice

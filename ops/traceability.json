@@ -51498,6 +51498,130 @@
       "test_path": "frontend/src/InvoiceManagement.test.tsx",
       "status": "implemented",
       "notes": "The old Invoices screen hides the free charge correction form when the charge read says manual corrections are closed (V1-056 slice 11g-3, no manual late-payment decision and no free charge correction; DL-087; ops/reviews/V1-056-slice-11g-3.md)."
+    },
+    {
+      "test_id": "test_a_payer_s_own_payment_pays_the_charge_right_after_its_invoice",
+      "upstream_ids": [
+        "DL-076",
+        "BR-PAY-020",
+        "BR-PAY-040",
+        "API-059",
+        "TEST-060"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_charge_payment_proposal_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL, a payer's own Payment that names nothing is proposed to the oldest Invoice, then that Invoice's late-payment charge, then the newer Invoice, and posting the proposal writes the charge part as a direct charge allocation whose detail trace names the batch (V1-056 slice 11g-4, the late-payment charge right after its own Invoice in the payment proposal; DL-088; ops/reviews/V1-056-slice-11g-4.md)."
+    },
+    {
+      "test_id": "test_money_that_runs_out_pays_part_of_the_charge_before_any_newer_invoice",
+      "upstream_ids": [
+        "DL-076",
+        "BR-PAY-020",
+        "BR-PAY-040",
+        "API-059",
+        "TEST-060"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_charge_payment_proposal_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL, money that runs out after the oldest Invoice pays part of its charge and nothing of the newer Invoice (V1-056 slice 11g-4, the late-payment charge right after its own Invoice in the payment proposal; DL-088; ops/reviews/V1-056-slice-11g-4.md)."
+    },
+    {
+      "test_id": "test_the_charge_of_a_paid_invoice_comes_before_newer_invoices",
+      "upstream_ids": [
+        "DL-076",
+        "BR-PAY-020",
+        "BR-PAY-040",
+        "API-059",
+        "TEST-060"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_charge_payment_proposal_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL, the charge of an Invoice already paid keeps its Due Date place before a newer Invoice (V1-056 slice 11g-4, the late-payment charge right after its own Invoice in the payment proposal; DL-088; ops/reviews/V1-056-slice-11g-4.md)."
+    },
+    {
+      "test_id": "test_a_third_party_or_named_payment_is_proposed_as_before",
+      "upstream_ids": [
+        "DL-076",
+        "DL-029",
+        "BR-PAY-024",
+        "BR-PAY-026",
+        "API-059",
+        "TEST-060"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_charge_payment_proposal_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL, a third-party Payment and a Payment that names an Invoice get no charge target and the earlier policy (V1-056 slice 11g-4, the late-payment charge right after its own Invoice in the payment proposal; DL-088; ops/reviews/V1-056-slice-11g-4.md)."
+    },
+    {
+      "test_id": "test_a_proposal_whose_charge_was_paid_meanwhile_is_refused_and_writes_nothing",
+      "upstream_ids": [
+        "DL-076",
+        "BR-PAY-029",
+        "API-059",
+        "TEST-060"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_charge_payment_proposal_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL, a proposal whose charge was paid in part meanwhile is refused and writes nothing, and a fresh proposal names what is still unpaid (V1-056 slice 11g-4, the late-payment charge right after its own Invoice in the payment proposal; DL-088; ops/reviews/V1-056-slice-11g-4.md)."
+    },
+    {
+      "test_id": "test_a_payment_that_names_the_charge_or_a_reduced_or_waived_charge_is_proposed_right",
+      "upstream_ids": [
+        "DL-076",
+        "BR-PAY-024",
+        "BR-LATE-005",
+        "API-059",
+        "TEST-060"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_charge_payment_proposal_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL, a Payment that names a charge gets no proposal targets, a reduced charge is proposed at what is still unpaid and a waived charge is left out (V1-056 slice 11g-4, the late-payment charge right after its own Invoice in the payment proposal; DL-088; ops/reviews/V1-056-slice-11g-4.md)."
+    },
+    {
+      "test_id": "test_each_charge_follows_its_own_invoice",
+      "upstream_ids": [
+        "DL-076",
+        "BR-PAY-020",
+        "BR-PAY-040",
+        "API-059",
+        "TEST-060"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_charge_payment_proposal_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL, with two charged Invoices each charge comes right after its own Invoice (V1-056 slice 11g-4, the late-payment charge right after its own Invoice in the payment proposal; DL-088; ops/reviews/V1-056-slice-11g-4.md)."
+    },
+    {
+      "test_id": "test_a_charge_allocation_from_a_proposal_is_reversed_like_a_direct_one",
+      "upstream_ids": [
+        "DL-076",
+        "BR-PAY-040",
+        "API-059",
+        "TEST-061"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_charge_payment_proposal_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL, a charge allocation posted from a proposal is reversed like a direct one and the charge is proposed again (V1-056 slice 11g-4, the late-payment charge right after its own Invoice in the payment proposal; DL-088; ops/reviews/V1-056-slice-11g-4.md)."
+    },
+    {
+      "test_id": "TEST-FE-S11G-003",
+      "upstream_ids": [
+        "TEST-117",
+        "DL-076",
+        "API-059",
+        "UI-005"
+      ],
+      "test_level": "UI",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "The allocation proposal view shows a late-payment charge target as a charge of its Invoice, without Invoice-only facts or duplicate keys (V1-056 slice 11g-4, the late-payment charge right after its own Invoice in the payment proposal; DL-088; ops/reviews/V1-056-slice-11g-4.md)."
     }
   ]
 }
