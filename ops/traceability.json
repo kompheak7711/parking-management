@@ -54277,6 +54277,54 @@
       "test_path": "backend/tests/test_payments_summary_api.py",
       "status": "implemented",
       "notes": "V1-058 R5d: the late-payment card route needs invoices.read, answers null without a charge and hides database failures."
+    },
+    {
+      "test_id": "TEST-FE-928",
+      "upstream_ids": [
+        "DL-074",
+        "DL-072",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/home/HomeScreen.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R6: Home shows the eight cards in the mock-up order with notes, links, the head buttons and the automatic jobs line."
+    },
+    {
+      "test_id": "TEST-FE-929",
+      "upstream_ids": [
+        "DL-074",
+        "DL-072",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/home/HomeScreen.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R6: What to do lists rows by group top down with dates, late/ago words and named links; waits that began earlier show under Today; Later folds."
+    },
+    {
+      "test_id": "TEST-FE-930",
+      "upstream_ids": [
+        "DL-074",
+        "DL-072",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/home/HomeScreen.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R6: Home shows only the cards the answer holds, leaves out unknown to-do kinds, empty groups say so, the head buttons follow the rights."
+    },
+    {
+      "test_id": "TEST-FE-931",
+      "upstream_ids": [
+        "DL-074",
+        "DL-072",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/home/HomeScreen.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R6: a failed Home read offers Retry with no old numbers; no right to read says so; Khmer words come from the mock-up."
     }
   ]
 }

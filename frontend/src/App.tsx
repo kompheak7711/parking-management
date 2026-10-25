@@ -63,6 +63,8 @@ import { utt } from "./utilities/text";
 import { InvoiceManagement } from "./InvoiceManagement";
 import { InvoicesPage } from "./invoices/InvoicesPage";
 import { PaymentsPage } from "./payments/PaymentsPage";
+import { type HomeApi, HomeScreen } from "./home/HomeScreen";
+import { reportsApi } from "./reportsClient";
 import {
   type PaymentsApi,
   paymentsApi as paymentsClient,
@@ -84,7 +86,7 @@ import {
 } from "./customerLedgerClient";
 import { type Language, storeLanguage, storedLanguage } from "./signInText";
 import { AppShell } from "./shell/AppShell";
-import { ComingSoon, HomePage, NoAccess, PropertyNeeded } from "./shell/pages";
+import { ComingSoon, NoAccess, PropertyNeeded } from "./shell/pages";
 import { openPageInAddress, useHashPage } from "./shell/useHashPage";
 import type { CustomerCommandGate } from "./customers/commands";
 import { CustomersPage } from "./customers/CustomersPage";
@@ -112,6 +114,7 @@ export interface AppProps {
   utilityApi?: UtilityApi;
   invoiceApi?: InvoiceApi;
   paymentsApi?: PaymentsApi;
+  homeApi?: HomeApi;
   financialServices?: FinancialUiServices;
   enforcementServices?: EnforcementServices;
   ledgerApi?: CustomerLedgerApi;
@@ -562,6 +565,7 @@ export function App({
   utilityApi = utilityClient,
   invoiceApi = invoiceClient,
   paymentsApi = paymentsClient,
+  homeApi = reportsApi,
   financialServices,
   enforcementServices,
   ledgerApi,
@@ -1483,7 +1487,16 @@ export function App({
     >
       {!allowed && <NoAccess language={language} />}
       <div className="shell-page" data-page="home" hidden={!shown("home")}>
-        <HomePage language={language} name={session.display_name ?? null} />
+        {propertyId === "" && propertyConfiguration === null && (
+          <PropertyNeeded language={language} />
+        )}
+        <HomeScreen
+          active={shown("home")}
+          capabilities={capabilities}
+          homeApi={homeApi}
+          language={language}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+        />
       </div>
       <div
         className="shell-page"

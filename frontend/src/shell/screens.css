@@ -1616,3 +1616,221 @@ table.ui-table.ui-paylist .ui-phone {
 .ui-btn.ui-locked .ui-badge {
   background: var(--surface);
 }
+
+/* V1-058 R6: Home cards and the "What to do" list (mock-up v43). */
+.ui-home-kpis {
+  grid-auto-rows: 1fr;
+}
+a.ui-kpi.ui-home-kpi {
+  grid-template-rows: 1fr auto auto auto;
+  text-decoration: none;
+}
+.ui-home-kpi.err .ui-kpi-value {
+  color: var(--err);
+}
+.ui-home-meter {
+  display: block;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--sunken);
+}
+.ui-home-meter.blank {
+  visibility: hidden;
+}
+.ui-home-meter span {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: var(--primary);
+}
+.ui-card.ui-todo-card {
+  gap: 4px;
+  padding: 18px 18px 8px;
+}
+.ui-todo-card > header {
+  margin-bottom: 6px;
+}
+.ui-todo-card > header p {
+  margin: 2px 0 0;
+}
+.ui-tgroup {
+  display: grid;
+  gap: 2px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+}
+.ui-card .ui-tgroup h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  margin: 0;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+.ui-tgroup {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.ui-tgroup > * {
+  grid-column: 1 / -1;
+}
+.ui-tgroup > h3 {
+  grid-column: 1;
+}
+.ui-tgroup > .ui-btn.link.ui-tmore {
+  grid-row: 1;
+  grid-column: 2;
+  min-height: 32px;
+  padding-block: 2px;
+  font-size: 0.88rem;
+}
+.ui-dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+.ui-dot.err {
+  background: var(--err);
+}
+.ui-dot.warn {
+  background: var(--warn);
+}
+.ui-dot.info {
+  background: var(--info);
+}
+.ui-count {
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--sunken);
+  color: var(--text-2);
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.6;
+}
+.ui-tnone {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 0;
+  padding: 2px 0 4px;
+  color: var(--text-2);
+  font-size: 0.9rem;
+}
+.ui-tnone.ok {
+  color: var(--ok);
+}
+.ui-todos {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ui-todo {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto 44px;
+  gap: 4px 14px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--bg);
+}
+.ui-todo.err {
+  border-left-color: var(--err);
+}
+.ui-todo.warn {
+  border-left-color: var(--warn);
+}
+.ui-todo.info {
+  border-left-color: var(--info);
+}
+.ui-todo-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--sunken);
+  color: var(--text-2);
+}
+.ui-todo.err .ui-todo-icon {
+  background: var(--err-bg);
+  color: var(--err);
+}
+.ui-todo.warn .ui-todo-icon {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+.ui-todo.info .ui-todo-icon {
+  background: var(--info-bg);
+  color: var(--info);
+}
+.ui-todo-body {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+.ui-todo-body b {
+  font-weight: 600;
+}
+.ui-todo-body span {
+  color: var(--text-2);
+  font-size: 0.86rem;
+}
+.ui-when {
+  display: grid;
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.3;
+  text-align: right;
+  white-space: nowrap;
+}
+.ui-when small {
+  color: var(--text-2);
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+.ui-iconbtn {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--primary);
+}
+.ui-iconbtn:hover {
+  border-color: var(--primary);
+  background: var(--hover);
+}
+@media (max-width: 620px) {
+  .ui-todo {
+    grid-template-columns: 32px minmax(0, 1fr) 44px;
+    align-items: start;
+  }
+  .ui-todo-icon {
+    width: 32px;
+    height: 32px;
+  }
+  .ui-when {
+    display: flex;
+    grid-column: 2;
+    gap: 8px;
+    align-items: baseline;
+    text-align: left;
+  }
+  .ui-todo-go {
+    grid-row: 1 / span 2;
+    grid-column: 3;
+    align-self: center;
+  }
+  .ui-home-kpis .ui-kpi-note {
+    min-height: 3.2em;
+  }
+}

@@ -137,3 +137,21 @@ Run rules: frontend-only steps run the frontend gates (format, typecheck, lint, 
 - Pins rerun: 516 of 517 passed; test_v1_045_typed_sources_keep_category_and_controlling_id_together
   failed only because the ad-hoc file order ran the Utility meter tests first in the shared
   database; test_invoice_migration.py passes alone (35 passed). Not an R5d change.
+
+## R6 Home (2026-10-25)
+- Home rebuilt to the mock-up on the V1-057 Home read (GET /properties/{id}/home; frontend/src/reportsClient.ts
+  copied unchanged from claude/v1-057-reports 30cebee, owned by that branch): page head with Receive
+  payment and Enter meter readings (shown by right), the eight cards in the owner's order (only those
+  the answer holds), the What to do list in four groups with Later folded, and the automatic jobs line.
+  The old start page is removed. TEST-FE-928 to 931.
+- Decided by Claude under the owner's 2026-10-23 22:30 rule: draft_waiting, deposit_decision and
+  settlement_open rows whose wait began earlier show under Today (as the mock-up), not Overdue, so
+  Home counts the groups itself; a to-do kind Home does not know yet is left out; Paid for this month
+  shows money paid on Invoices due this month (percent rounded down); draft rows link to Waiting for
+  approval (built in R7).
+- Review round 1 (no files written by the reviewer): fixed a crash risk on an unknown to-do kind,
+  the grouping above, the Show/Hide button moved out of the heading with aria-controls, and
+  "1 Invoice" wording. Left for later: a 401 on Home shows the no-right notice (the sign-in check
+  of the frame handles an ended session).
+- Gates: prettier, tsc, eslint clean; vitest 1,785 passed; traceability audit passed. Pictures in
+  /mnt/project-files/v1-058/r6-home/.
