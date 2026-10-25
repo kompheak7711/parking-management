@@ -51768,6 +51768,41 @@
       "test_path": "backend/tests/test_settings_evidence_hand_back_keep_migration.py",
       "status": "implemented",
       "notes": "On PostgreSQL, an Invoice that a credit Adjustment took to zero is assessed KEEP at hand-back, and both resolutions are refused as kept (V1-056 slice 12a, Settings audit evidence and the hand-back KEEP order; DL-090; ops/reviews/V1-056-slice-12a.md)."
+    },
+    {
+      "test_id": "test_a_period_finalized_after_its_run_is_billed_once_by_a_late_run",
+      "upstream_ids": [
+        "DB-UTIL-013",
+        "DL-071",
+        "DL-091",
+        "BR-UTIL-021"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_utility_run_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL, a Utility period finalized after a SUCCEEDED run is listed once and billed once by a scheduled late run linked to that run, due the configured days after issue when the on-time Due Date has passed; a period the first run skipped as not moved in is left to the catch-up command; a late run before any success or through the API is refused; a replay or another late run bills nothing again (V1-056 slice 12b, the scheduled worker bills a late Utility period; DL-091; ops/reviews/V1-056-slice-12b.md)."
+    },
+    {
+      "test_id": "test_late_candidates_are_financial_only_and_bounded",
+      "upstream_ids": [
+        "DL-091",
+        "SEC-002"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_utility_run_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL, the late Utility candidate function runs only for prm_financial, as SECURITY DEFINER, and refuses a limit outside 1 to 100 (V1-056 slice 12b, the scheduled worker bills a late Utility period; DL-091; ops/reviews/V1-056-slice-12b.md)."
+    },
+    {
+      "test_id": "test_the_worker_bills_late_utility_dates_within_its_bound",
+      "upstream_ids": [
+        "DL-071",
+        "DL-091"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_billing_run.py",
+      "status": "implemented",
+      "notes": "The scheduled worker runs late Utility candidates after its ordinary runs within the same bound, resumes an unfinished late run with its own key, and still runs the late-payment charge pass when a late run fails (V1-056 slice 12b, the scheduled worker bills a late Utility period; DL-091; ops/reviews/V1-056-slice-12b.md)."
     }
   ]
 }

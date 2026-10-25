@@ -2151,3 +2151,11 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Also:** `test_runtime_secrets.py` no longer reads `APP_DATABASE_URL` from the database test scripts (login L7c item).
 - **Migration head:** `20270215_203`.
 - **Decision date:** 2026-10-25.
+
+## DL-091 — V1-056 slice 12b: the scheduled worker bills a late Utility period
+
+- **Type:** `IMPLEMENTATION RECORD`
+- **Built (migration `20270216_204`):** DL-071 answer 18. Each scheduled worker pass, after its ordinary runs and within the same bound, bills a `LATE_AFTER_SUCCEEDED_RUN` Utility period by a late Utility run: a successor of the last SUCCEEDED run of the same dates whose snapshot holds only the responsible periods with no Invoice line that no run of those dates ever snapshotted, so a period is billed once and never twice. `app.utility_unbilled_periods`, its route and the catch-up command stay as the safety check; a `NOT_MOVED_IN` period is still billed only by the catch-up command, and a period an earlier run billed or skipped is left to it. Only the scheduled worker starts a late run; one that fails does not stop the late-payment charge pass.
+- **Decided by Claude under the owner's 2026-10-23 22:30 rule:** the late Invoice is due on the later of the on-time Due Date (the 5th after the period, BR-UTIL-022) and the day it is issued (the Property's date) plus the Property's configured days (the catch-up command's rule, BR-UTIL-021). A Customer never gets an earlier Due Date than on time, and never an Invoice that is already overdue when issued, also when a late run that stopped on an error is resumed on a later day. The amount is unchanged. The owner may change this.
+- **Migration head:** `20270216_204`.
+- **Decision date:** 2026-10-25.

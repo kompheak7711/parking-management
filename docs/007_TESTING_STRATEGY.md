@@ -514,6 +514,8 @@ V1-056 slice 11h: `backend/tests/test_refund_method_settings_migration.py` (Post
 
 V1-056 slice 12a: `backend/tests/test_settings_evidence_hand_back_keep_migration.py` (PostgreSQL: a Utility Rate change names `settings.manage`; an Invoice credit-adjusted to zero is assessed KEEP at hand-back and both resolutions are refused); `test_one_time_charges_migration.py` and `test_configuration_migration.py` assert `settings.manage` in the due-days and Service rate audit events; `test_runtime_secrets.py` no longer reads the database setting of the test scripts.
 
+V1-056 slice 12b: `backend/tests/test_late_utility_run_migration.py` (PostgreSQL: a late run is refused before any run of its dates succeeded and through the API; a period the first run skipped as not moved in is not billed by the late run after the move-in; a period finalized after a SUCCEEDED run is listed once, billed once by a late run linked to that run, due the configured days after issue when the on-time Due Date has passed, and never billed again by a replay or another late run; the candidate function is `prm_financial` only and bounded); `backend/tests/test_billing_run.py` (the worker runs late candidates after the ordinary runs within its bound and resumes an unfinished late run with its own key; a failed late run does not stop the charge pass).
+
 # 12. Payment, Allocation, Credit, Refund, and Reversal Coverage
 
 ## TEST-059 — Payment Confirmation

@@ -154,6 +154,7 @@ database_test_suites='
   tests/test_late_charge_payment_proposal_migration.py
   tests/test_refund_method_settings_migration.py
   tests/test_settings_evidence_hand_back_keep_migration.py
+  tests/test_late_utility_run_migration.py
   tests/test_payment_migration.py
   tests/test_payment_read_migration.py
   tests/test_financial_reference_migration.py
