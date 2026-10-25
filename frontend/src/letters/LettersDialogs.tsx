@@ -54,7 +54,7 @@ function OutcomeNotice({
 }
 
 /** A new idempotency key whenever the values change; the same one while they stay. */
-function useValuesKey() {
+export function useValuesKey() {
   const kept = useRef<{ fingerprint: string; key: string } | null>(null);
   return (fingerprint: string): string => {
     if (kept.current?.fingerprint !== fingerprint)
@@ -64,7 +64,7 @@ function useValuesKey() {
 }
 
 /** Sends a request and sorts its ending: saved, changed meanwhile, unknown, refused. */
-function useSend(onSaved: () => void, onConflict: () => void) {
+export function useLettersSend(onSaved: () => void, onConflict: () => void) {
   const [busy, setBusy] = useState(false);
   const [outcome, setOutcome] = useState<Outcome>(null);
   function send(request: () => Promise<unknown>) {
@@ -88,7 +88,7 @@ function useSend(onSaved: () => void, onConflict: () => void) {
   return { busy, outcome, send };
 }
 
-function HowSelect({
+export function HowSelect({
   id,
   language,
   value,
@@ -159,7 +159,7 @@ export function RecordLetterDialog({
   const caseKey = useRef(crypto.randomUUID());
   const letterKey = useValuesKey();
   const name = (n: 20 | 30) => ltr(language, n === 20 ? "d_20" : "d_30");
-  const { busy, outcome, send } = useSend(() => {
+  const { busy, outcome, send } = useLettersSend(() => {
     if (which !== null) onSaved(ltr(language, "d_toast", name(which), unit));
   }, onConflict);
 
@@ -373,7 +373,7 @@ export function RecordWarningDialog({
     context.state === "done" && context.leaseId === chosen
       ? context.sequence
       : null;
-  const { busy, outcome, send } = useSend(() => {
+  const { busy, outcome, send } = useLettersSend(() => {
     if (lease !== undefined && sequence !== null)
       onSaved(ltr(language, "lw_toast", sequence, lease.unit_number));
   }, onConflict);

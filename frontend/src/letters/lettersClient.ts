@@ -57,6 +57,39 @@ export interface WarningContext {
   business_date: string;
 }
 
+/** A recorded termination notice (DL-073: the third letter). It never ends a Lease by itself. */
+export interface TerminationNotice {
+  id: string;
+  lease_id: string;
+  notice_date: string;
+  intended_termination_date: string | null;
+  notice_text: string;
+  governing_lease_provision: string;
+  occurred_at: string;
+  context: {
+    approved_grounds: string;
+    notice_period_terms: string;
+    evidence_reference: string;
+    communication_record: string;
+  } | null;
+  current_effect: "NOTICE_ONLY" | "SUPERSEDED" | "HISTORICAL_NOTICE_ONLY";
+}
+
+export interface TerminationNoticeSource {
+  notice_id: string;
+  expected_lease_version: number;
+  notice_date: string;
+  intended_termination_date: string;
+  notice_text: string;
+  governing_lease_provision: string;
+  approved_grounds: string;
+  notice_period_terms: string;
+  evidence_reference: string;
+  communication_record: string;
+  authorization_reference: string;
+  reason: string;
+}
+
 export interface LettersApi {
   alerts: (propertyId: string) => Promise<RentAlerts>;
   events: (caseId: string) => Promise<RentLetterEvent[]>;
@@ -90,6 +123,16 @@ export interface LettersApi {
     },
     key: string,
   ) => Promise<LeaseWarning>;
+  notices: (
+    propertyId: string,
+    leaseId: string,
+  ) => Promise<TerminationNotice[]>;
+  recordNotice: (
+    propertyId: string,
+    leaseId: string,
+    source: TerminationNoticeSource,
+    key: string,
+  ) => Promise<TerminationNotice>;
 }
 
 /** The record changed meanwhile (or the same key was used for other values): read again. */
@@ -163,6 +206,8 @@ function command(path: string, source: object, key: string) {
 }
 
 const leasePath = (id: string) => `/api/v1/leases/${encodeURIComponent(id)}`;
+const noticePath = (propertyId: string, leaseId: string) =>
+  `/api/v1/properties/${encodeURIComponent(propertyId)}/leases/${encodeURIComponent(leaseId)}/termination-notices`;
 const casePath = (id: string) =>
   `/api/v1/rent-nonpayment-cases/${encodeURIComponent(id)}`;
 
@@ -222,4 +267,16 @@ export const lettersApi: LettersApi = {
       source,
       key,
     )) as LeaseWarning,
+  notices: async (propertyId, leaseId) =>
+    itemsOf(
+      await request(`${noticePath(propertyId, leaseId)}?limit=100`, {
+        method: "GET",
+      }),
+    ) as TerminationNotice[],
+  recordNotice: async (propertyId, leaseId, source, key) =>
+    (await command(
+      noticePath(propertyId, leaseId),
+      source,
+      key,
+    )) as TerminationNotice,
 };

@@ -20,6 +20,12 @@ import {
 import type { ReservationApi, ReservationResource } from "../reservationClient";
 import { dayText, todayInPhnomPenh } from "../shell/format";
 import type { UnitApi, UnitResource } from "../unitClient";
+import {
+  LettersUnavailableError,
+  type LeaseWarning,
+  type LettersApi,
+  type TerminationNotice,
+} from "../letters/lettersClient";
 import { LeasesPage } from "./LeasesPage";
 import { addDays, endingLimit, initialRent } from "./leasesData";
 
@@ -236,7 +242,14 @@ function show(
     get: vi.fn<CustomerApi["get"]>().mockRejectedValue(new Error("no")),
   },
   unitClient: Partial<UnitApi> = {},
+  lettersClient: Partial<LettersApi> = {},
 ) {
+  const letters = {
+    warnings: vi.fn<LettersApi["warnings"]>().mockResolvedValue([]),
+    notices: vi.fn<LettersApi["notices"]>().mockResolvedValue([]),
+    recordNotice: vi.fn<LettersApi["recordNotice"]>(),
+    ...lettersClient,
+  };
   return render(
     <LeasesPage
       active
@@ -248,6 +261,7 @@ function show(
       customerApi={customerClient as CustomerApi}
       reservationApi={reservationClient as ReservationApi}
       unitApi={unitClient as UnitApi}
+      lettersApi={letters}
     />,
   );
 }
@@ -1311,5 +1325,507 @@ describe("New Lease and Renew", () => {
       await screen.findByText(/The Booking of Bopha is no longer active/),
     ).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Save draft" })).toBeNull();
+  });
+
+  function lw(sequence: number): LeaseWarning {
+    return {
+      id: `warning-${String(sequence)}`,
+      lease_id: "lease-U101",
+      warning_sequence: sequence,
+      violation_date: addDays(today, -40 + sequence),
+      warning_date: addDays(today, -39 + sequence),
+      violation_description: `Noise at night ${String(sequence)}`,
+      lease_provision: "11.3",
+      communication_record: "Handed to the tenant",
+    };
+  }
+
+  function notice(id: string, ends: string): TerminationNotice {
+    return {
+      id,
+      lease_id: "lease-U101",
+      notice_date: addDays(ends, -30),
+      intended_termination_date: ends,
+      notice_text: "The Lease ends.",
+      governing_lease_provision: "Signed Lease: Rent provision",
+      occurred_at: "2026-10-01T03:00:00Z",
+      context: {
+        approved_grounds:
+          "Rent unpaid after the day-30 default notice (DL-073)",
+        notice_period_terms: "30 days",
+        evidence_reference: `TN-${id}`,
+        communication_record: "Handed to the tenant: signed",
+      },
+      current_effect: "NOTICE_ONLY",
+    };
+  }
+
+  async function openTerminate() {
+    fireEvent.click(await screen.findByRole("button", { name: /^Terminate/ }));
+    return screen.findByRole("dialog", {
+      name: "Terminate the Lease · U101",
+    });
+  }
+
+  it("TEST-FE-869 Terminate for early leaving sends the signed-Lease evidence, says the Security Deposit is kept and needs every field", async () => {
+    window.location.hash = "#/leases/lease-U101";
+    const terminate = vi
+      .fn<LeaseApi["terminate"]>()
+      .mockImplementation((value, source) =>
+        Promise.resolve({
+          ...value,
+          status: "TERMINATED",
+          actual_termination_date: source.actual_termination_date,
+        }),
+      );
+    show(api({ terminate }));
+    const button = await screen.findByRole("button", { name: /^Terminate/ });
+    expect(within(button).getByText("Manager")).toBeInTheDocument();
+    const dialog = await openTerminate();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Terminate" }));
+    expect(within(dialog).getByText("Choose the ground.")).toBeInTheDocument();
+    expect(within(dialog).getByText("Write the evidence.")).toBeInTheDocument();
+    expect(within(dialog).getByText("Write the reason.")).toBeInTheDocument();
+    expect(terminate).not.toHaveBeenCalled();
+
+    fireEvent.click(
+      within(dialog).getByRole("radio", { name: /Customer leaves early/ }),
+    );
+    expect(
+      within(dialog).getByText(
+        "The Security Deposit is kept in full and is not used for what the Customer owes.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByText(
+        "The Unit stays Occupied until the hand-back is recorded.",
+      ),
+    ).toBeInTheDocument();
+    // A day after today cannot be recorded.
+    fireEvent.change(within(dialog).getByLabelText("Termination date"), {
+      target: { value: addDays(today, 1) },
+    });
+    fireEvent.change(within(dialog).getByLabelText(/^Evidence/), {
+      target: { value: " Customer letter 24/10 " },
+    });
+    fireEvent.change(within(dialog).getByLabelText(/^Reason/), {
+      target: { value: "Moves to another city" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Terminate" }));
+    expect(
+      within(dialog).getByText(/Enter a date from .* up to today\./),
+    ).toBeInTheDocument();
+    fireEvent.change(within(dialog).getByLabelText("Termination date"), {
+      target: { value: today },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Terminate" }));
+    expect(
+      await screen.findByText(
+        `Lease of U101 terminated as of ${dayText(today)}.`,
+      ),
+    ).toBeInTheDocument();
+    expect(terminate).toHaveBeenCalledTimes(1);
+    const [, source, key] = terminate.mock.calls[0] ?? [];
+    expect(key).toEqual(expect.any(String));
+    expect(source).toEqual({
+      event_id: expect.any(String) as string,
+      actual_termination_date: today,
+      governing_event_reference: "BR-LEASE-021",
+      reason: "Moves to another city",
+      context: {
+        basis: "VOLUNTARY_EARLY",
+        signed_lease_provision:
+          "Signed Lease: early leaving at the Customer's request (BR-LEASE-021)",
+        approved_grounds:
+          "The Customer leaves before the End Date at the Customer's request",
+        management_authorization_reference:
+          "Approved in the app by the signed-in Owner or Manager (leases.terminate)",
+        evidence_reference: "Customer letter 24/10",
+        notice_required: false,
+        notice_exception_reason:
+          "No landlord notice: the Customer asked to leave early",
+      },
+    });
+  });
+
+  it("TEST-FE-870 a violation termination needs 3 ticked warnings, and the pet tick keeps both Deposits", async () => {
+    window.location.hash = "#/leases/lease-U101";
+    const terminate = vi
+      .fn<LeaseApi["terminate"]>()
+      .mockImplementation((value) => Promise.resolve(value));
+    const withPet = { ...running, pet_deposit_required: true };
+    show(
+      api({ get: vi.fn().mockResolvedValue(withPet), terminate }),
+      deposits(),
+      null,
+      undefined,
+      undefined,
+      {},
+      {
+        warnings: vi
+          .fn<LettersApi["warnings"]>()
+          .mockResolvedValue([lw(1), lw(2), lw(3)]),
+      },
+    );
+    const dialog = await openTerminate();
+    fireEvent.click(
+      within(dialog).getByRole("radio", { name: /Lease violation/ }),
+    );
+    const boxes = await within(dialog).findAllByRole("checkbox", {
+      name: /^Warning/,
+    });
+    const [first, second, third] = boxes;
+    if (!first || !second || !third) throw new Error("three warnings");
+    fireEvent.click(first);
+    fireEvent.click(third);
+    fireEvent.change(within(dialog).getByLabelText(/^Evidence/), {
+      target: { value: "Warning letters W-1 to W-3" },
+    });
+    fireEvent.change(within(dialog).getByLabelText(/^Reason/), {
+      target: { value: "Dog kept against the rules" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Terminate" }));
+    expect(
+      within(dialog).getByText("Tick at least 3 written warnings."),
+    ).toBeInTheDocument();
+    fireEvent.click(second);
+    fireEvent.click(
+      within(dialog).getByRole("checkbox", { name: /Pet-rule violation/ }),
+    );
+    expect(
+      within(dialog).getByText(
+        "The Pet Deposit is kept too (pet-rule termination).",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByText(
+        "The Security Deposit is kept in full and is not used for what the Customer owes.",
+      ),
+    ).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Terminate" }));
+    await waitFor(() => {
+      expect(terminate).toHaveBeenCalledTimes(1);
+    });
+    const source = terminate.mock.calls[0]?.[1];
+    expect(source?.governing_event_reference).toBe("BR-DEP-022");
+    expect(source?.context).toMatchObject({
+      basis: "CUSTOMER_VIOLATION",
+      approved_grounds: "Pet-rule violation after three written warnings",
+      notice_required: false,
+      warning_ids: ["warning-1", "warning-2", "warning-3"],
+    });
+  });
+
+  it("TEST-FE-871 from Letters the Rent ground records the termination notice first, keeps what was typed, and refuses a termination before the notice period ends", async () => {
+    window.location.hash = "#/leases/terminate:lease-U101";
+    const terminate = vi
+      .fn<LeaseApi["terminate"]>()
+      .mockImplementation((value) => Promise.resolve(value));
+    const fresh = notice("notice-new", addDays(today, 30));
+    const notices = vi.fn<LettersApi["notices"]>().mockResolvedValue([]);
+    const recordNotice = vi
+      .fn<LettersApi["recordNotice"]>()
+      .mockImplementation(() => {
+        notices.mockResolvedValue([fresh]);
+        return Promise.resolve(fresh);
+      });
+    show(
+      api({ terminate }),
+      deposits(),
+      null,
+      undefined,
+      undefined,
+      {},
+      {
+        notices,
+        recordNotice,
+      },
+    );
+    const dialog = await screen.findByRole("dialog", {
+      name: "Terminate the Lease · U101",
+    });
+    expect(
+      within(dialog).getByRole<HTMLInputElement>("radio", {
+        name: /Rent unpaid after the day-30 notice/,
+      }).checked,
+    ).toBe(true);
+    expect(
+      await within(dialog).findByText(/No termination notice yet/),
+    ).toBeInTheDocument();
+    fireEvent.change(within(dialog).getByLabelText(/^Evidence/), {
+      target: { value: "TN-7" },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: /Record termination notice/ }),
+    );
+    const record = await screen.findByRole("dialog", {
+      name: "Termination notice · U101",
+    });
+    fireEvent.change(within(record).getByLabelText(/Letter number/), {
+      target: { value: "TN-7" },
+    });
+    fireEvent.change(within(record).getByLabelText(/How it was given/), {
+      target: { value: "HAND" },
+    });
+    fireEvent.change(within(record).getByLabelText(/^Details/), {
+      target: { value: "signed our copy" },
+    });
+    fireEvent.click(
+      within(record).getByRole("button", { name: "Record termination notice" }),
+    );
+    expect(
+      await screen.findByText("Termination notice recorded for U101."),
+    ).toBeInTheDocument();
+    expect(recordNotice).toHaveBeenCalledWith(
+      "property-1",
+      "lease-U101",
+      {
+        notice_id: expect.any(String) as string,
+        expected_lease_version: running.version,
+        notice_date: today,
+        intended_termination_date: addDays(today, 30),
+        notice_text: `The Lease of U101 ends on ${dayText(addDays(today, 30))} because the Rent is still unpaid after the day-20 warning letter and the day-30 default notice.`,
+        governing_lease_provision:
+          "Signed Lease: Rent not paid after the day-20 warning letter and the day-30 default notice (BR-LEASE-028)",
+        approved_grounds:
+          "Rent unpaid after the day-30 default notice (DL-073)",
+        notice_period_terms: "The Lease ends on the date written in the notice",
+        evidence_reference: "TN-7",
+        communication_record: "Handed to the tenant: signed our copy",
+        authorization_reference:
+          "Approved in the app by the signed-in Owner or Manager (leases.terminate)",
+        reason: "Termination notice given",
+      },
+      expect.any(String),
+    );
+    // Back on Terminate with the new notice chosen; its period has not ended yet.
+    const again = await screen.findByRole("dialog", {
+      name: "Terminate the Lease · U101",
+    });
+    expect(
+      await within(again).findByText(/The notice period ends on/),
+    ).toBeInTheDocument();
+    expect(
+      within(again).getByRole<HTMLInputElement>("radio", { name: /^Given/ })
+        .checked,
+    ).toBe(true);
+    // What was typed before the notice is still there.
+    expect(
+      within(again).getByLabelText<HTMLInputElement>(/^Evidence/).value,
+    ).toBe("TN-7");
+    fireEvent.change(within(again).getByLabelText(/^Reason/), {
+      target: { value: "Rent unpaid" },
+    });
+    fireEvent.click(within(again).getByRole("button", { name: "Terminate" }));
+    expect(
+      within(again).getByText(/Enter a date from .* up to today\./),
+    ).toBeInTheDocument();
+    expect(terminate).not.toHaveBeenCalled();
+  });
+
+  it("TEST-FE-872 a Rent termination names the chosen current notice whose period is over, and nobody without the right sees Terminate", async () => {
+    window.location.hash = "#/leases/lease-U101";
+    const terminate = vi
+      .fn<LeaseApi["terminate"]>()
+      .mockImplementation((value) => Promise.resolve(value));
+    const over = notice("notice-over", addDays(today, -1));
+    show(
+      api({ terminate }),
+      deposits(),
+      null,
+      undefined,
+      undefined,
+      {},
+      {
+        notices: vi.fn<LettersApi["notices"]>().mockResolvedValue([
+          {
+            ...notice("notice-old", addDays(today, -5)),
+            current_effect: "SUPERSEDED",
+          },
+          over,
+          // Recorded last, so chosen first; its period is not over yet.
+          {
+            ...notice("notice-late", addDays(today, 3)),
+            occurred_at: "2026-10-02T03:00:00Z",
+          },
+        ]),
+      },
+    );
+    const dialog = await openTerminate();
+    fireEvent.click(
+      within(dialog).getByRole("radio", { name: /Rent unpaid after/ }),
+    );
+    // A superseded notice is not offered.
+    const choices = await within(dialog).findAllByRole("radio", {
+      name: /^Given/,
+    });
+    expect(choices).toHaveLength(2);
+    expect(
+      choices.map((choice) => (choice as HTMLInputElement).checked),
+    ).toEqual([false, true]);
+    fireEvent.click(
+      within(dialog).getByRole("radio", { name: /TN-notice-over/ }),
+    );
+    fireEvent.change(within(dialog).getByLabelText(/^Evidence/), {
+      target: { value: "TN-over" },
+    });
+    fireEvent.change(within(dialog).getByLabelText(/^Reason/), {
+      target: { value: "Rent unpaid" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Terminate" }));
+    await waitFor(() => {
+      expect(terminate).toHaveBeenCalledTimes(1);
+    });
+    const source = terminate.mock.calls[0]?.[1];
+    expect(source?.governing_event_reference).toBe("BR-LEASE-028");
+    expect(source?.context).toEqual({
+      basis: "SIGNED_LEASE_OTHER",
+      signed_lease_provision: "Signed Lease: Rent provision",
+      approved_grounds: "Rent unpaid after the day-30 default notice (DL-073)",
+      management_authorization_reference:
+        "Approved in the app by the signed-in Owner or Manager (leases.terminate)",
+      evidence_reference: "TN-over",
+      notice_required: true,
+      notice_id: "notice-over",
+      notice_period_ends_on: addDays(today, -1),
+    });
+
+    cleanup();
+    window.location.hash = "#/leases/lease-U101";
+    show(api(), deposits(), new Set(["leases.read", "deposits.read"]));
+    await screen.findByRole("heading", { name: "Lease · U101" });
+    expect(screen.queryByRole("button", { name: /^Terminate/ })).toBeNull();
+    cleanup();
+    window.location.hash = "#/leases/lease-U202";
+    show(api());
+    await screen.findByRole("heading", { name: "Lease · U202" });
+    expect(screen.queryByRole("button", { name: /^Terminate/ })).toBeNull();
+  });
+
+  it("TEST-FE-873 Try again sends the very same termination and notice, a change gets new ones, and the Initial-unpaid ground waits 5 days", async () => {
+    window.location.hash = "#/leases/terminate:lease-U101";
+    const terminate = vi
+      .fn<LeaseApi["terminate"]>()
+      .mockRejectedValueOnce(new LeaseUnavailableError())
+      .mockRejectedValueOnce(new LeaseUnavailableError())
+      .mockImplementation((value) => Promise.resolve(value));
+    const over = notice("notice-over", addDays(today, -1));
+    const recordNotice = vi
+      .fn<LettersApi["recordNotice"]>()
+      .mockRejectedValueOnce(new LettersUnavailableError())
+      .mockRejectedValueOnce(new LettersUnavailableError())
+      .mockResolvedValue(over);
+    const fresh = { ...running, start_date: addDays(today, -3) };
+    show(
+      api({ get: vi.fn().mockResolvedValue(fresh), terminate }),
+      deposits(),
+      null,
+      undefined,
+      undefined,
+      {},
+      {
+        notices: vi.fn<LettersApi["notices"]>().mockResolvedValue([over]),
+        recordNotice,
+      },
+    );
+    const dialog = await screen.findByRole("dialog", {
+      name: "Terminate the Lease · U101",
+    });
+    // Start Date 3 days ago: the 5 days to pay are not over.
+    expect(
+      within(dialog).getByRole<HTMLInputElement>("radio", {
+        name: /Initial Rent not paid/,
+      }).disabled,
+    ).toBe(true);
+    expect(within(dialog).getByText(/^Possible from/)).toBeInTheDocument();
+
+    // The notice: an unknown result, Try again, then a changed value.
+    fireEvent.click(
+      await within(dialog).findByRole("button", {
+        name: /Record termination notice/,
+      }),
+    );
+    const record = await screen.findByRole("dialog", {
+      name: "Termination notice · U101",
+    });
+    fireEvent.change(within(record).getByLabelText(/Letter number/), {
+      target: { value: "TN-8" },
+    });
+    fireEvent.change(within(record).getByLabelText(/How it was given/), {
+      target: { value: "TG" },
+    });
+    fireEvent.change(within(record).getByLabelText(/^Details/), {
+      target: { value: "chat photo kept" },
+    });
+    fireEvent.click(
+      within(record).getByRole("button", { name: "Record termination notice" }),
+    );
+    fireEvent.click(
+      await within(record).findByRole("button", { name: "Try again" }),
+    );
+    await waitFor(() => {
+      expect(recordNotice).toHaveBeenCalledTimes(2);
+    });
+    const [n1, n2] = recordNotice.mock.calls;
+    expect(n2).toEqual(n1);
+    fireEvent.change(within(record).getByLabelText(/Letter number/), {
+      target: { value: "TN-9" },
+    });
+    // The letter text follows the Lease end date until somebody writes it.
+    fireEvent.change(within(record).getByLabelText("Lease ends on"), {
+      target: { value: addDays(today, 40) },
+    });
+    expect(
+      within(record).getByLabelText<HTMLTextAreaElement>(/What the letter says/)
+        .value,
+    ).toContain(dayText(addDays(today, 40)));
+    await waitFor(() => {
+      expect(
+        within(record).getByRole("button", { name: "Try again" }),
+      ).toBeEnabled();
+    });
+    fireEvent.click(within(record).getByRole("button", { name: "Try again" }));
+    await screen.findByText("Termination notice recorded for U101.");
+    const n3 = recordNotice.mock.calls[2];
+    expect(n3?.[2].notice_id).not.toBe(n1?.[2].notice_id);
+    expect(n3?.[3]).not.toBe(n1?.[3]);
+    expect(n3?.[2].intended_termination_date).toBe(addDays(today, 40));
+
+    // The termination: an unknown result, Try again, then a changed reason.
+    const again = await screen.findByRole("dialog", {
+      name: "Terminate the Lease · U101",
+    });
+    await within(again).findAllByRole("radio", { name: /^Given/ });
+    fireEvent.change(within(again).getByLabelText(/^Evidence/), {
+      target: { value: "TN-over" },
+    });
+    fireEvent.change(within(again).getByLabelText(/^Reason/), {
+      target: { value: "Rent unpaid" },
+    });
+    fireEvent.click(within(again).getByRole("button", { name: "Terminate" }));
+    fireEvent.click(
+      await within(again).findByRole("button", { name: "Try again" }),
+    );
+    await waitFor(() => {
+      expect(terminate).toHaveBeenCalledTimes(2);
+    });
+    const [t1, t2] = terminate.mock.calls;
+    expect(t2?.[1]).toEqual(t1?.[1]);
+    expect(t2?.[2]).toBe(t1?.[2]);
+    await within(again).findByRole("button", { name: "Try again" });
+    fireEvent.change(within(again).getByLabelText(/^Reason/), {
+      target: { value: "Rent unpaid for two months" },
+    });
+    fireEvent.click(within(again).getByRole("button", { name: "Try again" }));
+    await waitFor(() => {
+      expect(terminate).toHaveBeenCalledTimes(3);
+    });
+    const t3 = terminate.mock.calls[2];
+    expect(t3?.[1].event_id).not.toBe(t1?.[1].event_id);
+    expect(t3?.[2]).not.toBe(t1?.[2]);
+    // Once done, a reload shows the Lease, not the dialog again.
+    await waitFor(() => {
+      expect(window.location.hash).toBe("#/leases/lease-U101");
+    });
   });
 });

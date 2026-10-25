@@ -50728,6 +50728,73 @@
       "test_path": "backend/tests/test_lease_notice_api_migration.py",
       "status": "implemented",
       "notes": "V1-058 R3 termination-notice routes: Real PostgreSQL: a notice is recorded once, replayed with the same key, refused with a changed body, read back, and leaves the Lease version unchanged."
+    },
+    {
+      "test_id": "TEST-FE-869",
+      "upstream_ids": [
+        "DL-074",
+        "BR-LEASE-021",
+        "BR-DEP-023",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Terminate: the Customer-leaves-early ground sends VOLUNTARY_EARLY with BR-LEASE-021 and its signed-Lease evidence, says the Security Deposit is kept before saving, refuses a missing ground, evidence or a day after today."
+    },
+    {
+      "test_id": "TEST-FE-870",
+      "upstream_ids": [
+        "DL-074",
+        "BR-LEASE-024",
+        "BR-LEASE-025",
+        "BR-DEP-022",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Terminate: a violation needs at least 3 ticked written warnings (sent in the order given); the pet-rule tick sends BR-DEP-022 and says both Deposits are kept."
+    },
+    {
+      "test_id": "TEST-FE-871",
+      "upstream_ids": [
+        "DL-073",
+        "DL-070",
+        "BR-LEASE-028",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Terminate from Letters opens on the Rent ground; with no notice it records the termination notice (the third letter) with its exact evidence, comes back with it chosen and refuses a termination before the notice period ends."
+    },
+    {
+      "test_id": "TEST-FE-872",
+      "upstream_ids": [
+        "DL-073",
+        "BR-LEASE-028",
+        "BR-AUTH-005",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Terminate on the Rent ground names a current notice whose period is over (notice_required, notice id and period end; superseded notices not offered); no Terminate button without leases.terminate or on a terminated Lease."
+    },
+    {
+      "test_id": "TEST-FE-873",
+      "upstream_ids": [
+        "DL-074",
+        "DL-073",
+        "BR-LEASE-005",
+        "BR-LEASE-028",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Terminate and termination notice: Try again after an unknown result sends the same body, key and id; a changed value gets a new key and id; the notice text follows the end date; the Initial-unpaid ground waits until Start Date + 5 days; the terminate address is dropped once done."
     }
   ]
 }

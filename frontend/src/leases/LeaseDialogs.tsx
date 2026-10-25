@@ -17,16 +17,16 @@ import { Icon } from "../shell/icons";
 import { Dialog } from "../shell/ui";
 import type { Language } from "../signInText";
 import { initialRent } from "./leasesData";
-import { lt } from "./text";
+import { lt, type LeaseTextKey } from "./text";
 
-type Outcome = "unknown" | "refused" | null;
+export type Outcome = "unknown" | "refused" | null;
 
 // The reason stored with each signature; the dialog's tick is the person's statement.
 const SIGN_REASON = "Every Signer signed the paper Lease";
 // The reason stored with a move-in when no note is written.
 const MOVE_IN_REASON = "Move-in recorded";
 
-function Problem({ message }: { message: string | null }) {
+export function Problem({ message }: { message: string | null }) {
   if (message === null) return null;
   return (
     <p className="ui-error" role="alert">
@@ -36,14 +36,14 @@ function Problem({ message }: { message: string | null }) {
   );
 }
 
-function OutcomeNotice({
+export function OutcomeNotice({
   language,
   outcome,
   refused = "refused",
 }: {
   language: Language;
   outcome: Outcome;
-  refused?: "refused" | "sign_refused";
+  refused?: LeaseTextKey;
 }) {
   if (outcome === null) return null;
   return (
@@ -79,7 +79,7 @@ async function activeReservationOf(
 }
 
 /** Sends a request and sorts its ending: saved, changed meanwhile, unknown, refused. */
-function useSend(
+export function useSend(
   onSaved: (saved: LeaseResource) => void,
   onConflict: () => void,
 ) {
@@ -482,7 +482,7 @@ export function EditDraftDialog({
 }
 
 /** One identity per set of values: the same values keep it, so Try again sends the same request. */
-function useValuesIdentity() {
+export function useValuesIdentity() {
   const kept = useRef<({ fingerprint: string } & Identity) | null>(null);
   return (fingerprint: string): Identity => {
     if (kept.current?.fingerprint !== fingerprint)

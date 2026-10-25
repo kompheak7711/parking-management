@@ -24,6 +24,7 @@ import { openPageInAddress } from "../shell/useHashPage";
 import { Chip } from "../shell/ui";
 import type { Language } from "../signInText";
 import type { CustomerApi } from "../customerClient";
+import type { LettersApi } from "../letters/lettersClient";
 import type { ReservationApi } from "../reservationClient";
 import { leftText } from "../reservations/ReservationsList";
 import {
@@ -33,6 +34,12 @@ import {
   SignDialog,
 } from "./LeaseDialogs";
 import { LeaseChip } from "./LeasesList";
+import {
+  RecordNoticeDialog,
+  TerminateDialog,
+  terminateDraft,
+  type TerminateDraft,
+} from "./TerminateDialogs";
 import { daysBetween, initialRent, kindOf } from "./leasesData";
 import { hasLeaseText, lt } from "./text";
 
@@ -70,7 +77,10 @@ export interface LeaseDetailProps {
   depositApi: DepositApi;
   reservationApi: Pick<ReservationApi, "list">;
   customerApi: Pick<CustomerApi, "get" | "list">;
+  lettersApi: Pick<LettersApi, "warnings" | "notices" | "recordNotice">;
   capabilities: ReadonlySet<string> | null;
+  /** Letters opens the Lease with the Terminate dialog on the Rent ground. */
+  terminateOnOpen?: boolean;
 }
 
 export function LeaseDetail({
@@ -81,7 +91,9 @@ export function LeaseDetail({
   depositApi,
   reservationApi,
   customerApi,
+  lettersApi,
   capabilities,
+  terminateOnOpen = false,
 }: LeaseDetailProps) {
   const [lease, setLease] = useState<LeaseResource | null>(null);
   const [timeline, setTimeline] = useState<LeaseTimelineEvent[]>([]);
@@ -93,8 +105,11 @@ export function LeaseDetail({
   const [historyIncomplete, setHistoryIncomplete] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
   const [dialog, setDialog] = useState<
-    "sign" | "edit" | "cancel" | "movein" | null
-  >(null);
+    "sign" | "edit" | "cancel" | "movein" | "terminate" | "notice" | null
+  >(terminateOnOpen ? "terminate" : null);
+  const [draft, setDraft] = useState<TerminateDraft>(() =>
+    terminateDraft(terminateOnOpen ? "RENT" : null),
+  );
   const [notice, setNotice] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
   const sequence = useRef(0);
@@ -242,6 +257,11 @@ export function LeaseDetail({
   const signed = lease.status === "SIGNED";
   const rent = lease.monthly_rent_usd_cents;
   const movedIn = lease.occupancies.length > 0;
+  const mayTerminate =
+    signed &&
+    lease.can_terminate &&
+    lease.actual_termination_date === null &&
+    may("leases.terminate");
   const left =
     lease.end_date === null ? null : daysBetween(today, lease.end_date);
   const initial =
@@ -282,7 +302,19 @@ export function LeaseDetail({
     </span>
   );
 
-  function open(which: "sign" | "edit" | "cancel" | "movein") {
+  // Letters opens "#/leases/terminate:<id>"; once the dialog is done a reload shows the Lease.
+  function leaveTerminateAddress() {
+    if (/terminate(:|%3A)/i.test(window.location.hash))
+      window.history.replaceState(
+        null,
+        "",
+        hashForPage("leases", lease?.lease_id ?? leaseId),
+      );
+  }
+
+  function open(
+    which: "sign" | "edit" | "cancel" | "movein" | "terminate" | "notice",
+  ) {
     setNotice(null);
     setWarning(null);
     setDialog(which);
@@ -408,6 +440,19 @@ export function LeaseDetail({
             >
               {lt(language, "renew")}
             </a>
+          )}
+          {mayTerminate && (
+            <button
+              className="ui-btn"
+              onClick={() => {
+                setDraft(terminateDraft(null));
+                open("terminate");
+              }}
+              type="button"
+            >
+              {lt(language, "terminate")}
+              <span className="ui-badge">{lt(language, "manager")}</span>
+            </button>
           )}
           {/* A renewal continues the earlier Lease's Occupancies, and a move-in is recorded
               from the Start Date, so neither shows the button. */}
@@ -888,6 +933,45 @@ export function LeaseDetail({
             setLease(saved);
             setNotice(lt(language, "moved_in_toast"));
             load();
+          }}
+        />
+      )}
+      {dialog === "terminate" && mayTerminate && (
+        <TerminateDialog
+          {...dialogProps}
+          lease={lease}
+          lettersApi={lettersApi}
+          onClose={() => {
+            leaveTerminateAddress();
+            setDialog(null);
+          }}
+          onRecordNotice={(typed) => {
+            setDraft(typed);
+            setDialog("notice");
+          }}
+          onSaved={(saved, message) => {
+            leaveTerminateAddress();
+            setDialog(null);
+            setLease(saved);
+            setNotice(message);
+            load();
+          }}
+          draft={draft}
+        />
+      )}
+      {dialog === "notice" && mayTerminate && (
+        <RecordNoticeDialog
+          language={language}
+          lease={lease}
+          lettersApi={lettersApi}
+          onClose={() => {
+            setDialog("terminate");
+          }}
+          onConflict={dialogProps.onConflict}
+          onSaved={(message) => {
+            // Back to Terminate with what was typed; it reads the notices again.
+            setDialog("terminate");
+            setNotice(message);
           }}
         />
       )}

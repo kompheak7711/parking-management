@@ -462,7 +462,10 @@ function RentLettersTab({
                           canTerminate && row.lease !== undefined ? (
                             <a
                               className="ui-btn ui-btn-wrap"
-                              href={hashForPage("leases", row.lease.lease_id)}
+                              href={hashForPage(
+                                "leases",
+                                `terminate:${row.lease.lease_id}`,
+                              )}
                             >
                               <Icon name="x" />
                               {ltr(language, "term")}

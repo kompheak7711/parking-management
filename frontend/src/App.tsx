@@ -1682,6 +1682,7 @@ export function App({
           customerApi={customerApi ?? defaultCustomerApi}
           reservationApi={reservationApi}
           unitApi={unitApi ?? defaultUnitApi}
+          lettersApi={lettersApi}
         />
         {/* V1-058 R3: the Lease actions stay in the earlier English forms, folded, until
             the next step moves them into the design. */}

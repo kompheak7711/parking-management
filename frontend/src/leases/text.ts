@@ -589,6 +589,196 @@ const TEXT = {
     "The server refused the draft. Another Lease may already cover this Unit for these dates, or the details do not fit the rules. Nothing more was saved.",
     "ម៉ាស៊ីនមេបានបដិសេធសេចក្តីព្រាង។ កិច្ចសន្យាផ្សេងប្រហែលគ្របដណ្តប់បន្ទប់នេះសម្រាប់ថ្ងៃទាំងនេះរួចហើយ ឬព័ត៌មានមិនត្រូវតាមច្បាប់។ គ្មានអ្វីបន្ថែមត្រូវបានរក្សាទុកទេ។",
   ],
+  // Terminate dialog (mock-up i18n3.js "tg_"; lines marked new are not in the mock-up)
+  terminate: ["Terminate", "បញ្ចប់កិច្ចសន្យា"],
+  tg_t: ["Terminate the Lease · {0}", "បញ្ចប់កិច្ចសន្យា · {0}"],
+  tg_ground: ["Ground", "មូលដ្ឋាន"],
+  tg_EARLY: ["Customer leaves early", "អតិថិជនចាកចេញមុនកំណត់"],
+  tg_EARLY_s: [
+    "Voluntary early termination at the Customer's request",
+    "បញ្ចប់មុនកំណត់ដោយស្ម័គ្រចិត្ត តាមសំណើអតិថិជន",
+  ],
+  tg_VIOLATION: [
+    "Lease violation after 3 written warnings",
+    "បំពានកិច្ចសន្យា បន្ទាប់ពីព្រមាន 3 ដង",
+  ],
+  tg_VIOLATION_s: [
+    "Includes pet-rule violations",
+    "រួមទាំងការបំពានច្បាប់សត្វចិញ្ចឹម",
+  ],
+  // new
+  tg_RENT: [
+    "Rent unpaid after the day-30 notice",
+    "ថ្លៃឈ្នួលមិនបង់ បន្ទាប់ពីលិខិតថ្ងៃទី៣០",
+  ],
+  // new
+  tg_RENT_s: [
+    "Needs the termination notice, the third letter, and its period to have ended",
+    "ត្រូវមានការជូនដំណឹងបញ្ចប់ ជាលិខិតទីបី ហើយរយៈពេលរបស់វាបានផុត",
+  ],
+  tg_UNPAID: ["Initial Rent not paid", "ថ្លៃឈ្នួលដំបូងមិនបានបង់"],
+  // new
+  tg_UNPAID_s: [
+    "The Initial Rent or the Security Deposit was not paid within 5 days",
+    "ថ្លៃឈ្នួលដំបូង ឬប្រាក់កក់សុវត្ថិភាព មិនបានបង់ក្នុង 5 ថ្ងៃ",
+  ],
+  // new
+  tg_UNPAID_wait: [
+    "Possible from {0}, after the 5 days to pay",
+    "អាចធ្វើបានពី {0} បន្ទាប់ពី 5 ថ្ងៃសម្រាប់បង់",
+  ],
+  // new
+  tg_c1_unpaid: [
+    "Whatever was received of the Security Deposit is kept and is not used for what the Customer owes.",
+    "ប្រាក់កក់សុវត្ថិភាពដែលបានទទួល ត្រូវរក្សាទុក មិនប្រើសម្រាប់អ្វីដែលអតិថិជនជំពាក់។",
+  ],
+  // new
+  tg_memo_e: ["Write the reason.", "សូមសរសេរមូលហេតុ។"],
+  // new
+  tg_ground_e: ["Choose the ground.", "សូមជ្រើសរើសមូលដ្ឋាន។"],
+  tg_date: ["Termination date", "ថ្ងៃបញ្ចប់"],
+  // new: the server records a termination on or after the day, never ahead.
+  tg_date_help: [
+    "The day the Lease ends, from {0} up to today. A later day goes in the termination notice.",
+    "ថ្ងៃកិច្ចសន្យាបញ្ចប់ ពី {0} ដល់ថ្ងៃនេះ។ ថ្ងៃក្រោយត្រូវដាក់ក្នុងការជូនដំណឹងបញ្ចប់។",
+  ],
+  // new
+  tg_bad: [
+    "Enter a date from {0} up to today.",
+    "បញ្ចូលថ្ងៃពី {0} ដល់ថ្ងៃនេះ។",
+  ],
+  tg_petrule: [
+    "Pet-rule violation: keep the Pet Deposit too",
+    "បំពានច្បាប់សត្វចិញ្ចឹម៖ រក្សាប្រាក់កក់សត្វចិញ្ចឹមដែរ",
+  ],
+  // new
+  tg_warnings: ["Written warnings", "ការព្រមានជាលាយលក្ខណ៍អក្សរ"],
+  // new
+  tg_warning_line: ["Warning {0} · {1} · {2}", "ការព្រមាន {0} · {1} · {2}"],
+  // new
+  tg_warnings_e: [
+    "Tick at least 3 written warnings.",
+    "សូមធីកការព្រមានយ៉ាងហោចណាស់ 3។",
+  ],
+  // new
+  tg_warnings_few: [
+    "This Lease has {0} written warnings. A violation termination needs 3. Record them on the Letters page.",
+    "កិច្ចសន្យានេះមានការព្រមាន {0}។ ការបញ្ចប់ដោយបំពានត្រូវការ 3។ សូមកត់ត្រានៅទំព័រលិខិត។",
+  ],
+  // new
+  tg_notice: ["Termination notice", "ការជូនដំណឹងបញ្ចប់"],
+  // new
+  tg_notice_line: [
+    "Given {0} · ends {1} · {2}",
+    "ផ្តល់ {0} · បញ្ចប់ {1} · {2}",
+  ],
+  // new
+  tg_notice_none: [
+    "No termination notice yet. Record it first; the Lease can end when its period is over.",
+    "មិនទាន់មានការជូនដំណឹងបញ្ចប់។ សូមកត់ត្រាវាជាមុន។ កិច្ចសន្យាអាចបញ្ចប់ពេលរយៈពេលរបស់វាផុត។",
+  ],
+  // new
+  tg_notice_e: [
+    "Choose the termination notice.",
+    "សូមជ្រើសរើសការជូនដំណឹងបញ្ចប់។",
+  ],
+  // new
+  tg_notice_wait: [
+    "The notice period ends on {0}. Terminate on or after that day.",
+    "រយៈពេលជូនដំណឹងបញ្ចប់នៅ {0}។ សូមបញ្ចប់នៅ ឬក្រោយថ្ងៃនោះ។",
+  ],
+  // new
+  tg_evidence: ["Evidence", "ភស្តុតាង"],
+  // new
+  tg_evidence_help: [
+    "For example the Customer's letter, the letter numbers or the payment record.",
+    "ឧទាហរណ៍ លិខិតរបស់អតិថិជន លេខលិខិត ឬកំណត់ត្រាបង់ប្រាក់។",
+  ],
+  // new
+  tg_evidence_e: ["Write the evidence.", "សូមសរសេរភស្តុតាង។"],
+  tg_memo: ["Reason (written in the record)", "មូលហេតុ (សរសេរក្នុងកំណត់ត្រា)"],
+  tg_c1: [
+    "The Security Deposit is kept in full and is not used for what the Customer owes.",
+    "ប្រាក់កក់សុវត្ថិភាពរក្សាទុកទាំងស្រុង មិនប្រើសម្រាប់អ្វីដែលអតិថិជនជំពាក់។",
+  ],
+  // new
+  tg_c1_rent: [
+    "The Security Deposit is kept in full when the day-30 notice is dated on or before the termination date.",
+    "ប្រាក់កក់សុវត្ថិភាពរក្សាទុកទាំងស្រុង ពេលលិខិតថ្ងៃទី៣០ ចុះថ្ងៃនៅ ឬមុនថ្ងៃបញ្ចប់។",
+  ],
+  tg_c2: [
+    "Rent for the termination month, Utilities and Services stay due. No later Rent is billed.",
+    "ថ្លៃឈ្នួលខែបញ្ចប់ ទឹកភ្លើង និងសេវា នៅត្រូវបង់។ គ្មានថ្លៃឈ្នួលក្រោយទៀត។",
+  ],
+  tg_c3: [
+    "The Pet Deposit pays pet damage first; the rest is refunded.",
+    "ប្រាក់កក់សត្វចិញ្ចឹមបង់ខូចខាតដោយសត្វមុន; នៅសល់សងវិញ។",
+  ],
+  tg_pet_kept: [
+    "The Pet Deposit is kept too (pet-rule termination).",
+    "ប្រាក់កក់សត្វចិញ្ចឹមក៏រក្សាទុកដែរ (បញ្ចប់ព្រោះច្បាប់សត្វចិញ្ចឹម)។",
+  ],
+  tg_c4: [
+    "The Unit stays Occupied until the hand-back is recorded.",
+    "បន្ទប់នៅមានអ្នកជួល រហូតដល់កត់ត្រាការប្រគល់។",
+  ],
+  // new
+  tg_c5: [
+    "Never moved in: release the Unit and settle the Initial Rent Invoice in the next step.",
+    "មិនដែលចូលស្នាក់នៅ៖ ដោះលែងបន្ទប់ និងដោះស្រាយវិក្កយបត្រថ្លៃឈ្នួលដំបូង នៅជំហានបន្ទាប់។",
+  ],
+  // new
+  tg_final: [
+    "This cannot be undone. A terminated Lease is never signed again.",
+    "មិនអាចត្រឡប់វិញបានទេ។ កិច្ចសន្យាដែលបានបញ្ចប់ មិនអាចចុះហត្ថលេខាម្តងទៀតទេ។",
+  ],
+  tg_ok: ["Terminate", "បញ្ចប់"],
+  tg_toast: [
+    "Lease of {0} terminated as of {1}.",
+    "កិច្ចសន្យា {0} បានបញ្ចប់ត្រឹម {1}។",
+  ],
+  // new
+  tg_refused: [
+    "The server refused the termination. The ground, the date, the warnings or the notice do not fit the rules, or the unpaid amount was paid meanwhile. Nothing was saved.",
+    "ម៉ាស៊ីនមេបានបដិសេធការបញ្ចប់។ មូលដ្ឋាន ថ្ងៃ ការព្រមាន ឬការជូនដំណឹង មិនត្រូវតាមច្បាប់ ឬចំនួនមិនទាន់បង់ត្រូវបានបង់រួចហើយ។ គ្មានអ្វីត្រូវបានរក្សាទុកទេ។",
+  ],
+  // new
+  tg_load_failed: [
+    "The warnings or notices of this Lease could not be read just now.",
+    "មិនអាចអានការព្រមាន ឬការជូនដំណឹងនៃកិច្ចសន្យានេះបានទេឥឡូវនេះ។",
+  ],
+  // new: Record termination notice
+  nt_new: ["Record termination notice", "កត់ត្រាការជូនដំណឹងបញ្ចប់"],
+  nt_t: ["Termination notice · {0}", "ការជូនដំណឹងបញ្ចប់ · {0}"],
+  nt_note: [
+    "The third letter after the day-20 and day-30 letters (DL-073). Recording it does not end the Lease; Terminate does, once its period is over.",
+    "លិខិតទីបី បន្ទាប់ពីលិខិតថ្ងៃទី២០ និងថ្ងៃទី៣០។ ការកត់ត្រាវាមិនបញ្ចប់កិច្ចសន្យាទេ។ ប៊ូតុងបញ្ចប់ធ្វើវា ពេលរយៈពេលរបស់វាផុត។",
+  ],
+  nt_date: ["Date given", "ថ្ងៃផ្តល់"],
+  nt_ends: ["Lease ends on", "កិច្ចសន្យាបញ្ចប់នៅ"],
+  nt_ends_help: [
+    "The standard Lease gives 30 days' landlord notice.",
+    "កិច្ចសន្យាស្តង់ដារ ផ្តល់ការជូនដំណឹងពីម្ចាស់ 30 ថ្ងៃ។",
+  ],
+  nt_dates_e: [
+    "The date given must be today or earlier, and the end on or after it.",
+    "ថ្ងៃផ្តល់ត្រូវជាថ្ងៃនេះ ឬមុន ហើយថ្ងៃបញ្ចប់នៅ ឬក្រោយវា។",
+  ],
+  nt_number: ["Letter number", "លេខលិខិត"],
+  nt_number_e: ["Write the letter number.", "សូមសរសេរលេខលិខិត។"],
+  nt_text: ["What the letter says", "ខ្លឹមសារលិខិត"],
+  nt_text_e: ["Write what the letter says.", "សូមសរសេរខ្លឹមសារលិខិត។"],
+  nt_text_default: [
+    "The Lease of {0} ends on {1} because the Rent is still unpaid after the day-20 warning letter and the day-30 default notice.",
+    "កិច្ចសន្យា {0} បញ្ចប់នៅ {1} ព្រោះថ្លៃឈ្នួលនៅមិនទាន់បង់ បន្ទាប់ពីលិខិតព្រមានថ្ងៃទី២០ និងលិខិតថ្ងៃទី៣០។",
+  ],
+  nt_how_e: ["Choose how it was given.", "សូមជ្រើសរើសរបៀបផ្តល់។"],
+  nt_details: ["Details", "ព័ត៌មានលម្អិត"],
+  nt_details_e: ["Write the details.", "សូមសរសេរព័ត៌មានលម្អិត។"],
+  nt_toast: [
+    "Termination notice recorded for {0}.",
+    "បានកត់ត្រាការជូនដំណឹងបញ្ចប់សម្រាប់ {0}។",
+  ],
 } as const;
 
 export type LeaseTextKey = keyof typeof TEXT;

@@ -246,6 +246,10 @@ function setup(
     recordWarning: vi.fn<LettersApi["recordWarning"]>((_lease, source) =>
       Promise.resolve(warning("U101", source.warning_sequence)),
     ),
+    notices: vi.fn<LettersApi["notices"]>(() => Promise.resolve([])),
+    recordNotice: vi.fn<LettersApi["recordNotice"]>(() =>
+      Promise.reject(new Error("not used")),
+    ),
   };
   tweak?.(api);
   const list = vi.fn<LeaseApi["list"]>(() =>
@@ -320,7 +324,7 @@ describe("Letters page (V1-058 R3)", () => {
       name: /Termination notice/,
     });
     expect(notice.textContent).toContain("MANAGER");
-    expect(notice.getAttribute("href")).toBe("#/leases/lease-U103");
+    expect(notice.getAttribute("href")).toBe("#/leases/terminate%3Alease-U103");
 
     // A card filters the table.
     fireEvent.click(

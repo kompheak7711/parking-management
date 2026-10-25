@@ -15,6 +15,7 @@ import { todayInPhnomPenh } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { useHashDetail } from "../shell/useHashPage";
 import type { Language } from "../signInText";
+import type { LettersApi } from "../letters/lettersClient";
 import { LeaseDetail } from "./LeaseDetail";
 import { LeaseForm, formModeOf } from "./LeaseForm";
 import { LeasesList } from "./LeasesList";
@@ -36,6 +37,7 @@ export interface LeasesPageProps {
   reservationApi: Pick<ReservationApi, "list" | "get">;
   customerApi: Pick<CustomerApi, "get" | "list">;
   unitApi: Pick<UnitApi, "list">;
+  lettersApi: Pick<LettersApi, "warnings" | "notices" | "recordNotice">;
   capabilities: ReadonlySet<string> | null;
 }
 
@@ -48,6 +50,7 @@ export function LeasesPage({
   reservationApi,
   customerApi,
   unitApi,
+  lettersApi,
   capabilities,
 }: LeasesPageProps) {
   const detail = useHashDetail("leases");
@@ -119,6 +122,8 @@ export function LeasesPage({
 
   // The Lease page reads its own record, so it does not wait for the list.
   if (detail !== null) {
+    // "terminate:<id>" opens the Lease with its Terminate dialog (the Letters next step).
+    const terminate = detail.startsWith("terminate:");
     return (
       <LeaseDetail
         api={api}
@@ -126,7 +131,9 @@ export function LeasesPage({
         depositApi={depositApi}
         key={`${detail}:${propertyId}`}
         language={language}
-        leaseId={detail}
+        leaseId={terminate ? detail.slice("terminate:".length) : detail}
+        lettersApi={lettersApi}
+        terminateOnOpen={terminate}
         propertyId={propertyId}
         reservationApi={reservationApi}
         customerApi={customerApi}
