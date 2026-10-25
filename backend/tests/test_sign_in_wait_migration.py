@@ -54,8 +54,8 @@ from test_move_in_migration import runtime_database_url
 
 REVISION = "20270128_185"
 PREVIOUS = "20270127_184"
-# The head after the V1-060 billing lock order migration (20270220_208).
-HEAD = "20270220_208"
+# The head after the V1-060 excess lock migration (20270221_209).
+HEAD = "20270221_209"
 # The migration of login sub-slice L3c-1.
 KEYED_CLEAR = "20270129_186"
 PASSWORD = "correct horse battery staple"

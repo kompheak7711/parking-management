@@ -1,6 +1,7 @@
 # ruff: noqa: E501
-"""V1-060 migrations: the faster reads of `20270219_207` give the same answers, and the
-Billing Run writers of `20270220_208` lock the run row before the attempt row.
+"""V1-060 migrations: the faster reads of `20270219_207` give the same answers, the
+Billing Run writers of `20270220_208` lock the run row before the attempt row, and the excess
+check of `20270221_209` waits only for PostgreSQL's own cleanup.
 
 Runs last in `scripts/database-test.sh`, on the shared test database after every other module
 has left its Invoices, adjustments, Payments, credit and deposit applications and their
@@ -121,3 +122,50 @@ def test_every_billing_run_writer_locks_the_run_before_the_attempt(
             run_lock = source.find("FROM app.billing_runs")
             attempt_lock = source.find("FROM app.billing_run_attempts")
             assert -1 < run_lock < attempt_lock, name
+
+
+def test_a_session_holding_an_obligation_table_is_still_refused_at_once(
+    migrated_database_url: str,
+) -> None:
+    """DL-067 cause (V1-060): the excess check waits only when autovacuum alone holds a
+    conflicting lock. A session's lock (here the one the DL-067 test used to stand in for
+    autovacuum) is still refused by the NOWAIT request itself, not by the 3 second wait."""
+    with (
+        psycopg.connect(migrated_database_url) as holder,
+        psycopg.connect(migrated_database_url) as caller,
+    ):
+        holder.execute("LOCK TABLE app.invoice_lines IN SHARE UPDATE EXCLUSIVE MODE")
+        row = caller.execute("SELECT id FROM app.payments ORDER BY id LIMIT 1").fetchone()
+        assert row is not None
+        caller.execute("SET LOCAL lock_timeout='7s'")
+        try:
+            caller.execute("SELECT app.assert_payment_excess_eligible(%s)", (row[0],))
+        except psycopg.errors.LockNotAvailable as refused:
+            assert 'could not obtain lock on relation "app.invoice_lines"' in str(refused)
+        else:
+            raise AssertionError("A session's conflicting lock must refuse the excess check")
+        caller.rollback()
+        holder.rollback()
+
+
+def test_the_excess_check_waits_only_for_autovacuum_and_keeps_the_caller_s_lock_timeout(
+    migrated_database_url: str,
+) -> None:
+    """The wait branch cannot be reached on demand (autovacuum runs when PostgreSQL decides), so
+    its guard is checked in the function itself; ops/V1_060_PLAN.md records the run with a busier
+    autovacuum that reached it (55P03 in most runs before the change, none after)."""
+    with psycopg.connect(migrated_database_url) as connection:
+        row = connection.execute(
+            "SELECT prosrc FROM pg_proc WHERE oid='app.assert_payment_excess_eligible(uuid)'::regprocedure"
+        ).fetchone()
+    assert row is not None
+    source = str(row[0])
+    nowait = source.find("IN SHARE MODE NOWAIT;")
+    handler = source.find("EXCEPTION WHEN lock_not_available THEN")
+    guard = source.find("AND holder.usesysid IS NOT NULL")
+    refuse = source.find("RAISE;")
+    bound = source.find("PERFORM pg_catalog.set_config('lock_timeout','3s',true);")
+    wait = source.find("IN SHARE MODE;")
+    restore = source.find("PERFORM pg_catalog.set_config('lock_timeout',v_lock_timeout,true);")
+    assert -1 < nowait < handler < guard < refuse < bound < wait < restore
+    assert source.count("LOCK TABLE") == 2
