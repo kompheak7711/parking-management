@@ -49,6 +49,18 @@ from test_reservation_migration import create_reservation, reservation_business_
 from test_termination_deposit_migration import terminate
 
 
+def without_searches(
+    tables: dict[str, list[tuple[object, ...]]],
+) -> dict[str, list[tuple[object, ...]]]:
+    """The tables without the `audit.searched` events a History search now writes (V1-057)."""
+    events = [
+        row
+        for row in tables["audit_events"]
+        if not (isinstance(row[0], dict) and row[0].get("action") == "audit.searched")
+    ]
+    return {**tables, "audit_events": events}
+
+
 def source_ended_yesterday(url: str) -> tuple[UUID, UUID, UUID, RecordPhysicalMoveOut]:
     move_flow, staff, move = setup_historical_move_in(
         url, signed_day_offset=-1, receipt_day_offset=-1
@@ -288,7 +300,7 @@ def test_physical_original_and_corrected_audits_reach_unit_readers(
         assert cast(dict[str, object], views[0].resulting_state)["unit_status"] == "VACANT"
         assert cast(dict[str, object], views[1].resulting_state)["unit_status"] == "CLEANING"
     assert record(prop, lease, human, request) == original
-    assert snapshot(migrated_database_url) == before
+    assert without_searches(snapshot(migrated_database_url)) == without_searches(before)
 
 
 @pytest.mark.parametrize(

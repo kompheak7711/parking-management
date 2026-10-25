@@ -193,6 +193,19 @@ from property_rental.property_api import (
 )
 from property_rental.receipt import ReceiptIdempotencyKeyReused
 from property_rental.refund import RefundIdempotencyKeyReused
+from property_rental.report_exports import (
+    ExportService,
+    ExportStore,
+    PostgresExportStore,
+    UnavailableExportStore,
+)
+from property_rental.reports import (
+    PostgresReportStore,
+    ReportService,
+    ReportStore,
+    UnavailableReportStore,
+)
+from property_rental.reports_api import create_reports_router
 from property_rental.reservation import (
     ReservationDepositDraftRequired,
     ReservationIdempotencyKeyReused,
@@ -495,6 +508,8 @@ def create_app(
     final_settlement_flow: FinalSettlementFlow | None = None,
     settlement_correction_flow: CorrectionFlow | None = None,
     customer_ledger_flow: CustomerLedgerFlow | None = None,
+    report_store: ReportStore | None = None,
+    export_store: ExportStore | None = None,
 ) -> FastAPI:
     """Build an application instance from validated settings."""
     resolved_settings = settings or Settings()
@@ -1335,6 +1350,30 @@ def create_app(
                 resolved_settings.database_url.get_secret_value()
                 if resolved_settings.database_url is not None
                 else None
+            ),
+        )
+    )
+    # V1-057: the Home page, the reports and their files (API-076 to API-078).
+    report_service = ReportService(
+        report_store
+        or (
+            PostgresReportStore(resolved_settings.database_url.get_secret_value())
+            if resolved_settings.database_url is not None
+            else UnavailableReportStore()
+        )
+    )
+    include_signed_in(
+        create_reports_router(
+            actor_resolver,
+            report_service,
+            ExportService(
+                report_service,
+                export_store
+                or (
+                    PostgresExportStore(resolved_settings.database_url.get_secret_value())
+                    if resolved_settings.database_url is not None
+                    else UnavailableExportStore()
+                ),
             ),
         )
     )

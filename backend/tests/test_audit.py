@@ -2,7 +2,7 @@
 
 from dataclasses import FrozenInstanceError, replace
 from datetime import UTC, datetime
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import pytest
 
@@ -485,3 +485,61 @@ def test_append_propagates_persistence_failure() -> None:
 
     with pytest.raises(RuntimeError, match="audit write failed"):
         service.append(audit_command())
+
+
+def test_a_file_fingerprint_is_kept_only_in_a_sha256_field() -> None:
+    """V1-057 (DL-072 answer 12): an export's audit event keeps its file's SHA-256."""
+    from property_rental.audit import _freeze_audit_value, is_file_fingerprint
+
+    digest = "0123456789abcdef" * 4
+    assert _freeze_audit_value({"file_sha256": digest}, "resulting_state")
+    assert is_file_fingerprint(digest, "file_sha256")
+    assert not is_file_fingerprint(digest.upper(), "file_sha256")
+    assert not is_file_fingerprint(digest, "file_reference")
+    with pytest.raises(ValueError):
+        _freeze_audit_value({"file_reference": digest}, "resulting_state")
+    with pytest.raises(ValueError):
+        _freeze_audit_value({"file_sha256": digest + "00"}, "resulting_state")
+
+
+def test_stored_capability_lists_and_odd_filters_read_back_on_the_history_page() -> None:
+    """Review round 1: role bundle events keep capability lists; search filters stay readable."""
+    from property_rental.audit import public_audit_filters
+    from property_rental.audit_api import _freeze_loaded
+
+    assert _freeze_loaded({"version": 3, "added_capability_ids": ["audit.view", "data.export"]})
+    assert _freeze_loaded({"capability_ids": ["reports.read"]})
+    assert _freeze_loaded({"created_period_ids": [str(uuid4())]})
+    assert _freeze_loaded({"capability": "invoices.issue", "also": "utility.calculate"})
+    with pytest.raises(ValueError):
+        _freeze_loaded({"added_capability_ids": ["not a capability"]})
+    kept = public_audit_filters({"action": "foo bar", "resource_type": "unit", "to_date": None})
+    assert kept == {"resource_type": "unit", "filters_not_recorded_count": 1}
+    assert _freeze_loaded({"filters": kept})
+
+
+def test_a_malformed_grant_is_refused_before_the_audit_search_reads() -> None:
+    """Review round 3: a grant with a wrong Property id gives 403, not a server error."""
+    from property_rental.audit_api import (
+        AuditPageRequest,
+        AuditQueryForbidden,
+        PostgresAuditEventQueryFlow,
+        PropertyAuditQuery,
+    )
+    from property_rental.identity import AuthenticatedActor, CapabilityGrant
+
+    prop = uuid4()
+    actor = AuthenticatedActor(
+        str(uuid4()),
+        frozenset(
+            {
+                CapabilityGrant("audit.view", frozenset({str(prop)})),
+                CapabilityGrant("units.read", frozenset({"not-a-property"})),
+            }
+        ),
+    )
+    flow = PostgresAuditEventQueryFlow("postgresql://unused.invalid/none")
+    with pytest.raises(AuditQueryForbidden):
+        flow.search_property(
+            actor, PropertyAuditQuery(property_id=prop, page=AuditPageRequest(limit=1))
+        )

@@ -196,6 +196,10 @@ database_test_suites='
   tests/test_final_utility_invoice_migration.py
   tests/test_utility_unbilled_periods_migration.py
   tests/test_late_utility_run_migration.py
+  tests/test_reports_home_migration.py
+  tests/test_report_month_facts_migration.py
+  tests/test_report_registers_migration.py
+  tests/test_report_exports_migration.py
   tests/test_final_settlement_preview_migration.py
   tests/test_final_settlement_draft_migration.py
   tests/test_billing_run_migration.py
