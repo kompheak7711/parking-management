@@ -526,6 +526,19 @@ function previewOf(
   };
 }
 
+const correctionDraft = (property: string) => ({
+  draft_id: "draft-2",
+  property_id: property,
+  kind: "SETTLEMENT_CORRECTION",
+  prepare_capability: "final_settlements.prepare",
+  payload: {},
+  reason: "correction",
+  prepared_at: "2026-10-25T03:00:00Z",
+  prepared_by: "actor-1",
+  state: "PENDING" as const,
+  decision: null,
+});
+
 function setup(
   leases: LeaseResource[],
   options: {
@@ -550,6 +563,7 @@ function setup(
     settlementPreview?: SettlementApi["settlementPreview"];
     settlementDraft?: SettlementApi["settlementDraft"];
     refundMethods?: SettlementApi["refundMethods"];
+    extraCharge?: SettlementApi["extraCharge"];
   } = {},
 ) {
   const byId = new Map(leases.map((item) => [item.lease_id, item]));
@@ -752,6 +766,10 @@ function setup(
             state: "PENDING",
             decision: null,
           })),
+    ),
+    extraCharge: vi.fn<SettlementApi["extraCharge"]>(
+      options.extraCharge ??
+        ((property) => Promise.resolve(correctionDraft(property))),
     ),
   };
   render(
@@ -3111,5 +3129,215 @@ describe("Move-out", () => {
       within(tooLong).getByRole("button", { name: "Save draft" }),
     );
     expect(long.settlementApi.settlementDraft).not.toHaveBeenCalled();
+  });
+});
+
+describe("Move-out step 6: after closure", () => {
+  const step6 = async () => {
+    const heading = await screen.findByRole("heading", {
+      name: "6. After closure",
+    });
+    const item = heading.closest("li");
+    if (item === null) throw new Error("no step 6");
+    return item;
+  };
+  const closed = () =>
+    Promise.resolve([
+      settlementOf("lease-U105", {
+        closed: true,
+        closed_at: "2026-10-22T04:00:00Z",
+        closing_balance_due_usd_cents: 0,
+      }),
+    ]);
+  const paidWindow = (): InvoiceResource => {
+    const invoice = chargeInvoice("finding-1", "DAMAGE_CHARGES", 4000, "PAID");
+    const none = { currency: "USD" as const, minor_units: 0 };
+    return {
+      ...invoice,
+      outstanding_balance: none,
+      lines: invoice.lines.map((line) => ({
+        ...line,
+        outstanding_balance: none,
+      })),
+    };
+  };
+
+  it("TEST-FE-996 after closure a preparer adds a charge as a correction draft: something else needs what it is for, a finding not charged yet makes a Damage charge of that finding; every box is required and the draft waits for a Manager", async () => {
+    window.location.hash = "#/moveout/lease-U105";
+    const { settlementApi } = setup([out], {
+      page: handedBackPage,
+      settlements: closed,
+      inspections: [
+        inspectionOf("inspection-1", [
+          ["finding-1", "Broken window", false],
+          ["finding-2", "Scratched floor", true],
+        ]),
+      ],
+      invoices: () => Promise.resolve([paidWindow()]),
+    });
+    const step = await step6();
+    fireEvent.click(
+      await within(step).findByRole("button", { name: "Add a charge" }),
+    );
+    let dialog = screen.getByRole("dialog");
+    // finding-1 is charged already: only finding-2 is offered.
+    const kinds = within(dialog)
+      .getAllByRole("option")
+      .map((option) => option.textContent);
+    expect(kinds).toEqual(["Something else", "Damage: Scratched floor"]);
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save draft" }));
+    expect(
+      within(dialog).getByText(/Fill in every box marked Required/),
+    ).toBeTruthy();
+    fireEvent.change(within(dialog).getByLabelText(/What it is for/), {
+      target: { value: "Lost parking card" },
+    });
+    fireEvent.change(within(dialog).getByLabelText(/^Charge ?required$/), {
+      target: { value: "15" },
+    });
+    fireEvent.change(within(dialog).getByLabelText(/Evidence/), {
+      target: { value: "Parking office note" },
+    });
+    fireEvent.change(within(dialog).getByLabelText(/Reason/), {
+      target: { value: "Card not handed back" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save draft" }));
+    expect(
+      await screen.findByText(
+        "Saved as a draft. A Manager confirms it in Waiting for approval.",
+      ),
+    ).toBeTruthy();
+    expect(settlementApi.extraCharge.mock.calls[0]?.slice(0, 3)).toEqual([
+      "property-1",
+      "fs-lease-U105",
+      {
+        category: "MISCELLANEOUS_CHARGES",
+        description: "Lost parking card",
+        amount_usd_cents: 1500,
+        evidence_reference: "Parking office note",
+        reason: "Card not handed back",
+        inspection_damage_finding_id: null,
+      },
+    ]);
+
+    fireEvent.click(within(step).getByRole("button", { name: "Add a charge" }));
+    dialog = screen.getByRole("dialog");
+    fireEvent.change(within(dialog).getByLabelText("Charge for"), {
+      target: { value: "finding-2" },
+    });
+    expect(within(dialog).queryByLabelText(/What it is for/)).toBeNull();
+    fireEvent.change(within(dialog).getByLabelText(/^Charge ?required$/), {
+      target: { value: "60.25" },
+    });
+    fireEvent.change(within(dialog).getByLabelText(/Evidence/), {
+      target: { value: "Photo 9" },
+    });
+    fireEvent.change(within(dialog).getByLabelText(/Reason/), {
+      target: { value: "Found after closure" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save draft" }));
+    await waitFor(() => {
+      expect(settlementApi.extraCharge).toHaveBeenCalledTimes(2);
+    });
+    expect(settlementApi.extraCharge.mock.calls[1]?.[2]).toMatchObject({
+      category: "DAMAGE_CHARGES",
+      description: "Damage: Scratched floor",
+      amount_usd_cents: 6025,
+      inspection_damage_finding_id: "finding-2",
+    });
+  });
+
+  it("TEST-FE-997 no answer to a charge: saving the same charge again, even after closing the dialog, sends the same key; a refusal shows the server's words; a refund after closure is said to come later", async () => {
+    window.location.hash = "#/moveout/lease-U105";
+    let calls = 0;
+    const { settlementApi } = setup([out], {
+      page: handedBackPage,
+      settlements: closed,
+      extraCharge: () => {
+        calls += 1;
+        return Promise.reject(
+          calls === 1
+            ? new SettlementUnavailableError()
+            : new SettlementRequestError(
+                409,
+                "CORRECTION_SOURCE_DRAFT_WAITING",
+                "A correction of this Final Settlement already waits.",
+              ),
+        );
+      },
+    });
+    const step = await step6();
+    expect(
+      await within(step).findByText(
+        "A refund after closure comes in a later update.",
+      ),
+    ).toBeTruthy();
+    const fill = (dialog: HTMLElement) => {
+      fireEvent.change(within(dialog).getByLabelText(/What it is for/), {
+        target: { value: "Lost parking card" },
+      });
+      fireEvent.change(within(dialog).getByLabelText(/^Charge ?required$/), {
+        target: { value: "15" },
+      });
+      fireEvent.change(within(dialog).getByLabelText(/Evidence/), {
+        target: { value: "Parking office note" },
+      });
+      fireEvent.change(within(dialog).getByLabelText(/Reason/), {
+        target: { value: "Card not handed back" },
+      });
+      fireEvent.click(
+        within(dialog).getByRole("button", { name: "Save draft" }),
+      );
+    };
+    fireEvent.click(within(step).getByRole("button", { name: "Add a charge" }));
+    let dialog = screen.getByRole("dialog");
+    fill(dialog);
+    expect(
+      await within(dialog).findByRole("button", { name: "Try again" }),
+    ).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Close" }));
+    fireEvent.click(within(step).getByRole("button", { name: "Add a charge" }));
+    dialog = screen.getByRole("dialog");
+    fill(dialog);
+    expect(
+      await within(dialog).findByText(
+        "A correction of this Final Settlement already waits.",
+      ),
+    ).toBeTruthy();
+    const [first, second] = settlementApi.extraCharge.mock.calls;
+    expect(second?.[2]).toEqual(first?.[2]);
+    expect(second?.[3]).toBe(first?.[3]);
+  });
+
+  it("TEST-FE-998 before closure step 6 waits with no buttons; after closure without the preparer right it says who may act and an approver gets the link to Waiting for approval", async () => {
+    window.location.hash = "#/moveout/lease-U105";
+    setup([out], {
+      page: handedBackPage,
+      settlements: () => Promise.resolve([settlementOf("lease-U105")]),
+    });
+    let step = await step6();
+    expect(within(step).queryByRole("button")).toBeNull();
+    cleanup();
+
+    window.location.hash = "#/moveout/lease-U105";
+    setup([out], {
+      page: handedBackPage,
+      capabilities: new Set(["leases.read", "financial.approve"]),
+      settlements: closed,
+    });
+    step = await step6();
+    expect(
+      await within(step).findByText(
+        "Only people who prepare Final Settlements add a charge here.",
+      ),
+    ).toBeTruthy();
+    expect(
+      within(step)
+        .getByRole("link", {
+          name: "Corrections waiting: Waiting for approval",
+        })
+        .getAttribute("href"),
+    ).toBe("#/approvals");
+    expect(within(step).queryByRole("button")).toBeNull();
   });
 });

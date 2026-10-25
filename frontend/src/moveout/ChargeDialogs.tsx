@@ -31,7 +31,7 @@ export type ChargeApi = Pick<InvoiceApi, "recordOneTimeCharge" | "create">;
 
 export type Outcome = "unknown" | "refused" | null;
 
-/** Kept by the dialog: one idempotency key per set of values. */
+/** Kept by a dialog (or a step): one idempotency key per set of values. */
 export type Keys = Map<string, { fingerprint: string; key: string }>;
 
 export function keyFor(keys: Keys, name: string, fingerprint: string): string {

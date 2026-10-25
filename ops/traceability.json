@@ -55945,6 +55945,46 @@
       "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
       "status": "implemented",
       "notes": "V1-058 R3 Move-out M5b: no answer retries with the same key; a refused draft shows the server's words; a waiting draft closes the dialog; no Prepare draft without the right or while blocked."
+    },
+    {
+      "test_id": "TEST-FE-996",
+      "upstream_ids": [
+        "BR-SETTLE-012",
+        "BR-SETTLE-013",
+        "BR-INV-044",
+        "BR-AUTH-010",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M6: after closure a preparer adds a Miscellaneous or a Damage charge (of a finding not charged yet) as a correction draft a Manager confirms."
+    },
+    {
+      "test_id": "TEST-FE-997",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-AUTH-010",
+        "SEC-019",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M6: no answer to an after-closure charge: saving it again, even after closing the dialog, sends the same key; a refusal shows the server's words; a refund after closure is said to come later."
+    },
+    {
+      "test_id": "TEST-FE-998",
+      "upstream_ids": [
+        "BR-SETTLE-012",
+        "BR-SETTLE-013",
+        "SEC-019",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M6: step 6 waits before closure; without the preparer right no actions; approvers get the Waiting for approval link."
     }
   ]
 }

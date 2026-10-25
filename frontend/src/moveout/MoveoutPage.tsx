@@ -136,6 +136,7 @@ export interface MoveoutPageProps {
     | "settlementPreview"
     | "refundMethods"
     | "settlementDraft"
+    | "extraCharge"
   >;
   capabilities: ReadonlySet<string> | null;
 }
@@ -1426,17 +1427,11 @@ function MoveoutDetail({
                   setNotice(text);
                 }}
                 propertyId={propertyId}
+                // Unread Invoices offer every finding; the server refuses one already billed.
+                findings={findings.filter((finding) => !billed.has(finding.id))}
                 reachable={terminated && (neverIn || handedBack)}
                 version={loads}
               />
-              <Step
-                language={language}
-                mark="todo"
-                number={6}
-                title={mt(language, "st6_t")}
-              >
-                <p className="ui-small ui-muted">{mt(language, "st6_note")}</p>
-              </Step>
             </ol>
           </section>
         </div>

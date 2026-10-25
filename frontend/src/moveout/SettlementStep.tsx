@@ -22,6 +22,8 @@ import { dayText, momentText, usdFromCents } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { hashForPage } from "../shell/navigation";
 import type { Language } from "../signInText";
+import { AfterClosureStep } from "./AfterClosureStep";
+import type { InspectionFinding } from "./moveoutClient";
 import { Kv, type Mark, Step } from "./parts";
 import { PrepareDialog } from "./PrepareDialog";
 import {
@@ -41,6 +43,7 @@ export type SettlementStepApi = Pick<
   | "settlementPreview"
   | "refundMethods"
   | "settlementDraft"
+  | "extraCharge"
 >;
 
 type Loaded =
@@ -84,6 +87,7 @@ export function SettlementStep({
   reachable,
   names,
   version,
+  findings,
   onNotice,
 }: {
   language: Language;
@@ -97,6 +101,8 @@ export function SettlementStep({
   names: Map<string, string>;
   /** Changes when the page reads everything again. */
   version: number;
+  /** Findings of the inspection in force with no charge yet (step 6 Damage charges). */
+  findings: InspectionFinding[];
   /** A plain notice for the page (started, draft saved, a draft already waits). */
   onNotice: (text: string) => void;
 }) {
@@ -219,78 +225,96 @@ export function SettlementStep({
   ) : undefined;
 
   return (
-    <Step
-      actions={actions}
-      language={language}
-      mark={mark}
-      number={5}
-      title={mt(language, "st5_t")}
-    >
-      {outcome !== null && (
-        <div className="ui-notice warn" role="alert">
-          <Icon name="alert" />
-          <p>
-            {mt(language, outcome === "unknown" ? "c_unknown" : "st5_refused")}
-          </p>
-        </div>
-      )}
-      {loaded.state === "hidden" ? (
-        <p className="ui-small ui-muted">{mt(language, "st5_hidden")}</p>
-      ) : loaded.state === "failed" ? (
-        <p className="ui-muted">
-          {mt(language, "st5_failed")}{" "}
-          <button className="ui-btn link" onClick={load} type="button">
-            {mt(language, "retry")}
-          </button>
-        </p>
-      ) : loaded.state === "loading" ? (
-        <p className="ui-muted" role="status">
-          {mt(language, "st5_reading")}
-        </p>
-      ) : loaded.state === "none" ? (
-        <>
-          <p>{mt(language, reachable ? "st5_todo" : "st5_wait")}</p>
-          {reachable && !mayPrepare && (
-            <p className="ui-small ui-muted">
-              {mt(language, "st5_not_allowed")}
+    <>
+      <Step
+        actions={actions}
+        language={language}
+        mark={mark}
+        number={5}
+        title={mt(language, "st5_t")}
+      >
+        {outcome !== null && (
+          <div className="ui-notice warn" role="alert">
+            <Icon name="alert" />
+            <p>
+              {mt(
+                language,
+                outcome === "unknown" ? "c_unknown" : "st5_refused",
+              )}
             </p>
-          )}
-        </>
-      ) : (
-        <Shown
-          language={language}
-          lease={lease}
-          mayApprove={may(APPROVE)}
-          names={names}
-          preview={loaded.preview}
-          settlement={loaded.settlement}
-        />
-      )}
-      {preparing && preview !== null && (
-        <PrepareDialog
-          api={api}
-          language={language}
-          lease={lease}
-          onClose={() => {
-            setPreparing(false);
-            // The draft may have been saved before the answer was lost: show it.
-            load();
-          }}
-          onSaved={() => {
-            setPreparing(false);
-            onNotice(mt(language, "pd_toast"));
-            load();
-          }}
-          onWaiting={() => {
-            setPreparing(false);
-            onNotice(mt(language, "pd_waiting"));
-            load();
-          }}
-          preview={preview}
-          propertyId={propertyId}
-        />
-      )}
-    </Step>
+          </div>
+        )}
+        {loaded.state === "hidden" ? (
+          <p className="ui-small ui-muted">{mt(language, "st5_hidden")}</p>
+        ) : loaded.state === "failed" ? (
+          <p className="ui-muted">
+            {mt(language, "st5_failed")}{" "}
+            <button className="ui-btn link" onClick={load} type="button">
+              {mt(language, "retry")}
+            </button>
+          </p>
+        ) : loaded.state === "loading" ? (
+          <p className="ui-muted" role="status">
+            {mt(language, "st5_reading")}
+          </p>
+        ) : loaded.state === "none" ? (
+          <>
+            <p>{mt(language, reachable ? "st5_todo" : "st5_wait")}</p>
+            {reachable && !mayPrepare && (
+              <p className="ui-small ui-muted">
+                {mt(language, "st5_not_allowed")}
+              </p>
+            )}
+          </>
+        ) : (
+          <Shown
+            language={language}
+            lease={lease}
+            mayApprove={may(APPROVE)}
+            names={names}
+            preview={loaded.preview}
+            settlement={loaded.settlement}
+          />
+        )}
+        {preparing && preview !== null && (
+          <PrepareDialog
+            api={api}
+            language={language}
+            lease={lease}
+            onClose={() => {
+              setPreparing(false);
+              // The draft may have been saved before the answer was lost: show it.
+              load();
+            }}
+            onSaved={() => {
+              setPreparing(false);
+              onNotice(mt(language, "pd_toast"));
+              load();
+            }}
+            onWaiting={() => {
+              setPreparing(false);
+              onNotice(mt(language, "pd_waiting"));
+              load();
+            }}
+            preview={preview}
+            propertyId={propertyId}
+          />
+        )}
+      </Step>
+      <AfterClosureStep
+        api={api}
+        findings={findings}
+        language={language}
+        lease={lease}
+        mayApprove={may(APPROVE)}
+        mayPrepare={mayPrepare}
+        onSaved={() => {
+          onNotice(mt(language, "st6_toast"));
+        }}
+        propertyId={propertyId}
+        settlement={settlement}
+      />
+    </>
   );
 }
 

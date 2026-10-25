@@ -761,10 +761,36 @@ const TEXT = {
     "A closed Final Settlement is never reopened. A later charge or refund is a linked correction with a reason, confirmed by a Manager.",
     "ការទូទាត់ចុងក្រោយបានបិទ មិនបើកឡើងវិញទេ។ ថ្លៃ ឬការសងវិញក្រោយ ជាការកែភ្ជាប់ដោយមានមូលហេតុ បញ្ជាក់ដោយអ្នកគ្រប់គ្រង។",
   ],
-  // new: steps 3 to 6 get their buttons in the next updates.
-  later: [
-    "The button for this step comes in the next update.",
-    "ប៊ូតុងសម្រាប់ជំហាននេះ នឹងមកក្នុងការធ្វើបច្ចុប្បន្នភាពបន្ទាប់។",
+  st6_charge: ["Add a charge", "បន្ថែមថ្លៃ"],
+  st6_not_allowed: [
+    "Only people who prepare Final Settlements add a charge here.",
+    "មានតែអ្នករៀបចំការទូទាត់ចុងក្រោយទេ ដែលអាចបន្ថែមថ្លៃនៅទីនេះ។",
+  ],
+  st6_refund_later: [
+    "A refund after closure comes in a later update.",
+    "ការសងវិញក្រោយបិទ នឹងមកក្នុងការធ្វើបច្ចុប្បន្នភាពក្រោយ។",
+  ],
+  st6_approvals: [
+    "Corrections waiting: Waiting for approval",
+    "ការកែដែលកំពុងរង់ចាំ៖ រង់ចាំការអនុម័ត",
+  ],
+  st6_toast: [
+    "Saved as a draft. A Manager confirms it in Waiting for approval.",
+    "បានរក្សាទុកជាសេចក្តីព្រាង។ អ្នកគ្រប់គ្រងបញ្ជាក់វានៅក្នុង រង់ចាំការអនុម័ត។",
+  ],
+  c6_ok: ["Save draft", "រក្សាទុកសេចក្តីព្រាង"],
+  c6_kind: ["Charge for", "ថ្លៃសម្រាប់"],
+  c6_misc: ["Something else", "ផ្សេងទៀត"],
+  c6_damage: ["Damage: {0}", "ការខូចខាត៖ {0}"],
+  c6_what: ["What it is for", "សម្រាប់អ្វី"],
+  c6_reason: ["Reason", "មូលហេតុ"],
+  c6_err: [
+    "Fill in every box marked Required.",
+    "សូមបំពេញប្រអប់ដែលចាំបាច់ទាំងអស់។",
+  ],
+  c6_c: [
+    "{0} is charged on a new Invoice once a Manager confirms it. The closed Final Settlement stays as it is.",
+    "{0} ត្រូវបានគិតថ្លៃលើវិក្កយបត្រថ្មី នៅពេលអ្នកគ្រប់គ្រងបញ្ជាក់។ ការទូទាត់ចុងក្រោយដែលបានបិទ នៅដដែល។",
   ],
   deps_t: ["Deposits", "ប្រាក់កក់"],
   dep_SECURITY: ["Security Deposit", "ប្រាក់កក់សុវត្ថិភាព"],
