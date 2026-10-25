@@ -1068,3 +1068,442 @@ ADJUSTMENT_REVERSAL_CORRECTION_NOT_FOUND = Refusal(
     ("BR-SETTLE-013",),
     ("adjustment_id",),
 )
+# V1-056 slice 11e-3: the post-settlement corrections with a DL-032 plan for the value they
+# release, the Deposit receipt correction and the return reversal.
+CORRECTION_ONE_REFUND_CHOICE = Refusal(
+    422,
+    "CORRECTION_ONE_REFUND_CHOICE",
+    "Use one Refund method, reference note, recipient and agreement for every Refund of this "
+    "correction.",
+    ("BR-SETTLE-013", "BR-REFUND-014"),
+    ("steps",),
+)
+CORRECTION_RETURNED_MONEY_PAYS_DEBT = Refusal(
+    422,
+    "CORRECTION_RETURNED_MONEY_PAYS_DEBT",
+    "Returned Deposit money pays the Lease's open debt first. Add the steps that pay it.",
+    ("BR-SETTLE-013", "BR-SETTLE-008"),
+    ("steps",),
+)
+CORRECTION_RELEASED_CREDIT_FIRST = Refusal(
+    422,
+    "CORRECTION_RELEASED_CREDIT_FIRST",
+    "Credit this correction releases first pays its own Customer's open debt on this Lease. "
+    "Add that step before any Refund.",
+    ("BR-SETTLE-013", "BR-CREDIT-008"),
+    ("steps",),
+)
+CORRECTION_NEW_CUSTOMER_CHOICE = Refusal(
+    422,
+    "CORRECTION_NEW_CUSTOMER_CHOICE",
+    "Record the Customer's choice again for this correction. An earlier choice is not used again.",
+    ("BR-SETTLE-013", "BR-SETTLE-008"),
+    ("pet_remainder",),
+)
+CORRECTION_HELD_VALUE_OVER = Refusal(
+    422,
+    "CORRECTION_HELD_VALUE_OVER",
+    "A held-value correction uses at most what the earlier correction left in each Deposit.",
+    ("BR-SETTLE-013",),
+    ("steps",),
+)
+CORRECTION_STEP_OUTSIDE_SETTLEMENT = Refusal(
+    409,
+    "CORRECTION_STEP_OUTSIDE_SETTLEMENT",
+    "This correction releases a Credit, Deposit or obligation that is not part of this Final "
+    "Settlement.",
+    ("BR-SETTLE-013",),
+)
+CORRECTION_REFUND_OVER_CHARGE = Refusal(
+    422,
+    "CORRECTION_REFUND_OVER_CHARGE",
+    "The Refund is more than the charge.",
+    ("BR-SETTLE-013", "BR-REFUND-014"),
+    ("amount_usd_cents",),
+)
+CORRECTION_REFUND_OVER_PAID = Refusal(
+    422,
+    "CORRECTION_REFUND_OVER_PAID",
+    "The Refund is more than was paid on the charge.",
+    ("BR-SETTLE-013", "BR-REFUND-014"),
+    ("amount_usd_cents",),
+)
+CORRECTION_REFUND_RELEASES_NOTHING = Refusal(
+    409,
+    "CORRECTION_REFUND_RELEASES_NOTHING",
+    "Nothing of this charge is paid. Use a charge reduction for an unpaid charge.",
+    ("BR-SETTLE-013",),
+)
+CORRECTION_REFUNDED_LATE_CHARGE_NOT_OF_SETTLEMENT = Refusal(
+    422,
+    "CORRECTION_REFUNDED_LATE_CHARGE_NOT_OF_SETTLEMENT",
+    "Choose a Late-payment Charge of this Final Settlement's Lease.",
+    ("BR-SETTLE-013",),
+    ("late_payment_charge_id",),
+)
+CORRECTION_PET_LINE_NOT_DAMAGE = Refusal(
+    422,
+    "CORRECTION_PET_LINE_NOT_DAMAGE",
+    "Choose a Damage line billed from a move-out inspection finding of this Lease.",
+    ("BR-SETTLE-013", "BR-SETTLE-008"),
+    ("invoice_line_id",),
+)
+CORRECTION_PET_SAME = Refusal(
+    422,
+    "CORRECTION_PET_SAME",
+    "The line already has this pet classification.",
+    ("BR-SETTLE-013",),
+    ("pet_related",),
+)
+CORRECTION_REFUND_NOT_FOUND = Refusal(
+    422,
+    "CORRECTION_REFUND_NOT_FOUND",
+    "No Refund with this id is in this Property.",
+    ("BR-SETTLE-013",),
+    ("refund_id",),
+)
+CORRECTION_REFUND_NOT_RETURNABLE = Refusal(
+    422,
+    "CORRECTION_REFUND_NOT_RETURNABLE",
+    "Choose a Refund of this Final Settlement or of one of its corrections.",
+    ("BR-SETTLE-013",),
+    ("refund_id",),
+)
+CORRECTION_RETURN_OVER_REFUND = Refusal(
+    422,
+    "CORRECTION_RETURN_OVER_REFUND",
+    "The returned amount is more than the Refund paid.",
+    ("BR-SETTLE-013",),
+    ("returned_amount_usd_cents",),
+)
+CORRECTION_RETURN_DATE = Refusal(
+    422,
+    "CORRECTION_RETURN_DATE",
+    "The return date must not be before the Refund or in the future.",
+    ("BR-SETTLE-013",),
+    ("returned_at",),
+)
+CORRECTION_RETURN_ONLY_NO_STEPS = Refusal(
+    422,
+    "CORRECTION_RETURN_ONLY_NO_STEPS",
+    "A return of a Deposit Refund that only records the return has no steps.",
+    ("BR-SETTLE-013",),
+    ("steps",),
+)
+CORRECTION_RETURNED_DEPOSIT_OFF_PATH = Refusal(
+    409,
+    "CORRECTION_RETURNED_DEPOSIT_OFF_PATH",
+    "This returned Deposit money does not follow DL-032, so it cannot pay debt or be refunded "
+    "again here.",
+    ("BR-SETTLE-013", "BR-SETTLE-008"),
+)
+CORRECTION_HELD_FROM_NOT_FOUND = Refusal(
+    422,
+    "CORRECTION_HELD_FROM_NOT_FOUND",
+    "No correction with this id is in this Final Settlement.",
+    ("BR-SETTLE-013",),
+    ("held_from_correction_id",),
+)
+CORRECTION_HELD_FROM_NOT_RETURN_ONLY = Refusal(
+    422,
+    "CORRECTION_HELD_FROM_NOT_RETURN_ONLY",
+    "Choose a returned-Refund correction that only recorded the return.",
+    ("BR-SETTLE-013",),
+    ("held_from_correction_id",),
+)
+CORRECTION_HELD_VALUE_NOTHING_LEFT = Refusal(
+    409,
+    "CORRECTION_HELD_VALUE_NOTHING_LEFT",
+    "Nothing that the earlier correction held is left to refund.",
+    ("BR-SETTLE-013",),
+)
+CORRECTION_FORFEITURE_NOT_FOUND = Refusal(
+    422,
+    "CORRECTION_FORFEITURE_NOT_FOUND",
+    "No Deposit forfeiture with this id belongs to this Final Settlement's Lease.",
+    ("BR-SETTLE-013", "BR-DEP-027"),
+    ("deposit_disposition_id",),
+)
+CORRECTION_FORFEITURE_ALREADY_REVERSED = Refusal(
+    409,
+    "CORRECTION_FORFEITURE_ALREADY_REVERSED",
+    "This forfeiture is reversed already.",
+    ("BR-SETTLE-013", "BR-DEP-027"),
+)
+CORRECTION_FORFEITURE_OTHER_ACTIVE = Refusal(
+    409,
+    "CORRECTION_FORFEITURE_OTHER_ACTIVE",
+    "Another forfeiture of this Deposit stays active. Reverse it first.",
+    ("BR-SETTLE-013", "BR-DEP-027"),
+)
+RECEIPT_CORRECTION_NOT_FOUND = Refusal(
+    422,
+    "RECEIPT_CORRECTION_NOT_FOUND",
+    "No Deposit receipt with this id is in this Property.",
+    ("BR-SETTLE-013",),
+    ("deposit_receipt_id",),
+)
+RECEIPT_CORRECTION_NOT_OF_SETTLEMENT = Refusal(
+    422,
+    "RECEIPT_CORRECTION_NOT_OF_SETTLEMENT",
+    "Choose a receipt of a Deposit of this Final Settlement's Lease.",
+    ("BR-SETTLE-013",),
+    ("deposit_receipt_id",),
+)
+RECEIPT_CORRECTION_ALREADY_REVERSED = Refusal(
+    409,
+    "RECEIPT_CORRECTION_ALREADY_REVERSED",
+    "This Deposit receipt is reversed already.",
+    ("BR-SETTLE-013",),
+)
+RECEIPT_CORRECTION_PAYMENT_NOT_RECEIVED = Refusal(
+    409,
+    "RECEIPT_CORRECTION_PAYMENT_NOT_RECEIVED",
+    "Only a receipt of a received Payment can be corrected.",
+    ("BR-SETTLE-013",),
+)
+RECEIPT_CORRECTION_DRAFT_WAITING = Refusal(
+    409,
+    "RECEIPT_CORRECTION_DRAFT_WAITING",
+    "A draft on this Deposit receipt, its Deposit or its Payment waits for a decision. Decide "
+    "it first.",
+    ("BR-SETTLE-013", "BR-AUTH-010"),
+)
+RECEIPT_CORRECTION_NO_CHANGE = Refusal(
+    422,
+    "RECEIPT_CORRECTION_NO_CHANGE",
+    "A receipt correction must change the Deposit or the amount.",
+    ("BR-SETTLE-013",),
+    ("receipts",),
+)
+RECEIPT_CORRECTION_DEPOSIT_NOT_FOUND = Refusal(
+    422,
+    "RECEIPT_CORRECTION_DEPOSIT_NOT_FOUND",
+    "No Deposit with this id is in this Property.",
+    ("BR-SETTLE-013",),
+    ("receipts",),
+)
+RECEIPT_CORRECTION_DEPOSIT_NOT_OF_LEASE = Refusal(
+    422,
+    "RECEIPT_CORRECTION_DEPOSIT_NOT_OF_LEASE",
+    "A new receipt goes only into a Deposit of this Final Settlement's Lease.",
+    ("BR-SETTLE-013",),
+    ("receipts",),
+)
+RECEIPT_CORRECTION_DEPOSIT_KEPT = Refusal(
+    422,
+    "RECEIPT_CORRECTION_DEPOSIT_KEPT",
+    "A new receipt cannot go into a Deposit the Property keeps.",
+    ("BR-SETTLE-013", "BR-DEP-027"),
+    ("receipts",),
+)
+RECEIPT_CORRECTION_DEPOSIT_HAS_RECEIPT = Refusal(
+    422,
+    "RECEIPT_CORRECTION_DEPOSIT_HAS_RECEIPT",
+    "This Deposit already holds a receipt from this Payment.",
+    ("BR-SETTLE-013",),
+    ("receipts",),
+)
+RECEIPT_CORRECTION_OVER_REQUIRED = Refusal(
+    422,
+    "RECEIPT_CORRECTION_OVER_REQUIRED",
+    "A new receipt would be more than the Deposit's required amount.",
+    ("BR-SETTLE-013",),
+    ("receipts",),
+)
+RECEIPT_CORRECTION_RECEIPTS_OVER = Refusal(
+    422,
+    "RECEIPT_CORRECTION_RECEIPTS_OVER",
+    "The new receipts take more than the corrected receipt frees.",
+    ("BR-SETTLE-013",),
+    ("receipts",),
+)
+RECEIPT_CORRECTION_PAYMENT_CANNOT_FUND = Refusal(
+    422,
+    "RECEIPT_CORRECTION_PAYMENT_CANNOT_FUND",
+    "The corrected receipt's Payment cannot pay into this Deposit.",
+    ("BR-SETTLE-013",),
+    ("receipts",),
+)
+RECEIPT_CORRECTION_OUTCOME_NEEDED = Refusal(
+    422,
+    "RECEIPT_CORRECTION_OUTCOME_NEEDED",
+    "This Deposit's forfeiture was reversed. Choose DL-032 or a forfeiture again for the new "
+    "receipt.",
+    ("BR-SETTLE-013", "BR-DEP-027"),
+    ("receipts",),
+)
+RECEIPT_CORRECTION_OUTCOME_NOT_TAKEN = Refusal(
+    422,
+    "RECEIPT_CORRECTION_OUTCOME_NOT_TAKEN",
+    "Only a Deposit whose forfeiture was reversed takes a choice of outcome.",
+    ("BR-SETTLE-013", "BR-DEP-027"),
+    ("receipts",),
+)
+RECEIPT_CORRECTION_FORFEIT_NEW_MONEY_ONLY = Refusal(
+    422,
+    "RECEIPT_CORRECTION_FORFEIT_NEW_MONEY_ONLY",
+    "A forfeiture in a receipt correction takes only the new receipt's money.",
+    ("BR-SETTLE-013", "BR-DEP-027"),
+    ("receipts",),
+)
+RECEIPT_CORRECTION_NOTHING_TO_FORFEIT = Refusal(
+    422,
+    "RECEIPT_CORRECTION_NOTHING_TO_FORFEIT",
+    "Nothing beyond the Customer's pay-back money is left to forfeit. Choose DL-032.",
+    ("BR-SETTLE-013", "BR-DEP-027"),
+    ("receipts",),
+)
+RECEIPT_CORRECTION_MIXED_DEPOSIT = Refusal(
+    409,
+    "RECEIPT_CORRECTION_MIXED_DEPOSIT",
+    "A new receipt into a Deposit that holds another Payment's money and the Customer's "
+    "pay-back money is not available yet.",
+    ("BR-SETTLE-013",),
+)
+RECEIPT_CORRECTION_CREDIT_AFTER_REAPPLY = Refusal(
+    422,
+    "RECEIPT_CORRECTION_CREDIT_AFTER_REAPPLY",
+    "A Credit step cannot follow a Deposit use this correction writes again. Refund or apply "
+    "the Customer's Credit first, or correct the receipt without new receipts.",
+    ("BR-SETTLE-013", "BR-SETTLE-008"),
+    ("steps",),
+)
+RECEIPT_CORRECTION_STEP_BEFORE_REAPPLY = Refusal(
+    422,
+    "RECEIPT_CORRECTION_STEP_BEFORE_REAPPLY",
+    "A Deposit step comes before, in the DL-032 order, a Deposit use this correction writes again.",
+    ("BR-SETTLE-013", "BR-SETTLE-008"),
+    ("steps",),
+)
+RECEIPT_CORRECTION_STEP_REPEATS_REAPPLY = Refusal(
+    422,
+    "RECEIPT_CORRECTION_STEP_REPEATS_REAPPLY",
+    "A Deposit step repeats a Deposit use this correction writes again. Split the step.",
+    ("BR-SETTLE-013", "BR-SETTLE-008"),
+    ("steps",),
+)
+RECEIPT_CORRECTION_DEPOSIT_NOT_EMPTY = Refusal(
+    422,
+    "RECEIPT_CORRECTION_DEPOSIT_NOT_EMPTY",
+    "After this correction the Deposit would still hold money the steps must use or refund.",
+    ("BR-SETTLE-013", "BR-SETTLE-008"),
+    ("steps",),
+)
+RECEIPT_CORRECTION_HELD_MONEY_FIRST = Refusal(
+    409,
+    "RECEIPT_CORRECTION_HELD_MONEY_FIRST",
+    "The corrected receipt's Deposit would still hold other money. Pay it out with a "
+    "held-value Refund correction first.",
+    ("BR-SETTLE-013",),
+)
+RECEIPT_CORRECTION_SHARED_DEPOSIT_REFUND = Refusal(
+    409,
+    "RECEIPT_CORRECTION_SHARED_DEPOSIT_REFUND",
+    "A Deposit this Payment paid into also holds another Payment's money and has a Refund that "
+    "is not fully returned.",
+    ("BR-SETTLE-013",),
+)
+RECEIPT_CORRECTION_RESERVATION_REFUND = Refusal(
+    409,
+    "RECEIPT_CORRECTION_RESERVATION_REFUND",
+    "A Reservation Deposit Refund paid from this Payment's money is not fully returned.",
+    ("BR-SETTLE-013",),
+)
+RECEIPT_CORRECTION_RECOVERY_ON_CLOSED_LEASE = Refusal(
+    409,
+    "RECEIPT_CORRECTION_RECOVERY_ON_CLOSED_LEASE",
+    "A Refund paid from this Payment's money would be charged on a Lease with a closed Final "
+    "Settlement. Return the Payment through a returned-Payment correction of that Final "
+    "Settlement.",
+    ("BR-SETTLE-013",),
+)
+RECEIPT_CORRECTION_NO_RECOVERY = Refusal(
+    409,
+    "RECEIPT_CORRECTION_NO_RECOVERY",
+    "A Refund paid from this Deposit has no planned recovery charge.",
+    ("BR-SETTLE-013",),
+)
+RECEIPT_CORRECTION_OTHER_SETTLEMENT_USE = Refusal(
+    409,
+    "RECEIPT_CORRECTION_OTHER_SETTLEMENT_USE",
+    "This Deposit was used by another Final Settlement.",
+    ("BR-SETTLE-013",),
+)
+RECEIPT_CORRECTION_FORFEITURE_ACTIVE = Refusal(
+    409,
+    "RECEIPT_CORRECTION_FORFEITURE_ACTIVE",
+    "This Deposit has an active forfeiture. Reverse it with a forfeiture reversal correction "
+    "first.",
+    ("BR-SETTLE-013", "BR-DEP-027"),
+)
+RECEIPT_CORRECTION_TOO_LARGE = Refusal(
+    409,
+    "RECEIPT_CORRECTION_TOO_LARGE",
+    "This Deposit receipt correction is too large to store. Use fewer steps or shorter notes.",
+    ("BR-SETTLE-013",),
+)
+RETURN_REVERSAL_NOT_FOUND = Refusal(
+    422,
+    "RETURN_REVERSAL_NOT_FOUND",
+    "No returned-Refund correction with this id is in this Final Settlement.",
+    ("BR-SETTLE-013",),
+    ("earlier_correction_id",),
+)
+RETURN_REVERSAL_ALREADY_REVERSED = Refusal(
+    409,
+    "RETURN_REVERSAL_ALREADY_REVERSED",
+    "The return of this correction is reversed already.",
+    ("BR-SETTLE-013",),
+)
+RETURN_REVERSAL_DRAFT_WAITING = Refusal(
+    409,
+    "RETURN_REVERSAL_DRAFT_WAITING",
+    "A return reversal draft of this correction waits for a decision. Decide it first.",
+    ("BR-SETTLE-013", "BR-AUTH-010"),
+)
+RETURN_REVERSAL_REFUND_RETURNED_FIRST = Refusal(
+    409,
+    "RETURN_REVERSAL_REFUND_RETURNED_FIRST",
+    "A Refund paid from the returned money has its own return. Reverse that return first.",
+    ("BR-SETTLE-013",),
+)
+RETURN_REVERSAL_FORFEITED = Refusal(
+    409,
+    "RETURN_REVERSAL_FORFEITED",
+    "A forfeiture kept this return's money, so the return cannot be reversed.",
+    ("BR-SETTLE-013", "BR-DEP-027"),
+)
+RETURN_REVERSAL_VALUE_USED = Refusal(
+    409,
+    "RETURN_REVERSAL_VALUE_USED",
+    "The returned money is used elsewhere now. Undo that use first.",
+    ("BR-SETTLE-013",),
+)
+RETURN_REVERSAL_WAITS_FOR_OWNER = Refusal(
+    409,
+    "RETURN_REVERSAL_WAITS_FOR_OWNER",
+    "The returned money was used in a way this reversal cannot follow yet. Reversing it waits "
+    "for the owner.",
+    ("BR-SETTLE-013",),
+)
+RETURN_REVERSAL_TOO_LARGE = Refusal(
+    409,
+    "RETURN_REVERSAL_TOO_LARGE",
+    "This return reversal is too large to store.",
+    ("BR-SETTLE-013",),
+)
+CORRECTION_REFUND_METHOD_OFF = Refusal(
+    422,
+    "CORRECTION_REFUND_METHOD_OFF",
+    "This Refund method is not an active method. Choose an active method.",
+    ("BR-SETTLE-013", "BR-REFUND-014"),
+    ("refund_method_id",),
+)
+CORRECTION_NEW_REFUND_METHOD_OFF = Refusal(
+    422,
+    "CORRECTION_NEW_REFUND_METHOD_OFF",
+    "This Refund method is not an active method. Choose an active method.",
+    ("BR-SETTLE-013", "BR-REFUND-014"),
+    ("new_refund_method_id",),
+)

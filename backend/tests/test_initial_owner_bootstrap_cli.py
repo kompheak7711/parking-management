@@ -872,6 +872,24 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/corrections/payment-moves": {"post"},
         "/api/v1/properties/{property_id}/final-settlements/{settlement_id}"
         "/corrections/adjustment-reversals": {"post"},
+        # V1-056 slice 11e-3: the corrections with a DL-032 plan and the return reversal.
+        "/api/v1/properties/{property_id}/final-settlements/{settlement_id}/corrections/refunds": {
+            "post"
+        },
+        "/api/v1/properties/{property_id}/final-settlements/{settlement_id}"
+        "/corrections/late-charge-refunds": {"post"},
+        "/api/v1/properties/{property_id}/final-settlements/{settlement_id}"
+        "/corrections/pet-classifications": {"post"},
+        "/api/v1/properties/{property_id}/final-settlements/{settlement_id}"
+        "/corrections/refund-returns": {"post"},
+        "/api/v1/properties/{property_id}/final-settlements/{settlement_id}"
+        "/corrections/held-value-refunds": {"post"},
+        "/api/v1/properties/{property_id}/final-settlements/{settlement_id}"
+        "/corrections/forfeiture-reversals": {"post"},
+        "/api/v1/properties/{property_id}/final-settlements/{settlement_id}"
+        "/corrections/deposit-receipt-corrections": {"post"},
+        "/api/v1/properties/{property_id}/final-settlements/{settlement_id}"
+        "/corrections/return-reversals": {"post"},
         "/api/v1/properties/{property_id}/invoice-adjustments/{adjustment_id}/reversal-drafts": {
             "post"
         },

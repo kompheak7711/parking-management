@@ -158,6 +158,29 @@ def test_every_named_refusal_message_is_still_raised_at_head(
         ADJUSTMENT_REVERSAL_REFUSALS,
     ):
         messages |= set(table)
+    # Slice 11e-3: the corrections with a DL-032 plan and the return reversal.
+    from property_rental.settlement_correction_api import (
+        FORFEITURE_REVERSAL_REFUSALS,
+        HELD_VALUE_REFUND_REFUSALS,
+        LATE_CHARGE_REFUND_REFUSALS,
+        PET_CLASSIFICATION_REFUSALS,
+        RECEIPT_CORRECTION_REFUSALS,
+        REFUND_CORRECTION_REFUSALS,
+        REFUND_RETURN_REFUSALS,
+        RETURN_REVERSAL_REFUSALS,
+    )
+
+    for table in (
+        REFUND_CORRECTION_REFUSALS,
+        LATE_CHARGE_REFUND_REFUSALS,
+        PET_CLASSIFICATION_REFUSALS,
+        REFUND_RETURN_REFUSALS,
+        HELD_VALUE_REFUND_REFUSALS,
+        FORFEITURE_REVERSAL_REFUSALS,
+        RECEIPT_CORRECTION_REFUSALS,
+        RETURN_REVERSAL_REFUSALS,
+    ):
+        messages |= set(table)
     messages.add(END_DATE_NOT_MONTH_END)
     with psycopg.connect(migrated_database_url) as connection:
         missing = [

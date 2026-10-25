@@ -50792,6 +50792,119 @@
       "test_path": "backend/tests/test_settlement_correction_api_migration.py",
       "status": "implemented",
       "notes": "On PostgreSQL an invoices.adjust holder records the Adjustment reversal draft (a final_settlements.prepare holder gets 404), a second answers ADJUSTMENT_REVERSAL_DRAFT_WAITING, an unknown Adjustment 404, and the approver rejects it (V1-056 slice 11e-2, post-settlement correction routes; ops/reviews/V1-056-slice-11e-2.md)."
+    },
+    {
+      "test_id": "test_each_plan_correction_draft_is_recorded_from_its_form",
+      "upstream_ids": [
+        "API-072",
+        "BR-SETTLE-013",
+        "BR-SETTLE-008",
+        "BR-REFUND-014"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_plan_correction_api.py",
+      "status": "implemented",
+      "notes": "Each of the eight routes (Refund, Late-payment Charge Refund, pet classification, returned Refund, held-value Refund, forfeiture reversal, Deposit receipt correction, return reversal) turns its form and its DL-032 steps into the service command and answers 201 with the recorded draft (V1-056 slice 11e-3, post-settlement correction routes with a DL-032 plan; ops/reviews/V1-056-slice-11e-3.md)."
+    },
+    {
+      "test_id": "test_a_refund_return_records_the_instant_it_was_returned",
+      "upstream_ids": [
+        "API-072"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_plan_correction_api.py",
+      "status": "implemented",
+      "notes": "The return instant with its offset reaches the command as the same instant (V1-056 slice 11e-3, post-settlement correction routes with a DL-032 plan; ops/reviews/V1-056-slice-11e-3.md)."
+    },
+    {
+      "test_id": "test_each_plan_route_needs_final_settlements_prepare",
+      "upstream_ids": [
+        "API-072",
+        "BR-AUTH-010"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_plan_correction_api.py",
+      "status": "implemented",
+      "notes": "An approver or a preparer of another Property gets a hidden 404 before any command (V1-056 slice 11e-3, post-settlement correction routes with a DL-032 plan; ops/reviews/V1-056-slice-11e-3.md)."
+    },
+    {
+      "test_id": "test_a_bad_plan_form_is_refused_on_its_field_before_any_command",
+      "upstream_ids": [
+        "API-072"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_plan_correction_api.py",
+      "status": "implemented",
+      "notes": "A zero amount, a reason over 500 characters, an unknown step kind, over 200 steps, a blank or untrimmed text, a text pet classification, a return time with no offset, a number or a space separator, a new Refund method without its note, more than two receipts, an unknown outcome or an outcome without its reason, two receipts into one Deposit, a plan with no new receipt, or steps on a return reversal answers 422 on that field before any command (V1-056 slice 11e-3, post-settlement correction routes with a DL-032 plan; ops/reviews/V1-056-slice-11e-3.md)."
+    },
+    {
+      "test_id": "test_a_correction_with_no_steps_is_recorded_with_an_empty_plan",
+      "upstream_ids": [
+        "API-072",
+        "BR-SETTLE-013"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_plan_correction_api.py",
+      "status": "implemented",
+      "notes": "A correction whose released value pays nothing records no step and no Pet Deposit remainder decision (V1-056 slice 11e-3, post-settlement correction routes with a DL-032 plan; ops/reviews/V1-056-slice-11e-3.md)."
+    },
+    {
+      "test_id": "test_each_named_plan_correction_refusal_answers_its_own_code",
+      "upstream_ids": [
+        "API-072",
+        "BR-SETTLE-013",
+        "BR-SETTLE-008",
+        "BR-DEP-027"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_plan_correction_api.py",
+      "status": "implemented",
+      "notes": "Each database message a plan correction route names answers its own status, code, rule ids and fields, with only the refusal's own words (V1-056 slice 11e-3, post-settlement correction routes with a DL-032 plan; ops/reviews/V1-056-slice-11e-3.md)."
+    },
+    {
+      "test_id": "test_the_plan_correction_codes_are_pinned",
+      "upstream_ids": [
+        "API-072",
+        "BR-SETTLE-008"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_plan_correction_api.py",
+      "status": "implemented",
+      "notes": "Every plan correction names the shared plan refusals; the DL-032 rules answer as the Final Settlement draft does; a Refund method named in the form answers on that field (CORRECTION_REFUND_METHOD_OFF or CORRECTION_NEW_REFUND_METHOD_OFF), one named only in a step answers on steps; the return reversal has no plan refusal; every named refusal is 409 or a 422 with its fields (V1-056 slice 11e-3, post-settlement correction routes with a DL-032 plan; ops/reviews/V1-056-slice-11e-3.md)."
+    },
+    {
+      "test_id": "test_an_answer_for_another_plan_correction_is_never_shown",
+      "upstream_ids": [
+        "API-072",
+        "BR-AUTH-010"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_plan_correction_api.py",
+      "status": "implemented",
+      "notes": "A recorded draft of another Property, kind, variant, Settlement or record than the path and form name is never shown (503) (V1-056 slice 11e-3, post-settlement correction routes with a DL-032 plan; ops/reviews/V1-056-slice-11e-3.md)."
+    },
+    {
+      "test_id": "test_an_invoice_line_refund_and_a_late_charge_refund_are_told_apart",
+      "upstream_ids": [
+        "API-072"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_plan_correction_api.py",
+      "status": "implemented",
+      "notes": "The Invoice line and Late-payment Charge Refund routes each refuse to show the other's REFUND draft (V1-056 slice 11e-3, post-settlement correction routes with a DL-032 plan; ops/reviews/V1-056-slice-11e-3.md)."
+    },
+    {
+      "test_id": "test_a_refund_correction_is_recorded_and_confirmed_over_http_and_records_are_checked",
+      "upstream_ids": [
+        "API-072",
+        "BR-SETTLE-013",
+        "BR-REFUND-014",
+        "BR-AUTH-010"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_settlement_plan_correction_api_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL an open Settlement answers CORRECTION_SETTLEMENT_NOT_CLOSED; after the real closure an inactive or unknown method answers 422 CORRECTION_REFUND_METHOD_OFF on refund_method_id and too large an amount 422 on its field; the Refund correction records, passes the answer check and is confirmed through the shared route; each other route's unknown or unfit record answers 422 on its field with no database text (V1-056 slice 11e-3, post-settlement correction routes with a DL-032 plan; ops/reviews/V1-056-slice-11e-3.md)."
     }
   ]
 }

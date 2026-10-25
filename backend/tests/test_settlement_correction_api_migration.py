@@ -166,7 +166,10 @@ def test_a_charge_reduction_and_its_adjustment_reversal_are_recorded_over_http(
         (409, "ADJUSTMENT_REVERSAL_OF_CORRECTION"),
         (409, "ADJUSTMENT_REVERSAL_THROUGH_CORRECTION"),
     }
-    reversal = {"adjustment_id": str(adjustment), "reason": "The reduction was recorded by mistake"}
+    reversal: dict[str, object] = {
+        "adjustment_id": str(adjustment),
+        "reason": "The reduction was recorded by mistake",
+    }
     unknown = post("adjustment-reversals", {**reversal, "adjustment_id": str(uuid4())})
     assert _code(unknown) == (422, "ADJUSTMENT_REVERSAL_CORRECTION_NOT_FOUND")
     assert unknown.json()["error"]["fields"] == ["adjustment_id"]

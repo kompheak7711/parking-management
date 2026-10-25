@@ -1540,6 +1540,63 @@ reversal, Deposit receipt correction) follow in slice 11e-3.
   `_BY_RESOLUTION`, `_OF_CORRECTION`, `_THROUGH_CORRECTION`, `_ONLY_CHARGE_REDUCTION`,
   `_DRAFT_WAITING`, `_TOO_LARGE`). No answer shows database text.
 
+V1-056 slice 11e-3 (2026-10-25; no migration; BR-SETTLE-008, BR-SETTLE-012, BR-SETTLE-013,
+BR-REFUND-014, BR-CREDIT-008, BR-DEP-027, BR-AUTH-010): the post-settlement correction routes
+with a DL-032 plan for the value they release, the Deposit receipt correction and the return
+reversal. Decided by Claude under the owner's 2026-10-23 22:30 rule: one route per correction
+kind, as in slice 11e-2; the plan uses the Final Settlement `steps` and `pet_remainder` format of
+slice 11e-1, and both may be left out when the released value pays nothing.
+
+- Every route is `POST` under
+  `/properties/{property_id}/final-settlements/{settlement_id}/corrections`, needs
+  `final_settlements.prepare` (others a hidden 404), Origin, CSRF and an `Idempotency-Key`, and
+  answers 201 with the pending `SETTLEMENT_CORRECTION` draft. Every text of the correction form is
+  1 to 500 characters; the plan's `staff_reason` is up to 1000 and its `customer_choice` and
+  `signer_agreement` up to 2000, as in slice 11e-1.
+  A `financial.approve` holder confirms it through the shared draft confirm.
+- `/refunds` (variant `REFUND`): `invoice_id`, `invoice_line_id`, `amount_usd_cents`,
+  `refund_method_id`, `reference_note`, `reason`, plan.
+- `/late-charge-refunds` (variant `REFUND`, target kind `LATE_PAYMENT_CHARGE`):
+  `late_payment_charge_id`, `amount_usd_cents`, `refund_method_id`, `reference_note`, `reason`,
+  plan.
+- `/pet-classifications` (variant `PET_DAMAGE_RECLASSIFICATION`): `invoice_id`,
+  `invoice_line_id`, `pet_related` (true or false), `evidence_reference`, `reason`, plan.
+- `/refund-returns` (variant `REFUND_RETURN`): `refund_id`, `returned_amount_usd_cents`,
+  `returned_at` (an instant with its offset), `return_method_reference`, `evidence_reference`,
+  `reason`, optional `new_refund_method_id` with `new_refund_reference_note` (together), plan.
+- `/held-value-refunds` (variant `HELD_VALUE_REFUND`): `held_from_correction_id`, `reason`,
+  `new_refund_method_id`, `new_refund_reference_note`, plan.
+- `/forfeiture-reversals` (variant `FORFEITURE_REVERSAL`): `deposit_disposition_id`, `reason`,
+  `evidence_reference`, `refund_method_id`, `reference_note`, plan.
+- `/deposit-receipt-corrections` (variant `DEPOSIT_RECEIPT_CORRECTION`): `deposit_receipt_id`,
+  `reason`, `evidence_reference`, optional `receipts` (at most 2, each `deposit_id`,
+  `amount_usd_cents` and an optional `outcome` `DL_032` or `FORFEIT` with `outcome_reason`; each
+  into a different Deposit), plan only with a new receipt.
+- `/return-reversals` (variant `RETURN_REVERSAL`): `earlier_correction_id`, `reason`,
+  `evidence_reference`; no plan.
+- Named refusals: every plan route answers the closed-Settlement code, 409
+  `CORRECTION_SOURCE_DRAFT_WAITING`, the Final Settlement state codes and the slice 11e-1 plan
+  codes on `steps` or `pet_remainder`, plus 422 `CORRECTION_ONE_REFUND_CHOICE`,
+  `_RETURNED_MONEY_PAYS_DEBT`, `_RELEASED_CREDIT_FIRST`, `_HELD_VALUE_OVER` (on `steps`),
+  `_NEW_CUSTOMER_CHOICE` (on `pet_remainder`) and 409 `_STEP_OUTSIDE_SETTLEMENT`. An inactive or
+  unknown Refund method is 422 `CORRECTION_REFUND_METHOD_OFF` on `refund_method_id` (refunds,
+  late-charge refunds, forfeiture reversals), `CORRECTION_NEW_REFUND_METHOD_OFF` on
+  `new_refund_method_id` (refund returns, held-value refunds), or the slice 11e-1
+  `FINAL_SETTLEMENT_REFUND_METHOD_OFF` on `steps` where only a step names it. On
+  `/deposit-receipt-corrections` a new receipt into a Deposit of no Lease or of another Lease
+  that is not terminated is 422 `RECEIPT_CORRECTION_DEPOSIT_NOT_OF_LEASE` on `receipts`. Each
+  route adds its own: 422 on the field that chose an unknown or unfit record (`CORRECTION_REFUND_OVER_CHARGE`, `_REFUND_OVER_PAID`,
+  `_REFUNDED_LATE_CHARGE_NOT_OF_SETTLEMENT`, `_PET_LINE_NOT_DAMAGE`, `_PET_SAME`,
+  `_REFUND_NOT_FOUND`, `_REFUND_NOT_RETURNABLE`, `_RETURN_OVER_REFUND`, `_RETURN_DATE`,
+  `_RETURN_ONLY_NO_STEPS`, `_HELD_FROM_NOT_FOUND`, `_HELD_FROM_NOT_RETURN_ONLY`,
+  `_FORFEITURE_NOT_FOUND`, the `RECEIPT_CORRECTION_` codes on `deposit_receipt_id`, `receipts`
+  or `steps`, `RETURN_REVERSAL_NOT_FOUND`) and 409 for a business state
+  (`CORRECTION_REFUND_RELEASES_NOTHING`, `_RETURNED_DEPOSIT_OFF_PATH`,
+  `_HELD_VALUE_NOTHING_LEFT`, `_FORFEITURE_ALREADY_REVERSED`, `_FORFEITURE_OTHER_ACTIVE`, the
+  other `RECEIPT_CORRECTION_` and `RETURN_REVERSAL_` codes; a return reversal the database cannot
+  follow yet is `RETURN_REVERSAL_WAITS_FOR_OWNER`). At the shared confirm a correction draft
+  keeps the plain answers for now. No answer shows database text.
+
 # 23. Audit Endpoints
 
 ## API-073 — Record Audit
