@@ -51837,6 +51837,29 @@
       "test_path": "backend/tests/test_sign_in_prune_migration.py",
       "status": "implemented",
       "notes": "The prune command refuses arguments and a missing database address without printing it (V1-056 slice 12c, removal of wrong sign-in tries older than 30 days; DL-092; ops/reviews/V1-056-slice-12c.md)."
+    },
+    {
+      "test_id": "test_a_waiting_refund_return_that_gives_value_back_to_a_credit_holds_the_other_lease",
+      "upstream_ids": [
+        "DL-093",
+        "BR-SETTLE-002",
+        "BR-SETTLE-013",
+        "BR-CREDIT-008"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_settlement_preview_refund_return_wait_migration.py",
+      "status": "implemented",
+      "notes": "A waiting REFUND_RETURN correction draft that gives value back to the Customer's Credit holds the Customer's other Lease's Settlement until it is withdrawn (V1-056 slice 12d; owner answer (a) to Q-2026-10-20-149; ops/reviews/V1-056-slice-12d.md)."
+    },
+    {
+      "test_id": "test_the_refund_return_wait_migration_changes_only_the_preview_and_is_forward_only",
+      "upstream_ids": [
+        "DL-093"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_settlement_preview_refund_return_wait_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20270218_206 changes only the body of app.final_settlement_preview, once, and is forward-only (V1-056 slice 12d; ops/reviews/V1-056-slice-12d.md)."
     }
   ]
 }

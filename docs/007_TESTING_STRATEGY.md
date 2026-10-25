@@ -518,6 +518,8 @@ V1-056 slice 12b: `backend/tests/test_late_utility_run_migration.py` (PostgreSQL
 
 V1-056 slice 12c: `backend/tests/test_sign_in_prune_migration.py` (PostgreSQL: the prune command, one username per batch, removes old waits, old clears and the old tries no remaining row names, a lone old try included, keeps a try a newer clear names and a latest clear whose try a remaining wait names, leaves every cleared count at 0, and removes nothing on a second run; bad bounds are refused; a DELETE outside the prune or of a recent row, an UPDATE and a TRUNCATE are refused; no application role may run the prune or delete; the command takes no arguments and needs a database); `backend/tests/test_local_run_scripts.py` lists the new local script.
 
+V1-056 slice 12d: `backend/tests/test_settlement_preview_refund_return_wait_migration.py` (PostgreSQL: a waiting `REFUND_RETURN` correction draft whose plan overlay gives value back to a Credit of the Customer holds the Customer's other Lease's Settlement preview and its draft record (55000, nothing written) and is not listed for its own Settlement; after the withdrawal the other Lease closes; the migration changes only the preview's body, once, and is forward-only). DL-093.
+
 # 12. Payment, Allocation, Credit, Refund, and Reversal Coverage
 
 ## TEST-059 — Payment Confirmation

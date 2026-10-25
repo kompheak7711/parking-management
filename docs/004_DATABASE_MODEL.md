@@ -2878,6 +2878,8 @@ variant whose plan (`payload->'plan'->'steps'`, read only when an array) has a `
 step on a Credit held by a Settlement Customer, or of the variant `REFUND` whose plan overlay
 (`payload->'plan_overlay'->'credits'`, read only when an object) has a key that is such a Credit
 (a released Payment allocation is keyed by its allocation and is not listed);
+since V1-056 slice 12d (migration `20270218_206`; owner answer (a) to Q-2026-10-20-149, DL-093)
+also such a draft of the variant `REFUND_RETURN`, by the same plan-overlay rule;
 `ONE_TIME_CHARGE_NOT_INVOICED` for a one-time charge source of the Lease on
 no DRAFT or issued, non-VOID Invoice that is still waiting to be billed (not one whose Invoice was
 VOIDed and not one a draft correction replaced, read from `app.invoice_draft_revision_events`;

@@ -156,6 +156,7 @@ database_test_suites='
   tests/test_settings_evidence_hand_back_keep_migration.py
   tests/test_late_utility_run_migration.py
   tests/test_sign_in_prune_migration.py
+  tests/test_settlement_preview_refund_return_wait_migration.py
   tests/test_payment_migration.py
   tests/test_payment_read_migration.py
   tests/test_financial_reference_migration.py

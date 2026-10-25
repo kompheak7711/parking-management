@@ -2167,3 +2167,10 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Decided by Claude under the owner's 2026-10-23 22:30 rule:** once removed, a username's uncleared wrong tries older than 30 days no longer count toward a wait (Q-2026-10-23-176 counts "in a row" with no time limit; the removal the owner chose ends that after 30 days). Removal is by hand, once a month suggested in the README; no automatic job.
 - **Migration head:** `20270217_205`.
 - **Decision date:** 2026-10-25.
+
+## DL-093 — V1-056 slice 12d: a waiting REFUND_RETURN correction also holds the other Lease's Settlement
+
+- **Type:** `IMPLEMENTATION RECORD`
+- **Built (migration `20270218_206`):** owner answer (a) to Q-2026-10-20-149 (BR-SETTLE-002, BR-SETTLE-012, BR-SETTLE-013, BR-CREDIT-008, DL-032). `app.final_settlement_preview` lists another Settlement's waiting `REFUND_RETURN` correction draft whose plan overlay gives value back to a Credit held by a person of the Lease, the same way as a `REFUND` draft since sub-slice 10i-4c (`PENDING_DRAFT`, blocking). That Lease's Settlement waits until the draft is confirmed, rejected or withdrawn. No amount rule changes, only the order. As with 10i-4c, while such a draft waits a closed Settlement of that Customer takes no correction step that the preview check covers (55000), and two drafts recorded at the same moment can hold each other until one is withdrawn. One exact-text change of the preview's filter; same signature, owner, settings and privileges.
+- **Migration head:** `20270218_206`.
+- **Decision date:** 2026-10-25.
