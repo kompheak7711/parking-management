@@ -821,3 +821,250 @@ FINAL_SETTLEMENT_TOO_LARGE = Refusal(
     ("BR-SETTLE-002",),
     ("steps",),
 )
+# V1-056 slice 11e-2: the post-settlement correction drafts with no DL-032 plan and the
+# Adjustment reversal draft. A record the form chose answers 422 on its field; state answers 409.
+CORRECTION_SETTLEMENT_NOT_CLOSED = Refusal(
+    409,
+    "CORRECTION_SETTLEMENT_NOT_CLOSED",
+    "A post-settlement correction is only for a closed Final Settlement. Use the Final "
+    "Settlement draft instead.",
+    ("BR-SETTLE-013",),
+)
+CORRECTION_SOURCE_DRAFT_WAITING = Refusal(
+    409,
+    "CORRECTION_SOURCE_DRAFT_WAITING",
+    "A draft on a record of this Final Settlement waits for a decision. Decide it first.",
+    ("BR-AUTH-010",),
+)
+CORRECTION_DAMAGE_TO_PRIMARY = Refusal(
+    422,
+    "CORRECTION_DAMAGE_TO_PRIMARY",
+    "A Damage charge goes to the Primary Tenant. Choose an Invoice of the Primary Tenant, or none.",
+    (
+        "BR-SETTLE-013",
+        "BR-INV-044",
+    ),
+    ("corrects_invoice_id",),
+)
+CORRECTION_CORRECTED_INVOICE_NOT_OF_SETTLEMENT = Refusal(
+    422,
+    "CORRECTION_CORRECTED_INVOICE_NOT_OF_SETTLEMENT",
+    "Choose an issued Invoice of this Final Settlement's Lease.",
+    ("BR-SETTLE-013",),
+    ("corrects_invoice_id",),
+)
+CORRECTION_FINDING_BILLED = Refusal(
+    409,
+    "CORRECTION_FINDING_BILLED",
+    "This damage finding is billed already.",
+    ("BR-INV-044",),
+)
+CORRECTION_FINDING_NOT_CURRENT = Refusal(
+    422,
+    "CORRECTION_FINDING_NOT_CURRENT",
+    "Choose a damage finding of the current move-out inspection.",
+    ("BR-INV-044",),
+    ("inspection_damage_finding_id",),
+)
+CORRECTION_DUE_DATE_BEFORE_ISSUE = Refusal(
+    422,
+    "CORRECTION_DUE_DATE_BEFORE_ISSUE",
+    "The Due Date cannot be before the issue date.",
+    ("BR-SETTLE-013",),
+    ("due_date",),
+)
+CORRECTION_PAID_BY_DEPOSIT = Refusal(
+    409,
+    "CORRECTION_PAID_BY_DEPOSIT",
+    "A Deposit paid this charge at Final Settlement, so it cannot be reduced this way.",
+    ("BR-SETTLE-013",),
+)
+CORRECTION_WOULD_RELEASE_PAID = Refusal(
+    409,
+    "CORRECTION_WOULD_RELEASE_PAID",
+    "This reduction is more than the unpaid part of the charge. A paid part is given back with "
+    "a Refund correction.",
+    ("BR-SETTLE-013",),
+)
+CORRECTION_REDUCED_INVOICE_NOT_OF_SETTLEMENT = Refusal(
+    422,
+    "CORRECTION_REDUCED_INVOICE_NOT_OF_SETTLEMENT",
+    "Choose an issued Invoice of this Final Settlement's Lease.",
+    ("BR-SETTLE-013",),
+    ("invoice_id",),
+)
+CORRECTION_INVOICE_LINE_NOT_FOUND = Refusal(
+    422,
+    "CORRECTION_INVOICE_LINE_NOT_FOUND",
+    "No line with this id is on the chosen Invoice.",
+    ("BR-SETTLE-013",),
+    ("invoice_line_id",),
+)
+CORRECTION_LATE_CHARGE_NOT_OF_SETTLEMENT = Refusal(
+    422,
+    "CORRECTION_LATE_CHARGE_NOT_OF_SETTLEMENT",
+    "Choose an open Late-payment Charge of this Final Settlement's Lease.",
+    ("BR-SETTLE-013",),
+    ("late_payment_charge_id",),
+)
+ADJUSTMENT_REVERSAL_NOT_CREDIT = Refusal(
+    409,
+    "ADJUSTMENT_REVERSAL_NOT_CREDIT",
+    "Only a credit Adjustment can be reversed this way.",
+    ("BR-INV-044",),
+)
+ADJUSTMENT_REVERSAL_ALREADY_REVERSED = Refusal(
+    409,
+    "ADJUSTMENT_REVERSAL_ALREADY_REVERSED",
+    "This Adjustment is reversed already.",
+    ("BR-INV-044",),
+)
+ADJUSTMENT_REVERSAL_INVOICE_NOT_ISSUED = Refusal(
+    409,
+    "ADJUSTMENT_REVERSAL_INVOICE_NOT_ISSUED",
+    "This Adjustment's Invoice is not issued.",
+    ("BR-INV-044",),
+)
+ADJUSTMENT_REVERSAL_BY_RESOLUTION = Refusal(
+    409,
+    "ADJUSTMENT_REVERSAL_BY_RESOLUTION",
+    "A resolution wrote this Adjustment, so it cannot be reversed this way.",
+    ("BR-INV-044",),
+)
+ADJUSTMENT_REVERSAL_OF_CORRECTION = Refusal(
+    409,
+    "ADJUSTMENT_REVERSAL_OF_CORRECTION",
+    "A post-settlement correction wrote this Adjustment. Reverse it through a correction of "
+    "that Final Settlement.",
+    ("BR-SETTLE-013",),
+)
+ADJUSTMENT_REVERSAL_THROUGH_CORRECTION = Refusal(
+    409,
+    "ADJUSTMENT_REVERSAL_THROUGH_CORRECTION",
+    "The Lease's Final Settlement is closed. Reverse this Adjustment through a correction of "
+    "that Final Settlement.",
+    ("BR-SETTLE-013",),
+)
+ADJUSTMENT_REVERSAL_NOT_OF_SETTLEMENT = Refusal(
+    422,
+    "ADJUSTMENT_REVERSAL_NOT_OF_SETTLEMENT",
+    "Choose an Adjustment on an Invoice of this Final Settlement's Lease.",
+    ("BR-SETTLE-013",),
+    ("adjustment_id",),
+)
+ADJUSTMENT_REVERSAL_ONLY_CHARGE_REDUCTION = Refusal(
+    409,
+    "ADJUSTMENT_REVERSAL_ONLY_CHARGE_REDUCTION",
+    "Of the Adjustments that corrections wrote, only a charge reduction's can be reversed.",
+    ("BR-SETTLE-013",),
+)
+ADJUSTMENT_REVERSAL_DRAFT_WAITING = Refusal(
+    409,
+    "ADJUSTMENT_REVERSAL_DRAFT_WAITING",
+    "A reversal draft of this Adjustment waits for a decision. Decide it first.",
+    ("BR-AUTH-010",),
+)
+ADJUSTMENT_REVERSAL_TOO_LARGE = Refusal(
+    409,
+    "ADJUSTMENT_REVERSAL_TOO_LARGE",
+    "This Adjustment reversal is too large for one draft.",
+    ("BR-INV-044",),
+)
+RETURNED_PAYMENT_DEPOSIT_MIXED = Refusal(
+    409,
+    "RETURNED_PAYMENT_DEPOSIT_MIXED",
+    "A Deposit this Payment paid also holds another Payment's money beside a forfeiture and "
+    "a Deposit use. This correction cannot return the Payment.",
+    ("BR-SETTLE-013",),
+)
+RETURNED_PAYMENT_OTHER_SETTLEMENT_USE = Refusal(
+    409,
+    "RETURNED_PAYMENT_OTHER_SETTLEMENT_USE",
+    "A Deposit this Payment paid was used by another Final Settlement.",
+    ("BR-SETTLE-013",),
+)
+RETURNED_PAYMENT_PAY_BACK_HELD = Refusal(
+    409,
+    "RETURNED_PAYMENT_PAY_BACK_HELD",
+    "A Deposit this Payment paid holds the Customer's pay-back money beside a forfeiture. "
+    "This correction cannot return the Payment.",
+    ("BR-SETTLE-013",),
+)
+RETURNED_PAYMENT_DEPOSIT_LEFT = Refusal(
+    409,
+    "RETURNED_PAYMENT_DEPOSIT_LEFT",
+    "A Deposit this Payment paid would still hold money after the return.",
+    ("BR-SETTLE-013",),
+)
+RETURNED_PAYMENT_TWO_SETTLEMENTS = Refusal(
+    409,
+    "RETURNED_PAYMENT_TWO_SETTLEMENTS",
+    "Two closed Final Settlements relied on this Payment, so it cannot be returned.",
+    ("BR-SETTLE-013",),
+)
+RETURNED_PAYMENT_OTHER_SETTLEMENT = Refusal(
+    409,
+    "RETURNED_PAYMENT_OTHER_SETTLEMENT",
+    "This Final Settlement did not rely on this Payment. Return it through a correction of "
+    "the Final Settlement that did.",
+    ("BR-SETTLE-013",),
+)
+RETURNED_PAYMENT_USE_RETURN_DRAFT = Refusal(
+    409,
+    "RETURNED_PAYMENT_USE_RETURN_DRAFT",
+    "This Final Settlement did not rely on this Payment. Return it with a Payment return draft.",
+    ("BR-SETTLE-013",),
+)
+RETURNED_PAYMENT_NOT_FOUND = Refusal(
+    422,
+    "RETURNED_PAYMENT_NOT_FOUND",
+    "No Payment with this id is in this Property.",
+    ("BR-SETTLE-013",),
+    ("payment_id",),
+)
+MOVE_CORRECTION_OTHER_SETTLEMENT = Refusal(
+    409,
+    "MOVE_CORRECTION_OTHER_SETTLEMENT",
+    "A correction of another Final Settlement wrote this allocation, so this correction "
+    "cannot move it.",
+    (
+        "BR-SETTLE-013",
+        "BR-PAY-042",
+    ),
+)
+MOVE_CORRECTION_USE_MOVE_DRAFT = Refusal(
+    409,
+    "MOVE_CORRECTION_USE_MOVE_DRAFT",
+    "This allocation was made after the closure. Move it with the ordinary move draft.",
+    ("BR-PAY-042",),
+)
+MOVE_CORRECTION_NOT_OF_SETTLEMENT = Refusal(
+    422,
+    "MOVE_CORRECTION_NOT_OF_SETTLEMENT",
+    "Choose an allocation that pays an Invoice of this Final Settlement's Lease.",
+    (
+        "BR-SETTLE-013",
+        "BR-PAY-042",
+    ),
+    ("allocation_id",),
+)
+MOVE_CORRECTION_ALLOCATION_NOT_FOUND = Refusal(
+    422,
+    "MOVE_CORRECTION_ALLOCATION_NOT_FOUND",
+    "No Payment allocation with this id is in this Property.",
+    ("BR-PAY-042",),
+    ("allocation_id",),
+)
+MOVE_CORRECTION_ALLOCATION_REVERSED = Refusal(
+    409,
+    "MOVE_CORRECTION_ALLOCATION_REVERSED",
+    "This allocation is reversed already.",
+    ("BR-PAY-042",),
+)
+ADJUSTMENT_REVERSAL_CORRECTION_NOT_FOUND = Refusal(
+    422,
+    "ADJUSTMENT_REVERSAL_CORRECTION_NOT_FOUND",
+    "No Invoice Adjustment with this id is in this Property.",
+    ("BR-SETTLE-013",),
+    ("adjustment_id",),
+)

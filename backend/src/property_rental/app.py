@@ -213,6 +213,11 @@ from property_rental.runtime_secrets import (
 )
 from property_rental.session_actor import PostgresSessionActorResolver
 from property_rental.settings import Settings
+from property_rental.settlement_correction_api import (
+    CorrectionFlow,
+    PostgresCorrectionFlow,
+    create_settlement_correction_router,
+)
 from property_rental.unit_api import (
     PostgresUnitResourceFlow,
     UnavailableUnitResourceFlow,
@@ -488,6 +493,7 @@ def create_app(
     financial_draft_flow: FinancialDraftFlow | None = None,
     draft_record_flow: DraftRecordFlow | None = None,
     final_settlement_flow: FinalSettlementFlow | None = None,
+    settlement_correction_flow: CorrectionFlow | None = None,
     customer_ledger_flow: CustomerLedgerFlow | None = None,
 ) -> FastAPI:
     """Build an application instance from validated settings."""
@@ -1438,6 +1444,18 @@ def create_app(
                 resolved_settings.financial_database_url.get_secret_value()
                 if resolved_settings.financial_database_url is not None
                 else None,
+            ),
+            resolved_settings,
+        )
+    )
+    include_signed_in(
+        create_settlement_correction_router(
+            actor_resolver,
+            settlement_correction_flow
+            or PostgresCorrectionFlow(
+                resolved_settings.financial_database_url.get_secret_value()
+                if resolved_settings.financial_database_url is not None
+                else None
             ),
             resolved_settings,
         )

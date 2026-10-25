@@ -859,6 +859,22 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/properties/{property_id}/leases/{lease_id}/final-settlement": {"post"},
         "/api/v1/properties/{property_id}/final-settlements/{settlement_id}/preview": {"get"},
         "/api/v1/properties/{property_id}/final-settlements/{settlement_id}/drafts": {"post"},
+        # V1-056 slice 11e-2: the post-settlement correction drafts and the Adjustment reversal.
+        "/api/v1/properties/{property_id}/final-settlements/{settlement_id}"
+        "/corrections/extra-charges": {"post"},
+        "/api/v1/properties/{property_id}/final-settlements/{settlement_id}"
+        "/corrections/charge-reductions": {"post"},
+        "/api/v1/properties/{property_id}/final-settlements/{settlement_id}"
+        "/corrections/late-charge-reductions": {"post"},
+        "/api/v1/properties/{property_id}/final-settlements/{settlement_id}"
+        "/corrections/returned-payments": {"post"},
+        "/api/v1/properties/{property_id}/final-settlements/{settlement_id}"
+        "/corrections/payment-moves": {"post"},
+        "/api/v1/properties/{property_id}/final-settlements/{settlement_id}"
+        "/corrections/adjustment-reversals": {"post"},
+        "/api/v1/properties/{property_id}/invoice-adjustments/{adjustment_id}/reversal-drafts": {
+            "post"
+        },
         "/api/v1/refunds": {"post"},
         "/api/v1/refund-drafts": {"post"},
         "/api/v1/properties/{property_id}/refund-drafts/{draft_id}/confirm": {"post"},

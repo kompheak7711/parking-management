@@ -50640,6 +50640,158 @@
       "test_path": "backend/tests/test_final_settlement_api.py",
       "status": "implemented",
       "notes": "The preview passes at most 10 capabilities (every prepare capability and financial.approve), the database function's limit (V1-056 slice 11e-1 review round 1, Final Settlement routes; ops/reviews/V1-056-slice-11e-1.md)."
+    },
+    {
+      "test_id": "test_each_correction_draft_is_recorded_from_its_form",
+      "upstream_ids": [
+        "API-072",
+        "BR-SETTLE-013",
+        "BR-AUTH-010"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_correction_api.py",
+      "status": "implemented",
+      "notes": "Each of the seven record routes (extra charge, charge reduction, Late-payment Charge reduction, returned Payment, Payment move, Adjustment reversal correction, plain Adjustment reversal) turns its form into the service command and answers 201 with the recorded draft (V1-056 slice 11e-2, post-settlement correction routes; ops/reviews/V1-056-slice-11e-2.md)."
+    },
+    {
+      "test_id": "test_a_miscellaneous_charge_needs_no_finding_or_due_date",
+      "upstream_ids": [
+        "API-072",
+        "BR-INV-044"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_correction_api.py",
+      "status": "implemented",
+      "notes": "A Miscellaneous extra charge is recorded with no inspection finding and no Due Date override (V1-056 slice 11e-2, post-settlement correction routes; ops/reviews/V1-056-slice-11e-2.md)."
+    },
+    {
+      "test_id": "test_each_route_needs_its_capability_sign_in_csrf_and_key",
+      "upstream_ids": [
+        "API-072",
+        "BR-AUTH-010"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_correction_api.py",
+      "status": "implemented",
+      "notes": "The correction routes need final_settlements.prepare and the plain Adjustment reversal invoices.adjust in the Property (others get a hidden 404), sign-in (401), CSRF (403) and an Idempotency-Key (422), before any command (V1-056 slice 11e-2, post-settlement correction routes; ops/reviews/V1-056-slice-11e-2.md)."
+    },
+    {
+      "test_id": "test_a_bad_form_is_refused_on_its_field_before_any_command",
+      "upstream_ids": [
+        "API-072"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_correction_api.py",
+      "status": "implemented",
+      "notes": "An unknown category, a zero, negative or text amount, a reason over 500 characters, a blank or untrimmed text, a bad date, a bad id or an unknown field answers 422 on that field before any command (V1-056 slice 11e-2, post-settlement correction routes; ops/reviews/V1-056-slice-11e-2.md)."
+    },
+    {
+      "test_id": "test_a_cross_field_mistake_is_refused_on_its_field",
+      "upstream_ids": [
+        "API-072"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_correction_api.py",
+      "status": "implemented",
+      "notes": "A Damage charge without its finding, a Miscellaneous charge with one, or a Due Date override without its reason (or the reverse) answers 422 on that field before any command (V1-056 slice 11e-2, post-settlement correction routes; ops/reviews/V1-056-slice-11e-2.md)."
+    },
+    {
+      "test_id": "test_each_named_correction_refusal_answers_its_own_code",
+      "upstream_ids": [
+        "API-072",
+        "BR-SETTLE-013",
+        "BR-INV-044",
+        "BR-PAY-042"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_correction_api.py",
+      "status": "implemented",
+      "notes": "Each database message a correction route names answers its own status, code, rule ids and fields, with only the refusal's own words (V1-056 slice 11e-2, post-settlement correction routes; ops/reviews/V1-056-slice-11e-2.md)."
+    },
+    {
+      "test_id": "test_the_correction_codes_are_pinned",
+      "upstream_ids": [
+        "API-072"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_correction_api.py",
+      "status": "implemented",
+      "notes": "Every correction route names the closed-Settlement refusal with the same answer; the plain Adjustment reversal does not; every named refusal is 409 or a 422 with its fields; an unknown body-chosen Adjustment is 422 on adjustment_id (V1-056 slice 11e-2, post-settlement correction routes; ops/reviews/V1-056-slice-11e-2.md)."
+    },
+    {
+      "test_id": "test_unnamed_correction_refusals_keep_their_plain_answers",
+      "upstream_ids": [
+        "API-072"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_correction_api.py",
+      "status": "implemented",
+      "notes": "An unnamed not-found, invalid, conflict, reused key or unavailable answer keeps its plain 404, 422, 409, IDEMPOTENCY_KEY_REUSED or 503 with no database text (V1-056 slice 11e-2, post-settlement correction routes; ops/reviews/V1-056-slice-11e-2.md)."
+    },
+    {
+      "test_id": "test_no_financial_database_answers_503",
+      "upstream_ids": [
+        "API-072"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_correction_api.py",
+      "status": "implemented",
+      "notes": "Without the financial database the correction routes answer 503 (V1-056 slice 11e-2, post-settlement correction routes; ops/reviews/V1-056-slice-11e-2.md)."
+    },
+    {
+      "test_id": "test_an_answer_for_another_record_is_never_shown",
+      "upstream_ids": [
+        "API-072",
+        "BR-AUTH-010"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_correction_api.py",
+      "status": "implemented",
+      "notes": "A recorded draft of another Property, kind, variant, Settlement or record than the path and form name is never shown (503) (V1-056 slice 11e-2, post-settlement correction routes; ops/reviews/V1-056-slice-11e-2.md)."
+    },
+    {
+      "test_id": "test_an_invoice_reduction_and_a_late_charge_reduction_are_told_apart",
+      "upstream_ids": [
+        "API-072"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_settlement_correction_api.py",
+      "status": "implemented",
+      "notes": "The Invoice line and Late-payment Charge reduction routes each refuse to show the other's CHARGE_REDUCTION draft (V1-056 slice 11e-2, post-settlement correction routes; ops/reviews/V1-056-slice-11e-2.md)."
+    },
+    {
+      "test_id": "test_an_extra_charge_correction_is_recorded_and_confirmed_over_http",
+      "upstream_ids": [
+        "API-072",
+        "BR-SETTLE-013",
+        "BR-AUTH-010"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_settlement_correction_api_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL an open Settlement answers CORRECTION_SETTLEMENT_NOT_CLOSED; after closure an unknown damage finding answers 422 on its field, the extra charge records a pending draft, replays and refuses a reused key; an approver cannot record but confirms it through the shared draft route (V1-056 slice 11e-2, post-settlement correction routes; ops/reviews/V1-056-slice-11e-2.md)."
+    },
+    {
+      "test_id": "test_a_charge_reduction_and_its_adjustment_reversal_are_recorded_over_http",
+      "upstream_ids": [
+        "API-072",
+        "BR-SETTLE-013"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_settlement_correction_api_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL after closure a charge reduction of another Invoice answers 422 on invoice_id; the reduction records, passes the answer check and is confirmed; the plain draft refuses its Adjustment (409); the Adjustment reversal correction records and an unknown Adjustment, Payment or allocation answers 422 on its field with no database text (V1-056 slice 11e-2, post-settlement correction routes; ops/reviews/V1-056-slice-11e-2.md)."
+    },
+    {
+      "test_id": "test_a_plain_adjustment_reversal_draft_is_recorded_over_http",
+      "upstream_ids": [
+        "API-072",
+        "BR-INV-044"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_settlement_correction_api_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL an invoices.adjust holder records the Adjustment reversal draft (a final_settlements.prepare holder gets 404), a second answers ADJUSTMENT_REVERSAL_DRAFT_WAITING, an unknown Adjustment 404, and the approver rejects it (V1-056 slice 11e-2, post-settlement correction routes; ops/reviews/V1-056-slice-11e-2.md)."
     }
   ]
 }

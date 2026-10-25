@@ -139,6 +139,25 @@ def test_every_named_refusal_message_is_still_raised_at_head(
     )
 
     messages |= {*FINAL_SETTLEMENT_DRAFT_REFUSALS, *FINAL_SETTLEMENT_CONFIRM_REFUSALS}
+    # Slice 11e-2: the post-settlement corrections with no plan and the Adjustment reversal.
+    from property_rental.settlement_correction_api import (
+        ADJUSTMENT_CORRECTION_REFUSALS,
+        ADJUSTMENT_REVERSAL_REFUSALS,
+        EXTRA_CHARGE_REFUSALS,
+        MOVE_CORRECTION_REFUSALS,
+        REDUCTION_REFUSALS,
+        RETURNED_PAYMENT_REFUSALS,
+    )
+
+    for table in (
+        EXTRA_CHARGE_REFUSALS,
+        REDUCTION_REFUSALS,
+        RETURNED_PAYMENT_REFUSALS,
+        MOVE_CORRECTION_REFUSALS,
+        ADJUSTMENT_CORRECTION_REFUSALS,
+        ADJUSTMENT_REVERSAL_REFUSALS,
+    ):
+        messages |= set(table)
     messages.add(END_DATE_NOT_MONTH_END)
     with psycopg.connect(migrated_database_url) as connection:
         missing = [

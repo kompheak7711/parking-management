@@ -1493,6 +1493,53 @@ the actions; the start route returns the Lease's Settlement).
   confirm the state codes apply; a step the plan now refuses, or a stale draft, answers 409
   `DRAFT_OUT_OF_DATE` (the draft stays pending: reject it and prepare a new one).
 
+V1-056 slice 11e-2 (2026-10-24; no migration; BR-SETTLE-012, BR-SETTLE-013, BR-SETTLE-016,
+BR-INV-044, BR-PAY-042, BR-CREDIT-006, BR-AUTH-010): the post-settlement correction routes with
+no DL-032 plan, and the plain Adjustment reversal draft. Decided by Claude under the owner's
+2026-10-23 22:30 rule: one route per correction kind under the Settlement, so each form is checked
+on its own fields; the corrections with a DL-032 plan for released value (Refund, Late-payment
+Charge Refund, pet classification, Refund return, held value Refund, forfeiture reversal, return
+reversal, Deposit receipt correction) follow in slice 11e-3.
+
+- Every route below is `POST`, needs Origin, CSRF and an `Idempotency-Key`, and answers 201 with
+  the recorded pending draft; an exact repeat returns it, and a reused key with another body is
+  409 `IDEMPOTENCY_KEY_REUSED`. The correction routes need `final_settlements.prepare` in the
+  Property (others a hidden 404) and record a `SETTLEMENT_CORRECTION` draft; a `financial.approve`
+  holder confirms it through `POST /properties/{property_id}/financial-drafts/{draft_id}/confirm`.
+  Base: `/properties/{property_id}/final-settlements/{settlement_id}/corrections`.
+- `/extra-charges` (variant `EXTRA_CHARGE`): `category` `MISCELLANEOUS_CHARGES` or
+  `DAMAGE_CHARGES`, `description`, `amount_usd_cents`, `evidence_reference`, `reason` (up to 500
+  characters), and the optional `inspection_damage_finding_id` (a Damage charge),
+  `corrects_invoice_id`, `due_date` and `due_date_reason` (the last two together).
+- `/charge-reductions` (variant `CHARGE_REDUCTION`): `invoice_id`, `invoice_line_id`,
+  `amount_usd_cents`, `reason` (up to 500 characters).
+- `/late-charge-reductions` (variant `CHARGE_REDUCTION`, target kind `LATE_PAYMENT_CHARGE`):
+  `late_payment_charge_id`, `amount_usd_cents`, `reason`.
+- `/returned-payments` (variant `RETURNED_PAYMENT`): `payment_id`, `reason`,
+  `evidence_reference`.
+- `/payment-moves` (variant `PAYMENT_MOVE`): `allocation_id`, `target_invoice_id`, `reason`,
+  `source_acknowledgement`, `target_acknowledgement`.
+- `/adjustment-reversals` (variant `ADJUSTMENT_REVERSAL`): `adjustment_id`, `reason`.
+- `POST /properties/{property_id}/invoice-adjustments/{adjustment_id}/reversal-drafts`
+  (`invoices.adjust`; body `reason`) records the plain `ADJUSTMENT_REVERSAL` draft of a credit
+  Adjustment recorded by mistake before closure; a `financial.approve` holder confirms it through
+  the same shared route.
+- A Damage charge without its finding, a Miscellaneous charge with one, or a Due Date override
+  without its reason (or the reverse) answers 422 on that field.
+- Named refusals: 409 `CORRECTION_SETTLEMENT_NOT_CLOSED` on every correction route; 422 on the
+  field that chose a wrong record (`CORRECTION_DAMAGE_TO_PRIMARY`, `_CORRECTED_INVOICE_NOT_OF_SETTLEMENT`,
+  `_FINDING_NOT_CURRENT`, `_DUE_DATE_BEFORE_ISSUE`, `_REDUCED_INVOICE_NOT_OF_SETTLEMENT`,
+  `_INVOICE_LINE_NOT_FOUND`, `_LATE_CHARGE_NOT_OF_SETTLEMENT`, `RETURNED_PAYMENT_NOT_FOUND`,
+  `MOVE_CORRECTION_NOT_OF_SETTLEMENT`, `_ALLOCATION_NOT_FOUND`,
+  `ADJUSTMENT_REVERSAL_NOT_OF_SETTLEMENT`, `ADJUSTMENT_REVERSAL_CORRECTION_NOT_FOUND`, and
+  `PAYMENT_MOVE_TARGET_NOT_FOUND`, `_TARGET_SAME_UNIT`, `_TARGET_NOTHING_OWED` and `_TOO_LARGE` of
+  slice 11d); 409 for a business state (`CORRECTION_FINDING_BILLED`,
+  `_PAID_BY_DEPOSIT`, `_WOULD_RELEASE_PAID`, the `RETURNED_PAYMENT_` and `MOVE_CORRECTION_` state
+  codes, the Payment return and Payment move state codes of slices 11c-3 and 11d, and
+  `ADJUSTMENT_REVERSAL_NOT_CREDIT`, `_ALREADY_REVERSED`, `_INVOICE_NOT_ISSUED`,
+  `_BY_RESOLUTION`, `_OF_CORRECTION`, `_THROUGH_CORRECTION`, `_ONLY_CHARGE_REDUCTION`,
+  `_DRAFT_WAITING`, `_TOO_LARGE`). No answer shows database text.
+
 # 23. Audit Endpoints
 
 ## API-073 — Record Audit
