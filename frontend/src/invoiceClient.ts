@@ -1032,6 +1032,22 @@ function createInvoiceApi(transmission?: BillingTransmission): InvoiceApi {
 }
 export const invoiceApi = createInvoiceApi();
 
+/** V1-058 R7b-4: the Settings Business tab reads the one-time charge Due Date days and changes
+ * them with the Property version. */
+export interface DueDaysApi {
+  get: (propertyId: string) => Promise<DueDaysSetting>;
+  set: InvoiceApi["setDueDays"];
+}
+export const dueDaysApi: DueDaysApi = {
+  get: (propertyId) =>
+    transport(
+      "/api/v1/properties/" + encoded(propertyId) + "/one-time-charge-due-days",
+      resource(dueDaysSetting),
+      undefined,
+    ),
+  set: invoiceApi.setDueDays,
+};
+
 /** Serializable intent is sealed before sending and replayed unchanged after interruption. */
 export type BillingCommand =
   | { action: "create"; propertyId: string; obligationId: string }

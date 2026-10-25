@@ -27,6 +27,7 @@ import {
   type HealthStatus,
 } from "./healthClient";
 import { type SettingsTextKey, sst } from "./text";
+import { type BusinessApi, BusinessTab } from "./BusinessTab";
 import { type SetupApi, UnitSetupTab } from "./UnitSetupTab";
 import { type UsersApi, UsersTab } from "./UsersTab";
 
@@ -78,6 +79,7 @@ export interface SettingsPageProps {
   capabilities: ReadonlySet<string> | null;
   healthApi: HealthApi;
   usersApi: UsersApi;
+  businessApi: BusinessApi;
   /** The signed-in person. */
   myUserId: string | null;
   /** The password and sign-in code again, for an action that changes who may use the app. */
@@ -301,6 +303,7 @@ export function SettingsPage({
   capabilities,
   healthApi,
   usersApi,
+  businessApi,
   myUserId,
   reauthenticate,
   earlier,
@@ -353,6 +356,14 @@ export function SettingsPage({
           propertyId={propertyId}
         />
       )}
+      {tab === "business" && (
+        <BusinessTab
+          active={active}
+          api={businessApi}
+          language={language}
+          propertyId={propertyId}
+        />
+      )}
       {tab === "users" && (
         <UsersTab
           active={active}
@@ -371,7 +382,13 @@ export function SettingsPage({
             <div hidden={item.tab !== tab} key={item.tab}>
               <Earlier
                 language={language}
-                note={item.tab === "users" ? "earlier_kept" : "earlier_note"}
+                note={
+                  item.tab === "users"
+                    ? "earlier_kept"
+                    : item.tab === "business"
+                      ? "earlier_same"
+                      : "earlier_note"
+                }
               >
                 {earlier[item.tab]}
               </Earlier>

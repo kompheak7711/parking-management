@@ -86,7 +86,12 @@ import {
 } from "./payments/paymentsClient";
 import { pyt } from "./payments/text";
 import { ivt } from "./invoices/text";
-import { InvoiceApi, invoiceApi as invoiceClient } from "./invoiceClient";
+import {
+  type DueDaysApi,
+  dueDaysApi as dueDaysClient,
+  InvoiceApi,
+  invoiceApi as invoiceClient,
+} from "./invoiceClient";
 import { LeaseEnforcementManagement } from "./LeaseEnforcementManagement";
 import type { EnforcementServices } from "./leaseEnforcementUi";
 import { FinancialManagement } from "./FinancialManagement";
@@ -120,6 +125,7 @@ export interface AppProps {
   administrationApi?: AccessAdministrationApi;
   propertyApi?: PropertyConfigurationApi;
   unitApi?: UnitApi;
+  dueDaysApi?: DueDaysApi;
   customerApi?: CustomerApi;
   effectiveConfigApi?: EffectiveConfigurationApi;
   reservationApi?: ReservationApi;
@@ -585,6 +591,7 @@ export function App({
   paymentsApi = paymentsClient,
   homeApi = reportsApi,
   healthApi = healthClient,
+  dueDaysApi = dueDaysClient,
   approvalsApi = approvalsClient,
   draftDecisionApi = settlementApi,
   financialServices,
@@ -593,6 +600,16 @@ export function App({
   accessApi = actorAccessApi,
   now = Date.now,
 }: AppProps) {
+  // V1-058 R7b-4: one object, so the Business tab does not read again on every render.
+  const businessApi = useMemo(
+    () => ({
+      property: propertyApi,
+      dueDays: dueDaysApi,
+      units: unitApi ?? defaultUnitApi,
+      rates: effectiveConfigApi,
+    }),
+    [propertyApi, dueDaysApi, unitApi, effectiveConfigApi],
+  );
   const client = useMemo<AuthenticationApi>(
     () => api ?? { ...authenticationApi, signIn: authenticate },
     [api, authenticate],
@@ -2662,6 +2679,7 @@ export function App({
           myUserId={session.actor_id}
           reauthenticate={reauthenticateForSettings}
           usersApi={administrationApi}
+          businessApi={businessApi}
         />
       </div>
     </AppShell>

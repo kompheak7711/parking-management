@@ -101,6 +101,35 @@ const usersApi = {
   removeSettingsAccess: vi.fn(),
 };
 
+const businessApi = {
+  property: {
+    load: vi.fn(() =>
+      Promise.resolve({
+        property_id: "property-1",
+        name: "CHETANA Residence",
+        address_text: null,
+        timezone_name: "Asia/Phnom_Penh" as const,
+        payment_methods: [],
+        version: 1,
+      }),
+    ),
+    updateSource: vi.fn(),
+    updatePaymentMethods: vi.fn(),
+  },
+  dueDays: {
+    get: vi.fn(() =>
+      Promise.resolve({
+        property_id: "property-1",
+        one_time_charge_due_days: 7,
+        version: 1,
+      }),
+    ),
+    set: vi.fn(),
+  },
+  units: setupApi,
+  rates: { load: vi.fn(() => Promise.reject(new Error("no rates"))) },
+};
+
 function show(
   status: () => Promise<HealthStatus>,
   {
@@ -124,6 +153,7 @@ function show(
       reauthenticate={vi.fn()}
       unitApi={setupApi}
       usersApi={usersApi}
+      businessApi={businessApi}
     />,
   );
   return api;

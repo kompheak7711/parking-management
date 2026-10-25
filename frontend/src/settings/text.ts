@@ -31,6 +31,11 @@ const TEXT = {
     "Role bundles and the full list of access changes are still in the earlier forms below.",
     "កញ្ចប់តួនាទី និងបញ្ជីពេញនៃការប្តូរសិទ្ធិ នៅតែមាននៅក្នុងទម្រង់មុនខាងក្រោម។",
   ],
+  // new: the Business tab is rebuilt; the earlier forms stay until the old screens go.
+  earlier_same: [
+    "The earlier forms below change the same things. They go when the old screens are removed.",
+    "ទម្រង់មុនខាងក្រោម ប្តូររឿងដដែល។ វានឹងដកចេញ ពេលអេក្រង់ចាស់ត្រូវដកចេញ។",
+  ],
   // new
   no_tab: [
     "Your account cannot open this tab.",
@@ -427,6 +432,129 @@ const TEXT = {
   ],
   // new: a disabled account shows no buttons.
   none: ["—", "—"],
+
+  // R7b-4 Business
+  se_prop: ["Property", "អចលនទ្រព្យ"],
+  se_edit: ["Edit", "កែ"],
+  se_prop_name: ["Property", "អចលនទ្រព្យ"],
+  // new
+  address: ["Address", "អាសយដ្ឋាន"],
+  // new
+  no_address: ["Not given", "មិនទាន់ផ្តល់"],
+  se_units: ["Units", "បន្ទប់"],
+  se_tz: ["Time zone", "ល្វែងម៉ោង"],
+  se_tz_n: [
+    "Due dates, expiry and reading days use Phnom Penh time.",
+    "ថ្ងៃកំណត់បង់ ផុតកំណត់ និងថ្ងៃអាន ប្រើម៉ោងភ្នំពេញ។",
+  ],
+  se_lang: ["Screen language", "ភាសាអេក្រង់"],
+  se_lang_v: ["English and Khmer", "អង់គ្លេស និងខ្មែរ"],
+  se_billing: ["Billing calendar", "ប្រតិទិនគិតថ្លៃ"],
+  se_read_day: ["Meters read on the", "អាននាឡិកាស្ទង់នៅថ្ងៃទី"],
+  se_issue_day: ["Invoices issued on the", "ចេញវិក្កយបត្រនៅថ្ងៃទី"],
+  se_due_day: [
+    "Rent and Utilities due on the",
+    "ថ្លៃឈ្នួល និងទឹកភ្លើង កំណត់បង់ថ្ងៃទី",
+  ],
+  se_misc_due: ["Other Invoices due", "វិក្កយបត្រផ្សេងកំណត់បង់"],
+  cal_misc_v: ["{0} days after issue", "{0} ថ្ងៃបន្ទាប់ពីចេញ"],
+  // new
+  day_n: ["{0}th", "{0}"],
+  se_late: ["Late-payment charge", "ថ្លៃពិន័យបង់យឺត"],
+  // new: DL-076 (the app adds it by itself), not the mock-up's older words.
+  late_v: [
+    "{0}% of the amount unpaid, added by the app on the day after the Due Date",
+    "{0}% នៃចំនួនមិនទាន់បង់ កម្មវិធីបន្ថែមដោយខ្លួនឯង នៅថ្ងៃបន្ទាប់ពីថ្ងៃកំណត់បង់",
+  ],
+  // new
+  misc_note: [
+    "These days apply to every one-time Invoice, such as move-out charges.",
+    "ចំនួនថ្ងៃនេះប្រើសម្រាប់វិក្កយបត្រម្តងៗទាំងអស់ ដូចជាថ្លៃពេលចាកចេញ។",
+  ],
+  se_res: ["Reservations", "ការកក់"],
+  se_res_days: ["Initial expiry at most", "ផុតកំណត់ដំបូងយ៉ាងច្រើន"],
+  rs_days_v: [
+    "{0} days after the Reservation Date",
+    "{0} ថ្ងៃបន្ទាប់ពីថ្ងៃកក់",
+  ],
+  se_res_ext: ["One extension of at most", "ពន្យារម្តងយ៉ាងច្រើន"],
+  rs_ext_v: ["{0} days, approved by a Manager", "{0} ថ្ងៃ អ្នកគ្រប់គ្រងអនុម័ត"],
+  se_res_dep: ["Suggested deposit", "ប្រាក់កក់ណែនាំ"],
+  rs_dep_v: [
+    "{0}% of the agreed monthly Rent",
+    "{0}% នៃថ្លៃជួលប្រចាំខែដែលបានព្រមព្រៀង",
+  ],
+  se_fixed: ["Set by the business rules", "កំណត់ដោយច្បាប់អាជីវកម្ម"],
+  // new
+  fixed_note: [
+    "These follow the business rules for now. Changing them here comes in a later step.",
+    "ទាំងនេះធ្វើតាមច្បាប់អាជីវកម្មសិន។ ការប្តូរនៅទីនេះនឹងមកក្នុងជំហានក្រោយ។",
+  ],
+  se_methods: ["Payment Methods", "វិធីបង់ប្រាក់"],
+  pm_add: ["Add a method", "បន្ថែមវិធី"],
+  pm_edit: ["Edit method", "កែវិធី"],
+  pm_off: ["Turned off", "បានបិទ"],
+  pm_note: [
+    "A method used on Receipts is never deleted. Turn it off instead; old Receipts keep it.",
+    "វិធីដែលប្រើនៅលើបង្កាន់ដៃ មិនត្រូវលុបទេ។ សូមបិទវាជំនួសវិញ; បង្កាន់ដៃចាស់រក្សាវាដដែល។",
+  ],
+  pm_name: ["Method name in English", "ឈ្មោះវិធីជាភាសាអង់គ្លេស"],
+  pm_on: [
+    "Staff can use it on new Receipts",
+    "បុគ្គលិកអាចប្រើវានៅលើបង្កាន់ដៃថ្មី",
+  ],
+  pm_e_last: [
+    "Keep at least one method turned on.",
+    "ត្រូវបើកយ៉ាងហោចណាស់មួយវិធី។",
+  ],
+  sv_saved: ["{0} saved.", "បានរក្សា {0}។"],
+  se_fx: ["Riel exchange rate", "អត្រាប្តូរប្រាក់រៀល"],
+  // new
+  fx_last: ["{0} ៛ per $1", "{0} ៛ ក្នុង $1"],
+  // new
+  fx_auto: ["ABA rate, {0}.", "អត្រា ABA {0}។"],
+  // new
+  fx_hand_v: ["Entered by hand, {0}.", "បញ្ចូលដោយដៃ {0}។"],
+  // new
+  fx_none: ["No riel payment yet.", "មិនទាន់មានការបង់ជារៀលទេ។"],
+  // new
+  fx_note: [
+    "The rate is taken when a payment in riel is received: ABA Sell rate plus 0.5%, rounded up to the next 1 ៛.",
+    "អត្រាត្រូវយកពេលទទួលការបង់ជារៀល៖ អត្រាលក់ ABA បូក 0.5% បង្គត់ឡើងទៅ 1 ៛ បន្ទាប់។",
+  ],
+  // new
+  fx_cannot: ["The rate could not be read.", "មិនអាចអានអត្រាបានទេ។"],
+  se_numbers: ["Numbers", "លេខ"],
+  se_inv_no: ["Invoice numbers", "លេខវិក្កយបត្រ"],
+  se_rcp_no: ["Receipt numbers", "លេខបង្កាន់ដៃ"],
+  // new
+  se_rfd_no: ["Refund numbers", "លេខការសងប្រាក់"],
+  // new: the next number is not read from the server yet.
+  no_v2: [
+    "{0} + year + running number, for example {1}",
+    "{0} + ឆ្នាំ + លេខរត់ ឧទាហរណ៍ {1}",
+  ],
+  // new
+  days_n: ["Days after issue", "ចំនួនថ្ងៃបន្ទាប់ពីចេញ"],
+  // new
+  days_h: [
+    "From 1 to 90. Invoices already issued keep their Due Date.",
+    "ពី 1 ដល់ 90។ វិក្កយបត្រដែលចេញរួច រក្សាថ្ងៃកំណត់បង់ដដែល។",
+  ],
+  // new
+  e_days: ["Enter a number from 1 to 90.", "សូមបញ្ចូលលេខពី 1 ដល់ 90។"],
+  // new
+  biz_loading: ["Reading the business settings…", "កំពុងអានការកំណត់អាជីវកម្ម…"],
+  // new
+  biz_failed: [
+    "The business settings could not be read just now. Check the connection and try again.",
+    "មិនអាចអានការកំណត់អាជីវកម្មបានទេឥឡូវនេះ។ សូមពិនិត្យការតភ្ជាប់ ហើយព្យាយាមម្តងទៀត។",
+  ],
+  // new
+  biz_changed: [
+    "Someone changed these settings. They were read again; check and try again.",
+    "មាននរណាម្នាក់បានប្តូរការកំណត់ទាំងនេះ។ បានអានម្តងទៀត សូមពិនិត្យ ហើយព្យាយាមម្តងទៀត។",
+  ],
 } as const satisfies Record<string, readonly [string, string]>;
 
 export type SettingsTextKey = keyof typeof TEXT;

@@ -788,7 +788,8 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/properties/{property_id}/invoices": {"get", "post"},
         # V1-055 slice 9b adds the one-time charge and its due-days setting (docs/010 DL-067).
         "/api/v1/properties/{property_id}/one-time-charges": {"post"},
-        "/api/v1/properties/{property_id}/one-time-charge-due-days": {"post"},
+        # V1-058 R7b-4: the Settings Business tab reads the due days (GET).
+        "/api/v1/properties/{property_id}/one-time-charge-due-days": {"get", "post"},
         "/api/v1/properties/{property_id}/leases/{lease_id}/initial-rent-due-date": {"post"},
         # V1-056 slice 11a: the move-out cleaning charge and the hand-back month (API-102).
         "/api/v1/properties/{property_id}/units/{unit_id}/cleaning-rate": {"get"},

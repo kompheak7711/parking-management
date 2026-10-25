@@ -280,6 +280,16 @@ class InMemoryInvoiceFlow:
         self.commands.append(command)
         return {"one_time_charge_due_days": command.days, "version": command.expected_version + 1}
 
+    def get_one_time_charge_due_days(
+        self,
+        property_id: UUID,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        del actor
+        assert property_id == self.property_id
+        return {"property_id": str(property_id), "one_time_charge_due_days": 7, "version": 3}
+
     def set_initial_rent_due_date(
         self,
         property_id: UUID,

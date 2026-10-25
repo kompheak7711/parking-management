@@ -54574,6 +54574,67 @@
       "test_path": "frontend/src/settings/UsersTab.test.tsx",
       "status": "implemented",
       "notes": "V1-058 R7b-3 review round 1: after the password and code, a refused form keeps what was typed; a Settings access run stopped part-way does only the rest; a one-time password still shows after the Property changed."
+    },
+    {
+      "test_id": "TEST-FE-950",
+      "upstream_ids": [
+        "DL-074",
+        "DL-075",
+        "DL-076",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/BusinessTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-4: Business shows the Property, the billing calendar with the server's days after issue, Reservations, Payment Methods, the newest riel rate and the document numbers; values the server does not store yet say Set by the business rules."
+    },
+    {
+      "test_id": "TEST-FE-951",
+      "upstream_ids": [
+        "DL-074",
+        "DL-075",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/BusinessTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-4: Edit changes the Property name and address; the days after issue need 1 to 90 and a reason and send the Property version; a Payment Method is added with a new code, renamed or turned off."
+    },
+    {
+      "test_id": "TEST-FE-952",
+      "upstream_ids": [
+        "DL-074",
+        "DL-075",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/BusinessTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-4: a change that met another change says so and reads again; the last method on cannot be turned off; Khmer words; Retry; no right."
+    },
+    {
+      "test_id": "TEST-FE-953",
+      "upstream_ids": [
+        "DL-074",
+        "DL-075",
+        "UI-008"
+      ],
+      "test_level": "Unit",
+      "test_path": "frontend/src/propertyClient.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-4: a saved Property change whose read-back fails is reported as saved (PropertySavedReadFailedError), not as a failure."
+    },
+    {
+      "test_id": "TEST-FE-954",
+      "upstream_ids": [
+        "DL-074",
+        "DL-075",
+        "UI-008"
+      ],
+      "test_level": "Unit",
+      "test_path": "frontend/src/invoiceClient.test.ts",
+      "status": "implemented",
+      "notes": "V1-058 R7b-4: the days after issue are read with GET and no body; a 403 refusal keeps its status."
     }
   ]
 }

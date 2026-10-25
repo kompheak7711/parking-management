@@ -40,6 +40,7 @@ from test_sign_in_code_migration import (
     code_for,
     fresh_step,
 )
+from test_unit_setup_lists_migration import create_item
 
 ORIGIN = "https://localhost"
 DONE = [201, 201, 200, 200, 200]
@@ -214,16 +215,40 @@ def test_the_settings_routes_need_settings_access_and_the_owner_always_has_it(
     before = counts(database)
     assert settings_calls(database, manager, current_version(database)) == [403] * 5
     assert counts(database) == before
+    due_days = f"/api/v1/properties/{database.property_id}/one-time-charge-due-days"
+    # V1-058 R7b-4: reading the due days is a Settings item too.
+    assert manager.get(due_days).status_code == 403
     # Review round 1: before any Settings access, `property.manage` alone creates and updates a
-    # Unit.
+    # Unit. Since V1-058 R2a (DL-078 answer 1) a Unit names its Floor from the Unit setup list,
+    # so two Floors are added first.
+    with psycopg.connect(database.owner_url) as connection:
+        first_floor, second_floor = (
+            str(
+                create_item(
+                    connection,
+                    database.property_id,
+                    database.owner.actor_id,
+                    "FLOOR",
+                    f"Floor {n}",
+                )[0]
+            )
+            for n in (1, 2)
+        )
     created = manager.post(
         f"/properties/{database.property_id}/units",
-        json={"unit_number": "L5-101", "floor": "1", "unit_type": "STUDIO", "status": "VACANT"},
+        json={
+            "unit_number": "L5-101",
+            "floor_item_id": first_floor,
+            "unit_type": "STUDIO",
+            "status": "VACANT",
+        },
     )
     assert created.status_code == 201
     unit_id = created.json()["data"]["unit_id"]
     assert manager.get(f"/units/{unit_id}").status_code == 200
-    updated = manager.patch(f"/units/{unit_id}", headers={"If-Match": '"1"'}, json={"floor": "2"})
+    updated = manager.patch(
+        f"/units/{unit_id}", headers={"If-Match": '"1"'}, json={"floor_item_id": second_floor}
+    )
     assert updated.status_code == 200
 
     admin = PostgresAccessAdministrationFlow(database.runtime_url)
@@ -237,6 +262,13 @@ def test_the_settings_routes_need_settings_access_and_the_owner_always_has_it(
     assert settings_calls(database, manager, current_version(database), 2030) == DONE
     owner = signed_in(database, database.owner)
     assert settings_calls(database, owner, current_version(database), 2031) == DONE
+    read = owner.get(due_days)
+    assert read.status_code == 200
+    assert read.json()["data"] == {
+        "property_id": str(database.property_id),
+        "one_time_charge_due_days": 10,
+        "version": current_version(database),
+    }
     staff = signed_in(database, database.staff)
     assert settings_calls(database, staff, current_version(database), 2032) == DONE
 

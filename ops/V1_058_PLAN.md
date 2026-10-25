@@ -251,3 +251,11 @@ Run rules: frontend-only steps run the frontend gates (format, typecheck, lint, 
 - Role bundles and the authorization history stay in the folded earlier forms on this tab.
 - Tests TEST-FE-944 to 949. Review round 1 (no blocker): form lost after the check, retry repeated done changes, one-time password dropped after a Property change, client mapping tests; all fixed. Full frontend run 1,803 passed.
 - Screenshots /mnt/project-files/v1-058/r7b-settings/11 to 18.
+
+### R7b-4 Settings Business (2026-10-25)
+
+- Business tab rebuilt to mock-up v43: Property (name, address, Unit count, time zone, languages; Edit), Billing calendar (24th/25th/5th and 10% late charge fixed by the business rules; Other Invoices due read from the new GET /properties/{id}/one-time-charge-due-days and edited with days 1-90, a reason and the Property version), Reservations (21/14/20% fixed), Payment Methods (add, rename, turn off; one stays on), newest riel rate, document numbers.
+- Backend: new read route for the days after issue, needs settings.manage; route inventory updated; settings-access PG test brought up to date (floors) and checks the new read (manager 403, owner 200).
+- Review round 1: no blocker. Fixed: wrong note about a fixed 7-day move-out due date (now says the days apply to every one-time Invoice); a saved change whose read-back fails now says saved (PropertySavedReadFailedError); Save stays busy until the new version is read; a 403 on the days read says no right; aria-invalid on the method on/off box; tests TEST-FE-952 (extended), 953, 954.
+- Server gaps (decided by Claude under the owner's 2026-10-23 22:30 rule, kept fixed on screen): billing calendar, Reservation limits, late rate and number letters are not stored on the server; no "needs a reference" flag on Payment Methods; "at least one method stays on" is checked only in the browser; units and rates are read again after every save.
+- Gates: prettier, tsc, eslint clean; vitest 1,808 passed (59 files); ruff, mypy clean; invoice API/flow/route inventory 117 passed; PG settings-access test passed. Screenshots 19-23 in /mnt/project-files/v1-058/r7b-settings/.
