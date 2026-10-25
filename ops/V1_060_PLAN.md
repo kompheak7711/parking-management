@@ -64,3 +64,33 @@ candidate is the code that will be used.
   can see or change. The supervisor routing step (`make automation-test`) fails 7 tests of the old
   OpenClaw automation (packets of V1-019 to V1-021 that look for code that has since changed);
   OpenClaw is the owner's, so this waits for the owner.
+- 2026-10-25 A4: speed tool built: `scripts/speed-test.sh` (own throw-away database),
+  `backend/speed/seed.py` (300 Units, 10 years of made-up history through the real Lease, billing
+  and allocation functions: 33,000 Rent Invoices, monthly Meter readings, 1 Unit in 5 with its last
+  two months unpaid; about 20 minutes) and `backend/speed/measure.py` (a signed-in Manager reads
+  about 25 screens' routes through the real app, then one scheduled Rent run). Limits (decided by
+  Claude under the owner's 2026-10-23 22:30 rule): middle read 0.5 s, slowest read 1 s, Rent run
+  120 s. First 300-Unit run: two reads too slow. The Invoices list took 0.7 s (no index on its
+  order): migration `20270219_207` adds `invoices_invoice_date_order_idx` (6 ms). The Rent
+  nonpayment alerts page took 28 s and answered 503 (one function per Rent line): 207 adds a
+  set-based balance check before the exact function check, with a test that both give the same
+  answer for every Invoice line of the shared test database (1.7 s on the busy machine; the rerun on
+  a quiet machine is still to do).
+- 2026-10-25 slice 12 item: `test_pending_future_basis_is_preserved_without_utility_invoice`
+  failed about 1 run in 6: a real lock-order deadlock between two executions of one Billing Run.
+  Migration `20270220_208` makes `app.finish_scheduled_billing_attempt` lock the run row before the
+  attempt row, like the other three writers. Before: 3 of 30 runs failed; after: 60 of 60 passed.
+  `test_access_control.py` gained the four `sign_in_prune.*` log labels of slice 12c (an old
+  failure on `implementation/foundation`).
+- 2026-10-25 A3: the DL-067 `LockNotAvailable` cause is proven. With a busier autovacuum on a
+  scratch database (naptime 1 s, thresholds 0, cost delay 20 ms) and nothing else running, the
+  refund and deposit receipt modules failed with 55P03 on `app.invoices` or `app.invoice_lines` in
+  2 of 3 runs (including `test_a_payment_confirmed_for_an_owed_invoice_is_not_a_deposit_receipt`).
+  Migration `20270221_209`: when the NOWAIT request of `app.assert_payment_excess_eligible` fails
+  and only autovacuum workers hold a conflicting lock, the function waits at most 3 s for the same
+  locks (PostgreSQL cancels the autovacuum after `deadlock_timeout`); any session's lock is still
+  refused at once. A first version looked at `backend_type`, which the function's owner cannot see
+  (4 of 5 runs still failed); the built version uses the missing user of an autovacuum worker.
+  After: 10 of 10 busy runs passed. This is a product code change: commit 7575ea0 stays on the work
+  branch until the owner says yes (decision card of 2026-10-25). Docs (docs/004, DL entry) follow
+  the owner's answer.
