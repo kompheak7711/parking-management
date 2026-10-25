@@ -50561,6 +50561,19 @@
       "test_path": "frontend/src/leases/LeasesPage.test.tsx",
       "status": "implemented",
       "notes": "V1-058 R3 L2b-2: after a save whose answer was lost, a later save with changed values is refused because the draft already exists (same Lease id); the form then opens that draft instead of saying nothing was saved. A Booking that is no longer ACTIVE makes no Lease and says so."
+    },
+    {
+      "test_id": "TEST-FE-861",
+      "upstream_ids": [
+        "DL-074",
+        "BR-OCC-004",
+        "BR-OCC-006",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 L2c-1: Record move-in offers the other active Customers (not those already listed) under 'Someone else moves in too'; a picked Customer is ticked and moves in with the others."
     }
   ]
 }

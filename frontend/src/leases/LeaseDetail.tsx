@@ -69,7 +69,7 @@ export interface LeaseDetailProps {
   api: LeaseApi;
   depositApi: DepositApi;
   reservationApi: Pick<ReservationApi, "list">;
-  customerApi: Pick<CustomerApi, "get">;
+  customerApi: Pick<CustomerApi, "get" | "list">;
   capabilities: ReadonlySet<string> | null;
 }
 

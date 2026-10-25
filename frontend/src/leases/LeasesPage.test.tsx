@@ -947,6 +947,78 @@ describe("Lease actions", () => {
   });
 });
 
+describe("Move-in with someone else", () => {
+  it("TEST-FE-861 Record move-in can add an active Customer who is not named in the Lease", async () => {
+    window.location.hash = "#/leases/lease-move";
+    const ready = lease("U302", {
+      lease_id: "lease-move",
+      start_date: addDays(today, -3),
+      end_date: addDays(today, 360),
+      signed_at: `${addDays(today, -5)}T03:00:00Z`,
+      occupancies: [],
+      can_move_in: true,
+    });
+    const recordMoveIn = vi
+      .fn<LeaseApi["recordMoveIn"]>()
+      .mockImplementation((value) => Promise.resolve(value));
+    const customers: Partial<CustomerApi> = {
+      get: vi.fn<CustomerApi["get"]>().mockRejectedValue(new Error("no")),
+      list: vi.fn<CustomerApi["list"]>().mockResolvedValue({
+        items: [
+          {
+            customer_id: "customer-U302",
+            legal_name: "Tenant U302",
+            active: true,
+            relationship_indicators: [],
+          },
+          {
+            customer_id: "customer-sister",
+            legal_name: "Sister S",
+            active: true,
+            relationship_indicators: [],
+          },
+        ],
+        next_cursor: null,
+        can_manage: true,
+      }),
+    };
+    show(
+      api({ get: vi.fn().mockResolvedValue(ready), recordMoveIn }),
+      deposits(),
+      null,
+      undefined,
+      customers,
+    );
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Record move-in" }),
+    );
+    const dialog = screen.getByRole("dialog");
+    const add = await within(dialog).findByLabelText(
+      "Someone else moves in too",
+    );
+    // The Primary Tenant is already listed, so only the other Customer is offered.
+    expect(
+      within(add)
+        .getAllByRole("option")
+        .map((option) => option.textContent),
+    ).toEqual(["Add a Customer…", "Sister S"]);
+    fireEvent.change(add, { target: { value: "customer-sister" } });
+    expect(
+      within(dialog).getByRole("checkbox", { name: "Sister S" }),
+    ).toBeChecked();
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Record move-in" }),
+    );
+    await waitFor(() => {
+      expect(recordMoveIn).toHaveBeenCalledTimes(1);
+    });
+    expect(
+      recordMoveIn.mock.calls[0]?.[1].occupants.map((item) => item.customer_id),
+    ).toEqual(["customer-U302", "customer-sister"]);
+  });
+});
+
 describe("New Lease and Renew", () => {
   const unit = (number: string, status: UnitResource["status"]) =>
     ({

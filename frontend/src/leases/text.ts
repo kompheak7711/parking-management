@@ -419,11 +419,13 @@ const TEXT = {
   ],
   // new
   movein_others: [
-    "Someone else who lives there is added with Add occupant after the move-in.",
-    "អ្នកផ្សេងដែលរស់នៅទីនោះ ត្រូវបន្ថែមដោយ «បន្ថែមអ្នករស់នៅ» ក្រោយការចូលស្នាក់នៅ។",
+    "To add someone not named in the Lease, ask a person who can see Customers.",
+    "ដើម្បីបន្ថែមអ្នកដែលមិនមានឈ្មោះក្នុងកិច្ចសន្យា សូមសួរអ្នកដែលអាចមើលអតិថិជន។",
   ],
   // new
   note: ["Note (optional)", "កំណត់ចំណាំ (ស្រេចចិត្ត)"],
+  // new
+  movein_add: ["Someone else moves in too", "មានអ្នកផ្សេងទៀតចូលស្នាក់នៅដែរ"],
   // new
   movein_ok: ["Record move-in", "កត់ត្រាការចូលស្នាក់នៅ"],
   // new

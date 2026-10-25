@@ -10,7 +10,7 @@ import {
   type LeaseApi,
   type LeaseResource,
 } from "../leaseClient";
-import type { CustomerApi } from "../customerClient";
+import type { CustomerApi, CustomerListItem } from "../customerClient";
 import type { ReservationApi } from "../reservationClient";
 import { dayText, todayInPhnomPenh, usdFromCents } from "../shell/format";
 import { Icon } from "../shell/icons";
@@ -584,7 +584,7 @@ export function MoveInDialog({
   onConflict,
 }: DialogProps & {
   /** Names of planned occupants who did not sign; null when the person may not read Customers. */
-  customerApi: Pick<CustomerApi, "get"> | null;
+  customerApi: Pick<CustomerApi, "get" | "list"> | null;
 }) {
   const today = todayInPhnomPenh();
   const start = lease.start_date ?? today;
@@ -595,7 +595,9 @@ export function MoveInDialog({
   const first = signedDay > start ? signedDay : start;
   const last =
     lease.end_date !== null && lease.end_date < today ? lease.end_date : today;
-  const people = peopleOf(lease);
+  const [extra, setExtra] = useState<Person[]>([]);
+  const [others, setOthers] = useState<CustomerListItem[]>([]);
+  const people = [...peopleOf(lease), ...extra];
   const planned = new Set(lease.planned_occupant_customer_ids);
   const [day, setDay] = useState(
     today < first ? first : today > last ? last : today,
@@ -620,23 +622,48 @@ export function MoveInDialog({
 
   useEffect(() => {
     if (customerApi === null) return;
-    let live = true;
+    const alive = { current: true };
     for (const person of people) {
       if (person.name !== null) continue;
       void customerApi
         .get(person.customerId)
         .then((customer) => {
-          if (live)
+          if (alive.current)
             setNames((before) =>
               new Map(before).set(person.customerId, customer.legal_name),
             );
         })
         .catch(() => undefined);
     }
+    // Other active Customers, so someone not named in the Lease can move in too.
+    void (async () => {
+      const found: CustomerListItem[] = [];
+      let cursor: string | undefined;
+      for (let page = 0; page < 50; page += 1) {
+        const result = await customerApi.list(
+          lease.property_id,
+          cursor === undefined ? { active: true } : { active: true, cursor },
+        );
+        found.push(...result.items);
+        if (result.next_cursor === null) break;
+        cursor = result.next_cursor;
+      }
+      if (alive.current)
+        setOthers(
+          found.sort((left, right) =>
+            left.legal_name.localeCompare(right.legal_name),
+          ),
+        );
+    })().catch(() => undefined);
     return () => {
-      live = false;
+      alive.current = false;
     };
   }, []);
+
+  const addable = others.filter(
+    (customer) =>
+      !people.some((person) => person.customerId === customer.customer_id),
+  );
 
   function occupancyOf(customerId: string): string {
     const known = occupancyIds.current.get(customerId);
@@ -738,7 +765,38 @@ export function MoveInDialog({
         })}
         <Problem message={problems.who ?? null} />
       </fieldset>
-      <p className="ui-small ui-muted">{lt(language, "movein_others")}</p>
+      {people.length < 20 && addable.length > 0 ? (
+        <div className="ui-field">
+          <label htmlFor="lease-movein-add">{lt(language, "movein_add")}</label>
+          <select
+            disabled={busy}
+            id="lease-movein-add"
+            onChange={(event) => {
+              const id = event.currentTarget.value;
+              const customer = addable.find((item) => item.customer_id === id);
+              if (customer === undefined) return;
+              setExtra([
+                ...extra,
+                { customerId: id, name: customer.legal_name },
+              ]);
+              setChosen(new Set([...chosen, id]));
+            }}
+            value=""
+          >
+            <option value="">{lt(language, "add_person")}</option>
+            {addable.map((customer) => (
+              <option key={customer.customer_id} value={customer.customer_id}>
+                {customer.legal_name}
+                {customer.phone_number ? ` · ${customer.phone_number}` : ""}
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : (
+        customerApi === null && (
+          <p className="ui-small ui-muted">{lt(language, "movein_others")}</p>
+        )
+      )}
       <div className="ui-field">
         <label htmlFor="lease-movein-note">{lt(language, "note")}</label>
         <textarea
