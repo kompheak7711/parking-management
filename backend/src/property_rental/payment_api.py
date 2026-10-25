@@ -51,6 +51,7 @@ from property_rental.payment_confirmation import (
     _uuid,
 )
 from property_rental.payment_read import (
+    SUMMARY_MAX_DAYS,
     PaymentFilters,
     PaymentPage,
     PaymentReadAuthorizationError,
@@ -58,6 +59,8 @@ from property_rental.payment_read import (
     PaymentReadNotFoundError,
     PaymentReadService,
     PaymentReadUnavailableError,
+    receipt_lines,
+    summarize_period,
 )
 from property_rental.receive_payment import (
     PaysTarget,
@@ -275,6 +278,12 @@ class PaymentFlow(Protocol):
     def payable(
         self, property_id: UUID, customer_id: UUID, *, actor: AuthenticatedActor
     ) -> dict[str, object]: ...
+    def summary(
+        self, property_id: UUID, start: date, end: date, *, actor: AuthenticatedActor
+    ) -> dict[str, object]: ...
+    def receipt_lines(
+        self, property_id: UUID, payment_id: UUID, *, actor: AuthenticatedActor
+    ) -> dict[str, object]: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -408,6 +417,16 @@ class PostgresPaymentFlow:
         if self.database_url is None:
             raise PaymentConfirmationUnavailableError("What is owed is unavailable")
         return read_payable(self.database_url, property_id, customer_id, actor=actor)
+
+    def summary(
+        self, property_id: UUID, start: date, end: date, *, actor: AuthenticatedActor
+    ) -> dict[str, object]:
+        return summarize_period(self._reader(), property_id, start, end, actor=actor)
+
+    def receipt_lines(
+        self, property_id: UUID, payment_id: UUID, *, actor: AuthenticatedActor
+    ) -> dict[str, object]:
+        return receipt_lines(self._reader(), property_id, payment_id, actor=actor)
 
 
 def payment_key_reused_response(request: Request) -> JSONResponse:
@@ -641,6 +660,37 @@ def create_payment_router(
         bind_financial_property(request, property_id)
         _queries(request, {"customer_id"})
         result = _invoke(lambda: flow.payable(property_id, customer_id, actor=actor))
+        return {"data": result, "meta": financial_metadata(request)}
+
+    @router.get("/properties/{property_id}/payments/summary")
+    def summary(
+        property_id: Identity,
+        request: Request,
+        start: Annotated[date, Query(alias="from")],
+        end: Annotated[date, Query(alias="to")],
+    ) -> dict[str, object]:
+        """V1-058 R5c-3a: the Payments page cards and list for one period."""
+        actor = _actor(request, resolver)
+        _authorize(actor, property_id, "payments.read")
+        bind_financial_property(request, property_id)
+        _queries(request, {"from", "to"})
+        if start > end or (end - start).days > SUMMARY_MAX_DAYS:
+            raise HTTPException(422)
+        result = _invoke(lambda: flow.summary(property_id, start, end, actor=actor))
+        return {"data": result, "meta": financial_metadata(request)}
+
+    @router.get("/properties/{property_id}/payments/{payment_id}/receipt-lines")
+    def payment_receipt_lines(
+        property_id: Identity, payment_id: Identity, request: Request
+    ) -> dict[str, object]:
+        """V1-058 R5c-3a: what the printed Receipt shows for one payment."""
+        actor = _actor(request, resolver)
+        _authorize(actor, property_id, "receipts.read")
+        bind_financial_property(request, property_id)
+        _queries(request, set())
+        result = _invoke(
+            lambda: flow.receipt_lines(property_id, payment_id, actor=actor), hide=True
+        )
         return {"data": result, "meta": financial_metadata(request)}
 
     @router.get("/payments/{payment_id}")
