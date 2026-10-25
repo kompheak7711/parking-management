@@ -365,6 +365,54 @@ export interface RegisterPage<N extends RegisterName> {
   }[];
 }
 
+export type ExportFileType = "xlsx" | "pdf";
+
+// A report file: one of the four Totals tables or the nine registers, with the report page's
+// filters (unitId only for the Totals tables).
+export interface ExportRequest {
+  report: TotalsReport | RegisterName;
+  fileType: ExportFileType;
+  floor?: string;
+  unitId?: string;
+  from?: string;
+  to?: string;
+}
+
+export interface AuditExportRequest {
+  fileType: ExportFileType;
+  from?: string;
+  to?: string;
+  actorId?: string;
+  action?: string;
+  unitId?: string;
+}
+
+// A small file comes at once; a larger one is kept 24 hours as an export job and is fetched
+// with reportsApi.download. The SHA-256 fingerprint is the one written to History.
+export type ExportAnswer =
+  | {
+      kind: "file";
+      exportId: string;
+      fileName: string;
+      sha256: string;
+      rowCount: number;
+      file: Blob;
+    }
+  | {
+      kind: "job";
+      exportId: string;
+      fileName: string;
+      sha256: string;
+      rowCount: number;
+      expiresAt: string;
+    };
+
+export interface DownloadedFile {
+  fileName: string;
+  sha256: string;
+  file: Blob;
+}
+
 export class ReportsUnavailableError extends Error {
   constructor() {
     super("This information is not available right now.");
@@ -377,6 +425,118 @@ export class ReportsNotAllowedError extends Error {
     super("Your account cannot see this.");
     this.name = "ReportsNotAllowedError";
   }
+}
+
+export class ExportRefusedError extends Error {
+  constructor() {
+    super("This file cannot be made with these choices.");
+    this.name = "ExportRefusedError";
+  }
+}
+
+export class ExportGoneError extends Error {
+  constructor() {
+    super("This file is no longer kept. Please export it again.");
+    this.name = "ExportGoneError";
+  }
+}
+
+function csrfToken(cookie = document.cookie): string | null {
+  const prefix = "__Host-prm_csrf=";
+  const entry = cookie
+    .split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(prefix));
+  return entry === undefined
+    ? null
+    : decodeURIComponent(entry.slice(prefix.length));
+}
+
+// The file name from Content-Disposition (filename="..."), or a fallback.
+function fileNameOf(response: Response, fallback: string): string {
+  const header = response.headers.get("Content-Disposition") ?? "";
+  const match = /filename="([^"]+)"/.exec(header);
+  return match?.[1] ?? fallback;
+}
+
+async function send(path: string, init: RequestInit): Promise<Response> {
+  let response: Response;
+  try {
+    response = await fetch(path, { credentials: "include", ...init });
+  } catch {
+    throw new ReportsUnavailableError();
+  }
+  if (response.status === 401 || response.status === 403) {
+    throw new ReportsNotAllowedError();
+  }
+  if (response.status === 404) throw new ExportGoneError();
+  if (response.status === 422) throw new ExportRefusedError();
+  if (!response.ok) throw new ReportsUnavailableError();
+  return response;
+}
+
+async function postExport(
+  path: string,
+  body: Record<string, string | undefined>,
+): Promise<ExportAnswer> {
+  const token = csrfToken();
+  if (token === null || token.length === 0) throw new ReportsNotAllowedError();
+  const response = await send(path, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      "X-CSRF-Token": token,
+    },
+    body: JSON.stringify(
+      Object.fromEntries(
+        Object.entries(body).filter(
+          ([, value]) => value !== undefined && value !== "",
+        ),
+      ),
+    ),
+  });
+  if (response.status === 201) {
+    let payload: unknown;
+    try {
+      payload = await response.json();
+    } catch {
+      throw new ReportsUnavailableError();
+    }
+    const data = isObject(payload) ? payload.data : null;
+    if (
+      !isObject(data) ||
+      typeof data.export_id !== "string" ||
+      typeof data.file_name !== "string" ||
+      typeof data.sha256 !== "string" ||
+      typeof data.row_count !== "number" ||
+      typeof data.expires_at !== "string"
+    ) {
+      throw new ReportsUnavailableError();
+    }
+    return {
+      kind: "job",
+      exportId: data.export_id,
+      fileName: data.file_name,
+      sha256: data.sha256,
+      rowCount: data.row_count,
+      expiresAt: data.expires_at,
+    };
+  }
+  const exportId = response.headers.get("X-Export-Id");
+  const sha256 = response.headers.get("X-Export-SHA256");
+  const rows = Number(response.headers.get("X-Export-Rows"));
+  if (exportId === null || sha256 === null || !Number.isInteger(rows)) {
+    throw new ReportsUnavailableError();
+  }
+  return {
+    kind: "file",
+    exportId,
+    fileName: fileNameOf(response, "report"),
+    sha256,
+    rowCount: rows,
+    file: await response.blob(),
+  };
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -514,4 +674,40 @@ export const reportsApi = {
           }),
       ),
     ),
+  // Every export writes its own History row (DL-072 answer 14).
+  exportFile: (propertyId: string, request: ExportRequest) =>
+    postExport(`/api/v1/properties/${encodeURIComponent(propertyId)}/exports`, {
+      report: request.report,
+      file_type: request.fileType,
+      floor: request.floor,
+      unit_id: request.unitId,
+      from: request.from,
+      to: request.to,
+    }),
+  exportAudit: (propertyId: string, request: AuditExportRequest) =>
+    postExport(
+      `/api/v1/properties/${encodeURIComponent(propertyId)}/audit-exports`,
+      {
+        file_type: request.fileType,
+        from: request.from,
+        to: request.to,
+        actor_id: request.actorId,
+        action: request.action,
+        unit_id: request.unitId,
+      },
+    ),
+  download: async (
+    propertyId: string,
+    exportId: string,
+  ): Promise<DownloadedFile> => {
+    const response = await send(
+      `/api/v1/properties/${encodeURIComponent(propertyId)}/exports/${encodeURIComponent(exportId)}`,
+      {},
+    );
+    return {
+      fileName: fileNameOf(response, "report"),
+      sha256: response.headers.get("X-Export-SHA256") ?? "",
+      file: await response.blob(),
+    };
+  },
 };

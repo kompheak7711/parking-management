@@ -1,12 +1,17 @@
-"""Authorized, read-only HTTP queries for immutable audit events."""
+"""Authorized HTTP queries for immutable audit events.
+
+The queries change no record. A new audit search (its first page) writes one `audit.searched`
+event of its own (DL-072 answer 14); the next pages of the same search do not.
+"""
 
 import base64
+import json
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from types import MappingProxyType
 from typing import Final, Protocol, cast
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import psycopg
 from fastapi import APIRouter, HTTPException, Query, Request, status
@@ -21,6 +26,7 @@ from property_rental.audit import (
     _reject_secret_text,
     _validate_classified_audit_number,
     _validate_classified_audit_text,
+    is_file_fingerprint,
 )
 from property_rental.identity import (
     ActorResolver,
@@ -429,10 +435,13 @@ class PostgresAuditEventQueryFlow:
     ) -> AuditEventPage:
         try:
             with psycopg.connect(self._database_url) as connection:
-                return AuthorizedAuditEventQueryService(
+                page = AuthorizedAuditEventQueryService(
                     PostgresAuditEventQueryRepository(connection),
                     self._resource_scope_resolver,
                 ).search_property(actor, query)
+                if query.page.cursor is None:
+                    record_audit_search(connection, actor, query, len(page.events))
+                return page
         except psycopg.Error as error:
             raise AuditQueryUnavailable from error
 
@@ -450,6 +459,46 @@ class PostgresAuditEventQueryFlow:
                 ).resource_timeline(actor, query)
         except psycopg.Error as error:
             raise AuditQueryUnavailable from error
+
+
+def audit_search_details(query: PropertyAuditQuery, first_page_count: int) -> dict[str, object]:
+    """The filters of a new audit search, as its own audit event records them."""
+    filters = {
+        "from_date": query.from_date,
+        "to_date": query.to_date,
+        "actor_id": query.actor_id,
+        "action": query.action,
+        "resource_type": query.resource_type,
+        "resource_id": query.resource_id,
+        "customer_id": query.customer_id,
+        "unit_id": query.unit_id,
+        "lease_id": query.lease_id,
+        "correlation_id": query.correlation_id,
+    }
+    return {
+        "filters": {key: str(value) for key, value in filters.items() if value is not None},
+        "first_page_count": first_page_count,
+    }
+
+
+def record_audit_search(
+    connection: psycopg.Connection[tuple[object, ...]],
+    actor: AuthenticatedActor,
+    query: PropertyAuditQuery,
+    first_page_count: int,
+) -> None:
+    """Write the `audit.searched` event in the search's own transaction (DL-072 answer 14)."""
+    connection.execute(
+        "SELECT app.record_report_activity(%s,%s,%s::uuid[],'audit_search','audit.view',"
+        "%s::jsonb,%s)",
+        (
+            UUID(actor.actor_id),
+            query.property_id,
+            [query.property_id],
+            json.dumps(audit_search_details(query, first_page_count)),
+            uuid4(),
+        ),
+    )
 
 
 class AuthorizedAuditEventQueryService:
@@ -744,6 +793,8 @@ def _freeze_loaded(value: object, field_key: str | None = None) -> AuditValue:
         _validate_classified_audit_number("stored_audit_value", field_key)
         return value
     if isinstance(value, str):
+        if is_file_fingerprint(value, field_key):
+            return value
         _reject_secret_text(value, "stored_audit_value")
         _validate_classified_audit_text(value, "stored_audit_value", field_key)
         return value

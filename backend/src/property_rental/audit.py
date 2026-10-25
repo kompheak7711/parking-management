@@ -338,6 +338,8 @@ def _freeze_audit_value(
         _validate_classified_audit_number(field_path, field_key)
         return value
     if isinstance(value, str):
+        if is_file_fingerprint(value, field_key):
+            return value
         _reject_secret_text(value, field_path)
         _validate_classified_audit_text(value, field_path, field_key)
         return value
@@ -375,6 +377,18 @@ def thaw_audit_value(value: AuditValue) -> object:
 
 def _json_text(value: AuditValue) -> str:
     return json.dumps(thaw_audit_value(value), separators=(",", ":"), sort_keys=True)
+
+
+def is_file_fingerprint(value: str, field_key: str | None) -> bool:
+    """A SHA-256 file fingerprint in a `..._sha256` field (V1-057, DL-072 answer 12).
+
+    It is a public digest of an export file, not a secret, but its 64 hex letters look like a
+    key to the secret-text patterns, so only this exact shape in such a field is let through."""
+    return (
+        field_key is not None
+        and _normalize_audit_key(field_key).endswith("_sha256")
+        and re.fullmatch(r"[0-9a-f]{64}", value) is not None
+    )
 
 
 def _reject_secret_text(value: str, field_path: str) -> None:

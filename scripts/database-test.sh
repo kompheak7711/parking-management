@@ -199,6 +199,7 @@ database_test_suites='
   tests/test_reports_home_migration.py
   tests/test_report_month_facts_migration.py
   tests/test_report_registers_migration.py
+  tests/test_report_exports_migration.py
   tests/test_final_settlement_preview_migration.py
   tests/test_final_settlement_draft_migration.py
   tests/test_billing_run_migration.py

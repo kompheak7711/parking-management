@@ -485,3 +485,18 @@ def test_append_propagates_persistence_failure() -> None:
 
     with pytest.raises(RuntimeError, match="audit write failed"):
         service.append(audit_command())
+
+
+def test_a_file_fingerprint_is_kept_only_in_a_sha256_field() -> None:
+    """V1-057 (DL-072 answer 12): an export's audit event keeps its file's SHA-256."""
+    from property_rental.audit import _freeze_audit_value, is_file_fingerprint
+
+    digest = "0123456789abcdef" * 4
+    assert _freeze_audit_value({"file_sha256": digest}, "resulting_state")
+    assert is_file_fingerprint(digest, "file_sha256")
+    assert not is_file_fingerprint(digest.upper(), "file_sha256")
+    assert not is_file_fingerprint(digest, "file_reference")
+    with pytest.raises(ValueError):
+        _freeze_audit_value({"file_reference": digest}, "resulting_state")
+    with pytest.raises(ValueError):
+        _freeze_audit_value({"file_sha256": digest + "00"}, "resulting_state")

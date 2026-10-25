@@ -71,6 +71,10 @@ class ReportForbiddenError(PermissionError):
     """The person may not read this report for this Property."""
 
 
+class ReportNotFoundError(LookupError):
+    pass
+
+
 class ReportInvalidError(ValueError):
     """The report request is outside its bounds."""
 

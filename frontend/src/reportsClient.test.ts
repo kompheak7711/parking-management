@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
+  ExportGoneError,
+  ExportRefusedError,
   ReportsNotAllowedError,
   ReportsUnavailableError,
   reportsApi,
@@ -170,5 +172,77 @@ describe("reportsClient", () => {
     await expect(
       reportsApi.register(PROPERTY, "payments"),
     ).rejects.toBeInstanceOf(ReportsUnavailableError);
+  });
+
+  it("TEST-FE-V57-008 sends an export with the CSRF token and gets a small file at once", async () => {
+    Object.defineProperty(document, "cookie", {
+      configurable: true,
+      value: "__Host-prm_csrf=token-1",
+      writable: true,
+    });
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(new Blob(["PK"]), {
+        status: 200,
+        headers: {
+          "Content-Disposition":
+            'attachment; filename="payments_20261025_1830.xlsx"',
+          "X-Export-Id": "33333333-3333-4333-8333-333333333333",
+          "X-Export-SHA256": "a".repeat(64),
+          "X-Export-Rows": "12",
+        },
+      }),
+    );
+    const answer = await reportsApi.exportFile(PROPERTY, {
+      report: "payments",
+      fileType: "xlsx",
+      floor: "2",
+      from: "",
+    });
+    expect(answer.kind).toBe("file");
+    expect(answer.fileName).toBe("payments_20261025_1830.xlsx");
+    expect(answer.rowCount).toBe(12);
+    const [path, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(path).toBe(`/api/v1/properties/${PROPERTY}/exports`);
+    expect(init.method).toBe("POST");
+    expect((init.headers as Record<string, string>)["X-CSRF-Token"]).toBe(
+      "token-1",
+    );
+    expect(JSON.parse(init.body as string)).toEqual({
+      report: "payments",
+      file_type: "xlsx",
+      floor: "2",
+    });
+  });
+
+  it("TEST-FE-V57-009 gets an export job for a large file and tells a gone file", async () => {
+    Object.defineProperty(document, "cookie", {
+      configurable: true,
+      value: "__Host-prm_csrf=token-1",
+      writable: true,
+    });
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      answer(
+        {
+          data: {
+            export_id: "33333333-3333-4333-8333-333333333333",
+            file_name: "audit_20261025_1830.pdf",
+            row_count: 5000,
+            sha256: "b".repeat(64),
+            expires_at: "2026-10-26T11:30:00+00:00",
+          },
+        },
+        201,
+      ),
+    );
+    const job = await reportsApi.exportAudit(PROPERTY, { fileType: "pdf" });
+    expect(job.kind).toBe("job");
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(answer({}, 404));
+    await expect(
+      reportsApi.download(PROPERTY, job.exportId),
+    ).rejects.toBeInstanceOf(ExportGoneError);
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(answer({}, 422));
+    await expect(
+      reportsApi.exportFile(PROPERTY, { report: "payments", fileType: "pdf" }),
+    ).rejects.toBeInstanceOf(ExportRefusedError);
   });
 });

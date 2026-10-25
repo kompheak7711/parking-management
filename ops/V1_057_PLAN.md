@@ -115,3 +115,26 @@ Register summaries (fields over every row of the filter):
   `app.report_payment_facts` rebuilt on it; the register reads); `report_registers.py`; route
   `GET /api/v1/properties/{property_id}/reports/{name}` with `floor`, `from`, `to`, `offset`,
   `limit`; client `reportsApi.register`.
+- Step 4 (2026-10-25): migration `20270305_224` (`app.report_export_files`,
+  `app.record_report_activity`, `app.store_report_export`, `app.take_report_export`);
+  `report_files.py` (.xlsx with openpyxl, PDF with reportlab) and `report_exports.py`; routes
+  `POST /api/v1/properties/{property_id}/exports`, `POST .../audit-exports` and
+  `GET .../exports/{export_id}`; a new audit search (first page only) writes `audit.searched`;
+  client `reportsApi.exportFile`, `exportAudit` and `download`. The head checks in seven older
+  test files now name `20270305_224`. Step 4 choices, decided by Claude under the owner's
+  2026-10-23 22:30 rule:
+  - An export of up to 1,000 rows downloads at once and is not stored. A larger one (up to
+    50,000 rows) is an export job: its file is kept 24 hours for the person who made it only,
+    then deleted. The audit event of every export stays.
+  - The download path is Property-scoped, `/properties/{property_id}/exports/{export_id}`, in
+    place of API-078's `/exports/{export_id}`, so the same Property check as every report applies.
+  - Every report export writes `report.exported` and every audit export `audit.exported` with
+    the file's SHA-256 fingerprint in `file_sha256` (DL-072 answer 12). The History page accepts
+    an exact 64-letter hex value only in a `*_sha256` key; the floor filter is stored as
+    `floor_label`.
+  - A file shows a Customer by name with the Unit only: no ID number, address or document.
+  - The PDF uses the built-in Helvetica font, which has no Khmer letters; Khmer text is
+    readable in the .xlsx file. A Khmer PDF font is a later item.
+  - Packages: openpyxl and reportlab (approved), with their typing stubs types-openpyxl and
+    types-reportlab for the type check; reportlab brings pillow (MIT-CMU) and
+    charset-normalizer (MIT).
