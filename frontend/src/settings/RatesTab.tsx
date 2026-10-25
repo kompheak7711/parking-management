@@ -2,7 +2,7 @@
 // Services with their monthly rates. Both are effective-dated and kept forever: a change is a new
 // rate from a later day, never an edit. The server asks when and how the tenants were told of a
 // new Utility Rate, so the form asks too. R7b-6b adds Services (with a first rate), their names
-// and type, and the Service types. The move-out cleaning rates by Unit Type are a later step.
+// and type, and the Service types; R7b-6d the move-out cleaning rates by Unit Type.
 
 import {
   type FormEvent,
@@ -28,6 +28,7 @@ import { Icon } from "../shell/icons";
 import { Chip, Dialog } from "../shell/ui";
 import type { Language } from "../signInText";
 import { Problem } from "./BusinessTab";
+import { CleaningRatesCard } from "./CleaningRates";
 import {
   failureText,
   Field,
@@ -38,6 +39,8 @@ import {
   TypeDialog,
 } from "./ServiceDialogs";
 import {
+  type CleaningSettingsApi,
+  cleaningSettingsApi,
   type ServiceSetting,
   ServiceSettingsError,
   type ServiceSettings,
@@ -170,6 +173,7 @@ export function RatesTab({
   active,
   api,
   services: servicesApi = serviceSettingsApi,
+  cleaning = cleaningSettingsApi,
   today: fixedToday,
 }: {
   language: Language;
@@ -178,6 +182,8 @@ export function RatesTab({
   api: RatesApi;
   /** The Services and Service types; the real server when not given. */
   services?: ServiceSettingsApi;
+  /** The move-out cleaning rates; the real server when not given. */
+  cleaning?: CleaningSettingsApi;
   /** For tests; otherwise today in Phnom Penh. */
   today?: string;
 }) {
@@ -701,8 +707,7 @@ export function RatesTab({
           )}
           <div className="ui-tfoot">
             <span>
-              {sst(language, "se_svc_n")} {sst(language, "sv_bill_gap")}{" "}
-              {sst(language, "sv_later")}
+              {sst(language, "se_svc_n")} {sst(language, "sv_bill_gap")}
             </span>
           </div>
         </section>
@@ -723,6 +728,12 @@ export function RatesTab({
             types={ready.service_types}
           />
         )}
+        <CleaningRatesCard
+          active={active}
+          api={cleaning}
+          language={language}
+          propertyId={propertyId}
+        />
       </div>
 
       {open?.kind === "utility" && (

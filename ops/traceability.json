@@ -56174,6 +56174,98 @@
       "test_path": "frontend/src/leases/LeasesPage.test.tsx",
       "status": "implemented",
       "notes": "V1-058 R7b-6c: the New Lease form shows None first for an Only one type, Trash Collection chosen by default, tick boxes for One or more, a later Service greyed with its start; chosen Services are saved as Service terms from the Start Date with their approval period; a failed read waits with Retry."
+    },
+    {
+      "test_id": "test_a_rate_gives_its_unit_types_their_amount_and_ticking_moves_a_type",
+      "upstream_ids": [
+        "BR-MOVEOUT-013",
+        "DL-075"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_cleaning_rates_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6d: a cleaning rate gives every Unit of its Unit Types its amount as a new link in the Unit's own chain; ticking a type moves it from another rate (that rate's version goes up); a repeat answers the same rate; a new Unit or a changed type takes the type's rate."
+    },
+    {
+      "test_id": "test_a_unit_type_with_units_is_never_left_without_a_rate",
+      "upstream_ids": [
+        "BR-MOVEOUT-013",
+        "DL-075"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_cleaning_rates_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6d: untick or remove that would leave a Unit Type with Units without a rate is refused (P5V03); invalid input, a removed rate and a wrong reference are refused."
+    },
+    {
+      "test_id": "test_only_the_functions_are_open_to_the_runtime_role_and_history_is_protected",
+      "upstream_ids": [
+        "DL-075",
+        "SEC-016"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_cleaning_rates_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6d: the runtime role may only call the cleaning rate functions; rate identity and history are protected and never emptied."
+    },
+    {
+      "test_id": "test_cleaning_rates_are_read_by_settings_readers_and_changed_with_settings_access",
+      "upstream_ids": [
+        "BR-MOVEOUT-013",
+        "SEC-016",
+        "DL-075"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_service_settings_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6d: the cleaning settings read needs a Settings reader; every change needs settings.manage, Origin and CSRF and strict fields; P5V03 answers 409 UNIT_TYPE_NEEDS_CLEANING_RATE."
+    },
+    {
+      "test_id": "TEST-FE-1005",
+      "upstream_ids": [
+        "BR-MOVEOUT-013",
+        "DL-075",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/CleaningRates.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6d: the cleaning rates list their Unit Types and warn of a type with no rate; Add sends its own id (kept after a lost answer) and the ticked types, a type of another rate moves; Edit sends the version and reads again when out of date; untick and Remove of a type with Units are refused with its name, and the server's refusal says so."
+    },
+    {
+      "test_id": "TEST-FE-1006",
+      "upstream_ids": [
+        "BR-MOVEOUT-013",
+        "DL-075",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/UnitSetupTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6d: Unit setup shows a No cleaning rate chip on a Unit Type with no move-out cleaning rate, and no chip when the rates cannot be read."
+    },
+    {
+      "test_id": "TEST-FE-1007",
+      "upstream_ids": [
+        "SEC-016",
+        "DL-075",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/CleaningRates.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6d: without Settings access the cleaning rates show with no buttons; a failed read offers Retry; Khmer names show in Khmer."
+    },
+    {
+      "test_id": "TEST-FE-1008",
+      "upstream_ids": [
+        "SEC-003",
+        "DL-075"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/settings/serviceSettingsClient.test.ts",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6d: the cleaning settings client reads the answer strictly, sends a new rate with its id, a change with its version and a removal with the CSRF token, and maps UNIT_TYPE_NEEDS_CLEANING_RATE."
     }
   ]
 }

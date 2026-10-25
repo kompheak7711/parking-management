@@ -652,11 +652,6 @@ const TEXT = {
   sv_none: ["No Services yet.", "មិនទាន់មានសេវា។"],
   // new
   util_none: ["No Utility Rates yet.", "មិនទាន់មានអត្រាទឹកភ្លើង។"],
-  // new
-  sv_later: [
-    "Move-out cleaning rates come in the next step.",
-    "អត្រាសម្អាតពេលចាកចេញ នឹងមកនៅជំហានបន្ទាប់។",
-  ],
   // new (R7b-6b)
   sv_add: ["Add a Service", "បន្ថែមសេវា"],
   sv_type: ["Type", "ប្រភេទ"],
@@ -721,6 +716,38 @@ const TEXT = {
   f_id_reused: [
     "This was already saved, with the values sent first. It is in the list now; change it there if needed.",
     "វាត្រូវបានរក្សាទុករួចហើយ ដោយតម្លៃដែលបានផ្ញើលើកដំបូង។ វានៅក្នុងបញ្ជីឥឡូវនេះ សូមប្តូរនៅទីនោះ បើត្រូវការ។",
+  ],
+  // V1-058 R7b-6d: the move-out cleaning rates by Unit Type.
+  cl_title: ["Move-out cleaning rates", "អត្រាសម្អាតពេលចាកចេញ"],
+  cl_add: ["Add a cleaning rate", "បន្ថែមអត្រាសម្អាត"],
+  cl_name: ["Name", "ឈ្មោះ"],
+  cl_types: ["Unit Types", "ប្រភេទបន្ទប់"],
+  cl_rate: ["Rate", "អត្រា"],
+  cl_none: ["No cleaning rates yet.", "មិនទាន់មានអត្រាសម្អាត។"],
+  cl_missing: [
+    "No cleaning rate yet: {0}. Tick them in a cleaning rate.",
+    "មិនទាន់មានអត្រាសម្អាត៖ {0}។ សូមធីកពួកវានៅក្នុងអត្រាសម្អាតមួយ។",
+  ],
+  cl_needs: [
+    "{0} has Units and needs a cleaning rate. Put it in another rate first.",
+    "{0} មានបន្ទប់ ហើយត្រូវការអត្រាសម្អាត។ សូមដាក់វាក្នុងអត្រាផ្សេងជាមុនសិន។",
+  ],
+  cl_moves: [
+    "Now in {0}; ticking moves it here.",
+    "ឥឡូវនៅក្នុង {0}។ ការធីកនឹងផ្លាស់វាមកទីនេះ។",
+  ],
+  cl_note: [
+    "A move-out has a cleaning charge at the rate of the Unit's type. A new amount applies to every Unit of its types from now on; charges already made keep theirs.",
+    "ការចាកចេញមានថ្លៃសម្អាត តាមអត្រានៃប្រភេទបន្ទប់។ ចំនួនថ្មីអនុវត្តចំពោះបន្ទប់ទាំងអស់នៃប្រភេទរបស់វា ចាប់ពីពេលនេះតទៅ ថ្លៃដែលបានធ្វើរួចរក្សាចំនួនដើម។",
+  ],
+  cl_chip: ["No cleaning rate", "គ្មានអត្រាសម្អាត"],
+  cl_read_failed: [
+    "The cleaning rates could not be read just now. Check the connection and try again.",
+    "មិនអាចអានអត្រាសម្អាតបានទេឥឡូវនេះ។ សូមពិនិត្យការតភ្ជាប់ ហើយព្យាយាមម្តងទៀត។",
+  ],
+  f_needs_rate: [
+    "A Unit Type that has Units needs a cleaning rate. Put it in another rate first. The list was read again.",
+    "ប្រភេទបន្ទប់ដែលមានបន្ទប់ ត្រូវការអត្រាសម្អាត។ សូមដាក់វាក្នុងអត្រាផ្សេងជាមុនសិន។ បញ្ជីត្រូវបានអានម្តងទៀត។",
   ],
   // new
   note_l: ["Note", "កំណត់ចំណាំ"],

@@ -109,11 +109,38 @@ function apiOf(
   };
 }
 
-function show(api = apiOf(), language: "en" | "km" = "en") {
+/** The move-out cleaning rates: every Unit Type has one unless named in `noRate`. */
+function cleaningOf(noRate: string[] = []) {
+  return {
+    read: vi.fn(() =>
+      Promise.resolve({
+        cleaning_rates: [],
+        unit_types: LISTS.lists.UNIT_TYPE.map((type) => ({
+          code: type.code,
+          name_en: type.name_en,
+          name_km: type.name_km,
+          units: 0,
+          cleaning_rate_id: noRate.includes(type.code) ? null : "rate-1",
+        })),
+        can_manage: true,
+      }),
+    ),
+    add: vi.fn(() => Promise.resolve({})),
+    change: vi.fn(() => Promise.resolve({})),
+    remove: vi.fn(() => Promise.resolve({})),
+  };
+}
+
+function show(
+  api = apiOf(),
+  language: "en" | "km" = "en",
+  cleaning = cleaningOf(),
+) {
   render(
     <UnitSetupTab
       active
       api={api}
+      cleaning={cleaning}
       language={language}
       propertyId="property-1"
     />,
@@ -310,5 +337,20 @@ describe("Settings: Unit setup", () => {
     expect(floors.textContent).toContain("ជាន់ទី 1");
     expect(floors.textContent).toContain("បន្ទប់កំពុងប្រើ");
     expect(floors.textContent).toContain("មិនទាន់មានបន្ទប់");
+  });
+
+  it("TEST-FE-1006 a Unit Type with no move-out cleaning rate shows a No cleaning rate chip; when the rates cannot be read no chip shows", async () => {
+    show(apiOf(), "en", cleaningOf(["ONE_BEDROOM"]));
+    const types = await screen.findByRole("region", { name: "Unit Types" });
+    const one = within(types).getByText("One Bedroom").closest("li");
+    await within(one ?? types).findByText("No cleaning rate");
+    const studio = within(types).getByText("Studio").closest("li");
+    expect(within(studio ?? types).queryByText("No cleaning rate")).toBeNull();
+    cleanup();
+    const failing = cleaningOf(["ONE_BEDROOM"]);
+    failing.read.mockImplementation(() => Promise.reject(new Error("down")));
+    show(apiOf(), "en", failing);
+    const again = await screen.findByRole("region", { name: "Unit Types" });
+    expect(within(again).queryByText("No cleaning rate")).toBeNull();
   });
 });

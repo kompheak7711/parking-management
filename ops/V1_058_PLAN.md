@@ -364,3 +364,14 @@ Run rules: frontend-only steps run the frontend gates (format, typecheck, lint, 
 - Decided by Claude under the owner's 2026-10-23 22:30 rule: changed values after a lost answer still open the draft the first try saved (TEST-FE-860 behaviour); the Lease page shows its real terms.
 - Reviews: round 1 no blocker, 5 should-fix (renewal could pre-tick two of an Only one type; removed types; rate on the Start Date; Trash default when greyed; changed values after a lost answer, kept as above) fixed. Round 2 no blocker, 1 should-fix (renewal with no End Date) fixed. Round 3 no blocker, no should-fix.
 - Tests TEST-FE-1003, 1004; PostgreSQL test_services_settings_migration 5 passed. Gates: prettier, tsc, eslint clean; vitest 1,867 passed; traceability 28 passed.
+
+
+### R7b-6d: move-out cleaning rates by Unit Type (2026-10-25)
+
+- Settings → Rates and services gets a "Move-out cleaning rates" card (DESIGN.md "Rates and services"): Name, Unit Types, Rate, Edit, Remove, "Add a cleaning rate", and a warning line naming any Unit Type with no rate. Unit setup shows a "No cleaning rate" chip on such a Unit Type.
+- Migration 20270317_236: tables cleaning_rates and cleaning_rate_unit_types (one rate per Unit Type); save_cleaning_rate (ticking a type moves it; the rate that loses it gets a new version), remove_cleaning_rate, cleaning_settings_read. A Unit Type with Units is never left without a rate (P5V03, 409 UNIT_TYPE_NEEDS_CLEANING_RATE); the form checks it first and names the type.
+- The move-out cleaning charge still reads each Unit's own append-only rate chain (migration 81): saving a rate adds a link for every Unit of its types whose amount differs, and a new Unit or a type change takes its type's rate (audited under property.manage). Nothing recorded changes.
+- Decided by Claude under the owner's 2026-10-23 22:30 rule: a rate is at least one cent; a per-Unit rate set on the Unit page stays until its type's rate is saved again; a Unit may be given a type with no rate yet (it keeps its amount; Settings warns and Unit setup shows the chip); a removed rate refuses every form (404).
+- Locks: Units of the named types FOR KEY SHARE, then the cleaning-settings lock, then each Unit's cleaning-rate lock; the units trigger takes the cleaning-settings lock shared.
+- Reviews: round 1 no blocker, 5 should-fix (deadlock with a Unit type change, removed rate looping on 409, audit capability of the trigger, links to removed Unit Types, Unit moved to a type with no rate) fixed. Round 2 no blocker, no should-fix. Round 3 text nits fixed.
+- Tests: PostgreSQL test_cleaning_rates_migration 3, plus the 236 head in 18 suites; API tests 19; TEST-FE-1005 to 1008. Runs: affected PostgreSQL suites 243 passed, test_migrations 124 passed; seven money suites 191 passed with the same 1 failure as unchanged HEAD (test_meter_identity_active_uniqueness_and_rate_unit_consistency). vitest 1,871 passed before the review fixes, settings suites 26 passed after.

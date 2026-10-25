@@ -245,6 +245,17 @@ function show(
       api={api}
       language={language}
       propertyId="property-1"
+      cleaning={{
+        read: () =>
+          Promise.resolve({
+            cleaning_rates: [],
+            unit_types: [],
+            can_manage: false,
+          }),
+        add: () => Promise.resolve({}),
+        change: () => Promise.resolve({}),
+        remove: () => Promise.resolve({}),
+      }}
       services={services}
       today={TODAY}
     />,
@@ -325,11 +336,8 @@ describe("Settings: Rates and services", () => {
       "Trash Collection$3.5001/12/2026New contract",
       "Trash Collection$3.0001/01/2025—",
     ]);
-    expect(
-      within(services).getByText(
-        /Move-out cleaning rates come in the next step/,
-      ),
-    ).toBeTruthy();
+    // R7b-6d: the cleaning rates have their own card now.
+    expect(within(services).queryByText(/cleaning rates come/)).toBeNull();
     // The helpers on their own.
     expect(
       serviceNow(

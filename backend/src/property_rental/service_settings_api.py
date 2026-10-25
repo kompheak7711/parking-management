@@ -7,6 +7,12 @@
   month); ``POST /properties/{p}/services/{id}`` changes its names or its type.
 - ``POST /properties/{p}/service-types`` adds a type; ``POST .../service-types/{id}`` changes it;
   ``POST .../service-types/{id}/remove`` removes one with no Services.
+- ``GET /properties/{p}/cleaning-settings`` (R7b-6d): the move-out cleaning rates with their Unit
+  Types, and every Unit Type with its Units count and its rate.
+  ``POST /properties/{p}/cleaning-rates`` adds a rate; ``POST .../cleaning-rates/{id}`` changes it
+  (a Unit Type ticked here moves from its other rate); ``POST .../cleaning-rates/{id}/remove``
+  removes it. A Unit Type that has Units is never left without a rate: that answers 409
+  ``UNIT_TYPE_NEEDS_CLEANING_RATE``. Changing or removing a rate already removed answers 404.
 
 Every change needs ``settings.manage`` (the Owner or a user ticked for Settings access), Origin and
 CSRF. The client chooses a new record's id, so sending the same form again answers the same record;
@@ -57,11 +63,12 @@ class ServiceSettingsInvalid(ValueError):
 
 
 class ServiceSettingsConflict(RuntimeError):
-    """A rule refused the change (a Lease holds two Services of the type; the type has Services)."""
+    """A rule refused the change (a Lease holds two Services of the type; the type has Services; a
+    Unit Type with Units would have no cleaning rate)."""
 
-    def __init__(self, type_has_services: bool = False) -> None:
+    def __init__(self, refusal: Refusal) -> None:
         super().__init__()
-        self.type_has_services = type_has_services
+        self.refusal = refusal
 
 
 SETTINGS_ID_REUSED: Final = Refusal(
@@ -77,6 +84,11 @@ LEASE_HOLDS_TWO_OF_TYPE: Final = Refusal(
 )
 SERVICE_TYPE_HAS_SERVICES: Final = Refusal(
     409, "SERVICE_TYPE_HAS_SERVICES", "A Service type with Services cannot be removed."
+)
+UNIT_TYPE_NEEDS_CLEANING_RATE: Final = Refusal(
+    409,
+    "UNIT_TYPE_NEEDS_CLEANING_RATE",
+    "A Unit Type that has Units needs a cleaning rate. Put it in another rate first.",
 )
 
 
@@ -134,6 +146,25 @@ class ServiceTypeRemove(StrictBody):
     version: Annotated[int, Field(strict=True, ge=1)]
 
 
+UnitTypeCode = Annotated[str, Field(pattern=r"^[A-Z0-9][A-Z0-9_]{0,39}$")]
+
+
+class CleaningRateChange(StrictBody):
+    name_en: Name
+    name_km: KhmerName = None
+    rate_usd_cents: Annotated[int, Field(strict=True, ge=1, le=MAX_RATE_USD_CENTS)]
+    unit_types: Annotated[list[UnitTypeCode], Field(max_length=200)]
+    version: Annotated[int, Field(strict=True, ge=1)]
+
+
+class CleaningRateCreate(StrictBody):
+    cleaning_rate_id: UUID
+    name_en: Name
+    name_km: KhmerName = None
+    rate_usd_cents: Annotated[int, Field(strict=True, ge=1, le=MAX_RATE_USD_CENTS)]
+    unit_types: Annotated[list[UnitTypeCode], Field(max_length=200)]
+
+
 class ServiceSettingsFlow(Protocol):
     def read(self, property_id: UUID, today: date) -> dict[str, object]: ...
 
@@ -157,6 +188,20 @@ class ServiceSettingsFlow(Protocol):
         self, property_id: UUID, actor_id: UUID, type_id: UUID, version: int
     ) -> dict[str, object]: ...
 
+    def read_cleaning(self, property_id: UUID) -> dict[str, object]: ...
+
+    def save_cleaning_rate(
+        self,
+        property_id: UUID,
+        actor_id: UUID,
+        rate_id: UUID,
+        body: CleaningRateCreate | CleaningRateChange,
+    ) -> dict[str, object]: ...
+
+    def remove_cleaning_rate(
+        self, property_id: UUID, actor_id: UUID, rate_id: UUID, version: int
+    ) -> dict[str, object]: ...
+
 
 def _refusal(error: psycopg.Error) -> Exception:
     code = error.sqlstate
@@ -167,9 +212,11 @@ def _refusal(error: psycopg.Error) -> Exception:
     if code == "23505":
         return ServiceSettingsIdReused()
     if code == "P5V01":
-        return ServiceSettingsConflict(type_has_services=False)
+        return ServiceSettingsConflict(LEASE_HOLDS_TWO_OF_TYPE)
     if code == "P5V02":
-        return ServiceSettingsConflict(type_has_services=True)
+        return ServiceSettingsConflict(SERVICE_TYPE_HAS_SERVICES)
+    if code == "P5V03":
+        return ServiceSettingsConflict(UNIT_TYPE_NEEDS_CLEANING_RATE)
     if code in {"40P01", "40001"}:
         # Another change ran at the same moment; nothing was saved, so it may be sent again.
         return ServiceSettingsOutOfDate()
@@ -292,6 +339,46 @@ class PostgresServiceSettingsFlow:
             )
         )
 
+    def read_cleaning(self, property_id: UUID) -> dict[str, object]:
+        value = self._one("SELECT app.cleaning_settings_read(%s)", (property_id,))
+        if value is None:
+            raise ServiceSettingsNotFound
+        return self._record(value)
+
+    def save_cleaning_rate(
+        self,
+        property_id: UUID,
+        actor_id: UUID,
+        rate_id: UUID,
+        body: CleaningRateCreate | CleaningRateChange,
+    ) -> dict[str, object]:
+        return self._record(
+            self._one(
+                "SELECT app.save_cleaning_rate(%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                (
+                    property_id,
+                    actor_id,
+                    rate_id,
+                    body.name_en,
+                    body.name_km or None,
+                    body.rate_usd_cents,
+                    body.unit_types,
+                    body.version if isinstance(body, CleaningRateChange) else None,
+                    SETTINGS_MANAGE_CAPABILITY,
+                ),
+            )
+        )
+
+    def remove_cleaning_rate(
+        self, property_id: UUID, actor_id: UUID, rate_id: UUID, version: int
+    ) -> dict[str, object]:
+        return self._record(
+            self._one(
+                "SELECT app.remove_cleaning_rate(%s, %s, %s, %s, %s)",
+                (property_id, actor_id, rate_id, version, SETTINGS_MANAGE_CAPABILITY),
+            )
+        )
+
 
 def _allowed(actor: AuthenticatedActor, capability: str, property_id: UUID) -> bool:
     return is_authorized(
@@ -311,9 +398,7 @@ def _invoke(operation: Callable[[], T]) -> T:
     except ServiceSettingsOutOfDate as exc:
         raise RefusedRequest(SETTINGS_OUT_OF_DATE) from exc
     except ServiceSettingsConflict as exc:
-        raise RefusedRequest(
-            SERVICE_TYPE_HAS_SERVICES if exc.type_has_services else LEASE_HOLDS_TWO_OF_TYPE
-        ) from exc
+        raise RefusedRequest(exc.refusal) from exc
     except ServiceSettingsForbidden as exc:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN) from exc
     except ServiceSettingsUnavailable as exc:
@@ -405,6 +490,52 @@ def create_service_settings_router(
         return answer(
             request,
             _invoke(lambda: flow.remove_type(property_id, actor_id, type_id, body.version)),
+        )
+
+    @router.get("/properties/{property_id}/cleaning-settings")
+    def read_cleaning(property_id: UUID, request: Request) -> dict[str, object]:
+        if set(request.query_params):
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT)
+        actor = actor_of(request)
+        if not any(_allowed(actor, item, property_id) for item in READ_CAPABILITIES):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+        data = _invoke(lambda: flow.read_cleaning(property_id))
+        return answer(
+            request,
+            {**data, "can_manage": _allowed(actor, SETTINGS_MANAGE_CAPABILITY, property_id)},
+        )
+
+    @router.post("/properties/{property_id}/cleaning-rates", status_code=status.HTTP_201_CREATED)
+    def add_cleaning_rate(
+        property_id: UUID, body: CleaningRateCreate, request: Request
+    ) -> dict[str, object]:
+        actor_id = manager(request, property_id)
+        return answer(
+            request,
+            _invoke(
+                lambda: flow.save_cleaning_rate(property_id, actor_id, body.cleaning_rate_id, body)
+            ),
+        )
+
+    @router.post("/properties/{property_id}/cleaning-rates/{rate_id}")
+    def change_cleaning_rate(
+        property_id: UUID, rate_id: UUID, body: CleaningRateChange, request: Request
+    ) -> dict[str, object]:
+        actor_id = manager(request, property_id)
+        return answer(
+            request, _invoke(lambda: flow.save_cleaning_rate(property_id, actor_id, rate_id, body))
+        )
+
+    @router.post("/properties/{property_id}/cleaning-rates/{rate_id}/remove")
+    def remove_cleaning_rate(
+        property_id: UUID, rate_id: UUID, body: ServiceTypeRemove, request: Request
+    ) -> dict[str, object]:
+        actor_id = manager(request, property_id)
+        return answer(
+            request,
+            _invoke(
+                lambda: flow.remove_cleaning_rate(property_id, actor_id, rate_id, body.version)
+            ),
         )
 
     return router

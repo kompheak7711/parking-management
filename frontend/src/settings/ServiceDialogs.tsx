@@ -73,6 +73,7 @@ const FAILURE_TEXT: Record<ServiceSettingsFailure, SettingsTextKey> = {
   id_reused: "f_id_reused",
   lease_holds_two: "f_lease_two",
   type_has_services: "f_type_has",
+  needs_rate: "f_needs_rate",
   unknown: "rates_unknown",
 };
 
@@ -98,7 +99,7 @@ function letters(value: string): number {
   return Array.from(value).length;
 }
 
-function NameFields({
+export function NameFields({
   language,
   prefix,
   nameEn,
@@ -162,7 +163,7 @@ function NameFields({
   );
 }
 
-function nameErrors(
+export function nameErrors(
   language: Language,
   prefix: string,
   nameEn: string,

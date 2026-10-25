@@ -1,7 +1,7 @@
 // V1-058 R7b-2: Settings → Unit setup (mock-up round 9, DL-075 answer 10): Floors, Unit Types,
 // Views, Kitchens and Room features, each with Add, Edit (not Floors) and Remove. The lists fill
 // the choices of New Unit and Update Unit. The Unit counts come from the Units list; an item a Unit
-// uses cannot be removed.
+// uses cannot be removed. R7b-6d: a Unit Type with no move-out cleaning rate shows a chip.
 
 import {
   type FormEvent,
@@ -12,7 +12,7 @@ import {
 } from "react";
 
 import { Icon } from "../shell/icons";
-import { Dialog } from "../shell/ui";
+import { Chip, Dialog } from "../shell/ui";
 import type { Language } from "../signInText";
 import {
   type UnitApi,
@@ -25,6 +25,10 @@ import {
   unitSetupListKinds,
 } from "../unitClient";
 import { allPages } from "../units/unitsData";
+import {
+  type CleaningSettingsApi,
+  cleaningSettingsApi,
+} from "./serviceSettingsClient";
 import { type SettingsTextKey, sst } from "./text";
 
 export type SetupApi = Pick<
@@ -236,13 +240,18 @@ export function UnitSetupTab({
   propertyId,
   active,
   api,
+  cleaning = cleaningSettingsApi,
 }: {
   language: Language;
   propertyId: string;
   active: boolean;
   api: SetupApi;
+  /** The move-out cleaning rates; the real server when not given. */
+  cleaning?: CleaningSettingsApi;
 }) {
   const [lists, setLists] = useState<UnitSetupLists | null>(null);
+  // The Unit Types with no cleaning rate; null when the rates could not be read.
+  const [noRate, setNoRate] = useState<Set<string> | null>(null);
   const [units, setUnits] = useState<UnitResource[] | null>(null);
   const [failed, setFailed] = useState(false);
   const [editing, setEditing] = useState<Editing | null>(null);
@@ -264,18 +273,30 @@ export function UnitSetupTab({
       allPages(async (cursor) =>
         api.list(propertyId, cursor === undefined ? {} : { cursor }),
       ).catch(() => null),
+      cleaning
+        .read(propertyId)
+        .then(
+          (found) =>
+            new Set(
+              found.unit_types
+                .filter((type) => type.cleaning_rate_id === null)
+                .map((type) => type.code),
+            ),
+        )
+        .catch(() => null),
     ])
-      .then(([loaded, read]) => {
+      .then(([loaded, read, missing]) => {
         if (operation !== sequence.current) return;
         setLists(loaded);
         setUnits(read);
+        setNoRate(missing);
       })
       .catch(() => {
         if (operation !== sequence.current) return;
         setLists(null);
         setFailed(true);
       });
-  }, [api, propertyId]);
+  }, [api, cleaning, propertyId]);
 
   // Another Property never shows the lists of the one before, and a change still on its way
   // for the one before reports nothing here.
@@ -286,6 +307,7 @@ export function UnitSetupTab({
     setProblem(null);
     setLists(null);
     setUnits(null);
+    setNoRate(null);
     setEditing(null);
     setRemoving(null);
     setToast(null);
@@ -389,6 +411,11 @@ export function UnitSetupTab({
                           ? sst(language, "set_n_unit1")
                           : sst(language, "set_n_units", count)}
                   </small>
+                  {kind === "UNIT_TYPE" && noRate?.has(item.code) === true && (
+                    <Chip icon="alert" tone="warn">
+                      {sst(language, "cl_chip")}
+                    </Chip>
+                  )}
                 </span>
                 {manage && (
                   <span className="ui-actions">

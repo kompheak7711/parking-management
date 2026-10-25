@@ -99,6 +99,7 @@ export type ServiceSettingsFailure =
   | "id_reused"
   | "lease_holds_two"
   | "type_has_services"
+  | "needs_rate"
   | "unknown";
 
 export class ServiceSettingsError extends Error {
@@ -113,6 +114,7 @@ const CODES: Record<string, ServiceSettingsFailure> = {
   SETTINGS_ID_REUSED: "id_reused",
   LEASE_HOLDS_TWO_OF_TYPE: "lease_holds_two",
   SERVICE_TYPE_HAS_SERVICES: "type_has_services",
+  UNIT_TYPE_NEEDS_CLEANING_RATE: "needs_rate",
 };
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -293,6 +295,116 @@ export const serviceSettingsApi: ServiceSettingsApi = {
   removeType: (propertyId, typeId, version) =>
     request(
       `${property(propertyId)}/service-types/${encodeURIComponent(typeId)}/remove`,
+      { version },
+    ),
+};
+
+// V1-058 R7b-6d: the move-out cleaning rates. One rate covers one or more Unit Types; each Unit
+// Type has one rate, and a Unit Type that has Units is never left without one.
+
+export interface CleaningRate {
+  cleaning_rate_id: string;
+  name_en: string;
+  name_km: string | null;
+  rate_usd_cents: number;
+  version: number;
+  /** Unit Type codes. */
+  unit_types: string[];
+}
+
+export interface CleaningUnitType {
+  code: string;
+  name_en: string;
+  name_km: string | null;
+  units: number;
+  cleaning_rate_id: string | null;
+}
+
+export interface CleaningSettings {
+  cleaning_rates: CleaningRate[];
+  unit_types: CleaningUnitType[];
+  can_manage: boolean;
+}
+
+export interface CleaningRateForm {
+  name_en: string;
+  name_km: string | null;
+  rate_usd_cents: number;
+  unit_types: string[];
+}
+
+export interface CleaningSettingsApi {
+  read: (propertyId: string) => Promise<CleaningSettings>;
+  add: (
+    propertyId: string,
+    body: CleaningRateForm & { cleaning_rate_id: string },
+  ) => Promise<unknown>;
+  change: (
+    propertyId: string,
+    rateId: string,
+    body: CleaningRateForm & { version: number },
+  ) => Promise<unknown>;
+  remove: (
+    propertyId: string,
+    rateId: string,
+    version: number,
+  ) => Promise<unknown>;
+}
+
+function codes(value: unknown): string[] {
+  if (!Array.isArray(value)) throw new ServiceSettingsError("unknown");
+  return value.map(text);
+}
+
+/** Reads the answer of the cleaning settings read; anything unexpected is "unknown". */
+export function cleaningOf(value: unknown): CleaningSettings {
+  if (
+    !isObject(value) ||
+    !Array.isArray(value.cleaning_rates) ||
+    !Array.isArray(value.unit_types) ||
+    typeof value.can_manage !== "boolean"
+  ) {
+    throw new ServiceSettingsError("unknown");
+  }
+  return {
+    cleaning_rates: value.cleaning_rates.map((rate: unknown) => {
+      if (!isObject(rate)) throw new ServiceSettingsError("unknown");
+      return {
+        cleaning_rate_id: text(rate.cleaning_rate_id),
+        name_en: text(rate.name_en),
+        name_km: textOrNull(rate.name_km),
+        rate_usd_cents: count(rate.rate_usd_cents),
+        version: count(rate.version),
+        unit_types: codes(rate.unit_types),
+      };
+    }),
+    unit_types: value.unit_types.map((type: unknown) => {
+      if (!isObject(type)) throw new ServiceSettingsError("unknown");
+      return {
+        code: text(type.code),
+        name_en: text(type.name_en),
+        name_km: textOrNull(type.name_km),
+        units: count(type.units),
+        cleaning_rate_id: textOrNull(type.cleaning_rate_id),
+      };
+    }),
+    can_manage: value.can_manage,
+  };
+}
+
+export const cleaningSettingsApi: CleaningSettingsApi = {
+  read: async (propertyId) =>
+    cleaningOf(await request(`${property(propertyId)}/cleaning-settings`)),
+  add: (propertyId, body) =>
+    request(`${property(propertyId)}/cleaning-rates`, body),
+  change: (propertyId, rateId, body) =>
+    request(
+      `${property(propertyId)}/cleaning-rates/${encodeURIComponent(rateId)}`,
+      body,
+    ),
+  remove: (propertyId, rateId, version) =>
+    request(
+      `${property(propertyId)}/cleaning-rates/${encodeURIComponent(rateId)}/remove`,
       { version },
     ),
 };

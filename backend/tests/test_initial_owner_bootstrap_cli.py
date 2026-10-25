@@ -891,6 +891,11 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/properties/{property_id}/service-types": {"post"},
         "/api/v1/properties/{property_id}/service-types/{type_id}": {"post"},
         "/api/v1/properties/{property_id}/service-types/{type_id}/remove": {"post"},
+        # V1-058 R7b-6d: move-out cleaning rates by Unit Type.
+        "/api/v1/properties/{property_id}/cleaning-settings": {"get"},
+        "/api/v1/properties/{property_id}/cleaning-rates": {"post"},
+        "/api/v1/properties/{property_id}/cleaning-rates/{rate_id}": {"post"},
+        "/api/v1/properties/{property_id}/cleaning-rates/{rate_id}/remove": {"post"},
         "/api/v1/properties/{property_id}/final-settlements/{settlement_id}/preview": {"get"},
         "/api/v1/properties/{property_id}/final-settlements/{settlement_id}/drafts": {"post"},
         # V1-056 slice 11e-2: the post-settlement correction drafts and the Adjustment reversal.

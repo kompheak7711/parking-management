@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
+  cleaningOf,
+  cleaningSettingsApi,
   ServiceSettingsError,
   serviceSettingsApi,
   settingsOf,
@@ -124,5 +126,83 @@ describe("Service settings client", () => {
     await expect(serviceSettingsApi.read("p-1")).rejects.toMatchObject({
       failure: "unknown",
     });
+  });
+
+  it("TEST-FE-1008 reads the cleaning rates strictly, sends a new rate with its id, a change with its version and a removal, and maps the needs-a-rate refusal", async () => {
+    const read = {
+      cleaning_rates: [
+        {
+          cleaning_rate_id: "r-1",
+          name_en: "Small",
+          name_km: null,
+          rate_usd_cents: 1500,
+          removed: false,
+          version: 1,
+          unit_types: ["STUDIO"],
+        },
+      ],
+      unit_types: [
+        {
+          code: "STUDIO",
+          name_en: "Studio",
+          name_km: null,
+          units: 3,
+          cleaning_rate_id: "r-1",
+        },
+      ],
+      can_manage: false,
+    };
+    expect(cleaningOf(read).cleaning_rates[0]?.unit_types).toEqual(["STUDIO"]);
+    for (const bad of [
+      { ...read, can_manage: 1 },
+      { ...read, unit_types: [{ ...read.unit_types[0], units: -1 }] },
+      {
+        ...read,
+        cleaning_rates: [{ ...read.cleaning_rates[0], unit_types: "STUDIO" }],
+      },
+    ]) {
+      expect(() => cleaningOf(bad)).toThrow(ServiceSettingsError);
+    }
+    const reading = answer(200, { data: read });
+    vi.stubGlobal("fetch", reading);
+    expect((await cleaningSettingsApi.read("p-1")).can_manage).toBe(false);
+    expect(reading).toHaveBeenCalledWith(
+      "/api/v1/properties/p-1/cleaning-settings",
+      expect.objectContaining({ method: "GET" }),
+    );
+
+    vi.spyOn(document, "cookie", "get").mockReturnValue(
+      "__Host-prm_csrf=token-2",
+    );
+    const sent = answer(200, { data: {} });
+    vi.stubGlobal("fetch", sent);
+    const form = {
+      name_en: "Small",
+      name_km: null,
+      rate_usd_cents: 1500,
+      unit_types: ["STUDIO"],
+    };
+    await cleaningSettingsApi.add("p-1", { cleaning_rate_id: "r-2", ...form });
+    await cleaningSettingsApi.change("p-1", "r 1", { ...form, version: 3 });
+    await cleaningSettingsApi.remove("p-1", "r-1", 4);
+    expect((sent.mock.calls as unknown[][]).map((call) => call[0])).toEqual([
+      "/api/v1/properties/p-1/cleaning-rates",
+      "/api/v1/properties/p-1/cleaning-rates/r%201",
+      "/api/v1/properties/p-1/cleaning-rates/r-1/remove",
+    ]);
+    expect(sent).toHaveBeenLastCalledWith(
+      "/api/v1/properties/p-1/cleaning-rates/r-1/remove",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ version: 4 }),
+      }),
+    );
+    vi.stubGlobal(
+      "fetch",
+      answer(409, { error: { code: "UNIT_TYPE_NEEDS_CLEANING_RATE" } }),
+    );
+    await expect(
+      cleaningSettingsApi.remove("p-1", "r-1", 4),
+    ).rejects.toMatchObject({ failure: "needs_rate" });
   });
 });
