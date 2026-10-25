@@ -436,13 +436,14 @@ def _validate_classified_audit_text(
     if field_key is None:
         raise ValueError(f"{field_path} text is not classified for audit persistence")
     field_key = _normalize_audit_key(field_key)
-    if (field_key == "capability" or field_key.endswith("capability_ids")) and re.fullmatch(
-        r"[a-z][a-z0-9_-]*(?:\.[a-z0-9_-]+)+", value
-    ):
+    # `also` names a second capability in older authorization evidence (migration 72).
+    if (
+        field_key in {"capability", "also"} or field_key.endswith("capability_ids")
+    ) and re.fullmatch(r"[a-z][a-z0-9_-]*(?:\.[a-z0-9_-]+)+", value):
         return
     if field_key == "reference" and re.fullmatch(r"AUTH-[A-Z0-9-]{1,122}", value):
         return
-    if field_key.endswith("_id"):
+    if field_key.endswith(("_id", "_ids")):
         try:
             UUID(value)
             return

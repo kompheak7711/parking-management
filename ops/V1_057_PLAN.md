@@ -151,3 +151,8 @@ Register summaries (fields over every row of the filter):
   - Rent in Unit occupancy and Lease dates shows only with `reports.read` (to confirm with the
     owner: DL-072 answer 5 says Staff see no money).
   - A PDF holds at most 5,000 rows and a file at most 25 MiB; more is refused with 422.
+- Review round 2 (2026-10-25): no blocker, two should-fix items, fixed: History also reads
+  older stored id lists (`*_ids`, such as `created_period_ids` of migration 72) and the `also`
+  capability of migration 72's authorization evidence; the client types mark Rent as present
+  only for people with `reports.read`. Nits fixed: the audit search uses `report_actor` for its
+  Property list, a details fault answers 503, the file heading says "Property local time".

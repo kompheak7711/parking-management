@@ -302,7 +302,8 @@ export interface UnitOccupancyRow extends UnitPart {
   reservation_id: string | null;
   customer_id: string | null;
   customer_name: string | null;
-  monthly_rent_usd_cents: number | null;
+  // Only for people who may read the money reports.
+  monthly_rent_usd_cents?: number | null;
   until_date: string | null;
 }
 
@@ -315,7 +316,8 @@ export interface LeaseDatesRow extends UnitPart {
   // The actual termination date when the Lease was ended early.
   end_date: string;
   actual_termination_date: string | null;
-  monthly_rent_usd_cents: number;
+  // Only for people who may read the money reports.
+  monthly_rent_usd_cents?: number;
   days_to_end: number | null;
   renewal_drafted: boolean;
 }

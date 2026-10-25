@@ -131,7 +131,7 @@ def heading_lines(
     lines = [
         f"Scope: {scope}",
         f"Period: {period}",
-        f"Generated {generated_at.strftime('%d/%m/%Y %H:%M')}, Property time",
+        f"Generated {generated_at.strftime('%d/%m/%Y %H:%M')}, Property local time",
     ]
     if money:
         lines.append("Amounts in USD; riel shown as information only.")
@@ -321,7 +321,8 @@ class PostgresExportStore:
             # The History page must be able to read this event back.
             _freeze_audit_value(details, "resulting_state")
         except (TypeError, ValueError) as exc:
-            raise ReportInvalidError("Export details are not audit values") from exc
+            # The filters are already cleaned, so this is a fault in this code, not the request.
+            raise ReportUnavailableError("Export details are not audit values") from exc
         connection.execute(
             "SELECT app.record_report_activity(%s,%s,%s::uuid[],%s,%s,%s::jsonb,%s)",
             (

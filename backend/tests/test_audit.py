@@ -2,7 +2,7 @@
 
 from dataclasses import FrozenInstanceError, replace
 from datetime import UTC, datetime
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import pytest
 
@@ -509,6 +509,8 @@ def test_stored_capability_lists_and_odd_filters_read_back_on_the_history_page()
 
     assert _freeze_loaded({"version": 3, "added_capability_ids": ["audit.view", "data.export"]})
     assert _freeze_loaded({"capability_ids": ["reports.read"]})
+    assert _freeze_loaded({"created_period_ids": [str(uuid4())]})
+    assert _freeze_loaded({"capability": "invoices.issue", "also": "utility.calculate"})
     with pytest.raises(ValueError):
         _freeze_loaded({"added_capability_ids": ["not a capability"]})
     kept = public_audit_filters({"action": "foo bar", "resource_type": "unit", "to_date": None})

@@ -35,6 +35,7 @@ from property_rental.identity import (
     AuthorizationRequirement,
     is_authorized,
 )
+from property_rental.reports import report_actor
 
 AUDIT_VIEW_CAPABILITY: Final = "audit.view"
 DEFAULT_AUDIT_PAGE_SIZE: Final = 50
@@ -497,9 +498,7 @@ def record_audit_search(
         (
             UUID(actor.actor_id),
             query.property_id,
-            sorted(
-                {UUID(value) for grant in actor.capability_grants for value in grant.property_ids}
-            ),
+            list(report_actor(actor).property_ids),
             json.dumps(audit_search_details(query, first_page_count)),
             uuid4(),
         ),
