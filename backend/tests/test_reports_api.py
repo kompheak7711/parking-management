@@ -13,7 +13,7 @@ from fastapi.testclient import TestClient
 
 from property_rental.app import create_app
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
-from property_rental.reports import ReportUnavailableError
+from property_rental.reports import ReportActor, ReportUnavailableError
 from property_rental.settings import Settings
 
 PROPERTY = uuid.uuid4()
@@ -36,11 +36,11 @@ class FakeStore:
         self.fail = fail
 
     def home_page(
-        self, actor_id: uuid.UUID, property_id: uuid.UUID, sections: Sequence[str]
+        self, actor: ReportActor, property_id: uuid.UUID, sections: Sequence[str]
     ) -> dict[str, object]:
         if self.fail:
             raise ReportUnavailableError("down")
-        self.calls.append((actor_id, property_id, tuple(sections)))
+        self.calls.append((actor.actor_id, property_id, tuple(sections)))
         return {
             "as_of": "2026-10-25T03:30:00+00:00",
             "business_date": "2026-10-25",
@@ -58,7 +58,7 @@ class FakeStore:
     def rows(
         self,
         read: str,
-        actor_id: uuid.UUID,
+        actor: ReportActor,
         property_id: uuid.UUID,
         extra: Sequence[object] = (),
     ) -> list[dict[str, object]]:

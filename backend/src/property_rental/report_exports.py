@@ -19,6 +19,7 @@ from uuid import UUID, uuid4
 
 import psycopg
 
+from property_rental.audit import _freeze_audit_value, public_audit_filters
 from property_rental.identity import AuthenticatedActor
 from property_rental.report_files import (
     AUDIT_COLUMNS,
@@ -35,16 +36,22 @@ from property_rental.reports import (
     AUDIT_EXPORT_CAPABILITY,
     DATA_EXPORT_CAPABILITY,
     REPORTS_READ_CAPABILITY,
+    ReportActor,
     ReportForbiddenError,
     ReportInvalidError,
     ReportNotFoundError,
     ReportService,
     ReportUnavailableError,
     has_capability,
+    report_actor,
 )
 
 INLINE_ROWS: Final = 1000
 MAX_EXPORT_ROWS: Final = 50_000
+# A PDF table is slow to lay out, so a PDF holds fewer rows than a spreadsheet; a kept file is at
+# most 25 MiB, the limit of `app.report_export_files`.
+MAX_PDF_ROWS: Final = 5_000
+MAX_FILE_BYTES: Final = 25 * 1024 * 1024
 
 TITLES: Final[Mapping[str, str]] = {
     "total_income": "Total Income by month",
@@ -124,7 +131,7 @@ def heading_lines(
     lines = [
         f"Scope: {scope}",
         f"Period: {period}",
-        f"Generated {generated_at.strftime('%d/%m/%Y %H:%M')}, Phnom Penh time",
+        f"Generated {generated_at.strftime('%d/%m/%Y %H:%M')}, Property time",
     ]
     if money:
         lines.append("Amounts in USD; riel shown as information only.")
@@ -210,13 +217,15 @@ def export_details(
         "file_sha256": sha256,
         "delivery_kind": delivery,
         # Keys the audit value rules accept: dates, ids, the action and the floor as a label.
-        "filters": {
-            ("floor_label" if key == "floor" else key): (
-                value.isoformat() if isinstance(value, date) else str(value)
-            )
-            for key, value in filters.items()
-            if value is not None
-        },
+        "filters": public_audit_filters(
+            {
+                ("floor_label" if key == "floor" else key): (
+                    value.isoformat() if isinstance(value, date) else str(value)
+                )
+                for key, value in filters.items()
+                if value is not None
+            }
+        ),
     }
 
 
@@ -234,7 +243,7 @@ class ExportStore(Protocol):
 
     def record(
         self,
-        actor_id: UUID,
+        actor: ReportActor,
         property_id: UUID,
         kind: str,
         capability: str,
@@ -243,7 +252,7 @@ class ExportStore(Protocol):
 
     def save(
         self,
-        actor_id: UUID,
+        actor: ReportActor,
         property_id: UUID,
         export_id: UUID,
         report: str,
@@ -255,7 +264,7 @@ class ExportStore(Protocol):
     ) -> datetime: ...
 
     def take(
-        self, actor_id: UUID, property_id: UUID, export_id: UUID
+        self, actor: ReportActor, property_id: UUID, export_id: UUID
     ) -> dict[str, object] | None: ...
 
     def audit_rows(
@@ -302,31 +311,44 @@ class PostgresExportStore:
     @staticmethod
     def _record(
         connection: psycopg.Connection[tuple[object, ...]],
-        actor_id: UUID,
+        actor: ReportActor,
         property_id: UUID,
         kind: str,
         capability: str,
         details: dict[str, object],
     ) -> None:
+        try:
+            # The History page must be able to read this event back.
+            _freeze_audit_value(details, "resulting_state")
+        except (TypeError, ValueError) as exc:
+            raise ReportInvalidError("Export details are not audit values") from exc
         connection.execute(
             "SELECT app.record_report_activity(%s,%s,%s::uuid[],%s,%s,%s::jsonb,%s)",
-            (actor_id, property_id, [property_id], kind, capability, json.dumps(details), uuid4()),
+            (
+                actor.actor_id,
+                property_id,
+                list(actor.property_ids),
+                kind,
+                capability,
+                json.dumps(details),
+                uuid4(),
+            ),
         )
 
     def record(
         self,
-        actor_id: UUID,
+        actor: ReportActor,
         property_id: UUID,
         kind: str,
         capability: str,
         details: dict[str, object],
     ) -> None:
         with self._connect() as connection:
-            self._record(connection, actor_id, property_id, kind, capability, details)
+            self._record(connection, actor, property_id, kind, capability, details)
 
     def save(
         self,
-        actor_id: UUID,
+        actor: ReportActor,
         property_id: UUID,
         export_id: UUID,
         report: str,
@@ -340,9 +362,9 @@ class PostgresExportStore:
             row = connection.execute(
                 "SELECT app.store_report_export(%s,%s,%s::uuid[],%s,%s,%s,%s,%s,%s,%s,%s)",
                 (
-                    actor_id,
+                    actor.actor_id,
                     property_id,
-                    [property_id],
+                    list(actor.property_ids),
                     export_id,
                     report,
                     file_type,
@@ -353,17 +375,19 @@ class PostgresExportStore:
                     file.row_count,
                 ),
             ).fetchone()
-            self._record(connection, actor_id, property_id, kind, capability, details)
+            self._record(connection, actor, property_id, kind, capability, details)
         if row is None or not isinstance(row[0], datetime):
             raise ReportUnavailableError("Export file was not kept")
         return row[0]
 
-    def take(self, actor_id: UUID, property_id: UUID, export_id: UUID) -> dict[str, object] | None:
+    def take(
+        self, actor: ReportActor, property_id: UUID, export_id: UUID
+    ) -> dict[str, object] | None:
         with self._connect() as connection:
             rows = _sql_rows(
                 connection.execute(
                     "SELECT * FROM app.take_report_export(%s,%s,%s::uuid[],%s)",
-                    (actor_id, property_id, [property_id], export_id),
+                    (actor.actor_id, property_id, list(actor.property_ids), export_id),
                 )
             )
         return rows[0] if rows else None
@@ -376,11 +400,16 @@ class PostgresExportStore:
             ("event.business_date<=%s", request.to_date),
             ("event.actor_id=%s", request.actor_id),
             ("event.action=%s", request.action),
-            ("event.unit_id=%s", request.unit_id),
         ):
             if value is not None:
                 clauses.append(clause)
                 parameters.append(value)
+        if request.unit_id is not None:
+            # The same Unit filter as the History page: events about the Unit and its own record.
+            clauses.append(
+                "(event.unit_id=%s OR (event.entity_type='unit' AND event.entity_id=%s))"
+            )
+            parameters.extend((request.unit_id, request.unit_id))
         parameters.append(MAX_EXPORT_ROWS + 1)
         with self._connect() as connection:
             connection.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
@@ -393,7 +422,8 @@ class PostgresExportStore:
                     "FROM app.audit_events event "
                     "JOIN app.properties property ON property.id=event.property_id "
                     "LEFT JOIN app.user_accounts account ON account.actor_id=event.actor_id "
-                    "LEFT JOIN app.units unit ON unit.id=event.unit_id "
+                    "LEFT JOIN app.units unit ON unit.id=COALESCE(event.unit_id,"
+                    "CASE WHEN event.entity_type='unit' THEN event.entity_id END) "
                     "LEFT JOIN app.customers customer ON customer.id=event.customer_id "
                     f"WHERE {' AND '.join(clauses)} "
                     "ORDER BY event.occurred_at DESC,event.id DESC LIMIT %s",
@@ -408,7 +438,7 @@ class UnavailableExportStore:
 
     def record(
         self,
-        actor_id: UUID,
+        actor: ReportActor,
         property_id: UUID,
         kind: str,
         capability: str,
@@ -418,7 +448,7 @@ class UnavailableExportStore:
 
     def save(
         self,
-        actor_id: UUID,
+        actor: ReportActor,
         property_id: UUID,
         export_id: UUID,
         report: str,
@@ -430,11 +460,19 @@ class UnavailableExportStore:
     ) -> datetime:
         raise ReportUnavailableError("Exports are unavailable")
 
-    def take(self, actor_id: UUID, property_id: UUID, export_id: UUID) -> dict[str, object] | None:
+    def take(
+        self, actor: ReportActor, property_id: UUID, export_id: UUID
+    ) -> dict[str, object] | None:
         raise ReportUnavailableError("Exports are unavailable")
 
     def audit_rows(self, property_id: UUID, request: AuditExportRequest) -> list[dict[str, object]]:
         raise ReportUnavailableError("Exports are unavailable")
+
+
+def _check_rows(file_type: FileType, row_count: int) -> None:
+    limit = MAX_PDF_ROWS if file_type == "pdf" else MAX_EXPORT_ROWS
+    if row_count > limit:
+        raise ReportInvalidError("Too many rows for one file; choose a shorter period")
 
 
 @dataclass(frozen=True, slots=True)
@@ -453,8 +491,10 @@ class ExportService:
         capability: str,
         filters: Mapping[str, object],
     ) -> ExportResult:
+        if len(file.content) > MAX_FILE_BYTES:
+            raise ReportInvalidError("The file is too large; choose a shorter period")
         export_id = uuid4()
-        actor_id = UUID(actor.actor_id)
+        who = report_actor(actor)
         delivery = "download" if file.row_count <= INLINE_ROWS else "job"
         details = export_details(
             export_id=export_id,
@@ -466,10 +506,10 @@ class ExportService:
             filters=filters,
         )
         if delivery == "download":
-            self.store.record(actor_id, property_id, kind, capability, details)
+            self.store.record(who, property_id, kind, capability, details)
             return ExportResult(export_id, file)
         expires_at = self.store.save(
-            actor_id, property_id, export_id, report, file_type, file, kind, capability, details
+            who, property_id, export_id, report, file_type, file, kind, capability, details
         )
         return ExportResult(export_id, file, expires_at)
 
@@ -519,9 +559,7 @@ class ExportService:
                     row["paid_for"] = paid_for(row.get("parts"))
             money = has_capability(actor, REPORTS_READ_CAPABILITY, property_id)
             columns = [
-                column
-                for column in REGISTER_COLUMNS[name]
-                if money or column.key != "amount_usd_cents"
+                column for column in REGISTER_COLUMNS[name] if money or column.kind != "money"
             ]
             period = cast(Mapping[str, object], page["filter"])["period_applies"]
             lines = heading_lines(
@@ -534,6 +572,7 @@ class ExportService:
             )
         else:
             raise ReportInvalidError("Unknown report")
+        _check_rows(request.file_type, len(rows))
         file = build_file(
             request.file_type,
             file_base_name(request.report, generated),
@@ -567,8 +606,7 @@ class ExportService:
             raise ReportInvalidError("From is after To")
         generated = self.store.generated_at(property_id)
         rows = self.store.audit_rows(property_id, request)
-        if len(rows) > MAX_EXPORT_ROWS:
-            raise ReportInvalidError("Too many rows for one file; choose a shorter period")
+        _check_rows(request.file_type, len(rows))
         file = build_file(
             request.file_type,
             file_base_name("audit", generated),
@@ -609,7 +647,7 @@ class ExportService:
         )
         if not allowed:
             raise ReportForbiddenError("Download needs an export right")
-        kept = self.store.take(UUID(actor.actor_id), property_id, export_id)
+        kept = self.store.take(report_actor(actor), property_id, export_id)
         if kept is None:
             raise ReportNotFoundError("The export file is gone or was never made")
         right = AUDIT_EXPORT_CAPABILITY if kept["report"] == "audit" else DATA_EXPORT_CAPABILITY

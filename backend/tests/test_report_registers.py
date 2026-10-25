@@ -25,6 +25,7 @@ from property_rental.report_registers import (
     overdue_group,
 )
 from property_rental.report_registers import build_register as build
+from property_rental.reports import ReportActor
 from property_rental.settings import Settings
 
 PROPERTY = uuid.uuid4()
@@ -309,14 +310,14 @@ class FakeStore:
         self.reads: list[tuple[str, tuple[object, ...]]] = []
 
     def home_page(
-        self, actor_id: uuid.UUID, property_id: uuid.UUID, sections: Sequence[str]
+        self, actor: ReportActor, property_id: uuid.UUID, sections: Sequence[str]
     ) -> dict[str, object]:
         raise AssertionError("not used")
 
     def rows(
         self,
         read: str,
-        actor_id: uuid.UUID,
+        actor: ReportActor,
         property_id: uuid.UUID,
         extra: Sequence[object] = (),
     ) -> list[dict[str, object]]:
@@ -404,3 +405,46 @@ def test_the_register_route_refuses_a_wrong_name_filter_or_page() -> None:
     ):
         assert manager.get(path("invoice_register", query)).status_code == 422, query
     assert manager.get(path("customer_list")).status_code == 422
+
+
+def test_only_a_running_lease_is_current_and_rent_needs_the_report_right() -> None:
+    """Review round 1: an ended or future signed Lease is not current; Staff see no Rent."""
+    leases: list[dict[str, object]] = [
+        {
+            "lease_id": uuid.uuid4(),
+            "unit_id": U1,
+            "customer_id": uuid.uuid4(),
+            "customer_name": "Sok Dara",
+            "status": "SIGNED",
+            "start_date": start,
+            "end_date": end,
+            "actual_termination_date": None,
+            "monthly_rent_usd_cents": 30_000,
+            "days_to_end": days,
+            "renewal_drafted": True,
+        }
+        for start, end, days in (
+            (date(2025, 11, 1), date(2026, 11, 30), 36),  # running today, 2026-10-25
+            (date(2024, 10, 1), date(2025, 9, 30), -390),  # ended last year, still SIGNED
+            (date(2026, 12, 1), date(2027, 11, 30), 401),  # signed, starts later
+        )
+    ]
+    manager = register("lease_dates", leases)
+    assert manager["summary"]["current_count"] == 1
+    assert manager["rows"][0]["monthly_rent_usd_cents"] == 30_000
+    staff = register("lease_dates", leases, money=False)
+    assert all("monthly_rent_usd_cents" not in row for row in staff["rows"])
+    occupancy = [
+        {
+            "unit_id": U1,
+            "unit_status": "OCCUPIED",
+            "lease_id": uuid.uuid4(),
+            "reservation_id": None,
+            "customer_id": uuid.uuid4(),
+            "customer_name": "Sok Dara",
+            "monthly_rent_usd_cents": 30_000,
+            "until_date": date(2027, 9, 30),
+        }
+    ]
+    rows = register("unit_occupancy", occupancy, money=False)["rows"]
+    assert "monthly_rent_usd_cents" not in rows[0]

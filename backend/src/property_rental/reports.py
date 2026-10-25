@@ -154,13 +154,42 @@ REGISTER_RIGHTS: Final[Mapping[str, tuple[str, ...]]] = {
 }
 
 
+@dataclass(frozen=True, slots=True)
+class ReportActor:
+    """A person and the Properties their grants name.
+
+    The definer functions check the asked Property against these Properties (the
+    allowed-Property check of `app.report_actor_property`), on top of the right checks here."""
+
+    actor_id: UUID
+    property_ids: tuple[UUID, ...]
+
+
+def report_actor(actor: AuthenticatedActor) -> ReportActor:
+    try:
+        return ReportActor(
+            UUID(actor.actor_id),
+            tuple(
+                sorted(
+                    {
+                        UUID(value)
+                        for grant in actor.capability_grants
+                        for value in grant.property_ids
+                    }
+                )
+            ),
+        )
+    except (ValueError, TypeError, AttributeError) as exc:
+        raise ReportForbiddenError("Report access is denied") from exc
+
+
 class ReportStore(Protocol):
     def home_page(
-        self, actor_id: UUID, property_id: UUID, sections: Sequence[str]
+        self, actor: ReportActor, property_id: UUID, sections: Sequence[str]
     ) -> dict[str, object]: ...
 
     def rows(
-        self, read: str, actor_id: UUID, property_id: UUID, extra: Sequence[object] = ()
+        self, read: str, actor: ReportActor, property_id: UUID, extra: Sequence[object] = ()
     ) -> list[dict[str, object]]: ...
 
     def units(self, property_id: UUID) -> list[dict[str, object]]: ...
@@ -192,19 +221,19 @@ class PostgresReportStore:
             raise ReportUnavailableError("Reports are unavailable") from exc
 
     def home_page(
-        self, actor_id: UUID, property_id: UUID, sections: Sequence[str]
+        self, actor: ReportActor, property_id: UUID, sections: Sequence[str]
     ) -> dict[str, object]:
         with self._read() as connection:
             row = connection.execute(
                 "SELECT app.home_page(%s,%s,%s::uuid[],%s::text[])",
-                (actor_id, property_id, [property_id], list(sections)),
+                (actor.actor_id, property_id, list(actor.property_ids), list(sections)),
             ).fetchone()
         if row is None or not isinstance(row[0], dict):
             raise ReportUnavailableError("Home page answer is invalid")
         return cast(dict[str, object], row[0])
 
     def rows(
-        self, read: str, actor_id: UUID, property_id: UUID, extra: Sequence[object] = ()
+        self, read: str, actor: ReportActor, property_id: UUID, extra: Sequence[object] = ()
     ) -> list[dict[str, object]]:
         if read not in REPORT_READS:
             raise ReportInvalidError("Unknown report read")
@@ -212,7 +241,7 @@ class PostgresReportStore:
         with self._read() as connection:
             cursor = connection.execute(
                 sql.SQL("SELECT * FROM app.{}({})").format(sql.Identifier(read), arguments),
-                (actor_id, property_id, [property_id], *extra),
+                (actor.actor_id, property_id, list(actor.property_ids), *extra),
             )
             names = [column.name for column in cursor.description or ()]
             return [dict(zip(names, row, strict=True)) for row in cursor.fetchall()]
@@ -241,15 +270,15 @@ class PostgresReportStore:
 
 class UnavailableReportStore:
     def home_page(
-        self, actor_id: UUID, property_id: UUID, sections: Sequence[str]
+        self, actor: ReportActor, property_id: UUID, sections: Sequence[str]
     ) -> dict[str, object]:
-        del actor_id, property_id, sections
+        del actor, property_id, sections
         raise ReportUnavailableError("Reports are unavailable")
 
     def rows(
-        self, read: str, actor_id: UUID, property_id: UUID, extra: Sequence[object] = ()
+        self, read: str, actor: ReportActor, property_id: UUID, extra: Sequence[object] = ()
     ) -> list[dict[str, object]]:
-        del read, actor_id, property_id, extra
+        del read, actor, property_id, extra
         raise ReportUnavailableError("Reports are unavailable")
 
     def units(self, property_id: UUID) -> list[dict[str, object]]:
@@ -269,7 +298,7 @@ class ReportService:
         sections = home_sections(actor, property_id)
         if not sections:
             raise ReportForbiddenError("Home page needs a read right")
-        page = self.store.home_page(UUID(actor.actor_id), property_id, sections)
+        page = self.store.home_page(report_actor(actor), property_id, sections)
         return {**group_home_page(page), "sections": list(sections)}
 
     def totals(
@@ -288,14 +317,14 @@ class ReportService:
             and chosen.from_date > chosen.to_date
         ):
             raise ReportInvalidError("From is after To")
-        actor_id = UUID(actor.actor_id)
+        who = report_actor(actor)
         if report == "total_income":
-            facts = income_facts(self.store.rows("report_income_facts", actor_id, property_id))
+            facts = income_facts(self.store.rows("report_income_facts", who, property_id))
         elif report == "total_payment":
-            facts = payment_facts(self.store.rows("report_payment_facts", actor_id, property_id))
+            facts = payment_facts(self.store.rows("report_payment_facts", who, property_id))
         else:
             facts = utility_facts(
-                self.store.rows("report_utility_facts", actor_id, property_id),
+                self.store.rows("report_utility_facts", who, property_id),
                 UTILITY_TYPES[report],
             )
         units = self.store.units(property_id)
@@ -321,11 +350,11 @@ class ReportService:
             and chosen.from_date > chosen.to_date
         ):
             raise ReportInvalidError("From is after To")
-        actor_id = UUID(actor.actor_id)
+        who = report_actor(actor)
         extra: tuple[object, ...] = ()
         if name == "audit_activity":
             extra = (chosen.from_date, chosen.to_date)
-        rows = self.store.rows(REGISTER_READS[name], actor_id, property_id, extra)
+        rows = self.store.rows(REGISTER_READS[name], who, property_id, extra)
         money = has_capability(actor, REPORTS_READ_CAPABILITY, property_id)
         page = build_register(name, rows, self.store.units(property_id), chosen, money=money)
         if name == "utility_consumption" and money:

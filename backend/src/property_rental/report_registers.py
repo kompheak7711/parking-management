@@ -13,7 +13,7 @@ from __future__ import annotations
 from collections import Counter, defaultdict
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 from typing import Final, Literal, cast
 
@@ -352,8 +352,17 @@ def _final_settlements(rows: Sequence[Row], money: bool) -> Built:
 NOT_AVAILABLE: Final = frozenset({"UNDER_MAINTENANCE", "CLEANING", "OUT_OF_SERVICE"})
 
 
+def _without_rent(rows: Sequence[Row], money: bool) -> list[Row]:
+    """Rent shows only to a person with `reports.read` (DL-072 answer 5: Staff see no money)."""
+    if money:
+        return list(rows)
+    return [
+        {key: value for key, value in row.items() if key != "monthly_rent_usd_cents"}
+        for row in rows
+    ]
+
+
 def _unit_occupancy(rows: Sequence[Row], money: bool) -> Built:
-    del money
     counts = {
         "occupied": sum(1 for row in rows if row["unit_status"] == "OCCUPIED"),
         "reserved": sum(1 for row in rows if row["unit_status"] == "RESERVED"),
@@ -362,22 +371,33 @@ def _unit_occupancy(rows: Sequence[Row], money: bool) -> Built:
     }
     summary: dict[str, object] = {**counts, "unit_count": len(rows)}
     chart = {"bars": [{"key": key, "count": value} for key, value in counts.items()]}
-    return Built(list(rows), summary, chart)
+    return Built(_without_rent(rows, money), summary, chart)
+
+
+def _is_current(row: Row) -> bool:
+    """A signed Lease whose Start Date has come and whose End Date has not passed."""
+    days_to_end = _int(row["days_to_end"])
+    if row["status"] != "SIGNED" or days_to_end < 0:
+        return False
+    end = row["end_date"]
+    end_date = end if isinstance(end, date) else date.fromisoformat(str(end))
+    start = row["start_date"]
+    start_date = start if isinstance(start, date) else date.fromisoformat(str(start))
+    return start_date <= end_date - timedelta(days=days_to_end)
 
 
 def _lease_dates(rows: Sequence[Row], money: bool) -> Built:
-    del money
     signed = [row for row in rows if row["status"] == "SIGNED"]
     ending = [row for row in signed if 0 <= _int(row["days_to_end"]) <= 60]
     by_month = Counter(_month(row["end_date"]) for row in signed)
     summary: dict[str, object] = {
-        "current_count": len(signed),
+        "current_count": sum(1 for row in rows if _is_current(row)),
         "ending_60_days_count": len(ending),
         "ending_without_renewal_count": sum(1 for row in ending if not row["renewal_drafted"]),
         "terminated_count": sum(1 for row in rows if row["status"] == "TERMINATED"),
     }
     chart = {"months": [{"month": key, "count": by_month[key]} for key in sorted(by_month)]}
-    return Built(list(rows), summary, chart)
+    return Built(_without_rent(rows, money), summary, chart)
 
 
 def _audit_activity(rows: Sequence[Row], money: bool) -> Built:

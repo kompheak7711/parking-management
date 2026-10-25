@@ -26,6 +26,7 @@ from property_rental.report_totals import (
     utility_facts,
 )
 from property_rental.report_totals import build_totals as build
+from property_rental.reports import ReportActor
 from property_rental.settings import Settings
 
 
@@ -194,14 +195,14 @@ class FakeStore:
         self.reads: list[str] = []
 
     def home_page(
-        self, actor_id: uuid.UUID, property_id: uuid.UUID, sections: Sequence[str]
+        self, actor: ReportActor, property_id: uuid.UUID, sections: Sequence[str]
     ) -> dict[str, object]:
         raise AssertionError("not used")
 
     def rows(
         self,
         read: str,
-        actor_id: uuid.UUID,
+        actor: ReportActor,
         property_id: uuid.UUID,
         extra: Sequence[object] = (),
     ) -> list[dict[str, object]]:

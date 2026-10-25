@@ -27,8 +27,18 @@ from property_rental.audit_api import (
     PropertyAuditQuery,
 )
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
-from property_rental.report_exports import ExportRequest, ExportService, PostgresExportStore
-from property_rental.reports import PostgresReportStore, ReportService
+from property_rental.report_exports import (
+    AuditExportRequest,
+    ExportRequest,
+    ExportService,
+    PostgresExportStore,
+)
+from property_rental.reports import (
+    PostgresReportStore,
+    ReportActor,
+    ReportForbiddenError,
+    ReportService,
+)
 from test_invoice_migration import runtime_database_url, setup_signed_lease
 from test_reservation_migration import migrated_database_url  # noqa: F401
 
@@ -183,6 +193,58 @@ def test_an_export_through_the_service_writes_its_event_with_the_file_fingerprin
     )
     shown = [event for event in page.events if event.action == "report.exported"]
     assert len(shown) == 1
+
+
+def test_an_odd_search_filter_is_left_out_so_history_still_reads_the_search(
+    migrated_database_url: str,  # noqa: F811
+) -> None:
+    """Review round 1: a search for free text must not leave an event History cannot read."""
+    with psycopg.connect(migrated_database_url) as connection:
+        human, prop, _, _ = setup_signed_lease(connection)
+    flow = PostgresAuditEventQueryFlow(runtime_database_url())
+    viewer = person(human, prop, "audit.view")
+    odd = PropertyAuditQuery(property_id=prop, page=AuditPageRequest(limit=5), action="foo bar")
+    assert flow.search_property(viewer, odd).events == ()
+    [(_, _, _, state, _)] = events(migrated_database_url, human, "audit.searched")
+    assert state == {"filters": {"filters_not_recorded_count": 1}, "first_page_count": 0}
+    page = flow.search_property(
+        viewer,
+        PropertyAuditQuery(property_id=prop, page=AuditPageRequest(limit=5), actor_id=human),
+    )
+    assert [event.action for event in page.events] == ["audit.searched"]
+
+
+def test_the_database_checks_the_property_against_the_persons_grants(
+    migrated_database_url: str,  # noqa: F811
+) -> None:
+    with psycopg.connect(migrated_database_url) as connection:
+        human, prop, _, _ = setup_signed_lease(connection)
+    store = PostgresReportStore(runtime_database_url())
+    assert store.rows("report_lease_dates", ReportActor(human, (prop,)), prop) != []
+    with pytest.raises(ReportForbiddenError):
+        store.rows("report_lease_dates", ReportActor(human, (uuid4(),)), prop)
+
+
+def test_an_audit_file_for_a_unit_holds_the_events_about_the_unit_itself(
+    migrated_database_url: str,  # noqa: F811
+) -> None:
+    with psycopg.connect(migrated_database_url) as connection:
+        human, prop, _, lease = setup_signed_lease(connection)
+        row = connection.execute("SELECT unit_id FROM app.leases WHERE id=%s", (lease,)).fetchone()
+        assert row is not None
+        unit = row[0]
+        connection.execute(
+            "INSERT INTO app.audit_events (id,occurred_at,business_date,actor_id,action,"
+            "entity_type,entity_id,reason,property_id,resulting_state,correlation_id,source,"
+            "outcome) VALUES (%s,now(),current_date,%s,'unit.status_changed','unit',%s,"
+            "'Unit check',%s,'{\"status\":\"VACANT\"}'::jsonb,%s,'API','SUCCEEDED')",
+            (uuid4(), human, unit, prop, uuid4()),
+        )
+    rows = PostgresExportStore(runtime_database_url()).audit_rows(
+        prop, AuditExportRequest("xlsx", unit_id=unit)
+    )
+    unit_events = [item for item in rows if item["action"] == "unit.status_changed"]
+    assert len(unit_events) == 1 and unit_events[0]["unit_number"] is not None
 
 
 def test_the_report_exports_migration_is_forward_only() -> None:

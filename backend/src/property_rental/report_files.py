@@ -20,8 +20,10 @@ from decimal import Decimal
 from typing import Any, Final, Literal
 
 from openpyxl import Workbook
+from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 from openpyxl.styles import Font
 from openpyxl.utils import get_column_letter
+from openpyxl.worksheet.worksheet import Worksheet
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.styles import getSampleStyleSheet
@@ -208,6 +210,23 @@ def _shown(value: object, kind: Kind) -> str:
     return str(cell)
 
 
+def _append(sheet: Worksheet, values: Sequence[object]) -> None:
+    """Append one row with every text kept as plain text.
+
+    A Customer name or a reason starting with "=" must never become a live formula in the
+    spreadsheet, and the control characters a spreadsheet cannot hold are removed."""
+    sheet.append(
+        [
+            ILLEGAL_CHARACTERS_RE.sub("", value) if isinstance(value, str) else value
+            for value in values
+        ]
+    )
+    for cell in sheet[sheet.max_row]:
+        if isinstance(cell.value, str) and cell.data_type != "s":
+            cell.data_type = "s"
+            cell.quotePrefix = True
+
+
 def _xlsx(
     title: str,
     lines: Sequence[str],
@@ -218,17 +237,17 @@ def _xlsx(
     sheet = book.active
     assert sheet is not None
     sheet.title = "Report"
-    sheet.append([title])
+    _append(sheet, [title])
     sheet["A1"].font = Font(bold=True, size=14)
     for line in lines:
-        sheet.append([line])
+        _append(sheet, [line])
     sheet.append([])
-    sheet.append([column.label for column in columns])
+    _append(sheet, [column.label for column in columns])
     header = sheet.max_row
     for cell in sheet[header]:
         cell.font = Font(bold=True)
     for row in rows:
-        sheet.append([_plain(row.get(column.key), column.kind) for column in columns])
+        _append(sheet, [_plain(row.get(column.key), column.kind) for column in columns])
     for index, column in enumerate(columns, start=1):
         letter = get_column_letter(index)
         width = 14 if column.kind != "text" else 22

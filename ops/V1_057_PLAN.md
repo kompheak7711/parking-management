@@ -138,3 +138,16 @@ Register summaries (fields over every row of the filter):
   - Packages: openpyxl and reportlab (approved), with their typing stubs types-openpyxl and
     types-reportlab for the type check; reportlab brings pillow (MIT-CMU) and
     charset-normalizer (MIT).
+- Review round 1 (2026-10-25), three blockers and five should-fix items, all fixed:
+  - History must read every stored event: capability lists (`added_capability_ids`,
+    `capability_ids`, of migrations 181 and 220) now pass the audit value rules; a search or
+    export filter the rules refuse (free text, a control character) is left out of the event and
+    counted in `filters_not_recorded_count`; an export's details are checked before they are kept.
+  - A spreadsheet keeps every text as text (a name starting with "=" is never a formula) and
+    drops the control characters a spreadsheet cannot hold.
+  - The definer functions now get the Properties of the person's grants, not only the asked one.
+  - An audit file filtered by Unit holds the events about the Unit itself, as History does.
+  - Lease dates "current" counts only a signed Lease running today.
+  - Rent in Unit occupancy and Lease dates shows only with `reports.read` (to confirm with the
+    owner: DL-072 answer 5 says Staff see no money).
+  - A PDF holds at most 5,000 rows and a file at most 25 MiB; more is refused with 422.

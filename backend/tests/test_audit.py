@@ -500,3 +500,17 @@ def test_a_file_fingerprint_is_kept_only_in_a_sha256_field() -> None:
         _freeze_audit_value({"file_reference": digest}, "resulting_state")
     with pytest.raises(ValueError):
         _freeze_audit_value({"file_sha256": digest + "00"}, "resulting_state")
+
+
+def test_stored_capability_lists_and_odd_filters_read_back_on_the_history_page() -> None:
+    """Review round 1: role bundle events keep capability lists; search filters stay readable."""
+    from property_rental.audit import public_audit_filters
+    from property_rental.audit_api import _freeze_loaded
+
+    assert _freeze_loaded({"version": 3, "added_capability_ids": ["audit.view", "data.export"]})
+    assert _freeze_loaded({"capability_ids": ["reports.read"]})
+    with pytest.raises(ValueError):
+        _freeze_loaded({"added_capability_ids": ["not a capability"]})
+    kept = public_audit_filters({"action": "foo bar", "resource_type": "unit", "to_date": None})
+    assert kept == {"resource_type": "unit", "filters_not_recorded_count": 1}
+    assert _freeze_loaded({"filters": kept})

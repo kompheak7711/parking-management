@@ -27,6 +27,7 @@ from property_rental.audit import (
     _validate_classified_audit_number,
     _validate_classified_audit_text,
     is_file_fingerprint,
+    public_audit_filters,
 )
 from property_rental.identity import (
     ActorResolver,
@@ -476,7 +477,9 @@ def audit_search_details(query: PropertyAuditQuery, first_page_count: int) -> di
         "correlation_id": query.correlation_id,
     }
     return {
-        "filters": {key: str(value) for key, value in filters.items() if value is not None},
+        "filters": public_audit_filters(
+            {key: str(value) for key, value in filters.items() if value is not None}
+        ),
         "first_page_count": first_page_count,
     }
 
@@ -494,7 +497,9 @@ def record_audit_search(
         (
             UUID(actor.actor_id),
             query.property_id,
-            [query.property_id],
+            sorted(
+                {UUID(value) for grant in actor.capability_grants for value in grant.property_ids}
+            ),
             json.dumps(audit_search_details(query, first_page_count)),
             uuid4(),
         ),

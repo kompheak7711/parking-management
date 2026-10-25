@@ -391,6 +391,27 @@ def is_file_fingerprint(value: str, field_key: str | None) -> bool:
     )
 
 
+def public_audit_filters(filters: Mapping[str, object]) -> dict[str, object]:
+    """The search or export filters an audit event may keep (V1-057, DL-072 answer 14).
+
+    A filter whose value the audit value rules refuse (free text typed in a search, say) is left
+    out and counted in `filters_not_recorded_count`, so the event can always be read back."""
+    kept: dict[str, object] = {}
+    left_out = 0
+    for key, value in filters.items():
+        if value is None:
+            continue
+        try:
+            _freeze_audit_value({key: value}, "filters")
+        except (TypeError, ValueError):
+            left_out += 1
+            continue
+        kept[key] = value
+    if left_out:
+        kept["filters_not_recorded_count"] = left_out
+    return kept
+
+
 def _reject_secret_text(value: str, field_path: str) -> None:
     if any(pattern.search(value) for pattern in FORBIDDEN_AUDIT_TEXT_PATTERNS):
         raise ValueError(f"{field_path} contains prohibited secret material")
@@ -415,7 +436,9 @@ def _validate_classified_audit_text(
     if field_key is None:
         raise ValueError(f"{field_path} text is not classified for audit persistence")
     field_key = _normalize_audit_key(field_key)
-    if field_key == "capability" and re.fullmatch(r"[a-z][a-z0-9_-]*(?:\.[a-z0-9_-]+)+", value):
+    if (field_key == "capability" or field_key.endswith("capability_ids")) and re.fullmatch(
+        r"[a-z][a-z0-9_-]*(?:\.[a-z0-9_-]+)+", value
+    ):
         return
     if field_key == "reference" and re.fullmatch(r"AUTH-[A-Z0-9-]{1,122}", value):
         return
