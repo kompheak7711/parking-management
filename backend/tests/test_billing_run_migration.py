@@ -28,6 +28,7 @@ from property_rental.billing_run import (
 )
 from property_rental.billing_worker import ScheduledBillingWorker
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
+from property_rental.late_payment_job import LateChargePassResult
 from property_rental.utility import (
     UTILITY_CALCULATE_CAPABILITY,
     UTILITY_ESTIMATE_CAPABILITY,
@@ -239,6 +240,14 @@ def rent_source(
     )
 
 
+class NoLateCharges:
+    """The late-payment pass is covered by its own tests; this one leaves the shared Property's
+    Invoices alone."""
+
+    def run(self, *, as_of: datetime) -> LateChargePassResult:
+        return LateChargePassResult(as_of.date())
+
+
 def test_two_concurrent_workers_replay_one_rent_service_invoice(
     migrated_database_url: str,
 ) -> None:
@@ -249,6 +258,7 @@ def test_two_concurrent_workers_replay_one_rent_service_invoice(
             property_id=property_id,
             actor_id=worker_actor_id,
             max_catchup_runs=1,
+            late_charges=NoLateCharges(),
         )
         for _ in range(2)
     )

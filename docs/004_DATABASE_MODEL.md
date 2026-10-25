@@ -1120,6 +1120,8 @@ the row cannot be repeated, replaced, supplemented, updated, or deleted.
 
 Amended by DL-076 (owner, 2026-10-20): no manual decision any more: the app adds the charge at 00:00 on the first day after the Due Date with a system actor as `finalized_by`, and the rate comes from Settings instead of `CHECK (= 1000)`. Not built yet (V1-056 slice 11).
 
+Built in V1-056 slice 11g-1 (migration `20270210_198`, DL-085): `default_rate_basis_points` takes a whole percent from 0 to 1000 basis points (`late_payment_decisions_rate_whole_percent`); `finalized_by` may be empty when the new column `finalized_by_service` (references `app.actor_identities`) names the service principal; exactly one of the two is set (`late_payment_decisions_one_actor`). The new columns avoid any lock on `app.user_accounts`. A decision with `authorization_reference` `late_payment.automatic_charge` is checked by `app.validate_automatic_late_payment_decision`: the Property's active `billing.generate` service principal, `assessed_at` at 00:00 Property time on the day after the Due Date, the amount unpaid at that moment, the rate of `app.late_payment_rate_basis_points` (10 percent until the Settings rate is built), half-up rounding, its one charge, and a charge day not before `app.late_payment_first_charge_day` (the day after the last finished pass, or the pass's first day). Any other decision must be a person's. New append-only table `app.late_payment_charge_runs`: one row per Property and business day the pass finished, with its counts; the next pass covers the charge days after the last row.
+
 ## DB-INV-008 — `late_payment_charges`
 
 Separate positive confirmed obligation: `id uuid PK`, `customer_id uuid NOT NULL FK`,
@@ -1135,6 +1137,8 @@ Miscellaneous Charge. It never changes source Invoice principal, lines, balance,
 status and is not eligible to produce another late-payment decision or Charge.
 
 Amended by DL-076 (owner, 2026-10-20): `payable_at` is the time the app adds the charge, and `created_by` is the system actor. Not built yet (V1-056 slice 11).
+
+Built in V1-056 slice 11g-1 (migration `20270210_198`, DL-085): `created_by` may be empty when the new column `created_by_service` (references `app.actor_identities`) is set; exactly one of the two is set (`late_payment_charges_one_actor`). An automatic charge is created by the Property's billing service principal, the same actor as its decision, and is payable at its decision's `finalized_at`.
 
 ## DB-INV-009 — `late_payment_charge_corrections`
 

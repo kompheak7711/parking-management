@@ -472,7 +472,7 @@ def test_a_payment_refund_with_no_lease_is_charged_with_no_lease(
         "RECOVERED_BY_CHARGE",
         "VALUE_CORRECTION",
     ]
-    # V1-056 slice 11c-1 (migration 20270209_197): each correction also names its recovery
+    # V1-056 slice 11c-1 (migration 20270210_198): each correction also names its recovery
     # charge, or null.
     assert all(set(item) == CORRECTION_KEYS | {"recovery"} for item in items)
     recovery = cast(dict[str, Any], items[0]["recovery"])

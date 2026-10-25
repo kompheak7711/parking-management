@@ -51042,6 +51042,231 @@
       "test_path": "frontend/src/settlementClient.test.tsx",
       "status": "implemented",
       "notes": "The cleaning rate and charge are sent with the CSRF token and no Idempotency-Key; their own ids make a retry safe (V1-056 slice 11f, slice 11 browser client; ops/reviews/V1-056-slice-11f.md)."
+    },
+    {
+      "test_id": "test_an_invoice_late_before_the_first_pass_gets_no_charge_and_a_day_is_done_once",
+      "upstream_ids": [
+        "DL-076",
+        "BR-INV-053",
+        "BR-LATE-001",
+        "DB-INV-007",
+        "DB-INV-008",
+        "TEST-123"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_automatic_late_payment_charge_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL an Invoice already overdue before the first pass gets no charge (owner card of 2026-10-25, \"No charge\"), and the database refuses it too (NOT_IN_WINDOW); the day is recorded once, a done day is not read again, and an instant more than one hour old is refused (22023) (V1-056 slice 11g-1, the automatic late-payment charge; DL-085; ops/reviews/V1-056-slice-11g-1.md)."
+    },
+    {
+      "test_id": "test_the_charge_is_ten_percent_of_the_amount_unpaid_at_midnight_rounded_half_up",
+      "upstream_ids": [
+        "DL-076",
+        "DL-075",
+        "BR-INV-052",
+        "BR-INV-053",
+        "BR-MONEY-012",
+        "DB-INV-007",
+        "DB-INV-008",
+        "TEST-123"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_automatic_late_payment_charge_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL the charge is 10 percent of the amount unpaid at 00:00 rounded half-up (8,000, 1,235, 1 cent); money received after 00:00 does not lower it; a zero result writes nothing; the decision names the billing service principal and the automatic reference; one SCHEDULED audit event; a second try adds nothing (V1-056 slice 11g-1, the automatic late-payment charge; DL-085; ops/reviews/V1-056-slice-11g-1.md)."
+    },
+    {
+      "test_id": "test_a_missed_day_is_caught_up_with_the_balance_of_its_own_midnight",
+      "upstream_ids": [
+        "DL-076",
+        "BR-INV-053",
+        "BR-LATE-001",
+        "DB-INV-007",
+        "DB-INV-008",
+        "TEST-123"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_automatic_late_payment_charge_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL a pass after missed days covers every day since the last pass and charges the amount unpaid at that day's 00:00, not the amount unpaid now; a last pass on the charge day leaves it out, a last pass on the Due Date covers it (V1-056 slice 11g-1, the automatic late-payment charge; DL-085; ops/reviews/V1-056-slice-11g-1.md)."
+    },
+    {
+      "test_id": "test_the_pass_skips_invoices_the_rule_does_not_charge",
+      "upstream_ids": [
+        "DL-076",
+        "BR-INV-051",
+        "BR-INV-053",
+        "BR-SETTLE-012",
+        "DB-INV-007",
+        "TEST-123"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_automatic_late_payment_charge_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL an Invoice issued after its charge moment, a draft Invoice, Initial Rent and an Invoice of a closed Final Settlement get no charge and write nothing (V1-056 slice 11g-1, the automatic late-payment charge; DL-085; ops/reviews/V1-056-slice-11g-1.md)."
+    },
+    {
+      "test_id": "test_two_passes_at_once_add_one_charge",
+      "upstream_ids": [
+        "DL-076",
+        "BR-INV-053",
+        "BR-LATE-001",
+        "DB-INV-007",
+        "DB-INV-008",
+        "TEST-123"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_automatic_late_payment_charge_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL two passes recording the same Invoice at once add one charge; the other answers ALREADY_ASSESSED (V1-056 slice 11g-1, the automatic late-payment charge; DL-085; ops/reviews/V1-056-slice-11g-1.md)."
+    },
+    {
+      "test_id": "test_the_billing_worker_runs_the_pass_only_while_it_holds_its_lock",
+      "upstream_ids": [
+        "DL-076",
+        "BR-INV-053",
+        "BR-LATE-001",
+        "DB-INV-007",
+        "DB-INV-008",
+        "TEST-123"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_automatic_late_payment_charge_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL the scheduled billing worker runs the charge pass after its billing runs with the real time, not while another worker holds the Property lock, and reports a pass it could not run by its SQLSTATE only (V1-056 slice 11g-1, the automatic late-payment charge; DL-085; ops/reviews/V1-056-slice-11g-1.md)."
+    },
+    {
+      "test_id": "test_only_the_property_s_billing_service_runs_the_pass_and_records_are_checked",
+      "upstream_ids": [
+        "DL-076",
+        "BR-LATE-001",
+        "DB-INV-007",
+        "DB-INV-008",
+        "SEC-001",
+        "TEST-123"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_automatic_late_payment_charge_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL a person or a disabled service principal is refused (42501) by every pass function; bad limits and ids answer 22023; the run table is append-only and not writable by prm_financial; an automatic decision that does not match the rule and a service principal's manual decision are refused (23514); the rate check takes a whole percent from 0 to 10; prm_runtime runs nothing (V1-056 slice 11g-1, the automatic late-payment charge; DL-085; ops/reviews/V1-056-slice-11g-1.md)."
+    },
+    {
+      "test_id": "test_the_pass_pages_by_invoice_counts_each_outcome_and_marks_the_day_done",
+      "upstream_ids": [
+        "DL-076",
+        "BR-INV-053",
+        "TEST-123"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_late_payment_job.py",
+      "status": "implemented",
+      "notes": "The pass pages through the candidates by the last Invoice id, counts charged, no-amount and skipped outcomes (not one another pass charged first) and marks the day done (V1-056 slice 11g-1, the automatic late-payment charge; DL-085; ops/reviews/V1-056-slice-11g-1.md)."
+    },
+    {
+      "test_id": "test_a_failed_invoice_is_logged_by_code_only_and_leaves_the_day_open",
+      "upstream_ids": [
+        "DL-076",
+        "BR-INV-053",
+        "TEST-123"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_late_payment_job.py",
+      "status": "implemented",
+      "notes": "An Invoice refused by a lock wait, a timeout or a check, and an outcome the code does not know, are counted as failed and logged by SQLSTATE (or unknown_outcome) only; the other Invoices are still recorded and the day is not marked done (V1-056 slice 11g-1, the automatic late-payment charge; DL-085; ops/reviews/V1-056-slice-11g-1.md)."
+    },
+    {
+      "test_id": "test_a_day_that_is_not_ready_or_already_done_reads_no_invoice",
+      "upstream_ids": [
+        "DL-076",
+        "BR-INV-053",
+        "TEST-123"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_late_payment_job.py",
+      "status": "implemented",
+      "notes": "A day whose charge moment has not settled, or that is already done, reads no Invoice (V1-056 slice 11g-1, the automatic late-payment charge; DL-085; ops/reviews/V1-056-slice-11g-1.md)."
+    },
+    {
+      "test_id": "test_the_pass_needs_an_aware_instant_and_a_bounded_page",
+      "upstream_ids": [
+        "DL-076",
+        "TEST-123"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_late_payment_job.py",
+      "status": "implemented",
+      "notes": "The pass refuses an instant with no offset and a page size outside 1 to 1000 (V1-056 slice 11g-1, the automatic late-payment charge; DL-085; ops/reviews/V1-056-slice-11g-1.md)."
+    },
+    {
+      "test_id": "test_the_worker_loop_reports_the_late_charge_pass_and_fails_on_a_failed_invoice",
+      "upstream_ids": [
+        "DL-076",
+        "TEST-123"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_late_payment_job.py",
+      "status": "implemented",
+      "notes": "The worker loop keeps its succeeded line, adds a late_charges line with the counts, and reports failure when an Invoice failed (V1-056 slice 11g-1, the automatic late-payment charge; DL-085; ops/reviews/V1-056-slice-11g-1.md)."
+    },
+    {
+      "test_id": "test_a_pass_far_behind_says_so_in_the_log",
+      "upstream_ids": [
+        "DL-076",
+        "BR-INV-053",
+        "TEST-123"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_late_payment_job.py",
+      "status": "implemented",
+      "notes": "A pass more than three days behind its last finished day says how many days in the log, with no Invoice data (V1-056 slice 11g-1, the automatic late-payment charge; DL-085; ops/reviews/V1-056-slice-11g-1.md)."
+    },
+    {
+      "test_id": "test_a_lost_connection_stops_the_pass_instead_of_counting_a_failure",
+      "upstream_ids": [
+        "DL-076",
+        "BR-INV-053",
+        "TEST-123"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_late_payment_job.py",
+      "status": "implemented",
+      "notes": "A lost database connection stops the pass at once instead of counting each later Invoice as failed; a lock wait on one Invoice is still only that Invoice's failure (V1-056 slice 11g-1, the automatic late-payment charge; DL-085; ops/reviews/V1-056-slice-11g-1.md)."
+    },
+    {
+      "test_id": "test_the_worker_loop_fails_and_logs_only_the_code_when_the_pass_cannot_run",
+      "upstream_ids": [
+        "DL-076",
+        "BR-INV-053",
+        "TEST-123"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_late_payment_job.py",
+      "status": "implemented",
+      "notes": "When the pass cannot run, the worker loop reports failure and logs only the SQLSTATE code (V1-056 slice 11g-1, the automatic late-payment charge; DL-085; ops/reviews/V1-056-slice-11g-1.md)."
+    },
+    {
+      "test_id": "test_a_refusal_every_invoice_would_get_stops_the_pass",
+      "upstream_ids": [
+        "DL-076",
+        "BR-INV-053",
+        "TEST-123"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_late_payment_job.py",
+      "status": "implemented",
+      "notes": "A refusal every later Invoice would get too (no privilege, a bad argument) stops the pass at once instead of being counted per Invoice (V1-056 slice 11g-1, the automatic late-payment charge; DL-085; ops/reviews/V1-056-slice-11g-1.md)."
+    },
+    {
+      "test_id": "test_a_window_in_an_unexpected_shape_is_a_pass_error",
+      "upstream_ids": [
+        "DL-076",
+        "BR-INV-053",
+        "TEST-123"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_late_payment_job.py",
+      "status": "implemented",
+      "notes": "A pass window in an unexpected shape stops the pass with LateChargePassError, which the worker reports by name (V1-056 slice 11g-1, the automatic late-payment charge; DL-085; ops/reviews/V1-056-slice-11g-1.md)."
     }
   ]
 }

@@ -91,7 +91,7 @@ def test_refund_service_create_source_replay_verified_return_reversal_history(
         "refund_currency": "USD",
         "available_usd_cents": 8000 if kind == "CREDIT" else 10000,
         "eligible": True,
-        # V1-056 slice 11c-1 (migration 20270209_197): the draft variant for this source.
+        # V1-056 slice 11c-1 (migration 20270210_198): the draft variant for this source.
         "refund_variant": "USD",
     }
     command = create(source_id, kind=kind)

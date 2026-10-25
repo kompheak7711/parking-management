@@ -254,6 +254,14 @@ def test_financial_action_context_database_credit_application_original_and_rever
     assert cast(dict[str, object], data(after)["target"])["outstanding_usd_cents"] == 80000
 
 
+def without_recovery(correction: dict[str, object]) -> dict[str, object]:
+    """The Refund read adds `recovery` to each correction since V1-056 slice 11c-1 (migration
+    20270209_197); the financial action context reads only value corrections, whose recovery is
+    always null, so its correction has no such key."""
+    assert correction["recovery"] is None
+    return {key: value for key, value in correction.items() if key != "recovery"}
+
+
 @pytest.mark.parametrize("kind", ["PAYMENT", "CREDIT"])
 def test_financial_action_context_database_refund_original_return_and_exact_correction(
     migrated_database_url: str,  # noqa: F811
@@ -276,7 +284,8 @@ def test_financial_action_context_database_refund_original_return_and_exact_corr
     selected = context(
         get(human, prop, "refund_correction_reversal", correction_id, refund=identity)
     )
-    assert selected["correction"] == correction and selected["reversal"] is None
+    assert selected["correction"] == without_recovery(correction)
+    assert selected["reversal"] is None
     assert cast(dict[str, object], selected["refund"])["net_refund_usd_cents"] == 4000
     assert snapshot(migrated_database_url) == before
     with pytest.raises(PaymentReadNotFoundError):
@@ -289,7 +298,7 @@ def test_financial_action_context_database_refund_original_return_and_exact_corr
         actor=actor(human, prop, "refunds.corrections.reverse"),
     )
     after = context(get(human, prop, "refund_correction_reversal", correction_id, refund=identity))
-    assert after["correction"] == correction
+    assert after["correction"] == without_recovery(correction)
     assert cast(dict[str, object], after["reversal"])["reverses_correction_id"] == str(
         correction_id
     )
@@ -316,7 +325,7 @@ def test_financial_action_context_database_migration_privileges_and_forward_only
     migrated_database_url: str,  # noqa: F811
 ) -> None:
     scripts = ScriptDirectory.from_config(Config("alembic.ini"))
-    assert scripts.get_heads() == ["20270209_197"]
+    assert scripts.get_heads() == ["20270210_198"]
     revision = scripts.get_revision("20260908_47")
     assert revision is not None and revision.down_revision == "20260908_46"
     with pytest.raises(RuntimeError, match="forward-only"):
@@ -516,7 +525,7 @@ def test_financial_action_context_database_selected_correction_beyond_max_histor
     selected = context(
         get(human, prop, "refund_correction_reversal", UUID(str(first["id"])), refund=identity)
     )
-    assert selected["correction"] == first
+    assert selected["correction"] == without_recovery(first)
     assert cast(dict[str, object], selected["refund"])["net_refund_usd_cents"] == 7899
     assert selected["reversal"] is None
 

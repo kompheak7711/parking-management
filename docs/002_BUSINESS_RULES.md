@@ -3004,6 +3004,8 @@ timestamp.
 
 Replaced by DL-076 (owner, 2026-10-20): no management decision. At 00:00 Property time on the first day after the Due Date, the app adds the late-payment charge by itself, at the Settings rate (DL-075, default 10%) of the amount unpaid at that moment, rounded half-up; no management decision is needed. The Owner or a Manager may only reduce or waive it after the Customer complains that it is wrong because of a staff mistake, with one of three fixed reasons ("Staff recorded the payment on the wrong Invoice", "Paid on time but recorded late", "Other staff mistake") and a required "What happened" text. The amount only goes down.
 
+Built in V1-056 slice 11g-1 (DL-085): the billing worker runs the charge pass after its billing runs, under the same lock, as the Property's billing service principal. Owner answer of 2026-10-25 ("No charge"): an Invoice already overdue on the day the pass first runs gets no charge. Readings recorded: an Invoice issued after its charge moment gets no charge; a missed day is caught up by the next pass with the amount unpaid at that day's 00:00; an Invoice of a Lease whose Final Settlement is closed gets no charge (BR-SETTLE-012); a charge that rounds to zero writes nothing. The database itself refuses a charge for a day before the pass's first day. The pass starts 10 seconds after 00:00; the amount is the one unpaid at 00:00, because a payment allocation dated before an earlier charge decision is refused.
+
 ---
 
 ### BR-INV-054 — One Final Non-compounding Decision per Invoice

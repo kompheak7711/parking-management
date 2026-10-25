@@ -970,6 +970,8 @@ must not reopen, supplement, replace, or recalculate the final decision.
 
 Amended by DL-076 (owner, 2026-10-20): no manual decision route; the charge is added by the 00:00 job. A route reduces or waives a charge with one of three fixed reasons and a required "What happened" text. Not built yet (V1-056 slice 11).
 
+V1-056 slice 11g-1 (DL-085): the 00:00 charge pass runs inside the scheduled billing worker (`property_rental.late_payment_job`); it has no HTTP route. The manual decision route stays until slice 11g-3 removes it.
+
 # 17. Scheduled Billing Endpoints
 
 ## API-054 — Rent Generation Run

@@ -489,6 +489,8 @@ debit Adjustment recorded after the final decision is allowed but does not chang
 
 Amended by DL-076 (owner, 2026-10-20): tests cover the automatic 00:00 charge (eligibility, one per Invoice, Settings rate, rounding, no charge on Initial Rent, no-Lease Invoices or charges) instead of a manual decision.
 
+V1-056 slice 11g-1: `backend/tests/test_automatic_late_payment_charge_migration.py` (PostgreSQL: the first-day window, rounding, the 00:00 amount, catch-up, skipped Invoices, one charge per Invoice, the worker, least privilege) and `backend/tests/test_late_payment_job.py` (paging, counts, failures and the log lines).
+
 ## TEST-124 — Late-payment Charge Corrections and Applications
 
 Verify DB-INV-009/API-091 authorized Charge reduction/reversal behavior preserves the
