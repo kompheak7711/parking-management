@@ -800,6 +800,7 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/unpaid-initial-never-moved-in": {"post"},
         "/api/v1/properties/{property_id}/lease-terminations/{termination_event_id}"
         "/unpaid-initial-moved-in-credit": {"post"},
+        "/api/v1/properties/{property_id}/leases/{lease_id}/termination-notices": {"get", "post"},
         "/api/v1/financial-workspaces": {"get"},
         "/api/v1/properties/{property_id}/financial-capabilities": {"get"},
         "/api/v1/properties/{property_id}/payment-methods": {"get"},

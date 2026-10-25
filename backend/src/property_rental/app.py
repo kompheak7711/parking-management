@@ -151,6 +151,12 @@ from property_rental.lease_enforcement_api import (
     create_enforcement_router,
 )
 from property_rental.lease_enforcement_context import PostgresEnforcementContext
+from property_rental.lease_notice_api import (
+    LeaseNoticeFlow,
+    UnavailableLeaseNoticeFlow,
+    create_lease_notice_router,
+)
+from property_rental.lease_notices import PostgresLeaseNoticeService
 from property_rental.logging import create_application_logger
 from property_rental.operations_status_api import create_operations_status_router
 from property_rental.payment_allocation import AllocationIdempotencyKeyReused
@@ -464,6 +470,7 @@ def create_app(
     invoice_flow: InvoiceFlow | None = None,
     late_payment_flow: LatePaymentFlow | None = None,
     unpaid_initial_flow: UnpaidInitialFlow | None = None,
+    lease_notice_flow: LeaseNoticeFlow | None = None,
     utility_lease_flow: UtilityLeaseFlow | None = None,
     enforcement_flow: EnforcementFlow | None = None,
     enforcement_context_flow: EnforcementContextFlow | None = None,
@@ -1230,6 +1237,28 @@ def create_app(
                     )
                     if resolved_settings.financial_database_url is not None
                     else UnavailableUnpaidInitialFlow()
+                ),
+            ),
+            resolved_settings,
+        )
+    )
+    include_signed_in(
+        create_lease_notice_router(
+            actor_resolver,
+            lease_notice_flow
+            or cast(
+                LeaseNoticeFlow,
+                (
+                    PostgresLeaseNoticeService(
+                        resolved_settings.database_url.get_secret_value(),
+                        (
+                            resolved_settings.financial_database_url.get_secret_value()
+                            if resolved_settings.financial_database_url is not None
+                            else None
+                        ),
+                    )
+                    if resolved_settings.database_url is not None
+                    else UnavailableLeaseNoticeFlow()
                 ),
             ),
             resolved_settings,

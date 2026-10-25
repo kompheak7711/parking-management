@@ -50663,6 +50663,71 @@
       "test_path": "frontend/src/letters/LettersPage.test.tsx",
       "status": "implemented",
       "notes": "V1-058 R3 Letters: Cancel after the dialog opened a case reads the list again so no second case is opened; ended or not-moved-in Leases with warnings get no Record warning button."
+    },
+    {
+      "test_id": "test_record_route_builds_the_exact_command_and_returns_the_saved_reply",
+      "upstream_ids": [
+        "BR-LEASE-022",
+        "DB-LEASE-004",
+        "API-068",
+        "DL-073"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_lease_notice_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R3 termination-notice routes: POST termination-notices builds the exact RecordLeaseNotice from the body and Idempotency-Key and returns the saved reply."
+    },
+    {
+      "test_id": "test_read_route_pages_the_notices_of_the_lease",
+      "upstream_ids": [
+        "BR-LEASE-022",
+        "DB-LEASE-004",
+        "API-068",
+        "DL-073"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_lease_notice_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R3 termination-notice routes: GET termination-notices accepts only one limit (1-100) and one offset; anything else is 400 before the flow runs."
+    },
+    {
+      "test_id": "test_record_route_refuses_bad_input_and_maps_service_errors",
+      "upstream_ids": [
+        "BR-LEASE-022",
+        "DB-LEASE-004",
+        "API-068",
+        "DL-073"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_lease_notice_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R3 termination-notice routes: Bad or padded input is 422; a query string is 400; not found 404, conflict and reused key 409, unavailable 503."
+    },
+    {
+      "test_id": "test_routes_need_a_signed_in_browser_change",
+      "upstream_ids": [
+        "BR-LEASE-022",
+        "DB-LEASE-004",
+        "API-068",
+        "DL-073"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_lease_notice_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R3 termination-notice routes: No sign-in is 401; a change without the Origin and CSRF pair is 403 before the flow runs."
+    },
+    {
+      "test_id": "test_http_notice_is_recorded_once_read_back_and_leaves_the_lease_version",
+      "upstream_ids": [
+        "BR-LEASE-022",
+        "DB-LEASE-004",
+        "API-068",
+        "DL-073"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_notice_api_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R3 termination-notice routes: Real PostgreSQL: a notice is recorded once, replayed with the same key, refused with a changed body, read back, and leaves the Lease version unchanged."
     }
   ]
 }
