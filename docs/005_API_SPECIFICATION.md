@@ -1943,6 +1943,10 @@ optional `X-Billing-Actor-ID` must name the signed-in person. Answers are `priva
   `HAND_BACK_MONTH_NOT_COVERED`, `HAND_BACK_ALREADY_RESOLVED`, `HAND_BACK_PAID_INVOICE_KEPT`,
   `HAND_BACK_ASSESSMENT_CHANGED`; the assessment read answers the same codes. A stale version
   answers 412.
+- Amended by V1-056 slice 12a (migration `20270215_203`; DL-090): an Invoice with nothing applied
+  and nothing outstanding (a credit Adjustment took it to zero) is assessed `KEEP`, not `VOID`;
+  the resolution still refuses it and writes nothing, but its refusal code changes from
+  `HAND_BACK_ASSESSMENT_CHANGED` to `HAND_BACK_PAID_INVOICE_KEPT`.
 - On these routes a closed Final Settlement answers 409 `FINAL_SETTLEMENT_CLOSED` (BR-SETTLE-012),
   and a rate or charge id reused with different input answers 409 `IDEMPOTENCY_KEY_REUSED`.
 - Lease draft, draft update, renewal and signing: an End Date that is not the last day of its month

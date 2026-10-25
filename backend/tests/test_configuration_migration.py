@@ -597,7 +597,7 @@ def test_runtime_configuration_commands_are_idempotent_and_audited(
         assert runtime.execute(
             "SELECT action, authorization_reference FROM app.audit_events WHERE id = %s",
             (first[0],),
-        ).fetchone() == ("service_rate.created", "service_rates.manage")
+        ).fetchone() == ("service_rate.created", "settings.manage")
         with pytest.raises(Error) as changed:
             runtime.execute(
                 statement,

@@ -51745,6 +51745,29 @@
       "test_path": "frontend/src/settlementClient.test.tsx",
       "status": "implemented",
       "notes": "The client adds a Refund method and turns one off with the CSRF token, the selected Property and no Idempotency-Key (V1-056 slice 11h, Refund methods with Settings access; DL-089; ops/reviews/V1-056-slice-11h.md)."
+    },
+    {
+      "test_id": "test_a_utility_rate_change_names_settings_manage",
+      "upstream_ids": [
+        "DL-075",
+        "DL-090",
+        "SEC-002"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_settings_evidence_hand_back_keep_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL, a Utility Rate change writes settings.manage as its audit authorization reference (V1-056 slice 12a, Settings audit evidence and the hand-back KEEP order; DL-090; ops/reviews/V1-056-slice-12a.md)."
+    },
+    {
+      "test_id": "test_an_invoice_credit_adjusted_to_zero_is_kept_at_hand_back",
+      "upstream_ids": [
+        "BR-RENT-030",
+        "DL-090"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_settings_evidence_hand_back_keep_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL, an Invoice that a credit Adjustment took to zero is assessed KEEP at hand-back, and both resolutions are refused as kept (V1-056 slice 12a, Settings audit evidence and the hand-back KEEP order; DL-090; ops/reviews/V1-056-slice-12a.md)."
     }
   ]
 }

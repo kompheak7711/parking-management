@@ -2142,3 +2142,12 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Not changed:** the seeded Cash and Bank transfer methods stay; who may prepare, confirm or read a Refund is unchanged; the database trusts the `settings.manage` reference the service passes, like the other Settings writers (the route checks the capability first).
 - **Migration head:** `20270214_202` (the V1-058 branch also uses ids from 196; whichever merges second re-chains).
 - **Decision date:** 2026-10-25.
+
+## DL-090 — V1-056 slice 12a: Settings audit evidence and the hand-back KEEP order
+
+- **Type:** `IMPLEMENTATION RECORD`
+- **Built (migration `20270215_203`):** the Service rate, Utility Rate and one-time charge Due Date days functions name `settings.manage` in their audit evidence, the capability their routes check since login sub-slice L5 (closes the L5 review item of Q-2026-10-24-186); the hand-back assessment tests "nothing outstanding" before "nothing applied", so an Invoice a credit Adjustment took to zero is `KEEP` (closes the slice 11a review item S2). Neither changes money or who may do what: the routes are unchanged, and the zero-owed Invoice is still refused with nothing written, only with `HAND_BACK_PAID_INVOICE_KEPT` instead of `HAND_BACK_ASSESSMENT_CHANGED`.
+- **Reading decided by Claude under the owner's 2026-10-23 22:30 rule:** BR-RENT-030 says an unpaid Invoice is VOIDed; an Invoice that owes nothing because a credit Adjustment took it to zero is read as kept, like a paid one.
+- **Also:** `test_runtime_secrets.py` no longer reads `APP_DATABASE_URL` from the database test scripts (login L7c item).
+- **Migration head:** `20270215_203`.
+- **Decision date:** 2026-10-25.

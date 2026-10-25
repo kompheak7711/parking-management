@@ -4582,6 +4582,11 @@ At minimum, audit events are written in the same transaction for:
 - every Final Settlement inclusion, application, disposition, Refund, closure,
   correction, and Customer Account Ledger reconciliation exception.
 
+V1-056 slice 12a (migration `20270215_203`; DL-090): `app.execute_service_rate`,
+`app.execute_utility_rate` and `app.set_one_time_charge_due_days` write `settings.manage` as
+the authorization reference (and, for the due days, the evidence capability), the capability
+their routes check since login sub-slice L5; earlier events keep what they recorded.
+
 ## DB-AUDIT-003 — Actor foreign key deferral
 
 `actor_id` is logically mandatory but has no database FK until the authoritative Security Model defines principal persistence. Migrations must not point audit history to a speculative user table. Once defined, the FK must use `ON DELETE RESTRICT` or preserve an immutable actor identity snapshot.

@@ -335,6 +335,9 @@ def test_the_password_blocklist_is_read_once_and_needed_with_a_database_outside_
         assert "correcthorse" not in str(refused.value)
 
     monkeypatch.delenv("APP_PASSWORD_BLOCKLIST_FILE", raising=False)
+    # V1-056 slice 12a: the database test scripts set APP_DATABASE_URL; the last case needs
+    # no database, so it must not come from the environment.
+    monkeypatch.delenv("APP_DATABASE_URL", raising=False)
     monkeypatch.setattr(app_module, "read_protected_totp_key", lambda _: bytes.fromhex(KEY_HEX))
     for blocklist_file in (None, ""):
         with pytest.raises(PasswordBlocklistUnavailable):

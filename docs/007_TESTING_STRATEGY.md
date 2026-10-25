@@ -512,6 +512,8 @@ V1-056 slice 11g-4: `backend/tests/test_late_charge_payment_proposal_migration.p
 
 V1-056 slice 11h: `backend/tests/test_refund_method_settings_migration.py` (PostgreSQL: adding with Settings access, its audit and replay, a used code or reused id refused, other capabilities and bad input refused; turning off and on again, each audited; the last method that is on stays on; two people turning off the last two methods at once leave one on, at READ COMMITTED and REPEATABLE READ); `backend/tests/test_credit_refund_api.py` (the two routes need `settings.manage`, the Origin and the CSRF pair; refusal codes; the list read with Settings access; the service maps each database answer); `frontend/src/settlementClient.test.tsx` TEST-FE-S11H-001 (the client sends both changes with no key).
 
+V1-056 slice 12a: `backend/tests/test_settings_evidence_hand_back_keep_migration.py` (PostgreSQL: a Utility Rate change names `settings.manage`; an Invoice credit-adjusted to zero is assessed KEEP at hand-back and both resolutions are refused); `test_one_time_charges_migration.py` and `test_configuration_migration.py` assert `settings.manage` in the due-days and Service rate audit events; `test_runtime_secrets.py` no longer reads the database setting of the test scripts.
+
 # 12. Payment, Allocation, Credit, Refund, and Reversal Coverage
 
 ## TEST-059 — Payment Confirmation
