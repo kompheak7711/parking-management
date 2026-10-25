@@ -1,0 +1,164 @@
+"""V1-057 reads: the Home page, the reports and the audit search record (API-076, API-077, DL-072,
+DL-079).
+
+The runtime role reads the records only through the bounded definer functions of migration
+`20270301_220` and later: the database checks the active person and that the Property is one the
+application passes from the person's grants; this module checks the capabilities. Amounts are
+integer USD cents (DL-060); nothing here writes a financial record.
+"""
+
+from __future__ import annotations
+
+import json
+from collections.abc import Iterator, Mapping, Sequence
+from contextlib import contextmanager
+from dataclasses import dataclass
+from datetime import date
+from typing import Final, Protocol, cast
+from uuid import UUID
+
+import psycopg
+from psycopg.types.json import set_json_loads
+
+from property_rental.access_control import UNITS_READ_CAPABILITY
+from property_rental.identity import AuthenticatedActor, AuthorizationRequirement, is_authorized
+
+REPORTS_READ_CAPABILITY: Final = "reports.read"
+AUDIT_EXPORT_CAPABILITY: Final = "audit.export"
+DATA_EXPORT_CAPABILITY: Final = "data.export"
+
+# Each Home section and the read rights that show it (any one of them). A section the person may
+# not read is left out whole, never shown as zero (DL-079 answer 9; DL-072 answer 5).
+HOME_SECTIONS: Final[Mapping[str, tuple[str, ...]]] = {
+    "units": (UNITS_READ_CAPABILITY,),
+    "invoices": ("invoices.read",),
+    "payments": ("payments.read",),
+    "leases": ("leases.read",),
+    "reservations": ("reservations.read",),
+    "approvals": ("financial.approve",),
+    "deposit_decisions": ("reservation_deposits.dispose", "financial.approve"),
+    "readings": ("utility.read",),
+    "letters": ("rent_nonpayment.read",),
+    "settlements": ("final_settlements.prepare", "financial.approve"),
+}
+TODO_GROUPS: Final = ("overdue", "today", "this_week", "later")
+
+
+class ReportUnavailableError(RuntimeError):
+    """The report store cannot answer now."""
+
+
+class ReportForbiddenError(PermissionError):
+    """The person may not read this report for this Property."""
+
+
+class ReportInvalidError(ValueError):
+    """The report request is outside its bounds."""
+
+
+def _exact_json(value: str | bytes) -> object:
+    # Amounts stay exact: a JSON number with a fraction is kept as text, never a float.
+    return json.loads(value, parse_float=str)
+
+
+def has_capability(actor: AuthenticatedActor, capability: str, property_id: UUID) -> bool:
+    return is_authorized(actor, AuthorizationRequirement(capability, str(property_id)))
+
+
+def home_sections(actor: AuthenticatedActor, property_id: UUID) -> tuple[str, ...]:
+    """The Home sections this person may see for the Property, in a fixed order."""
+    return tuple(
+        section
+        for section, capabilities in HOME_SECTIONS.items()
+        if any(has_capability(actor, capability, property_id) for capability in capabilities)
+    )
+
+
+def todo_group(day: date, today: date) -> str:
+    """Overdue, Today, This week (the next six days) or Later (DL-079 answer 9)."""
+    if day < today:
+        return "overdue"
+    if day == today:
+        return "today"
+    if (day - today).days <= 6:
+        return "this_week"
+    return "later"
+
+
+def group_home_page(page: Mapping[str, object]) -> dict[str, object]:
+    """Add the to-do group to each dated item and a count per group."""
+    today = date.fromisoformat(str(page["business_date"]))
+    items = page.get("todo")
+    if not isinstance(items, list):
+        raise ReportUnavailableError("Home page answer is invalid")
+    grouped: list[dict[str, object]] = []
+    counts = dict.fromkeys(TODO_GROUPS, 0)
+    for item in items:
+        if not isinstance(item, dict) or not isinstance(item.get("date"), str):
+            raise ReportUnavailableError("Home page answer is invalid")
+        group = todo_group(date.fromisoformat(cast(str, item["date"])), today)
+        counts[group] += 1
+        grouped.append({**cast(dict[str, object], item), "group": group})
+    return {**page, "todo": grouped, "todo_counts": counts}
+
+
+class ReportStore(Protocol):
+    def home_page(
+        self, actor_id: UUID, property_id: UUID, sections: Sequence[str]
+    ) -> dict[str, object]: ...
+
+
+@dataclass(frozen=True, slots=True)
+class PostgresReportStore:
+    """One bounded read-only transaction per call, through the definer functions only."""
+
+    database_url: str
+
+    @contextmanager
+    def _read(self) -> Iterator[psycopg.Connection[tuple[object, ...]]]:
+        try:
+            with psycopg.connect(self.database_url, connect_timeout=3) as connection:
+                connection.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
+                connection.execute("SET LOCAL lock_timeout='3000ms'")
+                connection.execute("SET LOCAL statement_timeout='15000ms'")
+                connection.execute("SET LOCAL TIME ZONE 'UTC'")
+                set_json_loads(_exact_json, connection)
+                yield connection
+        except psycopg.Error as exc:
+            if exc.sqlstate == "42501":
+                raise ReportForbiddenError("Report access is denied") from exc
+            if exc.sqlstate == "22023":
+                raise ReportInvalidError("Report request is invalid") from exc
+            raise ReportUnavailableError("Reports are unavailable") from exc
+
+    def home_page(
+        self, actor_id: UUID, property_id: UUID, sections: Sequence[str]
+    ) -> dict[str, object]:
+        with self._read() as connection:
+            row = connection.execute(
+                "SELECT app.home_page(%s,%s,%s::uuid[],%s::text[])",
+                (actor_id, property_id, [property_id], list(sections)),
+            ).fetchone()
+        if row is None or not isinstance(row[0], dict):
+            raise ReportUnavailableError("Home page answer is invalid")
+        return cast(dict[str, object], row[0])
+
+
+class UnavailableReportStore:
+    def home_page(
+        self, actor_id: UUID, property_id: UUID, sections: Sequence[str]
+    ) -> dict[str, object]:
+        del actor_id, property_id, sections
+        raise ReportUnavailableError("Reports are unavailable")
+
+
+@dataclass(frozen=True, slots=True)
+class ReportService:
+    store: ReportStore
+
+    def home_page(self, actor: AuthenticatedActor, property_id: UUID) -> dict[str, object]:
+        sections = home_sections(actor, property_id)
+        if not sections:
+            raise ReportForbiddenError("Home page needs a read right")
+        page = self.store.home_page(UUID(actor.actor_id), property_id, sections)
+        return {**group_home_page(page), "sections": list(sections)}
