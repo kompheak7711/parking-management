@@ -2142,3 +2142,54 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Not changed:** the seeded Cash and Bank transfer methods stay; who may prepare, confirm or read a Refund is unchanged; the database trusts the `settings.manage` reference the service passes, like the other Settings writers (the route checks the capability first).
 - **Migration head:** `20270214_202` (the V1-058 branch also uses ids from 196; whichever merges second re-chains).
 - **Decision date:** 2026-10-25.
+
+## DL-090 — V1-056 slice 12a: Settings audit evidence and the hand-back KEEP order
+
+- **Type:** `IMPLEMENTATION RECORD`
+- **Built (migration `20270215_203`):** the Service rate, Utility Rate and one-time charge Due Date days functions name `settings.manage` in their audit evidence, the capability their routes check since login sub-slice L5 (closes the L5 review item of Q-2026-10-24-186); the hand-back assessment tests "nothing outstanding" before "nothing applied", so an Invoice a credit Adjustment took to zero is `KEEP` (closes the slice 11a review item S2). Neither changes money or who may do what: the routes are unchanged, and the zero-owed Invoice is still refused with nothing written, only with `HAND_BACK_PAID_INVOICE_KEPT` instead of `HAND_BACK_ASSESSMENT_CHANGED`.
+- **Reading decided by Claude under the owner's 2026-10-23 22:30 rule:** BR-RENT-030 says an unpaid Invoice is VOIDed; an Invoice that owes nothing because a credit Adjustment took it to zero is read as kept, like a paid one.
+- **Also:** `test_runtime_secrets.py` no longer reads `APP_DATABASE_URL` from the database test scripts (login L7c item).
+- **Migration head:** `20270215_203`.
+- **Decision date:** 2026-10-25.
+
+## DL-091 — V1-056 slice 12b: the scheduled worker bills a late Utility period
+
+- **Type:** `IMPLEMENTATION RECORD`
+- **Built (migration `20270216_204`):** DL-071 answer 18. Each scheduled worker pass, after its ordinary runs and within the same bound, bills a `LATE_AFTER_SUCCEEDED_RUN` Utility period by a late Utility run: a successor of the last SUCCEEDED run of the same dates whose snapshot holds only the responsible periods with no Invoice line that no run of those dates ever snapshotted, so a period is billed once and never twice. `app.utility_unbilled_periods`, its route and the catch-up command stay as the safety check; a `NOT_MOVED_IN` period is still billed only by the catch-up command, and a period an earlier run billed or skipped is left to it. Only the scheduled worker starts a late run; one that fails does not stop the late-payment charge pass.
+- **Decided by Claude under the owner's 2026-10-23 22:30 rule:** the late Invoice is due on the later of the on-time Due Date (the 5th after the period, BR-UTIL-022) and the day it is issued (the Property's date) plus the Property's configured days (the catch-up command's rule, BR-UTIL-021). A Customer never gets an earlier Due Date than on time, and never an Invoice that is already overdue when issued, also when a late run that stopped on an error is resumed on a later day. The amount is unchanged. The owner may change this.
+- **Migration head:** `20270216_204`.
+- **Decision date:** 2026-10-25.
+
+## DL-092 — V1-056 slice 12c: the Owner removes wrong sign-in tries older than 30 days
+
+- **Type:** `IMPLEMENTATION RECORD`
+- **Built (migration `20270217_205`):** owner answer (a) to Q-2026-10-23-175. `app.prune_sign_in_wrong_tries`, which no application role may run, removes the waits that ended, the clears made and the wrong tries made more than 30 days ago, under the username lock of the sign-in functions, in batches of usernames; old waits go first with no lock; it keeps a username's latest clear while a try it covers is recent or named by a wait, and a try that a remaining wait or clear names, so a count never grows. The Owner runs it with `make prune-sign-in-tries` or `sh scripts/local/prune-sign-in-tries.sh`; it prints only the three counts. The three relations stay append-only for everything else.
+- **Decided by Claude under the owner's 2026-10-23 22:30 rule:** once removed, a username's uncleared wrong tries older than 30 days no longer count toward a wait (Q-2026-10-23-176 counts "in a row" with no time limit; the removal the owner chose ends that after 30 days). Removal is by hand, once a month suggested in the README; no automatic job.
+- **Migration head:** `20270217_205`.
+- **Decision date:** 2026-10-25.
+
+## DL-093 — V1-056 slice 12d: a waiting REFUND_RETURN correction also holds the other Lease's Settlement
+
+- **Type:** `IMPLEMENTATION RECORD`
+- **Built (migration `20270218_206`):** owner answer (a) to Q-2026-10-20-149 (BR-SETTLE-002, BR-SETTLE-012, BR-SETTLE-013, BR-CREDIT-008, DL-032). `app.final_settlement_preview` lists another Settlement's waiting `REFUND_RETURN` correction draft whose plan overlay gives value back to a Credit held by a person of the Lease, the same way as a `REFUND` draft since sub-slice 10i-4c (`PENDING_DRAFT`, blocking). That Lease's Settlement waits until the draft is confirmed, rejected or withdrawn. No amount rule changes, only the order. As with 10i-4c, while such a draft waits a closed Settlement of that Customer takes no correction step that the preview check covers (55000), and two drafts recorded at the same moment can hold each other until one is withdrawn. One exact-text change of the preview's filter; same signature, owner, settings and privileges.
+- **Migration head:** `20270218_206`.
+- **Decision date:** 2026-10-25.
+
+## DL-094 — V1-056 slice 12e: final gates, and the slice 12 list after V1-056
+
+- **Type:** `IMPLEMENTATION RECORD`
+- **Built:** the full gates and the final review of slice 12 (record ops/reviews/V1-056-slice-12e.md) and a type fix in a slice 11 frontend test (`FinancialWorkspaces.test.tsx`). No migration; the head stays `20270218_206`.
+- **Decided by Claude under the owner's 2026-10-23 22:30 rule:** the slice 12 items not built in 12a to 12d (tests, hardening, performance and text notes of earlier reviews; none changes a business rule, an amount or who may act) stay in the slice 12 list of ops/V1_056_PLAN.md, unchanged, as the hardening list after V1, so V1-056 can close.
+- **For the owner before go-live (not decided by Claude; they touch money or who may act):** (1) the two 10e-4 known limits (the owner decides both before go-live); (2) Q-2026-10-04-10, whether staff need a controlled way to correct a physical move-out that a hand-back resolution relies on; (3) the sub-slice 6b round 2 item, who a confirmed Lease forfeiture and its reversal name as actor; (4) the sub-slice 10e-1a notes (the pending-draft check of a returned Payment matches ids in the payload text).
+- **Points the owner may change:** DL-090 (the BR-RENT-030 reading), DL-091 (a late Utility Invoice is due on the later of the on-time Due Date and the issue date plus the configured days; the Due Date drives late-payment charges), DL-092 (uncleared wrong sign-in tries older than 30 days no longer count once removed). DL-093 is a tightening (a new 55000 hold) that the owner approved with answer (a) to Q-2026-10-20-149. The slice 12b worker bills every earlier late Utility period with no age limit on its first pass after deploy (no live history exists before go-live).
+- **Migration head:** `20270218_206`.
+- **Decision date:** 2026-10-25.
+
+## DL-095 — Owner answers to the four DL-094 questions before go-live
+
+- **Type:** `OWNER BUSINESS DECISION`
+- **Status:** `APPROVED; NOTHING TO BUILD FOR V1`
+- **Source:** the owner, 2026-10-25 12:17 ("ok all recommended"), after the plain explanation of the four DL-094 items in the V1-056 thread.
+- **Answers (each the recommendation):** (1) the two 10e-4 known limits stay as built for V1: a Payment used after closure on two closed Leases may be returned through either Settlement's `RETURNED_PAYMENT` correction (nothing either Settlement relied on changes), and a Payment with recoveries charged on two closed Settlements' Leases stays refused by every correction (no money moves wrongly); its refusal message is fixed after V1. (2) Q-2026-10-04-10: a physical move-out correction stays refused once a hand-back resolution (BR-RENT-030) relies on it; an Owner or Manager correction may be added after V1 if a case happens. (3) Sub-slice 6b round 2: a confirmed Lease forfeiture, its reversal and a wrong-Unit Payment move keep naming the approver with the one-call capability label; the draft and its decision record `financial.approve`; the earlier functions do not change. (4) Sub-slice 10e-1a: the pending-draft check of a returned Payment keeps matching ids in the draft text for V1 (it only makes a return wait); it matches structured keys after V1.
+- **Links:** DL-094, ops/V1_056_PLAN.md slice 12 list.
+- **Decision date:** 2026-10-25.

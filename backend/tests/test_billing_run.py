@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 from datetime import UTC, date, datetime
+from typing import Any, cast
 from uuid import UUID, uuid4
 
 import psycopg
@@ -22,6 +23,7 @@ from property_rental.billing_run import (
 )
 from property_rental.billing_worker import (
     BillingWorkerResult,
+    ScheduledBillingWorker,
     property_local_date,
     run_bounded_loop,
 )
@@ -241,6 +243,132 @@ def test_bounded_worker_loop_uses_capped_backoff_and_stops() -> None:
 
     assert worker.calls == 4
     assert sleeps == [2, 3, 3]
+
+
+def test_the_worker_bills_late_utility_dates_within_its_bound(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """V1-056 slice 12b (DL-071 answer 18): after the ordinary candidates, the worker runs a
+    late Utility run for each late candidate, with as many as its bound still allows; an
+    unfinished late run is resumed with its own idempotency key."""
+    property_id, actor_id = uuid4(), uuid4()
+    today = date(2026, 10, 25)
+    late_key = f"utilities-late/2026-09-03/2026-09-30/2026-10-25/{uuid4()}"
+    ordinary = (date(2026, 10, 1), date(2026, 9, 1), date(2026, 9, 30), "UTILITIES")
+    late = (today, date(2026, 9, 3), date(2026, 9, 30), late_key, None)
+    resumed_key = uuid4()
+    unfinished = (
+        date(2026, 10, 24),
+        date(2026, 8, 3),
+        date(2026, 8, 31),
+        "utilities-late/2026-08-03/2026-08-31/2026-10-24",
+        resumed_key,
+    )
+    asked: list[tuple[str, tuple[object, ...]]] = []
+
+    class Result:
+        def __init__(self, rows: list[tuple[object, ...]]) -> None:
+            self.rows = rows
+
+        def fetchone(self) -> tuple[object, ...] | None:
+            return self.rows[0] if self.rows else None
+
+        def fetchall(self) -> list[tuple[object, ...]]:
+            return self.rows
+
+    class Connection:
+        def __enter__(self) -> Connection:
+            return self
+
+        def __exit__(self, *_: object) -> None:
+            return None
+
+        def execute(self, sql: str, parameters: tuple[object, ...]) -> Result:
+            asked.append((sql, parameters))
+            if "billing_worker_property_date" in sql:
+                return Result([(today,)])
+            if "try_scheduled_billing_worker_lock" in sql:
+                return Result([(True,)])
+            if "scheduled_billing_worker_candidates" in sql:
+                return Result([ordinary])
+            if "scheduled_late_utility_candidates" in sql:
+                rows: list[tuple[object, ...]] = [unfinished, late]
+                return Result(rows[: int(str(parameters[3]))])
+            raise AssertionError(sql)
+
+    class Service:
+        def __init__(self) -> None:
+            self.commands: list[BillingRunCommand] = []
+
+        def execute(
+            self, command: BillingRunCommand, *, actor: AuthenticatedActor, invocation_source: str
+        ) -> BillingRunDetail:
+            assert invocation_source == "SCHEDULED" and actor.actor_id == str(actor_id)
+            self.commands.append(command)
+            return run_detail(command, source="SCHEDULED")
+
+    class NoLateCharges:
+        def __init__(self) -> None:
+            self.passes = 0
+
+        def run(self, *, as_of: datetime) -> object:
+            self.passes += 1
+            return None
+
+    class FailingLateService(Service):
+        def execute(
+            self, command: BillingRunCommand, *, actor: AuthenticatedActor, invocation_source: str
+        ) -> BillingRunDetail:
+            if command.logical_run_key.startswith("utilities-late/"):
+                self.commands.append(command)
+                raise BillingRunUnavailable("unavailable")
+            return super().execute(command, actor=actor, invocation_source=invocation_source)
+
+    monkeypatch.setattr(
+        "property_rental.billing_worker.psycopg.connect", lambda *_args, **_kw: Connection()
+    )
+    for bound, expected in ((3, 3), (1, 1)):
+        asked.clear()
+        service = Service()
+        worker = ScheduledBillingWorker(
+            "postgresql://unused",
+            property_id=property_id,
+            actor_id=actor_id,
+            max_catchup_runs=bound,
+            service=cast(Any, service),
+            late_charges=cast(Any, NoLateCharges()),
+        )
+        result = worker.run_once(as_of=datetime(2026, 10, 25, 5, tzinfo=UTC))
+        assert len(result.runs) == expected
+        late_asks = [p for sql, p in asked if "scheduled_late_utility_candidates" in sql]
+        if bound == 1:
+            # The ordinary run used the whole bound: no late candidates are read.
+            assert late_asks == []
+            continue
+        assert late_asks == [(property_id, actor_id, datetime(2026, 10, 25, 5, tzinfo=UTC), 2)]
+        assert service.commands[1].logical_run_key == unfinished[3]
+        assert service.commands[1].idempotency_key == resumed_key
+        command = service.commands[2]
+        assert (
+            command.run_kind,
+            command.logical_run_key,
+            command.business_date,
+            command.period_start,
+            command.period_end,
+        ) == ("UTILITIES", late_key, today, date(2026, 9, 3), date(2026, 9, 30))
+        assert command.idempotency_key != service.commands[0].idempotency_key
+    # A failed late run stops the later late runs of the pass, never the charge pass.
+    failing, charges = FailingLateService(), NoLateCharges()
+    failed = ScheduledBillingWorker(
+        "postgresql://unused",
+        property_id=property_id,
+        actor_id=actor_id,
+        max_catchup_runs=3,
+        service=cast(Any, failing),
+        late_charges=cast(Any, charges),
+    ).run_once(as_of=datetime(2026, 10, 25, 5, tzinfo=UTC))
+    assert (len(failed.runs), len(failing.commands), charges.passes) == (1, 2, 1)
+    assert failed.late_utility_error == "BillingRunUnavailable"
 
 
 def test_billing_routes_bind_actor_and_remain_available_without_invoice_read() -> None:

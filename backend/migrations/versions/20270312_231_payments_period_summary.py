@@ -38,8 +38,8 @@ Additive only: three new read functions; no existing table, function or grant ch
 
 from alembic import op
 
-revision = "20270220_208"
-down_revision = "20270219_207"
+revision = "20270312_231"
+down_revision = "20270311_230"
 branch_labels = None
 depends_on = None
 

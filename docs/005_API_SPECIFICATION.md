@@ -1943,6 +1943,10 @@ optional `X-Billing-Actor-ID` must name the signed-in person. Answers are `priva
   `HAND_BACK_MONTH_NOT_COVERED`, `HAND_BACK_ALREADY_RESOLVED`, `HAND_BACK_PAID_INVOICE_KEPT`,
   `HAND_BACK_ASSESSMENT_CHANGED`; the assessment read answers the same codes. A stale version
   answers 412.
+- Amended by V1-056 slice 12a (migration `20270215_203`; DL-090): an Invoice with nothing applied
+  and nothing outstanding (a credit Adjustment took it to zero) is assessed `KEEP`, not `VOID`;
+  the resolution still refuses it and writes nothing, but its refusal code changes from
+  `HAND_BACK_ASSESSMENT_CHANGED` to `HAND_BACK_PAID_INVOICE_KEPT`.
 - On these routes a closed Final Settlement answers 409 `FINAL_SETTLEMENT_CLOSED` (BR-SETTLE-012),
   and a rate or charge id reused with different input answers 409 `IDEMPOTENCY_KEY_REUSED`.
 - Lease draft, draft update, renewal and signing: an End Date that is not the last day of its month
@@ -2064,6 +2068,8 @@ This API Specification is complete for Owner Review when:
 Since slice 9d it is exposed as `GET /properties/{id}/unbilled-utility-periods` (`limit` up to 50 and `offset`; read only; `private, no-store`). `PostgresUnbilledUtilityPeriodsService.read` (capability `utility.read`, read-only, at most 50 per page) lists finalized Utility periods that have no Invoice line and that no run will pick up: `period_id`, `unit_id`, `utility_type`, `start_date`, `end_date`, `consumption_quantity`, `lease_id`, `can_catch_up` and `gap_reason` (`LATE_AFTER_SUCCEEDED_RUN` or `NOT_MOVED_IN`). The catch-up command below accepts these periods; a late period is billed only by that explicit action.
 
 Amended by DL-071 (owner, 2026-10-20; answer 18): before V1-060 the scheduled billing worker bills a `LATE_AFTER_SUCCEEDED_RUN` period by itself, and this list stays as a safety check; a `NOT_MOVED_IN` period is still billed only by the catch-up command. Not built yet (V1-056 slice 12).
+
+As built in V1-056 slice 12b (DL-091): `ScheduledBillingWorker.run_once` runs a late Utility run for each date `app.scheduled_late_utility_candidates` lists, after the ordinary runs and within the same bound of runs per pass; a late run that fails is reported (`late_utility:error:`) and the late-payment charge pass still runs. `POST` of a billing run with a `utilities-late/` logical key is refused (only the worker starts one). A late run is visible in the billing run reads like any other run.
 
 ### V1-055 final Utility Invoice and catch-up Invoice — service boundary — 2026-10-02
 

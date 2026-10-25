@@ -779,6 +779,8 @@ picked up again; `app.utility_unbilled_periods` lists it (reason `LATE_AFTER_SUC
 
 Amended by DL-071 (owner, 2026-10-20; answer 18): before V1-060 the scheduled billing worker bills a `LATE_AFTER_SUCCEEDED_RUN` period by itself; `app.utility_unbilled_periods` stays as a safety check. A `NOT_MOVED_IN` period is still billed only by the explicit catch-up command. Not built yet (V1-056 slice 12).
 
+As built in V1-056 slice 12b (migration `20270216_204`; DL-091): a late Utility run is a successor of the last SUCCEEDED Utility run of the same dates, with a logical key that starts with `utilities-late/` and the worker's business day, started only by the scheduled worker; `app.protect_billing_run_history` accepts it, `app.snapshot_billing_run_eligible_sources` gives it exactly what the candidate function lists (finalized periods of its dates with no Invoice line, a voided one included, that no run of those dates ever snapshotted, whose Lease is responsible; no Utility case), and `app.start_scheduled_billing_run` links it (55000 when the chain does not end in a SUCCEEDED run, 22023 for an API call or a Rent run). `app.scheduled_late_utility_candidates(property, actor, as_of, limit)` (`prm_financial` only, limit 1 to 100) lists the late run the same worker left RUNNING, with its idempotency key, and the dates of each finalized, responsible period with no Invoice line that no run of its dates ever snapshotted, whose chain ends in a SUCCEEDED run with no RUNNING run; the key `utilities-late/start/end/day/run id` names the SUCCEEDED run it continues. A period an earlier run of its dates billed or skipped (for example `NOT_MOVED_IN`) is never tried again by the worker; it stays in the unbilled list for the catch-up command. A late run whose item ends in an error stays RUNNING and the same worker actor resumes it with its own key on the next pass (a RUNNING late run of a replaced worker actor is not resumed and holds back the late runs of its dates; the catch-up command bills them). On the first pass after this migration is deployed, the worker bills every period then listed as `LATE_AFTER_SUCCEEDED_RUN` with a responsible Lease, dated that day: staff should read the unbilled list before the deploy. The late Invoice is due on the later of the on-time Due Date and the Property's date when it is issued plus the Property's configured days (then rule `ONE_TIME_ISSUE_PLUS_CONFIGURED_DAYS`, source `BR-UTIL-021`).
+
 ---
 
 # 8. Configured Service Tables
@@ -2876,6 +2878,8 @@ variant whose plan (`payload->'plan'->'steps'`, read only when an array) has a `
 step on a Credit held by a Settlement Customer, or of the variant `REFUND` whose plan overlay
 (`payload->'plan_overlay'->'credits'`, read only when an object) has a key that is such a Credit
 (a released Payment allocation is keyed by its allocation and is not listed);
+since V1-056 slice 12d (migration `20270218_206`; owner answer (a) to Q-2026-10-20-149, DL-093)
+also such a draft of the variant `REFUND_RETURN`, by the same plan-overlay rule;
 `ONE_TIME_CHARGE_NOT_INVOICED` for a one-time charge source of the Lease on
 no DRAFT or issued, non-VOID Invoice that is still waiting to be billed (not one whose Invoice was
 VOIDed and not one a draft correction replaced, read from `app.invoice_draft_revision_events`;
@@ -4582,6 +4586,11 @@ At minimum, audit events are written in the same transaction for:
 - every Final Settlement inclusion, application, disposition, Refund, closure,
   correction, and Customer Account Ledger reconciliation exception.
 
+V1-056 slice 12a (migration `20270215_203`; DL-090): `app.execute_service_rate`,
+`app.execute_utility_rate` and `app.set_one_time_charge_due_days` write `settings.manage` as
+the authorization reference (and, for the due days, the evidence capability), the capability
+their routes check since login sub-slice L5; earlier events keep what they recorded.
+
 ## DB-AUDIT-003 — Actor foreign key deferral
 
 `actor_id` is logically mandatory but has no database FK until the authoritative Security Model defines principal persistence. Migrations must not point audit history to a speculative user table. Once defined, the FK must use `ON DELETE RESTRICT` or preserve an immutable actor identity snapshot.
@@ -5360,6 +5369,20 @@ without clearing, and the application passes only the signed-in account's own di
 written before the key existed, or under an earlier key, no longer match, so the counts and waits
 start again when the key is introduced or changed. Removing rows older than 30 days is on the
 slice 12 list.
+
+Amended by DL-092 (V1-056 slice 12c, migration `20270217_205`, owner answer (a) to
+Q-2026-10-23-175): `app.prune_sign_in_wrong_tries(after, limit)` (no application role may run it;
+the Owner runs `make prune-sign-in-tries` or `sh scripts/local/prune-sign-in-tries.sh` with the
+migration address, which calls it in batches of 500 usernames until none is left) removes the
+waits that ended, the clears made and the tries made more than 30 days ago by database time,
+taking the username lock of the sign-in functions for each username whose tries or clears it
+removes (old waits go first, with no lock: they change nothing), and returns the counts. It runs
+only at READ COMMITTED. A username's latest clear stays while a try it covers is recent or named
+by a wait, and a try that a remaining wait or clear names stays, so a count never grows. The guard of the three relations still
+refuses every UPDATE and TRUNCATE, and refuses a DELETE unless `prm.sign_in_prune` is on in the
+transaction (the function sets it; only the table owner may delete at all) and the row is older
+than 30 days. Two new indexes cover the foreign keys to the tries. Once removed, a username's
+uncleared wrong tries older than 30 days no longer count toward a wait.
 
 ---
 

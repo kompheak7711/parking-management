@@ -21,7 +21,7 @@ from psycopg import Connection, Error
 from test_migrations import _temporary_migration_database
 from test_unit_migration import insert_actor, insert_property, insert_unit
 
-REVISION = "20270216_204"
+REVISION = "20270308_227"
 CREATE_UNIT = (
     "SELECT * FROM app.create_unit(%s, %s, %s, %s, %s, 'VACANT', %s, %s, %s, %s, %s, %s, %s, %s)"
 )
@@ -529,7 +529,7 @@ def test_the_existing_property_gets_the_defaults_and_its_floors_linked() -> None
     with _temporary_migration_database("unit_setup_backfill") as temporary:
         url = temporary.replace("postgresql+psycopg://", "postgresql://", 1)
         config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
-        command.upgrade(config, "20270215_203")
+        command.upgrade(config, "20270307_226")
         with psycopg.connect(url) as connection:
             actor_id = insert_actor(connection)
             property_id = insert_property(connection, actor_id)
@@ -619,5 +619,5 @@ def test_v1_058_r2a_is_forward_only_and_follows_r2c() -> None:
         Path(__file__).parents[1] / "migrations" / "versions" / f"{REVISION}_unit_setup_lists.py"
     ).read_text(encoding="utf-8")
 
-    assert 'down_revision = "20270215_203"' in source
+    assert 'down_revision = "20270307_226"' in source
     assert 'raise RuntimeError("Unit setup lists migration is forward-only")' in source

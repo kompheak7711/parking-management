@@ -309,6 +309,17 @@ def test_due_days_setting_is_authorized_audited_and_never_changes_issued_invoice
             (prop,),
         ).fetchall()
     assert audit[-2:] == [("Owner policy change", "7", "10"), ("Restore default", "10", "7")]
+    # V1-056 slice 12a: the evidence names the capability the route checks (settings.manage).
+    with psycopg.connect(migrated_database_url) as connection:
+        assert (
+            connection.execute(
+                "SELECT authorization_reference,authorization_evidence->>'capability' "
+                "FROM app.audit_events WHERE action='property.one_time_charge_due_days.set' "
+                "AND entity_id=%s ORDER BY occurred_at DESC LIMIT 2",
+                (prop,),
+            ).fetchall()
+            == [("settings.manage", "settings.manage")] * 2
+        )
 
 
 def test_governing_source_obligation_keeps_its_recorded_due_date(

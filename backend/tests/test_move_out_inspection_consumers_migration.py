@@ -122,13 +122,13 @@ def test_inspection_audit_property_lease_customer_consumers_preserve_full_source
     assert [
         finding["description"] for finding in cast(list[dict[str, object]], data["findings"])
     ] == [finding.description for finding in request.findings]
-    after = snapshot(migrated_database_url)
+    after = without_searches(snapshot(migrated_database_url))
     assert all(
         after[table] == rows
         for table, rows in before.items()
         if table not in NEW_TABLES | {"audit_events"}
     )
-    assert len(after["audit_events"]) == len(before["audit_events"]) + 2
+    assert len(after["audit_events"]) == len(without_searches(before)["audit_events"]) + 2
 
 
 @pytest.mark.parametrize("mode", ["IMMEDIATE", "DEFERRED"])
@@ -282,6 +282,18 @@ def test_inspection_completion_binds_typed_audit_projection(
             ):
                 connection.execute("SET CONSTRAINTS ALL IMMEDIATE")
     assert snapshot(migrated_database_url) == before
+
+
+def without_searches(
+    tables: dict[str, list[tuple[object, ...]]],
+) -> dict[str, list[tuple[object, ...]]]:
+    """The tables without the `audit.searched` events a History search now writes (V1-057)."""
+    events = [
+        row
+        for row in tables["audit_events"]
+        if not (isinstance(row[0], dict) and row[0].get("action") == "audit.searched")
+    ]
+    return {**tables, "audit_events": events}
 
 
 def test_inspection_audit_projection_remains_internal(migrated_database_url: str) -> None:

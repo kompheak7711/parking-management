@@ -2894,11 +2894,10 @@ describe("financial reads after another confirmed action", () => {
       });
       expect(shown).toHaveLength(2);
       const [first] = shown;
-      const [charge] = charges;
-      if (first === undefined || charge === undefined)
-        throw new Error("No proposed charge");
+      const [firstCharge] = charges;
+      if (!first || !firstCharge) throw new Error("Expected two proposals");
       expect(
-        within(first).getByText(charge.late_payment_charge_id),
+        within(first).getByText(firstCharge.late_payment_charge_id),
       ).toBeVisible();
       expect(
         within(first).getByText(invoice.invoice_id as string),

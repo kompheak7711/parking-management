@@ -11733,7 +11733,7 @@
       "test_level": "UI component",
       "test_path": "frontend/src/units/UnitsPage.test.tsx",
       "status": "implemented",
-      "notes": "V1-058 R2 (rebuilt screen; V1-024 intent kept): the Units table shows its seven columns, status chips, the Customer, Rent and Until from the current Lease or active Reservation, and New Unit only for a manager."
+      "notes": "V1-024 verifies semantic Unit tables, operational alerts, and authorized management controls."
     },
     {
       "test_id": "TEST-FE-028",
@@ -11744,7 +11744,7 @@
       "test_level": "UI component",
       "test_path": "frontend/src/units/UnitsPage.test.tsx",
       "status": "implemented",
-      "notes": "V1-058 R2 (rebuilt screen; V1-024 intent kept): New Unit, Change status and Update Unit stay hidden unless the server confirms the person may manage Units."
+      "notes": "V1-024 hides Unit mutation controls unless the server confirms scoped capability."
     },
     {
       "test_id": "TEST-FE-029",
@@ -11758,7 +11758,7 @@
       "test_level": "UI component",
       "test_path": "frontend/src/units/UnitsPage.test.tsx",
       "status": "implemented",
-      "notes": "V1-058 R2 (rebuilt screen; V1-024 intent kept): the Unit page keeps Unit details, Current Lease, Lease history, Meters, Invoices and History apart, and History lists the Unit's audit events (with a status reason) and the Lease steps."
+      "notes": "V1-024 keeps Unit source sections distinct and renders immutable event history."
     },
     {
       "test_id": "TEST-FE-030",
@@ -11772,7 +11772,7 @@
       "test_level": "UI component",
       "test_path": "frontend/src/units/UnitsPage.test.tsx",
       "status": "implemented",
-      "notes": "V1-058 R2 (rebuilt screen; V1-024 intent kept): a list that could not be read offers Retry, and a change someone else made first is named and the Unit read again."
+      "notes": "V1-024 announces authorization and optimistic-concurrency failures without exposing unavailable actions."
     },
     {
       "test_id": "test_runtime_unit_flow_creates_updates_and_returns_immutable_timeline",
@@ -11930,13 +11930,12 @@
         "API-030",
         "UI-028",
         "SEC-041",
-        "TEST-023",
-        "DL-074"
+        "TEST-023"
       ],
       "test_level": "API",
       "test_path": "backend/tests/test_customer_api.py",
       "status": "implemented",
-      "notes": "V1-026 requires authentication, bounded results, server-derived capability, and a minimized Customer list. V1-058 R2 (DL-074, owner-approved design: Phone column): the list carries the phone number; email, address and the ID or passport number stay off it."
+      "notes": "V1-026 requires authentication, bounded results, server-derived capability, and a minimized Customer list without contact details."
     },
     {
       "test_id": "test_customer_create_requires_scope_and_an_explicit_reuse_decision",
@@ -53339,7 +53338,7 @@
         "API-046",
         "UI-058"
       ],
-      "test_level": "Unit",
+      "test_level": "unit",
       "test_path": "backend/tests/test_utility_sheet.py",
       "status": "implemented",
       "notes": "V1-058 R4c Import readings: the server reads an .xlsx or .csv file with one row for each Unit (Unit, Electricity, Water; owner 22/10/2026) and makes the blank file; it saves nothing (openpyxl approved by the owner; technical points decided by Claude under the owner's 2026-10-23 22:30 rule)."
@@ -53351,7 +53350,7 @@
         "API-046",
         "UI-058"
       ],
-      "test_level": "Unit",
+      "test_level": "unit",
       "test_path": "backend/tests/test_utility_sheet.py",
       "status": "implemented",
       "notes": "V1-058 R4c Import readings: the server reads an .xlsx or .csv file with one row for each Unit (Unit, Electricity, Water; owner 22/10/2026) and makes the blank file; it saves nothing (openpyxl approved by the owner; technical points decided by Claude under the owner's 2026-10-23 22:30 rule)."
@@ -53363,7 +53362,7 @@
         "API-046",
         "UI-058"
       ],
-      "test_level": "Unit",
+      "test_level": "unit",
       "test_path": "backend/tests/test_utility_sheet.py",
       "status": "implemented",
       "notes": "V1-058 R4c Import readings: the server reads an .xlsx or .csv file with one row for each Unit (Unit, Electricity, Water; owner 22/10/2026) and makes the blank file; it saves nothing (openpyxl approved by the owner; technical points decided by Claude under the owner's 2026-10-23 22:30 rule)."
@@ -53375,7 +53374,7 @@
         "API-046",
         "UI-058"
       ],
-      "test_level": "Unit",
+      "test_level": "unit",
       "test_path": "backend/tests/test_utility_sheet.py",
       "status": "implemented",
       "notes": "V1-058 R4c Import readings: the server reads an .xlsx or .csv file with one row for each Unit (Unit, Electricity, Water; owner 22/10/2026) and makes the blank file; it saves nothing (openpyxl approved by the owner; technical points decided by Claude under the owner's 2026-10-23 22:30 rule)."
@@ -53387,7 +53386,7 @@
         "API-046",
         "UI-058"
       ],
-      "test_level": "Unit",
+      "test_level": "unit",
       "test_path": "backend/tests/test_utility_sheet.py",
       "status": "implemented",
       "notes": "V1-058 R4c Import readings: the server reads an .xlsx or .csv file with one row for each Unit (Unit, Electricity, Water; owner 22/10/2026) and makes the blank file; it saves nothing (openpyxl approved by the owner; technical points decided by Claude under the owner's 2026-10-23 22:30 rule)."
@@ -53459,7 +53458,7 @@
         "API-046",
         "UI-058"
       ],
-      "test_level": "Unit",
+      "test_level": "UI component",
       "test_path": "frontend/src/utilityClient.test.tsx",
       "status": "implemented",
       "notes": "V1-058 R4c Import readings: The client sends the file name and base64 content with the CSRF token, refuses an unknown problem code, and downloads the blank file; a refusal is an authorization error."
@@ -53471,7 +53470,7 @@
         "API-046",
         "UI-058"
       ],
-      "test_level": "Unit",
+      "test_level": "unit",
       "test_path": "backend/tests/test_utility_sheet.py",
       "status": "implemented",
       "notes": "V1-058 R4c Import readings review round 1: empty rows do not count toward the 500-row limit, and a .csv saved with semicolons reads the same way."
@@ -53483,7 +53482,7 @@
         "API-046",
         "UI-058"
       ],
-      "test_level": "Unit",
+      "test_level": "unit",
       "test_path": "backend/tests/test_utility_sheet.py",
       "status": "implemented",
       "notes": "V1-058 R4c Import readings review round 1: an over-long CSV field, broken XML inside the .xlsx, or a part that unpacks to more than 10 MB is UNREADABLE, never a server error or a memory spike."
@@ -53722,7 +53721,7 @@
         "BR-PAY-024",
         "BR-PAY-030"
       ],
-      "test_level": "Integration",
+      "test_level": "integration",
       "test_path": "backend/tests/test_receive_payment_migration.py",
       "status": "implemented",
       "notes": "V1-058 R5c-1 Receive payment in one step: the Payment, its Receipt and the oldest-first allocations (Invoice, its late-payment charge, the newer Invoice) are saved in one transaction; the answer names each Invoice number and the money left; the same press again saves nothing new; the same key with another request is refused."
@@ -53737,7 +53736,7 @@
         "BR-PAY-024",
         "BR-PAY-030"
       ],
-      "test_level": "Integration",
+      "test_level": "integration",
       "test_path": "backend/tests/test_receive_payment_migration.py",
       "status": "implemented",
       "notes": "V1-058 R5c-1 Receive payment in one step: ticks that differ from the database proposal, or no ticks while the Customer owes, save no Payment, Receipt or allocation, and the key is not used up."
@@ -53752,7 +53751,7 @@
         "BR-PAY-024",
         "BR-PAY-030"
       ],
-      "test_level": "Integration",
+      "test_level": "integration",
       "test_path": "backend/tests/test_receive_payment_migration.py",
       "status": "implemented",
       "notes": "V1-058 R5c-1 Receive payment in one step: money from a Customer who owes nothing waits on the Receipt with no allocation."
@@ -53767,7 +53766,7 @@
         "BR-PAY-024",
         "BR-PAY-030"
       ],
-      "test_level": "Integration",
+      "test_level": "integration",
       "test_path": "backend/tests/test_receive_payment_migration.py",
       "status": "implemented",
       "notes": "V1-058 R5c-1 Receive payment in one step: named ticks pay the named Invoice line by line (customer designated) or the named late-payment charge directly; older Invoices stay unpaid."
@@ -53782,7 +53781,7 @@
         "BR-PAY-024",
         "BR-PAY-030"
       ],
-      "test_level": "Integration",
+      "test_level": "integration",
       "test_path": "backend/tests/test_receive_payment_migration.py",
       "status": "implemented",
       "notes": "V1-058 R5c-1 Receive payment in one step: named ticks that leave money while something is still owed, or name more than an Invoice owes, save nothing."
@@ -53797,7 +53796,7 @@
         "BR-PAY-024",
         "BR-PAY-030"
       ],
-      "test_level": "Integration",
+      "test_level": "integration",
       "test_path": "backend/tests/test_receive_payment_migration.py",
       "status": "implemented",
       "notes": "V1-058 R5c-1 Receive payment in one step: riel money is converted at the system rate and pays oldest first in the same transaction."
@@ -53812,7 +53811,7 @@
         "BR-PAY-024",
         "BR-PAY-030"
       ],
-      "test_level": "Integration",
+      "test_level": "integration",
       "test_path": "backend/tests/test_receive_payment_migration.py",
       "status": "implemented",
       "notes": "V1-058 R5c-1 Receive payment in one step: named ticks need payments.allocate; only prm_financial may run the command and its replay; nobody reads the command table directly; the head is 20270219_207."
@@ -53827,7 +53826,7 @@
         "BR-PAY-024",
         "BR-PAY-030"
       ],
-      "test_level": "Integration",
+      "test_level": "integration",
       "test_path": "backend/tests/test_receive_payment_migration.py",
       "status": "implemented",
       "notes": "V1-058 R5c-1 Receive payment in one step: Receive payment command rows cannot be updated or deleted."
@@ -53881,7 +53880,7 @@
         "BR-PAY-024",
         "BR-PAY-030"
       ],
-      "test_level": "Integration",
+      "test_level": "integration",
       "test_path": "backend/tests/test_receive_payment_migration.py",
       "status": "implemented",
       "notes": "V1-058 R5c-1 Receive payment in one step: the payable list holds the unpaid Invoices and open late-payment charges in the proposal's order with what is still owed, and needs payments.record."
@@ -53896,7 +53895,7 @@
         "BR-PAY-024",
         "BR-PAY-030"
       ],
-      "test_level": "Integration",
+      "test_level": "integration",
       "test_path": "backend/tests/test_receive_payment_migration.py",
       "status": "implemented",
       "notes": "V1-058 R5c-1 Receive payment in one step: the database refuses a Payment that names an Invoice or a charge, or a third party's money, and saves nothing."
@@ -53911,7 +53910,7 @@
         "BR-PAY-024",
         "BR-PAY-030"
       ],
-      "test_level": "Integration",
+      "test_level": "integration",
       "test_path": "backend/tests/test_receive_payment_migration.py",
       "status": "implemented",
       "notes": "V1-058 R5c-1 Receive payment in one step: a riel retry returns the first answer with the first rate and does not ask the rate source again."
@@ -53926,7 +53925,7 @@
         "BR-PAY-024",
         "BR-PAY-030"
       ],
-      "test_level": "Integration",
+      "test_level": "integration",
       "test_path": "backend/tests/test_receive_payment_migration.py",
       "status": "implemented",
       "notes": "V1-058 R5c-1 Receive payment in one step: two presses at once with the same key save one Payment, one Receipt and one set of allocations."
@@ -54619,7 +54618,7 @@
         "DL-075",
         "UI-008"
       ],
-      "test_level": "Unit",
+      "test_level": "UI component",
       "test_path": "frontend/src/propertyClient.test.tsx",
       "status": "implemented",
       "notes": "V1-058 R7b-4: a saved Property change whose read-back fails is reported as saved (PropertySavedReadFailedError), not as a failure."
@@ -54631,7 +54630,7 @@
         "DL-075",
         "UI-008"
       ],
-      "test_level": "Unit",
+      "test_level": "unit",
       "test_path": "frontend/src/invoiceClient.test.ts",
       "status": "implemented",
       "notes": "V1-058 R7b-4: the days after issue are read with GET and no body; a 403 refusal keeps its status."
@@ -54714,7 +54713,7 @@
         "DL-072",
         "UI-008"
       ],
-      "test_level": "Unit",
+      "test_level": "unit",
       "test_path": "frontend/src/history/historyClient.test.ts",
       "status": "implemented",
       "notes": "V1-058 R7c: the History client reads audit events with the filters as query values and maps refusals."
@@ -54770,6 +54769,715 @@
       "test_path": "backend/tests/test_move_out_api.py",
       "status": "implemented",
       "notes": "V1-058 R3 Move-out routes: no session is 401; a change without the Origin and CSRF pair is 403 before the flow; without a database both reads answer 503."
+    },
+    {
+      "test_id": "test_a_utility_rate_change_names_settings_manage",
+      "upstream_ids": [
+        "DL-075",
+        "DL-090",
+        "SEC-002"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_settings_evidence_hand_back_keep_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL, a Utility Rate change writes settings.manage as its audit authorization reference (V1-056 slice 12a, Settings audit evidence and the hand-back KEEP order; DL-090; ops/reviews/V1-056-slice-12a.md)."
+    },
+    {
+      "test_id": "test_an_invoice_credit_adjusted_to_zero_is_kept_at_hand_back",
+      "upstream_ids": [
+        "BR-RENT-030",
+        "DL-090"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_settings_evidence_hand_back_keep_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL, an Invoice that a credit Adjustment took to zero is assessed KEEP at hand-back, and both resolutions are refused as kept (V1-056 slice 12a, Settings audit evidence and the hand-back KEEP order; DL-090; ops/reviews/V1-056-slice-12a.md)."
+    },
+    {
+      "test_id": "test_a_period_finalized_after_its_run_is_billed_once_by_a_late_run",
+      "upstream_ids": [
+        "DB-UTIL-013",
+        "DL-071",
+        "DL-091",
+        "BR-UTIL-021"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_utility_run_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL, a Utility period finalized after a SUCCEEDED run is listed once and billed once by a scheduled late run linked to that run, due the configured days after issue when the on-time Due Date has passed; a period the first run skipped as not moved in is left to the catch-up command; a late run before any success or through the API is refused; a replay or another late run bills nothing again (V1-056 slice 12b, the scheduled worker bills a late Utility period; DL-091; ops/reviews/V1-056-slice-12b.md)."
+    },
+    {
+      "test_id": "test_late_candidates_are_financial_only_and_bounded",
+      "upstream_ids": [
+        "DL-091",
+        "SEC-002"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_utility_run_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL, the late Utility candidate function runs only for prm_financial, as SECURITY DEFINER, and refuses a limit outside 1 to 100 (V1-056 slice 12b, the scheduled worker bills a late Utility period; DL-091; ops/reviews/V1-056-slice-12b.md)."
+    },
+    {
+      "test_id": "test_the_worker_bills_late_utility_dates_within_its_bound",
+      "upstream_ids": [
+        "DL-071",
+        "DL-091"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_billing_run.py",
+      "status": "implemented",
+      "notes": "The scheduled worker runs late Utility candidates after its ordinary runs within the same bound, resumes an unfinished late run with its own key, and still runs the late-payment charge pass when a late run fails (V1-056 slice 12b, the scheduled worker bills a late Utility period; DL-091; ops/reviews/V1-056-slice-12b.md)."
+    },
+    {
+      "test_id": "test_the_prune_removes_only_rows_older_than_30_days",
+      "upstream_ids": [
+        "DB-AUTH-011",
+        "DL-081",
+        "DL-092"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_sign_in_prune_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL, the prune command removes old waits, old clears and the old wrong tries no remaining row names, removes a lone old try, keeps a try a newer clear names and a latest clear whose try a remaining wait names so no count grows, works in batches, prints only the counts and removes nothing on a second run (V1-056 slice 12c, removal of wrong sign-in tries older than 30 days; DL-092; ops/reviews/V1-056-slice-12c.md)."
+    },
+    {
+      "test_id": "test_rows_are_removed_only_by_the_prune_and_only_when_old",
+      "upstream_ids": [
+        "DB-AUTH-011",
+        "DL-092",
+        "SEC-002"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_sign_in_prune_migration.py",
+      "status": "implemented",
+      "notes": "On PostgreSQL, a DELETE outside the prune or of a row of the last 30 days, an UPDATE and a TRUNCATE are refused, and no application role may run the prune or delete a row (V1-056 slice 12c, removal of wrong sign-in tries older than 30 days; DL-092; ops/reviews/V1-056-slice-12c.md)."
+    },
+    {
+      "test_id": "test_the_prune_command_takes_no_arguments_and_needs_a_database",
+      "upstream_ids": [
+        "DL-092"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_sign_in_prune_migration.py",
+      "status": "implemented",
+      "notes": "The prune command refuses arguments and a missing database address without printing it (V1-056 slice 12c, removal of wrong sign-in tries older than 30 days; DL-092; ops/reviews/V1-056-slice-12c.md)."
+    },
+    {
+      "test_id": "test_a_waiting_refund_return_that_gives_value_back_to_a_credit_holds_the_other_lease",
+      "upstream_ids": [
+        "DL-093",
+        "BR-SETTLE-002",
+        "BR-SETTLE-013",
+        "BR-CREDIT-008"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_settlement_preview_refund_return_wait_migration.py",
+      "status": "implemented",
+      "notes": "A waiting REFUND_RETURN correction draft that gives value back to the Customer's Credit holds the Customer's other Lease's Settlement until it is withdrawn (V1-056 slice 12d; owner answer (a) to Q-2026-10-20-149; ops/reviews/V1-056-slice-12d.md)."
+    },
+    {
+      "test_id": "test_the_refund_return_wait_migration_changes_only_the_preview_and_is_forward_only",
+      "upstream_ids": [
+        "DL-093"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_settlement_preview_refund_return_wait_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20270218_206 changes only the body of app.final_settlement_preview, once, and is forward-only (V1-056 slice 12d; ops/reviews/V1-056-slice-12d.md)."
+    },
+    {
+      "test_id": "test_a_file_fingerprint_is_kept_only_in_a_sha256_field",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_audit.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): V1-057 (DL-072 answer 12): an export's audit event keeps its file's SHA-256."
+    },
+    {
+      "test_id": "test_a_malformed_grant_is_refused_before_the_audit_search_reads",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_audit.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Review round 3: a grant with a wrong Property id gives 403, not a server error."
+    },
+    {
+      "test_id": "test_stored_capability_lists_and_odd_filters_read_back_on_the_history_page",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_audit.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Review round 1: role bundle events keep capability lists; search filters stay readable."
+    },
+    {
+      "test_id": "test_one_time_charge_due_days_read_needs_settings_access",
+      "upstream_ids": [
+        "DL-075",
+        "DL-074"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_invoice_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R7b-4: the Settings Business tab reads the days and the version to change them."
+    },
+    {
+      "test_id": "test_a_small_xlsx_file_downloads_at_once_and_its_event_keeps_its_fingerprint",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_exports.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test a small xlsx file downloads at once and its event keeps its fingerprint."
+    },
+    {
+      "test_id": "test_a_report_file_needs_data_export_and_the_report_right",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_exports.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test a report file needs data export and the report right."
+    },
+    {
+      "test_id": "test_a_pdf_holds_at_most_5000_rows_and_odd_filters_are_left_out_of_the_event",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_exports.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test a pdf holds at most 5000 rows and odd filters are left out of the event."
+    },
+    {
+      "test_id": "test_a_pdf_file_and_a_large_export_job_kept_for_its_maker",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_exports.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test a pdf file and a large export job kept for its maker."
+    },
+    {
+      "test_id": "test_paid_for_names_each_line_with_its_amount",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_exports.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test paid for names each line with its amount."
+    },
+    {
+      "test_id": "test_the_audit_file_needs_audit_export_and_keeps_its_fingerprint",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_exports.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the audit file needs audit export and keeps its fingerprint."
+    },
+    {
+      "test_id": "test_a_utility_file_has_amounts_only_with_the_report_right",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_exports.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test a utility file has amounts only with the report right."
+    },
+    {
+      "test_id": "test_the_export_body_is_bounded",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_exports.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the export body is bounded."
+    },
+    {
+      "test_id": "test_a_spreadsheet_keeps_text_as_text_and_drops_control_characters",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_exports.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Review round 1: a name starting with \"=\" is never a live formula in the .xlsx file."
+    },
+    {
+      "test_id": "test_an_export_file_is_kept_for_its_maker_for_24_hours",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_report_exports_migration.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test an export file is kept for its maker for 24 hours."
+    },
+    {
+      "test_id": "test_report_activity_checks_its_kind_its_right_and_the_audit_fingerprint",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_report_exports_migration.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test report activity checks its kind its right and the audit fingerprint."
+    },
+    {
+      "test_id": "test_a_new_audit_search_writes_one_event_and_its_next_pages_none",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_report_exports_migration.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test a new audit search writes one event and its next pages none."
+    },
+    {
+      "test_id": "test_an_odd_search_filter_is_left_out_so_history_still_reads_the_search",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_report_exports_migration.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Review round 1: a search for free text must not leave an event History cannot read."
+    },
+    {
+      "test_id": "test_an_export_through_the_service_writes_its_event_with_the_file_fingerprint",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_report_exports_migration.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test an export through the service writes its event with the file fingerprint."
+    },
+    {
+      "test_id": "test_an_audit_file_for_a_unit_holds_the_events_about_the_unit_itself",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_report_exports_migration.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test an audit file for a unit holds the events about the unit itself."
+    },
+    {
+      "test_id": "test_the_database_checks_the_property_against_the_persons_grants",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_report_exports_migration.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the database checks the property against the persons grants."
+    },
+    {
+      "test_id": "test_the_report_exports_migration_is_forward_only",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_report_exports_migration.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the report exports migration is forward only."
+    },
+    {
+      "test_id": "test_the_facts_parts_migration_is_forward_only",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_report_month_facts_migration.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Review: the month facts come as parts so a large sum never breaks the report."
+    },
+    {
+      "test_id": "test_income_and_payment_facts_count_each_record_in_its_month",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_report_month_facts_migration.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test income and payment facts count each record in its month."
+    },
+    {
+      "test_id": "test_the_month_facts_need_an_allowed_property_and_the_runtime_role",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_report_month_facts_migration.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the month facts need an allowed property and the runtime role."
+    },
+    {
+      "test_id": "test_the_report_month_facts_migration_is_forward_only",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_report_month_facts_migration.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the report month facts migration is forward only."
+    },
+    {
+      "test_id": "test_a_manager_reads_every_register_with_its_filters",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_registers.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test a manager reads every register with its filters."
+    },
+    {
+      "test_id": "test_the_register_route_refuses_a_wrong_name_filter_or_page",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_registers.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the register route refuses a wrong name filter or page."
+    },
+    {
+      "test_id": "test_staff_read_only_the_three_operational_reports_without_amounts",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_registers.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test staff read only the three operational reports without amounts."
+    },
+    {
+      "test_id": "test_the_invoice_register_sums_every_kept_row_and_leaves_void_invoices_out",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_registers.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the invoice register sums every kept row and leaves void invoices out."
+    },
+    {
+      "test_id": "test_only_a_running_lease_is_current_and_rent_needs_the_report_right",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_registers.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Review round 1: an ended or future signed Lease is not current; Staff see no Rent."
+    },
+    {
+      "test_id": "test_utility_consumption_shows_amounts_only_with_the_report_right",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_registers.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test utility consumption shows amounts only with the report right."
+    },
+    {
+      "test_id": "test_the_lists_count_today_and_ignore_the_period_where_it_does_not_apply",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_registers.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the lists count today and ignore the period where it does not apply."
+    },
+    {
+      "test_id": "test_the_payments_report_lists_where_money_went_and_reversals_in_their_month",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_registers.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the payments report lists where money went and reversals in their month."
+    },
+    {
+      "test_id": "test_the_overdue_groups_are_1_to_19_20_to_29_and_30_or_more",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_registers.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the overdue groups are 1 to 19 20 to 29 and 30 or more."
+    },
+    {
+      "test_id": "test_audit_activity_counts_by_day_person_and_kind",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_registers.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test audit activity counts by day person and kind."
+    },
+    {
+      "test_id": "test_the_invoice_and_payment_registers_agree_on_paid_to_invoices",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_report_registers_migration.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the invoice and payment registers agree on paid to invoices."
+    },
+    {
+      "test_id": "test_the_report_registers_migration_is_forward_only",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_report_registers_migration.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the report registers migration is forward only."
+    },
+    {
+      "test_id": "test_the_register_reads_need_an_allowed_property_and_the_runtime_role",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_report_registers_migration.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the register reads need an allowed property and the runtime role."
+    },
+    {
+      "test_id": "test_the_totals_route_refuses_a_wrong_report_filter_or_query",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_totals.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the totals route refuses a wrong report filter or query."
+    },
+    {
+      "test_id": "test_the_income_table_has_the_years_with_records_and_blank_months",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_totals.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the income table has the years with records and blank months."
+    },
+    {
+      "test_id": "test_the_totals_route_reads_the_chosen_report_with_its_filter",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_totals.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the totals route reads the chosen report with its filter."
+    },
+    {
+      "test_id": "test_payment_money_with_no_unit_counts_only_in_the_whole_property_table",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_totals.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test payment money with no unit counts only in the whole property table."
+    },
+    {
+      "test_id": "test_a_unit_floor_or_date_filter_keeps_those_rows_only",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_totals.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test a unit floor or date filter keeps those rows only."
+    },
+    {
+      "test_id": "test_the_totals_route_needs_reports_read",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_totals.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the totals route needs reports read."
+    },
+    {
+      "test_id": "test_the_utility_tables_add_the_quantity_and_mark_estimated_months",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_totals.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the utility tables add the quantity and mark estimated months."
+    },
+    {
+      "test_id": "test_an_empty_report_has_no_years_and_no_highest_month",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_totals.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test an empty report has no years and no highest month."
+    },
+    {
+      "test_id": "test_the_home_page_refuses_query_text_and_reports_a_store_failure",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_reports_api.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the home page refuses query text and reports a store failure."
+    },
+    {
+      "test_id": "test_the_home_page_needs_a_signed_in_person_with_a_read_right",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_reports_api.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the home page needs a signed in person with a read right."
+    },
+    {
+      "test_id": "test_the_home_page_passes_only_the_sections_the_person_may_read",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_reports_api.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the home page passes only the sections the person may read."
+    },
+    {
+      "test_id": "test_the_home_page_lists_a_lease_near_its_end_and_leaves_out_unpassed_sections",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reports_home_migration.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the home page lists a lease near its end and leaves out unpassed sections."
+    },
+    {
+      "test_id": "test_the_migration_gives_the_rights_to_the_owner_and_manager_bundles_only",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reports_home_migration.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): A new version of each default Owner and Manager bundle holds its old set plus the three"
+    },
+    {
+      "test_id": "test_to_do_groups_follow_the_property_day",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reports_home_migration.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test to do groups follow the property day."
+    },
+    {
+      "test_id": "test_the_new_rights_are_in_the_catalog_with_the_bundle_path",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reports_home_migration.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the new rights are in the catalog with the bundle path."
+    },
+    {
+      "test_id": "test_the_home_page_checks_the_person_the_property_and_the_sections",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reports_home_migration.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the home page checks the person the property and the sections."
     }
   ]
 }

@@ -31,7 +31,7 @@ from test_late_charge_payment_proposal_migration import CHARGE, RENT, two_months
 from test_late_payment_migration import migrated_database_url as migrated_database_url
 from test_receive_payment_migration import charge, invoice, receive, usd
 
-REVISION = "20270220_208"
+REVISION = "20270312_231"
 KINDS = ("RENT", "UTIL", "SVC", "LATE", "DEPOSIT", "MOVEOUT", "CREDIT")
 
 

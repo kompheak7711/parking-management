@@ -1,5 +1,8 @@
 """Bounded Property-local catch-up worker for scheduled billing runs.
 
+Since V1-056 slice 12b (DL-071 answer 18) each pass also bills, by a late Utility run, a Utility
+period finalized after a run for its dates (`app.scheduled_late_utility_candidates`).
+
 Since V1-056 slice 11g-1 (DL-076) each pass also runs the automatic late-payment charge pass
 (`property_rental.late_payment_job`) after the billing runs, while it holds the same lock."""
 
@@ -19,8 +22,13 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 import psycopg
 
 from property_rental.billing_run import (
+    BillingRunAuthorizationError,
     BillingRunCommand,
+    BillingRunConflict,
     BillingRunDetail,
+    BillingRunInvalid,
+    BillingRunNotFound,
+    BillingRunUnavailable,
     PostgresBillingRunService,
 )
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
@@ -39,6 +47,8 @@ class BillingWorkerResult:
     late_charges: LateChargePassResult | None = None
     # The charge pass failed as a whole; the billing runs above are still reported.
     late_charges_error: str | None = None
+    # A late Utility run failed; later late runs wait for the next pass, the charge pass still runs.
+    late_utility_error: str | None = None
 
 
 class BillingWorker(Protocol):
@@ -152,6 +162,46 @@ class ScheduledBillingWorker:
                         invocation_source="SCHEDULED",
                     )
                 )
+            # V1-056 slice 12b (DL-071 answer 18): a Utility period finalized after a run for
+            # its dates is billed by a late Utility run, within the same bound of runs.
+            remaining = self._max_catchup_runs - len(results)
+            late_utility_error: str | None = None
+            if remaining > 0:
+                try:
+                    late = connection.execute(
+                        "SELECT * FROM app.scheduled_late_utility_candidates(%s,%s,%s,%s)",
+                        (self._property_id, self._actor_id, instant, remaining),
+                    ).fetchall()
+                    for business_date, period_start, period_end, logical_run_key, key in late:
+                        results.append(
+                            self._service.execute(
+                                BillingRunCommand(
+                                    property_id=self._property_id,
+                                    run_kind="UTILITIES",
+                                    logical_run_key=str(logical_run_key),
+                                    business_date=business_date,
+                                    period_start=period_start,
+                                    period_end=period_end,
+                                    # An unfinished late run is resumed with its own key.
+                                    idempotency_key=UUID(str(key))
+                                    if key is not None
+                                    else _worker_id(
+                                        self._property_id, f"UTILITIES-LATE/{logical_run_key}"
+                                    ),
+                                ),
+                                actor=actor,
+                                invocation_source="SCHEDULED",
+                            )
+                        )
+                except (
+                    psycopg.Error,
+                    BillingRunAuthorizationError,
+                    BillingRunConflict,
+                    BillingRunInvalid,
+                    BillingRunNotFound,
+                    BillingRunUnavailable,
+                ) as exc:
+                    late_utility_error = getattr(exc, "sqlstate", None) or type(exc).__name__
             # DL-076: after the day's Invoices exist, still under the worker lock. The charge
             # pass always runs at the real time: the database refuses an instant older than an
             # hour, so a billing catch-up instant is not used for it.
@@ -159,8 +209,12 @@ class ScheduledBillingWorker:
                 late_charges = self._late_charges.run(as_of=datetime.now(UTC))
             except (psycopg.Error, LateChargePassError) as exc:
                 code = getattr(exc, "sqlstate", None) or type(exc).__name__
-                return BillingWorkerResult(current_business_date, tuple(results), None, code)
-        return BillingWorkerResult(current_business_date, tuple(results), late_charges)
+                return BillingWorkerResult(
+                    current_business_date, tuple(results), None, code, late_utility_error
+                )
+        return BillingWorkerResult(
+            current_business_date, tuple(results), late_charges, None, late_utility_error
+        )
 
 
 def run_bounded_loop(
@@ -189,6 +243,9 @@ def run_bounded_loop(
             continue
         consecutive_failures = 0
         print(f"succeeded:{len(result.runs)}", flush=True)
+        if result.late_utility_error is not None:
+            all_succeeded = False
+            print(f"late_utility:error:{result.late_utility_error}", file=sys.stderr, flush=True)
         if result.late_charges_error is not None:
             all_succeeded = False
             print(f"late_charges:error:{result.late_charges_error}", file=sys.stderr, flush=True)

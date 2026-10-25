@@ -44,7 +44,7 @@ from test_late_charge_payment_proposal_migration import CHARGE, RENT, status, tw
 from test_late_payment_charge_reduction_migration import position
 from test_late_payment_migration import migrated_database_url as migrated_database_url
 
-REVISION = "20270219_207"
+REVISION = "20270311_230"
 
 
 def cashier(case: dict[str, Any]) -> AuthenticatedActor:
@@ -294,7 +294,7 @@ def test_named_ticks_need_allocate_and_only_the_financial_role_may_call_the_comm
             ("prm_runtime", False, False, True, False),
         ]
         head = connection.execute("SELECT version_num FROM alembic_version").fetchone()
-        assert head == ("20270222_210",)
+        assert head == ("20270314_233",)
 
 
 def test_receive_payment_commands_are_append_only(migrated_database_url: str) -> None:

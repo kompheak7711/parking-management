@@ -21,6 +21,7 @@ PROPERTY_READ_CAPABILITY: Final = "property.read"
 UNITS_READ_CAPABILITY: Final = "units.read"
 
 CAPABILITY_CATALOG: Final[dict[str, str]] = {
+    "audit.export": "Export the audit history",
     "audit.view": "Search and read the audit history",
     "billing.generate": "Start a Rent or Utility billing run and read its status",
     "configuration.read": "Read the Property configuration and rates",
@@ -33,6 +34,7 @@ CAPABILITY_CATALOG: Final[dict[str, str]] = {
     "customers.manage": "Create and update Customers",
     "customers.read": "Read Customers",
     "damage_charges.bill": "Bill move-out damage charges",
+    "data.export": "Export report data",
     "deposits.correct": "Correct a Deposit disposition",
     "deposits.dispose": "Record a Deposit disposition or forfeiture draft",
     "deposits.manage": "Create Deposits and record Deposit receipts and adjustments",
@@ -77,6 +79,7 @@ CAPABILITY_CATALOG: Final[dict[str, str]] = {
     "rent_nonpayment.evaluate": "Evaluate Rent nonpayment (evaluation principal only)",
     "rent_nonpayment.event_post": "Post Rent nonpayment events",
     "rent_nonpayment.read": "Read Rent nonpayment cases",
+    "reports.read": "Read the money reports and the totals by Unit and month",
     "reservation_deposits.correct": "Correct a Reservation Deposit outcome",
     "reservation_deposits.dispose": "Record a Reservation Deposit outcome draft",
     "reservation_deposits.override": "Override a Reservation Deposit outcome",
@@ -163,7 +166,7 @@ STAFF_L1C_BUNDLE_CAPABILITIES: Final = frozenset(
 
 # Owner answer 2026-10-25 (V1-058 R3, DESIGN.md Letters): Staff may record the day-20 and day-30
 # Rent letters, so they may open the Rent case and post its letter events (migration
-# `20270218_206`). The Termination notice and Terminate stay with the Owner and Managers.
+# `20270310_229`). The Termination notice and Terminate stay with the Owner and Managers.
 STAFF_RENT_LETTER_CAPABILITIES: Final = frozenset(
     {"rent_nonpayment.case_manage", "rent_nonpayment.event_post"}
 )

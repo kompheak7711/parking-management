@@ -99,12 +99,11 @@ def test_drafts_are_listed_confirmed_rejected_and_withdrawn_through_the_shared_r
 
     detail = client.get(f"{base}/{confirmed_id}")
     assert detail.status_code == 200 and "transaction_id" not in detail.text
-    # Other modules share the one Property, so only our three drafts must have left the list.
+    # Ours are the newest drafts, so they would be on the first page; other modules' may remain.
     still_pending = {
-        item["draft_id"]
-        for item in client.get(base, params={"state": "PENDING", "limit": 100}).json()["data"]
+        item["draft_id"] for item in client.get(base, params={"state": "PENDING"}).json()["data"]
     }
-    assert still_pending.isdisjoint({confirmed_id, rejected_id, withdrawn_id})
+    assert not still_pending & {confirmed_id, rejected_id, withdrawn_id}
     # A person who holds no draft capability of this Property does not see its drafts.
     stranger = api(actor(human, prop, "payments.read"))
     assert stranger.get(base).status_code == 404

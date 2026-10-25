@@ -23,8 +23,8 @@ the rebuild?": "Yes, add both checks"); technical points decided by Claude under
 
 from alembic import op
 
-revision = "20270216_204"
-down_revision = "20270215_203"
+revision = "20270308_227"
+down_revision = "20270307_226"
 branch_labels = None
 depends_on = None
 

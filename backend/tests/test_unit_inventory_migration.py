@@ -29,7 +29,7 @@ from property_rental.unit_inventory_api import (
 )
 from test_unit_setup_lists_migration import create_unit, setup, sqlstate_of
 
-REVISION = "20270217_205"
+REVISION = "20270309_228"
 RECORD = "SELECT record_number, lines FROM app.record_unit_inventory(%s, %s, %s, %s, %s)"
 
 
@@ -199,7 +199,7 @@ def test_v1_058_r2b_is_forward_only_and_follows_r2a() -> None:
         Path(__file__).parents[1] / "migrations" / "versions" / f"{REVISION}_unit_inventory.py"
     ).read_text(encoding="utf-8")
 
-    assert 'down_revision = "20270216_204"' in source
+    assert 'down_revision = "20270308_227"' in source
     assert 'raise RuntimeError("Unit inventory migration is forward-only")' in source
 
 

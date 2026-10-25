@@ -22,8 +22,8 @@ Additive only: two new functions; no existing table, function or grant changes.
 
 from alembic import op
 
-revision = "20270222_210"
-down_revision = "20270221_209"
+revision = "20270314_233"
+down_revision = "20270313_232"
 branch_labels = None
 depends_on = None
 
