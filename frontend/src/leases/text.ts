@@ -282,8 +282,8 @@ const TEXT = {
   records: ["Earlier Lease forms", "ទម្រង់កិច្ចសន្យាពីមុន"],
   // new
   records_note: [
-    "In English. New Lease, Sign, Record move-in, Renew, Terminate and Cancel draft stay here until they move into the new design in the next step.",
-    "ជាភាសាអង់គ្លេស។ កិច្ចសន្យាថ្មី ចុះហត្ថលេខា កត់ត្រាការចូលស្នាក់នៅ បន្ត បញ្ចប់ និងលុបចោលសេចក្តីព្រាង នៅទីនេះ រហូតដល់ផ្លាស់ទៅរចនាថ្មីក្នុងជំហានបន្ទាប់។",
+    "In English. New Lease, Renew, Terminate, Signers and occupants stay here until they move into the new design, and so does a move-in the new dialog does not offer.",
+    "ជាភាសាអង់គ្លេស។ កិច្ចសន្យាថ្មី បន្ត បញ្ចប់ អ្នកចុះហត្ថលេខា និងអ្នករស់នៅ នៅទីនេះ រហូតដល់ផ្លាស់ទៅរចនាថ្មី ហើយការចូលស្នាក់នៅដែលប្រអប់ថ្មីមិនផ្តល់ក៏ដូចគ្នា។",
   ],
   // Actions (L2)
   sign: ["Sign Lease", "ចុះហត្ថលេខាកិច្ចសន្យា"],
@@ -389,6 +389,57 @@ const TEXT = {
     "This Lease or its Unit changed meanwhile, so nothing more was saved. It was read again: check it and try again.",
     "កិច្ចសន្យានេះ ឬបន្ទប់របស់វាបានប្តូរក្នុងពេលនេះ ដូច្នេះគ្មានអ្វីបន្ថែមត្រូវបានរក្សាទុកទេ។ វាត្រូវបានអានម្តងទៀត៖ សូមពិនិត្យ ហើយព្យាយាមម្តងទៀត។",
   ],
+  // L2b
+  cancel_draft: ["Cancel draft", "លុបសេចក្តីព្រាង"],
+  record_move_in: ["Record move-in", "កត់ត្រាការចូលស្នាក់នៅ"],
+  // new
+  cancel_title: ["Cancel draft · {0}", "លុបសេចក្តីព្រាង · {0}"],
+  // new
+  cancel_note: [
+    "Only a draft is cancelled; a signed Lease never is. The Unit and any Booking stay as they are.",
+    "មានតែសេចក្តីព្រាងប៉ុណ្ណោះដែលត្រូវលុប កិច្ចសន្យាដែលបានចុះហត្ថលេខាមិនដែលលុបទេ។ បន្ទប់ និងការកក់ណាមួយ នៅដដែល។",
+  ],
+  memo: ["Memo", "កំណត់ចំណាំ"],
+  // new
+  err_memo: ["Write why it is cancelled.", "សូមសរសេរហេតុអ្វីលុប។"],
+  // new
+  cancel_ok: ["Cancel the draft", "លុបសេចក្តីព្រាង"],
+  // new
+  cancelled_toast: ["The draft was cancelled.", "សេចក្តីព្រាងត្រូវបានលុប។"],
+  // new
+  movein_title: ["Record move-in · {0}", "កត់ត្រាការចូលស្នាក់នៅ · {0}"],
+  movein_day: ["Move-in date", "ថ្ងៃចូលស្នាក់នៅ"],
+  movein_who: ["Who moves in", "អ្នកណាចូលស្នាក់នៅ"],
+  // new
+  planned_tag: ["planned", "គ្រោងទុក"],
+  // new
+  occupant_unnamed: [
+    "A Customer of this Lease",
+    "អតិថិជនម្នាក់នៃកិច្ចសន្យានេះ",
+  ],
+  // new
+  movein_others: [
+    "Someone else who lives there is added with Add occupant after the move-in.",
+    "អ្នកផ្សេងដែលរស់នៅទីនោះ ត្រូវបន្ថែមដោយ «បន្ថែមអ្នករស់នៅ» ក្រោយការចូលស្នាក់នៅ។",
+  ],
+  // new
+  note: ["Note (optional)", "កំណត់ចំណាំ (ស្រេចចិត្ត)"],
+  // new
+  movein_ok: ["Record move-in", "កត់ត្រាការចូលស្នាក់នៅ"],
+  // new
+  moved_in_toast: ["Move-in recorded.", "ការចូលស្នាក់នៅត្រូវបានកត់ត្រា។"],
+  // new
+  err_movein_day: [
+    "Choose a date from {0} to {1}.",
+    "សូមជ្រើសថ្ងៃពី {0} ដល់ {1}។",
+  ],
+  // new
+  err_movein_early: [
+    "The move-in can be recorded from {0}.",
+    "ការចូលស្នាក់នៅអាចកត់ត្រាបានចាប់ពី {0}។",
+  ],
+  // new
+  err_who: ["Tick who moves in.", "សូមធីកអ្នកដែលចូលស្នាក់នៅ។"],
 } as const;
 
 export type LeaseTextKey = keyof typeof TEXT;

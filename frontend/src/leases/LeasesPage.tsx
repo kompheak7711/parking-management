@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { DepositApi } from "../depositClient";
 import type { LeaseApi } from "../leaseClient";
+import type { CustomerApi } from "../customerClient";
 import type { ReservationApi } from "../reservationClient";
 import { todayInPhnomPenh } from "../shell/format";
 import { Icon } from "../shell/icons";
@@ -31,6 +32,7 @@ export interface LeasesPageProps {
   api: LeaseApi;
   depositApi: DepositApi;
   reservationApi: Pick<ReservationApi, "list">;
+  customerApi: Pick<CustomerApi, "get">;
   capabilities: ReadonlySet<string> | null;
 }
 
@@ -41,6 +43,7 @@ export function LeasesPage({
   api,
   depositApi,
   reservationApi,
+  customerApi,
   capabilities,
 }: LeasesPageProps) {
   const detail = useHashDetail("leases");
@@ -105,6 +108,7 @@ export function LeasesPage({
         leaseId={detail}
         propertyId={propertyId}
         reservationApi={reservationApi}
+        customerApi={customerApi}
       />
     );
   }

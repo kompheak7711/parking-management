@@ -1671,6 +1671,7 @@ export function App({
           depositApi={depositApi}
           language={language}
           propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+          customerApi={customerApi ?? defaultCustomerApi}
           reservationApi={reservationApi}
         />
         {/* V1-058 R3: the Lease actions stay in the earlier English forms, folded, until

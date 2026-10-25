@@ -50471,6 +50471,43 @@
       "test_path": "backend/tests/test_lease_api_migration.py",
       "status": "implemented",
       "notes": "V1-058 on PostgreSQL through the runtime role: signing a draft with its Reservation completes the Reservation, links its Security Deposit and occupies the Unit; the same request again is replayed; the Lease move-in route starts the Occupancy; the cancel route cancels another draft."
+    },
+    {
+      "test_id": "TEST-FE-854",
+      "upstream_ids": [
+        "DL-074",
+        "BR-LEASE-004",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 L2b: Cancel draft (shown for a draft the person may edit) needs a memo, sends it trimmed as the reason, keeps the request identity on Try again and shows that the draft was cancelled."
+    },
+    {
+      "test_id": "TEST-FE-855",
+      "upstream_ids": [
+        "DL-074",
+        "DL-066",
+        "BR-OCC-004",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 L2b: Record move-in (a signed Lease with no move-in yet) offers the Signers and the planned occupants (names read from Customers), ticks the planned ones, starts at today and refuses a date outside the Start Date (or signing day) to today; Try again sends the same request with the same Occupancy ids."
+    },
+    {
+      "test_id": "TEST-FE-856",
+      "upstream_ids": [
+        "DL-074",
+        "DL-066",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 L2b: Record move-in is offered only from the Start Date and not on a renewal (its Occupancies continue from the earlier Lease, so the move-in route would refuse it)."
     }
   ]
 }

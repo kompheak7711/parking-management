@@ -8,6 +8,7 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { CustomerApi, CustomerDetail } from "../customerClient";
 import type { DepositApi, DepositResource } from "../depositClient";
 import {
   LeaseConflictError,
@@ -230,6 +231,9 @@ function show(
       can_create: false,
     }),
   },
+  customerClient: Pick<CustomerApi, "get"> = {
+    get: vi.fn<CustomerApi["get"]>().mockRejectedValue(new Error("no")),
+  },
 ) {
   return render(
     <LeasesPage
@@ -239,6 +243,7 @@ function show(
       depositApi={depositClient}
       language="en"
       propertyId="property-1"
+      customerApi={customerClient}
       reservationApi={reservationClient}
     />,
   );
@@ -786,5 +791,155 @@ describe("Lease actions", () => {
     expect(recordSignature).toHaveBeenCalledTimes(2);
     expect(sign.mock.calls[1]?.[1]).toEqual(sign.mock.calls[0]?.[1]);
     expect(list).toHaveBeenCalledTimes(2);
+  });
+
+  it("TEST-FE-854 Cancel draft needs a memo and keeps the request on Try again", async () => {
+    window.location.hash = "#/leases/lease-sign";
+    const cancel = vi
+      .fn<LeaseApi["cancel"]>()
+      .mockRejectedValueOnce(new LeaseUnavailableError())
+      .mockImplementationOnce((value) =>
+        Promise.resolve({ ...value, status: "CANCELLED" as const }),
+      );
+    show(api({ get: vi.fn().mockResolvedValue(signable), cancel }));
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Cancel draft" }),
+    );
+    const dialog = screen.getByRole("dialog", { name: "Cancel draft · U301" });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Cancel the draft" }),
+    );
+    expect(dialog).toHaveTextContent("Write why it is cancelled.");
+    expect(cancel).not.toHaveBeenCalled();
+    fireEvent.change(within(dialog).getByLabelText(/Memo/), {
+      target: { value: " Customer chose another Unit " },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Cancel the draft" }),
+    );
+    fireEvent.click(
+      await within(dialog).findByRole("button", { name: "Try again" }),
+    );
+    expect(
+      await screen.findByText("The draft was cancelled."),
+    ).toBeInTheDocument();
+    expect(cancel.mock.calls[0]?.[1]).toMatchObject({
+      reason: "Customer chose another Unit",
+    });
+    expect(cancel.mock.calls[1]?.[1]).toEqual(cancel.mock.calls[0]?.[1]);
+    expect(cancel.mock.calls[1]?.[2]).toBe(cancel.mock.calls[0]?.[2]);
+  });
+
+  it("TEST-FE-855 Record move-in offers the Signers and planned occupants, checks the date and keeps the Occupancy ids on Try again", async () => {
+    window.location.hash = "#/leases/lease-move";
+    const start = addDays(today, -3);
+    const ready = lease("U302", {
+      lease_id: "lease-move",
+      start_date: start,
+      end_date: addDays(today, 360),
+      signed_at: `${addDays(today, -5)}T03:00:00Z`,
+      occupancies: [],
+      can_move_in: true,
+      planned_occupant_customer_ids: ["customer-U302", "customer-kid"],
+    });
+    const get = vi.fn<CustomerApi["get"]>((id) =>
+      Promise.resolve({
+        customer_id: id,
+        legal_name: "Child C",
+      } as CustomerDetail),
+    );
+    const recordMoveIn = vi
+      .fn<LeaseApi["recordMoveIn"]>()
+      .mockRejectedValueOnce(new LeaseUnavailableError())
+      .mockImplementationOnce((value) => Promise.resolve(value));
+    show(
+      api({ get: vi.fn().mockResolvedValue(ready), recordMoveIn }),
+      deposits(),
+      null,
+      undefined,
+      { get },
+    );
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Record move-in" }),
+    );
+    const dialog = screen.getByRole("dialog", {
+      name: "Record move-in · U302",
+    });
+    expect(within(dialog).getByLabelText("Move-in date")).toHaveValue(today);
+    expect(
+      await within(dialog).findByRole("checkbox", { name: /Child C/ }),
+    ).toBeChecked();
+    expect(
+      within(dialog).getByRole("checkbox", { name: /Tenant U302/ }),
+    ).toBeChecked();
+    expect(get).toHaveBeenCalledWith("customer-kid");
+
+    fireEvent.change(within(dialog).getByLabelText("Move-in date"), {
+      target: { value: addDays(start, -1) },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Record move-in" }),
+    );
+    expect(dialog).toHaveTextContent(
+      `Choose a date from ${dayText(start)} to ${dayText(today)}.`,
+    );
+    expect(recordMoveIn).not.toHaveBeenCalled();
+
+    fireEvent.change(within(dialog).getByLabelText("Move-in date"), {
+      target: { value: start },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Record move-in" }),
+    );
+    fireEvent.click(
+      await within(dialog).findByRole("button", { name: "Try again" }),
+    );
+    expect(await screen.findByText("Move-in recorded.")).toBeInTheDocument();
+    const first = recordMoveIn.mock.calls[0]?.[1];
+    expect(first).toMatchObject({
+      actual_move_in_date: start,
+      reason: "Move-in recorded",
+    });
+    expect(first?.occupants.map((item) => item.customer_id)).toEqual([
+      "customer-U302",
+      "customer-kid",
+    ]);
+    expect(recordMoveIn.mock.calls[1]?.[1]).toEqual(first);
+    expect(recordMoveIn.mock.calls[1]?.[2]).toBe(
+      recordMoveIn.mock.calls[0]?.[2],
+    );
+    // Try again sends the same Lease version as the first try.
+    expect(recordMoveIn.mock.calls[1]?.[0].version).toBe(
+      recordMoveIn.mock.calls[0]?.[0].version,
+    );
+  });
+
+  it("TEST-FE-856 Record move-in is not offered before the Start Date or on a renewal", async () => {
+    const ready = {
+      start_date: addDays(today, -3),
+      signed_at: `${addDays(today, -5)}T03:00:00Z`,
+      occupancies: [],
+      can_move_in: true,
+    };
+    for (const extra of [
+      { start_date: addDays(today, 2) },
+      { predecessor_lease_id: "lease-before" },
+      {},
+    ]) {
+      cleanup();
+      window.location.hash = "#/leases/lease-move";
+      const value = lease("U302", {
+        lease_id: "lease-move",
+        ...ready,
+        ...extra,
+      });
+      show(api({ get: vi.fn().mockResolvedValue(value) }));
+      await screen.findByRole("heading", { name: /Lease · U302/ });
+      expect(
+        screen.queryByRole("button", { name: "Record move-in" }) !== null,
+      ).toBe(Object.keys(extra).length === 0);
+    }
   });
 });
