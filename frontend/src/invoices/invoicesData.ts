@@ -15,6 +15,8 @@ export interface InvoicesData {
   invoices: InvoiceResource[];
   /** Customer id → name. */
   names: ReadonlyMap<string, string>;
+  /** Customer id → phone, for the printed Invoice. */
+  phones: ReadonlyMap<string, string>;
   /** Lease id → Unit number. */
   leaseUnits: ReadonlyMap<string, string>;
   /** Customer id → the Unit of their newest signed Lease, for an Invoice with no Lease. */
@@ -76,8 +78,12 @@ export async function loadInvoicesData(
     }).catch(() => []),
   ]);
   const names = new Map<string, string>();
-  for (const customer of customers)
+  const phones = new Map<string, string>();
+  for (const customer of customers) {
     names.set(customer.customer_id, customer.legal_name);
+    if (customer.phone_number)
+      phones.set(customer.customer_id, customer.phone_number);
+  }
   const leaseUnits = new Map<string, string>();
   const customerUnits = new Map<string, string>();
   // Oldest first, so the newest signed Lease of a Customer is the one kept.
@@ -91,7 +97,7 @@ export async function loadInvoicesData(
     if (lease.status !== "DRAFTED" && lease.status !== "CANCELLED")
       customerUnits.set(lease.primary_tenant_id, lease.unit_number);
   }
-  return { invoices, names, leaseUnits, customerUnits, capabilities };
+  return { invoices, names, phones, leaseUnits, customerUnits, capabilities };
 }
 
 /** Whole cents of an amount; the server sends at most a few thousand dollars per Invoice. */

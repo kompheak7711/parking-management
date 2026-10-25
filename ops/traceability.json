@@ -51294,6 +51294,17 @@
       "test_path": "frontend/src/invoices/InvoicesPage.test.tsx",
       "status": "implemented",
       "notes": "V1-058 R5a Invoices: Review round 1: Last month in January is December of the year before; an Invoice of another Property is not shown on its page."
+    },
+    {
+      "test_id": "TEST-FE-903",
+      "upstream_ids": [
+        "DL-074",
+        "UI-057"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/invoices/InvoicesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5b-1 printed Invoice: Print Invoice prints only the sheet; a Utility line shows its use and rate; a Draft or void sheet is stamped; a paid, Draft or void sheet has no QR code. TEST-FE-898/899 now check the printed Invoice on the Invoice page."
     }
   ]
 }

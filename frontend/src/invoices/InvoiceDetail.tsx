@@ -1,6 +1,6 @@
-// V1-058 R5: one Invoice (DESIGN.md "Invoice page"): the head with its number and status, the
-// overdue, void or draft notice, what is billed, the Invoice status card with the bar from the
-// issue date to the Due Date, the Customer, and the History. The printed Invoice, Receive
+// V1-058 R5: one Invoice (DESIGN.md "Invoice page"): the head with its number, status and
+// Print Invoice, the overdue, void or draft notice, the printed Invoice, the Invoice status card
+// with the bar from the issue date to the Due Date, the Customer, and the History. Receive
 // payment, Adjust, Void and the late-payment card come in the next steps.
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -16,6 +16,7 @@ import { Icon } from "../shell/icons";
 import { hashForPage } from "../shell/navigation";
 import { openPageInAddress } from "../shell/useHashPage";
 import type { Language } from "../signInText";
+import { InvoiceDocument, SheetFrame } from "./InvoiceDocument";
 import { InvoiceChip } from "./InvoicesList";
 import {
   type InvoicesData,
@@ -32,14 +33,14 @@ function textOf(value: JsonValue | undefined): string | null {
   return typeof value === "string" && value.trim() !== "" ? value : null;
 }
 
-/** A line's period as "01/11/2026 to 30/11/2026", when it has one. */
-function periodText(language: Language, period: JsonValue): string | null {
-  if (typeof period !== "object" || period === null || Array.isArray(period))
-    return null;
-  const start = textOf(period.start);
-  const end = textOf(period.end);
-  if (start === null || end === null) return null;
-  return ivt(language, "line_period", dayText(start), dayText(end));
+/** Prints only the Invoice sheet (invoiceDocument.css), then the page is as before. */
+function printSheet() {
+  document.body.classList.add("ui-printing");
+  const done = () => {
+    document.body.classList.remove("ui-printing");
+  };
+  window.addEventListener("afterprint", done, { once: true });
+  window.print();
 }
 
 /** The bar from the issue date to the later of the Due Date and today, with a dot for each. */
@@ -135,6 +136,7 @@ function StatusCard({
 }) {
   const state = stateOf(invoice, today);
   const billed = cents(invoice.adjusted_total);
+  const changed = billed !== cents(invoice.original_total);
   const paid = paidOf(invoice);
   const owed = Math.max(0, cents(invoice.outstanding_balance));
   const percent = billed > 0 ? Math.round((paid * 100) / billed) : 0;
@@ -181,8 +183,19 @@ function StatusCard({
         </div>
       )}
       <dl className="ui-kv ui-is">
-        <dt>{ivt(language, "is_billed")}</dt>
-        <dd className="ui-num">{usdFromCents(billed)}</dd>
+        <dt>{ivt(language, changed ? "adjusted_total" : "is_billed")}</dt>
+        <dd className="ui-num">
+          {usdFromCents(billed)}
+          {changed && (
+            <span className="ui-sub2">
+              {ivt(
+                language,
+                "line_adjusted",
+                usdFromCents(cents(invoice.original_total)),
+              )}
+            </span>
+          )}
+        </dd>
         <dt>{ivt(language, "is_received")}</dt>
         <dd className={`ui-num${paid > 0 ? " okv" : " ui-muted"}`}>
           {usdFromCents(paid)} ({percent}%)
@@ -294,8 +307,6 @@ export function InvoiceDetail({
   const name = data?.names.get(invoice.customer_id) ?? null;
   const unit = data === null ? "" : unitOf(data, invoice);
   const owed = Math.max(0, cents(invoice.outstanding_balance));
-  const changed =
-    cents(invoice.adjusted_total) !== cents(invoice.original_total);
   const history: [string, string][] = [];
   const made =
     textOf(invoice.evidence.issued_at) ?? textOf(invoice.evidence.created_at);
@@ -347,6 +358,12 @@ export function InvoiceDetail({
               .join(" · ")}
           </p>
         </div>
+        <div className="ui-actions">
+          <button className="ui-btn" onClick={printSheet} type="button">
+            <Icon name="print" />
+            {ivt(language, "act_print")}
+          </button>
+        </div>
       </div>
       {state === "overdue" && invoice.due_date !== null && (
         <div className="ui-notice err" role="note">
@@ -370,93 +387,14 @@ export function InvoiceDetail({
       )}
       <div className="ui-split">
         <div className="ui-stack">
-          <section aria-labelledby="inv-lines" className="ui-card">
-            <h2 id="inv-lines">{ivt(language, "lines_t")}</h2>
-            <div className="ui-tablewrap">
-              <table className="ui-table fit">
-                <thead>
-                  <tr>
-                    <th scope="col">{ivt(language, "line_desc")}</th>
-                    <th className="r" scope="col">
-                      {ivt(language, "col_amount")}
-                    </th>
-                    <th className="r" scope="col">
-                      {ivt(language, "col_balance")}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[...invoice.lines]
-                    .sort((left, right) => left.sequence - right.sequence)
-                    .map((line) => {
-                      const period = periodText(language, line.period);
-                      const was = cents(line.original_amount);
-                      const now = cents(line.adjusted_amount);
-                      return (
-                        <tr key={line.id}>
-                          <td className="wrap">
-                            <b>{line.description}</b>
-                            <span className="ui-sub2">
-                              {[ivt(language, line.category), period]
-                                .filter(Boolean)
-                                .join(" · ")}
-                            </span>
-                          </td>
-                          <td className="r ui-num">
-                            {usdFromCents(now)}
-                            {was !== now && (
-                              <span className="ui-sub2">
-                                {ivt(
-                                  language,
-                                  "line_adjusted",
-                                  usdFromCents(was),
-                                )}
-                              </span>
-                            )}
-                          </td>
-                          <td className="r ui-num">
-                            {state === "draft" || state === "void" ? (
-                              <span className="ui-muted">—</span>
-                            ) : (
-                              usdFromCents(
-                                Math.max(0, cents(line.outstanding_balance)),
-                              )
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                </tbody>
-                <tfoot>
-                  <tr>
-                    <th scope="row">
-                      {ivt(language, changed ? "adjusted_total" : "total")}
-                    </th>
-                    <td className="r ui-num">
-                      <b>{usdFromCents(cents(invoice.adjusted_total))}</b>
-                    </td>
-                    <td className="r ui-num">
-                      {state === "draft" || state === "void" ? (
-                        <span className="ui-muted">—</span>
-                      ) : (
-                        <b>{usdFromCents(owed)}</b>
-                      )}
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-            <dl className="ui-kv">
-              <dt>{ivt(language, "is_issued")}</dt>
-              <dd className="ui-num">{dayText(invoice.invoice_date)}</dd>
-              <dt>{ivt(language, "col_due")}</dt>
-              <dd className="ui-num">
-                {invoice.due_date === null
-                  ? ivt(language, "ni_due_later")
-                  : dayText(invoice.due_date)}
-              </dd>
-            </dl>
-          </section>
+          <SheetFrame>
+            <InvoiceDocument
+              invoice={invoice}
+              name={name}
+              phone={data?.phones.get(invoice.customer_id) ?? null}
+              unit={unit}
+            />
+          </SheetFrame>
         </div>
         <div className="ui-stack">
           <StatusCard invoice={invoice} language={language} today={today} />

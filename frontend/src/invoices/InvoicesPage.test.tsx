@@ -192,6 +192,7 @@ function customerApi(): Pick<CustomerApi, "list"> {
         {
           customer_id: "cust-sok",
           legal_name: "Sok Dara",
+          phone_number: "012 345 678",
           active: true,
           relationship_indicators: [],
         },
@@ -330,7 +331,23 @@ describe("Invoices page (V1-058 R5)", () => {
     expect(within(status).getByText("Today (day +20)")).toBeTruthy();
     expect(within(status).getByText("Overdue now")).toBeTruthy();
     expect(within(status).getByText("$0.00 (0%)")).toBeTruthy();
-    expect(screen.getByText("Rent · 01/10/2026 to 31/10/2026")).toBeTruthy();
+    // The printed Invoice shows at once, Khmer above English, with the QR code while owed.
+    const sheet = document.querySelector("article.doc");
+    if (!(sheet instanceof HTMLElement)) throw new Error("No printed Invoice");
+    expect(within(sheet).getByText("Rent, October")).toBeTruthy();
+    expect(within(sheet).getByText("ថ្លៃឈ្នួល")).toBeTruthy();
+    expect(within(sheet).getByText("01/10/2026 - 31/10/2026")).toBeTruthy();
+    expect(within(sheet).getByText("Phone 012 345 678")).toBeTruthy();
+    expect(within(sheet).getByText("Unit U101")).toBeTruthy();
+    expect(sheet.querySelector(".due .n")?.textContent).toBe("$450.00");
+    expect(
+      within(sheet).getByRole("img", {
+        name: "ABA KHQR code for CHETANA APARTMENT",
+      }),
+    ).toBeTruthy();
+    expect(
+      within(sheet).getByText(/a late-payment charge of 10%/),
+    ).toBeTruthy();
     expect(screen.getByText("Became overdue with $450.00 unpaid")).toBeTruthy();
     expect(
       screen.getByRole("link", { name: "Open Customer" }).getAttribute("href"),
@@ -373,7 +390,13 @@ describe("Invoices page (V1-058 R5)", () => {
     expect(await screen.findByText("Days until the Due Date")).toBeTruthy();
     expect(screen.getByText("11")).toBeTruthy();
     expect(screen.getByText("$200.00 (44%)")).toBeTruthy();
-    expect(screen.getByText("Balance due")).toBeTruthy();
+    const card = screen
+      .getByRole("heading", { name: "Invoice status" })
+      .closest("section");
+    if (card === null) throw new Error("No status card");
+    expect(within(card).getByText("Balance due")).toBeTruthy();
+    // The printed Invoice takes off what is paid.
+    expect(screen.getByText("− $200.00")).toBeTruthy();
     cleanup();
 
     window.location.hash = "#/invoices/inv:inv-d1";
@@ -511,5 +534,57 @@ describe("Invoices page (V1-058 R5)", () => {
         "This Invoice was not found, or you may not see it.",
       ),
     ).toBeTruthy();
+  });
+
+  it("TEST-FE-903 Print Invoice prints only the sheet; a Utility line shows its use and rate; a Draft or void sheet is stamped and a paid, Draft or void one has no QR code", async () => {
+    const list = invoices();
+    const utility = list[2];
+    if (utility === undefined) throw new Error("No Utility Invoice");
+    const line = utility.lines[0];
+    if (line === undefined) throw new Error("No line");
+    line.calculation_evidence = {
+      utility_type: "ELECTRICITY",
+      consumption_quantity: "1240",
+      rate_usd_per_unit: "0.25",
+    };
+    const print = vi.spyOn(window, "print").mockImplementation(() => {
+      expect(document.body.classList.contains("ui-printing")).toBe(true);
+    });
+    window.location.hash = "#/invoices/inv:inv-r1";
+    show({ invoices: invoiceApi(list) });
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Print Invoice" }),
+    );
+    expect(print).toHaveBeenCalledTimes(1);
+    window.dispatchEvent(new Event("afterprint"));
+    expect(document.body.classList.contains("ui-printing")).toBe(false);
+    print.mockRestore();
+    cleanup();
+
+    const sheetOf = async (id: string) => {
+      window.location.hash = `#/invoices/inv:${id}`;
+      show({ invoices: invoiceApi(list) });
+      await screen.findByRole("button", { name: "Print Invoice" });
+      const sheet = document.querySelector("article.doc");
+      if (!(sheet instanceof HTMLElement)) throw new Error("No sheet");
+      return sheet;
+    };
+    let sheet = await sheetOf("inv-u1");
+    expect(within(sheet).getByText("ថ្លៃភ្លើង")).toBeTruthy();
+    expect(within(sheet).getByText("1,240 kWh × $0.25")).toBeTruthy();
+    expect(within(sheet).queryByRole("img", { name: /KHQR/ })).toBeNull();
+    expect(within(sheet).queryByText(/late-payment charge/)).toBeNull();
+    cleanup();
+
+    sheet = await sheetOf("inv-d1");
+    expect(within(sheet).getByText("DRAFT · សេចក្តីព្រាង")).toBeTruthy();
+    expect(within(sheet).queryByText("INV260004")).toBeNull();
+    expect(within(sheet).queryByRole("img", { name: /KHQR/ })).toBeNull();
+    cleanup();
+
+    sheet = await sheetOf("inv-v1");
+    expect(within(sheet).getByText("VOID · ទុកជាមោឃៈ")).toBeTruthy();
+    expect(sheet.querySelector(".due .n")?.textContent).toBe("$0.00");
+    expect(within(sheet).queryByRole("img", { name: /KHQR/ })).toBeNull();
   });
 });

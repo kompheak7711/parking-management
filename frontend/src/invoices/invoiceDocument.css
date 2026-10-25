@@ -1,0 +1,333 @@
+/* V1-058 R5: the printed Invoice, from the approved template
+   brand-kit/05_Templates/invoice-template.html (A4, mm sizes). The fonts are hosted with the
+   app, like the sign-in fonts. Receipt rules come with the Receipt in R5c. */
+
+@font-face {
+  font-family: "Spectral SC";
+  src: url("../../assets/fonts/SpectralSC-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+.doc {
+  --ink: #252a28;
+  --ink2: #5c625e;
+  --green: #4d6153;
+  --bronze: #836547;
+  --rule: #cec7ba;
+  --soft: #f4f1ea;
+  --err: #9e3a2f;
+  background: #fff;
+  color: var(--ink);
+  font-family: "Montserrat", Arial, sans-serif;
+  font-size: 9.5pt;
+  line-height: 1.45;
+  font-feature-settings:
+    "tnum" 1,
+    "lnum" 1;
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.doc * {
+  box-sizing: border-box;
+}
+.doc .push {
+  flex: 1 0 9mm;
+} /* QR box and signatures sit at the bottom of the page (owner, 17/10/2026) */
+.doc.a4 {
+  width: 210mm;
+  min-height: 297mm;
+  padding: 14mm 16mm 12mm;
+}
+.doc .kh,
+.doc :lang(km) {
+  font-family: "Kantumruy Pro", "Noto Sans Khmer", sans-serif;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.doc .top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8mm;
+}
+.doc .logo {
+  height: 17mm;
+  width: auto;
+  display: block;
+}
+.doc .biz {
+  margin-top: 3mm;
+  color: var(--ink2);
+  font-size: 8pt;
+  line-height: 1.5;
+}
+.doc .biz b {
+  color: var(--ink);
+  font-weight: 600;
+}
+.doc .title {
+  text-align: right;
+}
+.doc .title > .kh {
+  display: block;
+  font-size: 17pt;
+  font-weight: 600;
+  color: var(--green);
+  line-height: 1.5;
+}
+.doc .title > .en {
+  display: block;
+  font-family: "Spectral SC", Georgia, serif;
+  font-weight: 500;
+  font-size: 20pt;
+  letter-spacing: 0.06em;
+  color: var(--green);
+  line-height: 1;
+}
+.doc .meta {
+  margin-top: 4mm;
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 1.2mm 5mm;
+  justify-content: end;
+  text-align: left;
+}
+.doc .meta dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+}
+.doc .lbl {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+.doc .lbl .kh {
+  font-size: 7.5pt;
+  color: var(--ink2);
+  font-weight: 500;
+}
+.doc .lbl .en {
+  font-size: 6.8pt;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bronze);
+  font-weight: 600;
+}
+.doc hr {
+  border: 0;
+  border-top: 0.5mm solid var(--green);
+  margin: 6mm 0 5mm;
+}
+.doc .parties {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 8mm;
+}
+.doc .parties .v {
+  margin-top: 1.2mm;
+  font-size: 10.5pt;
+  font-weight: 600;
+}
+.doc .parties .v small {
+  display: block;
+  font-weight: 400;
+  font-size: 8.5pt;
+  color: var(--ink2);
+}
+.doc table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 7mm;
+}
+.doc th {
+  text-align: left;
+  padding: 0 0 2mm;
+  border-bottom: 0.3mm solid var(--ink);
+  vertical-align: bottom;
+}
+.doc th.r,
+.doc td.r {
+  text-align: right;
+}
+.doc td {
+  padding: 2.6mm 2mm 2.6mm 0;
+  border-bottom: 0.2mm solid var(--rule);
+  vertical-align: top;
+}
+.doc td.r {
+  padding-right: 0;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.doc td .cat {
+  font-weight: 600;
+}
+.doc td .cat .kh {
+  font-weight: 500;
+  color: var(--ink2);
+  margin-right: 1.5mm;
+}
+.doc td .det {
+  color: var(--ink2);
+  font-size: 8.3pt;
+  margin-top: 0.6mm;
+}
+.doc .sum {
+  margin-left: auto;
+  width: 78mm;
+  margin-top: 4mm;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1.6mm 4mm;
+  align-items: center;
+}
+.doc .sum .n {
+  text-align: right;
+  font-weight: 600;
+}
+.doc .sum .due {
+  grid-column: 1/-1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--soft);
+  border-left: 1.2mm solid var(--green);
+  padding: 3mm 4mm;
+  margin-top: 1.5mm;
+}
+.doc .sum .due .n {
+  font-size: 16pt;
+  color: var(--green);
+}
+.doc .pay {
+  margin: 0 0 7mm;
+  display: grid;
+  grid-template-columns: 34mm 1fr;
+  gap: 6mm;
+  padding: 5mm;
+  border: 0.3mm solid var(--rule);
+  border-radius: 2mm;
+  align-items: center;
+}
+.doc .pay img {
+  width: 34mm;
+  height: 34mm;
+  display: block;
+}
+.doc .pay h4 {
+  margin: 0 0 1.5mm;
+  font-size: 10pt;
+  font-weight: 600;
+  color: var(--green);
+}
+.doc .pay h4 .kh {
+  display: block;
+  font-size: 9.5pt;
+}
+.doc .pay p {
+  margin: 0;
+  font-size: 9.5pt;
+  line-height: 1.6;
+  color: var(--ink2);
+}
+.doc .pay p .kh {
+  display: block;
+  margin-bottom: 0.4mm;
+}
+.doc .pay p b {
+  color: var(--ink);
+}
+.doc .ref {
+  display: inline-block;
+  font-weight: 700;
+  color: var(--ink);
+  border: 0.3mm dashed var(--bronze);
+  padding: 0 1.5mm;
+  border-radius: 1mm;
+}
+.doc .note {
+  margin-top: 5mm;
+  font-size: 8pt;
+  color: var(--ink2);
+}
+.doc .note .kh {
+  display: block;
+}
+.doc .foot {
+  position: absolute;
+  left: 16mm;
+  right: 16mm;
+  bottom: 9mm;
+  display: flex;
+  justify-content: space-between;
+  font-size: 7.5pt;
+  color: var(--ink2);
+  border-top: 0.2mm solid var(--rule);
+  padding-top: 2mm;
+}
+.doc .foot .tag {
+  font-family: "Spectral SC", Georgia, serif;
+  color: var(--green);
+  letter-spacing: 0.04em;
+}
+.doc .stamp {
+  position: absolute;
+  top: 44%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-18deg);
+  border: 1.2mm solid var(--err);
+  color: var(--err);
+  font-weight: 700;
+  font-size: 30pt;
+  letter-spacing: 0.12em;
+  padding: 2mm 8mm;
+  opacity: 0.22;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* On screen the sheet is scaled to its column (SheetFrame). */
+.ui-sheetwrap {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  padding: 2px 2px 16px;
+}
+.ui-sheet {
+  width: max-content;
+  overflow: hidden;
+  border-radius: 4px;
+  box-shadow: var(--shadow, 0 1px 3px rgba(0, 0, 0, 0.12));
+  background: #fff;
+  transform-origin: top left;
+}
+
+/* Print Invoice prints only the sheet, at its real size. */
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  body.ui-printing * {
+    visibility: hidden;
+  }
+  body.ui-printing .ui-sheet,
+  body.ui-printing .ui-sheet * {
+    visibility: visible;
+  }
+  body.ui-printing .ui-sheet {
+    position: fixed;
+    left: 0;
+    top: 0;
+    transform: none !important;
+    margin: 0 !important;
+    box-shadow: none;
+    border-radius: 0;
+  }
+}

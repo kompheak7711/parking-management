@@ -127,12 +127,7 @@ const TEXT = {
   is_now: ["Today", "ថ្ងៃនេះ"],
   lines_t: ["What is billed", "អ្វីដែលបានគិតថ្លៃ"],
   // new
-  line_desc: ["Line", "បន្ទាត់"],
-  // new
-  line_period: ["{0} to {1}", "{0} ដល់ {1}"],
-  // new
   line_adjusted: ["Was {0}", "ពីមុន {0}"],
-  total: ["Total", "សរុប"],
   // new
   adjusted_total: ["Total after adjustments", "សរុបក្រោយកែតម្រូវ"],
   history_t: ["History", "ប្រវត្តិ"],
@@ -147,6 +142,7 @@ const TEXT = {
   // new
   open_customer: ["Open Customer", "បើកអតិថិជន"],
   // new
+  act_print: ["Print Invoice", "បោះពុម្ពវិក្កយបត្រ"],
   open_lease: ["Open Lease", "បើកកិច្ចសន្យា"],
   // new
   all_for: ["All Invoices for {0}", "វិក្កយបត្រទាំងអស់សម្រាប់ {0}"],

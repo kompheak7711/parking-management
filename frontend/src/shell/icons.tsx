@@ -20,7 +20,8 @@ export type ShellIcon =
   | "zap"
   | "drop"
   | "upload"
-  | "download";
+  | "download"
+  | "print";
 
 const PATHS: Record<ShellIcon, string[]> = {
   home: ["M3 10.5 12 3l9 7.5", "M5 9.5V21h14V9.5", "M10 21v-6h4v6"],
@@ -101,6 +102,11 @@ const PATHS: Record<ShellIcon, string[]> = {
     "M12 4v11",
     "m7.5 10.5 4.5 4.5 4.5-4.5",
     "M4.5 15v3.5A1.5 1.5 0 0 0 6 20h12a1.5 1.5 0 0 0 1.5-1.5V15",
+  ],
+  print: [
+    "M7 9V3.5h10V9",
+    "M5 9h14a1.5 1.5 0 0 1 1.5 1.5v5A1.5 1.5 0 0 1 19 17H5a1.5 1.5 0 0 1-1.5-1.5v-5A1.5 1.5 0 0 1 5 9z",
+    "M7 14h10v6.5H7z",
   ],
 };
 
