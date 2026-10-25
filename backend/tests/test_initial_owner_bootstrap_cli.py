@@ -888,6 +888,8 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/occupancies/{occupancy_id}/end": {"post"},
         "/api/v1/leases/{lease_id}/sign": {"post"},
         "/api/v1/leases/{lease_id}/renew": {"post"},
+        "/api/v1/leases/{lease_id}/cancel": {"post"},
+        "/api/v1/leases/{lease_id}/move-in": {"post"},
         "/api/v1/leases/{lease_id}/terminate": {"post"},
         "/api/v1/reservations/{reservation_id}/deposits": {"get"},
         "/api/v1/reservations/{reservation_id}/security-deposit-dispositions": {"post"},

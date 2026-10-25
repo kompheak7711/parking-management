@@ -23,7 +23,9 @@ import { hashForPage } from "../shell/navigation";
 import { openPageInAddress } from "../shell/useHashPage";
 import { Chip } from "../shell/ui";
 import type { Language } from "../signInText";
+import type { ReservationApi } from "../reservationClient";
 import { leftText } from "../reservations/ReservationsList";
+import { EditDraftDialog, SignDialog } from "./LeaseDialogs";
 import { LeaseChip } from "./LeasesList";
 import { daysBetween, initialRent, kindOf } from "./leasesData";
 import { hasLeaseText, lt } from "./text";
@@ -60,6 +62,7 @@ export interface LeaseDetailProps {
   propertyId: string;
   api: LeaseApi;
   depositApi: DepositApi;
+  reservationApi: Pick<ReservationApi, "list">;
   capabilities: ReadonlySet<string> | null;
 }
 
@@ -69,6 +72,7 @@ export function LeaseDetail({
   propertyId,
   api,
   depositApi,
+  reservationApi,
   capabilities,
 }: LeaseDetailProps) {
   const [lease, setLease] = useState<LeaseResource | null>(null);
@@ -80,6 +84,9 @@ export function LeaseDetail({
   const [successorId, setSuccessorId] = useState<string | null>(null);
   const [historyIncomplete, setHistoryIncomplete] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [dialog, setDialog] = useState<"sign" | "edit" | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
   const sequence = useRef(0);
   const today = todayInPhnomPenh();
   const may = (capability: string) =>
@@ -265,6 +272,24 @@ export function LeaseDetail({
     </span>
   );
 
+  function open(which: "sign" | "edit") {
+    setNotice(null);
+    setWarning(null);
+    setDialog(which);
+  }
+  const dialogProps = {
+    language,
+    api,
+    onClose: () => {
+      setDialog(null);
+    },
+    onConflict: () => {
+      setDialog(null);
+      setWarning(lt(language, "conflict"));
+      load();
+    },
+  };
+
   function depositRows(deposit: DepositResource): [string, ReactNode][] {
     const outstanding = deposit.outstanding_required_usd_cents;
     return [
@@ -330,8 +355,46 @@ export function LeaseDetail({
             )}
           </p>
         </div>
+        <div className="ui-actions">
+          {lease.status === "DRAFTED" && lease.can_sign && (
+            <button
+              className="ui-btn primary"
+              onClick={() => {
+                open("sign");
+              }}
+              type="button"
+            >
+              <Icon name="lease" />
+              {lt(language, "sign")}
+              <span className="ui-badge">{lt(language, "manager")}</span>
+            </button>
+          )}
+          {lease.status === "DRAFTED" && lease.can_edit && (
+            <button
+              className="ui-btn"
+              onClick={() => {
+                open("edit");
+              }}
+              type="button"
+            >
+              {lt(language, "edit_draft")}
+            </button>
+          )}
+        </div>
       </div>
       {failure}
+      {warning !== null && (
+        <div className="ui-notice warn" role="alert">
+          <Icon name="alert" />
+          <p>{warning}</p>
+        </div>
+      )}
+      {notice !== null && (
+        <div className="ui-notice ok" role="status">
+          <Icon name="check" />
+          <p>{notice}</p>
+        </div>
+      )}
       {lease.status === "DRAFTED" && (
         <div className="ui-notice" role="status">
           <Icon name="info" />
@@ -738,6 +801,34 @@ export function LeaseDetail({
           </section>
         </div>
       </div>
+      {dialog === "sign" && lease.status === "DRAFTED" && (
+        <SignDialog
+          {...dialogProps}
+          lease={lease}
+          onSaved={(saved) => {
+            setDialog(null);
+            setLease(saved);
+            setNotice(lt(language, "signed_toast", saved.unit_number));
+            load();
+          }}
+          dueChanged={dueChanged}
+          onProgress={setLease}
+          reservationApi={reservationApi}
+          securityOutstanding={security?.outstanding_required_usd_cents ?? null}
+        />
+      )}
+      {dialog === "edit" && lease.status === "DRAFTED" && (
+        <EditDraftDialog
+          {...dialogProps}
+          lease={lease}
+          onSaved={(saved) => {
+            setDialog(null);
+            setLease(saved);
+            setNotice(lt(language, "draft_saved"));
+            load();
+          }}
+        />
+      )}
     </>
   );
 }

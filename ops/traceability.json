@@ -50386,6 +50386,91 @@
       "test_path": "frontend/src/leases/LeasesPage.test.tsx",
       "status": "implemented",
       "notes": "V1-058 R3 L1: a cancelled renewal draft does not count as a renewal (the Lease stays Ending soon), and after an approved Initial Rent Due Date change the page leaves the date to the Invoice."
+    },
+    {
+      "test_id": "TEST-FE-850",
+      "upstream_ids": [
+        "DL-074",
+        "BR-LEASE-007",
+        "BR-LEASE-009",
+        "BR-LEASE-016",
+        "UI-040"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 L2a: Sign Lease needs a tick for every Signer, says what signing does (Unit Occupied, Reservation completed, Initial Rent Invoice, deposit rest), records each signature with the Lease version the last step returned, then signs."
+    },
+    {
+      "test_id": "TEST-FE-851",
+      "upstream_ids": [
+        "DL-074",
+        "UI-040"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 L2a: after an unknown result Try again carries on from the step that did not answer with the same idempotency key, and a conflict closes the dialog, says so and reads the Lease again."
+    },
+    {
+      "test_id": "TEST-FE-852",
+      "upstream_ids": [
+        "DL-074",
+        "BR-LEASE-002",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 L2a: Edit draft checks the dates, the Rent and a reason, sends the Rent in whole cents, keeps the request identity on Try again and shows a refusal."
+    },
+    {
+      "test_id": "TEST-FE-853",
+      "upstream_ids": [
+        "DL-074",
+        "DL-066",
+        "BR-LEASE-002",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 L2a: Sign Lease looks up the Primary Tenant's active Reservation for the Unit (every page), says it is completed and sends its id with the signing; a refusal after the signatures keeps them shown on the Lease page and says so; Try again resends the same signing without recording the signatures again."
+    },
+    {
+      "test_id": "test_sign_route_forwards_the_reservation_the_signing_completes",
+      "upstream_ids": [
+        "DL-066",
+        "API-038"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_lease_api.py",
+      "status": "implemented",
+      "notes": "V1-058: POST /leases/{id}/sign takes an optional reservation_id and passes it to the signing command, so signing completes the Reservation (the database checks Unit, Customer and dates)."
+    },
+    {
+      "test_id": "test_cancel_draft_and_lease_move_in_routes_need_capability_and_version",
+      "upstream_ids": [
+        "BR-LEASE-004",
+        "DL-066",
+        "API-038"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_lease_api.py",
+      "status": "implemented",
+      "notes": "V1-058: POST /leases/{id}/cancel (leases.draft) and POST /leases/{id}/move-in (reservations.complete) hide the Lease without the capability (404), need If-Match (428), and pass the version, reason, move-in date, Occupants and capability reference to the commands."
+    },
+    {
+      "test_id": "test_http_sign_with_reservation_then_lease_move_in_and_cancel_draft",
+      "upstream_ids": [
+        "BR-LEASE-004",
+        "DL-066",
+        "API-038"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_api_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 on PostgreSQL through the runtime role: signing a draft with its Reservation completes the Reservation, links its Security Deposit and occupies the Unit; the same request again is replayed; the Lease move-in route starts the Occupancy; the cancel route cancels another draft."
     }
   ]
 }

@@ -285,6 +285,110 @@ const TEXT = {
     "In English. New Lease, Sign, Record move-in, Renew, Terminate and Cancel draft stay here until they move into the new design in the next step.",
     "ជាភាសាអង់គ្លេស។ កិច្ចសន្យាថ្មី ចុះហត្ថលេខា កត់ត្រាការចូលស្នាក់នៅ បន្ត បញ្ចប់ និងលុបចោលសេចក្តីព្រាង នៅទីនេះ រហូតដល់ផ្លាស់ទៅរចនាថ្មីក្នុងជំហានបន្ទាប់។",
   ],
+  // Actions (L2)
+  sign: ["Sign Lease", "ចុះហត្ថលេខាកិច្ចសន្យា"],
+  edit_draft: ["Edit draft", "កែសេចក្តីព្រាង"],
+  manager: ["Manager", "អ្នកគ្រប់គ្រង"],
+  // new
+  sign_title: ["Sign Lease · {0}", "ចុះហត្ថលេខាកិច្ចសន្យា · {0}"],
+  sign_confirm: [
+    "Each Signer has signed the paper Lease",
+    "អ្នកចុះហត្ថលេខាម្នាក់ៗបានចុះហត្ថលេខាលើកិច្ចសន្យាក្រដាស",
+  ],
+  sign_all: [
+    "Tick every Signer. The Lease is signed only when all have signed.",
+    "សូមធីកអ្នកចុះហត្ថលេខាទាំងអស់។ កិច្ចសន្យាចុះហត្ថលេខាបានតែពេលទាំងអស់គ្នាបានចុះ។",
+  ],
+  // new
+  sign_what: ["What happens when you save", "អ្វីកើតឡើងពេលអ្នករក្សាទុក"],
+  sign_s1: [
+    "{0} becomes Occupied now, before the move-in.",
+    "{0} ក្លាយជា មានអ្នកជួល ឥឡូវ មុនការចូលស្នាក់នៅ។",
+  ],
+  // new: the mock-up line, shown when an active Reservation was found
+  sign_s2: [
+    "An active Reservation of this Customer for this Unit is completed in the same step; its deposit continues as the Security Deposit.",
+    "ការកក់កំពុងដំណើរការរបស់អតិថិជននេះសម្រាប់បន្ទប់នេះ បានបញ្ចប់ក្នុងជំហានតែមួយ។ ប្រាក់កក់របស់វាបន្តជាប្រាក់កក់សុវត្ថិភាព។",
+  ],
+  // new: billing makes the Initial Rent Invoice after signing, not the signing itself
+  sign_s3: [
+    "Initial Rent of {0} becomes due {1}; billing makes its Invoice.",
+    "ថ្លៃឈ្នួលដំបូង {0} ត្រូវបង់ត្រឹម {1}។ ការចេញវិក្កយបត្រធ្វើវិក្កយបត្ររបស់វា។",
+  ],
+  // new
+  sign_s3_set: [
+    "Initial Rent of {0} becomes due on the approved Due Date; billing makes its Invoice.",
+    "ថ្លៃឈ្នួលដំបូង {0} ត្រូវបង់ត្រឹមថ្ងៃកំណត់ដែលបានអនុម័ត។ ការចេញវិក្កយបត្រធ្វើវិក្កយបត្ររបស់វា។",
+  ],
+  sign_s4: [
+    "{0} of the Security Deposit is still due.",
+    "{0} នៃប្រាក់កក់សុវត្ថិភាពនៅត្រូវបង់។",
+  ],
+  // new
+  sign_res_check: [
+    "Checking for a Reservation of this Customer…",
+    "កំពុងពិនិត្យការកក់របស់អតិថិជននេះ…",
+  ],
+  // new
+  sign_res_failed: [
+    "The Reservations could not be read. If this Unit is Reserved, the signing will be refused; ask someone who can see Reservations.",
+    "មិនអាចអានការកក់បានទេ។ បើបន្ទប់នេះត្រូវបានកក់ ការចុះហត្ថលេខានឹងត្រូវបដិសេធ។ សូមសួរអ្នកដែលអាចមើលការកក់។",
+  ],
+  // new
+  sign_refused: [
+    "The server refused the signing. Any signatures already recorded stay recorded and show on this Lease. Check the details, or ask the Owner.",
+    "ម៉ាស៊ីនមេបានបដិសេធការចុះហត្ថលេខា។ ហត្ថលេខាដែលបានកត់ត្រារួច នៅតែកត់ត្រា ហើយបង្ហាញលើកិច្ចសន្យានេះ។ សូមពិនិត្យព័ត៌មាន ឬសួរម្ចាស់។",
+  ],
+  // new
+  sign_already: ["signed {0}", "បានចុះហត្ថលេខា {0}"],
+  sign_ok: ["Record signing", "កត់ត្រាការចុះហត្ថលេខា"],
+  signed_toast: [
+    "Lease signed. {0} is Occupied.",
+    "កិច្ចសន្យាបានចុះហត្ថលេខា។ {0} មានអ្នកជួល។",
+  ],
+  // new
+  edit_title: ["Edit draft · {0}", "កែសេចក្តីព្រាង · {0}"],
+  // new
+  edit_note: [
+    "Only a draft can change. Signers are changed in the draft form for now.",
+    "មានតែសេចក្តីព្រាងប៉ុណ្ណោះអាចប្តូរបាន។ អ្នកចុះហត្ថលេខាប្តូរក្នុងទម្រង់សេចក្តីព្រាងសិន។",
+  ],
+  // new
+  why_change: ["Why it changed", "ហេតុអ្វីប្តូរ"],
+  required: ["required", "ត្រូវតែបំពេញ"],
+  // new
+  save: ["Save", "រក្សាទុក"],
+  // new
+  draft_saved: ["The draft was saved.", "សេចក្តីព្រាងត្រូវបានរក្សាទុក។"],
+  err_start: ["Enter the Start Date.", "សូមបញ្ចូលថ្ងៃចាប់ផ្តើម។"],
+  err_end: [
+    "The End Date must be after the Start Date and the last day of a month.",
+    "ថ្ងៃបញ្ចប់ត្រូវតែក្រោយថ្ងៃចាប់ផ្តើម ហើយជាថ្ងៃចុងក្រោយនៃខែ។",
+  ],
+  err_rent: ["Enter the monthly Rent.", "សូមបញ្ចូលថ្លៃឈ្នួលប្រចាំខែ។"],
+  // new
+  err_reason: ["Say why it changed.", "សូមប្រាប់ហេតុអ្វីប្តូរ។"],
+  // new
+  close: ["Close", "បិទ"],
+  // new
+  saving: ["Saving…", "កំពុងរក្សាទុក…"],
+  // new
+  try_again: ["Try again", "ព្យាយាមម្តងទៀត"],
+  // new
+  unknown: [
+    "We could not tell whether this was saved. “Try again” sends the very same request; it is never saved twice.",
+    "យើងមិនអាចដឹងថាវាត្រូវបានរក្សាទុកឬអត់។ «ព្យាយាមម្តងទៀត» ផ្ញើសំណើដដែល វាមិនដែលរក្សាទុកពីរដងទេ។",
+  ],
+  // new
+  refused: [
+    "The server refused this. Nothing was saved. Check the details, or ask the Owner.",
+    "ម៉ាស៊ីនមេបានបដិសេធ។ គ្មានអ្វីត្រូវបានរក្សាទុកទេ។ សូមពិនិត្យព័ត៌មាន ឬសួរម្ចាស់។",
+  ],
+  // new
+  conflict: [
+    "This Lease or its Unit changed meanwhile, so nothing more was saved. It was read again: check it and try again.",
+    "កិច្ចសន្យានេះ ឬបន្ទប់របស់វាបានប្តូរក្នុងពេលនេះ ដូច្នេះគ្មានអ្វីបន្ថែមត្រូវបានរក្សាទុកទេ។ វាត្រូវបានអានម្តងទៀត៖ សូមពិនិត្យ ហើយព្យាយាមម្តងទៀត។",
+  ],
 } as const;
 
 export type LeaseTextKey = keyof typeof TEXT;

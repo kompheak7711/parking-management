@@ -10,6 +10,7 @@ from property_rental.app import create_app
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
 from property_rental.lease import (
     LeaseAddSignerCommand,
+    LeaseCancelCommand,
     LeaseDraftCommand,
     LeaseRecordSignatureCommand,
     LeaseSignCommand,
@@ -27,7 +28,7 @@ from property_rental.lease_api import (
     LeaseTimelinePage,
     LeaseTimelineVisibility,
 )
-from property_rental.move_in import CompleteMoveInCommand, MoveInSnapshot
+from property_rental.move_in import CompleteMoveInCommand, MoveInSnapshot, RecordLeaseMoveInCommand
 
 
 def actor(property_id: UUID, *capabilities: str) -> AuthenticatedActor:
@@ -73,6 +74,8 @@ class InMemoryLeaseFlow:
     sign_command: LeaseSignCommand | None = None
     terminate_command: LeaseTerminateCommand | None = None
     move_in_command: CompleteMoveInCommand | None = None
+    cancel_command: LeaseCancelCommand | None = None
+    record_move_in_command: RecordLeaseMoveInCommand | None = None
     visibilities: list[LeaseTimelineVisibility] = field(default_factory=list)
 
     def list(
@@ -261,6 +264,28 @@ class InMemoryLeaseFlow:
             command.actual_move_in_date,
             tuple(value.occupancy_id for value in command.occupants),
         )
+
+    def cancel(self, command: LeaseCancelCommand, *, actor: AuthenticatedActor) -> LeaseResource:
+        del actor
+        self.cancel_command = command
+        current = self.get(command.lease_id)
+        value = replace(current, status=LeaseStatus.CANCELLED, version=current.version + 1)
+        self.resources[value.lease_id] = value
+        return value
+
+    def record_move_in(
+        self,
+        property_id: UUID,
+        command: RecordLeaseMoveInCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> LeaseResource:
+        del property_id, actor
+        self.record_move_in_command = command
+        current = self.get(command.lease_id)
+        value = replace(current, version=current.version + 1)
+        self.resources[value.lease_id] = value
+        return value
 
 
 def headers(*, version: int | None = None) -> dict[str, str]:
@@ -666,3 +691,75 @@ def test_timeline_restricted_visibility_follows_only_the_actor_read_grants() -> 
     expected = LeaseTimelineVisibility(UUID(reader.actor_id), (property_id,), (other_property,))
     assert flow.visibilities[0] == expected
     assert flow.visibilities[-1] == expected
+
+
+def test_sign_route_forwards_the_reservation_the_signing_completes() -> None:
+    property_id = uuid4()
+    current = resource(property_id)
+    flow = InMemoryLeaseFlow({current.lease_id: current})
+    api = client(flow, actor(property_id, "leases.read", "leases.sign"))
+    reservation_id = uuid4()
+
+    signed = api.post(
+        f"/api/v1/leases/{current.lease_id}/sign",
+        headers=headers(version=1),
+        json={
+            "event_id": str(uuid4()),
+            "reason": "Signers completed",
+            "reservation_id": str(reservation_id),
+        },
+    )
+
+    assert signed.status_code == 200, signed.text
+    assert flow.sign_command is not None
+    assert flow.sign_command.reservation_id == reservation_id
+
+
+def test_cancel_draft_and_lease_move_in_routes_need_capability_and_version() -> None:
+    property_id = uuid4()
+    draft = resource(property_id)
+    signed = replace(resource(property_id, lease_status=LeaseStatus.SIGNED), version=2)
+    flow = InMemoryLeaseFlow({draft.lease_id: draft, signed.lease_id: signed})
+    cancel_path = f"/api/v1/leases/{draft.lease_id}/cancel"
+    move_in_path = f"/api/v1/leases/{signed.lease_id}/move-in"
+    cancel_body = {"event_id": str(uuid4()), "reason": "Customer chose another Unit"}
+    occupant_id = uuid4()
+    occupancy_id = uuid4()
+    move_in_body = {
+        "event_id": str(uuid4()),
+        "actual_move_in_date": "2026-09-01",
+        "occupants": [{"occupancy_id": str(occupancy_id), "customer_id": str(occupant_id)}],
+        "reason": "Keys handed over",
+    }
+
+    # Without the capability the Lease is hidden, as on the other Lease commands.
+    reader = client(flow, actor(property_id, "leases.read"))
+    assert reader.post(cancel_path, headers=headers(version=1), json=cancel_body).status_code == 404
+    assert (
+        reader.post(move_in_path, headers=headers(version=2), json=move_in_body).status_code == 404
+    )
+    assert (flow.cancel_command, flow.record_move_in_command) == (None, None)
+
+    api = client(flow, actor(property_id, "leases.read", "leases.draft", "reservations.complete"))
+    assert api.post(cancel_path, headers=headers(), json=cancel_body).status_code == 428
+    assert api.post(move_in_path, headers=headers(), json=move_in_body).status_code == 428
+
+    cancelled = api.post(cancel_path, headers=headers(version=1), json=cancel_body)
+    moved_in = api.post(move_in_path, headers=headers(version=2), json=move_in_body)
+
+    assert cancelled.status_code == 200, cancelled.text
+    assert cancelled.headers["etag"] == '"2"'
+    assert flow.cancel_command is not None
+    assert flow.cancel_command.expected_version == 1
+    assert flow.cancel_command.reason == "Customer chose another Unit"
+    assert flow.cancel_command.authorization_reference == "leases.draft"
+    assert moved_in.status_code == 200, moved_in.text
+    assert moved_in.headers["etag"] == '"3"'
+    command = flow.record_move_in_command
+    assert command is not None
+    assert command.expected_lease_version == 2
+    assert command.actual_move_in_date == date(2026, 9, 1)
+    assert [(value.occupancy_id, value.customer_id) for value in command.occupants] == [
+        (occupancy_id, occupant_id)
+    ]
+    assert command.authorization_reference == "reservations.complete"

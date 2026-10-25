@@ -10,10 +10,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { DepositApi, DepositResource } from "../depositClient";
 import {
+  LeaseConflictError,
+  LeaseRequestError,
   LeaseUnavailableError,
   type LeaseApi,
   type LeaseResource,
 } from "../leaseClient";
+import type { ReservationApi, ReservationResource } from "../reservationClient";
 import { dayText, todayInPhnomPenh } from "../shell/format";
 import { LeasesPage } from "./LeasesPage";
 import { addDays, endingLimit, initialRent } from "./leasesData";
@@ -220,6 +223,13 @@ function show(
   client: LeaseApi,
   depositClient: DepositApi = deposits(),
   capabilities: ReadonlySet<string> | null = null,
+  reservationClient: Pick<ReservationApi, "list"> = {
+    list: vi.fn<ReservationApi["list"]>().mockResolvedValue({
+      items: [],
+      next_cursor: null,
+      can_create: false,
+    }),
+  },
 ) {
   return render(
     <LeasesPage
@@ -229,6 +239,7 @@ function show(
       depositApi={depositClient}
       language="en"
       propertyId="property-1"
+      reservationApi={reservationClient}
     />,
   );
 }
@@ -485,5 +496,295 @@ describe("Lease page", () => {
     ).toHaveTextContent(
       "Its Due Date was changed with approval; the Invoice shows it.",
     );
+  });
+});
+
+describe("Lease actions", () => {
+  const signable = lease("U301", {
+    lease_id: "lease-sign",
+    status: "DRAFTED",
+    start_date: "2026-12-10",
+    end_date: "2027-12-09",
+    signed_at: null,
+    can_sign: true,
+    can_edit: true,
+    occupancies: [],
+    version: 4,
+    signers: [
+      {
+        signer_id: "signer-a",
+        customer_id: "customer-a",
+        customer_name: "Tenant A",
+        is_primary_tenant: true,
+        signed_at: null,
+        added_at: "2026-10-20T03:00:00Z",
+      },
+      {
+        signer_id: "signer-b",
+        customer_id: "customer-b",
+        customer_name: "Guarantor B",
+        is_primary_tenant: false,
+        signed_at: null,
+        added_at: "2026-10-20T03:00:00Z",
+      },
+    ],
+  });
+  // The dialog first looks for the Customer's active Reservation.
+  const checked = async (dialog: HTMLElement) => {
+    await waitFor(() => {
+      expect(dialog).not.toHaveTextContent("Checking for a Reservation");
+    });
+  };
+  const signedBy = (value: LeaseResource, signerId: string): LeaseResource => ({
+    ...value,
+    version: value.version + 1,
+    signers: value.signers.map((signer) =>
+      signer.signer_id === signerId
+        ? { ...signer, signed_at: "2026-10-25T03:00:00Z" }
+        : signer,
+    ),
+  });
+
+  it("TEST-FE-850 Sign Lease needs a tick for every Signer, records each signature and then signs", async () => {
+    window.location.hash = "#/leases/lease-sign";
+    const recordSignature = vi.fn((value: LeaseResource, signerId: string) =>
+      Promise.resolve(signedBy(value, signerId)),
+    );
+    const sign = vi.fn<LeaseApi["sign"]>((value) =>
+      Promise.resolve({
+        ...value,
+        status: "SIGNED" as const,
+        version: value.version + 1,
+      }),
+    );
+    show(
+      api({
+        get: vi.fn().mockResolvedValue(signable),
+        recordSignature,
+        sign,
+      }),
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: /^Sign Lease/ }));
+    const dialog = screen.getByRole("dialog", { name: "Sign Lease · U301" });
+    await checked(dialog);
+    expect(dialog).toHaveTextContent(
+      "Initial Rent of $354.84 becomes due 15/12/2026; billing makes its Invoice.",
+    );
+    // No active Reservation was found, so neither the line nor the field.
+    expect(dialog).not.toHaveTextContent("Reservation of this Customer");
+    // The Security Deposit is received in full, so no line about the rest.
+    expect(dialog).not.toHaveTextContent("still due");
+    fireEvent.click(within(dialog).getByRole("checkbox", { name: /Tenant A/ }));
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Record signing" }),
+    );
+    expect(
+      within(dialog).getByText(
+        "Tick every Signer. The Lease is signed only when all have signed.",
+      ),
+    ).toBeInTheDocument();
+    expect(recordSignature).not.toHaveBeenCalled();
+
+    fireEvent.click(
+      within(dialog).getByRole("checkbox", { name: /Guarantor B/ }),
+    );
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Record signing" }),
+    );
+    expect(
+      await screen.findByText("Lease signed. U301 is Occupied."),
+    ).toBeInTheDocument();
+    expect(
+      recordSignature.mock.calls.map((call) => [call[0].version, call[1]]),
+    ).toEqual([
+      [4, "signer-a"],
+      [5, "signer-b"],
+    ]);
+    expect(sign.mock.calls[0]?.[0].version).toBe(6);
+    expect(sign.mock.calls[0]?.[1]).toEqual({
+      event_id: expect.any(String) as string,
+      reason: "Every Signer signed the paper Lease",
+    });
+  });
+
+  it("TEST-FE-851 after an unknown result Try again carries on with the same requests, and a conflict reads the Lease again", async () => {
+    window.location.hash = "#/leases/lease-sign";
+    const recordSignature = vi
+      .fn<LeaseApi["recordSignature"]>()
+      .mockImplementationOnce((value: LeaseResource, signerId: string) =>
+        Promise.resolve(signedBy(value, signerId)),
+      )
+      .mockRejectedValueOnce(new LeaseUnavailableError())
+      .mockImplementationOnce((value: LeaseResource, signerId: string) =>
+        Promise.resolve(signedBy(value, signerId)),
+      );
+    const sign = vi.fn().mockRejectedValue(new LeaseConflictError());
+    const get = vi.fn().mockResolvedValue(signable);
+    show(api({ get, recordSignature, sign }));
+
+    fireEvent.click(await screen.findByRole("button", { name: /^Sign Lease/ }));
+    const dialog = screen.getByRole("dialog");
+    await checked(dialog);
+    for (const box of within(dialog).getAllByRole("checkbox"))
+      fireEvent.click(box);
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Record signing" }),
+    );
+    expect(
+      await within(dialog).findByText(
+        /We could not tell whether this was saved/,
+      ),
+    ).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
+    await waitFor(() => {
+      expect(sign).toHaveBeenCalledTimes(1);
+    });
+    // The first signature is not sent again; the second is resent with the same key.
+    expect(recordSignature.mock.calls.map((call) => call[1])).toEqual([
+      "signer-a",
+      "signer-b",
+      "signer-b",
+    ]);
+    expect(recordSignature.mock.calls[2]?.[3]).toBe(
+      recordSignature.mock.calls[1]?.[3],
+    );
+    expect(
+      await screen.findByText(/This Lease or its Unit changed meanwhile/),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(get).toHaveBeenCalledTimes(2);
+  });
+
+  it("TEST-FE-852 Edit draft checks the dates, Rent and reason, sends whole cents, and keeps the request on Try again", async () => {
+    window.location.hash = "#/leases/lease-sign";
+    const update = vi
+      .fn()
+      .mockRejectedValueOnce(new LeaseUnavailableError())
+      .mockRejectedValueOnce(new LeaseRequestError())
+      .mockResolvedValueOnce({ ...signable, monthly_rent_usd_cents: 52050 });
+    show(api({ get: vi.fn().mockResolvedValue(signable), update }));
+
+    fireEvent.click(await screen.findByRole("button", { name: "Edit draft" }));
+    const dialog = screen.getByRole("dialog", { name: "Edit draft · U301" });
+    fireEvent.change(within(dialog).getByLabelText("End Date"), {
+      target: { value: "2026-12-01" },
+    });
+    fireEvent.change(within(dialog).getByLabelText("Monthly Rent"), {
+      target: { value: "520.5" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(dialog).toHaveTextContent(
+      "The End Date must be after the Start Date and the last day of a month.",
+    );
+    expect(dialog).toHaveTextContent("Say why it changed.");
+    expect(update).not.toHaveBeenCalled();
+
+    // Not the last day of a month.
+    fireEvent.change(within(dialog).getByLabelText("End Date"), {
+      target: { value: "2027-12-09" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(dialog).toHaveTextContent("the last day of a month");
+    fireEvent.change(within(dialog).getByLabelText("End Date"), {
+      target: { value: "2027-12-31" },
+    });
+    fireEvent.change(within(dialog).getByLabelText(/Why it changed/), {
+      target: { value: "Rent agreed again" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    fireEvent.click(
+      await within(dialog).findByRole("button", { name: "Try again" }),
+    );
+    expect(
+      await within(dialog).findByText(/The server refused this/),
+    ).toBeInTheDocument();
+    expect(update.mock.calls[0]?.[1]).toMatchObject({
+      start_date: "2026-12-10",
+      end_date: "2027-12-31",
+      monthly_rent_usd_cents: 52050,
+      reason: "Rent agreed again",
+    });
+    expect(update.mock.calls[1]?.[2]).toBe(update.mock.calls[0]?.[2]);
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(await screen.findByText("The draft was saved.")).toBeInTheDocument();
+  });
+
+  it("TEST-FE-853 signing names the Customer's active Reservation, and a refusal after a signature keeps it shown", async () => {
+    window.location.hash = "#/leases/lease-sign";
+    const reservation = (
+      id: string,
+      overrides: Partial<ReservationResource>,
+    ): ReservationResource =>
+      ({
+        reservation_id: id,
+        property_id: "property-1",
+        unit_id: "unit-U301",
+        customer_id: "customer-U301",
+        status: "ACTIVE",
+        ...overrides,
+      }) as ReservationResource;
+    const list = vi
+      .fn<ReservationApi["list"]>()
+      .mockResolvedValueOnce({
+        items: [reservation("other-customer", { customer_id: "customer-x" })],
+        next_cursor: "page-2",
+        can_create: false,
+      })
+      .mockResolvedValueOnce({
+        items: [reservation("reservation-301", {})],
+        next_cursor: null,
+        can_create: false,
+      });
+    const recordSignature = vi.fn((value: LeaseResource, signerId: string) =>
+      Promise.resolve(signedBy(value, signerId)),
+    );
+    const sign = vi
+      .fn<LeaseApi["sign"]>()
+      .mockRejectedValueOnce(new LeaseRequestError())
+      .mockImplementationOnce((value) =>
+        Promise.resolve({ ...value, status: "SIGNED" as const }),
+      );
+    show(
+      api({ get: vi.fn().mockResolvedValue(signable), recordSignature, sign }),
+      deposits(),
+      null,
+      { list },
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: /^Sign Lease/ }));
+    const dialog = screen.getByRole("dialog");
+    await checked(dialog);
+    expect(list.mock.calls).toEqual([
+      ["property-1", "ACTIVE", undefined],
+      ["property-1", "ACTIVE", "page-2"],
+    ]);
+    expect(dialog).toHaveTextContent(
+      "An active Reservation of this Customer for this Unit is completed in the same step",
+    );
+    for (const box of within(dialog).getAllByRole("checkbox"))
+      fireEvent.click(box);
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Record signing" }),
+    );
+    expect(
+      await within(dialog).findByText(/The server refused the signing/),
+    ).toBeInTheDocument();
+    expect(sign.mock.calls[0]?.[1]).toMatchObject({
+      reservation_id: "reservation-301",
+    });
+    // Both signatures were recorded; the page behind the dialog shows them.
+    expect(screen.getByRole("region", { name: "Signers" })).toHaveTextContent(
+      /Guarantor BSigned/,
+    );
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Record signing" }),
+    );
+    expect(
+      await screen.findByText("Lease signed. U301 is Occupied."),
+    ).toBeInTheDocument();
+    expect(recordSignature).toHaveBeenCalledTimes(2);
+    expect(sign.mock.calls[1]?.[1]).toEqual(sign.mock.calls[0]?.[1]);
+    expect(list).toHaveBeenCalledTimes(2);
   });
 });
