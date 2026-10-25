@@ -596,6 +596,7 @@ export function MoveInDialog({
   const last =
     lease.end_date !== null && lease.end_date < today ? lease.end_date : today;
   const [extra, setExtra] = useState<Person[]>([]);
+  const [pick, setPick] = useState("");
   const [others, setOthers] = useState<CustomerListItem[]>([]);
   const people = [...peopleOf(lease), ...extra];
   const planned = new Set(lease.planned_occupant_customer_ids);
@@ -768,29 +769,44 @@ export function MoveInDialog({
       {people.length < 20 && addable.length > 0 ? (
         <div className="ui-field">
           <label htmlFor="lease-movein-add">{lt(language, "movein_add")}</label>
-          <select
-            disabled={busy}
-            id="lease-movein-add"
-            onChange={(event) => {
-              const id = event.currentTarget.value;
-              const customer = addable.find((item) => item.customer_id === id);
-              if (customer === undefined) return;
-              setExtra([
-                ...extra,
-                { customerId: id, name: customer.legal_name },
-              ]);
-              setChosen(new Set([...chosen, id]));
-            }}
-            value=""
-          >
-            <option value="">{lt(language, "add_person")}</option>
-            {addable.map((customer) => (
-              <option key={customer.customer_id} value={customer.customer_id}>
-                {customer.legal_name}
-                {customer.phone_number ? ` · ${customer.phone_number}` : ""}
-              </option>
-            ))}
-          </select>
+          <div className="ui-addrow">
+            <select
+              disabled={busy}
+              id="lease-movein-add"
+              onChange={(event) => {
+                setPick(event.currentTarget.value);
+              }}
+              value={pick}
+            >
+              <option value="">{lt(language, "add_person")}</option>
+              {addable.map((customer) => (
+                <option key={customer.customer_id} value={customer.customer_id}>
+                  {customer.legal_name}
+                  {customer.phone_number ? ` · ${customer.phone_number}` : ""}
+                </option>
+              ))}
+            </select>
+            {/* A separate button: arrow keys on a closed select fire change. */}
+            <button
+              className="ui-btn"
+              disabled={busy || pick === ""}
+              onClick={() => {
+                const customer = addable.find(
+                  (item) => item.customer_id === pick,
+                );
+                if (customer === undefined) return;
+                setExtra([
+                  ...extra,
+                  { customerId: pick, name: customer.legal_name },
+                ]);
+                setChosen(new Set([...chosen, pick]));
+                setPick("");
+              }}
+              type="button"
+            >
+              {lt(language, "add_button")}
+            </button>
+          </div>
         </div>
       ) : (
         customerApi === null && (

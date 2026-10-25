@@ -50574,6 +50574,95 @@
       "test_path": "frontend/src/leases/LeasesPage.test.tsx",
       "status": "implemented",
       "notes": "V1-058 R3 L2c-1: Record move-in offers the other active Customers (not those already listed) under 'Someone else moves in too'; a picked Customer is ticked and moves in with the others."
+    },
+    {
+      "test_id": "TEST-FE-862",
+      "upstream_ids": [
+        "DL-074",
+        "BR-LEASE-026",
+        "BR-LEASE-027",
+        "BR-LEASE-028",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/letters/LettersPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Letters: Rent letters list each unpaid Rent month from day 20 (day 1 is the 1st of the Rent month): owed Rent with its Due Date, the day-20 and day-30 letter cells (Given with how and number, Due since, On), count cards that filter, the red notice when both days passed with no letter, and the next step (Record letter, Wait for day 30, Termination notice with the MANAGER badge)."
+    },
+    {
+      "test_id": "TEST-FE-863",
+      "upstream_ids": [
+        "DL-074",
+        "BR-LEASE-027",
+        "API-016",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/letters/LettersPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Letters: Record letter opens the Rent nonpayment case once, requires how, details and the letter number for the day-20 letter, and after a lost answer Try again sends the very same request (same key and values)."
+    },
+    {
+      "test_id": "TEST-FE-864",
+      "upstream_ids": [
+        "DL-074",
+        "BR-LEASE-028",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/letters/LettersPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Letters: the day-30 letter is recorded on the open case without a letter number; a given letter is greyed; a change meanwhile closes the dialog and reads the list again."
+    },
+    {
+      "test_id": "TEST-FE-865",
+      "upstream_ids": [
+        "DL-074",
+        "UI-014",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/letters/LettersPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Letters: without the letter, terminate or warn capabilities the buttons are hidden; a person who may read only warnings sees only that tab; without either read capability the page says so."
+    },
+    {
+      "test_id": "TEST-FE-866",
+      "upstream_ids": [
+        "DL-074",
+        "BR-LEASE-024",
+        "DL-070",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/letters/LettersPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Letters: Lease rule warnings list each warned Lease with 'n of 3' (red at 3), the last warning date, the breach with its Lease article and how it was given; a Lease whose warnings could not be read is named with Retry."
+    },
+    {
+      "test_id": "TEST-FE-867",
+      "upstream_ids": [
+        "DL-074",
+        "BR-LEASE-024",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/letters/LettersPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Letters: Record warning offers only signed, moved-in, running Leases, numbers the warning from the server's suggested sequence, refuses a breach after the warning or a date after today, and sends the trimmed values."
+    },
+    {
+      "test_id": "TEST-FE-868",
+      "upstream_ids": [
+        "DL-074",
+        "DL-073",
+        "BR-LEASE-024",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/letters/LettersPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Letters: Cancel after the dialog opened a case reads the list again so no second case is opened; ended or not-moved-in Leases with warnings get no Record warning button."
     }
   ]
 }

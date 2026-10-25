@@ -482,6 +482,7 @@ const TEXT = {
   other_occupants: ["Other occupants", "អ្នករស់នៅផ្សេងទៀត"],
   // new
   add_person: ["Add a Customer…", "បន្ថែមអតិថិជន…"],
+  add_button: ["Add", "បន្ថែម"],
   // new
   remove: ["Remove {0}", "ដក {0}"],
   // new

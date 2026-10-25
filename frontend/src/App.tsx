@@ -45,6 +45,12 @@ import {
 } from "./reservationClient";
 import { LeaseManagement } from "./LeaseManagement";
 import { LeasesPage } from "./leases/LeasesPage";
+import { LettersPage } from "./letters/LettersPage";
+import {
+  LettersApi,
+  lettersApi as lettersClient,
+} from "./letters/lettersClient";
+import { ltr } from "./letters/text";
 import { lt } from "./leases/text";
 import { LeaseApi, leaseApi as leaseClient } from "./leaseClient";
 import { DepositManagement } from "./DepositManagement";
@@ -91,6 +97,7 @@ export interface AppProps {
   effectiveConfigApi?: EffectiveConfigurationApi;
   reservationApi?: ReservationApi;
   leaseApi?: LeaseApi;
+  lettersApi?: LettersApi;
   depositApi?: DepositApi;
   utilityApi?: UtilityApi;
   invoiceApi?: InvoiceApi;
@@ -539,6 +546,7 @@ export function App({
   effectiveConfigApi = effectiveConfigurationApi,
   reservationApi = reservationClient,
   leaseApi = leaseClient,
+  lettersApi = lettersClient,
   depositApi = depositClient,
   utilityApi = utilityClient,
   invoiceApi = invoiceClient,
@@ -1693,16 +1701,36 @@ export function App({
         className="shell-page"
         data-page="letters"
         hidden={!shown("letters")}
-        lang="en"
       >
-        {!logoutPending && (
-          <LeaseEnforcementManagement
-            key={`lease-enforcement:${session.actor_id}`}
-            actorId={session.actor_id}
-            services={enforcementServices}
-            onDirtyStateChange={setEnforcementDraftsDirty}
-          />
-        )}
+        <LettersPage
+          active={shown("letters")}
+          api={lettersApi}
+          capabilities={capabilities}
+          language={language}
+          leaseApi={leaseApi}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+        />
+        {/* V1-058 R3: the earlier English forms stay, folded, until the Terminate step and the
+            later steps replace what is left in them (opening a case for another follow-up,
+            Initial Rent alerts). */}
+        <details className="ui-records">
+          <summary lang={language}>
+            <span className="ui-records-title">{ltr(language, "records")}</span>
+            <span className="ui-small ui-muted">
+              {ltr(language, "records_note")}
+            </span>
+          </summary>
+          <div lang="en">
+            {!logoutPending && (
+              <LeaseEnforcementManagement
+                key={`lease-enforcement:${session.actor_id}`}
+                actorId={session.actor_id}
+                services={enforcementServices}
+                onDirtyStateChange={setEnforcementDraftsDirty}
+              />
+            )}
+          </div>
+        </details>
       </div>
       <div
         className="shell-page"

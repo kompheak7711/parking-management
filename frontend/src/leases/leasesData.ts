@@ -27,7 +27,7 @@ export interface LeasesData {
 const MAX_PAGES = 50;
 
 export async function loadLeasesData(
-  api: LeaseApi,
+  api: Pick<LeaseApi, "list">,
   propertyId: string,
 ): Promise<LeasesData> {
   const leases: LeaseResource[] = [];

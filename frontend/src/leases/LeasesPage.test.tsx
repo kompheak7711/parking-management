@@ -1004,6 +1004,11 @@ describe("Move-in with someone else", () => {
         .map((option) => option.textContent),
     ).toEqual(["Add a Customer…", "Sister S"]);
     fireEvent.change(add, { target: { value: "customer-sister" } });
+    // Choosing alone adds nobody; the Add button does.
+    expect(
+      within(dialog).queryByRole("checkbox", { name: "Sister S" }),
+    ).toBeNull();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Add" }));
     expect(
       within(dialog).getByRole("checkbox", { name: "Sister S" }),
     ).toBeChecked();

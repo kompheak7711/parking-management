@@ -984,3 +984,73 @@ table.ui-table a.ui-no {
   border-color: var(--err);
   box-shadow: 0 0 0 1px var(--err);
 }
+
+/* V1-058 R3 Letters: a red notice, a card head inside a pad0 card, and the tabs under a page
+   title (DESIGN.md "Page tabs": Letters has Rent letters and Lease rule warnings). */
+.ui-notice.err {
+  background: var(--err-bg);
+  color: var(--err);
+}
+
+.ui-chead.pad {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.ui-subtabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.ui-subtabs a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 14px;
+  border-bottom: 3px solid transparent;
+  color: var(--text-2);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.ui-subtabs a[aria-current="page"] {
+  border-bottom-color: var(--primary);
+  color: var(--heading);
+}
+
+/* One Rent letter in the Letters column: the day on the left, its state on the right. */
+table.ui-table td.ui-letters {
+  min-width: 16rem;
+}
+
+.ui-letter {
+  display: grid;
+  grid-template-columns: 3.2rem minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
+  padding: 3px 0;
+}
+
+/* A table button whose MANAGER badge may go under its words on a narrow screen. */
+.ui-btn.ui-btn-wrap {
+  flex-wrap: wrap;
+  white-space: normal;
+}
+
+.ui-letter-day {
+  color: var(--text-2);
+  font-size: 0.84rem;
+}
+
+/* A choice with its own Add button (V1-058 R3 move-in). */
+.ui-addrow {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.ui-addrow select {
+  flex: 1;
+  min-width: 0;
+}
