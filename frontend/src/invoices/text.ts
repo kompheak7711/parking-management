@@ -359,6 +359,161 @@ const TEXT = {
     "Billing runs and Due Date settings, in English, until the next steps move them into this screen.",
     "ការចេញវិក្កយបត្រ និងការកំណត់ថ្ងៃកំណត់បង់ ជាភាសាអង់គ្លេស រហូតដល់ជំហានបន្ទាប់ផ្លាស់វាមកអេក្រង់នេះ។",
   ],
+  // V1-058 R5d: the late-payment card and the Reduce or waive dialog (mock-up round 6, i18n6.js).
+  lt_t: ["Late-payment charge", "ថ្លៃពិន័យបង់យឺត"],
+  lt_CHARGED: ["Charged", "បានគិតថ្លៃ"],
+  lt_REDUCED: ["Reduced", "បានកាត់បន្ថយ"],
+  lt_WAIVED: ["Waived", "បានលើកលែង"],
+  lt_PAID: ["Paid", "បានបង់"],
+  lt_base: ["Unpaid on {0}", "មិនទាន់បង់នៅ {0}"],
+  lt_added: ["Added ({0}%)", "បានបន្ថែម ({0}%)"],
+  lt_added_s: ["Added by the app on {0}.", "បន្ថែមដោយកម្មវិធី នៅ {0}។"],
+  // new: a charge from before the automatic pass was added by a person.
+  lt_added_by: ["Added by {0} on {1}.", "បន្ថែមដោយ {0} នៅ {1}។"],
+  // new
+  lt_added_plain: ["Added", "បានបន្ថែម"],
+  // new: an old correction that undid a reduction (before the automatic pass).
+  lt_REVERSED: ["Reduction undone", "បានលុបការកាត់បន្ថយ"],
+  // new
+  lt_h_rev: [
+    "Late-payment charge reduction undone: back to {0}, by {1}. {2}",
+    "បានលុបការកាត់បន្ថយថ្លៃពិន័យ៖ ត្រឡប់ទៅ {0} ដោយ {1}។ {2}",
+  ],
+  // new
+  lt_h_add_by: [
+    "Late-payment charge {0} added by {1}",
+    "ថ្លៃពិន័យ {0} បន្ថែមដោយ {1}",
+  ],
+  // new
+  late_banner_by: [
+    "This Invoice is overdue. A late-payment charge of {0} was added on {1}.",
+    "វិក្កយបត្រនេះហួសកំណត់។ ថ្លៃពិន័យ {0} ត្រូវបានបន្ថែមនៅ {1}។",
+  ],
+  // new: the reduction command refuses a charge a Deposit paid (slice 11g-2).
+  lt_dep_note: [
+    "A Deposit paid part of this charge at the move-out, so it cannot be reduced here. Use a correction of the Final Settlement.",
+    "ប្រាក់កក់បានបង់មួយផ្នែកនៃថ្លៃនេះពេលចេញ ដូច្នេះមិនអាចកាត់បន្ថយនៅទីនេះបានទេ។ សូមប្រើការកែតម្រូវនៃការទូទាត់ចុងក្រោយ។",
+  ],
+  lt_ch_s: ["By {0} on {1}. {2}", "ដោយ {0} នៅ {1}។ {2}"],
+  lt_paid: ["Paid", "បានបង់"],
+  lt_left: ["Still owed", "នៅជំពាក់"],
+  // new
+  lt_from_credit: ["Customer Credit", "ឥណទានអតិថិជន"],
+  // new
+  lt_from_deposit: ["Deposit", "ប្រាក់កក់"],
+  lt_sep: [
+    "A separate charge, payable now. It is not an Invoice and does not change {0}.",
+    "ថ្លៃដាច់ដោយឡែក ត្រូវបង់ភ្លាម។ វាមិនមែនជាវិក្កយបត្រ ហើយមិនប្តូរ {0} ទេ។",
+  ],
+  lt_pay: ["Receive payment", "ទទួលការបង់ប្រាក់"],
+  lt_fix: ["Reduce or waive", "កាត់បន្ថយ ឬលើកលែង"],
+  mgr_badge: ["MANAGER", "អ្នកគ្រប់គ្រង"],
+  // new
+  lt_locked: [
+    "Only a Manager or the Owner can do this.",
+    "មានតែអ្នកគ្រប់គ្រង ឬម្ចាស់ទេដែលអាចធ្វើការនេះ។",
+  ],
+  lt_why_WRONG_INVOICE: [
+    "Staff recorded the payment on the wrong Invoice",
+    "បុគ្គលិកកត់ត្រាការបង់ទៅវិក្កយបត្រខុស",
+  ],
+  lt_why_PAID_ON_TIME_RECORDED_LATE: [
+    "Paid on time but recorded late",
+    "បានបង់ទាន់ពេល ប៉ុន្តែកត់ត្រាយឺត",
+  ],
+  lt_why_OTHER_STAFF_MISTAKE: ["Other staff mistake", "កំហុសបុគ្គលិកផ្សេងទៀត"],
+  late_banner_auto: [
+    "This Invoice is overdue. The app added a late-payment charge of {0} on {1}.",
+    "វិក្កយបត្រនេះហួសកំណត់។ កម្មវិធីបានបន្ថែមថ្លៃពិន័យ {0} នៅ {1}។",
+  ],
+  lt_h_add: [
+    "Late-payment charge {0} added by the app ({1}% of {2} unpaid)",
+    "កម្មវិធីបានបន្ថែមថ្លៃពិន័យ {0} ({1}% នៃ {2} មិនទាន់បង់)",
+  ],
+  lt_h_red: [
+    "Late-payment charge reduced to {0} by {1}. {2}",
+    "ថ្លៃពិន័យបានកាត់បន្ថយមក {0} ដោយ {1}។ {2}",
+  ],
+  lt_h_waive: [
+    "Late-payment charge waived by {1}. {2}",
+    "ថ្លៃពិន័យបានលើកលែងដោយ {1}។ {2}",
+  ],
+  lt_h_paid: [
+    "{0} paid to the late-payment charge from {1}",
+    "បានបង់ {0} ទៅថ្លៃពិន័យ ពី {1}",
+  ],
+  lt_fix_t: [
+    "Reduce or waive the late-payment charge on {0}",
+    "កាត់បន្ថយ ឬលើកលែងថ្លៃពិន័យលើ {0}",
+  ],
+  lt_now: ["Charge now", "ថ្លៃពិន័យឥឡូវ"],
+  lt_bal_at: [
+    "Unpaid on the first overdue day",
+    "មិនទាន់បង់នៅថ្ងៃដំបូងហួសកំណត់",
+  ],
+  lt_choice: ["Change", "ការប្តូរ"],
+  lt_o_red: ["Reduce", "កាត់បន្ថយ"],
+  lt_o_red_s: [
+    "A smaller amount: at least {0} (already paid) and less than {1}.",
+    "ចំនួនតិចជាង៖ យ៉ាងតិច {0} (បានបង់រួច) និងតិចជាង {1}។",
+  ],
+  lt_o_red_s0: [
+    "A smaller amount, more than $0.00 and less than {0}.",
+    "ចំនួនតិចជាង លើស $0.00 និងតិចជាង {0}។",
+  ],
+  lt_o_waive: ["Waive", "លើកលែង"],
+  lt_o_waive_s: [
+    "The charge becomes $0.00. Nothing is owed.",
+    "ថ្លៃពិន័យក្លាយជា $0.00។ មិនជំពាក់អ្វីទេ។",
+  ],
+  // new: the owner's rule of round 6: Waive only while nothing is paid.
+  lt_o_waive_no: [
+    "Not possible: {0} is already paid.",
+    "មិនអាចទេ៖ បានបង់ {0} រួចហើយ។",
+  ],
+  lt_red_amt: ["Reduced amount", "ចំនួនកាត់បន្ថយ"],
+  lt_reason: ["Reason", "មូលហេតុ"],
+  // new
+  lt_reason_pick: ["Choose a reason", "ជ្រើសមូលហេតុ"],
+  lt_detail: ["What happened", "អ្វីដែលបានកើតឡើង"],
+  lt_detail_ph: [
+    "For example: RCP260031 was recorded on INV260035 instead of INV260006",
+    "ឧទាហរណ៍៖ RCP260031 ត្រូវបានកត់ត្រាលើ INV260035 ជំនួស INV260006",
+  ],
+  lt_prev_red: [
+    "The charge goes from {0} to {1}. The Customer still owes {2} of it.",
+    "ថ្លៃពិន័យពី {0} មក {1}។ អតិថិជននៅជំពាក់ {2}។",
+  ],
+  lt_prev_zero: [
+    "The charge on {0} becomes $0.00. Nothing is owed.",
+    "ថ្លៃពិន័យលើ {0} ក្លាយជា $0.00។ មិនជំពាក់អ្វីទេ។",
+  ],
+  lt_fix_note: [
+    "Only after a Customer complaint about a staff mistake. The amount can only go down. The old amount and the reason stay in History.",
+    "តែក្រោយអតិថិជនតវ៉ាអំពីកំហុសបុគ្គលិក។ ចំនួនអាចតែចុះ។ ចំនួនចាស់ និងមូលហេតុនៅក្នុងប្រវត្តិ។",
+  ],
+  lt_e_pick: ["Choose Reduce or Waive.", "សូមជ្រើស កាត់បន្ថយ ឬលើកលែង។"],
+  lt_e_amt: [
+    "Enter an amount more than $0.00 and less than {0}.",
+    "សូមបញ្ចូលចំនួនលើស $0.00 និងតិចជាង {0}។",
+  ],
+  lt_e_amt_paid: [
+    "Enter an amount of at least {0} and less than {1}.",
+    "សូមបញ្ចូលចំនួនយ៉ាងតិច {0} និងតិចជាង {1}។",
+  ],
+  lt_e_reason: ["Choose a reason.", "សូមជ្រើសមូលហេតុ។"],
+  lt_e_detail: ["Write what happened.", "សូមសរសេរអ្វីដែលបានកើតឡើង។"],
+  // new
+  lt_save: ["Save change", "រក្សាទុកការប្តូរ"],
+  lt_saved: [
+    "Late-payment charge changed for {0}.",
+    "បានប្តូរថ្លៃពិន័យសម្រាប់ {0}។",
+  ],
+  // new
+  lt_failed: [
+    "The late-payment charge could not be read just now.",
+    "មិនអាចអានថ្លៃពិន័យបានទេឥឡូវនេះ។",
+  ],
 } as const satisfies Record<string, readonly [string, string]>;
 
 export type InvoicesTextKey = keyof typeof TEXT;

@@ -21,7 +21,8 @@ export type ShellIcon =
   | "drop"
   | "upload"
   | "download"
-  | "print";
+  | "print"
+  | "lock";
 
 const PATHS: Record<ShellIcon, string[]> = {
   home: ["M3 10.5 12 3l9 7.5", "M5 9.5V21h14V9.5", "M10 21v-6h4v6"],
@@ -108,6 +109,7 @@ const PATHS: Record<ShellIcon, string[]> = {
     "M5 9h14a1.5 1.5 0 0 1 1.5 1.5v5A1.5 1.5 0 0 1 19 17H5a1.5 1.5 0 0 1-1.5-1.5v-5A1.5 1.5 0 0 1 5 9z",
     "M7 14h10v6.5H7z",
   ],
+  lock: ["M6 11h12v9.5H6z", "M8.5 11V8a3.5 3.5 0 0 1 7 0v3"],
 };
 
 export function Icon({ name, small }: { name: ShellIcon; small?: boolean }) {

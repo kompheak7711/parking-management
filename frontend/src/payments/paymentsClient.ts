@@ -126,6 +126,50 @@ export interface ReceiptView {
   reprintCount: number;
 }
 
+/** V1-058 R5d: the late-payment card of one Invoice (DESIGN.md "Late-payment card"). */
+export type ReductionReason =
+  | "WRONG_INVOICE"
+  | "PAID_ON_TIME_RECORDED_LATE"
+  | "OTHER_STAFF_MISTAKE";
+
+export interface LateChargeChange {
+  kind: "REDUCTION" | "CHARGE_REVERSAL" | "REDUCTION_REVERSAL";
+  previous: number;
+  resulting: number;
+  at: string;
+  by: string | null;
+  reasonCode: ReductionReason | null;
+  whatHappened: string | null;
+  reason: string;
+}
+
+export interface LateChargeCard {
+  chargeId: string;
+  invoiceId: string;
+  customerId: string;
+  payableAt: string;
+  /** The charge moment: what was unpaid was measured then (a late job run is later). */
+  chargedAt: string;
+  /** The rate applies only to a full charge; an early person-made decision may be lower. */
+  fullRate: boolean;
+  byApp: boolean;
+  addedBy: string | null;
+  unpaidAtCharge: number;
+  rateBasisPoints: number;
+  original: number;
+  now: number;
+  stillOwed: number;
+  paid: number;
+  changes: LateChargeChange[];
+  paidBy: {
+    kind: "PAYMENT" | "CREDIT" | "DEPOSIT";
+    paymentId: string | null;
+    receiptNumber: string | null;
+    amount: number;
+    at: string;
+  }[];
+}
+
 export interface PaymentsApi {
   payable(propertyId: string, customerId: string): Promise<PayableItem[]>;
   methods(propertyId: string): Promise<PaymentMethodOption[]>;
@@ -142,6 +186,17 @@ export interface PaymentsApi {
   ): Promise<PaymentsSummary>;
   receipt(propertyId: string, paymentId: string): Promise<ReceiptView>;
   reprint(receiptId: string, reason: string, key: string): Promise<void>;
+  lateCharge(
+    propertyId: string,
+    invoiceId: string,
+  ): Promise<LateChargeCard | null>;
+  reduceLateCharge(
+    chargeId: string,
+    newAmount: number,
+    reason: ReductionReason,
+    whatHappened: string,
+    key: string,
+  ): Promise<void>;
 }
 
 function invalid(): never {
@@ -331,6 +386,74 @@ function receiptOf(value: unknown): ReceiptView {
   };
 }
 
+const REDUCTION_REASONS = [
+  "WRONG_INVOICE",
+  "PAID_ON_TIME_RECORDED_LATE",
+  "OTHER_STAFF_MISTAKE",
+] as const;
+
+function lateCardOf(value: unknown): LateChargeCard | null {
+  if (value === null) return null;
+  const data = object(value);
+  return {
+    chargeId: text(data.charge_id),
+    invoiceId: text(data.invoice_id),
+    customerId: text(data.customer_id),
+    payableAt: text(data.payable_at),
+    chargedAt: text(data.charged_at),
+    fullRate:
+      data.decision_outcome === "CONFIRMED_DEFAULT" &&
+      cents(data.calculated_default_usd_cents) ===
+        cents(data.original_usd_cents),
+    byApp: data.by_app === true,
+    addedBy: maybeText(data.added_by),
+    unpaidAtCharge: cents(data.unpaid_at_charge_usd_cents),
+    rateBasisPoints: cents(data.rate_basis_points),
+    original: cents(data.original_usd_cents),
+    now: cents(data.now_usd_cents),
+    stillOwed: cents(data.still_owed_usd_cents),
+    paid: cents(data.paid_usd_cents),
+    changes: list(data.changes).map((entry) => {
+      const change = object(entry);
+      const kind = change.kind;
+      if (
+        kind !== "REDUCTION" &&
+        kind !== "CHARGE_REVERSAL" &&
+        kind !== "REDUCTION_REVERSAL"
+      )
+        return invalid();
+      const code = change.reason_code;
+      return {
+        kind,
+        previous: cents(change.previous_usd_cents),
+        resulting: cents(change.resulting_usd_cents),
+        at: text(change.at),
+        by: maybeText(change.by),
+        reasonCode:
+          code === null || code === undefined
+            ? null
+            : (REDUCTION_REASONS.find((reason) => reason === code) ??
+              invalid()),
+        whatHappened: maybeText(change.what_happened),
+        reason: text(change.reason),
+      };
+    }),
+    paidBy: list(data.paid_by).map((entry) => {
+      const item = object(entry);
+      const kind = item.kind;
+      if (kind !== "PAYMENT" && kind !== "CREDIT" && kind !== "DEPOSIT")
+        return invalid();
+      return {
+        kind,
+        paymentId: maybeText(item.payment_id),
+        receiptNumber: maybeText(item.receipt_number),
+        amount: cents(item.amount_usd_cents),
+        at: text(item.at),
+      };
+    }),
+  };
+}
+
 const encoded = encodeURIComponent;
 
 export function createPaymentsApi(
@@ -410,6 +533,31 @@ export function createPaymentsApi(
         "/api/v1/receipts/" + encoded(receiptId) + "/reprints",
         () => undefined,
         { key, body: { reason } },
+        transmission,
+      ),
+    lateCharge: (propertyId, invoiceId) =>
+      billingTransport(
+        "/api/v1/properties/" +
+          encoded(propertyId) +
+          "/invoices/" +
+          encoded(invoiceId) +
+          "/late-charge",
+        (body) => lateCardOf(body.data),
+        undefined,
+        transmission,
+      ),
+    reduceLateCharge: (chargeId, newAmount, reason, whatHappened, key) =>
+      billingTransport(
+        "/api/v1/late-payment-charges/" + encoded(chargeId) + "/reductions",
+        () => undefined,
+        {
+          key,
+          body: {
+            new_amount: { currency: "USD", minor_units: newAmount },
+            reason,
+            what_happened: whatHappened,
+          },
+        },
         transmission,
       ),
   };

@@ -296,3 +296,30 @@ def receipt_lines(
     if not rows:
         raise PaymentReadNotFoundError("Payment was not found")
     return rows[0]
+
+
+def late_charge_card(
+    service: PaymentReadService,
+    property_id: UUID,
+    invoice_id: UUID,
+    *,
+    actor: AuthenticatedActor,
+) -> dict[str, object] | None:
+    """V1-058 R5d: the late-payment card of one Invoice, or None without a charge (read only)."""
+    _uuid(property_id)
+    _uuid(invoice_id)
+    if not is_authorized(actor, AuthorizationRequirement("invoices.read", str(property_id))):
+        raise PaymentReadAuthorizationError("Invoice read is not authorized")
+    try:
+        actor_id = UUID(actor.actor_id)
+        _uuid(actor_id)
+    except (ValueError, TypeError, AttributeError) as exc:
+        raise PaymentReadAuthorizationError("Payment actor identity is invalid") from exc
+    rows = service._query(
+        property_id,
+        actor_id,
+        "SELECT value FROM (SELECT app.invoice_late_charge_card(%s,%s,%s) AS value) item "
+        "WHERE value IS NOT NULL",
+        (property_id, actor_id, invoice_id),
+    )
+    return rows[0] if rows else None

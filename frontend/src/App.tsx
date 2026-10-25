@@ -1532,6 +1532,7 @@ export function App({
           customerApi={customerApi ?? defaultCustomerApi}
           invoiceApi={invoiceApi}
           language={language}
+          lateApi={paymentsApi}
           leaseApi={leaseApi}
           propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
         />

@@ -29,6 +29,15 @@ class SummaryFlow(ReceiveFlow):
         self.fail()
         return {"payment_id": str(payment_id), "lines": []}
 
+    def late_charge_card(
+        self, property_id: UUID, invoice_id: UUID, *, actor: AuthenticatedActor
+    ) -> dict[str, object] | None:
+        self.calls.append((property_id, invoice_id, actor))
+        self.fail()
+        return None if invoice_id == self.no_charge else {"invoice_id": str(invoice_id)}
+
+    no_charge: UUID | None = None
+
 
 def test_the_period_read_needs_payments_read_and_two_dates() -> None:
     flow = SummaryFlow()
@@ -75,3 +84,24 @@ def test_the_receipt_lines_need_receipts_read_and_hide_a_missing_payment() -> No
     path = f"/api/v1/properties/{missing.property_id}/payments/{payment}/receipt-lines"
     result = api(missing, actor(missing.property_id, "receipts.read")).get(path)
     assert result.status_code == 404 and "private SQL" not in result.text
+
+
+def test_the_late_charge_card_needs_invoices_read_and_is_null_without_a_charge() -> None:
+    """V1-058 R5d: the late-payment card of one Invoice."""
+    flow = SummaryFlow()
+    invoice = uuid4()
+    path = f"/api/v1/properties/{flow.property_id}/invoices/{invoice}/late-charge"
+    allowed = api(flow, actor(flow.property_id, "invoices.read"))
+    result = allowed.get(path)
+    assert result.status_code == 200 and result.json()["data"]["invoice_id"] == str(invoice)
+    assert flow.calls[-1][:2] == (flow.property_id, invoice)
+    flow.no_charge = invoice
+    assert allowed.get(path).json()["data"] is None
+    before = len(flow.calls)
+    assert allowed.get(path, params={"x": "1"}).status_code == 400
+    assert api(flow, actor(flow.property_id, "payments.read")).get(path).status_code == 403
+    assert len(flow.calls) == before
+    broken = SummaryFlow(error=PaymentReadUnavailableError("private SQL"))
+    path = f"/api/v1/properties/{broken.property_id}/invoices/{invoice}/late-charge"
+    result = api(broken, actor(broken.property_id, "invoices.read")).get(path)
+    assert result.status_code == 503 and "private SQL" not in result.text

@@ -54181,6 +54181,102 @@
       "test_path": "frontend/src/payments/PaymentsList.test.tsx",
       "status": "implemented",
       "notes": "V1-058 R5c-3b review round 1: the Receipt does not print without the Customer names, and a reversed Receipt shows no money waiting."
+    },
+    {
+      "test_id": "TEST-FE-923",
+      "upstream_ids": [
+        "DL-074",
+        "DL-076",
+        "BR-LATE-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/invoices/LateChargeCard.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5d: the late-payment card shows what was unpaid, the charge the app added, what paid it and what is still owed; Reduce or waive is locked for Staff."
+    },
+    {
+      "test_id": "TEST-FE-924",
+      "upstream_ids": [
+        "DL-074",
+        "DL-076",
+        "BR-LATE-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/invoices/LateChargeCard.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5d: Reduce or waive needs a choice, an amount between what is paid and the charge, a reason and what happened, and saves once after no answer."
+    },
+    {
+      "test_id": "TEST-FE-925",
+      "upstream_ids": [
+        "DL-074",
+        "DL-076",
+        "BR-LATE-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/payments/ReceivePayment.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5d: Receive payment from the late-payment card ticks only the charge, once."
+    },
+    {
+      "test_id": "TEST-FE-926",
+      "upstream_ids": [
+        "DL-074",
+        "DL-076",
+        "BR-LATE-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/invoices/LateChargeCard.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5d: an unpaid charge is waived to $0.00; no charge shows no card; a failed read offers Retry."
+    },
+    {
+      "test_id": "TEST-FE-927",
+      "upstream_ids": [
+        "DL-074",
+        "DL-076",
+        "BR-LATE-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/invoices/LateChargeCard.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5d review round 1: a person-made charge, an undone reduction and a late job run are named; a Deposit-paid charge is not offered for reduction; the chips follow the amounts."
+    },
+    {
+      "test_id": "test_the_card_shows_the_charge_its_reduction_and_what_paid_it",
+      "upstream_ids": [
+        "DL-074",
+        "DL-076",
+        "BR-LATE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_late_charge_card_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R5d: the late-payment card read names the charge, its reduction with the fixed reason and the Receipt that paid it."
+    },
+    {
+      "test_id": "test_no_charge_another_property_and_the_read_rights",
+      "upstream_ids": [
+        "DL-074",
+        "DL-076",
+        "BR-LATE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_late_charge_card_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R5d: an Invoice without a charge or unknown gives no card; the read needs invoices.read, an active human actor and its grants."
+    },
+    {
+      "test_id": "test_the_late_charge_card_needs_invoices_read_and_is_null_without_a_charge",
+      "upstream_ids": [
+        "DL-074",
+        "DL-076",
+        "BR-LATE-005"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_payments_summary_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R5d: the late-payment card route needs invoices.read, answers null without a charge and hides database failures."
     }
   ]
 }

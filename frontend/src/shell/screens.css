@@ -1358,6 +1358,9 @@ table.ui-table tr td .ui-chip + .ui-rdmsg {
   padding-left: 16px;
   text-align: right;
 }
+.ui-kv.ui-is dd.ui-num {
+  white-space: nowrap;
+}
 .ui-kv.ui-is .tot {
   padding-top: 8px;
   border-top: 1px solid var(--border);
@@ -1600,4 +1603,16 @@ table.ui-table.ui-paylist .ui-phone {
 .ui-stack h3 {
   margin: 0 0 12px;
   color: var(--heading);
+}
+
+/* V1-058 R5d: a manager-only action shown to Staff (DESIGN.md "Locked"): Ivory 200, Slate text,
+   a lock before the label and the MANAGER badge after it. */
+.ui-btn.ui-locked {
+  background: var(--sunken);
+  color: var(--text-2);
+  border-color: var(--border);
+  cursor: not-allowed;
+}
+.ui-btn.ui-locked .ui-badge {
+  background: var(--surface);
 }

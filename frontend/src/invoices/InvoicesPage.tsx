@@ -10,6 +10,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { CustomerApi } from "../customerClient";
 import type { InvoiceApi } from "../invoiceClient";
 import type { LeaseApi } from "../leaseClient";
+import type { PaymentsApi } from "../payments/paymentsClient";
 import { todayInPhnomPenh } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { openPageInAddress, useHashDetail } from "../shell/useHashPage";
@@ -37,6 +38,8 @@ export interface InvoicesPageProps {
   >;
   leaseApi: Pick<LeaseApi, "list">;
   customerApi: Pick<CustomerApi, "list">;
+  /** The late-payment card on the Invoice page (R5d). */
+  lateApi?: Pick<PaymentsApi, "lateCharge" | "reduceLateCharge">;
   capabilities: ReadonlySet<string> | null;
   /** Today in Phnom Penh; tests pass a fixed day. */
   today?: string;
@@ -49,6 +52,7 @@ export function InvoicesPage({
   invoiceApi,
   leaseApi,
   customerApi,
+  lateApi,
   capabilities,
   today: fixedToday,
 }: InvoicesPageProps) {
@@ -106,6 +110,7 @@ export function InvoicesPage({
         data={data}
         invoiceId={invoiceId}
         key={`${invoiceId}:${propertyId}`}
+        lateApi={lateApi}
         onChanged={load}
         propertyId={propertyId}
         language={language}

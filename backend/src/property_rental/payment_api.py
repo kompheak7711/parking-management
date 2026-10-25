@@ -59,6 +59,7 @@ from property_rental.payment_read import (
     PaymentReadNotFoundError,
     PaymentReadService,
     PaymentReadUnavailableError,
+    late_charge_card,
     receipt_lines,
     summarize_period,
 )
@@ -284,6 +285,9 @@ class PaymentFlow(Protocol):
     def receipt_lines(
         self, property_id: UUID, payment_id: UUID, *, actor: AuthenticatedActor
     ) -> dict[str, object]: ...
+    def late_charge_card(
+        self, property_id: UUID, invoice_id: UUID, *, actor: AuthenticatedActor
+    ) -> dict[str, object] | None: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -427,6 +431,11 @@ class PostgresPaymentFlow:
         self, property_id: UUID, payment_id: UUID, *, actor: AuthenticatedActor
     ) -> dict[str, object]:
         return receipt_lines(self._reader(), property_id, payment_id, actor=actor)
+
+    def late_charge_card(
+        self, property_id: UUID, invoice_id: UUID, *, actor: AuthenticatedActor
+    ) -> dict[str, object] | None:
+        return late_charge_card(self._reader(), property_id, invoice_id, actor=actor)
 
 
 def payment_key_reused_response(request: Request) -> JSONResponse:
@@ -691,6 +700,18 @@ def create_payment_router(
         result = _invoke(
             lambda: flow.receipt_lines(property_id, payment_id, actor=actor), hide=True
         )
+        return {"data": result, "meta": financial_metadata(request)}
+
+    @router.get("/properties/{property_id}/invoices/{invoice_id}/late-charge")
+    def invoice_late_charge(
+        property_id: Identity, invoice_id: Identity, request: Request
+    ) -> dict[str, object]:
+        """V1-058 R5d: the late-payment card of one Invoice; data is null without a charge."""
+        actor = _actor(request, resolver)
+        _authorize(actor, property_id, "invoices.read")
+        bind_financial_property(request, property_id)
+        _queries(request, set())
+        result = _invoke(lambda: flow.late_charge_card(property_id, invoice_id, actor=actor))
         return {"data": result, "meta": financial_metadata(request)}
 
     @router.get("/payments/{payment_id}")

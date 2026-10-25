@@ -823,6 +823,7 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/properties/{property_id}/payments/payable": {"get"},
         "/api/v1/properties/{property_id}/payments/summary": {"get"},
         "/api/v1/properties/{property_id}/payments/{payment_id}/receipt-lines": {"get"},
+        "/api/v1/properties/{property_id}/invoices/{invoice_id}/late-charge": {"get"},
         "/api/v1/properties/{property_id}/payments/{payment_id}/reversal-context": {"get"},
         "/api/v1/properties/{property_id}/payments": {"get", "post"},
         "/api/v1/payments/{payment_id}": {"get"},

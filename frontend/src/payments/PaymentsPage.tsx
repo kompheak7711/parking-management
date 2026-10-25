@@ -47,8 +47,9 @@ export function PaymentsPage({
   const detail = useHashDetail("payments");
   const receiving =
     detail === "receive" || detail?.startsWith("receive:") === true;
-  const customerId =
-    detail?.startsWith("receive:") === true ? detail.slice(8) : "";
+  // "receive:<Customer id>:<late-payment charge id>" opens the form with only that charge ticked.
+  const [customerId = "", chargeId = ""] =
+    detail?.startsWith("receive:") === true ? detail.slice(8).split(":") : [];
   const receiptOf =
     detail?.startsWith("receipt:") === true ? detail.slice(8) : null;
   const may = (capability: string) =>
@@ -114,7 +115,8 @@ export function PaymentsPage({
         api={paymentsApi}
         data={data}
         initialCustomer={data.customerLeases.has(customerId) ? customerId : ""}
-        key={`${propertyId}:${customerId}`}
+        initialPick={chargeId}
+        key={`${propertyId}:${customerId}:${chargeId}`}
         language={language}
         onSaved={load}
         propertyId={propertyId}

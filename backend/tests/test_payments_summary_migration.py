@@ -51,6 +51,9 @@ def test_each_payment_is_split_by_what_it_paid_and_the_cards_add_up(
 ) -> None:
     url = migrated_database_url
     case = two_months(url)
+    day = today(url)
+    # Other test files share the Property, so the totals are checked against what was there.
+    start = summary(case, day - timedelta(days=1), day + timedelta(days=1))["totals"]
     ticks = (
         invoice(case["invoice"], RENT),
         charge(case["charge"], CHARGE),
@@ -59,11 +62,10 @@ def test_each_payment_is_split_by_what_it_paid_and_the_cards_add_up(
     paid = receive(
         case, ReceivePaymentCommand(usd(case, 2 * RENT + CHARGE + 2_000), "OLDEST_FIRST", ticks)
     )
-    day = today(url)
     result = summary(case, day - timedelta(days=1), day + timedelta(days=1))
 
     assert result["truncated"] is False
-    [row] = result["rows"]
+    [row] = [item for item in result["rows"] if item["payment_id"] == paid["payment"]["id"]]
     assert row["payment_id"] == paid["payment"]["id"]
     assert row["receipt_number"] == paid["receipt"]["receipt_number"]
     assert row["customer_id"] == str(case["customer"])
@@ -76,12 +78,18 @@ def test_each_payment_is_split_by_what_it_paid_and_the_cards_add_up(
     assert datetime.fromisoformat(row["received_at"]).utcoffset() is not None
 
     totals = result["totals"]
-    assert totals["payments"] == 1 and totals["received_usd_cents"] == row["usd_cents"]
-    assert totals["left_usd_cents"] == 2_000 and totals["left_payments"] == 1
-    assert sum(totals["kinds"][kind]["usd_cents"] for kind in KINDS) + 2_000 == row["usd_cents"]
-    assert totals["kinds"]["LATE"] == {"usd_cents": CHARGE, "payments": 1}
-    assert totals["kinds"]["DEPOSIT"] == {"usd_cents": 0, "payments": 0}
-    assert totals["riel_received_minor"] == 0
+    assert totals["payments"] - start["payments"] == 1
+    assert totals["received_usd_cents"] - start["received_usd_cents"] == row["usd_cents"]
+    assert totals["left_usd_cents"] - start["left_usd_cents"] == 2_000
+    assert totals["left_payments"] - start["left_payments"] == 1
+    added = {
+        kind: totals["kinds"][kind]["usd_cents"] - start["kinds"][kind]["usd_cents"]
+        for kind in KINDS
+    }
+    assert sum(added.values()) + 2_000 == row["usd_cents"]
+    assert added["LATE"] == CHARGE and added["DEPOSIT"] == 0
+    assert totals["kinds"]["LATE"]["payments"] - start["kinds"]["LATE"]["payments"] == 1
+    assert totals["riel_received_minor"] == start["riel_received_minor"]
 
     before = summary(case, day - timedelta(days=40), day - timedelta(days=30))
     assert before["rows"] == [] and before["totals"]["payments"] == 0

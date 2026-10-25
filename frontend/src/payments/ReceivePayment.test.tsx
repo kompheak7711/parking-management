@@ -114,6 +114,8 @@ function api(overrides: Partial<PaymentsApi> = {}) {
     summary: vi.fn(() => Promise.reject(new Error("not used"))),
     receipt: vi.fn(() => Promise.reject(new Error("not used"))),
     reprint: vi.fn(() => Promise.resolve()),
+    lateCharge: vi.fn(() => Promise.resolve(null)),
+    reduceLateCharge: vi.fn(() => Promise.resolve()),
     ...overrides,
   };
 }
@@ -468,5 +470,35 @@ describe("Receive payment", () => {
     expect(body.pays.targets).toEqual([
       { invoice_id: "inv-old", amount_usd_cents: 1_001 },
     ]);
+  });
+});
+
+describe("V1-058 R5d Receive payment from the late-payment card", () => {
+  it("TEST-FE-925 opens with only the late-payment charge ticked and its amount, once", async () => {
+    const payments = api();
+    render(
+      <ReceivePayment
+        api={payments}
+        data={DATA}
+        initialCustomer={LIM}
+        initialPick="charge-1"
+        language="en"
+        onSaved={vi.fn()}
+        propertyId="property-1"
+      />,
+    );
+    await screen.findByText("INV260071");
+    expect(rows().map((row) => row.ticked)).toEqual([false, true, false]);
+    expect((document.getElementById("rp-amt") as HTMLInputElement).value).toBe(
+      "35.30",
+    );
+    // Another Customer and back again starts from oldest first.
+    fireEvent.change(screen.getByLabelText(/^Customer/), {
+      target: { value: "customer-dara" },
+    });
+    await screen.findByText(/has nothing unpaid/);
+    await choose();
+    type("rp-amt", "400.00");
+    expect(rows().map((row) => row.ticked)).toEqual([true, true, true]);
   });
 });

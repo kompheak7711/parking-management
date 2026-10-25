@@ -1,8 +1,8 @@
 // V1-058 R5: one Invoice (DESIGN.md "Invoice page"): the head with its number, status and
 // Print Invoice, the overdue, void or draft notice, the printed Invoice, the Invoice status card
 // with the bar from the issue date to the Due Date, the Customer, and the History; Issue for a
-// Draft, Adjust and Void for an issued one, and Receive payment while something is owed (R5c).
-// The late-payment card comes next.
+// Draft, Adjust and Void for an issued one, and Receive payment while something is owed (R5c);
+// under the status card the late-payment card when the app added a charge (R5d).
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -12,6 +12,7 @@ import {
   type InvoiceResource,
   type JsonValue,
 } from "../invoiceClient";
+import type { LateChargeCard, PaymentsApi } from "../payments/paymentsClient";
 import { dayText, momentText, usdFromCents } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { hashForPage } from "../shell/navigation";
@@ -21,6 +22,7 @@ import { AdjustDialog, VoidDialog } from "./ChangeDialogs";
 import { InvoiceDocument, SheetFrame } from "./InvoiceDocument";
 import { InvoiceChip } from "./InvoicesList";
 import { IssueDialog } from "./IssueDialog";
+import { LateChargeSection, lateHistory } from "./LateChargeCard";
 import {
   type InvoicesData,
   cents,
@@ -227,9 +229,12 @@ export function InvoiceDetail({
   capabilities,
   propertyId,
   onChanged,
+  lateApi,
 }: {
   language: Language;
   api: Pick<InvoiceApi, "get" | "issue" | "adjust" | "void">;
+  /** The late-payment card read and the Reduce or waive command; none hides the card. */
+  lateApi?: Pick<PaymentsApi, "lateCharge" | "reduceLateCharge">;
   /** Something was saved; the list reads again. */
   onChanged: () => void;
   invoiceId: string;
@@ -247,10 +252,13 @@ export function InvoiceDetail({
   );
   const [notice, setNotice] = useState<
     | { kind: "issued"; number: string; due: string }
-    | { kind: "changed" | "adjusted" | "voided" }
+    | { kind: "changed" | "adjusted" | "voided" | "late" }
     | null
   >(null);
   const sequence = useRef(0);
+  const [late, setLate] = useState<LateChargeCard | null>(null);
+  const [lateFailed, setLateFailed] = useState(false);
+  const lateSequence = useRef(0);
   const may = (capability: string) =>
     capabilities === null || capabilities.has(capability);
 
@@ -278,6 +286,27 @@ export function InvoiceDetail({
   useEffect(() => {
     load();
   }, [load]);
+
+  const loadLate = useCallback(() => {
+    if (lateApi === undefined) return;
+    const operation = ++lateSequence.current;
+    setLateFailed(false);
+    void lateApi
+      .lateCharge(propertyId, invoiceId)
+      .then((found) => {
+        if (operation === lateSequence.current) setLate(found);
+      })
+      .catch(() => {
+        if (operation !== lateSequence.current) return;
+        // An old card is never shown beside the warning.
+        setLate(null);
+        setLateFailed(true);
+      });
+  }, [invoiceId, lateApi, propertyId]);
+
+  useEffect(() => {
+    loadLate();
+  }, [loadLate]);
 
   const back = (
     <button
@@ -337,6 +366,8 @@ export function InvoiceDetail({
       dayAfter(invoice.due_date),
       ivt(language, "h_overdue", usdFromCents(owed)),
     ]);
+  // After "Became overdue", which happens at the same moment as the charge.
+  if (late !== null) history.push(...lateHistory(language, late));
   const voidEvent =
     typeof invoice.void_event === "object" &&
     invoice.void_event !== null &&
@@ -443,9 +474,12 @@ export function InvoiceDetail({
                   language,
                   notice.kind === "adjusted"
                     ? "adj_done"
-                    : notice.kind === "voided"
-                      ? "void_done"
-                      : "changed",
+                    : notice.kind === "late"
+                      ? "lt_saved"
+                      : notice.kind === "voided"
+                        ? "void_done"
+                        : "changed",
+                  invoice.invoice_number,
                 )}
           </p>
         </div>
@@ -514,7 +548,18 @@ export function InvoiceDetail({
         <div className="ui-notice err" role="note">
           <Icon name="alert" />
           <p>
-            {ivt(language, "late_banner", dayText(dayAfter(invoice.due_date)))}
+            {late !== null
+              ? ivt(
+                  language,
+                  late.byApp ? "late_banner_auto" : "late_banner_by",
+                  usdFromCents(late.original),
+                  momentText(late.chargedAt).slice(0, 10),
+                )
+              : ivt(
+                  language,
+                  "late_banner",
+                  dayText(dayAfter(invoice.due_date)),
+                )}
           </p>
         </div>
       )}
@@ -543,6 +588,39 @@ export function InvoiceDetail({
         </div>
         <div className="ui-stack">
           <StatusCard invoice={invoice} language={language} today={today} />
+          {late !== null && lateApi !== undefined && (
+            <LateChargeSection
+              api={lateApi}
+              card={late}
+              invoiceNumber={invoice.invoice_number}
+              language={language}
+              mayFix={may("late_payment.charge_correction")}
+              mayReceive={may("payments.record")}
+              onChanged={() => {
+                setNotice({ kind: "changed" });
+                load();
+                loadLate();
+              }}
+              onSaved={() => {
+                setNotice({ kind: "late" });
+                load();
+                loadLate();
+                onChanged();
+              }}
+              who={[name ?? ivt(language, "unknown_customer"), unit]
+                .filter(Boolean)
+                .join(" · ")}
+            />
+          )}
+          {lateFailed && (
+            <div className="ui-notice warn" role="status">
+              <Icon name="alert" />
+              <p>{ivt(language, "lt_failed")}</p>
+              <button className="ui-btn" onClick={loadLate} type="button">
+                {ivt(language, "retry")}
+              </button>
+            </div>
+          )}
           <section aria-labelledby="inv-cust" className="ui-card">
             <h2 id="inv-cust">{ivt(language, "cust_t")}</h2>
             <p>

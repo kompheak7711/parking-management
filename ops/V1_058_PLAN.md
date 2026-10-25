@@ -115,3 +115,25 @@ Run rules: frontend-only steps run the frontend gates (format, typecheck, lint, 
   422 Payment id shows as not found; Khmer spans carry lang="km"; phone list fits without sideways
   scroll. Left for later: today's date refresh after midnight while the page stays open.
 - Gates: prettier, tsc, eslint clean; vitest 1,776 passed; traceability audit passed.
+
+
+## R5d late-payment card (2026-10-25)
+- Server: migration 20270221_209 adds app.invoice_late_charge_card (one Invoice's late-payment
+  charge: when added, by whom, rate, changes, what paid it, still owed); route GET
+  /api/v1/properties/{property_id}/invoices/{invoice_id}/late-charge (invoices.read).
+- Screen: Late-payment charge card on the Invoice page under Invoice status (chips Charged,
+  Reduced, Waived, Paid), Receive payment for just the charge, Reduce or waive dialog (MANAGER,
+  locked without late_payment.charge_correction), history lines. TEST-FE-923 to 927.
+- Decided by Claude under the owner's 2026-10-23 22:30 rule: the card read uses invoices.read so
+  Staff see it; the dialog follows the round-6 design (reduce no lower than what is paid, waive
+  only when nothing is paid) although the server allows more; a charge paid by a Deposit is not
+  offered for reduction (that goes through a Final Settlement correction).
+- Review round 1 (no files written by the reviewer): fixed a person-made charge named as made by
+  the app; added date now uses the decision date; "Reduction undone" wording; Deposit-paid charge
+  no longer offered; the form is locked while a save is in flight; an old card no longer stays
+  after a failed re-read (Retry shown). Phone: money values no longer wrap.
+- Gates: prettier, tsc, eslint clean; vitest 1,781 passed; card and summary PostgreSQL tests
+  passed; head-pinned PostgreSQL files rerun; traceability audit passed.
+- Pins rerun: 516 of 517 passed; test_v1_045_typed_sources_keep_category_and_controlling_id_together
+  failed only because the ad-hoc file order ran the Utility meter tests first in the shared
+  database; test_invoice_migration.py passes alone (35 passed). Not an R5d change.

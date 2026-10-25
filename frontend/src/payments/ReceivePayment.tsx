@@ -127,6 +127,7 @@ export function ReceivePayment({
   api,
   data,
   initialCustomer = "",
+  initialPick = "",
   now: fixedNow,
   onSaved,
 }: {
@@ -135,6 +136,8 @@ export function ReceivePayment({
   api: PaymentsApi;
   data: InvoicesData;
   initialCustomer?: string;
+  /** One item to tick alone when the list arrives (the late-payment card's Receive payment). */
+  initialPick?: string;
   /** Tests pass a fixed moment. */
   now?: Date;
   /** The lists read again, so they show the new payment. */
@@ -161,6 +164,7 @@ export function ReceivePayment({
   const summary = useRef<HTMLDivElement>(null);
   const identity = useRef<{ sent: string; key: string } | null>(null);
   const reading = useRef(0);
+  const firstPick = useRef(initialPick);
 
   const customers = [...data.customerLeases.keys()]
     .map((id) => ({
@@ -209,7 +213,15 @@ export function ReceivePayment({
       void api
         .payable(propertyId, id)
         .then((found) => {
-          if (operation === reading.current) setItems(found);
+          if (operation !== reading.current) return;
+          setItems(found);
+          // The late-payment card asks for its charge alone, with its amount, once.
+          const only = found.find((item) => item.id === firstPick.current);
+          firstPick.current = "";
+          if (only !== undefined && id === initialCustomer) {
+            setPicks(new Set([only.id]));
+            setAmount((only.owed / 100).toFixed(2));
+          }
         })
         .catch(() => {
           if (operation === reading.current) setItemsFailed(true);
