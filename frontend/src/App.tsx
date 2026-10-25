@@ -164,6 +164,8 @@ export interface AppProps {
     | "settlements"
     | "startSettlement"
     | "settlementPreview"
+    | "refundMethods"
+    | "settlementDraft"
   >;
   depositApi?: DepositApi;
   utilityApi?: UtilityApi;

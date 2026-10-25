@@ -134,6 +134,8 @@ export interface MoveoutPageProps {
     | "settlements"
     | "startSettlement"
     | "settlementPreview"
+    | "refundMethods"
+    | "settlementDraft"
   >;
   capabilities: ReadonlySet<string> | null;
 }
@@ -1419,8 +1421,9 @@ function MoveoutDetail({
                 language={language}
                 lease={lease}
                 names={customerNames}
-                onStarted={() => {
-                  setNotice(mt(language, "st5_toast"));
+                onNotice={(text) => {
+                  setWarning(null);
+                  setNotice(text);
                 }}
                 propertyId={propertyId}
                 reachable={terminated && (neverIn || handedBack)}

@@ -548,6 +548,8 @@ function setup(
     settlements?: SettlementApi["settlements"];
     startSettlement?: SettlementApi["startSettlement"];
     settlementPreview?: SettlementApi["settlementPreview"];
+    settlementDraft?: SettlementApi["settlementDraft"];
+    refundMethods?: SettlementApi["refundMethods"];
   } = {},
 ) {
   const byId = new Map(leases.map((item) => [item.lease_id, item]));
@@ -720,6 +722,36 @@ function setup(
     settlementPreview: vi.fn<SettlementApi["settlementPreview"]>(
       options.settlementPreview ??
         ((_property, id) => Promise.resolve(previewOf(id))),
+    ),
+    refundMethods: vi.fn<SettlementApi["refundMethods"]>(
+      options.refundMethods ??
+        (() =>
+          Promise.resolve([
+            {
+              id: "m-aba",
+              code: "ABA",
+              display_name: "ABA transfer",
+              active: true,
+            },
+            { id: "m-cash", code: "CASH", display_name: "Cash", active: true },
+            { id: "m-wing", code: "WING", display_name: "Wing", active: false },
+          ])),
+    ),
+    settlementDraft: vi.fn<SettlementApi["settlementDraft"]>(
+      options.settlementDraft ??
+        ((property, settlement, form) =>
+          Promise.resolve({
+            draft_id: "draft-1",
+            property_id: property,
+            kind: "FINAL_SETTLEMENT",
+            prepare_capability: "final_settlements.prepare",
+            payload: { final_settlement_id: settlement, steps: form.steps },
+            reason: form.reason,
+            prepared_at: "2026-10-25T03:00:00Z",
+            prepared_by: "actor-1",
+            state: "PENDING",
+            decision: null,
+          })),
     ),
   };
   render(
@@ -2666,5 +2698,418 @@ describe("Move-out", () => {
       )?.id,
     ).toBe("new");
     expect(settlementOfLease([], "lease-U106")).toBeNull();
+  });
+
+  it("TEST-FE-993 Prepare draft proposes the DL-032 steps (own Credit first, then the Security Deposit oldest first) and refunds the rest to the Primary Tenant with the chosen method; a bank transfer needs its reference; the draft is recorded with a key", async () => {
+    window.location.hash = "#/moveout/lease-U106";
+    let drafted = false;
+    const { settlementApi } = setup([neverIn], {
+      settlements: () =>
+        Promise.resolve([
+          settlementOf("lease-U106", { pending_draft: drafted }),
+        ]),
+      settlementDraft: (property, settlement, form) => {
+        drafted = true;
+        return Promise.resolve({
+          draft_id: "draft-1",
+          property_id: property,
+          kind: "FINAL_SETTLEMENT",
+          prepare_capability: "final_settlements.prepare",
+          payload: { final_settlement_id: settlement, steps: form.steps },
+          reason: form.reason,
+          prepared_at: "2026-10-25T03:00:00Z",
+          prepared_by: "actor-1",
+          state: "PENDING",
+          decision: null,
+        });
+      },
+    });
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Prepare draft" }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText("− $20.00")).toBeTruthy();
+    expect(within(dialog).getByText("− $295.00")).toBeTruthy();
+    expect(within(dialog).getByText("$205.00")).toBeTruthy();
+    expect(
+      within(dialog).getByText(
+        "The refund goes to the Primary Tenant, Tenant U106.",
+      ),
+    ).toBeTruthy();
+    await within(dialog).findByLabelText("Refund by");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save draft" }));
+    expect(
+      await within(dialog).findByText(
+        "Fill in every box marked Required. A bank transfer needs its reference.",
+      ),
+    ).toBeTruthy();
+    expect(settlementApi.settlementDraft).not.toHaveBeenCalled();
+    fireEvent.change(within(dialog).getByLabelText(/Transfer reference/), {
+      target: { value: "ABA-123" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save draft" }));
+    expect(
+      await screen.findByText(
+        "Draft Final Settlement saved. A Manager confirms it in Waiting for approval.",
+      ),
+    ).toBeTruthy();
+    const [property, settlementId, form, key] =
+      settlementApi.settlementDraft.mock.calls[0] ?? [];
+    expect([property, settlementId]).toEqual(["property-1", "fs-lease-U106"]);
+    expect(key).toMatch(/^[0-9a-f-]{36}$/);
+    expect(form).toEqual({
+      steps: [
+        {
+          kind: "CUSTOMER_CREDIT",
+          customer_credit_id: "credit-1",
+          target_kind: "INVOICE_LINE",
+          target_id: "line-rent",
+          amount_usd_cents: 2000,
+          customer_designation: null,
+        },
+        {
+          kind: "SECURITY_DEPOSIT",
+          deposit_id: "dep-sec",
+          target_kind: "INVOICE_LINE",
+          target_id: "line-rent",
+          amount_usd_cents: 28000,
+        },
+        {
+          kind: "SECURITY_DEPOSIT",
+          deposit_id: "dep-sec",
+          target_kind: "LATE_PAYMENT_CHARGE",
+          target_id: "late-1",
+          amount_usd_cents: 1500,
+        },
+        {
+          kind: "DEPOSIT_REFUNDS",
+          deposit_id: "dep-sec",
+          amount_usd_cents: 20500,
+          refund_method_id: "m-aba",
+          reference_note: "ABA-123",
+          recipient_customer_id: "customer-U106",
+          signer_agreement: null,
+        },
+      ],
+      reason: "Final Settlement prepared from the move-out",
+      pet_remainder: null,
+    });
+    // The draft now waits: no second one is offered.
+    expect(
+      await screen.findByText("A draft waits for a Manager."),
+    ).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Prepare draft" })).toBeNull();
+  });
+
+  it("TEST-FE-994 the rest of the Pet Deposit: on a normal end it pays the debt left after the Security Deposit with the Customer's choice or a staff reason; at an early termination only the Customer may choose it, otherwise it is refunded", async () => {
+    const petCase = (chosenBy: string) => (_property: string, id: string) =>
+      Promise.resolve(
+        previewOf(id, {
+          customers: [
+            {
+              customer_id: "customer-U106",
+              primary_tenant: true,
+              invoice_lines: [
+                {
+                  invoice_id: "inv-dmg",
+                  invoice_line_id: "line-dog",
+                  customer_id: "customer-U106",
+                  category: "DAMAGE_CHARGES",
+                  description: "Damage: chewed door",
+                  due_date: "2026-10-20",
+                  outstanding_usd_cents: 5000,
+                  pet_damage: true,
+                },
+                {
+                  invoice_id: "inv-dmg",
+                  invoice_line_id: "line-window",
+                  customer_id: "customer-U106",
+                  category: "DAMAGE_CHARGES",
+                  description: "Damage: window",
+                  due_date: "2026-10-20",
+                  outstanding_usd_cents: 60000,
+                  pet_damage: false,
+                },
+              ],
+              late_payment_charges: [],
+              open_total_usd_cents: 65000,
+              credits: [],
+              credit_available_usd_cents: 0,
+              credit_may_use_usd_cents: 0,
+            },
+          ],
+          deposits: [
+            {
+              deposit_id: "dep-pet",
+              deposit_type: "PET",
+              customer_id: "customer-U106",
+              held_usd_cents: 20000,
+              path: "DL_032",
+            },
+            {
+              deposit_id: "dep-sec",
+              deposit_type: "SECURITY",
+              customer_id: "customer-U106",
+              held_usd_cents: 50000,
+              path: "DL_032",
+            },
+          ],
+          steps: [
+            {
+              step: 3,
+              kind: "PET_DEPOSIT_PET_DAMAGE",
+              pet_damage_open_usd_cents: 5000,
+              deposits: [],
+            },
+            {
+              step: 5,
+              kind: "PET_DEPOSIT_REMAINDER",
+              chosen_by: chosenBy,
+              deposits: [],
+            },
+          ],
+          open_total_usd_cents: 65000,
+        }),
+      );
+    window.location.hash = "#/moveout/lease-U106";
+    const normal = setup([neverIn], {
+      settlements: () => Promise.resolve([settlementOf("lease-U106")]),
+      settlementPreview: petCase("CUSTOMER_OR_STAFF_WITH_REASON"),
+    });
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Prepare draft" }),
+    );
+    let dialog = await screen.findByRole("dialog");
+    fireEvent.click(within(dialog).getByLabelText(/will not pay/));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save draft" }));
+    expect(
+      await within(dialog).findByText(/Fill in every box marked Required/),
+    ).toBeTruthy();
+    fireEvent.change(within(dialog).getByLabelText(/Staff reason/), {
+      target: { value: "The Customer left no money for the window" },
+    });
+    // 5,000 of the Pet Deposit is left to refund; ABA (the first method) needs a reference.
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save draft" }));
+    expect(normal.settlementApi.settlementDraft).not.toHaveBeenCalled();
+    fireEvent.change(within(dialog).getByLabelText(/Transfer reference/), {
+      target: { value: "ABA 778899" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save draft" }));
+    await waitFor(() => {
+      expect(normal.settlementApi.settlementDraft).toHaveBeenCalled();
+    });
+    const first = normal.settlementApi.settlementDraft.mock.calls[0]?.[2];
+    expect(
+      first?.steps.map((step) => [step.kind, step.amount_usd_cents]),
+    ).toEqual([
+      ["PET_DEPOSIT_PET_DAMAGE", 5000],
+      ["SECURITY_DEPOSIT", 50000],
+      ["PET_DEPOSIT_REMAINDER", 10000],
+      ["DEPOSIT_REFUNDS", 5000],
+    ]);
+    expect(first?.steps[3]).toMatchObject({
+      refund_method_id: "m-aba",
+      reference_note: "ABA 778899",
+    });
+    expect(first?.pet_remainder).toEqual({
+      basis: "STAFF_REASON",
+      staff_reason: "The Customer left no money for the window",
+      customer_choice: null,
+    });
+    cleanup();
+
+    window.location.hash = "#/moveout/lease-U106";
+    const early = setup([neverIn], {
+      settlements: () => Promise.resolve([settlementOf("lease-U106")]),
+      settlementPreview: petCase("CUSTOMER_ONLY"),
+    });
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Prepare draft" }),
+    );
+    dialog = await screen.findByRole("dialog");
+    expect(within(dialog).queryByLabelText(/will not pay/)).toBeNull();
+    await within(dialog).findByLabelText("Refund by");
+    fireEvent.change(within(dialog).getByLabelText("Refund by"), {
+      target: { value: "m-cash" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save draft" }));
+    await waitFor(() => {
+      expect(early.settlementApi.settlementDraft).toHaveBeenCalled();
+    });
+    const second = early.settlementApi.settlementDraft.mock.calls[0]?.[2];
+    expect(
+      second?.steps.map((step) => [step.kind, step.amount_usd_cents]),
+    ).toEqual([
+      ["PET_DEPOSIT_PET_DAMAGE", 5000],
+      ["SECURITY_DEPOSIT", 50000],
+      ["DEPOSIT_REFUNDS", 15000],
+    ]);
+    expect(second?.steps[2]).toMatchObject({
+      refund_method_id: "m-cash",
+      reference_note: "Paid in cash",
+    });
+    expect(second?.pet_remainder).toBeNull();
+  });
+
+  it("TEST-FE-995 no answer to the draft: Try again sends the same draft with the same key; a refused draft shows the server's words; a draft that already waits closes the dialog and says so; without the right, or while something blocks it, no Prepare draft", async () => {
+    window.location.hash = "#/moveout/lease-U106";
+    let calls = 0;
+    const { settlementApi } = setup([neverIn], {
+      settlements: () => Promise.resolve([settlementOf("lease-U106")]),
+      settlementDraft: () => {
+        calls += 1;
+        return Promise.reject(
+          calls === 1
+            ? new SettlementUnavailableError()
+            : calls === 2
+              ? new SettlementRequestError(
+                  422,
+                  "FINAL_SETTLEMENT_CREDIT_FIRST",
+                  "Each Customer's Credit must pay that Customer's open debt first.",
+                )
+              : new SettlementRequestError(
+                  409,
+                  "FINAL_SETTLEMENT_DRAFT_WAITING",
+                  "A Final Settlement draft is already waiting",
+                ),
+        );
+      },
+    });
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Prepare draft" }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    await within(dialog).findByLabelText("Refund by");
+    fireEvent.change(within(dialog).getByLabelText("Refund by"), {
+      target: { value: "m-cash" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save draft" }));
+    fireEvent.click(
+      await within(dialog).findByRole("button", { name: "Try again" }),
+    );
+    expect(
+      await within(dialog).findByText(
+        "Each Customer's Credit must pay that Customer's open debt first.",
+      ),
+    ).toBeTruthy();
+    const keys = settlementApi.settlementDraft.mock.calls.map(
+      (call) => call[3],
+    );
+    expect(keys[0]).toBe(keys[1]);
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save draft" }));
+    expect(
+      await screen.findByText(
+        "A draft of this Final Settlement already waits for a Manager.",
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByRole("dialog")).toBeNull();
+    cleanup();
+
+    window.location.hash = "#/moveout/lease-U106";
+    setup([neverIn], {
+      capabilities: new Set(["leases.read", "financial.approve"]),
+      settlements: () => Promise.resolve([settlementOf("lease-U106")]),
+    });
+    expect(await screen.findByText("Statement")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Prepare draft" })).toBeNull();
+    cleanup();
+
+    window.location.hash = "#/moveout/lease-U106";
+    setup([neverIn], {
+      settlements: () => Promise.resolve([settlementOf("lease-U106")]),
+      settlementPreview: (_property, id) =>
+        Promise.resolve(
+          previewOf(id, {
+            ready: false,
+            blocking_issues: [{ code: "CLEANING_CHARGE_MISSING" }],
+          }),
+        ),
+    });
+    expect(
+      await screen.findByText("Record the cleaning charge (step 4)."),
+    ).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Prepare draft" })).toBeNull();
+    cleanup();
+
+    // A refund with no refund method turned on: the dialog says so and records nothing.
+    window.location.hash = "#/moveout/lease-U106";
+    const none = setup([neverIn], {
+      settlements: () => Promise.resolve([settlementOf("lease-U106")]),
+      refundMethods: () =>
+        Promise.resolve([
+          { id: "m-wing", code: "WING", display_name: "Wing", active: false },
+        ]),
+    });
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Prepare draft" }),
+    );
+    const empty = await screen.findByRole("dialog");
+    expect(
+      await within(empty).findByText(/No refund method is turned on/),
+    ).toBeTruthy();
+    fireEvent.click(within(empty).getByRole("button", { name: "Save draft" }));
+    expect(none.settlementApi.settlementDraft).not.toHaveBeenCalled();
+    cleanup();
+
+    // The refund methods could not be read: the dialog says so and records nothing.
+    window.location.hash = "#/moveout/lease-U106";
+    const failed = setup([neverIn], {
+      settlements: () => Promise.resolve([settlementOf("lease-U106")]),
+      refundMethods: () => Promise.reject(new Error("down")),
+    });
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Prepare draft" }),
+    );
+    const unread = await screen.findByRole("dialog");
+    expect(
+      await within(unread).findByText(/refund methods could not be read/),
+    ).toBeTruthy();
+    fireEvent.click(within(unread).getByRole("button", { name: "Save draft" }));
+    expect(failed.settlementApi.settlementDraft).not.toHaveBeenCalled();
+    cleanup();
+
+    // More than 200 steps cannot be saved at once: the dialog says so before staff fill it in.
+    window.location.hash = "#/moveout/lease-U106";
+    const long = setup([neverIn], {
+      settlements: () => Promise.resolve([settlementOf("lease-U106")]),
+      settlementPreview: (_property, id) =>
+        Promise.resolve(
+          previewOf(id, {
+            customers: [
+              {
+                customer_id: "customer-U106",
+                primary_tenant: true,
+                invoice_lines: Array.from({ length: 201 }, (_, index) => ({
+                  invoice_id: `inv-${String(index)}`,
+                  invoice_line_id: `line-${String(index)}`,
+                  customer_id: "customer-U106",
+                  category: "UTILITIES",
+                  description: "Water",
+                  due_date: "2026-10-05",
+                  outstanding_usd_cents: 100,
+                  pet_damage: false,
+                })),
+                late_payment_charges: [],
+                open_total_usd_cents: 20100,
+                credits: [],
+                credit_available_usd_cents: 0,
+                credit_may_use_usd_cents: 0,
+              },
+            ],
+            open_total_usd_cents: 20100,
+          }),
+        ),
+    });
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Prepare draft" }),
+    );
+    const tooLong = await screen.findByRole("dialog");
+    expect(
+      within(tooLong).getAllByText(/too many lines to save at once/).length,
+    ).toBeGreaterThan(0);
+    fireEvent.click(
+      within(tooLong).getByRole("button", { name: "Save draft" }),
+    );
+    expect(long.settlementApi.settlementDraft).not.toHaveBeenCalled();
   });
 });

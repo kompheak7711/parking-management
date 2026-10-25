@@ -640,6 +640,85 @@ const TEXT = {
     "A voided charge is not billed again: {0}.",
     "ថ្លៃដែលបានលុបចោល មិនចេញវិក្កយបត្រម្តងទៀតទេ៖ {0}។",
   ],
+  fs_credit_used: ["Customer Credit used", "ឥណទានអតិថិជនបានប្រើ"],
+  fs_sec_app: ["Security Deposit applied", "ប្រាក់កក់សុវត្ថិភាពបានប្រើ"],
+  fs_balance_owed: ["Balance still owed", "សមតុល្យនៅជំពាក់"],
+  fs_refund: ["Refund to the Customer", "សងវិញទៅអតិថិជន"],
+  fs_pet_choice: [
+    "The Customer asked to use the remaining Pet Deposit for the other balance",
+    "អតិថិជនស្នើប្រើប្រាក់កក់សត្វចិញ្ចឹមនៅសល់ សម្រាប់សមតុល្យផ្សេង",
+  ],
+  pd_t: ["Prepare the Final Settlement", "រៀបចំការទូទាត់ចុងក្រោយ"],
+  pd_ok: ["Save draft", "រក្សាទុកសេចក្តីព្រាង"],
+  pd_c: [
+    "The draft is saved with the statement above. Only a Manager or the Owner can confirm and close it, in Waiting for approval. Nothing moves until then.",
+    "សេចក្តីព្រាងរក្សាទុកជាមួយរបាយការណ៍ខាងលើ។ មានតែអ្នកគ្រប់គ្រង ឬម្ចាស់ទេ អាចបញ្ជាក់ និងបិទ នៅរង់ចាំការអនុម័ត។ គ្មានអ្វីផ្លាស់ទី រហូតដល់ពេលនោះ។",
+  ],
+  pd_toast: [
+    "Draft Final Settlement saved. A Manager confirms it in Waiting for approval.",
+    "បានរក្សាទុកសេចក្តីព្រាងការទូទាត់ចុងក្រោយ។ អ្នកគ្រប់គ្រងបញ្ជាក់វានៅរង់ចាំការអនុម័ត។",
+  ],
+  // new
+  pd_waiting: [
+    "A draft of this Final Settlement already waits for a Manager.",
+    "សេចក្តីព្រាងនៃការទូទាត់ចុងក្រោយនេះ កំពុងរង់ចាំអ្នកគ្រប់គ្រងរួចហើយ។",
+  ],
+  // new
+  pd_btn: ["Prepare draft", "រៀបចំសេចក្តីព្រាង"],
+  // new
+  pd_pet_staff: [
+    "Debt is left after the Security Deposit, so the rest of the Pet Deposit pays it before any refund. Say why.",
+    "នៅមានបំណុលបន្ទាប់ពីប្រាក់កក់សុវត្ថិភាព ដូច្នេះប្រាក់កក់សត្វចិញ្ចឹមនៅសល់ បង់វាមុនការសងវិញ។ សូមប្រាប់មូលហេតុ។",
+  ],
+  // new
+  pd_basis_customer: ["The Customer asked for it", "អតិថិជនបានស្នើ"],
+  // new
+  pd_basis_staff: [
+    "The Customer will not pay it (staff reason)",
+    "អតិថិជននឹងមិនបង់ (មូលហេតុបុគ្គលិក)",
+  ],
+  // new
+  pd_choice: ["Who asked, the date and how", "អ្នកណាស្នើ កាលបរិច្ឆេទ និងរបៀប"],
+  // new
+  pd_staff: ["Staff reason", "មូលហេតុបុគ្គលិក"],
+  cf_method: ["Refund by", "សងវិញដោយ"],
+  cf_ref: ["Transfer reference", "លេខយោងផ្ទេរ"],
+  // new
+  pd_cash_note: ["Paid in cash", "បង់ជាសាច់ប្រាក់"],
+  // new
+  pd_to: [
+    "The refund goes to the Primary Tenant, {0}.",
+    "ការសងវិញទៅអ្នកជួលចម្បង {0}។",
+  ],
+  // new
+  pd_no_methods: [
+    "No refund method is turned on. The Owner turns one on in Settings, then prepare the draft.",
+    "មិនមានវិធីសងវិញដែលបានបើកទេ។ ម្ចាស់បើកវានៅក្នុងការកំណត់ បន្ទាប់មករៀបចំសេចក្តីព្រាងម្តងទៀត។",
+  ],
+  pd_too_long: [
+    "This draft has too many lines to save at once. Record some of the open Payments or Credits first, then prepare it again.",
+    "សេចក្តីព្រាងនេះមានបន្ទាត់ច្រើនពេក មិនអាចរក្សាទុកក្នុងពេលតែមួយបានទេ។ សូមកត់ត្រាការបង់ប្រាក់ ឬឥណទានខ្លះជាមុន ហើយរៀបចំម្តងទៀត។",
+  ],
+  pd_text_long: [
+    "The text is too long to save. Shorten the Customer's choice or the staff reason.",
+    "អត្ថបទវែងពេក មិនអាចរក្សាទុកបានទេ។ សូមកាត់ខ្លីជម្រើសរបស់អតិថិជន ឬមូលហេតុរបស់បុគ្គលិក។",
+  ],
+  pd_methods_failed: [
+    "The refund methods could not be read. Close and try again.",
+    "មិនអាចអានវិធីសងវិញបានទេ។ សូមបិទ ហើយព្យាយាមម្តងទៀត។",
+  ],
+  // new
+  pd_reason: ["Reason", "មូលហេតុ"],
+  // new
+  pd_reason_default: [
+    "Final Settlement prepared from the move-out",
+    "ការទូទាត់ចុងក្រោយរៀបចំពីការចាកចេញ",
+  ],
+  // new
+  pd_err: [
+    "Fill in every box marked Required. A bank transfer needs its reference.",
+    "សូមបំពេញប្រអប់ដែលចាំបាច់ទាំងអស់។ ការផ្ទេរធនាគារត្រូវមានលេខយោង។",
+  ],
   // new: what blocks the Final Settlement (the preview's blocking issues).
   fi_FINAL_UTILITY_NOT_ISSUED: [
     "Issue the final Utility Invoice (step 3).",

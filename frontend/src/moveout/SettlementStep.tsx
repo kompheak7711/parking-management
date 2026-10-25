@@ -23,6 +23,7 @@ import { Icon } from "../shell/icons";
 import { hashForPage } from "../shell/navigation";
 import type { Language } from "../signInText";
 import { Kv, type Mark, Step } from "./parts";
+import { PrepareDialog } from "./PrepareDialog";
 import {
   type SettlementDeposit,
   type SettlementPreview,
@@ -35,7 +36,11 @@ import { mt, type MoveOutTextKey } from "./text";
 
 export type SettlementStepApi = Pick<
   SettlementApi,
-  "settlements" | "startSettlement" | "settlementPreview"
+  | "settlements"
+  | "startSettlement"
+  | "settlementPreview"
+  | "refundMethods"
+  | "settlementDraft"
 >;
 
 type Loaded =
@@ -79,7 +84,7 @@ export function SettlementStep({
   reachable,
   names,
   version,
-  onStarted,
+  onNotice,
 }: {
   language: Language;
   propertyId: string;
@@ -92,7 +97,8 @@ export function SettlementStep({
   names: Map<string, string>;
   /** Changes when the page reads everything again. */
   version: number;
-  onStarted: () => void;
+  /** A plain notice for the page (started, draft saved, a draft already waits). */
+  onNotice: (text: string) => void;
 }) {
   const may = (capability: string) =>
     capabilities === null || capabilities.has(capability);
@@ -101,6 +107,7 @@ export function SettlementStep({
   const [loaded, setLoaded] = useState<Loaded>({ state: "loading" });
   const [busy, setBusy] = useState(false);
   const [outcome, setOutcome] = useState<"unknown" | "refused" | null>(null);
+  const [preparing, setPreparing] = useState(false);
   const key = useRef<string | null>(null);
   const sequence = useRef(0);
   const leaseId = lease.lease_id;
@@ -149,7 +156,7 @@ export function SettlementStep({
     api
       .startSettlement(propertyId, leaseId, key.current)
       .then(() => {
-        onStarted();
+        onNotice(mt(language, "st5_toast"));
         load();
       })
       .catch((error: unknown) => {
@@ -175,22 +182,41 @@ export function SettlementStep({
     : settlement !== null || reachable
       ? "now"
       : "todo";
-  const actions =
-    loaded.state === "none" && reachable && mayPrepare ? (
-      <button
-        className="ui-btn primary"
-        disabled={busy}
-        onClick={start}
-        type="button"
-      >
-        <Icon name="list" />
-        {busy
-          ? mt(language, "saving")
-          : outcome === "unknown"
-            ? mt(language, "try_again")
-            : mt(language, "st5_start")}
-      </button>
-    ) : undefined;
+  const preview = loaded.state === "shown" ? loaded.preview : null;
+  // A draft is prepared once nothing blocks it and none waits (the preview does not count this
+  // Settlement's own waiting draft).
+  const mayDraft =
+    mayPrepare &&
+    settlement !== null &&
+    !settlement.closed &&
+    !settlement.pending_draft &&
+    preview?.ready === true;
+  const actions = mayDraft ? (
+    <button
+      className="ui-btn primary"
+      onClick={() => {
+        setPreparing(true);
+      }}
+      type="button"
+    >
+      <Icon name="list" />
+      {mt(language, "pd_btn")}
+    </button>
+  ) : loaded.state === "none" && reachable && mayPrepare ? (
+    <button
+      className="ui-btn primary"
+      disabled={busy}
+      onClick={start}
+      type="button"
+    >
+      <Icon name="list" />
+      {busy
+        ? mt(language, "saving")
+        : outcome === "unknown"
+          ? mt(language, "try_again")
+          : mt(language, "st5_start")}
+    </button>
+  ) : undefined;
 
   return (
     <Step
@@ -238,6 +264,30 @@ export function SettlementStep({
           names={names}
           preview={loaded.preview}
           settlement={loaded.settlement}
+        />
+      )}
+      {preparing && preview !== null && (
+        <PrepareDialog
+          api={api}
+          language={language}
+          lease={lease}
+          onClose={() => {
+            setPreparing(false);
+            // The draft may have been saved before the answer was lost: show it.
+            load();
+          }}
+          onSaved={() => {
+            setPreparing(false);
+            onNotice(mt(language, "pd_toast"));
+            load();
+          }}
+          onWaiting={() => {
+            setPreparing(false);
+            onNotice(mt(language, "pd_waiting"));
+            load();
+          }}
+          preview={preview}
+          propertyId={propertyId}
         />
       )}
     </Step>

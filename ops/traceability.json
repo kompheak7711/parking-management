@@ -55868,6 +55868,83 @@
       "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
       "status": "implemented",
       "notes": "V1-058 R3 Move-out M5: the preview is read field by field (unknown Deposit path or broken amount is unreadable); the newest Settlement of the Lease is shown."
+    },
+    {
+      "test_id": "TEST-FE-991",
+      "upstream_ids": [
+        "BR-SETTLE-004",
+        "BR-SETTLE-005",
+        "BR-SETTLE-006",
+        "BR-SETTLE-007",
+        "BR-SETTLE-008",
+        "BR-CREDIT-006",
+        "BR-CREDIT-008",
+        "DL-032",
+        "DL-074"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/moveout/plan.test.ts",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M5b: the proposed Final Settlement draft follows the DL-032 order (own Credit Rent first, Pet Deposit for pet damage, Security Deposit, Pet Deposit rest only when chosen, refunds of what is left)."
+    },
+    {
+      "test_id": "TEST-FE-992",
+      "upstream_ids": [
+        "BR-SETTLE-004",
+        "BR-SETTLE-008",
+        "BR-SETTLE-014",
+        "BR-CREDIT-008",
+        "DL-032",
+        "DL-074"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/moveout/plan.test.ts",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M5b: a kept Deposit pays nothing and is not refunded; a Customer's Credit pays only that Customer's debt; with no debt every Deposit is refunded."
+    },
+    {
+      "test_id": "TEST-FE-993",
+      "upstream_ids": [
+        "BR-SETTLE-006",
+        "BR-SETTLE-008",
+        "BR-REFUND-007",
+        "BR-REFUND-014",
+        "BR-REFUND-015",
+        "BR-AUTH-010",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M5b: Prepare draft records the proposed steps, refund method, reference and Primary Tenant recipient as a draft for a Manager."
+    },
+    {
+      "test_id": "TEST-FE-994",
+      "upstream_ids": [
+        "BR-SETTLE-005",
+        "BR-SETTLE-008",
+        "BR-REFUND-007",
+        "BR-REFUND-014",
+        "DL-032",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M5b: the rest of the Pet Deposit pays debt by the Customer's choice or a staff reason on a normal end, only by the Customer's choice at an early termination, else it is refunded; a transfer refund needs a reference."
+    },
+    {
+      "test_id": "TEST-FE-995",
+      "upstream_ids": [
+        "BR-SETTLE-011",
+        "BR-AUTH-010",
+        "SEC-019",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M5b: no answer retries with the same key; a refused draft shows the server's words; a waiting draft closes the dialog; no Prepare draft without the right or while blocked."
     }
   ]
 }
