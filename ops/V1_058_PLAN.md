@@ -277,3 +277,8 @@ Run rules: frontend-only steps run the frontend gates (format, typecheck, lint, 
 - Decided by Claude under the owner's 2026-10-23 22:30 rule: no free-text record search (the server has none; the mock-up's box is left out), no Kind filter (the export has none), action words in English from the server's codes until a word list exists.
 - Review round 1: one blocker (StrictMode effect reset hid the list in dev), fixed with the should-fix items (Show more after a new search, export kept across a new search, filter kept for Show more and Export) and nits (inclusive day windows, aria, refused-export advice).
 - Gates: prettier, tsc, eslint clean; vitest 1,815 passed (TEST-FE-958..961). Screenshots in /mnt/project-files/v1-058/r7c-history/.
+
+## R3 Move-out M1: server routes (2026-10-25)
+- The move-out record and move-out inspection services (V1-055) had no HTTP route. Added backend/src/property_rental/move_out_api.py: GET and POST /api/v1/properties/{property_id}/leases/{lease_id}/move-outs (leases.read / leases.move_out) and .../move-out-inspections (leases.read / leases.inspect). Same pattern as the termination-notice routes: signed in, Origin + CSRF for changes, Idempotency-Key, extra fields refused, pages of 1-20.
+- No new SQL and no migration: the routes call the existing database functions.
+- Tests: backend/tests/test_move_out_api.py (4); the route inventory test covers the 4 new operations.

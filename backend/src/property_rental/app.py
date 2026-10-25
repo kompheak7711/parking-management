@@ -176,6 +176,14 @@ from property_rental.lease_notice_api import (
 )
 from property_rental.lease_notices import PostgresLeaseNoticeService
 from property_rental.logging import create_application_logger
+from property_rental.move_out_api import (
+    MoveOutFlow,
+    MoveOutInspectionFlow,
+    UnavailableMoveOutFlow,
+    UnavailableMoveOutInspectionFlow,
+    create_move_out_router,
+)
+from property_rental.move_out_inspection import PostgresMoveOutInspectionService
 from property_rental.operations_status_api import create_operations_status_router
 from property_rental.payment_allocation import AllocationIdempotencyKeyReused
 from property_rental.payment_api import (
@@ -190,6 +198,7 @@ from property_rental.payment_reversal_context_api import (
     PaymentReversalContextFlow,
     create_payment_reversal_context_router,
 )
+from property_rental.physical_move_out import PostgresPhysicalMoveOutService
 from property_rental.property_api import (
     PostgresPropertyResourceFlow,
     PropertyResourceFlow,
@@ -495,6 +504,8 @@ def create_app(
     late_payment_flow: LatePaymentFlow | None = None,
     unpaid_initial_flow: UnpaidInitialFlow | None = None,
     lease_notice_flow: LeaseNoticeFlow | None = None,
+    move_out_flow: MoveOutFlow | None = None,
+    move_out_inspection_flow: MoveOutInspectionFlow | None = None,
     utility_lease_flow: UtilityLeaseFlow | None = None,
     enforcement_flow: EnforcementFlow | None = None,
     enforcement_context_flow: EnforcementContextFlow | None = None,
@@ -1314,6 +1325,39 @@ def create_app(
                     )
                     if resolved_settings.database_url is not None
                     else UnavailableLeaseNoticeFlow()
+                ),
+            ),
+            resolved_settings,
+        )
+    )
+    financial_url = (
+        resolved_settings.financial_database_url.get_secret_value()
+        if resolved_settings.financial_database_url is not None
+        else None
+    )
+    include_signed_in(
+        create_move_out_router(
+            actor_resolver,
+            move_out_flow
+            or cast(
+                MoveOutFlow,
+                (
+                    PostgresPhysicalMoveOutService(
+                        resolved_settings.database_url.get_secret_value(), financial_url
+                    )
+                    if resolved_settings.database_url is not None
+                    else UnavailableMoveOutFlow()
+                ),
+            ),
+            move_out_inspection_flow
+            or cast(
+                MoveOutInspectionFlow,
+                (
+                    PostgresMoveOutInspectionService(
+                        resolved_settings.database_url.get_secret_value(), financial_url
+                    )
+                    if resolved_settings.database_url is not None
+                    else UnavailableMoveOutInspectionFlow()
                 ),
             ),
             resolved_settings,

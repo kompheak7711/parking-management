@@ -54718,6 +54718,58 @@
       "test_path": "frontend/src/history/historyClient.test.ts",
       "status": "implemented",
       "notes": "V1-058 R7c: the History client reads audit events with the filters as query values and maps refusals."
+    },
+    {
+      "test_id": "test_move_out_route_builds_the_exact_command_and_reads_the_page",
+      "upstream_ids": [
+        "BR-MOVEOUT-001",
+        "BR-MOVEOUT-003",
+        "BR-OCC-009",
+        "DL-074"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_move_out_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out routes: POST move-outs builds the exact RecordPhysicalMoveOut from the body and Idempotency-Key; GET move-outs takes one limit (1-20) and one offset, anything else is 400."
+    },
+    {
+      "test_id": "test_inspection_route_builds_the_exact_command_and_reads_the_page",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "BR-MOVEOUT-012",
+        "DB-MOVEOUT-001",
+        "DL-074"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_move_out_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out routes: POST move-out-inspections builds the exact RecordMoveOutInspection with its findings; an inspection with no findings is accepted; GET reads the first page."
+    },
+    {
+      "test_id": "test_routes_refuse_bad_input_and_map_service_errors",
+      "upstream_ids": [
+        "BR-MOVEOUT-001",
+        "BR-MOVEOUT-011",
+        "SEC-019",
+        "DL-074"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_move_out_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out routes: bad, padded or extra input is 422 before the flow runs; a query string is 400; not found 404, not allowed 403, Utility or hand-back conflicts and reused keys 409, unavailable 503."
+    },
+    {
+      "test_id": "test_routes_need_a_signed_in_browser_change_and_fail_closed_without_a_database",
+      "upstream_ids": [
+        "SEC-019",
+        "SEC-020",
+        "TEST-078",
+        "DL-074"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_move_out_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out routes: no session is 401; a change without the Origin and CSRF pair is 403 before the flow; without a database both reads answer 503."
     }
   ]
 }
