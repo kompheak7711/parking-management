@@ -187,3 +187,38 @@ Run rules: frontend-only steps run the frontend gates (format, typecheck, lint, 
   56 passed; PostgreSQL waiting, draft and draft API tests passed; head pins rerun 527 of 529 (the
   invoice test-order failure as in R5d, and the draft API test fixed above); traceability audit
   passed. Pictures in /mnt/project-files/v1-058/r7a-approvals/.
+
+## R7b Settings plan (2026-10-25)
+- Split: R7b-1 Settings frame with the five mock-up tabs (Business, Rates and services, Unit setup,
+  Users and sign-in, System health) and System health on GET /api/v1/operations/status; tabs not
+  rebuilt yet keep the earlier forms, folded. R7b-2 Unit setup (routes exist). R7b-3 Users and
+  sign-in (routes exist; the Settings access route needs a client). R7b-4 Business. R7b-5 Rates
+  and services.
+- Decided by Claude under the owner's 2026-10-23 22:30 rule: the Settings menu item also shows to
+  operations.status.read, so a Manager without Settings access still reaches System health (the
+  mock-up: "Owner and Managers see this page"). Values with no setting in the server yet (billing
+  calendar days, late-charge rate, Reservation limits, number formats) show as "Set by the business
+  rules" (mock-up se_fixed) until a later server step stores them.
+- Server gaps found (R7 list): no last sign-in or MFA enrolment state in the user list; no
+  "needs a reference" flag on Payment Methods; no stored billing calendar, Reservation limits or
+  number formats (DL-075 asks for them editable); no Service add/edit or Service types; cleaning
+  rates are per Unit, not the mock-up's list by Unit Type; no count of Units per setup item (only
+  in_use); health has no last audit export, storage or queued jobs.
+
+## R7b-1 Settings tabs and System health (2026-10-25)
+- Settings now has the five mock-up tabs, each shown only to a person who may use it (Business and
+  Unit setup: settings.manage; Rates and services: settings.manage or configuration.read; Users
+  and sign-in: identity.manage_access; System health: operations.status.read). A tab name in the
+  address opens that tab; one the person may not use opens the first allowed tab.
+- System health reads GET /api/v1/operations/status: App version, Database, Migration, Last
+  backup, copies to another place, last restore test, last billing run, last reservation expiry
+  check, Telegram alerts and last health check, with Healthy or Needs attention and the server's
+  notes (English, marked lang="en"). Last audit export, storage and queued jobs wait for the server.
+- The earlier English forms stay mounted, folded under "Earlier forms" on the Business, Rates and
+  services and Users and sign-in tabs, until each tab is rebuilt. TEST-FE-012, 014 and 684 now open
+  the Users and sign-in tab first. TEST-FE-937 to 939.
+- Gates: prettier, tsc, eslint clean; vitest 1,793 passed; traceability audit passed. Frontend
+  only, so no PostgreSQL run (faster-run rule). Pictures in /mnt/project-files/v1-058/r7b-settings/.
+  The reviewer round covers R7b-1 with R7b-2.
+- Full vitest run: 1,792 of 1,793; TEST-FE-258 (invoice dialog focus, not touched here) failed once
+  under load and passes alone twice (88 of 88). Added to the intermittent list for V1-060.

@@ -866,6 +866,8 @@ describe("local sign-in", () => {
     fireEvent.change(await screen.findByLabelText("Property identifier"), {
       target: { value: "property-1" },
     });
+    // V1-058 R7b: the account forms live on the Users and sign-in tab of Settings.
+    openPage("settings/users");
     fireEvent.click(
       screen.getByRole("button", { name: "Check administration access" }),
     );
@@ -1077,6 +1079,8 @@ describe("local sign-in", () => {
     fireEvent.change(await screen.findByLabelText("Property identifier"), {
       target: { value: "property-1" },
     });
+    // V1-058 R7b: the account forms live on the Users and sign-in tab of Settings.
+    openPage("settings/users");
     fireEvent.click(
       screen.getByRole("button", { name: "Check administration access" }),
     );
@@ -1172,6 +1176,8 @@ describe("local sign-in", () => {
     fireEvent.change(await screen.findByLabelText("Property identifier"), {
       target: { value: "property-1" },
     });
+    // V1-058 R7b: the account forms live on the Users and sign-in tab of Settings.
+    openPage("settings/users");
     fireEvent.click(
       screen.getByRole("button", { name: "Check administration access" }),
     );

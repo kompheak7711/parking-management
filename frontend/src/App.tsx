@@ -75,6 +75,11 @@ import { type HomeApi, HomeScreen } from "./home/HomeScreen";
 import { reportsApi } from "./reportsClient";
 import { settlementApi } from "./settlementClient";
 import {
+  type HealthApi,
+  healthApi as healthClient,
+} from "./settings/healthClient";
+import { SettingsPage } from "./settings/SettingsPage";
+import {
   type PaymentsApi,
   paymentsApi as paymentsClient,
 } from "./payments/paymentsClient";
@@ -124,6 +129,7 @@ export interface AppProps {
   invoiceApi?: InvoiceApi;
   paymentsApi?: PaymentsApi;
   homeApi?: HomeApi;
+  healthApi?: HealthApi;
   approvalsApi?: ApprovalsApi;
   draftDecisionApi?: DraftDecisionApi;
   financialServices?: FinancialUiServices;
@@ -577,6 +583,7 @@ export function App({
   invoiceApi = invoiceClient,
   paymentsApi = paymentsClient,
   homeApi = reportsApi,
+  healthApi = healthClient,
   approvalsApi = approvalsClient,
   draftDecisionApi = settlementApi,
   financialServices,
@@ -2053,513 +2060,596 @@ export function App({
         className="shell-page"
         data-page="settings"
         hidden={!shown("settings")}
-        lang="en"
       >
-        <section className="workspace-panel">
-          <section
-            aria-labelledby="business-configuration-heading"
-            className="information-card"
-          >
-            <h3 id="business-configuration-heading">
-              {propertyConfigurationAuthorized
-                ? "Business configuration"
-                : "Business configuration access"}
-            </h3>
-            {propertyConfigurationAuthorized ? (
-              <p>
-                The server authorized this Property. A change needs{" "}
-                <code>settings.manage</code>, and the server checks the current
-                version for every change. The fixed timezone is shown as an
-                authoritative value, not an editable source field.
-              </p>
-            ) : (
-              <p>
-                Enter the exact Property identifier. The server must confirm
-                <code> settings.manage</code> or <code>property.manage</code>{" "}
-                for that Property before any management screen or editing
-                control is shown.
-              </p>
-            )}
-            <form
-              className="form-stack inline-form"
-              onSubmit={loadPropertyConfiguration}
-            >
-              <div className="form-field">
-                <label htmlFor="configuration-property-id">
-                  Configuration Property identifier
-                </label>
-                <input
-                  id="configuration-property-id"
-                  onChange={(event) => {
-                    invalidatePropertyConfiguration();
-                    setPropertyConfigurationStatus(null);
-                    setConfigurationPropertyId(event.currentTarget.value);
-                  }}
-                  required
-                  value={configurationPropertyId}
-                />
-              </div>
-              <button type="submit">Load business configuration</button>
-            </form>
-            {propertyConfigurationStatus !== null && (
-              <p role="status">{propertyConfigurationStatus}</p>
-            )}
-            {propertyConfiguration !== null && (
-              <div className="administration-grid">
-                <section aria-labelledby="property-source-heading">
-                  <h4 id="property-source-heading">Property source data</h4>
-                  <dl className="detail-list">
-                    <div>
-                      <dt>Timezone</dt>
-                      <dd>{propertyConfiguration.timezone_name}</dd>
-                    </div>
-                    <div>
-                      <dt>Version</dt>
-                      <dd>{propertyConfiguration.version}</dd>
-                    </div>
-                  </dl>
+        <SettingsPage
+          active={shown("settings")}
+          capabilities={capabilities}
+          earlier={{
+            business: (
+              <section className="workspace-panel">
+                <section
+                  aria-labelledby="business-configuration-heading"
+                  className="information-card"
+                >
+                  <h3 id="business-configuration-heading">
+                    {propertyConfigurationAuthorized
+                      ? "Business configuration"
+                      : "Business configuration access"}
+                  </h3>
+                  {propertyConfigurationAuthorized ? (
+                    <p>
+                      The server authorized this Property. A change needs{" "}
+                      <code>settings.manage</code>, and the server checks the
+                      current version for every change. The fixed timezone is
+                      shown as an authoritative value, not an editable source
+                      field.
+                    </p>
+                  ) : (
+                    <p>
+                      Enter the exact Property identifier. The server must
+                      confirm
+                      <code> settings.manage</code> or{" "}
+                      <code>property.manage</code> for that Property before any
+                      management screen or editing control is shown.
+                    </p>
+                  )}
                   <form
-                    className="form-stack"
-                    key={`property-source-${String(propertyConfiguration.version)}`}
-                    onSubmit={updatePropertySource}
+                    className="form-stack inline-form"
+                    onSubmit={loadPropertyConfiguration}
                   >
                     <div className="form-field">
-                      <label htmlFor="property-name">Property name</label>
-                      <input
-                        defaultValue={propertyConfiguration.name}
-                        id="property-name"
-                        name="property-name"
-                        required
-                      />
-                    </div>
-                    <div className="form-field">
-                      <label htmlFor="property-address">Property address</label>
-                      <textarea
-                        defaultValue={propertyConfiguration.address_text ?? ""}
-                        id="property-address"
-                        name="property-address"
-                      />
-                    </div>
-                    <button type="submit">Save Property source data</button>
-                  </form>
-                </section>
-                <section aria-labelledby="payment-methods-heading">
-                  <h4 id="payment-methods-heading">Payment Methods</h4>
-                  {propertyConfiguration.payment_methods.length === 0 ? (
-                    <p>No Payment Methods are configured.</p>
-                  ) : (
-                    <ul className="record-list">
-                      {propertyConfiguration.payment_methods.map((method) => (
-                        <li key={method.code}>
-                          <label>
-                            <input
-                              checked={method.accepted}
-                              onChange={(event) => {
-                                const accepted = event.currentTarget.checked;
-                                setPropertyConfiguration({
-                                  ...propertyConfiguration,
-                                  payment_methods:
-                                    propertyConfiguration.payment_methods.map(
-                                      (candidate) =>
-                                        candidate.code === method.code
-                                          ? { ...candidate, accepted }
-                                          : candidate,
-                                    ),
-                                });
-                              }}
-                              type="checkbox"
-                            />
-                            {method.display_name} ({method.code}) accepted
-                          </label>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  <form className="form-stack" onSubmit={addPaymentMethod}>
-                    <div className="form-field">
-                      <label htmlFor="payment-method-code">Method code</label>
-                      <input
-                        id="payment-method-code"
-                        name="payment-method-code"
-                        required
-                      />
-                    </div>
-                    <div className="form-field">
-                      <label htmlFor="payment-method-name">
-                        Method display name
+                      <label htmlFor="configuration-property-id">
+                        Configuration Property identifier
                       </label>
                       <input
-                        id="payment-method-name"
-                        name="payment-method-name"
+                        id="configuration-property-id"
+                        onChange={(event) => {
+                          invalidatePropertyConfiguration();
+                          setPropertyConfigurationStatus(null);
+                          setConfigurationPropertyId(event.currentTarget.value);
+                        }}
                         required
+                        value={configurationPropertyId}
                       />
                     </div>
-                    <button type="submit">Add Payment Method</button>
+                    <button type="submit">Load business configuration</button>
                   </form>
-                  <button onClick={savePaymentMethods} type="button">
-                    Save Payment Method configuration
-                  </button>
-                  <p className="panel-help">
-                    Retired methods remain visible and are never deleted from
-                    configuration history.
-                  </p>
-                </section>
-              </div>
-            )}
-          </section>
-          <ConfigurationManagement
-            api={effectiveConfigApi}
-            propertyId={propertyConfiguration?.property_id ?? ""}
-          />
-          <section
-            aria-labelledby="administration-heading"
-            className="information-card"
-          >
-            <h3 id="administration-heading">
-              Capability-checked administration
-            </h3>
-            <p>
-              Enter the exact property identifier. The server decides whether
-              this session has the required capability; role labels are never
-              treated as authority.
-            </p>
-            <form
-              className="form-stack inline-form"
-              onSubmit={loadAdministration}
-            >
-              <div className="form-field">
-                <label htmlFor="property-id">Property identifier</label>
-                <input
-                  id="property-id"
-                  name="property-id"
-                  onChange={(event) => {
-                    setPropertyId(event.currentTarget.value);
-                  }}
-                  required
-                  value={propertyId}
-                />
-              </div>
-              <button type="submit">Check administration access</button>
-            </form>
-            {administrationStatus !== null && (
-              <p role="status">{administrationStatus}</p>
-            )}
-            {issuedPassword !== null && (
-              <section
-                aria-label="One-time password"
-                className="protected-material"
-              >
-                <p>
-                  One-time password for {issuedPassword.username}:{" "}
-                  <code>{issuedPassword.value}</code>
-                </p>
-                <p className="panel-help">
-                  Give it to the person directly. It works until{" "}
-                  {formatDateTime(issuedPassword.expires_at)}, and the person
-                  must choose a new password when they sign in. It is shown only
-                  once.
-                </p>
-                <button
-                  onClick={() => {
-                    setIssuedPassword(null);
-                  }}
-                  type="button"
-                >
-                  I gave it to the person—clear it
-                </button>
-              </section>
-            )}
-
-            {administration !== null && (
-              <div className="administration-grid">
-                <section aria-labelledby="users-heading">
-                  <h4 id="users-heading">Accounts</h4>
-                  {administration.users.length === 0 ? (
-                    <p>No accounts were returned for this property.</p>
-                  ) : (
-                    <ul className="record-list">
-                      {administration.users.map((user) => (
-                        <li key={user.user_id}>
-                          <div>
-                            <strong>{user.display_name}</strong>
-                            <span>
-                              {user.username} · {user.lifecycle_state} · MFA{" "}
-                              {user.mfa_policy_class}
-                            </span>
-                          </div>
-                          {session.reauthenticated_at === null ? (
-                            <span className="muted">
-                              Reauthenticate before protected commands.
-                            </span>
-                          ) : (
-                            <div className="button-row">
-                              {user.lifecycle_state === "active" && (
-                                <button
-                                  onClick={() => {
-                                    setPendingCommand({
-                                      kind: "disable",
-                                      user,
-                                    });
-                                  }}
-                                  type="button"
-                                >
-                                  Disable account
-                                </button>
-                              )}
-                              <button
-                                onClick={() => {
-                                  setPendingCommand({ kind: "revoke", user });
-                                }}
-                                type="button"
-                              >
-                                Revoke sessions
-                              </button>
-                            </div>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
+                  {propertyConfigurationStatus !== null && (
+                    <p role="status">{propertyConfigurationStatus}</p>
                   )}
-                </section>
-
-                <section aria-labelledby="authorization-heading">
-                  <h4 id="authorization-heading">
-                    Authorization configuration
-                  </h4>
-                  <p className="panel-help">
-                    This current configuration is audit context, not proof of
-                    authority. Historical authorization events remain immutable
-                    on the server. Event timestamps are shown in UTC.
-                  </p>
-                  <ul className="record-list">
-                    {administration.roleBundles.map((bundle) => (
-                      <li key={bundle.role_bundle_id}>
-                        <div>
-                          <strong>{bundle.name}</strong>
-                          <span>
-                            {bundle.capability_ids.length} configured
-                            capabilities
-                          </span>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                  <h5>Authorization history</h5>
-                  {administration.authorizationHistory.length === 0 ? (
-                    <p>No authorization events were returned.</p>
-                  ) : (
-                    <ol className="record-list">
-                      {administration.authorizationHistory.map((event) => (
-                        <li key={event.event_id}>
+                  {propertyConfiguration !== null && (
+                    <div className="administration-grid">
+                      <section aria-labelledby="property-source-heading">
+                        <h4 id="property-source-heading">
+                          Property source data
+                        </h4>
+                        <dl className="detail-list">
                           <div>
-                            <strong>{event.action}</strong>
-                            <span>
-                              {formatDateTime(event.occurred_at)} ·{" "}
-                              {event.outcome}
-                              {" · actor "}
-                              {event.actor_id}
-                              {" · target "}
-                              {event.target_id}
-                            </span>
+                            <dt>Timezone</dt>
+                            <dd>{propertyConfiguration.timezone_name}</dd>
                           </div>
-                        </li>
-                      ))}
-                    </ol>
-                  )}
-                  <details>
-                    <summary>Capability catalog</summary>
-                    <ul>
-                      {administration.capabilities.map((capability) => (
-                        <li key={capability.capability_id}>
-                          <strong>{capability.name}</strong> —{" "}
-                          {capability.description}
-                        </li>
-                      ))}
-                    </ul>
-                  </details>
-                </section>
-
-                {session.reauthenticated_at !== null && (
-                  <section aria-labelledby="protected-admin-heading">
-                    <h4 id="protected-admin-heading">
-                      Protected account and capability commands
-                    </h4>
-                    <form className="form-stack" onSubmit={createUser}>
-                      <h5>Create account</h5>
-                      <div className="form-field">
-                        <label htmlFor="new-username">Username</label>
-                        <input id="new-username" name="new-username" required />
-                      </div>
-                      <div className="form-field">
-                        <label htmlFor="new-display-name">Display name</label>
-                        <input
-                          id="new-display-name"
-                          name="new-display-name"
-                          required
-                        />
-                      </div>
-                      <div className="form-field">
-                        <label htmlFor="new-audit-name">Audit name</label>
-                        <input
-                          id="new-audit-name"
-                          name="new-audit-name"
-                          required
-                        />
-                      </div>
-                      <div className="form-field">
-                        <label htmlFor="new-account-class">Account class</label>
-                        <select id="new-account-class" name="new-account-class">
-                          <option value="staff">Staff</option>
-                          <option value="manager">Manager</option>
-                        </select>
-                      </div>
-                      <button type="submit">Create audited account</button>
-                    </form>
-                    <form
-                      className="form-stack nested-form"
-                      onSubmit={createRoleBundle}
-                    >
-                      <h5>Create role bundle</h5>
-                      <div className="form-field">
-                        <label htmlFor="bundle-name">Bundle name</label>
-                        <input id="bundle-name" name="bundle-name" required />
-                      </div>
-                      <fieldset>
-                        <legend>Explicit capabilities</legend>
-                        {administration.capabilities.map((capability) => (
-                          <label key={capability.capability_id}>
-                            <input
-                              name="bundle-capability"
-                              type="checkbox"
-                              value={capability.capability_id}
-                            />
-                            {capability.name}
-                          </label>
-                        ))}
-                      </fieldset>
-                      <button type="submit">Create audited role bundle</button>
-                    </form>
-                    {administration.users.length > 0 &&
-                      administration.roleBundles.length > 0 && (
+                          <div>
+                            <dt>Version</dt>
+                            <dd>{propertyConfiguration.version}</dd>
+                          </div>
+                        </dl>
                         <form
-                          className="form-stack nested-form"
-                          onSubmit={assignRoleBundle}
+                          className="form-stack"
+                          key={`property-source-${String(propertyConfiguration.version)}`}
+                          onSubmit={updatePropertySource}
                         >
-                          <h5>Assign configured role bundle</h5>
                           <div className="form-field">
-                            <label htmlFor="assignment-user">Account</label>
-                            <select id="assignment-user" name="assignment-user">
-                              {administration.users.map((user) => (
-                                <option key={user.user_id} value={user.user_id}>
-                                  {user.display_name}
-                                </option>
-                              ))}
-                            </select>
+                            <label htmlFor="property-name">Property name</label>
+                            <input
+                              defaultValue={propertyConfiguration.name}
+                              id="property-name"
+                              name="property-name"
+                              required
+                            />
                           </div>
                           <div className="form-field">
-                            <label htmlFor="assignment-bundle">
-                              Role bundle
+                            <label htmlFor="property-address">
+                              Property address
                             </label>
-                            <select
-                              id="assignment-bundle"
-                              name="assignment-bundle"
-                            >
-                              {administration.roleBundles.map((bundle) => (
-                                <option
-                                  key={bundle.role_bundle_id}
-                                  value={bundle.role_bundle_id}
-                                >
-                                  {bundle.name}
-                                </option>
-                              ))}
-                            </select>
+                            <textarea
+                              defaultValue={
+                                propertyConfiguration.address_text ?? ""
+                              }
+                              id="property-address"
+                              name="property-address"
+                            />
                           </div>
                           <button type="submit">
-                            Assign audited role bundle
+                            Save Property source data
                           </button>
                         </form>
-                      )}
-                    {administration.users.length > 0 && (
-                      <form
-                        className="form-stack nested-form"
-                        onSubmit={prepareAdministrativeRecovery}
-                      >
-                        <h5>Owner-authorized account recovery</h5>
-                        <p className="panel-help">
-                          The server permits only Owner recovery of Manager or
-                          Staff. It rejects Staff recovery of Owner or Manager
-                          and does not grant Manager recovery of Staff.
-                        </p>
-                        <div className="form-field">
-                          <label htmlFor="recovery-user">Account</label>
-                          <select id="recovery-user" name="recovery-user">
-                            {administration.users.map((user) => (
-                              <option key={user.user_id} value={user.user_id}>
-                                {user.display_name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div className="form-field">
-                          <label htmlFor="recovery-reason">Audit reason</label>
-                          <input
-                            id="recovery-reason"
-                            maxLength={500}
-                            name="recovery-reason"
-                            required
-                          />
-                        </div>
-                        <label>
-                          <input
-                            name="recovery-reset-mfa"
-                            type="checkbox"
-                            value="yes"
-                          />
-                          Reset current MFA enrollment
-                        </label>
-                        <button type="submit">
-                          Review recovery consequences
+                      </section>
+                      <section aria-labelledby="payment-methods-heading">
+                        <h4 id="payment-methods-heading">Payment Methods</h4>
+                        {propertyConfiguration.payment_methods.length === 0 ? (
+                          <p>No Payment Methods are configured.</p>
+                        ) : (
+                          <ul className="record-list">
+                            {propertyConfiguration.payment_methods.map(
+                              (method) => (
+                                <li key={method.code}>
+                                  <label>
+                                    <input
+                                      checked={method.accepted}
+                                      onChange={(event) => {
+                                        const accepted =
+                                          event.currentTarget.checked;
+                                        setPropertyConfiguration({
+                                          ...propertyConfiguration,
+                                          payment_methods:
+                                            propertyConfiguration.payment_methods.map(
+                                              (candidate) =>
+                                                candidate.code === method.code
+                                                  ? { ...candidate, accepted }
+                                                  : candidate,
+                                            ),
+                                        });
+                                      }}
+                                      type="checkbox"
+                                    />
+                                    {method.display_name} ({method.code})
+                                    accepted
+                                  </label>
+                                </li>
+                              ),
+                            )}
+                          </ul>
+                        )}
+                        <form
+                          className="form-stack"
+                          onSubmit={addPaymentMethod}
+                        >
+                          <div className="form-field">
+                            <label htmlFor="payment-method-code">
+                              Method code
+                            </label>
+                            <input
+                              id="payment-method-code"
+                              name="payment-method-code"
+                              required
+                            />
+                          </div>
+                          <div className="form-field">
+                            <label htmlFor="payment-method-name">
+                              Method display name
+                            </label>
+                            <input
+                              id="payment-method-name"
+                              name="payment-method-name"
+                              required
+                            />
+                          </div>
+                          <button type="submit">Add Payment Method</button>
+                        </form>
+                        <button onClick={savePaymentMethods} type="button">
+                          Save Payment Method configuration
                         </button>
-                      </form>
-                    )}
-                  </section>
-                )}
-              </div>
-            )}
-
-            {pendingCommand !== null && (
-              <div
-                aria-labelledby="confirmation-heading"
-                aria-modal="true"
-                className="confirmation-panel"
-                role="alertdialog"
-              >
-                <h4 id="confirmation-heading">Confirm protected command</h4>
-                <p>
-                  {pendingCommand.kind === "disable"
-                    ? "Disabling this account also revokes every applicable session."
-                    : pendingCommand.kind === "recover"
-                      ? "Recovery gives the selected account a one-time password, may reset MFA, and revokes every applicable session."
-                      : "This revokes every applicable session for the selected account."}{" "}
-                  The server records the acting account and request for audit.
-                </p>
-                <div className="button-row">
-                  <button onClick={confirmAdministrativeCommand} type="button">
-                    Confirm command
-                  </button>
-                  <button
-                    onClick={() => {
-                      setPendingCommand(null);
-                    }}
-                    type="button"
+                        <p className="panel-help">
+                          Retired methods remain visible and are never deleted
+                          from configuration history.
+                        </p>
+                      </section>
+                    </div>
+                  )}
+                </section>
+              </section>
+            ),
+            rates: (
+              <section className="workspace-panel">
+                <ConfigurationManagement
+                  api={effectiveConfigApi}
+                  propertyId={propertyConfiguration?.property_id ?? ""}
+                />
+              </section>
+            ),
+            users: (
+              <section className="workspace-panel">
+                <section
+                  aria-labelledby="administration-heading"
+                  className="information-card"
+                >
+                  <h3 id="administration-heading">
+                    Capability-checked administration
+                  </h3>
+                  <p>
+                    Enter the exact property identifier. The server decides
+                    whether this session has the required capability; role
+                    labels are never treated as authority.
+                  </p>
+                  <form
+                    className="form-stack inline-form"
+                    onSubmit={loadAdministration}
                   >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            )}
-          </section>
-        </section>
+                    <div className="form-field">
+                      <label htmlFor="property-id">Property identifier</label>
+                      <input
+                        id="property-id"
+                        name="property-id"
+                        onChange={(event) => {
+                          setPropertyId(event.currentTarget.value);
+                        }}
+                        required
+                        value={propertyId}
+                      />
+                    </div>
+                    <button type="submit">Check administration access</button>
+                  </form>
+                  {administrationStatus !== null && (
+                    <p role="status">{administrationStatus}</p>
+                  )}
+                  {issuedPassword !== null && (
+                    <section
+                      aria-label="One-time password"
+                      className="protected-material"
+                    >
+                      <p>
+                        One-time password for {issuedPassword.username}:{" "}
+                        <code>{issuedPassword.value}</code>
+                      </p>
+                      <p className="panel-help">
+                        Give it to the person directly. It works until{" "}
+                        {formatDateTime(issuedPassword.expires_at)}, and the
+                        person must choose a new password when they sign in. It
+                        is shown only once.
+                      </p>
+                      <button
+                        onClick={() => {
+                          setIssuedPassword(null);
+                        }}
+                        type="button"
+                      >
+                        I gave it to the person—clear it
+                      </button>
+                    </section>
+                  )}
+
+                  {administration !== null && (
+                    <div className="administration-grid">
+                      <section aria-labelledby="users-heading">
+                        <h4 id="users-heading">Accounts</h4>
+                        {administration.users.length === 0 ? (
+                          <p>No accounts were returned for this property.</p>
+                        ) : (
+                          <ul className="record-list">
+                            {administration.users.map((user) => (
+                              <li key={user.user_id}>
+                                <div>
+                                  <strong>{user.display_name}</strong>
+                                  <span>
+                                    {user.username} · {user.lifecycle_state} ·
+                                    MFA {user.mfa_policy_class}
+                                  </span>
+                                </div>
+                                {session.reauthenticated_at === null ? (
+                                  <span className="muted">
+                                    Reauthenticate before protected commands.
+                                  </span>
+                                ) : (
+                                  <div className="button-row">
+                                    {user.lifecycle_state === "active" && (
+                                      <button
+                                        onClick={() => {
+                                          setPendingCommand({
+                                            kind: "disable",
+                                            user,
+                                          });
+                                        }}
+                                        type="button"
+                                      >
+                                        Disable account
+                                      </button>
+                                    )}
+                                    <button
+                                      onClick={() => {
+                                        setPendingCommand({
+                                          kind: "revoke",
+                                          user,
+                                        });
+                                      }}
+                                      type="button"
+                                    >
+                                      Revoke sessions
+                                    </button>
+                                  </div>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </section>
+
+                      <section aria-labelledby="authorization-heading">
+                        <h4 id="authorization-heading">
+                          Authorization configuration
+                        </h4>
+                        <p className="panel-help">
+                          This current configuration is audit context, not proof
+                          of authority. Historical authorization events remain
+                          immutable on the server. Event timestamps are shown in
+                          UTC.
+                        </p>
+                        <ul className="record-list">
+                          {administration.roleBundles.map((bundle) => (
+                            <li key={bundle.role_bundle_id}>
+                              <div>
+                                <strong>{bundle.name}</strong>
+                                <span>
+                                  {bundle.capability_ids.length} configured
+                                  capabilities
+                                </span>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                        <h5>Authorization history</h5>
+                        {administration.authorizationHistory.length === 0 ? (
+                          <p>No authorization events were returned.</p>
+                        ) : (
+                          <ol className="record-list">
+                            {administration.authorizationHistory.map(
+                              (event) => (
+                                <li key={event.event_id}>
+                                  <div>
+                                    <strong>{event.action}</strong>
+                                    <span>
+                                      {formatDateTime(event.occurred_at)} ·{" "}
+                                      {event.outcome}
+                                      {" · actor "}
+                                      {event.actor_id}
+                                      {" · target "}
+                                      {event.target_id}
+                                    </span>
+                                  </div>
+                                </li>
+                              ),
+                            )}
+                          </ol>
+                        )}
+                        <details>
+                          <summary>Capability catalog</summary>
+                          <ul>
+                            {administration.capabilities.map((capability) => (
+                              <li key={capability.capability_id}>
+                                <strong>{capability.name}</strong> —{" "}
+                                {capability.description}
+                              </li>
+                            ))}
+                          </ul>
+                        </details>
+                      </section>
+
+                      {session.reauthenticated_at !== null && (
+                        <section aria-labelledby="protected-admin-heading">
+                          <h4 id="protected-admin-heading">
+                            Protected account and capability commands
+                          </h4>
+                          <form className="form-stack" onSubmit={createUser}>
+                            <h5>Create account</h5>
+                            <div className="form-field">
+                              <label htmlFor="new-username">Username</label>
+                              <input
+                                id="new-username"
+                                name="new-username"
+                                required
+                              />
+                            </div>
+                            <div className="form-field">
+                              <label htmlFor="new-display-name">
+                                Display name
+                              </label>
+                              <input
+                                id="new-display-name"
+                                name="new-display-name"
+                                required
+                              />
+                            </div>
+                            <div className="form-field">
+                              <label htmlFor="new-audit-name">Audit name</label>
+                              <input
+                                id="new-audit-name"
+                                name="new-audit-name"
+                                required
+                              />
+                            </div>
+                            <div className="form-field">
+                              <label htmlFor="new-account-class">
+                                Account class
+                              </label>
+                              <select
+                                id="new-account-class"
+                                name="new-account-class"
+                              >
+                                <option value="staff">Staff</option>
+                                <option value="manager">Manager</option>
+                              </select>
+                            </div>
+                            <button type="submit">
+                              Create audited account
+                            </button>
+                          </form>
+                          <form
+                            className="form-stack nested-form"
+                            onSubmit={createRoleBundle}
+                          >
+                            <h5>Create role bundle</h5>
+                            <div className="form-field">
+                              <label htmlFor="bundle-name">Bundle name</label>
+                              <input
+                                id="bundle-name"
+                                name="bundle-name"
+                                required
+                              />
+                            </div>
+                            <fieldset>
+                              <legend>Explicit capabilities</legend>
+                              {administration.capabilities.map((capability) => (
+                                <label key={capability.capability_id}>
+                                  <input
+                                    name="bundle-capability"
+                                    type="checkbox"
+                                    value={capability.capability_id}
+                                  />
+                                  {capability.name}
+                                </label>
+                              ))}
+                            </fieldset>
+                            <button type="submit">
+                              Create audited role bundle
+                            </button>
+                          </form>
+                          {administration.users.length > 0 &&
+                            administration.roleBundles.length > 0 && (
+                              <form
+                                className="form-stack nested-form"
+                                onSubmit={assignRoleBundle}
+                              >
+                                <h5>Assign configured role bundle</h5>
+                                <div className="form-field">
+                                  <label htmlFor="assignment-user">
+                                    Account
+                                  </label>
+                                  <select
+                                    id="assignment-user"
+                                    name="assignment-user"
+                                  >
+                                    {administration.users.map((user) => (
+                                      <option
+                                        key={user.user_id}
+                                        value={user.user_id}
+                                      >
+                                        {user.display_name}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <div className="form-field">
+                                  <label htmlFor="assignment-bundle">
+                                    Role bundle
+                                  </label>
+                                  <select
+                                    id="assignment-bundle"
+                                    name="assignment-bundle"
+                                  >
+                                    {administration.roleBundles.map(
+                                      (bundle) => (
+                                        <option
+                                          key={bundle.role_bundle_id}
+                                          value={bundle.role_bundle_id}
+                                        >
+                                          {bundle.name}
+                                        </option>
+                                      ),
+                                    )}
+                                  </select>
+                                </div>
+                                <button type="submit">
+                                  Assign audited role bundle
+                                </button>
+                              </form>
+                            )}
+                          {administration.users.length > 0 && (
+                            <form
+                              className="form-stack nested-form"
+                              onSubmit={prepareAdministrativeRecovery}
+                            >
+                              <h5>Owner-authorized account recovery</h5>
+                              <p className="panel-help">
+                                The server permits only Owner recovery of
+                                Manager or Staff. It rejects Staff recovery of
+                                Owner or Manager and does not grant Manager
+                                recovery of Staff.
+                              </p>
+                              <div className="form-field">
+                                <label htmlFor="recovery-user">Account</label>
+                                <select id="recovery-user" name="recovery-user">
+                                  {administration.users.map((user) => (
+                                    <option
+                                      key={user.user_id}
+                                      value={user.user_id}
+                                    >
+                                      {user.display_name}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                              <div className="form-field">
+                                <label htmlFor="recovery-reason">
+                                  Audit reason
+                                </label>
+                                <input
+                                  id="recovery-reason"
+                                  maxLength={500}
+                                  name="recovery-reason"
+                                  required
+                                />
+                              </div>
+                              <label>
+                                <input
+                                  name="recovery-reset-mfa"
+                                  type="checkbox"
+                                  value="yes"
+                                />
+                                Reset current MFA enrollment
+                              </label>
+                              <button type="submit">
+                                Review recovery consequences
+                              </button>
+                            </form>
+                          )}
+                        </section>
+                      )}
+                    </div>
+                  )}
+
+                  {pendingCommand !== null && (
+                    <div
+                      aria-labelledby="confirmation-heading"
+                      aria-modal="true"
+                      className="confirmation-panel"
+                      role="alertdialog"
+                    >
+                      <h4 id="confirmation-heading">
+                        Confirm protected command
+                      </h4>
+                      <p>
+                        {pendingCommand.kind === "disable"
+                          ? "Disabling this account also revokes every applicable session."
+                          : pendingCommand.kind === "recover"
+                            ? "Recovery gives the selected account a one-time password, may reset MFA, and revokes every applicable session."
+                            : "This revokes every applicable session for the selected account."}{" "}
+                        The server records the acting account and request for
+                        audit.
+                      </p>
+                      <div className="button-row">
+                        <button
+                          onClick={confirmAdministrativeCommand}
+                          type="button"
+                        >
+                          Confirm command
+                        </button>
+                        <button
+                          onClick={() => {
+                            setPendingCommand(null);
+                          }}
+                          type="button"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </section>
+              </section>
+            ),
+          }}
+          healthApi={healthApi}
+          language={language}
+        />
       </div>
     </AppShell>
   );

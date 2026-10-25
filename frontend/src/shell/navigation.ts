@@ -145,7 +145,12 @@ const PAGE_NEEDS: Record<PageId, readonly string[] | null> = {
   moveout: ["deposits.read", "final_settlements.prepare", "leases.move_out"],
   reports: ["payments.read", "invoices.read"],
   history: ["audit.view"],
-  settings: ["settings.manage", "identity.manage_access"],
+  // V1-058 R7b: System health is a Settings tab for operations.status.read too.
+  settings: [
+    "settings.manage",
+    "identity.manage_access",
+    "operations.status.read",
+  ],
   account: null,
 };
 

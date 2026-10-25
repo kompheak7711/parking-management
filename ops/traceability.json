@@ -54419,6 +54419,42 @@
       "test_path": "frontend/src/approvals/ApprovalsPage.test.tsx",
       "status": "implemented",
       "notes": "V1-058 R7a review round 1: a reject refused because someone decided first shows the draft as decided with the refusal words; more than 200 waiting says so; a refund worked out at confirm is named on Money out."
+    },
+    {
+      "test_id": "TEST-FE-937",
+      "upstream_ids": [
+        "DL-074",
+        "DL-075",
+        "DL-071",
+        "UI-093"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/SettingsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-1: Settings shows only the tabs the person may use; a Manager without Settings access lands on System health with the health records; earlier forms stay folded on tabs not rebuilt yet."
+    },
+    {
+      "test_id": "TEST-FE-938",
+      "upstream_ids": [
+        "DL-074",
+        "DL-071",
+        "UI-093"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/SettingsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-1: warnings or a database that does not answer show Needs attention with the server notes; a failed read offers Retry with no old state; no right says so."
+    },
+    {
+      "test_id": "TEST-FE-939",
+      "upstream_ids": [
+        "DL-074",
+        "UI-093"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/SettingsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-1: Khmer words come from the mock-up; the server's English notes are marked as English."
     }
   ]
 }
