@@ -9,6 +9,7 @@ import "../shell/screens.css";
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 
 import type { DepositApi, DepositResource } from "../depositClient";
+import type { InvoiceApi, InvoiceResource } from "../invoiceClient";
 import {
   LeaseUnavailableError,
   type LeaseApi,
@@ -23,7 +24,16 @@ import { openPageInAddress, useHashDetail } from "../shell/useHashPage";
 import { Chip, CountCard, type Tone } from "../shell/ui";
 import type { Language } from "../signInText";
 import type { UnitApi } from "../unitClient";
+import type { UtilityApi } from "../utilityClient";
+import type { EvidenceRecord, UtilityLeaseApi } from "../utilityLeaseClient";
 import { daysBetween } from "../reservations/reservationsData";
+import {
+  type FinalInputs,
+  currentFinalInputs,
+  finalInvoiceOf,
+  latestInputsId,
+} from "./finalReadings";
+import { FinalReadingsDialog } from "./FinalReadingsDialog";
 import { HandBackDialog, rentRuleText } from "./HandBackDialog";
 import {
   MoveOutUnavailableError,
@@ -98,6 +108,12 @@ export interface MoveoutPageProps {
   depositApi: Pick<DepositApi, "leaseDeposits">;
   unitApi: Pick<UnitApi, "get">;
   moveOutApi: MoveOutApi;
+  utilityApi: Pick<UtilityApi, "loadMeters" | "loadReadings" | "recordReading">;
+  utilityLeaseApi: Pick<
+    UtilityLeaseApi,
+    "readFinalInputs" | "recordFinalInputs" | "createFinalInvoice"
+  >;
+  invoiceApi: Pick<InvoiceApi, "list">;
   capabilities: ReadonlySet<string> | null;
 }
 
@@ -419,6 +435,20 @@ function Step({
 // The timeline is read oldest first; a long one has more pages.
 const MAX_TIMELINE_PAGES = 20;
 
+// The Lease's Utility Invoices are read a page at a time.
+const MAX_INVOICE_PAGES = 10;
+
+type FinalState =
+  | { state: "none" | "loading" | "failed" }
+  | {
+      state: "shown";
+      inputs: FinalInputs | null;
+      /** The newest final inputs of the Lease, which new ones replace. */
+      latest: string | null;
+      /** null: none yet; "unknown": the Invoices could not be read. */
+      invoice: InvoiceResource | null | "unknown";
+    };
+
 type DepositsState =
   | { state: "loading" | "hidden" | "failed" }
   | { state: "shown"; items: DepositResource[] };
@@ -431,6 +461,9 @@ function MoveoutDetail({
   depositApi,
   unitApi,
   moveOutApi,
+  utilityApi,
+  utilityLeaseApi,
+  invoiceApi,
   capabilities,
   leaseId,
 }: MoveoutPageProps & { leaseId: string }) {
@@ -443,13 +476,15 @@ function MoveoutDetail({
   const [missing, setMissing] = useState(false);
   const [renewed, setRenewed] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
-  const [dialog, setDialog] = useState<"handback" | null>(null);
+  const [dialog, setDialog] = useState<"handback" | "final" | null>(null);
+  const [final, setFinal] = useState<FinalState>({ state: "none" });
   const [notice, setNotice] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
   const sequence = useRef(0);
   const may = (capability: string) =>
     capabilities === null || capabilities.has(capability);
   const mayDeposits = may("deposits.read");
+  const mayInvoices = may("invoices.read");
 
   const load = useCallback(() => {
     const operation = ++sequence.current;
@@ -499,6 +534,49 @@ function MoveoutDetail({
       setTimeline(events);
       setPage(records);
       setMissing(false);
+      // After the hand-back: the final readings and the final Utility Invoice.
+      const handed = records.items.find(
+        (item) => item.event_status !== "SUPERSEDED",
+      );
+      if (handed === undefined || records.open_occupancies.length > 0) {
+        setFinal({ state: "none" });
+        return;
+      }
+      setFinal({ state: "loading" });
+      const read = await utilityLeaseApi
+        .readFinalInputs(propertyId, leaseId)
+        .catch(() => undefined);
+      if (!current()) return;
+      if (read === undefined) {
+        setFinal({ state: "failed" });
+        return;
+      }
+      const inputs = currentFinalInputs(read, handed.event_id);
+      const latest = latestInputsId(read);
+      let invoice: InvoiceResource | null | "unknown" = null;
+      if (inputs !== null) {
+        invoice = "unknown";
+        if (mayInvoices) {
+          try {
+            const found: InvoiceResource[] = [];
+            let cursor: string | undefined;
+            for (let count = 0; count < MAX_INVOICE_PAGES; count += 1) {
+              const next = await invoiceApi.list(propertyId, {
+                lease_id: leaseId,
+                category: "UTILITIES",
+                ...(cursor === undefined ? {} : { cursor }),
+              });
+              found.push(...next.items);
+              if (next.next_cursor === null) break;
+              cursor = next.next_cursor;
+            }
+            invoice = finalInvoiceOf(found, inputs);
+          } catch {
+            invoice = "unknown";
+          }
+        }
+      }
+      if (current()) setFinal({ state: "shown", inputs, latest, invoice });
     })().catch((error: unknown) => {
       if (!current()) return;
       // No answer is not "not found": keep what is shown and offer Retry.
@@ -521,7 +599,17 @@ function MoveoutDetail({
       .catch(() => {
         if (current()) setDeposits({ state: "failed" });
       });
-  }, [leaseApi, depositApi, moveOutApi, leaseId, propertyId, mayDeposits]);
+  }, [
+    leaseApi,
+    depositApi,
+    moveOutApi,
+    utilityLeaseApi,
+    invoiceApi,
+    leaseId,
+    propertyId,
+    mayDeposits,
+    mayInvoices,
+  ]);
 
   useEffect(() => {
     load();
@@ -604,7 +692,43 @@ function MoveoutDetail({
       : ended && open.length > 0
         ? "now"
         : "todo";
-  const mark3: Mark = neverIn ? "skip" : handedBack ? "now" : "todo";
+  const inputs = final.state === "shown" ? final.inputs : null;
+  const invoice = final.state === "shown" ? final.invoice : null;
+  const issued = inputs !== null && invoice !== null && invoice !== "unknown";
+  const mark3: Mark = neverIn
+    ? "skip"
+    : issued
+      ? "done"
+      : handedBack
+        ? "now"
+        : "todo";
+  const mayRead =
+    may("leases.move_out") &&
+    may("utility_readings.record") &&
+    may("utility.read");
+  const mayIssue = may("invoices.issue") && may("utility.calculate");
+  // Readings first; then the Invoice, for a person who may issue it.
+  const finalButton =
+    current !== undefined &&
+    handedBack &&
+    final.state === "shown" &&
+    !issued &&
+    (inputs === null
+      ? mayRead
+      : mayIssue && invoice !== "unknown" && inputs.unresolved === 0) ? (
+      <button
+        className="ui-btn primary"
+        onClick={() => {
+          setNotice(null);
+          setWarning(null);
+          setDialog("final");
+        }}
+        type="button"
+      >
+        <Icon name="meter" />
+        {mt(language, inputs === null ? "st3_btn" : "st3_issue_btn")}
+      </button>
+    ) : undefined;
   const later = <p className="ui-small ui-muted">{mt(language, "later")}</p>;
 
   const security =
@@ -625,6 +749,26 @@ function MoveoutDetail({
           : event.event_kind.replace(/^lease\./, "").replace(/_/g, " "),
       note: event.reason,
     })),
+    ...(inputs === null
+      ? []
+      : [
+          {
+            id: inputs.event_id,
+            at: inputs.occurred_at,
+            text: mt(language, "mh_readings"),
+            note: "",
+          },
+        ]),
+    ...(invoice === null || invoice === "unknown"
+      ? []
+      : [
+          {
+            id: invoice.id,
+            at: `${invoice.invoice_date}T23:59:59Z`,
+            text: mt(language, "mh_final", invoice.invoice_number),
+            note: "",
+          },
+        ]),
     ...page.items.map((item: MoveOutRecord) => ({
       id: item.event_id,
       at: item.occurred_at,
@@ -777,18 +921,68 @@ function MoveoutDetail({
                 )}
               </Step>
               <Step
+                actions={finalButton}
                 language={language}
                 mark={mark3}
                 number={3}
                 title={mt(language, "st3_t")}
               >
-                <p>
-                  {mt(
-                    language,
-                    neverIn ? "st2_skip" : handedBack ? "st3_todo" : "st3_wait",
-                  )}
-                </p>
-                {mark3 === "now" && later}
+                {neverIn || !handedBack ? (
+                  <p>{mt(language, neverIn ? "st2_skip" : "st3_wait")}</p>
+                ) : final.state === "failed" ? (
+                  <p className="ui-muted">{mt(language, "failed")}</p>
+                ) : final.state !== "shown" ? (
+                  <p className="ui-muted" role="status">
+                    {mt(language, "st3_reading_step")}
+                  </p>
+                ) : inputs === null ? (
+                  <>
+                    <p>{mt(language, "st3_todo")}</p>
+                    {!mayRead && (
+                      <p className="ui-small ui-muted">
+                        {mt(language, "st3_not_allowed")}
+                      </p>
+                    )}
+                  </>
+                ) : invoice !== null && invoice !== "unknown" ? (
+                  <p>
+                    {mt(
+                      language,
+                      "st3_done",
+                      dayText(inputs.actual_move_out_date),
+                      invoice.invoice_number,
+                      usdFromCents(Number(invoice.adjusted_total.minor_units)),
+                    )}{" "}
+                    <a href={hashForPage("invoices", `inv:${invoice.id}`)}>
+                      {mt(language, "open_invoice")}
+                    </a>
+                  </p>
+                ) : (
+                  <>
+                    <p>
+                      {mt(
+                        language,
+                        "st3_inputs",
+                        dayText(inputs.actual_move_out_date),
+                      )}
+                    </p>
+                    {invoice === "unknown" && (
+                      <p className="ui-small ui-muted">
+                        {mt(language, "st3_no_invoices")}
+                      </p>
+                    )}
+                    {inputs.unresolved > 0 && (
+                      <p className="ui-small ui-muted">
+                        {mt(language, "st3_unresolved")}
+                      </p>
+                    )}
+                    {!mayIssue && (
+                      <p className="ui-small ui-muted">
+                        {mt(language, "st3_no_issue")}
+                      </p>
+                    )}
+                  </>
+                )}
               </Step>
               <Step
                 language={language}
@@ -878,6 +1072,52 @@ function MoveoutDetail({
           </section>
         </div>
       </div>
+      {dialog === "final" && current !== undefined && (
+        <FinalReadingsDialog
+          day={current.actual_move_out_date}
+          inputsEventId={inputs?.event_id ?? null}
+          supersedesEventId={
+            inputs === null && final.state === "shown" ? final.latest : null
+          }
+          language={language}
+          lease={lease}
+          mayIssue={mayIssue}
+          moveOutEventId={current.event_id}
+          onClose={() => {
+            setDialog(null);
+            // Readings may have been saved before the answer was lost: show them.
+            load();
+          }}
+          onConflict={() => {
+            setDialog(null);
+            setWarning(mt(language, "conflict"));
+            load();
+          }}
+          onSaved={(created: EvidenceRecord | null) => {
+            setDialog(null);
+            const issuedInvoice =
+              created !== null &&
+              typeof created.invoice === "object" &&
+              created.invoice !== null
+                ? (created.invoice as EvidenceRecord)
+                : null;
+            setNotice(
+              created === null
+                ? mt(language, "st3_toast_only")
+                : mt(
+                    language,
+                    "st3_toast",
+                    typeof issuedInvoice?.invoice_number === "string"
+                      ? issuedInvoice.invoice_number
+                      : "",
+                  ),
+            );
+            load();
+          }}
+          utilityApi={utilityApi}
+          utilityLeaseApi={utilityLeaseApi}
+        />
+      )}
       {dialog === "handback" && (
         <HandBackDialog
           language={language}

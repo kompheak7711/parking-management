@@ -604,7 +604,8 @@ table.ui-table a.ui-no {
   min-width: 0;
 }
 
-.ui-field label {
+.ui-field label,
+.ui-field .ui-flabel {
   font-weight: 600;
 }
 
@@ -1980,4 +1981,7 @@ a.ui-kpi.ui-home-kpi {
   margin: 0;
   font-size: 1.02rem;
   color: var(--heading);
+}
+.ui-field p.ui-flabel {
+  margin: 0;
 }

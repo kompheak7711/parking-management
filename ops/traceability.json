@@ -55542,6 +55542,86 @@
       "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
       "status": "implemented",
       "notes": "V1-058 R3 Move-out M2: Try again after no answer on ending the Lease sends the same request; a Unit read failure is not called a refusal; Close reads the page again; a signed renewal shows no hand-back."
+    },
+    {
+      "test_id": "TEST-FE-967",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "BR-MOVEOUT-012",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M3: Record final readings lists each meter with its last reading, refuses a lower or broken reading (only that box is marked), then saves the readings on the hand-back day, the final inputs naming them and the final Utility Invoice."
+    },
+    {
+      "test_id": "TEST-FE-968",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "SEC-019",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M3: a reading already taken on the hand-back day is used as it is; without invoices.issue only the readings and final inputs are saved."
+    },
+    {
+      "test_id": "TEST-FE-969",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M3: with final inputs saved, Issue the final Utility Invoice sends only the Invoice and shows the refusal reason; a page whose final Invoice exists shows the step done with number, total and link."
+    },
+    {
+      "test_id": "TEST-FE-970",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M3: no answer to the final inputs; Try again records no reading twice and sends the same inputs and key."
+    },
+    {
+      "test_id": "TEST-FE-971",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M3: no answer to a reading or to the Invoice; Try again sends the same request and key; a 4xx reading answer says not saved."
+    },
+    {
+      "test_id": "TEST-FE-972",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "BR-MOVEOUT-012",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M3: only meters in use on the hand-back day are read; after a corrected hand-back the new final inputs supersede the earlier ones; a conflict closes, warns and reloads."
+    },
+    {
+      "test_id": "TEST-FE-973",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M3: the final Invoice is tied to the current final inputs by its lines' end readings; a same-day reading not checked yet is shown and stops the save."
     }
   ]
 }

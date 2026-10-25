@@ -9,12 +9,25 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { DepositResource } from "../depositClient";
+import type { InvoiceResource } from "../invoiceClient";
 import {
   LeaseUnavailableError,
   type LeaseApi,
   type LeaseResource,
 } from "../leaseClient";
 import type { UnitResource } from "../unitClient";
+import {
+  UtilityClientError,
+  type UtilityApi,
+  type UtilityMeter,
+  type UtilityReading,
+} from "../utilityClient";
+import { currentFinalInputs, finalInvoiceOf, metersOn } from "./finalReadings";
+import {
+  UtilityLeaseError,
+  type EvidenceRecord,
+  type UtilityLeaseApi,
+} from "../utilityLeaseClient";
 import {
   MoveOutUnavailableError,
   type MoveOutApi,
@@ -167,6 +180,152 @@ function record(overrides: Partial<MoveOutRecord> = {}): MoveOutRecord {
   };
 }
 
+function meter(type: "ELECTRICITY" | "WATER"): UtilityMeter {
+  return {
+    id: `meter-${type}`,
+    property_id: "property-1",
+    unit_id: "unit-U105",
+    utility_type: type,
+    serial_number: type === "ELECTRICITY" ? "E-501" : "W-501",
+    measurement_unit_code: type === "ELECTRICITY" ? "KWH" : "M3",
+    description: null,
+    installed_date: "2024-01-01",
+    failure_date: null,
+    deactivated_date: null,
+    current: true,
+    version: 4,
+    memo: null,
+    replacement: {
+      replaced_meter_id: null,
+      replacement_meter_id: null,
+      replacement_date: null,
+    },
+    readings_url: "",
+  };
+}
+
+function reading(
+  meterId: string,
+  day: string,
+  value: string,
+  id = `reading-${meterId}-${day}`,
+): UtilityReading {
+  return {
+    id,
+    property_id: "property-1",
+    meter_id: meterId,
+    unit_id: "unit-U105",
+    utility_type: meterId.endsWith("WATER") ? "WATER" : "ELECTRICITY",
+    measurement_unit_code: meterId.endsWith("WATER") ? "M3" : "KWH",
+    reading_date: day,
+    original_value: value,
+    effective_value: value,
+    source: { kind: "MANUAL", evidence: "" },
+    version: 1,
+    corrections: [],
+    validated: true,
+    validated_at: `${day}T05:00:00Z`,
+    validated_by: "actor-1",
+  };
+}
+
+function finalInvoice(): InvoiceResource {
+  const money = (cents: number) => ({
+    currency: "USD" as const,
+    minor_units: cents,
+  });
+  return {
+    id: "invoice-final",
+    property_id: "property-1",
+    customer_id: "customer-U105",
+    lease_id: "lease-U105",
+    invoice_number: "INV-0042",
+    category: "UTILITIES",
+    status: "UNPAID",
+    invoice_date: "2026-10-13",
+    due_date: "2026-10-20",
+    billing_period: null,
+    version: 1,
+    original_total: money(1830),
+    adjusted_total: money(1830),
+    active_application_total: money(0),
+    outstanding_balance: money(1830),
+    lines: [
+      {
+        id: "line-1",
+        sequence: 1,
+        description: "Electricity",
+        category: "UTILITIES",
+        original_amount: money(1830),
+        adjusted_amount: money(1830),
+        outstanding_balance: money(1830),
+        source: {},
+        calculation_evidence: {
+          billing_kind: "FINAL",
+          end_reading_id: "final-reading",
+        },
+        period: null,
+      },
+    ],
+    adjustments: [],
+    void_event: null,
+    evidence: {},
+  };
+}
+
+const handedBackPage: MoveOutPage = {
+  items: [
+    {
+      event_id: "move-out-1",
+      lease_id: "lease-U105",
+      termination_event_id: "termination",
+      actual_move_out_date: "2026-10-12",
+      unit_condition: "CLEANING",
+      resulting_unit_status: "CLEANING",
+      reason: "Unit handed back",
+      evidence_reference: "Keys returned: all",
+      supersedes_event_id: null,
+      occurred_at: "2026-10-12T05:00:00Z",
+      actor_id: "actor-1",
+      event_status: "CURRENT",
+      occupancies: [],
+    },
+  ],
+  total: 1,
+  open_occupancies: [],
+};
+
+function inputsPage(eventId: string | null): EvidenceRecord {
+  return {
+    items:
+      eventId === null
+        ? []
+        : [
+            {
+              event_id: eventId,
+              move_out_event_id: "move-out-1",
+              actual_move_out_date: "2026-10-12",
+              occurred_at: "2026-10-12T06:00:00Z",
+              event_status: "CURRENT",
+              physical_event_status: "CURRENT",
+              unresolved_item_count: 0,
+              items: [
+                {
+                  meter_id: "meter-ELECTRICITY",
+                  utility_type: "ELECTRICITY",
+                  resolution: "READING",
+                  reading: {
+                    reading_id: "final-reading",
+                    reading_value: "4190",
+                  },
+                },
+              ],
+            },
+          ],
+    total: eventId === null ? 0 : 1,
+  };
+}
+
 function setup(
   leases: LeaseResource[],
   options: {
@@ -175,6 +334,11 @@ function setup(
     record?: MoveOutApi["record"];
     terminate?: LeaseApi["terminate"];
     unitGet?: () => Promise<UnitResource>;
+    finalInputs?: () => Promise<EvidenceRecord>;
+    invoices?: () => Promise<InvoiceResource[]>;
+    readings?: Record<string, UtilityReading[]>;
+    recordInputs?: UtilityLeaseApi["recordFinalInputs"];
+    createInvoice?: UtilityLeaseApi["createFinalInvoice"];
   } = {},
 ) {
   const byId = new Map(leases.map((item) => [item.lease_id, item]));
@@ -237,20 +401,88 @@ function setup(
       options.record ?? (() => Promise.resolve(record())),
     ),
   };
+  const utilityApi = {
+    loadMeters: vi.fn<UtilityApi["loadMeters"]>(() =>
+      Promise.resolve({
+        items: [meter("ELECTRICITY"), meter("WATER")],
+        nextCursor: null,
+      }),
+    ),
+    loadReadings: vi.fn<UtilityApi["loadReadings"]>((meterId) =>
+      Promise.resolve({
+        items: options.readings?.[meterId] ?? [
+          reading(
+            meterId,
+            "2026-09-24",
+            meterId.endsWith("WATER") ? "310" : "4120",
+          ),
+        ],
+        nextCursor: null,
+      }),
+    ),
+    recordReading: vi.fn<UtilityApi["recordReading"]>((meterId, input) =>
+      Promise.resolve(
+        reading(
+          meterId,
+          input.reading_date,
+          input.reading_value,
+          `saved-${meterId}`,
+        ),
+      ),
+    ),
+  };
+  const utilityLeaseApi = {
+    readFinalInputs: vi.fn<UtilityLeaseApi["readFinalInputs"]>(
+      options.finalInputs ?? (() => Promise.resolve(inputsPage(null))),
+    ),
+    recordFinalInputs: vi.fn<UtilityLeaseApi["recordFinalInputs"]>(
+      options.recordInputs ??
+        ((_property, _lease, input) =>
+          Promise.resolve({ event_id: input.event_id })),
+    ),
+    createFinalInvoice: vi.fn<UtilityLeaseApi["createFinalInvoice"]>(
+      options.createInvoice ??
+        ((_property, _lease, input) =>
+          Promise.resolve({
+            invoice_id: input.invoice_id,
+            invoice: { invoice_number: "INV-0042" },
+          })),
+    ),
+  };
+  const invoiceApi = {
+    list: vi.fn(() =>
+      (options.invoices ?? (() => Promise.resolve([])))().then((items) => ({
+        items,
+        next_cursor: null,
+        capabilities: [],
+      })),
+    ),
+  };
   render(
     <MoveoutPage
       active
       capabilities={options.capabilities ?? null}
       depositApi={depositApi}
+      invoiceApi={invoiceApi}
       language="en"
       leaseApi={leaseApi}
       moveOutApi={moveOutApi}
       propertyId="property-1"
       today={TODAY}
       unitApi={unitApi}
+      utilityApi={utilityApi}
+      utilityLeaseApi={utilityLeaseApi}
     />,
   );
-  return { leaseApi, depositApi, unitApi, moveOutApi };
+  return {
+    leaseApi,
+    depositApi,
+    unitApi,
+    moveOutApi,
+    utilityApi,
+    utilityLeaseApi,
+    invoiceApi,
+  };
 }
 
 const rows = () =>
@@ -549,5 +781,481 @@ describe("Move-out", () => {
     expect(
       screen.queryByRole("button", { name: "Record hand-back" }),
     ).toBeNull();
+  });
+
+  it("TEST-FE-967 after the hand-back, Record final readings shows each meter with its last reading, refuses a lower or broken reading and marks only that box, then saves both readings on the hand-back day, the final inputs that name them and the final Utility Invoice", async () => {
+    window.location.hash = "#/moveout/lease-U105";
+    const { utilityApi, utilityLeaseApi, invoiceApi } = setup([out], {
+      page: handedBackPage,
+    });
+    const button = await screen.findByRole("button", {
+      name: "Record final readings",
+    });
+    expect(
+      screen.getByText(/Read both meters on the hand-back day/),
+    ).toBeTruthy();
+    // No final inputs yet: the Invoices are not read.
+    expect(invoiceApi.list).not.toHaveBeenCalled();
+    fireEvent.click(button);
+    const dialog = screen.getByRole("dialog");
+    const electricity = await within(dialog).findByLabelText(/Electricity/);
+    expect(
+      within(dialog).getByText("Last reading 4,120 kWh on 24/09/2026"),
+    ).toBeTruthy();
+    expect(
+      within(dialog).getByText("Last reading 310 m³ on 24/09/2026"),
+    ).toBeTruthy();
+    fireEvent.change(electricity, { target: { value: "4100" } });
+    fireEvent.change(within(dialog).getByLabelText(/Water/), {
+      target: { value: "318" },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", {
+        name: "Save and issue the Invoice",
+      }),
+    );
+    expect(
+      within(dialog).getByText(
+        "Each new reading must be a whole number not lower than the last reading.",
+      ),
+    ).toBeTruthy();
+    expect(utilityApi.recordReading).not.toHaveBeenCalled();
+    expect(electricity.getAttribute("aria-invalid")).toBe("true");
+    expect(
+      within(dialog).getByLabelText(/Water/).getAttribute("aria-invalid"),
+    ).toBe("false");
+    fireEvent.change(electricity, { target: { value: "41a5" } });
+    fireEvent.click(
+      within(dialog).getByRole("button", {
+        name: "Save and issue the Invoice",
+      }),
+    );
+    expect(electricity.getAttribute("aria-invalid")).toBe("true");
+    expect(utilityApi.recordReading).not.toHaveBeenCalled();
+    fireEvent.change(electricity, { target: { value: "4,185" } });
+    fireEvent.click(
+      within(dialog).getByRole("button", {
+        name: "Save and issue the Invoice",
+      }),
+    );
+    await screen.findByText("Final Utility Invoice INV-0042 issued.");
+    expect(
+      utilityApi.recordReading.mock.calls.map((call) => call.slice(0, 2)),
+    ).toEqual([
+      [
+        "meter-ELECTRICITY",
+        {
+          expected_meter_version: 4,
+          reading_date: "2026-10-12",
+          reading_value: "4185",
+          source_kind: "MANUAL",
+          source_evidence:
+            "Final reading at the hand-back, recorded in the app",
+        },
+      ],
+      [
+        "meter-WATER",
+        expect.objectContaining({
+          reading_date: "2026-10-12",
+          reading_value: "318",
+        }),
+      ],
+    ]);
+    const [property, leaseId, inputs] =
+      utilityLeaseApi.recordFinalInputs.mock.calls[0] ?? [];
+    expect([property, leaseId]).toEqual(["property-1", "lease-U105"]);
+    expect(inputs).toMatchObject({
+      move_out_event_id: "move-out-1",
+      items: [
+        {
+          meter_id: "meter-ELECTRICITY",
+          resolution: "READING",
+          reading_id: "saved-meter-ELECTRICITY",
+        },
+        {
+          meter_id: "meter-WATER",
+          resolution: "READING",
+          reading_id: "saved-meter-WATER",
+        },
+      ],
+    });
+    expect(utilityLeaseApi.createFinalInvoice.mock.calls[0]?.[2]).toMatchObject(
+      {
+        final_input_event_id: inputs?.event_id,
+      },
+    );
+  });
+
+  it("TEST-FE-968 a reading already taken on the hand-back day is used as it is; without the right to issue Invoices only the readings are saved and the step says a Manager issues the Invoice", async () => {
+    window.location.hash = "#/moveout/lease-U105";
+    const { utilityApi, utilityLeaseApi } = setup([out], {
+      page: handedBackPage,
+      capabilities: new Set([
+        "leases.read",
+        "leases.move_out",
+        "utility_readings.record",
+        "utility.read",
+        "invoices.read",
+      ]),
+      readings: {
+        "meter-ELECTRICITY": [
+          reading("meter-ELECTRICITY", "2026-10-12", "4190", "taken"),
+          reading("meter-ELECTRICITY", "2026-09-24", "4120"),
+        ],
+      },
+    });
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Record final readings" }),
+    );
+    const dialog = screen.getByRole("dialog");
+    expect(
+      await within(dialog).findByText("4,190 kWh, read on 12/10/2026"),
+    ).toBeTruthy();
+    expect(
+      within(dialog).queryByRole("textbox", { name: /Electricity/ }),
+    ).toBeNull();
+    fireEvent.change(within(dialog).getByLabelText(/Water/), {
+      target: { value: "320" },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save the readings" }),
+    );
+    await screen.findByText("Final readings saved.");
+    expect(utilityApi.recordReading).toHaveBeenCalledTimes(1);
+    expect(utilityLeaseApi.recordFinalInputs.mock.calls[0]?.[2].items).toEqual([
+      {
+        meter_id: "meter-ELECTRICITY",
+        resolution: "READING",
+        reading_id: "taken",
+      },
+      {
+        meter_id: "meter-WATER",
+        resolution: "READING",
+        reading_id: "saved-meter-WATER",
+      },
+    ]);
+    expect(utilityLeaseApi.createFinalInvoice).not.toHaveBeenCalled();
+  });
+
+  it("TEST-FE-969 readings saved without an Invoice: Issue the final Utility Invoice sends only the Invoice for those inputs and shows why it was refused; a page whose final Invoice exists shows the step done with the Invoice number, total and link", async () => {
+    window.location.hash = "#/moveout/lease-U105";
+    const { utilityApi, utilityLeaseApi } = setup([out], {
+      page: handedBackPage,
+      finalInputs: () => Promise.resolve(inputsPage("inputs-1")),
+      readings: {
+        "meter-ELECTRICITY": [
+          reading("meter-ELECTRICITY", "2026-10-12", "4190"),
+        ],
+        "meter-WATER": [reading("meter-WATER", "2026-10-12", "320")],
+      },
+      createInvoice: () =>
+        Promise.reject(
+          new UtilityLeaseError(422, "UTILITY_EARLIER_READING_NOT_FINALIZED"),
+        ),
+    });
+    expect(
+      await screen.findByText(
+        "Readings saved for 12/10/2026. The final Utility Invoice is not issued yet.",
+      ),
+    ).toBeTruthy();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Issue the final Utility Invoice" }),
+    );
+    const dialog = screen.getByRole("dialog");
+    // Only the Invoice is left: the meters are not read again.
+    expect(
+      within(dialog).getByText(/The final readings of 12\/10\/2026 are saved/),
+    ).toBeTruthy();
+    expect(utilityApi.loadMeters).not.toHaveBeenCalled();
+    fireEvent.click(
+      within(dialog).getByRole("button", {
+        name: "Issue the final Utility Invoice",
+      }),
+    );
+    expect(
+      await within(dialog).findByText(
+        "An earlier month is not billed yet. Bill it in Utilities first, then try again.",
+      ),
+    ).toBeTruthy();
+    expect(utilityApi.recordReading).not.toHaveBeenCalled();
+    expect(utilityLeaseApi.recordFinalInputs).not.toHaveBeenCalled();
+    expect(utilityLeaseApi.createFinalInvoice.mock.calls[0]?.[2]).toMatchObject(
+      {
+        final_input_event_id: "inputs-1",
+      },
+    );
+    cleanup();
+
+    window.location.hash = "#/moveout/lease-U105";
+    setup([out], {
+      page: handedBackPage,
+      finalInputs: () => Promise.resolve(inputsPage("inputs-1")),
+      invoices: () => Promise.resolve([finalInvoice()]),
+    });
+    expect(
+      await screen.findByText(
+        /Read on 12\/10\/2026\. Final Utility Invoice INV-0042 · \$18\.30\./,
+      ),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("link", { name: "Open Invoice" }).getAttribute("href"),
+    ).toBe("#/invoices/inv%3Ainvoice-final");
+    expect(
+      screen.queryByRole("button", {
+        name: /final Utility Invoice|final readings/,
+      }),
+    ).toBeNull();
+    expect(screen.getByText("Final readings; INV-0042 issued.")).toBeTruthy();
+  });
+
+  it("TEST-FE-970 no answer to the final inputs: Try again records no reading twice and sends the same inputs with the same key", async () => {
+    window.location.hash = "#/moveout/lease-U105";
+    let fail = true;
+    const { utilityApi, utilityLeaseApi } = setup([out], {
+      page: handedBackPage,
+      recordInputs: (_property, _lease, input) =>
+        fail
+          ? Promise.reject(new UtilityLeaseError(null, "NETWORK"))
+          : Promise.resolve({ event_id: input.event_id }),
+    });
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Record final readings" }),
+    );
+    const dialog = screen.getByRole("dialog");
+    fireEvent.change(await within(dialog).findByLabelText(/Electricity/), {
+      target: { value: "4185" },
+    });
+    fireEvent.change(within(dialog).getByLabelText(/Water/), {
+      target: { value: "318" },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", {
+        name: "Save and issue the Invoice",
+      }),
+    );
+    await within(dialog).findByText(/No answer came back/);
+    fail = false;
+    fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
+    await screen.findByText("Final Utility Invoice INV-0042 issued.");
+    expect(utilityApi.recordReading).toHaveBeenCalledTimes(2);
+    const [first, second] = utilityLeaseApi.recordFinalInputs.mock.calls;
+    expect(second?.[2]).toEqual(first?.[2]);
+    expect(second?.[3]).toBe(first?.[3]);
+  });
+
+  it("TEST-FE-971 no answer to a reading: Try again sends that reading with the same key and saves no other twice; no answer to the Invoice: Try again sends the same Invoice id and key; a refused reading says not saved", async () => {
+    window.location.hash = "#/moveout/lease-U105";
+    let readingFails = true;
+    let invoiceFails = true;
+    const { utilityApi, utilityLeaseApi } = setup([out], {
+      page: handedBackPage,
+      createInvoice: (_property, _lease, input) =>
+        invoiceFails
+          ? Promise.reject(new UtilityLeaseError(null, "NETWORK"))
+          : Promise.resolve({
+              invoice_id: input.invoice_id,
+              invoice: { invoice_number: "INV-0043" },
+            }),
+    });
+    utilityApi.recordReading.mockImplementation((meterId, input) =>
+      meterId === "meter-WATER" && readingFails
+        ? Promise.reject(new UtilityClientError())
+        : Promise.resolve(
+            reading(
+              meterId,
+              input.reading_date,
+              input.reading_value,
+              `saved-${meterId}`,
+            ),
+          ),
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Record final readings" }),
+    );
+    const dialog = screen.getByRole("dialog");
+    fireEvent.change(await within(dialog).findByLabelText(/Electricity/), {
+      target: { value: "4185" },
+    });
+    fireEvent.change(within(dialog).getByLabelText(/Water/), {
+      target: { value: "318" },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", {
+        name: "Save and issue the Invoice",
+      }),
+    );
+    await within(dialog).findByText(/No answer came back/);
+    readingFails = false;
+    fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
+    await within(dialog).findByText(/No answer came back/);
+    const calls = utilityApi.recordReading.mock.calls;
+    expect(calls.map((call) => call[0])).toEqual([
+      "meter-ELECTRICITY",
+      "meter-WATER",
+      "meter-WATER",
+    ]);
+    expect(calls[2]?.[1]).toEqual(calls[1]?.[1]);
+    expect(calls[2]?.[2]).toBe(calls[1]?.[2]);
+    expect(utilityLeaseApi.recordFinalInputs).toHaveBeenCalledTimes(1);
+    invoiceFails = false;
+    fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
+    await screen.findByText("Final Utility Invoice INV-0043 issued.");
+    const [first, second] = utilityLeaseApi.createFinalInvoice.mock.calls;
+    expect(second?.[2]).toEqual(first?.[2]);
+    expect(second?.[3]).toBe(first?.[3]);
+    expect(utilityLeaseApi.recordFinalInputs).toHaveBeenCalledTimes(1);
+    cleanup();
+
+    window.location.hash = "#/moveout/lease-U105";
+    const refused = setup([out], { page: handedBackPage });
+    refused.utilityApi.recordReading.mockRejectedValue(
+      new UtilityClientError(undefined, [], "request-1", 422),
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Record final readings" }),
+    );
+    const again = screen.getByRole("dialog");
+    fireEvent.change(await within(again).findByLabelText(/Electricity/), {
+      target: { value: "4185" },
+    });
+    fireEvent.change(within(again).getByLabelText(/Water/), {
+      target: { value: "318" },
+    });
+    fireEvent.click(
+      within(again).getByRole("button", { name: "Save and issue the Invoice" }),
+    );
+    expect(await within(again).findByText(/not saved/i)).toBeTruthy();
+    expect(
+      within(again).queryByRole("button", { name: "Try again" }),
+    ).toBeNull();
+  });
+
+  it("TEST-FE-972 only the meters in use on the hand-back day are read; after a corrected hand-back the new final inputs replace the earlier ones; a changed record closes the dialog, warns and reads the page again", async () => {
+    const day = "2026-10-12";
+    const later = {
+      ...meter("WATER"),
+      id: "later",
+      installed_date: "2026-10-13",
+    };
+    const gone = {
+      ...meter("WATER"),
+      id: "gone",
+      deactivated_date: "2026-10-11",
+    };
+    const lastDay = {
+      ...meter("WATER"),
+      id: "last-day",
+      deactivated_date: day,
+    };
+    expect(
+      metersOn([later, gone, lastDay, meter("ELECTRICITY")], day).map(
+        (item) => item.id,
+      ),
+    ).toEqual(["meter-ELECTRICITY", "last-day"]);
+
+    window.location.hash = "#/moveout/lease-U105";
+    const earlier = inputsPage("inputs-old");
+    const items = earlier.items as EvidenceRecord[];
+    items[0] = { ...items[0], move_out_event_id: "move-out-0" };
+    let conflict = true;
+    const { utilityLeaseApi, leaseApi } = setup([out], {
+      page: handedBackPage,
+      finalInputs: () => Promise.resolve(earlier),
+      recordInputs: (_property, _lease, input) =>
+        conflict
+          ? Promise.reject(new UtilityLeaseError(409, "CONFLICT"))
+          : Promise.resolve({ event_id: input.event_id }),
+    });
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Record final readings" }),
+    );
+    const dialog = screen.getByRole("dialog");
+    fireEvent.change(await within(dialog).findByLabelText(/Electricity/), {
+      target: { value: "4185" },
+    });
+    fireEvent.change(within(dialog).getByLabelText(/Water/), {
+      target: { value: "318" },
+    });
+    const reads = leaseApi.get.mock.calls.length;
+    fireEvent.click(
+      within(dialog).getByRole("button", {
+        name: "Save and issue the Invoice",
+      }),
+    );
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).toBeNull();
+    });
+    expect(utilityLeaseApi.recordFinalInputs.mock.calls[0]?.[2]).toMatchObject({
+      move_out_event_id: "move-out-1",
+      supersedes_event_id: "inputs-old",
+    });
+    expect(screen.getByRole("alert").textContent).toMatch(/changed/i);
+    await waitFor(() => {
+      expect(leaseApi.get.mock.calls.length).toBeGreaterThan(reads);
+    });
+    conflict = false;
+  });
+
+  it("TEST-FE-973 the final Invoice is the one whose line ends at a reading of the current final inputs, never an earlier final Invoice; a same-day reading not checked yet is shown and stops the save", async () => {
+    const inputs = currentFinalInputs(inputsPage("inputs-1"), "move-out-1");
+    expect(inputs?.items[0]?.reading_id).toBe("final-reading");
+    if (inputs === null) return;
+    const earlier = {
+      ...finalInvoice(),
+      id: "invoice-old",
+      invoice_date: "2026-10-12",
+      lines: finalInvoice().lines.map((line) => ({
+        ...line,
+        calculation_evidence: {
+          billing_kind: "FINAL",
+          end_reading_id: "old-reading",
+        },
+      })),
+    };
+    expect(finalInvoiceOf([earlier], inputs)).toBeNull();
+    expect(finalInvoiceOf([earlier, finalInvoice()], inputs)?.id).toBe(
+      "invoice-final",
+    );
+    expect(
+      finalInvoiceOf([{ ...finalInvoice(), status: "VOID" }], inputs),
+    ).toBeNull();
+
+    window.location.hash = "#/moveout/lease-U105";
+    const unchecked = {
+      ...reading("meter-WATER", "2026-10-12", "320", "unchecked"),
+      validated: false as const,
+      validated_at: null,
+      validated_by: null,
+    };
+    const { utilityApi, utilityLeaseApi } = setup([out], {
+      page: handedBackPage,
+      readings: {
+        "meter-WATER": [unchecked, reading("meter-WATER", "2026-09-24", "310")],
+      },
+    });
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Record final readings" }),
+    );
+    const dialog = screen.getByRole("dialog");
+    expect(
+      await within(dialog).findByText(
+        "320 m³, read on 12/10/2026, not checked yet",
+      ),
+    ).toBeTruthy();
+    fireEvent.change(within(dialog).getByLabelText(/Electricity/), {
+      target: { value: "4185" },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", {
+        name: "Save and issue the Invoice",
+      }),
+    );
+    expect(
+      within(dialog).getByText(
+        /A reading of the hand-back day is not checked yet/,
+      ),
+    ).toBeTruthy();
+    expect(utilityApi.recordReading).not.toHaveBeenCalled();
+    expect(utilityLeaseApi.recordFinalInputs).not.toHaveBeenCalled();
   });
 });

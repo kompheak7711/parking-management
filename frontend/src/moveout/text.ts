@@ -153,6 +153,140 @@ const TEXT = {
     "អាននាឡិកាស្ទង់ទាំងពីរនៅថ្ងៃប្រគល់។ កម្មវិធីចេញវិក្កយបត្រទឹកភ្លើងចុងក្រោយភ្លាម។",
   ],
   st3_wait: ["After the hand-back.", "បន្ទាប់ពីប្រគល់បន្ទប់។"],
+  st3_btn: ["Record final readings", "កត់ត្រាអំណានចុងក្រោយ"],
+  st3_ok: ["Save and issue the Invoice", "រក្សាទុក និងចេញវិក្កយបត្រ"],
+  // new
+  st3_ok_only: ["Save the readings", "រក្សាទុកអំណាន"],
+  st3_bad: [
+    "Each new reading must be a whole number not lower than the last reading.",
+    "អំណានថ្មីនីមួយៗត្រូវជាចំនួនគត់ មិនតិចជាងអំណានចុងក្រោយ។",
+  ],
+  // new
+  st3_last: ["Last reading {0} on {1}", "អំណានចុងក្រោយ {0} នៅ {1}"],
+  // new
+  st3_no_last: [
+    "No earlier reading of this meter.",
+    "គ្មានអំណានមុននៃនាឡិកាស្ទង់នេះទេ។",
+  ],
+  // new
+  st3_taken: ["{0}, read on {1}", "{0} អាននៅ {1}"],
+  // new
+  st3_meters_failed: [
+    "The meters of this Unit could not be read just now. Close and try again.",
+    "មិនអាចអាននាឡិកាស្ទង់នៃបន្ទប់នេះបានទេឥឡូវនេះ។ សូមបិទ ហើយព្យាយាមម្តងទៀត។",
+  ],
+  // new
+  st3_no_meters: [
+    "This Unit has no meter on {0}. Add the meters in Utilities first.",
+    "បន្ទប់នេះគ្មាននាឡិកាស្ទង់នៅ {0} ទេ។ សូមបន្ថែមនាឡិកាស្ទង់ក្នុងទឹកភ្លើងជាមុនសិន។",
+  ],
+  st3_note: [
+    "Final Utility Invoice at move-out: readings from the last cycle reading to the hand-back date (BR-UTIL-021).",
+    "វិក្កយបត្រទឹកភ្លើងចុងក្រោយពេលចាកចេញ៖ អំណានពីអំណានវដ្តចុងក្រោយ ដល់ថ្ងៃប្រគល់បន្ទប់។",
+  ],
+  // new
+  st3_note_only: [
+    "The readings are saved now; a Manager issues the final Utility Invoice from this page.",
+    "អំណានត្រូវបានរក្សាទុកឥឡូវនេះ; អ្នកគ្រប់គ្រងចេញវិក្កយបត្រទឹកភ្លើងចុងក្រោយពីទំព័រនេះ។",
+  ],
+  st3_done: [
+    "Read on {0}. Final Utility Invoice {1} · {2}.",
+    "អាននៅ {0}។ វិក្កយបត្រទឹកភ្លើងចុងក្រោយ {1} · {2}។",
+  ],
+  // new
+  st3_inputs: [
+    "Readings saved for {0}. The final Utility Invoice is not issued yet.",
+    "បានរក្សាទុកអំណានសម្រាប់ {0}។ វិក្កយបត្រទឹកភ្លើងចុងក្រោយមិនទាន់ចេញទេ។",
+  ],
+  // new
+  st3_issue_btn: [
+    "Issue the final Utility Invoice",
+    "ចេញវិក្កយបត្រទឹកភ្លើងចុងក្រោយ",
+  ],
+  // new
+  st3_no_issue: [
+    "A Manager issues the final Utility Invoice.",
+    "អ្នកគ្រប់គ្រងចេញវិក្កយបត្រទឹកភ្លើងចុងក្រោយ។",
+  ],
+  // new
+  st3_no_invoices: [
+    "The Invoices of this Lease could not be read, so this page cannot tell whether the final Utility Invoice is issued. Check Invoices.",
+    "មិនអាចអានវិក្កយបត្រនៃកិច្ចសន្យានេះបានទេ ដូច្នេះទំព័រនេះមិនដឹងថាវិក្កយបត្រទឹកភ្លើងចុងក្រោយបានចេញឬនៅ។ សូមពិនិត្យវិក្កយបត្រ។",
+  ],
+  // new
+  st3_not_allowed: [
+    "Your account may not record readings for a move-out.",
+    "គណនីរបស់អ្នកមិនអាចកត់ត្រាអំណានសម្រាប់ការចាកចេញបានទេ។",
+  ],
+  st3_toast: [
+    "Final Utility Invoice {0} issued.",
+    "បានចេញវិក្កយបត្រទឹកភ្លើងចុងក្រោយ {0}។",
+  ],
+  // new
+  st3_toast_only: ["Final readings saved.", "បានរក្សាទុកអំណានចុងក្រោយ។"],
+  // new
+  open_invoice: ["Open Invoice", "បើកវិក្កយបត្រ"],
+  // new
+  st3_loading: ["Reading the meters…", "កំពុងអាននាឡិកាស្ទង់…"],
+  // new
+  st3_reading_step: [
+    "Reading the final readings and Invoices…",
+    "កំពុងអានអំណានចុងក្រោយ និងវិក្កយបត្រ…",
+  ],
+  // new
+  st3_unresolved: [
+    "A meter has no final reading yet (recorded in Utilities). Finish it there before the final Utility Invoice.",
+    "នាឡិកាស្ទង់មួយមិនទាន់មានអំណានចុងក្រោយទេ (កត់ត្រាក្នុងទឹកភ្លើង)។ សូមបញ្ចប់វានៅទីនោះ មុនវិក្កយបត្រទឹកភ្លើងចុងក្រោយ។",
+  ],
+  // new
+  st3_issue_text: [
+    "The final readings of {0} are saved. Issue the final Utility Invoice for the days since the last billed reading.",
+    "អំណានចុងក្រោយនៃ {0} ត្រូវបានរក្សាទុក។ ចេញវិក្កយបត្រទឹកភ្លើងចុងក្រោយសម្រាប់ថ្ងៃចាប់ពីអំណានដែលបានចេញវិក្កយបត្រចុងក្រោយ។",
+  ],
+  // new
+  st3_unchecked: [
+    "{0}, read on {1}, not checked yet",
+    "{0} អាននៅ {1} មិនទាន់ពិនិត្យទេ",
+  ],
+  // new
+  st3_unchecked_problem: [
+    "A reading of the hand-back day is not checked yet. Check it in Utilities, then try again.",
+    "អំណាននៃថ្ងៃប្រគល់មួយមិនទាន់ពិនិត្យទេ។ សូមពិនិត្យវាក្នុងទឹកភ្លើង ហើយព្យាយាមម្តងទៀត។",
+  ],
+  mh_final: ["Final readings; {0} issued.", "អំណានចុងក្រោយ; បានចេញ {0}។"],
+  // new
+  mh_readings: ["Final readings saved.", "បានរក្សាទុកអំណានចុងក្រោយ។"],
+  k_ELECTRICITY: ["Electricity", "អគ្គិសនី"],
+  k_WATER: ["Water", "ទឹក"],
+  // new: why a final Utility Invoice was refused
+  ur_UTILITY_NOTHING_TO_BILL: [
+    "There is nothing to bill: every day up to the hand-back is already on an Invoice.",
+    "គ្មានអ្វីត្រូវចេញវិក្កយបត្រទេ៖ ថ្ងៃទាំងអស់ដល់ថ្ងៃប្រគល់មានក្នុងវិក្កយបត្ររួចហើយ។",
+  ],
+  ur_UTILITY_START_READING_MISSING: [
+    "A meter has no starting reading for this Lease. Record it in Utilities, then try again.",
+    "នាឡិកាស្ទង់មួយគ្មានអំណានចាប់ផ្តើមសម្រាប់កិច្ចសន្យានេះទេ។ សូមកត់ត្រាវាក្នុងទឹកភ្លើង ហើយព្យាយាមម្តងទៀត។",
+  ],
+  ur_UTILITY_EARLIER_READING_NOT_FINALIZED: [
+    "An earlier month is not billed yet. Bill it in Utilities first, then try again.",
+    "ខែមុនមួយមិនទាន់ចេញវិក្កយបត្រទេ។ សូមចេញវាក្នុងទឹកភ្លើងជាមុនសិន ហើយព្យាយាមម្តងទៀត។",
+  ],
+  ur_UTILITY_UNRESOLVED_FINAL_INPUT: [
+    "A meter has no final reading yet.",
+    "នាឡិកាស្ទង់មួយមិនទាន់មានអំណានចុងក្រោយទេ។",
+  ],
+  ur_UTILITY_NOT_MOVED_IN: [
+    "The Customer never moved in, so there is no Utility to bill.",
+    "អតិថិជនមិនដែលចូលនៅទេ ដូច្នេះគ្មានទឹកភ្លើងត្រូវចេញវិក្កយបត្រ។",
+  ],
+  ur_UTILITY_LEASE_NOT_TERMINATED: [
+    "The Lease is not ended yet.",
+    "កិច្ចសន្យាមិនទាន់បញ្ចប់ទេ។",
+  ],
+  ur_FORBIDDEN: [
+    "Your account may not do this.",
+    "គណនីរបស់អ្នកមិនអាចធ្វើការនេះបានទេ។",
+  ],
   st4_t: ["Inspection and charges", "ការត្រួតពិនិត្យ និងថ្លៃ"],
   st4_todo: [
     "Inspect the Unit after the hand-back. Each damage charge needs an amount, a reason and evidence; it is recorded once per finding.",
@@ -267,4 +401,12 @@ export function conditionText(language: Language, condition: string): string {
   return key in TEXT
     ? mt(language, key as MoveOutTextKey)
     : condition.toLowerCase().replace(/_/g, " ");
+}
+
+/** Why a final reading step was refused, from the server's stable reason code. */
+export function utilityRefusalText(language: Language, code: string): string {
+  const key = `ur_${code}`;
+  return key in TEXT
+    ? mt(language, key as MoveOutTextKey)
+    : mt(language, "refused");
 }

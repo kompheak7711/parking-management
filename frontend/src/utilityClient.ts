@@ -301,16 +301,20 @@ export interface PreviewInput {
 export class UtilityClientError extends Error {
   readonly fields: string[];
   readonly requestId: string | null;
+  /** The HTTP status of an answer kept by this error; null when no answer came back. */
+  readonly status: number | null;
 
   constructor(
     message = "The Utility request failed.",
     fields: string[] = [],
     requestId: string | null = null,
+    status: number | null = null,
   ) {
     super(message);
     this.name = "UtilityClientError";
     this.fields = fields;
     this.requestId = requestId;
+    this.status = status;
   }
 }
 
@@ -437,7 +441,7 @@ async function response(
     throw new UtilityConflictError(fields, requestId);
   }
   if (!result.ok || envelope === null || !("data" in envelope)) {
-    throw new UtilityClientError(undefined, fields, requestId);
+    throw new UtilityClientError(undefined, fields, requestId, result.status);
   }
   return { data: envelope.data, page: envelope.page };
 }

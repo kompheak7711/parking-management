@@ -80,6 +80,10 @@ import { DepositManagement } from "./DepositManagement";
 import { DepositApi, depositApi as depositClient } from "./depositClient";
 import { UtilityManagement } from "./UtilityManagement";
 import { UtilityLeaseWorkflows } from "./UtilityLeaseWorkflows";
+import {
+  type UtilityLeaseApi,
+  utilityLeaseApi as utilityLeaseClient,
+} from "./utilityLeaseClient";
 import { UtilityApi, utilityApi as utilityClient } from "./utilityClient";
 import { UtilitiesPage } from "./utilities/UtilitiesPage";
 import { utt } from "./utilities/text";
@@ -151,6 +155,7 @@ export interface AppProps {
   leaseApi?: LeaseApi;
   lettersApi?: LettersApi;
   moveOutApi?: MoveOutApi;
+  utilityLeaseApi?: UtilityLeaseApi;
   depositApi?: DepositApi;
   utilityApi?: UtilityApi;
   invoiceApi?: InvoiceApi;
@@ -608,6 +613,7 @@ export function App({
   leaseApi = leaseClient,
   lettersApi = lettersClient,
   moveOutApi = moveOutClient,
+  utilityLeaseApi = utilityLeaseClient,
   depositApi = depositClient,
   utilityApi = utilityClient,
   invoiceApi = invoiceClient,
@@ -1919,6 +1925,9 @@ export function App({
           language={language}
           leaseApi={leaseApi}
           moveOutApi={moveOutApi}
+          invoiceApi={invoiceApi}
+          utilityApi={utilityApi}
+          utilityLeaseApi={utilityLeaseApi}
           propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
           today={todayInPhnomPenh()}
           unitApi={unitApi ?? defaultUnitApi}
