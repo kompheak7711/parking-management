@@ -16,6 +16,7 @@ import {
 } from "../invoiceClient";
 import {
   SettlementRequestError,
+  SettlementUnavailableError,
   type SettlementApi,
 } from "../settlementClient";
 import {
@@ -50,6 +51,7 @@ import {
   type MoveOutRecord,
 } from "./moveoutClient";
 import { MoveoutPage } from "./MoveoutPage";
+import { readPreview, settlementOf as settlementOfLease } from "./settlement";
 
 const TODAY = "2026-10-25";
 
@@ -432,6 +434,98 @@ function inputsPage(eventId: string | null): EvidenceRecord {
   };
 }
 
+function settlementOf(
+  leaseId: string,
+  change: Record<string, unknown> = {},
+): Record<string, unknown> {
+  return {
+    id: `fs-${leaseId}`,
+    property_id: "property-1",
+    lease_id: leaseId,
+    started_at: "2026-10-20T03:00:00Z",
+    closed: false,
+    closed_at: null,
+    closing_balance_due_usd_cents: null,
+    pending_draft: false,
+    ...change,
+  };
+}
+
+function previewOf(
+  settlementId: string,
+  change: Record<string, unknown> = {},
+): Record<string, unknown> {
+  const leaseId = settlementId.replace(/^fs-/, "");
+  return {
+    settlement: settlementOf(leaseId),
+    lease: { lease_id: leaseId },
+    customers: [
+      {
+        customer_id: "customer-1",
+        primary_tenant: true,
+        invoice_lines: [
+          {
+            invoice_id: "inv-rent",
+            invoice_line_id: "line-rent",
+            customer_id: "customer-1",
+            category: "RENT",
+            description: "Rent October 2026",
+            due_date: "2026-10-05",
+            outstanding_usd_cents: 30000,
+            pet_damage: false,
+          },
+        ],
+        late_payment_charges: [
+          {
+            late_payment_charge_id: "late-1",
+            source_invoice_id: "inv-rent",
+            customer_id: "customer-1",
+            remaining_usd_cents: 1500,
+          },
+        ],
+        open_total_usd_cents: 31500,
+        credits: [
+          { customer_credit_id: "credit-1", available_usd_cents: 2000 },
+        ],
+        credit_available_usd_cents: 2000,
+        credit_may_use_usd_cents: 2000,
+      },
+    ],
+    deposits: [
+      {
+        deposit_id: "dep-sec",
+        deposit_type: "SECURITY",
+        customer_id: "customer-1",
+        held_usd_cents: 50000,
+        path: "DL_032",
+        ground: null,
+        forfeiture: "NONE",
+      },
+    ],
+    steps: [
+      { step: 1, kind: "OBLIGATIONS_FINAL", open_total_usd_cents: 31500 },
+      {
+        step: 3,
+        kind: "PET_DEPOSIT_PET_DAMAGE",
+        pet_damage_open_usd_cents: 0,
+        deposits: [],
+      },
+      {
+        step: 5,
+        kind: "PET_DEPOSIT_REMAINDER",
+        chosen_by: "CUSTOMER_OR_STAFF_WITH_REASON",
+        deposits: [],
+      },
+    ],
+    open_total_usd_cents: 31500,
+    blocking_issues: [],
+    information: [],
+    ready: true,
+    previewed_at: "2026-10-25T03:00:00Z",
+    ...change,
+  };
+}
+
 function setup(
   leases: LeaseResource[],
   options: {
@@ -451,6 +545,9 @@ function setup(
     createDraft?: InvoiceApi["create"];
     cleaningRate?: SettlementApi["cleaningRate"];
     chargeCleaning?: SettlementApi["chargeCleaning"];
+    settlements?: SettlementApi["settlements"];
+    startSettlement?: SettlementApi["startSettlement"];
+    settlementPreview?: SettlementApi["settlementPreview"];
   } = {},
 ) {
   const byId = new Map(leases.map((item) => [item.lease_id, item]));
@@ -611,6 +708,18 @@ function setup(
       options.chargeCleaning ??
         ((_property, _lease, form) =>
           Promise.resolve({ obligation_id: form.charge_id })),
+    ),
+    settlements: vi.fn<SettlementApi["settlements"]>(
+      options.settlements ?? (() => Promise.resolve([])),
+    ),
+    startSettlement: vi.fn<SettlementApi["startSettlement"]>(
+      options.startSettlement ??
+        ((_property, lease) =>
+          Promise.resolve(settlementOf(lease, { created: true }))),
+    ),
+    settlementPreview: vi.fn<SettlementApi["settlementPreview"]>(
+      options.settlementPreview ??
+        ((_property, id) => Promise.resolve(previewOf(id))),
     ),
   };
   render(
@@ -2195,5 +2304,367 @@ describe("Move-out", () => {
         "lease-U105",
       )?.status,
     ).toBe("UNPAID");
+  });
+
+  it("TEST-FE-985 the list reads the Final Settlements without starting one: a draft waiting for a Manager comes first and a closed one last, each with its card; without the Settlement rights the list keeps the earlier steps", async () => {
+    const closedLease = lease("U107", {
+      status: "TERMINATED",
+      actual_termination_date: "2026-09-30",
+      occupancies: [],
+    });
+    const { settlementApi } = setup([out, neverIn, closedLease], {
+      settlements: () =>
+        Promise.resolve([
+          settlementOf("lease-U106", { pending_draft: true }),
+          settlementOf("lease-U107", {
+            closed: true,
+            closed_at: "2026-10-01T03:00:00Z",
+          }),
+        ]),
+    });
+    await screen.findByRole("table");
+    await waitFor(() => {
+      expect(rows().map((row) => row[0])).toEqual(["U106", "U105", "U107"]);
+    });
+    expect(settlementApi.settlements).toHaveBeenCalledWith("property-1");
+    expect(settlementApi.startSettlement).not.toHaveBeenCalled();
+    expect(rows()[0]?.[4]).toBe("Waiting for a ManagerA Manager confirms it");
+    expect(rows()[2]?.[4]).toBe("ClosedNothing left to do");
+    fireEvent.click(
+      screen.getByRole("button", { name: /Waiting for a Manager/ }),
+    );
+    expect(rows().map((row) => row[0])).toEqual(["U106"]);
+    fireEvent.click(screen.getByRole("button", { name: /^Closed/ }));
+    expect(rows().map((row) => row[0])).toEqual(["U107"]);
+    cleanup();
+
+    // A Settlement read that fails keeps the list.
+    setup([out, neverIn], {
+      settlements: () => Promise.reject(new SettlementUnavailableError()),
+    });
+    await screen.findByRole("table");
+    await waitFor(() => {
+      expect(rows().map((row) => row[0])).toEqual(["U105", "U106"]);
+    });
+    expect(
+      await screen.findByText(
+        "The Final Settlements could not be read, so Waiting for a Manager and Closed are not shown.",
+      ),
+    ).toBeTruthy();
+    cleanup();
+
+    const staff = setup([out, neverIn], {
+      capabilities: new Set(["leases.read", "deposits.read"]),
+    });
+    await screen.findByRole("table");
+    expect(staff.settlementApi.settlements).not.toHaveBeenCalled();
+    expect(
+      screen.queryByRole("button", { name: /Waiting for a Manager/ }),
+    ).toBeNull();
+    expect(rows().map((row) => row[0])).toEqual(["U105", "U106"]);
+  });
+
+  it("TEST-FE-986 a terminated Lease nobody moved into: Start Final Settlement opens it with a key, then the statement shows the open Invoices and charges, the Customer's own Credit, the Security Deposit and that it is ready", async () => {
+    window.location.hash = "#/moveout/lease-U106";
+    let started = false;
+    const { settlementApi } = setup([neverIn], {
+      settlements: () =>
+        Promise.resolve(started ? [settlementOf("lease-U106")] : []),
+      startSettlement: (_property, leaseId) => {
+        started = true;
+        return Promise.resolve(settlementOf(leaseId, { created: true }));
+      },
+    });
+    expect(
+      await screen.findByText(
+        "Prepare the statement. Staff prepare the draft; a Manager confirms and closes it.",
+      ),
+    ).toBeTruthy();
+    expect(settlementApi.settlements).toHaveBeenCalledWith(
+      "property-1",
+      "lease-U106",
+    );
+    expect(settlementApi.settlementPreview).not.toHaveBeenCalled();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Start Final Settlement" }),
+    );
+    expect(await screen.findByText("Final Settlement started.")).toBeTruthy();
+    const [property, leaseId, key] =
+      settlementApi.startSettlement.mock.calls[0] ?? [];
+    expect([property, leaseId]).toEqual(["property-1", "lease-U106"]);
+    expect(key).toMatch(/^[0-9a-f-]{36}$/);
+    expect(await screen.findByText("Statement")).toBeTruthy();
+    expect(settlementApi.settlementPreview).toHaveBeenCalledWith(
+      "property-1",
+      "fs-lease-U106",
+    );
+    expect(screen.getByText("Started on 20/10/2026 10:00.")).toBeTruthy();
+    expect(screen.getByText("$315.00")).toBeTruthy();
+    expect(
+      screen.getByRole("link", { name: "Rent October 2026" }),
+    ).toBeTruthy();
+    expect(screen.getByText("Due 05/10/2026")).toBeTruthy();
+    expect(screen.getByText("Late-payment charge")).toBeTruthy();
+    expect(screen.getByText("Up to $20.00")).toBeTruthy();
+    // The statement and the Deposits card.
+    expect(screen.getAllByText("$500.00 held")).toHaveLength(2);
+    expect(
+      screen.getByText("Pays all Lease debt, oldest Due Date first."),
+    ).toBeTruthy();
+    expect(screen.getByText("Ready: the draft can be prepared.")).toBeTruthy();
+    expect(
+      screen.queryByRole("button", { name: "Start Final Settlement" }),
+    ).toBeNull();
+  });
+
+  it("TEST-FE-987 the step waits until the Unit is handed back; a person who may only approve sees it but cannot start it; a person with neither right is told so; a refused start says why and no answer offers Try again with the same key", async () => {
+    window.location.hash = "#/moveout/lease-U104";
+    const still = setup([terminated]);
+    expect(
+      await screen.findByText(
+        "After the Lease ends and the Unit is handed back.",
+      ),
+    ).toBeTruthy();
+    expect(still.settlementApi.settlements).toHaveBeenCalled();
+    expect(
+      screen.queryByRole("button", { name: "Start Final Settlement" }),
+    ).toBeNull();
+    cleanup();
+
+    window.location.hash = "#/moveout/lease-U106";
+    setup([neverIn], {
+      capabilities: new Set(["leases.read", "financial.approve"]),
+    });
+    expect(
+      await screen.findByText(
+        "A person with the Final Settlement right starts it.",
+      ),
+    ).toBeTruthy();
+    expect(
+      screen.queryByRole("button", { name: "Start Final Settlement" }),
+    ).toBeNull();
+    cleanup();
+
+    window.location.hash = "#/moveout/lease-U106";
+    const none = setup([neverIn], {
+      capabilities: new Set(["leases.read"]),
+    });
+    expect(
+      await screen.findByText("You may not see the Final Settlement."),
+    ).toBeTruthy();
+    expect(none.settlementApi.settlements).not.toHaveBeenCalled();
+    cleanup();
+
+    window.location.hash = "#/moveout/lease-U106";
+    let calls = 0;
+    const { settlementApi } = setup([neverIn], {
+      startSettlement: () => {
+        calls += 1;
+        return Promise.reject(
+          calls === 1
+            ? new SettlementUnavailableError()
+            : new SettlementRequestError(
+                409,
+                "FINAL_SETTLEMENT_LEASE_NOT_TERMINATED",
+                "The Lease is not terminated",
+              ),
+        );
+      },
+    });
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Start Final Settlement" }),
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "Try again" }));
+    expect(
+      await screen.findByText(
+        "The Final Settlement could not be started. Read the page again: the Lease may not be terminated yet.",
+      ),
+    ).toBeTruthy();
+    const keys = settlementApi.startSettlement.mock.calls.map(
+      (call) => call[2],
+    );
+    expect(keys).toHaveLength(2);
+    expect(keys[0]).toBe(keys[1]);
+  });
+
+  it("TEST-FE-988 an open Settlement names what blocks it in plain words, once each; a kept Security Deposit shows as kept, never as a payment; a draft waiting for a Manager is named with a link for a person who may approve", async () => {
+    window.location.hash = "#/moveout/lease-U106";
+    setup([neverIn], {
+      settlements: () =>
+        Promise.resolve([settlementOf("lease-U106", { pending_draft: true })]),
+      settlementPreview: (_property, id) =>
+        Promise.resolve(
+          previewOf(id, {
+            ready: false,
+            blocking_issues: [
+              {
+                code: "FINAL_UTILITY_NOT_ISSUED",
+                reason: "MOVE_OUT_NOT_RECORDED",
+              },
+              { code: "INVOICE_DRAFT_NOT_ISSUED", invoice_id: "inv-1" },
+              { code: "INVOICE_DRAFT_NOT_ISSUED", invoice_id: "inv-2" },
+              { code: "PENDING_DRAFT" },
+              { code: "SOMETHING_NEW" },
+            ],
+            deposits: [
+              {
+                deposit_id: "dep-sec",
+                deposit_type: "SECURITY",
+                customer_id: "customer-1",
+                held_usd_cents: 50000,
+                path: "KEPT",
+              },
+              {
+                deposit_id: "dep-pet",
+                deposit_type: "PET",
+                customer_id: "customer-1",
+                held_usd_cents: 20000,
+                path: "DL_032",
+              },
+            ],
+            information: [
+              {
+                code: "VOIDED_CHARGE_NOT_BILLED_AGAIN",
+                amount_usd_cents: 2500,
+              },
+            ],
+          }),
+        ),
+    });
+    expect(await screen.findByText("Not ready yet. First:")).toBeTruthy();
+    const blocked = screen.getByText("Not ready yet. First:").parentElement;
+    if (blocked === null) throw new Error("no notice");
+    expect(
+      within(blocked)
+        .getAllByRole("listitem")
+        .map((item) => item.textContent),
+    ).toEqual([
+      "Issue the final Utility Invoice (step 3).",
+      "Issue or remove the draft Invoices of the Lease.",
+      "Wait for the draft that waits for a Manager.",
+      "Something else blocks it. Read the page again later.",
+    ]);
+    expect(screen.getByText("Security Deposit kept")).toBeTruthy();
+    expect(
+      screen.getByText("Kept for the termination. Not used for the charges."),
+    ).toBeTruthy();
+    expect(screen.getByText("Pet Deposit for pet damage")).toBeTruthy();
+    expect(
+      screen.getByText(
+        "When the Customer asks for it, or Staff with a reason, after the Security Deposit is used up.",
+      ),
+    ).toBeTruthy();
+    expect(
+      screen.getByText("A voided charge is not billed again: $25.00."),
+    ).toBeTruthy();
+    expect(screen.getByText("A draft waits for a Manager.")).toBeTruthy();
+    expect(
+      screen
+        .getByRole("link", { name: "Open Waiting for approval" })
+        .getAttribute("href"),
+    ).toBe("#/approvals");
+    cleanup();
+
+    // Review round 1: the preview does not count this Settlement's own waiting draft, so it may
+    // say ready; the page then does not offer to prepare another.
+    window.location.hash = "#/moveout/lease-U106";
+    setup([neverIn], {
+      settlements: () =>
+        Promise.resolve([settlementOf("lease-U106", { pending_draft: true })]),
+    });
+    expect(
+      await screen.findByText("A draft waits for a Manager."),
+    ).toBeTruthy();
+    expect(await screen.findByText("Statement")).toBeTruthy();
+    expect(screen.queryByText("Ready: the draft can be prepared.")).toBeNull();
+  });
+
+  it("TEST-FE-989 a closed Settlement shows when it closed and what stays owed, reads no preview and marks the step done; an unreadable preview says so", async () => {
+    window.location.hash = "#/moveout/lease-U106";
+    const { settlementApi } = setup([neverIn], {
+      settlements: () =>
+        Promise.resolve([
+          settlementOf("lease-U106", {
+            closed: true,
+            closed_at: "2026-10-22T04:00:00Z",
+            closing_balance_due_usd_cents: 4200,
+          }),
+        ]),
+    });
+    expect(await screen.findByText("Closed on 22/10/2026 11:00.")).toBeTruthy();
+    expect(
+      screen.getByText(
+        "$42.00 stays owed on the Customer Ledger. No write-off in V1.",
+      ),
+    ).toBeTruthy();
+    expect(settlementApi.settlementPreview).not.toHaveBeenCalled();
+    const step = screen.getByRole("heading", { name: "5. Final Settlement" })
+      .parentElement?.parentElement;
+    if (step === null || step === undefined) throw new Error("no step");
+    expect(within(step).getByText("Done")).toBeTruthy();
+    cleanup();
+
+    window.location.hash = "#/moveout/lease-U106";
+    setup([neverIn], {
+      settlements: () => Promise.resolve([settlementOf("lease-U106")]),
+      settlementPreview: () => Promise.resolve({ settlement: {} }),
+    });
+    expect(
+      await screen.findByText(
+        "The statement could not be read. Read the page again.",
+      ),
+    ).toBeTruthy();
+  });
+
+  it("TEST-FE-990 the Settlement and its preview are read field by field: an unknown Deposit path or a broken amount is unreadable; the newest Settlement of the Lease is the one shown", () => {
+    const good = previewOf("fs-lease-U106");
+    expect(readPreview(good).open_total_usd_cents).toBe(31500);
+    expect(readPreview(good).pet_remainder_chosen_by).toBe(
+      "CUSTOMER_OR_STAFF_WITH_REASON",
+    );
+    expect(() =>
+      readPreview({
+        ...good,
+        deposits: [
+          {
+            deposit_id: "d",
+            deposit_type: "SECURITY",
+            customer_id: null,
+            held_usd_cents: 1,
+            path: "SOMEWHERE",
+          },
+        ],
+      }),
+    ).toThrow();
+    expect(() => readPreview({ ...good, open_total_usd_cents: 1.5 })).toThrow();
+    // Review round 1: a missing step or an unknown chooser is unreadable, never a guess.
+    expect(() => readPreview({ ...good, steps: [] })).toThrow();
+    const steps = (good.steps as Record<string, unknown>[]).map((item) =>
+      item.kind === "PET_DEPOSIT_REMAINDER"
+        ? { ...item, chosen_by: "ANYONE" }
+        : item,
+    );
+    expect(() => readPreview({ ...good, steps })).toThrow();
+    // The list always says whether a draft waits.
+    expect(() =>
+      settlementOfLease(
+        [{ ...settlementOf("lease-U106"), pending_draft: undefined }],
+        "lease-U106",
+      ),
+    ).toThrow();
+    expect(
+      settlementOfLease(
+        [
+          settlementOf("lease-U106", { id: "old" }),
+          settlementOf("lease-U106", {
+            id: "new",
+            started_at: "2026-10-22T03:00:00Z",
+          }),
+          settlementOf("lease-U105", { id: "other" }),
+        ],
+        "lease-U106",
+      )?.id,
+    ).toBe("new");
+    expect(settlementOfLease([], "lease-U106")).toBeNull();
   });
 });

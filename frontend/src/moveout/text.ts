@@ -21,6 +21,18 @@ const TEXT = {
     "Readings, inspection and charges to finish",
     "អំណាន ការត្រួតពិនិត្យ និងថ្លៃត្រូវបញ្ចប់",
   ],
+  c_confirm: ["Waiting for a Manager", "រង់ចាំអ្នកគ្រប់គ្រង"],
+  c_confirm_s: [
+    "Draft Final Settlement to confirm",
+    "សេចក្តីព្រាងការទូទាត់ចុងក្រោយ ត្រូវបញ្ជាក់",
+  ],
+  c_closed: ["Closed", "បានបិទ"],
+  c_closed_s: ["Final Settlement closed", "ការទូទាត់ចុងក្រោយបានបិទ"],
+  // new
+  settle_failed: [
+    "The Final Settlements could not be read, so Waiting for a Manager and Closed are not shown.",
+    "មិនអាចអានការទូទាត់ចុងក្រោយបានទេ ដូច្នេះរង់ចាំអ្នកគ្រប់គ្រង និងបានបិទ មិនបង្ហាញទេ។",
+  ],
   showing: ["Showing: {0}", "កំពុងបង្ហាញ៖ {0}"],
   show_all: ["Show all", "បង្ហាញទាំងអស់"],
   n1: ["1 move-out", "ការចាកចេញ 1"],
@@ -36,6 +48,9 @@ const TEXT = {
   next_hb: ["Record the hand-back", "កត់ត្រាការប្រគល់បន្ទប់"],
   next_final: ["Record final readings", "កត់ត្រាអំណានចុងក្រោយ"],
   next_settle: ["Prepare the Final Settlement", "រៀបចំការទូទាត់ចុងក្រោយ"],
+  next_confirm: ["A Manager confirms it", "អ្នកគ្រប់គ្រងបញ្ជាក់"],
+  // new
+  next_none: ["Nothing left to do", "គ្មានអ្វីត្រូវធ្វើទៀតទេ"],
   in_days: ["in {0} days", "ក្នុង {0} ថ្ងៃ"],
   today: ["today", "ថ្ងៃនេះ"],
   ago: ["{0} days ago", "{0} ថ្ងៃមុន"],
@@ -52,6 +67,10 @@ const TEXT = {
   s_out: ["Handed back", "បានប្រគល់"],
   // new: terminated before anybody moved in.
   s_skip: ["Never moved in", "មិនដែលចូលស្នាក់នៅ"],
+  // new (M5)
+  s_settle: ["Final Settlement", "ការទូទាត់ចុងក្រោយ"],
+  s_confirm: ["Waiting for a Manager", "រង់ចាំអ្នកគ្រប់គ្រង"],
+  s_closed: ["Closed", "បានបិទ"],
   steps_t: ["Move-out steps", "ជំហានចាកចេញ"],
   done: ["Done", "រួចរាល់"],
   todo: ["To do", "ត្រូវធ្វើ"],
@@ -490,10 +509,173 @@ const TEXT = {
     "នេះមិនត្រូវបានរក្សាទុកទេ។ ពិនិត្យតម្លៃ ហើយព្យាយាមម្តងទៀត ឬអានទំព័រម្តងទៀត។",
   ],
   st5_t: ["Final Settlement", "ការទូទាត់ចុងក្រោយ"],
-  st5_wait: ["After the charges are recorded.", "បន្ទាប់ពីកត់ត្រាថ្លៃ។"],
+  st5_wait: [
+    "After the Lease ends and the Unit is handed back.",
+    "បន្ទាប់ពីកិច្ចសន្យាបញ្ចប់ និងប្រគល់បន្ទប់។",
+  ],
   st5_todo: [
     "Prepare the statement. Staff prepare the draft; a Manager confirms and closes it.",
     "រៀបចំរបាយការណ៍។ បុគ្គលិករៀបចំសេចក្តីព្រាង; អ្នកគ្រប់គ្រងបញ្ជាក់ និងបិទ។",
+  ],
+  // new (M5): the Final Settlement step.
+  st5_start: ["Start Final Settlement", "ចាប់ផ្តើមការទូទាត់ចុងក្រោយ"],
+  // new
+  st5_toast: ["Final Settlement started.", "បានចាប់ផ្តើមការទូទាត់ចុងក្រោយ។"],
+  // new
+  st5_refused: [
+    "The Final Settlement could not be started. Read the page again: the Lease may not be terminated yet.",
+    "មិនអាចចាប់ផ្តើមការទូទាត់ចុងក្រោយបានទេ។ សូមអានទំព័រម្តងទៀត៖ កិច្ចសន្យាប្រហែលមិនទាន់បញ្ចប់។",
+  ],
+  // new
+  st5_hidden: [
+    "You may not see the Final Settlement.",
+    "អ្នកមិនអាចមើលការទូទាត់ចុងក្រោយបានទេ។",
+  ],
+  // new
+  st5_failed: [
+    "The Final Settlement could not be read.",
+    "មិនអាចអានការទូទាត់ចុងក្រោយបានទេ។",
+  ],
+  // new
+  st5_reading: ["Reading the Final Settlement…", "កំពុងអានការទូទាត់ចុងក្រោយ…"],
+  // new
+  st5_not_allowed: [
+    "A person with the Final Settlement right starts it.",
+    "អ្នកមានសិទ្ធិការទូទាត់ចុងក្រោយ ជាអ្នកចាប់ផ្តើម។",
+  ],
+  st5_closed: ["Closed on {0}.", "បានបិទនៅ {0}។"],
+  // new
+  st5_closed_owed: [
+    "{0} stays owed on the Customer Ledger. No write-off in V1.",
+    "{0} នៅជំពាក់លើបញ្ជីអតិថិជន។ គ្មានការលុបបំណុលក្នុង V1។",
+  ],
+  // new
+  st5_open: ["Started on {0}.", "បានចាប់ផ្តើមនៅ {0}។"],
+  st5_waiting: [
+    "A draft waits for a Manager.",
+    "សេចក្តីព្រាងរង់ចាំអ្នកគ្រប់គ្រង។",
+  ],
+  // new
+  st5_open_approvals: ["Open Waiting for approval", "បើករង់ចាំការអនុម័ត"],
+  // new
+  st5_no_preview: [
+    "The statement could not be read. Read the page again.",
+    "មិនអាចអានរបាយការណ៍បានទេ។ សូមអានទំព័រម្តងទៀត។",
+  ],
+  st5_statement: ["Statement", "របាយការណ៍"],
+  // new
+  st5_blocked: ["Not ready yet. First:", "មិនទាន់រួចរាល់ទេ។ ជាមុនសិន៖"],
+  // new
+  st5_ready: [
+    "Ready: the draft can be prepared.",
+    "រួចរាល់៖ អាចរៀបចំសេចក្តីព្រាងបាន។",
+  ],
+  fs_owed: ["Open Invoices and charges", "វិក្កយបត្រ និងថ្លៃនៅជំពាក់"],
+  // new
+  fs_due: ["Due {0}", "ថ្ងៃកំណត់ {0}"],
+  // new
+  fs_late: ["Late-payment charge", "ថ្លៃបង់យឺត"],
+  // new
+  fs_other_customer: ["another Customer", "អតិថិជនផ្សេង"],
+  fs_credit: ["Customer Credit", "ឥណទានអតិថិជន"],
+  // new
+  fs_credit_may: ["Up to {0}", "រហូតដល់ {0}"],
+  fs_credit_n: [
+    "Own Credit pays own debt first (DL-032).",
+    "ឥណទានផ្ទាល់បង់បំណុលផ្ទាល់មុន។",
+  ],
+  fs_pet_dmg: [
+    "Pet Deposit for pet damage",
+    "ប្រាក់កក់សត្វចិញ្ចឹម សម្រាប់ខូចខាតដោយសត្វ",
+  ],
+  // new
+  fs_pet_dmg_n: [
+    "Pays pet damage first: {0} open.",
+    "បង់ការខូចខាតដោយសត្វមុន៖ នៅជំពាក់ {0}។",
+  ],
+  // new
+  fs_sec_n: [
+    "Pays all Lease debt, oldest Due Date first.",
+    "បង់បំណុលកិច្ចសន្យាទាំងអស់ ថ្ងៃកំណត់ចាស់មុន។",
+  ],
+  fs_sec_kept: ["Security Deposit kept", "ប្រាក់កក់សុវត្ថិភាពរក្សាទុក"],
+  // new
+  fs_pet_kept: ["Pet Deposit kept", "ប្រាក់កក់សត្វចិញ្ចឹមរក្សាទុក"],
+  // new
+  fs_kept_n: [
+    "Kept for the termination. Not used for the charges.",
+    "រក្សាទុកដោយសារការបញ្ចប់កិច្ចសន្យា។ មិនប្រើសម្រាប់ថ្លៃ។",
+  ],
+  // new
+  fs_kept_first: [
+    "The termination keeps it: a Manager records it as kept first.",
+    "ការបញ្ចប់កិច្ចសន្យារក្សាវាទុក៖ អ្នកគ្រប់គ្រងកត់ត្រាថារក្សាទុកជាមុនសិន។",
+  ],
+  // new
+  fs_kept_none: [
+    "The termination keeps it; it holds nothing.",
+    "ការបញ្ចប់កិច្ចសន្យារក្សាវាទុក; គ្មានប្រាក់នៅសល់។",
+  ],
+  fs_pet_other: [
+    "Remaining Pet Deposit for other balance",
+    "ប្រាក់កក់សត្វចិញ្ចឹមនៅសល់ សម្រាប់សមតុល្យផ្សេង",
+  ],
+  fs_pet_other_n: [
+    "Only when the Customer asks for it, after the Security Deposit is used up.",
+    "តែពេលអតិថិជនស្នើ បន្ទាប់ពីប្រាក់កក់សុវត្ថិភាពអស់។",
+  ],
+  // new
+  fs_pet_other_staff: [
+    "When the Customer asks for it, or Staff with a reason, after the Security Deposit is used up.",
+    "ពេលអតិថិជនស្នើ ឬបុគ្គលិកដោយមានមូលហេតុ បន្ទាប់ពីប្រាក់កក់សុវត្ថិភាពអស់។",
+  ],
+  fs_balance: ["Balance and refund", "សមតុល្យ និងការសងវិញ"],
+  // new
+  fs_later: [
+    "Worked out when the draft is prepared.",
+    "គណនាពេលរៀបចំសេចក្តីព្រាង។",
+  ],
+  // new
+  fs_voided: [
+    "A voided charge is not billed again: {0}.",
+    "ថ្លៃដែលបានលុបចោល មិនចេញវិក្កយបត្រម្តងទៀតទេ៖ {0}។",
+  ],
+  // new: what blocks the Final Settlement (the preview's blocking issues).
+  fi_FINAL_UTILITY_NOT_ISSUED: [
+    "Issue the final Utility Invoice (step 3).",
+    "ចេញវិក្កយបត្រទឹកភ្លើងចុងក្រោយ (ជំហាន 3)។",
+  ],
+  fi_UTILITY_PERIOD_NOT_BILLED: [
+    "Bill every Utility period of the Lease.",
+    "ចេញវិក្កយបត្ររយៈពេលទឹកភ្លើងទាំងអស់នៃកិច្ចសន្យា។",
+  ],
+  fi_CLEANING_CHARGE_MISSING: [
+    "Record the cleaning charge (step 4).",
+    "កត់ត្រាថ្លៃសម្អាត (ជំហាន 4)។",
+  ],
+  fi_LATE_PAYMENT_DECISION_MISSING: [
+    "Decide the late-payment charges of the Lease.",
+    "សម្រេចថ្លៃបង់យឺតនៃកិច្ចសន្យា។",
+  ],
+  fi_FORFEITURE_NOT_CONFIRMED: [
+    "A Manager records the kept Deposit.",
+    "អ្នកគ្រប់គ្រងកត់ត្រាប្រាក់កក់ដែលរក្សាទុក។",
+  ],
+  fi_PENDING_DRAFT: [
+    "Wait for the draft that waits for a Manager.",
+    "រង់ចាំសេចក្តីព្រាងដែលកំពុងរង់ចាំអ្នកគ្រប់គ្រង។",
+  ],
+  fi_ONE_TIME_CHARGE_NOT_INVOICED: [
+    "Make the Invoice of each recorded charge (step 4).",
+    "ធ្វើវិក្កយបត្រនៃថ្លៃដែលបានកត់ត្រានីមួយៗ (ជំហាន 4)។",
+  ],
+  fi_INVOICE_DRAFT_NOT_ISSUED: [
+    "Issue or remove the draft Invoices of the Lease.",
+    "ចេញ ឬដកវិក្កយបត្រព្រាងនៃកិច្ចសន្យាចេញ។",
+  ],
+  fi_OTHER: [
+    "Something else blocks it. Read the page again later.",
+    "មានអ្វីផ្សេងរារាំង។ សូមអានទំព័រម្តងទៀតពេលក្រោយ។",
   ],
   st6_t: ["After closure", "បន្ទាប់ពីបិទ"],
   st6_note: [

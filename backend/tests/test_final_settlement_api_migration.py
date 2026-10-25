@@ -80,6 +80,12 @@ def test_a_settlement_is_started_previewed_drafted_and_closed_over_http(
         str(settlement),
         False,
     )
+    # V1-058 M5: the list read shows the open Settlement and starts nothing.
+    listed = preparer.get(f"{base}/final-settlements", params={"lease_id": str(case["lease"])})
+    assert listed.status_code == 200, listed.text
+    assert [
+        (item["id"], item["closed"], item["pending_draft"]) for item in listed.json()["data"]
+    ] == [(str(settlement), False, False)]
     preview = preparer.get(f"{base}/final-settlements/{settlement}/preview")
     assert preview.status_code == 200, preview.text
     assert preview.json()["data"]["settlement"]["id"] == str(settlement)
@@ -99,6 +105,8 @@ def test_a_settlement_is_started_previewed_drafted_and_closed_over_http(
     assert _record(preparer, case, plan, key).json()["data"]["draft_id"] == draft["draft_id"]
     assert _code(_record(preparer, case, plan[:-1], key)) == (409, "IDEMPOTENCY_KEY_REUSED")
     assert _code(_record(preparer, case, plan, uuid4())) == (409, "FINAL_SETTLEMENT_DRAFT_WAITING")
+    waiting = preparer.get(f"{base}/final-settlements").json()["data"]
+    assert [(item["id"], item["pending_draft"]) for item in waiting] == [(str(settlement), True)]
 
     with psycopg.connect(url) as connection:
         approver_id = setup_signed_lease(connection)[0]
@@ -118,6 +126,8 @@ def test_a_settlement_is_started_previewed_drafted_and_closed_over_http(
         f"{base}/leases/{case['lease']}/final-settlement", json={}, headers=headers(human)
     )
     assert closed.status_code == 200 and closed.json()["data"]["closed"] is True
+    [done] = approver.get(f"{base}/final-settlements").json()["data"]
+    assert (done["closed"], done["pending_draft"]) == (True, False)
     again = _record(preparer, case, plan, uuid4())
     assert again.status_code == 409, again.text
     # A closed Settlement is a blocking issue of the preview (SETTLEMENT_CLOSED).
@@ -143,3 +153,32 @@ def test_a_settlement_starts_only_for_a_terminated_lease(migrated_database_url: 
     )
     assert unknown.status_code == 404
     assert cast(dict[str, object], unknown.json())["error"] is not None
+
+
+def test_the_settlement_list_starts_nothing_and_hides_other_leases(
+    migrated_database_url: str,
+) -> None:
+    """V1-058 M5: a Lease with no Settlement reads as an empty list (none is opened); an
+    unknown Lease, or a Property the person may not work on, is not found."""
+    url = migrated_database_url
+    with psycopg.connect(url) as connection:
+        human, prop, _, lease = setup_signed_lease(connection)
+    client = api(person(human, prop, PREPARE))
+    base = f"/api/v1/properties/{prop}/final-settlements"
+    answer = client.get(base, params={"lease_id": str(lease)})
+    assert answer.status_code == 200, answer.text
+    assert answer.json()["data"] == []
+    assert client.get(base, params={"lease_id": str(uuid4())}).status_code == 404
+    # The Lease must be of the Property in the path.
+    assert client.get(f"/api/v1/properties/{uuid4()}/final-settlements").status_code == 404
+    with psycopg.connect(url) as connection:
+        assert connection.execute(
+            "SELECT count(*) FROM app.final_settlements WHERE lease_id=%s", (lease,)
+        ).fetchone() == (0,)
+        # Least privilege: only the runtime role may run the read.
+        granted = connection.execute(
+            "SELECT pg_catalog.has_function_privilege(role, "
+            "'app.final_settlements_read(uuid,uuid,uuid)', 'EXECUTE') "
+            "FROM unnest(ARRAY['prm_runtime','prm_financial','prm_bootstrap']) role"
+        ).fetchall()
+    assert granted == [(True,), (False,), (False,)]

@@ -353,6 +353,12 @@ export interface SettlementApi {
     form: AdjustmentReversalInput,
     key: string,
   ) => Promise<FinancialDraft>;
+  // V1-058 R3 Move-out M5: the Property's Final Settlements, or one Lease's (reading starts
+  // nothing); each says whether a draft of it waits.
+  settlements: (
+    propertyId: string,
+    leaseId?: string,
+  ) => Promise<SettlementRecord[]>;
   // Slice 11e-1: the Final Settlement.
   startSettlement: (
     propertyId: string,
@@ -507,6 +513,18 @@ export const settlementApi: SettlementApi = {
   paymentReturnDraft: draftOn("payments", "return-drafts"),
   paymentMoveDraft: draftOn("payment-allocations", "move-drafts"),
   adjustmentReversalDraft: draftOn("invoice-adjustments", "reversal-drafts"),
+  settlements: async (propertyId, leaseId) => {
+    const suffix =
+      leaseId === undefined ? "" : `?lease_id=${encodeURIComponent(leaseId)}`;
+    const body = await send(
+      `${property(propertyId)}/final-settlements${suffix}`,
+      { method: "GET" },
+      propertyId,
+    );
+    if (!Array.isArray(body.data))
+      throw new SettlementRequestError(200, null, FALLBACK);
+    return body.data.map(record);
+  },
   startSettlement: (propertyId, leaseId, key) =>
     post(
       `${property(propertyId)}/leases/${id(leaseId)}/final-settlement`,

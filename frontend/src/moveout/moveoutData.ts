@@ -7,11 +7,28 @@ import { addDays } from "../reservations/reservationsData";
 /**
  * soon: the Lease ends within 60 days (no renewal), or ended or was terminated and someone is
  * still in the Unit. out: everyone left (or nobody ever moved in); the later steps remain.
+ * confirm: a draft Final Settlement waits for a Manager. closed: the Final Settlement closed.
  */
-export type MoveOutStage = "soon" | "out";
+export type MoveOutStage = "soon" | "out" | "confirm" | "closed";
 
 /** The finer step shown in the chip (DESIGN.md "Move-out (round 3)"). */
-export type MoveOutStep = "soon" | "in" | "out" | "skip";
+export type MoveOutStep = "soon" | "in" | "out" | "skip" | "confirm" | "closed";
+
+/** What the list knows of a Lease's Final Settlement. */
+export interface SettlementMark {
+  closed: boolean;
+  pending_draft: boolean;
+}
+
+/** A Final Settlement waiting for a Manager, or closed, comes before the earlier steps. */
+export function settledStep(
+  step: MoveOutStep | null,
+  settlement: SettlementMark | undefined,
+): MoveOutStep | null {
+  if (step === null || settlement === undefined) return step;
+  if (settlement.closed) return "closed";
+  return settlement.pending_draft ? "confirm" : step;
+}
 
 export const SOON_DAYS = 60;
 
@@ -48,6 +65,7 @@ export function stepOf(
 }
 
 export function stageOf(step: MoveOutStep): MoveOutStage {
+  if (step === "confirm" || step === "closed") return step;
   return step === "soon" || step === "in" ? "soon" : "out";
 }
 

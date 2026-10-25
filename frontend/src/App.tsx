@@ -157,7 +157,14 @@ export interface AppProps {
   moveOutApi?: MoveOutApi;
   utilityLeaseApi?: UtilityLeaseApi;
   /** The move-out cleaning charge (V1-058 R3 M4). */
-  moveOutChargeApi?: Pick<SettlementApi, "cleaningRate" | "chargeCleaning">;
+  moveOutChargeApi?: Pick<
+    SettlementApi,
+    | "cleaningRate"
+    | "chargeCleaning"
+    | "settlements"
+    | "startSettlement"
+    | "settlementPreview"
+  >;
   depositApi?: DepositApi;
   utilityApi?: UtilityApi;
   invoiceApi?: InvoiceApi;

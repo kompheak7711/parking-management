@@ -458,3 +458,23 @@ class FinalSettlementReadService:
             (property_id, actor_id, settlement_id, capabilities),
             read_only=True,
         )
+
+    def settlements(
+        self, property_id: UUID, lease_id: UUID | None, *, actor: AuthenticatedActor
+    ) -> dict[str, object]:
+        """The Property's Final Settlements (or the Lease's), each with whether a draft waits.
+        It starts nothing: the Move-out screens look before anyone opens a Settlement."""
+        _uuid(property_id, "property_id")
+        if not any(
+            is_authorized(actor, AuthorizationRequirement(capability, str(property_id)))
+            for capability in (FINAL_SETTLEMENTS_PREPARE_CAPABILITY, FINANCIAL_APPROVE_CAPABILITY)
+        ):
+            raise FinalSettlementAuthorizationError("Final Settlement read is not authorized")
+        actor_id = _actor_identity(actor)
+        if lease_id is not None:
+            _uuid(lease_id, "lease_id")
+        return FinalSettlementService(self.database_url)._call(
+            "SELECT app.final_settlements_read(%s,%s,%s)",
+            (property_id, actor_id, lease_id),
+            read_only=True,
+        )

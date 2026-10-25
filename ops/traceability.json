@@ -55742,6 +55742,132 @@
       "test_path": "frontend/src/moveout/moveoutClient.test.ts",
       "status": "implemented",
       "notes": "V1-058 R3 Move-out M4: the client reads inspections a page at a time and records one with the key and CSRF token; 409 conflict, 5xx or unreadable save may be saved."
+    },
+    {
+      "test_id": "test_the_settlements_are_read_without_starting_one",
+      "upstream_ids": [
+        "API-071",
+        "BR-SETTLE-011",
+        "SEC-019",
+        "DL-074"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_final_settlement_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M5: GET final-settlements (prepare or financial.approve) lists the Property's Settlements, or one Lease's, each with pending_draft; it starts nothing; a bad or repeated lease_id is refused."
+    },
+    {
+      "test_id": "test_a_settlement_list_for_another_property_or_lease_is_never_shown",
+      "upstream_ids": [
+        "API-071",
+        "SEC-019",
+        "DL-074"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_final_settlement_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M5: a Settlement of another Property or Lease in the answer is never shown (503); not found is 404; no service is 503."
+    },
+    {
+      "test_id": "test_the_settlement_list_starts_nothing_and_hides_other_leases",
+      "upstream_ids": [
+        "API-071",
+        "BR-SETTLE-011",
+        "SEC-019",
+        "DL-074"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_final_settlement_api_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M5 (migration 20270315_234): a Lease with no Settlement reads as an empty list and none is opened; an unknown Lease or Property is 404; only prm_runtime may run app.final_settlements_read."
+    },
+    {
+      "test_id": "TEST-FE-984",
+      "upstream_ids": [
+        "API-071",
+        "SEC-019",
+        "DL-074"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/settlementClient.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M5: the client reads one Lease's Final Settlements (or all) with the Property header; an answer that is not a list is refused."
+    },
+    {
+      "test_id": "TEST-FE-985",
+      "upstream_ids": [
+        "BR-SETTLE-011",
+        "UI-034",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M5: the list shows Waiting for a Manager first and Closed last with their cards, from a read that starts nothing; a failed read or no Settlement rights keep the earlier steps."
+    },
+    {
+      "test_id": "TEST-FE-986",
+      "upstream_ids": [
+        "BR-SETTLE-001",
+        "BR-SETTLE-011",
+        "BR-CREDIT-008",
+        "DL-032",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M5: Start Final Settlement opens it with a key; the statement shows the open Invoices and late charges, the Customer's own Credit, the Security Deposit held and that it is ready."
+    },
+    {
+      "test_id": "TEST-FE-987",
+      "upstream_ids": [
+        "BR-MOVEOUT-012",
+        "BR-SETTLE-011",
+        "SEC-019",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M5: the step waits for the hand-back; an approver cannot start it; no rights hides it; a refused start says why; no answer offers Try again with the same key."
+    },
+    {
+      "test_id": "TEST-FE-988",
+      "upstream_ids": [
+        "BR-SETTLE-011",
+        "BR-SETTLE-014",
+        "BR-DEP-022",
+        "BR-DEP-023",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M5: blocking issues in plain words once each; a kept Security Deposit is shown as kept, never a payment; the Pet Deposit remainder rule; a waiting draft links to Waiting for approval."
+    },
+    {
+      "test_id": "TEST-FE-989",
+      "upstream_ids": [
+        "BR-SETTLE-009",
+        "BR-SETTLE-013",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M5: a closed Settlement shows its closing time and the balance that stays owed, reads no preview, step done; an unreadable preview says so."
+    },
+    {
+      "test_id": "TEST-FE-990",
+      "upstream_ids": [
+        "BR-SETTLE-011",
+        "DL-074"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M5: the preview is read field by field (unknown Deposit path or broken amount is unreadable); the newest Settlement of the Lease is shown."
     }
   ]
 }

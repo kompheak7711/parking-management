@@ -6,7 +6,7 @@
 
 import "../shell/screens.css";
 
-import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { DepositApi, DepositResource } from "../depositClient";
 import type {
@@ -68,11 +68,15 @@ import {
   endOf,
   handedBackOn,
   loadHeld,
+  settledStep,
   signedRenewalOf,
   stageOf,
   stepOf,
   terminationOf,
 } from "./moveoutData";
+import { Kv, type Mark, Step } from "./parts";
+import { type SettlementState, readSettlement } from "./settlement";
+import { SettlementStep } from "./SettlementStep";
 import { conditionText, mt } from "./text";
 
 const STEP_CHIPS: Record<MoveOutStep, [Tone, ShellIcon]> = {
@@ -80,6 +84,8 @@ const STEP_CHIPS: Record<MoveOutStep, [Tone, ShellIcon]> = {
   in: ["warn", "clock"],
   out: ["info", "door"],
   skip: ["info", "door"],
+  confirm: ["warn", "lock"],
+  closed: ["ok", "check"],
 };
 
 export function MoveOutChip({
@@ -105,19 +111,6 @@ function ago(language: Language, today: string, day: string): string {
   return days > 0 ? mt(language, "in_days", days) : mt(language, "ago", -days);
 }
 
-function Kv({ rows }: { rows: [string, ReactNode][] }) {
-  return (
-    <dl className="ui-kv">
-      {rows.map(([term, value], index) => (
-        <div key={`${String(index)}:${term}`} style={{ display: "contents" }}>
-          <dt>{term}</dt>
-          <dd>{value}</dd>
-        </div>
-      ))}
-    </dl>
-  );
-}
-
 export interface MoveoutPageProps {
   language: Language;
   propertyId: string;
@@ -134,7 +127,14 @@ export interface MoveoutPageProps {
     "readFinalInputs" | "recordFinalInputs" | "createFinalInvoice"
   >;
   invoiceApi: Pick<InvoiceApi, "list" | "recordOneTimeCharge" | "create">;
-  settlementApi: Pick<SettlementApi, "cleaningRate" | "chargeCleaning">;
+  settlementApi: Pick<
+    SettlementApi,
+    | "cleaningRate"
+    | "chargeCleaning"
+    | "settlements"
+    | "startSettlement"
+    | "settlementPreview"
+  >;
   capabilities: ReadonlySet<string> | null;
 }
 
@@ -171,25 +171,52 @@ function MoveoutList({
   today,
   leaseApi,
   depositApi,
+  settlementApi,
   capabilities,
 }: MoveoutPageProps) {
   const [rows, setRows] = useState<Row[] | null>(null);
   const [held, setHeld] = useState<Map<string, HeldCell> | null>(null);
   const [failed, setFailed] = useState(false);
+  const [settleFailed, setSettleFailed] = useState(false);
   const [card, setCard] = useState<MoveOutStage | "all">("all");
   const sequence = useRef(0);
   const mayDeposits =
     capabilities === null || capabilities.has("deposits.read");
+  const maySettlements =
+    capabilities === null ||
+    capabilities.has("final_settlements.prepare") ||
+    capabilities.has("financial.approve");
 
   const load = useCallback(() => {
     const operation = ++sequence.current;
     setFailed(false);
-    void loadLeasesData(leaseApi, propertyId)
-      .then(async ({ leases }) => {
+    setSettleFailed(false);
+    // Without the Settlements the list still shows the earlier steps.
+    const settlements: Promise<Map<string, SettlementState> | null> =
+      maySettlements
+        ? settlementApi
+            .settlements(propertyId)
+            .then(
+              (items) =>
+                new Map(
+                  items
+                    .map((item) => readSettlement(item))
+                    .map((item) => [item.lease_id, item]),
+                ),
+            )
+            // null: the read failed; said only for the current read.
+            .catch(() => null)
+        : Promise.resolve(new Map<string, SettlementState>());
+    void Promise.all([loadLeasesData(leaseApi, propertyId), settlements])
+      .then(async ([{ leases }, settled]) => {
         if (operation !== sequence.current) return;
+        setSettleFailed(settled === null);
         const renewed = signedRenewalOf(leases);
         const found = leases.flatMap((lease) => {
-          const step = stepOf(lease, today, renewed.has(lease.lease_id));
+          const step = settledStep(
+            stepOf(lease, today, renewed.has(lease.lease_id)),
+            settled?.get(lease.lease_id),
+          );
           return step === null ? [] : [{ lease, step }];
         });
         setRows(found);
@@ -203,12 +230,23 @@ function MoveoutList({
       .catch(() => {
         if (operation === sequence.current) setFailed(true);
       });
-  }, [leaseApi, depositApi, propertyId, today, mayDeposits]);
+  }, [
+    leaseApi,
+    depositApi,
+    settlementApi,
+    propertyId,
+    today,
+    mayDeposits,
+    maySettlements,
+  ]);
 
   // Another Property never shows the move-outs of the one before.
   useEffect(() => {
+    // A read still running for the Property before is dropped.
+    sequence.current += 1;
     setRows(null);
     setHeld(null);
+    setSettleFailed(false);
   }, [propertyId]);
 
   // Read again each time the page is opened, so it shows what others changed meanwhile.
@@ -234,8 +272,15 @@ function MoveoutList({
       )
     );
 
-  // Handed back first (work to finish), then the soonest end.
-  const order = (row: Row) => (stageOf(row.step) === "out" ? 0 : 1);
+  // Waiting for a Manager first, then handed back (work to finish), then the soonest end;
+  // closed last.
+  const ORDER: Record<MoveOutStage, number> = {
+    confirm: 0,
+    out: 1,
+    soon: 2,
+    closed: 3,
+  };
+  const order = (row: Row) => ORDER[stageOf(row.step)];
   const shown = rows
     .filter((row) => card === "all" || stageOf(row.step) === card)
     .sort(
@@ -250,11 +295,23 @@ function MoveoutList({
   const cards: [MoveOutStage, ShellIcon, Tone][] = [
     ["soon", "clock", "warn"],
     ["out", "door", "info"],
+    ...(maySettlements
+      ? ([
+          ["confirm", "lock", "warn"],
+          ["closed", "check", "ok"],
+        ] as [MoveOutStage, ShellIcon, Tone][])
+      : []),
   ];
 
   return (
     <>
       {failure}
+      {settleFailed && (
+        <div className="ui-notice warn" role="status">
+          <Icon name="alert" />
+          <p>{mt(language, "settle_failed")}</p>
+        </div>
+      )}
       <div className="ui-head">
         <p>{mt(language, "sub")}</p>
       </div>
@@ -377,7 +434,11 @@ function MoveoutList({
                                 ? "next_final"
                                 : step === "skip"
                                   ? "next_settle"
-                                  : "next_hb",
+                                  : step === "confirm"
+                                    ? "next_confirm"
+                                    : step === "closed"
+                                      ? "next_none"
+                                      : "next_hb",
                             )}
                           </span>
                         </td>
@@ -406,50 +467,6 @@ function MoveoutList({
         )}
       </div>
     </>
-  );
-}
-
-type Mark = "done" | "now" | "todo" | "skip";
-
-function Step({
-  language,
-  number,
-  mark,
-  title,
-  children,
-  actions,
-}: {
-  language: Language;
-  number: number;
-  mark: Mark;
-  title: string;
-  children: ReactNode;
-  actions?: ReactNode;
-}) {
-  const tone: Tone =
-    mark === "done" ? "ok" : mark === "now" ? "info" : "neutral";
-  return (
-    <li className={`ui-mstep s-${mark}`}>
-      <span aria-hidden="true" className={`ui-mark ${mark}`}>
-        {mark === "done" ? (
-          <Icon name="check" small />
-        ) : mark === "skip" ? (
-          "–"
-        ) : (
-          ""
-        )}
-      </span>
-      <div className="ui-mbody">
-        <div className="ui-mhead">
-          <h3>
-            {number}. {title}
-          </h3>
-          <Chip tone={tone}>{mt(language, mark)}</Chip>
-        </div>
-        {children}
-        {actions !== undefined && <div className="ui-actions">{actions}</div>}
-      </div>
-    </li>
   );
 }
 
@@ -540,6 +557,7 @@ function MoveoutDetail({
   const [charges, setCharges] = useState<ChargesState>({ state: "none" });
   const [notice, setNotice] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
+  const [loads, setLoads] = useState(0);
   const sequence = useRef(0);
   const may = (capability: string) =>
     capabilities === null || capabilities.has(capability);
@@ -551,6 +569,7 @@ function MoveoutDetail({
     const operation = ++sequence.current;
     const current = () => operation === sequence.current;
     setLoadFailed(false);
+    setLoads((count) => count + 1);
     const readInvoices = async (category: InvoiceCategory) => {
       const found: InvoiceResource[] = [];
       let cursor: string | undefined;
@@ -793,6 +812,10 @@ function MoveoutDetail({
       occupancy.customer_name,
     ]),
   );
+  const customerNames = new Map([
+    ...names,
+    [lease.primary_tenant_id, lease.primary_tenant_name],
+  ]);
 
   const mark1: Mark = ended ? "done" : "now";
   const mark2: Mark = handedBack
@@ -839,7 +862,6 @@ function MoveoutDetail({
         {mt(language, inputs === null ? "st3_btn" : "st3_issue_btn")}
       </button>
     ) : undefined;
-  const later = <p className="ui-small ui-muted">{mt(language, "later")}</p>;
 
   // A charge's outcome: its Draft, a Draft billing an amount recorded before, or no Draft
   // (already billed, or refused for another reason): then the person checks the Invoices.
@@ -1391,15 +1413,19 @@ function MoveoutDetail({
                   </>
                 )}
               </Step>
-              <Step
+              <SettlementStep
+                api={settlementApi}
+                capabilities={capabilities}
                 language={language}
-                mark={neverIn ? "now" : "todo"}
-                number={5}
-                title={mt(language, "st5_t")}
-              >
-                <p>{mt(language, neverIn ? "st5_todo" : "st5_wait")}</p>
-                {neverIn && later}
-              </Step>
+                lease={lease}
+                names={customerNames}
+                onStarted={() => {
+                  setNotice(mt(language, "st5_toast"));
+                }}
+                propertyId={propertyId}
+                reachable={terminated && (neverIn || handedBack)}
+                version={loads}
+              />
               <Step
                 language={language}
                 mark="todo"
