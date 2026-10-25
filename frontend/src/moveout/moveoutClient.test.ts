@@ -4,7 +4,9 @@ import {
   moveOutApi,
   MoveOutConflictError,
   MoveOutNotAllowedError,
+  MoveOutRequestError,
   MoveOutUnavailableError,
+  type InspectionSource,
   type MoveOutSource,
 } from "./moveoutClient";
 
@@ -112,5 +114,87 @@ describe("Move-out client", () => {
     await expect(moveOutApi.read("p/1", "l/1")).rejects.toBeInstanceOf(
       MoveOutUnavailableError,
     );
+  });
+
+  it("TEST-FE-983 reads a Lease's move-out inspections a page at a time and records one with the key and the CSRF token; an unreadable page is refused; a failed or unreadable save may be saved", async () => {
+    const inspection = {
+      id: "i1",
+      lease_id: "l/1",
+      inspection_date: "2026-10-13",
+      result_text: "No damage found.",
+      evidence_reference: "Recorded in the app",
+      reason: "Move-out inspection",
+      completed_at: "2026-10-13T04:00:00Z",
+      supersedes_inspection_id: null,
+      current_effect: "INSPECTION_ONLY",
+      findings: [],
+    };
+    const source: InspectionSource = {
+      inspection_id: "i1",
+      expected_lease_version: 4,
+      inspection_date: "2026-10-13",
+      result_text: "No damage found.",
+      authorization_reference: "Recorded in the app",
+      evidence_reference: "Recorded in the app",
+      reason: "Move-out inspection",
+      findings: [],
+      supersedes_inspection_id: null,
+    };
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ data: { items: [inspection], total: 21 } }),
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ data: inspection }), { status: 201 }),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ data: { items: "none", total: 1 } })),
+      )
+      .mockResolvedValueOnce(new Response("{}", { status: 409 }))
+      .mockResolvedValueOnce(new Response("{}", { status: 503 }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ data: { id: 1 } }), { status: 201 }),
+      )
+      .mockResolvedValueOnce(new Response("{}", { status: 201 }));
+    vi.stubGlobal("fetch", fetcher);
+    vi.spyOn(document, "cookie", "get").mockReturnValue(
+      "__Host-prm_csrf=token-1",
+    );
+    await expect(moveOutApi.inspections("p/1", "l/1", 20)).resolves.toEqual({
+      items: [inspection],
+      total: 21,
+    });
+    expect(fetcher.mock.calls[0]?.[0]).toBe(
+      "/api/v1/properties/p%2F1/leases/l%2F1/move-out-inspections?limit=20&offset=20",
+    );
+    await expect(
+      moveOutApi.inspect("p/1", "l/1", source, "key-2"),
+    ).resolves.toEqual(inspection);
+    const [url, init] = fetcher.mock.calls[1] ?? [];
+    expect(url).toBe(
+      "/api/v1/properties/p%2F1/leases/l%2F1/move-out-inspections",
+    );
+    const headers = new Headers(init?.headers);
+    expect(headers.get("Idempotency-Key")).toBe("key-2");
+    expect(headers.get("X-CSRF-Token")).toBe("token-1");
+    expect(JSON.parse(init?.body as string)).toEqual(source);
+    await expect(
+      moveOutApi.inspections("p/1", "l/1", 0),
+    ).rejects.toBeInstanceOf(MoveOutRequestError);
+    await expect(
+      moveOutApi.inspect("p/1", "l/1", source, "key-2"),
+    ).rejects.toBeInstanceOf(MoveOutConflictError);
+    await expect(
+      moveOutApi.inspect("p/1", "l/1", source, "key-2"),
+    ).rejects.toBeInstanceOf(MoveOutUnavailableError);
+    await expect(
+      moveOutApi.inspect("p/1", "l/1", source, "key-2"),
+    ).rejects.toBeInstanceOf(MoveOutUnavailableError);
+    await expect(
+      moveOutApi.inspect("p/1", "l/1", source, "key-2"),
+    ).rejects.toBeInstanceOf(MoveOutUnavailableError);
   });
 });

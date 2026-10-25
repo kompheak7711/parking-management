@@ -323,7 +323,10 @@ export function FinalReadingsDialog({
       {outcome !== null && (
         <div className="ui-notice warn" role="alert">
           <Icon name="alert" />
-          <p>{refusal ?? mt(language, outcome)}</p>
+          <p>
+            {refusal ??
+              mt(language, outcome === "unknown" ? "c_unknown" : "c_refused")}
+          </p>
         </div>
       )}
       {invoiceOnly ? (

@@ -55622,6 +55622,126 @@
       "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
       "status": "implemented",
       "notes": "V1-058 R3 Move-out M3: the final Invoice is tied to the current final inputs by its lines' end readings; a same-day reading not checked yet is shown and stops the save."
+    },
+    {
+      "test_id": "TEST-FE-974",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "BR-INV-010",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M4: Record inspection saves findings with the pet mark, then a Damage charge (the finding's id) and its Draft Invoice for each finding with an amount; a Draft refused as already made warns to check the Invoices."
+    },
+    {
+      "test_id": "TEST-FE-975",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M4: the inspection form refuses a day before the hand-back, an empty finding and an amount without evidence; without the Damage-charge right it asks no amounts."
+    },
+    {
+      "test_id": "TEST-FE-976",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "BR-MOVEOUT-013",
+        "BR-INV-010",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M4: the step shows each finding's charge (Draft, issued, VOID or Charge button), the cleaning charge and charges of a replaced inspection; a charged inspection is not corrected."
+    },
+    {
+      "test_id": "TEST-FE-977",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "BR-INV-010",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M4: Charge on a finding records the charge and Draft; a charge recorded before still gets its Draft with a warning when the amount differs; Try again reuses the key."
+    },
+    {
+      "test_id": "TEST-FE-978",
+      "upstream_ids": [
+        "BR-MOVEOUT-013",
+        "BR-UNIT-014",
+        "BR-INV-010",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M4: Add cleaning charge records the Unit rate with the Lease id and makes its Draft, also when recorded before; refusals named; a server failure offers Try again; no, zero or hidden rate."
+    },
+    {
+      "test_id": "TEST-FE-979",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M4: Correct inspection fills the form, asks why and sends a new inspection that replaces the old one with new finding ids; the step is done with no Drafts left."
+    },
+    {
+      "test_id": "TEST-FE-980",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "SEC-019",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M4: without inspect, Damage-charge or Invoice rights no buttons and the reasons; without invoices.read the charges are not shown; two inspections in force are named."
+    },
+    {
+      "test_id": "TEST-FE-981",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M4: no answer to the inspection holds the form and Try again sends the same inspection and key; a failed charge after the save is retried alone."
+    },
+    {
+      "test_id": "TEST-FE-982",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "BR-MOVEOUT-013",
+        "DL-074"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M4: the inspections in force, the Invoice billing each charge source (VOID only when no other) and the cleaning Invoice by source or fixed text."
+    },
+    {
+      "test_id": "TEST-FE-983",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "SEC-019",
+        "SEC-020",
+        "DL-074"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/moveout/moveoutClient.test.ts",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M4: the client reads inspections a page at a time and records one with the key and CSRF token; 409 conflict, 5xx or unreadable save may be saved."
     }
   ]
 }

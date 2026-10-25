@@ -1,7 +1,7 @@
 // V1-058 R3 Move-out: the Move-out tab of Leases (DESIGN.md "Move-out (round 3)"). "#/moveout"
-// shows the list; "#/moveout/<Lease id>" shows the steps of one Lease. This step builds the
-// list, the page and the Hand-back step; final readings, inspection and charges, the Final
-// Settlement and corrections after closure come next. The list cannot yet tell a closed Final
+// shows the list; "#/moveout/<Lease id>" shows the steps of one Lease: the hand-back, the final
+// readings, the inspection and charges; the Final Settlement and corrections after closure
+// come next. The list cannot yet tell a closed Final
 // Settlement apart (the server has no read of it), so "To confirm" and "Closed" come later.
 
 import "../shell/screens.css";
@@ -9,7 +9,11 @@ import "../shell/screens.css";
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 
 import type { DepositApi, DepositResource } from "../depositClient";
-import type { InvoiceApi, InvoiceResource } from "../invoiceClient";
+import type {
+  InvoiceApi,
+  InvoiceCategory,
+  InvoiceResource,
+} from "../invoiceClient";
 import {
   LeaseUnavailableError,
   type LeaseApi,
@@ -27,6 +31,19 @@ import type { UnitApi } from "../unitClient";
 import type { UtilityApi } from "../utilityClient";
 import type { EvidenceRecord, UtilityLeaseApi } from "../utilityLeaseClient";
 import { daysBetween } from "../reservations/reservationsData";
+import type { SettlementApi } from "../settlementClient";
+import {
+  type CleaningRate,
+  CleaningChargeDialog,
+  DamageChargeDialog,
+} from "./ChargeDialogs";
+import {
+  billedSources,
+  cleaningInvoice,
+  currentInspection,
+  currentInspections,
+  sourceOf,
+} from "./charges";
 import {
   type FinalInputs,
   currentFinalInputs,
@@ -35,9 +52,12 @@ import {
 } from "./finalReadings";
 import { FinalReadingsDialog } from "./FinalReadingsDialog";
 import { HandBackDialog, rentRuleText } from "./HandBackDialog";
+import { InspectionDialog } from "./InspectionDialog";
 import {
   MoveOutUnavailableError,
+  type InspectionFinding,
   type MoveOutApi,
+  type MoveOutInspection,
   type MoveOutPage,
   type MoveOutRecord,
 } from "./moveoutClient";
@@ -113,7 +133,8 @@ export interface MoveoutPageProps {
     UtilityLeaseApi,
     "readFinalInputs" | "recordFinalInputs" | "createFinalInvoice"
   >;
-  invoiceApi: Pick<InvoiceApi, "list">;
+  invoiceApi: Pick<InvoiceApi, "list" | "recordOneTimeCharge" | "create">;
+  settlementApi: Pick<SettlementApi, "cleaningRate" | "chargeCleaning">;
   capabilities: ReadonlySet<string> | null;
 }
 
@@ -435,8 +456,24 @@ function Step({
 // The timeline is read oldest first; a long one has more pages.
 const MAX_TIMELINE_PAGES = 20;
 
-// The Lease's Utility Invoices are read a page at a time.
+// The Lease's Invoices of one category are read a page at a time.
 const MAX_INVOICE_PAGES = 10;
+
+// Inspections are read oldest first, 20 a page.
+const MAX_INSPECTION_PAGES = 10;
+
+function rateOf(record: Record<string, unknown>): CleaningRate | null {
+  const rate = record.rate;
+  if (rate === null) return null;
+  if (
+    typeof rate !== "object" ||
+    typeof (rate as Record<string, unknown>).id !== "string" ||
+    typeof (rate as Record<string, unknown>).rate_usd_cents !== "number"
+  )
+    throw new Error("The cleaning rate answer is not readable.");
+  const found = rate as { id: string; rate_usd_cents: number };
+  return { id: found.id, cents: found.rate_usd_cents };
+}
 
 type FinalState =
   | { state: "none" | "loading" | "failed" }
@@ -448,6 +485,24 @@ type FinalState =
       /** null: none yet; "unknown": the Invoices could not be read. */
       invoice: InvoiceResource | null | "unknown";
     };
+
+type ChargesState =
+  | { state: "none" | "loading" | "failed" }
+  | {
+      state: "shown";
+      inspections: MoveOutInspection[];
+      inspection: MoveOutInspection | null;
+      /** The Lease's Damage and Miscellaneous Invoices. */
+      invoices: InvoiceResource[] | "hidden" | "unknown";
+      /** null: the Unit has no cleaning rate. */
+      rate: CleaningRate | null | "hidden" | "unknown";
+    };
+
+/** The amount an Invoice bills for one charge source. */
+function billedCents(invoice: InvoiceResource, sourceId: string): number {
+  const line = invoice.lines.find((item) => item.source.id === sourceId);
+  return Number((line?.original_amount ?? invoice.original_total).minor_units);
+}
 
 type DepositsState =
   | { state: "loading" | "hidden" | "failed" }
@@ -464,6 +519,7 @@ function MoveoutDetail({
   utilityApi,
   utilityLeaseApi,
   invoiceApi,
+  settlementApi,
   capabilities,
   leaseId,
 }: MoveoutPageProps & { leaseId: string }) {
@@ -476,8 +532,12 @@ function MoveoutDetail({
   const [missing, setMissing] = useState(false);
   const [renewed, setRenewed] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
-  const [dialog, setDialog] = useState<"handback" | "final" | null>(null);
+  const [dialog, setDialog] = useState<
+    "handback" | "final" | "inspect" | "clean" | null
+  >(null);
+  const [charging, setCharging] = useState<InspectionFinding | null>(null);
   const [final, setFinal] = useState<FinalState>({ state: "none" });
+  const [charges, setCharges] = useState<ChargesState>({ state: "none" });
   const [notice, setNotice] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
   const sequence = useRef(0);
@@ -485,11 +545,66 @@ function MoveoutDetail({
     capabilities === null || capabilities.has(capability);
   const mayDeposits = may("deposits.read");
   const mayInvoices = may("invoices.read");
+  const mayRate = may("invoices.create") || may("property.manage");
 
   const load = useCallback(() => {
     const operation = ++sequence.current;
     const current = () => operation === sequence.current;
     setLoadFailed(false);
+    const readInvoices = async (category: InvoiceCategory) => {
+      const found: InvoiceResource[] = [];
+      let cursor: string | undefined;
+      for (let count = 0; count < MAX_INVOICE_PAGES; count += 1) {
+        const next = await invoiceApi.list(propertyId, {
+          lease_id: leaseId,
+          category,
+          ...(cursor === undefined ? {} : { cursor }),
+        });
+        found.push(...next.items);
+        if (next.next_cursor === null) break;
+        cursor = next.next_cursor;
+      }
+      return found;
+    };
+    // After the hand-back: the inspection, its charges and the cleaning charge.
+    const loadCharges = async (unitId: string): Promise<ChargesState> => {
+      const inspections: MoveOutInspection[] = [];
+      try {
+        for (let count = 0; count < MAX_INSPECTION_PAGES; count += 1) {
+          const next = await moveOutApi.inspections(
+            propertyId,
+            leaseId,
+            inspections.length,
+          );
+          inspections.push(...next.items);
+          if (next.items.length === 0 || inspections.length >= next.total)
+            break;
+        }
+      } catch {
+        return { state: "failed" };
+      }
+      const invoices: InvoiceResource[] | "hidden" | "unknown" = mayInvoices
+        ? await Promise.all([
+            readInvoices("DAMAGE_CHARGES"),
+            readInvoices("MISCELLANEOUS_CHARGES"),
+          ])
+            .then(([damage, other]) => [...damage, ...other])
+            .catch(() => "unknown" as const)
+        : "hidden";
+      const rate: CleaningRate | null | "hidden" | "unknown" = mayRate
+        ? await settlementApi
+            .cleaningRate(propertyId, unitId)
+            .then(rateOf)
+            .catch(() => "unknown" as const)
+        : "hidden";
+      return {
+        state: "shown",
+        inspections,
+        inspection: currentInspection(inspections),
+        invoices,
+        rate,
+      };
+    };
     void (async () => {
       const loaded = await leaseApi.get(leaseId);
       if (!current()) return;
@@ -540,9 +655,14 @@ function MoveoutDetail({
       );
       if (handed === undefined || records.open_occupancies.length > 0) {
         setFinal({ state: "none" });
+        setCharges({ state: "none" });
         return;
       }
       setFinal({ state: "loading" });
+      setCharges({ state: "loading" });
+      void loadCharges(loaded.unit_id).then((found) => {
+        if (current()) setCharges(found);
+      });
       const read = await utilityLeaseApi
         .readFinalInputs(propertyId, leaseId)
         .catch(() => undefined);
@@ -558,19 +678,7 @@ function MoveoutDetail({
         invoice = "unknown";
         if (mayInvoices) {
           try {
-            const found: InvoiceResource[] = [];
-            let cursor: string | undefined;
-            for (let count = 0; count < MAX_INVOICE_PAGES; count += 1) {
-              const next = await invoiceApi.list(propertyId, {
-                lease_id: leaseId,
-                category: "UTILITIES",
-                ...(cursor === undefined ? {} : { cursor }),
-              });
-              found.push(...next.items);
-              if (next.next_cursor === null) break;
-              cursor = next.next_cursor;
-            }
-            invoice = finalInvoiceOf(found, inputs);
+            invoice = finalInvoiceOf(await readInvoices("UTILITIES"), inputs);
           } catch {
             invoice = "unknown";
           }
@@ -605,10 +713,12 @@ function MoveoutDetail({
     moveOutApi,
     utilityLeaseApi,
     invoiceApi,
+    settlementApi,
     leaseId,
     propertyId,
     mayDeposits,
     mayInvoices,
+    mayRate,
   ]);
 
   useEffect(() => {
@@ -731,6 +841,144 @@ function MoveoutDetail({
     ) : undefined;
   const later = <p className="ui-small ui-muted">{mt(language, "later")}</p>;
 
+  // A charge's outcome: its Draft, a Draft billing an amount recorded before, or no Draft
+  // (already billed, or refused for another reason): then the person checks the Invoices.
+  const charged = (
+    draft: InvoiceResource | null,
+    other: boolean,
+    otherKey: "st4_other" | "st4_clean_other",
+  ) => {
+    if (draft === null) {
+      setWarning(mt(language, "st4_check"));
+      return;
+    }
+    const amount = usdFromCents(Number(draft.original_total.minor_units));
+    if (other) setWarning(mt(language, otherKey, amount));
+    else setNotice(mt(language, "st4_toast_draft", amount));
+  };
+
+  // Step 4: the inspection in force, each finding's charge and the cleaning charge.
+  const shownCharges = charges.state === "shown" ? charges : null;
+  const inspection = shownCharges?.inspection ?? null;
+  const findings = [...(inspection?.findings ?? [])].sort(
+    (left, right) => left.ordinal - right.ordinal,
+  );
+  const known = Array.isArray(shownCharges?.invoices)
+    ? shownCharges.invoices
+    : null;
+  const billed = billedSources(known ?? []);
+  const cleaning = known === null ? null : cleaningInvoice(known, leaseId);
+  const current4 = new Set(findings.map((finding) => finding.id));
+  const earlier = [
+    ...new Map(
+      [...billed.entries()]
+        .filter(
+          ([source, invoice]) =>
+            invoice.category === "DAMAGE_CHARGES" && !current4.has(source),
+        )
+        .map(([source, invoice]) => [invoice.id, { source, invoice }]),
+    ).values(),
+  ];
+  const chargedNow = findings.some((finding) => billed.has(finding.id));
+  const rate = shownCharges === null ? "unknown" : shownCharges.rate;
+  const cleaningSettled =
+    cleaning !== null ||
+    (rate !== null && typeof rate === "object" && rate.cents === 0);
+  const drafts = [
+    ...findings.flatMap((finding) => {
+      const invoice = billed.get(finding.id);
+      return invoice === undefined ? [] : [invoice];
+    }),
+    ...(cleaning === null ? [] : [cleaning]),
+    ...earlier.map((item) => item.invoice),
+  ].filter((invoice) => invoice.status === "DRAFT");
+  const mark4: Mark = neverIn
+    ? "skip"
+    : !handedBack
+      ? "todo"
+      : inspection !== null &&
+          known !== null &&
+          cleaningSettled &&
+          drafts.length === 0
+        ? "done"
+        : "now";
+  const mayInspect = may("leases.inspect");
+  const mayCharge = may("damage_charges.bill") && may("invoices.create");
+  const mayClean = may("invoices.create");
+  const chargeMark = (invoice: InvoiceResource, source: string) => (
+    <span className="ui-num">
+      {usdFromCents(billedCents(invoice, source))}{" "}
+      {invoice.status === "VOID" && (
+        <>
+          <Chip tone="neutral">{mt(language, "st4_void")}</Chip>{" "}
+        </>
+      )}
+      {invoice.status === "DRAFT" ? (
+        <>
+          <Chip tone="info">{mt(language, "st4_draft")}</Chip>{" "}
+          <a href={hashForPage("invoices", `inv:${invoice.id}`)}>
+            {mt(language, "st4_open")}
+          </a>
+        </>
+      ) : (
+        <a href={hashForPage("invoices", `inv:${invoice.id}`)}>
+          {invoice.invoice_number}
+        </a>
+      )}
+    </span>
+  );
+  const inspectionActions =
+    handedBack && shownCharges !== null && !neverIn ? (
+      <>
+        {inspection === null && mayInspect && (
+          <button
+            className="ui-btn primary"
+            onClick={() => {
+              setNotice(null);
+              setWarning(null);
+              setDialog("inspect");
+            }}
+            type="button"
+          >
+            <Icon name="plus" />
+            {mt(language, "st4_btn")}
+          </button>
+        )}
+        {inspection !== null && known !== null && !chargedNow && mayInspect && (
+          <button
+            className="ui-btn"
+            onClick={() => {
+              setNotice(null);
+              setWarning(null);
+              setDialog("inspect");
+            }}
+            type="button"
+          >
+            {mt(language, "st4_fix_btn")}
+          </button>
+        )}
+        {known !== null &&
+          cleaning === null &&
+          rate !== null &&
+          typeof rate === "object" &&
+          rate.cents > 0 &&
+          mayClean && (
+            <button
+              className="ui-btn"
+              onClick={() => {
+                setNotice(null);
+                setWarning(null);
+                setDialog("clean");
+              }}
+              type="button"
+            >
+              <Icon name="invoice" />
+              {mt(language, "st4_clean_btn")}
+            </button>
+          )}
+      </>
+    ) : undefined;
+
   const security =
     deposits.state === "shown"
       ? deposits.items.filter((item) => item.deposit_type === "SECURITY")
@@ -769,6 +1017,16 @@ function MoveoutDetail({
             note: "",
           },
         ]),
+    ...(shownCharges?.inspections ?? []).map((item) => ({
+      id: item.id,
+      at: item.completed_at,
+      text: mt(
+        language,
+        item.supersedes_inspection_id === null ? "mh_insp" : "mh_insp_fixed",
+        item.findings.length,
+      ),
+      note: item.supersedes_inspection_id === null ? "" : item.reason,
+    })),
     ...page.items.map((item: MoveOutRecord) => ({
       id: item.event_id,
       at: item.occurred_at,
@@ -985,12 +1243,153 @@ function MoveoutDetail({
                 )}
               </Step>
               <Step
+                actions={inspectionActions}
                 language={language}
-                mark={neverIn ? "skip" : "todo"}
+                mark={mark4}
                 number={4}
                 title={mt(language, "st4_t")}
               >
-                <p>{mt(language, neverIn ? "st2_skip" : "st4_todo")}</p>
+                {neverIn || !handedBack ? (
+                  <p>{mt(language, neverIn ? "st2_skip" : "st4_todo")}</p>
+                ) : charges.state === "failed" ? (
+                  <p className="ui-muted">{mt(language, "st4_failed")}</p>
+                ) : shownCharges === null ? (
+                  <p className="ui-muted" role="status">
+                    {mt(language, "st4_reading")}
+                  </p>
+                ) : (
+                  <>
+                    {currentInspections(shownCharges.inspections).length >
+                      1 && (
+                      <p className="ui-small">{mt(language, "st4_two")}</p>
+                    )}
+                    {inspection === null ? (
+                      <>
+                        <p>{mt(language, "st4_todo")}</p>
+                        {!mayInspect && (
+                          <p className="ui-small ui-muted">
+                            {mt(language, "st4_not_allowed")}
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <p>
+                          {mt(
+                            language,
+                            "st4_insp",
+                            dayText(inspection.inspection_date),
+                          )}
+                          <span className="ui-sub2">
+                            {inspection.result_text}
+                          </span>
+                        </p>
+                        <h4>{mt(language, "st4_findings")}</h4>
+                        {findings.length === 0 ? (
+                          <p className="ui-small ui-muted">
+                            {mt(language, "st4_nofind")}
+                          </p>
+                        ) : (
+                          <ul className="ui-apps">
+                            {findings.map((finding) => {
+                              const invoice = billed.get(finding.id);
+                              return (
+                                <li key={finding.id}>
+                                  <span>
+                                    {finding.description}
+                                    {finding.pet_related && (
+                                      <small>{mt(language, "st4_pet")}</small>
+                                    )}
+                                  </span>
+                                  {invoice !== undefined ? (
+                                    chargeMark(invoice, finding.id)
+                                  ) : known !== null && mayCharge ? (
+                                    <button
+                                      className="ui-btn"
+                                      onClick={() => {
+                                        setNotice(null);
+                                        setWarning(null);
+                                        setCharging(finding);
+                                      }}
+                                      type="button"
+                                    >
+                                      {mt(language, "st4_charge_btn")}
+                                    </button>
+                                  ) : known !== null ? (
+                                    <span className="ui-muted ui-small">
+                                      {mt(language, "st4_no_charge")}
+                                    </span>
+                                  ) : null}
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        )}
+                      </>
+                    )}
+                    <h4>{mt(language, "st4_clean")}</h4>
+                    {cleaning !== null ? (
+                      <ul className="ui-apps">
+                        <li>
+                          <span>{cleaning.lines[0]?.description}</span>
+                          {chargeMark(
+                            cleaning,
+                            cleaning.lines.map(sourceOf).find(Boolean) ?? "",
+                          )}
+                        </li>
+                      </ul>
+                    ) : (
+                      <p className="ui-small">
+                        {rate === "hidden"
+                          ? mt(language, "st4_clean_hidden")
+                          : rate === "unknown"
+                            ? mt(language, "st4_failed")
+                            : rate === null
+                              ? mt(language, "st4_clean_none")
+                              : rate.cents === 0
+                                ? mt(language, "st4_clean_zero")
+                                : mt(
+                                    language,
+                                    "st4_clean_rate",
+                                    usdFromCents(rate.cents),
+                                  )}
+                      </p>
+                    )}
+                    {earlier.length > 0 && (
+                      <>
+                        <h4>{mt(language, "st4_earlier")}</h4>
+                        <ul className="ui-apps">
+                          {earlier.map(({ source, invoice }) => (
+                            <li key={invoice.id}>
+                              <span>{invoice.lines[0]?.description}</span>
+                              {chargeMark(invoice, source)}
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
+                    {shownCharges.invoices === "hidden" && (
+                      <p className="ui-small ui-muted">
+                        {mt(language, "st4_no_invoices")}
+                      </p>
+                    )}
+                    {shownCharges.invoices === "unknown" && (
+                      <p className="ui-small ui-muted">
+                        {mt(language, "st4_failed")}
+                      </p>
+                    )}
+                    {drafts.length > 0 && (
+                      <p className="ui-small ui-muted">
+                        {mt(language, "st4_drafts_note")}
+                      </p>
+                    )}
+                    {chargedNow && (
+                      <p className="ui-small ui-muted">
+                        {mt(language, "st4_locked")}
+                      </p>
+                    )}
+                  </>
+                )}
               </Step>
               <Step
                 language={language}
@@ -1116,6 +1515,82 @@ function MoveoutDetail({
           }}
           utilityApi={utilityApi}
           utilityLeaseApi={utilityLeaseApi}
+        />
+      )}
+      {dialog === "inspect" && current !== undefined && (
+        <InspectionDialog
+          chargeApi={invoiceApi}
+          handBackDay={current.actual_move_out_date}
+          language={language}
+          lease={lease}
+          mayCharge={mayCharge}
+          moveOutApi={moveOutApi}
+          onClose={() => {
+            setDialog(null);
+            // The inspection may have been saved before the answer was lost: show it.
+            load();
+          }}
+          onConflict={() => {
+            setDialog(null);
+            setWarning(mt(language, "conflict"));
+            load();
+          }}
+          onSaved={(made, other) => {
+            setDialog(null);
+            if (other) setWarning(mt(language, "st4_other_some"));
+            setNotice(
+              made.length === 0
+                ? mt(language, "st4_toast_insp")
+                : mt(
+                    language,
+                    "st4_toast_drafts",
+                    made
+                      .map((draft) =>
+                        usdFromCents(Number(draft.original_total.minor_units)),
+                      )
+                      .join(", "),
+                  ),
+            );
+            load();
+          }}
+          replaces={inspection}
+          today={today}
+        />
+      )}
+      {charging !== null && inspection !== null && (
+        <DamageChargeDialog
+          api={invoiceApi}
+          finding={charging}
+          inspectionDate={inspection.inspection_date}
+          language={language}
+          lease={lease}
+          onClose={() => {
+            setCharging(null);
+            load();
+          }}
+          onSaved={(draft, other) => {
+            setCharging(null);
+            charged(draft, other, "st4_other");
+            load();
+          }}
+        />
+      )}
+      {dialog === "clean" && rate !== null && typeof rate === "object" && (
+        <CleaningChargeDialog
+          invoiceApi={invoiceApi}
+          language={language}
+          lease={lease}
+          onClose={() => {
+            setDialog(null);
+            load();
+          }}
+          onSaved={(draft, other) => {
+            setDialog(null);
+            charged(draft, other, "st4_clean_other");
+            load();
+          }}
+          rate={rate}
+          settlementApi={settlementApi}
         />
       )}
       {dialog === "handback" && (

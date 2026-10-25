@@ -97,7 +97,7 @@ import {
   historyApi as historyClient,
 } from "./history/historyClient";
 import { type HistoryExportApi, HistoryPage } from "./history/HistoryPage";
-import { settlementApi } from "./settlementClient";
+import { settlementApi, type SettlementApi } from "./settlementClient";
 import {
   type HealthApi,
   healthApi as healthClient,
@@ -156,6 +156,8 @@ export interface AppProps {
   lettersApi?: LettersApi;
   moveOutApi?: MoveOutApi;
   utilityLeaseApi?: UtilityLeaseApi;
+  /** The move-out cleaning charge (V1-058 R3 M4). */
+  moveOutChargeApi?: Pick<SettlementApi, "cleaningRate" | "chargeCleaning">;
   depositApi?: DepositApi;
   utilityApi?: UtilityApi;
   invoiceApi?: InvoiceApi;
@@ -614,6 +616,7 @@ export function App({
   lettersApi = lettersClient,
   moveOutApi = moveOutClient,
   utilityLeaseApi = utilityLeaseClient,
+  moveOutChargeApi = settlementApi,
   depositApi = depositClient,
   utilityApi = utilityClient,
   invoiceApi = invoiceClient,
@@ -1928,6 +1931,7 @@ export function App({
           invoiceApi={invoiceApi}
           utilityApi={utilityApi}
           utilityLeaseApi={utilityLeaseApi}
+          settlementApi={moveOutChargeApi}
           propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
           today={todayInPhnomPenh()}
           unitApi={unitApi ?? defaultUnitApi}

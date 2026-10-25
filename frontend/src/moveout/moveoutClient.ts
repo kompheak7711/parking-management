@@ -55,6 +55,44 @@ export interface MoveOutSource {
   supersedes_event_id: string | null;
 }
 
+export interface InspectionFinding {
+  id: string;
+  ordinal: number;
+  description: string;
+  pet_related: boolean;
+}
+
+/** A move-out inspection: what was found. It charges nothing (BR-MOVEOUT-006). */
+export interface MoveOutInspection {
+  id: string;
+  lease_id: string;
+  inspection_date: string;
+  result_text: string;
+  evidence_reference: string;
+  reason: string;
+  completed_at: string;
+  supersedes_inspection_id: string | null;
+  current_effect: "INSPECTION_ONLY" | "SUPERSEDED";
+  findings: InspectionFinding[];
+}
+
+export interface InspectionPage {
+  items: MoveOutInspection[];
+  total: number;
+}
+
+export interface InspectionSource {
+  inspection_id: string;
+  expected_lease_version: number;
+  inspection_date: string;
+  result_text: string;
+  authorization_reference: string;
+  evidence_reference: string;
+  reason: string;
+  findings: { finding_id: string; description: string; pet_related: boolean }[];
+  supersedes_inspection_id: string | null;
+}
+
 export interface MoveOutApi {
   read: (propertyId: string, leaseId: string) => Promise<MoveOutPage>;
   record: (
@@ -63,6 +101,19 @@ export interface MoveOutApi {
     source: MoveOutSource,
     key: string,
   ) => Promise<MoveOutRecord>;
+  /** Oldest first, 20 a page. Needs leases.read. */
+  inspections: (
+    propertyId: string,
+    leaseId: string,
+    offset: number,
+  ) => Promise<InspectionPage>;
+  /** Needs leases.inspect. A correction names the inspection it replaces. */
+  inspect: (
+    propertyId: string,
+    leaseId: string,
+    source: InspectionSource,
+    key: string,
+  ) => Promise<MoveOutInspection>;
 }
 
 /** The Lease, the Unit or an Occupancy changed meanwhile, or the key was used for other values. */
@@ -130,8 +181,9 @@ async function request(path: string, init: RequestInit): Promise<unknown> {
   } catch {
     throw new MoveOutUnavailableError();
   }
+  // Answered but unreadable: a change may be saved, so it is no answer, never a refusal.
   if (!isObject(value) || !isObject(value.data))
-    throw new MoveOutRequestError();
+    throw new MoveOutUnavailableError();
   return value.data;
 }
 
@@ -146,8 +198,36 @@ function record(value: unknown): MoveOutRecord {
   return value as unknown as MoveOutRecord;
 }
 
+function inspection(value: unknown): MoveOutInspection {
+  if (
+    !isObject(value) ||
+    typeof value.id !== "string" ||
+    typeof value.inspection_date !== "string" ||
+    typeof value.completed_at !== "string" ||
+    !Array.isArray(value.findings)
+  )
+    throw new MoveOutRequestError();
+  return value as unknown as MoveOutInspection;
+}
+
+const leasePath = (propertyId: string, leaseId: string) =>
+  `/api/v1/properties/${encodeURIComponent(propertyId)}/leases/${encodeURIComponent(leaseId)}`;
 const path = (propertyId: string, leaseId: string) =>
-  `/api/v1/properties/${encodeURIComponent(propertyId)}/leases/${encodeURIComponent(leaseId)}/move-outs`;
+  `${leasePath(propertyId, leaseId)}/move-outs`;
+const inspectionsPath = (propertyId: string, leaseId: string) =>
+  `${leasePath(propertyId, leaseId)}/move-out-inspections`;
+
+function post(path: string, source: unknown, key: string): Promise<unknown> {
+  return request(path, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Idempotency-Key": key,
+      "X-CSRF-Token": csrfToken(),
+    },
+    body: JSON.stringify(source),
+  });
+}
 
 export const moveOutApi: MoveOutApi = {
   read: async (propertyId, leaseId) => {
@@ -167,16 +247,35 @@ export const moveOutApi: MoveOutApi = {
       open_occupancies: found.open_occupancies as OpenOccupancy[],
     };
   },
-  record: async (propertyId, leaseId, source, key) =>
-    record(
-      await request(path(propertyId, leaseId), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Idempotency-Key": key,
-          "X-CSRF-Token": csrfToken(),
-        },
-        body: JSON.stringify(source),
-      }),
-    ),
+  record: async (propertyId, leaseId, source, key) => {
+    const saved = await post(path(propertyId, leaseId), source, key);
+    try {
+      return record(saved);
+    } catch {
+      // Answered but unreadable: it may be saved, so Try again sends the same request.
+      throw new MoveOutUnavailableError();
+    }
+  },
+  inspections: async (propertyId, leaseId, offset) => {
+    const found = await request(
+      `${inspectionsPath(propertyId, leaseId)}?limit=20&offset=${String(offset)}`,
+      { method: "GET" },
+    );
+    if (
+      !isObject(found) ||
+      !Array.isArray(found.items) ||
+      typeof found.total !== "number"
+    )
+      throw new MoveOutRequestError();
+    return { items: found.items.map(inspection), total: found.total };
+  },
+  inspect: async (propertyId, leaseId, source, key) => {
+    const saved = await post(inspectionsPath(propertyId, leaseId), source, key);
+    try {
+      return inspection(saved);
+    } catch {
+      // Answered but unreadable: it may be saved, so Try again sends the same request.
+      throw new MoveOutUnavailableError();
+    }
+  },
 };

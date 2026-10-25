@@ -292,6 +292,203 @@ const TEXT = {
     "Inspect the Unit after the hand-back. Each damage charge needs an amount, a reason and evidence; it is recorded once per finding.",
     "ត្រួតពិនិត្យបន្ទប់បន្ទាប់ពីប្រគល់។ ថ្លៃខូចខាតនីមួយៗត្រូវមានចំនួន មូលហេតុ និងភស្តុតាង; កត់ត្រាម្តងក្នុងមួយការរកឃើញ។",
   ],
+  st4_insp: ["Inspected on {0}.", "បានត្រួតពិនិត្យនៅ {0}។"],
+  st4_findings: ["Damage findings", "ការរកឃើញការខូចខាត"],
+  st4_nofind: ["No damage found.", "គ្មានការខូចខាត។"],
+  st4_add: ["Add finding", "បន្ថែមការរកឃើញ"],
+  st4_pet: ["pet damage", "ខូចខាតដោយសត្វចិញ្ចឹម"],
+  st4_ev: ["Evidence", "ភស្តុតាង"],
+  st4_clean: ["Cleaning charge", "ថ្លៃសម្អាត"],
+  // changed from the mock-up: a charged finding keeps the inspection as it is.
+  st4_locked: [
+    "A finding is charged, so this inspection is kept as it is. New damage found later is a correction after closure.",
+    "ការរកឃើញមួយបានគិតថ្លៃ ដូច្នេះការត្រួតពិនិត្យនេះរក្សាដដែល។ ការខូចខាតរកឃើញក្រោយ ជាការកែបន្ទាប់ពីបិទ។",
+  ],
+  fd_desc: ["What is damaged", "អ្វីខូចខាត"],
+  fd_amt: ["Charge", "ថ្លៃ"],
+  fd_ev: ["Evidence (photo names, report)", "ភស្តុតាង (ឈ្មោះរូបថត របាយការណ៍)"],
+  fd_pet: [
+    "Caused by the pet (Pet Deposit pays this first)",
+    "បង្កដោយសត្វចិញ្ចឹម (ប្រាក់កក់សត្វចិញ្ចឹមបង់មុន)",
+  ],
+  fd_err: [
+    "Give a description, an amount above zero and the evidence.",
+    "ផ្តល់ការពិពណ៌នា ចំនួនលើសសូន្យ និងភស្តុតាង។",
+  ],
+  // new: M4 builds the step on the server's records (an inspection, then charges).
+  st4_btn: ["Record inspection", "កត់ត្រាការត្រួតពិនិត្យ"],
+  st4_fix_btn: ["Correct inspection", "កែការត្រួតពិនិត្យ"],
+  st4_date: ["Inspection date", "ថ្ងៃត្រួតពិនិត្យ"],
+  st4_date_help: [
+    "From the hand-back day ({0}) to today.",
+    "ពីថ្ងៃប្រគល់ ({0}) ដល់ថ្ងៃនេះ។",
+  ],
+  st4_reason: ["Why it is corrected", "ហេតុអ្វីកែ"],
+  st4_notes: ["Notes", "កំណត់ចំណាំ"],
+  fd_n: ["Finding {0}", "ការរកឃើញ {0}"],
+  fd_remove: ["Remove", "ដកចេញ"],
+  fd_remove_n: ["Remove finding {0}", "ដកការរកឃើញ {0} ចេញ"],
+  fd_amt_help: [
+    "Leave the charge and the evidence empty for no charge.",
+    "ទុកថ្លៃ និងភស្តុតាងទទេ បើគ្មានថ្លៃ។",
+  ],
+  st4_ok: ["Save the inspection", "រក្សាទុកការត្រួតពិនិត្យ"],
+  st4_ok_charges: ["Save and make the charges", "រក្សាទុក និងបង្កើតថ្លៃ"],
+  st4_bad_date: [
+    "Choose a day from the hand-back day to today.",
+    "ជ្រើសថ្ងៃពីថ្ងៃប្រគល់ ដល់ថ្ងៃនេះ។",
+  ],
+  st4_bad_reason: [
+    "Say why the inspection is corrected.",
+    "សូមប្រាប់ហេតុអ្វីកែការត្រួតពិនិត្យ។",
+  ],
+  st4_bad_desc: [
+    "Describe each finding, or remove it.",
+    "ពិពណ៌នាការរកឃើញនីមួយៗ ឬដកវាចេញ។",
+  ],
+  st4_c: [
+    "A finding alone charges nothing. Each charge makes a Draft Invoice; a Manager issues it on the Invoices page, due in 7 days.",
+    "ការរកឃើញតែឯង មិនគិតថ្លៃទេ។ ថ្លៃនីមួយៗបង្កើតវិក្កយបត្រព្រាង; អ្នកគ្រប់គ្រងចេញវានៅទំព័រវិក្កយបត្រ កំណត់បង់ក្នុង 7 ថ្ងៃ។",
+  ],
+  st4_c_no_charge: [
+    "A finding alone charges nothing. A person allowed to make Damage charges adds the amounts.",
+    "ការរកឃើញតែឯង មិនគិតថ្លៃទេ។ អ្នកដែលមានសិទ្ធិគិតថ្លៃខូចខាត បន្ថែមចំនួន។",
+  ],
+  st4_saved_charge_failed: [
+    "The inspection is saved, but a charge was not made. Press Try again; nothing is saved twice.",
+    "ការត្រួតពិនិត្យបានរក្សាទុក ប៉ុន្តែថ្លៃមួយមិនទាន់បានបង្កើត។ ចុច ព្យាយាមម្តងទៀត; គ្មានអ្វីរក្សាទុកពីរដងទេ។",
+  ],
+  st4_saved_charge_refused: [
+    "The inspection is saved, but a charge was refused. Check its amount and evidence and save again, or close and use Charge on the finding.",
+    "ការត្រួតពិនិត្យបានរក្សាទុក ប៉ុន្តែថ្លៃមួយត្រូវបានបដិសេធ។ ពិនិត្យចំនួន និងភស្តុតាង ហើយរក្សាទុកម្តងទៀត ឬបិទ ហើយប្រើ គិតថ្លៃ លើការរកឃើញ។",
+  ],
+  st4_charge_btn: ["Charge", "គិតថ្លៃ"],
+  st4_charge_t: ["Damage charge", "ថ្លៃខូចខាត"],
+  st4_charge_ok: ["Make the charge", "បង្កើតថ្លៃ"],
+  st4_charge_c: [
+    "Found at the inspection on {0}. The charge makes a Draft Invoice; a Manager issues it on the Invoices page.",
+    "រកឃើញនៅការត្រួតពិនិត្យថ្ងៃ {0}។ ថ្លៃបង្កើតវិក្កយបត្រព្រាង; អ្នកគ្រប់គ្រងចេញវានៅទំព័រវិក្កយបត្រ។",
+  ],
+  st4_no_charge: ["no charge", "គ្មានថ្លៃ"],
+  st4_draft: ["Draft", "ព្រាង"],
+  st4_open: ["Open", "បើក"],
+  st4_clean_rate: [
+    "This Unit's cleaning rate: {0}.",
+    "អត្រាសម្អាតរបស់បន្ទប់នេះ៖ {0}។",
+  ],
+  st4_clean_none: [
+    "This Unit has no cleaning rate yet. Set it in Settings, then add the charge.",
+    "បន្ទប់នេះមិនទាន់មានអត្រាសម្អាតទេ។ កំណត់វាក្នុងការកំណត់ ហើយបន្ថែមថ្លៃ។",
+  ],
+  st4_clean_zero: [
+    "This Unit's cleaning rate is zero: no cleaning charge.",
+    "អត្រាសម្អាតរបស់បន្ទប់នេះគឺសូន្យ៖ គ្មានថ្លៃសម្អាត។",
+  ],
+  st4_clean_hidden: [
+    "Your account cannot see the cleaning rate.",
+    "គណនីរបស់អ្នកមិនអាចមើលអត្រាសម្អាតបានទេ។",
+  ],
+  st4_clean_btn: ["Add cleaning charge", "បន្ថែមថ្លៃសម្អាត"],
+  st4_clean_c: [
+    "Add the cleaning charge of {0} for {1}? It makes a Draft Invoice for {2}.",
+    "បន្ថែមថ្លៃសម្អាត {0} សម្រាប់ {1}? វាបង្កើតវិក្កយបត្រព្រាងសម្រាប់ {2}។",
+  ],
+  st4_drafts_note: [
+    "A Draft is not owed yet. A Manager issues it on the Invoices page, due in 7 days.",
+    "វិក្កយបត្រព្រាងមិនទាន់ជំពាក់ទេ។ អ្នកគ្រប់គ្រងចេញវានៅទំព័រវិក្កយបត្រ កំណត់បង់ក្នុង 7 ថ្ងៃ។",
+  ],
+  st4_earlier: [
+    "Charges from an earlier inspection",
+    "ថ្លៃពីការត្រួតពិនិត្យមុន",
+  ],
+  st4_reading: [
+    "Reading the inspection and the charges…",
+    "កំពុងអានការត្រួតពិនិត្យ និងថ្លៃ…",
+  ],
+  st4_failed: [
+    "The inspection or the charges could not be read just now.",
+    "មិនអាចអានការត្រួតពិនិត្យ ឬថ្លៃបានទេឥឡូវនេះ។",
+  ],
+  st4_no_invoices: [
+    "Your account cannot see Invoices, so the charges are not shown.",
+    "គណនីរបស់អ្នកមិនអាចមើលវិក្កយបត្របានទេ ដូច្នេះថ្លៃមិនបង្ហាញ។",
+  ],
+  st4_not_allowed: [
+    "Your account cannot record the inspection.",
+    "គណនីរបស់អ្នកមិនអាចកត់ត្រាការត្រួតពិនិត្យបានទេ។",
+  ],
+  st4_toast_insp: ["Inspection saved.", "បានរក្សាទុកការត្រួតពិនិត្យ។"],
+  st4_toast_drafts: [
+    "Saved. Draft Invoices made: {0}.",
+    "បានរក្សាទុក។ វិក្កយបត្រព្រាងបានបង្កើត៖ {0}។",
+  ],
+  st4_toast_draft: [
+    "Draft Invoice made for {0}.",
+    "បានបង្កើតវិក្កយបត្រព្រាងសម្រាប់ {0}។",
+  ],
+  st4_other: [
+    "This finding was charged before at another amount. Its Draft Invoice bills {0}: correct it on the Invoices page if needed.",
+    "ការរកឃើញនេះបានគិតថ្លៃពីមុនក្នុងចំនួនផ្សេង។ វិក្កយបត្រព្រាងរបស់វាគិត {0}: កែវានៅទំព័រវិក្កយបត្រ បើចាំបាច់។",
+  ],
+  st4_other_some: [
+    "Saved, but a charge got no new Draft, or its Draft bills an amount recorded before. Check the Drafts on the Invoices page.",
+    "បានរក្សាទុក ប៉ុន្តែថ្លៃមួយមិនបានវិក្កយបត្រព្រាងថ្មី ឬវិក្កយបត្រព្រាងគិតចំនួនដែលកត់ត្រាពីមុន។ ពិនិត្យវិក្កយបត្រព្រាងនៅទំព័រវិក្កយបត្រ។",
+  ],
+  st4_void: ["Void", "ទុកជាមោឃៈ"],
+  st4_two: [
+    "More than one inspection is in force for this move-out; the newest is shown. Check the History and the Invoices page.",
+    "មានការត្រួតពិនិត្យច្រើនជាងមួយសម្រាប់ការចាកចេញនេះ; បង្ហាញថ្មីបំផុត។ សូមពិនិត្យប្រវត្តិ និងទំព័រវិក្កយបត្រ។",
+  ],
+  st4_check: [
+    "No new Draft was made: the charge may already have its Invoice. The page was read again; check the Invoices page.",
+    "មិនបានបង្កើតវិក្កយបត្រព្រាងថ្មីទេ៖ ថ្លៃនេះប្រហែលមានវិក្កយបត្ររួចហើយ។ ទំព័រត្រូវបានអានម្តងទៀត; សូមពិនិត្យទំព័រវិក្កយបត្រ។",
+  ],
+  st4_clean_other: [
+    "The cleaning charge was recorded before at another rate. Its Draft Invoice bills {0}: correct it on the Invoices page if needed.",
+    "ថ្លៃសម្អាតបានកត់ត្រាពីមុនក្នុងអត្រាផ្សេង។ វិក្កយបត្រព្រាងរបស់វាគិត {0}: កែវានៅទំព័រវិក្កយបត្រ បើចាំបាច់។",
+  ],
+  mh_insp: [
+    "Move-out inspection: {0} finding(s).",
+    "ការត្រួតពិនិត្យពេលចាកចេញ៖ ការរកឃើញ {0}។",
+  ],
+  mh_insp_fixed: [
+    "Inspection corrected: {0} finding(s).",
+    "ការត្រួតពិនិត្យត្រូវបានកែ៖ ការរកឃើញ {0}។",
+  ],
+  // new: why the cleaning charge was refused
+  cr_CLEANING_RATE_CHANGED: [
+    "The cleaning rate changed meanwhile. Close, check the new rate and add it again.",
+    "អត្រាសម្អាតបានផ្លាស់ប្តូរ។ បិទ ពិនិត្យអត្រាថ្មី ហើយបន្ថែមម្តងទៀត។",
+  ],
+  cr_CLEANING_RATE_NOT_SET: [
+    "This Unit has no cleaning rate. Set the rate first.",
+    "បន្ទប់នេះគ្មានអត្រាសម្អាតទេ។ កំណត់អត្រាជាមុនសិន។",
+  ],
+  cr_CLEANING_RATE_ZERO: [
+    "This Unit's cleaning rate is zero, so there is no cleaning charge.",
+    "អត្រាសម្អាតរបស់បន្ទប់នេះគឺសូន្យ ដូច្នេះគ្មានថ្លៃសម្អាត។",
+  ],
+  cr_CLEANING_CHARGE_NEEDS_MOVE_OUT: [
+    "Record the hand-back before the cleaning charge.",
+    "កត់ត្រាការប្រគល់មុនថ្លៃសម្អាត។",
+  ],
+  cr_CLEANING_CHARGE_NOT_MOVED_IN: [
+    "There is no cleaning charge, because the Customer never moved in.",
+    "គ្មានថ្លៃសម្អាតទេ ព្រោះអតិថិជនមិនដែលចូលនៅ។",
+  ],
+  cr_elsewhere: [
+    "The cleaning charge was recorded another way. Find it on the Invoices page.",
+    "ថ្លៃសម្អាតត្រូវបានកត់ត្រាតាមផ្លូវផ្សេង។ រកវានៅទំព័រវិក្កយបត្រ។",
+  ],
+  // new: a step that saves money records
+  c_unknown: [
+    "No answer came back. It may or may not be saved: press Try again to send the very same request; nothing is saved twice.",
+    "គ្មានចម្លើយត្រឡប់មកវិញ។ វាអាចរក្សាទុក ឬមិនទាន់: ចុច ព្យាយាមម្តងទៀត ដើម្បីផ្ញើសំណើដដែល; គ្មានអ្វីរក្សាទុកពីរដងទេ។",
+  ],
+  c_refused: [
+    "This was not saved. Check the values and try again, or read the page again.",
+    "នេះមិនត្រូវបានរក្សាទុកទេ។ ពិនិត្យតម្លៃ ហើយព្យាយាមម្តងទៀត ឬអានទំព័រម្តងទៀត។",
+  ],
   st5_t: ["Final Settlement", "ការទូទាត់ចុងក្រោយ"],
   st5_wait: ["After the charges are recorded.", "បន្ទាប់ពីកត់ត្រាថ្លៃ។"],
   st5_todo: [

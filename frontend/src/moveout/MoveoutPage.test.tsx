@@ -9,7 +9,15 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { DepositResource } from "../depositClient";
-import type { InvoiceResource } from "../invoiceClient";
+import {
+  InvoiceClientError,
+  type InvoiceApi,
+  type InvoiceResource,
+} from "../invoiceClient";
+import {
+  SettlementRequestError,
+  type SettlementApi,
+} from "../settlementClient";
 import {
   LeaseUnavailableError,
   type LeaseApi,
@@ -29,14 +37,27 @@ import {
   type UtilityLeaseApi,
 } from "../utilityLeaseClient";
 import {
+  billedSources,
+  cleaningInvoice,
+  currentInspection,
+  currentInspections,
+} from "./charges";
+import {
   MoveOutUnavailableError,
   type MoveOutApi,
+  type MoveOutInspection,
   type MoveOutPage,
   type MoveOutRecord,
 } from "./moveoutClient";
 import { MoveoutPage } from "./MoveoutPage";
 
 const TODAY = "2026-10-25";
+
+function nth(items: HTMLElement[], index: number): HTMLElement {
+  const item = items[index];
+  if (item === undefined) throw new Error(`No item ${String(index)}`);
+  return item;
+}
 
 afterEach(() => {
   cleanup();
@@ -273,6 +294,91 @@ function finalInvoice(): InvoiceResource {
   };
 }
 
+function chargeInvoice(
+  source: string,
+  category: "DAMAGE_CHARGES" | "MISCELLANEOUS_CHARGES",
+  cents: number,
+  status: InvoiceResource["status"],
+  description = category === "DAMAGE_CHARGES"
+    ? "Damage: Broken window"
+    : "Unit cleaning charge",
+): InvoiceResource {
+  const money = (amount: number) => ({
+    currency: "USD" as const,
+    minor_units: amount,
+  });
+  return {
+    ...finalInvoice(),
+    id: `invoice-${source}`,
+    invoice_number: status === "DRAFT" ? "" : `INV-${source}`,
+    category,
+    status,
+    original_total: money(cents),
+    adjusted_total: money(cents),
+    outstanding_balance: money(cents),
+    lines: [
+      {
+        id: `line-${source}`,
+        sequence: 1,
+        description,
+        category,
+        original_amount: money(cents),
+        adjusted_amount: money(cents),
+        outstanding_balance: money(cents),
+        source: { type: "AUTHORIZED_NONRECURRING_OBLIGATION", id: source },
+        calculation_evidence: {
+          formula: "authorized_source_exact_amount",
+          source_reference: `one-time-charge:${source}`,
+        },
+        period: null,
+      },
+    ],
+  };
+}
+
+function inspectionOf(
+  id: string,
+  findings: [string, string, boolean][],
+  overrides: Partial<MoveOutInspection> = {},
+): MoveOutInspection {
+  return {
+    id,
+    lease_id: "lease-U105",
+    inspection_date: "2026-10-13",
+    result_text: "Checked with the tenant",
+    evidence_reference: "Move-out inspection recorded in the app",
+    reason: "Move-out inspection after the hand-back",
+    completed_at: "2026-10-13T04:00:00Z",
+    supersedes_inspection_id: null,
+    current_effect: "INSPECTION_ONLY",
+    findings: findings.map(([findingId, description, pet], index) => ({
+      id: findingId,
+      ordinal: index + 1,
+      description,
+      pet_related: pet,
+    })),
+    ...overrides,
+  };
+}
+
+function savedInspection(
+  source: Parameters<MoveOutApi["inspect"]>[2],
+): MoveOutInspection {
+  return inspectionOf(
+    source.inspection_id,
+    source.findings.map((finding) => [
+      finding.finding_id,
+      finding.description,
+      finding.pet_related,
+    ]),
+    {
+      inspection_date: source.inspection_date,
+      result_text: source.result_text,
+      supersedes_inspection_id: source.supersedes_inspection_id,
+    },
+  );
+}
+
 const handedBackPage: MoveOutPage = {
   items: [
     {
@@ -339,6 +445,12 @@ function setup(
     readings?: Record<string, UtilityReading[]>;
     recordInputs?: UtilityLeaseApi["recordFinalInputs"];
     createInvoice?: UtilityLeaseApi["createFinalInvoice"];
+    inspections?: MoveOutInspection[];
+    inspect?: MoveOutApi["inspect"];
+    recordCharge?: InvoiceApi["recordOneTimeCharge"];
+    createDraft?: InvoiceApi["create"];
+    cleaningRate?: SettlementApi["cleaningRate"];
+    chargeCleaning?: SettlementApi["chargeCleaning"];
   } = {},
 ) {
   const byId = new Map(leases.map((item) => [item.lease_id, item]));
@@ -400,6 +512,17 @@ function setup(
     record: vi.fn<MoveOutApi["record"]>(
       options.record ?? (() => Promise.resolve(record())),
     ),
+    inspections: vi.fn<MoveOutApi["inspections"]>(() =>
+      Promise.resolve({
+        items: options.inspections ?? [],
+        total: options.inspections?.length ?? 0,
+      }),
+    ),
+    inspect: vi.fn<MoveOutApi["inspect"]>(
+      options.inspect ??
+        ((_property, _lease, source) =>
+          Promise.resolve(savedInspection(source))),
+    ),
   };
   const utilityApi = {
     loadMeters: vi.fn<UtilityApi["loadMeters"]>(() =>
@@ -450,12 +573,44 @@ function setup(
     ),
   };
   const invoiceApi = {
-    list: vi.fn(() =>
+    list: vi.fn<InvoiceApi["list"]>((_property, filters) =>
       (options.invoices ?? (() => Promise.resolve([])))().then((items) => ({
-        items,
+        items: items.filter(
+          (item) =>
+            filters?.category === undefined ||
+            item.category === filters.category,
+        ),
         next_cursor: null,
         capabilities: [],
       })),
+    ),
+    recordOneTimeCharge: vi.fn<InvoiceApi["recordOneTimeCharge"]>(
+      options.recordCharge ??
+        ((_property, input) =>
+          Promise.resolve({
+            obligation_id: input.charge_id,
+            ...input,
+            evidence: {},
+          })),
+    ),
+    create: vi.fn<InvoiceApi["create"]>(
+      options.createDraft ??
+        ((_property, obligation) =>
+          Promise.resolve(
+            chargeInvoice(obligation, "DAMAGE_CHARGES", 2500, "DRAFT"),
+          )),
+    ),
+  };
+  const settlementApi = {
+    cleaningRate: vi.fn<SettlementApi["cleaningRate"]>(
+      options.cleaningRate ??
+        (() =>
+          Promise.resolve({ rate: { id: "rate-1", rate_usd_cents: 3500 } })),
+    ),
+    chargeCleaning: vi.fn<SettlementApi["chargeCleaning"]>(
+      options.chargeCleaning ??
+        ((_property, _lease, form) =>
+          Promise.resolve({ obligation_id: form.charge_id })),
     ),
   };
   render(
@@ -468,6 +623,7 @@ function setup(
       leaseApi={leaseApi}
       moveOutApi={moveOutApi}
       propertyId="property-1"
+      settlementApi={settlementApi}
       today={TODAY}
       unitApi={unitApi}
       utilityApi={utilityApi}
@@ -482,6 +638,7 @@ function setup(
     utilityApi,
     utilityLeaseApi,
     invoiceApi,
+    settlementApi,
   };
 }
 
@@ -795,7 +952,11 @@ describe("Move-out", () => {
       screen.getByText(/Read both meters on the hand-back day/),
     ).toBeTruthy();
     // No final inputs yet: the Invoices are not read.
-    expect(invoiceApi.list).not.toHaveBeenCalled();
+    expect(
+      invoiceApi.list.mock.calls.some(
+        (call) => call[1]?.category === "UTILITIES",
+      ),
+    ).toBe(false);
     fireEvent.click(button);
     const dialog = screen.getByRole("dialog");
     const electricity = await within(dialog).findByLabelText(/Electricity/);
@@ -1257,5 +1418,782 @@ describe("Move-out", () => {
     ).toBeTruthy();
     expect(utilityApi.recordReading).not.toHaveBeenCalled();
     expect(utilityLeaseApi.recordFinalInputs).not.toHaveBeenCalled();
+  });
+
+  const step4 = async () => {
+    const heading = await screen.findByRole("heading", {
+      name: "4. Inspection and charges",
+    });
+    const item = heading.closest("li");
+    if (item === null) throw new Error("no step 4");
+    return item;
+  };
+
+  it("TEST-FE-974 after the hand-back, Record inspection saves the findings with the pet mark, then a Damage charge and its Draft Invoice for each finding with an amount, the finding's id being the charge's id", async () => {
+    window.location.hash = "#/moveout/lease-U105";
+    const { moveOutApi, invoiceApi } = setup([out], { page: handedBackPage });
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Record inspection" }),
+    );
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByText("No damage found.")).toBeTruthy();
+    const date = within(dialog).getByLabelText(/Inspection date/);
+    expect((date as HTMLInputElement).value).toBe(TODAY);
+    expect(date.getAttribute("min")).toBe("2026-10-12");
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Add finding" }),
+    );
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Add finding" }),
+    );
+    const described = within(dialog).getAllByLabelText(/What is damaged/);
+    fireEvent.change(nth(described, 0), {
+      target: { value: "Broken  window   in the bedroom " },
+    });
+    fireEvent.change(nth(described, 1), {
+      target: { value: "Scratched door" },
+    });
+    fireEvent.click(
+      nth(within(dialog).getAllByLabelText(/Caused by the pet/), 1),
+    );
+    fireEvent.change(nth(within(dialog).getAllByLabelText(/^Charge/), 0), {
+      target: { value: "25" },
+    });
+    fireEvent.change(
+      nth(within(dialog).getAllByLabelText(/Evidence \(photo names/), 0),
+      { target: { value: "Photos 1-3" } },
+    );
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save and make the charges" }),
+    );
+    await screen.findByText("Saved. Draft Invoices made: $25.00.");
+    const [sent] = moveOutApi.inspect.mock.calls;
+    expect(sent?.[0]).toBe("property-1");
+    expect(sent?.[1]).toBe("lease-U105");
+    const source = sent?.[2];
+    expect(source).toMatchObject({
+      expected_lease_version: 3,
+      inspection_date: TODAY,
+      result_text: "2 damage finding(s).",
+      reason: "Move-out inspection after the hand-back",
+      supersedes_inspection_id: null,
+    });
+    expect(
+      source?.findings.map((finding) => [
+        finding.description,
+        finding.pet_related,
+      ]),
+    ).toEqual([
+      ["Broken window in the bedroom", false],
+      ["Scratched door", true],
+    ]);
+    expect(invoiceApi.recordOneTimeCharge).toHaveBeenCalledTimes(1);
+    const [charge] = invoiceApi.recordOneTimeCharge.mock.calls;
+    const finding = source?.findings[0]?.finding_id;
+    expect(charge?.[1]).toEqual({
+      charge_id: finding,
+      category: "DAMAGE_CHARGES",
+      customer_id: "customer-U105",
+      lease_id: "lease-U105",
+      inspection_damage_finding_id: finding,
+      description: "Damage: Broken window in the bedroom",
+      amount: { currency: "USD", minor_units: 2500 },
+      reason: `Damage found at the move-out inspection on ${TODAY}`,
+      evidence_reference: "Photos 1-3",
+    });
+    expect(invoiceApi.create.mock.calls[0]?.[1]).toBe(finding);
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(moveOutApi.inspections.mock.calls.length).toBeGreaterThan(1);
+    cleanup();
+
+    // A charge whose Draft is refused as already made: saved, with a warning to check.
+    window.location.hash = "#/moveout/lease-U105";
+    setup([out], {
+      page: handedBackPage,
+      createDraft: () =>
+        Promise.reject(new InvoiceClientError(409, "CONFLICT", false)),
+    });
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Record inspection" }),
+    );
+    const again = screen.getByRole("dialog");
+    fireEvent.click(within(again).getByRole("button", { name: "Add finding" }));
+    fireEvent.change(within(again).getByLabelText(/What is damaged/), {
+      target: { value: "Broken window" },
+    });
+    fireEvent.change(within(again).getByLabelText(/^Charge/), {
+      target: { value: "25" },
+    });
+    fireEvent.change(within(again).getByLabelText(/Evidence \(photo/), {
+      target: { value: "Photo 1" },
+    });
+    fireEvent.click(
+      within(again).getByRole("button", { name: "Save and make the charges" }),
+    );
+    await screen.findByText(
+      "Saved, but a charge got no new Draft, or its Draft bills an amount recorded before. Check the Drafts on the Invoices page.",
+    );
+  });
+
+  it("TEST-FE-975 the inspection dialog refuses a day before the hand-back, an empty finding, and an amount without evidence, marking the box; without the right to make Damage charges it asks for no amounts", async () => {
+    window.location.hash = "#/moveout/lease-U105";
+    const { moveOutApi } = setup([out], { page: handedBackPage });
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Record inspection" }),
+    );
+    const dialog = screen.getByRole("dialog");
+    fireEvent.change(within(dialog).getByLabelText(/Inspection date/), {
+      target: { value: "2026-10-11" },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save the inspection" }),
+    );
+    expect(
+      within(dialog).getByText("Choose a day from the hand-back day to today."),
+    ).toBeTruthy();
+    fireEvent.change(within(dialog).getByLabelText(/Inspection date/), {
+      target: { value: "2026-10-12" },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Add finding" }),
+    );
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save the inspection" }),
+    );
+    expect(
+      within(dialog).getByText("Describe each finding, or remove it."),
+    ).toBeTruthy();
+    expect(
+      within(dialog)
+        .getByLabelText(/What is damaged/)
+        .getAttribute("aria-invalid"),
+    ).toBe("true");
+    fireEvent.change(within(dialog).getByLabelText(/What is damaged/), {
+      target: { value: "Broken window" },
+    });
+    fireEvent.change(within(dialog).getByLabelText(/^Charge/), {
+      target: { value: "25" },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save and make the charges" }),
+    );
+    expect(
+      within(dialog).getByText(
+        "Give a description, an amount above zero and the evidence.",
+      ),
+    ).toBeTruthy();
+    expect(
+      within(dialog)
+        .getByLabelText(/Evidence \(photo names/)
+        .getAttribute("aria-invalid"),
+    ).toBe("true");
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Remove finding 1" }),
+    );
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save the inspection" }),
+    );
+    await screen.findByText("Inspection saved.");
+    expect(moveOutApi.inspect.mock.calls[0]?.[2]).toMatchObject({
+      inspection_date: "2026-10-12",
+      result_text: "No damage found.",
+      findings: [],
+    });
+    cleanup();
+
+    window.location.hash = "#/moveout/lease-U105";
+    setup([out], {
+      page: handedBackPage,
+      capabilities: new Set([
+        "leases.read",
+        "leases.inspect",
+        "invoices.read",
+        "deposits.read",
+      ]),
+    });
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Record inspection" }),
+    );
+    const plain = screen.getByRole("dialog");
+    fireEvent.click(within(plain).getByRole("button", { name: "Add finding" }));
+    expect(within(plain).queryByLabelText(/^Charge/)).toBeNull();
+    expect(
+      within(plain).getByText(
+        "A finding alone charges nothing. A person allowed to make Damage charges adds the amounts.",
+      ),
+    ).toBeTruthy();
+  });
+
+  it("TEST-FE-976 a recorded inspection shows each finding with its charge: a Draft with its link, an issued Invoice by number, a Charge button for the rest; the cleaning charge; charges from a replaced inspection; with a charge the inspection is no longer corrected", async () => {
+    window.location.hash = "#/moveout/lease-U105";
+    const old = inspectionOf(
+      "inspection-old",
+      [["finding-old", "Old stain", false]],
+      {
+        current_effect: "SUPERSEDED",
+      },
+    );
+    const current = inspectionOf(
+      "inspection-new",
+      [
+        ["finding-1", "Broken window", false],
+        ["finding-2", "Chewed door", true],
+        ["finding-3", "Loose tile", false],
+      ],
+      {
+        supersedes_inspection_id: "inspection-old",
+        reason: "Missed a room",
+        completed_at: "2026-10-14T04:00:00Z",
+      },
+    );
+    setup([out], {
+      page: handedBackPage,
+      inspections: [old, current],
+      invoices: () =>
+        Promise.resolve([
+          chargeInvoice("finding-1", "DAMAGE_CHARGES", 2500, "DRAFT"),
+          chargeInvoice(
+            "finding-2",
+            "DAMAGE_CHARGES",
+            4000,
+            "UNPAID",
+            "Damage: Chewed door",
+          ),
+          chargeInvoice(
+            "finding-old",
+            "DAMAGE_CHARGES",
+            1000,
+            "UNPAID",
+            "Damage: Old stain",
+          ),
+          chargeInvoice(
+            "finding-3",
+            "DAMAGE_CHARGES",
+            900,
+            "VOID",
+            "Damage: Loose tile",
+          ),
+          chargeInvoice("lease-U105", "MISCELLANEOUS_CHARGES", 3500, "UNPAID"),
+        ]),
+    });
+    const step = await step4();
+    await within(step).findByText("Inspected on 13/10/2026.");
+    const items = within(step)
+      .getAllByRole("listitem")
+      .map((item) => item.textContent);
+    expect(items).toEqual([
+      "Broken window$25.00 Draft Open",
+      "Chewed doorpet damage$40.00 INV-finding-2",
+      "Loose tile$9.00 Void INV-finding-3",
+      "Unit cleaning charge$35.00 INV-lease-U105",
+      "Damage: Old stain$10.00 INV-finding-old",
+    ]);
+    expect(
+      within(step).getByRole("link", { name: "Open" }).getAttribute("href"),
+    ).toBe("#/invoices/inv%3Ainvoice-finding-1");
+    expect(
+      within(step).getByText("Charges from an earlier inspection"),
+    ).toBeTruthy();
+    expect(
+      within(step).getByText(
+        "A Draft is not owed yet. A Manager issues it on the Invoices page, due in 7 days.",
+      ),
+    ).toBeTruthy();
+    expect(
+      within(step).getByText(
+        "A finding is charged, so this inspection is kept as it is. New damage found later is a correction after closure.",
+      ),
+    ).toBeTruthy();
+    expect(
+      within(step).queryByRole("button", { name: "Correct inspection" }),
+    ).toBeNull();
+    expect(
+      within(step).queryByRole("button", { name: "Add cleaning charge" }),
+    ).toBeNull();
+    expect(within(step).getByText("Now")).toBeTruthy();
+    expect(
+      screen.getByText("Inspection corrected: 3 finding(s)."),
+    ).toBeTruthy();
+    expect(screen.getByText("Missed a room")).toBeTruthy();
+    expect(screen.getByText("Move-out inspection: 1 finding(s).")).toBeTruthy();
+  });
+
+  it("TEST-FE-977 Charge on a finding records its Damage charge and Draft; a charge recorded before (answered 409) still gets its Draft and a warning when that Draft bills another amount; a Draft already made says so; no answer offers Try again with the same key", async () => {
+    window.location.hash = "#/moveout/lease-U105";
+    const current = inspectionOf("inspection-1", [
+      ["finding-1", "Broken window", false],
+    ]);
+    let attempt = 0;
+    const { invoiceApi } = setup([out], {
+      page: handedBackPage,
+      inspections: [current],
+      recordCharge: () => {
+        attempt += 1;
+        return attempt === 1
+          ? Promise.reject(new InvoiceClientError(null, "NETWORK", true))
+          : Promise.reject(new InvoiceClientError(409, "CONFLICT", false));
+      },
+    });
+    const step = await step4();
+    fireEvent.click(
+      await within(step).findByRole("button", { name: "Charge" }),
+    );
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByText("Broken window")).toBeTruthy();
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Make the charge" }),
+    );
+    expect(
+      within(dialog).getByText(
+        "Give a description, an amount above zero and the evidence.",
+      ),
+    ).toBeTruthy();
+    fireEvent.change(within(dialog).getByLabelText(/^Charge/), {
+      target: { value: "25.50" },
+    });
+    fireEvent.change(within(dialog).getByLabelText(/Evidence/), {
+      target: { value: "Photo 4" },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Make the charge" }),
+    );
+    await within(dialog).findByText(/No answer came back/);
+    fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
+    await screen.findByText(
+      "This finding was charged before at another amount. Its Draft Invoice bills $25.00: correct it on the Invoices page if needed.",
+    );
+    expect(screen.queryByText("Draft Invoice made for $25.00.")).toBeNull();
+    const [first, second] = invoiceApi.recordOneTimeCharge.mock.calls;
+    expect(second?.[1]).toEqual(first?.[1]);
+    expect(second?.[2]).toBe(first?.[2]);
+    expect(first?.[1]).toMatchObject({
+      charge_id: "finding-1",
+      inspection_damage_finding_id: "finding-1",
+      amount: { currency: "USD", minor_units: 2550 },
+      reason: "Damage found at the move-out inspection on 2026-10-13",
+      evidence_reference: "Photo 4",
+    });
+    expect(invoiceApi.create.mock.calls.map((call) => call[1])).toEqual([
+      "finding-1",
+    ]);
+    cleanup();
+
+    window.location.hash = "#/moveout/lease-U105";
+    setup([out], {
+      page: handedBackPage,
+      inspections: [current],
+      createDraft: () =>
+        Promise.reject(new InvoiceClientError(409, "CONFLICT", false)),
+    });
+    fireEvent.click(
+      await within(await step4()).findByRole("button", { name: "Charge" }),
+    );
+    const again = screen.getByRole("dialog");
+    fireEvent.change(within(again).getByLabelText(/^Charge/), {
+      target: { value: "25" },
+    });
+    fireEvent.change(within(again).getByLabelText(/Evidence/), {
+      target: { value: "Photo 4" },
+    });
+    fireEvent.click(
+      within(again).getByRole("button", { name: "Make the charge" }),
+    );
+    await screen.findByText(
+      "No new Draft was made: the charge may already have its Invoice. The page was read again; check the Invoices page.",
+    );
+    cleanup();
+
+    // Recorded before at the same amount: the Draft is made and nothing is wrong.
+    window.location.hash = "#/moveout/lease-U105";
+    setup([out], {
+      page: handedBackPage,
+      inspections: [current],
+      recordCharge: () =>
+        Promise.reject(new InvoiceClientError(409, "CONFLICT", false)),
+    });
+    fireEvent.click(
+      await within(await step4()).findByRole("button", { name: "Charge" }),
+    );
+    const same = screen.getByRole("dialog");
+    fireEvent.change(within(same).getByLabelText(/^Charge/), {
+      target: { value: "25" },
+    });
+    fireEvent.change(within(same).getByLabelText(/Evidence/), {
+      target: { value: "Photo 4" },
+    });
+    fireEvent.click(
+      within(same).getByRole("button", { name: "Make the charge" }),
+    );
+    await screen.findByText("Draft Invoice made for $25.00.");
+  });
+
+  it("TEST-FE-978 Add cleaning charge records the Unit's rate with the Lease's id and makes its Draft, also when that id was recorded before; a refusal names why, a server failure offers Try again; no rate, a zero rate or a hidden rate say so", async () => {
+    window.location.hash = "#/moveout/lease-U105";
+    const current = inspectionOf("inspection-1", []);
+    const { settlementApi, invoiceApi } = setup([out], {
+      page: handedBackPage,
+      inspections: [current],
+      createDraft: (_property, obligation) =>
+        Promise.resolve(
+          chargeInvoice(obligation, "MISCELLANEOUS_CHARGES", 3500, "DRAFT"),
+        ),
+    });
+    const step = await step4();
+    await within(step).findByText("This Unit's cleaning rate: $35.00.");
+    expect(settlementApi.cleaningRate).toHaveBeenCalledWith(
+      "property-1",
+      "unit-U105",
+    );
+    fireEvent.click(
+      within(step).getByRole("button", { name: "Add cleaning charge" }),
+    );
+    const dialog = screen.getByRole("dialog");
+    expect(
+      within(dialog).getByText(
+        "Add the cleaning charge of $35.00 for U105? It makes a Draft Invoice for Tenant U105.",
+      ),
+    ).toBeTruthy();
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Add cleaning charge" }),
+    );
+    await screen.findByText("Draft Invoice made for $35.00.");
+    expect(settlementApi.chargeCleaning).toHaveBeenCalledWith(
+      "property-1",
+      "lease-U105",
+      { charge_id: "lease-U105", expected_rate_id: "rate-1" },
+    );
+    expect(invoiceApi.create.mock.calls[0]?.[1]).toBe("lease-U105");
+    cleanup();
+
+    window.location.hash = "#/moveout/lease-U105";
+    const refused = setup([out], {
+      page: handedBackPage,
+      inspections: [current],
+      chargeCleaning: () =>
+        Promise.reject(
+          new SettlementRequestError(
+            409,
+            "CLEANING_RATE_CHANGED",
+            "The cleaning rate changed.",
+          ),
+        ),
+    });
+    fireEvent.click(
+      await within(await step4()).findByRole("button", {
+        name: "Add cleaning charge",
+      }),
+    );
+    const box = screen.getByRole("dialog");
+    fireEvent.click(
+      within(box).getByRole("button", { name: "Add cleaning charge" }),
+    );
+    await within(box).findByText(
+      "The cleaning rate changed meanwhile. Close, check the new rate and add it again.",
+    );
+    expect(refused.invoiceApi.create).not.toHaveBeenCalled();
+    cleanup();
+
+    // Recorded before under the Lease's id by another person: its Draft is still made.
+    window.location.hash = "#/moveout/lease-U105";
+    const before = setup([out], {
+      page: handedBackPage,
+      inspections: [current],
+      chargeCleaning: () =>
+        Promise.reject(
+          new SettlementRequestError(409, "IDEMPOTENCY_KEY_REUSED", "Reused."),
+        ),
+      createDraft: (_property, obligation) =>
+        Promise.resolve(
+          chargeInvoice(obligation, "MISCELLANEOUS_CHARGES", 3500, "DRAFT"),
+        ),
+    });
+    fireEvent.click(
+      await within(await step4()).findByRole("button", {
+        name: "Add cleaning charge",
+      }),
+    );
+    fireEvent.click(
+      within(screen.getByRole("dialog")).getByRole("button", {
+        name: "Add cleaning charge",
+      }),
+    );
+    await screen.findByText("Draft Invoice made for $35.00.");
+    expect(before.invoiceApi.create.mock.calls[0]?.[1]).toBe("lease-U105");
+    cleanup();
+
+    // A server failure may have saved it: not "not saved".
+    window.location.hash = "#/moveout/lease-U105";
+    setup([out], {
+      page: handedBackPage,
+      inspections: [current],
+      chargeCleaning: () =>
+        Promise.reject(new SettlementRequestError(500, null, "Failed.")),
+    });
+    fireEvent.click(
+      await within(await step4()).findByRole("button", {
+        name: "Add cleaning charge",
+      }),
+    );
+    const failed = screen.getByRole("dialog");
+    fireEvent.click(
+      within(failed).getByRole("button", { name: "Add cleaning charge" }),
+    );
+    await within(failed).findByText(/No answer came back/);
+    expect(
+      within(failed).getByRole("button", { name: "Try again" }),
+    ).toBeTruthy();
+    cleanup();
+
+    for (const [rate, words] of [
+      [
+        { rate: null },
+        "This Unit has no cleaning rate yet. Set it in Settings, then add the charge.",
+      ],
+      [
+        { rate: { id: "rate-0", rate_usd_cents: 0 } },
+        "This Unit's cleaning rate is zero: no cleaning charge.",
+      ],
+    ] as const) {
+      window.location.hash = "#/moveout/lease-U105";
+      setup([out], {
+        page: handedBackPage,
+        inspections: [current],
+        cleaningRate: () => Promise.resolve(rate),
+      });
+      const shown = await step4();
+      await within(shown).findByText(words);
+      expect(
+        within(shown).queryByRole("button", { name: "Add cleaning charge" }),
+      ).toBeNull();
+      cleanup();
+    }
+
+    window.location.hash = "#/moveout/lease-U105";
+    const hidden = setup([out], {
+      page: handedBackPage,
+      inspections: [current],
+      capabilities: new Set(["leases.read", "invoices.read"]),
+    });
+    await within(await step4()).findByText(
+      "Your account cannot see the cleaning rate.",
+    );
+    expect(hidden.settlementApi.cleaningRate).not.toHaveBeenCalled();
+  });
+
+  it("TEST-FE-979 Correct inspection, offered while no finding is charged, fills the form with the findings, asks why, and sends a new inspection that replaces the old one with new finding ids; a zero cleaning rate and no Drafts mark the step done", async () => {
+    window.location.hash = "#/moveout/lease-U105";
+    const current = inspectionOf("inspection-1", [
+      ["finding-1", "Broken window", false],
+      ["finding-2", "Chewed door", true],
+    ]);
+    const { moveOutApi } = setup([out], {
+      page: handedBackPage,
+      inspections: [current],
+      cleaningRate: () =>
+        Promise.resolve({ rate: { id: "rate-0", rate_usd_cents: 0 } }),
+    });
+    const step = await step4();
+    await within(step).findByText("Inspected on 13/10/2026.");
+    expect(within(step).getByText("Done")).toBeTruthy();
+    fireEvent.click(
+      within(step).getByRole("button", { name: "Correct inspection" }),
+    );
+    const dialog = screen.getByRole("dialog");
+    const described = within(dialog).getAllByLabelText(/What is damaged/);
+    expect(described.map((item) => (item as HTMLInputElement).value)).toEqual([
+      "Broken window",
+      "Chewed door",
+    ]);
+    const pets = within(dialog).getAllByLabelText(/Caused by the pet/);
+    expect(pets.map((item) => (item as HTMLInputElement).checked)).toEqual([
+      false,
+      true,
+    ]);
+    expect(
+      within(dialog).getByLabelText<HTMLTextAreaElement>("Notes").value,
+    ).toBe("Checked with the tenant");
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Remove finding 1" }),
+    );
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save the inspection" }),
+    );
+    expect(
+      within(dialog).getByText("Say why the inspection is corrected."),
+    ).toBeTruthy();
+    fireEvent.change(within(dialog).getByLabelText(/Why it is corrected/), {
+      target: { value: "The window was broken before the Lease" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: /Save/ }));
+    await screen.findByText("Inspection saved.");
+    const source = moveOutApi.inspect.mock.calls[0]?.[2];
+    expect(source).toMatchObject({
+      supersedes_inspection_id: "inspection-1",
+      reason: "The window was broken before the Lease",
+      result_text: "Checked with the tenant",
+    });
+    expect(source?.findings).toHaveLength(1);
+    expect(source?.findings[0]).toMatchObject({
+      description: "Chewed door",
+      pet_related: true,
+    });
+    expect(["finding-1", "finding-2"]).not.toContain(
+      source?.findings[0]?.finding_id,
+    );
+  });
+
+  it("TEST-FE-980 without leases.inspect, Damage-charge or Invoice rights the step offers no buttons and says why; without invoices.read the charges are not shown; two inspections in force are named", async () => {
+    window.location.hash = "#/moveout/lease-U105";
+    setup([out], {
+      page: handedBackPage,
+      capabilities: new Set(["leases.read", "deposits.read"]),
+    });
+    const step = await step4();
+    await within(step).findByText("Your account cannot record the inspection.");
+    expect(
+      within(step).getByText(
+        "Your account cannot see Invoices, so the charges are not shown.",
+      ),
+    ).toBeTruthy();
+    expect(within(step).queryByRole("button")).toBeNull();
+    cleanup();
+
+    window.location.hash = "#/moveout/lease-U105";
+    setup([out], {
+      page: handedBackPage,
+      inspections: [
+        inspectionOf("inspection-1", [["finding-1", "Broken window", false]]),
+      ],
+      capabilities: new Set(["leases.read", "invoices.read"]),
+    });
+    const shown = await step4();
+    await within(shown).findByText("no charge");
+    expect(within(shown).queryByRole("button")).toBeNull();
+    cleanup();
+
+    window.location.hash = "#/moveout/lease-U105";
+    setup([out], {
+      page: handedBackPage,
+      inspections: [
+        inspectionOf("inspection-0", []),
+        inspectionOf("inspection-1", [["finding-1", "Broken window", false]]),
+      ],
+    });
+    await within(await step4()).findByText(
+      "More than one inspection is in force for this move-out; the newest is shown. Check the History and the Invoices page.",
+    );
+  });
+
+  it("TEST-FE-981 no answer to the inspection: the form is held and Try again sends the same inspection with the same key; a charge that fails after the inspection is saved says so and Try again sends only the charge", async () => {
+    window.location.hash = "#/moveout/lease-U105";
+    let inspectFails = true;
+    let chargeFails = true;
+    const { moveOutApi, invoiceApi } = setup([out], {
+      page: handedBackPage,
+      inspect: (_property, _lease, source) =>
+        inspectFails
+          ? Promise.reject(new MoveOutUnavailableError())
+          : Promise.resolve(savedInspection(source)),
+      recordCharge: (_property, input) =>
+        chargeFails
+          ? Promise.reject(new InvoiceClientError(null, "NETWORK", true))
+          : Promise.resolve({
+              obligation_id: input.charge_id,
+              ...input,
+              evidence: {},
+            }),
+    });
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Record inspection" }),
+    );
+    const dialog = screen.getByRole("dialog");
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Add finding" }),
+    );
+    fireEvent.change(within(dialog).getByLabelText(/What is damaged/), {
+      target: { value: "Broken window" },
+    });
+    fireEvent.change(within(dialog).getByLabelText(/^Charge/), {
+      target: { value: "25" },
+    });
+    fireEvent.change(within(dialog).getByLabelText(/Evidence \(photo/), {
+      target: { value: "Photo 1" },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save and make the charges" }),
+    );
+    await within(dialog).findByText(/No answer came back/);
+    expect(
+      within(dialog).getByLabelText<HTMLInputElement>(/What is damaged/)
+        .disabled,
+    ).toBe(true);
+    expect(
+      within(dialog).queryByRole("button", { name: "Add finding" }),
+    ).toBeNull();
+    inspectFails = false;
+    fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
+    await within(dialog).findByText(
+      "The inspection is saved, but a charge was not made. Press Try again; nothing is saved twice.",
+    );
+    const [first, second] = moveOutApi.inspect.mock.calls;
+    expect(second?.[2]).toEqual(first?.[2]);
+    expect(second?.[3]).toBe(first?.[3]);
+    chargeFails = false;
+    fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
+    await screen.findByText("Saved. Draft Invoices made: $25.00.");
+    expect(moveOutApi.inspect).toHaveBeenCalledTimes(2);
+    const charges = invoiceApi.recordOneTimeCharge.mock.calls;
+    expect(charges).toHaveLength(2);
+    expect(charges[1]?.[2]).toBe(charges[0]?.[2]);
+  });
+
+  it("TEST-FE-982 the step reads the inspections still in force and the Invoice billing each charge source, a VOID one only when no other bills it, and finds the cleaning charge by its source or its fixed text", () => {
+    const first = inspectionOf("a", []);
+    const second = inspectionOf("b", [], { supersedes_inspection_id: "a" });
+    expect(currentInspection([first, second])?.id).toBe("b");
+    expect(
+      currentInspection([{ ...first, current_effect: "SUPERSEDED" }]),
+    ).toBeNull();
+    expect(currentInspection([])).toBeNull();
+    const draft = chargeInvoice("f1", "DAMAGE_CHARGES", 100, "DRAFT");
+    const voided = chargeInvoice("f2", "DAMAGE_CHARGES", 100, "VOID");
+    const billed = billedSources([draft, voided, finalInvoice()]);
+    expect([...billed.keys()]).toEqual(["f1", "f2"]);
+    expect(
+      billedSources([
+        chargeInvoice("f1", "DAMAGE_CHARGES", 100, "VOID"),
+        draft,
+      ]).get("f1")?.status,
+    ).toBe("DRAFT");
+    expect(currentInspections([first, inspectionOf("c", [])])).toHaveLength(2);
+    expect(
+      cleaningInvoice(
+        [chargeInvoice("other-id", "MISCELLANEOUS_CHARGES", 3500, "UNPAID")],
+        "lease-U105",
+      )?.id,
+    ).toBe("invoice-other-id");
+    expect(
+      cleaningInvoice(
+        [
+          chargeInvoice(
+            "x",
+            "MISCELLANEOUS_CHARGES",
+            100,
+            "UNPAID",
+            "Late key",
+          ),
+        ],
+        "lease-U105",
+      ),
+    ).toBeNull();
+    expect(
+      cleaningInvoice(
+        [
+          chargeInvoice("lease-U105", "MISCELLANEOUS_CHARGES", 100, "VOID"),
+          chargeInvoice("other", "MISCELLANEOUS_CHARGES", 3500, "UNPAID"),
+        ],
+        "lease-U105",
+      )?.status,
+    ).toBe("UNPAID");
   });
 });

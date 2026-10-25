@@ -1985,3 +1985,19 @@ a.ui-kpi.ui-home-kpi {
 .ui-field p.ui-flabel {
   margin: 0;
 }
+/* V1-058 R3 Move-out M4: the parts of the Inspection and charges step, and one finding of the
+   inspection form. */
+.ui-mbody h4 {
+  margin: 4px 0 0;
+  font-size: 0.92rem;
+  color: var(--heading);
+}
+.ui-finding {
+  display: grid;
+  gap: 8px;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+}
+.ui-finding .ui-mhead {
+  justify-content: space-between;
+}
