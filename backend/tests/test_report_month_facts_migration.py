@@ -42,6 +42,14 @@ def facts(read: str, human: UUID, prop: UUID, allowed: list[UUID] | None = None)
         return cursor.fetchall()
 
 
+def summed(rows: list[Any]) -> list[tuple[Any, ...]]:
+    """The facts added up by every column but the amount, as the application adds them."""
+    totals: dict[tuple[Any, ...], int] = {}
+    for row in rows:
+        totals[tuple(row[:-1])] = totals.get(tuple(row[:-1]), 0) + row[-1]
+    return [(*key, amount) for key, amount in totals.items() if amount != 0]
+
+
 def lease_unit(url: str, lease: UUID) -> UUID:
     with psycopg.connect(url) as connection:
         row = connection.execute("SELECT unit_id FROM app.leases WHERE id=%s", (lease,)).fetchone()
@@ -93,7 +101,7 @@ def test_income_and_payment_facts_count_each_record_in_its_month(
 
     income = {
         (row[1], row[2]): row[3]
-        for row in facts("report_income_facts", human, prop)
+        for row in summed(facts("report_income_facts", human, prop))
         if row[0] == unit
     }
     assert income == {(date(2027, 2, 1), "RENT"): 80_000, (date(2027, 3, 1), "RENT"): 70_000}
@@ -109,7 +117,7 @@ def test_income_and_payment_facts_count_each_record_in_its_month(
         for invoice, amount in ((february, 80_000), (march, 20_000))
     ]
     month = payment_month(migrated_database_url, payment)
-    paid = [row for row in facts("report_payment_facts", human, prop) if row[0] == unit]
+    paid = [row for row in summed(facts("report_payment_facts", human, prop)) if row[0] == unit]
     assert (month, "INVOICES", "RENT", 100_000) in [tuple(row[1:]) for row in paid]
 
     allocation = posted[1]["allocation_ids"]
@@ -123,7 +131,11 @@ def test_income_and_payment_facts_count_each_record_in_its_month(
     service().reverse_payment(
         prop, returned, ReversePaymentCommand(uuid4(), "Money returned"), actor=staff
     )
-    paid = [tuple(row[1:]) for row in facts("report_payment_facts", human, prop) if row[0] == unit]
+    paid = [
+        tuple(row[1:])
+        for row in summed(facts("report_payment_facts", human, prop))
+        if row[0] == unit
+    ]
     assert (month, "INVOICES", "RENT", 80_000) in paid
     assert (month, "REVERSED_LATER", None, 30_000) in paid
     reversal = [row for row in paid if row[1] == "REVERSAL"]
@@ -131,7 +143,7 @@ def test_income_and_payment_facts_count_each_record_in_its_month(
     # Payment money with no Lease has no Unit: its unpaid part is in the no-Unit row.
     no_unit = [
         row
-        for row in facts("report_payment_facts", human, prop)
+        for row in summed(facts("report_payment_facts", human, prop))
         if row[0] is None and row[1] == month and row[2] == "NOT_ALLOCATED"
     ]
     assert no_unit and no_unit[0][4] >= 20_000
@@ -168,5 +180,14 @@ def test_the_report_month_facts_migration_is_forward_only() -> None:
     config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
     revision = ScriptDirectory.from_config(config).get_revision(REVISION)
     assert revision is not None and revision.down_revision == "20270301_220"
+    with pytest.raises(RuntimeError, match="forward-only"):
+        revision.module.downgrade()
+
+
+def test_the_facts_parts_migration_is_forward_only() -> None:
+    """Review: the month facts come as parts so a large sum never breaks the report."""
+    config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
+    revision = ScriptDirectory.from_config(config).get_revision("20270306_225")
+    assert revision is not None and revision.down_revision == "20270305_224"
     with pytest.raises(RuntimeError, match="forward-only"):
         revision.module.downgrade()

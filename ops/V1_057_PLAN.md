@@ -159,3 +159,10 @@ Register summaries (fields over every row of the filter):
 - Review round 3 (2026-10-25): no blocker; one should-fix fixed: a grant with a wrong Property
   id is refused (403) before the audit search reads, with a test. Nit left as is: the `also`
   key is accepted in any audit field (only migration 72 writes it).
+- Step 5 (2026-10-25): full PostgreSQL run on de420c7: 2,761 passed, 15 failed. Fixed: ten older
+  tests still named head `20270218_206` (now `20270306_225`); four move-out tests counted the
+  new `audit.searched` events of their own History searches as changes (they now leave them
+  out); the month facts failed when a Property's amounts added up past the bigint range, so
+  migration `20270306_225` returns `app.report_income_facts` and `app.report_payment_facts` as
+  one row per part and the application adds them up (same totals). Rerun of the 29 failed or
+  changed suites on a fresh database: all pass (706 + 43). Frontend: 1,663 tests pass, build ok.
