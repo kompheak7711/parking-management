@@ -2893,14 +2893,17 @@ describe("financial reads after another confirmed action", () => {
         name: /^Proposed late-payment charge of Invoice/,
       });
       expect(shown).toHaveLength(2);
+      const [first] = shown;
+      const [firstCharge] = charges;
+      if (!first || !firstCharge) throw new Error("Expected two proposals");
       expect(
-        within(shown[0]).getByText(charges[0].late_payment_charge_id),
+        within(first).getByText(firstCharge.late_payment_charge_id),
       ).toBeVisible();
       expect(
-        within(shown[0]).getByText(invoice.invoice_id as string),
+        within(first).getByText(invoice.invoice_id as string),
       ).toBeVisible();
       expect(
-        within(shown[0]).queryByText("Invoice version at proposal"),
+        within(first).queryByText("Invoice version at proposal"),
       ).toBeNull();
       expect(errors.mock.calls.flat().join(" ")).not.toMatch(/same key/);
     } finally {
