@@ -44,6 +44,8 @@ import {
   reservationApi as reservationClient,
 } from "./reservationClient";
 import { LeaseManagement } from "./LeaseManagement";
+import { LeasesPage } from "./leases/LeasesPage";
+import { lt } from "./leases/text";
 import { LeaseApi, leaseApi as leaseClient } from "./leaseClient";
 import { DepositManagement } from "./DepositManagement";
 import { DepositApi, depositApi as depositClient } from "./depositClient";
@@ -1661,13 +1663,28 @@ export function App({
           </div>
         </details>
       </div>
-      <div
-        className="shell-page"
-        data-page="leases"
-        hidden={!shown("leases")}
-        lang="en"
-      >
-        <LeaseManagement api={leaseApi} />
+      <div className="shell-page" data-page="leases" hidden={!shown("leases")}>
+        <LeasesPage
+          active={shown("leases")}
+          api={leaseApi}
+          capabilities={capabilities}
+          depositApi={depositApi}
+          language={language}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+        />
+        {/* V1-058 R3: the Lease actions stay in the earlier English forms, folded, until
+            the next step moves them into the design. */}
+        <details className="ui-records">
+          <summary lang={language}>
+            <span className="ui-records-title">{lt(language, "records")}</span>
+            <span className="ui-small ui-muted">
+              {lt(language, "records_note")}
+            </span>
+          </summary>
+          <div lang="en">
+            <LeaseManagement api={leaseApi} />
+          </div>
+        </details>
       </div>
       <div
         className="shell-page"

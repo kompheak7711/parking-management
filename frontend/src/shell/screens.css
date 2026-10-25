@@ -900,3 +900,34 @@ table.ui-table a.ui-no {
   color: inherit;
   font-weight: 600;
 }
+
+/* V1-058 R3: plain lists of people or services in a card, one line each. */
+.ui-plain {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+}
+
+.ui-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.ui-line:last-child {
+  border-bottom: 0;
+}
+
+.ui-nowrap {
+  white-space: nowrap;
+}
+
+.ui-card h3 {
+  margin: 14px 0 6px;
+  font-size: 0.95rem;
+  color: var(--text);
+}

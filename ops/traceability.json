@@ -50296,6 +50296,96 @@
       "test_path": "frontend/src/reservations/ReservationsPage.test.tsx",
       "status": "implemented",
       "notes": "V1-058 R3: when the Reservation cannot be read (no answer), the page offers Retry instead of saying not found; a Reservation of another Property is never shown."
+    },
+    {
+      "test_id": "TEST-FE-843",
+      "upstream_ids": [
+        "DL-074",
+        "BR-LEASE-001",
+        "BR-LEASE-009",
+        "UI-036"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 L1: the Leases list shows Unit, Primary Tenant with other Signers, Start and End Date (termination date with the old End Date), Monthly Rent, Security Deposit received of required and the status chip."
+    },
+    {
+      "test_id": "TEST-FE-844",
+      "upstream_ids": [
+        "DL-074",
+        "BR-LEASE-017",
+        "UI-036"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 L1: count cards filter the list (Ending soon looks two months ahead and leaves out a renewed Lease) and a row opens the Lease at its own address."
+    },
+    {
+      "test_id": "TEST-FE-845",
+      "upstream_ids": [
+        "DL-074",
+        "BR-RENT-009",
+        "BR-DEP-006",
+        "BR-OCC-006",
+        "UI-037",
+        "UI-038",
+        "UI-039"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 L1: the Lease page shows the draft notice, Signers with To sign, planned occupants, the Initial Rent worked out by the rules with its Due Date, and the Security Deposit rest due with the Initial Rent."
+    },
+    {
+      "test_id": "TEST-FE-846",
+      "upstream_ids": [
+        "BR-RENT-005",
+        "BR-RENT-006",
+        "BR-RENT-007",
+        "BR-MONEY-012"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 L1: the Initial Rent shown on the Lease page: inclusive days, rounded half up to the cent, the whole next month from day 21, due 5 days after the Start Date."
+    },
+    {
+      "test_id": "TEST-FE-847",
+      "upstream_ids": [
+        "DL-074",
+        "BR-LEASE-005",
+        "UI-042"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 L1: a terminated Lease shows the Termination card with the move-out date, and History reads every timeline page and lists events newest first."
+    },
+    {
+      "test_id": "TEST-FE-848",
+      "upstream_ids": [
+        "DL-074",
+        "UI-036"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 L1: no answer offers Retry instead of not found; a Lease of another Property is never shown; without deposit access the deposits are not read."
+    },
+    {
+      "test_id": "TEST-FE-849",
+      "upstream_ids": [
+        "DL-074",
+        "BR-RENT-009",
+        "BR-LEASE-017",
+        "UI-041"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 L1: a cancelled renewal draft does not count as a renewal (the Lease stays Ending soon), and after an approved Initial Rent Due Date change the page leaves the date to the Invoice."
     }
   ]
 }
