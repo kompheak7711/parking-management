@@ -12,6 +12,8 @@ on:
 
 permissions:
   contents: read
+  # Lets a failed job cancel the rest of its run (below).
+  actions: write
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -64,6 +66,13 @@ jobs:
       - name: Build and import backend package
         run: make backend-build backend-import-check
 
+      # V1-060 (owner 2026-10-25): when one job fails, stop the run's other jobs to save minutes.
+      - name: Stop the other jobs after a failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run cancel "${{ github.run_id }}" --repo "${{ github.repository }}"
+
   frontend:
     name: Frontend quality, tests, and build
     runs-on: ubuntu-latest
@@ -96,6 +105,13 @@ jobs:
 
       - name: Build frontend
         run: make frontend-build
+
+      # V1-060 (owner 2026-10-25): when one job fails, stop the run's other jobs to save minutes.
+      - name: Stop the other jobs after a failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run cancel "${{ github.run_id }}" --repo "${{ github.repository }}"
 
   dependency-security:
     name: Dependency security
@@ -142,6 +158,13 @@ jobs:
       - name: Audit locked frontend dependencies
         run: make frontend-audit
 
+      # V1-060 (owner 2026-10-25): when one job fails, stop the run's other jobs to save minutes.
+      - name: Stop the other jobs after a failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run cancel "${{ github.run_id }}" --repo "${{ github.repository }}"
+
   postgresql-migrations:
     name: PostgreSQL migration gate
     runs-on: ubuntu-latest
@@ -168,3 +191,10 @@ jobs:
 
       - name: Run isolated PostgreSQL migration verification
         run: make database-test
+
+      # V1-060 (owner 2026-10-25): when one job fails, stop the run's other jobs to save minutes.
+      - name: Stop the other jobs after a failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run cancel "${{ github.run_id }}" --repo "${{ github.repository }}"
