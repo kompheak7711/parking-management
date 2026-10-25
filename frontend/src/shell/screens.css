@@ -21,6 +21,24 @@
   font-weight: 500;
 }
 
+.ui-sub2.warn {
+  color: var(--warn);
+  font-weight: 600;
+}
+
+/* The small MANAGER mark on a button only a Manager or the Owner may use (mock-up .badge). */
+.ui-badge {
+  margin-left: 4px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--sunken);
+  color: var(--text-2);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .ui-head {
   display: flex;
   flex-wrap: wrap;
@@ -421,6 +439,10 @@ table.ui-table th {
   text-align: left;
 }
 
+table.ui-table td.wrap {
+  white-space: normal;
+  min-width: 9rem;
+}
 table.ui-table td {
   padding: 12px 14px;
   white-space: nowrap;

@@ -50218,6 +50218,84 @@
       "test_path": "frontend/src/customers/CustomersPage.test.tsx",
       "status": "implemented",
       "notes": "V1-058 R2 C2: without the server's manage or deactivate permission, Add Customer, Edit contact and Deactivate are not shown."
+    },
+    {
+      "test_id": "TEST-FE-837",
+      "upstream_ids": [
+        "DL-074",
+        "BR-RES-003",
+        "BR-RES-010",
+        "UI-031"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reservations/ReservationsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3: the Reservations list shows Unit, Customer, dates, extended-once and days-left notes, deposit received of required, status chip and result."
+    },
+    {
+      "test_id": "TEST-FE-838",
+      "upstream_ids": [
+        "DL-074",
+        "UI-031",
+        "UI-033"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reservations/ReservationsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3: count cards filter the list (Ending within 7 days counts Active ones), and a row opens the Reservation at its own address."
+    },
+    {
+      "test_id": "TEST-FE-839",
+      "upstream_ids": [
+        "DL-074",
+        "BR-RES-009",
+        "BR-RES-010",
+        "BR-RES-021",
+        "UI-033"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reservations/ReservationsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3: the Reservation page shows facts, the Extension card, the Security Deposit (suggested, accepted, received) and what happens to the deposit after a cancellation."
+    },
+    {
+      "test_id": "TEST-FE-840",
+      "upstream_ids": [
+        "DL-074",
+        "BR-RES-008",
+        "BR-RES-017",
+        "BR-RES-018",
+        "UI-034"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reservations/ReservationsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3: Extend offers at most 14 more days and Try again after an unknown result sends the same notice id and idempotency key."
+    },
+    {
+      "test_id": "TEST-FE-841",
+      "upstream_ids": [
+        "DL-074",
+        "BR-RES-012",
+        "BR-RES-020",
+        "BR-RES-022",
+        "UI-035"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reservations/ReservationsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3: Cancel asks who caused it, needs a memo, needs what was offered for a Property reason, and reloads after a conflict."
+    },
+    {
+      "test_id": "TEST-FE-842",
+      "upstream_ids": [
+        "DL-074",
+        "UI-033"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reservations/ReservationsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3: when the Reservation cannot be read (no answer), the page offers Retry instead of saying not found; a Reservation of another Property is never shown."
     }
   ]
 }

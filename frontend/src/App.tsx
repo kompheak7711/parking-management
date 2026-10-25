@@ -70,6 +70,8 @@ import { ComingSoon, HomePage, NoAccess, PropertyNeeded } from "./shell/pages";
 import { openPageInAddress, useHashPage } from "./shell/useHashPage";
 import type { CustomerCommandGate } from "./customers/commands";
 import { CustomersPage } from "./customers/CustomersPage";
+import { ReservationsPage } from "./reservations/ReservationsPage";
+import { rt } from "./reservations/text";
 import { ct } from "./customers/text";
 import { UnitsPage } from "./units/UnitsPage";
 import { type ActorAccessApi, actorAccessApi } from "./shell/accessClient";
@@ -1637,9 +1639,27 @@ export function App({
         className="shell-page"
         data-page="reservations"
         hidden={!shown("reservations")}
-        lang="en"
       >
-        <ReservationManagement api={reservationApi} />
+        <ReservationsPage
+          active={shown("reservations")}
+          api={reservationApi}
+          capabilities={capabilities}
+          language={language}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+        />
+        {/* V1-058 R3: Make Reservation receives the deposit, so it stays in the earlier
+            English form, folded, until Payments are rebuilt (step R5). */}
+        <details className="ui-records">
+          <summary lang={language}>
+            <span className="ui-records-title">{rt(language, "records")}</span>
+            <span className="ui-small ui-muted">
+              {rt(language, "records_note")}
+            </span>
+          </summary>
+          <div lang="en">
+            <ReservationManagement api={reservationApi} />
+          </div>
+        </details>
       </div>
       <div
         className="shell-page"
