@@ -2184,3 +2184,13 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Points the owner may change:** DL-090 (the BR-RENT-030 reading), DL-091 (a late Utility Invoice is due on the later of the on-time Due Date and the issue date plus the configured days; the Due Date drives late-payment charges), DL-092 (uncleared wrong sign-in tries older than 30 days no longer count once removed). DL-093 is a tightening (a new 55000 hold) that the owner approved with answer (a) to Q-2026-10-20-149. The slice 12b worker bills every earlier late Utility period with no age limit on its first pass after deploy (no live history exists before go-live).
 - **Migration head:** `20270218_206`.
 - **Decision date:** 2026-10-25.
+
+## DL-096 — V1-060 part A: flaky tests, CI limits, speed fixes and the DL-067 lock cause
+
+- **Type:** `IMPLEMENTATION RECORD` (V1-060, DL-071 answers 13 and 14; plan and step log ops/V1_060_PLAN.md)
+- **Built:** frontend test time budgets (`testTimeout` 60 s, `asyncUtilTimeout` 15 s; TEST-FE-203 waits for its line), `certifi` 2026.10.23 (PYSEC-2026-4320), CI job limits (backend 60, frontend 30, PostgreSQL 120 minutes), the speed tool (`scripts/speed-test.sh`, `backend/speed/`), migration `20270219_207` (Invoices list index; the Rent nonpayment alerts page checks a set-based balance before the exact function), `20270220_208` (the Billing Run finish locks the run before the attempt: the slice 12 deadlock flake) and `20270221_209` (below).
+- **DL-067 cause (owner yes 2026-10-25, decision card "Yes, use the fix"):** the intermittent `LockNotAvailable` came from PostgreSQL's automatic cleanup (autovacuum) holding SHARE UPDATE EXCLUSIVE on an obligation table while `app.assert_payment_excess_eligible` asked for SHARE with NOWAIT. Proven with a busier autovacuum on a scratch database: the refund and deposit receipt modules failed with 55P03 in most runs. Migration 209: when the NOWAIT request fails and every session holding a conflicting lock on those tables is an autovacuum worker (no user in `pg_stat_activity`), the function waits at most 3 seconds for the same locks; PostgreSQL cancels the cleanup after `deadlock_timeout`. Any other session's lock is still refused at once with 55P03, so the deadlock reason for NOWAIT stays. After the change 10 of 10 busy runs passed. No rule, amount or answer changes; no test was relaxed.
+- **Decided by Claude under the owner's 2026-10-23 22:30 rule:** the speed limits (middle read 0.5 s, slowest read 1 s, scheduled Rent run 120 s for 300 Units and 10 years of history).
+- **Migration head:** `20270221_209` (re-chained after the V1-057 and V1-058 migrations when part B merges them).
+- **Decision date:** 2026-10-25.
+
