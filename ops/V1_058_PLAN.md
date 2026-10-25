@@ -222,3 +222,21 @@ Run rules: frontend-only steps run the frontend gates (format, typecheck, lint, 
   The reviewer round covers R7b-1 with R7b-2.
 - Full vitest run: 1,792 of 1,793; TEST-FE-258 (invoice dialog focus, not touched here) failed once
   under load and passes alone twice (88 of 88). Added to the intermittent list for V1-060.
+
+## R7b-2 Unit setup (2026-10-25)
+- Settings → Unit setup to the mock-up: Floors, Unit Types, Views, Kitchens and Room features, each
+  with Add, Edit (not Floors) and Remove, on the existing unit-setup routes. TEST-FE-940 to 943.
+- Decided by Claude under the owner's 2026-10-23 22:30 rule: the Unit counts come from the Units
+  list (no server change); without it an item shows only "Used by a Unit". A Floor is added by its
+  number as "Floor N" / "ជាន់ទី N" with sort order N x 10 (the moved-over Floors use 10, 20, 30),
+  and a moved-over Floor named by its number alone counts as taken. An item in use offers no Remove.
+- Review round 1 (R7b-1 and R7b-2, no files written by the reviewer), no blocker. Fixed: a form
+  refused with 409/412 kept its old version and could never succeed (it now closes and the lists
+  are read again); the Rates tab no longer opens for configuration.read alone (the page itself
+  needs Settings rights, so Staff never reached it); duplicate check for moved-over Floors; the
+  tab resets and ignores late answers after a Property change; the saved note is announced.
+  Left: Unit setup and Rates follow the same Property expression as the other rebuilt pages (one
+  Property in V1); focus after Remove returns to the page; Floor 0 is allowed (ground floor).
+- Gates: prettier, tsc, eslint clean; vitest run below; traceability audit passed. Pictures 07 to
+  10 in /mnt/project-files/v1-058/r7b-settings/.
+- Full vitest run after the review fixes: 1,797 passed.

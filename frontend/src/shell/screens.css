@@ -1855,3 +1855,17 @@ a.ui-kpi.ui-home-kpi {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* V1-058 R7b-2 Unit setup: the five lists in two columns (one on a phone). */
+.ui-setup {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+.ui-apps .ui-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  align-items: baseline;
+}

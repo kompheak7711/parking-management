@@ -54455,6 +54455,54 @@
       "test_path": "frontend/src/settings/SettingsPage.test.tsx",
       "status": "implemented",
       "notes": "V1-058 R7b-1: Khmer words come from the mock-up; the server's English notes are marked as English."
+    },
+    {
+      "test_id": "TEST-FE-940",
+      "upstream_ids": [
+        "DL-074",
+        "DL-075",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/UnitSetupTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-2: Unit setup shows the five lists with how many Units use each item; an item in use offers no Remove; Floors have no Edit."
+    },
+    {
+      "test_id": "TEST-FE-941",
+      "upstream_ids": [
+        "DL-074",
+        "DL-075",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/UnitSetupTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-2: Add asks a name not in the list yet, a Floor asks its number; Edit renames; Remove asks first; the lists are read again."
+    },
+    {
+      "test_id": "TEST-FE-942",
+      "upstream_ids": [
+        "DL-074",
+        "DL-075",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/UnitSetupTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-2: a change refused because the list changed closes the form, says so and reads again, and a second try works; a moved-over Floor named by its number counts as taken; read-only without the right; a failed read offers Retry."
+    },
+    {
+      "test_id": "TEST-FE-943",
+      "upstream_ids": [
+        "DL-074",
+        "DL-075",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/UnitSetupTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-2: Khmer shows the Khmer list names and mock-up words; without the Units list an item shows only that a Unit uses it."
     }
   ]
 }

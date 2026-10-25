@@ -26,6 +26,7 @@ import {
   type HealthStatus,
 } from "./healthClient";
 import { type SettingsTextKey, sst } from "./text";
+import { type SetupApi, UnitSetupTab } from "./UnitSetupTab";
 
 export type SettingsTab = "business" | "rates" | "units" | "users" | "health";
 
@@ -45,7 +46,7 @@ const TABS: readonly {
     tab: "rates",
     label: "se_tab_rates",
     icon: "payments",
-    needs: ["settings.manage", "configuration.read"],
+    needs: ["settings.manage"],
   },
   {
     tab: "units",
@@ -69,7 +70,9 @@ const TABS: readonly {
 
 export interface SettingsPageProps {
   language: Language;
+  propertyId: string;
   active: boolean;
+  unitApi: SetupApi;
   capabilities: ReadonlySet<string> | null;
   healthApi: HealthApi;
   /** The earlier forms of the tabs not rebuilt yet (English only). */
@@ -283,7 +286,9 @@ function HealthTab({
 
 export function SettingsPage({
   language,
+  propertyId,
   active,
+  unitApi,
   capabilities,
   healthApi,
   earlier,
@@ -327,6 +332,14 @@ export function SettingsPage({
       )}
       {tab !== undefined && tab !== "health" && (
         <p className="ui-small ui-muted">{sst(language, "set_who")}</p>
+      )}
+      {tab === "units" && (
+        <UnitSetupTab
+          active={active}
+          api={unitApi}
+          language={language}
+          propertyId={propertyId}
+        />
       )}
       {/* The earlier forms stay mounted, so what was typed in one survives a tab change; each
           checks its own rights with the server. */}

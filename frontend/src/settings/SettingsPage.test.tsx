@@ -63,6 +63,27 @@ function openTab(tab: string) {
   });
 }
 
+const setupApi = {
+  list: vi.fn(() =>
+    Promise.resolve({ items: [], next_cursor: null, can_manage: true }),
+  ),
+  setupLists: vi.fn(() =>
+    Promise.resolve({
+      lists: {
+        FLOOR: [],
+        UNIT_TYPE: [],
+        VIEW: [],
+        KITCHEN: [],
+        ROOM_FEATURE: [],
+      },
+      can_manage: true,
+    }),
+  ),
+  createSetupItem: vi.fn(),
+  updateSetupItem: vi.fn(),
+  removeSetupItem: vi.fn(),
+};
+
 function show(
   status: () => Promise<HealthStatus>,
   {
@@ -81,6 +102,8 @@ function show(
       }}
       healthApi={api}
       language={language}
+      propertyId="property-1"
+      unitApi={setupApi}
     />,
   );
   return api;

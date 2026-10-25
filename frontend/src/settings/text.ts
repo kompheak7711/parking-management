@@ -93,6 +93,83 @@ const TEXT = {
   ],
   // new
   checked_at: ["Read at {0}", "អាននៅ {0}"],
+
+  cf_note: [
+    "These lists fill the choices on New Unit and Update Unit. An item used by a Unit cannot be removed; rename it instead.",
+    "បញ្ជីទាំងនេះបំពេញជម្រើសនៅលើបន្ទប់ថ្មី និងកែបន្ទប់។ ធាតុដែលបន្ទប់កំពុងប្រើ មិនអាចដកចេញបានទេ សូមប្តូរឈ្មោះវិញ។",
+  ],
+  cf_FLOOR: ["Floors", "ជាន់"],
+  cf_UNIT_TYPE: ["Unit Types", "ប្រភេទបន្ទប់"],
+  cf_VIEW: ["Views", "ទេសភាព"],
+  cf_KITCHEN: ["Kitchens", "ផ្ទះបាយ"],
+  cf_ROOM_FEATURE: ["Room features", "លក្ខណៈបន្ទប់"],
+  cf_one_FLOOR: ["Floor", "ជាន់"],
+  cf_one_UNIT_TYPE: ["Unit Type", "ប្រភេទបន្ទប់"],
+  cf_one_VIEW: ["View", "ទេសភាព"],
+  cf_one_KITCHEN: ["Kitchen", "ផ្ទះបាយ"],
+  cf_one_ROOM_FEATURE: ["Room feature", "លក្ខណៈបន្ទប់"],
+  cf_add: ["Add", "បន្ថែម"],
+  cf_edit: ["Edit", "កែ"],
+  cf_floor_no: ["Floor number", "លេខជាន់"],
+  cf_en: ["Name in English", "ឈ្មោះជាភាសាអង់គ្លេស"],
+  cf_kh: ["Name in Khmer", "ឈ្មោះជាភាសាខ្មែរ"],
+  cf_e_floor: [
+    "Enter a floor number from 0 to 99.",
+    "សូមបញ្ចូលលេខជាន់ពី 0 ដល់ 99។",
+  ],
+  cf_e_dup: ['"{0}" is already in the list.', '"{0}" មាននៅក្នុងបញ្ជីរួចហើយ។'],
+  cf_type_note: [
+    "Rename keeps every Unit of this type. Add the new type to a move-out cleaning rate on the Rates and services tab.",
+    "ការប្តូរឈ្មោះរក្សាបន្ទប់ទាំងអស់នៃប្រភេទនេះ។ សូមបន្ថែមប្រភេទថ្មីទៅអត្រាសម្អាតពេលចាកចេញ នៅផ្ទាំងអត្រា និងសេវា។",
+  ],
+  cf_feat_note: [
+    "Room features show as Yes or No on each Unit page.",
+    "លក្ខណៈបន្ទប់បង្ហាញជា មាន ឬ គ្មាន នៅលើទំព័របន្ទប់នីមួយៗ។",
+  ],
+  cf_saved: ["Saved.", "បានរក្សា។"],
+  u_floor_n: ["Floor {0}", "ជាន់ទី {0}"],
+  se_e_name: ["Enter a name.", "បញ្ចូលឈ្មោះ។"],
+  set_n_unit1: ["1 Unit", "1 បន្ទប់"],
+  set_n_units: ["{0} Units", "{0} បន្ទប់"],
+  set_none_units: ["No Units yet", "មិនទាន់មានបន្ទប់"],
+  set_remove: ["Remove", "ដកចេញ"],
+  set_removed: ["{0} removed.", "បានដក {0} ចេញ។"],
+  set_remove_q: [
+    "Remove {0}? This cannot be undone. Records made before keep it.",
+    "ដក {0} ចេញ? មិនអាចត្រឡប់វិញបានទេ។ កំណត់ត្រាដែលធ្វើពីមុនរក្សាវាទុក។",
+  ],
+  save: ["Save", "រក្សាទុក"],
+  required: ["Required", "ចាំបាច់"],
+  cancel: ["Cancel", "បោះបង់"],
+  // new: the Units could not be read, so only "in use" is known.
+  in_use: ["Used by a Unit", "បន្ទប់កំពុងប្រើ"],
+  // new
+  units_loading: ["Reading the lists…", "កំពុងអានបញ្ជី…"],
+  // new
+  units_failed: [
+    "The lists could not be read just now. Check the connection and try again.",
+    "មិនអាចអានបញ្ជីបានទេឥឡូវនេះ។ សូមពិនិត្យការតភ្ជាប់ ហើយព្យាយាមម្តងទៀត។",
+  ],
+  // new
+  changed: [
+    "Someone changed this list, or a Unit now uses the item. The lists were read again; check and try again.",
+    "មាននរណាម្នាក់បានប្តូរបញ្ជីនេះ ឬបន្ទប់មួយកំពុងប្រើធាតុនេះ។ បញ្ជីត្រូវបានអានម្តងទៀត សូមពិនិត្យ ហើយព្យាយាមម្តងទៀត។",
+  ],
+  // new
+  refused: [
+    "The server did not accept this. Check the name and try again.",
+    "ម៉ាស៊ីនមេមិនទទួលយកទេ។ សូមពិនិត្យឈ្មោះ ហើយព្យាយាមម្តងទៀត។",
+  ],
+  // new
+  unknown: [
+    "The answer did not come back. The lists were read again; check before trying again.",
+    "ចម្លើយមិនបានត្រឡប់មកវិញទេ។ បញ្ជីត្រូវបានអានម្តងទៀត សូមពិនិត្យមុននឹងព្យាយាមម្តងទៀត។",
+  ],
+  // new
+  read_only: [
+    "You can read these lists. Only the Owner or a user the Owner allows can change them.",
+    "អ្នកអាចអានបញ្ជីទាំងនេះ។ មានតែម្ចាស់ ឬអ្នកប្រើដែលម្ចាស់អនុញ្ញាតទេ ដែលអាចប្តូរបាន។",
+  ],
 } as const satisfies Record<string, readonly [string, string]>;
 
 export type SettingsTextKey = keyof typeof TEXT;

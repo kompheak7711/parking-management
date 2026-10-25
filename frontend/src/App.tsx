@@ -2063,6 +2063,8 @@ export function App({
       >
         <SettingsPage
           active={shown("settings")}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+          unitApi={unitApi ?? defaultUnitApi}
           capabilities={capabilities}
           earlier={{
             business: (

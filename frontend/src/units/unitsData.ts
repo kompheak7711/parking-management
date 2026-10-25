@@ -27,7 +27,7 @@ export interface UnitsData {
 // More pages than this means something is wrong; V1 has one building of a few dozen Units.
 const MAX_PAGES = 50;
 
-async function allPages<T>(
+export async function allPages<T>(
   load: (
     cursor?: string,
   ) => Promise<{ items: T[]; next_cursor: string | null }>,
