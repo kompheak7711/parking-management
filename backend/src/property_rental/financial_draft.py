@@ -246,6 +246,16 @@ class FinancialDraftService:
             mutation=False,
         )
 
+    def approvals(self, property_id: UUID, *, actor: AuthenticatedActor) -> dict[str, object]:
+        """The drafts the person may read that wait, and those decided today, each with one
+        plain line (V1-058 R7a, Waiting for approval)."""
+        actor_id, capabilities = _require_reader(actor, property_id)
+        return self._call(
+            "SELECT app.financial_draft_approvals(%s,%s,%s::text[])",
+            (property_id, actor_id, capabilities),
+            mutation=False,
+        )
+
     def reject(
         self, property_id: UUID, draft_id: UUID, reason: str, *, actor: AuthenticatedActor
     ) -> dict[str, object]:

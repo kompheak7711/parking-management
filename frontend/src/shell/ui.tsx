@@ -78,6 +78,7 @@ export function Dialog({
   closeLabel,
   busy = false,
   wide = false,
+  actions,
 }: {
   title: string;
   children: ReactNode;
@@ -88,6 +89,8 @@ export function Dialog({
   busy?: boolean;
   /** Up to 820px, for a table with many columns. */
   wide?: boolean;
+  /** More buttons after Close, for a dialog without a form (such as Reject and Confirm). */
+  actions?: ReactNode;
 }) {
   const headingId = useId();
   const box = useRef<HTMLDivElement>(null);
@@ -155,6 +158,7 @@ export function Dialog({
       >
         {closeLabel}
       </button>
+      {actions}
       {onSubmit !== undefined && (
         <button className="ui-btn primary" disabled={busy} type="submit">
           {submitLabel}

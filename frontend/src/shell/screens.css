@@ -1834,3 +1834,24 @@ a.ui-kpi.ui-home-kpi {
     min-height: 3.2em;
   }
 }
+
+/* V1-058 R7a Waiting for approval: the Reject button (mock-up .btn.danger) and the note under
+   the list. */
+.ui-btn.danger {
+  color: var(--err);
+  border-color: var(--err);
+}
+.ui-btn.danger:hover:not(:disabled) {
+  background: var(--err-bg);
+}
+.ui-card.pad0 > p.pad {
+  margin: 0;
+  padding: 10px 24px 14px;
+}
+/* The reason under a draft's name: one line; Open shows it in full. */
+.ui-sub2.ui-clip {
+  max-width: 30ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

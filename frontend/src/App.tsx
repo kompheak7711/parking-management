@@ -1,6 +1,14 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
 import {
+  type ApprovalsApi,
+  approvalsApi as approvalsClient,
+} from "./approvals/approvalsClient";
+import {
+  ApprovalsPage,
+  type DraftDecisionApi,
+} from "./approvals/ApprovalsPage";
+import {
   AuthenticationApi,
   AuthenticationData,
   LocalSignIn,
@@ -65,6 +73,7 @@ import { InvoicesPage } from "./invoices/InvoicesPage";
 import { PaymentsPage } from "./payments/PaymentsPage";
 import { type HomeApi, HomeScreen } from "./home/HomeScreen";
 import { reportsApi } from "./reportsClient";
+import { settlementApi } from "./settlementClient";
 import {
   type PaymentsApi,
   paymentsApi as paymentsClient,
@@ -115,6 +124,8 @@ export interface AppProps {
   invoiceApi?: InvoiceApi;
   paymentsApi?: PaymentsApi;
   homeApi?: HomeApi;
+  approvalsApi?: ApprovalsApi;
+  draftDecisionApi?: DraftDecisionApi;
   financialServices?: FinancialUiServices;
   enforcementServices?: EnforcementServices;
   ledgerApi?: CustomerLedgerApi;
@@ -566,6 +577,8 @@ export function App({
   invoiceApi = invoiceClient,
   paymentsApi = paymentsClient,
   homeApi = reportsApi,
+  approvalsApi = approvalsClient,
+  draftDecisionApi = settlementApi,
   financialServices,
   enforcementServices,
   ledgerApi,
@@ -1617,7 +1630,15 @@ export function App({
         data-page="approvals"
         hidden={!shown("approvals")}
       >
-        <ComingSoon language={language} step="R7" />
+        <ApprovalsPage
+          active={shown("approvals")}
+          actorId={session.actor_id}
+          approvalsApi={approvalsApi}
+          capabilities={capabilities}
+          decisionApi={draftDecisionApi}
+          language={language}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+        />
       </div>
       <div className="shell-page" data-page="units" hidden={!shown("units")}>
         <UnitsPage

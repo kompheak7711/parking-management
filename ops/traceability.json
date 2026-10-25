@@ -54325,6 +54325,100 @@
       "test_path": "frontend/src/home/HomeScreen.test.tsx",
       "status": "implemented",
       "notes": "V1-058 R6: a failed Home read offers Retry with no old numbers; no right to read says so; Khmer words come from the mock-up."
+    },
+    {
+      "test_id": "test_each_waiting_draft_gets_its_amount_direction_customer_and_unit",
+      "upstream_ids": [
+        "DL-074",
+        "DL-069",
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_waiting_for_approval_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R7a: the Waiting for approval read lists waiting drafts oldest first with a summary line (amount, OUT/KEPT/INTERNAL, Customer, Unit, preparer), filters by capability and moves a decided draft to decided today with its decider."
+    },
+    {
+      "test_id": "test_the_read_needs_an_active_person_and_only_the_read_is_granted",
+      "upstream_ids": [
+        "DL-074",
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_waiting_for_approval_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R7a: the read refuses an unknown actor and only it is granted to the runtime role."
+    },
+    {
+      "test_id": "test_waiting_for_approval_lists_waiting_and_decided_today_drafts_with_their_line",
+      "upstream_ids": [
+        "DL-074",
+        "BR-AUTH-010"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R7a: GET financial-drafts-waiting answers business date, waiting and decided today, and hides Reservation drafts without reservations.read."
+    },
+    {
+      "test_id": "TEST-FE-932",
+      "upstream_ids": [
+        "DL-074",
+        "DL-069",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/approvals/ApprovalsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7a: four cards, waiting drafts oldest first with names, Unit, Customer, preparer and amount; cards filter the list; decided today list."
+    },
+    {
+      "test_id": "TEST-FE-933",
+      "upstream_ids": [
+        "DL-074",
+        "DL-069",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/approvals/ApprovalsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7a: Open shows the draft and what confirming does; Confirm sends one decision and reads again; Reject needs a reason."
+    },
+    {
+      "test_id": "TEST-FE-934",
+      "upstream_ids": [
+        "DL-074",
+        "DL-069",
+        "BR-AUTH-010",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/approvals/ApprovalsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7a: no Confirm or Reject without financial.approve; the preparer withdraws with a reason; refusals show their words; a lost answer resends the same key."
+    },
+    {
+      "test_id": "TEST-FE-935",
+      "upstream_ids": [
+        "DL-074",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/approvals/ApprovalsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7a: a failed read offers Retry; no right to read says so; nothing waiting says so; Khmer words come from the mock-up."
+    },
+    {
+      "test_id": "TEST-FE-936",
+      "upstream_ids": [
+        "DL-074",
+        "DL-069",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/approvals/ApprovalsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7a review round 1: a reject refused because someone decided first shows the draft as decided with the refusal words; more than 200 waiting says so; a refund worked out at confirm is named on Money out."
     }
   ]
 }

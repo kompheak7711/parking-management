@@ -155,3 +155,35 @@ Run rules: frontend-only steps run the frontend gates (format, typecheck, lint, 
   of the frame handles an ended session).
 - Gates: prettier, tsc, eslint clean; vitest 1,785 passed; traceability audit passed. Pictures in
   /mnt/project-files/v1-058/r6-home/.
+
+## R7a Waiting for approval (2026-10-25)
+- Server: migration 20270222_210 adds app.financial_draft_approvals (granted to prm_runtime only)
+  with a plain summary line per draft (app.financial_draft_summary: variant, amount in cents,
+  OUT/KEPT/INTERNAL, Customer, Lease, Reservation, Deposit type, Unit, preparer and decider
+  names). Route GET /properties/{id}/financial-drafts-waiting answers business date, the waiting
+  drafts (oldest first, 200 at most, truncated flag) and those decided today in the Property's
+  time zone, with the same readers as the draft list (Reservation drafts need reservations.read).
+- Screen to the mock-up: four cards that filter the table (Waiting, Money out, Deposits kept,
+  Decided today), the table, the rule notice, the Decided today list, the Open dialog with what
+  confirming does, Confirm and Reject (financial.approve) and Withdraw for the preparer. Decisions
+  use the existing draft routes with an Idempotency-Key. TEST-FE-932 to 936; DB and API tests.
+- Decided by Claude under the owner's 2026-10-23 22:30 rule: a summary line made on the server;
+  the amount is shown as the draft recorded it, none when unknown (a held-value refund is worked
+  out at confirm and is named on the Money out card); Final Settlement amount = its Deposit
+  refunds; OUT = refunds, returned payments and refund corrections, KEPT = Reservation and Lease
+  forfeitures, else INTERNAL; the reason shows on one line under the name (drafts have no number,
+  DL-071); Withdraw asks a reason because the server keeps one; draft names not in the mock-up are
+  marked "new" in approvals/text.ts.
+- Test fix: test_financial_draft_api_migration no longer expects an empty pending list in the
+  shared Property, only that its own three drafts left it.
+- Review round 1 (no files written by the reviewer), no blocker: fixed a reject refused with 409
+  closing the dialog silently (now shows the decided draft and the words), the 200 cap counted
+  after the Reservation filter (truncated flag from one extra row), a kept key reused with a new
+  reason, the Money out card hiding refunds worked out at confirm, the page keeping state and late
+  answers after a Property change, and the reason error not linked to its field. Left: a second
+  Property in the DB test (the test database has one shared Property), focus after switching
+  dialogs, and Property checks on the ids inside a draft payload (written only by the server).
+- Gates: prettier, tsc, eslint clean; vitest 1,790 passed; ruff, mypy clean; draft API unit tests
+  56 passed; PostgreSQL waiting, draft and draft API tests passed; head pins rerun 527 of 529 (the
+  invoice test-order failure as in R5d, and the draft API test fixed above); traceability audit
+  passed. Pictures in /mnt/project-files/v1-058/r7a-approvals/.

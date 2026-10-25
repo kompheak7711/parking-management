@@ -799,6 +799,7 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         # V1-056 slice 11b: the shared financial draft routes (API-101).
         "/api/v1/properties/{property_id}/financial-drafts": {"get"},
         "/api/v1/properties/{property_id}/financial-drafts/{draft_id}": {"get"},
+        "/api/v1/properties/{property_id}/financial-drafts-waiting": {"get"},
         "/api/v1/properties/{property_id}/financial-drafts/{draft_id}/reject": {"post"},
         "/api/v1/properties/{property_id}/financial-drafts/{draft_id}/withdraw": {"post"},
         "/api/v1/properties/{property_id}/financial-drafts/{draft_id}/confirm": {"post"},
