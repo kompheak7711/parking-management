@@ -1,5 +1,6 @@
 # ruff: noqa: E501
-"""V1-060 speed migration `20270219_207`: the faster reads give the same answers.
+"""V1-060 migrations: the faster reads of `20270219_207` give the same answers, and the
+Billing Run writers of `20270220_208` lock the run row before the attempt row.
 
 Runs last in `scripts/database-test.sh`, on the shared test database after every other module
 has left its Invoices, adjustments, Payments, credit and deposit applications and their
@@ -96,3 +97,27 @@ def test_the_invoice_list_order_has_its_index(migrated_database_url: str) -> Non
         ).fetchone()
     assert row is not None
     assert str(row[0]).endswith("(invoice_date, id)")
+
+
+def test_every_billing_run_writer_locks_the_run_before_the_attempt(
+    migrated_database_url: str,
+) -> None:
+    """The flaky deadlock of two executions of one run (V1-060) came from one writer locking the
+    attempt first; every writer that locks both now locks the run row first."""
+    with psycopg.connect(migrated_database_url) as connection:
+        for name in (
+            "start_scheduled_billing_run",
+            "record_scheduled_rent_item",
+            "record_scheduled_utility_item",
+            "finish_scheduled_billing_attempt",
+        ):
+            row = connection.execute(
+                "SELECT prosrc FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace "
+                "WHERE n.nspname='app' AND p.proname=%s",
+                (name,),
+            ).fetchone()
+            assert row is not None, name
+            source = str(row[0])
+            run_lock = source.find("FROM app.billing_runs")
+            attempt_lock = source.find("FROM app.billing_run_attempts")
+            assert -1 < run_lock < attempt_lock, name
