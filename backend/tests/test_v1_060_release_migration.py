@@ -28,10 +28,9 @@ SPEED = importlib.util.module_from_spec(_SPEC)
 _SPEC.loader.exec_module(SPEED)
 
 # The migration's set-based balance, for every Invoice line at one instant.
-_BALANCE = SPEED.OWED_FIRST_CHECK.split("AND line.amount_usd_cents", 1)[1].rsplit("> 0", 1)[0]
 INLINE_BALANCE = (
     "SELECT line.id, app.invoice_line_outstanding_at(line.id,statement_timestamp()) AS exact, "
-    f"line.amount_usd_cents {_BALANCE} AS inline FROM app.invoice_lines AS line"
+    f"{SPEED.OWED_BALANCE} AS inline FROM app.invoice_lines AS line\n{SPEED.OWED_JOINS}"
 )
 
 OLD_ALERT_LINES = """
