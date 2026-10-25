@@ -778,6 +778,8 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/meters/{meter_id}/readings": {"get", "post"},
         "/api/v1/utility-readings/{reading_id}/correct": {"post"},
         "/api/v1/properties/{property_id}/utility-readings:batch": {"post"},
+        "/api/v1/properties/{property_id}/utility-readings/sheet": {"post"},
+        "/api/v1/properties/{property_id}/utility-readings/blank-sheet": {"post"},
         "/api/v1/utility-billing/preview": {"post"},
         "/api/v1/properties/{property_id}/billing-runs/rent": {"post"},
         "/api/v1/properties/{property_id}/billing-runs/utilities": {"post"},

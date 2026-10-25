@@ -278,6 +278,30 @@ export function allLines(
   );
 }
 
+/**
+ * The data with one more saved reading, and its meter one version on. A reading that is
+ * already there is not added twice (a save that ends after the list was read again).
+ */
+export function withReading(
+  data: UtilitiesData,
+  reading: UtilityReading,
+): UtilitiesData {
+  const list = data.readings.get(reading.meter_id) ?? [];
+  if (list.some((item) => item.id === reading.id)) return data;
+  const readings = new Map(data.readings);
+  readings.set(reading.meter_id, [reading, ...list]);
+  return {
+    ...data,
+    meters: data.meters.map(
+      (item): UtilityMeter =>
+        item.id === reading.meter_id
+          ? { ...item, version: item.version + 1 }
+          : item,
+    ),
+    readings,
+  };
+}
+
 /** "U302", "u302" or "302" → the Unit; null for an empty box; undefined for no such Unit. */
 export function findUnit(
   units: readonly UnitResource[],

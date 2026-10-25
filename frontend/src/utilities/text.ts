@@ -270,6 +270,154 @@ const TEXT = {
     "The meters changed while the form was open, so the list was read again. Check and try again.",
     "នាឡិកាស្ទង់បានផ្លាស់ប្តូរ ពេលទម្រង់កំពុងបើក ដូច្នេះបញ្ជីត្រូវបានអានម្តងទៀត។ សូមពិនិត្យ ហើយព្យាយាមម្តងទៀត។",
   ],
+  // R4c Import (mock-up i18n.js and i18n9.js; owner 22/10/2026: one row per Unit)
+  im_btn: ["Import", "នាំចូល"],
+  im_t: ["Import readings from a spreadsheet", "នាំចូលអំណានពីតារាង"],
+  im_intro: [
+    "Import the readings for reading day {0} from an .xlsx or .csv file.",
+    "នាំចូលអំណានសម្រាប់ថ្ងៃអាន {0} ពីឯកសារ .xlsx ឬ .csv។",
+  ],
+  im_cols: [
+    "One row for each Unit, with three columns: Unit, Electricity, Water. The Units are already filled in, so staff type only the readings. No meter numbers.",
+    "មួយជួរសម្រាប់បន្ទប់នីមួយៗ មានបីជួរឈរ៖ បន្ទប់ អគ្គិសនី ទឹក។ បន្ទប់បានបំពេញរួចហើយ ដូច្នេះបុគ្គលិកវាយតែអំណានប៉ុណ្ណោះ។ គ្មានលេខនាឡិកាស្ទង់ទេ។",
+  ],
+  im_blank: ["Download the blank file", "ទាញយកឯកសារទទេ"],
+  im_blank_s: [
+    "Every Unit is filled in. Print it or fill it in on the tablet.",
+    "បន្ទប់ទាំងអស់បានបំពេញរួច។ បោះពុម្ព ឬបំពេញលើថេប្លេត។",
+  ],
+  // new
+  im_blank_failed: [
+    "The blank file could not be made just now. Try again.",
+    "មិនអាចបង្កើតឯកសារទទេបានទេឥឡូវនេះ។ សូមព្យាយាមម្តងទៀត។",
+  ],
+  im_file: ["Spreadsheet file", "ឯកសារតារាង"],
+  // changed: the mock-up's sample file is not in the app
+  im_e_none: ["Choose a file first.", "សូមជ្រើសឯកសារជាមុនសិន។"],
+  im_check: ["Check the file", "ពិនិត្យឯកសារ"],
+  // new
+  checking: ["Checking…", "កំពុងពិនិត្យ…"],
+  // new
+  im_e_type: ["Choose an .xlsx or .csv file.", "សូមជ្រើសឯកសារ .xlsx ឬ .csv។"],
+  // new
+  im_e_read: [
+    "This file could not be read. Save it again as .xlsx or .csv and try again.",
+    "មិនអាចអានឯកសារនេះបានទេ។ សូមរក្សាទុកម្តងទៀតជា .xlsx ឬ .csv ហើយព្យាយាមម្តងទៀត។",
+  ],
+  // new
+  im_e_big: [
+    "The file is bigger than 2 MB. It needs only one row for each Unit.",
+    "ឯកសារធំជាង 2 MB។ វាត្រូវការតែមួយជួរសម្រាប់បន្ទប់នីមួយៗ។",
+  ],
+  // new
+  im_e_columns: [
+    "The first row needs the three column names Unit, Electricity and Water.",
+    "ជួរទីមួយត្រូវមានឈ្មោះជួរឈរបី៖ Unit, Electricity និង Water។",
+  ],
+  // new
+  im_e_rows: [
+    "The file has too many rows. It needs one row for each Unit.",
+    "ឯកសារមានជួរច្រើនពេក។ វាត្រូវការមួយជួរសម្រាប់បន្ទប់នីមួយៗ។",
+  ],
+  // new
+  im_e_empty_file: ["The file has no readings.", "ឯកសារគ្មានអំណានទេ។"],
+  // new
+  im_e_failed: [
+    "The file could not be checked. Check the connection and try again.",
+    "មិនអាចពិនិត្យឯកសារបានទេ។ សូមពិនិត្យការតភ្ជាប់ ហើយព្យាយាមម្តងទៀត។",
+  ],
+  // new
+  im_e_allowed: ["You may not import readings.", "អ្នកមិនអាចនាំចូលអំណានបានទេ។"],
+  im_t2: ["Check readings", "ពិនិត្យអំណាន"],
+  im_prev: ["Previous Reading", "អំណានមុន"],
+  im_cur: ["Current Reading", "អំណានបច្ចុប្បន្ន"],
+  im_result: ["Check", "ការពិនិត្យ"],
+  im_ready: ["Ready", "រួចរាល់"],
+  im_sum: [
+    "{0} readings. {1} are ready. {2} need fixing.",
+    "អំណាន {0}។ {1} រួចរាល់។ {2} ត្រូវកែ។",
+  ],
+  im_e_empty: ["Empty. Type the reading.", "ទទេ។ សូមវាយអំណាន។"],
+  im_e_lower: ["Lower than previous", "ទាបជាងអំណានមុន"],
+  im_e_broken: [
+    "Meter broken. Replace it first.",
+    "នាឡិកាស្ទង់ខូច។ សូមប្តូរជាមុនសិន។",
+  ],
+  im_e_unit: ["There is no Unit {0}.", "គ្មានបន្ទប់ {0} ទេ។"],
+  // new
+  im_e_no_unit: ["Row {0} has no Unit.", "ជួរទី {0} គ្មានបន្ទប់។"],
+  // new
+  im_e_twice: [
+    "{0} is on more than one row (rows {1}). Keep one row.",
+    "{0} មាននៅលើជួរច្រើនជាងមួយ (ជួរទី {1})។ សូមទុកតែមួយជួរ។",
+  ],
+  // new
+  im_e_no_meter: [
+    "This Unit has no {0} meter. A Manager adds it on the Meters tab.",
+    "បន្ទប់នេះគ្មាននាឡិកាស្ទង់{0}ទេ។ អ្នកគ្រប់គ្រងបន្ថែមវានៅផ្ទាំងនាឡិកាស្ទង់។",
+  ],
+  // new
+  im_e_number: ["Not a whole number", "មិនមែនលេខគត់"],
+  // new
+  im_e_saved: ["Already saved this month: {0}", "បានរក្សាទុករួចខែនេះ៖ {0}"],
+  // new
+  im_w_high: [
+    "Much more than usual (about {0}). Check the meter.",
+    "ច្រើនជាងធម្មតា (ប្រហែល {0})។ សូមពិនិត្យនាឡិកាស្ទង់។",
+  ],
+  im_how: ["What to confirm", "អ្វីត្រូវបញ្ជាក់"],
+  im_good: [
+    "Confirm the {0} ready readings now. Fix the other {1} on the screen.",
+    "បញ្ជាក់អំណាន {0} ដែលរួចរាល់ឥឡូវ។ កែ {1} ផ្សេងទៀតលើអេក្រង់។",
+  ],
+  im_all: [
+    "Confirm nothing until every reading is right.",
+    "មិនបញ្ជាក់អ្វីទេ រហូតដល់អំណានទាំងអស់ត្រឹមត្រូវ។",
+  ],
+  im_note: [
+    "Each reading is checked again when it is saved, the same as typing it in. This is saved in History.",
+    "អំណាននីមួយៗត្រូវពិនិត្យម្តងទៀតពេលរក្សាទុក ដូចការវាយបញ្ចូល។ ការនេះរក្សាទុកក្នុងប្រវត្តិ។",
+  ],
+  // changed: the mock-up sentence about acting as the Manager is left out
+  im_who: [
+    "A Manager or a user allowed to confirm readings checks this list and confirms it.",
+    "អ្នកគ្រប់គ្រង ឬអ្នកប្រើដែលមានសិទ្ធិបញ្ជាក់អំណាន ពិនិត្យបញ្ជីនេះ ហើយបញ្ជាក់។",
+  ],
+  im_photo: [
+    "No meter photos are needed. Report a meter problem on a Unit Check.",
+    "មិនត្រូវការរូបថតនាឡិកាស្ទង់ទេ។ រាយការណ៍បញ្ហានាឡិកាស្ទង់លើការពិនិត្យបន្ទប់។",
+  ],
+  im_save: ["Confirm readings", "បញ្ជាក់អំណាន"],
+  // new
+  im_e_atomic_big: [
+    "There are more than 100 readings, too many to confirm in one step. Choose the first choice.",
+    "មានអំណានច្រើនជាង 100 ច្រើនពេកសម្រាប់បញ្ជាក់ក្នុងមួយជំហាន។ សូមជ្រើសជម្រើសទីមួយ។",
+  ],
+  // new
+  im_e_changed: [
+    "Nothing was confirmed. The meters changed while the list was open, so the readings were read again. Import the file again.",
+    "មិនបានបញ្ជាក់អ្វីទេ។ នាឡិកាស្ទង់បានផ្លាស់ប្តូរ ពេលបញ្ជីកំពុងបើក ដូច្នេះអំណានត្រូវបានអានម្តងទៀត។ សូមនាំចូលឯកសារម្តងទៀត។",
+  ],
+  im_done: ["{0} readings confirmed from {1}.", "បានបញ្ជាក់អំណាន {0} ពី {1}។"],
+  im_none: [
+    "Nothing confirmed from {0}. Fix the file and import it again.",
+    "មិនបានបញ្ជាក់អ្វីពី {0}។ សូមកែឯកសារ ហើយនាំចូលម្តងទៀត។",
+  ],
+  // new: why the server refused one reading
+  im_r_conflict: [
+    "The meter changed. Check it on the screen.",
+    "នាឡិកាស្ទង់បានផ្លាស់ប្តូរ។ សូមពិនិត្យលើអេក្រង់។",
+  ],
+  // new
+  im_r_refused: [
+    "Refused. It may be lower than a reading already saved.",
+    "ត្រូវបានបដិសេធ។ វាអាចទាបជាងអំណានដែលបានរក្សាទុករួច។",
+  ],
+  // new
+  im_r_failed: [
+    "Not saved. Type it on the screen.",
+    "មិនបានរក្សាទុក។ សូមវាយវាលើអេក្រង់។",
+  ],
   required: ["Required", "ត្រូវការ"],
   optional: ["Optional", "ស្រេចចិត្ត"],
 } as const satisfies Record<string, readonly [string, string]>;

@@ -118,6 +118,8 @@ function api(): UtilityApi {
       },
     ]),
     createRate: vi.fn().mockResolvedValue(value.rates[0]),
+    readSheet: vi.fn(),
+    blankSheet: vi.fn(),
     preview: vi.fn(),
   };
 }

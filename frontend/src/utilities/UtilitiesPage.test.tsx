@@ -14,9 +14,13 @@ import {
   MeterSerialNumberInUseError,
   UtilityClientError,
   UtilityConflictError,
+  type BatchReadingInput,
+  type BatchReadingResult,
   type MeterInstallInput,
   type MeterReplaceInput,
   type ReadingInput,
+  type ReadingSheet,
+  type ReadingSheetRow,
   type UtilityApi,
   type UtilityMeter,
   type UtilityReading,
@@ -224,15 +228,17 @@ function utilityApi(
     correctReading: vi.fn(),
     recordBatch: vi.fn(),
     createRate: vi.fn(),
+    readSheet: vi.fn(),
+    blankSheet: vi.fn(),
     preview: vi.fn(),
     ...overrides,
   };
 }
 
-function unitApi(): Pick<UnitApi, "list"> {
+function unitApi(items: UnitResource[] = UNITS): Pick<UnitApi, "list"> {
   return {
     list: vi.fn().mockResolvedValue({
-      items: UNITS,
+      items,
       next_cursor: null,
       can_manage: false,
     }),
@@ -260,10 +266,11 @@ function show(
     api?: UtilityApi;
     today?: string;
     capabilities?: ReadonlySet<string> | null;
+    units?: UnitResource[];
   } = {},
 ) {
   const api = options.api ?? utilityApi();
-  const units = unitApi();
+  const units = unitApi(options.units);
   render(
     <UtilitiesPage
       active
@@ -277,6 +284,39 @@ function show(
     />,
   );
   return { api, units };
+}
+
+const SHEET_ROWS: ReadingSheetRow[] = [
+  { row: 2, unit: "U101", electricity: "1,300", water: "38" },
+  { row: 3, unit: "U102", electricity: "340", water: "5" },
+  { row: 4, unit: "u201", electricity: "", water: "20" },
+  { row: 5, unit: "U999", electricity: "1", water: "2" },
+  { row: 6, unit: "301", electricity: "60", water: "21" },
+  { row: 7, unit: "U301", electricity: "7", water: "" },
+];
+
+function sheetOf(rows: ReadingSheetRow[]) {
+  return vi.fn(() =>
+    Promise.resolve({
+      file_name: "readings.csv",
+      problem: null,
+      rows,
+    } satisfies ReadingSheet),
+  );
+}
+
+/** Opens Import, chooses a file and returns the Check readings dialog. */
+async function openCheck(): Promise<HTMLElement> {
+  fireEvent.click(await screen.findByRole("button", { name: /^Import/ }));
+  const dialog = screen.getByRole("dialog");
+  fireEvent.change(within(dialog).getByLabelText("Spreadsheet file"), {
+    target: { files: [new File(["x"], "readings.csv")] },
+  });
+  fireEvent.click(
+    within(dialog).getByRole("button", { name: "Check the file" }),
+  );
+  await within(dialog).findByText("Check readings");
+  return screen.getByRole("dialog");
 }
 
 function rowOf(unitNumber: string): HTMLElement {
@@ -1047,6 +1087,363 @@ describe("Utilities Meters tab (V1-058 R4b)", () => {
     expect(keys[2]).not.toBe(keys[1]);
     await within(dialog).findByText(/No answer came back/);
     fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    await waitFor(() => {
+      expect(units.list).toHaveBeenCalledTimes(2);
+    });
+  });
+});
+
+describe("Utilities Import readings (V1-058 R4c)", () => {
+  it("TEST-FE-890 Import opens from the reading list, downloads the blank file with every Unit, asks for a file, and sends the chosen file to be read", async () => {
+    const blob = new Blob(["xlsx"]);
+    const blankSheet = vi.fn().mockResolvedValue(blob);
+    const readSheet = vi.fn().mockResolvedValue({
+      file_name: "readings.csv",
+      problem: "COLUMNS",
+      rows: [],
+    } satisfies ReadingSheet);
+    const createObjectURL = vi.fn(() => "blob:sheet");
+    const revokeObjectURL = vi.fn();
+    vi.stubGlobal(
+      "URL",
+      Object.assign(URL, { createObjectURL, revokeObjectURL }),
+    );
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(() => undefined);
+    show({ api: utilityApi({ blankSheet, readSheet }) });
+    fireEvent.click(await screen.findByRole("button", { name: /^Import/ }));
+    const dialog = screen.getByRole("dialog");
+    expect(
+      within(dialog).getByText("Import readings from a spreadsheet"),
+    ).toBeTruthy();
+    expect(
+      within(dialog).getByText(
+        /Import the readings for reading day 24\/10\/2026 from an \.xlsx or \.csv file\./,
+      ),
+    ).toBeTruthy();
+
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: /Download the blank file/ }),
+    );
+    await waitFor(() => {
+      expect(click).toHaveBeenCalledTimes(1);
+    });
+    expect(blankSheet).toHaveBeenCalledWith("property-1", [
+      "U101",
+      "U102",
+      "U201",
+      "U301",
+    ]);
+    expect(createObjectURL).toHaveBeenCalledWith(blob);
+    expect(revokeObjectURL).toHaveBeenCalledWith("blob:sheet");
+
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Check the file" }),
+    );
+    expect(within(dialog).getByText("Choose a file first.")).toBeTruthy();
+    const fileBox = within(dialog).getByLabelText("Spreadsheet file");
+    expect(fileBox.getAttribute("aria-describedby")).toBe("im-file-err");
+
+    fireEvent.change(fileBox, {
+      target: { files: [new File(["Unit,Meter\n"], "readings.csv")] },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Check the file" }),
+    );
+    expect(
+      await within(dialog).findByText(
+        "The first row needs the three column names Unit, Electricity and Water.",
+      ),
+    ).toBeTruthy();
+    expect(readSheet).toHaveBeenCalledWith(
+      "property-1",
+      "readings.csv",
+      btoa("Unit,Meter\n"),
+    );
+    click.mockRestore();
+    vi.unstubAllGlobals();
+  });
+
+  it("TEST-FE-891 Check readings lists each reading with its previous reading, puts the lines that need fixing first, and confirms the ready ones in one step", async () => {
+    const recordBatch = vi.fn(
+      (_property: string, _mode: string, items: BatchReadingInput[]) =>
+        Promise.resolve(
+          items.map((item, index): BatchReadingResult => {
+            const failed = item.meter_id === "wa-201";
+            return {
+              index,
+              idempotency_key: item.idempotency_key,
+              status: failed ? "FAILED" : "SUCCEEDED",
+              reading: failed
+                ? null
+                : reading(
+                    item.meter_id,
+                    item.reading.reading_date,
+                    item.reading.reading_value,
+                  ),
+              error: failed ? { code: "CONFLICT" } : null,
+            };
+          }),
+        ),
+    );
+    const { units } = show({
+      api: utilityApi({ readSheet: sheetOf(SHEET_ROWS), recordBatch }),
+    });
+    const dialog = await openCheck();
+    expect(
+      within(dialog).getByText(/9 readings\. 3 are ready\. 6 need fixing\./),
+    ).toBeTruthy();
+    const lines = within(dialog).getAllByRole("row").slice(1);
+    expect(lines).toHaveLength(9);
+    // The six lines that need fixing come first, on the error tint.
+    expect(
+      lines.slice(0, 6).every((line) => line.className === "ui-imbad"),
+    ).toBe(true);
+    expect(lines.slice(6).map((line) => line.textContent)).toEqual([
+      "U101Electricity1,2001,300Ready",
+      "U102Water—5Ready",
+      "U201Water1520Ready",
+    ]);
+    // Previous is the reading before reading day, even when this month's is already saved.
+    expect(
+      within(dialog).getByText("Already saved this month: 330").closest("tr")
+        ?.textContent,
+    ).toContain("U102Electricity300340");
+    for (const text of [
+      "Lower than previous",
+      "Already saved this month: 330",
+      "Empty. Type the reading.",
+      "There is no Unit U999.",
+    ]) {
+      expect(within(dialog).getByText(text)).toBeTruthy();
+    }
+    // A Unit on two rows: neither row is confirmed.
+    expect(
+      within(dialog).getAllByText(
+        "U301 is on more than one row (rows 6, 7). Keep one row.",
+      ),
+    ).toHaveLength(2);
+    expect(
+      within(dialog).getByLabelText(
+        "Confirm the 3 ready readings now. Fix the other 6 on the screen.",
+      ),
+    ).toHaveProperty("checked", true);
+
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Confirm readings" }),
+    );
+    expect(
+      await screen.findByText("2 readings confirmed from readings.csv."),
+    ).toBeTruthy();
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(recordBatch).toHaveBeenCalledTimes(1);
+    const [property, mode, items] = recordBatch.mock.calls[0] ?? [];
+    expect(property).toBe("property-1");
+    expect(mode).toBe("PARTIAL");
+    expect(
+      items?.map((item) => [
+        item.meter_id,
+        item.reading.reading_value,
+        item.reading.reading_date,
+        item.reading.expected_meter_version,
+        item.reading.source_evidence,
+      ]),
+    ).toEqual([
+      ["el-101", "1300", READING_DAY, 4, "Imported from readings.csv"],
+      ["wa-102", "5", READING_DAY, 4, "Imported from readings.csv"],
+      ["wa-201", "20", READING_DAY, 4, "Imported from readings.csv"],
+    ]);
+    // The result lists every reading that was not confirmed and why.
+    expect(
+      screen.getByText(
+        "U201 Water: The meter changed. Check it on the screen.",
+      ),
+    ).toBeTruthy();
+    expect(screen.getByText("U101 Water: Lower than previous")).toBeTruthy();
+    // A reading the server refused reads the list again.
+    await waitFor(() => {
+      expect(units.list).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it("TEST-FE-892 Confirm nothing saves nothing while a line needs fixing, sends every reading in one all-or-nothing step when all are ready, and keeps the keys for Try again", async () => {
+    const recordBatch = vi
+      .fn()
+      .mockRejectedValueOnce(new UtilityClientError())
+      .mockRejectedValueOnce(new UtilityConflictError());
+    const readSheet = vi
+      .fn()
+      .mockImplementationOnce(sheetOf(SHEET_ROWS))
+      .mockImplementation(
+        sheetOf([{ row: 2, unit: "101", electricity: "1,250", water: "41" }]),
+      );
+    const { units } = show({ api: utilityApi({ readSheet, recordBatch }) });
+    let dialog = await openCheck();
+    fireEvent.click(
+      within(dialog).getByLabelText(
+        "Confirm nothing until every reading is right.",
+      ),
+    );
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Confirm readings" }),
+    );
+    expect(
+      await screen.findByText(
+        "Nothing confirmed from readings.csv. Fix the file and import it again.",
+      ),
+    ).toBeTruthy();
+    expect(recordBatch).not.toHaveBeenCalled();
+
+    dialog = await openCheck();
+    expect(
+      within(dialog).getByText(/2 readings\. 2 are ready\. 0 need fixing\./),
+    ).toBeTruthy();
+    fireEvent.click(
+      within(dialog).getByLabelText(
+        "Confirm nothing until every reading is right.",
+      ),
+    );
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Confirm readings" }),
+    );
+    await within(dialog).findByText(/No answer came back/);
+    fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
+    expect(
+      await screen.findByText(
+        "Nothing was confirmed. The meters changed while the list was open, so the readings were read again. Import the file again.",
+      ),
+    ).toBeTruthy();
+    const [first, second] = recordBatch.mock.calls;
+    expect(first?.[1]).toBe("ATOMIC_ALL");
+    expect(first?.[3]).toEqual(expect.any(String));
+    expect(second?.[3]).toBe(first?.[3]);
+    expect(
+      (second?.[2] as BatchReadingInput[]).map((item) => item.idempotency_key),
+    ).toEqual(
+      (first?.[2] as BatchReadingInput[]).map((item) => item.idempotency_key),
+    );
+    await waitFor(() => {
+      expect(units.list).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it("TEST-FE-893 A much higher reading is ready with a check note; Import is only on the reading list and only for a person who may record readings", async () => {
+    show({
+      api: utilityApi({
+        readSheet: sheetOf([
+          { row: 2, unit: "U101", electricity: "1900", water: "" },
+          { row: 3, unit: "U301", electricity: "7", water: "" },
+        ]),
+      }),
+    });
+    const dialog = await openCheck();
+    expect(within(dialog).getByText("Ready")).toBeTruthy();
+    expect(
+      within(dialog).getByText(
+        "Much more than usual (about 100). Check the meter.",
+      ),
+    ).toBeTruthy();
+    // An empty Water box of a Unit that has a water meter needs fixing; a Unit with no meter
+    // of that kind is named, and its empty box is left out.
+    expect(within(dialog).getByText("Empty. Type the reading.")).toBeTruthy();
+    expect(
+      within(dialog).getByText(
+        "This Unit has no electricity meter. A Manager adds it on the Meters tab.",
+      ),
+    ).toBeTruthy();
+    expect(within(dialog).getAllByRole("row")).toHaveLength(4);
+    cleanup();
+
+    show({ capabilities: new Set(["utility.read"]) });
+    await screen.findByText("1 of 6 meters read");
+    expect(screen.queryByRole("button", { name: /^Import/ })).toBeNull();
+    cleanup();
+
+    show({ today: "2026-10-20" });
+    await screen.findByText(/Reading day is 24\/10\/2026/);
+    expect(screen.queryByRole("button", { name: /^Import/ })).toBeNull();
+  });
+
+  it("TEST-FE-895 More than 100 readings go in batches of 100; after batch 2 is refused, Try again skips batch 1, and closing still names the readings batch 1 confirmed", async () => {
+    const many = Array.from({ length: 55 }, (_, index) =>
+      unit(`U${String(500 + index)}`, "5", "OCCUPIED"),
+    );
+    const list = many.flatMap((item) => [
+      meter(`el-${item.unit_number}`, item.unit_number, "ELECTRICITY"),
+      meter(`wa-${item.unit_number}`, item.unit_number, "WATER"),
+    ]);
+    const answer = (items: BatchReadingInput[]) =>
+      Promise.resolve(
+        items.map(
+          (item, index): BatchReadingResult => ({
+            index,
+            idempotency_key: item.idempotency_key,
+            status: "SUCCEEDED",
+            reading: reading(
+              item.meter_id,
+              item.reading.reading_date,
+              item.reading.reading_value,
+            ),
+            error: null,
+          }),
+        ),
+      );
+    const recordBatch = vi
+      .fn()
+      .mockImplementationOnce(
+        (_p: string, _m: string, items: BatchReadingInput[]) => answer(items),
+      )
+      .mockRejectedValueOnce(new UtilityClientError(undefined, [], "req-9"))
+      .mockRejectedValueOnce(new UtilityClientError(undefined, [], "req-10"));
+    const readSheet = sheetOf(
+      many.map((item, index) => ({
+        row: index + 2,
+        unit: item.unit_number,
+        electricity: "5",
+        water: "6",
+      })),
+    );
+    const { units } = show({
+      api: utilityApi({ readSheet, recordBatch }, list),
+      units: many,
+    });
+    const dialog = await openCheck();
+    expect(
+      within(dialog).getByText(
+        /110 readings\. 110 are ready\. 0 need fixing\./,
+      ),
+    ).toBeTruthy();
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Confirm readings" }),
+    );
+    await within(dialog).findByText(
+      "It was not saved. Check the values and try again.",
+    );
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Confirm readings" }),
+    );
+    await waitFor(() => {
+      expect(recordBatch).toHaveBeenCalledTimes(3);
+    });
+    const sizes = recordBatch.mock.calls.map(
+      (call) => (call[2] as BatchReadingInput[]).length,
+    );
+    expect(sizes).toEqual([100, 10, 10]);
+    expect(recordBatch.mock.calls[2]?.[3]).toBe(recordBatch.mock.calls[1]?.[3]);
+    expect(recordBatch.mock.calls[1]?.[3]).not.toBe(
+      recordBatch.mock.calls[0]?.[3],
+    );
+    await within(dialog).findByText(
+      "It was not saved. Check the values and try again.",
+    );
+    fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    expect(
+      await screen.findByText("100 readings confirmed from readings.csv."),
+    ).toBeTruthy();
+    expect(
+      screen.getAllByText(/: Not saved\. Type it on the screen\.$/),
+    ).toHaveLength(10);
     await waitFor(() => {
       expect(units.list).toHaveBeenCalledTimes(2);
     });

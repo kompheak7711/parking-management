@@ -51037,6 +51037,186 @@
       "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
       "status": "implemented",
       "notes": "V1-058 R4b Meters: Add meter links each field error and moves the cursor to the first one, says when the server refused, keeps the key for Try again but gives changed values a new key, and reads the list again when closed after a lost answer."
+    },
+    {
+      "test_id": "test_an_xlsx_file_gives_one_row_per_unit_with_the_text_people_see",
+      "upstream_ids": [
+        "DL-074",
+        "API-046",
+        "UI-058"
+      ],
+      "test_level": "Unit",
+      "test_path": "backend/tests/test_utility_sheet.py",
+      "status": "implemented",
+      "notes": "V1-058 R4c Import readings: the server reads an .xlsx or .csv file with one row for each Unit (Unit, Electricity, Water; owner 22/10/2026) and makes the blank file; it saves nothing (openpyxl approved by the owner; technical points decided by Claude under the owner's 2026-10-23 22:30 rule)."
+    },
+    {
+      "test_id": "test_a_csv_file_with_a_byte_order_mark_reads_the_same_way",
+      "upstream_ids": [
+        "DL-074",
+        "API-046",
+        "UI-058"
+      ],
+      "test_level": "Unit",
+      "test_path": "backend/tests/test_utility_sheet.py",
+      "status": "implemented",
+      "notes": "V1-058 R4c Import readings: the server reads an .xlsx or .csv file with one row for each Unit (Unit, Electricity, Water; owner 22/10/2026) and makes the blank file; it saves nothing (openpyxl approved by the owner; technical points decided by Claude under the owner's 2026-10-23 22:30 rule)."
+    },
+    {
+      "test_id": "test_a_file_that_cannot_be_used_says_why",
+      "upstream_ids": [
+        "DL-074",
+        "API-046",
+        "UI-058"
+      ],
+      "test_level": "Unit",
+      "test_path": "backend/tests/test_utility_sheet.py",
+      "status": "implemented",
+      "notes": "V1-058 R4c Import readings: the server reads an .xlsx or .csv file with one row for each Unit (Unit, Electricity, Water; owner 22/10/2026) and makes the blank file; it saves nothing (openpyxl approved by the owner; technical points decided by Claude under the owner's 2026-10-23 22:30 rule)."
+    },
+    {
+      "test_id": "test_the_blank_file_lists_every_unit_under_the_three_columns",
+      "upstream_ids": [
+        "DL-074",
+        "API-046",
+        "UI-058"
+      ],
+      "test_level": "Unit",
+      "test_path": "backend/tests/test_utility_sheet.py",
+      "status": "implemented",
+      "notes": "V1-058 R4c Import readings: the server reads an .xlsx or .csv file with one row for each Unit (Unit, Electricity, Water; owner 22/10/2026) and makes the blank file; it saves nothing (openpyxl approved by the owner; technical points decided by Claude under the owner's 2026-10-23 22:30 rule)."
+    },
+    {
+      "test_id": "test_a_unit_that_looks_like_a_formula_stays_text_in_the_blank_file",
+      "upstream_ids": [
+        "DL-074",
+        "API-046",
+        "UI-058"
+      ],
+      "test_level": "Unit",
+      "test_path": "backend/tests/test_utility_sheet.py",
+      "status": "implemented",
+      "notes": "V1-058 R4c Import readings: the server reads an .xlsx or .csv file with one row for each Unit (Unit, Electricity, Water; owner 22/10/2026) and makes the blank file; it saves nothing (openpyxl approved by the owner; technical points decided by Claude under the owner's 2026-10-23 22:30 rule)."
+    },
+    {
+      "test_id": "test_the_sheet_routes_need_their_rights_and_the_browser_checks",
+      "upstream_ids": [
+        "DL-074",
+        "API-046",
+        "UI-058"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_utility_sheet.py",
+      "status": "implemented",
+      "notes": "V1-058 R4c Import readings: the server reads an .xlsx or .csv file with one row for each Unit (Unit, Electricity, Water; owner 22/10/2026) and makes the blank file; it saves nothing (openpyxl approved by the owner; technical points decided by Claude under the owner's 2026-10-23 22:30 rule)."
+    },
+    {
+      "test_id": "TEST-FE-890",
+      "upstream_ids": [
+        "DL-074",
+        "API-046",
+        "UI-058"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4c Import readings: Import opens from the reading list, downloads the blank file with every Unit filled in, asks for a file with the error linked to the box, and sends the chosen file to be read; a file without the three columns is named."
+    },
+    {
+      "test_id": "TEST-FE-891",
+      "upstream_ids": [
+        "DL-074",
+        "API-046",
+        "UI-058"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4c Import readings: Check readings shows Unit, Meter, Previous Reading, Current Reading and Check with the lines that need fixing first (lower, already saved, empty, broken, no such Unit, a Unit twice, no meter); Confirm sends the ready readings in one PARTIAL batch with today's date and the meter version, and the result lists what was not confirmed."
+    },
+    {
+      "test_id": "TEST-FE-892",
+      "upstream_ids": [
+        "DL-074",
+        "API-046",
+        "UI-058"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4c Import readings: Confirm nothing until every reading is right saves nothing while a line needs fixing; when all are ready it sends one ATOMIC_ALL batch with an envelope key, keeps every key for Try again after a lost answer, and reads the list again after a conflict."
+    },
+    {
+      "test_id": "TEST-FE-893",
+      "upstream_ids": [
+        "DL-074",
+        "API-046",
+        "UI-058"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4c Import readings: A much higher reading stays ready with a check note; Import is only on the reading list (from the 24th) and only for a person who may record readings."
+    },
+    {
+      "test_id": "TEST-FE-894",
+      "upstream_ids": [
+        "DL-074",
+        "API-046",
+        "UI-058"
+      ],
+      "test_level": "Unit",
+      "test_path": "frontend/src/utilityClient.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4c Import readings: The client sends the file name and base64 content with the CSRF token, refuses an unknown problem code, and downloads the blank file; a refusal is an authorization error."
+    },
+    {
+      "test_id": "test_empty_rows_are_not_counted_and_a_semicolon_csv_reads_the_same_way",
+      "upstream_ids": [
+        "DL-074",
+        "API-046",
+        "UI-058"
+      ],
+      "test_level": "Unit",
+      "test_path": "backend/tests/test_utility_sheet.py",
+      "status": "implemented",
+      "notes": "V1-058 R4c Import readings review round 1: empty rows do not count toward the 500-row limit, and a .csv saved with semicolons reads the same way."
+    },
+    {
+      "test_id": "test_a_broken_or_swollen_file_is_unreadable_not_a_server_error",
+      "upstream_ids": [
+        "DL-074",
+        "API-046",
+        "UI-058"
+      ],
+      "test_level": "Unit",
+      "test_path": "backend/tests/test_utility_sheet.py",
+      "status": "implemented",
+      "notes": "V1-058 R4c Import readings review round 1: an over-long CSV field, broken XML inside the .xlsx, or a part that unpacks to more than 10 MB is UNREADABLE, never a server error or a memory spike."
+    },
+    {
+      "test_id": "test_the_sheet_route_names_the_problem_of_a_file",
+      "upstream_ids": [
+        "DL-074",
+        "API-046",
+        "UI-058"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_utility_sheet.py",
+      "status": "implemented",
+      "notes": "V1-058 R4c Import readings review round 1: the sheet route answers 200 with the problem code of a file it cannot use."
+    },
+    {
+      "test_id": "TEST-FE-895",
+      "upstream_ids": [
+        "DL-074",
+        "API-046",
+        "UI-058"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4c Import readings review round 1: more than 100 readings go in batches of 100; after a refusal Try again skips the batch already saved and keeps the refused batch's key; closing still names the readings that were confirmed and lists the rest."
     }
   ]
 }

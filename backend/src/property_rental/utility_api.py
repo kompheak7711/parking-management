@@ -39,6 +39,13 @@ from property_rental.utility import (
     UtilityCalculationSnapshot,
     UtilityPreviewSourceKind,
 )
+from property_rental.utility_sheet import (
+    MAX_FILE_BYTES,
+    MAX_ROWS,
+    SheetError,
+    blank_sheet,
+    read_sheet,
+)
 
 UTILITY_READ_CAPABILITY = "utility.read"
 UTILITY_METER_MANAGE_CAPABILITY = "utility_meters.manage"
@@ -983,6 +990,22 @@ class MeterReplaceInput(BaseModel):
         return self
 
 
+class ReadingSheetInput(BaseModel):
+    """V1-058 R4c: a meter-readings file to read; nothing is saved."""
+
+    model_config = ConfigDict(extra="forbid")
+    file_name: str = Field(min_length=1, max_length=200)
+    # Base64 of at most MAX_FILE_BYTES.
+    content_base64: str = Field(min_length=1, max_length=(MAX_FILE_BYTES * 4) // 3 + 4)
+
+
+class BlankSheetInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    units: list[Annotated[str, Field(min_length=1, max_length=50)]] = Field(
+        min_length=1, max_length=MAX_ROWS
+    )
+
+
 class ReadingCreateInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
     expected_meter_version: int = Field(ge=1)
@@ -1500,6 +1523,50 @@ def create_utility_router(
             },
             "meta": {"request_id": request.state.request_id},
         }
+
+    # V1-058 R4c: the spreadsheet import reads the file here and saves through the batch route,
+    # so every reading gets the same checks as a typed one.
+    @router.post("/properties/{property_id}/utility-readings/sheet")
+    def read_reading_sheet(
+        property_id: UUID, body: ReadingSheetInput, request: Request
+    ) -> dict[str, object]:
+        _allow_query(request, set())
+        actor = _actor(request, resolver)
+        _authorized(actor, UTILITY_READING_RECORD_CAPABILITY, property_id)
+        require_browser_mutation(request, settings)
+        problem: str | None = None
+        rows: list[dict[str, object]] = []
+        try:
+            content = base64.b64decode(body.content_base64, validate=True)
+            rows = [
+                {
+                    "row": item.row,
+                    "unit": item.unit,
+                    "electricity": item.electricity,
+                    "water": item.water,
+                }
+                for item in read_sheet(body.file_name, content)
+            ]
+        except SheetError as exc:
+            problem = exc.problem
+        except ValueError:
+            problem = "UNREADABLE"
+        return {
+            "data": {"file_name": body.file_name, "problem": problem, "rows": rows},
+            "meta": {"request_id": request.state.request_id},
+        }
+
+    @router.post("/properties/{property_id}/utility-readings/blank-sheet")
+    def make_blank_sheet(property_id: UUID, body: BlankSheetInput, request: Request) -> Response:
+        _allow_query(request, set())
+        actor = _actor(request, resolver)
+        _authorized(actor, UTILITY_READ_CAPABILITY, property_id)
+        require_browser_mutation(request, settings)
+        return Response(
+            content=blank_sheet(body.units),
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": 'attachment; filename="meter-readings.xlsx"'},
+        )
 
     @router.post("/utility-billing/preview")
     def preview(body: PreviewInput, request: Request) -> dict[str, object]:

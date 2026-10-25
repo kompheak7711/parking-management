@@ -1213,3 +1213,43 @@ table.ui-table.ui-grid th[scope="row"] {
     padding: 10px 8px;
   }
 }
+
+/* V1-058 R4c: Import readings. The Check readings dialog is wider so its five columns fit;
+   on a phone the table scrolls inside its box. Lines that need fixing are on the error tint. */
+.ui-push {
+  margin-left: auto;
+}
+.ui-dlg.wide {
+  width: min(820px, 100%);
+}
+.ui-imblank {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  align-items: center;
+}
+.ui-imlist {
+  max-height: 50dvh;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+table.ui-table tr.ui-imbad td {
+  background: var(--err-bg);
+}
+table.ui-table tr td .ui-chip + .ui-rdmsg {
+  display: block;
+  margin-top: 4px;
+}
+.ui-notice ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  color: var(--text);
+}
+.ui-imnotes {
+  display: grid;
+  gap: 4px;
+}
+.ui-imnotes p {
+  margin: 0;
+}

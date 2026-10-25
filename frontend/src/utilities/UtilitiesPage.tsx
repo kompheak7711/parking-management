@@ -21,10 +21,10 @@ import {
   UtilityConflictError,
   UtilityClientError,
   type UtilityApi,
-  type UtilityMeter,
   type UtilityReading,
   type UtilityType,
 } from "../utilityClient";
+import { ImportDialog } from "./ImportDialog";
 import { monthText, utt } from "./text";
 import { MeterDetail, MetersTab } from "./MetersTab";
 import { UnitBox, whoText } from "./UnitBox";
@@ -41,6 +41,7 @@ import {
   muchMore,
   parseReading,
   readingDayOf,
+  withReading,
 } from "./utilitiesData";
 
 export interface UtilitiesPageProps {
@@ -171,6 +172,7 @@ export function UtilitiesPage({
       ) : tab === "read" ? (
         <ReadingsTab
           api={utilityApi}
+          propertyId={propertyId}
           canSave={may("utility_readings.record")}
           data={data}
           language={language}
@@ -211,6 +213,7 @@ export function UtilitiesPage({
 function ReadingsTab({
   language,
   api,
+  propertyId,
   data,
   today,
   canSave,
@@ -219,21 +222,25 @@ function ReadingsTab({
 }: {
   language: Language;
   api: UtilityApi;
+  propertyId: string;
   data: UtilitiesData;
   today: string;
   canSave: boolean;
   onChange: (update: (data: UtilitiesData) => UtilitiesData) => void;
   onReload: () => void;
 }) {
+  const [importing, setImporting] = useState(false);
   const [unit, setUnit] = useState<UnitResource | null>(null);
   const [period, setPeriod] = useState<Period>("month");
   const [pick, setPick] = useState(today.slice(0, 7));
   const [type, setType] = useState<UtilityType>("ELECTRICITY");
   const [floor, setFloor] = useState("all");
   const [onlyMissing, setOnlyMissing] = useState(false);
-  const [toast, setToast] = useState<{ ok: boolean; text: string } | null>(
-    null,
-  );
+  const [toast, setToast] = useState<{
+    ok: boolean;
+    text: string;
+    list?: string[];
+  } | null>(null);
 
   const readingDay = readingDayOf(today);
   const entry = period === "month" && today >= readingDay;
@@ -373,13 +380,55 @@ function ReadingsTab({
               />
               {utt(language, "only_missing")}
             </label>
+            {canSave && (
+              <button
+                className="ui-btn ui-push"
+                onClick={() => {
+                  setImporting(true);
+                }}
+                type="button"
+              >
+                <Icon name="upload" small />
+                {utt(language, "im_btn")}
+              </button>
+            )}
           </>
         )}
       </div>
+      {importing && (
+        <ImportDialog
+          api={api}
+          data={data}
+          language={language}
+          onChange={onChange}
+          onClose={(result, reload) => {
+            setImporting(false);
+            if (result !== null)
+              setToast({
+                ok: result.ok,
+                text: result.text,
+                list: result.notConfirmed,
+              });
+            if (reload) onReload();
+          }}
+          propertyId={propertyId}
+          readingDay={readingDay}
+          today={today}
+        />
+      )}
       {toast !== null && (
         <div className={`ui-notice ${toast.ok ? "ok" : "warn"}`} role="status">
           <Icon name={toast.ok ? "check" : "alert"} />
-          <p>{toast.text}</p>
+          <div>
+            <p>{toast.text}</p>
+            {toast.list !== undefined && toast.list.length > 0 && (
+              <ul className="ui-small">
+                {toast.list.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       )}
       {entry ? (
@@ -497,22 +546,7 @@ function EntryList({
   function saved(row: EntryRow, reading: UtilityReading) {
     // Applied to the newest data, so two saves that finish close together both stay, and a
     // save that ends after the list was read again is not counted twice.
-    onChange((current) => {
-      const list = current.readings.get(reading.meter_id) ?? [];
-      if (list.some((item) => item.id === reading.id)) return current;
-      const readings = new Map(current.readings);
-      readings.set(reading.meter_id, [reading, ...list]);
-      return {
-        ...current,
-        meters: current.meters.map(
-          (item): UtilityMeter =>
-            item.id === reading.meter_id
-              ? { ...item, version: item.version + 1 }
-              : item,
-        ),
-        readings,
-      };
-    });
+    onChange((current) => withReading(current, reading));
     onToast({
       ok: true,
       text: utt(

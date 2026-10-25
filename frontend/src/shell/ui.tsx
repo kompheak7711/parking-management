@@ -73,6 +73,7 @@ export function Dialog({
   submitLabel,
   closeLabel,
   busy = false,
+  wide = false,
 }: {
   title: string;
   children: ReactNode;
@@ -81,6 +82,8 @@ export function Dialog({
   submitLabel?: string;
   closeLabel: string;
   busy?: boolean;
+  /** Up to 820px, for a table with many columns. */
+  wide?: boolean;
 }) {
   const headingId = useId();
   const box = useRef<HTMLDivElement>(null);
@@ -160,7 +163,7 @@ export function Dialog({
       <div
         aria-labelledby={headingId}
         aria-modal="true"
-        className="ui-dlg"
+        className={wide ? "ui-dlg wide" : "ui-dlg"}
         ref={box}
         role="dialog"
       >

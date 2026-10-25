@@ -19,7 +19,8 @@ export type ShellIcon =
   | "clock"
   | "zap"
   | "drop"
-  | "upload";
+  | "upload"
+  | "download";
 
 const PATHS: Record<ShellIcon, string[]> = {
   home: ["M3 10.5 12 3l9 7.5", "M5 9.5V21h14V9.5", "M10 21v-6h4v6"],
@@ -94,6 +95,11 @@ const PATHS: Record<ShellIcon, string[]> = {
   upload: [
     "M12 15V4",
     "m7.5 8.5 4.5-4.5 4.5 4.5",
+    "M4.5 15v3.5A1.5 1.5 0 0 0 6 20h12a1.5 1.5 0 0 0 1.5-1.5V15",
+  ],
+  download: [
+    "M12 4v11",
+    "m7.5 10.5 4.5 4.5 4.5-4.5",
     "M4.5 15v3.5A1.5 1.5 0 0 0 6 20h12a1.5 1.5 0 0 0 1.5-1.5V15",
   ],
 };
