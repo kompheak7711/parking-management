@@ -18,6 +18,11 @@ import {
   type UtilityRate,
 } from "../configurationClient";
 import { type RatesApi, RatesTab, serviceNow, utilityRows } from "./RatesTab";
+import {
+  type ServiceSettings,
+  ServiceSettingsError,
+  type ServiceSettingsApi,
+} from "./serviceSettingsClient";
 
 afterEach(() => {
   cleanup();
@@ -143,9 +148,94 @@ function apiOf(load: () => Promise<EffectiveConfigurationSnapshot>) {
   };
 }
 
+function settingsOf(extra: Partial<ServiceSettings> = {}): ServiceSettings {
+  return {
+    services: [
+      {
+        service_id: TRASH.id,
+        service_code: "TRASH_COLLECTION",
+        name_en: "Trash Collection",
+        name_km: "ប្រមូលសំរាម",
+        service_type_id: "type-trash",
+        version: 3,
+        rate_today_usd_cents: 300,
+        next_rate: null,
+        approval_periods: [],
+        leases_using: 2,
+      },
+      {
+        service_id: PARKING.id,
+        service_code: "SVC_1",
+        name_en: "Parking",
+        name_km: null,
+        service_type_id: null,
+        version: 1,
+        rate_today_usd_cents: null,
+        next_rate: null,
+        approval_periods: [],
+        leases_using: 0,
+      },
+    ],
+    service_types: [
+      {
+        service_type_id: "type-trash",
+        name_en: "Trash",
+        name_km: "សំរាម",
+        one_per_lease: true,
+        removed: false,
+        version: 4,
+        services: 1,
+      },
+      {
+        service_type_id: "type-laundry",
+        name_en: "Laundry",
+        name_km: null,
+        one_per_lease: false,
+        removed: false,
+        version: 1,
+        services: 0,
+      },
+      {
+        service_type_id: "type-old",
+        name_en: "Old",
+        name_km: null,
+        one_per_lease: false,
+        removed: true,
+        version: 2,
+        services: 0,
+      },
+    ],
+    today: TODAY,
+    can_manage: true,
+    ...extra,
+  };
+}
+
+function servicesOf(
+  read: () => Promise<ServiceSettings> = () => Promise.resolve(settingsOf()),
+) {
+  return {
+    read: vi.fn<ServiceSettingsApi["read"]>(read),
+    addService: vi.fn<ServiceSettingsApi["addService"]>(() =>
+      Promise.resolve({}),
+    ),
+    changeService: vi.fn<ServiceSettingsApi["changeService"]>(() =>
+      Promise.resolve({}),
+    ),
+    addType: vi.fn<ServiceSettingsApi["addType"]>(() => Promise.resolve({})),
+    changeType: vi.fn<ServiceSettingsApi["changeType"]>(() =>
+      Promise.resolve({}),
+    ),
+    removeType: vi.fn<ServiceSettingsApi["removeType"]>(() =>
+      Promise.resolve({}),
+    ),
+  };
+}
+
 function show(
   api = apiOf(() => Promise.resolve(snapshot())),
   language: "en" | "km" = "en",
+  services = servicesOf(),
 ) {
   render(
     <RatesTab
@@ -153,6 +243,7 @@ function show(
       api={api}
       language={language}
       propertyId="property-1"
+      services={services}
       today={TODAY}
     />,
   );
@@ -212,8 +303,15 @@ describe("Settings: Rates and services", () => {
     ]);
     const services = screen.getByRole("region", { name: "Services" });
     expect(rowsOf(services)).toEqual([
-      ["Trash CollectionTRASH", "$3.00", "$3.50 · 01/12/2026", "New rate"],
-      ["ParkingPARKING", "—", "—", "New rate"],
+      [
+        "Trash Collectionប្រមូលសំរាម",
+        "Trash",
+        "$3.00",
+        "$3.50 · 01/12/2026",
+        "2",
+        "EditNew rate",
+      ],
+      ["Parking", "No type", "—", "—", "0", "EditNew rate"],
     ]);
     const history = within(services).getAllByRole("table").at(1) ?? services;
     expect(
@@ -226,7 +324,9 @@ describe("Settings: Rates and services", () => {
       "Trash Collection$3.0001/01/2025—",
     ]);
     expect(
-      within(services).getByText(/Service types and move-out cleaning rates/),
+      within(services).getByText(
+        /Move-out cleaning rates come in the next step/,
+      ),
     ).toBeTruthy();
     // The helpers on their own.
     expect(
@@ -429,6 +529,7 @@ describe("Settings: Rates and services", () => {
         api={race}
         language="en"
         propertyId="property-1"
+        services={servicesOf()}
         today={TODAY}
       />,
     );
@@ -449,6 +550,7 @@ describe("Settings: Rates and services", () => {
         api={race}
         language="en"
         propertyId="property-2"
+        services={servicesOf()}
         today={TODAY}
       />,
     );
@@ -514,5 +616,315 @@ describe("Settings: Rates and services", () => {
       await screen.findByRole("region", { name: "អត្រាទឹកភ្លើង" }),
     ).toBeTruthy();
     expect(screen.getByRole("region", { name: "សេវា" })).toBeTruthy();
+  });
+
+  it("TEST-FE-999 Add a Service sends its own id, names, type, first rate in cents and a start on the 1st; the same values again keep the id; Edit changes names and type with the version", async () => {
+    const services = servicesOf();
+    show(undefined, "en", services);
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Add a Service" }),
+    );
+    let dialog = screen.getByRole("dialog", { name: "Add a Service" });
+    // The type list leaves out removed types.
+    expect(
+      within(dialog)
+        .getAllByRole("option")
+        .map((option) => option.textContent),
+    ).toEqual([
+      "No type",
+      "Trash · Only one per Lease",
+      "Laundry · One or more per Lease",
+    ]);
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(
+      within(dialog).getByText("Enter a name of 1 to 100 letters."),
+    ).toBeTruthy();
+    expect(services.addService).not.toHaveBeenCalled();
+    fireEvent.change(within(dialog).getByLabelText(/^Name in English/), {
+      target: { value: "  Wash and fold " },
+    });
+    fireEvent.change(within(dialog).getByLabelText(/^Name in Khmer/), {
+      target: { value: "បោកអ៊ុត" },
+    });
+    fireEvent.change(within(dialog).getByLabelText("Type"), {
+      target: { value: "type-laundry" },
+    });
+    fireEvent.change(within(dialog).getByLabelText(/^Monthly rate/), {
+      target: { value: "12.50" },
+    });
+    fireEvent.change(within(dialog).getByLabelText(/^Starts on/), {
+      target: { value: "2026-11-15" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    const notFirst = /Enter the first day of this month or a later month/;
+    expect(within(dialog).getByText(notFirst)).toBeTruthy();
+    // A month already gone is refused too.
+    fireEvent.change(within(dialog).getByLabelText(/^Starts on/), {
+      target: { value: "2026-09-01" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(within(dialog).getByText(notFirst)).toBeTruthy();
+    expect(services.addService).not.toHaveBeenCalled();
+    fireEvent.change(within(dialog).getByLabelText(/^Starts on/), {
+      target: { value: "2026-11-01" },
+    });
+    services.addService.mockRejectedValueOnce(
+      new ServiceSettingsError("unknown"),
+    );
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(
+      await within(dialog).findByText(/may be saved already/),
+    ).toBeTruthy();
+    // Changed values after no answer still use the same id: the server refuses them rather
+    // than adding a second Service.
+    fireEvent.change(within(dialog).getByLabelText(/^Monthly rate/), {
+      target: { value: "13" },
+    });
+    services.addService.mockRejectedValueOnce(
+      new ServiceSettingsError("id_reused"),
+    );
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    // It was saved the first time: the form closes and the list is read again.
+    expect(await screen.findByText(/This was already saved/)).toBeTruthy();
+    expect(screen.queryByRole("dialog")).toBeNull();
+    const [first, again] = services.addService.mock.calls;
+    expect(first?.[1]).toEqual({
+      service_id: expect.any(String) as string,
+      name_en: "Wash and fold",
+      name_km: "បោកអ៊ុត",
+      service_type_id: "type-laundry",
+      monthly_rate_usd_cents: 1250,
+      starts_on: "2026-11-01",
+    });
+    expect(again?.[1].service_id).toBe(first?.[1].service_id);
+    expect(again?.[1].monthly_rate_usd_cents).toBe(1300);
+    // Read again after no answer and after the refusal.
+    await waitFor(() => {
+      expect(services.read).toHaveBeenCalledTimes(3);
+    });
+    // Once confirmed, a new Service gets a new id; after no answer the id is kept even when
+    // the form is closed and opened again.
+    fireEvent.click(screen.getByRole("button", { name: "Add a Service" }));
+    dialog = screen.getByRole("dialog", { name: "Add a Service" });
+    fireEvent.change(within(dialog).getByLabelText(/^Name in English/), {
+      target: { value: "Wash and fold" },
+    });
+    fireEvent.change(within(dialog).getByLabelText(/^Monthly rate/), {
+      target: { value: "12.50" },
+    });
+    fireEvent.change(within(dialog).getByLabelText(/^Starts on/), {
+      target: { value: "2026-10-01" },
+    });
+    services.addService.mockRejectedValueOnce(
+      new ServiceSettingsError("unknown"),
+    );
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(
+      await within(dialog).findByText(/may be saved already/),
+    ).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add a Service" }));
+    dialog = screen.getByRole("dialog", { name: "Add a Service" });
+    fireEvent.change(within(dialog).getByLabelText(/^Name in English/), {
+      target: { value: "Wash and fold" },
+    });
+    fireEvent.change(within(dialog).getByLabelText(/^Monthly rate/), {
+      target: { value: "12.50" },
+    });
+    fireEvent.change(within(dialog).getByLabelText(/^Starts on/), {
+      target: { value: "2026-10-01" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    await screen.findByText("Wash and fold added.");
+    const [, , third, fourth] = services.addService.mock.calls;
+    expect(third?.[1].service_id).not.toBe(first?.[1].service_id);
+    expect(fourth?.[1]).toEqual(third?.[1]);
+    await waitFor(() => {
+      expect(services.read).toHaveBeenCalledTimes(5);
+    });
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Edit: Trash Collection" }),
+    );
+    dialog = screen.getByRole("dialog", { name: "Edit · Trash Collection" });
+    expect(
+      within(dialog).getByText(/A new name shows only on new Invoices/),
+    ).toBeTruthy();
+    expect(within(dialog).queryByLabelText(/^Monthly rate/)).toBeNull();
+    fireEvent.change(within(dialog).getByLabelText(/^Name in English/), {
+      target: { value: "Trash pick-up" },
+    });
+    fireEvent.change(within(dialog).getByLabelText("Type"), {
+      target: { value: "" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    await screen.findByText("Trash pick-up saved.");
+    expect(services.changeService).toHaveBeenCalledWith(
+      "property-1",
+      TRASH.id,
+      {
+        name_en: "Trash pick-up",
+        name_km: "ប្រមូលសំរាម",
+        service_type_id: null,
+        version: 3,
+      },
+    );
+  });
+
+  it("TEST-FE-1000 Service types: Only one or One or more with a Services count; Remove only for a type with no Services; refusals say why and an old version reads again", async () => {
+    const services = servicesOf();
+    show(undefined, "en", services);
+    const types = await screen.findByRole("region", { name: "Service types" });
+    expect(rowsOf(types)).toEqual([
+      ["Trash", "Only one per Lease", "1", "EditHas 1 Service"],
+      ["Laundry", "One or more per Lease", "0", "EditRemove"],
+    ]);
+    expect(
+      within(types).queryByRole("button", { name: "Remove: Trash" }),
+    ).toBeNull();
+
+    fireEvent.click(
+      within(types).getByRole("button", { name: "Add a Service type" }),
+    );
+    let dialog = screen.getByRole("dialog", { name: "Add a Service type" });
+    expect(
+      within(dialog).getByRole<HTMLInputElement>("radio", {
+        name: "Only one per Lease",
+      }).checked,
+    ).toBe(true);
+    fireEvent.change(within(dialog).getByLabelText(/^Name in English/), {
+      target: { value: "Parking" },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("radio", { name: "One or more per Lease" }),
+    );
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    await screen.findByText("Parking added.");
+    expect(services.addType.mock.calls[0]?.[1]).toEqual({
+      service_type_id: expect.any(String) as string,
+      name_en: "Parking",
+      name_km: null,
+      one_per_lease: false,
+    });
+
+    // Making a type Only one while a Lease holds two of it is refused in plain words.
+    services.changeType.mockRejectedValueOnce(
+      new ServiceSettingsError("lease_holds_two"),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Edit: Laundry" }));
+    dialog = screen.getByRole("dialog", { name: "Edit · Laundry" });
+    fireEvent.click(
+      within(dialog).getByRole("radio", { name: "Only one per Lease" }),
+    );
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(
+      await within(dialog).findByText(
+        /A Lease holds two Services of this type/,
+      ),
+    ).toBeTruthy();
+    expect(services.changeType).toHaveBeenCalledWith(
+      "property-1",
+      "type-laundry",
+      {
+        name_en: "Laundry",
+        name_km: null,
+        one_per_lease: true,
+        version: 1,
+      },
+    );
+    // Someone changed it first: the lists are read again.
+    const reads = services.read.mock.calls.length;
+    services.read.mockImplementation(() => {
+      const newer = settingsOf();
+      return Promise.resolve({
+        ...newer,
+        service_types: newer.service_types.map((type) =>
+          type.service_type_id === "type-laundry"
+            ? { ...type, version: 5 }
+            : type,
+        ),
+      });
+    });
+    services.changeType.mockRejectedValueOnce(
+      new ServiceSettingsError("out_of_date"),
+    );
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(
+      await within(dialog).findByText(/Someone changed this first/),
+    ).toBeTruthy();
+    await waitFor(() => {
+      expect(services.read.mock.calls.length).toBe(reads + 1);
+    });
+    // The next Save sends the version of the newest read.
+    services.changeType.mockRejectedValueOnce(
+      new ServiceSettingsError("lease_holds_two"),
+    );
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    await waitFor(() => {
+      expect(services.changeType.mock.lastCall?.[2].version).toBe(5);
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+
+    services.removeType.mockRejectedValueOnce(
+      new ServiceSettingsError("type_has_services"),
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Remove: Laundry" }),
+    );
+    dialog = screen.getByRole("dialog", { name: "Remove · Laundry" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Remove" }));
+    // The form closes with the reason; the list is read again.
+    expect(
+      await screen.findByText(/has Services, so it cannot be removed/),
+    ).toBeTruthy();
+    expect(screen.queryByRole("dialog")).toBeNull();
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Remove: Laundry" }),
+    );
+    dialog = screen.getByRole("dialog", { name: "Remove · Laundry" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Remove" }));
+    await screen.findByText("Laundry removed.");
+    expect(services.removeType).toHaveBeenLastCalledWith(
+      "property-1",
+      "type-laundry",
+      5,
+    );
+  });
+
+  it("TEST-FE-1001 without Settings access the Services and types are read-only; a failed Services read keeps the rates and says so; Khmer names show in Khmer", async () => {
+    show(
+      undefined,
+      "en",
+      servicesOf(() => Promise.resolve(settingsOf({ can_manage: false }))),
+    );
+    const types = await screen.findByRole("region", { name: "Service types" });
+    expect(screen.queryByRole("button", { name: "Add a Service" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Edit/ })).toBeNull();
+    expect(within(types).queryByRole("button")).toBeNull();
+    // The rate right is separate: New rate still shows.
+    expect(
+      screen.getByRole("button", { name: "New rate: Parking" }),
+    ).toBeTruthy();
+    cleanup();
+
+    show(
+      undefined,
+      "en",
+      servicesOf(() => Promise.reject(new ServiceSettingsError("unknown"))),
+    );
+    expect(
+      await screen.findByText(
+        /Service names and types could not be read just now/,
+      ),
+    ).toBeTruthy();
+    expect(screen.getByRole("region", { name: "Utility Rates" })).toBeTruthy();
+    expect(screen.queryByRole("region", { name: "Service types" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Add a Service" })).toBeNull();
+    cleanup();
+
+    show(undefined, "km");
+    const khmer = await screen.findByRole("region", { name: "ប្រភេទសេវា" });
+    expect(within(khmer).getByText("សំរាម")).toBeTruthy();
+    expect(screen.getByText("ប្រមូលសំរាម")).toBeTruthy();
   });
 });

@@ -250,6 +250,7 @@ def test_traceability_manifest_covers_executable_tests() -> None:
         "history/historyClient.test.ts",
         "moveout/moveoutClient.test.ts",
         "moveout/plan.test.ts",
+        "settings/serviceSettingsClient.test.ts",
     ):
         executable_ids.update(
             identifier

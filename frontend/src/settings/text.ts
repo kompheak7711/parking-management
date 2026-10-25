@@ -654,8 +654,73 @@ const TEXT = {
   util_none: ["No Utility Rates yet.", "មិនទាន់មានអត្រាទឹកភ្លើង។"],
   // new
   sv_later: [
-    "Adding a Service, changing its name, Service types and move-out cleaning rates come in the next step.",
-    "ការបន្ថែមសេវា ការប្តូរឈ្មោះ ប្រភេទសេវា និងអត្រាសម្អាតពេលចាកចេញ នឹងមកនៅជំហានបន្ទាប់។",
+    "Move-out cleaning rates come in the next step.",
+    "អត្រាសម្អាតពេលចាកចេញ នឹងមកនៅជំហានបន្ទាប់។",
+  ],
+  // new (R7b-6b)
+  sv_add: ["Add a Service", "បន្ថែមសេវា"],
+  sv_type: ["Type", "ប្រភេទ"],
+  sv_no_type: ["No type", "គ្មានប្រភេទ"],
+  sv_leases: ["Leases using it", "កិច្ចសន្យាដែលប្រើ"],
+  sv_name_note: [
+    "A new name shows only on new Invoices. To change the amount, use New rate.",
+    "ឈ្មោះថ្មីបង្ហាញតែលើវិក្កយបត្រថ្មីប៉ុណ្ណោះ។ ដើម្បីប្តូរចំនួនទឹកប្រាក់ សូមប្រើ អត្រាថ្មី។",
+  ],
+  sv_first_h: [
+    "The first rate. It starts on the first day of a month.",
+    "អត្រាដំបូង។ វាចាប់ផ្តើមនៅថ្ងៃទីមួយនៃខែ។",
+  ],
+  sv_added: ["{0} added.", "បានបន្ថែម {0}។"],
+  sv_changed: ["{0} saved.", "បានរក្សាទុក {0}។"],
+  sv_bill_gap: [
+    "For now only Trash Collection is billed on the Rent Invoice. Other Services are saved, and are billed after a later update.",
+    "សម្រាប់ពេលនេះ មានតែសេវាប្រមូលសំរាមប៉ុណ្ណោះ ដែលគិតថ្លៃលើវិក្កយបត្រថ្លៃឈ្នួល។ សេវាផ្សេងទៀតត្រូវបានរក្សាទុក ហើយនឹងគិតថ្លៃបន្ទាប់ពីការធ្វើបច្ចុប្បន្នភាពនៅពេលក្រោយ។",
+  ],
+  sv_read_failed: [
+    "The Service names and types could not be read just now, so they cannot be changed. The rates still show.",
+    "មិនអាចអានឈ្មោះ និងប្រភេទសេវាបានទេឥឡូវនេះ ដូច្នេះមិនអាចប្តូរបានទេ។ អត្រានៅតែបង្ហាញ។",
+  ],
+  st_title: ["Service types", "ប្រភេទសេវា"],
+  actions: ["Actions", "សកម្មភាព"],
+  e_first_now: [
+    "Enter the first day of this month or a later month, like 01/12/2026.",
+    "បញ្ចូលថ្ងៃទីមួយនៃខែនេះ ឬខែក្រោយ ដូចជា 01/12/2026។",
+  ],
+  st_add: ["Add a Service type", "បន្ថែមប្រភេទសេវា"],
+  st_rule: ["Per Lease", "ក្នុងមួយកិច្ចសន្យា"],
+  st_one: ["Only one per Lease", "តែមួយក្នុងមួយកិច្ចសន្យា"],
+  st_many: ["One or more per Lease", "មួយ ឬច្រើនក្នុងមួយកិច្ចសន្យា"],
+  st_count: ["Services", "សេវា"],
+  st_none: ["No Service types yet.", "មិនទាន់មានប្រភេទសេវា។"],
+  st_used: ["Has {0} Services", "មានសេវា {0}"],
+  st_used1: ["Has 1 Service", "មានសេវា 1"],
+  st_note: [
+    "The New Lease form groups Services by type: an Only one type shows a choice of one, a One or more type shows tick boxes. Changing a Service's type, or a type to Only one, is refused while a Lease holds two Services of that type.",
+    "ទម្រង់កិច្ចសន្យាថ្មីដាក់សេវាជាក្រុមតាមប្រភេទ៖ ប្រភេទតែមួយបង្ហាញជម្រើសមួយ ប្រភេទមួយ ឬច្រើនបង្ហាញប្រអប់ធីក។ ការប្តូរប្រភេទសេវា ឬប្តូរប្រភេទទៅជាតែមួយ ត្រូវបានបដិសេធ ខណៈកិច្ចសន្យាមួយមានសេវាពីរនៃប្រភេទនោះ។",
+  ],
+  e_name: [
+    "Enter a name of 1 to 100 letters.",
+    "បញ្ចូលឈ្មោះពី 1 ដល់ 100 តួអក្សរ។",
+  ],
+  f_lease_two: [
+    "A Lease holds two Services of this type, so this change is refused. End one of them on that Lease first.",
+    "កិច្ចសន្យាមួយមានសេវាពីរនៃប្រភេទនេះ ដូច្នេះការប្តូរនេះត្រូវបានបដិសេធ។ សូមបញ្ចប់សេវាមួយនៅលើកិច្ចសន្យានោះជាមុនសិន។",
+  ],
+  f_type_has: [
+    "This Service type has Services, so it cannot be removed. Move them to another type first.",
+    "ប្រភេទសេវានេះមានសេវា ដូច្នេះមិនអាចដកចេញបានទេ។ សូមផ្លាស់សេវាទាំងនោះទៅប្រភេទផ្សេងជាមុនសិន។",
+  ],
+  f_out_of_date: [
+    "Someone changed this first. The list was read again; check and try again.",
+    "នរណាម្នាក់បានប្តូរវាមុន។ បញ្ជីត្រូវបានអានម្តងទៀត សូមពិនិត្យ ហើយព្យាយាមម្តងទៀត។",
+  ],
+  f_gone: [
+    "This is no longer in the list; someone may have removed it. The list was read again.",
+    "វាលែងមាននៅក្នុងបញ្ជីទៀតហើយ ប្រហែលជានរណាម្នាក់បានដកវាចេញ។ បញ្ជីត្រូវបានអានម្តងទៀត។",
+  ],
+  f_id_reused: [
+    "This was already saved, with the values sent first. It is in the list now; change it there if needed.",
+    "វាត្រូវបានរក្សាទុករួចហើយ ដោយតម្លៃដែលបានផ្ញើលើកដំបូង។ វានៅក្នុងបញ្ជីឥឡូវនេះ សូមប្តូរនៅទីនោះ បើត្រូវការ។",
   ],
   // new
   note_l: ["Note", "កំណត់ចំណាំ"],

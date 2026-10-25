@@ -56097,6 +56097,55 @@
       "test_path": "backend/tests/test_service_settings_api.py",
       "status": "implemented",
       "notes": "V1-058 R7b-6a: each database refusal maps by its own code (P5V01 Lease holds two of the type, P5V02 type has Services); another 55000 is not taken as a rule refusal."
+    },
+    {
+      "test_id": "TEST-FE-999",
+      "upstream_ids": [
+        "BR-SVC-001",
+        "BR-SVC-005",
+        "BR-SVC-014",
+        "DL-075",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/RatesTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6b: Add a Service sends a client id, names, type, first rate in cents and a start on the 1st; a retry after no answer keeps the id; Edit changes names and type with the version; removed types are not offered."
+    },
+    {
+      "test_id": "TEST-FE-1000",
+      "upstream_ids": [
+        "BR-SVC-014",
+        "DL-075",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/RatesTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6b: Service types show Only one or One or more and a Services count; Remove only for an empty type; refusals (Lease holds two, type has Services, out of date) say why and an old version reads again."
+    },
+    {
+      "test_id": "TEST-FE-1001",
+      "upstream_ids": [
+        "SEC-016",
+        "DL-075",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/RatesTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6b: without Settings access Services and types are read-only (the rate right stays separate); a failed Services read keeps the rates and says so; Khmer names in Khmer."
+    },
+    {
+      "test_id": "TEST-FE-1002",
+      "upstream_ids": [
+        "SEC-003",
+        "DL-075"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/settings/serviceSettingsClient.test.ts",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6b: the Service settings client reads the answer strictly, sends changes only with the CSRF token, and maps each refusal code."
     }
   ]
 }

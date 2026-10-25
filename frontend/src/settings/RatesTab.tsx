@@ -1,12 +1,11 @@
 // V1-058 R7b-5: Settings → Rates and services (mock-up round 9, DL-075): the Utility Rates and the
 // Services with their monthly rates. Both are effective-dated and kept forever: a change is a new
 // rate from a later day, never an edit. The server asks when and how the tenants were told of a
-// new Utility Rate, so the form asks too. Adding or renaming a Service, Service types and the
-// move-out cleaning rates by Unit Type need a later server step.
+// new Utility Rate, so the form asks too. R7b-6b adds Services (with a first rate), their names
+// and type, and the Service types. The move-out cleaning rates by Unit Type are a later step.
 
 import {
   type FormEvent,
-  type ReactNode,
   useCallback,
   useEffect,
   useRef,
@@ -28,7 +27,24 @@ import { dayText, todayInPhnomPenh, usdFromCents } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { Chip, Dialog } from "../shell/ui";
 import type { Language } from "../signInText";
-import { FieldError, Problem } from "./BusinessTab";
+import { Problem } from "./BusinessTab";
+import {
+  failureText,
+  Field,
+  focusFirst,
+  nameOf,
+  ServiceDialog,
+  ServiceTypesCard,
+  TypeDialog,
+} from "./ServiceDialogs";
+import {
+  type ServiceSetting,
+  ServiceSettingsError,
+  type ServiceSettings,
+  type ServiceSettingsApi,
+  serviceSettingsApi,
+  type ServiceType,
+} from "./serviceSettingsClient";
 import { sst } from "./text";
 
 export type RatesApi = Pick<
@@ -58,7 +74,11 @@ interface Loaded {
 
 type Open =
   | { kind: "utility" }
-  | { kind: "service"; service: ConfiguredService };
+  | { kind: "service"; service: ConfiguredService }
+  | { kind: "add_service" }
+  | { kind: "edit_service"; setting: ServiceSetting }
+  | { kind: "type"; type: ServiceType | null }
+  | { kind: "remove_type"; type: ServiceType };
 
 /** Every page after the first one, so no rate is missed when choosing the current one. */
 async function rest<Item>(
@@ -149,17 +169,24 @@ export function RatesTab({
   propertyId,
   active,
   api,
+  services: servicesApi = serviceSettingsApi,
   today: fixedToday,
 }: {
   language: Language;
   propertyId: string;
   active: boolean;
   api: RatesApi;
+  /** The Services and Service types; the real server when not given. */
+  services?: ServiceSettingsApi;
   /** For tests; otherwise today in Phnom Penh. */
   today?: string;
 }) {
   const today = fixedToday ?? todayInPhnomPenh();
   const [loaded, setLoaded] = useState<Loaded | null>(null);
+  // "failed": the rates still show, but Services cannot be added or changed.
+  const [settings, setSettings] = useState<ServiceSettings | "failed" | null>(
+    null,
+  );
   const [failure, setFailure] = useState<"failed" | "not_allowed" | null>(null);
   const [open, setOpen] = useState<Open | null>(null);
   const [busy, setBusy] = useState(false);
@@ -171,11 +198,20 @@ export function RatesTab({
   const sequence = useRef(0);
   // One key per form opening, so a retry after a lost answer is not saved twice.
   const key = useRef<{ body: string; key: string } | null>(null);
+  // The id of a new Service or Service type (the client chooses it). It is kept until the
+  // server confirms that record, even across closing and opening the form again, so a resend
+  // after a lost answer can never add a second one: the same values answer the same record,
+  // other values are refused and the lists are read again.
+  const pending = useRef<{ service: string | null; type: string | null }>({
+    service: null,
+    type: null,
+  });
 
   const load = useCallback((): Promise<void> => {
     if (propertyId === "") return Promise.resolve();
     const operation = ++sequence.current;
     setFailure(null);
+    const read = servicesApi.read(propertyId).catch(() => "failed" as const);
     return api
       .load(propertyId)
       .then(async (snapshot) => {
@@ -199,6 +235,17 @@ export function RatesTab({
           serviceRates,
           utilityRates,
         });
+        // The rates show without waiting for the Services read; the load ends when it lands,
+        // so a form stays busy until the newest versions are in. A failed read again keeps the
+        // lists read before, so an open form is not lost.
+        return read.then((found) => {
+          if (operation !== sequence.current) return;
+          setSettings((before) =>
+            found === "failed" && before !== null && before !== "failed"
+              ? before
+              : found,
+          );
+        });
       })
       .catch((error: unknown) => {
         if (operation !== sequence.current) return;
@@ -209,12 +256,14 @@ export function RatesTab({
             : "failed",
         );
       });
-  }, [api, propertyId]);
+  }, [api, servicesApi, propertyId]);
 
   useEffect(() => {
     shownProperty.current = propertyId;
     sequence.current++;
     setLoaded(null);
+    setSettings(null);
+    pending.current = { service: null, type: null };
     setFailure(null);
     setOpen(null);
     setProblem(null);
@@ -281,6 +330,62 @@ export function RatesTab({
       });
   }
 
+  /** The id for a new record of this kind: the same until the server confirms one. */
+  function newRecordId(kind: "service" | "type"): string {
+    const id = pending.current[kind] ?? crypto.randomUUID();
+    pending.current[kind] = id;
+    return id;
+  }
+
+  function runService(
+    work: () => Promise<unknown>,
+    done: string,
+    adding?: "service" | "type",
+  ) {
+    const asked = propertyId;
+    setBusy(true);
+    setProblem(null);
+    work()
+      .then(
+        () => {
+          if (shownProperty.current !== asked) return undefined;
+          if (adding !== undefined) pending.current[adding] = null;
+          setOpen(null);
+          setToast({ ok: true, text: done });
+          return load();
+        },
+        (error: unknown) => {
+          if (shownProperty.current !== asked) return undefined;
+          const found =
+            error instanceof ServiceSettingsError ? error.failure : "unknown";
+          // The id stays after any other failure: an earlier send that got no answer may have
+          // saved it, so sending again must never add a second record.
+          if (found === "id_reused" && adding !== undefined) {
+            pending.current[adding] = null;
+          }
+          if (
+            found === "id_reused" ||
+            found === "type_has_services" ||
+            found === "not_found"
+          ) {
+            // Saved before (the list shows it now), cannot be removed, or gone (removed by
+            // another person or by a send that got no answer): the form has nothing more to do.
+            setOpen(null);
+            setToast({ ok: false, text: failureText(language, found) });
+            return load();
+          }
+          setProblem(failureText(language, found));
+          // Someone else changed it first, or the answer was lost: read the lists again, so
+          // they show what was saved.
+          if (found === "out_of_date" || found === "unknown") return load();
+          return undefined;
+        },
+      )
+      .finally(() => {
+        if (shownProperty.current === asked) setBusy(false);
+      });
+  }
+
   if (failure !== null) {
     return (
       <div className="ui-notice warn" role="status">
@@ -314,6 +419,14 @@ export function RatesTab({
   };
   const serviceName = (id: string) =>
     services.find((service) => service.id === id)?.display_name ?? "";
+  const ready = settings !== null && settings !== "failed" ? settings : null;
+  const manageServices = ready?.can_manage === true;
+  const settingOf = new Map(
+    (ready?.services ?? []).map((item) => [item.service_id, item]),
+  );
+  const typeOf = new Map(
+    (ready?.service_types ?? []).map((item) => [item.service_type_id, item]),
+  );
   const history = [...serviceRates].sort(
     (a, b) =>
       serviceName(a.property_service_id).localeCompare(
@@ -406,7 +519,25 @@ export function RatesTab({
         <section aria-labelledby="rates-services" className="ui-card pad0">
           <header className="ui-chead pad">
             <h2 id="rates-services">{sst(language, "se_svc")}</h2>
+            {manageServices && (
+              <button
+                className="ui-btn"
+                onClick={() => {
+                  start({ kind: "add_service" });
+                }}
+                type="button"
+              >
+                <Icon name="plus" small />
+                {sst(language, "sv_add")}
+              </button>
+            )}
           </header>
+          {settings === "failed" && (
+            <div className="ui-notice warn pad" role="status">
+              <Icon name="alert" />
+              <p>{sst(language, "sv_read_failed")}</p>
+            </div>
+          )}
           {services.length === 0 ? (
             <p className="pad ui-muted">{sst(language, "sv_none")}</p>
           ) : (
@@ -415,13 +546,23 @@ export function RatesTab({
                 <thead>
                   <tr>
                     <th scope="col">{sst(language, "se_svc_name")}</th>
+                    {ready !== null && (
+                      <th scope="col">{sst(language, "sv_type")}</th>
+                    )}
                     <th className="r" scope="col">
                       {sst(language, "sv_rate_now")}
                     </th>
                     <th scope="col">{sst(language, "sv_next")}</th>
-                    {capabilities.manage_service_rates && (
+                    {ready !== null && (
+                      <th className="r" scope="col">
+                        {sst(language, "sv_leases")}
+                      </th>
+                    )}
+                    {(capabilities.manage_service_rates || manageServices) && (
                       <th scope="col">
-                        <span className="ui-sr">{sst(language, "sv_new")}</span>
+                        <span className="ui-sr">
+                          {sst(language, "actions")}
+                        </span>
                       </th>
                     )}
                   </tr>
@@ -433,14 +574,32 @@ export function RatesTab({
                       service.id,
                       today,
                     );
+                    const setting = settingOf.get(service.id);
+                    const type =
+                      setting?.service_type_id == null
+                        ? undefined
+                        : typeOf.get(setting.service_type_id);
+                    const name =
+                      setting === undefined
+                        ? service.display_name
+                        : nameOf(language, setting);
                     return (
                       <tr key={service.id}>
                         <td>
-                          <b>{service.display_name}</b>
-                          <span className="ui-sub2 ui-num" lang="en">
-                            {service.service_code}
-                          </span>
+                          <b>{name}</b>
+                          {setting?.name_km != null && language !== "km" && (
+                            <span className="ui-sub2" lang="km">
+                              {setting.name_km}
+                            </span>
+                          )}
                         </td>
+                        {ready !== null && (
+                          <td>
+                            {type === undefined
+                              ? sst(language, "sv_no_type")
+                              : nameOf(language, type)}
+                          </td>
+                        )}
                         <td className="r ui-num">
                           {now !== null ? (
                             usdFromCents(now.monthly_rate_usd_cents)
@@ -461,18 +620,40 @@ export function RatesTab({
                             ? "—"
                             : `${usdFromCents(next.monthly_rate_usd_cents)} · ${dayText(next.effective_date)}`}
                         </td>
-                        {capabilities.manage_service_rates && (
+                        {ready !== null && (
+                          <td className="r ui-num">
+                            {setting?.leases_using ?? "—"}
+                          </td>
+                        )}
+                        {(capabilities.manage_service_rates ||
+                          manageServices) && (
                           <td>
-                            <button
-                              aria-label={`${sst(language, "sv_new")}: ${service.display_name}`}
-                              className="ui-btn link"
-                              onClick={() => {
-                                start({ kind: "service", service });
-                              }}
-                              type="button"
-                            >
-                              {sst(language, "sv_new")}
-                            </button>
+                            <span className="ui-actions">
+                              {manageServices && setting !== undefined && (
+                                <button
+                                  aria-label={`${sst(language, "cf_edit")}: ${name}`}
+                                  className="ui-btn link"
+                                  onClick={() => {
+                                    start({ kind: "edit_service", setting });
+                                  }}
+                                  type="button"
+                                >
+                                  {sst(language, "cf_edit")}
+                                </button>
+                              )}
+                              {capabilities.manage_service_rates && (
+                                <button
+                                  aria-label={`${sst(language, "sv_new")}: ${name}`}
+                                  className="ui-btn link"
+                                  onClick={() => {
+                                    start({ kind: "service", service });
+                                  }}
+                                  type="button"
+                                >
+                                  {sst(language, "sv_new")}
+                                </button>
+                              )}
+                            </span>
                           </td>
                         )}
                       </tr>
@@ -520,10 +701,28 @@ export function RatesTab({
           )}
           <div className="ui-tfoot">
             <span>
-              {sst(language, "se_svc_n")} {sst(language, "sv_later")}
+              {sst(language, "se_svc_n")} {sst(language, "sv_bill_gap")}{" "}
+              {sst(language, "sv_later")}
             </span>
           </div>
         </section>
+
+        {ready !== null && (
+          <ServiceTypesCard
+            language={language}
+            manage={manageServices}
+            onAdd={() => {
+              start({ kind: "type", type: null });
+            }}
+            onEdit={(type) => {
+              start({ kind: "type", type });
+            }}
+            onRemove={(type) => {
+              start({ kind: "remove_type", type });
+            }}
+            types={ready.service_types}
+          />
+        )}
       </div>
 
       {open?.kind === "utility" && (
@@ -560,6 +759,122 @@ export function RatesTab({
           today={today}
         />
       )}
+      {ready !== null &&
+        (open?.kind === "add_service" || open?.kind === "edit_service") && (
+          <ServiceDialog
+            busy={busy}
+            language={language}
+            onClose={closeOpen}
+            onSave={(form) => {
+              if (open.kind === "edit_service") {
+                // The newest read: after "someone changed this first" the next Save uses it.
+                const setting =
+                  settingOf.get(open.setting.service_id) ?? open.setting;
+                runService(
+                  () =>
+                    servicesApi.changeService(propertyId, setting.service_id, {
+                      name_en: form.name_en,
+                      name_km: form.name_km,
+                      service_type_id: form.service_type_id,
+                      version: setting.version,
+                    }),
+                  sst(language, "sv_changed", nameOf(language, form)),
+                );
+                return;
+              }
+              if (form.first === null) return;
+              const values = {
+                name_en: form.name_en,
+                name_km: form.name_km,
+                service_type_id: form.service_type_id,
+                monthly_rate_usd_cents: form.first.cents,
+                starts_on: form.first.starts_on,
+              };
+              const serviceId = newRecordId("service");
+              runService(
+                () =>
+                  servicesApi.addService(propertyId, {
+                    service_id: serviceId,
+                    ...values,
+                  }),
+                sst(language, "sv_added", nameOf(language, form)),
+                "service",
+              );
+            }}
+            problem={problem}
+            service={open.kind === "edit_service" ? open.setting : null}
+            types={ready.service_types}
+            today={today}
+          />
+        )}
+      {open?.kind === "type" && (
+        <TypeDialog
+          busy={busy}
+          language={language}
+          onClose={closeOpen}
+          onSave={(form) => {
+            const type =
+              open.type === null
+                ? null
+                : (typeOf.get(open.type.service_type_id) ?? open.type);
+            if (type !== null) {
+              runService(
+                () =>
+                  servicesApi.changeType(propertyId, type.service_type_id, {
+                    ...form,
+                    version: type.version,
+                  }),
+                sst(language, "sv_changed", nameOf(language, form)),
+              );
+              return;
+            }
+            const typeId = newRecordId("type");
+            runService(
+              () =>
+                servicesApi.addType(propertyId, {
+                  service_type_id: typeId,
+                  ...form,
+                }),
+              sst(language, "sv_added", nameOf(language, form)),
+              "type",
+            );
+          }}
+          problem={problem}
+          type={open.type}
+        />
+      )}
+      {open?.kind === "remove_type" && (
+        <Dialog
+          actions={
+            <button
+              className="ui-btn danger"
+              disabled={busy}
+              onClick={() => {
+                const type = typeOf.get(open.type.service_type_id) ?? open.type;
+                runService(
+                  () =>
+                    servicesApi.removeType(
+                      propertyId,
+                      type.service_type_id,
+                      type.version,
+                    ),
+                  sst(language, "set_removed", nameOf(language, type)),
+                );
+              }}
+              type="button"
+            >
+              {sst(language, "set_remove")}
+            </button>
+          }
+          busy={busy}
+          closeLabel={sst(language, "cancel")}
+          onClose={closeOpen}
+          title={`${sst(language, "set_remove")} · ${nameOf(language, open.type)}`}
+        >
+          <p>{sst(language, "set_remove_q", nameOf(language, open.type))}</p>
+          <Problem text={problem} />
+        </Dialog>
+      )}
       {open?.kind === "service" && (
         <ServiceRateDialog
           busy={busy}
@@ -590,53 +905,6 @@ export function RatesTab({
       )}
     </>
   );
-}
-
-function Field({
-  id,
-  label,
-  required,
-  help,
-  error,
-  children,
-}: {
-  id: string;
-  label: string;
-  required: string | null;
-  help?: string;
-  error: string | undefined;
-  children: (describedBy: string | undefined) => ReactNode;
-}) {
-  const ids = [
-    help === undefined ? null : `${id}-h`,
-    error === undefined ? null : `${id}-e`,
-  ]
-    .filter((value) => value !== null)
-    .join(" ");
-  return (
-    <div className="ui-field">
-      <label htmlFor={id}>
-        {label}
-        {required !== null && <span className="req">{required}</span>}
-      </label>
-      {children(ids === "" ? undefined : ids)}
-      {help !== undefined && (
-        <p className="help" id={`${id}-h`}>
-          {help}
-        </p>
-      )}
-      <FieldError id={`${id}-e`} text={error ?? null} />
-    </div>
-  );
-}
-
-function focusFirst(
-  errors: Record<string, string | undefined>,
-  order: readonly string[],
-) {
-  const first = order.find((id) => errors[id] !== undefined);
-  if (first !== undefined) document.getElementById(first)?.focus();
-  return first !== undefined;
 }
 
 function UtilityDialog({
