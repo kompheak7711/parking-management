@@ -61,6 +61,8 @@ import { UtilityApi, utilityApi as utilityClient } from "./utilityClient";
 import { UtilitiesPage } from "./utilities/UtilitiesPage";
 import { utt } from "./utilities/text";
 import { InvoiceManagement } from "./InvoiceManagement";
+import { InvoicesPage } from "./invoices/InvoicesPage";
+import { ivt } from "./invoices/text";
 import { InvoiceApi, invoiceApi as invoiceClient } from "./invoiceClient";
 import { LeaseEnforcementManagement } from "./LeaseEnforcementManagement";
 import type { EnforcementServices } from "./leaseEnforcementUi";
@@ -1494,18 +1496,40 @@ export function App({
         className="shell-page"
         data-page="invoices"
         hidden={!shown("invoices")}
-        lang="en"
       >
-        {propertyConfiguration === null && (
-          <PropertyNeeded language={language} />
-        )}
-        {!logoutPending && (
-          <InvoiceManagement
-            api={invoiceApi}
-            actorId={session.actor_id}
-            propertyId={propertyConfiguration?.property_id ?? ""}
-          />
-        )}
+        <InvoicesPage
+          active={shown("invoices")}
+          capabilities={capabilities}
+          customerApi={customerApi ?? defaultCustomerApi}
+          invoiceApi={invoiceApi}
+          language={language}
+          leaseApi={leaseApi}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+        />
+        {/* V1-058 R5: Create Invoice, issue, adjust, void and the billing runs stay in the
+            earlier English forms, folded, until the next steps move them into the design. */}
+        <details className="ui-records">
+          <summary lang={language}>
+            <span className="ui-records-title">{ivt(language, "records")}</span>
+            <span className="ui-small ui-muted">
+              {ivt(language, "records_note")}
+            </span>
+          </summary>
+          <div lang="en">
+            {propertyConfiguration === null && (
+              <PropertyNeeded language={language} />
+            )}
+            {!logoutPending && (
+              <InvoiceManagement
+                api={invoiceApi}
+                actorId={session.actor_id}
+                propertyId={
+                  propertyId || (propertyConfiguration?.property_id ?? "")
+                }
+              />
+            )}
+          </div>
+        </details>
       </div>
       <div
         className="shell-page"

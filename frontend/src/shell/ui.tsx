@@ -32,6 +32,7 @@ export function CountCard({
   note,
   pressed,
   onPress,
+  valueText,
 }: {
   icon: ShellIcon;
   tone: Tone | "brand" | "none";
@@ -40,10 +41,13 @@ export function CountCard({
   note: string;
   pressed: boolean;
   onPress: () => void;
+  /** How the value is written, such as "$1,250.00"; the plain number by default. */
+  valueText?: string;
 }) {
+  const shown = valueText ?? String(value);
   return (
     <button
-      aria-label={`${label}: ${String(value)}. ${note}`}
+      aria-label={`${label}: ${shown}. ${note}`}
       aria-pressed={pressed}
       className={`ui-kpi ${value === 0 ? "none" : tone}`}
       onClick={onPress}
@@ -55,7 +59,7 @@ export function CountCard({
         </span>
         {label}
       </span>
-      <span className="ui-kpi-value ui-num">{value}</span>
+      <span className="ui-kpi-value ui-num">{shown}</span>
       <span className="ui-kpi-note">{note}</span>
     </button>
   );

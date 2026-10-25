@@ -402,6 +402,7 @@
 }
 
 .ui-kpi-note {
+  white-space: pre-line;
   color: var(--text-2);
   font-size: 0.82rem;
 }
@@ -1252,4 +1253,153 @@ table.ui-table tr td .ui-chip + .ui-rdmsg {
 }
 .ui-imnotes p {
   margin: 0;
+}
+
+/* V1-058 R5: Invoices. The add-up line under the summary cards, and the Invoice status card
+   with the bar from the issue date to the Due Date (mock-up app.css .aging). */
+.ui-addup {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 0;
+  color: var(--text-2);
+  font-size: 0.9rem;
+}
+.ui-aging {
+  display: grid;
+  gap: 10px;
+  padding: 14px 14px 10px;
+  border-radius: var(--radius);
+  background: var(--sunken);
+}
+.ui-aging .ui-big {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: baseline;
+  justify-content: space-between;
+  color: var(--text-2);
+}
+.ui-aging .ui-big .val {
+  color: var(--text);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.ui-aging .ui-big .val b {
+  font-size: 1.75rem;
+  line-height: 1;
+  font-weight: 700;
+}
+.ui-aging.late .ui-big .val b {
+  color: var(--err);
+}
+.ui-agebar {
+  position: relative;
+  height: 8px;
+  margin: 4px 0 2px;
+  border-radius: 4px;
+  background: var(--border);
+}
+.ui-agebar i {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 4px;
+  background: var(--primary);
+}
+.ui-agebar i.late {
+  background: var(--err);
+}
+.ui-agebar em {
+  position: absolute;
+  top: 50%;
+  box-sizing: border-box;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--text-2);
+  border-radius: 50%;
+  background: var(--surface);
+  transform: translate(-50%, -50%);
+}
+.ui-agelbl {
+  position: relative;
+  height: 2.4em;
+  font-size: 0.78rem;
+}
+.ui-agelbl span {
+  position: absolute;
+  top: 0;
+  display: grid;
+  color: var(--text-2);
+  text-align: center;
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+.ui-agelbl span:first-child {
+  text-align: left;
+  transform: none;
+}
+.ui-agelbl span:last-child {
+  text-align: right;
+  transform: translateX(-100%);
+}
+.ui-agelbl b {
+  color: var(--text);
+  font-weight: 600;
+}
+.ui-kv.ui-is {
+  grid-template-columns: auto 1fr;
+  column-gap: 0;
+}
+.ui-kv.ui-is dd {
+  padding-left: 16px;
+  text-align: right;
+}
+.ui-kv.ui-is .tot {
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  font-size: 1.05rem;
+}
+.ui-kv.ui-is dd.tot {
+  font-weight: 700;
+}
+.ui-kv dd.okv {
+  color: var(--ok);
+}
+.ui-kv dd.errv {
+  color: var(--err);
+}
+table.ui-table tfoot th,
+table.ui-table tfoot td {
+  padding: 12px 14px;
+  border-top: 1px solid var(--border-strong);
+  border-bottom: 0;
+  text-align: left;
+}
+/* The Invoices list fits an iPad beside the menu: narrower cells, and the chip never wraps. */
+table.ui-table.ui-invlist {
+  min-width: 0;
+}
+table.ui-table.ui-invlist th,
+table.ui-table.ui-invlist td {
+  padding-right: 10px;
+  padding-left: 10px;
+}
+table.ui-table.ui-invlist .ui-chip {
+  white-space: nowrap;
+}
+table.ui-table tfoot td.r {
+  text-align: right;
+}
+table.ui-table.ui-invlist .ui-phone {
+  display: none;
+}
+@media (max-width: 760px) {
+  table.ui-table.ui-invlist .ui-wide {
+    display: none;
+  }
+  table.ui-table.ui-invlist .ui-phone {
+    display: block;
+    white-space: normal;
+  }
 }

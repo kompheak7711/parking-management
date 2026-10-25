@@ -1,0 +1,515 @@
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import type { CustomerApi } from "../customerClient";
+import {
+  InvoiceClientError,
+  type InvoiceApi,
+  type InvoiceCategory,
+  type InvoiceResource,
+  type InvoiceStatus,
+} from "../invoiceClient";
+import type { LeaseApi, LeaseResource } from "../leaseClient";
+import { InvoicesPage } from "./InvoicesPage";
+import { periodMonth } from "./invoicesData";
+
+afterEach(() => {
+  cleanup();
+  window.location.hash = "";
+});
+
+beforeEach(() => {
+  window.location.hash = "#/invoices";
+});
+
+const TODAY = "2026-10-25";
+
+const usd = (cents: number) => ({
+  currency: "USD" as const,
+  minor_units: cents,
+});
+
+function invoice(
+  id: string,
+  number: string,
+  fields: {
+    customer: string;
+    lease: string | null;
+    category?: InvoiceCategory;
+    status?: InvoiceStatus;
+    issued?: string;
+    due?: string | null;
+    total: number;
+    paid?: number;
+    adjusted?: number;
+  },
+): InvoiceResource {
+  const status = fields.status ?? "UNPAID";
+  const adjusted = fields.adjusted ?? fields.total;
+  const paid = fields.paid ?? 0;
+  const owed = status === "DRAFT" || status === "VOID" ? 0 : adjusted - paid;
+  return {
+    id,
+    property_id: "property-1",
+    customer_id: fields.customer,
+    lease_id: fields.lease,
+    invoice_number: number,
+    category: fields.category ?? "RENT",
+    status,
+    invoice_date: fields.issued ?? "2026-09-25",
+    due_date: fields.due === undefined ? "2026-10-05" : fields.due,
+    billing_period: null,
+    version: 1,
+    original_total: usd(fields.total),
+    adjusted_total: usd(adjusted),
+    active_application_total: usd(paid),
+    outstanding_balance: usd(owed),
+    lines: [
+      {
+        id: `${id}-line`,
+        sequence: 1,
+        description:
+          fields.category === "UTILITIES" ? "Electricity" : "Rent, October",
+        category: fields.category ?? "RENT",
+        original_amount: usd(fields.total),
+        adjusted_amount: usd(adjusted),
+        outstanding_balance: usd(owed),
+        source: {},
+        calculation_evidence: {},
+        period: { start: "2026-10-01", end: "2026-10-31" },
+      },
+    ],
+    adjustments:
+      adjusted === fields.total
+        ? []
+        : [
+            {
+              reason: "Typed the wrong amount",
+              occurred_at: "2026-09-26T03:00:00Z",
+            },
+          ],
+    void_event:
+      status === "VOID"
+        ? { reason: "Billed twice", occurred_at: "2026-09-27T04:00:00Z" }
+        : null,
+    evidence: { issued_at: "2026-09-25T00:00:00Z" },
+  };
+}
+
+function invoices(): InvoiceResource[] {
+  return [
+    invoice("inv-r1", "INV260001", {
+      customer: "cust-sok",
+      lease: "lease-101",
+      total: 45000,
+    }),
+    invoice("inv-r2", "INV260002", {
+      customer: "cust-chan",
+      lease: "lease-201",
+      status: "PARTIALLY_PAID",
+      issued: "2026-10-25",
+      due: "2026-11-05",
+      total: 45000,
+      paid: 20000,
+    }),
+    invoice("inv-u1", "INV260003", {
+      customer: "cust-sok",
+      lease: "lease-101",
+      category: "UTILITIES",
+      status: "PAID",
+      issued: "2026-10-25",
+      due: "2026-11-05",
+      total: 3000,
+      paid: 3000,
+    }),
+    invoice("inv-d1", "INV260004", {
+      customer: "cust-sok",
+      lease: null,
+      category: "MISCELLANEOUS_CHARGES",
+      status: "DRAFT",
+      due: null,
+      total: 1500,
+    }),
+    invoice("inv-v1", "INV260005", {
+      customer: "cust-chan",
+      lease: "lease-201",
+      status: "VOID",
+      total: 10000,
+    }),
+  ];
+}
+
+function invoiceApi(list = invoices()): Pick<InvoiceApi, "list" | "get"> {
+  return {
+    list: vi.fn().mockResolvedValue({
+      items: list,
+      next_cursor: null,
+      capabilities: ["invoices.read"],
+    }),
+    get: vi.fn((id: string) => {
+      const found = list.find((item) => item.id === id);
+      return found === undefined
+        ? Promise.reject(new InvoiceClientError(404, "NOT_FOUND", false))
+        : Promise.resolve(found);
+    }),
+  };
+}
+
+function lease(id: string, unit: string, customer: string, name: string) {
+  return {
+    lease_id: id,
+    unit_number: unit,
+    primary_tenant_id: customer,
+    primary_tenant_name: name,
+    status: "SIGNED",
+    start_date: "2026-03-01",
+  } as LeaseResource;
+}
+
+function leaseApi(): Pick<LeaseApi, "list"> {
+  return {
+    list: vi.fn().mockResolvedValue({
+      items: [
+        lease("lease-101", "U101", "cust-sok", "Sok Dara"),
+        lease("lease-201", "U201", "cust-chan", "Chan Vanna"),
+      ],
+      next_cursor: null,
+    }),
+  };
+}
+
+function customerApi(): Pick<CustomerApi, "list"> {
+  return {
+    list: vi.fn().mockResolvedValue({
+      items: [
+        {
+          customer_id: "cust-sok",
+          legal_name: "Sok Dara",
+          active: true,
+          relationship_indicators: [],
+        },
+        {
+          customer_id: "cust-chan",
+          legal_name: "Chan Vanna",
+          active: true,
+          relationship_indicators: [],
+        },
+      ],
+      next_cursor: null,
+      can_manage: false,
+    }),
+  };
+}
+
+function show(
+  options: {
+    invoices?: Pick<InvoiceApi, "list" | "get">;
+    leases?: Pick<LeaseApi, "list">;
+    customers?: Pick<CustomerApi, "list">;
+    capabilities?: ReadonlySet<string> | null;
+  } = {},
+) {
+  const api = options.invoices ?? invoiceApi();
+  render(
+    <InvoicesPage
+      active
+      capabilities={options.capabilities ?? null}
+      customerApi={options.customers ?? customerApi()}
+      invoiceApi={api}
+      language="en"
+      leaseApi={options.leases ?? leaseApi()}
+      propertyId="property-1"
+      today={TODAY}
+    />,
+  );
+  return api;
+}
+
+function rows(): string[] {
+  return screen
+    .getAllByRole("row")
+    .slice(1)
+    .map((row) => {
+      // The phone line repeats the type, Due Date and amount; it is hidden on a wide screen.
+      const copy = row.cloneNode(true) as HTMLElement;
+      copy.querySelectorAll(".ui-phone").forEach((item) => {
+        item.remove();
+      });
+      return copy.textContent;
+    });
+}
+
+describe("Invoices page (V1-058 R5)", () => {
+  it("TEST-FE-896 The list shows the four cards with their amounts, the add-up line and every Invoice with the Draft first, its Customer and Unit, Due Date, amount, balance and status", async () => {
+    show();
+    expect(await screen.findByText("All Invoices")).toBeTruthy();
+    const card = (name: RegExp) => screen.getByRole("button", { name });
+    expect(
+      card(/^Total Invoice amount: \$930\.00\. Issued Invoices\n3 Invoices$/),
+    ).toBeTruthy();
+    expect(card(/^Total unpaid: \$700\.00\./)).toBeTruthy();
+    expect(card(/^Total overdue: \$450\.00\./)).toBeTruthy();
+    expect(card(/^Total paid: \$230\.00\./)).toBeTruthy();
+    expect(
+      screen.getByText(
+        "Paid $230.00 + unpaid $700.00 = $930.00. Overdue $450.00 is part of unpaid. 1 Draft is not counted until it is issued.",
+      ),
+    ).toBeTruthy();
+    expect(rows()).toEqual([
+      "DraftSok DaraU101MiscellaneousSet when issued$15.00—Draft",
+      "INV260003Sok DaraU101Utilities05/11/2026$30.00$0.00Paid",
+      "INV260002Chan VannaU201Rent05/11/2026$450.00$250.00Part paid",
+      "INV260005Chan VannaU201Rent05/10/2026$100.00—Void",
+      "INV260001Sok DaraU101Rent05/10/2026$450.00$450.00Overdue",
+    ]);
+    expect(screen.getByText("3 Invoices · 1 void, not counted")).toBeTruthy();
+  });
+
+  it("TEST-FE-897 A card filters the list until Show all; This month and Pick a month show the Invoices due in that month; the Type select keeps one type", async () => {
+    show();
+    fireEvent.click(
+      await screen.findByRole("button", { name: /^Total overdue/ }),
+    );
+    expect(rows()).toEqual([
+      "INV260001Sok DaraU101Rent05/10/2026$450.00$450.00Overdue",
+    ]);
+    expect(screen.getByText("Showing: Total overdue.")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Show all" }));
+    expect(rows()).toHaveLength(5);
+
+    fireEvent.click(screen.getByRole("button", { name: "This month" }));
+    expect(screen.getByText("Invoices due in October 2026")).toBeTruthy();
+    // Drafts have no Due Date, so a month leaves them out.
+    expect(rows().map((row) => row.slice(0, 9))).toEqual([
+      "INV260005",
+      "INV260001",
+    ]);
+    fireEvent.click(screen.getByRole("button", { name: "Pick a month" }));
+    fireEvent.change(screen.getByRole("combobox", { name: "Month" }), {
+      target: { value: "2026-11" },
+    });
+    expect(rows().map((row) => row.slice(0, 9))).toEqual([
+      "INV260003",
+      "INV260002",
+    ]);
+    fireEvent.change(screen.getByLabelText("Type"), {
+      target: { value: "UTILITIES" },
+    });
+    expect(rows().map((row) => row.slice(0, 9))).toEqual(["INV260003"]);
+    expect(
+      screen.getByText("Paid $30.00 + unpaid $0.00 = $30.00."),
+    ).toBeTruthy();
+  });
+
+  it("TEST-FE-898 An overdue Invoice page names the day it became overdue, counts the days past the Due Date, and lists what is billed, the Customer and the History", async () => {
+    show();
+    fireEvent.click(await screen.findByRole("link", { name: "INV260001" }));
+    expect(
+      await screen.findByRole("heading", { name: "INV260001" }),
+    ).toBeTruthy();
+    expect(window.location.hash).toBe("#/invoices/inv%3Ainv-r1");
+    expect(screen.getByText("Rent · Sok Dara · U101")).toBeTruthy();
+    expect(
+      screen.getByText(
+        "This Invoice is overdue. It became overdue on 06/10/2026, the day after its Due Date.",
+      ),
+    ).toBeTruthy();
+    const status = screen
+      .getByRole("heading", { name: "Invoice status" })
+      .closest("section");
+    if (status === null) throw new Error("No status card");
+    expect(within(status).getByText("Days past the Due Date")).toBeTruthy();
+    expect(within(status).getByText("20")).toBeTruthy();
+    expect(within(status).getByText("Today (day +20)")).toBeTruthy();
+    expect(within(status).getByText("Overdue now")).toBeTruthy();
+    expect(within(status).getByText("$0.00 (0%)")).toBeTruthy();
+    expect(screen.getByText("Rent · 01/10/2026 to 31/10/2026")).toBeTruthy();
+    expect(screen.getByText("Became overdue with $450.00 unpaid")).toBeTruthy();
+    expect(
+      screen.getByRole("link", { name: "Open Customer" }).getAttribute("href"),
+    ).toBe("#/customers/cust-sok");
+    expect(
+      screen.getByRole("link", { name: "Open Lease" }).getAttribute("href"),
+    ).toBe("#/leases/lease-101");
+
+    fireEvent.click(
+      screen.getByRole("link", { name: "All Invoices for U101" }),
+    );
+    await waitFor(() => {
+      expect(screen.getByText("Showing only Sok Dara")).toBeTruthy();
+    });
+    expect(rows().map((row) => row.slice(0, 9))).toEqual([
+      "DraftSok ",
+      "INV260003",
+      "INV260001",
+    ]);
+    fireEvent.click(screen.getByRole("button", { name: "Show everyone" }));
+    await waitFor(() => {
+      expect(rows()).toHaveLength(5);
+    });
+  });
+
+  it("TEST-FE-899 A part-paid Invoice counts the days until its Due Date; a Draft, a void and an adjusted Invoice say so; a missing Invoice is named", async () => {
+    const list = invoices();
+    list.push(
+      invoice("inv-a1", "INV260006", {
+        customer: "cust-chan",
+        lease: "lease-201",
+        issued: "2026-10-25",
+        due: "2026-11-05",
+        total: 45000,
+        adjusted: 40000,
+      }),
+    );
+    window.location.hash = "#/invoices/inv:inv-r2";
+    show({ invoices: invoiceApi(list) });
+    expect(await screen.findByText("Days until the Due Date")).toBeTruthy();
+    expect(screen.getByText("11")).toBeTruthy();
+    expect(screen.getByText("$200.00 (44%)")).toBeTruthy();
+    expect(screen.getByText("Balance due")).toBeTruthy();
+    cleanup();
+
+    window.location.hash = "#/invoices/inv:inv-d1";
+    show({ invoices: invoiceApi(list) });
+    expect(
+      await screen.findByText(
+        "This is a Draft. It has no Due Date and is not owed until it is issued.",
+      ),
+    ).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Draft" })).toBeTruthy();
+    cleanup();
+
+    window.location.hash = "#/invoices/inv:inv-v1";
+    show({ invoices: invoiceApi(list) });
+    expect(
+      await screen.findByText(
+        "This Invoice is void. Nobody owes it. It stays here with its history.",
+      ),
+    ).toBeTruthy();
+    expect(screen.getByText("Voided: Billed twice")).toBeTruthy();
+    cleanup();
+
+    window.location.hash = "#/invoices/inv:inv-a1";
+    show({ invoices: invoiceApi(list) });
+    expect(await screen.findByText("Total after adjustments")).toBeTruthy();
+    expect(screen.getByText("Was $450.00")).toBeTruthy();
+    expect(screen.getByText("Adjusted: Typed the wrong amount")).toBeTruthy();
+    cleanup();
+
+    window.location.hash = "#/invoices/inv:nothing";
+    show({ invoices: invoiceApi(list) });
+    expect(
+      await screen.findByText(
+        "This Invoice was not found, or you may not see it.",
+      ),
+    ).toBeTruthy();
+  });
+
+  it("TEST-FE-900 A person who may not read Customers or Leases still sees the Invoices without names; a failed Invoice list offers Retry", async () => {
+    const refused = { list: vi.fn().mockRejectedValue(new Error("403")) };
+    show({
+      customers: refused,
+      leases: refused,
+      capabilities: new Set(["invoices.read"]),
+    });
+    expect(await screen.findByText("All Invoices")).toBeTruthy();
+    expect(screen.getAllByText("Customer not shown")).toHaveLength(5);
+    cleanup();
+
+    const list = vi
+      .fn()
+      .mockRejectedValueOnce(new InvoiceClientError(null, "NETWORK", false))
+      .mockResolvedValue({
+        items: invoices(),
+        next_cursor: null,
+        capabilities: [],
+      });
+    show({ invoices: { list, get: vi.fn() } });
+    fireEvent.click(await screen.findByRole("button", { name: "Retry" }));
+    expect(await screen.findByText("All Invoices")).toBeTruthy();
+    expect(list).toHaveBeenCalledTimes(2);
+  });
+
+  it("TEST-FE-901 An overpaid Invoice still adds up, an Invoice due today is not overdue, the list reads every page, a month still names the Drafts left out, and voids are not counted", async () => {
+    const first = [
+      invoice("inv-x1", "INV260010", {
+        customer: "cust-sok",
+        lease: "lease-101",
+        status: "PAID",
+        due: TODAY,
+        total: 10000,
+        paid: 12000,
+      }),
+      invoice("inv-x2", "INV260011", {
+        customer: "cust-chan",
+        lease: "lease-201",
+        due: TODAY,
+        total: 5000,
+      }),
+    ];
+    const second = invoices();
+    const list = vi
+      .fn()
+      .mockResolvedValueOnce({
+        items: first,
+        next_cursor: "page-2",
+        capabilities: [],
+      })
+      .mockResolvedValueOnce({
+        items: second,
+        next_cursor: null,
+        capabilities: [],
+      });
+    show({ invoices: { list, get: vi.fn() } });
+    expect(await screen.findByText("All Invoices")).toBeTruthy();
+    expect(list).toHaveBeenLastCalledWith("property-1", { cursor: "page-2" });
+    // Overpaid counts as its total; due today is not overdue yet.
+    expect(
+      screen.getByText(
+        "Paid $330.00 + unpaid $750.00 = $1,080.00. Overdue $450.00 is part of unpaid. 1 Draft is not counted until it is issued.",
+      ),
+    ).toBeTruthy();
+    expect(rows().find((row) => row.startsWith("INV260011"))).toContain(
+      "Not paid",
+    );
+    expect(screen.getByText("5 Invoices · 1 void, not counted")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "This month" }));
+    expect(rows().map((row) => row.slice(0, 9))).toEqual([
+      "INV260011",
+      "INV260010",
+      "INV260005",
+      "INV260001",
+    ]);
+    expect(
+      screen.getByText(/1 Draft is not counted until it is issued\.$/),
+    ).toBeTruthy();
+  });
+
+  it("TEST-FE-902 Last month in January is December; an Invoice of another Property is not shown on its page", async () => {
+    expect(periodMonth("last", "2027-01-10", "")).toBe("2026-12");
+    expect(periodMonth("month", "2027-01-10", "")).toBe("2027-01");
+    expect(periodMonth("pick", "2027-01-10", "2026-08")).toBe("2026-08");
+    expect(periodMonth("all", "2027-01-10", "")).toBeNull();
+    const other = invoice("inv-o1", "INV270001", {
+      customer: "cust-sok",
+      lease: null,
+      total: 1000,
+    });
+    other.property_id = "property-2";
+    window.location.hash = "#/invoices/inv:inv-o1";
+    show({ invoices: invoiceApi([other]) });
+    expect(
+      await screen.findByText(
+        "This Invoice was not found, or you may not see it.",
+      ),
+    ).toBeTruthy();
+  });
+});
