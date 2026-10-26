@@ -107,12 +107,19 @@ def source(url: str) -> tuple[UUID, UUID, UUID, RecordLeaseNotice]:
     )
 
 
+UNIT_SETUP_COLUMNS = (
+    "ARRAY['floor_item_id','size_square_metres','bedrooms','bathrooms',"
+    "'view_item_id','kitchen_item_id','notes']"
+)
+
+
 def business_snapshot(url: str, lease: UUID) -> list[tuple[object, ...]]:
     # DL-064: migration 64 added the Due Date override columns; an upgrade adds them as
-    # null, so they are left out of the before/after Invoice comparison.
+    # null, so they are left out of the before/after Invoice comparison. V1-058 migration 227
+    # adds the Unit setup columns the same way (the Floor item is linked from the Floor text).
     with psycopg.connect(url) as connection:
         return connection.execute(
-            "SELECT to_jsonb(l),to_jsonb(u),to_jsonb(o),to_jsonb(i)-ARRAY["
+            f"SELECT to_jsonb(l),to_jsonb(u)-{UNIT_SETUP_COLUMNS},to_jsonb(o),to_jsonb(i)-ARRAY["
             "'due_date_override_reason','due_date_set_by','due_date_set_at','draft_reference'],"
             "to_jsonb(il) "
             "FROM app.leases l JOIN app.units u ON u.id=l.unit_id "

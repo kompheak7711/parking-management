@@ -65,6 +65,12 @@ ALL = (
     "property.manage",
 )
 SNAPSHOT_TABLES = ("leases", "reservations", "deposits", "invoices", "units")
+# V1-058 migration 227 adds the Unit setup columns: NULL, or the Floor item linked from the
+# Floor text. Every other value must stay as it was.
+UNIT_SETUP_COLUMNS = (
+    "ARRAY['floor_item_id','size_square_metres','bedrooms','bathrooms',"
+    "'view_item_id','kitchen_item_id','notes']"
+)
 
 
 def row(url: str, query: str, *parameters: object) -> Any:
@@ -407,7 +413,9 @@ def snapshot(url: str) -> dict[str, Any]:
     with psycopg.connect(url) as connection:
         return {
             table: connection.execute(
-                "SELECT COALESCE(jsonb_agg(to_jsonb(t) ORDER BY t.id),'[]'::jsonb) "
+                "SELECT COALESCE(jsonb_agg(to_jsonb(t)"
+                f"{'-' + UNIT_SETUP_COLUMNS if table == 'units' else ''} "
+                "ORDER BY t.id),'[]'::jsonb) "
                 f"FROM app.{table} t"
             ).fetchone()
             for table in SNAPSHOT_TABLES

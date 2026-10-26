@@ -105,7 +105,10 @@ def test_a_settlement_is_started_previewed_drafted_and_closed_over_http(
     assert _record(preparer, case, plan, key).json()["data"]["draft_id"] == draft["draft_id"]
     assert _code(_record(preparer, case, plan[:-1], key)) == (409, "IDEMPOTENCY_KEY_REUSED")
     assert _code(_record(preparer, case, plan, uuid4())) == (409, "FINAL_SETTLEMENT_DRAFT_WAITING")
-    waiting = preparer.get(f"{base}/final-settlements").json()["data"]
+    # The shared test Property holds the Settlements of other tests too: read this Lease's.
+    waiting = preparer.get(
+        f"{base}/final-settlements", params={"lease_id": str(case["lease"])}
+    ).json()["data"]
     assert [(item["id"], item["pending_draft"]) for item in waiting] == [(str(settlement), True)]
 
     with psycopg.connect(url) as connection:

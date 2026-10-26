@@ -1,7 +1,8 @@
 # ruff: noqa: E501
 """V1-060 migrations: the faster reads of `20270320_239` give the same answers, the
 Billing Run writers of `20270321_240` lock the run row before the attempt row, and the excess
-check of `20270322_241` waits only for PostgreSQL's own cleanup.
+check of `20270322_241` waits only for PostgreSQL's own cleanup, and the Home page of
+`20270323_242` reads a Refund draft it does not understand as no amount.
 
 Runs last in `scripts/database-test.sh`, on the shared test database after every other module
 has left its Invoices, adjustments, Payments, credit and deposit applications and their
@@ -17,7 +18,11 @@ from uuid import UUID
 
 import psycopg
 
+from test_billing_service_migration import runtime_database_url as home_database_url
 from test_move_in_migration import migrated_database_url as migrated_database_url
+from test_reports_home_migration import home
+from test_waiting_for_approval_migration import _draft
+from test_waiting_for_approval_migration import _setup as approval_sources
 
 _SPEC = importlib.util.spec_from_file_location(
     "v1_060_speed",
@@ -168,3 +173,28 @@ def test_the_excess_check_waits_only_for_autovacuum_and_keeps_the_caller_s_lock_
     restore = source.find("PERFORM pg_catalog.set_config('lock_timeout',v_lock_timeout,true);")
     assert -1 < nowait < handler < guard < refuse < bound < wait < restore
     assert source.count("LOCK TABLE") == 2
+
+
+def test_the_home_page_counts_an_odd_refund_draft_as_waiting_with_no_amount(
+    migrated_database_url: str,
+) -> None:
+    url = migrated_database_url
+    human, prop, _, tenant, _ = approval_sources(url)
+
+    def waiting() -> dict[str, Any]:
+        page = home(home_database_url(), human, prop, ["approvals"])
+        return dict(page["cards"]["waiting_for_approval"])
+
+    before = waiting()
+    for amount in ("five", 500):
+        _draft(
+            url,
+            prop,
+            human,
+            "REFUND",
+            "refunds.create",
+            {"variant": "USD", "amount_usd_cents": amount, "customer_id": str(tenant)},
+        )
+    after = waiting()
+    assert after["money_out_count"] == before["money_out_count"] + 2
+    assert after["money_out_usd_cents"] == before["money_out_usd_cents"] + 500

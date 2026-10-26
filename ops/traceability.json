@@ -56453,6 +56453,17 @@
       "test_path": "backend/tests/test_v1_060_release_migration.py",
       "status": "implemented",
       "notes": "V1-060 lock cause fix (migration 241): the excess check waits at most 3 seconds only when autovacuum alone holds the lock, and restores the caller's lock_timeout."
+    },
+    {
+      "test_id": "test_the_home_page_counts_an_odd_refund_draft_as_waiting_with_no_amount",
+      "upstream_ids": [
+        "DL-096",
+        "DL-071"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v1_060_release_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 B2 (migration 242): a Refund draft whose amount is not a JSON number counts as waiting with no amount; the Home page no longer fails with 22P02."
     }
   ]
 }

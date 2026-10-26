@@ -42,6 +42,12 @@ from test_reservation_migration import (
 )
 
 SNAPSHOT_TABLES = ("leases", "reservations", "deposits", "invoices", "units")
+# V1-058 migration 227 adds the Unit setup columns: NULL, or the Floor item linked from the
+# Floor text. Every other value must stay as it was.
+UNIT_SETUP_COLUMNS = (
+    "ARRAY['floor_item_id','size_square_metres','bedrooms','bathrooms',"
+    "'view_item_id','kitchen_item_id','notes']"
+)
 
 
 def reserved_unit(url: str) -> tuple[UUID, UUID, UUID, UUID, UUID, UUID]:
@@ -254,7 +260,8 @@ def snapshot(url: str) -> dict[str, Any]:
             table: connection.execute(
                 # V1-059 part B adds invoices.draft_reference and customers.id_document_number
                 # (NULL on earlier rows); every other value must stay as it was.
-                "SELECT COALESCE(jsonb_agg(to_jsonb(t)-'draft_reference'-'id_document_number' "
+                "SELECT COALESCE(jsonb_agg(to_jsonb(t)-'draft_reference'-'id_document_number'"
+                f"{'-' + UNIT_SETUP_COLUMNS if table == 'units' else ''} "
                 "ORDER BY t.id),'[]'::jsonb) "
                 f"FROM app.{table} t"
             ).fetchone()

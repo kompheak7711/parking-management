@@ -108,16 +108,28 @@ def test_upgrade_keeps_every_earlier_record(migrated_database_url: str) -> None:
                 customer_id=customer,
                 expiration_days=10,
             )
-        tables = ("audit_events", "reservations", "deposits", "leases", "units")
+        # V1-058 migration 227 adds the Unit setup columns (NULL, or the Floor item linked from
+        # the Floor text) and audits the Unit setup items it creates; nothing earlier changes.
+        units_row = (
+            "to_jsonb(t)-ARRAY['floor_item_id','size_square_metres','bedrooms','bathrooms',"
+            "'view_item_id','kitchen_item_id','notes']"
+        )
+        tables = {
+            "audit_events": ("to_jsonb(t)", "WHERE t.entity_type <> 'unit_setup_item'"),
+            "reservations": ("to_jsonb(t)", ""),
+            "deposits": ("to_jsonb(t)", ""),
+            "leases": ("to_jsonb(t)", ""),
+            "units": (units_row, ""),
+        }
 
         def snapshot() -> list[Any]:
             with psycopg.connect(temporary) as connection:
                 return [
                     connection.execute(
-                        "SELECT COALESCE(jsonb_agg(to_jsonb(t) ORDER BY t.id),'[]'::jsonb) "
-                        f"FROM app.{table} t"
+                        f"SELECT COALESCE(jsonb_agg({row} ORDER BY t.id),'[]'::jsonb) "
+                        f"FROM app.{table} t {where}"
                     ).fetchone()
-                    for table in tables
+                    for table, (row, where) in tables.items()
                 ]
 
         before = snapshot()
