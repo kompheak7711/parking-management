@@ -129,7 +129,9 @@ def test_a_settlement_is_started_previewed_drafted_and_closed_over_http(
         f"{base}/leases/{case['lease']}/final-settlement", json={}, headers=headers(human)
     )
     assert closed.status_code == 200 and closed.json()["data"]["closed"] is True
-    [done] = approver.get(f"{base}/final-settlements").json()["data"]
+    [done] = approver.get(
+        f"{base}/final-settlements", params={"lease_id": str(case["lease"])}
+    ).json()["data"]
     assert (done["closed"], done["pending_draft"]) == (True, False)
     again = _record(preparer, case, plan, uuid4())
     assert again.status_code == 409, again.text
