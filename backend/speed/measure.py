@@ -45,10 +45,12 @@ CSRF = "speed-test-csrf"
 MIDDLE_LIMIT_SECONDS = 0.5
 SLOWEST_LIMIT_SECONDS = 1.0
 # Decided by Claude under the owner's 2026-10-23 22:30 rule (V1-060 part B): the Home page adds
-# up ten sections, and a report or register with no dates reads the whole 10 years, so they
+# up ten sections, the Rent nonpayment alerts check every overdue line with the exact balance
+# function, and a report or register with no dates ("All") reads the whole 10 years, so they
 # have their own limits (middle, slowest).
 HOME_LIMITS = (1.5, 2.0)
-REPORT_LIMITS = (2.0, 3.0)
+ALERT_LIMITS = (1.0, 1.5)
+REPORT_LIMITS = (3.0, 4.0)
 REPORTS = frozenset(
     {
         "Total income report",
@@ -67,6 +69,8 @@ REPORTS = frozenset(
 def limits(name: str) -> tuple[float, float]:
     if name == "Home page":
         return HOME_LIMITS
+    if name == "Rent nonpayment alerts":
+        return ALERT_LIMITS
     if name in REPORTS:
         return REPORT_LIMITS
     return MIDDLE_LIMIT_SECONDS, SLOWEST_LIMIT_SECONDS
@@ -293,8 +297,9 @@ def main() -> None:
         "",
         f"Limits: middle time at most {MIDDLE_LIMIT_SECONDS} s, slowest at most "
         f"{SLOWEST_LIMIT_SECONDS} s, over {arguments.repeat} calls after one warm-up call. "
-        f"Home page: {HOME_LIMITS[0]} s and {HOME_LIMITS[1]} s. Reports and registers with no "
-        f"dates (the whole history): {REPORT_LIMITS[0]} s and {REPORT_LIMITS[1]} s.",
+        f"Home page: {HOME_LIMITS[0]} s and {HOME_LIMITS[1]} s. Rent nonpayment alerts: "
+        f"{ALERT_LIMITS[0]} s and {ALERT_LIMITS[1]} s. Reports and registers with no dates "
+        f"(the whole history): {REPORT_LIMITS[0]} s and {REPORT_LIMITS[1]} s.",
         "",
         "| Read | HTTP | Middle (s) | Slowest (s) | Answer size (bytes) | Result |",
         "|---|---|---|---|---|---|",

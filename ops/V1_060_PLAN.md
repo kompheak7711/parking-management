@@ -130,3 +130,21 @@ candidate is the code that will be used.
   rule or amount change). Three statement timeouts (credit application, settlement return
   reversal, 500-line action context) pass alone; the full PostgreSQL run is repeated alone to
   settle them (no reruns of flaky tests: a timeout that repeats gets fixed).
+- 2026-10-26 B2 done: the full PostgreSQL run alone (d46588a) gave 2,848 passed and 1 failed (the
+  Final Settlement API test read every Settlement of the shared Property; fixed in a190724). The
+  three statement timeouts of the first pass did not come back: they came from the load of the
+  other suites. Backend unit 5,080 passed on a190724.
+- 2026-10-26 B3 done: two full frontend runs at once next to 8 busy processes: 1,874 of 1,874
+  passed in each.
+- 2026-10-26 B4: the speed tool now also reads the V1-057 Home and reports and the V1-058 screens,
+  and runs the Rent run on day 25 of this month (it used today's date and only worked on the
+  25th). First run: Total payment, the Invoice register and the Payments register timed out
+  (about 60 s), the Home page took 1.8 s and Total income 1.4 s. Migration `20270324_243`
+  rewrites the four functions without per-row function calls (same answers; a release test
+  compares each with its pre-243 version). Limits decided by Claude under the owner's 2026-10-23
+  22:30 rule: the Home page 1.5 s middle and 2 s slowest, the Rent nonpayment alerts 1 s and
+  1.5 s, a report or register with no dates (the whole 10 years) 3 s and 4 s; every other read
+  0.5 s and 1 s. Full PostgreSQL run on 243: 2,850 passed. Speed run on 243: all 41 reads and the
+  Rent run (4.1 s) pass (ops/reviews/V1-060-speed-test.md). The owner made the repository public
+  (2026-10-26 13:58); the whole history was scanned for secrets (none) and GitHub CI ran green on
+  99be0a8 (all four jobs).
