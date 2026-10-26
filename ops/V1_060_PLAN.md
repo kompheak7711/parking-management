@@ -116,4 +116,17 @@ candidate is the code that will be used.
 - 2026-10-25 owner (17:30): when a CI job fails, the run's other jobs stop. Each job ends with a
   step that runs only after a failure and cancels the run (`gh run cancel`, workflow permission
   `actions: write`).
-
+- 2026-10-26 B1: foundation a7f3645 (V1-057, V1-058) merged in; this branch's migrations re-chained
+  to `20270320_239`, `20270321_240` and `20270322_241`. 19 merge conflicts resolved; 39 mypy errors
+  in the merged V1-057/V1-058 tests fixed; traceability entries for the six release tests.
+- 2026-10-26 B2 first pass (b5d8437, the PostgreSQL run alongside the other suites): every other
+  gate passed (frontend 1,874; backend unit 5,079 + the traceability fix; pip-audit and npm audit
+  clean; backup and restore at 241, 194 tables). PostgreSQL: 9 failed, 2,839 passed. Fixed:
+  four upgrade tests now leave out the Unit setup columns and audit rows that V1-058 migration 227
+  adds; the Final Settlement API test reads its own Lease's Settlements; migration
+  `20270323_242` makes the Home page read a Refund draft whose amount is not a JSON number as no
+  amount (the Waiting for approval test leaves such a draft in the shared Property, and the Home
+  page failed with 22P02). Decided by Claude under the owner's 2026-10-23 22:30 rule (a read, no
+  rule or amount change). Three statement timeouts (credit application, settlement return
+  reversal, 500-line action context) pass alone; the full PostgreSQL run is repeated alone to
+  settle them (no reruns of flaky tests: a timeout that repeats gets fixed).
