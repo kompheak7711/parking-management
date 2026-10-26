@@ -56387,6 +56387,72 @@
       "test_path": "backend/tests/test_final_settlement_preview_migration.py",
       "status": "implemented",
       "notes": "V1-058 R7b-7: a Meter put in after the hand-back day does not hold the Final Settlement; a Meter in on the hand-back day still needs final inputs (FINAL_INPUTS_NOT_RECORDED)."
+    },
+    {
+      "test_id": "test_the_set_based_balance_matches_the_exact_function_for_every_invoice_line",
+      "upstream_ids": [
+        "DL-096",
+        "DL-071"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v1_060_release_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 speed fix (migration 239): the set-based balance of the Rent nonpayment alerts filter equals app.invoice_line_outstanding_at for every Invoice line of the shared test database."
+    },
+    {
+      "test_id": "test_the_alert_page_lists_exactly_the_lines_of_the_old_filter",
+      "upstream_ids": [
+        "DL-096",
+        "DL-071"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v1_060_release_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 speed fix (migration 239): the faster alerts page lists exactly the lines of the old per-line filter, for every Property."
+    },
+    {
+      "test_id": "test_the_invoice_list_order_has_its_index",
+      "upstream_ids": [
+        "DL-096",
+        "DL-071"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v1_060_release_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 speed fix (migration 239): the Invoices list order (invoice_date, id) has its index."
+    },
+    {
+      "test_id": "test_every_billing_run_writer_locks_the_run_before_the_attempt",
+      "upstream_ids": [
+        "DL-096",
+        "DL-071"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v1_060_release_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 flaky test fix (migration 240): every Billing Run writer locks the run row before the attempt row, so two executions of one run wait instead of a deadlock."
+    },
+    {
+      "test_id": "test_a_session_holding_an_obligation_table_is_still_refused_at_once",
+      "upstream_ids": [
+        "DL-096",
+        "DL-067"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v1_060_release_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 lock cause fix (migration 241): a session's conflicting lock on an obligation table still refuses the excess check at once (55P03 from the NOWAIT request)."
+    },
+    {
+      "test_id": "test_the_excess_check_waits_only_for_autovacuum_and_keeps_the_caller_s_lock_timeout",
+      "upstream_ids": [
+        "DL-096",
+        "DL-067"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v1_060_release_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 lock cause fix (migration 241): the excess check waits at most 3 seconds only when autovacuum alone holds the lock, and restores the caller's lock_timeout."
     }
   ]
 }
