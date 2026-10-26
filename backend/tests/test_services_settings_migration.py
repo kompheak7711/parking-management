@@ -8,9 +8,9 @@ and a type with Services is never removed.
 
 from __future__ import annotations
 
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from datetime import date
-from typing import Any
+from typing import Any, cast
 from uuid import UUID, uuid4
 
 import psycopg
@@ -183,7 +183,7 @@ def test_a_service_is_added_with_its_first_rate_and_approval_and_a_repeat_answer
     ):
         connection.execute(f"SAVEPOINT {name}")
         with pytest.raises(psycopg.Error) as refused:
-            call()
+            cast(Callable[[], object], call)()
         assert refused.value.sqlstate == "22023"
         connection.execute(f"ROLLBACK TO SAVEPOINT {name}")
     connection.execute("SAVEPOINT reference")

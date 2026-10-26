@@ -330,13 +330,13 @@ def test_the_payable_list_is_in_the_order_oldest_first_ticks_pay_it(
     )
     assert [
         (item["kind"], item["id"], item["invoice_number"], item["owed_usd_cents"])
-        for item in found["items"]
+        for item in cast(list[dict[str, object]], found["items"])
     ] == [
         ("INVOICE", str(case["invoice"]), number(url, case["invoice"]), RENT),
         ("LATE_PAYMENT_CHARGE", str(case["charge"]), number(url, case["invoice"]), CHARGE),
         ("INVOICE", str(case["later"]), number(url, case["later"]), RENT),
     ]
-    assert found["items"][1]["invoice_id"] == str(case["invoice"])
+    assert cast(list[dict[str, object]], found["items"])[1]["invoice_id"] == str(case["invoice"])
     # Part paid: the list shows what is still owed, and a paid Invoice leaves it.
     receive(
         case,
@@ -349,7 +349,10 @@ def test_the_payable_list_is_in_the_order_oldest_first_ticks_pay_it(
     after = read_payable(
         runtime_database_url(), case["prop"], case["customer"], actor=cashier(case)
     )
-    assert [(item["id"], item["owed_usd_cents"]) for item in after["items"]] == [
+    assert [
+        (item["id"], item["owed_usd_cents"])
+        for item in cast(list[dict[str, object]], after["items"])
+    ] == [
         (str(case["charge"]), CHARGE - 3_000),
         (str(case["later"]), RENT),
     ]

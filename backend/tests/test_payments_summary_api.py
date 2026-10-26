@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date
+from typing import cast
 from uuid import UUID, uuid4
 
 from property_rental.identity import AuthenticatedActor
@@ -46,7 +47,11 @@ def test_the_period_read_needs_payments_read_and_two_dates() -> None:
     result = allowed.get(path, params={"from": "2026-10-01", "to": "2026-10-25"})
     assert result.status_code == 200
     assert result.json()["data"]["from"] == "2026-10-01"
-    assert flow.calls[-1][:3] == (flow.property_id, date(2026, 10, 1), date(2026, 10, 25))
+    assert cast(tuple[object, ...], flow.calls[-1])[:3] == (
+        flow.property_id,
+        date(2026, 10, 1),
+        date(2026, 10, 25),
+    )
     before = len(flow.calls)
     assert allowed.get(path, params={"from": "2026-10-01"}).status_code == 422
     assert allowed.get(path, params={"from": "01/10/2026", "to": "2026-10-25"}).status_code == 422
@@ -75,7 +80,7 @@ def test_the_receipt_lines_need_receipts_read_and_hide_a_missing_payment() -> No
     allowed = api(flow, actor(flow.property_id, "receipts.read"))
     result = allowed.get(path)
     assert result.status_code == 200 and result.json()["data"]["payment_id"] == str(payment)
-    assert flow.calls[-1][:2] == (flow.property_id, payment)
+    assert cast(tuple[object, ...], flow.calls[-1])[:2] == (flow.property_id, payment)
     before = len(flow.calls)
     assert allowed.get(path, params={"x": "1"}).status_code == 400
     assert api(flow, actor(flow.property_id, "payments.read")).get(path).status_code == 403
@@ -94,7 +99,7 @@ def test_the_late_charge_card_needs_invoices_read_and_is_null_without_a_charge()
     allowed = api(flow, actor(flow.property_id, "invoices.read"))
     result = allowed.get(path)
     assert result.status_code == 200 and result.json()["data"]["invoice_id"] == str(invoice)
-    assert flow.calls[-1][:2] == (flow.property_id, invoice)
+    assert cast(tuple[object, ...], flow.calls[-1])[:2] == (flow.property_id, invoice)
     flow.no_charge = invoice
     assert allowed.get(path).json()["data"] is None
     before = len(flow.calls)

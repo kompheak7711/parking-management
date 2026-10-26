@@ -185,7 +185,7 @@ def test_the_payable_list_needs_recording_and_one_customer() -> None:
     result = allowed.get(path, params={"customer_id": str(customer)})
     assert result.status_code == 200
     assert result.json()["data"] == {"customer_id": str(customer), "items": []}
-    assert flow.calls[-1][:2] == (flow.property_id, customer)
+    assert cast(tuple[object, ...], flow.calls[-1])[:2] == (flow.property_id, customer)
     before = len(flow.calls)
     assert allowed.get(path).status_code == 422
     assert allowed.get(path, params={"customer_id": str(customer), "x": "1"}).status_code == 400
@@ -230,7 +230,7 @@ def test_receive_payment_takes_only_the_payer_s_own_money(field: str, value: str
 )
 def test_each_database_refusal_becomes_its_own_answer(state: str, error: type[Exception]) -> None:
     class Refusal(psycopg.Error):
-        sqlstate = state  # type: ignore[assignment]
+        sqlstate = state
 
     with pytest.raises(error) as raised:
         _database_error(Refusal("private SQL"))

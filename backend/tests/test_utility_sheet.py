@@ -103,7 +103,8 @@ def test_empty_rows_are_not_counted_and_a_semicolon_csv_reads_the_same_way() -> 
     assert read_sheet("r.csv", padded.encode()) == [
         SheetRow(row=2, unit="U101", electricity="1", water="2")
     ]
-    formatted = xlsx([["Unit", "Electricity", "Water"], ["U101", 1, 2]] + [[None]] * 1000)
+    rows: list[list[object]] = [["Unit", "Electricity", "Water"], ["U101", 1, 2]]
+    formatted = xlsx(rows + [[None]] * 1000)
     assert len(read_sheet("r.xlsx", formatted)) == 1
     assert read_sheet("r.csv", b"Unit;Electricity;Water\nU101;1300;12\n") == [
         SheetRow(row=2, unit="U101", electricity="1300", water="12")

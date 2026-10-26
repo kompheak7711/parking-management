@@ -7,7 +7,7 @@ import base64
 import json
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from typing import cast
 from unittest.mock import patch
@@ -38,6 +38,7 @@ from property_rental.payment_confirmation import (
     PaymentConfirmationUnavailableError,
 )
 from property_rental.payment_read import PaymentFilters, PaymentPage, PaymentReadUnavailableError
+from property_rental.receive_payment import ReceivePaymentCommand
 from test_invoice import actor, mutation_headers
 
 
@@ -103,6 +104,32 @@ class Flow:
         response = {**self.value(), "original_intent": intent, "receipt": {"id": str(uuid4())}}
         self.responses[key] = (intent, response)
         return response
+
+    # The rest of PaymentFlow; subclasses in the receive and summary tests answer these.
+    def receive(
+        self, property_id: UUID, command: ReceivePaymentCommand, *, actor: AuthenticatedActor
+    ) -> dict[str, object]:
+        raise AssertionError("receive is not used by this fake")
+
+    def payable(
+        self, property_id: UUID, customer_id: UUID, *, actor: AuthenticatedActor
+    ) -> dict[str, object]:
+        raise AssertionError("payable is not used by this fake")
+
+    def summary(
+        self, property_id: UUID, start: date, end: date, *, actor: AuthenticatedActor
+    ) -> dict[str, object]:
+        raise AssertionError("summary is not used by this fake")
+
+    def receipt_lines(
+        self, property_id: UUID, payment_id: UUID, *, actor: AuthenticatedActor
+    ) -> dict[str, object]:
+        raise AssertionError("receipt_lines is not used by this fake")
+
+    def late_charge_card(
+        self, property_id: UUID, invoice_id: UUID, *, actor: AuthenticatedActor
+    ) -> dict[str, object] | None:
+        raise AssertionError("late_charge_card is not used by this fake")
 
 
 def api(flow: PaymentFlow, authenticated: AuthenticatedActor | None) -> TestClient:

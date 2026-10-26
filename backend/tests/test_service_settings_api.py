@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import date
+from typing import cast
 from uuid import UUID, uuid4
 
 import psycopg
@@ -157,7 +158,9 @@ def test_every_change_needs_settings_access_origin_and_csrf_and_strict_fields() 
         assert manager.post(url, json=body, headers=mutation_headers()).status_code == 403
         assert owner.post(url, json=body).status_code == 403  # no Origin or CSRF
         assert (
-            owner.post(url, json={**body, "extra": 1}, headers=mutation_headers()).status_code
+            owner.post(
+                url, json={**cast(dict[str, object], body), "extra": 1}, headers=mutation_headers()
+            ).status_code
             == 422
         )
         assert owner.post(url, json=body, headers=mutation_headers()).status_code == done
@@ -211,7 +214,7 @@ class _Refused(psycopg.Error):
         super().__init__("refused")
 
     @property
-    def sqlstate(self) -> str | None:
+    def sqlstate(self) -> str | None:  # type: ignore[override]
         return self._code
 
 
@@ -272,14 +275,16 @@ def test_cleaning_rates_are_read_by_settings_readers_and_changed_with_settings_a
         assert owner.post(change_url, json=body).status_code == 403  # no Origin or CSRF
         assert (
             owner.post(
-                change_url, json={**body, "extra": 1}, headers=mutation_headers()
+                change_url,
+                json={**cast(dict[str, object], body), "extra": 1},
+                headers=mutation_headers(),
             ).status_code
             == 422
         )
         assert owner.post(change_url, json=body, headers=mutation_headers()).status_code == done
     calls = [value for name, value in flow.calls if name != "read_cleaning"]
     added, changed, removed = calls
-    assert isinstance(added, tuple) and added[0] == UUID(RATE["cleaning_rate_id"])
+    assert isinstance(added, tuple) and added[0] == UUID(str(RATE["cleaning_rate_id"]))
     assert isinstance(changed, tuple) and changed[0] == rate_id
     assert isinstance(changed[1], CleaningRateChange) and changed[1].version == 2
     assert removed == (rate_id, 3)
