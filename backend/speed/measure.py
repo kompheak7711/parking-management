@@ -44,6 +44,34 @@ ORIGIN = "https://localhost"
 CSRF = "speed-test-csrf"
 MIDDLE_LIMIT_SECONDS = 0.5
 SLOWEST_LIMIT_SECONDS = 1.0
+# Decided by Claude under the owner's 2026-10-23 22:30 rule (V1-060 part B): the Home page adds
+# up ten sections, and a report or register with no dates reads the whole 10 years, so they
+# have their own limits (middle, slowest).
+HOME_LIMITS = (1.5, 2.0)
+REPORT_LIMITS = (2.0, 3.0)
+REPORTS = frozenset(
+    {
+        "Total income report",
+        "Total payment report",
+        "Total electricity report",
+        "Invoice register",
+        "Payments register",
+        "Credit ledger",
+        "Deposits register",
+        "Unit occupancy",
+        "Lease dates",
+    }
+)
+
+
+def limits(name: str) -> tuple[float, float]:
+    if name == "Home page":
+        return HOME_LIMITS
+    if name in REPORTS:
+        return REPORT_LIMITS
+    return MIDDLE_LIMIT_SECONDS, SLOWEST_LIMIT_SECONDS
+
+
 RENT_RUN_LIMIT_SECONDS = 120.0
 
 
@@ -112,6 +140,9 @@ def sample_ids(url: str) -> dict[str, str]:
 def reads(ids: dict[str, str]) -> list[tuple[str, str]]:
     """The reads behind the screens: lists first, then one record's pages."""
     p = ids["property"]
+    first = date.today().replace(day=1)
+    month = f"from={first.isoformat()}&to={date.today().isoformat()}"
+    customer = f"customer_id={ids['customer']}"
     return [
         ("Units list", f"/properties/{p}/units"),
         ("Customers list", f"/api/v1/properties/{p}/customers"),
@@ -138,11 +169,31 @@ def reads(ids: dict[str, str]) -> list[tuple[str, str]]:
         ("Invoice page", f"/api/v1/invoices/{ids['invoice']}"),
         ("Payment page", f"/api/v1/payments/{ids['payment']}"),
         ("Payment receipt", f"/api/v1/payments/{ids['payment']}/receipt"),
+        # The V1-057 Home and reports and the V1-058 screens' own reads.
+        ("Home page", f"/api/v1/properties/{p}/home"),
+        ("Payments page (this month)", f"/api/v1/properties/{p}/payments/summary?{month}"),
+        ("Receive payment list", f"/api/v1/properties/{p}/payments/payable?{customer}"),
+        ("Waiting for approval page", f"/api/v1/properties/{p}/financial-drafts-waiting"),
+        ("Move-out list", f"/api/v1/properties/{p}/final-settlements"),
+        ("Services settings", f"/api/v1/properties/{p}/service-settings"),
+        ("Unit inventory", f"/units/{ids['unit']}/inventory"),
+        ("Total income report", f"/api/v1/properties/{p}/reports/totals/total_income"),
+        ("Total payment report", f"/api/v1/properties/{p}/reports/totals/total_payment"),
+        ("Total electricity report", f"/api/v1/properties/{p}/reports/totals/total_electricity"),
+        ("Invoice register", f"/api/v1/properties/{p}/reports/invoice_register"),
+        ("Payments register", f"/api/v1/properties/{p}/reports/payments"),
+        ("Credit ledger", f"/api/v1/properties/{p}/reports/credit_ledger"),
+        ("Deposits register", f"/api/v1/properties/{p}/reports/deposits"),
+        ("Unit occupancy", f"/api/v1/properties/{p}/reports/unit_occupancy"),
+        ("Lease dates", f"/api/v1/properties/{p}/reports/lease_dates"),
     ]
 
 
 def rent_run(url: str, property_id: str, business_date: date) -> tuple[float, str, int]:
-    """Time next month's scheduled Rent run for every Unit, as the billing worker runs it."""
+    """Time next month's scheduled Rent run for every Unit, as the billing worker runs it.
+
+    The worker runs it on the Property's day 25 (BR-RENT), so the tool passes the 25th of this
+    month, whatever today is."""
     period_start = (business_date.replace(day=28) + timedelta(days=4)).replace(day=1)
     period_end = (period_start.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(
         days=1
@@ -224,12 +275,14 @@ def main() -> None:
         ok = (
             first.status_code == 200
             and answer.status_code == 200
-            and middle <= MIDDLE_LIMIT_SECONDS
-            and slowest <= SLOWEST_LIMIT_SECONDS
+            and middle <= limits(name)[0]
+            and slowest <= limits(name)[1]
         )
         failed = failed or not ok
         rows.append((name, answer.status_code, middle, slowest, len(answer.content), ok))
-    run_seconds, run_status, run_invoices = rent_run(url, ids["property"], date.today())
+    run_seconds, run_status, run_invoices = rent_run(
+        url, ids["property"], date.today().replace(day=25)
+    )
     run_ok = run_status == "SUCCEEDED" and run_seconds <= RENT_RUN_LIMIT_SECONDS
     failed = failed or not run_ok
     lines = [
@@ -239,7 +292,9 @@ def main() -> None:
         + ", ".join(f"{table} {count:,}" for table, count in counts.items()),
         "",
         f"Limits: middle time at most {MIDDLE_LIMIT_SECONDS} s, slowest at most "
-        f"{SLOWEST_LIMIT_SECONDS} s, over {arguments.repeat} calls after one warm-up call.",
+        f"{SLOWEST_LIMIT_SECONDS} s, over {arguments.repeat} calls after one warm-up call. "
+        f"Home page: {HOME_LIMITS[0]} s and {HOME_LIMITS[1]} s. Reports and registers with no "
+        f"dates (the whole history): {REPORT_LIMITS[0]} s and {REPORT_LIMITS[1]} s.",
         "",
         "| Read | HTTP | Middle (s) | Slowest (s) | Answer size (bytes) | Result |",
         "|---|---|---|---|---|---|",

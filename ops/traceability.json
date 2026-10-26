@@ -56464,6 +56464,17 @@
       "test_path": "backend/tests/test_v1_060_release_migration.py",
       "status": "implemented",
       "notes": "V1-060 B2 (migration 242): a Refund draft whose amount is not a JSON number counts as waiting with no amount; the Home page no longer fails with 22P02."
+    },
+    {
+      "test_id": "test_the_faster_reports_and_home_page_give_the_old_answers",
+      "upstream_ids": [
+        "DL-096",
+        "DL-071"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v1_060_release_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 speed test (migration 243): the Payment parts, Invoice register, income facts and Home page give the same answers as their pre-243 versions for every Property of the shared test database."
     }
   ]
 }
