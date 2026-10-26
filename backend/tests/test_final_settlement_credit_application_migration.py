@@ -264,7 +264,9 @@ def test_settlement_credit_on_a_mixed_rent_invoice_follows_the_proposal_or_the_d
     def credit(line: UUID, designation: str | None = None) -> SettlementCreditStep:
         return SettlementCreditStep(case["credit"], LINE, line, owed[line], designation)
 
-    designation = "Primary Tenant asked on 2026-10-06, by signed note, to clear Internet first"
+    designation = (
+        "Primary Tenant asked on 2026-10-06, by signed note, to clear the Service line first"
+    )
     designated = record(case, (credit(internet, designation), credit(rent), credit(trash)))
     # The designated step, then the proposal for Rent and for the first Service line; checked at
     # once and rolled back.
@@ -301,7 +303,7 @@ def test_settlement_credit_on_a_mixed_rent_invoice_follows_the_proposal_or_the_d
     assert applications(url, case["settlement"]) == []
     # Review round 1: rows written as the owner, bypassing the writer, meet the database checks.
     # The designated step's header with credits.apply is refused when written (BR-AUTH-010); with
-    # financial.approve but its detail on the Rent line instead of the step's Internet line, it is
+    # financial.approve but its detail on the Rent line instead of the step's Service line, it is
     # refused at commit.
     header = (
         "INSERT INTO app.customer_credit_applications(id,customer_credit_id,target_kind,invoice_id,"

@@ -223,6 +223,10 @@ class FinalSettlementFlow(Protocol):
         self, property_id: UUID, settlement_id: UUID, *, actor: AuthenticatedActor
     ) -> dict[str, object]: ...
 
+    def settlements(
+        self, property_id: UUID, lease_id: UUID | None, *, actor: AuthenticatedActor
+    ) -> dict[str, object]: ...
+
     def record_draft(
         self,
         property_id: UUID,
@@ -257,6 +261,13 @@ class PostgresFinalSettlementFlow:
     ) -> dict[str, object]:
         return FinalSettlementReadService(self._runtime()).preview(
             property_id, settlement_id, actor=actor
+        )
+
+    def settlements(
+        self, property_id: UUID, lease_id: UUID | None, *, actor: AuthenticatedActor
+    ) -> dict[str, object]:
+        return FinalSettlementReadService(self._runtime()).settlements(
+            property_id, lease_id, actor=actor
         )
 
     def record_draft(
@@ -427,9 +438,12 @@ def create_final_settlement_router(
     )
 
     def context(
-        request: Request, property_id: UUID, capabilities: tuple[str, ...]
+        request: Request,
+        property_id: UUID,
+        capabilities: tuple[str, ...],
+        queries: frozenset[str] = frozenset(),
     ) -> AuthenticatedActor:
-        _queries(request, set())
+        _queries(request, set(queries))
         actor = _actor(request, resolver)
         if request.method == "POST":
             _mutation(request, settings)
@@ -469,6 +483,31 @@ def create_final_settlement_router(
         if settlement.get("created") is True:
             response.status_code = 201
         return envelope(request, settlement)
+
+    @router.get("/properties/{property_id}/final-settlements")
+    def list_settlements(
+        property_id: Identity, request: Request, lease_id: Identity | None = None
+    ) -> dict[str, object]:
+        """The Property's Final Settlements, or only the Lease's; reading starts nothing."""
+        actor = context(
+            request,
+            property_id,
+            (FINAL_SETTLEMENTS_PREPARE_CAPABILITY, FINANCIAL_APPROVE_CAPABILITY),
+            frozenset({"lease_id"}),
+        )
+        result = _invoke(
+            lambda: flow.settlements(property_id, lease_id, actor=actor),
+            FINAL_SETTLEMENT_STATE_REFUSALS,
+        )
+        items = result.get("items")
+        if not isinstance(items, list):
+            raise HTTPException(503)
+        for item in items:
+            if lease_id is None:
+                _settlement(item, property_id)
+            else:
+                _settlement(item, property_id, lease_id=lease_id)
+        return envelope(request, items)
 
     @router.get("/properties/{property_id}/final-settlements/{settlement_id}/preview")
     def preview_settlement(

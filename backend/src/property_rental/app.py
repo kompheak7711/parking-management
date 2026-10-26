@@ -169,7 +169,21 @@ from property_rental.lease_enforcement_api import (
     create_enforcement_router,
 )
 from property_rental.lease_enforcement_context import PostgresEnforcementContext
+from property_rental.lease_notice_api import (
+    LeaseNoticeFlow,
+    UnavailableLeaseNoticeFlow,
+    create_lease_notice_router,
+)
+from property_rental.lease_notices import PostgresLeaseNoticeService
 from property_rental.logging import create_application_logger
+from property_rental.move_out_api import (
+    MoveOutFlow,
+    MoveOutInspectionFlow,
+    UnavailableMoveOutFlow,
+    UnavailableMoveOutInspectionFlow,
+    create_move_out_router,
+)
+from property_rental.move_out_inspection import PostgresMoveOutInspectionService
 from property_rental.operations_status_api import create_operations_status_router
 from property_rental.payment_allocation import AllocationIdempotencyKeyReused
 from property_rental.payment_api import (
@@ -184,6 +198,7 @@ from property_rental.payment_reversal_context_api import (
     PaymentReversalContextFlow,
     create_payment_reversal_context_router,
 )
+from property_rental.physical_move_out import PostgresPhysicalMoveOutService
 from property_rental.property_api import (
     PostgresPropertyResourceFlow,
     PropertyResourceFlow,
@@ -193,6 +208,19 @@ from property_rental.property_api import (
 )
 from property_rental.receipt import ReceiptIdempotencyKeyReused
 from property_rental.refund import RefundIdempotencyKeyReused
+from property_rental.report_exports import (
+    ExportService,
+    ExportStore,
+    PostgresExportStore,
+    UnavailableExportStore,
+)
+from property_rental.reports import (
+    PostgresReportStore,
+    ReportService,
+    ReportStore,
+    UnavailableReportStore,
+)
+from property_rental.reports_api import create_reports_router
 from property_rental.reservation import (
     ReservationDepositDraftRequired,
     ReservationIdempotencyKeyReused,
@@ -211,6 +239,11 @@ from property_rental.runtime_secrets import (
     read_password_blocklist,
     read_protected_totp_key,
 )
+from property_rental.service_settings_api import (
+    PostgresServiceSettingsFlow,
+    ServiceSettingsFlow,
+    create_service_settings_router,
+)
 from property_rental.session_actor import PostgresSessionActorResolver
 from property_rental.settings import Settings
 from property_rental.settlement_correction_api import (
@@ -224,6 +257,12 @@ from property_rental.unit_api import (
     UnitResourceFlow,
     UnitVersionConflict,
     create_unit_router,
+)
+from property_rental.unit_inventory_api import (
+    PostgresUnitInventoryFlow,
+    UnavailableUnitInventoryFlow,
+    UnitInventoryFlow,
+    create_unit_inventory_router,
 )
 from property_rental.unpaid_initial_termination_api import (
     PostgresUnpaidInitialFlow,
@@ -469,6 +508,7 @@ def create_app(
     audit_query_flow: AuditEventQueryFlow | None = None,
     property_resource_flow: PropertyResourceFlow | None = None,
     unit_resource_flow: UnitResourceFlow | None = None,
+    unit_inventory_flow: UnitInventoryFlow | None = None,
     customer_resource_flow: CustomerResourceFlow | None = None,
     configuration_flow: ConfigurationFlow | None = None,
     exchange_rate_provider: ExchangeRateProvider | None = None,
@@ -481,6 +521,9 @@ def create_app(
     move_out_billing_flow: MoveOutBillingFlow | None = None,
     late_payment_flow: LatePaymentFlow | None = None,
     unpaid_initial_flow: UnpaidInitialFlow | None = None,
+    lease_notice_flow: LeaseNoticeFlow | None = None,
+    move_out_flow: MoveOutFlow | None = None,
+    move_out_inspection_flow: MoveOutInspectionFlow | None = None,
     utility_lease_flow: UtilityLeaseFlow | None = None,
     enforcement_flow: EnforcementFlow | None = None,
     enforcement_context_flow: EnforcementContextFlow | None = None,
@@ -495,6 +538,9 @@ def create_app(
     final_settlement_flow: FinalSettlementFlow | None = None,
     settlement_correction_flow: CorrectionFlow | None = None,
     customer_ledger_flow: CustomerLedgerFlow | None = None,
+    report_store: ReportStore | None = None,
+    export_store: ExportStore | None = None,
+    service_settings_flow: ServiceSettingsFlow | None = None,
 ) -> FastAPI:
     """Build an application instance from validated settings."""
     resolved_settings = settings or Settings()
@@ -1090,6 +1136,18 @@ def create_app(
         )
     )
     include_signed_in(
+        create_service_settings_router(
+            actor_resolver,
+            service_settings_flow
+            or PostgresServiceSettingsFlow(
+                resolved_settings.database_url.get_secret_value()
+                if resolved_settings.database_url is not None
+                else None
+            ),
+            resolved_settings,
+        )
+    )
+    include_signed_in(
         create_unit_router(
             actor_resolver,
             unit_resource_flow
@@ -1097,6 +1155,18 @@ def create_app(
                 PostgresUnitResourceFlow(resolved_settings.database_url.get_secret_value())
                 if resolved_settings.database_url is not None
                 else UnavailableUnitResourceFlow()
+            ),
+            resolved_settings,
+        )
+    )
+    include_signed_in(
+        create_unit_inventory_router(
+            actor_resolver,
+            unit_inventory_flow
+            or (
+                PostgresUnitInventoryFlow(resolved_settings.database_url.get_secret_value())
+                if resolved_settings.database_url is not None
+                else UnavailableUnitInventoryFlow()
             ),
             resolved_settings,
         )
@@ -1272,6 +1342,61 @@ def create_app(
         )
     )
     include_signed_in(
+        create_lease_notice_router(
+            actor_resolver,
+            lease_notice_flow
+            or cast(
+                LeaseNoticeFlow,
+                (
+                    PostgresLeaseNoticeService(
+                        resolved_settings.database_url.get_secret_value(),
+                        (
+                            resolved_settings.financial_database_url.get_secret_value()
+                            if resolved_settings.financial_database_url is not None
+                            else None
+                        ),
+                    )
+                    if resolved_settings.database_url is not None
+                    else UnavailableLeaseNoticeFlow()
+                ),
+            ),
+            resolved_settings,
+        )
+    )
+    financial_url = (
+        resolved_settings.financial_database_url.get_secret_value()
+        if resolved_settings.financial_database_url is not None
+        else None
+    )
+    include_signed_in(
+        create_move_out_router(
+            actor_resolver,
+            move_out_flow
+            or cast(
+                MoveOutFlow,
+                (
+                    PostgresPhysicalMoveOutService(
+                        resolved_settings.database_url.get_secret_value(), financial_url
+                    )
+                    if resolved_settings.database_url is not None
+                    else UnavailableMoveOutFlow()
+                ),
+            ),
+            move_out_inspection_flow
+            or cast(
+                MoveOutInspectionFlow,
+                (
+                    PostgresMoveOutInspectionService(
+                        resolved_settings.database_url.get_secret_value(), financial_url
+                    )
+                    if resolved_settings.database_url is not None
+                    else UnavailableMoveOutInspectionFlow()
+                ),
+            ),
+            resolved_settings,
+        )
+    )
+    include_signed_in(
         create_late_payment_router(
             actor_resolver,
             late_payment_flow
@@ -1335,6 +1460,30 @@ def create_app(
                 resolved_settings.database_url.get_secret_value()
                 if resolved_settings.database_url is not None
                 else None
+            ),
+        )
+    )
+    # V1-057: the Home page, the reports and their files (API-076 to API-078).
+    report_service = ReportService(
+        report_store
+        or (
+            PostgresReportStore(resolved_settings.database_url.get_secret_value())
+            if resolved_settings.database_url is not None
+            else UnavailableReportStore()
+        )
+    )
+    include_signed_in(
+        create_reports_router(
+            actor_resolver,
+            report_service,
+            ExportService(
+                report_service,
+                export_store
+                or (
+                    PostgresExportStore(resolved_settings.database_url.get_secret_value())
+                    if resolved_settings.database_url is not None
+                    else UnavailableExportStore()
+                ),
             ),
         )
     )

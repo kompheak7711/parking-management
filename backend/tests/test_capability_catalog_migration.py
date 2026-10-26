@@ -58,7 +58,13 @@ def test_the_catalog_table_holds_exactly_the_application_catalog(
         assert family == capability.split(".", 1)[0]
         assert description == CAPABILITY_CATALOG[capability]
         assert grant_path == capability_grant_path(capability)
-        assert provenance == "login-slice-capability-catalog" and finite is True
+        # The V1-057 report and export rights came with migration `20270301_220`.
+        expected = (
+            "v1-057-reports"
+            if capability in {"audit.export", "data.export", "reports.read"}
+            else "login-slice-capability-catalog"
+        )
+        assert provenance == expected and finite is True
     assert {(row[0], row[3]) for row in rows if row[3] != "bundle"} == {
         ("settings.manage", "per_user"),
         ("identity.manage_access", "owner_class"),

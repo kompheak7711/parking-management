@@ -81,7 +81,8 @@ def test_unit_accepts_each_supported_status(status: UnitStatus) -> None:
         ("unit_number", " 101 ", "unit_number must not have surrounding whitespace"),
         ("floor", "  ", "floor must not be blank"),
         ("floor", " 1 ", "floor must not have surrounding whitespace"),
-        ("unit_type", "COMMERCIAL", "unit_type is not supported"),
+        # A Unit Type is a list code (V1-058 R2a); the database checks the list itself.
+        ("unit_type", "commercial", "unit_type is not supported"),
         ("status", "AVAILABLE", "status is not supported"),
     ],
 )

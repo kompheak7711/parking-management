@@ -91,17 +91,19 @@ NON_CAPABILITY_LABELS = frozenset(
         "restore_test.counts_differ",
         "restore_test.succeeded",
         "security.protected_key_file_missing",
-        "sign_in_prune.completed",
-        "sign_in_prune.config_invalid",
-        "sign_in_prune.failed",
-        "sign_in_prune.usage",
         "unit.created",
         "unit.updated",
+        "unit.status_changed",
         "unpaid_initial.moved_in_credit",
         "unpaid_initial.never_moved_in",
         "utility.baseline.record",
         "utility.catch_up_invoice.create",
         "utility.final_invoice.create",
+        # The sign-in clean-up command's log events (V1-056 slice 12c), not capabilities.
+        "sign_in_prune.completed",
+        "sign_in_prune.config_invalid",
+        "sign_in_prune.failed",
+        "sign_in_prune.usage",
     }
 )
 
@@ -131,14 +133,15 @@ def test_the_capability_catalog_names_every_capability_the_code_checks() -> None
     # Every label listed is still used, so the list cannot hide a removed capability.
     assert NON_CAPABILITY_LABELS <= found
     # The 68 capabilities the application checks today are all in the catalog (login sub-slice
-    # L5: `service_rates.manage` and `utility_rates.manage` no longer open a route).
-    assert len(found - NON_CAPABILITY_LABELS) == 68
+    # L5: `service_rates.manage` and `utility_rates.manage` no longer open a route), with the
+    # three V1-057 report and export rights.
+    assert len(found - NON_CAPABILITY_LABELS) == 71
     # Review round 1: a capability constant added to the catalog module itself is a catalog name.
     assert dotted_constants(SOURCE / "access_control.py") - set(CAPABILITY_CATALOG) == set()
 
 
 def test_the_catalog_holds_the_approved_new_names() -> None:
-    assert len(CAPABILITY_CATALOG) == 75
+    assert len(CAPABILITY_CATALOG) == 78
     assert list(CAPABILITY_CATALOG) == sorted(CAPABILITY_CATALOG)
     assert all(DOTTED.fullmatch(name) and len(name) <= 128 for name in CAPABILITY_CATALOG)
     assert all(description.strip() for description in CAPABILITY_CATALOG.values())
@@ -174,7 +177,7 @@ def test_each_capability_has_one_grant_path() -> None:
     assert paths["rent_nonpayment.evaluate"] == "service_principal"
     assert paths["billing.generate"] == "bundle"
     assert BUNDLE_CAPABILITIES == {c for c, path in paths.items() if path == "bundle"}
-    assert len(BUNDLE_CAPABILITIES) == 72
+    assert len(BUNDLE_CAPABILITIES) == 75
     with pytest.raises(KeyError):
         capability_grant_path("reports.export")
 
@@ -256,6 +259,9 @@ STAFF_APPROVED = frozenset(
         "refunds.read",
         "customer_ledger.read",
         "rent_nonpayment.read",
+        # Owner answer 2026-10-25: Staff record the day-20 and day-30 Rent letters.
+        "rent_nonpayment.case_manage",
+        "rent_nonpayment.event_post",
         "configuration.read",
         "units.read",
         "property.read",
@@ -277,6 +283,10 @@ STAFF_NEVER = frozenset(
         "financial.approve",
         "invoices.void",
         "audit.view",
+        # DL-072 answer 5: no money reports, no audit export and no data export for Staff.
+        "reports.read",
+        "audit.export",
+        "data.export",
         "operations.status.read",
         "leases.warn",
         "utility_readings.correct",
@@ -296,8 +306,6 @@ STAFF_NEVER = frozenset(
         "credits.reverse",
         "credits.applications.reverse",
         "late_payment.review",
-        "rent_nonpayment.case_manage",
-        "rent_nonpayment.event_post",
         "exchange_rates.manage",
         "leases.sign",
         "reservations.extend",
@@ -326,7 +334,7 @@ RATE_CAPABILITIES = frozenset({"service_rates.manage", "utility_rates.manage"})
 
 def test_the_default_staff_bundle_holds_exactly_the_approved_daily_work() -> None:
     assert STAFF_DEFAULT_BUNDLE_CAPABILITIES == STAFF_APPROVED
-    assert len(STAFF_APPROVED) == 31
+    assert len(STAFF_APPROVED) == 33
     assert STAFF_APPROVED <= BUNDLE_CAPABILITIES
     groups = (STAFF_APPROVED, STAFF_NEVER, STAFF_NOT_NAMED, RATE_CAPABILITIES)
     # Every bundle capability is in exactly one group, so a new bundle capability must be

@@ -1639,6 +1639,8 @@ Utility consumption belongs to the Unit served by the Utility Meter.
 
 Utility charges shall always be calculated using readings recorded from the meter assigned to that Unit.
 
+Amended by DL-098 (owner, 2026-10-26): a Unit with no Meter of a kind (for example a store room with no electricity or water) gets no Utility Invoice for that kind; a Unit with no Meter at all on the hand-back day needs no final reading or final Utility Invoice at move-out. A Lease has no separate Utility tick; a Meter added later is billed from its first reading.
+
 ---
 
 ### BR-UTIL-004 — Utility Billing Independence
@@ -2073,6 +2075,8 @@ charges. They are examples of Services the Property could approve and configure 
 the future. This document approves no other Service type. Any different Service
 requires a separate Owner-approved rule and explicit configuration before billing;
 staff must not create an arbitrary Service through a generic or miscellaneous field.
+
+Amended by DL-097 (owner, 2026-10-26): every Service a Lease holds (added in Settings with a monthly rate and ticked on the Lease, DL-075) is billed on the Rent Invoice with the Trash Collection rules: a month is billed when the Lease's term and the Service's approval cover the whole month, at the rate in force on the first billed day, by days in the move-in month and in full for a following month, each Service on its own line. A Service that covers only part of a month, or has no rate, stops that Rent Invoice until it is corrected.
 
 Amended by DL-068 and DL-069 (2026-10-03): the one-time Unit cleaning charge at move-out (BR-MOVEOUT-013) is not a recurring Service and does not approve a Monthly Cleaning Service.
 

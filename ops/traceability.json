@@ -11731,7 +11731,7 @@
         "TEST-095"
       ],
       "test_level": "UI component",
-      "test_path": "frontend/src/UnitManagement.test.tsx",
+      "test_path": "frontend/src/units/UnitsPage.test.tsx",
       "status": "implemented",
       "notes": "V1-024 verifies semantic Unit tables, operational alerts, and authorized management controls."
     },
@@ -11742,7 +11742,7 @@
         "TEST-095"
       ],
       "test_level": "UI component",
-      "test_path": "frontend/src/UnitManagement.test.tsx",
+      "test_path": "frontend/src/units/UnitsPage.test.tsx",
       "status": "implemented",
       "notes": "V1-024 hides Unit mutation controls unless the server confirms scoped capability."
     },
@@ -11756,7 +11756,7 @@
         "TEST-094"
       ],
       "test_level": "UI component",
-      "test_path": "frontend/src/UnitManagement.test.tsx",
+      "test_path": "frontend/src/units/UnitsPage.test.tsx",
       "status": "implemented",
       "notes": "V1-024 keeps Unit source sections distinct and renders immutable event history."
     },
@@ -11770,7 +11770,7 @@
         "TEST-095"
       ],
       "test_level": "UI component",
-      "test_path": "frontend/src/UnitManagement.test.tsx",
+      "test_path": "frontend/src/units/UnitsPage.test.tsx",
       "status": "implemented",
       "notes": "V1-024 announces authorization and optimistic-concurrency failures without exposing unavailable actions."
     },
@@ -17434,7 +17434,7 @@
       "notes": "The bounded final fixed-Service calculation applies the approved partial-month coverage with actual-day half-up proration or preserves the complete configured monthly rate for an approved full-month treatment."
     },
     {
-      "test_id": "test_initial_invoice_preserves_rent_service_components_and_excludes_unapproved_type",
+      "test_id": "test_initial_invoice_preserves_rent_service_components_and_bills_every_service",
       "upstream_ids": [
         "BR-RENT-005",
         "BR-RENT-006",
@@ -17457,7 +17457,7 @@
       "test_level": "integration",
       "test_path": "backend/tests/test_billing_service_migration.py",
       "status": "implemented",
-      "notes": "A real authenticated financial-role call creates one issued Initial Rent Invoice with reconstructable July proration and August full-month components for Rent and Trash Collection. Distinct effective Service rates remain linked at component level, while equally configured Internet is not billed."
+      "notes": "A real authenticated financial-role call creates one issued Initial Rent Invoice with reconstructable July proration and August full-month components for Rent and Trash Collection. Distinct effective Service rates remain linked at component level. Since V1-058 R7b-6e (DL-075) a configured Internet Service the Lease holds is billed the same way on its own lines after Trash Collection."
     },
     {
       "test_id": "test_initial_invoice_bills_service_that_becomes_eligible_only_in_second_month",
@@ -49392,6 +49392,464 @@
       "notes": "V1-059 part B: Customer ID number / Passport number (DL-071 answer 11; review round 1: the earlier create overloads are closed to the runtime role; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/reviews/V1-059-part-B.md)."
     },
     {
+      "test_id": "TEST-FE-801",
+      "upstream_ids": [
+        "UI-008",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shell/AppShell.test.tsx",
+      "status": "implemented",
+      "notes": "The menu shows the groups the owner approved on 24/10/2026 (Daily work, Tenants, Building, Office) in order, one link per menu item (V1-058 R1 app shell, DESIGN.md 0.29; non-money design points decided by Claude under the owner's 2026-10-23 22:30 rule, DL-074)."
+    },
+    {
+      "test_id": "TEST-FE-802",
+      "upstream_ids": [
+        "UI-008",
+        "UI-011"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shell/AppShell.test.tsx",
+      "status": "implemented",
+      "notes": "Only the open page is marked in the menu, each link has its own address and the work area is named after the page (V1-058 R1 app shell, DESIGN.md 0.29; non-money design points decided by Claude under the owner's 2026-10-23 22:30 rule, DL-074)."
+    },
+    {
+      "test_id": "TEST-FE-803",
+      "upstream_ids": [
+        "UI-009",
+        "UI-095"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shell/AppShell.test.tsx",
+      "status": "implemented",
+      "notes": "The top bar shows the weekday, the date as dd/mm/yyyy and the 24-hour time in Phnom Penh (V1-058 R1 app shell, DESIGN.md 0.29; non-money design points decided by Claude under the owner's 2026-10-23 22:30 rule, DL-074)."
+    },
+    {
+      "test_id": "TEST-FE-804",
+      "upstream_ids": [
+        "UI-009",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shell/AppShell.test.tsx",
+      "status": "implemented",
+      "notes": "The Khmer / EN switch changes the menu language and the page language attribute (V1-058 R1 app shell, DESIGN.md 0.29; non-money design points decided by Claude under the owner's 2026-10-23 22:30 rule, DL-074)."
+    },
+    {
+      "test_id": "TEST-FE-805",
+      "upstream_ids": [
+        "UI-009"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shell/AppShell.test.tsx",
+      "status": "implemented",
+      "notes": "The menu shows the signed-in name, the environment badge outside production and a Sign out button (V1-058 R1 app shell, DESIGN.md 0.29; non-money design points decided by Claude under the owner's 2026-10-23 22:30 rule, DL-074)."
+    },
+    {
+      "test_id": "TEST-FE-806",
+      "upstream_ids": [
+        "UI-009",
+        "UI-007"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shell/AppShell.test.tsx",
+      "status": "implemented",
+      "notes": "The environment badge is hidden in production and Sign out stays locked while a sign-in action runs (V1-058 R1 app shell, DESIGN.md 0.29; non-money design points decided by Claude under the owner's 2026-10-23 22:30 rule, DL-074)."
+    },
+    {
+      "test_id": "TEST-FE-807",
+      "upstream_ids": [
+        "UI-101",
+        "UI-007"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shell/AppShell.test.tsx",
+      "status": "implemented",
+      "notes": "On narrow screens the menu slides in as a dialog: the focus starts on its first link, the page behind is inert, and its close button or Escape closes it and returns the focus to the menu button (review round 1 of V1-058 R1; V1-058 R1 app shell, DESIGN.md 0.29; non-money design points decided by Claude under the owner's 2026-10-23 22:30 rule, DL-074)."
+    },
+    {
+      "test_id": "TEST-FE-808",
+      "upstream_ids": [
+        "UI-011"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shell/AppShell.test.tsx",
+      "status": "implemented",
+      "notes": "The page is read from the address and follows address changes (Back, Forward, bookmarks) (V1-058 R1 app shell, DESIGN.md 0.29; non-money design points decided by Claude under the owner's 2026-10-23 22:30 rule, DL-074)."
+    },
+    {
+      "test_id": "TEST-FE-809",
+      "upstream_ids": [
+        "UI-008",
+        "UI-011"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shell/AppShell.test.tsx",
+      "status": "implemented",
+      "notes": "Letters and Move-out are tabs of Leases (the Leases menu item stays marked); Bookings shows no tab bar while it has one tab (V1-058 R1 app shell, owner menu approval of 24/10/2026)."
+    },
+    {
+      "test_id": "test_actor_access_lists_the_actors_own_capabilities_and_properties_for_the_menu",
+      "upstream_ids": [
+        "UI-008",
+        "UI-004",
+        "DL-074"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_auth_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R1b: GET /api/v1/identity/me/access lists the actor's own capabilities with their Properties, merged and sorted, not cached, so the menu shows only what the person may use (owner menu approval of 24/10/2026); display only, every route still checks."
+    },
+    {
+      "test_id": "test_actor_access_needs_a_session_and_the_read_self_capability",
+      "upstream_ids": [
+        "UI-008",
+        "SEC-002"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_auth_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R1b: the access read answers 401 without a session and 403 without identity.read_self for the actor's own scope, and then shows no capability."
+    },
+    {
+      "test_id": "TEST-FE-810",
+      "upstream_ids": [
+        "UI-008",
+        "UI-004"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shell/AppShell.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R1b: the menu and the page tabs show only what the person's capabilities allow; an empty group is left out and a menu item opens its first allowed tab (owner menu approval of 24/10/2026; page-to-capability map decided by Claude under the owner's 2026-10-23 22:30 rule)."
+    },
+    {
+      "test_id": "TEST-FE-811",
+      "upstream_ids": [
+        "UI-009"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shell/AppShell.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R1b: the signed-in name at the foot of the menu opens My account (the person's session, sign-in check and recovery codes), so Settings can show only to allowed users."
+    },
+    {
+      "test_id": "TEST-FE-812",
+      "upstream_ids": [
+        "UI-007",
+        "UI-011"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shell/AppShell.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R1 review round 1: a page change moves the focus to the new page and starts it at the top; the first page does not take the focus."
+    },
+    {
+      "test_id": "TEST-FE-813",
+      "upstream_ids": [
+        "UI-008",
+        "UI-003"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/shell/accessClient.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R1b: the access read sends the session cookie and accepts only the documented shape; a refusal, a network failure or another shape counts as unreadable (the menu then shows every item and the server still refuses what is not allowed)."
+    },
+    {
+      "test_id": "TEST-FE-814",
+      "upstream_ids": [
+        "UI-008",
+        "UI-004",
+        "UI-011"
+      ],
+      "test_level": "UI",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R1b: after sign-in the menu shows only the allowed pages, a closed page is mounted but not visible, a page the person may not use says so and shows nothing of it, and the one Property fills the Property boxes."
+    },
+    {
+      "test_id": "test_customer_details_are_optional_checked_and_kept_unless_given",
+      "upstream_ids": [
+        "DL-078",
+        "BR-CUST-003"
+      ],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_customer.py",
+      "status": "implemented",
+      "notes": "V1-058 R2c: Customer date of birth, gender and nationality, all optional (DL-078 answer 3; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/V1_058_PLAN.md)."
+    },
+    {
+      "test_id": "test_customer_details_are_optional_checked_shown_in_detail_and_cleared_with_null",
+      "upstream_ids": [
+        "DL-078",
+        "BR-CUST-003",
+        "SEC-006"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_customer_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R2c: Customer date of birth, gender and nationality, all optional (DL-078 answer 3; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/V1_058_PLAN.md)."
+    },
+    {
+      "test_id": "test_the_details_are_stored_returned_and_audited_without_their_values",
+      "upstream_ids": [
+        "DL-078",
+        "SEC-006",
+        "DB-CUST-001"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_customer_details_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R2c: Customer date of birth, gender and nationality, all optional (DL-078 answer 3; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/V1_058_PLAN.md)."
+    },
+    {
+      "test_id": "test_the_database_refuses_details_outside_the_rules",
+      "upstream_ids": [
+        "DL-078",
+        "DB-CUST-001"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_customer_details_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R2c: Customer date of birth, gender and nationality, all optional (DL-078 answer 3; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/V1_058_PLAN.md)."
+    },
+    {
+      "test_id": "test_an_update_through_the_earlier_overload_keeps_the_details",
+      "upstream_ids": [
+        "DL-078",
+        "BR-CUST-003"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_customer_details_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R2c: Customer date of birth, gender and nationality, all optional (DL-078 answer 3; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/V1_058_PLAN.md)."
+    },
+    {
+      "test_id": "test_the_details_are_kept_in_the_command_replay",
+      "upstream_ids": [
+        "DL-078",
+        "DB-CUST-001"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_customer_details_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R2c: Customer date of birth, gender and nationality, all optional (DL-078 answer 3; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/V1_058_PLAN.md)."
+    },
+    {
+      "test_id": "test_v1_058_r2c_is_forward_only_and_follows_v1_059_part_b",
+      "upstream_ids": [
+        "DL-078",
+        "DB-CUST-001"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_customer_details_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R2c: Customer date of birth, gender and nationality, all optional (DL-078 answer 3; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/V1_058_PLAN.md)."
+    },
+    {
+      "test_id": "TEST-FE-815",
+      "upstream_ids": [
+        "DL-078",
+        "BR-CUST-003"
+      ],
+      "test_level": "UI",
+      "test_path": "frontend/src/customerClient.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R2c: the Customer client reads the optional date of birth (yyyy-mm-dd), gender (FEMALE or MALE) and nationality, and refuses other values (DL-078 answer 3)."
+    },
+    {
+      "test_id": "TEST-FE-816",
+      "upstream_ids": [
+        "DL-078",
+        "BR-CUST-003"
+      ],
+      "test_level": "UI",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R2c: the Customers screen records the optional date of birth, gender and nationality, shows the date as dd/mm/yyyy, and an update sends only the detail that was changed (a cleared gender is sent as null) (DL-078 answer 3)."
+    },
+    {
+      "test_id": "test_customer_detail_digests_keep_older_requests_and_tell_different_details_apart",
+      "upstream_ids": [
+        "DL-078",
+        "API-016"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_customer_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R2c review round 1: the Customer command fingerprint and replay with the optional details (DL-078 answer 3; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/V1_058_PLAN.md)."
+    },
+    {
+      "test_id": "test_customer_command_replay_keeps_the_details_and_refuses_a_different_detail",
+      "upstream_ids": [
+        "DL-078",
+        "API-016"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_customer_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R2c review round 1: the Customer command fingerprint and replay with the optional details (DL-078 answer 3; technical points decided by Claude under the owner's 2026-10-23 22:30 rule; ops/V1_058_PLAN.md)."
+    },
+    {
+      "test_id": "test_the_customers_page_search_finds_a_whole_id_number_and_never_shows_it",
+      "upstream_ids": [
+        "DL-078",
+        "SEC-041"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_customer_details_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R2c: the Customers page search finds a Customer by the whole ID or passport number (any capitals, spaces or dashes), a part of a number finds nothing, and the list never shows the number (DL-078 answer 4 and its reading; whole number only decided by Claude under the owner's 2026-10-23 22:30 rule)."
+    },
+    {
+      "test_id": "test_unit_details_are_saved_kept_and_cleared_and_the_unit_number_never_changes",
+      "upstream_ids": [
+        "DL-078",
+        "BR-UNIT-001"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_unit_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R2a: Unit details (size, bedrooms, bathrooms, View, Kitchen, notes, Room features) are saved, a detail left out is kept and one sent as null is cleared, and a patch with a different Unit number is refused (DL-078 answer 1; owner 2026-10-24 19:24 'Yes, add both checks')."
+    },
+    {
+      "test_id": "test_unit_setup_lists_are_read_with_units_read_and_changed_only_with_settings_access",
+      "upstream_ids": [
+        "DL-075",
+        "SEC-041"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_unit_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R2a: the Unit setup lists are read with units.read or settings.manage, removed items show only to Settings users, and only settings.manage may add, change or remove an item; an item in use gives 409 (DL-075 answer 10)."
+    },
+    {
+      "test_id": "test_every_property_gets_the_default_unit_types_and_balcony",
+      "upstream_ids": [
+        "DL-075",
+        "BR-UNIT-001",
+        "DB-UNIT-001"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_unit_setup_lists_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R2a: every Property has the four default Unit Types and the Balcony Room feature, seeded by a trigger when a Property is created (DL-075 answer 10)."
+    },
+    {
+      "test_id": "test_list_items_get_codes_from_their_names_and_are_audited",
+      "upstream_ids": [
+        "DL-075",
+        "DB-UNIT-001"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_unit_setup_lists_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R2a: a new list item gets a fixed code made from its English name (unique in its list), a stale version changes nothing, and every change is written to the audit history (DL-075 answer 10)."
+    },
+    {
+      "test_id": "test_units_save_keep_and_clear_details_and_room_features",
+      "upstream_ids": [
+        "DL-078",
+        "DB-UNIT-001"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_unit_setup_lists_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R2a: the new create_unit and update_unit save, change and clear the Unit details and Room features (DL-078 answer 1)."
+    },
+    {
+      "test_id": "test_unit_types_and_items_must_come_from_the_property_lists",
+      "upstream_ids": [
+        "DL-075",
+        "DL-078",
+        "BR-UNIT-001",
+        "DB-UNIT-001"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_unit_setup_lists_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R2a: a Unit Type must be a Unit Types item of the Property, and the Floor, View, Kitchen and Room features must be items of their own lists (owner 2026-10-24 19:24 'Yes, add both checks')."
+    },
+    {
+      "test_id": "test_the_unit_number_never_changes_after_creation",
+      "upstream_ids": [
+        "DL-078",
+        "BR-UNIT-001",
+        "DB-UNIT-001"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_unit_setup_lists_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R2a: the Unit number cannot change after creation, through the earlier update_unit or a direct update; the same number still saves (owner 2026-10-24 19:24 'Yes, add both checks')."
+    },
+    {
+      "test_id": "test_items_in_use_cannot_be_removed_and_removed_items_cannot_be_picked",
+      "upstream_ids": [
+        "DL-075",
+        "DB-UNIT-001"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_unit_setup_lists_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R2a: an item used by a Unit cannot be removed, an unused one can, a removed item cannot be picked or changed, and items are never deleted and keep their code (DL-075 answer 10)."
+    },
+    {
+      "test_id": "test_runtime_role_reads_lists_and_writes_only_through_functions",
+      "upstream_ids": [
+        "DL-075",
+        "DB-UNIT-001"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_unit_setup_lists_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R2a: the runtime role reads the lists and Room features but writes only through the definer functions; helper functions stay closed."
+    },
+    {
+      "test_id": "test_the_existing_property_gets_the_defaults_and_its_floors_linked",
+      "upstream_ids": [
+        "DL-075",
+        "DL-078",
+        "DB-UNIT-001"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_unit_setup_lists_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R2a: the migration gives the existing Property the defaults and a Floor item for each Floor its Units use, linked to those Units, without changing the Units' versions or history."
+    },
+    {
+      "test_id": "test_v1_058_r2a_is_forward_only_and_follows_r2c",
+      "upstream_ids": [
+        "DL-078",
+        "TEST-022"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_unit_setup_lists_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R2a: migration 20270209_197 follows 20270208_196 and refuses a downgrade."
+    },
+    {
+      "test_id": "TEST-FE-817",
+      "upstream_ids": [
+        "DL-075",
+        "DL-078"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/unitClient.test.ts",
+      "status": "implemented",
+      "notes": "V1-058 R2a: the Unit client reads the Unit details and the setup lists, an update never sends a Unit number, a refused pick (422) is named, and a list item in the wrong list is refused."
+    },
+    {
+      "test_id": "TEST-FE-818",
+      "upstream_ids": [
+        "DL-075",
+        "DL-078",
+        "BR-UNIT-001"
+      ],
+      "test_level": "UI",
+      "test_path": "frontend/src/units/UnitsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R2 (moved to the rebuilt screen): New Unit picks the Floor and Unit Type from the Settings lists (removed items hidden), needs the number and floor, starts the Unit as Vacant, and Update Unit never sends the Unit number."
+    },
+    {
       "test_id": "test_acknowledgement_in_lower_case_or_with_extra_spaces_commits",
       "upstream_ids": [
         "SEC-073",
@@ -51747,6 +52205,2572 @@
       "notes": "The client adds a Refund method and turns one off with the CSRF token, the selected Property and no Idempotency-Key (V1-056 slice 11h, Refund methods with Settings access; DL-089; ops/reviews/V1-056-slice-11h.md)."
     },
     {
+      "test_id": "test_the_inventory_is_saved_as_numbered_records_and_an_item_left_out_is_gone",
+      "upstream_ids": [
+        "DL-078",
+        "BR-UNIT-003"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_unit_inventory_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R2b: the Unit inventory is read with units.read, each save with If-Match is a new numbered record, an item left out of a save is no longer in the Unit, a stale record number gives 412, and Edit inventory offers the starter items and the items already used (DL-078 answer 2)."
+    },
+    {
+      "test_id": "test_only_a_unit_manager_saves_and_bad_lines_are_refused",
+      "upstream_ids": [
+        "DL-078",
+        "SEC-041"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_unit_inventory_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R2b: only property.manage at the Unit's Property saves the inventory, with the Origin and CSRF pair; unknown groups, blank or long names, quantities outside 1 to 999, a name twice in a group, more than 200 items and extra fields are refused."
+    },
+    {
+      "test_id": "test_saves_are_numbered_records_and_each_is_in_the_unit_history",
+      "upstream_ids": [
+        "DL-078",
+        "DB-UNIT-001"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_unit_inventory_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R2b: app.record_unit_inventory numbers each save, trims names, refuses a stale record number, and writes unit.inventory_updated to the Unit's history with the previous and new items (DL-078 answer 2)."
+    },
+    {
+      "test_id": "test_bad_lines_and_unknown_units_are_refused",
+      "upstream_ids": [
+        "DL-078",
+        "DB-UNIT-001"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_unit_inventory_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R2b: unknown groups, quantity 0, blank names, a name twice in a group (any capitals), more than 200 items, a non-list and an unknown Unit are refused and save nothing."
+    },
+    {
+      "test_id": "test_inventory_history_is_append_only",
+      "upstream_ids": [
+        "DL-078",
+        "DB-UNIT-001"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_unit_inventory_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R2b: inventory records and their items cannot be changed or deleted (dated History kept, DL-078 answer 2)."
+    },
+    {
+      "test_id": "test_runtime_role_reads_the_inventory_and_saves_only_through_the_function",
+      "upstream_ids": [
+        "DL-078",
+        "DB-UNIT-001"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_unit_inventory_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R2b: the runtime role reads both inventory tables and saves only through the definer function."
+    },
+    {
+      "test_id": "test_v1_058_r2b_is_forward_only_and_follows_r2a",
+      "upstream_ids": [
+        "DL-078",
+        "TEST-022"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_unit_inventory_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R2b: migration 20270210_198 follows 20270209_197 and refuses a downgrade."
+    },
+    {
+      "test_id": "test_postgres_inventory_flow_reads_saves_and_offers_used_items",
+      "upstream_ids": [
+        "DL-078",
+        "DB-UNIT-001"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_unit_inventory_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R2b: the runtime inventory flow reads an empty inventory, saves record 1, reports a stale save as a version conflict and a bad group as invalid, offers the used and starter items, and the save shows in the Unit timeline."
+    },
+    {
+      "test_id": "TEST-FE-819",
+      "upstream_ids": [
+        "DL-078"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/UnitInventoryPanel.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R2b: the Unit inventory shows the count line, the save time as dd/mm/yyyy 24-hour in Phnom Penh and the items by group; Edit inventory has a number box for every known item (0 takes it out) and an Another item row, and saves every item above 0."
+    },
+    {
+      "test_id": "TEST-FE-820",
+      "upstream_ids": [
+        "DL-078"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/UnitInventoryPanel.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R2b: Edit inventory is hidden without access, an empty inventory says so, and a save someone else beat is named."
+    },
+    {
+      "test_id": "TEST-FE-821",
+      "upstream_ids": [
+        "DL-078"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/unitClient.test.ts",
+      "status": "implemented",
+      "notes": "V1-058 R2b: the Unit client reads the inventory, saves it with If-Match set to the record number it showed, and refuses an unknown item group."
+    },
+    {
+      "test_id": "TEST-FE-822",
+      "upstream_ids": [
+        "DL-078"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/UnitInventoryPanel.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R2b review: an Another item whose name is already in its group adds to that item instead of a second line, an emptied box keeps the quantity, and switching to another Unit loads that Unit's inventory with Edit inventory enabled."
+    },
+    {
+      "test_id": "TEST-FE-823",
+      "upstream_ids": [
+        "DL-074",
+        "UI-025",
+        "BR-UNIT-002"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/units/UnitsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R2: the Units list filters by floor, by Unit Type (removed types not offered) and by the four count cards (Occupied, Reserved, Vacant, Not available), with Show all."
+    },
+    {
+      "test_id": "TEST-FE-824",
+      "upstream_ids": [
+        "DL-074",
+        "BR-UNIT-002",
+        "UI-027"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/units/UnitsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R2: Change status is refused while a signed Lease holds the Unit, offers only Vacant, Cleaning, Under maintenance and Out of service, needs a reason, and sends the status with the trimmed reason."
+    },
+    {
+      "test_id": "TEST-FE-825",
+      "upstream_ids": [
+        "DL-074",
+        "UI-025"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/units/UnitsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R2: a Unit opens at its own address (#/units/<id>), and a person who cannot read Leases or Reservations sees the Units with a note and dashes in those columns."
+    },
+    {
+      "test_id": "test_change_status_sends_its_reason_and_a_blank_reason_is_refused",
+      "upstream_ids": [
+        "DL-074",
+        "BR-UNIT-002",
+        "API-028"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_unit_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R2: PATCH /units/{id} takes a Change status reason of 1 to 500 characters (trimmed); a blank or too long reason is refused with 422."
+    },
+    {
+      "test_id": "TEST-FE-826",
+      "upstream_ids": [
+        "DL-074",
+        "UI-028",
+        "BR-CUST-001"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/customers/CustomersPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R2: the Customers list shows Legal name, Phone, Unit and a Relationship chip worked out from the Leases and active Reservations (Tenant, Signer or occupant, Reservation, Former, No Lease yet), four count cards and Deactivated under the name; an occupant who moved out of a running Lease shows as Former."
+    },
+    {
+      "test_id": "TEST-FE-827",
+      "upstream_ids": [
+        "DL-074",
+        "DL-078",
+        "UI-028",
+        "SEC-041"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/customers/CustomersPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R2: count cards filter the list; typing filters by name, phone digits or Unit; Search asks the server, which finds a whole ID or passport number without the list showing it."
+    },
+    {
+      "test_id": "TEST-FE-828",
+      "upstream_ids": [
+        "DL-074",
+        "UI-028"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/customers/CustomersPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R2: without Lease or Reservation access the list shows a note and dashes and hides the count cards; a Customer opens at its own address (#/customers/<id>)."
+    },
+    {
+      "test_id": "TEST-FE-829",
+      "upstream_ids": [
+        "DL-074",
+        "DL-078",
+        "UI-029",
+        "UI-030",
+        "UI-104"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/customers/CustomersPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R2: the Customer page shows Contact and identity, Leases and Reservations with role, period and chip, Money (Unpaid, Customer Credit, Security Deposit, Pet Deposit only when held) from the read-only Account Ledger position, History, and opens the Account Ledger."
+    },
+    {
+      "test_id": "TEST-FE-830",
+      "upstream_ids": [
+        "DL-074",
+        "UI-029",
+        "UI-030"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/customers/CustomersPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R2: when the ledger cannot be read the Money card says so and the ledger button is hidden; a Customer that is not found shows a notice and Back returns to the list."
+    },
+    {
+      "test_id": "TEST-FE-831",
+      "upstream_ids": [
+        "DL-074",
+        "DL-071",
+        "UI-029",
+        "BR-CUST-001"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/customers/CustomersPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R2 C2: Add Customer is a form page (#/customers/new); legal name and ID or passport number are required; the save reserves the browser's Customer command gate, sends one idempotency key, releases the gate on the known result and opens the new Customer."
+    },
+    {
+      "test_id": "TEST-FE-832",
+      "upstream_ids": [
+        "DL-074",
+        "DL-071",
+        "BR-CUST-002"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/customers/CustomersPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R2 C2: a Customer with the same name or phone is named with a link and the save needs the 'different person' tick (sent as confirmed_distinct); a used ID or passport number is an error naming the existing Customer."
+    },
+    {
+      "test_id": "TEST-FE-833",
+      "upstream_ids": [
+        "DL-074",
+        "BR-CUST-003",
+        "UI-029"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/customers/CustomersPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R2 C2: Edit contact is a dialog that sends only the changed, trimmed fields with the version; when someone else changed the Customer first, the page reads it again and says so."
+    },
+    {
+      "test_id": "TEST-FE-834",
+      "upstream_ids": [
+        "DL-074",
+        "SEC-041"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/customers/CustomersPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R2 C2: when the result of a save is unknown the gate stays reserved, and Try again resends the same request with the same idempotency key; the gate is released once the result is known."
+    },
+    {
+      "test_id": "TEST-FE-835",
+      "upstream_ids": [
+        "DL-074",
+        "BR-CUST-003",
+        "UI-029"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/customers/CustomersPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R2 C2: Deactivate is a dialog with a required reason; while another Customer save waits to be checked, the page says so and a save sends nothing."
+    },
+    {
+      "test_id": "TEST-FE-836",
+      "upstream_ids": [
+        "DL-074",
+        "UI-029"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/customers/CustomersPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R2 C2: without the server's manage or deactivate permission, Add Customer, Edit contact and Deactivate are not shown."
+    },
+    {
+      "test_id": "TEST-FE-837",
+      "upstream_ids": [
+        "DL-074",
+        "BR-RES-003",
+        "BR-RES-010",
+        "UI-031"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reservations/ReservationsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3: the Reservations list shows Unit, Customer, dates, extended-once and days-left notes, deposit received of required, status chip and result."
+    },
+    {
+      "test_id": "TEST-FE-838",
+      "upstream_ids": [
+        "DL-074",
+        "UI-031",
+        "UI-033"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reservations/ReservationsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3: count cards filter the list (Ending within 7 days counts Active ones), and a row opens the Reservation at its own address."
+    },
+    {
+      "test_id": "TEST-FE-839",
+      "upstream_ids": [
+        "DL-074",
+        "BR-RES-009",
+        "BR-RES-010",
+        "BR-RES-021",
+        "UI-033"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reservations/ReservationsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3: the Reservation page shows facts, the Extension card, the Security Deposit (suggested, accepted, received) and what happens to the deposit after a cancellation."
+    },
+    {
+      "test_id": "TEST-FE-840",
+      "upstream_ids": [
+        "DL-074",
+        "BR-RES-008",
+        "BR-RES-017",
+        "BR-RES-018",
+        "UI-034"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reservations/ReservationsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3: Extend offers at most 14 more days and Try again after an unknown result sends the same notice id and idempotency key."
+    },
+    {
+      "test_id": "TEST-FE-841",
+      "upstream_ids": [
+        "DL-074",
+        "BR-RES-012",
+        "BR-RES-020",
+        "BR-RES-022",
+        "UI-035"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reservations/ReservationsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3: Cancel asks who caused it, needs a memo, needs what was offered for a Property reason, and reloads after a conflict."
+    },
+    {
+      "test_id": "TEST-FE-842",
+      "upstream_ids": [
+        "DL-074",
+        "UI-033"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reservations/ReservationsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3: when the Reservation cannot be read (no answer), the page offers Retry instead of saying not found; a Reservation of another Property is never shown."
+    },
+    {
+      "test_id": "TEST-FE-843",
+      "upstream_ids": [
+        "DL-074",
+        "BR-LEASE-001",
+        "BR-LEASE-009",
+        "UI-036"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 L1: the Leases list shows Unit, Primary Tenant with other Signers, Start and End Date (termination date with the old End Date), Monthly Rent, Security Deposit received of required and the status chip."
+    },
+    {
+      "test_id": "TEST-FE-844",
+      "upstream_ids": [
+        "DL-074",
+        "BR-LEASE-017",
+        "UI-036"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 L1: count cards filter the list (Ending soon looks two months ahead and leaves out a renewed Lease) and a row opens the Lease at its own address."
+    },
+    {
+      "test_id": "TEST-FE-845",
+      "upstream_ids": [
+        "DL-074",
+        "BR-RENT-009",
+        "BR-DEP-006",
+        "BR-OCC-006",
+        "UI-037",
+        "UI-038",
+        "UI-039"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 L1: the Lease page shows the draft notice, Signers with To sign, planned occupants, the Initial Rent worked out by the rules with its Due Date, and the Security Deposit rest due with the Initial Rent."
+    },
+    {
+      "test_id": "TEST-FE-846",
+      "upstream_ids": [
+        "BR-RENT-005",
+        "BR-RENT-006",
+        "BR-RENT-007",
+        "BR-MONEY-012"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 L1: the Initial Rent shown on the Lease page: inclusive days, rounded half up to the cent, the whole next month from day 21, due 5 days after the Start Date."
+    },
+    {
+      "test_id": "TEST-FE-847",
+      "upstream_ids": [
+        "DL-074",
+        "BR-LEASE-005",
+        "UI-042"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 L1: a terminated Lease shows the Termination card with the move-out date, and History reads every timeline page and lists events newest first."
+    },
+    {
+      "test_id": "TEST-FE-848",
+      "upstream_ids": [
+        "DL-074",
+        "UI-036"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 L1: no answer offers Retry instead of not found; a Lease of another Property is never shown; without deposit access the deposits are not read."
+    },
+    {
+      "test_id": "TEST-FE-849",
+      "upstream_ids": [
+        "DL-074",
+        "BR-RENT-009",
+        "BR-LEASE-017",
+        "UI-041"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 L1: a cancelled renewal draft does not count as a renewal (the Lease stays Ending soon), and after an approved Initial Rent Due Date change the page leaves the date to the Invoice."
+    },
+    {
+      "test_id": "TEST-FE-850",
+      "upstream_ids": [
+        "DL-074",
+        "BR-LEASE-007",
+        "BR-LEASE-009",
+        "BR-LEASE-016",
+        "UI-040"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 L2a: Sign Lease needs a tick for every Signer, says what signing does (Unit Occupied, Reservation completed, Initial Rent Invoice, deposit rest), records each signature with the Lease version the last step returned, then signs."
+    },
+    {
+      "test_id": "TEST-FE-851",
+      "upstream_ids": [
+        "DL-074",
+        "UI-040"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 L2a: after an unknown result Try again carries on from the step that did not answer with the same idempotency key, and a conflict closes the dialog, says so and reads the Lease again."
+    },
+    {
+      "test_id": "TEST-FE-852",
+      "upstream_ids": [
+        "DL-074",
+        "BR-LEASE-002",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 L2a: Edit draft checks the dates, the Rent and a reason, sends the Rent in whole cents, keeps the request identity on Try again and shows a refusal."
+    },
+    {
+      "test_id": "TEST-FE-853",
+      "upstream_ids": [
+        "DL-074",
+        "DL-066",
+        "BR-LEASE-002",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 L2a: Sign Lease looks up the Primary Tenant's active Reservation for the Unit (every page), says it is completed and sends its id with the signing; a refusal after the signatures keeps them shown on the Lease page and says so; Try again resends the same signing without recording the signatures again."
+    },
+    {
+      "test_id": "test_sign_route_forwards_the_reservation_the_signing_completes",
+      "upstream_ids": [
+        "DL-066",
+        "API-038"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_lease_api.py",
+      "status": "implemented",
+      "notes": "V1-058: POST /leases/{id}/sign takes an optional reservation_id and passes it to the signing command, so signing completes the Reservation (the database checks Unit, Customer and dates)."
+    },
+    {
+      "test_id": "test_cancel_draft_and_lease_move_in_routes_need_capability_and_version",
+      "upstream_ids": [
+        "BR-LEASE-004",
+        "DL-066",
+        "API-038"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_lease_api.py",
+      "status": "implemented",
+      "notes": "V1-058: POST /leases/{id}/cancel (leases.draft) and POST /leases/{id}/move-in (reservations.complete) hide the Lease without the capability (404), need If-Match (428), and pass the version, reason, move-in date, Occupants and capability reference to the commands."
+    },
+    {
+      "test_id": "test_http_sign_with_reservation_then_lease_move_in_and_cancel_draft",
+      "upstream_ids": [
+        "BR-LEASE-004",
+        "DL-066",
+        "API-038"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_api_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 on PostgreSQL through the runtime role: signing a draft with its Reservation completes the Reservation, links its Security Deposit and occupies the Unit; the same request again is replayed; the Lease move-in route starts the Occupancy; the cancel route cancels another draft."
+    },
+    {
+      "test_id": "TEST-FE-854",
+      "upstream_ids": [
+        "DL-074",
+        "BR-LEASE-004",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 L2b: Cancel draft (shown for a draft the person may edit) needs a memo, sends it trimmed as the reason, keeps the request identity on Try again and shows that the draft was cancelled."
+    },
+    {
+      "test_id": "TEST-FE-855",
+      "upstream_ids": [
+        "DL-074",
+        "DL-066",
+        "BR-OCC-004",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 L2b: Record move-in (a signed Lease with no move-in yet) offers the Signers and the planned occupants (names read from Customers), ticks the planned ones, starts at today and refuses a date outside the Start Date (or signing day) to today; Try again sends the same request with the same Occupancy ids."
+    },
+    {
+      "test_id": "TEST-FE-856",
+      "upstream_ids": [
+        "DL-074",
+        "DL-066",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 L2b: Record move-in is offered only from the Start Date and not on a renewal (its Occupancies continue from the earlier Lease, so the move-in route would refuse it)."
+    },
+    {
+      "test_id": "TEST-FE-857",
+      "upstream_ids": [
+        "DL-074",
+        "DL-066",
+        "BR-LEASE-014",
+        "BR-RENT-005",
+        "BR-RENT-009",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 L2b-2: New Lease (from the list) offers only Vacant, Cleaning and Maintenance Units, fills the End Date as one year to a month end, previews the Initial Rent with its sum (day 21 or later adds the next month) and the walk-in Security Deposit, asks once more before saving, sends the Primary Tenant first among the planned occupants, the other Signers and the pet term, keeps the Lease id and request on Try again and opens the new draft."
+    },
+    {
+      "test_id": "TEST-FE-858",
+      "upstream_ids": [
+        "DL-074",
+        "DL-066",
+        "BR-DEP-005",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 L2b-2: a Lease from a Booking takes the Booking's Unit, Customer and agreed Rent (fixed), shows the deposit received of required and the rest due, and links the Booking's Security Deposit."
+    },
+    {
+      "test_id": "TEST-FE-859",
+      "upstream_ids": [
+        "DL-074",
+        "DL-066",
+        "BR-LEASE-017",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 L2b-2: Renew (a signed Lease with no renewal) opens the same form with the same Unit and Primary Tenant, the day after the old End Date, the old Rent and the other Signers, says the old deposit does not move by itself, and links the draft to the old Lease."
+    },
+    {
+      "test_id": "TEST-FE-860",
+      "upstream_ids": [
+        "DL-074",
+        "DL-066",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 L2b-2: after a save whose answer was lost, a later save with changed values is refused because the draft already exists (same Lease id); the form then opens that draft instead of saying nothing was saved. A Booking that is no longer ACTIVE makes no Lease and says so."
+    },
+    {
+      "test_id": "TEST-FE-861",
+      "upstream_ids": [
+        "DL-074",
+        "BR-OCC-004",
+        "BR-OCC-006",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 L2c-1: Record move-in offers the other active Customers (not those already listed) under 'Someone else moves in too'; a picked Customer is ticked and moves in with the others."
+    },
+    {
+      "test_id": "TEST-FE-862",
+      "upstream_ids": [
+        "DL-074",
+        "BR-LEASE-026",
+        "BR-LEASE-027",
+        "BR-LEASE-028",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/letters/LettersPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Letters: Rent letters list each unpaid Rent month from day 20 (day 1 is the 1st of the Rent month): owed Rent with its Due Date, the day-20 and day-30 letter cells (Given with how and number, Due since, On), count cards that filter, the red notice when both days passed with no letter, and the next step (Record letter, Wait for day 30, Termination notice with the MANAGER badge)."
+    },
+    {
+      "test_id": "TEST-FE-863",
+      "upstream_ids": [
+        "DL-074",
+        "BR-LEASE-027",
+        "API-016",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/letters/LettersPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Letters: Record letter opens the Rent nonpayment case once, requires how, details and the letter number for the day-20 letter, and after a lost answer Try again sends the very same request (same key and values)."
+    },
+    {
+      "test_id": "TEST-FE-864",
+      "upstream_ids": [
+        "DL-074",
+        "BR-LEASE-028",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/letters/LettersPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Letters: the day-30 letter is recorded on the open case without a letter number; a given letter is greyed; a change meanwhile closes the dialog and reads the list again."
+    },
+    {
+      "test_id": "TEST-FE-865",
+      "upstream_ids": [
+        "DL-074",
+        "UI-014",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/letters/LettersPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Letters: without the letter, terminate or warn capabilities the buttons are hidden; a person who may read only warnings sees only that tab; without either read capability the page says so."
+    },
+    {
+      "test_id": "TEST-FE-866",
+      "upstream_ids": [
+        "DL-074",
+        "BR-LEASE-024",
+        "DL-070",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/letters/LettersPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Letters: Lease rule warnings list each warned Lease with 'n of 3' (red at 3), the last warning date, the breach with its Lease article and how it was given; a Lease whose warnings could not be read is named with Retry."
+    },
+    {
+      "test_id": "TEST-FE-867",
+      "upstream_ids": [
+        "DL-074",
+        "BR-LEASE-024",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/letters/LettersPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Letters: Record warning offers only signed, moved-in, running Leases, numbers the warning from the server's suggested sequence, refuses a breach after the warning or a date after today, and sends the trimmed values."
+    },
+    {
+      "test_id": "TEST-FE-868",
+      "upstream_ids": [
+        "DL-074",
+        "DL-073",
+        "BR-LEASE-024",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/letters/LettersPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Letters: Cancel after the dialog opened a case reads the list again so no second case is opened; ended or not-moved-in Leases with warnings get no Record warning button."
+    },
+    {
+      "test_id": "test_record_route_builds_the_exact_command_and_returns_the_saved_reply",
+      "upstream_ids": [
+        "BR-LEASE-022",
+        "DB-LEASE-004",
+        "API-068",
+        "DL-073"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_lease_notice_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R3 termination-notice routes: POST termination-notices builds the exact RecordLeaseNotice from the body and Idempotency-Key and returns the saved reply."
+    },
+    {
+      "test_id": "test_read_route_pages_the_notices_of_the_lease",
+      "upstream_ids": [
+        "BR-LEASE-022",
+        "DB-LEASE-004",
+        "API-068",
+        "DL-073"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_lease_notice_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R3 termination-notice routes: GET termination-notices accepts only one limit (1-100) and one offset; anything else is 400 before the flow runs."
+    },
+    {
+      "test_id": "test_record_route_refuses_bad_input_and_maps_service_errors",
+      "upstream_ids": [
+        "BR-LEASE-022",
+        "DB-LEASE-004",
+        "API-068",
+        "DL-073"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_lease_notice_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R3 termination-notice routes: Bad or padded input is 422; a query string is 400; not found 404, conflict and reused key 409, unavailable 503."
+    },
+    {
+      "test_id": "test_routes_need_a_signed_in_browser_change",
+      "upstream_ids": [
+        "BR-LEASE-022",
+        "DB-LEASE-004",
+        "API-068",
+        "DL-073"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_lease_notice_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R3 termination-notice routes: No sign-in is 401; a change without the Origin and CSRF pair is 403 before the flow runs."
+    },
+    {
+      "test_id": "test_http_notice_is_recorded_once_read_back_and_leaves_the_lease_version",
+      "upstream_ids": [
+        "BR-LEASE-022",
+        "DB-LEASE-004",
+        "API-068",
+        "DL-073"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_notice_api_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R3 termination-notice routes: Real PostgreSQL: a notice is recorded once, replayed with the same key, refused with a changed body, read back, and leaves the Lease version unchanged."
+    },
+    {
+      "test_id": "TEST-FE-869",
+      "upstream_ids": [
+        "DL-074",
+        "BR-LEASE-021",
+        "BR-DEP-023",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Terminate: the Customer-leaves-early ground sends VOLUNTARY_EARLY with BR-LEASE-021 and its signed-Lease evidence, says the Security Deposit is kept before saving, refuses a missing ground, evidence or a day after today."
+    },
+    {
+      "test_id": "TEST-FE-870",
+      "upstream_ids": [
+        "DL-074",
+        "BR-LEASE-024",
+        "BR-LEASE-025",
+        "BR-DEP-022",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Terminate: a violation needs at least 3 ticked written warnings (sent in the order given); the pet-rule tick sends BR-DEP-022 and says both Deposits are kept."
+    },
+    {
+      "test_id": "TEST-FE-871",
+      "upstream_ids": [
+        "DL-073",
+        "DL-070",
+        "BR-LEASE-028",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Terminate from Letters opens on the Rent ground; with no notice it records the termination notice (the third letter) with its exact evidence, comes back with it chosen and refuses a termination before the notice period ends."
+    },
+    {
+      "test_id": "TEST-FE-872",
+      "upstream_ids": [
+        "DL-073",
+        "BR-LEASE-028",
+        "BR-AUTH-005",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Terminate on the Rent ground names a current notice whose period is over (notice_required, notice id and period end; superseded notices not offered); no Terminate button without leases.terminate or on a terminated Lease."
+    },
+    {
+      "test_id": "TEST-FE-873",
+      "upstream_ids": [
+        "DL-074",
+        "DL-073",
+        "BR-LEASE-005",
+        "BR-LEASE-028",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Terminate and termination notice: Try again after an unknown result sends the same body, key and id; a changed value gets a new key and id; the notice text follows the end date; the Initial-unpaid ground waits until Start Date + 5 days; the terminate address is dropped once done."
+    },
+    {
+      "test_id": "test_the_staff_letter_rights_are_the_two_rent_case_rights",
+      "upstream_ids": [
+        "DL-081",
+        "SEC-021",
+        "DL-073",
+        "DB-AUTH-009"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_staff_rent_letters_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R3 Staff Rent letters: The owner's 2026-10-25 answer adds only rent_nonpayment.case_manage and rent_nonpayment.event_post to the default Staff list; Terminate and rule warnings stay out."
+    },
+    {
+      "test_id": "test_a_new_property_seeds_staff_with_the_letter_rights",
+      "upstream_ids": [
+        "DL-081",
+        "SEC-021",
+        "DL-073",
+        "DB-AUTH-009"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_staff_rent_letters_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R3 Staff Rent letters: Real PostgreSQL: a Property seeded after migration 199 gets a Staff bundle with the two Rent letter rights."
+    },
+    {
+      "test_id": "test_the_upgrade_adds_the_rights_only_to_an_untouched_default_staff_bundle",
+      "upstream_ids": [
+        "DL-081",
+        "SEC-021",
+        "DL-073",
+        "DB-AUTH-009"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_staff_rent_letters_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R3 Staff Rent letters: Real PostgreSQL upgrade 198 to 199: an untouched default Staff bundle gets version 2 with the two rights and an audit event naming the Owner; a Staff bundle the Owner changed stays as it is; forward-only."
+    },
+    {
+      "test_id": "TEST-FE-874",
+      "upstream_ids": [
+        "DL-074",
+        "UI-058",
+        "BR-UTIL-005",
+        "BR-UTIL-009"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4 Meter readings: On reading day This month lists every working current meter with its last reading, the read count and progress, the Customer or vacant note, and the floor, Only not read and Electricity/Water filters."
+    },
+    {
+      "test_id": "TEST-FE-875",
+      "upstream_ids": [
+        "DL-074",
+        "UI-058",
+        "BR-UTIL-009",
+        "BR-UTIL-010"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4 Meter readings: Saving one reading sends today's date, the meter version and an Idempotency-Key, marks the line Saved, counts it, and moves the cursor to the next meter not read."
+    },
+    {
+      "test_id": "TEST-FE-876",
+      "upstream_ids": [
+        "DL-074",
+        "UI-058",
+        "BR-UTIL-009",
+        "BR-UTIL-010"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4 Meter readings: A reading lower than the last or not a whole number is refused on the screen without a request; much more than usual asks to check first and Save anyway sends it."
+    },
+    {
+      "test_id": "TEST-FE-877",
+      "upstream_ids": [
+        "DL-074",
+        "UI-058",
+        "BR-UTIL-009"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4 Meter readings: A changed meter reads the whole list again; a lost answer keeps the same key for the next try; a server refusal says so."
+    },
+    {
+      "test_id": "TEST-FE-878",
+      "upstream_ids": [
+        "DL-074",
+        "UI-058",
+        "BR-UTIL-008",
+        "BR-UTIL-011"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4 Meter readings: Before reading day This month shows the month's saved readings; Pick a month lists one month with use and corrections; 6 months shows the Units-by-month grid (a late reading goes in its month's column) where the current meter wins on a replacement day."
+    },
+    {
+      "test_id": "TEST-FE-879",
+      "upstream_ids": [
+        "DL-074",
+        "UI-058",
+        "BR-UTIL-006",
+        "BR-UTIL-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4 Meter readings: The Unit box accepts 201 or U201, shows that Unit's readings with the meter on each line including the replaced meter, and names a Unit that does not exist."
+    },
+    {
+      "test_id": "TEST-FE-880",
+      "upstream_ids": [
+        "DL-074",
+        "UI-058",
+        "UI-008",
+        "BR-UTIL-007"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4 Meter readings: Without utility_readings.record there is no Save and the boxes are disabled; a broken meter cannot be read and links to Replace meter; the Meters tab has its own address."
+    },
+    {
+      "test_id": "TEST-FE-881",
+      "upstream_ids": [
+        "DL-074",
+        "UI-058",
+        "BR-UTIL-009"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4 Meter readings: Two saves that finish close together both stay and both count; a changed value gets a new Idempotency-Key; after the last meter of the list the cursor goes to the count."
+    },
+    {
+      "test_id": "TEST-FE-882",
+      "upstream_ids": [
+        "DL-074",
+        "UI-058",
+        "BR-UTIL-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4 Meter readings: A Unit whose meters or readings cannot be read is named, left out of the count, and the list is never called done without it; the Unit box waits while U10 may still become U101."
+    },
+    {
+      "test_id": "TEST-FE-883",
+      "upstream_ids": [
+        "DL-074",
+        "UI-056",
+        "BR-UTIL-005",
+        "BR-UTIL-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4b Meters: The Meters list counts meters in use per type and broken meters, lists broken first and replaced meters last, links each meter to its page, and filters by card, status and Unit."
+    },
+    {
+      "test_id": "TEST-FE-884",
+      "upstream_ids": [
+        "DL-074",
+        "UI-057",
+        "BR-UTIL-005",
+        "DL-071"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4b Meters: Add meter refuses a second working meter of one type in a Unit, sends the meter with its first reading on the day it is put in, and shows a serial already used in the Property under the serial."
+    },
+    {
+      "test_id": "TEST-FE-885",
+      "upstream_ids": [
+        "DL-074",
+        "UI-056",
+        "BR-UTIL-006",
+        "BR-UTIL-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4b Meters: A meter's page shows its facts, its readings and the meter it replaced or was replaced by, with a Back link instead of tabs; a replaced meter cannot be replaced again."
+    },
+    {
+      "test_id": "TEST-FE-886",
+      "upstream_ids": [
+        "DL-074",
+        "UI-057",
+        "BR-UTIL-006",
+        "BR-UTIL-007"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4b Meters: Replace meter checks the found-broken day against the last good reading and today and the put-in day after it, sends the boundary reading and the meter version, keeps the key for Try again, and opens the new meter."
+    },
+    {
+      "test_id": "TEST-FE-887",
+      "upstream_ids": [
+        "DL-074",
+        "UI-056",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4b Meters: A person without utility_meters.manage sees the Meters list and meter page but no Add meter or Replace meter."
+    },
+    {
+      "test_id": "TEST-FE-888",
+      "upstream_ids": [
+        "DL-074",
+        "UI-056",
+        "UI-057",
+        "BR-UTIL-006",
+        "BR-UTIL-007"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4b Meters: A broken meter is listed first and counted with the next reading day, its page warns that it cannot be read, Replace opens with the found-broken day filled and sends the newest checked reading as the boundary; a version conflict closes the dialog and reads the list again."
+    },
+    {
+      "test_id": "TEST-FE-889",
+      "upstream_ids": [
+        "DL-074",
+        "UI-057"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4b Meters: Add meter links each field error and moves the cursor to the first one, says when the server refused, keeps the key for Try again but gives changed values a new key, and reads the list again when closed after a lost answer."
+    },
+    {
+      "test_id": "test_an_xlsx_file_gives_one_row_per_unit_with_the_text_people_see",
+      "upstream_ids": [
+        "DL-074",
+        "API-046",
+        "UI-058"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_utility_sheet.py",
+      "status": "implemented",
+      "notes": "V1-058 R4c Import readings: the server reads an .xlsx or .csv file with one row for each Unit (Unit, Electricity, Water; owner 22/10/2026) and makes the blank file; it saves nothing (openpyxl approved by the owner; technical points decided by Claude under the owner's 2026-10-23 22:30 rule)."
+    },
+    {
+      "test_id": "test_a_csv_file_with_a_byte_order_mark_reads_the_same_way",
+      "upstream_ids": [
+        "DL-074",
+        "API-046",
+        "UI-058"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_utility_sheet.py",
+      "status": "implemented",
+      "notes": "V1-058 R4c Import readings: the server reads an .xlsx or .csv file with one row for each Unit (Unit, Electricity, Water; owner 22/10/2026) and makes the blank file; it saves nothing (openpyxl approved by the owner; technical points decided by Claude under the owner's 2026-10-23 22:30 rule)."
+    },
+    {
+      "test_id": "test_a_file_that_cannot_be_used_says_why",
+      "upstream_ids": [
+        "DL-074",
+        "API-046",
+        "UI-058"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_utility_sheet.py",
+      "status": "implemented",
+      "notes": "V1-058 R4c Import readings: the server reads an .xlsx or .csv file with one row for each Unit (Unit, Electricity, Water; owner 22/10/2026) and makes the blank file; it saves nothing (openpyxl approved by the owner; technical points decided by Claude under the owner's 2026-10-23 22:30 rule)."
+    },
+    {
+      "test_id": "test_the_blank_file_lists_every_unit_under_the_three_columns",
+      "upstream_ids": [
+        "DL-074",
+        "API-046",
+        "UI-058"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_utility_sheet.py",
+      "status": "implemented",
+      "notes": "V1-058 R4c Import readings: the server reads an .xlsx or .csv file with one row for each Unit (Unit, Electricity, Water; owner 22/10/2026) and makes the blank file; it saves nothing (openpyxl approved by the owner; technical points decided by Claude under the owner's 2026-10-23 22:30 rule)."
+    },
+    {
+      "test_id": "test_a_unit_that_looks_like_a_formula_stays_text_in_the_blank_file",
+      "upstream_ids": [
+        "DL-074",
+        "API-046",
+        "UI-058"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_utility_sheet.py",
+      "status": "implemented",
+      "notes": "V1-058 R4c Import readings: the server reads an .xlsx or .csv file with one row for each Unit (Unit, Electricity, Water; owner 22/10/2026) and makes the blank file; it saves nothing (openpyxl approved by the owner; technical points decided by Claude under the owner's 2026-10-23 22:30 rule)."
+    },
+    {
+      "test_id": "test_the_sheet_routes_need_their_rights_and_the_browser_checks",
+      "upstream_ids": [
+        "DL-074",
+        "API-046",
+        "UI-058"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_utility_sheet.py",
+      "status": "implemented",
+      "notes": "V1-058 R4c Import readings: the server reads an .xlsx or .csv file with one row for each Unit (Unit, Electricity, Water; owner 22/10/2026) and makes the blank file; it saves nothing (openpyxl approved by the owner; technical points decided by Claude under the owner's 2026-10-23 22:30 rule)."
+    },
+    {
+      "test_id": "TEST-FE-890",
+      "upstream_ids": [
+        "DL-074",
+        "API-046",
+        "UI-058"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4c Import readings: Import opens from the reading list, downloads the blank file with every Unit filled in, asks for a file with the error linked to the box, and sends the chosen file to be read; a file without the three columns is named."
+    },
+    {
+      "test_id": "TEST-FE-891",
+      "upstream_ids": [
+        "DL-074",
+        "API-046",
+        "UI-058"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4c Import readings: Check readings shows Unit, Meter, Previous Reading, Current Reading and Check with the lines that need fixing first (lower, already saved, empty, broken, no such Unit, a Unit twice, no meter); Confirm sends the ready readings in one PARTIAL batch with today's date and the meter version, and the result lists what was not confirmed."
+    },
+    {
+      "test_id": "TEST-FE-892",
+      "upstream_ids": [
+        "DL-074",
+        "API-046",
+        "UI-058"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4c Import readings: Confirm nothing until every reading is right saves nothing while a line needs fixing; when all are ready it sends one ATOMIC_ALL batch with an envelope key, keeps every key for Try again after a lost answer, and reads the list again after a conflict."
+    },
+    {
+      "test_id": "TEST-FE-893",
+      "upstream_ids": [
+        "DL-074",
+        "API-046",
+        "UI-058"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4c Import readings: A much higher reading stays ready with a check note; Import is only on the reading list (from the 24th) and only for a person who may record readings."
+    },
+    {
+      "test_id": "TEST-FE-894",
+      "upstream_ids": [
+        "DL-074",
+        "API-046",
+        "UI-058"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilityClient.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4c Import readings: The client sends the file name and base64 content with the CSRF token, refuses an unknown problem code, and downloads the blank file; a refusal is an authorization error."
+    },
+    {
+      "test_id": "test_empty_rows_are_not_counted_and_a_semicolon_csv_reads_the_same_way",
+      "upstream_ids": [
+        "DL-074",
+        "API-046",
+        "UI-058"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_utility_sheet.py",
+      "status": "implemented",
+      "notes": "V1-058 R4c Import readings review round 1: empty rows do not count toward the 500-row limit, and a .csv saved with semicolons reads the same way."
+    },
+    {
+      "test_id": "test_a_broken_or_swollen_file_is_unreadable_not_a_server_error",
+      "upstream_ids": [
+        "DL-074",
+        "API-046",
+        "UI-058"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_utility_sheet.py",
+      "status": "implemented",
+      "notes": "V1-058 R4c Import readings review round 1: an over-long CSV field, broken XML inside the .xlsx, or a part that unpacks to more than 10 MB is UNREADABLE, never a server error or a memory spike."
+    },
+    {
+      "test_id": "test_the_sheet_route_names_the_problem_of_a_file",
+      "upstream_ids": [
+        "DL-074",
+        "API-046",
+        "UI-058"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_utility_sheet.py",
+      "status": "implemented",
+      "notes": "V1-058 R4c Import readings review round 1: the sheet route answers 200 with the problem code of a file it cannot use."
+    },
+    {
+      "test_id": "TEST-FE-895",
+      "upstream_ids": [
+        "DL-074",
+        "API-046",
+        "UI-058"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R4c Import readings review round 1: more than 100 readings go in batches of 100; after a refusal Try again skips the batch already saved and keeps the refused batch's key; closing still names the readings that were confirmed and lists the rest."
+    },
+    {
+      "test_id": "TEST-FE-896",
+      "upstream_ids": [
+        "DL-074",
+        "UI-057"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/invoices/InvoicesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5a Invoices: The Invoices list shows the four summary cards (Total Invoice amount, Total unpaid, Total overdue, Total paid) with amounts and counts, the add-up line naming the Drafts left out, and every Invoice with the Draft first, Customer over Unit, Due Date, amount, balance and status chip."
+    },
+    {
+      "test_id": "TEST-FE-897",
+      "upstream_ids": [
+        "DL-074",
+        "UI-057"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/invoices/InvoicesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5a Invoices: A summary card filters the list until Show all; This month, Last month and Pick a month show Invoices whose Due Date is in that month; the Type select keeps one type."
+    },
+    {
+      "test_id": "TEST-FE-898",
+      "upstream_ids": [
+        "DL-074",
+        "UI-057"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/invoices/InvoicesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5a Invoices: An overdue Invoice page names the day it became overdue (the day after the Due Date, no grace period), counts the days past the Due Date on the status card with its bar, lists what is billed, links the Customer and Lease, and opens the list for one Customer."
+    },
+    {
+      "test_id": "TEST-FE-899",
+      "upstream_ids": [
+        "DL-074",
+        "UI-057"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/invoices/InvoicesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5a Invoices: A part-paid Invoice counts the days until its Due Date; a Draft, a void and an adjusted Invoice say so with their history; a missing Invoice is named."
+    },
+    {
+      "test_id": "TEST-FE-900",
+      "upstream_ids": [
+        "DL-074",
+        "UI-057"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/invoices/InvoicesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5a Invoices: A person who may not read Customers or Leases still sees the Invoices without names; a failed Invoice list offers Retry."
+    },
+    {
+      "test_id": "TEST-FE-901",
+      "upstream_ids": [
+        "DL-074",
+        "UI-057"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/invoices/InvoicesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5a Invoices: Review round 1: an overpaid Invoice still adds up, an Invoice due today is not overdue, every page of the list is read, a month filter still names the Drafts left out, and void Invoices are listed but not counted."
+    },
+    {
+      "test_id": "TEST-FE-902",
+      "upstream_ids": [
+        "DL-074",
+        "UI-057"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/invoices/InvoicesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5a Invoices: Review round 1: Last month in January is December of the year before; an Invoice of another Property is not shown on its page."
+    },
+    {
+      "test_id": "TEST-FE-903",
+      "upstream_ids": [
+        "DL-074",
+        "UI-057"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/invoices/InvoicesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5b-1 printed Invoice: Print Invoice prints only the sheet; a Utility line shows its use and rate; a Draft or void sheet is stamped; a paid, Draft or void sheet has no QR code. TEST-FE-898/899 now check the printed Invoice on the Invoice page."
+    },
+    {
+      "test_id": "TEST-FE-904",
+      "upstream_ids": [
+        "DL-074",
+        "UI-057",
+        "BR-INV-018"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/invoices/InvoicesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5b-2 Create Invoice: every box is checked with a summary, a confirmation dialog, the one-time charge is recorded and a Draft made once even when pressed again after no answer; Damage points to Move-out; Create Invoice needs invoices.create."
+    },
+    {
+      "test_id": "TEST-FE-905",
+      "upstream_ids": [
+        "DL-074",
+        "UI-057",
+        "BR-INV-011",
+        "BR-INV-018"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/invoices/InvoicesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5b-2 Issue Invoice: a Draft gets its number with the Settings Due Date, or another date from today on with a reason; a change meanwhile reads the Invoice again; Issue needs invoices.issue."
+    },
+    {
+      "test_id": "TEST-FE-906",
+      "upstream_ids": [
+        "DL-074",
+        "UI-057"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/invoices/InvoicesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5b-3 Adjust: lowers or raises one line with a reason and what approves it, shows the new line amount, cannot lower below $0.00, saves once after no answer, and names a fully paid line that cannot be raised."
+    },
+    {
+      "test_id": "TEST-FE-907",
+      "upstream_ids": [
+        "DL-074",
+        "UI-057"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/invoices/InvoicesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5b-3 Void: ends what is owed with a reason; an Invoice with money paid toward it cannot be voided; a change meanwhile reads it again; Adjust and Void need invoices.adjust and invoices.void and show only on an issued Invoice."
+    },
+    {
+      "test_id": "test_receive_payment_sends_the_payment_and_the_ticks_as_one_command",
+      "upstream_ids": [
+        "DL-077",
+        "DL-029",
+        "BR-PAY-019",
+        "BR-PAY-024"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_receive_payment_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-1 Receive payment in one step: the route sends the USD or KHR payment and the ticks (an Invoice or a late-payment charge with what each gets) as one command and answers 201 with the Payment's Location."
+    },
+    {
+      "test_id": "test_receive_payment_needs_record_and_allocate_only_when_something_is_ticked",
+      "upstream_ids": [
+        "DL-077",
+        "DL-029",
+        "BR-PAY-019",
+        "BR-PAY-024"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_receive_payment_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-1 Receive payment in one step: Receive payment needs payments.record, and payments.allocate as soon as anything is ticked; money from a Customer who owes nothing needs recording only."
+    },
+    {
+      "test_id": "test_receive_payment_refuses_unclear_ticks_before_anything_is_saved",
+      "upstream_ids": [
+        "DL-077",
+        "DL-029",
+        "BR-PAY-019",
+        "BR-PAY-024"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_receive_payment_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-1 Receive payment in one step: unclear ticks (no target, both targets, zero or inexact cents, a target twice, more than 100, NAMED with none, an unknown field) are refused with 422 before anything is saved."
+    },
+    {
+      "test_id": "test_receive_payment_without_ticks_field_or_csrf_is_refused",
+      "upstream_ids": [
+        "DL-077",
+        "DL-029",
+        "BR-PAY-019",
+        "BR-PAY-024"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_receive_payment_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-1 Receive payment in one step: a body without the ticks, or a request without the CSRF token, is refused before dispatch."
+    },
+    {
+      "test_id": "test_receive_payment_refusals_name_what_the_screen_explains",
+      "upstream_ids": [
+        "DL-077",
+        "DL-029",
+        "BR-PAY-019",
+        "BR-PAY-024"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_receive_payment_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-1 Receive payment in one step: refusals answer 409 with RECEIVE_PAYMENT_CHANGED, RECEIVE_PAYMENT_LEFT_WHILE_OWING or IDEMPOTENCY_KEY_REUSED and no private detail."
+    },
+    {
+      "test_id": "test_oldest_first_saves_the_payment_its_receipt_and_what_it_pays_together",
+      "upstream_ids": [
+        "DL-077",
+        "DL-076",
+        "BR-PAY-019",
+        "BR-PAY-021",
+        "BR-PAY-024",
+        "BR-PAY-030"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_receive_payment_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-1 Receive payment in one step: the Payment, its Receipt and the oldest-first allocations (Invoice, its late-payment charge, the newer Invoice) are saved in one transaction; the answer names each Invoice number and the money left; the same press again saves nothing new; the same key with another request is refused."
+    },
+    {
+      "test_id": "test_ticks_that_differ_from_the_proposal_save_nothing",
+      "upstream_ids": [
+        "DL-077",
+        "DL-076",
+        "BR-PAY-019",
+        "BR-PAY-021",
+        "BR-PAY-024",
+        "BR-PAY-030"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_receive_payment_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-1 Receive payment in one step: ticks that differ from the database proposal, or no ticks while the Customer owes, save no Payment, Receipt or allocation, and the key is not used up."
+    },
+    {
+      "test_id": "test_money_from_a_customer_who_owes_nothing_waits_on_the_receipt",
+      "upstream_ids": [
+        "DL-077",
+        "DL-076",
+        "BR-PAY-019",
+        "BR-PAY-021",
+        "BR-PAY-024",
+        "BR-PAY-030"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_receive_payment_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-1 Receive payment in one step: money from a Customer who owes nothing waits on the Receipt with no allocation."
+    },
+    {
+      "test_id": "test_named_ticks_pay_what_the_payer_named",
+      "upstream_ids": [
+        "DL-077",
+        "DL-076",
+        "BR-PAY-019",
+        "BR-PAY-021",
+        "BR-PAY-024",
+        "BR-PAY-030"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_receive_payment_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-1 Receive payment in one step: named ticks pay the named Invoice line by line (customer designated) or the named late-payment charge directly; older Invoices stay unpaid."
+    },
+    {
+      "test_id": "test_named_ticks_never_leave_money_waiting_while_something_is_owed",
+      "upstream_ids": [
+        "DL-077",
+        "DL-076",
+        "BR-PAY-019",
+        "BR-PAY-021",
+        "BR-PAY-024",
+        "BR-PAY-030"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_receive_payment_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-1 Receive payment in one step: named ticks that leave money while something is still owed, or name more than an Invoice owes, save nothing."
+    },
+    {
+      "test_id": "test_khr_money_pays_oldest_first_in_the_same_step",
+      "upstream_ids": [
+        "DL-077",
+        "DL-076",
+        "BR-PAY-019",
+        "BR-PAY-021",
+        "BR-PAY-024",
+        "BR-PAY-030"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_receive_payment_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-1 Receive payment in one step: riel money is converted at the system rate and pays oldest first in the same transaction."
+    },
+    {
+      "test_id": "test_named_ticks_need_allocate_and_only_the_financial_role_may_call_the_command",
+      "upstream_ids": [
+        "DL-077",
+        "DL-076",
+        "BR-PAY-019",
+        "BR-PAY-021",
+        "BR-PAY-024",
+        "BR-PAY-030"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_receive_payment_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-1 Receive payment in one step: named ticks need payments.allocate; only prm_financial may run the command and its replay; nobody reads the command table directly; the head is 20270219_207."
+    },
+    {
+      "test_id": "test_receive_payment_commands_are_append_only",
+      "upstream_ids": [
+        "DL-077",
+        "DL-076",
+        "BR-PAY-019",
+        "BR-PAY-021",
+        "BR-PAY-024",
+        "BR-PAY-030"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_receive_payment_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-1 Receive payment in one step: Receive payment command rows cannot be updated or deleted."
+    },
+    {
+      "test_id": "test_the_payable_list_needs_recording_and_one_customer",
+      "upstream_ids": [
+        "DL-077",
+        "DL-029",
+        "BR-PAY-019",
+        "BR-PAY-024"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_receive_payment_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-1 Receive payment in one step: the payable list needs payments.record, exactly one customer_id and no other query."
+    },
+    {
+      "test_id": "test_receive_payment_takes_only_the_payer_s_own_money",
+      "upstream_ids": [
+        "DL-077",
+        "DL-029",
+        "BR-PAY-019",
+        "BR-PAY-024"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_receive_payment_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-1 Receive payment in one step: a Payment that names an Invoice or a charge, or a third party's money, is refused with 422 (review round 1 blocker)."
+    },
+    {
+      "test_id": "test_each_database_refusal_becomes_its_own_answer",
+      "upstream_ids": [
+        "DL-077",
+        "DL-029",
+        "BR-PAY-019",
+        "BR-PAY-024"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_receive_payment_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-1 Receive payment in one step: each database refusal becomes its own answer: changed, left while owing, too many, key reused, not found, bad request, conflict, or unknown outcome to replay."
+    },
+    {
+      "test_id": "test_the_payable_list_is_in_the_order_oldest_first_ticks_pay_it",
+      "upstream_ids": [
+        "DL-077",
+        "DL-076",
+        "BR-PAY-019",
+        "BR-PAY-021",
+        "BR-PAY-024",
+        "BR-PAY-030"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_receive_payment_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-1 Receive payment in one step: the payable list holds the unpaid Invoices and open late-payment charges in the proposal's order with what is still owed, and needs payments.record."
+    },
+    {
+      "test_id": "test_a_payment_that_names_an_invoice_is_refused_by_the_database_too",
+      "upstream_ids": [
+        "DL-077",
+        "DL-076",
+        "BR-PAY-019",
+        "BR-PAY-021",
+        "BR-PAY-024",
+        "BR-PAY-030"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_receive_payment_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-1 Receive payment in one step: the database refuses a Payment that names an Invoice or a charge, or a third party's money, and saves nothing."
+    },
+    {
+      "test_id": "test_a_khr_retry_keeps_the_first_rate_and_asks_for_no_new_one",
+      "upstream_ids": [
+        "DL-077",
+        "DL-076",
+        "BR-PAY-019",
+        "BR-PAY-021",
+        "BR-PAY-024",
+        "BR-PAY-030"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_receive_payment_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-1 Receive payment in one step: a riel retry returns the first answer with the first rate and does not ask the rate source again."
+    },
+    {
+      "test_id": "test_two_presses_at_once_save_one_payment",
+      "upstream_ids": [
+        "DL-077",
+        "DL-076",
+        "BR-PAY-019",
+        "BR-PAY-021",
+        "BR-PAY-024",
+        "BR-PAY-030"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_receive_payment_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-1 Receive payment in one step: two presses at once with the same key save one Payment, one Receipt and one set of allocations."
+    },
+    {
+      "test_id": "TEST-FE-908",
+      "upstream_ids": [
+        "DL-074",
+        "DL-077",
+        "BR-PAY-024"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/payments/ReceivePayment.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5c-2 Receive payment: ticks the oldest Due Date first, a late-payment charge right after its own Invoice, and names what cannot be saved."
+    },
+    {
+      "test_id": "TEST-FE-909",
+      "upstream_ids": [
+        "DL-074",
+        "DL-077",
+        "BR-PAY-024"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/payments/ReceivePayment.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5c-2 Receive payment: pays oldest first, confirms in a dialog, sends one command and shows the Receipt."
+    },
+    {
+      "test_id": "TEST-FE-910",
+      "upstream_ids": [
+        "DL-074",
+        "DL-077",
+        "BR-PAY-024"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/payments/ReceivePayment.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5c-2 Receive payment: a tick by hand sets the amount, sends named ticks, and money may not wait while something is owed."
+    },
+    {
+      "test_id": "TEST-FE-911",
+      "upstream_ids": [
+        "DL-074",
+        "DL-077",
+        "BR-PAY-024"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/payments/ReceivePayment.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5c-2 Receive payment: names each missing value, needs a reference except for cash, refuses a later time, and lets money wait from a Customer who owes nothing."
+    },
+    {
+      "test_id": "TEST-FE-912",
+      "upstream_ids": [
+        "DL-074",
+        "DL-077",
+        "BR-PAY-024"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/payments/ReceivePayment.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5c-2 Receive payment: a change meanwhile reads the list again, and pressing again after no answer keeps the same key."
+    },
+    {
+      "test_id": "TEST-FE-913",
+      "upstream_ids": [
+        "DL-074",
+        "DL-077",
+        "BR-PAY-024"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/payments/ReceivePayment.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5c-2 Receive payment: riel counts at the app rate and is sent with its dollar value."
+    },
+    {
+      "test_id": "TEST-FE-914",
+      "upstream_ids": [
+        "DL-074",
+        "UI-068",
+        "BR-PAY-036"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/payments/PaymentsList.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5c-3b Payments list and Receipt: shows Total received and the seven cards, the add-up line, and filters the list by a card or by money not matched yet."
+    },
+    {
+      "test_id": "TEST-FE-915",
+      "upstream_ids": [
+        "DL-074",
+        "UI-068",
+        "BR-PAY-036"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/payments/PaymentsList.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5c-3b Payments list and Receipt: reads each period from the server, and Pick dates needs two real days in order."
+    },
+    {
+      "test_id": "TEST-FE-916",
+      "upstream_ids": [
+        "DL-074",
+        "UI-068",
+        "BR-PAY-036"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/payments/PaymentsList.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5c-3b Payments list and Receipt: adds refunded money to the add-up line, and a failed read offers Retry."
+    },
+    {
+      "test_id": "TEST-FE-917",
+      "upstream_ids": [
+        "DL-074",
+        "UI-068",
+        "BR-PAY-036"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/payments/PaymentsList.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5c-3b Payments list and Receipt: prints what the payment paid line by line, an Invoice before its late-payment charge, and the money not used yet."
+    },
+    {
+      "test_id": "TEST-FE-918",
+      "upstream_ids": [
+        "DL-074",
+        "UI-068",
+        "BR-PAY-036"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/payments/PaymentsList.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5c-3b Payments list and Receipt: a reprint needs a reason, keeps one key for one reason, records it and prints a copy marked REPRINT."
+    },
+    {
+      "test_id": "TEST-FE-919",
+      "upstream_ids": [
+        "DL-074",
+        "UI-068",
+        "BR-PAY-036"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/payments/PaymentsList.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5c-3b Payments list and Receipt: a missing payment is named, a reversed one is stamped, and Reprint shows only to a person who may reprint."
+    },
+    {
+      "test_id": "test_the_period_read_needs_payments_read_and_two_dates",
+      "upstream_ids": [
+        "DL-074",
+        "UI-068",
+        "BR-PAY-036"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_payments_summary_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-3a: the Payments period read needs payments.read and two dates at most two years apart."
+    },
+    {
+      "test_id": "test_the_period_read_hides_database_failures",
+      "upstream_ids": [
+        "DL-074",
+        "UI-068",
+        "BR-PAY-036"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_payments_summary_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-3a: a failed period read answers 503 without database words."
+    },
+    {
+      "test_id": "test_the_receipt_lines_need_receipts_read_and_hide_a_missing_payment",
+      "upstream_ids": [
+        "DL-074",
+        "UI-068",
+        "BR-PAY-036"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_payments_summary_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-3a: the Receipt lines need receipts.read and a missing payment answers 404."
+    },
+    {
+      "test_id": "test_each_payment_is_split_by_what_it_paid_and_the_cards_add_up",
+      "upstream_ids": [
+        "DL-074",
+        "UI-068",
+        "BR-PAY-036"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payments_summary_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-3a: each payment is split by what it paid and the cards add up to what was received."
+    },
+    {
+      "test_id": "test_the_period_read_is_bounded_and_needs_payments_read",
+      "upstream_ids": [
+        "DL-074",
+        "UI-068",
+        "BR-PAY-036"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payments_summary_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-3a: the period read is bounded (500 rows, two years) and needs payments.read."
+    },
+    {
+      "test_id": "test_the_receipt_lines_name_what_one_payment_paid",
+      "upstream_ids": [
+        "DL-074",
+        "UI-068",
+        "BR-PAY-036"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payments_summary_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R5c-3a: the Receipt lines name what one payment paid, with its reprints."
+    },
+    {
+      "test_id": "TEST-FE-920",
+      "upstream_ids": [
+        "DL-074",
+        "UI-068"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/payments/PaymentsList.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5c-3b review round 1: the add-up line warns when the cards do not add up, and the Not matched filter names why the list is empty."
+    },
+    {
+      "test_id": "TEST-FE-921",
+      "upstream_ids": [
+        "DL-074",
+        "UI-068",
+        "BR-PAY-036"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/payments/PaymentsList.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5c-3b review round 1: once reprinted, Print Receipt prints a copy marked REPRINT on A5, and each new reprint prints again."
+    },
+    {
+      "test_id": "TEST-FE-922",
+      "upstream_ids": [
+        "DL-074",
+        "UI-068",
+        "BR-PAY-036"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/payments/PaymentsList.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5c-3b review round 1: the Receipt does not print without the Customer names, and a reversed Receipt shows no money waiting."
+    },
+    {
+      "test_id": "TEST-FE-923",
+      "upstream_ids": [
+        "DL-074",
+        "DL-076",
+        "BR-LATE-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/invoices/LateChargeCard.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5d: the late-payment card shows what was unpaid, the charge the app added, what paid it and what is still owed; Reduce or waive is locked for Staff."
+    },
+    {
+      "test_id": "TEST-FE-924",
+      "upstream_ids": [
+        "DL-074",
+        "DL-076",
+        "BR-LATE-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/invoices/LateChargeCard.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5d: Reduce or waive needs a choice, an amount between what is paid and the charge, a reason and what happened, and saves once after no answer."
+    },
+    {
+      "test_id": "TEST-FE-925",
+      "upstream_ids": [
+        "DL-074",
+        "DL-076",
+        "BR-LATE-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/payments/ReceivePayment.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5d: Receive payment from the late-payment card ticks only the charge, once."
+    },
+    {
+      "test_id": "TEST-FE-926",
+      "upstream_ids": [
+        "DL-074",
+        "DL-076",
+        "BR-LATE-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/invoices/LateChargeCard.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5d: an unpaid charge is waived to $0.00; no charge shows no card; a failed read offers Retry."
+    },
+    {
+      "test_id": "TEST-FE-927",
+      "upstream_ids": [
+        "DL-074",
+        "DL-076",
+        "BR-LATE-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/invoices/LateChargeCard.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R5d review round 1: a person-made charge, an undone reduction and a late job run are named; a Deposit-paid charge is not offered for reduction; the chips follow the amounts."
+    },
+    {
+      "test_id": "test_the_card_shows_the_charge_its_reduction_and_what_paid_it",
+      "upstream_ids": [
+        "DL-074",
+        "DL-076",
+        "BR-LATE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_late_charge_card_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R5d: the late-payment card read names the charge, its reduction with the fixed reason and the Receipt that paid it."
+    },
+    {
+      "test_id": "test_no_charge_another_property_and_the_read_rights",
+      "upstream_ids": [
+        "DL-074",
+        "DL-076",
+        "BR-LATE-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_late_charge_card_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R5d: an Invoice without a charge or unknown gives no card; the read needs invoices.read, an active human actor and its grants."
+    },
+    {
+      "test_id": "test_the_late_charge_card_needs_invoices_read_and_is_null_without_a_charge",
+      "upstream_ids": [
+        "DL-074",
+        "DL-076",
+        "BR-LATE-005"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_payments_summary_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R5d: the late-payment card route needs invoices.read, answers null without a charge and hides database failures."
+    },
+    {
+      "test_id": "TEST-FE-928",
+      "upstream_ids": [
+        "DL-074",
+        "DL-072",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/home/HomeScreen.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R6: Home shows the eight cards in the mock-up order with notes, links, the head buttons and the automatic jobs line."
+    },
+    {
+      "test_id": "TEST-FE-929",
+      "upstream_ids": [
+        "DL-074",
+        "DL-072",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/home/HomeScreen.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R6: What to do lists rows by group top down with dates, late/ago words and named links; waits that began earlier show under Today; Later folds."
+    },
+    {
+      "test_id": "TEST-FE-930",
+      "upstream_ids": [
+        "DL-074",
+        "DL-072",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/home/HomeScreen.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R6: Home shows only the cards the answer holds, leaves out unknown to-do kinds, empty groups say so, the head buttons follow the rights."
+    },
+    {
+      "test_id": "TEST-FE-931",
+      "upstream_ids": [
+        "DL-074",
+        "DL-072",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/home/HomeScreen.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R6: a failed Home read offers Retry with no old numbers; no right to read says so; Khmer words come from the mock-up."
+    },
+    {
+      "test_id": "test_each_waiting_draft_gets_its_amount_direction_customer_and_unit",
+      "upstream_ids": [
+        "DL-074",
+        "DL-069",
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_waiting_for_approval_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R7a: the Waiting for approval read lists waiting drafts oldest first with a summary line (amount, OUT/KEPT/INTERNAL, Customer, Unit, preparer), filters by capability and moves a decided draft to decided today with its decider."
+    },
+    {
+      "test_id": "test_the_read_needs_an_active_person_and_only_the_read_is_granted",
+      "upstream_ids": [
+        "DL-074",
+        "BR-AUTH-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_waiting_for_approval_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R7a: the read refuses an unknown actor and only it is granted to the runtime role."
+    },
+    {
+      "test_id": "test_waiting_for_approval_lists_waiting_and_decided_today_drafts_with_their_line",
+      "upstream_ids": [
+        "DL-074",
+        "BR-AUTH-010"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_draft_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R7a: GET financial-drafts-waiting answers business date, waiting and decided today, and hides Reservation drafts without reservations.read."
+    },
+    {
+      "test_id": "TEST-FE-932",
+      "upstream_ids": [
+        "DL-074",
+        "DL-069",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/approvals/ApprovalsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7a: four cards, waiting drafts oldest first with names, Unit, Customer, preparer and amount; cards filter the list; decided today list."
+    },
+    {
+      "test_id": "TEST-FE-933",
+      "upstream_ids": [
+        "DL-074",
+        "DL-069",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/approvals/ApprovalsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7a: Open shows the draft and what confirming does; Confirm sends one decision and reads again; Reject needs a reason."
+    },
+    {
+      "test_id": "TEST-FE-934",
+      "upstream_ids": [
+        "DL-074",
+        "DL-069",
+        "BR-AUTH-010",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/approvals/ApprovalsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7a: no Confirm or Reject without financial.approve; the preparer withdraws with a reason; refusals show their words; a lost answer resends the same key."
+    },
+    {
+      "test_id": "TEST-FE-935",
+      "upstream_ids": [
+        "DL-074",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/approvals/ApprovalsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7a: a failed read offers Retry; no right to read says so; nothing waiting says so; Khmer words come from the mock-up."
+    },
+    {
+      "test_id": "TEST-FE-936",
+      "upstream_ids": [
+        "DL-074",
+        "DL-069",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/approvals/ApprovalsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7a review round 1: a reject refused because someone decided first shows the draft as decided with the refusal words; more than 200 waiting says so; a refund worked out at confirm is named on Money out."
+    },
+    {
+      "test_id": "TEST-FE-937",
+      "upstream_ids": [
+        "DL-074",
+        "DL-075",
+        "DL-071",
+        "UI-093"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/SettingsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-1: Settings shows only the tabs the person may use; a Manager without Settings access lands on System health with the health records; earlier forms stay folded on tabs not rebuilt yet."
+    },
+    {
+      "test_id": "TEST-FE-938",
+      "upstream_ids": [
+        "DL-074",
+        "DL-071",
+        "UI-093"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/SettingsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-1: warnings or a database that does not answer show Needs attention with the server notes; a failed read offers Retry with no old state; no right says so."
+    },
+    {
+      "test_id": "TEST-FE-939",
+      "upstream_ids": [
+        "DL-074",
+        "UI-093"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/SettingsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-1: Khmer words come from the mock-up; the server's English notes are marked as English."
+    },
+    {
+      "test_id": "TEST-FE-940",
+      "upstream_ids": [
+        "DL-074",
+        "DL-075",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/UnitSetupTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-2: Unit setup shows the five lists with how many Units use each item; an item in use offers no Remove; Floors have no Edit."
+    },
+    {
+      "test_id": "TEST-FE-941",
+      "upstream_ids": [
+        "DL-074",
+        "DL-075",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/UnitSetupTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-2: Add asks a name not in the list yet, a Floor asks its number; Edit renames; Remove asks first; the lists are read again."
+    },
+    {
+      "test_id": "TEST-FE-942",
+      "upstream_ids": [
+        "DL-074",
+        "DL-075",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/UnitSetupTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-2: a change refused because the list changed closes the form, says so and reads again, and a second try works; a moved-over Floor named by its number counts as taken; read-only without the right; a failed read offers Retry."
+    },
+    {
+      "test_id": "TEST-FE-943",
+      "upstream_ids": [
+        "DL-074",
+        "DL-075",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/UnitSetupTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-2: Khmer shows the Khmer list names and mock-up words; without the Units list an item shows only that a Unit uses it."
+    },
+    {
+      "test_id": "TEST-FE-944",
+      "upstream_ids": [
+        "DL-074",
+        "DL-081",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/UsersTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-3: Users lists role, MFA, Settings access and state; only active users who are not the Owner get Reset and Disable; End all sessions leaves the signed-in Owner; role table and sign-in rules show."
+    },
+    {
+      "test_id": "TEST-FE-945",
+      "upstream_ids": [
+        "DL-074",
+        "DL-081",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/UsersTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-3: Add user checks name and username, makes Staff or Manager and shows the one-time password once; Reset asks what and why (Other needs a note), then shows the one-time password."
+    },
+    {
+      "test_id": "TEST-FE-946",
+      "upstream_ids": [
+        "DL-074",
+        "DL-081",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/UsersTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-3: an action the server refuses for missing reauthentication asks for password and code, then runs once more; wrong code and wait messages; cancel changes nothing; a per-user Settings access refusal names the user; a stale account reads the list again; other refusals show the server's English words."
+    },
+    {
+      "test_id": "TEST-FE-947",
+      "upstream_ids": [
+        "DL-074",
+        "DL-081",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/UsersTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-3: Khmer words from the mock-up; a failed read offers Retry; without the right the tab says so."
+    },
+    {
+      "test_id": "TEST-FE-948",
+      "upstream_ids": [
+        "DL-081",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/adminClient.test.ts",
+      "status": "implemented",
+      "notes": "V1-058 R7b-3: the admin client tells a request for the password and code again (still an unavailable answer for the earlier forms), a refusal with its code and English words, a non-JSON refusal as a plain error, and gives or removes Settings access with a reason."
+    },
+    {
+      "test_id": "TEST-FE-949",
+      "upstream_ids": [
+        "DL-074",
+        "DL-081",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/UsersTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-3 review round 1: after the password and code, a refused form keeps what was typed; a Settings access run stopped part-way does only the rest; a one-time password still shows after the Property changed."
+    },
+    {
+      "test_id": "TEST-FE-950",
+      "upstream_ids": [
+        "DL-074",
+        "DL-075",
+        "DL-076",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/BusinessTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-4: Business shows the Property, the billing calendar with the server's days after issue, Reservations, Payment Methods, the newest riel rate and the document numbers; values the server does not store yet say Set by the business rules."
+    },
+    {
+      "test_id": "TEST-FE-951",
+      "upstream_ids": [
+        "DL-074",
+        "DL-075",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/BusinessTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-4: Edit changes the Property name and address; the days after issue need 1 to 90 and a reason and send the Property version; a Payment Method is added with a new code, renamed or turned off."
+    },
+    {
+      "test_id": "TEST-FE-952",
+      "upstream_ids": [
+        "DL-074",
+        "DL-075",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/BusinessTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-4: a change that met another change says so and reads again; the last method on cannot be turned off; Khmer words; Retry; no right."
+    },
+    {
+      "test_id": "TEST-FE-953",
+      "upstream_ids": [
+        "DL-074",
+        "DL-075",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/propertyClient.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-4: a saved Property change whose read-back fails is reported as saved (PropertySavedReadFailedError), not as a failure."
+    },
+    {
+      "test_id": "TEST-FE-954",
+      "upstream_ids": [
+        "DL-074",
+        "DL-075",
+        "UI-008"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/invoiceClient.test.ts",
+      "status": "implemented",
+      "notes": "V1-058 R7b-4: the days after issue are read with GET and no body; a 403 refusal keeps its status."
+    },
+    {
+      "test_id": "TEST-FE-955",
+      "upstream_ids": [
+        "DL-074",
+        "DL-075",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/RatesTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-5: Rates and services lists every page of Utility Rates newest first with until, Starts later or Active and when the tenants were told; Services show the rate today, the next change and the rate history."
+    },
+    {
+      "test_id": "TEST-FE-956",
+      "upstream_ids": [
+        "DL-074",
+        "DL-075",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/RatesTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-5: a new Utility Rate starts on a 24th after today, after the tenants were told, with the fixed unit and one idempotency key per form; a new Service rate starts on the 1st of a later month."
+    },
+    {
+      "test_id": "TEST-FE-957",
+      "upstream_ids": [
+        "DL-074",
+        "DL-075",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/RatesTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-5: a conflict says so and reads again; no right to change hides the buttons; no right to read says so; Retry; Khmer words."
+    },
+    {
+      "test_id": "TEST-FE-958",
+      "upstream_ids": [
+        "DL-072",
+        "DL-074",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/history/HistoryPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7c: History opens on the last 7 days with one search; shows when, who, the kind, what happened with the reason, links the record; Show more reads the next page."
+    },
+    {
+      "test_id": "TEST-FE-959",
+      "upstream_ids": [
+        "DL-072",
+        "DL-074",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/history/HistoryPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7c: Search sends period, person and Unit; Export audit sends the same filters and saves the file; a refused export says why; no audit.export hides it."
+    },
+    {
+      "test_id": "TEST-FE-960",
+      "upstream_ids": [
+        "DL-072",
+        "DL-074",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/history/HistoryPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7c: no right says so; failed read offers Retry; no events says so; unreadable names show a short id."
+    },
+    {
+      "test_id": "TEST-FE-961",
+      "upstream_ids": [
+        "DL-072",
+        "UI-008"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/history/historyClient.test.ts",
+      "status": "implemented",
+      "notes": "V1-058 R7c: the History client reads audit events with the filters as query values and maps refusals."
+    },
+    {
+      "test_id": "test_move_out_route_builds_the_exact_command_and_reads_the_page",
+      "upstream_ids": [
+        "BR-MOVEOUT-001",
+        "BR-MOVEOUT-003",
+        "BR-OCC-009",
+        "DL-074"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_move_out_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out routes: POST move-outs builds the exact RecordPhysicalMoveOut from the body and Idempotency-Key; GET move-outs takes one limit (1-20) and one offset, anything else is 400."
+    },
+    {
+      "test_id": "test_inspection_route_builds_the_exact_command_and_reads_the_page",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "BR-MOVEOUT-012",
+        "DB-MOVEOUT-001",
+        "DL-074"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_move_out_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out routes: POST move-out-inspections builds the exact RecordMoveOutInspection with its findings; an inspection with no findings is accepted; GET reads the first page."
+    },
+    {
+      "test_id": "test_routes_refuse_bad_input_and_map_service_errors",
+      "upstream_ids": [
+        "BR-MOVEOUT-001",
+        "BR-MOVEOUT-011",
+        "SEC-019",
+        "DL-074"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_move_out_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out routes: bad, padded or extra input is 422 before the flow runs; a query string is 400; not found 404, not allowed 403, Utility or hand-back conflicts and reused keys 409, unavailable 503."
+    },
+    {
+      "test_id": "test_routes_need_a_signed_in_browser_change_and_fail_closed_without_a_database",
+      "upstream_ids": [
+        "SEC-019",
+        "SEC-020",
+        "TEST-078",
+        "DL-074"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_move_out_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out routes: no session is 401; a change without the Origin and CSRF pair is 403 before the flow; without a database both reads answer 503."
+    },
+    {
       "test_id": "test_a_utility_rate_change_names_settings_manage",
       "upstream_ids": [
         "DL-075",
@@ -51860,6 +54884,1509 @@
       "test_path": "backend/tests/test_settlement_preview_refund_return_wait_migration.py",
       "status": "implemented",
       "notes": "Migration 20270218_206 changes only the body of app.final_settlement_preview, once, and is forward-only (V1-056 slice 12d; ops/reviews/V1-056-slice-12d.md)."
+    },
+    {
+      "test_id": "test_a_file_fingerprint_is_kept_only_in_a_sha256_field",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_audit.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): V1-057 (DL-072 answer 12): an export's audit event keeps its file's SHA-256."
+    },
+    {
+      "test_id": "test_a_malformed_grant_is_refused_before_the_audit_search_reads",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_audit.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Review round 3: a grant with a wrong Property id gives 403, not a server error."
+    },
+    {
+      "test_id": "test_stored_capability_lists_and_odd_filters_read_back_on_the_history_page",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_audit.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Review round 1: role bundle events keep capability lists; search filters stay readable."
+    },
+    {
+      "test_id": "test_one_time_charge_due_days_read_needs_settings_access",
+      "upstream_ids": [
+        "DL-075",
+        "DL-074"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_invoice_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R7b-4: the Settings Business tab reads the days and the version to change them."
+    },
+    {
+      "test_id": "test_a_small_xlsx_file_downloads_at_once_and_its_event_keeps_its_fingerprint",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_exports.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test a small xlsx file downloads at once and its event keeps its fingerprint."
+    },
+    {
+      "test_id": "test_a_report_file_needs_data_export_and_the_report_right",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_exports.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test a report file needs data export and the report right."
+    },
+    {
+      "test_id": "test_a_pdf_holds_at_most_5000_rows_and_odd_filters_are_left_out_of_the_event",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_exports.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test a pdf holds at most 5000 rows and odd filters are left out of the event."
+    },
+    {
+      "test_id": "test_a_pdf_file_and_a_large_export_job_kept_for_its_maker",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_exports.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test a pdf file and a large export job kept for its maker."
+    },
+    {
+      "test_id": "test_paid_for_names_each_line_with_its_amount",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_exports.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test paid for names each line with its amount."
+    },
+    {
+      "test_id": "test_the_audit_file_needs_audit_export_and_keeps_its_fingerprint",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_exports.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the audit file needs audit export and keeps its fingerprint."
+    },
+    {
+      "test_id": "test_a_utility_file_has_amounts_only_with_the_report_right",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_exports.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test a utility file has amounts only with the report right."
+    },
+    {
+      "test_id": "test_the_export_body_is_bounded",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_exports.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the export body is bounded."
+    },
+    {
+      "test_id": "test_a_spreadsheet_keeps_text_as_text_and_drops_control_characters",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_exports.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Review round 1: a name starting with \"=\" is never a live formula in the .xlsx file."
+    },
+    {
+      "test_id": "test_an_export_file_is_kept_for_its_maker_for_24_hours",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_report_exports_migration.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test an export file is kept for its maker for 24 hours."
+    },
+    {
+      "test_id": "test_report_activity_checks_its_kind_its_right_and_the_audit_fingerprint",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_report_exports_migration.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test report activity checks its kind its right and the audit fingerprint."
+    },
+    {
+      "test_id": "test_a_new_audit_search_writes_one_event_and_its_next_pages_none",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_report_exports_migration.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test a new audit search writes one event and its next pages none."
+    },
+    {
+      "test_id": "test_an_odd_search_filter_is_left_out_so_history_still_reads_the_search",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_report_exports_migration.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Review round 1: a search for free text must not leave an event History cannot read."
+    },
+    {
+      "test_id": "test_an_export_through_the_service_writes_its_event_with_the_file_fingerprint",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_report_exports_migration.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test an export through the service writes its event with the file fingerprint."
+    },
+    {
+      "test_id": "test_an_audit_file_for_a_unit_holds_the_events_about_the_unit_itself",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_report_exports_migration.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test an audit file for a unit holds the events about the unit itself."
+    },
+    {
+      "test_id": "test_the_database_checks_the_property_against_the_persons_grants",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_report_exports_migration.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the database checks the property against the persons grants."
+    },
+    {
+      "test_id": "test_the_report_exports_migration_is_forward_only",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_report_exports_migration.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the report exports migration is forward only."
+    },
+    {
+      "test_id": "test_the_facts_parts_migration_is_forward_only",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_report_month_facts_migration.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Review: the month facts come as parts so a large sum never breaks the report."
+    },
+    {
+      "test_id": "test_income_and_payment_facts_count_each_record_in_its_month",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_report_month_facts_migration.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test income and payment facts count each record in its month."
+    },
+    {
+      "test_id": "test_the_month_facts_need_an_allowed_property_and_the_runtime_role",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_report_month_facts_migration.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the month facts need an allowed property and the runtime role."
+    },
+    {
+      "test_id": "test_the_report_month_facts_migration_is_forward_only",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_report_month_facts_migration.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the report month facts migration is forward only."
+    },
+    {
+      "test_id": "test_a_manager_reads_every_register_with_its_filters",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_registers.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test a manager reads every register with its filters."
+    },
+    {
+      "test_id": "test_the_register_route_refuses_a_wrong_name_filter_or_page",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_registers.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the register route refuses a wrong name filter or page."
+    },
+    {
+      "test_id": "test_staff_read_only_the_three_operational_reports_without_amounts",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_registers.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test staff read only the three operational reports without amounts."
+    },
+    {
+      "test_id": "test_the_invoice_register_sums_every_kept_row_and_leaves_void_invoices_out",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_registers.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the invoice register sums every kept row and leaves void invoices out."
+    },
+    {
+      "test_id": "test_only_a_running_lease_is_current_and_rent_needs_the_report_right",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_registers.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Review round 1: an ended or future signed Lease is not current; Staff see no Rent."
+    },
+    {
+      "test_id": "test_utility_consumption_shows_amounts_only_with_the_report_right",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_registers.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test utility consumption shows amounts only with the report right."
+    },
+    {
+      "test_id": "test_the_lists_count_today_and_ignore_the_period_where_it_does_not_apply",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_registers.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the lists count today and ignore the period where it does not apply."
+    },
+    {
+      "test_id": "test_the_payments_report_lists_where_money_went_and_reversals_in_their_month",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_registers.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the payments report lists where money went and reversals in their month."
+    },
+    {
+      "test_id": "test_the_overdue_groups_are_1_to_19_20_to_29_and_30_or_more",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_registers.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the overdue groups are 1 to 19 20 to 29 and 30 or more."
+    },
+    {
+      "test_id": "test_audit_activity_counts_by_day_person_and_kind",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_registers.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test audit activity counts by day person and kind."
+    },
+    {
+      "test_id": "test_the_invoice_and_payment_registers_agree_on_paid_to_invoices",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_report_registers_migration.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the invoice and payment registers agree on paid to invoices."
+    },
+    {
+      "test_id": "test_the_report_registers_migration_is_forward_only",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_report_registers_migration.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the report registers migration is forward only."
+    },
+    {
+      "test_id": "test_the_register_reads_need_an_allowed_property_and_the_runtime_role",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_report_registers_migration.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the register reads need an allowed property and the runtime role."
+    },
+    {
+      "test_id": "test_the_totals_route_refuses_a_wrong_report_filter_or_query",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_totals.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the totals route refuses a wrong report filter or query."
+    },
+    {
+      "test_id": "test_the_income_table_has_the_years_with_records_and_blank_months",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_totals.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the income table has the years with records and blank months."
+    },
+    {
+      "test_id": "test_the_totals_route_reads_the_chosen_report_with_its_filter",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_totals.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the totals route reads the chosen report with its filter."
+    },
+    {
+      "test_id": "test_payment_money_with_no_unit_counts_only_in_the_whole_property_table",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_totals.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test payment money with no unit counts only in the whole property table."
+    },
+    {
+      "test_id": "test_a_unit_floor_or_date_filter_keeps_those_rows_only",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_totals.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test a unit floor or date filter keeps those rows only."
+    },
+    {
+      "test_id": "test_the_totals_route_needs_reports_read",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_totals.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the totals route needs reports read."
+    },
+    {
+      "test_id": "test_the_utility_tables_add_the_quantity_and_mark_estimated_months",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_totals.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the utility tables add the quantity and mark estimated months."
+    },
+    {
+      "test_id": "test_an_empty_report_has_no_years_and_no_highest_month",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_report_totals.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test an empty report has no years and no highest month."
+    },
+    {
+      "test_id": "test_the_home_page_refuses_query_text_and_reports_a_store_failure",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_reports_api.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the home page refuses query text and reports a store failure."
+    },
+    {
+      "test_id": "test_the_home_page_needs_a_signed_in_person_with_a_read_right",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_reports_api.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the home page needs a signed in person with a read right."
+    },
+    {
+      "test_id": "test_the_home_page_passes_only_the_sections_the_person_may_read",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_reports_api.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the home page passes only the sections the person may read."
+    },
+    {
+      "test_id": "test_the_home_page_lists_a_lease_near_its_end_and_leaves_out_unpassed_sections",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reports_home_migration.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the home page lists a lease near its end and leaves out unpassed sections."
+    },
+    {
+      "test_id": "test_the_migration_gives_the_rights_to_the_owner_and_manager_bundles_only",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reports_home_migration.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): A new version of each default Owner and Manager bundle holds its old set plus the three"
+    },
+    {
+      "test_id": "test_to_do_groups_follow_the_property_day",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reports_home_migration.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test to do groups follow the property day."
+    },
+    {
+      "test_id": "test_the_new_rights_are_in_the_catalog_with_the_bundle_path",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reports_home_migration.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the new rights are in the catalog with the bundle path."
+    },
+    {
+      "test_id": "test_the_home_page_checks_the_person_the_property_and_the_sections",
+      "upstream_ids": [
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reports_home_migration.py",
+      "status": "implemented",
+      "notes": "V1-057 (traced at the V1-058 merge): Test the home page checks the person the property and the sections."
+    },
+    {
+      "test_id": "TEST-FE-962",
+      "upstream_ids": [
+        "BR-MOVEOUT-001",
+        "DL-074",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M2: the list shows Leases ending within 60 days or terminated with someone still in, handed-back rows first, with Deposits held; the cards filter the list."
+    },
+    {
+      "test_id": "TEST-FE-963",
+      "upstream_ids": [
+        "BR-MOVEOUT-001",
+        "BR-MOVEOUT-003",
+        "BR-LEASE-023",
+        "BR-OCC-009",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M2: Record hand-back ends a Lease past its End Date on that End Date as signed, then records the move-out with the new Lease version, Unit version and every open Occupancy; Try again sends the same request."
+    },
+    {
+      "test_id": "TEST-FE-964",
+      "upstream_ids": [
+        "BR-MOVEOUT-001",
+        "BR-MOVEOUT-003",
+        "DL-074",
+        "SEC-019"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M2: a terminated Lease uses its termination; a handed-back Lease shows the day and the Rent rule; never moved in skips the hand-back; without leases.terminate a running Lease says a Manager records it."
+    },
+    {
+      "test_id": "TEST-FE-965",
+      "upstream_ids": [
+        "BR-MOVEOUT-001",
+        "SEC-019",
+        "SEC-020",
+        "DL-074"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/moveout/moveoutClient.test.ts",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M2: the client reads move-outs and open Occupancies, records one with the Idempotency-Key and CSRF token, and maps 401/403/404, 409, 5xx and bad answers."
+    },
+    {
+      "test_id": "TEST-FE-966",
+      "upstream_ids": [
+        "BR-MOVEOUT-001",
+        "BR-LEASE-023",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M2: Try again after no answer on ending the Lease sends the same request; a Unit read failure is not called a refusal; Close reads the page again; a signed renewal shows no hand-back."
+    },
+    {
+      "test_id": "TEST-FE-967",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "BR-MOVEOUT-012",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M3: Record final readings lists each meter with its last reading, refuses a lower or broken reading (only that box is marked), then saves the readings on the hand-back day, the final inputs naming them and the final Utility Invoice."
+    },
+    {
+      "test_id": "TEST-FE-968",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "SEC-019",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M3: a reading already taken on the hand-back day is used as it is; without invoices.issue only the readings and final inputs are saved."
+    },
+    {
+      "test_id": "TEST-FE-969",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M3: with final inputs saved, Issue the final Utility Invoice sends only the Invoice and shows the refusal reason; a page whose final Invoice exists shows the step done with number, total and link."
+    },
+    {
+      "test_id": "TEST-FE-970",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M3: no answer to the final inputs; Try again records no reading twice and sends the same inputs and key."
+    },
+    {
+      "test_id": "TEST-FE-971",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M3: no answer to a reading or to the Invoice; Try again sends the same request and key; a 4xx reading answer says not saved."
+    },
+    {
+      "test_id": "TEST-FE-972",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "BR-MOVEOUT-012",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M3: only meters in use on the hand-back day are read; after a corrected hand-back the new final inputs supersede the earlier ones; a conflict closes, warns and reloads."
+    },
+    {
+      "test_id": "TEST-FE-973",
+      "upstream_ids": [
+        "BR-UTIL-021",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M3: the final Invoice is tied to the current final inputs by its lines' end readings; a same-day reading not checked yet is shown and stops the save."
+    },
+    {
+      "test_id": "TEST-FE-974",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "BR-INV-010",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M4: Record inspection saves findings with the pet mark, then a Damage charge (the finding's id) and its Draft Invoice for each finding with an amount; a Draft refused as already made warns to check the Invoices."
+    },
+    {
+      "test_id": "TEST-FE-975",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M4: the inspection form refuses a day before the hand-back, an empty finding and an amount without evidence; without the Damage-charge right it asks no amounts."
+    },
+    {
+      "test_id": "TEST-FE-976",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "BR-MOVEOUT-013",
+        "BR-INV-010",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M4: the step shows each finding's charge (Draft, issued, VOID or Charge button), the cleaning charge and charges of a replaced inspection; a charged inspection is not corrected."
+    },
+    {
+      "test_id": "TEST-FE-977",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "BR-INV-010",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M4: Charge on a finding records the charge and Draft; a charge recorded before still gets its Draft with a warning when the amount differs; Try again reuses the key."
+    },
+    {
+      "test_id": "TEST-FE-978",
+      "upstream_ids": [
+        "BR-MOVEOUT-013",
+        "BR-UNIT-014",
+        "BR-INV-010",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M4: Add cleaning charge records the Unit rate with the Lease id and makes its Draft, also when recorded before; refusals named; a server failure offers Try again; no, zero or hidden rate."
+    },
+    {
+      "test_id": "TEST-FE-979",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M4: Correct inspection fills the form, asks why and sends a new inspection that replaces the old one with new finding ids; the step is done with no Drafts left."
+    },
+    {
+      "test_id": "TEST-FE-980",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "SEC-019",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M4: without inspect, Damage-charge or Invoice rights no buttons and the reasons; without invoices.read the charges are not shown; two inspections in force are named."
+    },
+    {
+      "test_id": "TEST-FE-981",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M4: no answer to the inspection holds the form and Try again sends the same inspection and key; a failed charge after the save is retried alone."
+    },
+    {
+      "test_id": "TEST-FE-982",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "BR-MOVEOUT-013",
+        "DL-074"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M4: the inspections in force, the Invoice billing each charge source (VOID only when no other) and the cleaning Invoice by source or fixed text."
+    },
+    {
+      "test_id": "TEST-FE-983",
+      "upstream_ids": [
+        "BR-MOVEOUT-006",
+        "SEC-019",
+        "SEC-020",
+        "DL-074"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/moveout/moveoutClient.test.ts",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M4: the client reads inspections a page at a time and records one with the key and CSRF token; 409 conflict, 5xx or unreadable save may be saved."
+    },
+    {
+      "test_id": "test_the_settlements_are_read_without_starting_one",
+      "upstream_ids": [
+        "API-071",
+        "BR-SETTLE-011",
+        "SEC-019",
+        "DL-074"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_final_settlement_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M5: GET final-settlements (prepare or financial.approve) lists the Property's Settlements, or one Lease's, each with pending_draft; it starts nothing; a bad or repeated lease_id is refused."
+    },
+    {
+      "test_id": "test_a_settlement_list_for_another_property_or_lease_is_never_shown",
+      "upstream_ids": [
+        "API-071",
+        "SEC-019",
+        "DL-074"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_final_settlement_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M5: a Settlement of another Property or Lease in the answer is never shown (503); not found is 404; no service is 503."
+    },
+    {
+      "test_id": "test_the_settlement_list_starts_nothing_and_hides_other_leases",
+      "upstream_ids": [
+        "API-071",
+        "BR-SETTLE-011",
+        "SEC-019",
+        "DL-074"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_final_settlement_api_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M5 (migration 20270315_234): a Lease with no Settlement reads as an empty list and none is opened; an unknown Lease or Property is 404; only prm_runtime may run app.final_settlements_read."
+    },
+    {
+      "test_id": "TEST-FE-984",
+      "upstream_ids": [
+        "API-071",
+        "SEC-019",
+        "DL-074"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/settlementClient.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M5: the client reads one Lease's Final Settlements (or all) with the Property header; an answer that is not a list is refused."
+    },
+    {
+      "test_id": "TEST-FE-985",
+      "upstream_ids": [
+        "BR-SETTLE-011",
+        "UI-034",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M5: the list shows Waiting for a Manager first and Closed last with their cards, from a read that starts nothing; a failed read or no Settlement rights keep the earlier steps."
+    },
+    {
+      "test_id": "TEST-FE-986",
+      "upstream_ids": [
+        "BR-SETTLE-001",
+        "BR-SETTLE-011",
+        "BR-CREDIT-008",
+        "DL-032",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M5: Start Final Settlement opens it with a key; the statement shows the open Invoices and late charges, the Customer's own Credit, the Security Deposit held and that it is ready."
+    },
+    {
+      "test_id": "TEST-FE-987",
+      "upstream_ids": [
+        "BR-MOVEOUT-012",
+        "BR-SETTLE-011",
+        "SEC-019",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M5: the step waits for the hand-back; an approver cannot start it; no rights hides it; a refused start says why; no answer offers Try again with the same key."
+    },
+    {
+      "test_id": "TEST-FE-988",
+      "upstream_ids": [
+        "BR-SETTLE-011",
+        "BR-SETTLE-014",
+        "BR-DEP-022",
+        "BR-DEP-023",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M5: blocking issues in plain words once each; a kept Security Deposit is shown as kept, never a payment; the Pet Deposit remainder rule; a waiting draft links to Waiting for approval."
+    },
+    {
+      "test_id": "TEST-FE-989",
+      "upstream_ids": [
+        "BR-SETTLE-009",
+        "BR-SETTLE-013",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M5: a closed Settlement shows its closing time and the balance that stays owed, reads no preview, step done; an unreadable preview says so."
+    },
+    {
+      "test_id": "TEST-FE-990",
+      "upstream_ids": [
+        "BR-SETTLE-011",
+        "DL-074"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M5: the preview is read field by field (unknown Deposit path or broken amount is unreadable); the newest Settlement of the Lease is shown."
+    },
+    {
+      "test_id": "TEST-FE-991",
+      "upstream_ids": [
+        "BR-SETTLE-004",
+        "BR-SETTLE-005",
+        "BR-SETTLE-006",
+        "BR-SETTLE-007",
+        "BR-SETTLE-008",
+        "BR-CREDIT-006",
+        "BR-CREDIT-008",
+        "DL-032",
+        "DL-074"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/moveout/plan.test.ts",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M5b: the proposed Final Settlement draft follows the DL-032 order (own Credit Rent first, Pet Deposit for pet damage, Security Deposit, Pet Deposit rest only when chosen, refunds of what is left)."
+    },
+    {
+      "test_id": "TEST-FE-992",
+      "upstream_ids": [
+        "BR-SETTLE-004",
+        "BR-SETTLE-008",
+        "BR-SETTLE-014",
+        "BR-CREDIT-008",
+        "DL-032",
+        "DL-074"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/moveout/plan.test.ts",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M5b: a kept Deposit pays nothing and is not refunded; a Customer's Credit pays only that Customer's debt; with no debt every Deposit is refunded."
+    },
+    {
+      "test_id": "TEST-FE-993",
+      "upstream_ids": [
+        "BR-SETTLE-006",
+        "BR-SETTLE-008",
+        "BR-REFUND-007",
+        "BR-REFUND-014",
+        "BR-REFUND-015",
+        "BR-AUTH-010",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M5b: Prepare draft records the proposed steps, refund method, reference and Primary Tenant recipient as a draft for a Manager."
+    },
+    {
+      "test_id": "TEST-FE-994",
+      "upstream_ids": [
+        "BR-SETTLE-005",
+        "BR-SETTLE-008",
+        "BR-REFUND-007",
+        "BR-REFUND-014",
+        "DL-032",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M5b: the rest of the Pet Deposit pays debt by the Customer's choice or a staff reason on a normal end, only by the Customer's choice at an early termination, else it is refunded; a transfer refund needs a reference."
+    },
+    {
+      "test_id": "TEST-FE-995",
+      "upstream_ids": [
+        "BR-SETTLE-011",
+        "BR-AUTH-010",
+        "SEC-019",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M5b: no answer retries with the same key; a refused draft shows the server's words; a waiting draft closes the dialog; no Prepare draft without the right or while blocked."
+    },
+    {
+      "test_id": "TEST-FE-996",
+      "upstream_ids": [
+        "BR-SETTLE-012",
+        "BR-SETTLE-013",
+        "BR-INV-044",
+        "BR-AUTH-010",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M6: after closure a preparer adds a Miscellaneous or a Damage charge (of a finding not charged yet) as a correction draft a Manager confirms."
+    },
+    {
+      "test_id": "TEST-FE-997",
+      "upstream_ids": [
+        "BR-SETTLE-013",
+        "BR-AUTH-010",
+        "SEC-019",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M6: no answer to an after-closure charge: saving it again, even after closing the dialog, sends the same key; a refusal shows the server's words; a refund after closure is said to come later."
+    },
+    {
+      "test_id": "TEST-FE-998",
+      "upstream_ids": [
+        "BR-SETTLE-012",
+        "BR-SETTLE-013",
+        "SEC-019",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R3 Move-out M6: step 6 waits before closure; without the preparer right no actions; approvers get the Waiting for approval link."
+    },
+    {
+      "test_id": "test_a_service_is_added_with_its_first_rate_and_approval_and_a_repeat_answers_it",
+      "upstream_ids": [
+        "BR-SVC-001",
+        "BR-SVC-005",
+        "BR-SVC-014",
+        "BR-SVC-015",
+        "SEC-016",
+        "DL-075"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_services_settings_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6a: a Service is added with its first rate and open approval period from the 1st; a repeat answers it; other values, a non-1st start, an unknown type and a missing Settings reference are refused; audited."
+    },
+    {
+      "test_id": "test_a_lease_holds_only_one_service_of_an_only_one_type",
+      "upstream_ids": [
+        "BR-SVC-001",
+        "BR-SVC-014",
+        "DL-075"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_services_settings_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6a: a Lease holds at most one Service of an 'Only one per Lease' type at a time; a type change, a Service move and removing a used type are refused; rename keeps version rules."
+    },
+    {
+      "test_id": "test_the_settings_read_gives_rates_approvals_and_leases_using_each_service",
+      "upstream_ids": [
+        "BR-SVC-005",
+        "BR-SVC-007",
+        "BR-SVC-015",
+        "DL-075"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_services_settings_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6a: the Settings read gives today's rate, the next rate, approval periods and the Leases using each Service."
+    },
+    {
+      "test_id": "test_the_runtime_role_may_only_call_the_settings_functions",
+      "upstream_ids": [
+        "SEC-016",
+        "DL-075"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_services_settings_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6a: the runtime role may not write Service type rows directly, only call the Settings functions."
+    },
+    {
+      "test_id": "test_reading_needs_settings_access_configuration_read_or_lease_drafting",
+      "upstream_ids": [
+        "SEC-002",
+        "SEC-016",
+        "DL-075"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_service_settings_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6a: the Service settings read needs settings.manage, configuration.read or leases.draft and takes no query values."
+    },
+    {
+      "test_id": "test_every_change_needs_settings_access_origin_and_csrf_and_strict_fields",
+      "upstream_ids": [
+        "SEC-002",
+        "SEC-003",
+        "SEC-016",
+        "DL-075"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_service_settings_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6a: every Services change needs settings.manage, Origin and CSRF, and strict body fields."
+    },
+    {
+      "test_id": "test_refusals_answer_their_status",
+      "upstream_ids": [
+        "BR-SVC-014",
+        "SEC-016",
+        "DL-075"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_service_settings_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6a: database refusals map to 409, 422, 404, 403 and 503 with coded details."
+    },
+    {
+      "test_id": "test_service_history_and_reused_type_ids_are_refused",
+      "upstream_ids": [
+        "BR-SVC-006",
+        "BR-SVC-008",
+        "SEC-016",
+        "DL-075"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_services_settings_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6a: Service code, creator and version history cannot be changed directly and Services are never deleted; a Service type id reused with other values is refused; Service types are never truncated."
+    },
+    {
+      "test_id": "test_database_refusals_map_by_their_own_code",
+      "upstream_ids": [
+        "BR-SVC-014",
+        "DL-075"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_service_settings_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6a: each database refusal maps by its own code (P5V01 Lease holds two of the type, P5V02 type has Services); another 55000 is not taken as a rule refusal."
+    },
+    {
+      "test_id": "TEST-FE-999",
+      "upstream_ids": [
+        "BR-SVC-001",
+        "BR-SVC-005",
+        "BR-SVC-014",
+        "DL-075",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/RatesTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6b: Add a Service sends a client id, names, type, first rate in cents and a start on the 1st; a retry after no answer keeps the id; Edit changes names and type with the version; removed types are not offered."
+    },
+    {
+      "test_id": "TEST-FE-1000",
+      "upstream_ids": [
+        "BR-SVC-014",
+        "DL-075",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/RatesTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6b: Service types show Only one or One or more and a Services count; Remove only for an empty type; refusals (Lease holds two, type has Services, out of date) say why and an old version reads again."
+    },
+    {
+      "test_id": "TEST-FE-1001",
+      "upstream_ids": [
+        "SEC-016",
+        "DL-075",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/RatesTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6b: without Settings access Services and types are read-only (the rate right stays separate); a failed Services read keeps the rates and says so; Khmer names in Khmer."
+    },
+    {
+      "test_id": "TEST-FE-1002",
+      "upstream_ids": [
+        "SEC-003",
+        "DL-075"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/settings/serviceSettingsClient.test.ts",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6b: the Service settings client reads the answer strictly, sends changes only with the CSRF token, and maps each refusal code."
+    },
+    {
+      "test_id": "TEST-FE-1003",
+      "upstream_ids": [
+        "BR-SVC-001",
+        "BR-SVC-005",
+        "BR-SVC-014",
+        "DL-075",
+        "DL-074"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/leases/leaseServices.test.ts",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6c: New Lease Services grouped by type; only Services approved for the whole Lease can be picked (a later start is shown); rate on the Start Date; Trash Collection or the renewed Lease's Services by default; one per Only one type."
+    },
+    {
+      "test_id": "TEST-FE-1004",
+      "upstream_ids": [
+        "BR-SVC-001",
+        "BR-SVC-012",
+        "BR-SVC-014",
+        "DL-075",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6c: the New Lease form shows None first for an Only one type, Trash Collection chosen by default, tick boxes for One or more, a later Service greyed with its start; chosen Services are saved as Service terms from the Start Date with their approval period; a failed read waits with Retry."
+    },
+    {
+      "test_id": "test_a_rate_gives_its_unit_types_their_amount_and_ticking_moves_a_type",
+      "upstream_ids": [
+        "BR-MOVEOUT-013",
+        "DL-075"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_cleaning_rates_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6d: a cleaning rate gives every Unit of its Unit Types its amount as a new link in the Unit's own chain; ticking a type moves it from another rate (that rate's version goes up); a repeat answers the same rate; a new Unit or a changed type takes the type's rate."
+    },
+    {
+      "test_id": "test_a_unit_type_with_units_is_never_left_without_a_rate",
+      "upstream_ids": [
+        "BR-MOVEOUT-013",
+        "DL-075"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_cleaning_rates_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6d: untick or remove that would leave a Unit Type with Units without a rate is refused (P5V03); invalid input, a removed rate and a wrong reference are refused."
+    },
+    {
+      "test_id": "test_only_the_functions_are_open_to_the_runtime_role_and_history_is_protected",
+      "upstream_ids": [
+        "DL-075",
+        "SEC-016"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_cleaning_rates_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6d: the runtime role may only call the cleaning rate functions; rate identity and history are protected and never emptied."
+    },
+    {
+      "test_id": "test_cleaning_rates_are_read_by_settings_readers_and_changed_with_settings_access",
+      "upstream_ids": [
+        "BR-MOVEOUT-013",
+        "SEC-016",
+        "DL-075"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_service_settings_api.py",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6d: the cleaning settings read needs a Settings reader; every change needs settings.manage, Origin and CSRF and strict fields; P5V03 answers 409 UNIT_TYPE_NEEDS_CLEANING_RATE."
+    },
+    {
+      "test_id": "TEST-FE-1005",
+      "upstream_ids": [
+        "BR-MOVEOUT-013",
+        "DL-075",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/CleaningRates.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6d: the cleaning rates list their Unit Types and warn of a type with no rate; Add sends its own id (kept after a lost answer) and the ticked types, a type of another rate moves; Edit sends the version and reads again when out of date; untick and Remove of a type with Units are refused with its name, and the server's refusal says so."
+    },
+    {
+      "test_id": "TEST-FE-1006",
+      "upstream_ids": [
+        "BR-MOVEOUT-013",
+        "DL-075",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/UnitSetupTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6d: Unit setup shows a No cleaning rate chip on a Unit Type with no move-out cleaning rate, and no chip when the rates cannot be read."
+    },
+    {
+      "test_id": "TEST-FE-1007",
+      "upstream_ids": [
+        "SEC-016",
+        "DL-075",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/CleaningRates.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6d: without Settings access the cleaning rates show with no buttons; a failed read offers Retry; Khmer names show in Khmer."
+    },
+    {
+      "test_id": "TEST-FE-1008",
+      "upstream_ids": [
+        "SEC-003",
+        "DL-075"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/settings/serviceSettingsClient.test.ts",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6d: the cleaning settings client reads the answer strictly, sends a new rate with its id, a change with its version and a removal with the CSRF token, and maps UNIT_TYPE_NEEDS_CLEANING_RATE."
+    },
+    {
+      "test_id": "test_a_service_that_covers_only_part_of_a_month_is_refused_like_trash_collection",
+      "upstream_ids": [
+        "BR-SVC-001",
+        "BR-SVC-012",
+        "BR-SVC-014",
+        "DL-075"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_billing_service_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6e: a Service other than Trash Collection whose Lease term covers only part of a billed month is refused like Trash Collection, with no Invoice written."
+    },
+    {
+      "test_id": "test_a_service_approval_that_ends_mid_month_is_refused_like_trash_collection",
+      "upstream_ids": [
+        "BR-SVC-001",
+        "BR-SVC-012",
+        "BR-SVC-014",
+        "DL-075"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_billing_service_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6e: a Service whose approval period ends in the middle of a billed month is refused like Trash Collection, with no Invoice written."
+    },
+    {
+      "test_id": "test_a_service_with_no_rate_for_the_month_is_refused",
+      "upstream_ids": [
+        "BR-SVC-001",
+        "BR-SVC-012",
+        "BR-SVC-014",
+        "DL-075"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_billing_service_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6e: a Service with no rate in force on the first day of a billed month is refused (Applicable Service rate is missing), with no Invoice written."
+    },
+    {
+      "test_id": "test_two_other_services_without_trash_are_billed_by_month_then_name",
+      "upstream_ids": [
+        "BR-SVC-001",
+        "BR-SVC-012",
+        "BR-SVC-014",
+        "DL-075"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_billing_service_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6e: two Services other than Trash Collection are billed on their own lines, the first month's lines then the following month's, by Service name within a month, with prorated and full amounts."
+    },
+    {
+      "test_id": "test_trash_only_in_the_second_month_keeps_its_line_before_the_other_services",
+      "upstream_ids": [
+        "BR-SVC-001",
+        "BR-SVC-012",
+        "BR-SVC-014",
+        "DL-075"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_billing_service_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R7b-6e: when Trash Collection starts only in the following month, its one line comes before the other Service lines and the line numbers stay in order."
+    },
+    {
+      "test_id": "TEST-FE-1009",
+      "upstream_ids": [
+        "DL-098",
+        "BR-UTIL-003",
+        "BR-UTIL-021"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-7: a Unit with no meter on the hand-back day has no final readings or Utility Invoice; Move-out step 3 is done with no button; a failed meter read keeps the usual step."
+    },
+    {
+      "test_id": "TEST-FE-1010",
+      "upstream_ids": [
+        "DL-098",
+        "BR-UTIL-003"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-7: the New Lease form says when the chosen Unit has no electricity or water meter on the Start Date; a meter put in later counts from its day; a failed meter read shows nothing."
+    },
+    {
+      "test_id": "TEST-FE-1011",
+      "upstream_ids": [
+        "DL-098",
+        "DL-075"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-7: New Service on the New Lease form only with Settings access; it adds the Service with its own id, keeps it after a lost answer and reads the Services again."
+    },
+    {
+      "test_id": "test_a_unit_with_no_meter_needs_no_final_utility_inputs",
+      "upstream_ids": [
+        "DL-098",
+        "BR-UTIL-021"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_final_settlement_preview_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R7b-7: a moved-out Lease whose Unit has no Meter shows no FINAL_UTILITY_NOT_ISSUED and no UTILITY_PERIOD_NOT_BILLED in the Final Settlement preview, and after the inspection its Home 'Refund due by' to-do is dated 7 days after the inspection."
+    },
+    {
+      "test_id": "test_a_meter_in_on_the_hand_back_day_still_needs_final_inputs",
+      "upstream_ids": [
+        "DL-098",
+        "BR-UTIL-021"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_final_settlement_preview_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R7b-7: a Meter put in after the hand-back day does not hold the Final Settlement; a Meter in on the hand-back day still needs final inputs (FINAL_INPUTS_NOT_RECORDED)."
     }
   ]
 }

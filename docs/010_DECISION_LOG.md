@@ -316,6 +316,7 @@ Older unnumbered placeholder documents are not decision authority.
 - **Decision date:** Not recorded in this log.
 - **Alternatives:** Presented before approval; not adopted.
 - **Amended by DL-075 (owner, 2026-10-20; docs-only rules update 2b, part 2):** Services are added in Settings with a Service type; Trash Collection is chosen by default on a new Lease.
+- **Amended by DL-097 (owner, 2026-10-26):** every Service a Lease holds is billed on the Rent Invoice like Trash Collection; the sentence that Internet and Monthly Cleaning must not generate charges no longer applies once such a Service is added in Settings and ticked on a Lease.
 
 ## DL-021 — Invoice lifecycle
 
@@ -2185,12 +2186,41 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Migration head:** `20270218_206`.
 - **Decision date:** 2026-10-25.
 
+## DL-095 — Owner answers to the four DL-094 questions before go-live
+
+- **Type:** `OWNER BUSINESS DECISION`
+- **Status:** `APPROVED; NOTHING TO BUILD FOR V1`
+- **Source:** the owner, 2026-10-25 12:17 ("ok all recommended"), after the plain explanation of the four DL-094 items in the V1-056 thread.
+- **Answers (each the recommendation):** (1) the two 10e-4 known limits stay as built for V1: a Payment used after closure on two closed Leases may be returned through either Settlement's `RETURNED_PAYMENT` correction (nothing either Settlement relied on changes), and a Payment with recoveries charged on two closed Settlements' Leases stays refused by every correction (no money moves wrongly); its refusal message is fixed after V1. (2) Q-2026-10-04-10: a physical move-out correction stays refused once a hand-back resolution (BR-RENT-030) relies on it; an Owner or Manager correction may be added after V1 if a case happens. (3) Sub-slice 6b round 2: a confirmed Lease forfeiture, its reversal and a wrong-Unit Payment move keep naming the approver with the one-call capability label; the draft and its decision record `financial.approve`; the earlier functions do not change. (4) Sub-slice 10e-1a: the pending-draft check of a returned Payment keeps matching ids in the draft text for V1 (it only makes a return wait); it matches structured keys after V1.
+- **Links:** DL-094, ops/V1_056_PLAN.md slice 12 list.
+- **Decision date:** 2026-10-25.
+
 ## DL-096 — V1-060 part A: flaky tests, CI limits, speed fixes and the DL-067 lock cause
 
 - **Type:** `IMPLEMENTATION RECORD` (V1-060, DL-071 answers 13 and 14; plan and step log ops/V1_060_PLAN.md)
-- **Built:** frontend test time budgets (`testTimeout` 60 s, `asyncUtilTimeout` 15 s; TEST-FE-203 waits for its line), `certifi` 2026.10.23 (PYSEC-2026-4320), CI job limits (backend 60, frontend 30, PostgreSQL 120 minutes), the speed tool (`scripts/speed-test.sh`, `backend/speed/`), migration `20270219_207` (Invoices list index; the Rent nonpayment alerts page checks a set-based balance before the exact function), `20270220_208` (the Billing Run finish locks the run before the attempt: the slice 12 deadlock flake) and `20270221_209` (below).
-- **DL-067 cause (owner yes 2026-10-25, decision card "Yes, use the fix"):** the intermittent `LockNotAvailable` came from PostgreSQL's automatic cleanup (autovacuum) holding SHARE UPDATE EXCLUSIVE on an obligation table while `app.assert_payment_excess_eligible` asked for SHARE with NOWAIT. Proven with a busier autovacuum on a scratch database: the refund and deposit receipt modules failed with 55P03 in most runs. Migration 209: when the NOWAIT request fails and every session holding a conflicting lock on those tables is an autovacuum worker (no user in `pg_stat_activity`), the function waits at most 3 seconds for the same locks; PostgreSQL cancels the cleanup after `deadlock_timeout`. Any other session's lock is still refused at once with 55P03, so the deadlock reason for NOWAIT stays. After the change 10 of 10 busy runs passed. No rule, amount or answer changes; no test was relaxed.
+- **Built:** frontend test time budgets (`testTimeout` 60 s, `asyncUtilTimeout` 15 s; TEST-FE-203 waits for its line), `certifi` 2026.10.23 (PYSEC-2026-4320), CI job limits (backend 60, frontend 30, PostgreSQL 120 minutes), the speed tool (`scripts/speed-test.sh`, `backend/speed/`), migration `20270320_239` (Invoices list index; the Rent nonpayment alerts page checks a set-based balance before the exact function), `20270321_240` (the Billing Run finish locks the run before the attempt: the slice 12 deadlock flake) and `20270322_241` (below).
+- **DL-067 cause (owner yes 2026-10-25, decision card "Yes, use the fix"):** the intermittent `LockNotAvailable` came from PostgreSQL's automatic cleanup (autovacuum) holding SHARE UPDATE EXCLUSIVE on an obligation table while `app.assert_payment_excess_eligible` asked for SHARE with NOWAIT. Proven with a busier autovacuum on a scratch database: the refund and deposit receipt modules failed with 55P03 in most runs. Migration 241: when the NOWAIT request fails and every session holding a conflicting lock on those tables is an autovacuum worker (no user in `pg_stat_activity`), the function waits at most 3 seconds for the same locks; PostgreSQL cancels the cleanup after `deadlock_timeout`. Any other session's lock is still refused at once with 55P03, so the deadlock reason for NOWAIT stays. After the change 10 of 10 busy runs passed. No rule, amount or answer changes; no test was relaxed.
 - **Decided by Claude under the owner's 2026-10-23 22:30 rule:** the speed limits (middle read 0.5 s, slowest read 1 s, scheduled Rent run 120 s for 300 Units and 10 years of history).
-- **Migration head:** `20270221_209` (re-chained after the V1-057 and V1-058 migrations when part B merges them).
+- **Migration head:** `20270322_241` (first written as 207 to 209; re-chained after V1-058's `20270319_238` in part B).
 - **Decision date:** 2026-10-25.
 
+## DL-097 — V1-058 R7b-6e: the Rent Invoice bills every Service a Lease holds
+
+- **Type:** `OWNER BUSINESS DECISION`
+- **Status:** `APPROVED; BUILT ON THE V1-058 BRANCH`
+- **Source:** the owner, 2026-10-26 03:07, decision card "Should the Rent Invoice bill every Service a Lease ticks?", answer "Yes, bill every ticked Service" (the recommendation).
+- **Decision:** every Service a Lease holds, not only Trash Collection, is billed on the Rent Invoice with the Trash Collection rules: a month is billed when the Lease's term and the Service's approval period cover the whole month; the rate is the one in force on the first billed day; the move-in month is charged by days (half-up to the cent) and a following month in full; each Service has its own line after the Trash Collection lines (first month, then following month, by Service name). A Service that covers only part of a month, or has no rate in force, stops that Rent Invoice (as for Trash Collection) until it is corrected.
+- **Amends:** DL-020 (Internet and Monthly Cleaning not billable), BR-SVC-001 (no other Service without an owner rule). Builds on DL-075 (Services and rates in Settings).
+- **Built:** migration 20270318_237 (commit 26e5d52), tests in backend/tests/test_billing_service_migration.py.
+- **Release note:** before release, check that no Lease holds a non-Trash Service term that covers only part of a month or has no rate (V1-060 gate).
+- **Numbering:** DL-096 is used on the V1-060 branch (migration 209); renumber at merge if needed.
+- **Decision date:** 2026-10-26.
+
+## DL-098 — V1-058 R7b-7: electricity and water follow the Unit's Meters; a Unit with no Meter is not billed for them
+
+- **Type:** `OWNER BUSINESS DECISION`
+- **Status:** `APPROVED; BUILT ON THE V1-058 BRANCH`
+- **Source:** the owner, 2026-10-26 03:53, decision card "How should a Lease with no electricity or water work?", answer "Meters decide (no Lease tick)" (the recommendation), after a Customer asked to rent a small store room that needs no electricity or water.
+- **Decision:** a Lease has no tick for Utilities. Electricity and water are billed from the Meters on the Unit (BR-UTIL-003); a Unit with no Meter of a kind gets no Utility Invoice for it. When a later Customer needs electricity or water, staff install the Meter and add it in Utilities > Meters with its first reading. The Meter is dated the day it is put in, after the earlier Lease's hand-back, so its readings never belong to a Lease that closed without one. A Unit with no Meter at all on the hand-back day needs no final readings or final Utility Invoice, so its Final Settlement is not held for them (migration 20270319_238); any earlier Utility period with consumption on no Invoice still holds it. The Home "Refund due by" to-do (DL-073 item 4) for such a Unit counts 7 days from the final inspection alone. The New Lease form says when the chosen Unit has no electricity or water Meter on the Start Date, and a person with Settings access may add a Service from the form (the Settings rules of DL-075 apply).
+- **Links:** BR-UTIL-003, BR-UTIL-020, BR-UTIL-021, DL-075, DL-097.
+- **Decision date:** 2026-10-26.

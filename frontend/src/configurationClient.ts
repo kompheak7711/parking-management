@@ -126,16 +126,20 @@ export interface EffectiveConfigurationApi {
 export class EffectiveConfigurationError extends Error {
   readonly fields: string[];
   readonly requestId: string | null;
+  /** The HTTP status of a refusal; null when no answer came back or it could not be read. */
+  readonly status: number | null;
 
   constructor(
     message = "The effective configuration request failed.",
     fields: string[] = [],
     requestId: string | null = null,
+    status: number | null = null,
   ) {
     super(message);
     this.name = "EffectiveConfigurationError";
     this.fields = fields;
     this.requestId = requestId;
+    this.status = status;
   }
 }
 
@@ -230,7 +234,12 @@ async function response(path: string, init: RequestInit): Promise<Envelope> {
     throw new EffectiveConfigurationConflictError(fields, requestId);
   }
   if (!result.ok)
-    throw new EffectiveConfigurationError(undefined, fields, requestId);
+    throw new EffectiveConfigurationError(
+      undefined,
+      fields,
+      requestId,
+      result.status,
+    );
   try {
     const envelope = object(payload);
     const meta = object(envelope.meta);

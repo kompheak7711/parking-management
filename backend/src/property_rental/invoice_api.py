@@ -165,6 +165,13 @@ class InvoiceFlow(Protocol):
         actor: AuthenticatedActor,
     ) -> dict[str, object]: ...
 
+    def get_one_time_charge_due_days(
+        self,
+        property_id: UUID,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]: ...
+
     def set_initial_rent_due_date(
         self,
         property_id: UUID,
@@ -586,6 +593,17 @@ def create_invoice_router(
                 actor=actor,
             )
         )
+        return _envelope(resource, request)
+
+    @router.get("/properties/{property_id}/one-time-charge-due-days")
+    def get_one_time_charge_due_days(property_id: UUID, request: Request) -> dict[str, object]:
+        """V1-058 R7b-4: the Settings Business tab shows the days and changes them with the
+        version (the Property's version)."""
+        if request.query_params:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+        actor = _actor(request, resolver)
+        _authorize(actor, property_id, SETTINGS_MANAGE_CAPABILITY)
+        resource = _invoke(lambda: flow.get_one_time_charge_due_days(property_id, actor=actor))
         return _envelope(resource, request)
 
     @router.post("/properties/{property_id}/one-time-charge-due-days")

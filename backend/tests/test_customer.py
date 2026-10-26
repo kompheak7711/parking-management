@@ -1,6 +1,7 @@
 """Domain tests for canonical Customer identity and reuse decisions."""
 
 from dataclasses import dataclass, field
+from datetime import date
 from uuid import UUID, uuid4
 
 import pytest
@@ -414,3 +415,69 @@ def test_update_corrects_but_never_removes_the_id_number_and_keeps_it_unique() -
         memo=None,
     )
     assert kept.id_document_number == "B222"
+
+
+def test_customer_details_are_optional_checked_and_kept_unless_given() -> None:
+    """DL-078 answer 3 (V1-058 R2c): date of birth, gender and nationality."""
+    service = CustomerService(InMemoryCustomerRepository())
+    plain = create_customer(service, uuid4(), legal_name="Dara Sok")
+    assert (plain.date_of_birth, plain.gender, plain.nationality) == (None, None, None)
+    for refused in (
+        {"date_of_birth": date(1899, 12, 31)},
+        {"gender": "OTHER"},
+        {"nationality": "x" * 65},
+    ):
+        with pytest.raises(ValueError):
+            create_customer(service, uuid4(), legal_name="Srey Mom", **refused)
+    full = create_customer(
+        service,
+        uuid4(),
+        legal_name="Srey Mom",
+        date_of_birth=date(1990, 5, 17),
+        gender="FEMALE",
+        nationality="  Cambodian ",
+    )
+    assert (full.date_of_birth, full.gender, full.nationality) == (
+        date(1990, 5, 17),
+        "FEMALE",
+        "Cambodian",
+    )
+    kept = service.update(
+        full,
+        legal_name=full.legal_name,
+        phone_number="012 345 678",
+        email_address=None,
+        contact_address=None,
+        memo=None,
+    )
+    assert (kept.date_of_birth, kept.gender, kept.nationality) == (
+        date(1990, 5, 17),
+        "FEMALE",
+        "Cambodian",
+    )
+    cleared = service.update(
+        kept,
+        legal_name=kept.legal_name,
+        phone_number=kept.phone_number,
+        email_address=None,
+        contact_address=None,
+        memo=None,
+        gender=None,
+        nationality=" ",
+    )
+    assert (cleared.date_of_birth, cleared.gender, cleared.nationality) == (
+        date(1990, 5, 17),
+        None,
+        None,
+    )
+    assert cleared.version == kept.version + 1
+    with pytest.raises(ValueError):
+        service.update(
+            cleared,
+            legal_name=cleared.legal_name,
+            phone_number=cleared.phone_number,
+            email_address=None,
+            contact_address=None,
+            memo=None,
+            gender="X",
+        )

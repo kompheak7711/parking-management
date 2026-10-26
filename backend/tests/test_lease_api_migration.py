@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from datetime import date, timedelta
 from pathlib import Path
 from uuid import UUID, uuid4
 
@@ -289,7 +290,7 @@ def test_http_create_update_sign_and_replay_use_runtime_role(
             ("lease.sign",),
         ]
         assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-            "20270221_209",
+            "20270322_241",
         )
         assert connection.execute(
             "SELECT has_function_privilege('prm_runtime',"
@@ -595,3 +596,179 @@ def test_http_complete_move_in_preserves_atomic_postgresql_result(
         assert connection.execute(
             "SELECT count(*) FROM app.deposits WHERE id=%s", (deposit_id,)
         ).fetchone() == (1,)
+
+
+def test_http_sign_with_reservation_then_lease_move_in_and_cancel_draft(
+    migrated_database_url: str,
+) -> None:
+    """V1-058: the Lease screens sign with the Reservation, record move-in and cancel a draft."""
+    with psycopg.connect(migrated_database_url) as connection:
+        actor_id, property_id, unit_id, customer_id, _ = setup_sources(connection)
+        today = connection.execute(
+            "SELECT timezone(timezone_name, statement_timestamp())::date "
+            "FROM app.properties WHERE id=%s",
+            (property_id,),
+        ).fetchone()
+        assert today is not None
+        business_date = today[0]
+        # A Lease ends on the last day of a calendar month.
+        lease_end = date(business_date.year + 1, business_date.month, 1) + timedelta(days=31)
+        lease_end = lease_end.replace(day=1) - timedelta(days=1)
+        reservation_id = uuid4()
+        deposit_id = uuid4()
+        connection.execute(
+            "INSERT INTO app.reservations("
+            "id,unit_id,customer_id,reservation_date,agreed_monthly_rent_usd_cents,"
+            "original_expiration_date,effective_expiration_date,status,created_by,updated_by) "
+            "VALUES (%s,%s,%s,%s::date - 2,80000,%s::date + 10,%s::date + 10,"
+            "'ACTIVE',%s,%s)",
+            (
+                reservation_id,
+                unit_id,
+                customer_id,
+                business_date,
+                business_date,
+                business_date,
+                actor_id,
+                actor_id,
+            ),
+        )
+        connection.execute(
+            "INSERT INTO app.reservation_deposit_acceptances("
+            "id,reservation_id,suggested_rate_basis_points,suggested_amount_usd_cents,"
+            "accepted_required_amount_usd_cents,acceptance_kind,accepted_at,accepted_by,"
+            "reason,authorization_reference,calculation_trace) "
+            "VALUES (%s,%s,2000,16000,80000,'AUTHORIZED_VARIANCE',"
+            "clock_timestamp(),%s,'Approved full Security Deposit','reservations.manage',"
+            "%s::jsonb)",
+            (
+                uuid4(),
+                reservation_id,
+                actor_id,
+                '{"agreed_monthly_rent_usd_cents":80000,'
+                '"suggested_rate_basis_points":2000,'
+                '"suggested_amount_usd_cents":16000}',
+            ),
+        )
+        connection.execute(
+            "INSERT INTO app.deposits("
+            "id,deposit_type,customer_id,reservation_id,required_usd_cents,"
+            "required_effective_date,created_by,updated_by) "
+            "VALUES (%s,'SECURITY',%s,%s,80000,%s::date - 2,%s,%s)",
+            (deposit_id, customer_id, reservation_id, business_date, actor_id, actor_id),
+        )
+        connection.execute(
+            "INSERT INTO app.deposit_receipts("
+            "id,deposit_id,payment_id,amount_usd_cents,occurred_at,actor_id) "
+            "VALUES (%s,%s,%s,80000,clock_timestamp(),%s)",
+            (
+                uuid4(),
+                deposit_id,
+                seed_deposit_payment(
+                    connection, deposit_id=deposit_id, actor_id=actor_id, amount=80_000
+                ),
+                actor_id,
+            ),
+        )
+        connection.execute(
+            "UPDATE app.units SET status='RESERVED',version=version+1,"
+            "updated_at=statement_timestamp(),updated_by=%s WHERE id=%s",
+            (actor_id, unit_id),
+        )
+        other_unit_id = uuid4()
+        connection.execute(
+            "INSERT INTO app.units("
+            "id,property_id,unit_number,floor,unit_type,status,created_by,updated_by) "
+            "VALUES (%s,%s,%s,'1','ONE_BEDROOM','VACANT',%s,%s)",
+            (other_unit_id, property_id, f"LEASE-{other_unit_id.hex[:12]}", actor_id, actor_id),
+        )
+        connection.commit()
+
+    client = api(runtime_database_url(), authenticated(actor_id, property_id))
+
+    def draft(lease_unit_id: UUID, security_deposit_id: UUID | None) -> dict[str, object]:
+        lease_id = uuid4()
+        created = client.post(
+            f"/api/v1/properties/{property_id}/leases",
+            json={
+                "lease_id": str(lease_id),
+                "unit_id": str(lease_unit_id),
+                "primary_tenant_id": str(customer_id),
+                "primary_signer_id": str(uuid4()),
+                "start_date": business_date.isoformat(),
+                "end_date": lease_end.isoformat(),
+                "monthly_rent_usd_cents": 80000,
+                "predecessor_lease_id": None,
+                "additional_signers": [],
+                "planned_occupant_customer_ids": [str(customer_id)],
+                "service_terms": [],
+                "pet_term": None,
+                "security_deposit_id": None
+                if security_deposit_id is None
+                else str(security_deposit_id),
+                "event_id": str(uuid4()),
+                "reason": "Lease drafted from the screen",
+            },
+            headers=headers(),
+        )
+        assert created.status_code == 201, created.text
+        body: dict[str, object] = created.json()["data"]
+        return body
+
+    reserved = draft(unit_id, deposit_id)
+    lease_id = reserved["lease_id"]
+    signers = reserved["signers"]
+    assert isinstance(signers, list)
+    signature = client.patch(
+        f"/api/v1/lease-signers/{signers[0]['signer_id']}?lease_id={lease_id}",
+        headers=headers(int(str(reserved["version"]))),
+        json={"event_id": str(uuid4()), "reason": "Every Signer signed the paper Lease"},
+    )
+    assert signature.status_code == 200, signature.text
+    sign_body = {
+        "event_id": str(uuid4()),
+        "reason": "Every Signer signed the paper Lease",
+        "reservation_id": str(reservation_id),
+    }
+    sign_headers = headers(signature.json()["data"]["version"])
+    signed = client.post(f"/api/v1/leases/{lease_id}/sign", headers=sign_headers, json=sign_body)
+    assert signed.status_code == 200, signed.text
+    # Try again with the same request is replayed, not refused.
+    replayed = client.post(f"/api/v1/leases/{lease_id}/sign", headers=sign_headers, json=sign_body)
+    assert replayed.status_code == 200, replayed.text
+    with psycopg.connect(migrated_database_url) as connection:
+        assert connection.execute(
+            "SELECT status, resulting_lease_id::text FROM app.reservations WHERE id=%s",
+            (reservation_id,),
+        ).fetchone() == ("COMPLETED", lease_id)
+        assert connection.execute(
+            "SELECT lease_id::text FROM app.deposits WHERE id=%s", (deposit_id,)
+        ).fetchone() == (lease_id,)
+        assert connection.execute(
+            "SELECT status FROM app.units WHERE id=%s", (unit_id,)
+        ).fetchone() == ("OCCUPIED",)
+
+    occupancy_id = uuid4()
+    moved_in = client.post(
+        f"/api/v1/leases/{lease_id}/move-in",
+        headers=headers(signed.json()["data"]["version"]),
+        json={
+            "event_id": str(uuid4()),
+            "actual_move_in_date": business_date.isoformat(),
+            "occupants": [{"occupancy_id": str(occupancy_id), "customer_id": str(customer_id)}],
+            "reason": "Keys handed over",
+        },
+    )
+    assert moved_in.status_code == 200, moved_in.text
+    assert [value["occupancy_id"] for value in moved_in.json()["data"]["occupancies"]] == [
+        str(occupancy_id)
+    ]
+
+    other = draft(other_unit_id, None)
+    cancelled = client.post(
+        f"/api/v1/leases/{other['lease_id']}/cancel",
+        headers=headers(int(str(other["version"]))),
+        json={"event_id": str(uuid4()), "reason": "Customer chose another Unit"},
+    )
+    assert cancelled.status_code == 200, cancelled.text
+    assert cancelled.json()["data"]["status"] == "CANCELLED"

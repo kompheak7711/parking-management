@@ -21,7 +21,7 @@ from property_rental.unit import (
     UnitStatus,
     UnitType,
 )
-from property_rental.unit_api import PostgresUnitResourceFlow
+from property_rental.unit_api import PostgresUnitResourceFlow, UnitDetails
 
 
 @pytest.fixture(scope="session")
@@ -249,9 +249,11 @@ def test_migration_accepts_supported_unit_statuses(
         ({"floor": ""}, "23514"),
         ({"floor": "\t\n"}, "23514"),
         ({"floor": "\r1\f"}, "23514"),
-        ({"unit_type": "COMMERCIAL"}, "23514"),
+        # V1-058 R2a (owner 2026-10-24): a Unit Type must be in the Property's Unit Types list.
+        ({"unit_type": "COMMERCIAL"}, "22023"),
         ({"status": "AVAILABLE"}, "23514"),
-        ({"property_id": uuid4()}, "23503"),
+        # A Property that does not exist has no Unit Types list, so the list check refuses first.
+        ({"property_id": uuid4()}, "22023"),
     ],
 )
 def test_migration_rejects_invalid_unit_values(
@@ -507,37 +509,63 @@ def test_runtime_unit_flow_creates_updates_and_returns_immutable_timeline(
             property_id = UUID(str(existing_property[0]))
 
     flow = PostgresUnitResourceFlow(runtime_url)
+    # V1-058 R2a: the Floor comes from the Floors list (DL-075 answer 10, DL-078 answer 1).
+    first_floor = flow.create_setup_item(
+        property_id,
+        list_kind="FLOOR",
+        name_en=f"Floor {uuid4().hex[:6]}",
+        name_km=None,
+        sort_order=1,
+        actor_id=str(actor_id),
+    )
+    second_floor = flow.create_setup_item(
+        property_id,
+        list_kind="FLOOR",
+        name_en=f"Floor {uuid4().hex[:6]}",
+        name_km=None,
+        sort_order=2,
+        actor_id=str(actor_id),
+    )
     created = flow.create(
         property_id,
         unit_number=unit_number,
-        floor="1",
+        floor_item_id=first_floor.item_id,
         unit_type=UnitType.STUDIO,
         unit_status=UnitStatus.VACANT,
+        details=UnitDetails(),
         actor_id=str(actor_id),
     )
     updated = flow.patch(
         created.unit_id,
-        unit_number=unit_number,
-        floor="2",
+        floor_item_id=second_floor.item_id,
         unit_type=UnitType.ONE_BEDROOM,
         unit_status=UnitStatus.CLEANING,
+        details=UnitDetails(),
         expected_version=1,
         actor_id=str(actor_id),
     )
     timeline = flow.timeline(created.unit_id, limit=10, cursor=None)
 
     assert updated.version == 2
-    assert updated.floor == "2"
+    assert updated.floor == second_floor.name_en
     assert updated.status is UnitStatus.CLEANING
     assert [event.action for event in timeline.items] == ["unit.updated", "unit.created"]
     assert timeline.items[0].previous_state == {
         "unit_id": str(created.unit_id),
         "property_id": str(property_id),
         "unit_number": unit_number,
-        "floor": "1",
+        "floor": first_floor.name_en,
         "unit_type": "STUDIO",
         "status": "VACANT",
         "version": 1,
+        "floor_item_id": str(first_floor.item_id),
+        "size_square_metres": None,
+        "bedrooms": None,
+        "bathrooms": None,
+        "view_item_id": None,
+        "kitchen_item_id": None,
+        "notes": None,
+        "room_feature_ids": [],
     }
 
 

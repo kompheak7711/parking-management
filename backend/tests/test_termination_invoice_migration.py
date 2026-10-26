@@ -110,7 +110,8 @@ def test_initial_coverage_components_and_services_survive_termination_and_exact_
     migrated_database_url: str, actual: date, coverage: OriginalRentCoverage
 ) -> None:
     with psycopg.connect(migrated_database_url) as connection:
-        human, prop, _, lease, occupancy = setup_billing_source(connection)
+        # An Internet term too: since V1-058 R7b-6e it is billed beside Trash Collection.
+        human, prop, _, lease, occupancy = setup_billing_source(connection, configure_internet=True)
     flow = PostgresRentBillingService(financial_database_url(), prop, human)
     command = initial_command(lease, occupancy)
     original = flow.generate(command, actor=authenticated(human, prop))
@@ -130,7 +131,8 @@ def test_initial_coverage_components_and_services_survive_termination_and_exact_
         (80000, date(2026, 8, 1), date(2026, 8, 31)),
     ]
     services = [row for row in result.items if row.category == "SERVICE_CHARGES"]
-    assert services and all(
+    assert sorted(row.original_usd_cents for row in services) == [161, 403, 1_200, 2_700]
+    assert all(
         row.original_rent_coverage is OriginalRentCoverage.NON_RENT_SOURCE_REVIEW
         for row in services
     )

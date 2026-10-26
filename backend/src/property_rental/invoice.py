@@ -827,6 +827,31 @@ class PostgresInvoiceService:
             ),
         )
 
+    def get_one_time_charge_due_days(
+        self,
+        property_id: UUID,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        """The Property setting and the Property version a change must name (V1-058 R7b-4)."""
+        self._authorize(actor, property_id, SETTINGS_MANAGE_CAPABILITY)
+        try:
+            with self._read_connection() as connection:
+                self._bound_query(connection)
+                row = connection.execute(
+                    "SELECT id,one_time_charge_due_days,version FROM app.properties WHERE id=%s",
+                    (property_id,),
+                ).fetchone()
+        except psycopg.Error as exc:
+            raise self._map_error(exc) from exc
+        if row is None:
+            raise InvoiceNotFoundError("Property was not found")
+        return {
+            "property_id": str(row[0]),
+            "one_time_charge_due_days": row[1],
+            "version": row[2],
+        }
+
     def set_one_time_charge_due_days(
         self,
         property_id: UUID,

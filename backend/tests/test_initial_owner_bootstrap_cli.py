@@ -738,6 +738,7 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         # V1-059 part A: the health page data (API-081), signed in with operations.status.read.
         "/api/v1/operations/status": {"get"},
         "/api/v1/identity/me": {"get"},
+        "/api/v1/identity/me/access": {"get"},
         "/api/v1/auth/login": {"post"},
         "/api/v1/auth/password-change": {"post"},
         "/api/v1/auth/mfa/challenge": {"post"},
@@ -777,6 +778,8 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/meters/{meter_id}/readings": {"get", "post"},
         "/api/v1/utility-readings/{reading_id}/correct": {"post"},
         "/api/v1/properties/{property_id}/utility-readings:batch": {"post"},
+        "/api/v1/properties/{property_id}/utility-readings/sheet": {"post"},
+        "/api/v1/properties/{property_id}/utility-readings/blank-sheet": {"post"},
         "/api/v1/utility-billing/preview": {"post"},
         "/api/v1/properties/{property_id}/billing-runs/rent": {"post"},
         "/api/v1/properties/{property_id}/billing-runs/utilities": {"post"},
@@ -785,7 +788,8 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/properties/{property_id}/invoices": {"get", "post"},
         # V1-055 slice 9b adds the one-time charge and its due-days setting (docs/010 DL-067).
         "/api/v1/properties/{property_id}/one-time-charges": {"post"},
-        "/api/v1/properties/{property_id}/one-time-charge-due-days": {"post"},
+        # V1-058 R7b-4: the Settings Business tab reads the due days (GET).
+        "/api/v1/properties/{property_id}/one-time-charge-due-days": {"get", "post"},
         "/api/v1/properties/{property_id}/leases/{lease_id}/initial-rent-due-date": {"post"},
         # V1-056 slice 11a: the move-out cleaning charge and the hand-back month (API-102).
         "/api/v1/properties/{property_id}/units/{unit_id}/cleaning-rate": {"get"},
@@ -796,6 +800,7 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         # V1-056 slice 11b: the shared financial draft routes (API-101).
         "/api/v1/properties/{property_id}/financial-drafts": {"get"},
         "/api/v1/properties/{property_id}/financial-drafts/{draft_id}": {"get"},
+        "/api/v1/properties/{property_id}/financial-drafts-waiting": {"get"},
         "/api/v1/properties/{property_id}/financial-drafts/{draft_id}/reject": {"post"},
         "/api/v1/properties/{property_id}/financial-drafts/{draft_id}/withdraw": {"post"},
         "/api/v1/properties/{property_id}/financial-drafts/{draft_id}/confirm": {"post"},
@@ -811,10 +816,29 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/unpaid-initial-never-moved-in": {"post"},
         "/api/v1/properties/{property_id}/lease-terminations/{termination_event_id}"
         "/unpaid-initial-moved-in-credit": {"post"},
+        "/api/v1/properties/{property_id}/leases/{lease_id}/termination-notices": {"get", "post"},
         "/api/v1/financial-workspaces": {"get"},
         "/api/v1/properties/{property_id}/financial-capabilities": {"get"},
         "/api/v1/properties/{property_id}/payment-methods": {"get"},
         "/api/v1/properties/{property_id}/payments/khr-preview": {"post"},
+        "/api/v1/properties/{property_id}/payments/receive": {"post"},
+        "/api/v1/properties/{property_id}/payments/payable": {"get"},
+        "/api/v1/properties/{property_id}/payments/summary": {"get"},
+        # V1-057: Home, reports, report files and the audit file (DL-072, DL-079).
+        "/api/v1/properties/{property_id}/home": {"get"},
+        "/api/v1/properties/{property_id}/reports/totals/{report}": {"get"},
+        "/api/v1/properties/{property_id}/reports/{name}": {"get"},
+        "/api/v1/properties/{property_id}/exports": {"post"},
+        "/api/v1/properties/{property_id}/exports/{export_id}": {"get"},
+        "/api/v1/properties/{property_id}/audit-exports": {"post"},
+        # V1-058 R3 Move-out: the hand-back record and the move-out inspection.
+        "/api/v1/properties/{property_id}/leases/{lease_id}/move-outs": {"get", "post"},
+        "/api/v1/properties/{property_id}/leases/{lease_id}/move-out-inspections": {
+            "get",
+            "post",
+        },
+        "/api/v1/properties/{property_id}/payments/{payment_id}/receipt-lines": {"get"},
+        "/api/v1/properties/{property_id}/invoices/{invoice_id}/late-charge": {"get"},
         "/api/v1/properties/{property_id}/payments/{payment_id}/reversal-context": {"get"},
         "/api/v1/properties/{property_id}/payments": {"get", "post"},
         "/api/v1/payments/{payment_id}": {"get"},
@@ -859,6 +883,19 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         },
         # V1-056 slice 11e-1: the Final Settlement start, preview and draft routes.
         "/api/v1/properties/{property_id}/leases/{lease_id}/final-settlement": {"post"},
+        "/api/v1/properties/{property_id}/final-settlements": {"get"},
+        # V1-058 R7b-6a: Services and Service types in Settings.
+        "/api/v1/properties/{property_id}/service-settings": {"get"},
+        "/api/v1/properties/{property_id}/services": {"post"},
+        "/api/v1/properties/{property_id}/services/{service_id}": {"post"},
+        "/api/v1/properties/{property_id}/service-types": {"post"},
+        "/api/v1/properties/{property_id}/service-types/{type_id}": {"post"},
+        "/api/v1/properties/{property_id}/service-types/{type_id}/remove": {"post"},
+        # V1-058 R7b-6d: move-out cleaning rates by Unit Type.
+        "/api/v1/properties/{property_id}/cleaning-settings": {"get"},
+        "/api/v1/properties/{property_id}/cleaning-rates": {"post"},
+        "/api/v1/properties/{property_id}/cleaning-rates/{rate_id}": {"post"},
+        "/api/v1/properties/{property_id}/cleaning-rates/{rate_id}/remove": {"post"},
         "/api/v1/properties/{property_id}/final-settlements/{settlement_id}/preview": {"get"},
         "/api/v1/properties/{property_id}/final-settlements/{settlement_id}/drafts": {"post"},
         # V1-056 slice 11e-2: the post-settlement correction drafts and the Adjustment reversal.
@@ -915,6 +952,12 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/properties/{property_id}/units": {"get", "post"},
         "/units/{unit_id}": {"get", "patch"},
         "/units/{unit_id}/timeline": {"get"},
+        "/properties/{property_id}/unit-setup": {"get"},
+        "/properties/{property_id}/unit-setup/items": {"post"},
+        "/unit-setup/items/{item_id}": {"patch"},
+        "/unit-setup/items/{item_id}/remove": {"post"},
+        "/units/{unit_id}/inventory": {"get", "put"},
+        "/properties/{property_id}/unit-inventory-items": {"get"},
         "/api/v1/properties/{property_id}/customers": {"get", "post"},
         "/api/v1/properties/{property_id}/customers/{customer_id}/command-status": {"get"},
         "/api/v1/customers/{customer_id}": {"get", "patch"},
@@ -951,6 +994,8 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/occupancies/{occupancy_id}/end": {"post"},
         "/api/v1/leases/{lease_id}/sign": {"post"},
         "/api/v1/leases/{lease_id}/renew": {"post"},
+        "/api/v1/leases/{lease_id}/cancel": {"post"},
+        "/api/v1/leases/{lease_id}/move-in": {"post"},
         "/api/v1/leases/{lease_id}/terminate": {"post"},
         "/api/v1/reservations/{reservation_id}/deposits": {"get"},
         "/api/v1/reservations/{reservation_id}/security-deposit-dispositions": {"post"},

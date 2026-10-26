@@ -23,6 +23,9 @@ const current = {
   contact_address: null,
   memo: null,
   id_document_number: "N0123456",
+  date_of_birth: null,
+  gender: null,
+  nationality: null,
   version: 4,
   active: true,
   deactivated_at: null,
@@ -56,6 +59,7 @@ describe("Customer API client", () => {
               {
                 customer_id: "customer-1",
                 legal_name: "Dara Sok",
+                phone_number: "012 345 678",
                 active: true,
                 relationship_indicators: [],
               },
@@ -73,6 +77,7 @@ describe("Customer API client", () => {
         {
           customer_id: "customer-1",
           legal_name: "Dara Sok",
+          phone_number: "012 345 678",
           active: true,
           relationship_indicators: [],
         },
@@ -432,5 +437,38 @@ describe("Customer API client", () => {
         relationship_indicators: [],
       },
     ]);
+  });
+
+  it("TEST-FE-815 reads the optional date of birth, gender and nationality and refuses other values", async () => {
+    const respond = (extra: Record<string, unknown>) =>
+      new Response(JSON.stringify({ data: { ...current, ...extra } }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn<typeof fetch>()
+        .mockResolvedValueOnce(
+          respond({
+            date_of_birth: "1990-05-17",
+            gender: "FEMALE",
+            nationality: "Cambodian",
+          }),
+        )
+        .mockResolvedValueOnce(respond({ gender: "OTHER" }))
+        .mockResolvedValueOnce(respond({ date_of_birth: "17/05/1990" })),
+    );
+    await expect(customerApi.get("customer-1")).resolves.toMatchObject({
+      date_of_birth: "1990-05-17",
+      gender: "FEMALE",
+      nationality: "Cambodian",
+    });
+    await expect(customerApi.get("customer-1")).rejects.toBeInstanceOf(
+      CustomerRequestError,
+    );
+    await expect(customerApi.get("customer-1")).rejects.toBeInstanceOf(
+      CustomerRequestError,
+    );
   });
 });

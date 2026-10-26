@@ -338,6 +338,8 @@ def _freeze_audit_value(
         _validate_classified_audit_number(field_path, field_key)
         return value
     if isinstance(value, str):
+        if is_file_fingerprint(value, field_key):
+            return value
         _reject_secret_text(value, field_path)
         _validate_classified_audit_text(value, field_path, field_key)
         return value
@@ -377,6 +379,39 @@ def _json_text(value: AuditValue) -> str:
     return json.dumps(thaw_audit_value(value), separators=(",", ":"), sort_keys=True)
 
 
+def is_file_fingerprint(value: str, field_key: str | None) -> bool:
+    """A SHA-256 file fingerprint in a `..._sha256` field (V1-057, DL-072 answer 12).
+
+    It is a public digest of an export file, not a secret, but its 64 hex letters look like a
+    key to the secret-text patterns, so only this exact shape in such a field is let through."""
+    return (
+        field_key is not None
+        and _normalize_audit_key(field_key).endswith("_sha256")
+        and re.fullmatch(r"[0-9a-f]{64}", value) is not None
+    )
+
+
+def public_audit_filters(filters: Mapping[str, object]) -> dict[str, object]:
+    """The search or export filters an audit event may keep (V1-057, DL-072 answer 14).
+
+    A filter whose value the audit value rules refuse (free text typed in a search, say) is left
+    out and counted in `filters_not_recorded_count`, so the event can always be read back."""
+    kept: dict[str, object] = {}
+    left_out = 0
+    for key, value in filters.items():
+        if value is None:
+            continue
+        try:
+            _freeze_audit_value({key: value}, "filters")
+        except (TypeError, ValueError):
+            left_out += 1
+            continue
+        kept[key] = value
+    if left_out:
+        kept["filters_not_recorded_count"] = left_out
+    return kept
+
+
 def _reject_secret_text(value: str, field_path: str) -> None:
     if any(pattern.search(value) for pattern in FORBIDDEN_AUDIT_TEXT_PATTERNS):
         raise ValueError(f"{field_path} contains prohibited secret material")
@@ -401,11 +436,14 @@ def _validate_classified_audit_text(
     if field_key is None:
         raise ValueError(f"{field_path} text is not classified for audit persistence")
     field_key = _normalize_audit_key(field_key)
-    if field_key == "capability" and re.fullmatch(r"[a-z][a-z0-9_-]*(?:\.[a-z0-9_-]+)+", value):
+    # `also` names a second capability in older authorization evidence (migration 72).
+    if (
+        field_key in {"capability", "also"} or field_key.endswith("capability_ids")
+    ) and re.fullmatch(r"[a-z][a-z0-9_-]*(?:\.[a-z0-9_-]+)+", value):
         return
     if field_key == "reference" and re.fullmatch(r"AUTH-[A-Z0-9-]{1,122}", value):
         return
-    if field_key.endswith("_id"):
+    if field_key.endswith(("_id", "_ids")):
         try:
             UUID(value)
             return

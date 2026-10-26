@@ -707,6 +707,8 @@ async function transport<T>(
     version?: number;
     decisionInvoiceId?: string;
     chargeCorrection?: { id: string; input: ChargeCorrectionInput };
+    /** V1-058 R5c: a POST that saves nothing (the riel preview) sends no key. */
+    preview?: boolean;
   },
   transmission?: BillingTransmission,
 ): Promise<T> {
@@ -714,7 +716,7 @@ async function transport<T>(
   if (command) {
     if (command.version !== undefined && command.version > 2_147_483_647)
       throw new InvoiceClientError(null, "INVALID_VERSION", false);
-    if (!command.key)
+    if (!command.key && command.preview !== true)
       throw new InvoiceClientError(null, "IDEMPOTENCY_REQUIRED", false);
     if (transmission) {
       if (!transmission.actorId || transmission.signal.aborted)
@@ -723,7 +725,7 @@ async function transport<T>(
     }
     headers["Content-Type"] = "application/json";
     headers["X-CSRF-Token"] = csrf();
-    headers["Idempotency-Key"] = command.key;
+    if (command.preview !== true) headers["Idempotency-Key"] = command.key;
     if (command.version !== undefined)
       headers["If-Match"] = '"' + String(integer(command.version, 1)) + '"';
   }
@@ -792,7 +794,7 @@ async function transport<T>(
     throw new InvoiceClientError(
       response.status,
       code,
-      Boolean(command) && response.status >= 500,
+      Boolean(command) && command?.preview !== true && response.status >= 500,
       currentVersion,
       fields,
       requestId,
@@ -810,6 +812,8 @@ async function transport<T>(
     );
   }
 }
+// V1-058 R5c: the Payments screens use the same request rules (CSRF, key, safe errors).
+export { transport as billingTransport };
 const encoded = encodeURIComponent;
 const resource =
   <T>(decode: (value: unknown) => T) =>
@@ -1027,6 +1031,22 @@ function createInvoiceApi(transmission?: BillingTransmission): InvoiceApi {
   };
 }
 export const invoiceApi = createInvoiceApi();
+
+/** V1-058 R7b-4: the Settings Business tab reads the one-time charge Due Date days and changes
+ * them with the Property version. */
+export interface DueDaysApi {
+  get: (propertyId: string) => Promise<DueDaysSetting>;
+  set: InvoiceApi["setDueDays"];
+}
+export const dueDaysApi: DueDaysApi = {
+  get: (propertyId) =>
+    transport(
+      "/api/v1/properties/" + encoded(propertyId) + "/one-time-charge-due-days",
+      resource(dueDaysSetting),
+      undefined,
+    ),
+  set: invoiceApi.setDueDays,
+};
 
 /** Serializable intent is sealed before sending and replayed unchanged after interruption. */
 export type BillingCommand =

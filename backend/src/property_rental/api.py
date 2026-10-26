@@ -71,6 +71,35 @@ class IdentityResponse(BaseModel):
     meta: ResponseMeta
 
 
+class CapabilityAccess(BaseModel):
+    """One capability of the current actor and the Properties it covers (V1-058 R1b)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    capability: str
+    property_ids: list[str]
+
+
+class ActorAccess(BaseModel):
+    """What the current actor may use, so the screens show only those menu items.
+
+    It repeats the actor's own grants for display only; every route still checks them."""
+
+    model_config = ConfigDict(frozen=True)
+
+    actor_id: str
+    capabilities: list[CapabilityAccess]
+
+
+class ActorAccessResponse(BaseModel):
+    """Canonical resource envelope for the current actor's access."""
+
+    model_config = ConfigDict(frozen=True)
+
+    data: ActorAccess
+    meta: ResponseMeta
+
+
 def create_api_router(
     settings: Settings,
     readiness_check: Callable[[str], None],
@@ -127,6 +156,37 @@ def create_api_router(
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
         return IdentityResponse(
             data=ActorIdentity(actor_id=actor.actor_id),
+            meta=ResponseMeta(request_id=request.state.request_id),
+        )
+
+    @router.get(
+        "/identity/me/access",
+        response_model=ActorAccessResponse,
+        tags=["identity"],
+        summary="The current actor's capabilities and their Properties, for the menu",
+    )
+    def current_access(request: Request, response: Response) -> ActorAccessResponse:
+        actor = actor_resolver(request)
+        if actor is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+        requirement = AuthorizationRequirement(
+            capability=IDENTITY_READ_SELF_CAPABILITY,
+            object_scope=ObjectScope(object_type="actor", object_id=actor.actor_id),
+        )
+        if not is_authorized(actor, requirement):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+        merged: dict[str, set[str]] = {}
+        for grant in actor.capability_grants:
+            merged.setdefault(grant.capability, set()).update(grant.property_ids)
+        response.headers["Cache-Control"] = "no-store"
+        return ActorAccessResponse(
+            data=ActorAccess(
+                actor_id=actor.actor_id,
+                capabilities=[
+                    CapabilityAccess(capability=name, property_ids=sorted(merged[name]))
+                    for name in sorted(merged)
+                ],
+            ),
             meta=ResponseMeta(request_id=request.state.request_id),
         )
 

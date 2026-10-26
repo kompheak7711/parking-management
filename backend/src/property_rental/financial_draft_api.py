@@ -98,6 +98,7 @@ class FinancialDraftFlow(Protocol):
     def list(
         self, property_id: UUID, *, actor: AuthenticatedActor, page: FinancialDraftPage
     ) -> dict[str, object]: ...
+    def approvals(self, property_id: UUID, *, actor: AuthenticatedActor) -> dict[str, object]: ...
     def reject(
         self, property_id: UUID, draft_id: UUID, reason: str, *, actor: AuthenticatedActor
     ) -> dict[str, object]: ...
@@ -134,6 +135,9 @@ class PostgresFinancialDraftFlow:
         self, property_id: UUID, *, actor: AuthenticatedActor, page: FinancialDraftPage
     ) -> dict[str, object]:
         return self._service(mutation=False).list(property_id, actor=actor, page=page)
+
+    def approvals(self, property_id: UUID, *, actor: AuthenticatedActor) -> dict[str, object]:
+        return self._service(mutation=False).approvals(property_id, actor=actor)
 
     def reject(
         self, property_id: UUID, draft_id: UUID, reason: str, *, actor: AuthenticatedActor
@@ -184,6 +188,9 @@ def _without_transaction_id(value: object) -> object:
 # 11c-3) and returned-Payment drafts have them; the other kinds keep their plain answers until
 # their own routes name them (slice 11c-2 review round 1: a closed-Settlement refusal reads
 # wrongly on a correction).
+# Waiting for approval shows at most this many waiting drafts, oldest first (V1-058 R7a).
+WAITING_PAGE: Final = 200
+
 CONFIRM_REFUSALS: Final[Mapping[str, Mapping[str, Refusal]]] = MappingProxyType(
     {
         "REFUND": REFUND_REFUSALS_BY_DATABASE_MESSAGE,
@@ -401,6 +408,37 @@ def create_financial_draft_router(
             **envelope(request, shown),
             "page": {"limit": limit, "next_cursor": next_cursor},
         }
+
+    @router.get("/properties/{property_id}/financial-drafts-waiting")
+    def waiting_drafts(property_id: Identity, request: Request) -> dict[str, object]:
+        """Waiting for approval (V1-058 R7a): the drafts that wait, oldest first, and those
+        decided today, each with a plain ``summary`` line; the same drafts the list shows."""
+        _queries(request, set())
+        actor = context(request, property_id, READ_CAPABILITIES)
+        result = _invoke(lambda: flow.approvals(property_id, actor=actor))
+        if not isinstance(result, dict) or set(result) != {
+            "business_date",
+            "waiting",
+            "decided_today",
+        }:
+            raise HTTPException(503)
+        lists: dict[str, list[dict[str, object]]] = {}
+        truncated = False
+        for name in ("waiting", "decided_today"):
+            items = result[name]
+            if not isinstance(items, list):
+                raise HTTPException(503)
+            # The read sends one waiting draft more than the page holds when more wait; this
+            # is counted before the Reservation filter below, which may drop some.
+            if name == "waiting" and len(items) > WAITING_PAGE:
+                truncated = True
+                items = items[:WAITING_PAGE]
+            drafts = [_draft(item, property_id) for item in items]
+            lists[name] = [draft for draft in drafts if _shown_to(actor, property_id, draft)]
+        return envelope(
+            request,
+            {"business_date": result["business_date"], **lists, "truncated": truncated},
+        )
 
     @router.get("/properties/{property_id}/financial-drafts/{draft_id}")
     def get_draft(property_id: Identity, draft_id: Identity, request: Request) -> dict[str, object]:

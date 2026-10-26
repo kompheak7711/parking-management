@@ -112,6 +112,8 @@ database_test_suites='
   tests/test_audit_migration.py
   tests/test_property_migration.py
   tests/test_unit_migration.py
+  tests/test_unit_setup_lists_migration.py
+  tests/test_unit_inventory_migration.py
   tests/test_customer_migration.py
   tests/test_configuration_migration.py
   tests/test_reservation_migration.py
@@ -134,6 +136,8 @@ database_test_suites='
   tests/test_lease_enforcement_migration.py
   tests/test_lease_enforcement_api_migration.py
   tests/test_lease_notices_migration.py
+  tests/test_lease_notice_api_migration.py
+  tests/test_staff_rent_letters_migration.py
   tests/test_lease_termination_migration.py
   tests/test_termination_deposit_migration.py
   tests/test_termination_invoice_migration.py
@@ -152,6 +156,10 @@ database_test_suites='
   tests/test_late_payment_charge_reduction_migration.py
   tests/test_manual_late_payment_closed_migration.py
   tests/test_late_charge_payment_proposal_migration.py
+  tests/test_receive_payment_migration.py
+  tests/test_payments_summary_migration.py
+  tests/test_late_charge_card_migration.py
+  tests/test_waiting_for_approval_migration.py
   tests/test_refund_method_settings_migration.py
   tests/test_settings_evidence_hand_back_keep_migration.py
   tests/test_sign_in_prune_migration.py
@@ -196,6 +204,10 @@ database_test_suites='
   tests/test_final_utility_invoice_migration.py
   tests/test_utility_unbilled_periods_migration.py
   tests/test_late_utility_run_migration.py
+  tests/test_reports_home_migration.py
+  tests/test_report_month_facts_migration.py
+  tests/test_report_registers_migration.py
+  tests/test_report_exports_migration.py
   tests/test_final_settlement_preview_migration.py
   tests/test_final_settlement_draft_migration.py
   tests/test_billing_run_migration.py
@@ -310,6 +322,7 @@ database_test_suites='
   tests/test_settings_access_routes_migration.py
   tests/test_meter_serial_number_migration.py
   tests/test_customer_id_document_number_migration.py
+  tests/test_customer_details_migration.py
   tests/test_document_numbers_migration.py
   tests/test_draft_reads_transaction_id_migration.py
   tests/test_financial_draft_api_migration.py
@@ -321,6 +334,8 @@ database_test_suites='
   tests/test_final_settlement_api_migration.py
   tests/test_settlement_correction_api_migration.py
   tests/test_settlement_plan_correction_api_migration.py
+  tests/test_services_settings_migration.py
+  tests/test_cleaning_rates_migration.py
   tests/test_v1_060_release_migration.py
 '
 

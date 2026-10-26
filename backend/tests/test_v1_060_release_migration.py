@@ -1,7 +1,7 @@
 # ruff: noqa: E501
-"""V1-060 migrations: the faster reads of `20270219_207` give the same answers, the
-Billing Run writers of `20270220_208` lock the run row before the attempt row, and the excess
-check of `20270221_209` waits only for PostgreSQL's own cleanup.
+"""V1-060 migrations: the faster reads of `20270320_239` give the same answers, the
+Billing Run writers of `20270321_240` lock the run row before the attempt row, and the excess
+check of `20270322_241` waits only for PostgreSQL's own cleanup.
 
 Runs last in `scripts/database-test.sh`, on the shared test database after every other module
 has left its Invoices, adjustments, Payments, credit and deposit applications and their
@@ -21,7 +21,7 @@ from test_move_in_migration import migrated_database_url as migrated_database_ur
 
 _SPEC = importlib.util.spec_from_file_location(
     "v1_060_speed",
-    Path(__file__).parents[1] / "migrations/versions/20270219_207_v1_060_speed.py",
+    Path(__file__).parents[1] / "migrations/versions/20270320_239_v1_060_speed.py",
 )
 assert _SPEC is not None and _SPEC.loader is not None
 SPEED = importlib.util.module_from_spec(_SPEC)

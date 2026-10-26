@@ -256,6 +256,24 @@ def test_one_time_charge_due_days_route_needs_settings_access_and_the_exact_vers
     assert cast(SetOneTimeChargeDueDaysCommand, flow.commands[-1]).expected_version == 3
 
 
+def test_one_time_charge_due_days_read_needs_settings_access() -> None:
+    """V1-058 R7b-4: the Settings Business tab reads the days and the version to change them."""
+    property_id = uuid4()
+    flow = InMemoryInvoiceFlow(property_id, invoice_resource(property_id))
+    path = f"/api/v1/properties/{property_id}/one-time-charge-due-days"
+    for capability in ("invoices.issue", "property.manage"):
+        assert api(flow, actor(property_id, capability)).get(path).status_code == 403
+    client = api(flow, actor(property_id, "settings.manage"))
+    assert client.get(path + "?x=1").status_code == 400
+    read = client.get(path)
+    assert read.status_code == 200
+    assert read.json()["data"] == {
+        "property_id": str(property_id),
+        "one_time_charge_due_days": 7,
+        "version": 3,
+    }
+
+
 def test_initial_rent_due_date_route_uses_invoices_issue_with_a_mandatory_reason() -> None:
     from test_invoice import mutation_headers
 

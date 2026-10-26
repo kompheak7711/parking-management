@@ -153,6 +153,27 @@ export interface BatchReadingResult {
   error: { code: string } | null;
 }
 
+/** V1-058 R4c: what the server read from a readings spreadsheet; nothing is saved yet. */
+export type ReadingSheetProblem =
+  | "FILE_TYPE"
+  | "UNREADABLE"
+  | "COLUMNS"
+  | "TOO_MANY_ROWS"
+  | "EMPTY";
+
+export interface ReadingSheetRow {
+  row: number;
+  unit: string;
+  electricity: string;
+  water: string;
+}
+
+export interface ReadingSheet {
+  file_name: string;
+  problem: ReadingSheetProblem | null;
+  rows: ReadingSheetRow[];
+}
+
 export interface UtilityApi {
   load: (propertyId: string, unitId: string) => Promise<UtilitySnapshot>;
   loadMeters: (
@@ -198,6 +219,12 @@ export interface UtilityApi {
     input: UtilityRateInput,
     idempotencyKey: string,
   ) => Promise<UtilityRate>;
+  readSheet: (
+    propertyId: string,
+    fileName: string,
+    contentBase64: string,
+  ) => Promise<ReadingSheet>;
+  blankSheet: (propertyId: string, units: string[]) => Promise<Blob>;
   preview: (input: PreviewInput) => Promise<UtilityCalculation>;
 }
 
@@ -274,16 +301,20 @@ export interface PreviewInput {
 export class UtilityClientError extends Error {
   readonly fields: string[];
   readonly requestId: string | null;
+  /** The HTTP status of an answer kept by this error; null when no answer came back. */
+  readonly status: number | null;
 
   constructor(
     message = "The Utility request failed.",
     fields: string[] = [],
     requestId: string | null = null,
+    status: number | null = null,
   ) {
     super(message);
     this.name = "UtilityClientError";
     this.fields = fields;
     this.requestId = requestId;
+    this.status = status;
   }
 }
 
@@ -410,7 +441,7 @@ async function response(
     throw new UtilityConflictError(fields, requestId);
   }
   if (!result.ok || envelope === null || !("data" in envelope)) {
-    throw new UtilityClientError(undefined, fields, requestId);
+    throw new UtilityClientError(undefined, fields, requestId, result.status);
   }
   return { data: envelope.data, page: envelope.page };
 }
@@ -794,6 +825,57 @@ export const utilityApi: UtilityApi = {
         )
       ).data,
     );
+  },
+  async readSheet(propertyId, fileName, contentBase64) {
+    const data = object(
+      (
+        await response(
+          `/api/v1/properties/${encodeURIComponent(propertyId)}/utility-readings/sheet`,
+          mutation({ file_name: fileName, content_base64: contentBase64 }),
+        )
+      ).data,
+    );
+    const problem = data.problem;
+    if (
+      problem !== null &&
+      problem !== "FILE_TYPE" &&
+      problem !== "UNREADABLE" &&
+      problem !== "COLUMNS" &&
+      problem !== "TOO_MANY_ROWS" &&
+      problem !== "EMPTY"
+    ) {
+      throw new UtilityClientError();
+    }
+    if (!Array.isArray(data.rows)) throw new UtilityClientError();
+    return {
+      file_name: string(data.file_name),
+      problem,
+      rows: data.rows.map((value): ReadingSheetRow => {
+        const row = object(value);
+        return {
+          row: number(row.row),
+          unit: string(row.unit),
+          electricity: string(row.electricity),
+          water: string(row.water),
+        };
+      }),
+    };
+  },
+  async blankSheet(propertyId, units) {
+    let result: Response;
+    try {
+      result = await fetch(
+        `/api/v1/properties/${encodeURIComponent(propertyId)}/utility-readings/blank-sheet`,
+        { credentials: "include", ...mutation({ units }) },
+      );
+    } catch {
+      throw new UtilityClientError();
+    }
+    if (result.status === 401 || result.status === 403) {
+      throw new UtilityAuthorizationError();
+    }
+    if (!result.ok) throw new UtilityClientError();
+    return result.blob();
   },
   async preview(input) {
     return calculation(

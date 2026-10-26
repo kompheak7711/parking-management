@@ -1,6 +1,8 @@
 export interface CustomerListItem {
   customer_id: string;
   legal_name: string;
+  // V1-058 R2: the Customers list shows the phone (DESIGN.md "Customers (round 2)").
+  phone_number?: string | null;
   active: boolean;
   relationship_indicators: string[];
 }
@@ -37,6 +39,10 @@ export interface CustomerDetail {
   memo: string | null;
   // DL-071 answer 11: required for new Customers; null only for Customers recorded before.
   id_document_number: string | null;
+  // DL-078 answer 3 (V1-058 R2c): optional details; date as yyyy-mm-dd.
+  date_of_birth: string | null;
+  gender: CustomerGender | null;
+  nationality: string | null;
   version: number;
   active: boolean;
   deactivated_at: string | null;
@@ -49,6 +55,8 @@ export interface CustomerDetail {
   can_view_audit: boolean;
   audit_history_available: boolean;
 }
+
+export type CustomerGender = "FEMALE" | "MALE";
 
 export interface CustomerListPage {
   items: CustomerListItem[];
@@ -103,6 +111,9 @@ export interface CustomerSource {
   contact_address?: string | null;
   memo?: string | null;
   id_document_number?: string | null;
+  date_of_birth?: string | null;
+  gender?: CustomerGender | null;
+  nationality?: string | null;
   confirmed_distinct?: boolean;
 }
 
@@ -340,6 +351,25 @@ function nullableString(value: unknown): string | null {
   return value;
 }
 
+// A detail the server leaves out (a server before V1-058 R2c) reads as not recorded.
+function optionalDetail(value: unknown): string | null {
+  return value === undefined ? null : nullableString(value);
+}
+
+function dateOfBirth(value: unknown): string | null {
+  const text = optionalDetail(value);
+  if (text !== null && !/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+    throw new CustomerRequestError();
+  }
+  return text;
+}
+
+function gender(value: unknown): CustomerGender | null {
+  const text = optionalDetail(value);
+  if (text === null || text === "FEMALE" || text === "MALE") return text;
+  throw new CustomerRequestError();
+}
+
 function listItem(value: unknown): CustomerListItem {
   if (
     !isObject(value) ||
@@ -352,6 +382,8 @@ function listItem(value: unknown): CustomerListItem {
   return {
     customer_id: value.customer_id,
     legal_name: value.legal_name,
+    phone_number:
+      typeof value.phone_number === "string" ? value.phone_number : null,
     active: value.active,
     relationship_indicators: stringArray(value.relationship_indicators),
   };
@@ -438,6 +470,9 @@ function detail(value: unknown): CustomerDetail {
     contact_address: nullableString(value.contact_address),
     memo: nullableString(value.memo),
     id_document_number: nullableString(value.id_document_number),
+    date_of_birth: dateOfBirth(value.date_of_birth),
+    gender: gender(value.gender),
+    nationality: optionalDetail(value.nationality),
     version: value.version,
     active: value.active,
     deactivated_at: nullableString(value.deactivated_at),

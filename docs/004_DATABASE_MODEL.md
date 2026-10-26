@@ -1962,7 +1962,7 @@ the Payment and Deposit locks (review round 1: before it, the receipt held SHARE
 it waited for the Payment, Reservation and Deposit locks, and could deadlock with the allocation
 post or the Payment return confirm); its NOWAIT locks never wait. The Deposit service replays the
 receipt command after 55P03 at most three times and then answers unavailable (DL-067).
-Since V1-060 (DL-096, migration `20270221_209`) the NOWAIT request of
+Since V1-060 (DL-096, migration `20270322_241`) the NOWAIT request of
 `app.assert_payment_excess_eligible` is followed by a wait of at most 3 seconds only when every
 holder of a conflicting lock is an autovacuum worker; any session's lock is still refused at once.
 Known limits (review round 2): the ground refusal reads the Lease status when the receipt is

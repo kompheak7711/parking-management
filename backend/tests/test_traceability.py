@@ -8,6 +8,43 @@ from typing import Final, TypedDict, cast
 
 REPOSITORY_ROOT: Final = Path(__file__).resolve().parents[2]
 MANIFEST_PATH: Final = REPOSITORY_ROOT / "ops" / "traceability.json"
+# V1-058 R2 moved the Unit screen tests to units/UnitsPage.test.tsx. Only the test_path of
+# these entries changed; the history checks below read them as first recorded.
+MOVED_TEST_PATHS: Final = {
+    "TEST-FE-027": "frontend/src/UnitManagement.test.tsx",
+    "TEST-FE-028": "frontend/src/UnitManagement.test.tsx",
+    "TEST-FE-029": "frontend/src/UnitManagement.test.tsx",
+    "TEST-FE-030": "frontend/src/UnitManagement.test.tsx",
+}
+# V1-058 R7b-6e bills every Service, so this test's name and notes changed; the history checks
+# below read the entry as first recorded.
+CHANGED_ENTRIES: Final[dict[str, dict[str, object]]] = {
+    "test_initial_invoice_preserves_rent_service_components_and_bills_every_service": {
+        "test_id": (
+            "test_initial_invoice_preserves_rent_service_components_and_excludes_unapproved_type"
+        ),
+        "notes": (
+            "A real authenticated financial-role call creates one issued Initial Rent Invoice "
+            "with reconstructable July proration and August full-month components for Rent and "
+            "Trash Collection. Distinct effective Service rates remain linked at component level, "
+            "while equally configured Internet is not billed."
+        ),
+    },
+}
+
+
+def as_first_recorded(entries: list[dict[str, object]]) -> list[dict[str, object]]:
+    """Return the entries with each moved test path and changed entry put back as first recorded."""
+    return [
+        {**entry, "test_path": MOVED_TEST_PATHS[str(entry["test_id"])]}
+        if entry["test_id"] in MOVED_TEST_PATHS
+        else {**entry, **CHANGED_ENTRIES[str(entry["test_id"])]}
+        if entry["test_id"] in CHANGED_ENTRIES
+        else entry
+        for entry in entries
+    ]
+
+
 PYTHON_TEST_DIRECTORY: Final = REPOSITORY_ROOT / "backend" / "tests"
 FRONTEND_TEST_DIRECTORY: Final = REPOSITORY_ROOT / "frontend" / "src"
 ALLOWED_LEVELS: Final = {
@@ -222,6 +259,22 @@ def test_traceability_manifest_covers_executable_tests() -> None:
         "CustomerAccountLedger.test.tsx",
     ):
         executable_ids.update(collect_financial_unit_test_ids(FRONTEND_TEST_DIRECTORY / name))
+    # V1-058 screen rebuild: client tests that carry numbered TEST-FE ids beside older names.
+    for name in (
+        "unitClient.test.ts",
+        "adminClient.test.ts",
+        "invoiceClient.test.ts",
+        "history/historyClient.test.ts",
+        "moveout/moveoutClient.test.ts",
+        "moveout/plan.test.ts",
+        "settings/serviceSettingsClient.test.ts",
+        "leases/leaseServices.test.ts",
+    ):
+        executable_ids.update(
+            identifier
+            for identifier in collect_financial_unit_test_ids(FRONTEND_TEST_DIRECTORY / name)
+            if re.fullmatch(r"TEST-FE-\d+", identifier)
+        )
     executable_ids.update(
         collect_financial_browser_test_ids(
             FRONTEND_TEST_DIRECTORY / "test" / "financialRecovery.browser.ts"
@@ -1128,7 +1181,9 @@ def test_v1052_payment_reversal_context_preserves_prior_manifest_and_complete_st
     import hashlib
 
     entries = json.loads(MANIFEST_PATH.read_text())["entries"]
-    historical = json.dumps(entries[:1598], sort_keys=True, separators=(",", ":")).encode()
+    historical = json.dumps(
+        as_first_recorded(entries[:1598]), sort_keys=True, separators=(",", ":")
+    ).encode()
     assert (
         hashlib.sha256(historical).hexdigest()
         == "a121fe8e1adc5075d7bfedbc5e7c93f55206d1893180cba73b6eebf00777cb5f"
@@ -1190,7 +1245,9 @@ def test_v1052_reversal_context_correction_preserves_failed_candidate_trace() ->
     import hashlib
 
     entries = json.loads(MANIFEST_PATH.read_text())["entries"]
-    retained = json.dumps(entries[:1636], sort_keys=True, separators=(",", ":")).encode()
+    retained = json.dumps(
+        as_first_recorded(entries[:1636]), sort_keys=True, separators=(",", ":")
+    ).encode()
     assert (
         hashlib.sha256(retained).hexdigest()
         == "247671c11d722ea1f42e604924148bc2c5da2685eab669c34f159fa8bef8fb11"
@@ -1212,7 +1269,9 @@ def test_v1052_financial_action_context_preserves_accepted_trace_and_requires_st
     import hashlib
 
     entries = json.loads(MANIFEST_PATH.read_text())["entries"]
-    original = json.dumps(entries[:1644], sort_keys=True, separators=(",", ":")).encode()
+    original = json.dumps(
+        as_first_recorded(entries[:1644]), sort_keys=True, separators=(",", ":")
+    ).encode()
     assert (
         hashlib.sha256(original).hexdigest()
         == "bf884c4c65aca66bf120e00bd0e2636dc6519899e6e2f124c92305a374e22f4c"
@@ -1290,7 +1349,9 @@ def test_v1052_action_context_review_correction_preserves_all_prior_trace() -> N
     import hashlib
 
     entries = json.loads(MANIFEST_PATH.read_text())["entries"]
-    original = json.dumps(entries[:1700], sort_keys=True, separators=(",", ":")).encode()
+    original = json.dumps(
+        as_first_recorded(entries[:1700]), sort_keys=True, separators=(",", ":")
+    ).encode()
     assert (
         hashlib.sha256(original).hexdigest()
         == "a82b06cb07cd4ec11204a484a73ae6712bde97181d057bfa88b8e9e4ebf63e34"
@@ -1329,7 +1390,9 @@ def test_v1052_action_context_review_aa_preserves_all_prior_trace() -> None:
     import hashlib
 
     entries = json.loads(MANIFEST_PATH.read_text())["entries"]
-    original = json.dumps(entries[:1717], sort_keys=True, separators=(",", ":")).encode()
+    original = json.dumps(
+        as_first_recorded(entries[:1717]), sort_keys=True, separators=(",", ":")
+    ).encode()
     assert (
         hashlib.sha256(original).hexdigest()
         == "91d34416a20b699bf8a695c0c801dc8a42e278f695e3bb1bc2c2550ddff00858"
@@ -1367,7 +1430,9 @@ def test_v1052_financial_staff_ui_preserves_accepted_trace_and_requires_helper_m
     import hashlib
 
     entries = json.loads(MANIFEST_PATH.read_text())["entries"]
-    original = json.dumps(entries[:1733], sort_keys=True, separators=(",", ":")).encode()
+    original = json.dumps(
+        as_first_recorded(entries[:1733]), sort_keys=True, separators=(",", ":")
+    ).encode()
     assert (
         hashlib.sha256(original).hexdigest()
         == "236f98a553757325765189177ebe9d3154ca3e18b261e9a826d8a42405784441"

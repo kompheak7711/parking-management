@@ -123,6 +123,14 @@ class Flow:
             return answer
         return {"settlement": self._settlement(property_id), "blocking_issues": []}
 
+    def settlements(
+        self, property_id: UUID, lease_id: UUID | None, *, actor: AuthenticatedActor
+    ) -> dict[str, object]:
+        answer = self._result("settlements", property_id, lease_id, actor)
+        if isinstance(answer, dict):
+            return answer
+        return {"items": [{**self._settlement(property_id), "pending_draft": True}]}
+
     def record_draft(
         self,
         property_id: UUID,
@@ -173,6 +181,16 @@ def _preview(
     person = None if anonymous else who or actor(flow.prop, PREPARE)
     answer: Response = _api(flow, person).get(
         f"/api/v1/properties/{flow.prop}/final-settlements/{flow.settlement}/preview"
+    )
+    return answer
+
+
+def _list(
+    flow: Flow, who: AuthenticatedActor | None = None, *, query: str = "", anonymous: bool = False
+) -> Response:
+    person = None if anonymous else who or actor(flow.prop, PREPARE)
+    answer: Response = _api(flow, person).get(
+        f"/api/v1/properties/{flow.prop}/final-settlements{query}"
     )
     return answer
 
@@ -420,3 +438,41 @@ def test_an_answer_for_another_property_lease_or_settlement_is_never_shown() -> 
         "payload": {"variant": "FINAL_SETTLEMENT", "final_settlement_id": str(flow.settlement)},
     }
     assert _draft(flow).status_code == 503
+
+
+def test_the_settlements_are_read_without_starting_one() -> None:
+    """V1-058 R3 Move-out M5: the Move-out screens look at a Lease's Settlement (open, waiting
+    for a Manager or closed) by a read that opens nothing."""
+    for capability in (PREPARE, APPROVE):
+        flow = Flow()
+        answer = _list(flow, actor(flow.prop, capability), query=f"?lease_id={flow.lease}")
+        assert answer.status_code == 200, answer.text
+        assert answer.headers["Cache-Control"] == "private, no-store"
+        [item] = answer.json()["data"]
+        assert (item["id"], item["pending_draft"]) == (str(flow.settlement), True)
+        assert flow.calls == [("settlements", flow.prop, flow.lease, flow.calls[0][3])]
+    flow = Flow()
+    assert _list(flow).status_code == 200
+    assert flow.calls[0][2] is None
+    flow = Flow()
+    assert _list(flow, actor(flow.prop, "final_settlements.read")).status_code == 404
+    assert _list(flow, actor(uuid4(), PREPARE)).status_code == 404
+    assert _list(flow, anonymous=True).status_code == 401
+    for query in ("?lease_id=nope", "?other=1", f"?lease_id={flow.lease}&lease_id={flow.lease}"):
+        assert _list(flow, query=query).status_code in {400, 422}
+    assert flow.calls == []
+
+
+def test_a_settlement_list_for_another_property_or_lease_is_never_shown() -> None:
+    flow = Flow()
+    flow.answer = {"items": [{**flow._settlement(flow.prop), "property_id": str(uuid4())}]}
+    assert _list(flow).status_code == 503
+    flow.answer = {"items": [{**flow._settlement(flow.prop), "lease_id": str(uuid4())}]}
+    assert _list(flow, query=f"?lease_id={flow.lease}").status_code == 503
+    flow.answer = {"items": None}
+    assert _list(flow).status_code == 503
+    flow.answer = None
+    flow.error = FinalSettlementNotFoundError("Lease or Final Settlement was not found")
+    assert _list(flow, query=f"?lease_id={flow.lease}").status_code == 404
+    flow.error = FinalSettlementUnavailableError("down")
+    assert _list(flow).status_code == 503

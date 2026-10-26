@@ -302,6 +302,9 @@ function reconciledCustomer(
     customer_id: customerId,
     legal_name: legalName,
     id_document_number: "N 0123456",
+    date_of_birth: null,
+    gender: null,
+    nationality: null,
     phone_number: null,
     email_address: null,
     contact_address: null,
@@ -329,6 +332,14 @@ function reconciledCustomer(
   };
 }
 
+// V1-058 R1: every page has its own address; a test opens a page the way the menu link does.
+function openPage(page: string) {
+  act(() => {
+    window.history.replaceState(null, "", `#/${page}`);
+    window.dispatchEvent(new HashChangeEvent("hashchange"));
+  });
+}
+
 function renderPropertyConfigurationApp(propertyApi: PropertyConfigurationApi) {
   render(
     <App
@@ -342,6 +353,7 @@ function renderPropertyConfigurationApp(propertyApi: PropertyConfigurationApi) {
 }
 
 async function signInAndLoadProperty(propertyId = "property-1") {
+  openPage("settings");
   fireEvent.change(screen.getByLabelText("Username"), {
     target: { value: "manager" },
   });
@@ -500,6 +512,7 @@ describe("local sign-in", () => {
   });
 
   it("TEST-FE-221 mounts the Utilities workflow only in the authenticated workspace", async () => {
+    openPage("utilities");
     const authenticate = vi.fn().mockResolvedValue({
       phase: "authenticated",
       session,
@@ -523,7 +536,7 @@ describe("local sign-in", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
     expect(
-      await screen.findByRole("heading", { name: "Utilities" }),
+      await screen.findByRole("heading", { name: "Utilities", level: 3 }),
     ).toBeInTheDocument();
   });
 
@@ -750,7 +763,7 @@ describe("local sign-in", () => {
     await act(async () => {
       await Promise.resolve();
     });
-    expect(screen.getByRole("main")).toHaveAccessibleName("Account and access");
+    expect(screen.getByRole("main")).toHaveAccessibleName("Home");
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1000);
     });
@@ -786,23 +799,23 @@ describe("local sign-in", () => {
       target: { value: "password" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
-    await waitFor(() => {
-      expect(screen.getByRole("main")).toHaveAccessibleName(
-        "Account and access",
-      );
-    });
+    // V1-058 R1: the signed-in app is the shell, whose work area is named after the open page.
+    await screen.findByRole("button", { name: "Sign out" });
     fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
     // Login L8 review: the server's session may still be alive, so the next person must not
     // get a sign-in screen that hides it.
     expect(
       await screen.findByText(/Sign out did not reach the office computer/),
     ).toBeInTheDocument();
-    expect(screen.getByRole("main")).toHaveAccessibleName("Account and access");
+    expect(
+      screen.queryByRole("button", { name: "Sign in" }),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Sign out" })).toBeEnabled();
     expect(api.logout).toHaveBeenCalledOnce();
   });
 
   it("TEST-FE-012 exposes account commands only after server capability and recent-auth checks with explicit consequence confirmation", async () => {
+    openPage("settings");
     const user: UserAccount = {
       user_id: "user-1",
       property_id: "property-1",
@@ -833,6 +846,8 @@ describe("local sign-in", () => {
       createRoleBundle: vi.fn(),
       assignRoleBundle: vi.fn(),
       administrativelyRecoverUser: vi.fn(),
+      giveSettingsAccess: vi.fn(),
+      removeSettingsAccess: vi.fn(),
     };
     render(
       <App
@@ -853,6 +868,8 @@ describe("local sign-in", () => {
     fireEvent.change(await screen.findByLabelText("Property identifier"), {
       target: { value: "property-1" },
     });
+    // V1-058 R7b: the account forms live on the Users and sign-in tab of Settings.
+    openPage("settings/users");
     fireEvent.click(
       screen.getByRole("button", { name: "Check administration access" }),
     );
@@ -869,6 +886,7 @@ describe("local sign-in", () => {
   });
 
   it("TEST-FE-013 presents recovery codes once and clears accessible material on acknowledgement", async () => {
+    openPage("account");
     const api = mockAuthenticationApi();
     render(
       <App
@@ -906,6 +924,7 @@ describe("local sign-in", () => {
   });
 
   it("TEST-FE-707 shows the live recovery-code set and replaces it by its id, and a refused read keeps the person signed in", async () => {
+    openPage("account");
     let answerLiveSet!: (value: RecoveryCodeSetSummary) => void;
     const api = mockAuthenticationApi({
       liveRecoveryCodeSet: vi
@@ -1001,11 +1020,12 @@ describe("local sign-in", () => {
     expect(
       await screen.findByText(/Your recovery codes could not be checked/),
     ).toBeInTheDocument();
-    expect(screen.getByRole("main")).toHaveAccessibleName("Account and access");
+    expect(screen.getByRole("main")).toHaveAccessibleName("My account");
     expect(refused.logout).not.toHaveBeenCalled();
   });
 
   it("TEST-FE-014 requires consequence confirmation before administrative recovery", async () => {
+    openPage("settings");
     const user: UserAccount = {
       user_id: "user-1",
       property_id: "property-1",
@@ -1041,6 +1061,8 @@ describe("local sign-in", () => {
       createRoleBundle: vi.fn(),
       assignRoleBundle: vi.fn(),
       administrativelyRecoverUser,
+      giveSettingsAccess: vi.fn(),
+      removeSettingsAccess: vi.fn(),
     };
     render(
       <App
@@ -1061,6 +1083,8 @@ describe("local sign-in", () => {
     fireEvent.change(await screen.findByLabelText("Property identifier"), {
       target: { value: "property-1" },
     });
+    // V1-058 R7b: the account forms live on the Users and sign-in tab of Settings.
+    openPage("settings/users");
     fireEvent.click(
       screen.getByRole("button", { name: "Check administration access" }),
     );
@@ -1102,6 +1126,7 @@ describe("local sign-in", () => {
   });
 
   it("TEST-FE-684 shows a new account's first one-time password once and clears it", async () => {
+    openPage("settings");
     const created: UserAccount = {
       user_id: "user-2",
       property_id: "property-1",
@@ -1135,6 +1160,8 @@ describe("local sign-in", () => {
       createRoleBundle: vi.fn(),
       assignRoleBundle: vi.fn(),
       administrativelyRecoverUser: vi.fn(),
+      giveSettingsAccess: vi.fn(),
+      removeSettingsAccess: vi.fn(),
     };
     render(
       <App
@@ -1155,6 +1182,8 @@ describe("local sign-in", () => {
     fireEvent.change(await screen.findByLabelText("Property identifier"), {
       target: { value: "property-1" },
     });
+    // V1-058 R7b: the account forms live on the Users and sign-in tab of Settings.
+    openPage("settings/users");
     fireEvent.click(
       screen.getByRole("button", { name: "Check administration access" }),
     );
@@ -1188,11 +1217,13 @@ describe("local sign-in", () => {
     // Review round 2: loading the administration again clears a password not cleared by hand.
     createAccount();
     await screen.findByRole("region", { name: "One-time password" });
+    // The rebuilt Users tab reads the users too, so only this button's read is counted.
+    const loadsBefore = load.mock.calls.length;
     fireEvent.click(
       screen.getByRole("button", { name: "Check administration access" }),
     );
     await waitFor(() => {
-      expect(load).toHaveBeenCalledTimes(2);
+      expect(load).toHaveBeenCalledTimes(loadsBefore + 1);
     });
     expect(
       screen.queryByRole("region", { name: "One-time password" }),
@@ -1311,6 +1342,7 @@ describe("local sign-in", () => {
   );
 
   it("TEST-FE-015 restores a valid server session after a browser refresh", async () => {
+    openPage("account");
     const restoredSession = {
       ...session,
       idle_expires_at: "2099-08-22T10:30:00Z",
@@ -1457,6 +1489,7 @@ describe("local sign-in", () => {
   });
 
   it("TEST-FE-071 protects dirty Customer forms from in-app sign-out", async () => {
+    openPage("customers");
     const authentication = mockAuthenticationApi();
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
     render(
@@ -1502,6 +1535,7 @@ describe("local sign-in", () => {
   });
 
   it("TEST-FE-072 hides a pending command and requires reconciliation after sign-out", async () => {
+    openPage("customers");
     let finishCreate!: (value: Parameters<CustomerApi["update"]>[0]) => void;
     const pendingCreate = new Promise<Parameters<CustomerApi["update"]>[0]>(
       (resolve) => {
@@ -1599,6 +1633,9 @@ describe("local sign-in", () => {
         customer_id: "customer-created",
         legal_name: "Pending Customer",
         id_document_number: null,
+        date_of_birth: null,
+        gender: null,
+        nationality: null,
         phone_number: null,
         email_address: null,
         contact_address: null,
@@ -1637,6 +1674,8 @@ describe("local sign-in", () => {
     expect(
       await screen.findByText(/A Customer command outcome is unknown/),
     ).toBeInTheDocument();
+    // A new sign-in starts on Home.
+    openPage("customers");
     fireEvent.click(
       screen.getByRole("button", {
         name: "Check the prior Customer command status",
@@ -1655,6 +1694,7 @@ describe("local sign-in", () => {
   });
 
   it("TEST-FE-076 marks an in-flight Customer outcome unknown on session expiry", async () => {
+    openPage("customers");
     vi.useFakeTimers();
     let finishCreate!: (value: Parameters<CustomerApi["update"]>[0]) => void;
     const pendingCreate = new Promise<Parameters<CustomerApi["update"]>[0]>(
@@ -1739,6 +1779,9 @@ describe("local sign-in", () => {
         customer_id: "customer-created",
         legal_name: "Pending Customer",
         id_document_number: null,
+        date_of_birth: null,
+        gender: null,
+        nationality: null,
         phone_number: null,
         email_address: null,
         contact_address: null,
@@ -1770,6 +1813,7 @@ describe("local sign-in", () => {
   });
 
   it("TEST-FE-101 keeps an unresolved Customer command pending at later session expiry", async () => {
+    openPage("customers");
     vi.useFakeTimers();
     const expiringSession = {
       ...session,
@@ -1849,6 +1893,7 @@ describe("local sign-in", () => {
   });
 
   it("TEST-FE-079 requires list reconciliation after an ambiguous Customer create", async () => {
+    openPage("customers");
     const customers = customerApiDouble({
       get: vi
         .fn()
@@ -1945,6 +1990,7 @@ describe("local sign-in", () => {
   });
 
   it("TEST-FE-087 safely retries an authoritatively absent creation with the same identity", async () => {
+    openPage("customers");
     const commandId = "11111111-1111-4111-8111-111111111111";
     vi.spyOn(crypto, "randomUUID").mockReturnValue(commandId);
     const customers = customerApiDouble({
@@ -2034,6 +2080,7 @@ describe("local sign-in", () => {
   });
 
   it("TEST-FE-080 restores an unresolved Customer command gate after reload", async () => {
+    openPage("customers");
     const customers = customerApiDouble({
       create: vi
         .fn()
@@ -2132,6 +2179,8 @@ describe("local sign-in", () => {
       resultFingerprint: "b".repeat(64),
       requestFingerprint: "a".repeat(64),
     });
+    // Review round 1 of V1-058 R1: open the Customers page, so the check is not met by a hidden page.
+    openPage("customers");
     const otherActor = { ...session, actor_id: "actor-2" };
     render(
       <App
@@ -2155,18 +2204,83 @@ describe("local sign-in", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
 
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      "coordination is unavailable",
-    );
+    // V1-058 R2: the Customers page has its own status line, so find the notice by its words.
+    await waitFor(() => {
+      expect(
+        screen
+          .getAllByRole("status")
+          .some((element) =>
+            element.textContent.includes("coordination is unavailable"),
+          ),
+      ).toBe(true);
+    });
     expect(
       screen.queryByText(/A prior Customer command may have completed/),
     ).not.toBeInTheDocument();
+    expect(screen.getByRole("main")).toHaveAccessibleName("Customers");
     expect(
       screen.queryByRole("button", { name: "Create Customer" }),
     ).not.toBeInTheDocument();
   });
 
+  it("TEST-FE-814 shows only the open page and the menu items the person may use, and fills the one Property", async () => {
+    const read = vi.fn().mockResolvedValue({
+      actor_id: session.actor_id,
+      capabilities: [
+        { capability: "identity.read_self", property_ids: [] },
+        { capability: "units.read", property_ids: ["property-1"] },
+        { capability: "customers.read", property_ids: ["property-1"] },
+      ],
+    });
+    render(
+      <App
+        accessApi={{ read }}
+        api={mockAuthenticationApi()}
+        buildId="test-build"
+        environment="development"
+        now={() => new Date("2026-08-22T10:10:00Z").getTime()}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText("Username"), {
+      target: { value: "staff" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "password" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    await waitFor(() => {
+      expect(read).toHaveBeenCalledTimes(1);
+    });
+    const menu = screen.getByRole("navigation", { name: "Menu" });
+    await waitFor(() => {
+      expect(
+        within(menu)
+          .getAllByRole("link")
+          .map((link) => link.textContent),
+      ).toEqual(["Home", "Customers", "Units"]);
+    });
+    // On Home, the Units page is mounted but neither shown nor in the accessibility tree.
+    const unitsPage = document.querySelector('[data-page="units"]');
+    expect(unitsPage).not.toBeNull();
+    expect(unitsPage).not.toBeVisible();
+    openPage("units");
+    expect(unitsPage).toBeVisible();
+    expect(screen.getByRole("main")).toHaveAccessibleName("Units");
+    // A page the person may not use says so and shows nothing of it.
+    openPage("settings");
+    expect(screen.getByText(/Your account cannot use this page/)).toBeVisible();
+    expect(document.querySelector('[data-page="settings"]')).not.toBeVisible();
+    // The Property boxes of Settings (hidden here) are filled with the one Property.
+    expect(screen.getByLabelText("Property identifier")).toHaveValue(
+      "property-1",
+    );
+    expect(
+      screen.getByLabelText("Configuration Property identifier"),
+    ).toHaveValue("property-1");
+  });
+
   it("TEST-FE-088 synchronizes an actor's unresolved command gate across tabs", async () => {
+    openPage("customers");
     render(
       <App
         api={mockAuthenticationApi()}
@@ -2212,9 +2326,16 @@ describe("local sign-in", () => {
         screen.queryByText(/A prior Customer command may have completed/),
       ).not.toBeInTheDocument();
     });
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      "resolved in another tab",
-    );
+    // V1-058 R2: the Customers page has its own status line, so find the notice by its words.
+    await waitFor(() => {
+      expect(
+        screen
+          .getAllByRole("status")
+          .some((element) =>
+            element.textContent.includes("resolved in another tab"),
+          ),
+      ).toBe(true);
+    });
     fireEvent.change(screen.getByLabelText("Customer Property identifier"), {
       target: { value: "property-1" },
     });
@@ -2275,9 +2396,16 @@ describe("local sign-in", () => {
         newValue: null,
       }),
     );
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      "resolved in another tab",
-    );
+    // V1-058 R2: the Customers page has its own status line, so find the notice by its words.
+    await waitFor(() => {
+      expect(
+        screen
+          .getAllByRole("status")
+          .some((element) =>
+            element.textContent.includes("resolved in another tab"),
+          ),
+      ).toBe(true);
+    });
     releaseRead();
     await act(async () => {
       await Promise.resolve();
@@ -2414,6 +2542,7 @@ describe("local sign-in", () => {
   });
 
   it("TEST-FE-135 treats a matching gate cleared by another tab as reconciled", async () => {
+    openPage("customers");
     const commandId = "77777777-7777-4777-8777-777777777777";
     vi.spyOn(crypto, "randomUUID").mockReturnValue(commandId);
     const customers = customerApiDouble({
@@ -2506,6 +2635,7 @@ describe("local sign-in", () => {
   }, 15000);
 
   it("TEST-FE-093 sends no Customer command when durable coordination is unavailable", async () => {
+    openPage("customers");
     vi.spyOn(window.localStorage, "setItem").mockImplementation(() => {
       throw new Error("storage unavailable");
     });
@@ -2555,6 +2685,7 @@ describe("local sign-in", () => {
   });
 
   it("TEST-FE-109 keeps Customer reads available when durable mutation coordination is unavailable", async () => {
+    openPage("customers");
     vi.spyOn(window.localStorage, "getItem").mockImplementation(() => {
       throw new Error("storage unavailable");
     });
@@ -2890,6 +3021,7 @@ describe("financial panel session integration", () => {
   it.each([false, true])(
     "TEST-FE-498 removes financial access and aborts discovery during logout, delayed=%s",
     async (delayed) => {
+      openPage("payments");
       const actorId = "70000000-0000-4000-8000-000000000001",
         signedIn = { ...session, actor_id: actorId };
       let releaseDiscovery!: () => void, releaseLogout!: () => void;
@@ -2982,6 +3114,7 @@ describe("financial drafts during App logout and expiry", () => {
   it.each([false, true])(
     "TEST-FE-525 protects voluntary sign-out drafts and immediately clears forced expiry, forced=%s",
     async (forced) => {
+      openPage("payments");
       const actorId = "70000000-0000-4000-8000-000000000001",
         propertyId = "70000000-0000-4000-8000-000000000002",
         sourceId = "70000000-0000-4000-8000-000000000003",
@@ -3147,6 +3280,7 @@ describe("financial drafts during App logout and expiry", () => {
 
 describe("Customer ledger App integration", () => {
   it("TEST-FE-578 opens ledger from the Customer detail and aborts its read when logout begins, without replay after sign-in", async () => {
+    openPage("customers");
     const actorId = "00000000-0000-4000-8000-000000000001",
       customerId = "00000000-0000-4000-8000-000000000003",
       propertyId = "00000000-0000-4000-8000-000000000002";
@@ -3242,6 +3376,8 @@ describe("Customer ledger App integration", () => {
     releaseLogout();
     await screen.findByLabelText("Username");
     await signIn();
+    // A new sign-in starts on Home.
+    openPage("customers");
     expect(read).toHaveBeenCalledTimes(1);
     expect(
       screen.getByRole("button", { name: "Open Customer account ledger" }),
@@ -3253,6 +3389,7 @@ describe("Lease enforcement drafts during App logout and expiry", () => {
   it.each([false, true])(
     "TEST-FE-614 protects unsaved enforcement values and invalidates forced expiry, forced=%s",
     async (forced) => {
+      openPage("letters");
       const signedIn = { ...session, actor_id: enforcementIds.actor };
       const discard = vi.spyOn(window, "confirm").mockReturnValue(false);
       const read = vi.fn<EnforcementClient["read"]>(async (scope, input) =>

@@ -244,8 +244,11 @@ class Leaver:
     customer: UUID
 
 
-def departed(url: str, slot: int, month: int = 2) -> Leaver:
-    """A signed Lease with an electricity baseline that then moved in, left and was terminated."""
+def departed(url: str, slot: int, month: int = 2, *, with_meter: bool = True) -> Leaver:
+    """A signed Lease with an electricity baseline that then moved in, left and was terminated.
+
+    Without a meter (V1-058 R7b-7: a store room with no electricity or water) the Unit gets no
+    Meter and no baseline; the Departure then names an unused id for the meter."""
     move_flow, staff, move = setup_historical_move_in(
         url, signed_day_offset=-1, receipt_day_offset=-1
     )
@@ -256,38 +259,42 @@ def departed(url: str, slot: int, month: int = 2) -> Leaver:
         ).fetchone()
         assert row is not None
         unit, start, customer = cast(UUID, row[0]), cast(date, row[1]), cast(UUID, row[2])
-        electricity = add_meter(
-            connection, actor_id=human, unit_id=unit, installed_date=start - timedelta(days=30)
+        if not with_meter:
+            electricity = uuid4()
+        else:
+            electricity = add_meter(
+                connection, actor_id=human, unit_id=unit, installed_date=start - timedelta(days=30)
+            )
+            connection.execute(
+                "INSERT INTO app.utility_rates(id,property_id,utility_type,measurement_unit_code,"
+                "rate_usd_per_unit,effective_date,notice_at,notice_evidence,actor_id) "
+                "VALUES (%s,%s,'ELECTRICITY','KWH',0.25,%s,TIMESTAMPTZ '2015-01-01 00:00:00+07',"
+                "'OWNER-NOTICE',%s)",
+                (uuid4(), prop, date(2015, month, slot), human),
+            )
+            base_e = add_reading(
+                connection,
+                actor_id=human,
+                meter_id=electricity,
+                reading_date=start,
+                reading_value="100",
+            )
+            connection.commit()
+    if with_meter:
+        PostgresUtilityBaselineService(runtime_database_url(), financial_database_url()).record(
+            prop,
+            lease,
+            RecordUtilityBaseline(
+                uuid4(),
+                uuid4(),
+                start,
+                (BaselineItem(electricity, base_e),),
+                "Baseline recorded after cleaning and repair",
+                "Handover sheet 17",
+            ),
+            actor=issuer(human, prop, BASELINE_RECORD),
+            request_id="baseline-test",
         )
-        connection.execute(
-            "INSERT INTO app.utility_rates(id,property_id,utility_type,measurement_unit_code,"
-            "rate_usd_per_unit,effective_date,notice_at,notice_evidence,actor_id) "
-            "VALUES (%s,%s,'ELECTRICITY','KWH',0.25,%s,TIMESTAMPTZ '2015-01-01 00:00:00+07',"
-            "'OWNER-NOTICE',%s)",
-            (uuid4(), prop, date(2015, month, slot), human),
-        )
-        base_e = add_reading(
-            connection,
-            actor_id=human,
-            meter_id=electricity,
-            reading_date=start,
-            reading_value="100",
-        )
-        connection.commit()
-    PostgresUtilityBaselineService(runtime_database_url(), financial_database_url()).record(
-        prop,
-        lease,
-        RecordUtilityBaseline(
-            uuid4(),
-            uuid4(),
-            start,
-            (BaselineItem(electricity, base_e),),
-            "Baseline recorded after cleaning and repair",
-            "Handover sheet 17",
-        ),
-        actor=issuer(human, prop, BASELINE_RECORD),
-        request_id="baseline-test",
-    )
     move = replace(move, occupants=(MoveInOccupant(uuid4(), customer),))
     result = move_flow.complete(move, actor=staff)
     termination = terminate(url, human, prop, lease, move.actual_move_in_date + timedelta(days=2))

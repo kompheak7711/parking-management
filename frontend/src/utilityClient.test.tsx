@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   MeterSerialNumberInUseError,
+  UtilityAuthorizationError,
   UtilityClientError,
   UtilityConflictError,
   utilityApi,
@@ -590,5 +591,57 @@ describe("Utility client", () => {
       message:
         "Another Meter of this Property, current or replaced, already has this serial number.",
     });
+  });
+
+  it("TEST-FE-894 sends a readings file to be read, parses its rows and problem, and downloads the blank file", async () => {
+    Object.defineProperty(document, "cookie", {
+      configurable: true,
+      value: "__Host-prm_csrf=utility-token",
+    });
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        response({
+          file_name: "readings.csv",
+          problem: null,
+          rows: [{ row: 2, unit: "U101", electricity: "1300", water: "" }],
+        }),
+      )
+      .mockResolvedValueOnce(
+        response({ file_name: "readings.csv", problem: "SURPRISE", rows: [] }),
+      )
+      .mockResolvedValueOnce(new Response("xlsx bytes", { status: 200 }))
+      .mockResolvedValueOnce(new Response(null, { status: 403 }));
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(
+      utilityApi.readSheet("property/1", "readings.csv", "VW5pdA=="),
+    ).resolves.toEqual({
+      file_name: "readings.csv",
+      problem: null,
+      rows: [{ row: 2, unit: "U101", electricity: "1300", water: "" }],
+    });
+    expect(requestUrl(fetchMock.mock.calls[0]?.[0] ?? "")).toBe(
+      "/api/v1/properties/property%2F1/utility-readings/sheet",
+    );
+    const init = fetchMock.mock.calls[0]?.[1];
+    expect(new Headers(init?.headers).get("X-CSRF-Token")).toBe(
+      "utility-token",
+    );
+    expect(JSON.parse(init?.body as string)).toEqual({
+      file_name: "readings.csv",
+      content_base64: "VW5pdA==",
+    });
+    await expect(
+      utilityApi.readSheet("property-1", "readings.csv", "VW5pdA=="),
+    ).rejects.toBeInstanceOf(UtilityClientError);
+
+    const blob = await utilityApi.blankSheet("property-1", ["U101", "U102"]);
+    expect(await blob.text()).toBe("xlsx bytes");
+    expect(JSON.parse(fetchMock.mock.calls[2]?.[1]?.body as string)).toEqual({
+      units: ["U101", "U102"],
+    });
+    await expect(
+      utilityApi.blankSheet("property-1", ["U101"]),
+    ).rejects.toBeInstanceOf(UtilityAuthorizationError);
   });
 });

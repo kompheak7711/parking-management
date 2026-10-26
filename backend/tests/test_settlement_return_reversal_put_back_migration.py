@@ -211,7 +211,7 @@ def test_the_q104_example_puts_the_service_part_back_on_its_own_line(
     migrated_database_url: str,
 ) -> None:
     """Owner answer (b) to Q-2026-10-13-104 on the real path (set-up of the round 1 independent
-    reviewer): an Initial Invoice with Rent, Trash and Internet lines, all paid; a closed
+    reviewer): an Initial Invoice with Rent and two Trash Collection lines, all paid; a closed
     Settlement that only refunds the Pet Deposit; a REFUND correction of a month's Rent line pays
     2,000 back as a correction Credit Refund. E brings back 900 + p of it (return only, held). The
     Rent line's last 1,000 and the Trash line (prorated, so p is its whole amount up to 500) are
@@ -234,8 +234,10 @@ def test_the_q104_example_puts_the_service_part_back_on_its_own_line(
         )
         sign_lease(connection, lease, human)
         for code, name, first_rate, second_rate in (
+            # Trash Collection alone gives the two Service lines (the July part month and
+            # August). Since V1-058 R7b-6e an Internet term would be billed too, so it is left out
+            # to keep this Invoice as it was.
             ("TRASH_COLLECTION", "Trash Collection", 1_000, 1_200),
-            ("INTERNET", "Internet", 2_500, 2_700),
         ):
             add_service(
                 connection,

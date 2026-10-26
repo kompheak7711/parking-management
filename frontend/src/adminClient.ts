@@ -90,6 +90,12 @@ export interface AccessAdministrationApi {
     userId: string,
     request: { reset_mfa: boolean; reason: string },
   ) => Promise<AdministrativeRecoveryResult>;
+  /** V1-058 R7b-3: give or remove a user's Settings access, with a reason (DL-081). */
+  giveSettingsAccess: (userId: string, reason: string) => Promise<UserAccount>;
+  removeSettingsAccess: (
+    userId: string,
+    reason: string,
+  ) => Promise<UserAccount>;
 }
 
 export class AdministrationUnavailableError extends Error {
@@ -99,10 +105,31 @@ export class AdministrationUnavailableError extends Error {
   }
 }
 
+/** The action needs the password and sign-in code again (login sub-slice L3d-2); nothing was
+ * written. */
+export class ReauthenticationRequiredError extends AdministrationUnavailableError {
+  constructor() {
+    super();
+    this.name = "ReauthenticationRequiredError";
+  }
+}
+
 export class AdministrationError extends Error {
   constructor() {
     super("The administrative command was not completed.");
     this.name = "AdministrationError";
+  }
+}
+
+/** The server refused the command with a stable code and a fixed plain English message. */
+export class AdministrationRefusedError extends AdministrationError {
+  constructor(
+    readonly status: number,
+    readonly code: string,
+    readonly serverMessage: string,
+  ) {
+    super();
+    this.name = "AdministrationRefusedError";
   }
 }
 
@@ -135,16 +162,45 @@ async function request(path: string, init: RequestInit): Promise<unknown> {
   } catch {
     throw new AdministrationError();
   }
-  if (response.status === 401 || response.status === 403) {
-    throw new AdministrationUnavailableError();
-  }
   if (!response.ok) {
+    const refusal =
+      response.status === 401 || response.status >= 500
+        ? null
+        : await refusalOf(response);
+    if (refusal?.code === "REAUTHENTICATION_REQUIRED") {
+      throw new ReauthenticationRequiredError();
+    }
+    if (response.status === 401 || response.status === 403) {
+      throw new AdministrationUnavailableError();
+    }
+    if (refusal !== null) {
+      throw new AdministrationRefusedError(
+        response.status,
+        refusal.code,
+        refusal.message,
+      );
+    }
     throw new AdministrationError();
   }
   try {
     return await response.json();
   } catch {
     throw new AdministrationError();
+  }
+}
+
+async function refusalOf(
+  response: Response,
+): Promise<{ code: string; message: string } | null> {
+  try {
+    const body: unknown = await response.json();
+    if (!isObject(body) || !isObject(body.error)) return null;
+    const { code, message } = body.error;
+    return typeof code === "string" && typeof message === "string"
+      ? { code, message }
+      : null;
+  } catch {
+    return null;
   }
 }
 
@@ -430,4 +486,28 @@ export const accessAdministrationApi: AccessAdministrationApi = {
       one_time_password: oneTimePassword(data.one_time_password),
     };
   },
+
+  async giveSettingsAccess(userId, reason) {
+    return settingsAccess(userId, reason, "");
+  },
+
+  async removeSettingsAccess(userId, reason) {
+    return settingsAccess(userId, reason, "/remove");
+  },
 };
+
+async function settingsAccess(
+  userId: string,
+  reason: string,
+  suffix: "" | "/remove",
+): Promise<UserAccount> {
+  const payload = await request(
+    `/api/v1/users/${encodeURIComponent(userId)}/settings-access${suffix}`,
+    {
+      method: "POST",
+      headers: mutationHeaders(),
+      body: JSON.stringify({ reason }),
+    },
+  );
+  return userAccount(oneData(payload));
+}

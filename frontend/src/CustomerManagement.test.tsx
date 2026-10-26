@@ -34,6 +34,9 @@ const customer: CustomerDetail = {
   contact_address: "Phnom Penh",
   memo: null,
   id_document_number: "N0123456",
+  date_of_birth: null,
+  gender: null,
+  nationality: null,
   version: 1,
   active: true,
   deactivated_at: null,
@@ -161,6 +164,74 @@ describe("CustomerManagement", () => {
         selector: "#edit-customer-id-number",
       }),
     ).not.toBeRequired();
+  });
+
+  it("TEST-FE-816 records the optional date of birth, gender and nationality and changes only what was edited", async () => {
+    const api = client({
+      get: vi.fn().mockResolvedValue({
+        ...customer,
+        date_of_birth: "1990-05-17",
+        gender: "FEMALE",
+        nationality: "Cambodian",
+      }),
+    });
+    await loadCustomers(api);
+    expect(screen.getByLabelText("Date of birth (optional)")).toHaveAttribute(
+      "min",
+      "1900-01-01",
+    );
+    expect(screen.getByLabelText("Nationality (optional)")).toHaveAttribute(
+      "maxlength",
+      "64",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Open Dara Sok" }));
+    expect(await screen.findByText("17/05/1990")).toBeInTheDocument();
+    expect(screen.getByText("Female", { selector: "dd" })).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Gender"), {
+      target: { value: "" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Update Customer" }));
+    await waitFor(() => {
+      expect(api.update).toHaveBeenCalledWith(
+        expect.objectContaining({ customer_id: "customer-1" }),
+        { gender: null },
+        expect.any(String),
+      );
+    });
+
+    fireEvent.change(
+      screen.getByLabelText("Legal name", { selector: "#customer-legal-name" }),
+      { target: { value: "Srey Mom" } },
+    );
+    fireEvent.change(
+      screen.getByLabelText("ID number / Passport number", {
+        selector: "#customer-id-number",
+      }),
+      { target: { value: "P 1122" } },
+    );
+    fireEvent.change(screen.getByLabelText("Date of birth (optional)"), {
+      target: { value: "1988-02-29" },
+    });
+    fireEvent.change(screen.getByLabelText("Gender (optional)"), {
+      target: { value: "MALE" },
+    });
+    fireEvent.change(screen.getByLabelText("Nationality (optional)"), {
+      target: { value: " Thai " },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Create Customer" }));
+    await waitFor(() => {
+      expect(api.create).toHaveBeenCalledWith(
+        "property-1",
+        expect.any(String),
+        expect.objectContaining({
+          legal_name: "Srey Mom",
+          date_of_birth: "1988-02-29",
+          gender: "MALE",
+          nationality: "Thai",
+        }),
+        expect.any(String),
+      );
+    });
   });
 
   it("TEST-FE-V059B-04 keeps the update draft when another Customer has the ID number", async () => {

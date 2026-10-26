@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   PropertyConfigurationUnavailableError,
+  PropertySavedReadFailedError,
   propertyConfigurationApi,
 } from "./propertyClient";
 
@@ -95,6 +96,33 @@ describe("Property business configuration client", () => {
     const init = fetchMock.mock.calls[0]?.[1];
     expect(new Headers(init?.headers).get("If-Match")).toBe('"3"');
     expect(new Headers(init?.headers).get("X-CSRF-Token")).toBe("csrf-token");
+  });
+
+  it("TEST-FE-953 a saved change whose read-back fails says it was saved, not that it failed", async () => {
+    Object.defineProperty(document, "cookie", {
+      configurable: true,
+      value: "__Host-prm_csrf=csrf-token",
+    });
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(response({}))
+      .mockRejectedValueOnce(new Error("network down"))
+      .mockRejectedValueOnce(new Error("network down"));
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(
+      propertyConfigurationApi.updatePaymentMethods(
+        {
+          property_id: "property-1",
+          name: "Riverside",
+          address_text: null,
+          timezone_name: "Asia/Phnom_Penh",
+          payment_methods: [],
+          version: 3,
+        },
+        [{ code: "CASH", display_name: "Cash", accepted: true }],
+      ),
+    ).rejects.toBeInstanceOf(PropertySavedReadFailedError);
+    expect(fetchMock.mock.calls[0]?.[1]?.method).toBe("PATCH");
   });
 
   it("TEST-FE-019 does not expose configuration after a server capability denial", async () => {

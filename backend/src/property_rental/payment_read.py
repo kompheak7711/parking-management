@@ -237,3 +237,89 @@ class PaymentReadService:
             last = cast(dict[str, object], items[-1]["payment"])
             cursor = {"payment_date": last["payment_date"], "id": last["id"]}
         return {"items": items, "next_cursor": cursor, "limit": checked.limit}
+
+
+SUMMARY_ROW_LIMIT = 500
+# At most two years, so the read of every payment in the period stays quick.
+SUMMARY_MAX_DAYS = 731
+
+
+def summarize_period(
+    service: PaymentReadService,
+    property_id: UUID,
+    start: date,
+    end: date,
+    *,
+    actor: AuthenticatedActor,
+) -> dict[str, object]:
+    """V1-058 R5c-3a: the Payments page cards and list for one period (read only)."""
+    actor_id = service._authorize(actor, property_id)
+    if type(start) is not date or type(end) is not date or start > end:
+        raise PaymentReadInvalidError("Payment period is invalid")
+    if (end - start).days > SUMMARY_MAX_DAYS:
+        raise PaymentReadInvalidError("Payment period is too long")
+    rows = service._query(
+        property_id,
+        actor_id,
+        "SELECT app.payments_period_summary(%s,%s,%s,%s,%s)",
+        (property_id, actor_id, start, end, SUMMARY_ROW_LIMIT),
+    )
+    if len(rows) != 1:
+        raise PaymentReadUnavailableError("Payment read is temporarily unavailable")
+    return rows[0]
+
+
+def receipt_lines(
+    service: PaymentReadService,
+    property_id: UUID,
+    payment_id: UUID,
+    *,
+    actor: AuthenticatedActor,
+) -> dict[str, object]:
+    """V1-058 R5c-3a: what the printed Receipt shows for one payment (read only)."""
+    _uuid(property_id)
+    _uuid(payment_id)
+    if not is_authorized(actor, AuthorizationRequirement("receipts.read", str(property_id))):
+        raise PaymentReadAuthorizationError("Receipt read is not authorized")
+    try:
+        actor_id = UUID(actor.actor_id)
+        _uuid(actor_id)
+    except (ValueError, TypeError, AttributeError) as exc:
+        raise PaymentReadAuthorizationError("Payment actor identity is invalid") from exc
+    rows = service._query(
+        property_id,
+        actor_id,
+        "SELECT value FROM (SELECT app.payment_receipt_lines(%s,%s,%s) AS value) item "
+        "WHERE value IS NOT NULL",
+        (property_id, actor_id, payment_id),
+    )
+    if not rows:
+        raise PaymentReadNotFoundError("Payment was not found")
+    return rows[0]
+
+
+def late_charge_card(
+    service: PaymentReadService,
+    property_id: UUID,
+    invoice_id: UUID,
+    *,
+    actor: AuthenticatedActor,
+) -> dict[str, object] | None:
+    """V1-058 R5d: the late-payment card of one Invoice, or None without a charge (read only)."""
+    _uuid(property_id)
+    _uuid(invoice_id)
+    if not is_authorized(actor, AuthorizationRequirement("invoices.read", str(property_id))):
+        raise PaymentReadAuthorizationError("Invoice read is not authorized")
+    try:
+        actor_id = UUID(actor.actor_id)
+        _uuid(actor_id)
+    except (ValueError, TypeError, AttributeError) as exc:
+        raise PaymentReadAuthorizationError("Payment actor identity is invalid") from exc
+    rows = service._query(
+        property_id,
+        actor_id,
+        "SELECT value FROM (SELECT app.invoice_late_charge_card(%s,%s,%s) AS value) item "
+        "WHERE value IS NOT NULL",
+        (property_id, actor_id, invoice_id),
+    )
+    return rows[0] if rows else None

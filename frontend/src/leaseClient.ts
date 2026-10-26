@@ -151,6 +151,11 @@ export interface LeaseSignatureSource {
   reason: string;
 }
 
+/** Signing may name the active Reservation it completes (DL-066). */
+export interface LeaseSignSource extends LeaseSignatureSource {
+  reservation_id?: string;
+}
+
 export interface LeaseRenewSource {
   lease_id: string;
   primary_signer_id: string;
@@ -225,6 +230,20 @@ export interface MoveInSource {
   reason: string;
 }
 
+/** Cancels a draft Lease only (BR-LEASE-004). */
+export interface LeaseCancelSource {
+  event_id: string;
+  reason: string;
+}
+
+/** The physical move-in of a Lease whose signing completed its Reservation (DL-066). */
+export interface LeaseMoveInSource {
+  event_id: string;
+  actual_move_in_date: string;
+  occupants: { occupancy_id: string; customer_id: string }[];
+  reason: string;
+}
+
 export interface MoveInResult {
   event_id: string;
   property_id: string;
@@ -267,7 +286,7 @@ export interface LeaseApi {
   ) => Promise<LeaseResource>;
   sign: (
     lease: LeaseResource,
-    source: LeaseSignatureSource,
+    source: LeaseSignSource,
     idempotencyKey: string,
   ) => Promise<LeaseResource>;
   renew: (
@@ -278,6 +297,16 @@ export interface LeaseApi {
   terminate: (
     lease: LeaseResource,
     source: LeaseTerminateSource,
+    idempotencyKey: string,
+  ) => Promise<LeaseResource>;
+  cancel: (
+    lease: LeaseResource,
+    source: LeaseCancelSource,
+    idempotencyKey: string,
+  ) => Promise<LeaseResource>;
+  recordMoveIn: (
+    lease: LeaseResource,
+    source: LeaseMoveInSource,
     idempotencyKey: string,
   ) => Promise<LeaseResource>;
   completeMoveIn: (
@@ -529,6 +558,22 @@ export const leaseApi: LeaseApi = {
   sign: (value, source, key) =>
     leaseCommand(
       `/api/v1/leases/${encodeURIComponent(value.lease_id)}/sign`,
+      "POST",
+      source,
+      key,
+      value.version,
+    ),
+  cancel: (value, source, key) =>
+    leaseCommand(
+      `/api/v1/leases/${encodeURIComponent(value.lease_id)}/cancel`,
+      "POST",
+      source,
+      key,
+      value.version,
+    ),
+  recordMoveIn: (value, source, key) =>
+    leaseCommand(
+      `/api/v1/leases/${encodeURIComponent(value.lease_id)}/move-in`,
       "POST",
       source,
       key,

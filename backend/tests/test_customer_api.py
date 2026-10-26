@@ -11,26 +11,32 @@ from fastapi.testclient import TestClient
 
 from property_rental.app import create_app
 from property_rental.customer import (
+    UNCHANGED,
     Customer,
     CustomerIdNumberInUse,
     CustomerReuseRequired,
     CustomerVersionConflict,
+    Unchanged,
     id_document_match_key,
 )
 from property_rental.customer_api import (
     CustomerCommandIdentityConflict,
     CustomerCommandStatus,
+    CustomerCreate,
     CustomerHistoryEvent,
     CustomerHistoryPage,
     CustomerIdempotencyKeyReused,
     CustomerLifecycleConflict,
     CustomerPage,
+    CustomerPatch,
     CustomerRecord,
     CustomerResourceInvalid,
     CustomerResourceNotFound,
     CustomerResourceUnavailable,
     PostgresCustomerResourceFlow,
     SlidingWindowCustomerSearchRateGuard,
+    _canonical_create_payload,
+    _canonical_update_payload,
     _decode_history_cursor,
     _encode_history_cursor,
     _record,
@@ -127,6 +133,9 @@ class InMemoryCustomerFlow:
         idempotency_key: UUID,
         request_digest: str,
         id_document_number: str | None = None,
+        date_of_birth: date | None = None,
+        gender: str | None = None,
+        nationality: str | None = None,
     ) -> CustomerRecord:
         existing_command = self.commands.get(idempotency_key)
         if existing_command is not None:
@@ -144,6 +153,9 @@ class InMemoryCustomerFlow:
             contact_address,
             memo,
             id_document_number=id_document_number,
+            date_of_birth=date_of_birth,
+            gender=gender,
+            nationality=nationality,
         )
         holder = next(
             (
@@ -193,6 +205,9 @@ class InMemoryCustomerFlow:
         idempotency_key: UUID,
         request_digest: str,
         id_document_number: str | None = None,
+        date_of_birth: date | Unchanged | None = UNCHANGED,
+        gender: str | Unchanged | None = UNCHANGED,
+        nationality: str | Unchanged | None = UNCHANGED,
     ) -> CustomerRecord:
         existing_command = self.commands.get(idempotency_key)
         if existing_command is not None:
@@ -211,6 +226,11 @@ class InMemoryCustomerFlow:
             if id_document_number is None
             else id_document_number
         )
+        details = (
+            current.customer.date_of_birth if date_of_birth is UNCHANGED else date_of_birth,
+            current.customer.gender if gender is UNCHANGED else gender,
+            current.customer.nationality if nationality is UNCHANGED else nationality,
+        )
         if (
             legal_name,
             phone_number,
@@ -218,6 +238,7 @@ class InMemoryCustomerFlow:
             contact_address,
             memo,
             id_number,
+            *details,
         ) == (
             current.customer.legal_name,
             current.customer.phone_number,
@@ -225,6 +246,9 @@ class InMemoryCustomerFlow:
             current.customer.contact_address,
             current.customer.memo,
             current.customer.id_document_number,
+            current.customer.date_of_birth,
+            current.customer.gender,
+            current.customer.nationality,
         ):
             raise CustomerResourceInvalid("Customer update must change source data")
         try:
@@ -237,6 +261,7 @@ class InMemoryCustomerFlow:
                 memo,
                 current.customer.version + 1,
                 id_number,
+                *details,
                 _allow_legacy_phone=phone_number == current.customer.phone_number,
             )
         except ValueError as exc:
@@ -551,12 +576,14 @@ def test_customer_list_is_authenticated_minimized_and_capability_sensitive() -> 
         {
             "customer_id": str(record.customer.customer_id),
             "legal_name": "Dara Sok",
+            "phone_number": record.customer.phone_number,
             "active": True,
             "relationship_indicators": [],
         }
     ]
     assert "email_address" not in response.text
-    assert "phone_number" not in response.text
+    assert "contact_address" not in response.text
+    assert "id_document_number" not in response.text
     assert (
         client.get(f"/api/v1/properties/{property_id}/customers?customer_type=TENANT").status_code
         == 400
@@ -1064,6 +1091,9 @@ def test_normalized_noop_still_detects_a_concurrent_version_change() -> None:
             idempotency_key: UUID,
             request_digest: str,
             id_document_number: str | None = None,
+            date_of_birth: date | Unchanged | None = UNCHANGED,
+            gender: str | Unchanged | None = UNCHANGED,
+            nationality: str | Unchanged | None = UNCHANGED,
         ) -> CustomerRecord:
             current = self.get(customer_id)
             self.customers[customer_id] = replace(
@@ -1084,6 +1114,9 @@ def test_normalized_noop_still_detects_a_concurrent_version_change() -> None:
                 idempotency_key=idempotency_key,
                 request_digest=request_digest,
                 id_document_number=id_document_number,
+                date_of_birth=date_of_birth,
+                gender=gender,
+                nationality=nationality,
             )
 
     property_id = uuid4()
@@ -1252,8 +1285,13 @@ def test_postgres_list_uses_immutable_cursor_and_literal_search_pattern(
         literal_pattern,
         literal_pattern,
         literal_pattern,
+        # DL-078 answer 4 (V1-058 R2c): the whole ID number compared by its match key.
+        r"person_%\path",
+        r"person_%\path",
         2,
     )
+    assert "app.customer_id_document_match_key(customer.id_document_number) = %s" in queries[0][0]
+    assert "customer.id_document_number" not in queries[0][0].split(" FROM ", 1)[0]
     assert "customer.id > %s" in queries[1][0]
     assert queries[1][1][-2:] == (first_id, 2)
     assert timeouts == [("1000",), ("3000",), ("1000",), ("3000",)]
@@ -1773,3 +1811,149 @@ def test_customer_id_number_is_required_unique_shown_in_detail_and_never_cleared
     )
     assert corrected.status_code == 200
     assert corrected.json()["data"]["id_document_number"] == "P78"
+
+
+def test_customer_details_are_optional_checked_shown_in_detail_and_cleared_with_null() -> None:
+    """DL-078 answer 3 (V1-058 R2c): date of birth, gender and nationality are optional."""
+    property_id = uuid4()
+    flow = InMemoryCustomerFlow(property_id)
+    client = TestClient(
+        create_app(actor_resolver=lambda _: manager(property_id), customer_resource_flow=flow)
+    )
+    url = f"/api/v1/properties/{property_id}/customers"
+
+    def body(**details: object) -> dict[str, object]:
+        return {
+            "customer_id": str(uuid4()),
+            "legal_name": "Srey Mom",
+            "id_document_number": f"P {uuid4().hex[:8]}",
+            **details,
+        }
+
+    plain = client.post(url, json=body(), headers=mutation_headers())
+    assert plain.status_code == 201
+    assert {
+        key: plain.json()["data"][key] for key in ("date_of_birth", "gender", "nationality")
+    } == {
+        "date_of_birth": None,
+        "gender": None,
+        "nationality": None,
+    }
+    for refused in (
+        {"date_of_birth": "1899-12-31"},
+        {"date_of_birth": "2999-01-01"},
+        {"date_of_birth": "31/12/1990"},
+        {"gender": "OTHER"},
+        {"gender": "female"},
+        {"nationality": "x" * 65},
+    ):
+        response = client.post(url, json=body(**refused), headers=mutation_headers())
+        assert response.status_code == 422, refused
+    created = client.post(
+        url,
+        json=body(date_of_birth="1990-05-17", gender="FEMALE", nationality="  Cambodian "),
+        headers=mutation_headers(),
+    )
+    assert created.status_code == 201
+    data = created.json()["data"]
+    assert (data["date_of_birth"], data["gender"], data["nationality"]) == (
+        "1990-05-17",
+        "FEMALE",
+        "Cambodian",
+    )
+    customer_id = data["customer_id"]
+    assert "1990-05-17" not in client.get(url).text
+    detail = client.get(f"/api/v1/customers/{customer_id}")
+    assert detail.json()["data"]["nationality"] == "Cambodian"
+    kept = client.patch(
+        f"/api/v1/customers/{customer_id}",
+        json={"phone_number": "012 345 678"},
+        headers=mutation_headers(1),
+    )
+    assert kept.status_code == 200
+    assert kept.json()["data"]["date_of_birth"] == "1990-05-17"
+    assert kept.json()["data"]["gender"] == "FEMALE"
+    cleared = client.patch(
+        f"/api/v1/customers/{customer_id}",
+        json={"gender": None, "nationality": None},
+        headers=mutation_headers(2),
+    )
+    assert cleared.status_code == 200
+    cleared_data = cleared.json()["data"]
+    assert (cleared_data["date_of_birth"], cleared_data["gender"], cleared_data["nationality"]) == (
+        "1990-05-17",
+        None,
+        None,
+    )
+    only_detail = client.patch(
+        f"/api/v1/customers/{customer_id}",
+        json={"date_of_birth": "1990-05-18"},
+        headers=mutation_headers(3),
+    )
+    assert only_detail.status_code == 200
+    assert only_detail.json()["data"]["date_of_birth"] == "1990-05-18"
+
+
+def test_customer_detail_digests_keep_older_requests_and_tell_different_details_apart() -> None:
+    """DL-078 answer 3 (V1-058 R2c): the replay fingerprint of a Customer command."""
+    customer_id = uuid4()
+    plain = {"customer_id": str(customer_id), "legal_name": "Srey Mom", "id_document_number": "P1"}
+    before = {
+        "legal_name": "Srey Mom",
+        "phone_number": None,
+        "email_address": None,
+        "contact_address": None,
+        "memo": None,
+        "confirmed_distinct": False,
+        "id_document_number": "P1",
+    }
+    assert _canonical_create_payload(CustomerCreate.model_validate(plain)) == before
+    blank = {**plain, "date_of_birth": None, "gender": None, "nationality": "  "}
+    assert _canonical_create_payload(CustomerCreate.model_validate(blank)) == before
+    given = {**plain, "date_of_birth": "1990-05-17", "gender": "MALE", "nationality": " Thai "}
+    assert _canonical_create_payload(CustomerCreate.model_validate(given)) == {
+        **before,
+        "date_of_birth": "1990-05-17",
+        "gender": "MALE",
+        "nationality": "Thai",
+    }
+    omitted = _canonical_update_payload(
+        CustomerPatch.model_validate({"phone_number": "012 345 678"}), expected_version=2
+    )
+    cleared = _canonical_update_payload(
+        CustomerPatch.model_validate({"phone_number": "012 345 678", "gender": None}),
+        expected_version=2,
+    )
+    assert "gender" not in omitted and cleared["gender"] is None
+    for not_a_date in (0, "1990-05-17T00:00:00", "17/05/1990"):
+        with pytest.raises(ValueError):
+            CustomerCreate.model_validate({**plain, "date_of_birth": not_a_date})
+
+
+def test_customer_command_replay_keeps_the_details_and_refuses_a_different_detail() -> None:
+    property_id = uuid4()
+    record = sample_record(property_id)
+    flow = InMemoryCustomerFlow(property_id, {record.customer.customer_id: record})
+    client = TestClient(
+        create_app(actor_resolver=lambda _: manager(property_id), customer_resource_flow=flow)
+    )
+    headers = mutation_headers()
+    body = {
+        "customer_id": str(uuid4()),
+        "legal_name": "Srey Mom",
+        "id_document_number": "P 4455",
+        "gender": "FEMALE",
+    }
+    url = f"/api/v1/properties/{property_id}/customers"
+    first = client.post(url, json=body, headers=headers)
+    again = client.post(url, json=body, headers=headers)
+    assert first.status_code == again.status_code == 201
+    assert again.json()["data"]["gender"] == "FEMALE"
+    changed = client.post(url, json={**body, "gender": "MALE"}, headers=headers)
+    assert changed.status_code == 409
+    update_headers = mutation_headers(record.customer.version)
+    path = f"/api/v1/customers/{record.customer.customer_id}"
+    updated = client.patch(path, json={"nationality": "Khmer"}, headers=update_headers)
+    assert updated.status_code == 200
+    different = client.patch(path, json={"nationality": None}, headers=update_headers)
+    assert different.status_code == 409

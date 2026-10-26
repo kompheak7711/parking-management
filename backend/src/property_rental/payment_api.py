@@ -51,6 +51,7 @@ from property_rental.payment_confirmation import (
     _uuid,
 )
 from property_rental.payment_read import (
+    SUMMARY_MAX_DAYS,
     PaymentFilters,
     PaymentPage,
     PaymentReadAuthorizationError,
@@ -58,6 +59,18 @@ from property_rental.payment_read import (
     PaymentReadNotFoundError,
     PaymentReadService,
     PaymentReadUnavailableError,
+    late_charge_card,
+    receipt_lines,
+    summarize_period,
+)
+from property_rental.receive_payment import (
+    PaysTarget,
+    ReceivePaymentChanged,
+    ReceivePaymentCommand,
+    ReceivePaymentLeftWhileOwing,
+    ReceivePaymentService,
+    ReceivePaymentTooMany,
+    read_payable,
 )
 from property_rental.settings import Settings
 
@@ -211,6 +224,42 @@ class KhrPaymentInput(PaymentInput):
 Confirmation = ConfirmUsdPaymentCommand | ConfirmKhrPaymentCommand
 
 
+class PaysTargetInput(StrictInput):
+    """One tick on Receive payment: an Invoice or a late-payment charge and what it gets."""
+
+    invoice_id: Identity | None = None
+    late_payment_charge_id: Identity | None = None
+    amount_usd_cents: MinorUnits
+
+    def command(self) -> PaysTarget:
+        if (self.invoice_id is None) == (self.late_payment_charge_id is None):
+            raise PaymentConfirmationInvalidError("A tick names an Invoice or a charge")
+        if self.invoice_id is not None:
+            return PaysTarget("INVOICE", self.invoice_id, self.amount_usd_cents)
+        assert self.late_payment_charge_id is not None
+        return PaysTarget("LATE_PAYMENT_CHARGE", self.late_payment_charge_id, self.amount_usd_cents)
+
+
+class PaysInput(StrictInput):
+    """What the money pays (DL-077): the oldest-first ticks shown, or what the payer named."""
+
+    mode: Literal["OLDEST_FIRST", "NAMED"]
+    targets: Annotated[list[PaysTargetInput], Field(max_length=100)]
+
+    def command(self, confirmation: Confirmation) -> ReceivePaymentCommand:
+        return ReceivePaymentCommand(
+            confirmation, self.mode, tuple(target.command() for target in self.targets)
+        )
+
+
+class ReceiveUsdPaymentInput(UsdPaymentInput):
+    pays: PaysInput
+
+
+class ReceiveKhrPaymentInput(KhrPaymentInput):
+    pays: PaysInput
+
+
 class PaymentFlow(Protocol):
     def list(
         self,
@@ -224,6 +273,21 @@ class PaymentFlow(Protocol):
     def confirm(
         self, property_id: UUID, command: Confirmation, *, actor: AuthenticatedActor
     ) -> dict[str, object]: ...
+    def receive(
+        self, property_id: UUID, command: ReceivePaymentCommand, *, actor: AuthenticatedActor
+    ) -> dict[str, object]: ...
+    def payable(
+        self, property_id: UUID, customer_id: UUID, *, actor: AuthenticatedActor
+    ) -> dict[str, object]: ...
+    def summary(
+        self, property_id: UUID, start: date, end: date, *, actor: AuthenticatedActor
+    ) -> dict[str, object]: ...
+    def receipt_lines(
+        self, property_id: UUID, payment_id: UUID, *, actor: AuthenticatedActor
+    ) -> dict[str, object]: ...
+    def late_charge_card(
+        self, property_id: UUID, invoice_id: UUID, *, actor: AuthenticatedActor
+    ) -> dict[str, object] | None: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -341,6 +405,38 @@ class PostgresPaymentFlow:
             actor=actor,
         )
 
+    def receive(
+        self, property_id: UUID, command: ReceivePaymentCommand, *, actor: AuthenticatedActor
+    ) -> dict[str, object]:
+        if self.financial_database_url is None:
+            raise PaymentConfirmationUnavailableError("Receive payment is unavailable")
+        return ReceivePaymentService(
+            self.financial_database_url,
+            self.exchange_rate_provider or UnavailableExchangeRateProvider(),
+        ).receive(property_id, command, actor=actor)
+
+    def payable(
+        self, property_id: UUID, customer_id: UUID, *, actor: AuthenticatedActor
+    ) -> dict[str, object]:
+        if self.database_url is None:
+            raise PaymentConfirmationUnavailableError("What is owed is unavailable")
+        return read_payable(self.database_url, property_id, customer_id, actor=actor)
+
+    def summary(
+        self, property_id: UUID, start: date, end: date, *, actor: AuthenticatedActor
+    ) -> dict[str, object]:
+        return summarize_period(self._reader(), property_id, start, end, actor=actor)
+
+    def receipt_lines(
+        self, property_id: UUID, payment_id: UUID, *, actor: AuthenticatedActor
+    ) -> dict[str, object]:
+        return receipt_lines(self._reader(), property_id, payment_id, actor=actor)
+
+    def late_charge_card(
+        self, property_id: UUID, invoice_id: UUID, *, actor: AuthenticatedActor
+    ) -> dict[str, object] | None:
+        return late_charge_card(self._reader(), property_id, invoice_id, actor=actor)
+
 
 def payment_key_reused_response(request: Request) -> JSONResponse:
     return JSONResponse(
@@ -359,13 +455,53 @@ def payment_key_reused_response(request: Request) -> JSONResponse:
     )
 
 
+def receive_refused_response(
+    request: Request, error: PaymentConfirmationConflictError
+) -> JSONResponse:
+    """The two Receive payment refusals the screen explains in its own words (DL-077)."""
+    if isinstance(error, ReceivePaymentLeftWhileOwing):
+        code, message = (
+            "RECEIVE_PAYMENT_LEFT_WHILE_OWING",
+            "Money is left while other Invoices are still unpaid. Tick another Invoice.",
+        )
+    elif isinstance(error, ReceivePaymentTooMany):
+        code, message = (
+            "RECEIVE_PAYMENT_TOO_MANY",
+            "This Customer owes more than 100 items. Name what this money pays.",
+        )
+    else:
+        code, message = (
+            "RECEIVE_PAYMENT_CHANGED",
+            "What this money pays changed. Read the Customer's Invoices again.",
+        )
+    return JSONResponse(
+        status_code=409,
+        content={
+            "error": {
+                "code": code,
+                "message": message,
+                "fields": [],
+                "rule_ids": ["DL-077"],
+                "current_version": None,
+            },
+            "meta": {"request_id": request.state.request_id},
+        },
+        headers={"X-Request-ID": request.state.request_id, "Cache-Control": "private, no-store"},
+    )
+
+
 T = TypeVar("T")
 
 
 def _invoke(call: Callable[[], T], *, hide: bool = False) -> T:
     try:
         return call()
-    except PaymentConfirmationKeyReused:
+    except (
+        PaymentConfirmationKeyReused,
+        ReceivePaymentChanged,
+        ReceivePaymentLeftWhileOwing,
+        ReceivePaymentTooMany,
+    ):
         raise
     except (PaymentReadNotFoundError, PaymentConfirmationNotFoundError) as exc:
         raise HTTPException(404) from exc
@@ -523,6 +659,61 @@ def create_payment_router(
             "meta": financial_metadata(request),
         }
 
+    @router.get("/properties/{property_id}/payments/payable")
+    def payable(
+        property_id: Identity, customer_id: Identity, request: Request
+    ) -> dict[str, object]:
+        """V1-058 R5c-1: the Receive payment list, in the order oldest-first ticks pay it."""
+        actor = _actor(request, resolver)
+        _authorize(actor, property_id, "payments.record")
+        bind_financial_property(request, property_id)
+        _queries(request, {"customer_id"})
+        result = _invoke(lambda: flow.payable(property_id, customer_id, actor=actor))
+        return {"data": result, "meta": financial_metadata(request)}
+
+    @router.get("/properties/{property_id}/payments/summary")
+    def summary(
+        property_id: Identity,
+        request: Request,
+        start: Annotated[date, Query(alias="from")],
+        end: Annotated[date, Query(alias="to")],
+    ) -> dict[str, object]:
+        """V1-058 R5c-3a: the Payments page cards and list for one period."""
+        actor = _actor(request, resolver)
+        _authorize(actor, property_id, "payments.read")
+        bind_financial_property(request, property_id)
+        _queries(request, {"from", "to"})
+        if start > end or (end - start).days > SUMMARY_MAX_DAYS:
+            raise HTTPException(422)
+        result = _invoke(lambda: flow.summary(property_id, start, end, actor=actor))
+        return {"data": result, "meta": financial_metadata(request)}
+
+    @router.get("/properties/{property_id}/payments/{payment_id}/receipt-lines")
+    def payment_receipt_lines(
+        property_id: Identity, payment_id: Identity, request: Request
+    ) -> dict[str, object]:
+        """V1-058 R5c-3a: what the printed Receipt shows for one payment."""
+        actor = _actor(request, resolver)
+        _authorize(actor, property_id, "receipts.read")
+        bind_financial_property(request, property_id)
+        _queries(request, set())
+        result = _invoke(
+            lambda: flow.receipt_lines(property_id, payment_id, actor=actor), hide=True
+        )
+        return {"data": result, "meta": financial_metadata(request)}
+
+    @router.get("/properties/{property_id}/invoices/{invoice_id}/late-charge")
+    def invoice_late_charge(
+        property_id: Identity, invoice_id: Identity, request: Request
+    ) -> dict[str, object]:
+        """V1-058 R5d: the late-payment card of one Invoice; data is null without a charge."""
+        actor = _actor(request, resolver)
+        _authorize(actor, property_id, "invoices.read")
+        bind_financial_property(request, property_id)
+        _queries(request, set())
+        result = _invoke(lambda: flow.late_charge_card(property_id, invoice_id, actor=actor))
+        return {"data": result, "meta": financial_metadata(request)}
+
     @router.get("/payments/{payment_id}")
     def get_payment(payment_id: Identity, request: Request) -> dict[str, object]:
         actor = _actor(request, resolver)
@@ -559,6 +750,47 @@ def create_payment_router(
         bind_financial_property(request, property_id)
         command = _invoke(lambda: body.command(idempotency_key))
         result = _invoke(lambda: flow.confirm(property_id, command, actor=actor))
+        payment = cast(dict[str, object], result["payment"])
+        response.headers["Location"] = f"/api/v1/payments/{payment['id']}"
+        return {"data": result, "meta": financial_metadata(request)}
+
+    @router.post(
+        "/properties/{property_id}/payments/receive",
+        status_code=201,
+        dependencies=[Depends(_strict_json)],
+        response_model=None,
+    )
+    def receive_payment(
+        property_id: Identity,
+        body: ReceiveUsdPaymentInput | ReceiveKhrPaymentInput,
+        request: Request,
+        response: Response,
+        idempotency_key: Annotated[Identity, Header(alias="Idempotency-Key")],
+    ) -> dict[str, object] | JSONResponse:
+        """V1-058 R5c-1 (DL-077): the payment, its Receipt and what it pays, saved together."""
+        actor = _actor(request, resolver)
+        _queries(request, set())
+        _authorize(actor, property_id, "payments.record")
+        if body.pays.targets:
+            _authorize(actor, property_id, "payments.allocate")
+        for header in ("Idempotency-Key", "Origin", "X-CSRF-Token", "X-Billing-Actor-ID"):
+            if len(request.headers.getlist(header)) > 1:
+                raise HTTPException(400)
+        if not request.headers.get("X-CSRF-Token"):
+            raise HTTPException(403)
+        require_browser_mutation(request, settings)
+        if isinstance(body, ReceiveKhrPaymentInput) and body.manual_reference is not None:
+            _authorize(actor, property_id, "exchange_rates.manage")
+        bind_financial_property(request, property_id)
+        command = _invoke(lambda: body.pays.command(body.command(idempotency_key)))
+        try:
+            result = _invoke(lambda: flow.receive(property_id, command, actor=actor))
+        except (
+            ReceivePaymentChanged,
+            ReceivePaymentLeftWhileOwing,
+            ReceivePaymentTooMany,
+        ) as error:
+            return receive_refused_response(request, error)
         payment = cast(dict[str, object], result["payment"])
         response.headers["Location"] = f"/api/v1/payments/{payment['id']}"
         return {"data": result, "meta": financial_metadata(request)}

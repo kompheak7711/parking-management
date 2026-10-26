@@ -13,7 +13,7 @@ from dataclasses import asdict, dataclass
 from datetime import UTC, date, datetime
 from threading import Lock
 from time import monotonic
-from typing import Annotated, Final, Protocol, cast
+from typing import Annotated, Final, Literal, Protocol, cast
 from uuid import UUID
 
 import psycopg
@@ -22,10 +22,14 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field, StrictBool, field_validator
 
 from property_rental.auth_api import CSRF_COOKIE_NAME
+from property_rental.business_time import property_business_date
 from property_rental.customer import (
     CUSTOMER_CONNECT_TIMEOUT_SECONDS,
     CUSTOMER_LOCK_TIMEOUT_MS,
+    EARLIEST_DATE_OF_BIRTH,
     ID_DOCUMENT_NUMBER_MAX_LENGTH,
+    NATIONALITY_MAX_LENGTH,
+    UNCHANGED,
     Customer,
     CustomerCommandContext,
     CustomerIdentityAlreadyExistsError,
@@ -35,6 +39,7 @@ from property_rental.customer import (
     CustomerService,
     CustomerVersionConflict,
     PostgresCustomerRepository,
+    Unchanged,
     _customer_from_row,
     canonical_email,
     id_document_match_key,
@@ -357,6 +362,9 @@ class CustomerResourceFlow(Protocol):
         idempotency_key: UUID,
         request_digest: str,
         id_document_number: str | None = None,
+        date_of_birth: date | None = None,
+        gender: str | None = None,
+        nationality: str | None = None,
     ) -> CustomerRecord: ...
 
     def update(
@@ -374,6 +382,9 @@ class CustomerResourceFlow(Protocol):
         idempotency_key: UUID,
         request_digest: str,
         id_document_number: str | None = None,
+        date_of_birth: date | Unchanged | None = UNCHANGED,
+        gender: str | Unchanged | None = UNCHANGED,
+        nationality: str | Unchanged | None = UNCHANGED,
     ) -> CustomerRecord: ...
 
     def deactivate(
@@ -474,6 +485,9 @@ class UnavailableCustomerResourceFlow:
         idempotency_key: UUID,
         request_digest: str,
         id_document_number: str | None = None,
+        date_of_birth: date | None = None,
+        gender: str | None = None,
+        nationality: str | None = None,
     ) -> CustomerRecord:
         del (
             property_id,
@@ -488,6 +502,9 @@ class UnavailableCustomerResourceFlow:
             idempotency_key,
             request_digest,
             id_document_number,
+            date_of_birth,
+            gender,
+            nationality,
         )
         self._fail()
         raise AssertionError
@@ -507,6 +524,9 @@ class UnavailableCustomerResourceFlow:
         idempotency_key: UUID,
         request_digest: str,
         id_document_number: str | None = None,
+        date_of_birth: date | Unchanged | None = UNCHANGED,
+        gender: str | Unchanged | None = UNCHANGED,
+        nationality: str | Unchanged | None = UNCHANGED,
     ) -> CustomerRecord:
         del (
             customer_id,
@@ -521,6 +541,9 @@ class UnavailableCustomerResourceFlow:
             idempotency_key,
             request_digest,
             id_document_number,
+            date_of_birth,
+            gender,
+            nationality,
         )
         self._fail()
         raise AssertionError
@@ -669,10 +692,11 @@ def _command_digest(
 
 
 def _record(row: tuple[object, ...]) -> CustomerRecord:
-    """Map a Customer row; the ID number, when read, is the eleventh column."""
-    id_document_number = row[10] if len(row) > 10 else None
+    """Map a Customer row; the ID number, when read, is the eleventh column and the
+    details (date of birth, gender, nationality, DL-078 answer 3) the next three."""
+    identity = tuple(row[10:14]) if len(row) > 10 else (None,)
     return CustomerRecord(
-        customer=_customer_from_row((*row[:7], id_document_number)),
+        customer=_customer_from_row((*row[:7], *identity)),
         property_id=UUID(str(row[9])),
         deactivated_at=cast(datetime | None, row[7]),
         deactivation_reason=None if row[8] is None else str(row[8]),
@@ -720,7 +744,8 @@ class PostgresCustomerResourceFlow:
         "customer.id, customer.legal_name, customer.phone_number, "
         "customer.email_address, customer.contact_address, customer.memo, "
         "customer.version, customer.deactivated_at, customer.deactivation_reason, "
-        "property.id, customer.id_document_number"
+        "property.id, customer.id_document_number, customer.date_of_birth, "
+        "customer.gender, customer.nationality"
     )
     _list_columns: Final = (
         "customer.id, left(customer.legal_name, 255), NULL::text, NULL::text, "
@@ -781,11 +806,18 @@ class PostgresCustomerResourceFlow:
                 "OR left(lower(customer.email_address), 320) "
                 "LIKE lower(%s) ESCAPE E'\\\\' "
                 "OR left(regexp_replace(customer.phone_number, '[^0-9]', '', 'g'), 100) "
-                "LIKE %s ESCAPE E'\\\\')"
+                "LIKE %s ESCAPE E'\\\\' "
+                # DL-078 answer 4: the whole ID or passport number finds its Customer; the
+                # list never shows the number (SEC-041). A part of a number finds nothing.
+                "OR (%s <> '' "
+                "AND app.customer_id_document_match_key(customer.id_document_number) = %s))"
             )
             escaped = normalized.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
             phone_key = "".join(character for character in normalized if character in "0123456789")
-            parameters.extend((f"{escaped}%", f"{escaped}%", f"{phone_key or escaped}%"))
+            id_key = id_document_match_key(normalized) or ""
+            parameters.extend(
+                (f"{escaped}%", f"{escaped}%", f"{phone_key or escaped}%", id_key, id_key)
+            )
         if active is not None:
             clauses.append(
                 "customer.deactivated_at IS NULL"
@@ -890,6 +922,9 @@ class PostgresCustomerResourceFlow:
         idempotency_key: UUID,
         request_digest: str,
         id_document_number: str | None = None,
+        date_of_birth: date | None = None,
+        gender: str | None = None,
+        nationality: str | None = None,
     ) -> CustomerRecord:
         replay = self.command_status(
             property_id=property_id,
@@ -933,6 +968,9 @@ class PostgresCustomerResourceFlow:
                     memo=memo,
                     confirmed_distinct=confirmed_distinct,
                     id_document_number=id_document_number,
+                    date_of_birth=date_of_birth,
+                    gender=gender,
+                    nationality=nationality,
                 )
             except CustomerIdentityAlreadyExistsError:
                 raise CustomerCommandIdentityConflict(
@@ -963,6 +1001,9 @@ class PostgresCustomerResourceFlow:
         idempotency_key: UUID,
         request_digest: str,
         id_document_number: str | None = None,
+        date_of_birth: date | Unchanged | None = UNCHANGED,
+        gender: str | Unchanged | None = UNCHANGED,
+        nationality: str | Unchanged | None = UNCHANGED,
     ) -> CustomerRecord:
         initial = self.get(customer_id)
         replay = self.command_status(
@@ -1018,6 +1059,9 @@ class PostgresCustomerResourceFlow:
                 memo=memo,
                 confirmed_distinct=confirmed_distinct,
                 id_document_number=id_document_number,
+                date_of_birth=date_of_birth,
+                gender=gender,
+                nationality=nationality,
             )
             return CustomerRecord(
                 updated,
@@ -1191,25 +1235,27 @@ class PostgresCustomerResourceFlow:
             raise CustomerResourceUnavailable("Customer command status is unavailable") from exc
         return CustomerCommandStatus(
             row is not None,
-            None if row is None else self._with_current_id_number(_record(row[:10])),
+            None if row is None else self._with_current_identity(_record(row[:10])),
             None if row is None else UUID(str(row[10])),
             tombstone is not None,
         )
 
-    def _with_current_id_number(self, record: CustomerRecord) -> CustomerRecord:
-        """A replayed command shows the Customer's current ID number (V1-059 part B)."""
+    def _with_current_identity(self, record: CustomerRecord) -> CustomerRecord:
+        """A replayed command shows the Customer's current ID number (V1-059 part B) and
+        current details (V1-058 R2)."""
         try:
             with psycopg.connect(
                 self._database_url, connect_timeout=CUSTOMER_CONNECT_TIMEOUT_SECONDS
             ) as connection:
                 self._bound_query(connection)
                 row = connection.execute(
-                    "SELECT id_document_number FROM app.customers WHERE id = %s",
+                    "SELECT id_document_number, date_of_birth, gender, nationality "
+                    "FROM app.customers WHERE id = %s",
                     (record.customer.customer_id,),
                 ).fetchone()
         except psycopg.Error as exc:
             raise CustomerResourceUnavailable("Customer command status is unavailable") from exc
-        if row is None or row[0] is None:
+        if row is None:
             return record
         customer = record.customer
         return CustomerRecord(
@@ -1222,7 +1268,8 @@ class PostgresCustomerResourceFlow:
                     customer.contact_address,
                     customer.memo,
                     customer.version,
-                    row[0],
+                    customer.id_document_number if row[0] is None else row[0],
+                    *row[1:4],
                 )
             ),
             record.property_id,
@@ -1436,6 +1483,29 @@ def _normalize_optional_command_text(value: object) -> object:
     return normalize_optional(value) if isinstance(value, str) else value
 
 
+CustomerGender = Literal["FEMALE", "MALE"]
+
+
+def _require_date_text(value: object) -> object:
+    """A date of birth is sent as yyyy-mm-dd text only (not a number or a date and time)."""
+    if value is not None and (
+        not isinstance(value, str) or re.fullmatch(r"\d{4}-\d{2}-\d{2}", value) is None
+    ):
+        raise ValueError("date_of_birth must be a yyyy-mm-dd date")
+    return value
+
+
+def _validate_date_of_birth(value: date | None) -> date | None:
+    """DL-078 answer 3: an optional date of birth, from 01/01/1900 up to today in Phnom Penh."""
+    if value is None:
+        return None
+    if value < EARLIEST_DATE_OF_BIRTH:
+        raise ValueError("date_of_birth must not be before 01/01/1900")
+    if value > property_business_date(datetime.now(UTC)):
+        raise ValueError("date_of_birth must not be after today")
+    return value
+
+
 class CustomerCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -1447,6 +1517,9 @@ class CustomerCreate(BaseModel):
     memo: str | None = Field(default=None, max_length=5000)
     confirmed_distinct: StrictBool = False
     id_document_number: str = Field(min_length=1, max_length=ID_DOCUMENT_NUMBER_MAX_LENGTH)
+    date_of_birth: date | None = None
+    gender: CustomerGender | None = None
+    nationality: str | None = Field(default=None, max_length=NATIONALITY_MAX_LENGTH)
 
     @field_validator("legal_name", "id_document_number", mode="before")
     @classmethod
@@ -1461,18 +1534,34 @@ class CustomerCreate(BaseModel):
         _validate_customer_text(value)
         return _validate_id_document_number(value)
 
-    @field_validator("phone_number", "email_address", "contact_address", "memo", mode="before")
+    @field_validator(
+        "phone_number", "email_address", "contact_address", "memo", "nationality", mode="before"
+    )
     @classmethod
     def normalize_optional_text(cls, value: object) -> object:
         del cls
         return _normalize_optional_command_text(value)
 
-    @field_validator("legal_name", "phone_number", "email_address", "contact_address", "memo")
+    @field_validator(
+        "legal_name", "phone_number", "email_address", "contact_address", "memo", "nationality"
+    )
     @classmethod
     def reject_incompatible_text(cls, value: str | None) -> str | None:
         del cls
         _validate_customer_text(value)
         return value
+
+    @field_validator("date_of_birth", mode="before")
+    @classmethod
+    def require_date_text(cls, value: object) -> object:
+        del cls
+        return _require_date_text(value)
+
+    @field_validator("date_of_birth")
+    @classmethod
+    def validate_date_of_birth(cls, value: date | None) -> date | None:
+        del cls
+        return _validate_date_of_birth(value)
 
     @field_validator("phone_number")
     @classmethod
@@ -1507,6 +1596,9 @@ class CustomerPatch(BaseModel):
     id_document_number: str | None = Field(
         default=None, min_length=1, max_length=ID_DOCUMENT_NUMBER_MAX_LENGTH
     )
+    date_of_birth: date | None = None
+    gender: CustomerGender | None = None
+    nationality: str | None = Field(default=None, max_length=NATIONALITY_MAX_LENGTH)
 
     @field_validator("legal_name", "id_document_number", mode="before")
     @classmethod
@@ -1530,6 +1622,7 @@ class CustomerPatch(BaseModel):
         "contact_address",
         "memo",
         "deactivation_reason",
+        "nationality",
         mode="before",
     )
     @classmethod
@@ -1544,6 +1637,7 @@ class CustomerPatch(BaseModel):
         "contact_address",
         "memo",
         "deactivation_reason",
+        "nationality",
     )
     @classmethod
     def reject_incompatible_text(cls, value: str | None) -> str | None:
@@ -1556,6 +1650,18 @@ class CustomerPatch(BaseModel):
     def validate_email(cls, value: str | None) -> str | None:
         del cls
         return _validate_email_address(value)
+
+    @field_validator("date_of_birth", mode="before")
+    @classmethod
+    def require_date_text(cls, value: object) -> object:
+        del cls
+        return _require_date_text(value)
+
+    @field_validator("date_of_birth")
+    @classmethod
+    def validate_date_of_birth(cls, value: date | None) -> date | None:
+        del cls
+        return _validate_date_of_birth(value)
 
 
 def _validate_id_document_number(value: str) -> str:
@@ -1701,7 +1807,25 @@ def _canonical_create_payload(command: CustomerCreate) -> dict[str, object]:
         "memo": normalize_optional(command.memo),
         "confirmed_distinct": command.confirmed_distinct,
         "id_document_number": command.id_document_number.strip(),
+        # The optional details join the digest only when given, so a request without them
+        # keeps the digest it had before V1-058.
+        **_canonical_details(command, set(command.model_fields_set)),
     }
+
+
+def _canonical_details(
+    command: CustomerCreate | CustomerPatch, given: set[str]
+) -> dict[str, object]:
+    details: dict[str, object] = {}
+    if "date_of_birth" in given and command.date_of_birth is not None:
+        details["date_of_birth"] = command.date_of_birth.isoformat()
+    elif "date_of_birth" in given and isinstance(command, CustomerPatch):
+        details["date_of_birth"] = None
+    for field_name in ("gender", "nationality"):
+        value = normalize_optional(cast(str | None, getattr(command, field_name)))
+        if field_name in given and (value is not None or isinstance(command, CustomerPatch)):
+            details[field_name] = value
+    return details
 
 
 def _canonical_update_payload(
@@ -1730,6 +1854,7 @@ def _canonical_update_payload(
             if field_name == "legal_name"
             else normalize_optional(cast(str | None, value))
         )
+    payload.update(_canonical_details(patch, set(patch.model_fields_set)))
     return payload
 
 
@@ -1746,9 +1871,12 @@ def _required_idempotency_key(value: str | None) -> UUID:
 
 
 def _minimal(record: CustomerRecord) -> dict[str, object]:
+    # V1-058 R2: the Customers list shows the phone (DESIGN.md "Customers (round 2)", recorded
+    # by DL-074); email, address and the ID number still need the Customer page (SEC-041).
     return {
         "customer_id": str(record.customer.customer_id),
         "legal_name": record.customer.legal_name,
+        "phone_number": record.customer.phone_number,
         "active": record.active,
         "relationship_indicators": [],
     }
@@ -1771,6 +1899,11 @@ def _detail(
         "contact_address": customer.contact_address,
         "memo": customer.memo,
         "id_document_number": customer.id_document_number,
+        "date_of_birth": (
+            None if customer.date_of_birth is None else customer.date_of_birth.isoformat()
+        ),
+        "gender": customer.gender,
+        "nationality": customer.nationality,
         "version": customer.version,
         "active": record.active,
         "deactivated_at": (
@@ -1921,6 +2054,9 @@ def create_customer_router(
                 memo=command.memo,
                 confirmed_distinct=command.confirmed_distinct,
                 id_document_number=command.id_document_number,
+                date_of_birth=command.date_of_birth,
+                gender=command.gender,
+                nationality=command.nationality,
                 actor_id=actor.actor_id,
                 idempotency_key=idempotency_key,
                 request_digest=_command_digest(
@@ -2082,6 +2218,9 @@ def create_customer_router(
             "contact_address",
             "memo",
             "id_document_number",
+            "date_of_birth",
+            "gender",
+            "nationality",
         }
         changed_source_fields = source_fields.intersection(patch.model_fields_set)
         try:
@@ -2144,6 +2283,15 @@ def create_customer_router(
                         patch.id_document_number
                         if "id_document_number" in patch.model_fields_set
                         else None
+                    ),
+                    date_of_birth=(
+                        patch.date_of_birth
+                        if "date_of_birth" in patch.model_fields_set
+                        else UNCHANGED
+                    ),
+                    gender=patch.gender if "gender" in patch.model_fields_set else UNCHANGED,
+                    nationality=(
+                        patch.nationality if "nationality" in patch.model_fields_set else UNCHANGED
                     ),
                     expected_version=expected,
                     actor_id=actor.actor_id,

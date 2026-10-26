@@ -32,7 +32,7 @@ from property_rental.physical_move_out import (
     physical_move_out_digest,
 )
 from property_rental.unit import UnitStatus
-from property_rental.unit_api import PostgresUnitResourceFlow
+from property_rental.unit_api import PostgresUnitResourceFlow, UnitDetails
 from test_invoice_migration import migrated_database_url as migrated_database_url
 from test_invoice_migration import runtime_database_url
 from test_lease_migration import create_draft, sign_lease
@@ -47,6 +47,18 @@ from test_physical_move_out_migration import (
 )
 from test_reservation_migration import create_reservation, reservation_business_date
 from test_termination_deposit_migration import terminate
+
+
+def without_searches(
+    tables: dict[str, list[tuple[object, ...]]],
+) -> dict[str, list[tuple[object, ...]]]:
+    """The tables without the `audit.searched` events a History search now writes (V1-057)."""
+    events = [
+        row
+        for row in tables["audit_events"]
+        if not (isinstance(row[0], dict) and row[0].get("action") == "audit.searched")
+    ]
+    return {**tables, "audit_events": events}
 
 
 def source_ended_yesterday(url: str) -> tuple[UUID, UUID, UUID, RecordPhysicalMoveOut]:
@@ -93,12 +105,12 @@ def later_unit_activity(url: str, human: UUID, prop: UUID, lease: UUID, activity
     unit = units.get(unit_id)
     units.patch(
         unit_id,
-        unit_number=unit.unit_number,
-        floor=unit.floor,
+        floor_item_id=unit.floor_item_id,
         unit_type=unit.unit_type,
         unit_status=UnitStatus(
             activity if activity in {"UNDER_MAINTENANCE", "OUT_OF_SERVICE"} else "VACANT"
         ),
+        details=UnitDetails.of(unit),
         expected_version=unit.version,
         actor_id=str(human),
     )
@@ -288,7 +300,7 @@ def test_physical_original_and_corrected_audits_reach_unit_readers(
         assert cast(dict[str, object], views[0].resulting_state)["unit_status"] == "VACANT"
         assert cast(dict[str, object], views[1].resulting_state)["unit_status"] == "CLEANING"
     assert record(prop, lease, human, request) == original
-    assert snapshot(migrated_database_url) == before
+    assert without_searches(snapshot(migrated_database_url)) == without_searches(before)
 
 
 @pytest.mark.parametrize(

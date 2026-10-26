@@ -29,6 +29,7 @@ from property_rental.lease import (
     LEASE_TERMINATE_CAPABILITY,
     LeaseAddSignerCommand,
     LeaseAuthorizationError,
+    LeaseCancelCommand,
     LeaseCommandConflictError,
     LeaseCommandInvalidError,
     LeaseDraftCommand,
@@ -57,6 +58,7 @@ from property_rental.move_in import (
     MoveInSnapshot,
     MoveInVersionConflictError,
     PostgresMoveInService,
+    RecordLeaseMoveInCommand,
 )
 from property_rental.settings import Settings
 
@@ -276,6 +278,18 @@ class LeaseResourceFlow(Protocol):
         actor: AuthenticatedActor,
     ) -> MoveInSnapshot: ...
 
+    def cancel(
+        self, command: LeaseCancelCommand, *, actor: AuthenticatedActor
+    ) -> LeaseResource: ...
+
+    def record_move_in(
+        self,
+        property_id: UUID,
+        command: RecordLeaseMoveInCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> LeaseResource: ...
+
 
 class UnavailableLeaseResourceFlow:
     def _raise(self) -> None:
@@ -382,6 +396,22 @@ class UnavailableLeaseResourceFlow:
         *,
         actor: AuthenticatedActor,
     ) -> MoveInSnapshot:
+        del property_id, command, actor
+        self._raise()
+        raise AssertionError
+
+    def cancel(self, command: LeaseCancelCommand, *, actor: AuthenticatedActor) -> LeaseResource:
+        del command, actor
+        self._raise()
+        raise AssertionError
+
+    def record_move_in(
+        self,
+        property_id: UUID,
+        command: RecordLeaseMoveInCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> LeaseResource:
         del property_id, command, actor
         self._raise()
         raise AssertionError
@@ -835,6 +865,22 @@ class PostgresLeaseResourceFlow:
         service = PostgresMoveInService(self._database_url, property_id, self._actor_id(actor))
         return service.complete(command, actor=actor)
 
+    def cancel(self, command: LeaseCancelCommand, *, actor: AuthenticatedActor) -> LeaseResource:
+        current = self.get(command.lease_id)
+        self._service(current.property_id, actor).cancel(command, actor=actor)
+        return self.get(command.lease_id)
+
+    def record_move_in(
+        self,
+        property_id: UUID,
+        command: RecordLeaseMoveInCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> LeaseResource:
+        service = PostgresMoveInService(self._database_url, property_id, self._actor_id(actor))
+        service.record_lease_move_in(command, actor=actor)
+        return self.get(command.lease_id)
+
 
 class LeaseDraftSignerSource(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -916,6 +962,9 @@ class LeaseSignSource(BaseModel):
 
     event_id: UUID
     reason: Annotated[str, Field(min_length=1, max_length=500)]
+    # V1-058: the active Reservation this signing completes (DL-066); the database checks it
+    # belongs to the same Unit and Primary Tenant.
+    reservation_id: UUID | None = None
 
 
 class LeaseRenewSource(BaseModel):
@@ -984,6 +1033,24 @@ class MoveInCommandSource(BaseModel):
     event_id: UUID
     expected_lease_version: Annotated[int, Field(gt=0)]
     expected_unit_version: Annotated[int, Field(gt=0)]
+    actual_move_in_date: date
+    occupants: Annotated[list[MoveInOccupantSource], Field(min_length=1, max_length=20)]
+    reason: Annotated[str, Field(min_length=1, max_length=500)]
+
+
+class LeaseCancelSource(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    event_id: UUID
+    reason: Annotated[str, Field(min_length=1, max_length=500)]
+
+
+class LeaseMoveInSource(BaseModel):
+    """Move-in of a Lease whose signing already completed its Reservation (DL-066)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    event_id: UUID
     actual_move_in_date: date
     occupants: Annotated[list[MoveInOccupantSource], Field(min_length=1, max_length=20)]
     reason: Annotated[str, Field(min_length=1, max_length=500)]
@@ -1469,6 +1536,7 @@ def create_lease_router(
                     signed_at=None,
                     reason=source.reason,
                     authorization_reference=LEASE_SIGN_CAPABILITY,
+                    reservation_id=source.reservation_id,
                 ),
                 actor=actor,
             )
@@ -1512,6 +1580,74 @@ def create_lease_router(
             raise _translate(exc) from exc
         response.headers["ETag"] = f'"{resource.version}"'
         response.headers["Location"] = f"/api/v1/leases/{resource.lease_id}"
+        return {"data": _body(resource, actor), "meta": {"request_id": request.state.request_id}}
+
+    @router.post("/leases/{lease_id}/cancel")
+    def cancel_lease(
+        lease_id: UUID,
+        source: LeaseCancelSource,
+        request: Request,
+        response: Response,
+        idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
+        if_match: Annotated[str | None, Header(alias="If-Match")] = None,
+    ) -> dict[str, object]:
+        """V1-058: cancel a draft Lease (BR-LEASE-004); a signed Lease is never cancelled."""
+        actor = _require_actor(request, resolver)
+        try:
+            current = flow.get(lease_id)
+            _require(actor, current.property_id, LEASE_DRAFT_CAPABILITY)
+            require_browser_mutation(request, settings)
+            resource = flow.cancel(
+                LeaseCancelCommand(
+                    idempotency_key=idempotency_key,
+                    event_id=source.event_id,
+                    lease_id=lease_id,
+                    expected_version=_version(if_match),
+                    reason=source.reason,
+                    authorization_reference=LEASE_DRAFT_CAPABILITY,
+                ),
+                actor=actor,
+            )
+        except Exception as exc:
+            raise _translate(exc) from exc
+        response.headers["ETag"] = f'"{resource.version}"'
+        return {"data": _body(resource, actor), "meta": {"request_id": request.state.request_id}}
+
+    @router.post("/leases/{lease_id}/move-in")
+    def record_lease_move_in(
+        lease_id: UUID,
+        source: LeaseMoveInSource,
+        request: Request,
+        response: Response,
+        idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
+        if_match: Annotated[str | None, Header(alias="If-Match")] = None,
+    ) -> dict[str, object]:
+        """V1-058: the physical move-in of a signed Lease starts its Occupancies (DL-066)."""
+        actor = _require_actor(request, resolver)
+        try:
+            current = flow.get(lease_id)
+            _require(actor, current.property_id, MOVE_IN_CAPABILITY)
+            require_browser_mutation(request, settings)
+            resource = flow.record_move_in(
+                current.property_id,
+                RecordLeaseMoveInCommand(
+                    idempotency_key=idempotency_key,
+                    event_id=source.event_id,
+                    lease_id=lease_id,
+                    expected_lease_version=_version(if_match),
+                    actual_move_in_date=source.actual_move_in_date,
+                    occupants=tuple(
+                        MoveInOccupant(value.occupancy_id, value.customer_id)
+                        for value in source.occupants
+                    ),
+                    reason=source.reason,
+                    authorization_reference=MOVE_IN_CAPABILITY,
+                ),
+                actor=actor,
+            )
+        except Exception as exc:
+            raise _translate(exc) from exc
+        response.headers["ETag"] = f'"{resource.version}"'
         return {"data": _body(resource, actor), "meta": {"request_id": request.state.request_id}}
 
     @router.post("/leases/{lease_id}/terminate")

@@ -25,6 +25,23 @@ export interface PropertyConfigurationApi {
   ) => Promise<PropertyBusinessConfiguration>;
 }
 
+// The change was saved, but reading the Property again afterwards failed.
+export class PropertySavedReadFailedError extends Error {
+  constructor() {
+    super("The change was saved, but the Property could not be read again.");
+  }
+}
+
+async function loadAfterSave(
+  propertyId: string,
+): Promise<PropertyBusinessConfiguration> {
+  try {
+    return await load(propertyId);
+  } catch {
+    throw new PropertySavedReadFailedError();
+  }
+}
+
 export class PropertyConfigurationUnavailableError extends Error {
   constructor() {
     super("Business configuration is unavailable for this session.");
@@ -33,7 +50,8 @@ export class PropertyConfigurationUnavailableError extends Error {
 }
 
 export class PropertyConfigurationError extends Error {
-  constructor() {
+  /** The HTTP status when the server answered (V1-058 R7b-4: 409 or 412 means it changed). */
+  constructor(readonly status: number | null = null) {
     super("The business configuration command was not completed.");
     this.name = "PropertyConfigurationError";
   }
@@ -67,7 +85,7 @@ async function request(
   if (response.status === 401 || response.status === 403) {
     throw new PropertyConfigurationUnavailableError();
   }
-  if (!response.ok) throw new PropertyConfigurationError();
+  if (!response.ok) throw new PropertyConfigurationError(response.status);
   try {
     const payload: unknown = await response.json();
     if (!isObject(payload) || !isObject(payload.data)) {
@@ -158,7 +176,7 @@ async function updateSource(
     headers: mutationHeaders(current.version),
     body: JSON.stringify(source),
   });
-  return load(current.property_id);
+  return loadAfterSave(current.property_id);
 }
 
 async function updatePaymentMethods(
@@ -176,7 +194,7 @@ async function updatePaymentMethods(
       }),
     },
   );
-  return load(current.property_id);
+  return loadAfterSave(current.property_id);
 }
 
 export const propertyConfigurationApi: PropertyConfigurationApi = {

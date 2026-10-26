@@ -5,8 +5,10 @@ from __future__ import annotations
 from collections.abc import Iterator
 from contextlib import AbstractContextManager, contextmanager, nullcontext
 from dataclasses import InitVar, dataclass
+from datetime import date
+from enum import Enum
 from hashlib import md5
-from typing import Protocol, cast, runtime_checkable
+from typing import Final, Literal, Protocol, cast, runtime_checkable
 from uuid import UUID, uuid4
 
 import psycopg
@@ -18,6 +20,20 @@ CUSTOMER_CONNECT_TIMEOUT_SECONDS = 3
 NIL_UUID = UUID(int=0)
 ID_DOCUMENT_NUMBER_MAX_LENGTH = 64
 ID_DOCUMENT_NUMBER_INDEX = "customers_id_document_number_unique"
+# DL-078 answer 3 (V1-058 R2): optional date of birth, gender and nationality.
+EARLIEST_DATE_OF_BIRTH: Final = date(1900, 1, 1)
+CUSTOMER_GENDERS: Final = frozenset({"FEMALE", "MALE"})
+NATIONALITY_MAX_LENGTH: Final = 64
+
+
+class _Unchanged(Enum):
+    """An update argument left out: the current value stays."""
+
+    UNCHANGED = "unchanged"
+
+
+UNCHANGED: Final = _Unchanged.UNCHANGED
+Unchanged = Literal[_Unchanged.UNCHANGED]
 
 
 def normalize_optional(value: str | None) -> str | None:
@@ -90,6 +106,9 @@ class Customer:
     memo: str | None = None
     version: int = 1
     id_document_number: str | None = None
+    date_of_birth: date | None = None
+    gender: str | None = None
+    nationality: str | None = None
     _allow_legacy_phone: InitVar[bool] = False
     _allow_legacy_fields: InitVar[frozenset[str]] = frozenset()
 
@@ -138,6 +157,15 @@ class Customer:
                 )
             if id_document_match_key(value) is None:
                 raise ValueError("id_document_number must hold a letter or a digit")
+        if self.date_of_birth is not None and self.date_of_birth < EARLIEST_DATE_OF_BIRTH:
+            raise ValueError("date_of_birth must not be before 01/01/1900")
+        if self.gender is not None and self.gender not in CUSTOMER_GENDERS:
+            raise ValueError("gender must be FEMALE or MALE")
+        if self.nationality is not None and (
+            self.nationality != self.nationality.strip()
+            or not 1 <= len(self.nationality) <= NATIONALITY_MAX_LENGTH
+        ):
+            raise ValueError("nationality must be normalized text of at most 64 characters")
 
 
 class CustomerIdentityAlreadyExistsError(ValueError):
@@ -229,7 +257,7 @@ class PostgresCustomerRepository:
 
     _columns = (
         "id, legal_name, phone_number, email_address, contact_address, memo, version, "
-        "id_document_number"
+        "id_document_number, date_of_birth, gender, nationality"
     )
     _qualified_columns = ", ".join(f"customer.{column.strip()}" for column in _columns.split(","))
 
@@ -349,7 +377,7 @@ class PostgresCustomerRepository:
                     row = connection.execute(
                         """
                         SELECT * FROM app.create_customer(
-                            %s, %s, %s, %s, %s, %s, %s, %s, %s
+                            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                         )
                         """,
                         (
@@ -362,13 +390,16 @@ class PostgresCustomerRepository:
                             self.actor_id,
                             uuid4(),
                             customer.id_document_number,
+                            customer.date_of_birth,
+                            customer.gender,
+                            customer.nationality,
                         ),
                     ).fetchone()
                 else:
                     row = connection.execute(
                         """
                         SELECT * FROM app.execute_customer_create(
-                            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                         )
                         """,
                         (
@@ -383,6 +414,9 @@ class PostgresCustomerRepository:
                             customer.memo,
                             self.actor_id,
                             customer.id_document_number,
+                            customer.date_of_birth,
+                            customer.gender,
+                            customer.nationality,
                         ),
                     ).fetchone()
         except psycopg.errors.UniqueViolation as error:
@@ -415,7 +449,7 @@ class PostgresCustomerRepository:
                 row = connection.execute(
                     """
                     SELECT * FROM app.update_customer(
-                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                     )
                     """,
                     (
@@ -429,13 +463,16 @@ class PostgresCustomerRepository:
                         self.actor_id,
                         uuid4(),
                         customer.id_document_number,
+                        customer.date_of_birth,
+                        customer.gender,
+                        customer.nationality,
                     ),
                 ).fetchone()
             else:
                 row = connection.execute(
                     """
                     SELECT * FROM app.execute_customer_update(
-                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                     )
                     """,
                     (
@@ -451,6 +488,9 @@ class PostgresCustomerRepository:
                         expected_version,
                         self.actor_id,
                         customer.id_document_number,
+                        customer.date_of_birth,
+                        customer.gender,
+                        customer.nationality,
                     ),
                 ).fetchone()
             if row is None:
@@ -497,6 +537,9 @@ class CustomerService:
         memo: str | None = None,
         confirmed_distinct: bool = False,
         id_document_number: str | None = None,
+        date_of_birth: date | None = None,
+        gender: str | None = None,
+        nationality: str | None = None,
     ) -> Customer:
         """Create a Customer; the ID number is required (DL-071 answer 11)."""
         normalized_id_number = normalize_optional(id_document_number)
@@ -510,6 +553,9 @@ class CustomerService:
             contact_address=normalize_optional(contact_address),
             memo=normalize_optional(memo),
             id_document_number=normalized_id_number,
+            date_of_birth=date_of_birth,
+            gender=gender,
+            nationality=normalize_optional(nationality),
         )
         with self._reuse_guard(customer):
             self._refuse_used_id_number(customer)
@@ -530,11 +576,20 @@ class CustomerService:
         memo: str | None,
         confirmed_distinct: bool = False,
         id_document_number: str | None = None,
+        date_of_birth: date | Unchanged | None = UNCHANGED,
+        gender: str | Unchanged | None = UNCHANGED,
+        nationality: str | Unchanged | None = UNCHANGED,
     ) -> Customer:
         """Update current values; a recorded ID number may be corrected, never removed.
 
-        `id_document_number=None` keeps the current number.
+        `id_document_number=None` keeps the current number. A detail left out keeps its value;
+        None clears it (DL-078 answer 3: the details are optional).
         """
+        new_date_of_birth = current.date_of_birth if date_of_birth is UNCHANGED else date_of_birth
+        new_gender = current.gender if gender is UNCHANGED else gender
+        new_nationality = (
+            current.nationality if nationality is UNCHANGED else normalize_optional(nationality)
+        )
         normalized_id_number = (
             current.id_document_number
             if id_document_number is None
@@ -568,6 +623,7 @@ class CustomerService:
             ),
             "memo": current.memo if memo == current.memo else normalized_memo,
             "id_document_number": normalized_id_number,
+            "nationality": new_nationality,
         }
         preserved_legacy_fields = frozenset(
             field_name
@@ -582,6 +638,9 @@ class CustomerService:
             contact_address=candidate_values["contact_address"],
             memo=candidate_values["memo"],
             id_document_number=candidate_values["id_document_number"],
+            date_of_birth=new_date_of_birth,
+            gender=new_gender,
+            nationality=candidate_values["nationality"],
             version=current.version + 1,
             _allow_legacy_phone=normalized_phone_number == current.phone_number,
             _allow_legacy_fields=preserved_legacy_fields,
@@ -593,6 +652,9 @@ class CustomerService:
             candidate.contact_address,
             candidate.memo,
             candidate.id_document_number,
+            candidate.date_of_birth,
+            candidate.gender,
+            candidate.nationality,
         ) == (
             current.legal_name,
             current.phone_number,
@@ -600,6 +662,9 @@ class CustomerService:
             current.contact_address,
             current.memo,
             current.id_document_number,
+            current.date_of_birth,
+            current.gender,
+            current.nationality,
         ):
             if isinstance(self.repository, VersionedCustomerRepository):
                 repository = cast(VersionedCustomerRepository, self.repository)
@@ -650,6 +715,9 @@ def _customer_from_row(row: tuple[object, ...]) -> Customer:
         memo=None if row[5] is None else str(row[5]),
         version=int(str(row[6])),
         id_document_number=None if len(row) < 8 or row[7] is None else str(row[7]),
+        date_of_birth=None if len(row) < 9 or row[8] is None else cast(date, row[8]),
+        gender=None if len(row) < 10 or row[9] is None else str(row[9]),
+        nationality=None if len(row) < 11 or row[10] is None else str(row[10]),
         _allow_legacy_phone=True,
         _allow_legacy_fields=frozenset(
             {
@@ -659,6 +727,7 @@ def _customer_from_row(row: tuple[object, ...]) -> Customer:
                 "contact_address",
                 "memo",
                 "id_document_number",
+                "nationality",
             }
         ),
     )

@@ -96,6 +96,18 @@ class Flow:
             "list", (property_id, page), {"items": [self.resource(uuid4())] * self.items}
         )
 
+    def approvals(self, property_id: UUID, *, actor: AuthenticatedActor) -> dict[str, object]:
+        summary = {"variant": self.variant, "amount_usd_cents": 500, "direction": "OUT"}
+        return self._answer(
+            "approvals",
+            property_id,
+            {
+                "business_date": "2026-11-03",
+                "waiting": [{**self.resource(uuid4()), "summary": summary}] * self.items,
+                "decided_today": [{**self.resource(uuid4(), "CONFIRMED"), "summary": summary}],
+            },
+        )
+
     def reject(
         self, property_id: UUID, draft_id: UUID, reason: str, *, actor: AuthenticatedActor
     ) -> dict[str, object]:
@@ -672,3 +684,67 @@ def test_a_named_conflict_is_answered_without_reading_the_draft_again() -> None:
     assert answer.status_code == 409
     assert answer.json()["error"]["code"] == "REFUND_DEPOSIT_RECEIPT_REVERSAL_WAITING"
     assert [name for name, _ in flow.calls].count("get") == 1
+
+
+def test_waiting_for_approval_lists_waiting_and_decided_today_drafts_with_their_line() -> None:
+    """V1-058 R7a: one read for the Waiting for approval page; the same readers as the list,
+    a Reservation Deposit draft only with reservations.read, and a shape check on the answer."""
+    flow = Flow(items=2)
+    path = f"/api/v1/properties/{flow.prop}/financial-drafts-waiting"
+    answer = api(flow, actor(flow.prop, "refunds.create")).get(path)
+    assert answer.status_code == 200
+    assert answer.headers["cache-control"] == "private, no-store"
+    data = answer.json()["data"]
+    assert data["business_date"] == "2026-11-03"
+    assert len(data["waiting"]) == 2 and len(data["decided_today"]) == 1
+    assert data["truncated"] is False
+    assert data["waiting"][0]["summary"] == {
+        "variant": "USD",
+        "amount_usd_cents": 500,
+        "direction": "OUT",
+    }
+    assert flow.calls[-1] == ("approvals", flow.prop)
+    assert (
+        api(flow, actor(flow.prop, "refunds.create")).get(path, params={"x": "1"}).status_code
+        == 400
+    )
+
+    hidden = Flow(variant="RESERVATION_OUTCOME", prepare_capability="reservation_deposits.refund")
+    shown = api(hidden, actor(hidden.prop, APPROVE)).get(
+        f"/api/v1/properties/{hidden.prop}/financial-drafts-waiting"
+    )
+    assert shown.status_code == 200
+    assert shown.json()["data"]["waiting"] == [] and shown.json()["data"]["decided_today"] == []
+
+    # The read sends one more waiting draft than the page holds when more wait.
+    many = Flow(items=201)
+    full = api(many, actor(many.prop, "refunds.create")).get(
+        f"/api/v1/properties/{many.prop}/financial-drafts-waiting"
+    )
+    assert len(full.json()["data"]["waiting"]) == 200 and full.json()["data"]["truncated"] is True
+
+    nobody = Flow()
+    refused = api(nobody, actor(nobody.prop, "units.read")).get(
+        f"/api/v1/properties/{nobody.prop}/financial-drafts-waiting"
+    )
+    assert refused.status_code == 404
+
+    for error, status in (
+        (FinancialDraftUnavailableError("x"), 503),
+        (FinancialDraftAuthorizationError("x"), 403),
+    ):
+        failing = Flow(error=error)
+        assert (
+            api(failing, actor(failing.prop, APPROVE))
+            .get(f"/api/v1/properties/{failing.prop}/financial-drafts-waiting")
+            .status_code
+            == status
+        )
+
+    elsewhere = Flow(other_property=True)
+    assert (
+        api(elsewhere, actor(elsewhere.prop, APPROVE))
+        .get(f"/api/v1/properties/{elsewhere.prop}/financial-drafts-waiting")
+        .status_code
+        == 503
+    )

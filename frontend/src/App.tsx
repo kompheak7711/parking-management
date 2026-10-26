@@ -1,10 +1,27 @@
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import {
+  FormEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { todayInPhnomPenh } from "./shell/format";
 
+import {
+  type ApprovalsApi,
+  approvalsApi as approvalsClient,
+} from "./approvals/approvalsClient";
+import {
+  ApprovalsPage,
+  type DraftDecisionApi,
+} from "./approvals/ApprovalsPage";
 import {
   AuthenticationApi,
   AuthenticationData,
   LocalSignIn,
   RecoveryCodeSetData,
+  ReauthenticationRequest,
   RecoveryCodeSetSummary,
   SessionData,
   authenticationApi,
@@ -24,13 +41,15 @@ import {
   PropertyConfigurationUnavailableError,
   propertyConfigurationApi,
 } from "./propertyClient";
-import { UnitManagement } from "./UnitManagement";
-import { UnitApi } from "./unitClient";
+import { UnitApi, unitApi as defaultUnitApi } from "./unitClient";
 import {
   CustomerManagement,
   CustomerReconciliationRequirement,
 } from "./CustomerManagement";
-import { CustomerApi } from "./customerClient";
+import {
+  CustomerApi,
+  customerApi as defaultCustomerApi,
+} from "./customerClient";
 import { ConfigurationManagement } from "./ConfigurationManagement";
 import {
   EffectiveConfigurationApi,
@@ -42,14 +61,60 @@ import {
   reservationApi as reservationClient,
 } from "./reservationClient";
 import { LeaseManagement } from "./LeaseManagement";
+import { LeasesPage } from "./leases/LeasesPage";
+import { LettersPage } from "./letters/LettersPage";
+import {
+  LettersApi,
+  lettersApi as lettersClient,
+} from "./letters/lettersClient";
+import { ltr } from "./letters/text";
+import { MoveoutPage } from "./moveout/MoveoutPage";
+import {
+  type MoveOutApi,
+  moveOutApi as moveOutClient,
+} from "./moveout/moveoutClient";
+import { mt } from "./moveout/text";
+import { lt } from "./leases/text";
 import { LeaseApi, leaseApi as leaseClient } from "./leaseClient";
 import { DepositManagement } from "./DepositManagement";
 import { DepositApi, depositApi as depositClient } from "./depositClient";
 import { UtilityManagement } from "./UtilityManagement";
 import { UtilityLeaseWorkflows } from "./UtilityLeaseWorkflows";
+import {
+  type UtilityLeaseApi,
+  utilityLeaseApi as utilityLeaseClient,
+} from "./utilityLeaseClient";
 import { UtilityApi, utilityApi as utilityClient } from "./utilityClient";
+import { UtilitiesPage } from "./utilities/UtilitiesPage";
+import { utt } from "./utilities/text";
 import { InvoiceManagement } from "./InvoiceManagement";
-import { InvoiceApi, invoiceApi as invoiceClient } from "./invoiceClient";
+import { InvoicesPage } from "./invoices/InvoicesPage";
+import { PaymentsPage } from "./payments/PaymentsPage";
+import { type HomeApi, HomeScreen } from "./home/HomeScreen";
+import { reportsApi } from "./reportsClient";
+import {
+  type HistoryApi,
+  historyApi as historyClient,
+} from "./history/historyClient";
+import { type HistoryExportApi, HistoryPage } from "./history/HistoryPage";
+import { settlementApi, type SettlementApi } from "./settlementClient";
+import {
+  type HealthApi,
+  healthApi as healthClient,
+} from "./settings/healthClient";
+import { SettingsPage } from "./settings/SettingsPage";
+import {
+  type PaymentsApi,
+  paymentsApi as paymentsClient,
+} from "./payments/paymentsClient";
+import { pyt } from "./payments/text";
+import { ivt } from "./invoices/text";
+import {
+  type DueDaysApi,
+  dueDaysApi as dueDaysClient,
+  InvoiceApi,
+  invoiceApi as invoiceClient,
+} from "./invoiceClient";
 import { LeaseEnforcementManagement } from "./LeaseEnforcementManagement";
 import type { EnforcementServices } from "./leaseEnforcementUi";
 import { FinancialManagement } from "./FinancialManagement";
@@ -58,7 +123,22 @@ import {
   CustomerAccountLedger,
   type LedgerSelection,
 } from "./CustomerAccountLedger";
-import type { CustomerLedgerApi } from "./customerLedgerClient";
+import {
+  type CustomerLedgerApi,
+  customerLedgerClient,
+} from "./customerLedgerClient";
+import { type Language, storeLanguage, storedLanguage } from "./signInText";
+import { AppShell } from "./shell/AppShell";
+import { ComingSoon, NoAccess, PropertyNeeded } from "./shell/pages";
+import { openPageInAddress, useHashPage } from "./shell/useHashPage";
+import type { CustomerCommandGate } from "./customers/commands";
+import { CustomersPage } from "./customers/CustomersPage";
+import { ReservationsPage } from "./reservations/ReservationsPage";
+import { rt } from "./reservations/text";
+import { ct } from "./customers/text";
+import { UnitsPage } from "./units/UnitsPage";
+import { type ActorAccessApi, actorAccessApi } from "./shell/accessClient";
+import { pageAllowed, type PageId } from "./shell/navigation";
 
 export interface AppProps {
   environment: string;
@@ -68,16 +148,40 @@ export interface AppProps {
   administrationApi?: AccessAdministrationApi;
   propertyApi?: PropertyConfigurationApi;
   unitApi?: UnitApi;
+  dueDaysApi?: DueDaysApi;
   customerApi?: CustomerApi;
   effectiveConfigApi?: EffectiveConfigurationApi;
   reservationApi?: ReservationApi;
   leaseApi?: LeaseApi;
+  lettersApi?: LettersApi;
+  moveOutApi?: MoveOutApi;
+  utilityLeaseApi?: UtilityLeaseApi;
+  /** The move-out cleaning charge (V1-058 R3 M4). */
+  moveOutChargeApi?: Pick<
+    SettlementApi,
+    | "cleaningRate"
+    | "chargeCleaning"
+    | "settlements"
+    | "startSettlement"
+    | "settlementPreview"
+    | "refundMethods"
+    | "settlementDraft"
+    | "extraCharge"
+  >;
   depositApi?: DepositApi;
   utilityApi?: UtilityApi;
   invoiceApi?: InvoiceApi;
+  paymentsApi?: PaymentsApi;
+  homeApi?: HomeApi;
+  historyApi?: HistoryApi;
+  historyExportApi?: HistoryExportApi;
+  healthApi?: HealthApi;
+  approvalsApi?: ApprovalsApi;
+  draftDecisionApi?: DraftDecisionApi;
   financialServices?: FinancialUiServices;
   enforcementServices?: EnforcementServices;
   ledgerApi?: CustomerLedgerApi;
+  accessApi?: ActorAccessApi;
   now?: () => number;
 }
 
@@ -519,18 +623,61 @@ export function App({
   effectiveConfigApi = effectiveConfigurationApi,
   reservationApi = reservationClient,
   leaseApi = leaseClient,
+  lettersApi = lettersClient,
+  moveOutApi = moveOutClient,
+  utilityLeaseApi = utilityLeaseClient,
+  moveOutChargeApi = settlementApi,
   depositApi = depositClient,
   utilityApi = utilityClient,
   invoiceApi = invoiceClient,
+  paymentsApi = paymentsClient,
+  homeApi = reportsApi,
+  historyApi = historyClient,
+  historyExportApi = reportsApi,
+  healthApi = healthClient,
+  dueDaysApi = dueDaysClient,
+  approvalsApi = approvalsClient,
+  draftDecisionApi = settlementApi,
   financialServices,
   enforcementServices,
   ledgerApi,
+  accessApi = actorAccessApi,
   now = Date.now,
 }: AppProps) {
+  // V1-058 R7c: History names people from the user list when this account may read it.
+  const historyPeople = useCallback(
+    (id: string) =>
+      administrationApi.load(id).then((snapshot) => snapshot.users),
+    [administrationApi],
+  );
+  // V1-058 R7b-4: one object, so the Business tab does not read again on every render.
+  const businessApi = useMemo(
+    () => ({
+      property: propertyApi,
+      dueDays: dueDaysApi,
+      units: unitApi ?? defaultUnitApi,
+      rates: effectiveConfigApi,
+    }),
+    [propertyApi, dueDaysApi, unitApi, effectiveConfigApi],
+  );
   const client = useMemo<AuthenticationApi>(
     () => api ?? { ...authenticationApi, signIn: authenticate },
     [api, authenticate],
   );
+  // V1-058 R1: the page named by the address, and the screen language chosen on this device
+  // (shared with the sign-in screens).
+  const page = useHashPage();
+  // V1-058 R1b: the person's capabilities, so the menu shows only what they may use; null while
+  // unknown or unreadable (the server still checks every action).
+  const [capabilities, setCapabilities] = useState<ReadonlySet<string> | null>(
+    null,
+  );
+  const accessSequence = useRef(0);
+  const [language, setLanguage] = useState<Language>(storedLanguage);
+  function changeLanguage(next: Language) {
+    setLanguage(next);
+    storeLanguage(next);
+  }
   const [screen, setScreen] = useState<Screen>("sign_in");
   const [session, setSession] = useState<SessionData | null>(null);
   const [submissionState, setSubmissionState] =
@@ -571,6 +718,9 @@ export function App({
   const [propertyConfigurationAuthorized, setPropertyConfigurationAuthorized] =
     useState(false);
   const [customerDraftsDirty, setCustomerDraftsDirty] = useState(false);
+  // V1-058 R2 step C2: the new Customer form page has its own unsaved values.
+  const [customerPageDirty, setCustomerPageDirty] = useState(false);
+  const [customerRecordsOpen, setCustomerRecordsOpen] = useState(false);
   const [financialDraftsDirty, setFinancialDraftsDirty] = useState(false);
   const [enforcementDraftsDirty, setEnforcementDraftsDirty] = useState(false);
   const [customerCommandBusy, setCustomerCommandBusy] = useState(false);
@@ -630,6 +780,39 @@ export function App({
     };
   }, [session]);
 
+  const sessionActorId = session?.actor_id ?? null;
+  useEffect(() => {
+    if (sessionActorId === null) return;
+    const ticket = ++accessSequence.current;
+    const controller = new AbortController();
+    void accessApi
+      .read(controller.signal)
+      .then((access) => {
+        if (ticket !== accessSequence.current) return;
+        if (access.actor_id !== sessionActorId) return;
+        setCapabilities(
+          new Set(access.capabilities.map((grant) => grant.capability)),
+        );
+        // V1 has one Property: fill the Property boxes once, so nobody types its identifier.
+        const properties = new Set(
+          access.capabilities.flatMap((grant) => grant.property_ids),
+        );
+        if (properties.size === 1) {
+          const only = [...properties][0] ?? "";
+          setConfigurationPropertyId((current) =>
+            current === "" ? only : current,
+          );
+          setPropertyId((current) => (current === "" ? only : current));
+        }
+      })
+      .catch(() => {
+        // Unreadable access shows the whole menu; the server still refuses what is not allowed.
+      });
+    return () => {
+      controller.abort();
+    };
+  }, [accessApi, sessionActorId]);
+
   function invalidatePropertyConfiguration() {
     propertyOperationSequence.current += 1;
     setPropertyConfiguration(null);
@@ -650,6 +833,8 @@ export function App({
     invalidatePropertyConfiguration();
     setPropertyConfigurationStatus(null);
     setSession(result.session);
+    // The sign-in screens may have changed the language on this device.
+    setLanguage(storedLanguage());
     setCustomerCoordinationAvailable(
       stored.status !== "unavailable" && stored.status !== "invalid",
     );
@@ -666,6 +851,10 @@ export function App({
   }
 
   function returnToSignIn(entry: SignInEntry) {
+    // V1-058 R1: the next person starts on Home, not on the page the last person left open.
+    openPageInAddress("home", true);
+    accessSequence.current += 1;
+    setCapabilities(null);
     setEnforcementDraftsDirty(false);
     setFinancialDraftsDirty(false);
     setCustomerDraftsDirty(false);
@@ -807,9 +996,19 @@ export function App({
       });
   }
 
+  /** V1-058 R7b-3: the Users tab asks for the password and code again itself. */
+  async function reauthenticateForSettings(request: ReauthenticationRequest) {
+    // The Property configuration is kept: clearing it could move the tab to no Property while
+    // the action runs again.
+    setSession(await client.reauthenticate(request));
+  }
+
   function handleLogout() {
     if (
-      customerDraftsDirty &&
+      (customerDraftsDirty ||
+        customerPageDirty ||
+        customerCommandBusy ||
+        customerReconciliationRequirement !== null) &&
       !window.confirm(
         customerCommandBusy
           ? "A Customer command is still pending and its outcome will be unknown. Discard other unsaved Customer values and sign out?"
@@ -819,6 +1018,8 @@ export function App({
       setNotice(
         "Sign out was cancelled; unsaved Customer values were preserved.",
       );
+      // V1-058 R1: show the page that holds the unsaved form.
+      openPageInAddress("customers");
       return;
     }
     if (
@@ -828,6 +1029,8 @@ export function App({
       setNotice(
         "Sign out was cancelled; unsaved financial values were preserved.",
       );
+      // V1-058 R1: show the page that holds the unsaved form.
+      openPageInAddress("payments");
       return;
     }
     if (
@@ -839,6 +1042,8 @@ export function App({
       setNotice(
         "Sign out was cancelled; unsaved Lease enforcement values were preserved.",
       );
+      // V1-058 R1: show the page that holds the unsaved form.
+      openPageInAddress("letters");
       return;
     }
     setEnforcementDraftsDirty(false);
@@ -1289,40 +1494,509 @@ export function App({
     );
   }
 
-  return (
-    <div className="app-shell">
-      <header className="app-header">
-        <p className="eyebrow">Staff application</p>
-        <h1>Property Rental Management</h1>
-      </header>
+  // V1-058 R1b: a page opens only when it is the address and the person may use it.
+  // The one Customer command gate, shared by the earlier form and the V1-058 dialogs.
+  const releaseCustomerGate = async (
+    requirement: CustomerReconciliationRequirement,
+  ): Promise<boolean> => {
+    const clearance = await clearCustomerReconciliation(requirement);
+    if (clearance.status === "cleared") {
+      setCustomerCoordinationAvailable(true);
+      setCustomerReconciliationRequirement((current) =>
+        sameCustomerReconciliation(current, requirement) ? null : current,
+      );
+      return true;
+    } else if (clearance.status === "superseded") {
+      if (clearance.requirement === null) {
+        setCustomerCoordinationAvailable(true);
+        setCustomerReconciliationRequirement(null);
+        setNotice(
+          "The Customer reconciliation gate was already resolved in another tab.",
+        );
+        return true;
+      }
+      setCustomerReconciliationRequirement(clearance.requirement);
+      setNotice(
+        "A newer Customer command gate remains active. Reconcile that exact command before retrying.",
+      );
+      return false;
+    } else {
+      setNotice(
+        "The Customer result is known, but its durable command gate could not be cleared. Customer commands remain blocked.",
+      );
+      return false;
+    }
+  };
+  const reserveCustomerGate = async (
+    requirement: CustomerReconciliationRequirement,
+  ): Promise<boolean> => {
+    const reservation = await reserveCustomerReconciliation(requirement);
+    if (reservation.existing !== null) {
+      setCustomerCoordinationAvailable(true);
+      setCustomerReconciliationRequirement(reservation.existing);
+      return false;
+    }
+    if (!reservation.reserved) {
+      setNotice(
+        reservation.storageAvailable
+          ? "Another tab already reserved the Customer command gate. Reconcile it before retrying."
+          : "Customer command coordination is unavailable. No command was sent; restore durable browser coordination before retrying.",
+      );
+      return false;
+    }
+    setCustomerCoordinationAvailable(true);
+    setCustomerReconciliationRequirement(requirement);
+    return true;
+  };
+  const customerGate: CustomerCommandGate = {
+    actorId: session.actor_id,
+    open:
+      customerCoordinationAvailable &&
+      customerReconciliationRequirement === null,
+    reserve: reserveCustomerGate,
+    release: releaseCustomerGate,
+    setBusy: setCustomerCommandBusy,
+  };
+  const allowed = pageAllowed(page, capabilities);
+  const shown = (candidate: PageId) => candidate === page && allowed;
 
-      <main aria-labelledby="screen-heading" className="app-content">
-        {notice !== null && (
+  return (
+    <AppShell
+      buildId={buildId}
+      capabilities={capabilities}
+      displayName={session.display_name ?? null}
+      environment={environment}
+      language={language}
+      notice={
+        notice !== null && (
           <p className="global-status" role="status">
             {notice}
           </p>
+        )
+      }
+      now={now}
+      onLanguageChange={changeLanguage}
+      onSignOut={handleLogout}
+      page={page}
+      signOutDisabled={isSubmitting}
+    >
+      {!allowed && <NoAccess language={language} />}
+      <div className="shell-page" data-page="home" hidden={!shown("home")}>
+        {propertyId === "" && propertyConfiguration === null && (
+          <PropertyNeeded language={language} />
         )}
-
+        <HomeScreen
+          active={shown("home")}
+          capabilities={capabilities}
+          homeApi={homeApi}
+          language={language}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+        />
+      </div>
+      <div
+        className="shell-page"
+        data-page="payments"
+        hidden={!shown("payments")}
+      >
+        <PaymentsPage
+          active={shown("payments")}
+          capabilities={capabilities}
+          customerApi={customerApi ?? defaultCustomerApi}
+          invoiceApi={invoiceApi}
+          language={language}
+          leaseApi={leaseApi}
+          paymentsApi={paymentsApi}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+        />
+        {/* V1-058 R5c: the payment list, matching, Credit and refunds stay in the earlier English
+            forms, folded, until the next steps move them into the Payments screens. */}
+        <details className="ui-records">
+          <summary lang={language}>
+            <span className="ui-records-title">{pyt(language, "records")}</span>
+            <span className="ui-small ui-muted">
+              {pyt(language, "records_note")}
+            </span>
+          </summary>
+          <div lang="en">
+            {!logoutPending && (
+              <FinancialManagement
+                key={session.actor_id}
+                actorId={session.actor_id}
+                services={financialServices}
+                onDirtyStateChange={setFinancialDraftsDirty}
+              />
+            )}
+          </div>
+        </details>
+      </div>
+      <div
+        className="shell-page"
+        data-page="invoices"
+        hidden={!shown("invoices")}
+      >
+        <InvoicesPage
+          active={shown("invoices")}
+          capabilities={capabilities}
+          customerApi={customerApi ?? defaultCustomerApi}
+          invoiceApi={invoiceApi}
+          language={language}
+          lateApi={paymentsApi}
+          leaseApi={leaseApi}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+        />
+        {/* V1-058 R5: the billing runs and the Due Date settings stay in the earlier English
+            forms, folded, until Settings and Home take them over. */}
+        <details className="ui-records">
+          <summary lang={language}>
+            <span className="ui-records-title">{ivt(language, "records")}</span>
+            <span className="ui-small ui-muted">
+              {ivt(language, "records_note")}
+            </span>
+          </summary>
+          <div lang="en">
+            {propertyConfiguration === null && (
+              <PropertyNeeded language={language} />
+            )}
+            {!logoutPending && (
+              <InvoiceManagement
+                api={invoiceApi}
+                actorId={session.actor_id}
+                propertyId={
+                  propertyId || (propertyConfiguration?.property_id ?? "")
+                }
+              />
+            )}
+          </div>
+        </details>
+      </div>
+      <div
+        className="shell-page"
+        data-page="utilities"
+        hidden={!shown("utilities")}
+      >
+        <UtilitiesPage
+          active={shown("utilities")}
+          capabilities={capabilities}
+          language={language}
+          leaseApi={leaseApi}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+          unitApi={unitApi ?? defaultUnitApi}
+          utilityApi={utilityApi}
+        />
+        {/* V1-058 R4: meters, rates, corrections and move-in or move-out readings stay in the
+            earlier English forms, folded, until the next steps move them into the design. */}
+        <details className="ui-records">
+          <summary lang={language}>
+            <span className="ui-records-title">{utt(language, "records")}</span>
+            <span className="ui-small ui-muted">
+              {utt(language, "records_note")}
+            </span>
+          </summary>
+          <div lang="en">
+            <UtilityManagement
+              api={utilityApi}
+              propertyId={
+                propertyId || (propertyConfiguration?.property_id ?? "")
+              }
+            />
+            <UtilityLeaseWorkflows
+              propertyId={
+                propertyId || (propertyConfiguration?.property_id ?? "")
+              }
+            />
+          </div>
+        </details>
+      </div>
+      <div
+        className="shell-page"
+        data-page="approvals"
+        hidden={!shown("approvals")}
+      >
+        <ApprovalsPage
+          active={shown("approvals")}
+          actorId={session.actor_id}
+          approvalsApi={approvalsApi}
+          capabilities={capabilities}
+          decisionApi={draftDecisionApi}
+          language={language}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+        />
+      </div>
+      <div className="shell-page" data-page="units" hidden={!shown("units")}>
+        <UnitsPage
+          active={shown("units")}
+          capabilities={capabilities}
+          language={language}
+          leaseApi={leaseApi}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+          reservationApi={reservationApi}
+          unitApi={unitApi ?? defaultUnitApi}
+        />
+      </div>
+      <div
+        className="shell-page"
+        data-page="customers"
+        hidden={!shown("customers")}
+      >
+        {!logoutPending && (
+          <CustomersPage
+            active={shown("customers")}
+            actorId={session.actor_id}
+            capabilities={capabilities}
+            customerApi={customerApi ?? defaultCustomerApi}
+            gate={customerGate}
+            onDirty={setCustomerPageDirty}
+            language={language}
+            leaseApi={leaseApi}
+            ledgerApi={ledgerApi ?? customerLedgerClient}
+            onOpenLedger={(customerId) => {
+              const selected =
+                propertyId || (propertyConfiguration?.property_id ?? "");
+              if (selected === "") return;
+              setLedgerSelection({
+                customerId,
+                propertyId: selected,
+                actorId: session.actor_id,
+                sequence: ++ledgerSequence.current,
+              });
+              setCustomerRecordsOpen(true);
+              window.setTimeout(() => {
+                document
+                  .getElementById("customer-records")
+                  ?.scrollIntoView({ block: "start" });
+              }, 0);
+            }}
+            propertyId={
+              propertyId || (propertyConfiguration?.property_id ?? "")
+            }
+            reservationApi={reservationApi}
+          />
+        )}
+        {/* V1-058 R2 step C2: the earlier form stays folded away. It opens by itself while a
+            Customer save waits to be checked, and for the full Account Ledger. */}
+        <details
+          className="ui-records"
+          id="customer-records"
+          onToggle={(event) => {
+            // A waiting save opens it by itself; only the person's own click is remembered.
+            if (customerReconciliationRequirement === null)
+              setCustomerRecordsOpen(event.currentTarget.open);
+          }}
+          open={
+            customerRecordsOpen || customerReconciliationRequirement !== null
+          }
+        >
+          <summary lang={language}>
+            <span className="ui-records-title">{ct(language, "records")}</span>
+            <span className="ui-small ui-muted">
+              {ct(language, "records_note")}
+            </span>
+          </summary>
+          <div lang="en">
+            {!logoutPending && (
+              <CustomerAccountLedger
+                key={`customer-ledger:${session.actor_id}`}
+                actorId={session.actor_id}
+                api={ledgerApi}
+                requested={
+                  ledgerSelection?.actorId === session.actor_id
+                    ? ledgerSelection
+                    : undefined
+                }
+              />
+            )}
+            {!logoutPending && (
+              <CustomerManagement
+                actorId={session.actor_id}
+                api={customerApi}
+                onOpenAccountLedger={(selection) => {
+                  setLedgerSelection({
+                    ...selection,
+                    actorId: session.actor_id,
+                    sequence: ++ledgerSequence.current,
+                  });
+                }}
+                mutationCoordinationAvailable={customerCoordinationAvailable}
+                onCommandBusyChange={setCustomerCommandBusy}
+                onDirtyStateChange={setCustomerDraftsDirty}
+                onReconciled={releaseCustomerGate}
+                onReconciliationRequired={reserveCustomerGate}
+                reconciliationRequirement={customerReconciliationRequirement}
+              />
+            )}
+            {!logoutPending && !customerCoordinationAvailable && (
+              <section className="information-card">
+                <h3>Customer command coordination unavailable</h3>
+                <p>
+                  Customer commands are blocked because the opaque
+                  reconciliation handle cannot be matched to this authenticated
+                  browser session. No confidential Customer or actor metadata
+                  was read from local storage.
+                </p>
+              </section>
+            )}
+          </div>
+        </details>
+      </div>
+      <div
+        className="shell-page"
+        data-page="reservations"
+        hidden={!shown("reservations")}
+      >
+        <ReservationsPage
+          active={shown("reservations")}
+          api={reservationApi}
+          capabilities={capabilities}
+          language={language}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+        />
+        {/* V1-058 R3: Make Reservation receives the deposit, so it stays in the earlier
+            English form, folded, until Payments are rebuilt (step R5). */}
+        <details className="ui-records">
+          <summary lang={language}>
+            <span className="ui-records-title">{rt(language, "records")}</span>
+            <span className="ui-small ui-muted">
+              {rt(language, "records_note")}
+            </span>
+          </summary>
+          <div lang="en">
+            <ReservationManagement api={reservationApi} />
+          </div>
+        </details>
+      </div>
+      <div className="shell-page" data-page="leases" hidden={!shown("leases")}>
+        <LeasesPage
+          active={shown("leases")}
+          api={leaseApi}
+          capabilities={capabilities}
+          depositApi={depositApi}
+          language={language}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+          customerApi={customerApi ?? defaultCustomerApi}
+          reservationApi={reservationApi}
+          unitApi={unitApi ?? defaultUnitApi}
+          lettersApi={lettersApi}
+        />
+        {/* V1-058 R3: the Lease actions stay in the earlier English forms, folded, until
+            the next step moves them into the design. */}
+        <details className="ui-records">
+          <summary lang={language}>
+            <span className="ui-records-title">{lt(language, "records")}</span>
+            <span className="ui-small ui-muted">
+              {lt(language, "records_note")}
+            </span>
+          </summary>
+          <div lang="en">
+            <LeaseManagement api={leaseApi} />
+          </div>
+        </details>
+      </div>
+      <div
+        className="shell-page"
+        data-page="letters"
+        hidden={!shown("letters")}
+      >
+        <LettersPage
+          active={shown("letters")}
+          api={lettersApi}
+          capabilities={capabilities}
+          language={language}
+          leaseApi={leaseApi}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+        />
+        {/* V1-058 R3: the earlier English forms stay, folded, until the Terminate step and the
+            later steps replace what is left in them (opening a case for another follow-up,
+            Initial Rent alerts). */}
+        <details className="ui-records">
+          <summary lang={language}>
+            <span className="ui-records-title">{ltr(language, "records")}</span>
+            <span className="ui-small ui-muted">
+              {ltr(language, "records_note")}
+            </span>
+          </summary>
+          <div lang="en">
+            {!logoutPending && (
+              <LeaseEnforcementManagement
+                key={`lease-enforcement:${session.actor_id}`}
+                actorId={session.actor_id}
+                services={enforcementServices}
+                onDirtyStateChange={setEnforcementDraftsDirty}
+              />
+            )}
+          </div>
+        </details>
+      </div>
+      <div
+        className="shell-page"
+        data-page="moveout"
+        hidden={!shown("moveout")}
+      >
+        <MoveoutPage
+          active={shown("moveout")}
+          capabilities={capabilities}
+          depositApi={depositApi}
+          language={language}
+          leaseApi={leaseApi}
+          moveOutApi={moveOutApi}
+          invoiceApi={invoiceApi}
+          utilityApi={utilityApi}
+          utilityLeaseApi={utilityLeaseApi}
+          settlementApi={moveOutChargeApi}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+          today={todayInPhnomPenh()}
+          unitApi={unitApi ?? defaultUnitApi}
+        />
+        {/* V1-058 R3 Move-out: the earlier English Deposit forms stay, folded, until the
+            Final Settlement steps replace them. */}
+        <details className="ui-records">
+          <summary lang={language}>
+            <span className="ui-records-title">{mt(language, "records")}</span>
+            <span className="ui-small ui-muted">
+              {mt(language, "records_note")}
+            </span>
+          </summary>
+          <div lang="en">
+            <DepositManagement api={depositApi} />
+          </div>
+        </details>
+      </div>
+      <div
+        className="shell-page"
+        data-page="reports"
+        hidden={!shown("reports")}
+      >
+        <ComingSoon language={language} step="V1-057" />
+      </div>
+      <div
+        className="shell-page"
+        data-page="history"
+        hidden={!shown("history")}
+      >
+        <HistoryPage
+          active={shown("history")}
+          api={historyApi}
+          capabilities={capabilities}
+          exporter={historyExportApi}
+          language={language}
+          me={{
+            id: session.actor_id,
+            name: session.display_name ?? session.actor_id.slice(0, 8),
+          }}
+          people={historyPeople}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+          today={todayInPhnomPenh()}
+          units={unitApi ?? defaultUnitApi}
+        />
+      </div>
+      <div
+        className="shell-page"
+        data-page="account"
+        hidden={!shown("account")}
+        lang="en"
+      >
         <section className="workspace-panel">
           <div className="workspace-heading">
-            <div>
-              <p className="eyebrow">Authenticated workspace</p>
-              <h2 id="screen-heading">Account and access</h2>
-            </div>
-            <div className="signed-in-person">
-              {session.display_name !== undefined &&
-                session.display_name !== null &&
-                session.display_name.trim().length > 0 && (
-                  <p className="signed-in-name">{session.display_name}</p>
-                )}
-              <button
-                disabled={isSubmitting}
-                onClick={handleLogout}
-                type="button"
-              >
-                Sign out
-              </button>
-            </div>
+            <h2 id="screen-heading">Account and access</h2>
           </div>
           <section
             aria-labelledby="session-heading"
@@ -1495,639 +2169,610 @@ export function App({
               </div>
             )}
           </section>
-          <section
-            aria-labelledby="business-configuration-heading"
-            className="information-card"
-          >
-            <h3 id="business-configuration-heading">
-              {propertyConfigurationAuthorized
-                ? "Business configuration"
-                : "Business configuration access"}
-            </h3>
-            {propertyConfigurationAuthorized ? (
-              <p>
-                The server authorized this Property. A change needs{" "}
-                <code>settings.manage</code>, and the server checks the current
-                version for every change. The fixed timezone is shown as an
-                authoritative value, not an editable source field.
-              </p>
-            ) : (
-              <p>
-                Enter the exact Property identifier. The server must confirm
-                <code> settings.manage</code> or <code>property.manage</code>{" "}
-                for that Property before any management screen or editing
-                control is shown.
-              </p>
-            )}
-            <form
-              className="form-stack inline-form"
-              onSubmit={loadPropertyConfiguration}
-            >
-              <div className="form-field">
-                <label htmlFor="configuration-property-id">
-                  Configuration Property identifier
-                </label>
-                <input
-                  id="configuration-property-id"
-                  onChange={(event) => {
-                    invalidatePropertyConfiguration();
-                    setPropertyConfigurationStatus(null);
-                    setConfigurationPropertyId(event.currentTarget.value);
-                  }}
-                  required
-                  value={configurationPropertyId}
-                />
-              </div>
-              <button type="submit">Load business configuration</button>
-            </form>
-            {propertyConfigurationStatus !== null && (
-              <p role="status">{propertyConfigurationStatus}</p>
-            )}
-            {propertyConfiguration !== null && (
-              <div className="administration-grid">
-                <section aria-labelledby="property-source-heading">
-                  <h4 id="property-source-heading">Property source data</h4>
-                  <dl className="detail-list">
-                    <div>
-                      <dt>Timezone</dt>
-                      <dd>{propertyConfiguration.timezone_name}</dd>
-                    </div>
-                    <div>
-                      <dt>Version</dt>
-                      <dd>{propertyConfiguration.version}</dd>
-                    </div>
-                  </dl>
+        </section>
+      </div>
+      <div
+        className="shell-page"
+        data-page="settings"
+        hidden={!shown("settings")}
+      >
+        <SettingsPage
+          active={shown("settings")}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+          unitApi={unitApi ?? defaultUnitApi}
+          capabilities={capabilities}
+          earlier={{
+            business: (
+              <section className="workspace-panel">
+                <section
+                  aria-labelledby="business-configuration-heading"
+                  className="information-card"
+                >
+                  <h3 id="business-configuration-heading">
+                    {propertyConfigurationAuthorized
+                      ? "Business configuration"
+                      : "Business configuration access"}
+                  </h3>
+                  {propertyConfigurationAuthorized ? (
+                    <p>
+                      The server authorized this Property. A change needs{" "}
+                      <code>settings.manage</code>, and the server checks the
+                      current version for every change. The fixed timezone is
+                      shown as an authoritative value, not an editable source
+                      field.
+                    </p>
+                  ) : (
+                    <p>
+                      Enter the exact Property identifier. The server must
+                      confirm
+                      <code> settings.manage</code> or{" "}
+                      <code>property.manage</code> for that Property before any
+                      management screen or editing control is shown.
+                    </p>
+                  )}
                   <form
-                    className="form-stack"
-                    key={`property-source-${String(propertyConfiguration.version)}`}
-                    onSubmit={updatePropertySource}
+                    className="form-stack inline-form"
+                    onSubmit={loadPropertyConfiguration}
                   >
                     <div className="form-field">
-                      <label htmlFor="property-name">Property name</label>
-                      <input
-                        defaultValue={propertyConfiguration.name}
-                        id="property-name"
-                        name="property-name"
-                        required
-                      />
-                    </div>
-                    <div className="form-field">
-                      <label htmlFor="property-address">Property address</label>
-                      <textarea
-                        defaultValue={propertyConfiguration.address_text ?? ""}
-                        id="property-address"
-                        name="property-address"
-                      />
-                    </div>
-                    <button type="submit">Save Property source data</button>
-                  </form>
-                </section>
-                <section aria-labelledby="payment-methods-heading">
-                  <h4 id="payment-methods-heading">Payment Methods</h4>
-                  {propertyConfiguration.payment_methods.length === 0 ? (
-                    <p>No Payment Methods are configured.</p>
-                  ) : (
-                    <ul className="record-list">
-                      {propertyConfiguration.payment_methods.map((method) => (
-                        <li key={method.code}>
-                          <label>
-                            <input
-                              checked={method.accepted}
-                              onChange={(event) => {
-                                const accepted = event.currentTarget.checked;
-                                setPropertyConfiguration({
-                                  ...propertyConfiguration,
-                                  payment_methods:
-                                    propertyConfiguration.payment_methods.map(
-                                      (candidate) =>
-                                        candidate.code === method.code
-                                          ? { ...candidate, accepted }
-                                          : candidate,
-                                    ),
-                                });
-                              }}
-                              type="checkbox"
-                            />
-                            {method.display_name} ({method.code}) accepted
-                          </label>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  <form className="form-stack" onSubmit={addPaymentMethod}>
-                    <div className="form-field">
-                      <label htmlFor="payment-method-code">Method code</label>
-                      <input
-                        id="payment-method-code"
-                        name="payment-method-code"
-                        required
-                      />
-                    </div>
-                    <div className="form-field">
-                      <label htmlFor="payment-method-name">
-                        Method display name
+                      <label htmlFor="configuration-property-id">
+                        Configuration Property identifier
                       </label>
                       <input
-                        id="payment-method-name"
-                        name="payment-method-name"
+                        id="configuration-property-id"
+                        onChange={(event) => {
+                          invalidatePropertyConfiguration();
+                          setPropertyConfigurationStatus(null);
+                          setConfigurationPropertyId(event.currentTarget.value);
+                        }}
                         required
+                        value={configurationPropertyId}
                       />
                     </div>
-                    <button type="submit">Add Payment Method</button>
+                    <button type="submit">Load business configuration</button>
                   </form>
-                  <button onClick={savePaymentMethods} type="button">
-                    Save Payment Method configuration
-                  </button>
-                  <p className="panel-help">
-                    Retired methods remain visible and are never deleted from
-                    configuration history.
-                  </p>
-                </section>
-              </div>
-            )}
-          </section>
-          <ConfigurationManagement
-            api={effectiveConfigApi}
-            propertyId={propertyConfiguration?.property_id ?? ""}
-          />
-          <UtilityManagement
-            api={utilityApi}
-            propertyId={propertyConfiguration?.property_id ?? ""}
-          />
-          <UtilityLeaseWorkflows
-            propertyId={propertyConfiguration?.property_id ?? ""}
-          />
-          <UnitManagement api={unitApi} />
-          {!logoutPending && (
-            <InvoiceManagement
-              api={invoiceApi}
-              actorId={session.actor_id}
-              propertyId={propertyConfiguration?.property_id ?? ""}
-            />
-          )}
-          {!logoutPending && (
-            <FinancialManagement
-              key={session.actor_id}
-              actorId={session.actor_id}
-              services={financialServices}
-              onDirtyStateChange={setFinancialDraftsDirty}
-            />
-          )}
-          {!logoutPending && (
-            <CustomerAccountLedger
-              key={`customer-ledger:${session.actor_id}`}
-              actorId={session.actor_id}
-              api={ledgerApi}
-              requested={
-                ledgerSelection?.actorId === session.actor_id
-                  ? ledgerSelection
-                  : undefined
-              }
-            />
-          )}
-          <ReservationManagement api={reservationApi} />
-          <LeaseManagement api={leaseApi} />
-          {!logoutPending && (
-            <LeaseEnforcementManagement
-              key={`lease-enforcement:${session.actor_id}`}
-              actorId={session.actor_id}
-              services={enforcementServices}
-              onDirtyStateChange={setEnforcementDraftsDirty}
-            />
-          )}
-          <DepositManagement api={depositApi} />
-          {!logoutPending && (
-            <CustomerManagement
-              actorId={session.actor_id}
-              api={customerApi}
-              onOpenAccountLedger={(selection) => {
-                setLedgerSelection({
-                  ...selection,
-                  actorId: session.actor_id,
-                  sequence: ++ledgerSequence.current,
-                });
-              }}
-              mutationCoordinationAvailable={customerCoordinationAvailable}
-              onCommandBusyChange={setCustomerCommandBusy}
-              onDirtyStateChange={setCustomerDraftsDirty}
-              onReconciled={async (requirement) => {
-                const clearance =
-                  await clearCustomerReconciliation(requirement);
-                if (clearance.status === "cleared") {
-                  setCustomerCoordinationAvailable(true);
-                  setCustomerReconciliationRequirement((current) =>
-                    sameCustomerReconciliation(current, requirement)
-                      ? null
-                      : current,
-                  );
-                  return true;
-                } else if (clearance.status === "superseded") {
-                  if (clearance.requirement === null) {
-                    setCustomerCoordinationAvailable(true);
-                    setCustomerReconciliationRequirement(null);
-                    setNotice(
-                      "The Customer reconciliation gate was already resolved in another tab.",
-                    );
-                    return true;
-                  }
-                  setCustomerReconciliationRequirement(clearance.requirement);
-                  setNotice(
-                    "A newer Customer command gate remains active. Reconcile that exact command before retrying.",
-                  );
-                  return false;
-                } else {
-                  setNotice(
-                    "The Customer result is known, but its durable command gate could not be cleared. Customer commands remain blocked.",
-                  );
-                  return false;
-                }
-              }}
-              onReconciliationRequired={async (requirement) => {
-                const reservation =
-                  await reserveCustomerReconciliation(requirement);
-                if (reservation.existing !== null) {
-                  setCustomerCoordinationAvailable(true);
-                  setCustomerReconciliationRequirement(reservation.existing);
-                  return false;
-                }
-                if (!reservation.reserved) {
-                  setNotice(
-                    reservation.storageAvailable
-                      ? "Another tab already reserved the Customer command gate. Reconcile it before retrying."
-                      : "Customer command coordination is unavailable. No command was sent; restore durable browser coordination before retrying.",
-                  );
-                  return false;
-                }
-                setCustomerCoordinationAvailable(true);
-                setCustomerReconciliationRequirement(requirement);
-                return true;
-              }}
-              reconciliationRequirement={customerReconciliationRequirement}
-            />
-          )}
-          {!logoutPending && !customerCoordinationAvailable && (
-            <section className="information-card">
-              <h3>Customer command coordination unavailable</h3>
-              <p>
-                Customer commands are blocked because the opaque reconciliation
-                handle cannot be matched to this authenticated browser session.
-                No confidential Customer or actor metadata was read from local
-                storage.
-              </p>
-            </section>
-          )}
-          <section
-            aria-labelledby="administration-heading"
-            className="information-card"
-          >
-            <h3 id="administration-heading">
-              Capability-checked administration
-            </h3>
-            <p>
-              Enter the exact property identifier. The server decides whether
-              this session has the required capability; role labels are never
-              treated as authority.
-            </p>
-            <form
-              className="form-stack inline-form"
-              onSubmit={loadAdministration}
-            >
-              <div className="form-field">
-                <label htmlFor="property-id">Property identifier</label>
-                <input
-                  id="property-id"
-                  name="property-id"
-                  onChange={(event) => {
-                    setPropertyId(event.currentTarget.value);
-                  }}
-                  required
-                  value={propertyId}
-                />
-              </div>
-              <button type="submit">Check administration access</button>
-            </form>
-            {administrationStatus !== null && (
-              <p role="status">{administrationStatus}</p>
-            )}
-            {issuedPassword !== null && (
-              <section
-                aria-label="One-time password"
-                className="protected-material"
-              >
-                <p>
-                  One-time password for {issuedPassword.username}:{" "}
-                  <code>{issuedPassword.value}</code>
-                </p>
-                <p className="panel-help">
-                  Give it to the person directly. It works until{" "}
-                  {formatDateTime(issuedPassword.expires_at)}, and the person
-                  must choose a new password when they sign in. It is shown only
-                  once.
-                </p>
-                <button
-                  onClick={() => {
-                    setIssuedPassword(null);
-                  }}
-                  type="button"
-                >
-                  I gave it to the person—clear it
-                </button>
-              </section>
-            )}
-
-            {administration !== null && (
-              <div className="administration-grid">
-                <section aria-labelledby="users-heading">
-                  <h4 id="users-heading">Accounts</h4>
-                  {administration.users.length === 0 ? (
-                    <p>No accounts were returned for this property.</p>
-                  ) : (
-                    <ul className="record-list">
-                      {administration.users.map((user) => (
-                        <li key={user.user_id}>
-                          <div>
-                            <strong>{user.display_name}</strong>
-                            <span>
-                              {user.username} · {user.lifecycle_state} · MFA{" "}
-                              {user.mfa_policy_class}
-                            </span>
-                          </div>
-                          {session.reauthenticated_at === null ? (
-                            <span className="muted">
-                              Reauthenticate before protected commands.
-                            </span>
-                          ) : (
-                            <div className="button-row">
-                              {user.lifecycle_state === "active" && (
-                                <button
-                                  onClick={() => {
-                                    setPendingCommand({
-                                      kind: "disable",
-                                      user,
-                                    });
-                                  }}
-                                  type="button"
-                                >
-                                  Disable account
-                                </button>
-                              )}
-                              <button
-                                onClick={() => {
-                                  setPendingCommand({ kind: "revoke", user });
-                                }}
-                                type="button"
-                              >
-                                Revoke sessions
-                              </button>
-                            </div>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
+                  {propertyConfigurationStatus !== null && (
+                    <p role="status">{propertyConfigurationStatus}</p>
                   )}
-                </section>
-
-                <section aria-labelledby="authorization-heading">
-                  <h4 id="authorization-heading">
-                    Authorization configuration
-                  </h4>
-                  <p className="panel-help">
-                    This current configuration is audit context, not proof of
-                    authority. Historical authorization events remain immutable
-                    on the server. Event timestamps are shown in UTC.
-                  </p>
-                  <ul className="record-list">
-                    {administration.roleBundles.map((bundle) => (
-                      <li key={bundle.role_bundle_id}>
-                        <div>
-                          <strong>{bundle.name}</strong>
-                          <span>
-                            {bundle.capability_ids.length} configured
-                            capabilities
-                          </span>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                  <h5>Authorization history</h5>
-                  {administration.authorizationHistory.length === 0 ? (
-                    <p>No authorization events were returned.</p>
-                  ) : (
-                    <ol className="record-list">
-                      {administration.authorizationHistory.map((event) => (
-                        <li key={event.event_id}>
+                  {propertyConfiguration !== null && (
+                    <div className="administration-grid">
+                      <section aria-labelledby="property-source-heading">
+                        <h4 id="property-source-heading">
+                          Property source data
+                        </h4>
+                        <dl className="detail-list">
                           <div>
-                            <strong>{event.action}</strong>
-                            <span>
-                              {formatDateTime(event.occurred_at)} ·{" "}
-                              {event.outcome}
-                              {" · actor "}
-                              {event.actor_id}
-                              {" · target "}
-                              {event.target_id}
-                            </span>
+                            <dt>Timezone</dt>
+                            <dd>{propertyConfiguration.timezone_name}</dd>
                           </div>
-                        </li>
-                      ))}
-                    </ol>
-                  )}
-                  <details>
-                    <summary>Capability catalog</summary>
-                    <ul>
-                      {administration.capabilities.map((capability) => (
-                        <li key={capability.capability_id}>
-                          <strong>{capability.name}</strong> —{" "}
-                          {capability.description}
-                        </li>
-                      ))}
-                    </ul>
-                  </details>
-                </section>
-
-                {session.reauthenticated_at !== null && (
-                  <section aria-labelledby="protected-admin-heading">
-                    <h4 id="protected-admin-heading">
-                      Protected account and capability commands
-                    </h4>
-                    <form className="form-stack" onSubmit={createUser}>
-                      <h5>Create account</h5>
-                      <div className="form-field">
-                        <label htmlFor="new-username">Username</label>
-                        <input id="new-username" name="new-username" required />
-                      </div>
-                      <div className="form-field">
-                        <label htmlFor="new-display-name">Display name</label>
-                        <input
-                          id="new-display-name"
-                          name="new-display-name"
-                          required
-                        />
-                      </div>
-                      <div className="form-field">
-                        <label htmlFor="new-audit-name">Audit name</label>
-                        <input
-                          id="new-audit-name"
-                          name="new-audit-name"
-                          required
-                        />
-                      </div>
-                      <div className="form-field">
-                        <label htmlFor="new-account-class">Account class</label>
-                        <select id="new-account-class" name="new-account-class">
-                          <option value="staff">Staff</option>
-                          <option value="manager">Manager</option>
-                        </select>
-                      </div>
-                      <button type="submit">Create audited account</button>
-                    </form>
-                    <form
-                      className="form-stack nested-form"
-                      onSubmit={createRoleBundle}
-                    >
-                      <h5>Create role bundle</h5>
-                      <div className="form-field">
-                        <label htmlFor="bundle-name">Bundle name</label>
-                        <input id="bundle-name" name="bundle-name" required />
-                      </div>
-                      <fieldset>
-                        <legend>Explicit capabilities</legend>
-                        {administration.capabilities.map((capability) => (
-                          <label key={capability.capability_id}>
-                            <input
-                              name="bundle-capability"
-                              type="checkbox"
-                              value={capability.capability_id}
-                            />
-                            {capability.name}
-                          </label>
-                        ))}
-                      </fieldset>
-                      <button type="submit">Create audited role bundle</button>
-                    </form>
-                    {administration.users.length > 0 &&
-                      administration.roleBundles.length > 0 && (
+                          <div>
+                            <dt>Version</dt>
+                            <dd>{propertyConfiguration.version}</dd>
+                          </div>
+                        </dl>
                         <form
-                          className="form-stack nested-form"
-                          onSubmit={assignRoleBundle}
+                          className="form-stack"
+                          key={`property-source-${String(propertyConfiguration.version)}`}
+                          onSubmit={updatePropertySource}
                         >
-                          <h5>Assign configured role bundle</h5>
                           <div className="form-field">
-                            <label htmlFor="assignment-user">Account</label>
-                            <select id="assignment-user" name="assignment-user">
-                              {administration.users.map((user) => (
-                                <option key={user.user_id} value={user.user_id}>
-                                  {user.display_name}
-                                </option>
-                              ))}
-                            </select>
+                            <label htmlFor="property-name">Property name</label>
+                            <input
+                              defaultValue={propertyConfiguration.name}
+                              id="property-name"
+                              name="property-name"
+                              required
+                            />
                           </div>
                           <div className="form-field">
-                            <label htmlFor="assignment-bundle">
-                              Role bundle
+                            <label htmlFor="property-address">
+                              Property address
                             </label>
-                            <select
-                              id="assignment-bundle"
-                              name="assignment-bundle"
-                            >
-                              {administration.roleBundles.map((bundle) => (
-                                <option
-                                  key={bundle.role_bundle_id}
-                                  value={bundle.role_bundle_id}
-                                >
-                                  {bundle.name}
-                                </option>
-                              ))}
-                            </select>
+                            <textarea
+                              defaultValue={
+                                propertyConfiguration.address_text ?? ""
+                              }
+                              id="property-address"
+                              name="property-address"
+                            />
                           </div>
                           <button type="submit">
-                            Assign audited role bundle
+                            Save Property source data
                           </button>
                         </form>
-                      )}
-                    {administration.users.length > 0 && (
-                      <form
-                        className="form-stack nested-form"
-                        onSubmit={prepareAdministrativeRecovery}
-                      >
-                        <h5>Owner-authorized account recovery</h5>
-                        <p className="panel-help">
-                          The server permits only Owner recovery of Manager or
-                          Staff. It rejects Staff recovery of Owner or Manager
-                          and does not grant Manager recovery of Staff.
-                        </p>
-                        <div className="form-field">
-                          <label htmlFor="recovery-user">Account</label>
-                          <select id="recovery-user" name="recovery-user">
-                            {administration.users.map((user) => (
-                              <option key={user.user_id} value={user.user_id}>
-                                {user.display_name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div className="form-field">
-                          <label htmlFor="recovery-reason">Audit reason</label>
-                          <input
-                            id="recovery-reason"
-                            maxLength={500}
-                            name="recovery-reason"
-                            required
-                          />
-                        </div>
-                        <label>
-                          <input
-                            name="recovery-reset-mfa"
-                            type="checkbox"
-                            value="yes"
-                          />
-                          Reset current MFA enrollment
-                        </label>
-                        <button type="submit">
-                          Review recovery consequences
+                      </section>
+                      <section aria-labelledby="payment-methods-heading">
+                        <h4 id="payment-methods-heading">Payment Methods</h4>
+                        {propertyConfiguration.payment_methods.length === 0 ? (
+                          <p>No Payment Methods are configured.</p>
+                        ) : (
+                          <ul className="record-list">
+                            {propertyConfiguration.payment_methods.map(
+                              (method) => (
+                                <li key={method.code}>
+                                  <label>
+                                    <input
+                                      checked={method.accepted}
+                                      onChange={(event) => {
+                                        const accepted =
+                                          event.currentTarget.checked;
+                                        setPropertyConfiguration({
+                                          ...propertyConfiguration,
+                                          payment_methods:
+                                            propertyConfiguration.payment_methods.map(
+                                              (candidate) =>
+                                                candidate.code === method.code
+                                                  ? { ...candidate, accepted }
+                                                  : candidate,
+                                            ),
+                                        });
+                                      }}
+                                      type="checkbox"
+                                    />
+                                    {method.display_name} ({method.code})
+                                    accepted
+                                  </label>
+                                </li>
+                              ),
+                            )}
+                          </ul>
+                        )}
+                        <form
+                          className="form-stack"
+                          onSubmit={addPaymentMethod}
+                        >
+                          <div className="form-field">
+                            <label htmlFor="payment-method-code">
+                              Method code
+                            </label>
+                            <input
+                              id="payment-method-code"
+                              name="payment-method-code"
+                              required
+                            />
+                          </div>
+                          <div className="form-field">
+                            <label htmlFor="payment-method-name">
+                              Method display name
+                            </label>
+                            <input
+                              id="payment-method-name"
+                              name="payment-method-name"
+                              required
+                            />
+                          </div>
+                          <button type="submit">Add Payment Method</button>
+                        </form>
+                        <button onClick={savePaymentMethods} type="button">
+                          Save Payment Method configuration
                         </button>
-                      </form>
-                    )}
-                  </section>
-                )}
-              </div>
-            )}
-
-            {pendingCommand !== null && (
-              <div
-                aria-labelledby="confirmation-heading"
-                aria-modal="true"
-                className="confirmation-panel"
-                role="alertdialog"
-              >
-                <h4 id="confirmation-heading">Confirm protected command</h4>
-                <p>
-                  {pendingCommand.kind === "disable"
-                    ? "Disabling this account also revokes every applicable session."
-                    : pendingCommand.kind === "recover"
-                      ? "Recovery gives the selected account a one-time password, may reset MFA, and revokes every applicable session."
-                      : "This revokes every applicable session for the selected account."}{" "}
-                  The server records the acting account and request for audit.
-                </p>
-                <div className="button-row">
-                  <button onClick={confirmAdministrativeCommand} type="button">
-                    Confirm command
-                  </button>
-                  <button
-                    onClick={() => {
-                      setPendingCommand(null);
-                    }}
-                    type="button"
+                        <p className="panel-help">
+                          Retired methods remain visible and are never deleted
+                          from configuration history.
+                        </p>
+                      </section>
+                    </div>
+                  )}
+                </section>
+              </section>
+            ),
+            rates: (
+              <section className="workspace-panel">
+                <ConfigurationManagement
+                  api={effectiveConfigApi}
+                  propertyId={propertyConfiguration?.property_id ?? ""}
+                />
+              </section>
+            ),
+            users: (
+              <section className="workspace-panel">
+                <section
+                  aria-labelledby="administration-heading"
+                  className="information-card"
+                >
+                  <h3 id="administration-heading">
+                    Capability-checked administration
+                  </h3>
+                  <p>
+                    Enter the exact property identifier. The server decides
+                    whether this session has the required capability; role
+                    labels are never treated as authority.
+                  </p>
+                  <form
+                    className="form-stack inline-form"
+                    onSubmit={loadAdministration}
                   >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            )}
-          </section>
-        </section>
-      </main>
+                    <div className="form-field">
+                      <label htmlFor="property-id">Property identifier</label>
+                      <input
+                        id="property-id"
+                        name="property-id"
+                        onChange={(event) => {
+                          setPropertyId(event.currentTarget.value);
+                        }}
+                        required
+                        value={propertyId}
+                      />
+                    </div>
+                    <button type="submit">Check administration access</button>
+                  </form>
+                  {administrationStatus !== null && (
+                    <p role="status">{administrationStatus}</p>
+                  )}
+                  {issuedPassword !== null && (
+                    <section
+                      aria-label="One-time password"
+                      className="protected-material"
+                    >
+                      <p>
+                        One-time password for {issuedPassword.username}:{" "}
+                        <code>{issuedPassword.value}</code>
+                      </p>
+                      <p className="panel-help">
+                        Give it to the person directly. It works until{" "}
+                        {formatDateTime(issuedPassword.expires_at)}, and the
+                        person must choose a new password when they sign in. It
+                        is shown only once.
+                      </p>
+                      <button
+                        onClick={() => {
+                          setIssuedPassword(null);
+                        }}
+                        type="button"
+                      >
+                        I gave it to the person—clear it
+                      </button>
+                    </section>
+                  )}
 
-      {buildInformation}
-    </div>
+                  {administration !== null && (
+                    <div className="administration-grid">
+                      <section aria-labelledby="users-heading">
+                        <h4 id="users-heading">Accounts</h4>
+                        {administration.users.length === 0 ? (
+                          <p>No accounts were returned for this property.</p>
+                        ) : (
+                          <ul className="record-list">
+                            {administration.users.map((user) => (
+                              <li key={user.user_id}>
+                                <div>
+                                  <strong>{user.display_name}</strong>
+                                  <span>
+                                    {user.username} · {user.lifecycle_state} ·
+                                    MFA {user.mfa_policy_class}
+                                  </span>
+                                </div>
+                                {session.reauthenticated_at === null ? (
+                                  <span className="muted">
+                                    Reauthenticate before protected commands.
+                                  </span>
+                                ) : (
+                                  <div className="button-row">
+                                    {user.lifecycle_state === "active" && (
+                                      <button
+                                        onClick={() => {
+                                          setPendingCommand({
+                                            kind: "disable",
+                                            user,
+                                          });
+                                        }}
+                                        type="button"
+                                      >
+                                        Disable account
+                                      </button>
+                                    )}
+                                    <button
+                                      onClick={() => {
+                                        setPendingCommand({
+                                          kind: "revoke",
+                                          user,
+                                        });
+                                      }}
+                                      type="button"
+                                    >
+                                      Revoke sessions
+                                    </button>
+                                  </div>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </section>
+
+                      <section aria-labelledby="authorization-heading">
+                        <h4 id="authorization-heading">
+                          Authorization configuration
+                        </h4>
+                        <p className="panel-help">
+                          This current configuration is audit context, not proof
+                          of authority. Historical authorization events remain
+                          immutable on the server. Event timestamps are shown in
+                          UTC.
+                        </p>
+                        <ul className="record-list">
+                          {administration.roleBundles.map((bundle) => (
+                            <li key={bundle.role_bundle_id}>
+                              <div>
+                                <strong>{bundle.name}</strong>
+                                <span>
+                                  {bundle.capability_ids.length} configured
+                                  capabilities
+                                </span>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                        <h5>Authorization history</h5>
+                        {administration.authorizationHistory.length === 0 ? (
+                          <p>No authorization events were returned.</p>
+                        ) : (
+                          <ol className="record-list">
+                            {administration.authorizationHistory.map(
+                              (event) => (
+                                <li key={event.event_id}>
+                                  <div>
+                                    <strong>{event.action}</strong>
+                                    <span>
+                                      {formatDateTime(event.occurred_at)} ·{" "}
+                                      {event.outcome}
+                                      {" · actor "}
+                                      {event.actor_id}
+                                      {" · target "}
+                                      {event.target_id}
+                                    </span>
+                                  </div>
+                                </li>
+                              ),
+                            )}
+                          </ol>
+                        )}
+                        <details>
+                          <summary>Capability catalog</summary>
+                          <ul>
+                            {administration.capabilities.map((capability) => (
+                              <li key={capability.capability_id}>
+                                <strong>{capability.name}</strong> —{" "}
+                                {capability.description}
+                              </li>
+                            ))}
+                          </ul>
+                        </details>
+                      </section>
+
+                      {session.reauthenticated_at !== null && (
+                        <section aria-labelledby="protected-admin-heading">
+                          <h4 id="protected-admin-heading">
+                            Protected account and capability commands
+                          </h4>
+                          <form className="form-stack" onSubmit={createUser}>
+                            <h5>Create account</h5>
+                            <div className="form-field">
+                              <label htmlFor="new-username">Username</label>
+                              <input
+                                id="new-username"
+                                name="new-username"
+                                required
+                              />
+                            </div>
+                            <div className="form-field">
+                              <label htmlFor="new-display-name">
+                                Display name
+                              </label>
+                              <input
+                                id="new-display-name"
+                                name="new-display-name"
+                                required
+                              />
+                            </div>
+                            <div className="form-field">
+                              <label htmlFor="new-audit-name">Audit name</label>
+                              <input
+                                id="new-audit-name"
+                                name="new-audit-name"
+                                required
+                              />
+                            </div>
+                            <div className="form-field">
+                              <label htmlFor="new-account-class">
+                                Account class
+                              </label>
+                              <select
+                                id="new-account-class"
+                                name="new-account-class"
+                              >
+                                <option value="staff">Staff</option>
+                                <option value="manager">Manager</option>
+                              </select>
+                            </div>
+                            <button type="submit">
+                              Create audited account
+                            </button>
+                          </form>
+                          <form
+                            className="form-stack nested-form"
+                            onSubmit={createRoleBundle}
+                          >
+                            <h5>Create role bundle</h5>
+                            <div className="form-field">
+                              <label htmlFor="bundle-name">Bundle name</label>
+                              <input
+                                id="bundle-name"
+                                name="bundle-name"
+                                required
+                              />
+                            </div>
+                            <fieldset>
+                              <legend>Explicit capabilities</legend>
+                              {administration.capabilities.map((capability) => (
+                                <label key={capability.capability_id}>
+                                  <input
+                                    name="bundle-capability"
+                                    type="checkbox"
+                                    value={capability.capability_id}
+                                  />
+                                  {capability.name}
+                                </label>
+                              ))}
+                            </fieldset>
+                            <button type="submit">
+                              Create audited role bundle
+                            </button>
+                          </form>
+                          {administration.users.length > 0 &&
+                            administration.roleBundles.length > 0 && (
+                              <form
+                                className="form-stack nested-form"
+                                onSubmit={assignRoleBundle}
+                              >
+                                <h5>Assign configured role bundle</h5>
+                                <div className="form-field">
+                                  <label htmlFor="assignment-user">
+                                    Account
+                                  </label>
+                                  <select
+                                    id="assignment-user"
+                                    name="assignment-user"
+                                  >
+                                    {administration.users.map((user) => (
+                                      <option
+                                        key={user.user_id}
+                                        value={user.user_id}
+                                      >
+                                        {user.display_name}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <div className="form-field">
+                                  <label htmlFor="assignment-bundle">
+                                    Role bundle
+                                  </label>
+                                  <select
+                                    id="assignment-bundle"
+                                    name="assignment-bundle"
+                                  >
+                                    {administration.roleBundles.map(
+                                      (bundle) => (
+                                        <option
+                                          key={bundle.role_bundle_id}
+                                          value={bundle.role_bundle_id}
+                                        >
+                                          {bundle.name}
+                                        </option>
+                                      ),
+                                    )}
+                                  </select>
+                                </div>
+                                <button type="submit">
+                                  Assign audited role bundle
+                                </button>
+                              </form>
+                            )}
+                          {administration.users.length > 0 && (
+                            <form
+                              className="form-stack nested-form"
+                              onSubmit={prepareAdministrativeRecovery}
+                            >
+                              <h5>Owner-authorized account recovery</h5>
+                              <p className="panel-help">
+                                The server permits only Owner recovery of
+                                Manager or Staff. It rejects Staff recovery of
+                                Owner or Manager and does not grant Manager
+                                recovery of Staff.
+                              </p>
+                              <div className="form-field">
+                                <label htmlFor="recovery-user">Account</label>
+                                <select id="recovery-user" name="recovery-user">
+                                  {administration.users.map((user) => (
+                                    <option
+                                      key={user.user_id}
+                                      value={user.user_id}
+                                    >
+                                      {user.display_name}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                              <div className="form-field">
+                                <label htmlFor="recovery-reason">
+                                  Audit reason
+                                </label>
+                                <input
+                                  id="recovery-reason"
+                                  maxLength={500}
+                                  name="recovery-reason"
+                                  required
+                                />
+                              </div>
+                              <label>
+                                <input
+                                  name="recovery-reset-mfa"
+                                  type="checkbox"
+                                  value="yes"
+                                />
+                                Reset current MFA enrollment
+                              </label>
+                              <button type="submit">
+                                Review recovery consequences
+                              </button>
+                            </form>
+                          )}
+                        </section>
+                      )}
+                    </div>
+                  )}
+
+                  {pendingCommand !== null && (
+                    <div
+                      aria-labelledby="confirmation-heading"
+                      aria-modal="true"
+                      className="confirmation-panel"
+                      role="alertdialog"
+                    >
+                      <h4 id="confirmation-heading">
+                        Confirm protected command
+                      </h4>
+                      <p>
+                        {pendingCommand.kind === "disable"
+                          ? "Disabling this account also revokes every applicable session."
+                          : pendingCommand.kind === "recover"
+                            ? "Recovery gives the selected account a one-time password, may reset MFA, and revokes every applicable session."
+                            : "This revokes every applicable session for the selected account."}{" "}
+                        The server records the acting account and request for
+                        audit.
+                      </p>
+                      <div className="button-row">
+                        <button
+                          onClick={confirmAdministrativeCommand}
+                          type="button"
+                        >
+                          Confirm command
+                        </button>
+                        <button
+                          onClick={() => {
+                            setPendingCommand(null);
+                          }}
+                          type="button"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </section>
+              </section>
+            ),
+          }}
+          healthApi={healthApi}
+          language={language}
+          myUserId={session.actor_id}
+          reauthenticate={reauthenticateForSettings}
+          usersApi={administrationApi}
+          businessApi={businessApi}
+          ratesApi={effectiveConfigApi}
+        />
+      </div>
+    </AppShell>
   );
 }

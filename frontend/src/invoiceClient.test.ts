@@ -3,6 +3,7 @@ import {
   InvoiceClientError,
   BillingRun,
   billingRunRetry,
+  dueDaysApi,
   executeBilling,
   formatUsd,
   invoiceApi,
@@ -909,6 +910,43 @@ describe("V1-055 due days transport", () => {
       invoiceApi.setDueDays("p", 14, "r", 2_147_483_648, "k"),
     ).rejects.toMatchObject({ code: "INVALID_VERSION" });
     expect(fetcher).not.toHaveBeenCalled();
+  });
+});
+
+describe("Settings: days after issue read", () => {
+  it("TEST-FE-954 reads the days after issue with GET and no body, and a refusal keeps its status", async () => {
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        response({
+          property_id: "p/1",
+          one_time_charge_due_days: 7,
+          version: 3,
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            error: { code: "FORBIDDEN", message: "Not allowed." },
+          }),
+          { status: 403 },
+        ),
+      );
+    vi.stubGlobal("fetch", fetcher);
+    await expect(dueDaysApi.get("p/1")).resolves.toEqual({
+      property_id: "p/1",
+      one_time_charge_due_days: 7,
+      version: 3,
+    });
+    const [path, init] = fetcher.mock.calls[0] ?? [];
+    expect(path).toBe("/api/v1/properties/p%2F1/one-time-charge-due-days");
+    expect(init?.method ?? "GET").toBe("GET");
+    expect(init?.body ?? null).toBeNull();
+    const refused = await dueDaysApi
+      .get("p/1")
+      .catch((error: unknown) => error);
+    expect(refused).toBeInstanceOf(InvoiceClientError);
+    expect((refused as InvoiceClientError).status).toBe(403);
   });
 });
 

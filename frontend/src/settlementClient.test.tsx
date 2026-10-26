@@ -379,4 +379,27 @@ describe("settlementClient", () => {
       expect(headers.get("X-Financial-Property-ID")).toBe(PROPERTY);
     }
   });
+
+  it("TEST-FE-984 reads one Lease's Final Settlements without starting one", async () => {
+    const item = { id: SETTLEMENT, property_id: PROPERTY, pending_draft: true };
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(answer({ data: [item], meta: {} }, 200))
+      .mockResolvedValueOnce(answer({ data: [], meta: {} }, 200))
+      .mockResolvedValueOnce(answer({ data: {}, meta: {} }, 200));
+    expect(await settlementApi.settlements(PROPERTY, KEY)).toEqual([item]);
+    expect(await settlementApi.settlements(PROPERTY)).toEqual([]);
+    await expect(settlementApi.settlements(PROPERTY)).rejects.toBeInstanceOf(
+      SettlementRequestError,
+    );
+    const first = sent(fetchMock, 0);
+    expect(first.path).toBe(
+      `/api/v1/properties/${PROPERTY}/final-settlements?lease_id=${KEY}`,
+    );
+    expect(first.init.method).toBe("GET");
+    expect(first.headers.get("X-Financial-Property-ID")).toBe(PROPERTY);
+    expect(sent(fetchMock, 1).path).toBe(
+      `/api/v1/properties/${PROPERTY}/final-settlements`,
+    );
+  });
 });

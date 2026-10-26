@@ -214,3 +214,63 @@ def test_client_supplied_identity_assertions_cannot_bypass_default_denial() -> N
     assert response.status_code == 401
     assert response.json()["meta"] == {"request_id": "identity-header-bypass"}
     assert "client-asserted" not in response.text
+
+
+def _access_app(actor: AuthenticatedActor | None) -> FastAPI:
+    return create_app(Settings(), actor_resolver=lambda _request: actor)
+
+
+def test_actor_access_lists_the_actors_own_capabilities_and_properties_for_the_menu() -> None:
+    """V1-058 R1b (UI-008): the menu shows only what the person may use."""
+    self_scope = frozenset({ObjectScope(object_type="actor", object_id="actor-9")})
+    actor = AuthenticatedActor(
+        actor_id="actor-9",
+        capability_grants=frozenset(
+            {
+                CapabilityGrant(capability=IDENTITY_READ_SELF_CAPABILITY, object_scopes=self_scope),
+                CapabilityGrant(capability="units.read", property_ids=frozenset({"p-2"})),
+                CapabilityGrant(capability="units.read", property_ids=frozenset({"p-1"})),
+                CapabilityGrant(capability="invoices.read", property_ids=frozenset({"p-1"})),
+            }
+        ),
+    )
+
+    response = request(
+        _access_app(actor),
+        "GET",
+        "/api/v1/identity/me/access",
+        headers={"X-Request-ID": "access-1"},
+    )
+
+    assert response.status_code == 200
+    assert response.headers["Cache-Control"] == "no-store"
+    assert response.json() == {
+        "data": {
+            "actor_id": "actor-9",
+            "capabilities": [
+                {"capability": IDENTITY_READ_SELF_CAPABILITY, "property_ids": []},
+                {"capability": "invoices.read", "property_ids": ["p-1"]},
+                {"capability": "units.read", "property_ids": ["p-1", "p-2"]},
+            ],
+        },
+        "meta": {"request_id": "access-1"},
+    }
+
+
+def test_actor_access_needs_a_session_and_the_read_self_capability() -> None:
+    assert request(_access_app(None), "GET", "/api/v1/identity/me/access").status_code == 401
+    other_scope = frozenset({ObjectScope(object_type="actor", object_id="someone-else")})
+    actor = AuthenticatedActor(
+        actor_id="actor-9",
+        capability_grants=frozenset(
+            {
+                CapabilityGrant(
+                    capability=IDENTITY_READ_SELF_CAPABILITY, object_scopes=other_scope
+                ),
+                CapabilityGrant(capability="units.read", property_ids=frozenset({"p-1"})),
+            }
+        ),
+    )
+    response = request(_access_app(actor), "GET", "/api/v1/identity/me/access")
+    assert response.status_code == 403
+    assert "units.read" not in response.text
