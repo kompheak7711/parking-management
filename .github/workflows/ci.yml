@@ -29,6 +29,8 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
+          # The token stays out of .git/config, so later steps cannot reuse it.
+          persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
@@ -63,6 +65,12 @@ jobs:
           TRACEABILITY_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: python3 scripts/traceability-audit.py --base "$TRACEABILITY_BASE"
 
+      # V1-060: these two checks ran inside the removed OpenClaw step; they are not OpenClaw.
+      - name: Validate the V1 roadmap and automation traceability
+        run: |
+          python3 scripts/validate-v1-roadmap.py
+          python3 -m json.tool ops/AUTOMATION_TRACEABILITY.json >/dev/null
+
       - name: Build and import backend package
         run: make backend-build backend-import-check
 
@@ -80,6 +88,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: Set up Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
@@ -120,6 +130,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
@@ -172,6 +184,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5

@@ -197,7 +197,9 @@ def test_the_home_page_counts_an_odd_refund_draft_as_waiting_with_no_amount(
         return dict(page["cards"]["waiting_for_approval"])
 
     before = waiting()
-    for amount in ("five", 500):
+    # Only whole cents from 0 to 9e15 count, as in the Waiting for approval read; 1e20 would
+    # overflow bigint, and 12.5 and -500 are not amounts the app writes.
+    for amount in ("five", 1e20, 12.5, -500, 500):
         _draft(
             url,
             prop,
@@ -206,8 +208,10 @@ def test_the_home_page_counts_an_odd_refund_draft_as_waiting_with_no_amount(
             "refunds.create",
             {"variant": "USD", "amount_usd_cents": amount, "customer_id": str(tenant)},
         )
+    # A Payment return whose Payment id is not a uuid counts as waiting with no amount.
+    _draft(url, prop, human, "PAYMENT_RETURN", "payments.reverse", {"payment_id": "not-an-id"})
     after = waiting()
-    assert after["money_out_count"] == before["money_out_count"] + 2
+    assert after["money_out_count"] == before["money_out_count"] + 6
     assert after["money_out_usd_cents"] == before["money_out_usd_cents"] + 500
 
 
@@ -264,8 +268,17 @@ def test_the_faster_reports_and_home_page_give_the_old_answers(
         }
         for signature, (sql, arguments) in calls.items():
             old = _old_function(connection, signature)
+            seen = 0
             for prop in properties:
-                new_rows = connection.execute(sql.format(signature.split("(")[0]), arguments(prop))
-                old_rows = connection.execute(sql.format(old), arguments(prop))
-                assert new_rows.fetchall() == old_rows.fetchall(), (signature, prop)
+                new_rows = connection.execute(
+                    sql.format(signature.split("(")[0]), arguments(prop)
+                ).fetchall()
+                old_rows = connection.execute(sql.format(old), arguments(prop)).fetchall()
+                if signature == REPORT_SPEED.PARTS:
+                    # The Payment parts have no order of their own; their readers sort them.
+                    new_rows.sort(key=repr)
+                    old_rows.sort(key=repr)
+                assert new_rows == old_rows, (signature, prop)
+                seen += len(new_rows)
+            assert seen > 0, signature
         connection.rollback()
