@@ -316,6 +316,7 @@ Older unnumbered placeholder documents are not decision authority.
 - **Decision date:** Not recorded in this log.
 - **Alternatives:** Presented before approval; not adopted.
 - **Amended by DL-075 (owner, 2026-10-20; docs-only rules update 2b, part 2):** Services are added in Settings with a Service type; Trash Collection is chosen by default on a new Lease.
+- **Amended by DL-097 (owner, 2026-10-26):** every Service a Lease holds is billed on the Rent Invoice like Trash Collection; the sentence that Internet and Monthly Cleaning must not generate charges no longer applies once such a Service is added in Settings and ticked on a Lease.
 
 ## DL-021 — Invoice lifecycle
 
@@ -2193,3 +2194,15 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Answers (each the recommendation):** (1) the two 10e-4 known limits stay as built for V1: a Payment used after closure on two closed Leases may be returned through either Settlement's `RETURNED_PAYMENT` correction (nothing either Settlement relied on changes), and a Payment with recoveries charged on two closed Settlements' Leases stays refused by every correction (no money moves wrongly); its refusal message is fixed after V1. (2) Q-2026-10-04-10: a physical move-out correction stays refused once a hand-back resolution (BR-RENT-030) relies on it; an Owner or Manager correction may be added after V1 if a case happens. (3) Sub-slice 6b round 2: a confirmed Lease forfeiture, its reversal and a wrong-Unit Payment move keep naming the approver with the one-call capability label; the draft and its decision record `financial.approve`; the earlier functions do not change. (4) Sub-slice 10e-1a: the pending-draft check of a returned Payment keeps matching ids in the draft text for V1 (it only makes a return wait); it matches structured keys after V1.
 - **Links:** DL-094, ops/V1_056_PLAN.md slice 12 list.
 - **Decision date:** 2026-10-25.
+
+## DL-097 — V1-058 R7b-6e: the Rent Invoice bills every Service a Lease holds
+
+- **Type:** `OWNER BUSINESS DECISION`
+- **Status:** `APPROVED; BUILT ON THE V1-058 BRANCH`
+- **Source:** the owner, 2026-10-26 03:07, decision card "Should the Rent Invoice bill every Service a Lease ticks?", answer "Yes, bill every ticked Service" (the recommendation).
+- **Decision:** every Service a Lease holds, not only Trash Collection, is billed on the Rent Invoice with the Trash Collection rules: a month is billed when the Lease's term and the Service's approval period cover the whole month; the rate is the one in force on the first billed day; the move-in month is charged by days (half-up to the cent) and a following month in full; each Service has its own line after the Trash Collection lines (first month, then following month, by Service name). A Service that covers only part of a month, or has no rate in force, stops that Rent Invoice (as for Trash Collection) until it is corrected.
+- **Amends:** DL-020 (Internet and Monthly Cleaning not billable), BR-SVC-001 (no other Service without an owner rule). Builds on DL-075 (Services and rates in Settings).
+- **Built:** migration 20270318_237 (commit 26e5d52), tests in backend/tests/test_billing_service_migration.py.
+- **Release note:** before release, check that no Lease holds a non-Trash Service term that covers only part of a month or has no rate (V1-060 gate).
+- **Numbering:** DL-096 is used on the V1-060 branch (migration 209); renumber at merge if needed.
+- **Decision date:** 2026-10-26.

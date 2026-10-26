@@ -2074,6 +2074,8 @@ the future. This document approves no other Service type. Any different Service
 requires a separate Owner-approved rule and explicit configuration before billing;
 staff must not create an arbitrary Service through a generic or miscellaneous field.
 
+Amended by DL-097 (owner, 2026-10-26): every Service a Lease holds (added in Settings with a monthly rate and ticked on the Lease, DL-075) is billed on the Rent Invoice with the Trash Collection rules: a month is billed when the Lease's term and the Service's approval cover the whole month, at the rate in force on the first billed day, by days in the move-in month and in full for a following month, each Service on its own line. A Service that covers only part of a month, or has no rate, stops that Rent Invoice until it is corrected.
+
 Amended by DL-068 and DL-069 (2026-10-03): the one-time Unit cleaning charge at move-out (BR-MOVEOUT-013) is not a recurring Service and does not approve a Monthly Cleaning Service.
 
 Amended by DL-075 (owner, 2026-10-20): widened. Services are added in Settings by the Owner or a user with Settings access (DL-074), each with an English and a Khmer name, a Service type and a monthly rate. A Service type is "Only one per Lease" or "One or more per Lease"; changing a type to "Only one per Lease" is refused while a Lease holds two Services of that type, and a type that has Services cannot be removed. Trash Collection is chosen by default on a new Lease.
