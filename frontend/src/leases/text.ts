@@ -517,6 +517,23 @@ const TEXT = {
     "Enter the Start Date and End Date to choose the Services.",
     "សូមបញ្ចូលថ្ងៃចាប់ផ្តើម និងថ្ងៃបញ្ចប់ ដើម្បីជ្រើសសេវា។",
   ],
+  no_meter_e: [
+    "This Unit has no electricity meter, so no electricity is billed. Add the meter in Utilities when it is put in.",
+    "បន្ទប់នេះគ្មាននាឡិកាស្ទង់អគ្គិសនីទេ ដូច្នេះមិនគិតថ្លៃអគ្គិសនីទេ។ សូមបន្ថែមនាឡិកាស្ទង់ក្នុងទឹកភ្លើង ពេលដំឡើងរួច។",
+  ],
+  no_meter_w: [
+    "This Unit has no water meter, so no water is billed. Add the meter in Utilities when it is put in.",
+    "បន្ទប់នេះគ្មាននាឡិកាស្ទង់ទឹកទេ ដូច្នេះមិនគិតថ្លៃទឹកទេ។ សូមបន្ថែមនាឡិកាស្ទង់ក្នុងទឹកភ្លើង ពេលដំឡើងរួច។",
+  ],
+  no_meter_both: [
+    "This Unit has no electricity or water meter, so no Utilities are billed. Add the meters in Utilities when they are put in.",
+    "បន្ទប់នេះគ្មាននាឡិកាស្ទង់អគ្គិសនី ឬទឹកទេ ដូច្នេះមិនគិតថ្លៃទឹកភ្លើងទេ។ សូមបន្ថែមនាឡិកាស្ទង់ក្នុងទឹកភ្លើង ពេលដំឡើងរួច។",
+  ],
+  svc_new: ["New Service", "សេវាថ្មី"],
+  svc_added: [
+    "{0} added. Tick it below if this Lease uses it.",
+    "បានបន្ថែម {0}។ សូមធីកខាងក្រោម ប្រសិនបើកិច្ចសន្យានេះប្រើវា។",
+  ],
   svc_none: [
     "No Services are set up in Settings yet.",
     "មិនទាន់មានសេវាក្នុងការកំណត់នៅឡើយទេ។",

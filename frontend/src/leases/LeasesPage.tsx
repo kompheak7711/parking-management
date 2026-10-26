@@ -11,6 +11,7 @@ import type { LeaseApi } from "../leaseClient";
 import type { CustomerApi } from "../customerClient";
 import type { ReservationApi } from "../reservationClient";
 import type { UnitApi } from "../unitClient";
+import type { UtilityApi } from "../utilityClient";
 import { todayInPhnomPenh } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { useHashDetail } from "../shell/useHashPage";
@@ -41,7 +42,9 @@ export interface LeasesPageProps {
   lettersApi: Pick<LettersApi, "warnings" | "notices" | "recordNotice">;
   capabilities: ReadonlySet<string> | null;
   /** The Services from Settings for the New Lease form; the real server when not given. */
-  servicesApi?: Pick<ServiceSettingsApi, "read">;
+  servicesApi?: Pick<ServiceSettingsApi, "read" | "addService">;
+  /** The Unit's meters for the New Lease form; the real server when not given. */
+  metersApi?: Pick<UtilityApi, "loadMeters">;
 }
 
 export function LeasesPage({
@@ -56,6 +59,7 @@ export function LeasesPage({
   lettersApi,
   capabilities,
   servicesApi,
+  metersApi,
 }: LeasesPageProps) {
   const detail = useHashDetail("leases");
   const [data, setData] = useState<LeasesData | null>(null);
@@ -119,6 +123,7 @@ export function LeasesPage({
         mode={formMode}
         propertyId={propertyId}
         reservationApi={reservationApi}
+        metersApi={metersApi}
         servicesApi={servicesApi}
         unitApi={unitApi}
       />

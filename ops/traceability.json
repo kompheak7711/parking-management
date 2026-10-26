@@ -56331,6 +56331,62 @@
       "test_path": "backend/tests/test_billing_service_migration.py",
       "status": "implemented",
       "notes": "V1-058 R7b-6e: when Trash Collection starts only in the following month, its one line comes before the other Service lines and the line numbers stay in order."
+    },
+    {
+      "test_id": "TEST-FE-1009",
+      "upstream_ids": [
+        "DL-098",
+        "BR-UTIL-003",
+        "BR-UTIL-021"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-7: a Unit with no meter on the hand-back day has no final readings or Utility Invoice; Move-out step 3 is done with no button; a failed meter read keeps the usual step."
+    },
+    {
+      "test_id": "TEST-FE-1010",
+      "upstream_ids": [
+        "DL-098",
+        "BR-UTIL-003"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-7: the New Lease form says when the chosen Unit has no electricity or water meter on the Start Date; a meter put in later counts from its day; a failed meter read shows nothing."
+    },
+    {
+      "test_id": "TEST-FE-1011",
+      "upstream_ids": [
+        "DL-098",
+        "DL-075"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-058 R7b-7: New Service on the New Lease form only with Settings access; it adds the Service with its own id, keeps it after a lost answer and reads the Services again."
+    },
+    {
+      "test_id": "test_a_unit_with_no_meter_needs_no_final_utility_inputs",
+      "upstream_ids": [
+        "DL-098",
+        "BR-UTIL-021"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_final_settlement_preview_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R7b-7: a moved-out Lease whose Unit has no Meter shows no FINAL_UTILITY_NOT_ISSUED and no UTILITY_PERIOD_NOT_BILLED in the Final Settlement preview, and after the inspection its Home 'Refund due by' to-do is dated 7 days after the inspection."
+    },
+    {
+      "test_id": "test_a_meter_in_on_the_hand_back_day_still_needs_final_inputs",
+      "upstream_ids": [
+        "DL-098",
+        "BR-UTIL-021"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_final_settlement_preview_migration.py",
+      "status": "implemented",
+      "notes": "V1-058 R7b-7: a Meter put in after the hand-back day does not hold the Final Settlement; a Meter in on the hand-back day still needs final inputs (FINAL_INPUTS_NOT_RECORDED)."
     }
   ]
 }

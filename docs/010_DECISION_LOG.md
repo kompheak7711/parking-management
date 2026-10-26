@@ -2206,3 +2206,12 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Release note:** before release, check that no Lease holds a non-Trash Service term that covers only part of a month or has no rate (V1-060 gate).
 - **Numbering:** DL-096 is used on the V1-060 branch (migration 209); renumber at merge if needed.
 - **Decision date:** 2026-10-26.
+
+## DL-098 — V1-058 R7b-7: electricity and water follow the Unit's Meters; a Unit with no Meter is not billed for them
+
+- **Type:** `OWNER BUSINESS DECISION`
+- **Status:** `APPROVED; BUILT ON THE V1-058 BRANCH`
+- **Source:** the owner, 2026-10-26 03:53, decision card "How should a Lease with no electricity or water work?", answer "Meters decide (no Lease tick)" (the recommendation), after a Customer asked to rent a small store room that needs no electricity or water.
+- **Decision:** a Lease has no tick for Utilities. Electricity and water are billed from the Meters on the Unit (BR-UTIL-003); a Unit with no Meter of a kind gets no Utility Invoice for it. When a later Customer needs electricity or water, staff install the Meter and add it in Utilities > Meters with its first reading. The Meter is dated the day it is put in, after the earlier Lease's hand-back, so its readings never belong to a Lease that closed without one. A Unit with no Meter at all on the hand-back day needs no final readings or final Utility Invoice, so its Final Settlement is not held for them (migration 20270319_238); any earlier Utility period with consumption on no Invoice still holds it. The Home "Refund due by" to-do (DL-073 item 4) for such a Unit counts 7 days from the final inspection alone. The New Lease form says when the chosen Unit has no electricity or water Meter on the Start Date, and a person with Settings access may add a Service from the form (the Settings rules of DL-075 apply).
+- **Links:** BR-UTIL-003, BR-UTIL-020, BR-UTIL-021, DL-075, DL-097.
+- **Decision date:** 2026-10-26.

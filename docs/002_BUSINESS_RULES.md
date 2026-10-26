@@ -1639,6 +1639,8 @@ Utility consumption belongs to the Unit served by the Utility Meter.
 
 Utility charges shall always be calculated using readings recorded from the meter assigned to that Unit.
 
+Amended by DL-098 (owner, 2026-10-26): a Unit with no Meter of a kind (for example a store room with no electricity or water) gets no Utility Invoice for that kind; a Unit with no Meter at all on the hand-back day needs no final reading or final Utility Invoice at move-out. A Lease has no separate Utility tick; a Meter added later is billed from its first reading.
+
 ---
 
 ### BR-UTIL-004 — Utility Billing Independence

@@ -199,6 +199,11 @@ const TEXT = {
     "This Unit has no meter on {0}. Add the meters in Utilities first.",
     "បន្ទប់នេះគ្មាននាឡិកាស្ទង់នៅ {0} ទេ។ សូមបន្ថែមនាឡិកាស្ទង់ក្នុងទឹកភ្លើងជាមុនសិន។",
   ],
+  // new
+  st3_none: [
+    "This Unit has no meter on {0}, so there are no final readings and no final Utility Invoice.",
+    "បន្ទប់នេះគ្មាននាឡិកាស្ទង់នៅ {0} ទេ ដូច្នេះគ្មានអំណានចុងក្រោយ និងគ្មានវិក្កយបត្រទឹកភ្លើងចុងក្រោយទេ។",
+  ],
   st3_note: [
     "Final Utility Invoice at move-out: readings from the last cycle reading to the hand-back date (BR-UTIL-021).",
     "វិក្កយបត្រទឹកភ្លើងចុងក្រោយពេលចាកចេញ៖ អំណានពីអំណានវដ្តចុងក្រោយ ដល់ថ្ងៃប្រគល់បន្ទប់។",

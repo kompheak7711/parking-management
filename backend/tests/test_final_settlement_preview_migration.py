@@ -44,6 +44,13 @@ from property_rental.lease_deposit_forfeiture import (
 )
 from property_rental.lease_enforcement import NonpaymentEventKind
 from property_rental.lease_termination import TerminationBasis
+from property_rental.move_out_inspection import (
+    INSPECTION_READ,
+    INSPECTION_RECORD,
+    InspectionFinding,
+    PostgresMoveOutInspectionService,
+    RecordMoveOutInspection,
+)
 from property_rental.payment_move import PaymentMoveService, RecordPaymentMoveCommand
 from property_rental.refund import CreateUsdRefundCommand, RefundService
 from refund_test_support import cash
@@ -878,6 +885,86 @@ def test_a_final_reading_without_consumption_needs_no_final_utility_invoice(
     assert [
         item["utility_consumption_period_id"] for item in issues(view, "UTILITY_PERIOD_NOT_BILLED")
     ] == [str(period)]
+
+
+def test_a_unit_with_no_meter_needs_no_final_utility_inputs(
+    migrated_database_url: str,
+) -> None:
+    # V1-058 R7b-7 (owner 2026-10-26, "Meters decide"): a store room with no electricity or water
+    # has no Meter, so no final readings and no final Utility Invoice hold its Settlement.
+    leaver = departed(migrated_database_url, 3, 4, with_meter=False)
+    dep = leaver.dep
+    settlement = start(dep.prop, dep.human, dep.lease)
+    view = preview(dep.prop, dep.human, settlement)
+    assert view["lease"]["moved_in"] is True
+    assert issues(view, "FINAL_UTILITY_NOT_ISSUED") == []
+    assert issues(view, "UTILITY_PERIOD_NOT_BILLED") == []
+    # The Home "Refund due by" to-do counts from the inspection alone (DL-073 item 4).
+    lease_version = int(
+        scalar(migrated_database_url, "SELECT version FROM app.leases WHERE id=%s", dep.lease)
+    )
+    PostgresMoveOutInspectionService(runtime_database_url(), financial_database_url()).record(
+        dep.prop,
+        dep.lease,
+        RecordMoveOutInspection(
+            uuid4(),
+            uuid4(),
+            lease_version,
+            dep.move_out_date,
+            "Store room empty and clean",
+            "Approved inspection",
+            "Evidence-238",
+            "Final inspection",
+            (InspectionFinding(uuid4(), "Door condition", False),),
+        ),
+        actor=person(dep.human, dep.prop, INSPECTION_READ, INSPECTION_RECORD),
+        request_id="inspect-238",
+    )
+    with psycopg.connect(runtime_database_url()) as connection:
+        row = connection.execute(
+            "SELECT app.home_page(%s,%s,%s::uuid[],%s::text[])",
+            (dep.human, dep.prop, [dep.prop], ["settlements"]),
+        ).fetchone()
+    assert row is not None
+    due = [
+        item
+        for item in cast(dict[str, Any], row[0])["todo"]
+        if item["kind"] == "refund_due" and item["lease_id"] == str(dep.lease)
+    ]
+    assert [item["date"] for item in due] == [(dep.move_out_date + timedelta(days=7)).isoformat()]
+
+
+def test_a_meter_in_on_the_hand_back_day_still_needs_final_inputs(
+    migrated_database_url: str,
+) -> None:
+    # The no-Meter rule counts the Meters the final inputs must name: a Meter put in after the
+    # hand-back day is not one of them; a Meter in on the hand-back day itself is.
+    url = migrated_database_url
+    leaver = departed(url, 4, 4, with_meter=False)
+    dep = leaver.dep
+    settlement = start(dep.prop, dep.human, dep.lease)
+
+    def utility(view: dict[str, Any]) -> list[str]:
+        return [item["reason"] for item in issues(view, "FINAL_UTILITY_NOT_ISSUED")]
+
+    with psycopg.connect(url) as connection:
+        add_meter(
+            connection,
+            actor_id=dep.human,
+            unit_id=dep.unit,
+            installed_date=dep.move_out_date + timedelta(days=1),
+        )
+    assert utility(preview(dep.prop, dep.human, settlement)) == []
+    with psycopg.connect(url) as connection:
+        add_meter(
+            connection,
+            actor_id=dep.human,
+            unit_id=dep.unit,
+            utility_type="WATER",
+            measurement_unit_code="M3",
+            installed_date=dep.move_out_date,
+        )
+    assert utility(preview(dep.prop, dep.human, settlement)) == ["FINAL_INPUTS_NOT_RECORDED"]
 
 
 def test_withdrawn_one_time_charges_do_not_block_and_voided_ones_are_listed(

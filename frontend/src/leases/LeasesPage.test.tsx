@@ -6,7 +6,10 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
-import type { ServiceSettingsApi } from "../settings/serviceSettingsClient";
+import {
+  type ServiceSettingsApi,
+  ServiceSettingsError,
+} from "../settings/serviceSettingsClient";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { CustomerApi, CustomerDetail } from "../customerClient";
@@ -21,6 +24,7 @@ import {
 import type { ReservationApi, ReservationResource } from "../reservationClient";
 import { dayText, todayInPhnomPenh } from "../shell/format";
 import type { UnitApi, UnitResource } from "../unitClient";
+import type { UtilityApi, UtilityMeter } from "../utilityClient";
 import {
   LettersUnavailableError,
   type LeaseWarning,
@@ -228,6 +232,33 @@ function deposits(overrides: Partial<DepositApi> = {}): DepositApi {
   } as unknown as DepositApi;
 }
 
+function meterOf(
+  kind: "ELECTRICITY" | "WATER",
+  installed = "2020-01-01",
+): UtilityMeter {
+  return {
+    id: `meter-${kind}`,
+    property_id: "property-1",
+    unit_id: "unit-U402",
+    utility_type: kind,
+    serial_number: `S-${kind}`,
+    measurement_unit_code: kind === "ELECTRICITY" ? "KWH" : "M3",
+    description: null,
+    installed_date: installed,
+    failure_date: null,
+    deactivated_date: null,
+    current: true,
+    version: 1,
+    memo: null,
+    replacement: {
+      replaced_meter_id: null,
+      replacement_meter_id: null,
+      replacement_date: null,
+    },
+    readings_url: "",
+  };
+}
+
 function show(
   client: LeaseApi,
   depositClient: DepositApi = deposits(),
@@ -244,15 +275,24 @@ function show(
   },
   unitClient: Partial<UnitApi> = {},
   lettersClient: Partial<LettersApi> = {},
-  servicesClient: Pick<ServiceSettingsApi, "read"> = {
+  servicesClient: Partial<Pick<ServiceSettingsApi, "read" | "addService">> = {},
+  metersClient: Pick<UtilityApi, "loadMeters"> = {
+    loadMeters: vi.fn<UtilityApi["loadMeters"]>().mockResolvedValue({
+      items: [meterOf("ELECTRICITY"), meterOf("WATER")],
+      nextCursor: null,
+    }),
+  },
+) {
+  const services = {
     read: vi.fn<ServiceSettingsApi["read"]>().mockResolvedValue({
       services: [],
       service_types: [],
       today: "2026-10-25",
       can_manage: false,
     }),
-  },
-) {
+    addService: vi.fn<ServiceSettingsApi["addService"]>().mockResolvedValue({}),
+    ...servicesClient,
+  };
   const letters = {
     warnings: vi.fn<LettersApi["warnings"]>().mockResolvedValue([]),
     notices: vi.fn<LettersApi["notices"]>().mockResolvedValue([]),
@@ -271,7 +311,8 @@ function show(
       reservationApi={reservationClient as ReservationApi}
       unitApi={unitClient as UnitApi}
       lettersApi={letters}
-      servicesApi={servicesClient}
+      servicesApi={services}
+      metersApi={metersClient}
     />,
   );
 }
@@ -1180,6 +1221,139 @@ describe("New Lease and Renew", () => {
     ]);
     expect(create.mock.calls[1]?.[1]).toEqual(sent);
     expect(create.mock.calls[1]?.[2]).toBe(create.mock.calls[0]?.[2]);
+  });
+
+  it("TEST-FE-1010 New Lease says when the chosen Unit has no electricity or water meter on the Start Date (nothing of that kind is billed); a meter put in later counts from its day; a failed meter read shows nothing", async () => {
+    const loadMeters = vi.fn<UtilityApi["loadMeters"]>().mockResolvedValue({
+      items: [meterOf("WATER", "2027-01-01")],
+      nextCursor: null,
+    });
+    show(
+      api(),
+      deposits(),
+      null,
+      undefined,
+      people(),
+      units,
+      {},
+      {},
+      { loadMeters },
+    );
+    fireEvent.click(await screen.findByRole("link", { name: "New Lease" }));
+    await screen.findByLabelText("Unit");
+    pickIn("Unit", "unit-U402");
+    fireEvent.change(screen.getByLabelText("Start Date"), {
+      target: { value: "2026-12-22" },
+    });
+    expect(
+      await screen.findByText(
+        "This Unit has no electricity or water meter, so no Utilities are billed. Add the meters in Utilities when they are put in.",
+      ),
+    ).toBeInTheDocument();
+    expect(loadMeters).toHaveBeenLastCalledWith("unit-U402", undefined);
+    // From 1 January the water meter is in: only electricity is missing.
+    fireEvent.change(screen.getByLabelText("Start Date"), {
+      target: { value: "2027-01-01" },
+    });
+    expect(
+      await screen.findByText(
+        "This Unit has no electricity meter, so no electricity is billed. Add the meter in Utilities when it is put in.",
+      ),
+    ).toBeInTheDocument();
+    loadMeters.mockRejectedValue(new Error("not allowed"));
+    fireEvent.change(screen.getByLabelText("Start Date"), {
+      target: { value: "2027-01-02" },
+    });
+    await waitFor(() => {
+      expect(screen.queryByText(/meter, so no/)).toBeNull();
+    });
+  });
+
+  it("TEST-FE-1011 New Lease offers New Service only to a person with Settings access: it adds the Service with its own id, keeps that id after a lost answer and reads the Services again; an id saved before with other values closes the form and says so", async () => {
+    const empty = {
+      services: [],
+      service_types: [],
+      today: "2026-10-25",
+      can_manage: true,
+    };
+    const read = vi.fn<ServiceSettingsApi["read"]>().mockResolvedValue(empty);
+    const addService = vi
+      .fn<ServiceSettingsApi["addService"]>()
+      .mockRejectedValueOnce(new ServiceSettingsError("unknown"))
+      .mockResolvedValueOnce({});
+    show(
+      api(),
+      deposits(),
+      null,
+      undefined,
+      people(),
+      units,
+      {},
+      { read, addService },
+    );
+    fireEvent.click(await screen.findByRole("link", { name: "New Lease" }));
+    fireEvent.click(await screen.findByRole("button", { name: "New Service" }));
+    const dialog = screen.getByRole("dialog", { name: "Add a Service" });
+    fireEvent.change(within(dialog).getByLabelText(/^Name in English/), {
+      target: { value: "Storage cage" },
+    });
+    fireEvent.change(within(dialog).getByLabelText(/^Monthly rate/), {
+      target: { value: "15" },
+    });
+    fireEvent.change(within(dialog).getByLabelText(/^Starts on/), {
+      target: { value: "2026-11-01" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(
+      await within(dialog).findByText(/may be saved already/),
+    ).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(
+      await screen.findByText(
+        "Storage cage added. Tick it below if this Lease uses it.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).toBeNull();
+    const [first, again] = addService.mock.calls;
+    expect(first?.[1]).toEqual({
+      service_id: again?.[1].service_id,
+      name_en: "Storage cage",
+      name_km: null,
+      service_type_id: null,
+      monthly_rate_usd_cents: 1500,
+      starts_on: "2026-11-01",
+    });
+    expect(read.mock.calls.length).toBeGreaterThanOrEqual(3);
+
+    // Other values saved before under this id: the form closes and says so, adding nothing.
+    addService.mockRejectedValueOnce(new ServiceSettingsError("id_reused"));
+    fireEvent.click(screen.getByRole("button", { name: "New Service" }));
+    const second = screen.getByRole("dialog", { name: "Add a Service" });
+    fireEvent.change(within(second).getByLabelText(/^Name in English/), {
+      target: { value: "Cleaning" },
+    });
+    fireEvent.change(within(second).getByLabelText(/^Monthly rate/), {
+      target: { value: "5" },
+    });
+    fireEvent.change(within(second).getByLabelText(/^Starts on/), {
+      target: { value: "2026-11-01" },
+    });
+    fireEvent.click(within(second).getByRole("button", { name: "Save" }));
+    expect(
+      await screen.findByText(
+        /This was already saved, with the values sent first/,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.queryByText(/Cleaning added/)).toBeNull();
+    cleanup();
+
+    // Without Settings access there is no button.
+    window.location.hash = "#/leases";
+    show(api(), deposits(), null, undefined, people(), units);
+    fireEvent.click(await screen.findByRole("link", { name: "New Lease" }));
+    await screen.findByText("No Services are set up in Settings yet.");
+    expect(screen.queryByRole("button", { name: "New Service" })).toBeNull();
   });
 
   it("TEST-FE-1004 New Lease picks Services by type: None first for an Only one type, Trash Collection by default, tick boxes for One or more, a later Service greyed; they are saved as terms from the Start Date; a failed read waits with Retry", async () => {

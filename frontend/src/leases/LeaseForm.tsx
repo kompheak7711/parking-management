@@ -4,6 +4,9 @@
 // previews what will be billed; saving asks once more, then makes the draft and opens it.
 // R7b-6c: the Services are picked by type (leaseServices.ts) and saved as the Lease's Service
 // terms from the Start Date with no end of their own (the server runs them to the End Date).
+// R7b-7 (owner 2026-10-26, "Meters decide"): the form says when the Unit has no electricity or
+// water meter (nothing of that kind is billed), and a person with Settings access may add a
+// Service here with the Settings dialog.
 
 import { FormEvent, ReactNode, useEffect, useRef, useState } from "react";
 
@@ -14,10 +17,17 @@ import {
   type LeaseDraftSource,
   type LeaseResource,
 } from "../leaseClient";
+import { metersOn } from "../moveout/finalReadings";
 import type { ReservationApi, ReservationResource } from "../reservationClient";
+import {
+  failureText,
+  nameOf as settingsNameOf,
+  ServiceDialog,
+} from "../settings/ServiceDialogs";
 import {
   type ServiceSettings,
   type ServiceSettingsApi,
+  ServiceSettingsError,
   serviceSettingsApi,
 } from "../settings/serviceSettingsClient";
 import { dayText, todayInPhnomPenh, usdFromCents } from "../shell/format";
@@ -26,6 +36,7 @@ import { openPageInAddress } from "../shell/useHashPage";
 import { Dialog } from "../shell/ui";
 import type { Language } from "../signInText";
 import type { UnitApi, UnitResource } from "../unitClient";
+import { type UtilityApi, utilityApi } from "../utilityClient";
 import { addDays, initialRent } from "./leasesData";
 import {
   choose,
@@ -112,7 +123,9 @@ export interface LeaseFormProps {
   customerApi: Pick<CustomerApi, "list">;
   reservationApi: Pick<ReservationApi, "get">;
   /** The Services from Settings; the real server when not given. */
-  servicesApi?: Pick<ServiceSettingsApi, "read">;
+  servicesApi?: Pick<ServiceSettingsApi, "read" | "addService">;
+  /** The Unit's meters; the real server when not given. */
+  metersApi?: Pick<UtilityApi, "loadMeters">;
 }
 
 export function LeaseForm({
@@ -124,6 +137,7 @@ export function LeaseForm({
   customerApi,
   reservationApi,
   servicesApi = serviceSettingsApi,
+  metersApi = utilityApi,
 }: LeaseFormProps) {
   const today = todayInPhnomPenh();
   const [sources, setSources] = useState<Sources | null>(null);
@@ -141,6 +155,19 @@ export function LeaseForm({
     null,
   );
   const [chosen, setChosen] = useState<Set<string>>(new Set());
+  // The kinds of meter the chosen Unit lacks on the Start Date; null while unknown.
+  const [noMeter, setNoMeter] = useState<{
+    unitId: string;
+    kinds: ("ELECTRICITY" | "WATER")[];
+  } | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [addBusy, setAddBusy] = useState(false);
+  const [addProblem, setAddProblem] = useState<string | null>(null);
+  const [addDone, setAddDone] = useState<string | null>(null);
+  // A save the server refused because the id was used before (shown under the Services).
+  const [addNote, setAddNote] = useState<string | null>(null);
+  // A new Service keeps its id until the server confirms it, so a resend never adds two.
+  const newServiceId = useRef<string | null>(null);
   const [petText, setPetText] = useState("");
   const [problems, setProblems] = useState<Record<string, string>>({});
   const [confirm, setConfirm] = useState<LeaseDraftSource | null>(null);
@@ -168,6 +195,8 @@ export function LeaseForm({
   ) => {
     const operation = ++servicesRead.current;
     setServices(null);
+    setAddDone(null);
+    setAddNote(null);
     servicesApi
       .read(propertyId)
       .then((found) => {
@@ -189,6 +218,56 @@ export function LeaseForm({
       })
       .catch(() => {
         if (operation === servicesRead.current) setServices("failed");
+      });
+  };
+
+  // The Unit's meters on the Start Date: a kind with none is not billed (owner 2026-10-26).
+  // A failed read (or no right to read meters) shows nothing.
+  useEffect(() => {
+    if (unitId === "" || !/^\d{4}-\d{2}-\d{2}$/.test(start)) {
+      setNoMeter(null);
+      return;
+    }
+    const run = { live: true };
+    setNoMeter(null);
+    void (async () => {
+      const found = [];
+      let cursor: string | undefined;
+      let complete = false;
+      for (let page = 0; page < MAX_PAGES && run.live; page += 1) {
+        const next = await metersApi.loadMeters(unitId, cursor);
+        found.push(...next.items);
+        if (next.nextCursor === null) {
+          complete = true;
+          break;
+        }
+        cursor = next.nextCursor;
+      }
+      // A list cut short could miss a meter: say nothing then.
+      if (!complete) return;
+      const on = metersOn(found, start);
+      const kinds = (["ELECTRICITY", "WATER"] as const).filter(
+        (kind) => !on.some((meter) => meter.utility_type === kind),
+      );
+      if (run.live) setNoMeter({ unitId, kinds });
+    })().catch(() => {
+      if (run.live) setNoMeter(null);
+    });
+    return () => {
+      run.live = false;
+    };
+  }, [metersApi, unitId, start]);
+
+  /** Reads the Services again after one was added here; the ticks stay as they are. */
+  const refreshServices = () => {
+    const operation = ++servicesRead.current;
+    servicesApi
+      .read(propertyId)
+      .then((found) => {
+        if (operation === servicesRead.current) setServices(found);
+      })
+      .catch(() => {
+        // A failed re-read keeps the list shown (and an open form); the next read updates it.
       });
   };
 
@@ -587,6 +666,21 @@ export function LeaseForm({
             problems.unit,
             fixedParty ? undefined : lt(language, "unit_help"),
           )}
+          {noMeter !== null &&
+            noMeter.unitId === unitId &&
+            noMeter.kinds.length > 0 && (
+              <p className="ui-small ui-muted" role="status">
+                <Icon name="zap" small />{" "}
+                {lt(
+                  language,
+                  noMeter.kinds.length === 2
+                    ? "no_meter_both"
+                    : noMeter.kinds[0] === "ELECTRICITY"
+                      ? "no_meter_e"
+                      : "no_meter_w",
+                )}
+              </p>
+            )}
           {field(
             "lease-form-tenant",
             lt(language, "primary"),
@@ -705,9 +799,21 @@ export function LeaseForm({
               lt(language, "pet_help"),
             )}
           <ServicesField
+            added={addDone}
+            addNote={addNote}
             chosen={chosen}
             groups={groups}
             language={language}
+            onAdd={
+              services !== null && services !== "failed" && services.can_manage
+                ? () => {
+                    setAddProblem(null);
+                    setAddDone(null);
+                    setAddNote(null);
+                    setAdding(true);
+                  }
+                : undefined
+            }
             onChange={setChosen}
             onRetry={() => {
               loadServices(previous, start, end);
@@ -799,6 +905,69 @@ export function LeaseForm({
           )}
         </section>
       </form>
+      {adding && services !== null && services !== "failed" && (
+        <ServiceDialog
+          busy={addBusy}
+          language={language}
+          onClose={() => {
+            if (!addBusy) setAdding(false);
+          }}
+          onSave={(form) => {
+            if (form.first === null) return;
+            const serviceId = newServiceId.current ?? crypto.randomUUID();
+            newServiceId.current = serviceId;
+            const name = settingsNameOf(language, form);
+            setAddBusy(true);
+            setAddProblem(null);
+            servicesApi
+              .addService(propertyId, {
+                service_id: serviceId,
+                name_en: form.name_en,
+                name_km: form.name_km,
+                service_type_id: form.service_type_id,
+                monthly_rate_usd_cents: form.first.cents,
+                starts_on: form.first.starts_on,
+              })
+              .then(
+                () => {
+                  newServiceId.current = null;
+                  setAdding(false);
+                  setAddDone(name);
+                  refreshServices();
+                },
+                (error: unknown) => {
+                  const found =
+                    error instanceof ServiceSettingsError
+                      ? error.failure
+                      : "unknown";
+                  if (found === "id_reused") {
+                    // An earlier send whose answer was lost saved other values under this id:
+                    // the form closes, says so, and the list shows what was saved (as RatesTab).
+                    newServiceId.current = null;
+                    setAdding(false);
+                    setAddDone(null);
+                    setAddProblem(null);
+                    setAddNote(failureText(language, found));
+                    refreshServices();
+                    return;
+                  }
+                  setAddProblem(failureText(language, found));
+                  // The answer may have been lost after a save: read the list again.
+                  if (found === "unknown" || found === "out_of_date") {
+                    refreshServices();
+                  }
+                },
+              )
+              .finally(() => {
+                setAddBusy(false);
+              });
+          }}
+          problem={addProblem}
+          service={null}
+          today={services.today}
+          types={services.service_types}
+        />
+      )}
       {confirm !== null && (
         <Dialog
           busy={busy}
@@ -858,16 +1027,25 @@ function ServicesField({
   groups,
   chosen,
   problem,
+  added,
+  addNote,
   onChange,
   onRetry,
+  onAdd,
 }: {
   language: Language;
   state: "loading" | "failed" | "dates" | "ready";
   groups: ServiceGroup[];
   chosen: ReadonlySet<string>;
   problem: string | undefined;
+  /** The name of a Service just added here. */
+  added: string | null;
+  /** Why the last New Service was not added as typed. */
+  addNote: string | null;
   onChange: (next: Set<string>) => void;
   onRetry: () => void;
+  /** Only for a person with Settings access. */
+  onAdd?: () => void;
 }) {
   const groupName = (group: ServiceGroup) =>
     group.nameEn === null
@@ -880,6 +1058,22 @@ function ServicesField({
       <h3 className="ui-small" id="lease-form-services">
         {lt(language, "services_t")}
       </h3>
+      {onAdd !== undefined && (
+        <button className="ui-btn" onClick={onAdd} type="button">
+          <Icon name="plus" small />
+          {lt(language, "svc_new")}
+        </button>
+      )}
+      {added !== null && (
+        <p className="ui-small" role="status">
+          {lt(language, "svc_added", added)}
+        </p>
+      )}
+      {addNote !== null && (
+        <p className="ui-small ui-muted" role="status">
+          {addNote}
+        </p>
+      )}
       {state === "loading" && (
         <p className="ui-small ui-muted" role="status">
           {lt(language, "svc_loading")}

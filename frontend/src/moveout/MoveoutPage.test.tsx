@@ -550,6 +550,7 @@ function setup(
     finalInputs?: () => Promise<EvidenceRecord>;
     invoices?: () => Promise<InvoiceResource[]>;
     readings?: Record<string, UtilityReading[]>;
+    meters?: UtilityMeter[];
     recordInputs?: UtilityLeaseApi["recordFinalInputs"];
     createInvoice?: UtilityLeaseApi["createFinalInvoice"];
     inspections?: MoveOutInspection[];
@@ -640,7 +641,7 @@ function setup(
   const utilityApi = {
     loadMeters: vi.fn<UtilityApi["loadMeters"]>(() =>
       Promise.resolve({
-        items: [meter("ELECTRICITY"), meter("WATER")],
+        items: options.meters ?? [meter("ELECTRICITY"), meter("WATER")],
         nextCursor: null,
       }),
     ),
@@ -1204,6 +1205,35 @@ describe("Move-out", () => {
         final_input_event_id: inputs?.event_id,
       },
     );
+  });
+
+  it("TEST-FE-1009 a Unit with no meter on the hand-back day (a store room with no electricity or water) has no final readings or Utility Invoice: the step is done and offers no button; a failed meter read keeps the usual step", async () => {
+    window.location.hash = "#/moveout/lease-U105";
+    const { utilityApi, invoiceApi } = setup([out], {
+      page: handedBackPage,
+      meters: [],
+    });
+    expect(
+      await screen.findByText(
+        /This Unit has no meter on .*, so there are no final readings and no final Utility Invoice\./,
+      ),
+    ).toBeTruthy();
+    expect(
+      screen.queryByRole("button", { name: "Record final readings" }),
+    ).toBeNull();
+    expect(utilityApi.loadMeters).toHaveBeenCalled();
+    expect(
+      invoiceApi.list.mock.calls.some(
+        (call) => call[1]?.category === "UTILITIES",
+      ),
+    ).toBe(false);
+    cleanup();
+
+    const failing = setup([out], { page: handedBackPage });
+    failing.utilityApi.loadMeters.mockRejectedValue(new Error("down"));
+    expect(
+      await screen.findByRole("button", { name: "Record final readings" }),
+    ).toBeTruthy();
   });
 
   it("TEST-FE-968 a reading already taken on the hand-back day is used as it is; without the right to issue Invoices only the readings are saved and the step says a Manager issues the Invoice", async () => {

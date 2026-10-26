@@ -50,7 +50,7 @@ import {
   finalInvoiceOf,
   latestInputsId,
 } from "./finalReadings";
-import { FinalReadingsDialog } from "./FinalReadingsDialog";
+import { FinalReadingsDialog, countMetersOn } from "./FinalReadingsDialog";
 import { HandBackDialog, rentRuleText } from "./HandBackDialog";
 import { InspectionDialog } from "./InspectionDialog";
 import {
@@ -504,6 +504,8 @@ type FinalState =
       latest: string | null;
       /** null: none yet; "unknown": the Invoices could not be read. */
       invoice: InvoiceResource | null | "unknown";
+      /** The Unit has no Meter on the hand-back day: nothing to read or bill. */
+      noMeters: boolean;
     };
 
 type ChargesState =
@@ -706,7 +708,19 @@ function MoveoutDetail({
           }
         }
       }
-      if (current()) setFinal({ state: "shown", inputs, latest, invoice });
+      // A Unit with no Meter (a store room with no electricity or water, owner 2026-10-26) has
+      // no final readings or Utility Invoice. A failed Meter read keeps the usual step.
+      let noMeters = false;
+      if (inputs === null) {
+        noMeters =
+          (await countMetersOn(
+            utilityApi,
+            loaded.unit_id,
+            handed.actual_move_out_date,
+          ).catch(() => 1)) === 0;
+      }
+      if (current())
+        setFinal({ state: "shown", inputs, latest, invoice, noMeters });
     })().catch((error: unknown) => {
       if (!current()) return;
       // No answer is not "not found": keep what is shown and offer Retry.
@@ -733,6 +747,7 @@ function MoveoutDetail({
     leaseApi,
     depositApi,
     moveOutApi,
+    utilityApi,
     utilityLeaseApi,
     invoiceApi,
     settlementApi,
@@ -831,9 +846,10 @@ function MoveoutDetail({
   const inputs = final.state === "shown" ? final.inputs : null;
   const invoice = final.state === "shown" ? final.invoice : null;
   const issued = inputs !== null && invoice !== null && invoice !== "unknown";
+  const noMeters = final.state === "shown" && final.noMeters;
   const mark3: Mark = neverIn
     ? "skip"
-    : issued
+    : issued || noMeters
       ? "done"
       : handedBack
         ? "now"
@@ -849,6 +865,7 @@ function MoveoutDetail({
     handedBack &&
     final.state === "shown" &&
     !issued &&
+    !noMeters &&
     (inputs === null
       ? mayRead
       : mayIssue && invoice !== "unknown" && inputs.unresolved === 0) ? (
@@ -1217,6 +1234,14 @@ function MoveoutDetail({
                 ) : final.state !== "shown" ? (
                   <p className="ui-muted" role="status">
                     {mt(language, "st3_reading_step")}
+                  </p>
+                ) : noMeters ? (
+                  <p>
+                    {mt(
+                      language,
+                      "st3_none",
+                      dayText(current.actual_move_out_date),
+                    )}
                   </p>
                 ) : inputs === null ? (
                   <>

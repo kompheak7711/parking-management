@@ -64,6 +64,24 @@ async function all<T>(
   return found;
 }
 
+/** How many Meters the Unit has on the hand-back day (none: no final Utility Invoice). */
+export async function countMetersOn(
+  utilityApi: Pick<UtilityApi, "loadMeters">,
+  unitId: string,
+  day: string,
+): Promise<number> {
+  const found: UtilityMeter[] = [];
+  let cursor: string | undefined;
+  for (let count = 0; count < MAX_PAGES; count += 1) {
+    const page = await utilityApi.loadMeters(unitId, cursor);
+    found.push(...page.items);
+    if (page.nextCursor === null) return metersOn(found, day).length;
+    cursor = page.nextCursor;
+  }
+  // A list cut short could hide a Meter: never call it empty.
+  throw new Error("Meter list cut short");
+}
+
 /** The Meters of the Unit on the hand-back day, each with its last reading before that day. */
 export async function loadLines(
   utilityApi: Pick<UtilityApi, "loadMeters" | "loadReadings">,
