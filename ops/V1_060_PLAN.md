@@ -148,3 +148,13 @@ candidate is the code that will be used.
   Rent run (4.1 s) pass (ops/reviews/V1-060-speed-test.md). The owner made the repository public
   (2026-10-26 13:58); the whole history was scanned for secrets (none) and GitHub CI ran green on
   99be0a8 (all four jobs).
+- 2026-10-26 B5: final review of everything since foundation a7f3645 found no blocker.
+  Fixed: migration 242 casts a REFUND amount only when it is a whole JSON number in range and
+  reads payment_id with app.draft_uuid; the release tests cover more odd drafts and check that
+  each compared function saw rows; CI checkouts keep the token out of .git/config, and the V1
+  roadmap and automation traceability checks are back in CI (they left with the OpenClaw step).
+  Left as notes (no change): the 241 holder check can wait up to 3 s in rare cases; the
+  one-Property fallback in 243 is correct by reading but has no test; seed.py and measure.py
+  trust the database URL they are given. Checks on 5b5aed38: format, lint, types, roadmap,
+  backend tests 5,080 passed; PostgreSQL 2,850 passed (run in two halves: a full run that shared
+  the machine with the backend tests hit statement timeouts and the 2-hour limit).
