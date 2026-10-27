@@ -721,14 +721,15 @@ export function LeaseForm({
                 {customerCreateApi !== undefined &&
                   customerGate !== undefined && (
                     <button
-                      className="ui-btn"
+                      aria-label={lt(language, "new_customer")}
+                      className="ui-btn ui-iconbtn"
                       onClick={() => {
                         setAddingCustomer(true);
                       }}
+                      title={lt(language, "new_customer")}
                       type="button"
                     >
-                      <Icon name="plus" small />
-                      {lt(language, "new_customer")}
+                      <Icon name="userplus" />
                     </button>
                   )}
               </div>

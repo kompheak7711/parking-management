@@ -395,14 +395,15 @@ export function MakeReservationDialog({
                 </select>
                 {gate !== undefined && !locked && (
                   <button
-                    className="ui-btn"
+                    aria-label={rt(language, "mk_new_customer")}
+                    className="ui-btn ui-iconbtn"
                     onClick={() => {
                       setAdding(true);
                     }}
+                    title={rt(language, "mk_new_customer")}
                     type="button"
                   >
-                    <Icon name="plus" small />
-                    {rt(language, "mk_new_customer")}
+                    <Icon name="userplus" />
                   </button>
                 )}
               </div>

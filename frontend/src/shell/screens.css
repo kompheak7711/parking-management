@@ -2048,7 +2048,6 @@ a.ui-kpi.ui-home-kpi {
 .ui-date {
   position: relative;
   display: flex;
-  flex-wrap: wrap;
   gap: 6px;
   align-items: stretch;
   width: 100%;
@@ -2093,11 +2092,12 @@ a.ui-kpi.ui-home-kpi {
 }
 
 /* V1-060 B6 (owner 27/10/2026): the calendar under a date box, drawn large enough to tap on the
-   iPad (the browser's own calendar cannot be made bigger). It sits in the page flow, so a dialog
-   never cuts it off. */
+   iPad (the browser's own calendar cannot be made bigger). It floats over the page, above a
+   dialog, lined up under its date box. */
 .ui-cal {
-  flex: 1 1 100%;
-  max-width: 420px;
+  position: fixed;
+  z-index: 80;
+  width: min(360px, calc(100vw - 16px));
   padding: 12px;
   border: 1px solid var(--border-strong);
   border-radius: 12px;
@@ -2113,8 +2113,18 @@ a.ui-kpi.ui-home-kpi {
 }
 
 .ui-cal-head select {
-  flex: 1 1 auto;
   min-width: 0;
+  padding-right: 30px;
+  padding-left: 10px;
+  background-position: right 8px center;
+}
+
+.ui-cal-head select:first-of-type {
+  flex: 1.6 1 0;
+}
+
+.ui-cal-head select:last-of-type {
+  flex: 1 1 0;
 }
 
 .ui-cal-nav {
@@ -2177,4 +2187,13 @@ a.ui-kpi.ui-home-kpi {
   justify-content: space-between;
   gap: 8px;
   margin-top: 10px;
+}
+
+/* V1-060 B6 (owner 27/10/2026): a square icon button beside a field, such as New Customer. */
+.ui-btn.ui-iconbtn {
+  flex: 0 0 46px;
+  width: 46px;
+  min-height: 46px;
+  padding: 0;
+  justify-content: center;
 }

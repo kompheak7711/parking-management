@@ -4,7 +4,7 @@
 // month and year lists: the browser's own calendar cannot be made bigger. The value given and sent is yyyy-mm-dd; a box that does not hold a
 // whole, real day sends what was typed (or "" when empty), so the form's own check refuses it.
 
-import { useEffect, useState } from "react";
+import { RefObject, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { dayText } from "./format";
 import { Icon } from "./icons";
@@ -107,7 +107,10 @@ function Calendar({
   language,
   onPick,
   onClose,
+  anchor,
 }: {
+  /** The date box and its button: the calendar floats under it (or above, without room). */
+  anchor: RefObject<HTMLElement | null>;
   value: string;
   min?: string;
   max?: string;
@@ -132,6 +135,56 @@ function Calendar({
   const outside = (day: string) =>
     (min !== undefined && min !== "" && day < min) ||
     (max !== undefined && max !== "" && day > max);
+  // Floats over the page (position: fixed), so a dialog or card never cuts it off; it follows
+  // the box while the page scrolls and closes on a tap outside the box and the calendar.
+  const box = useRef<HTMLDivElement>(null);
+  const [place, setPlace] = useState<{ top: number; left: number } | null>(
+    null,
+  );
+  const shut = useRef(onClose);
+  useEffect(() => {
+    shut.current = onClose;
+  });
+  useLayoutEffect(() => {
+    const measure = () => {
+      const field = anchor.current?.getBoundingClientRect();
+      const own = box.current?.getBoundingClientRect();
+      if (field === undefined || own === undefined) return;
+      const gap = 6;
+      const below = field.bottom + gap;
+      const top =
+        below + own.height > window.innerHeight &&
+        field.top - gap - own.height >= 0
+          ? field.top - gap - own.height
+          : below;
+      const left = Math.max(
+        8,
+        Math.min(field.left, window.innerWidth - own.width - 8),
+      );
+      setPlace((now) =>
+        now?.top === top && now.left === left ? now : { top, left },
+      );
+    };
+    measure();
+    const away = (event: PointerEvent) => {
+      const target = event.target as Node | null;
+      if (
+        target !== null &&
+        !anchor.current?.contains(target) &&
+        !box.current?.contains(target)
+      )
+        shut.current();
+    };
+    window.addEventListener("scroll", measure, true);
+    window.addEventListener("resize", measure);
+    document.addEventListener("pointerdown", away);
+    return () => {
+      window.removeEventListener("scroll", measure, true);
+      window.removeEventListener("resize", measure);
+      document.removeEventListener("pointerdown", away);
+    };
+  }, [anchor, year, month]);
+
   const step = (by: number) => {
     const next = month + by;
     setYear(year + Math.floor(next / 12));
@@ -141,6 +194,12 @@ function Calendar({
   return (
     <div
       className="ui-cal"
+      ref={box}
+      style={
+        place === null
+          ? { visibility: "hidden", top: 0, left: 0 }
+          : { top: place.top, left: place.left }
+      }
       onKeyDown={(event) => {
         if (event.key === "Escape") {
           event.stopPropagation();
@@ -283,6 +342,7 @@ export function DateInput({
   const current = value ?? own;
   const [text, setText] = useState(dayText(current));
   const [open, setOpen] = useState(false);
+  const wrapper = useRef<HTMLSpanElement>(null);
 
   // A new value from outside (a default, the calendar, another field) shows as dd/mm/yyyy;
   // what is being typed stays as typed while it means the same day.
@@ -300,7 +360,7 @@ export function DateInput({
   }
 
   return (
-    <span className="ui-date">
+    <span className="ui-date" ref={wrapper}>
       <input
         aria-describedby={describedBy}
         aria-invalid={invalid}
@@ -341,6 +401,7 @@ export function DateInput({
       </button>
       {open && !disabled && (
         <Calendar
+          anchor={wrapper}
           language={language}
           max={max}
           min={min}
