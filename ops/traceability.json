@@ -56475,6 +56475,89 @@
       "test_path": "backend/tests/test_v1_060_release_migration.py",
       "status": "implemented",
       "notes": "V1-060 speed test (migration 243): the Payment parts, Invoice register, income facts and Home page give the same answers as their pre-243 versions for every Property of the shared test database."
+    },
+    {
+      "test_id": "test_property_setup_command_finds_the_owner_and_makes_the_identifier",
+      "upstream_ids": [
+        "API-026",
+        "PR-PROP-001"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_property.py",
+      "status": "implemented",
+      "notes": "V1-060 B6 (owner test 27/10/2026): the local Property setup command finds the Owner account and makes the Property id itself when none is given."
+    },
+    {
+      "test_id": "test_property_setup_command_needs_the_owner_and_runs_once",
+      "upstream_ids": [
+        "API-026",
+        "PR-PROP-001"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_property.py",
+      "status": "implemented",
+      "notes": "V1-060 B6 (owner test 27/10/2026): the local Property setup command refuses without an Owner account and changes nothing when the Property is already set up."
+    },
+    {
+      "test_id": "TEST-FE-1012",
+      "upstream_ids": [
+        "DL-074",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reservations/MakeReservationDialog.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (owner test 27/10/2026): the date box reads a typed dd/mm/yyyy or yyyy-mm-dd day (any year), adds the slashes while typing and sends yyyy-mm-dd; an unreal day is sent as typed so the form refuses it."
+    },
+    {
+      "test_id": "TEST-FE-1013",
+      "upstream_ids": [
+        "DL-074",
+        "BR-RES-003",
+        "BR-RES-004",
+        "BR-DEP-002",
+        "UI-034"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reservations/MakeReservationDialog.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (owner test 27/10/2026): Make Reservation saves the deposit first as a Payment with its Receipt, then the Reservation with that Payment; Try again after a lost answer resends the same Reservation request and never saves the money twice."
+    },
+    {
+      "test_id": "TEST-FE-1014",
+      "upstream_ids": [
+        "DL-074",
+        "BR-RES-004",
+        "UI-034"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reservations/MakeReservationDialog.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (owner test 27/10/2026): Make Reservation suggests 20% of the agreed Rent and asks why when another amount is received; nothing is saved while a field is missing."
+    },
+    {
+      "test_id": "TEST-FE-1015",
+      "upstream_ids": [
+        "BR-DEP-004",
+        "BR-DEP-002",
+        "BR-DEP-006",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/ReceiveDepositDialog.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (owner test 27/10/2026): Receive Security Deposit on a walk-in Lease saves the money, makes the Security Deposit and takes its receipt; a refusal shows the server's words and Try again finishes without saving the money or the Deposit twice."
+    },
+    {
+      "test_id": "TEST-FE-1016",
+      "upstream_ids": [
+        "BR-DEP-004",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/ReceiveDepositDialog.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (owner test 27/10/2026): a Security Deposit not fully received takes at most the rest, and no new Deposit is made."
     }
   ]
 }
