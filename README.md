@@ -288,6 +288,10 @@ screen.
    on) or "The set-up stopped and saved nothing" (delete the new CHETANA entry in Google
    Authenticator, throw away the codes you wrote, and run this step again). The
    set-up can run only once; after it, the Owner makes every other account in the app.
+5b. **Set up the Property** (once, after step 5): `sh scripts/local/setup-property.sh "CHETANA Residence"`
+   (use the business name). It makes the one Property and gives the Owner every Owner action on
+   it; without it the screens have no Property and Settings keeps saying it is reading. Running
+   it again changes nothing. Restart step 7 afterwards if the API was running.
 6. **Make the HTTPS certificate** (once a year): `sh scripts/local/make-certificate.sh`. It covers
    `https://NAME.local:5173` (NAME is the Mac's local network name, System Settings, General,
    Sharing, shown in lower case); sign in only at that address. Trust its authority once (it

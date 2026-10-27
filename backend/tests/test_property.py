@@ -133,13 +133,19 @@ def test_property_setup_command_uses_runtime_database_identity(
     property_id = uuid4()
     actor_id = uuid4()
     observed: list[tuple[str, UUID, str, str | None, UUID]] = []
-    monkeypatch.setattr(
-        property_setup_cli,
-        "configure_postgres_property",
-        lambda database_url, configured_id, *, name, address_text, actor_id: observed.append(
-            (database_url, configured_id, name, address_text, actor_id)
-        ),
-    )
+
+    def configure(
+        database_url: str,
+        configured_id: UUID,
+        *,
+        name: str,
+        address_text: str | None,
+        actor_id: UUID,
+    ) -> PropertyConfiguration:
+        observed.append((database_url, configured_id, name, address_text, actor_id))
+        return PropertyConfiguration(configured_id, name=name)
+
+    monkeypatch.setattr(property_setup_cli, "configure_postgres_property", configure)
 
     result = property_setup_cli.main(
         [
@@ -157,3 +163,51 @@ def test_property_setup_command_uses_runtime_database_identity(
 
     assert result == 0
     assert observed == [("postgresql://runtime", property_id, "Riverside", "Phnom Penh", actor_id)]
+
+
+def test_property_setup_command_finds_the_owner_and_makes_the_identifier(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    owner = uuid4()
+    observed: list[tuple[UUID, UUID]] = []
+    monkeypatch.setattr(property_setup_cli, "owner_actor_id", lambda database_url: owner)
+
+    def configure(
+        database_url: str,
+        configured_id: UUID,
+        *,
+        name: str,
+        address_text: str | None,
+        actor_id: UUID,
+    ) -> PropertyConfiguration:
+        observed.append((configured_id, actor_id))
+        return PropertyConfiguration(configured_id, name=name)
+
+    monkeypatch.setattr(property_setup_cli, "configure_postgres_property", configure)
+
+    result = property_setup_cli.main(
+        ["--name", "CHETANA Residence"], settings=Settings(database_url="postgresql://runtime")
+    )
+
+    assert result == 0
+    assert len(observed) == 1 and observed[0][1] == owner
+    assert "CHETANA Residence is set up" in capsys.readouterr().out
+
+
+def test_property_setup_command_needs_the_owner_and_runs_once(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setattr(property_setup_cli, "owner_actor_id", lambda database_url: None)
+    with pytest.raises(SystemExit):
+        property_setup_cli.main(["--name", "X"], settings=Settings(database_url="postgresql://r"))
+
+    def already(*_: object, **__: object) -> PropertyConfiguration:
+        raise PropertyAlreadyConfiguredError("already")
+
+    monkeypatch.setattr(property_setup_cli, "configure_postgres_property", already)
+    result = property_setup_cli.main(
+        ["--name", "X", "--actor-id", str(uuid4())],
+        settings=Settings(database_url="postgresql://r"),
+    )
+    assert result == 0
+    assert "already set up" in capsys.readouterr().out
