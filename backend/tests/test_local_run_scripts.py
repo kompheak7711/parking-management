@@ -48,6 +48,7 @@ def test_every_local_script_parses_and_reads_secrets_only_from_files() -> None:
         "make-secrets.sh",
         "migrate.sh",
         "prune-sign-in-tries.sh",
+        "setup-property.sh",
         "start-api.sh",
     }
     for script in scripts:
