@@ -135,8 +135,13 @@ export function LeaseDetail({
     terminateDraft(terminateOnOpen ? "RENT" : null),
   );
   const [notice, setNotice] = useState<string | null>(null);
-  // V1-060 B6 (DL-100): a walk-in draft's planned Security Deposit; undefined until read.
+  // V1-060 B6 (DL-100, DL-101): the draft's recorded Security Deposit and, for a draft from a
+  // Booking, the Reservation's Security Deposit; undefined until read.
   const [planned, setPlanned] = useState<number | null | undefined>(undefined);
+  const [held, setHeld] = useState<{
+    required: number;
+    received: number;
+  } | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
   const sequence = useRef(0);
   const today = todayInPhnomPenh();
@@ -154,10 +159,22 @@ export function LeaseDetail({
     settlementApi
       .signingPreview(lease.lease_id)
       .then((preview) => {
-        if (live) setPlanned(preview.planned_security_deposit_usd_cents);
+        if (!live) return;
+        setPlanned(preview.planned_security_deposit_usd_cents);
+        const reservation = preview.held_security_deposit;
+        setHeld(
+          reservation === null
+            ? null
+            : {
+                required: reservation.required_usd_cents,
+                received: reservation.received_usd_cents,
+              },
+        );
       })
       .catch(() => {
-        if (live) setPlanned(null);
+        if (!live) return;
+        setPlanned(null);
+        setHeld(null);
       });
     return () => {
       live = false;
@@ -319,11 +336,11 @@ export function LeaseDetail({
       ? (deposits.items.find((item) => item.deposit_type === "SECURITY") ??
         null)
       : null;
-  // A draft made without a Booking and not a renewal takes its Security Deposit at signing.
-  const walkInDraft =
-    lease.status === "DRAFTED" &&
-    lease.predecessor_lease_id === null &&
-    lease.security_deposit_id === null;
+  // A draft that is not a renewal records its Security Deposit (DL-100, DL-101): a walk-in
+  // draft's is made at signing, a Booking's is the Reservation's until the Lease is signed.
+  const depositDraft =
+    lease.status === "DRAFTED" && lease.predecessor_lease_id === null;
+  const draftDeposit = planned ?? held?.required ?? null;
   const pet =
     deposits.state === "shown"
       ? (deposits.items.find((item) => item.deposit_type === "PET") ?? null)
@@ -906,10 +923,24 @@ export function LeaseDetail({
                   </div>
                 )}
                 <h3>{lt(language, "dep_sec")}</h3>
-                {security === null && walkInDraft && planned != null ? (
-                  <p>
-                    {lt(language, "pv_deposit_planned", usdFromCents(planned))}
-                  </p>
+                {security === null && depositDraft && draftDeposit !== null ? (
+                  <>
+                    <p>
+                      {lt(language, "dep_term", usdFromCents(draftDeposit))}
+                    </p>
+                    {held !== null && (
+                      <p className="ui-muted">
+                        {held.received >= draftDeposit
+                          ? lt(language, "dep_term_paid")
+                          : lt(
+                              language,
+                              "dep_term_booking",
+                              usdFromCents(held.received),
+                              usdFromCents(draftDeposit - held.received),
+                            )}
+                      </p>
+                    )}
+                  </>
                 ) : security === null ? (
                   <p className="ui-muted">{lt(language, "no_deposit")}</p>
                 ) : (
@@ -1120,7 +1151,8 @@ export function LeaseDetail({
         <EditDraftDialog
           {...dialogProps}
           lease={lease}
-          planned={walkInDraft && planned !== undefined ? planned : undefined}
+          planned={depositDraft && planned !== undefined ? planned : undefined}
+          held={held}
           signingApi={settlementApi}
           onSaved={(saved) => {
             setDialog(null);

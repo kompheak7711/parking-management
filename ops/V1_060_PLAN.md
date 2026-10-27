@@ -178,3 +178,14 @@ candidate is the code that will be used.
   Deposit; each step keeps its request id so Try again never pays twice. Earlier in step 1: a
   larger calendar beside its box, New Customer as an icon button, DL-099 (more than the 20%
   suggestion needs no reason) and the duplicate Reservation step taken out of the script.
+- 2026-10-27 B6 (owner session, step 2 again): the owner found no Security Deposit box on a draft
+  from a Booking and a Lease page that said no Security Deposit was recorded; the owner's rule
+  (DL-101): the Security Deposit is a Lease term like the Rent, recorded with the Lease before any
+  money. Built: migration `20270326_245` (the Reservation's Security Deposit of a draft, a draft
+  amount never below the money received, and one INCREASE or DECREASE of the required amount right
+  after signing under `leases.sign`), the apply route, the box on New Lease from a Booking (with a
+  reason when the amount changes) and on Edit draft, the Lease page Deposits card, Print draft and
+  Sign Lease (which refuses money while the draft's amount is below the money received). Pushed
+  after the quick checks (format, lint, types, Lease screen tests 36 passed, the new and nearby
+  database tests 19 passed, signing API tests passed, traceability passed) so the owner can test
+  sooner; the longer suites and CI run after the push (owner 20:35: do not make the owner wait).

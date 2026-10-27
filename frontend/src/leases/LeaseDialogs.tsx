@@ -13,7 +13,7 @@ import {
 import type { CustomerApi, CustomerListItem } from "../customerClient";
 import type { SettlementApi } from "../settlementClient";
 import { DateInput } from "../shell/DateInput";
-import { dayText, todayInPhnomPenh } from "../shell/format";
+import { dayText, todayInPhnomPenh, usdFromCents } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { Dialog } from "../shell/ui";
 import type { Language } from "../signInText";
@@ -130,19 +130,20 @@ export function EditDraftDialog({
   onSaved,
   onConflict,
   planned,
+  held = null,
   signingApi,
 }: DialogProps & {
-  /** V1-060 B6 (DL-100): a walk-in draft's planned Security Deposit; undefined hides the box. */
+  /** V1-060 B6 (DL-100, DL-101): the draft's recorded Security Deposit; undefined hides the box. */
   planned?: number | null;
+  /** DL-101: the Reservation's Security Deposit of a draft from a Booking. */
+  held?: { required: number; received: number } | null;
   signingApi?: Pick<SettlementApi, "planSecurityDeposit">;
 }) {
-  const walkIn = planned !== undefined && signingApi !== undefined;
+  const takesDeposit = planned !== undefined && signingApi !== undefined;
+  const firstDeposit =
+    planned ?? held?.required ?? lease.monthly_rent_usd_cents ?? null;
   const [deposit, setDeposit] = useState(
-    planned === undefined || planned === null
-      ? lease.monthly_rent_usd_cents === null
-        ? ""
-        : (lease.monthly_rent_usd_cents / 100).toFixed(2)
-      : (planned / 100).toFixed(2),
+    firstDeposit === null ? "" : (firstDeposit / 100).toFixed(2),
   );
   const [start, setStart] = useState(lease.start_date ?? "");
   const [end, setEnd] = useState(lease.end_date ?? "");
@@ -166,9 +167,19 @@ export function EditDraftDialog({
     if (!/^\d{4}-\d{2}-\d{2}$/.test(end) || end <= start || !monthEnd(end))
       found.end = lt(language, "err_end");
     if (cents === null) found.rent = lt(language, "err_rent");
-    const depositCents = walkIn ? centsOf(deposit) : null;
-    if (walkIn && depositCents === null)
+    const depositCents = takesDeposit ? centsOf(deposit) : null;
+    if (takesDeposit && depositCents === null)
       found.deposit = lt(language, "err_deposit");
+    else if (
+      held !== null &&
+      depositCents !== null &&
+      depositCents < held.received
+    )
+      found.deposit = lt(
+        language,
+        "err_deposit_below",
+        usdFromCents(held.received),
+      );
     if (reason.trim() === "") found.reason = lt(language, "err_reason");
     setProblems(found);
     if (cents === null || Object.keys(found).length > 0) return;
@@ -192,7 +203,7 @@ export function EditDraftDialog({
         { event_id: chosen.id, ...source },
         chosen.key,
       );
-      if (walkIn && depositCents !== null && depositCents !== planned)
+      if (takesDeposit && depositCents !== null && depositCents !== planned)
         await signingApi.planSecurityDeposit(lease.lease_id, {
           plan_id: chosen.id,
           required_usd_cents: depositCents,
@@ -273,7 +284,7 @@ export function EditDraftDialog({
         />,
         problems.rent,
       )}
-      {walkIn &&
+      {takesDeposit &&
         field(
           "lease-edit-deposit",
           lt(language, "deposit_box"),

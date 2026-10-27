@@ -56680,6 +56680,85 @@
       "test_path": "backend/tests/test_lease_signing_api.py",
       "status": "implemented",
       "notes": "V1-060 B6 (DL-100): making the Initial Rent Invoice at signing needs leases.sign and an Idempotency-Key, and a Service for part of a month is refused with INITIAL_RENT_SERVICE_PART_MONTH."
+    },
+    {
+      "test_id": "TEST-FE-1020",
+      "upstream_ids": [
+        "DL-101",
+        "DL-100",
+        "BR-DEP-004",
+        "BR-DEP-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (DL-101): Sign Lease on a draft from a Booking asks for the draft's Security Deposit less the money received plus the Initial Rent, applies the draft's amount right after signing and before the money goes into the Reservation's deposit; an amount below the money received takes no money and signs nothing."
+    },
+    {
+      "test_id": "TEST-FE-1021",
+      "upstream_ids": [
+        "DL-101",
+        "BR-DEP-004"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (DL-101): the Lease page of a draft from a Booking shows its Security Deposit as a Lease term with the money received (not 'No Security Deposit is recorded'), Print draft shows the amount and the rest to pay, and Edit draft refuses an amount below the money received."
+    },
+    {
+      "test_id": "TEST-FE-1022",
+      "upstream_ids": [
+        "DL-101",
+        "BR-DEP-004"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (DL-101): New Lease from a Booking shows the Security Deposit box at the Reservation's amount; a changed amount needs a reason, never goes below the money received, and is saved with the draft."
+    },
+    {
+      "test_id": "test_a_draft_from_a_reservation_records_its_deposit_and_signing_applies_it",
+      "upstream_ids": [
+        "DL-101",
+        "BR-DEP-004",
+        "BR-DEP-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_lease_deposit_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 B6 (DL-101): a draft from a Reservation records its Security Deposit (even the Reservation's own amount), never below the money received; nothing changes before signing; after signing one INCREASE with the draft's reason is recorded once (replay safe) and only prm_financial may apply it."
+    },
+    {
+      "test_id": "test_a_lower_amount_on_the_draft_becomes_a_decrease_at_signing",
+      "upstream_ids": [
+        "DL-101",
+        "BR-DEP-004"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_lease_deposit_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 B6 (DL-101): a lower amount on the draft becomes one DECREASE of the required Security Deposit at signing."
+    },
+    {
+      "test_id": "test_a_walk_in_lease_has_no_held_deposit_and_nothing_to_apply",
+      "upstream_ids": [
+        "DL-101",
+        "DL-100"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_lease_deposit_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 B6 (DL-101): a walk-in draft has no Reservation deposit, so applying after signing changes nothing (its deposit is made at signing, DL-100)."
+    },
+    {
+      "test_id": "test_the_draft_deposit_is_applied_after_signing_with_lease_sign_only",
+      "upstream_ids": [
+        "DL-101"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_lease_signing_api.py",
+      "status": "implemented",
+      "notes": "V1-060 B6 (DL-101): applying the draft's Security Deposit after signing needs leases.sign and an Idempotency-Key, and an amount below the money received is refused with PLANNED_DEPOSIT_BELOW_RECEIVED."
     }
   ]
 }

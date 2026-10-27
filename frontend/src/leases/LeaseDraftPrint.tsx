@@ -1,6 +1,8 @@
 // V1-060 B6 (owner 27/10/2026, DL-100): Print draft. After drafting, the customer checks the
 // draft on paper before paying: the Unit, the people, the dates, the Rent, the Security Deposit,
 // the Services and the money paid at signing. Printing shows only the sheet (A4).
+// DL-101: a draft from a Booking shows its own Security Deposit amount too, and what is left to
+// pay after the money received with the Reservation.
 
 import { FormEvent, useEffect, useState } from "react";
 
@@ -52,12 +54,21 @@ export function LeaseDraftPrint({
 
   const initial =
     preview !== null && preview !== "failed" ? preview.initial : null;
+  const loaded = preview !== null && preview !== "failed" ? preview : null;
+  const held = loaded?.held_security_deposit ?? null;
+  const renewal = lease.predecessor_lease_id !== null;
+  // The Security Deposit on the Lease: the draft's amount, or the Reservation's until one is saved.
   const planned =
-    preview !== null && preview !== "failed"
-      ? preview.planned_security_deposit_usd_cents
-      : null;
-  const walkIn =
-    lease.predecessor_lease_id === null && lease.security_deposit_id === null;
+    loaded === null
+      ? null
+      : (loaded.planned_security_deposit_usd_cents ??
+        held?.required_usd_cents ??
+        null);
+  // What is paid at signing: all of it on a walk-in draft, the rest on a draft from a Booking.
+  const depositDue =
+    renewal || planned === null
+      ? null
+      : Math.max(0, planned - (held?.received_usd_cents ?? 0));
   const others = lease.signers.filter((signer) => !signer.is_primary_tenant);
   const rows: [string, string][] = [
     [lt(language, "lp_unit"), lease.unit_number],
@@ -87,15 +98,12 @@ export function LeaseDraftPrint({
     ],
     [
       lt(language, "sp_deposit"),
-      !walkIn
-        ? lt(
-            language,
-            lease.predecessor_lease_id === null
-              ? "lp_dep_booking"
-              : "lp_dep_renewal",
-          )
+      renewal
+        ? lt(language, "lp_dep_renewal")
         : planned === null
-          ? "—"
+          ? lease.security_deposit_id === null
+            ? "—"
+            : lt(language, "lp_dep_booking")
           : usdFromCents(planned),
     ],
     ...(lease.pet_deposit_required
@@ -141,10 +149,19 @@ export function LeaseDraftPrint({
         ) : (
           <table className="ui-table ui-num">
             <tbody>
-              {walkIn && planned !== null && (
+              {depositDue !== null && planned !== null && (
                 <tr>
-                  <td>{lt(language, "sp_deposit")}</td>
-                  <td>{usdFromCents(planned)}</td>
+                  <td>
+                    {held === null
+                      ? lt(language, "sp_deposit")
+                      : lt(
+                          language,
+                          "sp_deposit_rest",
+                          usdFromCents(held.received_usd_cents),
+                          usdFromCents(planned),
+                        )}
+                  </td>
+                  <td>{usdFromCents(depositDue)}</td>
                 </tr>
               )}
               <tr>
@@ -172,10 +189,10 @@ export function LeaseDraftPrint({
                   <td>{usdFromCents(line.amount_usd_cents)}</td>
                 </tr>
               ))}
-              {walkIn && planned !== null && (
+              {depositDue !== null && (
                 <tr>
                   <th scope="row">{lt(language, "sp_total")}</th>
-                  <th>{usdFromCents(planned + initial.total_usd_cents)}</th>
+                  <th>{usdFromCents(depositDue + initial.total_usd_cents)}</th>
                 </tr>
               )}
             </tbody>

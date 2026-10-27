@@ -6,6 +6,9 @@
 // Rent Invoice is made, the Payment pays it, and the rest goes into the Security Deposit. Each
 // step keeps one request identity, so "Try again" carries on where an earlier try stopped and
 // never saves anything twice.
+// DL-101 (owner 27/10/2026): a draft from a Booking records its own Security Deposit, starting
+// at the Reservation's amount; right after signing that amount becomes the required amount of
+// the Reservation's Security Deposit, and the rest of it is received.
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 
@@ -89,6 +92,7 @@ export type SigningApi = Pick<
   SettlementApi,
   | "signingPreview"
   | "makeInitialRentInvoice"
+  | "applyPlannedSecurityDeposit"
   | "allocationProposal"
   | "allocateByProposal"
   | "createSecurityDeposit"
@@ -157,6 +161,7 @@ export function SignDialog({
   const progress = useRef<{
     lease: LeaseResource;
     signed: LeaseResource | null;
+    applied: boolean;
     invoiced: boolean;
     proposal: Record<string, unknown> | null;
     allocated: boolean;
@@ -164,6 +169,7 @@ export function SignDialog({
   }>({
     lease,
     signed: null,
+    applied: false,
     invoiced: false,
     proposal: null,
     allocated: false,
@@ -177,28 +183,48 @@ export function SignDialog({
   const renewal = lease.predecessor_lease_id !== null;
   // A draft from a Booking names the Booking's deposit, and signing completes the Customer's
   // active Booking of this Unit; either way the Booking's deposit continues and its rest is paid.
-  const fromBooking = lease.security_deposit_id !== null || booking !== null;
+  const held =
+    preview.state === "done" ? preview.value.held_security_deposit : null;
+  const fromBooking =
+    lease.security_deposit_id !== null || booking !== null || held !== null;
   const walkIn = !renewal && !fromBooking;
   const planned =
     preview.state === "done"
       ? preview.value.planned_security_deposit_usd_cents
       : null;
+  // A Booking's Security Deposit: the draft's amount (DL-101), or the Reservation's.
+  const bookingDeposit =
+    held !== null
+      ? {
+          depositId: held.deposit_id,
+          required: planned ?? held.required_usd_cents,
+          received: held.received_usd_cents,
+        }
+      : booking !== null
+        ? {
+            depositId: booking.deposit_id,
+            required: planned ?? booking.deposit_required_usd_cents,
+            received: booking.deposit_received_usd_cents,
+          }
+        : null;
   const depositText =
     deposit ??
     ((planned ?? lease.monthly_rent_usd_cents ?? 0) / 100).toFixed(2);
   const depositDue = renewal
     ? 0
-    : booking !== null
-      ? Math.max(
-          0,
-          booking.deposit_required_usd_cents -
-            booking.deposit_received_usd_cents,
-        )
+    : bookingDeposit !== null
+      ? Math.max(0, bookingDeposit.required - bookingDeposit.received)
       : fromBooking
         ? 0
         : (centsOf(depositText) ?? 0);
-  // The Booking's deposit is not known when the Booking could not be read.
+  // Signing completes the Booking, so it must be read (the server refuses a Reserved Unit
+  // without its Reservation).
   const bookingUnknown = fromBooking && booking === null;
+  // The draft's amount becomes the required amount after signing, so it cannot be less than
+  // the money the Reservation already received.
+  const belowReceived =
+    bookingDeposit !== null &&
+    bookingDeposit.required < bookingDeposit.received;
   const rentDue = initial?.total_usd_cents ?? 0;
   const total = depositDue + rentDue;
   const ready =
@@ -207,6 +233,7 @@ export function SignDialog({
     initial !== null &&
     initial.problem === null &&
     !bookingUnknown &&
+    !belowReceived &&
     mayCollect &&
     (!walkIn || mayCreateDeposit);
   const blocker =
@@ -218,11 +245,17 @@ export function SignDialog({
           ? lt(language, "sp_problem", initial.problem.replace(/^[A-Z_]+:/, ""))
           : bookingUnknown && reservation.state !== "loading"
             ? lt(language, "sp_no_booking")
-            : !mayCollect
-              ? lt(language, "sp_no_rights")
-              : walkIn && !mayCreateDeposit && reservation.state === "done"
-                ? lt(language, "sp_no_deposit_right")
-                : null;
+            : belowReceived
+              ? lt(
+                  language,
+                  "sp_deposit_below",
+                  usdFromCents(bookingDeposit.received),
+                )
+              : !mayCollect
+                ? lt(language, "sp_no_rights")
+                : walkIn && !mayCreateDeposit && reservation.state === "done"
+                  ? lt(language, "sp_no_deposit_right")
+                  : null;
 
   async function sign(reservationId: string | null): Promise<LeaseResource> {
     let current = progress.current.lease;
@@ -270,6 +303,13 @@ export function SignDialog({
       done.signed = await sign(booking?.reservation_id ?? null);
       onProgress(done.signed);
     }
+    if (bookingDeposit !== null && planned !== null && !done.applied) {
+      await signingApi.applyPlannedSecurityDeposit(
+        lease.lease_id,
+        identity("apply").key,
+      );
+      done.applied = true;
+    }
     if (rentDue > 0 && !done.invoiced) {
       await signingApi.makeInitialRentInvoice(
         lease.lease_id,
@@ -292,7 +332,7 @@ export function SignDialog({
     }
     if (depositDue > 0) {
       if (done.depositId === null) {
-        if (booking !== null) done.depositId = booking.deposit_id;
+        if (bookingDeposit !== null) done.depositId = bookingDeposit.depositId;
         else {
           const step = identity("deposit");
           await signingApi.createSecurityDeposit(
@@ -462,12 +502,12 @@ export function SignDialog({
               {!renewal && (
                 <tr>
                   <td>
-                    {booking !== null ? (
+                    {bookingDeposit !== null ? (
                       lt(
                         language,
                         "sp_deposit_rest",
-                        usdFromCents(booking.deposit_received_usd_cents),
-                        usdFromCents(booking.deposit_required_usd_cents),
+                        usdFromCents(bookingDeposit.received),
+                        usdFromCents(bookingDeposit.required),
                       )
                     ) : (
                       <label htmlFor="sign-deposit">

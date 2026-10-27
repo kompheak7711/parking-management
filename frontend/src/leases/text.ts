@@ -878,6 +878,35 @@ const TEXT = {
     "Type the Security Deposit, more than 0.",
     "សូមវាយប្រាក់កក់សុវត្ថិភាព ច្រើនជាង ០។",
   ],
+  // DL-101 (owner 27/10/2026): a Lease from a Reservation records its Security Deposit too.
+  deposit_help_booking: [
+    "Starts at the Reservation's amount. It cannot be less than the {0} already received.",
+    "ចាប់ផ្តើមពីចំនួនក្នុងការកក់។ មិនអាចតិចជាង {0} ដែលបានទទួលរួចហើយទេ។",
+  ],
+  deposit_reason: [
+    "Why the Security Deposit changed",
+    "មូលហេតុដែលប្រាក់កក់សុវត្ថិភាពផ្លាស់ប្តូរ",
+  ],
+  err_deposit_below: [
+    "The Security Deposit cannot be less than the {0} already received.",
+    "ប្រាក់កក់សុវត្ថិភាពមិនអាចតិចជាង {0} ដែលបានទទួលរួចហើយទេ។",
+  ],
+  err_deposit_reason: [
+    "Say why the Security Deposit changed.",
+    "សូមប្រាប់មូលហេតុដែលប្រាក់កក់សុវត្ថិភាពផ្លាស់ប្តូរ។",
+  ],
+  dep_term: [
+    "Security Deposit on this Lease: {0}.",
+    "ប្រាក់កក់សុវត្ថិភាពក្នុងកិច្ចសន្យានេះ៖ {0}។",
+  ],
+  dep_term_booking: [
+    "{0} received with the Reservation; {1} is paid when the Lease is signed.",
+    "បានទទួល {0} ជាមួយការកក់ {1} បង់ពេលចុះហត្ថលេខាកិច្ចសន្យា។",
+  ],
+  dep_term_paid: [
+    "Received in full with the Reservation.",
+    "បានទទួលគ្រប់ចំនួនជាមួយការកក់។",
+  ],
   sp_money: [
     "Money to receive before signing",
     "ប្រាក់ត្រូវទទួលមុនចុះហត្ថលេខា",
@@ -910,6 +939,10 @@ const TEXT = {
   sp_no_booking: [
     "The Booking of this Lease could not be read, so the rest of its deposit is not known. Close and try again, or ask someone who can see Bookings.",
     "មិនអាចអានការកក់នៃកិច្ចសន្យានេះបានទេ ដូច្នេះមិនដឹងប្រាក់កក់ដែលនៅសល់។ សូមបិទ ហើយព្យាយាមម្តងទៀត ឬសួរអ្នកដែលអាចមើលការកក់។",
+  ],
+  sp_deposit_below: [
+    "The Security Deposit on this draft is less than the {0} already received with the Reservation. Change it with Edit draft first.",
+    "ប្រាក់កក់សុវត្ថិភាពក្នុងសេចក្តីព្រាងនេះ តិចជាង {0} ដែលបានទទួលរួចជាមួយការកក់។ សូមកែវាដោយកែសេចក្តីព្រាងជាមុនសិន។",
   ],
   sp_no_rights: [
     "To sign, you need the rights to receive and allocate payments. Ask the Owner.",

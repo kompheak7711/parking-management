@@ -660,6 +660,8 @@ Required
 Received
 ```
 
+Amended by DL-101 (owner, 2026-10-27): the required Security Deposit is a Lease term like the monthly Rent. Every draft Lease that is not a renewal records it with the Lease (not in the payment tables) before any money is received, and the printed draft shows it. A draft from a Reservation starts at the Reservation's amount and may be changed with a reason, never below the money already received; the Reservation's Security Deposit takes the new amount only when the Lease is signed.
+
 ---
 
 ## BR-DEP-005 — Security Deposit Continues Into Lease
@@ -676,6 +678,8 @@ The system must not:
 - create a second deposit
 - record a conversion transaction
 - recognize it as rental income
+
+Amended by DL-101 (owner, 2026-10-27): when the draft from a Reservation records another Security Deposit amount, signing records one increase or decrease of the required amount of the same Security Deposit, with the draft's reason; it stays the same Security Deposit.
 
 ---
 

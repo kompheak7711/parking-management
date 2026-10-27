@@ -6,6 +6,11 @@ signing (the rest of the Security Deposit and the Initial Rent Invoice), signs, 
 Initial Rent Invoice at once so the money just received pays it. The amounts come from
 app.lease_signing_preview (migration 20270325_244), which reads the Invoice generator's own rules;
 the Invoice is made by app.generate_rent_service_invoice, as billing makes every Rent Invoice.
+
+DL-101 (owner 27/10/2026, migration 20270326_245): the Security Deposit amount is a Lease term like
+the Rent, so a draft from a Reservation records it too, starting at the Reservation's amount and
+never below the money already received. Sign Lease applies it to the Reservation's Security Deposit
+right after signing (app.apply_lease_planned_security_deposit), then receives the rest.
 """
 
 from __future__ import annotations
@@ -47,11 +52,14 @@ REFUSALS: Final[dict[str, Refusal]] = {
         "PLANNED_DEPOSIT_NOT_DRAFT",
         "Only a draft Lease takes a planned Security Deposit.",
     ),
-    "A Lease from a Reservation keeps the Reservation's Security Deposit": Refusal(
+    "The Security Deposit cannot be less than the money already received": Refusal(
         409,
-        "PLANNED_DEPOSIT_FROM_RESERVATION",
-        "A Lease from a Reservation keeps the Reservation's Security Deposit.",
-        ("BR-DEP-005",),
+        "PLANNED_DEPOSIT_BELOW_RECEIVED",
+        "The Security Deposit cannot be less than the money already received.",
+        ("BR-DEP-004",),
+    ),
+    "Sign the Lease before its Security Deposit changes": Refusal(
+        409, "PLANNED_DEPOSIT_NOT_SIGNED", "Sign the Lease first."
     ),
     "A renewal Lease keeps the Security Deposit it carries": Refusal(
         409,
@@ -115,6 +123,10 @@ class LeaseSigningFlow(Protocol):
         self, property_id: UUID, lease_id: UUID, idempotency_key: UUID, actor_id: UUID
     ) -> InitialRentInvoice: ...
 
+    def apply_planned_deposit(
+        self, property_id: UUID, lease_id: UUID, adjustment_id: UUID, actor_id: UUID
+    ) -> dict[str, object]: ...
+
 
 class UnavailableLeaseSigningFlow:
     def property_of(self, lease_id: UUID) -> UUID:
@@ -137,6 +149,11 @@ class UnavailableLeaseSigningFlow:
     def initial_invoice(
         self, property_id: UUID, lease_id: UUID, idempotency_key: UUID, actor_id: UUID
     ) -> InitialRentInvoice:
+        raise LeaseSigningUnavailable(str(lease_id))
+
+    def apply_planned_deposit(
+        self, property_id: UUID, lease_id: UUID, adjustment_id: UUID, actor_id: UUID
+    ) -> dict[str, object]:
         raise LeaseSigningUnavailable(str(lease_id))
 
 
@@ -212,7 +229,9 @@ class PostgresLeaseSigningFlow:
         try:
             with self._connect(self._database_url) as connection:
                 row = connection.execute(
-                    "SELECT app.lease_signing_preview(%s,%s)", (property_id, lease_id)
+                    "SELECT app.lease_signing_preview(%s,%s) || jsonb_build_object("
+                    "'held_security_deposit', app.lease_held_security_deposit(%s,%s))",
+                    (property_id, lease_id, property_id, lease_id),
                 ).fetchone()
         except psycopg.Error as exc:
             self._raise(exc)
@@ -299,6 +318,24 @@ class PostgresLeaseSigningFlow:
             raise LeaseSigningUnavailable
         made = cast(dict[str, object], row[0])
         return InitialRentInvoice(UUID(str(made["invoice_id"])), created=True)
+
+    def apply_planned_deposit(
+        self, property_id: UUID, lease_id: UUID, adjustment_id: UUID, actor_id: UUID
+    ) -> dict[str, object]:
+        if self._financial_database_url is None:
+            raise LeaseSigningUnavailable
+        try:
+            with self._connect(self._financial_database_url) as connection:
+                row = connection.execute(
+                    "SELECT app.apply_lease_planned_security_deposit(%s,%s,%s,%s,%s)",
+                    (property_id, lease_id, adjustment_id, actor_id, LEASE_SIGN_CAPABILITY),
+                ).fetchone()
+        except psycopg.Error as exc:
+            self._raise(exc)
+            raise
+        if row is None:
+            raise LeaseSigningUnavailable
+        return cast(dict[str, object], row[0])
 
 
 class PlannedDepositSource(BaseModel):
@@ -401,5 +438,25 @@ def create_lease_signing_router(
             "data": {"invoice_id": str(made.invoice_id), "created": made.created},
             "meta": {"request_id": request.state.request_id},
         }
+
+    @router.post("/leases/{lease_id}/planned-security-deposit/apply")
+    def apply_planned_security_deposit(
+        lease_id: UUID,
+        request: Request,
+        idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
+    ) -> dict[str, object]:
+        # DL-101: right after signing, the draft's Security Deposit becomes the required amount of
+        # the Reservation's Security Deposit; the request key is the adjustment's identity.
+        actor = _actor(request, resolver)
+        try:
+            property_id = flow.property_of(lease_id)
+            _require(actor, property_id, LEASE_SIGN_CAPABILITY)
+            require_browser_mutation(request, settings)
+            applied = flow.apply_planned_deposit(
+                property_id, lease_id, idempotency_key, _actor_id(actor)
+            )
+        except Exception as exc:
+            raise _translate(exc) from exc
+        return {"data": applied, "meta": {"request_id": request.state.request_id}}
 
     return router

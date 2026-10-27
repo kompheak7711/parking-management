@@ -9,6 +9,7 @@ from property_rental.app import create_app
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
 from property_rental.lease_signing_api import (
     PARTIAL_SERVICE,
+    REFUSALS,
     InitialRentInvoice,
     LeaseSigningNotFound,
 )
@@ -21,6 +22,7 @@ class MemoryFlow:
     def __init__(self) -> None:
         self.plans: list[tuple[UUID, UUID, UUID, UUID, int, str]] = []
         self.invoices: list[tuple[UUID, UUID, UUID, UUID]] = []
+        self.applied: list[tuple[UUID, UUID, UUID, UUID]] = []
         self.failure: Exception | None = None
 
     def property_of(self, lease_id: UUID) -> UUID:
@@ -50,6 +52,14 @@ class MemoryFlow:
             raise self.failure
         self.invoices.append((property_id, lease_id, idempotency_key, actor_id))
         return InitialRentInvoice(UUID(int=7), created=True)
+
+    def apply_planned_deposit(
+        self, property_id: UUID, lease_id: UUID, adjustment_id: UUID, actor_id: UUID
+    ) -> dict[str, object]:
+        if self.failure is not None:
+            raise self.failure
+        self.applied.append((property_id, lease_id, adjustment_id, actor_id))
+        return {"changed": True, "required_usd_cents": 60_000}
 
 
 def client(flow: MemoryFlow, *capabilities: str) -> tuple[TestClient, UUID]:
@@ -144,3 +154,23 @@ def test_the_initial_rent_invoice_needs_lease_sign_and_shows_a_refusal() -> None
         ).status_code
         == 404
     )
+
+
+def test_the_draft_deposit_is_applied_after_signing_with_lease_sign_only() -> None:
+    flow = MemoryFlow()
+    lease, key = uuid4(), uuid4()
+    http, actor = client(flow, "leases.sign")
+    path = f"/api/v1/leases/{lease}/planned-security-deposit/apply"
+    reply = http.post(path, headers=mutation_headers(key=key))
+    assert reply.status_code == 200
+    assert reply.json()["data"] == {"changed": True, "required_usd_cents": 60_000}
+    assert flow.applied == [(PROPERTY, lease, key, actor)]
+    flow.failure = RefusedRequest(
+        REFUSALS["The Security Deposit cannot be less than the money already received"]
+    )
+    refused = http.post(path, headers=mutation_headers())
+    assert refused.status_code == 409
+    assert refused.json()["error"]["code"] == "PLANNED_DEPOSIT_BELOW_RECEIVED"
+    drafter, _ = client(flow, "leases.draft")
+    assert drafter.post(path, headers=mutation_headers()).status_code == 404
+    assert len(flow.applied) == 1

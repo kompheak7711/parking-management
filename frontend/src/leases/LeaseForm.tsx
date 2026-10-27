@@ -133,7 +133,7 @@ export interface LeaseFormProps {
   /** V1-060 B6: New Customer beside the Primary Tenant; both are needed to show it. */
   customerCreateApi?: CustomerApi;
   customerGate?: CustomerCommandGate;
-  /** V1-060 B6 (DL-100): saves a walk-in draft's Security Deposit; the real server when not given. */
+  /** V1-060 B6 (DL-100, DL-101): saves the draft's Security Deposit; the real server when not given. */
   signingApi?: Pick<SettlementApi, "planSecurityDeposit">;
 }
 
@@ -161,10 +161,13 @@ export function LeaseForm({
   const [start, setStart] = useState(today);
   const [end, setEnd] = useState(oneYearEnd(today));
   const [rent, setRent] = useState("");
-  // A walk-in draft's Security Deposit: one month's Rent until it is typed (DL-100).
+  // The draft's Security Deposit, a Lease term like the Rent: one month's Rent until it is typed
+  // on a walk-in draft (DL-100), the Reservation's amount on a draft from a Booking (DL-101).
   const [deposit, setDeposit] = useState("");
   const [depositTyped, setDepositTyped] = useState(false);
+  const [depositReason, setDepositReason] = useState("");
   const [plannedCents, setPlannedCents] = useState<number | null>(null);
+  const [plannedReason, setPlannedReason] = useState("");
   const [pet, setPet] = useState(false);
   // "failed": the draft waits until they are read (Retry).
   const [services, setServices] = useState<ServiceSettings | "failed" | null>(
@@ -322,6 +325,8 @@ export function LeaseForm({
         setUnitId(reservation.unit_id);
         setTenantId(reservation.customer_id);
         setRent((reservation.agreed_monthly_rent_usd_cents / 100).toFixed(2));
+        setDeposit((reservation.deposit_required_usd_cents / 100).toFixed(2));
+        setDepositTyped(true);
       }
       if (previous !== null) {
         const next =
@@ -445,9 +450,10 @@ export function LeaseForm({
     language === "km" && choice.service.name_km !== null
       ? choice.service.name_km
       : choice.service.name_en;
-  // Only a walk-in Lease takes its Security Deposit here: a Booking's is already held and a
-  // renewal keeps the old Lease's.
-  const walkIn = reservation === null && previous === null;
+  // Every new draft records its Security Deposit (DL-100, DL-101); a renewal keeps the old
+  // Lease's. A Booking's starts at the Reservation's amount and never goes below the money
+  // already received with it.
+  const takesDeposit = previous === null;
   const heldDeposit =
     reservation === null
       ? null
@@ -455,6 +461,8 @@ export function LeaseForm({
           required: reservation.deposit_required_usd_cents,
           received: reservation.deposit_received_usd_cents,
         };
+  // The amount the draft will record: the one typed, or the Reservation's until it is.
+  const bookingDeposit = centsOf(deposit) ?? heldDeposit?.required ?? 0;
 
   function pick(
     list: string[],
@@ -527,9 +535,25 @@ export function LeaseForm({
     if (!/^\d{4}-\d{2}-\d{2}$/.test(end) || end <= start || !monthEnd(end))
       found.end = lt(language, "err_end");
     if (cents === null) found.rent = lt(language, "err_rent");
-    const depositCents = walkIn ? centsOf(deposit) : null;
-    if (walkIn && depositCents === null)
+    const depositCents = takesDeposit ? centsOf(deposit) : null;
+    if (takesDeposit && depositCents === null)
       found.deposit = lt(language, "err_deposit");
+    else if (
+      heldDeposit !== null &&
+      depositCents !== null &&
+      depositCents < heldDeposit.received
+    )
+      found.deposit = lt(
+        language,
+        "err_deposit_below",
+        usdFromCents(heldDeposit.received),
+      );
+    const depositChanged =
+      heldDeposit !== null &&
+      depositCents !== null &&
+      depositCents !== heldDeposit.required;
+    if (depositChanged && depositReason.trim() === "")
+      found.depositReason = lt(language, "err_deposit_reason");
     if (pet && petText.trim() === "") found.pet = lt(language, "err_pet");
     if (services === null || services === "failed")
       found.services = lt(language, "err_svc_wait");
@@ -539,6 +563,11 @@ export function LeaseForm({
     setProblems(found);
     if (cents === null || Object.keys(found).length > 0) return;
     setPlannedCents(depositCents);
+    setPlannedReason(
+      depositChanged
+        ? depositReason.trim()
+        : "Security Deposit on the New Lease form",
+    );
     const signerIds = ids.current.signers;
     const others = signers.filter((id) => id !== tenantId);
     setConfirm({
@@ -613,7 +642,7 @@ export function LeaseForm({
             .planSecurityDeposit(saved.lease_id, {
               plan_id: ids.current.plan,
               required_usd_cents: plannedCents,
-              reason: "Security Deposit on the New Lease form",
+              reason: plannedReason,
             })
             .catch(() => null);
         openPageInAddress("leases", true, saved.lease_id);
@@ -824,7 +853,7 @@ export function LeaseForm({
             />,
             problems.rent,
           )}
-          {walkIn &&
+          {takesDeposit &&
             field(
               "lease-form-deposit",
               lt(language, "deposit_box"),
@@ -839,7 +868,30 @@ export function LeaseForm({
                 value={deposit}
               />,
               problems.deposit,
-              lt(language, "deposit_help"),
+              heldDeposit === null
+                ? lt(language, "deposit_help")
+                : lt(
+                    language,
+                    "deposit_help_booking",
+                    usdFromCents(heldDeposit.received),
+                  ),
+            )}
+          {heldDeposit !== null &&
+            centsOf(deposit) !== null &&
+            centsOf(deposit) !== heldDeposit.required &&
+            field(
+              "lease-form-deposit-reason",
+              lt(language, "deposit_reason"),
+              <input
+                aria-invalid={problems.depositReason !== undefined}
+                id="lease-form-deposit-reason"
+                maxLength={500}
+                onChange={(event) => {
+                  setDepositReason(event.currentTarget.value);
+                }}
+                value={depositReason}
+              />,
+              problems.depositReason,
             )}
           <label className="ui-chk">
             <input
@@ -942,7 +994,7 @@ export function LeaseForm({
                           "pv_deposit_planned",
                           usdFromCents(centsOf(deposit) ?? 0),
                         )
-                    : heldDeposit.received >= heldDeposit.required
+                    : heldDeposit.received >= bookingDeposit
                       ? lt(
                           language,
                           "pv_deposit_full",
@@ -952,12 +1004,9 @@ export function LeaseForm({
                           language,
                           "pv_deposit_booking",
                           usdFromCents(heldDeposit.received),
-                          usdFromCents(heldDeposit.required),
+                          usdFromCents(bookingDeposit),
                           usdFromCents(
-                            Math.max(
-                              0,
-                              heldDeposit.required - heldDeposit.received,
-                            ),
+                            Math.max(0, bookingDeposit - heldDeposit.received),
                           ),
                           dayText(preview.due),
                         )}

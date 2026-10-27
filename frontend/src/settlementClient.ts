@@ -227,6 +227,12 @@ export interface SigningPreview {
     invoice_id: string | null;
   } | null;
   planned_security_deposit_usd_cents: number | null;
+  /** DL-101: the Reservation's Security Deposit a Lease from a Reservation takes over. */
+  held_security_deposit: {
+    deposit_id: string;
+    required_usd_cents: number;
+    received_usd_cents: number;
+  } | null;
 }
 
 function centsField(value: unknown): number {
@@ -247,9 +253,22 @@ function signingPreview(data: SettlementRecord): SigningPreview {
     data.initial === null || data.initial === undefined
       ? null
       : record(data.initial);
+  const held =
+    data.held_security_deposit === null ||
+    data.held_security_deposit === undefined
+      ? null
+      : record(data.held_security_deposit);
   return {
     planned_security_deposit_usd_cents:
       planned === null || planned === undefined ? null : centsField(planned),
+    held_security_deposit:
+      held === null
+        ? null
+        : {
+            deposit_id: textField(held.deposit_id),
+            required_usd_cents: centsField(held.required_usd_cents),
+            received_usd_cents: centsField(held.received_usd_cents),
+          },
     initial:
       initial === null
         ? null
@@ -360,6 +379,11 @@ export interface SettlementApi {
     form: { plan_id: string; required_usd_cents: number; reason: string },
   ) => Promise<SettlementRecord>;
   makeInitialRentInvoice: (
+    leaseId: string,
+    key: string,
+  ) => Promise<SettlementRecord>;
+  /** DL-101: right after signing, the draft's amount becomes the Reservation deposit's. */
+  applyPlannedSecurityDeposit: (
     leaseId: string,
     key: string,
   ) => Promise<SettlementRecord>;
@@ -549,6 +573,12 @@ export const settlementApi: SettlementApi = {
   },
   makeInitialRentInvoice: (leaseId, key) =>
     post(`/api/v1/leases/${id(leaseId)}/initial-rent-invoice`, null, key),
+  applyPlannedSecurityDeposit: (leaseId, key) =>
+    post(
+      `/api/v1/leases/${id(leaseId)}/planned-security-deposit/apply`,
+      null,
+      key,
+    ),
   allocationProposal: (propertyId, paymentId) =>
     read(`/api/v1/payments/${id(paymentId)}/allocation-proposal`, propertyId),
   allocateByProposal: (propertyId, paymentId, proposal, key) =>
