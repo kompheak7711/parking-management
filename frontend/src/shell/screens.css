@@ -2055,7 +2055,8 @@ a.ui-kpi.ui-home-kpi {
 }
 
 .ui-date input[type="text"] {
-  flex: 1 1 auto;
+  /* Basis 0: the box shrinks beside its calendar button instead of pushing it to a new line. */
+  flex: 1 1 0;
   min-width: 0;
 }
 
