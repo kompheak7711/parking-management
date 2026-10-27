@@ -14,6 +14,7 @@ import {
   type LeaseResource,
 } from "../leaseClient";
 import { Problem, useValuesIdentity } from "../leases/LeaseDialogs";
+import { DateInput } from "../shell/DateInput";
 import { dayText } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { Dialog } from "../shell/ui";
@@ -235,17 +236,15 @@ export function HandBackDialog({
           {mt(language, "st2_date")}
           <span className="req">{mt(language, "required")}</span>
         </label>
-        <input
-          aria-invalid={problem !== null}
-          className="ui-num"
+        <DateInput
+          invalid={problem !== null}
           id="hb-day"
           max={today}
           min={first}
-          onChange={(event) => {
-            setDay(event.target.value);
+          onChange={(value) => {
+            setDay(value);
             setProblem(null);
           }}
-          type="date"
           value={day}
         />
         <p className="help">{mt(language, "st2_date_help")}</p>

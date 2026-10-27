@@ -12,6 +12,7 @@ import {
 } from "../leaseClient";
 import type { CustomerApi, CustomerListItem } from "../customerClient";
 import type { ReservationApi } from "../reservationClient";
+import { DateInput } from "../shell/DateInput";
 import { dayText, todayInPhnomPenh, usdFromCents } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { Dialog } from "../shell/ui";
@@ -420,13 +421,12 @@ export function EditDraftDialog({
       {field(
         "lease-edit-start",
         lt(language, "start"),
-        <input
-          aria-invalid={problems.start !== undefined}
+        <DateInput
+          invalid={problems.start !== undefined}
           id="lease-edit-start"
-          onChange={(event) => {
-            setStart(event.currentTarget.value);
+          onChange={(value) => {
+            setStart(value);
           }}
-          type="date"
           value={start}
         />,
         problems.start,
@@ -434,13 +434,12 @@ export function EditDraftDialog({
       {field(
         "lease-edit-end",
         lt(language, "end"),
-        <input
-          aria-invalid={problems.end !== undefined}
+        <DateInput
+          invalid={problems.end !== undefined}
           id="lease-edit-end"
-          onChange={(event) => {
-            setEnd(event.currentTarget.value);
+          onChange={(value) => {
+            setEnd(value);
           }}
-          type="date"
           value={end}
         />,
         problems.end,
@@ -720,15 +719,14 @@ export function MoveInDialog({
     >
       <div className="ui-field">
         <label htmlFor="lease-movein-day">{lt(language, "movein_day")}</label>
-        <input
-          aria-invalid={problems.day !== undefined}
+        <DateInput
+          invalid={problems.day !== undefined}
           id="lease-movein-day"
           max={last}
           min={first}
-          onChange={(event) => {
-            setDay(event.currentTarget.value);
+          onChange={(value) => {
+            setDay(value);
           }}
-          type="date"
           value={day}
         />
         <Problem message={problems.day ?? null} />

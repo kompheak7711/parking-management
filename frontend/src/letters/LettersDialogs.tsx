@@ -5,6 +5,7 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 
 import type { LeaseResource } from "../leaseClient";
+import { DateInput } from "../shell/DateInput";
 import { dayText, todayInPhnomPenh, usdFromCents } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { Dialog } from "../shell/ui";
@@ -473,14 +474,13 @@ export function RecordWarningDialog({
                 {ltr(language, "lw_d_vdate")}
                 <span className="req">{ltr(language, "required")}</span>
               </label>
-              <input
-                aria-invalid={problems.dates !== undefined}
+              <DateInput
+                invalid={problems.dates !== undefined}
                 id="warning-breach"
                 max={today}
-                onChange={(event) => {
-                  setBreach(event.currentTarget.value);
+                onChange={(value) => {
+                  setBreach(value);
                 }}
-                type="date"
                 value={breach}
               />
             </div>
@@ -489,14 +489,13 @@ export function RecordWarningDialog({
                 {ltr(language, "lw_d_wdate")}
                 <span className="req">{ltr(language, "required")}</span>
               </label>
-              <input
-                aria-invalid={problems.dates !== undefined}
+              <DateInput
+                invalid={problems.dates !== undefined}
                 id="warning-given"
                 max={today}
-                onChange={(event) => {
-                  setGiven(event.currentTarget.value);
+                onChange={(value) => {
+                  setGiven(value);
                 }}
-                type="date"
                 value={given}
               />
             </div>

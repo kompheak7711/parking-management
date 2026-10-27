@@ -41,6 +41,15 @@ import {
   type TerminateDraft,
 } from "./TerminateDialogs";
 import { stepOf } from "../moveout/moveoutData";
+import {
+  paymentsApi as defaultPaymentsApi,
+  type PaymentsApi,
+} from "../payments/paymentsClient";
+import {
+  settlementApi as defaultSettlementApi,
+  type SettlementApi,
+} from "../settlementClient";
+import { ReceiveDepositDialog } from "./ReceiveDepositDialog";
 import { daysBetween, initialRent, kindOf } from "./leasesData";
 import { hasLeaseText, lt } from "./text";
 
@@ -82,6 +91,12 @@ export interface LeaseDetailProps {
   capabilities: ReadonlySet<string> | null;
   /** Letters opens the Lease with the Terminate dialog on the Rent ground. */
   terminateOnOpen?: boolean;
+  /** V1-060 B6: Receive Security Deposit. */
+  settlementApi?: Pick<
+    SettlementApi,
+    "createSecurityDeposit" | "receiveIntoDeposit"
+  >;
+  paymentsApi?: PaymentsApi;
 }
 
 export function LeaseDetail({
@@ -95,6 +110,8 @@ export function LeaseDetail({
   lettersApi,
   capabilities,
   terminateOnOpen = false,
+  settlementApi = defaultSettlementApi,
+  paymentsApi = defaultPaymentsApi,
 }: LeaseDetailProps) {
   const [lease, setLease] = useState<LeaseResource | null>(null);
   const [timeline, setTimeline] = useState<LeaseTimelineEvent[]>([]);
@@ -106,7 +123,14 @@ export function LeaseDetail({
   const [historyIncomplete, setHistoryIncomplete] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
   const [dialog, setDialog] = useState<
-    "sign" | "edit" | "cancel" | "movein" | "terminate" | "notice" | null
+    | "sign"
+    | "edit"
+    | "cancel"
+    | "movein"
+    | "terminate"
+    | "notice"
+    | "deposit"
+    | null
   >(terminateOnOpen ? "terminate" : null);
   const [draft, setDraft] = useState<TerminateDraft>(() =>
     terminateDraft(terminateOnOpen ? "RENT" : null),
@@ -278,6 +302,19 @@ export function LeaseDetail({
     deposits.state === "shown"
       ? (deposits.items.find((item) => item.deposit_type === "PET") ?? null)
       : null;
+  // A signed Lease still running takes its Security Deposit here: a walk-in Lease that has
+  // none yet (a renewal keeps the earlier one), or one not fully received.
+  const mayReceiveDeposit =
+    signed &&
+    lease.actual_termination_date === null &&
+    deposits.state === "shown" &&
+    may("payments.record") &&
+    may("payments.allocate") &&
+    (security === null
+      ? lease.predecessor_lease_id === null &&
+        lease.security_deposit_id === null &&
+        may("deposits.manage")
+      : security.outstanding_required_usd_cents > 0);
   const history = [...timeline].sort((left_, right) =>
     right.occurred_at.localeCompare(left_.occurred_at),
   );
@@ -314,7 +351,14 @@ export function LeaseDetail({
   }
 
   function open(
-    which: "sign" | "edit" | "cancel" | "movein" | "terminate" | "notice",
+    which:
+      | "sign"
+      | "edit"
+      | "cancel"
+      | "movein"
+      | "terminate"
+      | "notice"
+      | "deposit",
   ) {
     setNotice(null);
     setWarning(null);
@@ -809,6 +853,20 @@ export function LeaseDetail({
             )}
             {deposits.state === "shown" && (
               <>
+                {mayReceiveDeposit && (
+                  <div className="ui-actions">
+                    <button
+                      className="ui-btn primary"
+                      onClick={() => {
+                        open("deposit");
+                      }}
+                      type="button"
+                    >
+                      <Icon name="plus" small />
+                      {lt(language, "rd_button")}
+                    </button>
+                  </div>
+                )}
                 <h3>{lt(language, "dep_sec")}</h3>
                 {security === null ? (
                   <p className="ui-muted">{lt(language, "no_deposit")}</p>
@@ -983,6 +1041,24 @@ export function LeaseDetail({
             setDialog("terminate");
             setNotice(message);
           }}
+        />
+      )}
+      {dialog === "deposit" && mayReceiveDeposit && (
+        <ReceiveDepositDialog
+          language={language}
+          lease={lease}
+          onClose={() => {
+            setDialog(null);
+          }}
+          onSaved={(message) => {
+            setDialog(null);
+            setNotice(message);
+            load();
+          }}
+          paymentsApi={paymentsApi}
+          propertyId={propertyId}
+          security={security}
+          settlementApi={settlementApi}
         />
       )}
       {dialog === "edit" && lease.status === "DRAFTED" && (

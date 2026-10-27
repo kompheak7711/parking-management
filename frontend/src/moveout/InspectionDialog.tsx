@@ -12,6 +12,7 @@ import type { InvoiceResource } from "../invoiceClient";
 import { centsOf } from "../invoices/invoicesData";
 import type { LeaseResource } from "../leaseClient";
 import { Problem } from "../leases/LeaseDialogs";
+import { DateInput } from "../shell/DateInput";
 import { dayText } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { Dialog } from "../shell/ui";
@@ -313,20 +314,18 @@ export function InspectionDialog({
             {mt(language, "st4_date")}
             <span className="req">{mt(language, "required")}</span>
           </label>
-          <input
-            aria-describedby="in-day-help"
-            aria-invalid={bad.has("date")}
-            className="ui-num"
+          <DateInput
+            describedBy="in-day-help"
+            invalid={bad.has("date")}
             disabled={frozen}
             id="in-day"
             max={today}
             min={handBackDay}
-            onChange={(event) => {
-              setDay(event.target.value);
+            onChange={(value) => {
+              setDay(value);
               setBad(new Set());
               setProblem(null);
             }}
-            type="date"
             value={day}
           />
           <p className="help" id="in-day-help">

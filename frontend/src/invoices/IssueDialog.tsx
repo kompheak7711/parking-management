@@ -9,6 +9,7 @@ import {
   type InvoiceApi,
   type InvoiceResource,
 } from "../invoiceClient";
+import { DateInput } from "../shell/DateInput";
 import { usdFromCents } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { Dialog } from "../shell/ui";
@@ -118,17 +119,16 @@ export function IssueDialog({
         <>
           <div className="ui-field">
             <label htmlFor="iss-date">{ivt(language, "iss_date")}</label>
-            <input
-              aria-describedby={
+            <DateInput
+              describedBy={
                 problems.includes("date") ? "iss-date-err" : undefined
               }
-              aria-invalid={problems.includes("date")}
+              invalid={problems.includes("date")}
               id="iss-date"
               min={today}
-              onChange={(event) => {
-                setDue(event.currentTarget.value);
+              onChange={(value) => {
+                setDue(value);
               }}
-              type="date"
               value={due}
             />
             {problems.includes("date") && (

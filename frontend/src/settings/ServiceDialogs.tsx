@@ -7,6 +7,7 @@
 import { type FormEvent, type ReactNode, useState } from "react";
 
 import { centsOf } from "../invoices/invoicesData";
+import { DateInput } from "../shell/DateInput";
 import { Icon } from "../shell/icons";
 import { Chip, Dialog } from "../shell/ui";
 import type { Language } from "../signInText";
@@ -319,15 +320,14 @@ export function ServiceDialog({
             required={sst(language, "required")}
           >
             {(describedBy) => (
-              <input
-                aria-describedby={describedBy}
-                aria-invalid={errors["sv-day"] !== undefined}
+              <DateInput
+                describedBy={describedBy}
+                invalid={errors["sv-day"] !== undefined}
                 id="sv-day"
                 min={`${today.slice(0, 7)}-01`}
-                onChange={(event) => {
-                  setDay(event.currentTarget.value);
+                onChange={(value) => {
+                  setDay(value);
                 }}
-                type="date"
                 value={day}
               />
             )}

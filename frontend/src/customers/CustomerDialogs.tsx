@@ -12,6 +12,8 @@ import {
   type CustomerListItem,
   type CustomerSource,
 } from "../customerClient";
+import { DateInput } from "../shell/DateInput";
+import { todayInPhnomPenh } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { hashForPage } from "../shell/navigation";
 import { Dialog } from "../shell/ui";
@@ -161,7 +163,19 @@ function CustomerFields({
         { maxLength: 255, autoComplete: "off" },
       )}
       <div className="ui-row2">
-        {box("date_of_birth", ct(language, "dob"), { type: "date" })}
+        <div className="ui-field">
+          <label htmlFor="customer-date_of_birth">{ct(language, "dob")}</label>
+          <DateInput
+            id="customer-date_of_birth"
+            invalid={problems.date_of_birth !== undefined}
+            max={todayInPhnomPenh()}
+            onChange={(value) => {
+              onChange("date_of_birth", value);
+            }}
+            value={values.date_of_birth}
+          />
+          <Problem message={problems.date_of_birth} />
+        </div>
         <div className="ui-field">
           <label htmlFor="customer-gender">{ct(language, "gender")}</label>
           <select
@@ -267,6 +281,8 @@ export interface AddCustomerProps {
   onCancel: () => void;
   onSaved: (customer: CustomerDetail) => void;
   onDirty: (dirty: boolean) => void;
+  /** V1-060 B6: shown inside a dialog, which gives the title; no Back link or page head. */
+  inDialog?: boolean;
 }
 
 /** "Add Customer" is a form page, not a dialog (owner, 13/10/2026 18:27). */
@@ -278,6 +294,7 @@ export function AddCustomerPage({
   onCancel,
   onSaved,
   onDirty,
+  inDialog = false,
 }: AddCustomerProps) {
   const [values, setValues] = useState<Values>(EMPTY);
   const [problems, setProblems] = useState<Problems>({});
@@ -355,16 +372,20 @@ export function AddCustomerPage({
 
   return (
     <>
-      <button className="ui-crumb" onClick={onCancel} type="button">
-        <Icon name="back" small />
-        {ct(language, "back")}
-      </button>
-      <div className="ui-head">
-        <div>
-          <h2>{ct(language, "add")}</h2>
-          <p>{ct(language, "add_sub")}</p>
-        </div>
-      </div>
+      {!inDialog && (
+        <>
+          <button className="ui-crumb" onClick={onCancel} type="button">
+            <Icon name="back" small />
+            {ct(language, "back")}
+          </button>
+          <div className="ui-head">
+            <div>
+              <h2>{ct(language, "add")}</h2>
+              <p>{ct(language, "add_sub")}</p>
+            </div>
+          </div>
+        </>
+      )}
       <form
         aria-label={ct(language, "add")}
         className="ui-card ui-form ui-formpage"
@@ -674,6 +695,44 @@ export function DeactivateDialog({
           <p>{failure}</p>
         </Notice>
       )}
+    </Dialog>
+  );
+}
+
+/** V1-060 B6 (owner 27/10/2026): Add Customer from another form (New Lease, Make Reservation). */
+export function NewCustomerDialog({
+  language,
+  api,
+  gate,
+  propertyId,
+  onClose,
+  onSaved,
+}: {
+  language: Language;
+  api: CustomerApi;
+  gate: CustomerCommandGate;
+  propertyId: string;
+  onClose: () => void;
+  onSaved: (customer: CustomerDetail) => void;
+}) {
+  return (
+    <Dialog
+      closeLabel={ct(language, "cancel")}
+      noButtons
+      onClose={onClose}
+      title={ct(language, "add")}
+      wide
+    >
+      <AddCustomerPage
+        api={api}
+        gate={gate}
+        inDialog
+        language={language}
+        onCancel={onClose}
+        onDirty={() => undefined}
+        onSaved={onSaved}
+        propertyId={propertyId}
+      />
     </Dialog>
   );
 }

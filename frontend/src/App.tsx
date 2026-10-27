@@ -55,7 +55,6 @@ import {
   EffectiveConfigurationApi,
   effectiveConfigurationApi,
 } from "./configurationClient";
-import { ReservationManagement } from "./ReservationManagement";
 import {
   ReservationApi,
   reservationApi as reservationClient,
@@ -134,7 +133,6 @@ import { openPageInAddress, useHashPage } from "./shell/useHashPage";
 import type { CustomerCommandGate } from "./customers/commands";
 import { CustomersPage } from "./customers/CustomersPage";
 import { ReservationsPage } from "./reservations/ReservationsPage";
-import { rt } from "./reservations/text";
 import { ct } from "./customers/text";
 import { UnitsPage } from "./units/UnitsPage";
 import { type ActorAccessApi, actorAccessApi } from "./shell/accessClient";
@@ -1843,26 +1841,18 @@ export function App({
         data-page="reservations"
         hidden={!shown("reservations")}
       >
+        {/* V1-060 B6: Make Reservation is in the design now; the earlier form is gone. */}
         <ReservationsPage
           active={shown("reservations")}
           api={reservationApi}
           capabilities={capabilities}
+          customerApi={customerApi ?? defaultCustomerApi}
+          customerGate={customerGate}
           language={language}
+          paymentsApi={paymentsApi}
           propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+          unitApi={unitApi ?? defaultUnitApi}
         />
-        {/* V1-058 R3: Make Reservation receives the deposit, so it stays in the earlier
-            English form, folded, until Payments are rebuilt (step R5). */}
-        <details className="ui-records">
-          <summary lang={language}>
-            <span className="ui-records-title">{rt(language, "records")}</span>
-            <span className="ui-small ui-muted">
-              {rt(language, "records_note")}
-            </span>
-          </summary>
-          <div lang="en">
-            <ReservationManagement api={reservationApi} />
-          </div>
-        </details>
       </div>
       <div className="shell-page" data-page="leases" hidden={!shown("leases")}>
         <LeasesPage
@@ -1873,6 +1863,8 @@ export function App({
           language={language}
           propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
           customerApi={customerApi ?? defaultCustomerApi}
+          customerCreateApi={customerApi ?? defaultCustomerApi}
+          customerGate={customerGate}
           reservationApi={reservationApi}
           unitApi={unitApi ?? defaultUnitApi}
           lettersApi={lettersApi}

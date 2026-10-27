@@ -12,6 +12,7 @@ import {
   type ReservationApi,
   type ReservationResource,
 } from "../reservationClient";
+import { DateInput } from "../shell/DateInput";
 import { dayText, todayInPhnomPenh, usdFromCents } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { Dialog } from "../shell/ui";
@@ -172,15 +173,14 @@ export function ExtendDialog({
       </p>
       <div className="ui-field">
         <label htmlFor="reservation-new-date">{rt(language, "new_date")}</label>
-        <input
-          aria-invalid={wrong}
+        <DateInput
+          invalid={wrong}
           id="reservation-new-date"
           max={latest}
           min={earliest}
-          onChange={(event) => {
-            setDate(event.currentTarget.value);
+          onChange={(value) => {
+            setDate(value);
           }}
-          type="date"
           value={date}
         />
         <Problem

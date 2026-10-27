@@ -448,7 +448,10 @@ export function UnitDetail({
         </div>
         <div className="ui-actions">
           {unit.status === "VACANT" && may("reservations.create") && (
-            <a className="ui-btn primary" href={hashForPage("reservations")}>
+            <a
+              className="ui-btn primary"
+              href={hashForPage("reservations", `new:${unit.unit_id}`)}
+            >
               <Icon name="calendar" />
               {ut(language, "make_reservation")}
             </a>

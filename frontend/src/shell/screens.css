@@ -2012,3 +2012,93 @@ a.ui-kpi.ui-home-kpi {
 .ui-finding .ui-mhead {
   justify-content: space-between;
 }
+
+/* V1-060 B6 (owner 27/10/2026): every box and drop-down the same height. Safari draws a
+   drop-down at its own small size unless its own look is turned off, so each select gets the
+   plain look and a drawn arrow. */
+.shell-view select,
+.ui-dlg select {
+  -webkit-appearance: none;
+  appearance: none;
+  min-height: 46px;
+  padding-right: 36px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%2379776f' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+
+.shell-view select[multiple],
+.ui-dlg select[multiple] {
+  padding-right: 12px;
+  background-image: none;
+}
+
+.shell-view input.ui-search,
+.shell-view select.ui-sel {
+  min-height: 46px;
+}
+
+.shell-view input:not([type="checkbox"], [type="radio"], [type="hidden"]),
+.ui-dlg input:not([type="checkbox"], [type="radio"], [type="hidden"]) {
+  box-sizing: border-box;
+  line-height: normal;
+}
+
+/* The typed date box (shell/DateInput.tsx): the box, then its calendar button. */
+.ui-date {
+  position: relative;
+  display: flex;
+  gap: 6px;
+  align-items: stretch;
+  width: 100%;
+}
+
+.ui-date input[type="text"] {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ui-date input.ui-date-picker {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 1px;
+  min-height: 0;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ui-date .ui-date-button {
+  flex: 0 0 46px;
+  min-height: 46px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.ui-date .ui-date-button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+/* V1-060 B6: a drop-down with a button beside it (Customer and "New Customer"). */
+.ui-pickrow {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.ui-pickrow select {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ui-pickrow .ui-btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}

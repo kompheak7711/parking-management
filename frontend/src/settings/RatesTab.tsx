@@ -23,6 +23,7 @@ import {
   type ServiceRate,
   type UtilityRate,
 } from "../configurationClient";
+import { DateInput } from "../shell/DateInput";
 import { dayText, todayInPhnomPenh, usdFromCents } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { Chip, Dialog } from "../shell/ui";
@@ -1037,15 +1038,14 @@ function UtilityDialog({
           required={required}
         >
           {(describedBy) => (
-            <input
-              aria-describedby={describedBy}
-              aria-invalid={errors["ur-day"] !== undefined}
+            <DateInput
+              describedBy={describedBy}
+              invalid={errors["ur-day"] !== undefined}
               id="ur-day"
               min={nextMonthDay(today, READING_DAY)}
-              onChange={(event) => {
-                setDay(event.currentTarget.value);
+              onChange={(value) => {
+                setDay(value);
               }}
-              type="date"
               value={day}
             />
           )}
@@ -1059,15 +1059,14 @@ function UtilityDialog({
         required={required}
       >
         {(describedBy) => (
-          <input
-            aria-describedby={describedBy}
-            aria-invalid={errors["ur-told"] !== undefined}
+          <DateInput
+            describedBy={describedBy}
+            invalid={errors["ur-told"] !== undefined}
             id="ur-told"
             max={today}
-            onChange={(event) => {
-              setToldOn(event.currentTarget.value);
+            onChange={(value) => {
+              setToldOn(value);
             }}
-            type="date"
             value={toldOn}
           />
         )}
@@ -1188,15 +1187,14 @@ function ServiceRateDialog({
           required={required}
         >
           {(describedBy) => (
-            <input
-              aria-describedby={describedBy}
-              aria-invalid={errors["sr-day"] !== undefined}
+            <DateInput
+              describedBy={describedBy}
+              invalid={errors["sr-day"] !== undefined}
               id="sr-day"
               min={nextMonthDay(today, 1)}
-              onChange={(event) => {
-                setDay(event.currentTarget.value);
+              onChange={(value) => {
+                setDay(value);
               }}
-              type="date"
               value={day}
             />
           )}

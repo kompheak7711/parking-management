@@ -291,7 +291,7 @@ describe("Reservation page", () => {
     fireEvent.click(await screen.findByRole("button", { name: /^Extend/ }));
     const dialog = screen.getByRole("dialog", { name: "Extend · U102" });
     const box = within(dialog).getByLabelText("New expiration date");
-    expect(box).toHaveValue(latest);
+    expect(box).toHaveValue(dayText(dayText(latest)));
     fireEvent.change(box, { target: { value: addDays(latest, 1) } });
     fireEvent.click(within(dialog).getByRole("button", { name: "Extend" }));
     expect(within(dialog).getByText(/^Pick a date after/)).toBeInTheDocument();

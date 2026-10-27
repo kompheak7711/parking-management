@@ -9,6 +9,7 @@ import {
   MEASUREMENT_UNIT_CODES,
   measurementUnitLabel,
 } from "../measurementUnits";
+import { DateInput } from "../shell/DateInput";
 import { dayText } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { hashForPage } from "../shell/navigation";
@@ -872,17 +873,16 @@ function AddMeterDialog({
       </div>
       <div className="ui-field">
         <label htmlFor="add-day">{utt(language, "mt_installed")}</label>
-        <input
-          aria-describedby={
+        <DateInput
+          describedBy={
             problems.installed === undefined ? undefined : "add-day-err"
           }
-          aria-invalid={problems.installed !== undefined}
+          invalid={problems.installed !== undefined}
           id="add-day"
           max={today}
-          onChange={(event) => {
-            setInstalled(event.currentTarget.value);
+          onChange={(value) => {
+            setInstalled(value);
           }}
-          type="date"
           value={installed}
         />
         <FieldError id="add-day" text={problems.installed} />
@@ -1039,18 +1039,17 @@ function ReplaceMeterDialog({
           {utt(language, "mt_found")}
           <span className="req">{utt(language, "required")}</span>
         </label>
-        <input
-          aria-describedby={
+        <DateInput
+          describedBy={
             problems.found === undefined ? undefined : "rp-found-err"
           }
-          aria-invalid={problems.found !== undefined}
+          invalid={problems.found !== undefined}
           id="rp-found"
           max={today}
           min={lastGood?.reading_date}
-          onChange={(event) => {
-            setFound(event.currentTarget.value);
+          onChange={(value) => {
+            setFound(value);
           }}
-          type="date"
           value={found}
         />
         {lastGood !== undefined && (
@@ -1062,17 +1061,14 @@ function ReplaceMeterDialog({
       </div>
       <div className="ui-field">
         <label htmlFor="rp-day">{utt(language, "mt_new_day")}</label>
-        <input
-          aria-describedby={
-            problems.putIn === undefined ? undefined : "rp-day-err"
-          }
-          aria-invalid={problems.putIn !== undefined}
+        <DateInput
+          describedBy={problems.putIn === undefined ? undefined : "rp-day-err"}
+          invalid={problems.putIn !== undefined}
           id="rp-day"
           max={today}
-          onChange={(event) => {
-            setPutIn(event.currentTarget.value);
+          onChange={(value) => {
+            setPutIn(value);
           }}
-          type="date"
           value={putIn}
         />
         <FieldError id="rp-day" text={problems.putIn} />

@@ -52,6 +52,7 @@ import {
 } from "./moveoutClient";
 import { MoveoutPage } from "./MoveoutPage";
 import { readPreview, settlementOf as settlementOfLease } from "./settlement";
+import { dayText } from "../shell/format";
 
 const TODAY = "2026-10-25";
 
@@ -1627,8 +1628,11 @@ describe("Move-out", () => {
     const dialog = screen.getByRole("dialog");
     expect(within(dialog).getByText("No damage found.")).toBeTruthy();
     const date = within(dialog).getByLabelText(/Inspection date/);
-    expect((date as HTMLInputElement).value).toBe(TODAY);
-    expect(date.getAttribute("min")).toBe("2026-10-12");
+    expect((date as HTMLInputElement).value).toBe(dayText(TODAY));
+    // The calendar beside the typed box offers no day before the hand-back.
+    expect(
+      date.parentElement?.querySelector(".ui-date-picker")?.getAttribute("min"),
+    ).toBe("2026-10-12");
     fireEvent.click(
       within(dialog).getByRole("button", { name: "Add finding" }),
     );

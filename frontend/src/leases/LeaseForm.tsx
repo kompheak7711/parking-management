@@ -11,6 +11,8 @@
 import { FormEvent, ReactNode, useEffect, useRef, useState } from "react";
 
 import type { CustomerApi, CustomerListItem } from "../customerClient";
+import type { CustomerCommandGate } from "../customers/commands";
+import { NewCustomerDialog } from "../customers/CustomerDialogs";
 import {
   LeaseUnavailableError,
   type LeaseApi,
@@ -30,6 +32,7 @@ import {
   ServiceSettingsError,
   serviceSettingsApi,
 } from "../settings/serviceSettingsClient";
+import { DateInput } from "../shell/DateInput";
 import { dayText, todayInPhnomPenh, usdFromCents } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { openPageInAddress } from "../shell/useHashPage";
@@ -126,6 +129,9 @@ export interface LeaseFormProps {
   servicesApi?: Pick<ServiceSettingsApi, "read" | "addService">;
   /** The Unit's meters; the real server when not given. */
   metersApi?: Pick<UtilityApi, "loadMeters">;
+  /** V1-060 B6: New Customer beside the Primary Tenant; both are needed to show it. */
+  customerCreateApi?: CustomerApi;
+  customerGate?: CustomerCommandGate;
 }
 
 export function LeaseForm({
@@ -138,6 +144,8 @@ export function LeaseForm({
   reservationApi,
   servicesApi = serviceSettingsApi,
   metersApi = utilityApi,
+  customerCreateApi,
+  customerGate,
 }: LeaseFormProps) {
   const today = todayInPhnomPenh();
   const [sources, setSources] = useState<Sources | null>(null);
@@ -161,6 +169,7 @@ export function LeaseForm({
     kinds: ("ELECTRICITY" | "WATER")[];
   } | null>(null);
   const [adding, setAdding] = useState(false);
+  const [addingCustomer, setAddingCustomer] = useState(false);
   const [addBusy, setAddBusy] = useState(false);
   const [addProblem, setAddProblem] = useState<string | null>(null);
   const [addDone, setAddDone] = useState<string | null>(null);
@@ -687,25 +696,42 @@ export function LeaseForm({
             fixedParty ? (
               <input id="lease-form-tenant" readOnly value={nameOf(tenantId)} />
             ) : (
-              <select
-                aria-invalid={problems.tenant !== undefined}
-                id="lease-form-tenant"
-                onChange={(event) => {
-                  setTenantId(event.currentTarget.value);
-                }}
-                value={tenantId}
-              >
-                <option value="">{lt(language, "choose_customer")}</option>
-                {sources.customers.map((customer) => (
-                  <option
-                    key={customer.customer_id}
-                    value={customer.customer_id}
-                  >
-                    {customer.legal_name}
-                    {customer.phone_number ? ` · ${customer.phone_number}` : ""}
-                  </option>
-                ))}
-              </select>
+              <div className="ui-pickrow">
+                <select
+                  aria-invalid={problems.tenant !== undefined}
+                  id="lease-form-tenant"
+                  onChange={(event) => {
+                    setTenantId(event.currentTarget.value);
+                  }}
+                  value={tenantId}
+                >
+                  <option value="">{lt(language, "choose_customer")}</option>
+                  {sources.customers.map((customer) => (
+                    <option
+                      key={customer.customer_id}
+                      value={customer.customer_id}
+                    >
+                      {customer.legal_name}
+                      {customer.phone_number
+                        ? ` · ${customer.phone_number}`
+                        : ""}
+                    </option>
+                  ))}
+                </select>
+                {customerCreateApi !== undefined &&
+                  customerGate !== undefined && (
+                    <button
+                      className="ui-btn"
+                      onClick={() => {
+                        setAddingCustomer(true);
+                      }}
+                      type="button"
+                    >
+                      <Icon name="plus" small />
+                      {lt(language, "new_customer")}
+                    </button>
+                  )}
+              </div>
             ),
             problems.tenant,
           )}
@@ -728,16 +754,14 @@ export function LeaseForm({
             {field(
               "lease-form-start",
               lt(language, "start"),
-              <input
-                aria-invalid={problems.start !== undefined}
+              <DateInput
+                invalid={problems.start !== undefined}
                 id="lease-form-start"
-                onChange={(event) => {
-                  const value = event.currentTarget.value;
+                onChange={(value) => {
                   setStart(value);
                   if (/^\d{4}-\d{2}-\d{2}$/.test(value))
                     setEnd(oneYearEnd(value));
                 }}
-                type="date"
                 value={start}
               />,
               problems.start,
@@ -745,13 +769,12 @@ export function LeaseForm({
             {field(
               "lease-form-end",
               lt(language, "end"),
-              <input
-                aria-invalid={problems.end !== undefined}
+              <DateInput
+                invalid={problems.end !== undefined}
                 id="lease-form-end"
-                onChange={(event) => {
-                  setEnd(event.currentTarget.value);
+                onChange={(value) => {
+                  setEnd(value);
                 }}
-                type="date"
                 value={end}
               />,
               problems.end,
@@ -905,6 +928,44 @@ export function LeaseForm({
           )}
         </section>
       </form>
+      {addingCustomer &&
+        customerCreateApi !== undefined &&
+        customerGate !== undefined && (
+          <NewCustomerDialog
+            api={customerCreateApi}
+            gate={customerGate}
+            language={language}
+            onClose={() => {
+              setAddingCustomer(false);
+            }}
+            onSaved={(customer) => {
+              setSources((current) =>
+                current === null
+                  ? current
+                  : {
+                      ...current,
+                      customers: [
+                        ...current.customers.filter(
+                          (item) => item.customer_id !== customer.customer_id,
+                        ),
+                        {
+                          customer_id: customer.customer_id,
+                          legal_name: customer.legal_name,
+                          phone_number: customer.phone_number ?? null,
+                          active: true,
+                          relationship_indicators: [],
+                        },
+                      ].sort((left, right) =>
+                        left.legal_name.localeCompare(right.legal_name),
+                      ),
+                    },
+              );
+              setTenantId(customer.customer_id);
+              setAddingCustomer(false);
+            }}
+            propertyId={propertyId}
+          />
+        )}
       {adding && services !== null && services !== "failed" && (
         <ServiceDialog
           busy={addBusy}

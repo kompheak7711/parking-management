@@ -79,6 +79,7 @@ export function Dialog({
   busy = false,
   wide = false,
   actions,
+  noButtons = false,
 }: {
   title: string;
   children: ReactNode;
@@ -91,6 +92,8 @@ export function Dialog({
   wide?: boolean;
   /** More buttons after Close, for a dialog without a form (such as Reject and Confirm). */
   actions?: ReactNode;
+  /** V1-060 B6: the content brings its own buttons (an embedded form such as Add Customer). */
+  noButtons?: boolean;
 }) {
   const headingId = useId();
   const box = useRef<HTMLDivElement>(null);
@@ -179,7 +182,7 @@ export function Dialog({
         {onSubmit === undefined ? (
           <>
             {children}
-            {buttons}
+            {!noButtons && buttons}
           </>
         ) : (
           <form className="ui-form" noValidate onSubmit={onSubmit}>

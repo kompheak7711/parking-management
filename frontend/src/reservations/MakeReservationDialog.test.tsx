@@ -1,0 +1,226 @@
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+import type { CustomerApi } from "../customerClient";
+import type { PaymentsApi } from "../payments/paymentsClient";
+import type { ReservationApi, ReservationResource } from "../reservationClient";
+import { DateInput, parseDay } from "../shell/DateInput";
+import { dayText, todayInPhnomPenh } from "../shell/format";
+import type { UnitApi, UnitResource } from "../unitClient";
+import {
+  MakeReservationDialog,
+  suggestedDeposit,
+} from "./MakeReservationDialog";
+import { addDays } from "./reservationsData";
+
+afterEach(cleanup);
+
+const today = todayInPhnomPenh();
+
+function apis() {
+  const unitApi = {
+    list: vi.fn(() =>
+      Promise.resolve({
+        items: [
+          {
+            unit_id: "unit-2",
+            unit_number: "U102",
+            status: "VACANT",
+          } as unknown as UnitResource,
+        ],
+        next_cursor: null,
+      }),
+    ),
+  } as unknown as Pick<UnitApi, "list">;
+  const customerApi = {
+    list: vi.fn(() =>
+      Promise.resolve({
+        items: [
+          {
+            customer_id: "customer-dara",
+            legal_name: "Sok Dara",
+            phone_number: null,
+            active: true,
+            relationship_indicators: [],
+          },
+        ],
+        next_cursor: null,
+      }),
+    ),
+  } as unknown as CustomerApi;
+  const confirm = vi
+    .fn<PaymentsApi["confirm"]>()
+    .mockResolvedValue({ paymentId: "payment-1", receiptNumber: "RC0001" });
+  const paymentsApi = {
+    methods: vi.fn(() =>
+      Promise.resolve([
+        { id: "method-cash", code: "CASH", displayName: "Cash" },
+      ]),
+    ),
+    confirm,
+  } as unknown as PaymentsApi;
+  const create = vi
+    .fn<ReservationApi["create"]>()
+    .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+    .mockResolvedValue({
+      reservation_id: "saved",
+    } as unknown as ReservationResource);
+  const api = { create } as unknown as ReservationApi;
+  return { unitApi, customerApi, paymentsApi, confirm, api, create };
+}
+
+describe("Date box (V1-060 B6)", () => {
+  it("TEST-FE-1012 reads dd/mm/yyyy and yyyy-mm-dd, adds the slashes while typing and sends yyyy-mm-dd", () => {
+    expect(parseDay("15/03/1986")).toBe("1986-03-15");
+    expect(parseDay("5.3.1986")).toBe("1986-03-05");
+    expect(parseDay("1986-03-15")).toBe("1986-03-15");
+    expect(parseDay("31/02/2026")).toBe("");
+    expect(parseDay("15/03")).toBe("");
+    const onChange = vi.fn();
+    render(
+      <>
+        <label htmlFor="born">Date of birth</label>
+        <DateInput id="born" onChange={onChange} value="" />
+      </>,
+    );
+    const box = screen.getByLabelText("Date of birth");
+    fireEvent.change(box, { target: { value: "15031986" } });
+    expect(box).toHaveValue("15/03/1986");
+    expect(onChange).toHaveBeenLastCalledWith("1986-03-15");
+    fireEvent.change(box, { target: { value: "15/13/1986" } });
+    expect(onChange).toHaveBeenLastCalledWith("15/13/1986");
+  });
+});
+
+describe("Make Reservation (V1-060 B6)", () => {
+  it("TEST-FE-1013 saves the deposit as a Payment first, then the Reservation with that Payment; Try again never pays twice", async () => {
+    const { unitApi, customerApi, paymentsApi, confirm, api, create } = apis();
+    const onSaved = vi.fn();
+    render(
+      <MakeReservationDialog
+        api={api}
+        customerApi={customerApi}
+        language="en"
+        onClose={vi.fn()}
+        onSaved={onSaved}
+        paymentsApi={paymentsApi}
+        propertyId="property-1"
+        unitApi={unitApi}
+      />,
+    );
+    const dialog = await screen.findByRole("dialog", {
+      name: "Make Reservation",
+    });
+    await within(dialog).findByLabelText("Unit");
+    expect(within(dialog).getByLabelText("Reservation Date")).toHaveValue(
+      dayText(today),
+    );
+    expect(within(dialog).getByLabelText("Expires on")).toHaveValue(
+      dayText(addDays(today, 21)),
+    );
+    fireEvent.change(within(dialog).getByLabelText("Unit"), {
+      target: { value: "unit-2" },
+    });
+    fireEvent.change(within(dialog).getByLabelText("Customer"), {
+      target: { value: "customer-dara" },
+    });
+    fireEvent.change(
+      within(dialog).getByLabelText("Agreed monthly Rent (USD)"),
+      {
+        target: { value: "500" },
+      },
+    );
+    expect(within(dialog).getByLabelText("Received now (USD)")).toHaveValue(
+      "100.00",
+    );
+    expect(
+      within(dialog).getByLabelText("Full Security Deposit (USD)"),
+    ).toHaveValue("500.00");
+    fireEvent.change(
+      await within(dialog).findByLabelText("How the money came"),
+      {
+        target: { value: "method-cash" },
+      },
+    );
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save Reservation" }),
+    );
+    fireEvent.click(
+      await within(dialog).findByRole("button", { name: "Try again" }),
+    );
+    await waitFor(() => {
+      expect(onSaved).toHaveBeenCalled();
+    });
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(confirm.mock.calls[0]?.[1]).toMatchObject({
+      payer_customer_id: "customer-dara",
+      payment_method_id: "method-cash",
+      evidence_reference: "Cash received, Cash",
+      payer_intent_memo:
+        "Security Deposit received with the Reservation of U102",
+      amount: { currency: "USD", minor_units: 10_000 },
+    });
+    expect(create).toHaveBeenCalledTimes(2);
+    expect(create.mock.calls[0]?.[1]).toMatchObject({
+      unit_id: "unit-2",
+      customer_id: "customer-dara",
+      reservation_date: today,
+      expiration_date: addDays(today, 21),
+      agreed_monthly_rent_usd_cents: 50_000,
+      accepted_initial_deposit_usd_cents: 10_000,
+      required_security_deposit_usd_cents: 50_000,
+      payment_id: "payment-1",
+    });
+    expect(create.mock.calls[1]?.[1]).toEqual(create.mock.calls[0]?.[1]);
+    expect(create.mock.calls[1]?.[2]).toBe(create.mock.calls[0]?.[2]);
+  });
+
+  it("TEST-FE-1014 suggests 20% of the Rent and asks why when another amount is received", async () => {
+    expect(suggestedDeposit(45_000)).toBe(9_000);
+    expect(suggestedDeposit(45_003)).toBe(9_001);
+    const { unitApi, customerApi, paymentsApi, confirm, api } = apis();
+    render(
+      <MakeReservationDialog
+        api={api}
+        customerApi={customerApi}
+        language="en"
+        onClose={vi.fn()}
+        onSaved={vi.fn()}
+        paymentsApi={paymentsApi}
+        propertyId="property-1"
+        unitApi={unitApi}
+        unitId="unit-2"
+      />,
+    );
+    const dialog = await screen.findByRole("dialog", {
+      name: "Make Reservation",
+    });
+    expect(await within(dialog).findByLabelText("Unit")).toHaveValue("unit-2");
+    fireEvent.change(
+      within(dialog).getByLabelText("Agreed monthly Rent (USD)"),
+      {
+        target: { value: "450" },
+      },
+    );
+    fireEvent.change(within(dialog).getByLabelText("Received now (USD)"), {
+      target: { value: "50" },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save Reservation" }),
+    );
+    expect(
+      within(dialog).getByText(
+        "Say why the amount differs from the suggestion.",
+      ),
+    ).toBeInTheDocument();
+    expect(within(dialog).getByText("Choose a Customer.")).toBeInTheDocument();
+    expect(confirm).not.toHaveBeenCalled();
+  });
+});

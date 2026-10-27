@@ -9,6 +9,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { DepositApi } from "../depositClient";
 import type { LeaseApi } from "../leaseClient";
 import type { CustomerApi } from "../customerClient";
+import type { CustomerCommandGate } from "../customers/commands";
 import type { ReservationApi } from "../reservationClient";
 import type { UnitApi } from "../unitClient";
 import type { UtilityApi } from "../utilityClient";
@@ -45,6 +46,9 @@ export interface LeasesPageProps {
   servicesApi?: Pick<ServiceSettingsApi, "read" | "addService">;
   /** The Unit's meters for the New Lease form; the real server when not given. */
   metersApi?: Pick<UtilityApi, "loadMeters">;
+  /** V1-060 B6: New Customer from the New Lease form; left out, the button is not shown. */
+  customerCreateApi?: CustomerApi;
+  customerGate?: CustomerCommandGate;
 }
 
 export function LeasesPage({
@@ -60,6 +64,8 @@ export function LeasesPage({
   capabilities,
   servicesApi,
   metersApi,
+  customerCreateApi,
+  customerGate,
 }: LeasesPageProps) {
   const detail = useHashDetail("leases");
   const [data, setData] = useState<LeasesData | null>(null);
@@ -118,6 +124,12 @@ export function LeasesPage({
       <LeaseForm
         api={api}
         customerApi={customerApi}
+        customerCreateApi={customerCreateApi}
+        customerGate={
+          capabilities === null || capabilities.has("customers.manage")
+            ? customerGate
+            : undefined
+        }
         key={`${detail ?? ""}:${propertyId}`}
         language={language}
         mode={formMode}

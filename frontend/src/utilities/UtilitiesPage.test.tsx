@@ -27,6 +27,7 @@ import {
   type UtilityType,
 } from "../utilityClient";
 import { UtilitiesPage } from "./UtilitiesPage";
+import { dayText } from "../shell/format";
 
 afterEach(() => {
   cleanup();
@@ -1014,7 +1015,7 @@ describe("Utilities Meters tab (V1-058 R4b)", () => {
     const dialog = screen.getByRole("dialog");
     const found =
       within(dialog).getByLabelText<HTMLInputElement>(/^Found broken on/);
-    expect(found.value).toBe("2026-10-20");
+    expect(found.value).toBe(dayText("2026-10-20"));
     expect(
       within(dialog).getByText(
         "Not before the last good reading (24/09/2026).",

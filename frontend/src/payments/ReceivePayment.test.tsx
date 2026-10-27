@@ -111,6 +111,7 @@ function api(overrides: Partial<PaymentsApi> = {}) {
     ),
     khrRate: vi.fn(() => Promise.resolve({ rate: 4_083 })),
     receive: vi.fn(() => Promise.resolve(RESULT)),
+    confirm: vi.fn(() => Promise.reject(new Error("not used"))),
     summary: vi.fn(() => Promise.reject(new Error("not used"))),
     receipt: vi.fn(() => Promise.reject(new Error("not used"))),
     reprint: vi.fn(() => Promise.resolve()),

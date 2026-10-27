@@ -218,12 +218,70 @@ const TEXT = {
     "ការកក់ឥឡូវផុតកំណត់នៅ {0}។",
   ],
   saved_cancel: ["The Reservation was cancelled.", "ការកក់ត្រូវបានលុបចោល។"],
-  // new
-  records: ["Earlier Reservation form", "ទម្រង់ការកក់ពីមុន"],
-  // new
-  records_note: [
-    "In English. Make Reservation stays here until it moves into the new design with Payments (step R5), because it receives the deposit.",
-    "ជាភាសាអង់គ្លេស។ ការធ្វើការកក់នៅទីនេះ រហូតដល់វាផ្លាស់ទៅរចនាថ្មីជាមួយការបង់ប្រាក់ (ជំហាន R5) ព្រោះវាទទួលប្រាក់កក់។",
+  // V1-060 B6: Make Reservation in the new design (owner 27/10/2026).
+  mk_title: ["Make Reservation", "ធ្វើការកក់"],
+  mk_unit: ["Unit", "បន្ទប់"],
+  mk_choose_unit: ["Choose a vacant Unit", "ជ្រើសរើសបន្ទប់ទំនេរ"],
+  mk_no_units: ["No Unit is vacant now.", "ឥឡូវនេះមិនមានបន្ទប់ទំនេរទេ។"],
+  mk_customer: ["Customer", "អតិថិជន"],
+  mk_choose_customer: ["Choose a Customer", "ជ្រើសរើសអតិថិជន"],
+  mk_new_customer: ["New Customer", "អតិថិជនថ្មី"],
+  mk_date: ["Reservation Date", "ថ្ងៃកក់"],
+  mk_expires: ["Expires on", "ផុតកំណត់នៅ"],
+  mk_expires_help: [
+    "At most 21 days after the Reservation Date.",
+    "យូរបំផុត 21 ថ្ងៃ បន្ទាប់ពីថ្ងៃកក់។",
+  ],
+  mk_rent: [
+    "Agreed monthly Rent (USD)",
+    "ថ្លៃឈ្នួលប្រចាំខែដែលបានព្រមព្រៀង (USD)",
+  ],
+  mk_required: ["Full Security Deposit (USD)", "ប្រាក់កក់សុវត្ថិភាពពេញ (USD)"],
+  mk_required_help: ["Usually one month's Rent.", "ជាធម្មតាថ្លៃឈ្នួលមួយខែ។"],
+  mk_received: ["Received now (USD)", "ទទួលបានឥឡូវនេះ (USD)"],
+  mk_received_help: [
+    "Suggested: 20% of the agreed Rent, {0}.",
+    "ការណែនាំ៖ 20% នៃថ្លៃឈ្នួលដែលបានព្រមព្រៀង {0}។",
+  ],
+  mk_reason: [
+    "Why a different amount (needs the Manager's approval)",
+    "ហេតុអ្វីចំនួនខុសគ្នា (ត្រូវការការអនុម័តពីអ្នកគ្រប់គ្រង)",
+  ],
+  mk_reason_default: [
+    "Suggested 20% of the agreed Rent.",
+    "Suggested 20% of the agreed Rent.",
+  ],
+  mk_save: ["Save Reservation", "រក្សាទុកការកក់"],
+  mk_err_unit: ["Choose a Unit.", "សូមជ្រើសរើសបន្ទប់។"],
+  mk_err_customer: ["Choose a Customer.", "សូមជ្រើសរើសអតិថិជន។"],
+  mk_err_date: ["Type a real day.", "សូមវាយថ្ងៃដែលត្រឹមត្រូវ។"],
+  mk_err_expires: [
+    "Pick a day after the Reservation Date, at most 21 days later.",
+    "សូមជ្រើសរើសថ្ងៃបន្ទាប់ពីថ្ងៃកក់ យូរបំផុត 21 ថ្ងៃក្រោយ។",
+  ],
+  mk_err_rent: [
+    "Type the Rent, such as 450.00.",
+    "សូមវាយថ្លៃឈ្នួល ដូចជា 450.00។",
+  ],
+  mk_err_required: [
+    "Type the full Security Deposit; it cannot be less than what is received now.",
+    "សូមវាយប្រាក់កក់សុវត្ថិភាពពេញ វាមិនអាចតិចជាងប្រាក់ដែលទទួលបានឥឡូវនេះទេ។",
+  ],
+  mk_err_received: [
+    "Type the amount received now.",
+    "សូមវាយចំនួនដែលទទួលបានឥឡូវនេះ។",
+  ],
+  mk_err_reason: [
+    "Say why the amount differs from the suggestion.",
+    "សូមប្រាប់ពីមូលហេតុដែលចំនួនខុសពីការណែនាំ។",
+  ],
+  mk_memo: [
+    "Security Deposit received with the Reservation of {0}",
+    "Security Deposit received with the Reservation of {0}",
+  ],
+  mk_loading: [
+    "Reading the Units and Customers…",
+    "កំពុងអានបន្ទប់ និងអតិថិជន…",
   ],
 } as const;
 

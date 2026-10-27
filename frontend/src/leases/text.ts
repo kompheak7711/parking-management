@@ -838,6 +838,60 @@ const TEXT = {
     "Termination notice recorded for {0}.",
     "បានកត់ត្រាការជូនដំណឹងបញ្ចប់សម្រាប់ {0}។",
   ],
+  // new (V1-060 B6): Receive Security Deposit on the Lease page.
+  rd_button: ["Receive Security Deposit", "ទទួលប្រាក់កក់សុវត្ថិភាព"],
+  rd_title: ["Receive Security Deposit · {0}", "ទទួលប្រាក់កក់សុវត្ថិភាព · {0}"],
+  rd_intro: [
+    "Money from {0} for the Security Deposit. It is held, not income, and it pays no Invoice.",
+    "ប្រាក់ពី {0} សម្រាប់ប្រាក់កក់សុវត្ថិភាព។ វាត្រូវបានរក្សាទុក មិនមែនចំណូល ហើយមិនបង់វិក្កយបត្រទេ។",
+  ],
+  rd_required: ["Full Security Deposit", "ប្រាក់កក់សុវត្ថិភាពពេញ"],
+  rd_required_help: ["Usually one month's Rent.", "ជាធម្មតាថ្លៃឈ្នួលមួយខែ។"],
+  rd_outstanding: ["{0} still to receive", "នៅសល់ {0} ត្រូវទទួល"],
+  rd_received: ["Received now", "ទទួលឥឡូវនេះ"],
+  rd_received_help: [
+    "Part now is fine; the rest can be received later here.",
+    "ទទួលមួយផ្នែកឥឡូវក៏បាន ផ្នែកនៅសល់អាចទទួលនៅទីនេះពេលក្រោយ។",
+  ],
+  rd_note: [
+    "If the Tenant still owes an Invoice, receive that Payment first in Payments; the Security Deposit is taken after.",
+    "ប្រសិនបើអ្នកជួលនៅជំពាក់វិក្កយបត្រ សូមទទួលការបង់ប្រាក់នោះជាមុននៅក្នុងការបង់ប្រាក់ ប្រាក់កក់សុវត្ថិភាពទទួលបន្ទាប់។",
+  ],
+  rd_save: ["Save the deposit", "រក្សាទុកប្រាក់កក់"],
+  rd_err_required: [
+    "Type the full Security Deposit, for example 500.00.",
+    "សូមវាយប្រាក់កក់សុវត្ថិភាពពេញ ឧទាហរណ៍ 500.00។",
+  ],
+  rd_err_received: [
+    "Type the money received, more than 0 and not more than what is still to receive.",
+    "សូមវាយប្រាក់ដែលបានទទួល លើសពី 0 និងមិនលើសពីចំនួនដែលនៅសល់។",
+  ],
+  rd_unknown: [
+    "We could not tell whether this was saved. “Try again” sends the very same request; it is never saved twice.",
+    "យើងមិនដឹងថាវាត្រូវបានរក្សាទុកឬអត់។ “ព្យាយាមម្តងទៀត” ផ្ញើសំណើដដែល វាមិនត្រូវបានរក្សាទុកពីរដងទេ។",
+  ],
+  rd_refused: [
+    "This was not saved. Check the Lease and try again.",
+    "មិនបានរក្សាទុកទេ។ សូមពិនិត្យកិច្ចសន្យា ហើយព្យាយាមម្តងទៀត។",
+  ],
+  rd_toast: [
+    "Security Deposit of {0} received with Receipt {1}.",
+    "បានទទួលប្រាក់កក់សុវត្ថិភាព {0} ជាមួយបង្កាន់ដៃ {1}។",
+  ],
+  rd_memo: [
+    "Security Deposit received for the Lease of {0}",
+    "Security Deposit received for the Lease of {0}",
+  ],
+  rd_reason_create: [
+    "Security Deposit agreed for this walk-in Lease.",
+    "Security Deposit agreed for this walk-in Lease.",
+  ],
+  rd_reason_receipt: [
+    "Security Deposit received from the Tenant.",
+    "Security Deposit received from the Tenant.",
+  ],
+  // new (V1-060 B6): a new Customer from the Lease form.
+  new_customer: ["New Customer", "អតិថិជនថ្មី"],
 } as const;
 
 export type LeaseTextKey = keyof typeof TEXT;

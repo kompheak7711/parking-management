@@ -1,7 +1,7 @@
 // V1-058 R3: the Reservations list (DESIGN.md "Reservations (round 2)"): four count cards that
 // filter the table, and the table of Reservations.
 
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 
 import type {
   ReservationResource,
@@ -71,10 +71,13 @@ export function ReservationsList({
   language,
   data,
   today,
+  action,
 }: {
   language: Language;
   data: ReservationsData;
   today: string;
+  /** V1-060 B6: the Make Reservation button. */
+  action?: ReactNode;
 }) {
   const [card, setCard] = useState<ReservationCard | "all">("all");
   const inCard = (reservation: ReservationResource, value: ReservationCard) =>
@@ -92,6 +95,7 @@ export function ReservationsList({
     <>
       <div className="ui-head">
         <p>{rt(language, "sub", data.reservations.length)}</p>
+        {action !== undefined && <div className="ui-actions">{action}</div>}
       </div>
       <div className="ui-kpis">
         {CARDS.map(([value, icon, tone]) => (

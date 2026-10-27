@@ -935,7 +935,9 @@ describe("Lease actions", () => {
     const dialog = screen.getByRole("dialog", {
       name: "Record move-in · U302",
     });
-    expect(within(dialog).getByLabelText("Move-in date")).toHaveValue(today);
+    expect(within(dialog).getByLabelText("Move-in date")).toHaveValue(
+      dayText(today),
+    );
     expect(
       await within(dialog).findByRole("checkbox", { name: /Child C/ }),
     ).toBeChecked();
@@ -1164,7 +1166,9 @@ describe("New Lease and Renew", () => {
     fireEvent.change(screen.getByLabelText("Start Date"), {
       target: { value: "2026-12-22" },
     });
-    expect(screen.getByLabelText("End Date")).toHaveValue("2027-12-31");
+    expect(screen.getByLabelText("End Date")).toHaveValue(
+      dayText("2027-12-31"),
+    );
     fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
     expect(screen.getByText("Enter the monthly Rent.")).toBeInTheDocument();
 
@@ -1616,7 +1620,7 @@ describe("New Lease and Renew", () => {
     fireEvent.click(await screen.findByRole("link", { name: "Renew" }));
     expect(await screen.findByLabelText("Unit")).toHaveValue("U101");
     const next = addDays(running.end_date ?? today, 1);
-    expect(screen.getByLabelText("Start Date")).toHaveValue(next);
+    expect(screen.getByLabelText("Start Date")).toHaveValue(dayText(next));
     expect(screen.getByText("Guarantor")).toBeInTheDocument();
     expect(
       screen.getByRole("region", { name: "What will be billed" }),

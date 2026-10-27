@@ -19,6 +19,7 @@ import type {
 import { howRecord, type How } from "../letters/lettersData";
 import { ltr } from "../letters/text";
 import { addDays } from "../reservations/reservationsData";
+import { DateInput } from "../shell/DateInput";
 import { dayText, todayInPhnomPenh } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { Dialog } from "../shell/ui";
@@ -462,15 +463,14 @@ export function TerminateDialog({
       )}
       <div className="ui-field">
         <label htmlFor="terminate-day">{lt(language, "tg_date")}</label>
-        <input
-          aria-invalid={problems.day !== undefined}
+        <DateInput
+          invalid={problems.day !== undefined}
           id="terminate-day"
           max={last}
           min={first}
-          onChange={(event) => {
-            setDay(event.currentTarget.value);
+          onChange={(value) => {
+            setDay(value);
           }}
-          type="date"
           value={day}
         />
         <p className="help">{lt(language, "tg_date_help", dayText(first))}</p>
@@ -621,28 +621,26 @@ export function RecordNoticeDialog({
       <p className="ui-small">{lt(language, "nt_note")}</p>
       <div className="ui-field">
         <label htmlFor="notice-given">{lt(language, "nt_date")}</label>
-        <input
-          aria-invalid={problems.dates !== undefined}
+        <DateInput
+          invalid={problems.dates !== undefined}
           id="notice-given"
           max={today}
           min={lease.start_date ?? undefined}
-          onChange={(event) => {
-            setGiven(event.currentTarget.value);
+          onChange={(value) => {
+            setGiven(value);
           }}
-          type="date"
           value={given}
         />
       </div>
       <div className="ui-field">
         <label htmlFor="notice-ends">{lt(language, "nt_ends")}</label>
-        <input
-          aria-invalid={problems.dates !== undefined}
+        <DateInput
+          invalid={problems.dates !== undefined}
           id="notice-ends"
           min={given}
-          onChange={(event) => {
-            setEnds(event.currentTarget.value);
+          onChange={(value) => {
+            setEnds(value);
           }}
-          type="date"
           value={ends}
         />
         <p className="help">{lt(language, "nt_ends_help")}</p>

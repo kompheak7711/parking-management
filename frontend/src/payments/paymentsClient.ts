@@ -43,6 +43,11 @@ export interface ReceiveResult {
   left: number;
 }
 
+export interface ConfirmedPayment {
+  paymentId: string;
+  receiptNumber: string;
+}
+
 export interface KhrRate {
   /** Riel for one dollar, after the markup and rounding up (BR-MONEY-005 to 008). */
   rate: number;
@@ -179,6 +184,12 @@ export interface PaymentsApi {
     input: ReceiveInput,
     key: string,
   ): Promise<ReceiveResult>;
+  /** V1-060 B6: money received for a deposit, saved with its Receipt and paying no Invoice. */
+  confirm(
+    propertyId: string,
+    input: Omit<ReceiveInput, "pays">,
+    key: string,
+  ): Promise<ConfirmedPayment>;
   summary(
     propertyId: string,
     from: string,
@@ -502,6 +513,19 @@ export function createPaymentsApi(
       billingTransport(
         "/api/v1/properties/" + encoded(propertyId) + "/payments/receive",
         (body) => received(body.data),
+        { key, body: input },
+        transmission,
+      ),
+    confirm: (propertyId, input, key) =>
+      billingTransport(
+        "/api/v1/properties/" + encoded(propertyId) + "/payments",
+        (body) => {
+          const data = object(body.data);
+          return {
+            paymentId: text(object(data.payment).id),
+            receiptNumber: text(object(data.receipt).receipt_number),
+          };
+        },
         { key, body: input },
         transmission,
       ),
