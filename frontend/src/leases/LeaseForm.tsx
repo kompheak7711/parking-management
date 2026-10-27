@@ -21,6 +21,7 @@ import {
 } from "../leaseClient";
 import { metersOn } from "../moveout/finalReadings";
 import type { ReservationApi, ReservationResource } from "../reservationClient";
+import { type SettlementApi, settlementApi } from "../settlementClient";
 import {
   failureText,
   nameOf as settingsNameOf,
@@ -132,6 +133,8 @@ export interface LeaseFormProps {
   /** V1-060 B6: New Customer beside the Primary Tenant; both are needed to show it. */
   customerCreateApi?: CustomerApi;
   customerGate?: CustomerCommandGate;
+  /** V1-060 B6 (DL-100): saves a walk-in draft's Security Deposit; the real server when not given. */
+  signingApi?: Pick<SettlementApi, "planSecurityDeposit">;
 }
 
 export function LeaseForm({
@@ -146,6 +149,7 @@ export function LeaseForm({
   metersApi = utilityApi,
   customerCreateApi,
   customerGate,
+  signingApi = settlementApi,
 }: LeaseFormProps) {
   const today = todayInPhnomPenh();
   const [sources, setSources] = useState<Sources | null>(null);
@@ -157,6 +161,10 @@ export function LeaseForm({
   const [start, setStart] = useState(today);
   const [end, setEnd] = useState(oneYearEnd(today));
   const [rent, setRent] = useState("");
+  // A walk-in draft's Security Deposit: one month's Rent until it is typed (DL-100).
+  const [deposit, setDeposit] = useState("");
+  const [depositTyped, setDepositTyped] = useState(false);
+  const [plannedCents, setPlannedCents] = useState<number | null>(null);
   const [pet, setPet] = useState(false);
   // "failed": the draft waits until they are read (Retry).
   const [services, setServices] = useState<ServiceSettings | "failed" | null>(
@@ -188,6 +196,7 @@ export function LeaseForm({
     lease: crypto.randomUUID(),
     primarySigner: crypto.randomUUID(),
     pet: crypto.randomUUID(),
+    plan: crypto.randomUUID(),
     signers: new Map<string, string>(),
     terms: new Map<string, string>(),
   });
@@ -436,6 +445,9 @@ export function LeaseForm({
     language === "km" && choice.service.name_km !== null
       ? choice.service.name_km
       : choice.service.name_en;
+  // Only a walk-in Lease takes its Security Deposit here: a Booking's is already held and a
+  // renewal keeps the old Lease's.
+  const walkIn = reservation === null && previous === null;
   const heldDeposit =
     reservation === null
       ? null
@@ -515,6 +527,9 @@ export function LeaseForm({
     if (!/^\d{4}-\d{2}-\d{2}$/.test(end) || end <= start || !monthEnd(end))
       found.end = lt(language, "err_end");
     if (cents === null) found.rent = lt(language, "err_rent");
+    const depositCents = walkIn ? centsOf(deposit) : null;
+    if (walkIn && depositCents === null)
+      found.deposit = lt(language, "err_deposit");
     if (pet && petText.trim() === "") found.pet = lt(language, "err_pet");
     if (services === null || services === "failed")
       found.services = lt(language, "err_svc_wait");
@@ -523,6 +538,7 @@ export function LeaseForm({
     else if (picked.length > 20) found.services = lt(language, "err_svc_many");
     setProblems(found);
     if (cents === null || Object.keys(found).length > 0) return;
+    setPlannedCents(depositCents);
     const signerIds = ids.current.signers;
     const others = signers.filter((id) => id !== tenantId);
     setConfirm({
@@ -590,7 +606,16 @@ export function LeaseForm({
     setOutcome(null);
     void api
       .create(propertyId, { ...confirm, event_id: chosen.event }, chosen.key)
-      .then((saved) => {
+      .then(async (saved) => {
+        // The draft is saved; a deposit that fails to save is typed again on Edit draft.
+        if (plannedCents !== null)
+          await signingApi
+            .planSecurityDeposit(saved.lease_id, {
+              plan_id: ids.current.plan,
+              required_usd_cents: plannedCents,
+              reason: "Security Deposit on the New Lease form",
+            })
+            .catch(() => null);
         openPageInAddress("leases", true, saved.lease_id);
       })
       .catch(async (error: unknown) => {
@@ -793,11 +818,29 @@ export function LeaseForm({
               inputMode="decimal"
               onChange={(event) => {
                 setRent(event.currentTarget.value);
+                if (!depositTyped) setDeposit(event.currentTarget.value);
               }}
               value={rent}
             />,
             problems.rent,
           )}
+          {walkIn &&
+            field(
+              "lease-form-deposit",
+              lt(language, "deposit_box"),
+              <input
+                aria-invalid={problems.deposit !== undefined}
+                id="lease-form-deposit"
+                inputMode="decimal"
+                onChange={(event) => {
+                  setDeposit(event.currentTarget.value);
+                  setDepositTyped(true);
+                }}
+                value={deposit}
+              />,
+              problems.deposit,
+              lt(language, "deposit_help"),
+            )}
           <label className="ui-chk">
             <input
               checked={pet}
@@ -892,7 +935,13 @@ export function LeaseForm({
                 {previous !== null
                   ? lt(language, "pv_renewal")
                   : heldDeposit === null
-                    ? lt(language, "pv_deposit_walkin", usdFromCents(cents))
+                    ? centsOf(deposit) === null
+                      ? lt(language, "pv_deposit_walkin", usdFromCents(cents))
+                      : lt(
+                          language,
+                          "pv_deposit_planned",
+                          usdFromCents(centsOf(deposit) ?? 0),
+                        )
                     : heldDeposit.received >= heldDeposit.required
                       ? lt(
                           language,

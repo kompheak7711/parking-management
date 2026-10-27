@@ -31,8 +31,9 @@ import {
   CancelDraftDialog,
   EditDraftDialog,
   MoveInDialog,
-  SignDialog,
 } from "./LeaseDialogs";
+import { LeaseDraftPrint } from "./LeaseDraftPrint";
+import { SignDialog, type SigningApi } from "./SignLeaseDialog";
 import { LeaseChip } from "./LeasesList";
 import {
   RecordNoticeDialog,
@@ -91,11 +92,8 @@ export interface LeaseDetailProps {
   capabilities: ReadonlySet<string> | null;
   /** Letters opens the Lease with the Terminate dialog on the Rent ground. */
   terminateOnOpen?: boolean;
-  /** V1-060 B6: Receive Security Deposit. */
-  settlementApi?: Pick<
-    SettlementApi,
-    "createSecurityDeposit" | "receiveIntoDeposit"
-  >;
+  /** V1-060 B6: Receive Security Deposit, the draft's planned deposit and signing with money. */
+  settlementApi?: SigningApi & Pick<SettlementApi, "planSecurityDeposit">;
   paymentsApi?: PaymentsApi;
 }
 
@@ -130,18 +128,41 @@ export function LeaseDetail({
     | "terminate"
     | "notice"
     | "deposit"
+    | "print"
     | null
   >(terminateOnOpen ? "terminate" : null);
   const [draft, setDraft] = useState<TerminateDraft>(() =>
     terminateDraft(terminateOnOpen ? "RENT" : null),
   );
   const [notice, setNotice] = useState<string | null>(null);
+  // V1-060 B6 (DL-100): a walk-in draft's planned Security Deposit; undefined until read.
+  const [planned, setPlanned] = useState<number | null | undefined>(undefined);
   const [warning, setWarning] = useState<string | null>(null);
   const sequence = useRef(0);
   const today = todayInPhnomPenh();
   const may = (capability: string) =>
     capabilities === null || capabilities.has(capability);
   const mayDeposits = may("deposits.read");
+
+  const draftKey =
+    lease !== null && lease.status === "DRAFTED"
+      ? `${lease.lease_id}/${String(lease.version)}`
+      : null;
+  useEffect(() => {
+    if (draftKey === null || lease === null) return;
+    let live = true;
+    settlementApi
+      .signingPreview(lease.lease_id)
+      .then((preview) => {
+        if (live) setPlanned(preview.planned_security_deposit_usd_cents);
+      })
+      .catch(() => {
+        if (live) setPlanned(null);
+      });
+    return () => {
+      live = false;
+    };
+  }, [draftKey]);
 
   const load = useCallback(() => {
     const operation = ++sequence.current;
@@ -298,6 +319,11 @@ export function LeaseDetail({
       ? (deposits.items.find((item) => item.deposit_type === "SECURITY") ??
         null)
       : null;
+  // A draft made without a Booking and not a renewal takes its Security Deposit at signing.
+  const walkInDraft =
+    lease.status === "DRAFTED" &&
+    lease.predecessor_lease_id === null &&
+    lease.security_deposit_id === null;
   const pet =
     deposits.state === "shown"
       ? (deposits.items.find((item) => item.deposit_type === "PET") ?? null)
@@ -453,7 +479,18 @@ export function LeaseDetail({
             >
               <Icon name="lease" />
               {lt(language, "sign")}
-              <span className="ui-badge">{lt(language, "manager")}</span>
+            </button>
+          )}
+          {lease.status === "DRAFTED" && (
+            <button
+              className="ui-btn"
+              onClick={() => {
+                open("print");
+              }}
+              type="button"
+            >
+              <Icon name="print" />
+              {lt(language, "lp_button")}
             </button>
           )}
           {lease.status === "DRAFTED" && lease.can_edit && (
@@ -868,7 +905,11 @@ export function LeaseDetail({
                   </div>
                 )}
                 <h3>{lt(language, "dep_sec")}</h3>
-                {security === null ? (
+                {security === null && walkInDraft && planned != null ? (
+                  <p>
+                    {lt(language, "pv_deposit_planned", usdFromCents(planned))}
+                  </p>
+                ) : security === null ? (
                   <p className="ui-muted">{lt(language, "no_deposit")}</p>
                 ) : (
                   <Kv rows={depositRows(security)} />
@@ -967,16 +1008,29 @@ export function LeaseDetail({
         <SignDialog
           {...dialogProps}
           lease={lease}
-          onSaved={(saved) => {
+          mayCollect={may("payments.record") && may("payments.allocate")}
+          mayCreateDeposit={may("deposits.manage")}
+          onSaved={(saved, message) => {
             setDialog(null);
             setLease(saved);
-            setNotice(lt(language, "signed_toast", saved.unit_number));
+            setNotice(message);
             load();
           }}
-          dueChanged={dueChanged}
           onProgress={setLease}
+          paymentsApi={paymentsApi}
+          propertyId={propertyId}
           reservationApi={reservationApi}
-          securityOutstanding={security?.outstanding_required_usd_cents ?? null}
+          signingApi={settlementApi}
+        />
+      )}
+      {dialog === "print" && lease.status === "DRAFTED" && (
+        <LeaseDraftPrint
+          language={language}
+          lease={lease}
+          onClose={() => {
+            setDialog(null);
+          }}
+          signingApi={settlementApi}
         />
       )}
       {dialog === "cancel" && lease.status === "DRAFTED" && (
@@ -1065,6 +1119,8 @@ export function LeaseDetail({
         <EditDraftDialog
           {...dialogProps}
           lease={lease}
+          planned={walkInDraft && planned !== undefined ? planned : undefined}
+          signingApi={settlementApi}
           onSaved={(saved) => {
             setDialog(null);
             setLease(saved);

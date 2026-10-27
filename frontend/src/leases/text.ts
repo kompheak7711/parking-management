@@ -310,25 +310,6 @@ const TEXT = {
     "An active Reservation of this Customer for this Unit is completed in the same step; its deposit continues as the Security Deposit.",
     "ការកក់កំពុងដំណើរការរបស់អតិថិជននេះសម្រាប់បន្ទប់នេះ បានបញ្ចប់ក្នុងជំហានតែមួយ។ ប្រាក់កក់របស់វាបន្តជាប្រាក់កក់សុវត្ថិភាព។",
   ],
-  // new: billing makes the Initial Rent Invoice after signing, not the signing itself
-  sign_s3: [
-    "Initial Rent of {0} becomes due {1}; billing makes its Invoice.",
-    "ថ្លៃឈ្នួលដំបូង {0} ត្រូវបង់ត្រឹម {1}។ ការចេញវិក្កយបត្រធ្វើវិក្កយបត្ររបស់វា។",
-  ],
-  // new
-  sign_s3_set: [
-    "Initial Rent of {0} becomes due on the approved Due Date; billing makes its Invoice.",
-    "ថ្លៃឈ្នួលដំបូង {0} ត្រូវបង់ត្រឹមថ្ងៃកំណត់ដែលបានអនុម័ត។ ការចេញវិក្កយបត្រធ្វើវិក្កយបត្ររបស់វា។",
-  ],
-  sign_s4: [
-    "{0} of the Security Deposit is still due.",
-    "{0} នៃប្រាក់កក់សុវត្ថិភាពនៅត្រូវបង់។",
-  ],
-  // new
-  sign_res_check: [
-    "Checking for a Reservation of this Customer…",
-    "កំពុងពិនិត្យការកក់របស់អតិថិជននេះ…",
-  ],
   // new
   sign_res_failed: [
     "The Reservations could not be read. If this Unit is Reserved, the signing will be refused; ask someone who can see Reservations.",
@@ -341,11 +322,6 @@ const TEXT = {
   ],
   // new
   sign_already: ["signed {0}", "បានចុះហត្ថលេខា {0}"],
-  sign_ok: ["Record signing", "កត់ត្រាការចុះហត្ថលេខា"],
-  signed_toast: [
-    "Lease signed. {0} is Occupied.",
-    "កិច្ចសន្យាបានចុះហត្ថលេខា។ {0} មានអ្នកជួល។",
-  ],
   // new
   edit_title: ["Edit draft · {0}", "កែសេចក្តីព្រាង · {0}"],
   // new
@@ -577,8 +553,8 @@ const TEXT = {
     "សូមបញ្ចូលថ្ងៃចាប់ផ្តើម និងថ្លៃឈ្នួល ដើម្បីមើល។",
   ],
   pv_initial: [
-    "Initial Rent {0}, due {1}, with the rest of the Security Deposit.",
-    "ថ្លៃឈ្នួលដំបូង {0} ត្រូវបង់ត្រឹម {1} រួមនឹងប្រាក់កក់សុវត្ថិភាពដែលនៅសល់។",
+    "Initial Rent {0}, paid with the Security Deposit when the Lease is signed (its Invoice shows the Due Date {1}).",
+    "ថ្លៃឈ្នួលដំបូង {0} បង់ជាមួយប្រាក់កក់សុវត្ថិភាពពេលចុះហត្ថលេខាកិច្ចសន្យា (វិក្កយបត្ររបស់វាបង្ហាញថ្ងៃកំណត់ {1})។",
   ],
   pv_initial_how: [
     "{0} × {1} ÷ {2} days = {3}.",
@@ -594,13 +570,13 @@ const TEXT = {
   ],
   // new
   pv_deposit_walkin: [
-    "Security Deposit: one month's Rent ({0}), entered after signing.",
-    "ប្រាក់កក់សុវត្ថិភាព៖ ថ្លៃឈ្នួលមួយខែ ({0}) បញ្ចូលក្រោយចុះហត្ថលេខា។",
+    "Security Deposit: one month's Rent ({0}), paid when the Lease is signed.",
+    "ប្រាក់កក់សុវត្ថិភាព៖ ថ្លៃឈ្នួលមួយខែ ({0}) បង់ពេលចុះហត្ថលេខាកិច្ចសន្យា។",
   ],
   // new
   pv_deposit_booking: [
-    "Security Deposit: {0} received of {1} from the Booking; {2} still due by {3}.",
-    "ប្រាក់កក់សុវត្ថិភាព៖ បានទទួល {0} នៃ {1} ពីការកក់ នៅត្រូវបង់ {2} ត្រឹម {3}។",
+    "Security Deposit: {0} received of {1} from the Booking; {2} is paid when the Lease is signed.",
+    "ប្រាក់កក់សុវត្ថិភាព៖ បានទទួល {0} នៃ {1} ពីការកក់ {2} បង់ពេលចុះហត្ថលេខាកិច្ចសន្យា។",
   ],
   // new
   booking_not_active: [
@@ -892,6 +868,121 @@ const TEXT = {
   ],
   // new (V1-060 B6): a new Customer from the Lease form.
   new_customer: ["New Customer", "អតិថិជនថ្មី"],
+  // new (V1-060 B6, DL-100): the walk-in draft's Security Deposit and paying at signing.
+  deposit_box: ["Security Deposit (USD)", "ប្រាក់កក់សុវត្ថិភាព (ដុល្លារ)"],
+  deposit_help: [
+    "Usually one month's Rent. The customer pays it when the Lease is signed.",
+    "ជាធម្មតាថ្លៃឈ្នួលមួយខែ។ អតិថិជនបង់វាពេលចុះហត្ថលេខាកិច្ចសន្យា។",
+  ],
+  err_deposit: [
+    "Type the Security Deposit, more than 0.",
+    "សូមវាយប្រាក់កក់សុវត្ថិភាព ច្រើនជាង ០។",
+  ],
+  sp_money: [
+    "Money to receive before signing",
+    "ប្រាក់ត្រូវទទួលមុនចុះហត្ថលេខា",
+  ],
+  sp_deposit: ["Security Deposit", "ប្រាក់កក់សុវត្ថិភាព"],
+  sp_deposit_rest: [
+    "Rest of the Security Deposit ({0} of {1} received with the Booking)",
+    "ប្រាក់កក់សុវត្ថិភាពដែលនៅសល់ (បានទទួល {0} នៃ {1} ជាមួយការកក់)",
+  ],
+  sp_rent: ["Initial Rent, {0} to {1}", "ថ្លៃឈ្នួលដំបូង {0} ដល់ {1}"],
+  sp_service: ["{0}, {1} to {2}", "{0} {1} ដល់ {2}"],
+  sp_total: ["Total to receive", "សរុបត្រូវទទួល"],
+  sp_note: [
+    "The Lease is signed only after this money is saved. The Initial Rent Invoice is then made at once and paid with it; the rest goes into the Security Deposit.",
+    "កិច្ចសន្យាចុះហត្ថលេខាបានតែក្រោយប្រាក់នេះត្រូវបានរក្សាទុក។ បន្ទាប់មក វិក្កយបត្រថ្លៃឈ្នួលដំបូងត្រូវបានធ្វើភ្លាម ហើយបង់ដោយប្រាក់នេះ ប្រាក់ដែលនៅសល់ចូលប្រាក់កក់សុវត្ថិភាព។",
+  ],
+  sp_loading: ["Reading the amounts…", "កំពុងអានចំនួនទឹកប្រាក់…"],
+  sp_failed: [
+    "The amounts could not be read. Close and try again.",
+    "មិនអាចអានចំនួនទឹកប្រាក់បានទេ។ សូមបិទ ហើយព្យាយាមម្តងទៀត។",
+  ],
+  sp_no_terms: [
+    "Add the Start Date and the Rent first (Edit draft).",
+    "សូមបន្ថែមថ្ងៃចាប់ផ្តើម និងថ្លៃឈ្នួលជាមុនសិន (កែសេចក្តីព្រាង)។",
+  ],
+  sp_problem: [
+    "The Initial Rent Invoice cannot be made: {0} covers only part of a month or has no rate. Fix the Service first.",
+    "មិនអាចធ្វើវិក្កយបត្រថ្លៃឈ្នួលដំបូងបានទេ៖ {0} គ្របដណ្តប់តែផ្នែកខ្លះនៃខែ ឬគ្មានតម្លៃ។ សូមកែសេវាជាមុនសិន។",
+  ],
+  sp_no_booking: [
+    "The Booking of this Lease could not be read, so the rest of its deposit is not known. Close and try again, or ask someone who can see Bookings.",
+    "មិនអាចអានការកក់នៃកិច្ចសន្យានេះបានទេ ដូច្នេះមិនដឹងប្រាក់កក់ដែលនៅសល់។ សូមបិទ ហើយព្យាយាមម្តងទៀត ឬសួរអ្នកដែលអាចមើលការកក់។",
+  ],
+  sp_no_rights: [
+    "To sign, you need the rights to receive and allocate payments. Ask the Owner.",
+    "ដើម្បីចុះហត្ថលេខា អ្នកត្រូវមានសិទ្ធិទទួល និងបែងចែកការបង់ប្រាក់។ សូមសួរម្ចាស់។",
+  ],
+  sp_no_deposit_right: [
+    "A walk-in Lease's Security Deposit needs the right to manage deposits. Ask the Owner.",
+    "ប្រាក់កក់សុវត្ថិភាពនៃកិច្ចសន្យាដោយផ្ទាល់ ត្រូវការសិទ្ធិគ្រប់គ្រងប្រាក់កក់។ សូមសួរម្ចាស់។",
+  ],
+  sp_ok: ["Receive {0} and sign", "ទទួល {0} ហើយចុះហត្ថលេខា"],
+  sp_unknown: [
+    "No answer came back. Try again finishes the rest; nothing is saved twice.",
+    "គ្មានចម្លើយត្រឡប់មកវិញទេ។ ព្យាយាមម្តងទៀត ដើម្បីបញ្ចប់ផ្នែកដែលនៅសល់ គ្មានអ្វីត្រូវបានរក្សាទុកពីរដងទេ។",
+  ],
+  sp_signed_saved: [
+    "The Lease is signed. Try again finishes the Invoice and the Security Deposit.",
+    "កិច្ចសន្យាបានចុះហត្ថលេខា។ ព្យាយាមម្តងទៀត ដើម្បីបញ្ចប់វិក្កយបត្រ និងប្រាក់កក់សុវត្ថិភាព។",
+  ],
+  sp_toast: [
+    "Lease signed. {0} is Occupied. {1} received with Receipt {2}.",
+    "កិច្ចសន្យាបានចុះហត្ថលេខា។ {0} មានអ្នកជួល។ បានទទួល {1} ជាមួយបង្កាន់ដៃ {2}។",
+  ],
+  sp_memo: [
+    "Money received at signing the Lease of {0}",
+    "Money received at signing the Lease of {0}",
+  ],
+  sp_reason_create: [
+    "Security Deposit agreed on the draft Lease, received at signing.",
+    "Security Deposit agreed on the draft Lease, received at signing.",
+  ],
+  sp_reason_receipt: [
+    "Security Deposit received at signing.",
+    "Security Deposit received at signing.",
+  ],
+  lp_button: ["Print draft", "បោះពុម្ពសេចក្តីព្រាង"],
+  lp_title: ["Print draft · {0}", "បោះពុម្ពសេចក្តីព្រាង · {0}"],
+  lp_print: ["Print", "បោះពុម្ព"],
+  lp_sheet: ["Draft Lease sheet", "សន្លឹកកិច្ចសន្យាព្រាង"],
+  lp_heading: [
+    "Draft Lease, for the customer to check",
+    "កិច្ចសន្យាព្រាង សម្រាប់អតិថិជនពិនិត្យ",
+  ],
+  lp_note: [
+    "Printed {0}. This is a draft: the Lease is signed only after the money below is received.",
+    "បោះពុម្ព {0}។ នេះជាសេចក្តីព្រាង៖ កិច្ចសន្យាចុះហត្ថលេខាបានតែក្រោយទទួលប្រាក់ខាងក្រោម។",
+  ],
+  lp_unit: ["Unit", "បន្ទប់"],
+  lp_tenant: ["Primary Tenant", "អ្នកជួលចម្បង"],
+  lp_signers: ["Other Signers", "អ្នកចុះហត្ថលេខាផ្សេងទៀត"],
+  lp_dates: ["Lease dates", "កាលបរិច្ឆេទកិច្ចសន្យា"],
+  lp_rent: ["Monthly Rent", "ថ្លៃឈ្នួលប្រចាំខែ"],
+  lp_pet: ["Pet approved", "សត្វចិញ្ចឹមដែលបានអនុញ្ញាត"],
+  lp_dep_booking: [
+    "Held with the Booking; the rest is paid at signing",
+    "កាន់ជាមួយការកក់ ប្រាក់ដែលនៅសល់បង់ពេលចុះហត្ថលេខា",
+  ],
+  lp_dep_renewal: ["Carried from the old Lease", "យកពីកិច្ចសន្យាចាស់"],
+  lp_at_signing: [
+    "Paid when the Lease is signed",
+    "បង់ពេលចុះហត្ថលេខាកិច្ចសន្យា",
+  ],
+  lp_no_amounts: [
+    "The amounts could not be read. Add the Start Date and the Rent, or try again.",
+    "មិនអាចអានចំនួនទឹកប្រាក់បានទេ។ សូមបន្ថែមថ្ងៃចាប់ផ្តើម និងថ្លៃឈ្នួល ឬព្យាយាមម្តងទៀត។",
+  ],
+  lp_checked: [
+    "Checked by the customer: ____________________   Date: ____/____/________",
+    "ពិនិត្យដោយអតិថិជន៖ ____________________   កាលបរិច្ឆេទ៖ ____/____/________",
+  ],
+  pv_deposit_planned: [
+    "Security Deposit: {0}, paid when the Lease is signed.",
+    "ប្រាក់កក់សុវត្ថិភាព៖ {0} បង់ពេលចុះហត្ថលេខាកិច្ចសន្យា។",
+  ],
 } as const;
 
 export type LeaseTextKey = keyof typeof TEXT;

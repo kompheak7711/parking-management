@@ -28,6 +28,9 @@ import {
   loadDepositCells,
   loadLeasesData,
 } from "./leasesData";
+import type { PaymentsApi } from "../payments/paymentsClient";
+import type { SettlementApi } from "../settlementClient";
+import type { SigningApi } from "./SignLeaseDialog";
 import { lt } from "./text";
 
 export interface LeasesPageProps {
@@ -49,6 +52,10 @@ export interface LeasesPageProps {
   /** V1-060 B6: New Customer from the New Lease form; left out, the button is not shown. */
   customerCreateApi?: CustomerApi;
   customerGate?: CustomerCommandGate;
+  /** V1-060 B6 (DL-100): the draft's Security Deposit and Sign Lease with money; the real
+   * server when not given. */
+  settlementApi?: SigningApi & Pick<SettlementApi, "planSecurityDeposit">;
+  paymentsApi?: PaymentsApi;
 }
 
 export function LeasesPage({
@@ -66,6 +73,8 @@ export function LeasesPage({
   metersApi,
   customerCreateApi,
   customerGate,
+  settlementApi,
+  paymentsApi,
 }: LeasesPageProps) {
   const detail = useHashDetail("leases");
   const [data, setData] = useState<LeasesData | null>(null);
@@ -137,6 +146,7 @@ export function LeasesPage({
         reservationApi={reservationApi}
         metersApi={metersApi}
         servicesApi={servicesApi}
+        signingApi={settlementApi}
         unitApi={unitApi}
       />
     );
@@ -159,6 +169,8 @@ export function LeasesPage({
         propertyId={propertyId}
         reservationApi={reservationApi}
         customerApi={customerApi}
+        paymentsApi={paymentsApi}
+        settlementApi={settlementApi}
       />
     );
   }

@@ -21,7 +21,9 @@ import {
   type LeaseApi,
   type LeaseResource,
 } from "../leaseClient";
+import type { PaymentsApi } from "../payments/paymentsClient";
 import type { ReservationApi, ReservationResource } from "../reservationClient";
+import type { SettlementApi, SigningPreview } from "../settlementClient";
 import { dayText, todayInPhnomPenh } from "../shell/format";
 import type { UnitApi, UnitResource } from "../unitClient";
 import type { UtilityApi, UtilityMeter } from "../utilityClient";
@@ -259,6 +261,62 @@ function meterOf(
   };
 }
 
+/** V1-060 B6 (DL-100): the signing calls and the money calls of Sign Lease. */
+function signing(
+  preview: Partial<NonNullable<SigningPreview["initial"]>> | null = {},
+  planned: number | null = 50_000,
+) {
+  const calls = {
+    signingPreview: vi.fn<SettlementApi["signingPreview"]>().mockResolvedValue({
+      initial:
+        preview === null
+          ? null
+          : {
+              period_start: "2026-12-10",
+              period_end: "2026-12-31",
+              due_date: "2026-12-15",
+              rent_usd_cents: 35_484,
+              service_lines: [],
+              total_usd_cents: 35_484,
+              problem: null,
+              invoice_id: null,
+              ...preview,
+            },
+      planned_security_deposit_usd_cents: planned,
+    }),
+    planSecurityDeposit: vi
+      .fn<SettlementApi["planSecurityDeposit"]>()
+      .mockResolvedValue({}),
+    makeInitialRentInvoice: vi
+      .fn<SettlementApi["makeInitialRentInvoice"]>()
+      .mockResolvedValue({ invoice_id: "invoice-1", created: true }),
+    allocationProposal: vi
+      .fn<SettlementApi["allocationProposal"]>()
+      .mockResolvedValue({ proposal_token: "p-1" }),
+    allocateByProposal: vi
+      .fn<SettlementApi["allocateByProposal"]>()
+      .mockResolvedValue({}),
+    createSecurityDeposit: vi
+      .fn<SettlementApi["createSecurityDeposit"]>()
+      .mockResolvedValue({}),
+    receiveIntoDeposit: vi
+      .fn<SettlementApi["receiveIntoDeposit"]>()
+      .mockResolvedValue({}),
+  };
+  const confirm = vi
+    .fn<PaymentsApi["confirm"]>()
+    .mockResolvedValue({ paymentId: "payment-1", receiptNumber: "RC0042" });
+  const payments = {
+    methods: vi.fn(() =>
+      Promise.resolve([
+        { id: "method-cash", code: "CASH", displayName: "Cash" },
+      ]),
+    ),
+    confirm,
+  } as unknown as PaymentsApi;
+  return { ...calls, confirm, payments };
+}
+
 function show(
   client: LeaseApi,
   depositClient: DepositApi = deposits(),
@@ -282,6 +340,7 @@ function show(
       nextCursor: null,
     }),
   },
+  signingClients: ReturnType<typeof signing> = signing(),
 ) {
   const services = {
     read: vi.fn<ServiceSettingsApi["read"]>().mockResolvedValue({
@@ -313,6 +372,8 @@ function show(
       lettersApi={letters}
       servicesApi={services}
       metersApi={metersClient}
+      settlementApi={signingClients}
+      paymentsApi={signingClients.payments}
     />,
   );
 }
@@ -576,6 +637,8 @@ describe("Lease actions", () => {
   const signable = lease("U301", {
     lease_id: "lease-sign",
     status: "DRAFTED",
+    // A walk-in draft: no Booking's deposit (DL-100 takes its Security Deposit at signing).
+    security_deposit_id: null,
     start_date: "2026-12-10",
     end_date: "2027-12-09",
     signed_at: null,
@@ -618,7 +681,7 @@ describe("Lease actions", () => {
     ),
   });
 
-  it("TEST-FE-850 Sign Lease needs a tick for every Signer, records each signature and then signs", async () => {
+  it("TEST-FE-850 Sign Lease receives the full money first (Security Deposit and Initial Rent), then records each signature, signs, makes the Initial Rent Invoice, pays it and fills the Security Deposit (DL-100)", async () => {
     window.location.hash = "#/leases/lease-sign";
     const recordSignature = vi.fn((value: LeaseResource, signerId: string) =>
       Promise.resolve(signedBy(value, signerId)),
@@ -630,44 +693,73 @@ describe("Lease actions", () => {
         version: value.version + 1,
       }),
     );
+    const money = signing();
     show(
       api({
         get: vi.fn().mockResolvedValue(signable),
         recordSignature,
         sign,
       }),
+      deposits(),
+      null,
+      undefined,
+      undefined,
+      {},
+      {},
+      {},
+      undefined,
+      money,
     );
 
     fireEvent.click(await screen.findByRole("button", { name: /^Sign Lease/ }));
     const dialog = screen.getByRole("dialog", { name: "Sign Lease · U301" });
     await checked(dialog);
-    expect(dialog).toHaveTextContent(
-      "Initial Rent of $354.84 becomes due 15/12/2026; billing makes its Invoice.",
+    expect(dialog).toHaveTextContent("Initial Rent, 10/12/2026 to 31/12/2026");
+    expect(dialog).toHaveTextContent("Total to receive$854.84");
+    expect(within(dialog).getByLabelText("Security Deposit")).toHaveValue(
+      "500.00",
     );
-    // No active Reservation was found, so neither the line nor the field.
+    // No active Reservation was found, so no line about it.
     expect(dialog).not.toHaveTextContent("Reservation of this Customer");
-    // The Security Deposit is received in full, so no line about the rest.
-    expect(dialog).not.toHaveTextContent("still due");
     fireEvent.click(within(dialog).getByRole("checkbox", { name: /Tenant A/ }));
+    fireEvent.change(
+      await within(dialog).findByLabelText("How the money came"),
+      { target: { value: "method-cash" } },
+    );
     fireEvent.click(
-      within(dialog).getByRole("button", { name: "Record signing" }),
+      within(dialog).getByRole("button", { name: "Receive $854.84 and sign" }),
     );
     expect(
       within(dialog).getByText(
         "Tick every Signer. The Lease is signed only when all have signed.",
       ),
     ).toBeInTheDocument();
-    expect(recordSignature).not.toHaveBeenCalled();
+    expect(money.confirm).not.toHaveBeenCalled();
 
     fireEvent.click(
       within(dialog).getByRole("checkbox", { name: /Guarantor B/ }),
     );
     fireEvent.click(
-      within(dialog).getByRole("button", { name: "Record signing" }),
+      within(dialog).getByRole("button", { name: "Receive $854.84 and sign" }),
     );
     expect(
-      await screen.findByText("Lease signed. U301 is Occupied."),
+      await screen.findByText(
+        "Lease signed. U301 is Occupied. $854.84 received with Receipt RC0042.",
+      ),
     ).toBeInTheDocument();
+    expect(money.confirm.mock.calls[0]?.[1]).toMatchObject({
+      payer_customer_id: "customer-U301",
+      amount: { currency: "USD", minor_units: 85_484 },
+      payer_intent_memo: "Money received at signing the Lease of U301",
+    });
+    // The money is saved before the first signature; the Invoice is made after signing.
+    const first = (mock: { mock: { invocationCallOrder: number[] } }) =>
+      mock.mock.invocationCallOrder[0] ?? 0;
+    expect(first(money.confirm)).toBeLessThan(first(recordSignature));
+    expect(first(sign)).toBeLessThan(first(money.makeInitialRentInvoice));
+    expect(first(money.allocateByProposal)).toBeLessThan(
+      first(money.receiveIntoDeposit),
+    );
     expect(
       recordSignature.mock.calls.map((call) => [call[0].version, call[1]]),
     ).toEqual([
@@ -679,9 +771,24 @@ describe("Lease actions", () => {
       event_id: expect.any(String) as string,
       reason: "Every Signer signed the paper Lease",
     });
+    expect(money.makeInitialRentInvoice.mock.calls[0]?.[0]).toBe("lease-sign");
+    expect(money.allocateByProposal.mock.calls[0]?.slice(0, 3)).toEqual([
+      "property-1",
+      "payment-1",
+      { proposal_token: "p-1" },
+    ]);
+    const created = money.createSecurityDeposit.mock.calls[0]?.[1];
+    expect(created).toMatchObject({ required_usd_cents: 50_000 });
+    expect(money.receiveIntoDeposit.mock.calls[0]?.[0]).toBe(
+      created?.deposit_id,
+    );
+    expect(money.receiveIntoDeposit.mock.calls[0]?.[1]).toMatchObject({
+      payment_id: "payment-1",
+      amount_usd_cents: 50_000,
+    });
   });
 
-  it("TEST-FE-851 after an unknown result Try again carries on with the same requests, and a conflict reads the Lease again", async () => {
+  it("TEST-FE-851 after an unknown result Try again carries on with the same requests and never pays twice, and a conflict reads the Lease again", async () => {
     window.location.hash = "#/leases/lease-sign";
     const recordSignature = vi
       .fn<LeaseApi["recordSignature"]>()
@@ -694,25 +801,41 @@ describe("Lease actions", () => {
       );
     const sign = vi.fn().mockRejectedValue(new LeaseConflictError());
     const get = vi.fn().mockResolvedValue(signable);
-    show(api({ get, recordSignature, sign }));
+    const money = signing();
+    show(
+      api({ get, recordSignature, sign }),
+      deposits(),
+      null,
+      undefined,
+      undefined,
+      {},
+      {},
+      {},
+      undefined,
+      money,
+    );
 
     fireEvent.click(await screen.findByRole("button", { name: /^Sign Lease/ }));
     const dialog = screen.getByRole("dialog");
     await checked(dialog);
     for (const box of within(dialog).getAllByRole("checkbox"))
       fireEvent.click(box);
+    fireEvent.change(
+      await within(dialog).findByLabelText("How the money came"),
+      { target: { value: "method-cash" } },
+    );
     fireEvent.click(
-      within(dialog).getByRole("button", { name: "Record signing" }),
+      within(dialog).getByRole("button", { name: /^Receive .* and sign$/ }),
     );
     expect(
-      await within(dialog).findByText(
-        /We could not tell whether this was saved/,
-      ),
+      await within(dialog).findByText(/No answer came back/),
     ).toBeInTheDocument();
+    expect(dialog).toHaveTextContent("The money is saved with Receipt RC0042.");
     fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
     await waitFor(() => {
       expect(sign).toHaveBeenCalledTimes(1);
     });
+    expect(money.confirm).toHaveBeenCalledTimes(1);
     // The first signature is not sent again; the second is resent with the same key.
     expect(recordSignature.mock.calls.map((call) => call[1])).toEqual([
       "signer-a",
@@ -727,6 +850,7 @@ describe("Lease actions", () => {
     ).toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(get).toHaveBeenCalledTimes(2);
+    expect(money.makeInitialRentInvoice).not.toHaveBeenCalled();
   });
 
   it("TEST-FE-852 Edit draft checks the dates, Rent and reason, sends whole cents, and keeps the request on Try again", async () => {
@@ -783,7 +907,7 @@ describe("Lease actions", () => {
     expect(await screen.findByText("The draft was saved.")).toBeInTheDocument();
   });
 
-  it("TEST-FE-853 signing names the Customer's active Reservation, and a refusal after a signature keeps it shown", async () => {
+  it("TEST-FE-853 signing names the Customer's active Reservation and takes only the rest of its deposit; a refusal after a signature keeps it shown and Try again pays nothing twice", async () => {
     window.location.hash = "#/leases/lease-sign";
     const reservation = (
       id: string,
@@ -795,6 +919,9 @@ describe("Lease actions", () => {
         unit_id: "unit-U301",
         customer_id: "customer-U301",
         status: "ACTIVE",
+        deposit_id: `deposit-${id}`,
+        deposit_required_usd_cents: 50_000,
+        deposit_received_usd_cents: 10_000,
         ...overrides,
       }) as ReservationResource;
     const list = vi
@@ -818,11 +945,25 @@ describe("Lease actions", () => {
       .mockImplementationOnce((value) =>
         Promise.resolve({ ...value, status: "SIGNED" as const }),
       );
+    const money = signing({}, null);
     show(
-      api({ get: vi.fn().mockResolvedValue(signable), recordSignature, sign }),
+      api({
+        get: vi.fn().mockResolvedValue({
+          ...signable,
+          security_deposit_id: "deposit-reservation-301",
+        }),
+        recordSignature,
+        sign,
+      }),
       deposits(),
       null,
       { list },
+      undefined,
+      {},
+      {},
+      {},
+      undefined,
+      money,
     );
 
     fireEvent.click(await screen.findByRole("button", { name: /^Sign Lease/ }));
@@ -835,10 +976,18 @@ describe("Lease actions", () => {
     expect(dialog).toHaveTextContent(
       "An active Reservation of this Customer for this Unit is completed in the same step",
     );
+    expect(dialog).toHaveTextContent(
+      "Rest of the Security Deposit ($100.00 of $500.00 received with the Booking)$400.00",
+    );
+    expect(within(dialog).queryByLabelText("Security Deposit")).toBeNull();
     for (const box of within(dialog).getAllByRole("checkbox"))
       fireEvent.click(box);
+    fireEvent.change(
+      await within(dialog).findByLabelText("How the money came"),
+      { target: { value: "method-cash" } },
+    );
     fireEvent.click(
-      within(dialog).getByRole("button", { name: "Record signing" }),
+      within(dialog).getByRole("button", { name: "Receive $754.84 and sign" }),
     );
     expect(
       await within(dialog).findByText(/The server refused the signing/),
@@ -850,15 +999,178 @@ describe("Lease actions", () => {
     expect(screen.getByRole("region", { name: "Signers" })).toHaveTextContent(
       /Guarantor BSigned/,
     );
-    fireEvent.click(
-      within(dialog).getByRole("button", { name: "Record signing" }),
-    );
+    fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
     expect(
-      await screen.findByText("Lease signed. U301 is Occupied."),
+      await screen.findByText(
+        "Lease signed. U301 is Occupied. $754.84 received with Receipt RC0042.",
+      ),
     ).toBeInTheDocument();
+    expect(money.confirm).toHaveBeenCalledTimes(1);
     expect(recordSignature).toHaveBeenCalledTimes(2);
     expect(sign.mock.calls[1]?.[1]).toEqual(sign.mock.calls[0]?.[1]);
     expect(list).toHaveBeenCalledTimes(2);
+    expect(money.createSecurityDeposit).not.toHaveBeenCalled();
+    expect(money.receiveIntoDeposit.mock.calls[0]?.[0]).toBe(
+      "deposit-reservation-301",
+    );
+    expect(money.receiveIntoDeposit.mock.calls[0]?.[1]).toMatchObject({
+      amount_usd_cents: 40_000,
+    });
+  });
+
+  it("TEST-FE-1017 a walk-in draft shows its planned Security Deposit, and Edit draft saves a new amount after the draft (DL-100)", async () => {
+    window.location.hash = "#/leases/lease-sign";
+    const update = vi.fn().mockResolvedValue(signable);
+    const money = signing();
+    show(
+      api({ get: vi.fn().mockResolvedValue(signable), update }),
+      deposits({
+        leaseDeposits: vi.fn(() =>
+          Promise.resolve({ items: [], can_manage: false }),
+        ),
+      } as unknown as Partial<DepositApi>),
+      null,
+      undefined,
+      undefined,
+      {},
+      {},
+      {},
+      undefined,
+      money,
+    );
+    expect(
+      await screen.findByText(
+        "Security Deposit: $500.00, paid when the Lease is signed.",
+      ),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Edit draft" }));
+    const dialog = screen.getByRole("dialog", { name: "Edit draft · U301" });
+    const box = within(dialog).getByLabelText("Security Deposit (USD)");
+    expect(box).toHaveValue("500.00");
+    fireEvent.change(within(dialog).getByLabelText("End Date"), {
+      target: { value: "2027-12-31" },
+    });
+    fireEvent.change(box, { target: { value: "0" } });
+    fireEvent.change(within(dialog).getByLabelText(/Why it changed/), {
+      target: { value: "Deposit agreed again" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(dialog).toHaveTextContent("Type the Security Deposit, more than 0.");
+    expect(update).not.toHaveBeenCalled();
+    fireEvent.change(box, { target: { value: "450" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(await screen.findByText("The draft was saved.")).toBeInTheDocument();
+    expect(money.planSecurityDeposit.mock.calls[0]?.[0]).toBe("lease-sign");
+    expect(money.planSecurityDeposit.mock.calls[0]?.[1]).toMatchObject({
+      required_usd_cents: 45_000,
+      reason: "Deposit agreed again",
+    });
+    expect(update.mock.invocationCallOrder[0] ?? 0).toBeLessThan(
+      money.planSecurityDeposit.mock.invocationCallOrder[0] ?? 0,
+    );
+  });
+
+  it("TEST-FE-1018 Sign Lease takes no money and signs nothing when the Initial Rent Invoice cannot be made or the person may not receive payments", async () => {
+    window.location.hash = "#/leases/lease-sign";
+    const recordSignature = vi.fn();
+    const money = signing({ problem: "PARTIAL_SERVICE:Parking" });
+    show(
+      api({ get: vi.fn().mockResolvedValue(signable), recordSignature }),
+      deposits(),
+      null,
+      undefined,
+      undefined,
+      {},
+      {},
+      {},
+      undefined,
+      money,
+    );
+    fireEvent.click(await screen.findByRole("button", { name: /^Sign Lease/ }));
+    const dialog = screen.getByRole("dialog");
+    expect(
+      await within(dialog).findByText(
+        "The Initial Rent Invoice cannot be made: Parking covers only part of a month or has no rate. Fix the Service first.",
+      ),
+    ).toBeInTheDocument();
+    expect(within(dialog).queryByLabelText("How the money came")).toBeNull();
+    for (const box of within(dialog).getAllByRole("checkbox"))
+      fireEvent.click(box);
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: /^Receive .* and sign$/ }),
+    );
+    expect(money.confirm).not.toHaveBeenCalled();
+    expect(recordSignature).not.toHaveBeenCalled();
+    cleanup();
+
+    window.location.hash = "#/leases/lease-sign";
+    show(
+      api({ get: vi.fn().mockResolvedValue(signable), recordSignature }),
+      deposits(),
+      new Set(["leases.read", "leases.sign", "deposits.read"]),
+      undefined,
+      undefined,
+      {},
+      {},
+      {},
+      undefined,
+      signing(),
+    );
+    fireEvent.click(await screen.findByRole("button", { name: /^Sign Lease/ }));
+    expect(
+      await screen.findByText(
+        "To sign, you need the rights to receive and allocate payments. Ask the Owner.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("TEST-FE-1019 Print draft shows the draft for the customer to check, with the money paid at signing, and prints only the sheet", async () => {
+    window.location.hash = "#/leases/lease-sign";
+    const print = vi.spyOn(window, "print").mockImplementation(() => undefined);
+    show(
+      api({ get: vi.fn().mockResolvedValue(signable) }),
+      deposits(),
+      null,
+      undefined,
+      undefined,
+      {},
+      {},
+      {},
+      undefined,
+      signing({
+        service_lines: [
+          {
+            name: "Parking",
+            period_start: "2026-12-10",
+            period_end: "2026-12-31",
+            amount_usd_cents: 1_419,
+          },
+        ],
+        total_usd_cents: 36_903,
+      }),
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "Print draft" }));
+    const dialog = screen.getByRole("dialog", { name: "Print draft · U301" });
+    const sheet = within(dialog).getByRole("article", {
+      name: "Draft Lease sheet",
+    });
+    expect(
+      await within(sheet).findByText("Total to receive"),
+    ).toBeInTheDocument();
+    expect(sheet).toHaveTextContent("UnitU301");
+    expect(sheet).toHaveTextContent("Other SignersGuarantor B");
+    expect(sheet).toHaveTextContent("Monthly Rent$500.00");
+    expect(sheet).toHaveTextContent("Parking, 10/12/2026 to 31/12/2026$14.19");
+    expect(sheet).toHaveTextContent("Total to receive$869.03");
+    expect(sheet).toHaveTextContent(
+      "the Lease is signed only after the money below is received",
+    );
+    fireEvent.click(within(dialog).getByRole("button", { name: "Print" }));
+    expect(print).toHaveBeenCalledTimes(1);
+    expect(document.body).toHaveClass("ui-printing");
+    window.dispatchEvent(new Event("afterprint"));
+    expect(document.body).not.toHaveClass("ui-printing");
+    print.mockRestore();
   });
 
   it("TEST-FE-854 Cancel draft needs a memo and keeps the request on Try again", async () => {
@@ -1150,7 +1462,19 @@ describe("New Lease and Renew", () => {
           lease("U402", { lease_id: source.lease_id, status: "DRAFTED" }),
         ),
       );
-    show(api({ create }), deposits(), null, undefined, people(), units);
+    const money = signing();
+    show(
+      api({ create }),
+      deposits(),
+      null,
+      undefined,
+      people(),
+      units,
+      {},
+      {},
+      undefined,
+      money,
+    );
 
     fireEvent.click(await screen.findByRole("link", { name: "New Lease" }));
     const unitBox = await screen.findByLabelText("Unit");
@@ -1178,11 +1502,11 @@ describe("New Lease and Renew", () => {
     const preview = screen.getByRole("region", { name: "What will be billed" });
     // 22 to 31 December is 10 of 31 days; day 21 or later adds January.
     expect(preview).toHaveTextContent(
-      "Initial Rent $410.00, due 27/12/2026, with the rest of the Security Deposit.",
+      "Initial Rent $410.00, paid with the Security Deposit when the Lease is signed (its Invoice shows the Due Date 27/12/2026).",
     );
     expect(preview).toHaveTextContent("$310.00 × 10 ÷ 31 days = $100.00.");
     expect(preview).toHaveTextContent(
-      "Security Deposit: one month's Rent ($310.00), entered after signing.",
+      "Security Deposit: $310.00, paid when the Lease is signed.",
     );
     fireEvent.click(
       screen.getByRole("checkbox", { name: "A pet is approved" }),
@@ -1225,6 +1549,12 @@ describe("New Lease and Renew", () => {
     ]);
     expect(create.mock.calls[1]?.[1]).toEqual(sent);
     expect(create.mock.calls[1]?.[2]).toBe(create.mock.calls[0]?.[2]);
+    // DL-100: the walk-in draft keeps its Security Deposit, one month's Rent unless typed.
+    expect(money.planSecurityDeposit.mock.calls[0]?.[0]).toBe(sent?.lease_id);
+    expect(money.planSecurityDeposit.mock.calls[0]?.[1]).toMatchObject({
+      required_usd_cents: 31_000,
+      reason: "Security Deposit on the New Lease form",
+    });
   });
 
   it("TEST-FE-1010 New Lease says when the chosen Unit has no electricity or water meter on the Start Date (nothing of that kind is billed); a meter put in later counts from its day; a failed meter read shows nothing", async () => {
@@ -1588,7 +1918,7 @@ describe("New Lease and Renew", () => {
     expect(
       screen.getByRole("region", { name: "What will be billed" }),
     ).toHaveTextContent(
-      "Security Deposit: $80.00 received of $400.00 from the Booking; $320.00 still due by",
+      "Security Deposit: $80.00 received of $400.00 from the Booking; $320.00 is paid when the Lease is signed.",
     );
     fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
     fireEvent.click(

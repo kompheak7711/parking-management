@@ -167,3 +167,14 @@ candidate is the code that will be used.
   calendar button, and 46px text boxes and drop-downs (decided by Claude under the owner's
   2026-10-23 22:30 rule; no money rule changed). Services on New Lease need a Service in Settings
   first. Checks: format, lint, types, build, frontend 1,879 passed, traceability passed.
+- 2026-10-27 B6 (owner session, step 2): the owner asked that a walk-in draft carries its Security
+  Deposit, the draft is printed for the customer to check, and Sign Lease receives the money first;
+  on the decision card the owner chose the full total, no part payment (DL-100). Built: migration
+  `20270325_244` (append-only planned Security Deposit of a walk-in draft and a read-only preview of
+  the Initial Rent Invoice), the signing routes (preview, planned deposit, make the Initial Rent
+  Invoice), a Security Deposit box on New Lease and Edit draft, Print draft (one A4 sheet), and Sign
+  Lease as one dialog: receive the full total as a Payment with its Receipt, record the signatures,
+  sign, make the Initial Rent Invoice, pay it from the Payment and put the rest into the Security
+  Deposit; each step keeps its request id so Try again never pays twice. Earlier in step 1: a
+  larger calendar beside its box, New Customer as an icon button, DL-099 (more than the 20%
+  suggestion needs no reason) and the duplicate Reservation step taken out of the script.

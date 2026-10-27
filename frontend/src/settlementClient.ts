@@ -209,6 +209,78 @@ async function post(
   return record((await send(path, init, propertyId)).data);
 }
 
+export interface SigningPreview {
+  initial: {
+    period_start: string;
+    period_end: string;
+    due_date: string;
+    rent_usd_cents: number;
+    service_lines: {
+      name: string;
+      period_start: string;
+      period_end: string;
+      amount_usd_cents: number;
+    }[];
+    total_usd_cents: number;
+    /** "PARTIAL_SERVICE:<name>" or "NO_RATE:<name>": the Invoice cannot be made yet. */
+    problem: string | null;
+    invoice_id: string | null;
+  } | null;
+  planned_security_deposit_usd_cents: number | null;
+}
+
+function centsField(value: unknown): number {
+  if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 0)
+    throw new SettlementRequestError(200, null, FALLBACK);
+  return value;
+}
+
+function textField(value: unknown): string {
+  if (typeof value !== "string")
+    throw new SettlementRequestError(200, null, FALLBACK);
+  return value;
+}
+
+function signingPreview(data: SettlementRecord): SigningPreview {
+  const planned = data.planned_security_deposit_usd_cents;
+  const initial =
+    data.initial === null || data.initial === undefined
+      ? null
+      : record(data.initial);
+  return {
+    planned_security_deposit_usd_cents:
+      planned === null || planned === undefined ? null : centsField(planned),
+    initial:
+      initial === null
+        ? null
+        : {
+            period_start: textField(initial.period_start),
+            period_end: textField(initial.period_end),
+            due_date: textField(initial.due_date),
+            rent_usd_cents: centsField(initial.rent_usd_cents),
+            service_lines: (Array.isArray(initial.service_lines)
+              ? initial.service_lines
+              : []
+            ).map((entry) => {
+              const line = record(entry);
+              return {
+                name: textField(line.name),
+                period_start: textField(line.period_start),
+                period_end: textField(line.period_end),
+                amount_usd_cents: centsField(line.amount_usd_cents),
+              };
+            }),
+            total_usd_cents: centsField(initial.total_usd_cents),
+            problem:
+              initial.problem === null ? null : textField(initial.problem),
+            invoice_id:
+              initial.invoice_id === null
+                ? null
+                : textField(initial.invoice_id),
+          },
+  };
+}
+
 const id = encodeURIComponent;
 
 function property(propertyId: string): string {
@@ -278,6 +350,27 @@ export interface SettlementApi {
   receiveIntoDeposit: (
     depositId: string,
     form: DepositReceiptCreate,
+    key: string,
+  ) => Promise<SettlementRecord>;
+  // V1-060 B6 (DL-100): what a Lease owes at signing, the draft's Security Deposit, the
+  // Initial Rent Invoice made right after signing, and the money received paying it.
+  signingPreview: (leaseId: string) => Promise<SigningPreview>;
+  planSecurityDeposit: (
+    leaseId: string,
+    form: { plan_id: string; required_usd_cents: number; reason: string },
+  ) => Promise<SettlementRecord>;
+  makeInitialRentInvoice: (
+    leaseId: string,
+    key: string,
+  ) => Promise<SettlementRecord>;
+  allocationProposal: (
+    propertyId: string,
+    paymentId: string,
+  ) => Promise<SettlementRecord>;
+  allocateByProposal: (
+    propertyId: string,
+    paymentId: string,
+    proposal: SettlementRecord,
     key: string,
   ) => Promise<SettlementRecord>;
   // Slice 11b and 11c-1: the shared drafts and the Refund methods a draft may name.
@@ -434,6 +527,37 @@ export const settlementApi: SettlementApi = {
     post(`/api/v1/leases/${id(leaseId)}/security-deposit`, form, key),
   receiveIntoDeposit: (depositId, form, key) =>
     post(`/api/v1/deposits/${id(depositId)}/receipts`, form, key),
+  signingPreview: async (leaseId) =>
+    signingPreview(await read(`/api/v1/leases/${id(leaseId)}/signing-preview`)),
+  planSecurityDeposit: async (leaseId, form) => {
+    const init: RequestInit = {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": csrfToken(),
+      },
+      body: JSON.stringify(form),
+    };
+    return record(
+      (
+        await send(
+          `/api/v1/leases/${id(leaseId)}/planned-security-deposit`,
+          init,
+        )
+      ).data,
+    );
+  },
+  makeInitialRentInvoice: (leaseId, key) =>
+    post(`/api/v1/leases/${id(leaseId)}/initial-rent-invoice`, null, key),
+  allocationProposal: (propertyId, paymentId) =>
+    read(`/api/v1/payments/${id(paymentId)}/allocation-proposal`, propertyId),
+  allocateByProposal: (propertyId, paymentId, proposal, key) =>
+    post(
+      `/api/v1/payments/${id(paymentId)}/allocations`,
+      { intent: { mode: "PROPOSAL", proposal } },
+      key,
+      propertyId,
+    ),
   drafts: async (propertyId, options = {}) => {
     const query = new URLSearchParams();
     if (options.state !== undefined) query.set("state", options.state);

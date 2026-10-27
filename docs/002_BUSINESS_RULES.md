@@ -349,6 +349,8 @@ Unit still becomes OCCUPIED at signing under BR-UNIT-007.
 A walk-in Lease is subject to the same Unit exclusivity as any other Lease under
 BR-UNIT-005 and BR-UNIT-006.
 
+Amended by DL-100 (owner, 2026-10-27): a walk-in draft keeps a planned Security Deposit; Sign Lease first receives the full Security Deposit and the Initial Rent Invoice total, then signs.
+
 ---
 
 ## BR-RES-002 — One Customer per Reservation
@@ -596,6 +598,8 @@ amount and authorization must be audited.
 
 Every receipt remains part of the same Security Deposit obligation.
 
+Amended by DL-100 (owner, 2026-10-27): at Sign Lease the rest of the Security Deposit is received in full, together with the Initial Rent Invoice; there is no part payment at signing.
+
 ---
 
 ## BR-DEP-003 — Suggested Initial Security Deposit
@@ -684,6 +688,8 @@ Move-in is always recorded when it happens and is never blocked by an unpaid Sec
 Deposit or Initial Rent. If the Security Deposit balance or the Initial Rent is unpaid
 after that period, the owner may terminate under the standard Lease clause in
 BR-LEASE-025.
+
+Amended by DL-100 (owner, 2026-10-27): the app now receives the Security Deposit balance and the Initial Rent Invoice in full when the Lease is signed, so both are paid before move-in; this rule still covers a Lease signed before DL-100 and the Initial Rent Invoice Due Date.
 
 ---
 

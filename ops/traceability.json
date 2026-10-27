@@ -56569,6 +56569,117 @@
       "test_path": "backend/tests/test_reservation_api.py",
       "status": "implemented",
       "notes": "V1-060 B6 (DL-099): an amount above the 20% suggestion is kept as a variance with its reason under reservations.create alone; only an amount below needs reservation_deposits.override."
+    },
+    {
+      "test_id": "TEST-FE-1017",
+      "upstream_ids": [
+        "DL-100",
+        "BR-DEP-002",
+        "BR-RES-001"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (DL-100): a walk-in draft shows its planned Security Deposit on the Lease page; New Lease and Edit draft save the amount (one month's Rent until typed) after the draft is saved."
+    },
+    {
+      "test_id": "TEST-FE-1018",
+      "upstream_ids": [
+        "DL-100",
+        "BR-RENT-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (DL-100): Sign Lease takes no money and records nothing when the Initial Rent Invoice cannot be made (no terms, a Service for part of a month) or the person may not receive payments or make the Deposit."
+    },
+    {
+      "test_id": "TEST-FE-1019",
+      "upstream_ids": [
+        "DL-100",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (DL-100): Print draft shows the Unit, people, dates, Rent, planned Security Deposit and the money paid at signing on one A4 sheet, and printing shows only the sheet."
+    },
+    {
+      "test_id": "test_the_draft_keeps_its_planned_security_deposit_and_only_the_draft",
+      "upstream_ids": [
+        "DL-100",
+        "BR-DEP-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_signing_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 B6 (DL-100): the planned Security Deposit is append-only, kept only for a DRAFTED walk-in Lease, replays by id, adds nothing for the same amount, writes its audit event and is refused for a Lease from a Reservation."
+    },
+    {
+      "test_id": "test_a_renewal_draft_takes_no_planned_security_deposit",
+      "upstream_ids": [
+        "DL-100",
+        "DL-066"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_signing_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 B6 (DL-100): a renewal draft keeps the Security Deposit it carries and takes no planned amount."
+    },
+    {
+      "test_id": "test_the_preview_is_the_initial_rent_invoice_made_after_signing",
+      "upstream_ids": [
+        "DL-100",
+        "DL-064",
+        "BR-RENT-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_signing_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 B6 (DL-100): the signing preview's period, Due Date, Rent, Service lines and total equal the Initial Rent Invoice the generator makes after signing."
+    },
+    {
+      "test_id": "test_a_service_covering_part_of_the_first_month_is_named_before_any_money",
+      "upstream_ids": [
+        "DL-100",
+        "BR-RENT-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_signing_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 B6 (DL-100): a Service that covers only part of the first month is named as a problem in the preview, before any money is taken."
+    },
+    {
+      "test_id": "test_the_signing_preview_needs_lease_read",
+      "upstream_ids": [
+        "DL-100"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_lease_signing_api.py",
+      "status": "implemented",
+      "notes": "V1-060 B6 (DL-100): the signing preview needs leases.read for the Property, is not cached and refuses query parameters."
+    },
+    {
+      "test_id": "test_the_planned_security_deposit_is_saved_with_lease_draft_only",
+      "upstream_ids": [
+        "DL-100",
+        "BR-DEP-002"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_lease_signing_api.py",
+      "status": "implemented",
+      "notes": "V1-060 B6 (DL-100): the planned Security Deposit needs leases.draft, a whole number of cents of at least one and a reason, and refuses extra fields."
+    },
+    {
+      "test_id": "test_the_initial_rent_invoice_needs_lease_sign_and_shows_a_refusal",
+      "upstream_ids": [
+        "DL-100",
+        "BR-RENT-005"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_lease_signing_api.py",
+      "status": "implemented",
+      "notes": "V1-060 B6 (DL-100): making the Initial Rent Invoice at signing needs leases.sign and an Idempotency-Key, and a Service for part of a month is refused with INITIAL_RENT_SERVICE_PART_MONTH."
     }
   ]
 }

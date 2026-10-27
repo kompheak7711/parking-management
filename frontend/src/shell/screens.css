@@ -2197,3 +2197,38 @@ a.ui-kpi.ui-home-kpi {
   padding: 0;
   justify-content: center;
 }
+
+/* V1-060 B6 (DL-100): Print draft prints only the draft Lease sheet, on A4. */
+.lease-print {
+  background: #fff;
+  color: #000;
+  padding: 16px;
+  border: 1px solid var(--line, #ddd);
+  border-radius: 4px;
+}
+.lease-print-note {
+  font-size: 0.9em;
+}
+.lease-print-sign {
+  margin-top: 32px;
+}
+@media print {
+  @page {
+    size: A4;
+    margin: 15mm;
+  }
+  body.ui-printing * {
+    visibility: hidden;
+  }
+  body.ui-printing .lease-print,
+  body.ui-printing .lease-print * {
+    visibility: visible;
+  }
+  body.ui-printing .lease-print {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    border: 0;
+  }
+}

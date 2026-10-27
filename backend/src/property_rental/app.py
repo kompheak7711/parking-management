@@ -175,6 +175,12 @@ from property_rental.lease_notice_api import (
     create_lease_notice_router,
 )
 from property_rental.lease_notices import PostgresLeaseNoticeService
+from property_rental.lease_signing_api import (
+    LeaseSigningFlow,
+    PostgresLeaseSigningFlow,
+    UnavailableLeaseSigningFlow,
+    create_lease_signing_router,
+)
 from property_rental.logging import create_application_logger
 from property_rental.move_out_api import (
     MoveOutFlow,
@@ -517,6 +523,7 @@ def create_app(
     exchange_rate_provider: ExchangeRateProvider | None = None,
     reservation_resource_flow: ReservationResourceFlow | None = None,
     lease_resource_flow: LeaseResourceFlow | None = None,
+    lease_signing_flow: LeaseSigningFlow | None = None,
     deposit_resource_flow: DepositResourceFlow | None = None,
     utility_resource_flow: UtilityResourceFlow | None = None,
     billing_run_flow: BillingRunFlow | None = None,
@@ -1218,6 +1225,25 @@ def create_app(
                 PostgresLeaseResourceFlow(resolved_settings.database_url.get_secret_value())
                 if resolved_settings.database_url is not None
                 else UnavailableLeaseResourceFlow()
+            ),
+            resolved_settings,
+        )
+    )
+    include_signed_in(
+        create_lease_signing_router(
+            actor_resolver,
+            lease_signing_flow
+            or (
+                PostgresLeaseSigningFlow(
+                    resolved_settings.database_url.get_secret_value(),
+                    (
+                        resolved_settings.financial_database_url.get_secret_value()
+                        if resolved_settings.financial_database_url is not None
+                        else None
+                    ),
+                )
+                if resolved_settings.database_url is not None
+                else UnavailableLeaseSigningFlow()
             ),
             resolved_settings,
         )
