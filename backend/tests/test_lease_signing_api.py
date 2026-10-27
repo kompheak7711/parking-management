@@ -16,6 +16,7 @@ from property_rental.lease_signing_api import (
 from test_invoice import mutation_headers
 
 PROPERTY = uuid4()
+HELD = {"deposit_id": str(UUID(int=9)), "required_usd_cents": 50_000, "received_usd_cents": 10_000}
 
 
 class MemoryFlow:
@@ -31,7 +32,11 @@ class MemoryFlow:
         return PROPERTY
 
     def preview(self, property_id: UUID, lease_id: UUID) -> dict[str, object]:
-        return {"initial": None, "planned_security_deposit_usd_cents": 50_000}
+        return {
+            "initial": None,
+            "planned_security_deposit_usd_cents": 50_000,
+            "held_security_deposit": HELD,
+        }
 
     def set_planned_deposit(
         self,
@@ -174,3 +179,22 @@ def test_the_draft_deposit_is_applied_after_signing_with_lease_sign_only() -> No
     drafter, _ = client(flow, "leases.draft")
     assert drafter.post(path, headers=mutation_headers()).status_code == 404
     assert len(flow.applied) == 1
+
+
+def test_the_reservation_deposit_in_the_preview_needs_deposit_or_booking_read() -> None:
+    flow = MemoryFlow()
+    lease = uuid4()
+    reader, _ = client(flow, "leases.read")
+    reply = reader.get(f"/api/v1/leases/{lease}/signing-preview")
+    assert reply.status_code == 200
+    # The draft's own amount is a Lease term; the money received belongs to the deposit.
+    assert reply.json()["data"]["planned_security_deposit_usd_cents"] == 50_000
+    assert reply.json()["data"]["held_security_deposit"] is None
+    for allowed in ("deposits.read", "reservations.read"):
+        http, _ = client(flow, "leases.read", allowed)
+        assert (
+            http.get(f"/api/v1/leases/{lease}/signing-preview").json()["data"][
+                "held_security_deposit"
+            ]
+            == HELD
+        )

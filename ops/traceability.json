@@ -56759,6 +56759,16 @@
       "test_path": "backend/tests/test_lease_signing_api.py",
       "status": "implemented",
       "notes": "V1-060 B6 (DL-101): applying the draft's Security Deposit after signing needs leases.sign and an Idempotency-Key, and an amount below the money received is refused with PLANNED_DEPOSIT_BELOW_RECEIVED."
+    },
+    {
+      "test_id": "test_the_reservation_deposit_in_the_preview_needs_deposit_or_booking_read",
+      "upstream_ids": [
+        "DL-101"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_lease_signing_api.py",
+      "status": "implemented",
+      "notes": "V1-060 B6 (DL-101): the signing preview shows the Reservation's Security Deposit (money received) only to a person with deposits.read or reservations.read; the draft's own amount stays visible with leases.read."
     }
   ]
 }

@@ -40,6 +40,10 @@ from property_rental.settings import Settings
 LEASE_READ_CAPABILITY: Final = "leases.read"
 LEASE_DRAFT_CAPABILITY: Final = "leases.draft"
 LEASE_SIGN_CAPABILITY: Final = "leases.sign"
+# DL-101: the Reservation's Security Deposit in the preview shows only to a person who may see
+# deposits or Bookings.
+DEPOSIT_READ_CAPABILITY: Final = "deposits.read"
+RESERVATION_READ_CAPABILITY: Final = "reservations.read"
 CONNECT_TIMEOUT_SECONDS: Final = 3
 LOCK_TIMEOUT_MS: Final = 3_000
 QUERY_TIMEOUT_MS: Final = 5_000
@@ -393,6 +397,13 @@ def create_lease_signing_router(
             data = flow.preview(property_id, lease_id)
         except Exception as exc:
             raise _translate(exc) from exc
+        if not any(
+            is_authorized(
+                actor, AuthorizationRequirement(capability=name, property_id=str(property_id))
+            )
+            for name in (DEPOSIT_READ_CAPABILITY, RESERVATION_READ_CAPABILITY)
+        ):
+            data = {**data, "held_security_deposit": None}
         response.headers["Cache-Control"] = "private, no-store"
         return {"data": data, "meta": {"request_id": request.state.request_id}}
 
