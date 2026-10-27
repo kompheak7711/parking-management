@@ -428,6 +428,37 @@ def test_authorized_variance_requires_separate_capability() -> None:
     assert permitted_flow.create_command.acceptance_kind == "AUTHORIZED_VARIANCE"
 
 
+def test_more_than_the_suggestion_needs_no_override() -> None:
+    """DL-099: an amount above the 20% suggestion is a variance kept with its reason, made with
+    reservations.create alone; only an amount below needs reservation_deposits.override."""
+    property_id = uuid4()
+    payload = {
+        "reservation_id": str(uuid4()),
+        "unit_id": str(uuid4()),
+        "customer_id": str(uuid4()),
+        "reservation_date": "2026-08-26",
+        "agreed_monthly_rent_usd_cents": 30000,
+        "expiration_date": "2026-09-05",
+        "acceptance_id": str(uuid4()),
+        "accepted_initial_deposit_usd_cents": 10000,
+        "required_security_deposit_usd_cents": 30000,
+        "acceptance_reason": "More than the suggested 20% received.",
+        "deposit_id": str(uuid4()),
+        "receipt_id": str(uuid4()),
+        "payment_id": str(uuid4()),
+    }
+    flow = InMemoryReservationFlow()
+    answer = client(flow, actor(property_id, "reservations.create")).post(
+        f"/properties/{property_id}/reservations", json=payload, headers=headers()
+    )
+
+    assert answer.status_code == 201
+    assert flow.create_command is not None
+    assert flow.create_command.acceptance_kind == "AUTHORIZED_VARIANCE"
+    assert flow.create_command.authorization_reference == "reservations.create"
+    assert flow.create_command.acceptance_reason == "More than the suggested 20% received."
+
+
 def test_extend_requires_version_and_records_one_notice_shape() -> None:
     property_id = uuid4()
     current = resource(property_id)

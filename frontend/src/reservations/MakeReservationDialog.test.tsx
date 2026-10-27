@@ -194,7 +194,7 @@ describe("Make Reservation (V1-060 B6)", () => {
     expect(create.mock.calls[1]?.[2]).toBe(create.mock.calls[0]?.[2]);
   });
 
-  it("TEST-FE-1014 suggests 20% of the Rent and asks why when another amount is received", async () => {
+  it("TEST-FE-1014 suggests 20% of the Rent, asks why only when less is received (DL-099)", async () => {
     expect(suggestedDeposit(45_000)).toBe(9_000);
     expect(suggestedDeposit(45_003)).toBe(9_001);
     const { unitApi, customerApi, paymentsApi, confirm, api } = apis();
@@ -229,10 +229,16 @@ describe("Make Reservation (V1-060 B6)", () => {
     );
     expect(
       within(dialog).getByText(
-        "Say why the amount differs from the suggestion.",
+        "Say why the amount is less than the suggestion.",
       ),
     ).toBeInTheDocument();
     expect(within(dialog).getByText("Choose a Customer.")).toBeInTheDocument();
     expect(confirm).not.toHaveBeenCalled();
+    fireEvent.change(within(dialog).getByLabelText("Received now (USD)"), {
+      target: { value: "200" },
+    });
+    expect(
+      within(dialog).queryByLabelText(/Why less than the suggestion/),
+    ).toBeNull();
   });
 });

@@ -156,10 +156,11 @@ export function MakeReservationDialog({
   const rentCents = centsOf(rent);
   const suggestion = rentCents === null ? null : suggestedDeposit(rentCents);
   const receivedCents = centsOf(received);
-  const differs =
-    suggestion !== null &&
-    receivedCents !== null &&
-    receivedCents !== suggestion;
+  // DL-099 (owner 2026-10-27): only less than the suggestion needs a reason and the Manager.
+  const below =
+    suggestion !== null && receivedCents !== null && receivedCents < suggestion;
+  const above =
+    suggestion !== null && receivedCents !== null && receivedCents > suggestion;
 
   // The suggestions follow the Rent until someone types their own amount.
   const typedReceived = useRef(false);
@@ -190,7 +191,7 @@ export function MakeReservationDialog({
       (receivedCents !== null && requiredCents < receivedCents)
     )
       found.required = say("mk_err_required");
-    if (differs && reason.trim() === "") found.reason = say("mk_err_reason");
+    if (below && reason.trim() === "") found.reason = say("mk_err_reason");
     const issue =
       paid !== null || methods === null || methods === "failed"
         ? null
@@ -226,9 +227,9 @@ export function MakeReservationDialog({
         acceptance_id: ids.current.acceptance,
         accepted_initial_deposit_usd_cents: receivedCents,
         required_security_deposit_usd_cents: requiredCents,
-        acceptance_reason: differs
+        acceptance_reason: below
           ? reason.trim()
-          : rt("en", "mk_reason_default"),
+          : rt("en", above ? "mk_reason_more" : "mk_reason_default"),
         deposit_id: ids.current.deposit,
         receipt_id: ids.current.receipt,
       },
@@ -506,7 +507,7 @@ export function MakeReservationDialog({
               />
             </div>
           </div>
-          {differs && (
+          {below && (
             <div className="ui-field">
               <label htmlFor="mk-reason">{rt(language, "mk_reason")}</label>
               <input

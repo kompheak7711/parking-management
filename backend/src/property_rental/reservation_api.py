@@ -1023,7 +1023,10 @@ def create_reservation_router(
             if source.accepted_initial_deposit_usd_cents == suggested
             else "AUTHORIZED_VARIANCE"
         )
-        if acceptance_kind == "AUTHORIZED_VARIANCE":
+        # DL-099 (owner 2026-10-27): only an amount below the suggestion needs the override; more
+        # is still recorded as a variance with its reason, under reservations.create.
+        below = source.accepted_initial_deposit_usd_cents < suggested
+        if below:
             _require(actor, property_id, DEPOSIT_OVERRIDE_CAPABILITY)
         command = ReservationCreateCommand(
             idempotency_key=idempotency_key,
@@ -1039,9 +1042,7 @@ def create_reservation_router(
             accepted_at=None,
             acceptance_reason=source.acceptance_reason,
             authorization_reference=(
-                RESERVATION_CREATE_CAPABILITY
-                if acceptance_kind == "NORMAL_SUGGESTION"
-                else DEPOSIT_OVERRIDE_CAPABILITY
+                DEPOSIT_OVERRIDE_CAPABILITY if below else RESERVATION_CREATE_CAPABILITY
             ),
             calculation_trace={
                 "agreed_monthly_rent_usd_cents": source.agreed_monthly_rent_usd_cents,

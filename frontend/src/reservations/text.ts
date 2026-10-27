@@ -244,12 +244,16 @@ const TEXT = {
     "ការណែនាំ៖ 20% នៃថ្លៃឈ្នួលដែលបានព្រមព្រៀង {0}។",
   ],
   mk_reason: [
-    "Why a different amount (needs the Manager's approval)",
-    "ហេតុអ្វីចំនួនខុសគ្នា (ត្រូវការការអនុម័តពីអ្នកគ្រប់គ្រង)",
+    "Why less than the suggestion (needs the Manager's approval)",
+    "ហេតុអ្វីតិចជាងចំនួនណែនាំ (ត្រូវការការអនុម័តពីអ្នកគ្រប់គ្រង)",
   ],
   mk_reason_default: [
     "Suggested 20% of the agreed Rent.",
     "Suggested 20% of the agreed Rent.",
+  ],
+  mk_reason_more: [
+    "More than the suggested 20% received.",
+    "More than the suggested 20% received.",
   ],
   mk_save: ["Save Reservation", "រក្សាទុកការកក់"],
   mk_err_unit: ["Choose a Unit.", "សូមជ្រើសរើសបន្ទប់។"],
@@ -272,8 +276,8 @@ const TEXT = {
     "សូមវាយចំនួនដែលទទួលបានឥឡូវនេះ។",
   ],
   mk_err_reason: [
-    "Say why the amount differs from the suggestion.",
-    "សូមប្រាប់ពីមូលហេតុដែលចំនួនខុសពីការណែនាំ។",
+    "Say why the amount is less than the suggestion.",
+    "សូមប្រាប់ពីមូលហេតុដែលចំនួនតិចជាងការណែនាំ។",
   ],
   mk_memo: [
     "Security Deposit received with the Reservation of {0}",

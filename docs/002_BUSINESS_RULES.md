@@ -628,6 +628,8 @@ This amount is Security Deposit, not a fee or separate Deposit type.
 
 Amended by DL-075 (owner, 2026-10-20): the 20 percent is the Settings default for the suggested deposit. A new value applies only to new Reservations.
 
+Amended by DL-099 (owner, 2026-10-27): more than the suggestion needs no typed reason and no override; only an amount below it needs a reason and authorized management.
+
 ---
 
 ## BR-DEP-004 — Required Security Deposit Amount

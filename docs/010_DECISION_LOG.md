@@ -2224,3 +2224,12 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Decision:** a Lease has no tick for Utilities. Electricity and water are billed from the Meters on the Unit (BR-UTIL-003); a Unit with no Meter of a kind gets no Utility Invoice for it. When a later Customer needs electricity or water, staff install the Meter and add it in Utilities > Meters with its first reading. The Meter is dated the day it is put in, after the earlier Lease's hand-back, so its readings never belong to a Lease that closed without one. A Unit with no Meter at all on the hand-back day needs no final readings or final Utility Invoice, so its Final Settlement is not held for them (migration 20270319_238); any earlier Utility period with consumption on no Invoice still holds it. The Home "Refund due by" to-do (DL-073 item 4) for such a Unit counts 7 days from the final inspection alone. The New Lease form says when the chosen Unit has no electricity or water Meter on the Start Date, and a person with Settings access may add a Service from the form (the Settings rules of DL-075 apply).
 - **Links:** BR-UTIL-003, BR-UTIL-020, BR-UTIL-021, DL-075, DL-097.
 - **Decision date:** 2026-10-26.
+
+## DL-099 — V1-060 B6: more than the suggested Reservation deposit needs no reason or Manager
+
+- **Type:** `OWNER BUSINESS DECISION`
+- **Status:** `APPROVED; BUILT ON THE V1-060 BRANCH`
+- **Source:** the owner, 2026-10-27 16:04, during the V1-060 owner test session: "why need a reason if customer pay $100 for reservation. I don't think we need a reason. except it smaller than 20%."
+- **Decision:** amends BR-DEP-003 and the override line of BR-RES (authorized management for an override). When the money received with a Reservation is more than the suggested 20% of the agreed Rent, staff with `reservations.create` may accept it with no typed reason and without `reservation_deposits.override`; the record still keeps it as a variance (`AUTHORIZED_VARIANCE`) with the suggested amount, the accepted amount, the actor, the time and the fixed reason "More than the suggested 20% received.", under `reservations.create`. An amount below the suggestion still needs a typed reason and `reservation_deposits.override`. No database change; the API and Make Reservation follow it.
+- **Links:** BR-DEP-001, BR-DEP-002, BR-DEP-003, DL-075, DL-077.
+- **Decision date:** 2026-10-27.

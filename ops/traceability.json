@@ -56558,6 +56558,17 @@
       "test_path": "frontend/src/leases/ReceiveDepositDialog.test.tsx",
       "status": "implemented",
       "notes": "V1-060 B6 (owner test 27/10/2026): a Security Deposit not fully received takes at most the rest, and no new Deposit is made."
+    },
+    {
+      "test_id": "test_more_than_the_suggestion_needs_no_override",
+      "upstream_ids": [
+        "DL-099",
+        "BR-DEP-003"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_reservation_api.py",
+      "status": "implemented",
+      "notes": "V1-060 B6 (DL-099): an amount above the 20% suggestion is kept as a variance with its reason under reservations.create alone; only an amount below needs reservation_deposits.override."
     }
   ]
 }
