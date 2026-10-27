@@ -25,6 +25,12 @@ if (process.env.PRM_LOCAL_HTTPS === "1" && localHttps === undefined) {
   );
 }
 
+const api = {
+  target: "http://127.0.0.1:8000",
+  changeOrigin: false,
+  xfwd: true,
+};
+
 export default defineConfig({
   plugins: [react()],
   server: {
@@ -32,11 +38,10 @@ export default defineConfig({
       ? {}
       : { https: localHttps, allowedHosts: [".local"] }),
     proxy: {
-      "/api": {
-        target: "http://127.0.0.1:8000",
-        changeOrigin: false,
-        xfwd: true,
-      },
+      "/api": api,
+      // V1-060: the Property, Unit, Unit setup and Reservation routes have no /api/v1 prefix
+      // yet; the screens page by the # part only, so these paths never name a screen.
+      "^/(properties|units|unit-setup|reservations)/": api,
     },
     // Vite's own list, and the ignored `.local` folder of the local secrets and certificate.
     fs: {

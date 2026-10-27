@@ -320,6 +320,9 @@ INVOICE_API_PATH_PATTERN: Final = re.compile(
     r"^/api/v1/(?:properties/[^/]+/(?:invoices(?:/|$)|billing-capabilities$|"
     r"one-time-charges$|one-time-charge-due-days$)|invoices(?:/|$))"
 )
+# V1-060: routes mounted without /api/v1 (the screens reach them through the same proxy).
+UNPREFIXED_API_PATHS: Final = ("/properties/", "/units/", "/unit-setup/", "/reservations/")
+
 UNPAID_INITIAL_API_PATH_PATTERN: Final = re.compile(
     r"^/api/v1/properties/[^/]+/lease-terminations/[^/]+/"
     r"unpaid-initial-(?:never-moved-in|moved-in-credit)$"
@@ -1038,6 +1041,11 @@ def create_app(
             # Every other API answer that sets no caching rule of its own (login L8 review: the
             # account administration, audit, Property and Unit reads) is per person as well.
             or (request.url.path.startswith("/api/v1/") and "Cache-Control" not in response.headers)
+            # V1-060: the Property, Unit, Unit setup and Reservation routes without /api/v1.
+            or (
+                request.url.path.startswith(UNPREFIXED_API_PATHS)
+                and "Cache-Control" not in response.headers
+            )
         ):
             response.headers["Cache-Control"] = "private, no-store"
             response.headers["Vary"] = "Cookie"

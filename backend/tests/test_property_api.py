@@ -135,6 +135,8 @@ def test_get_property_returns_identity_timezone_version_and_etag() -> None:
 
     assert response.status_code == 200
     assert response.headers["etag"] == '"3"'
+    # V1-060: per person, like every /api/v1 read, although this route has no /api/v1 prefix.
+    assert response.headers["cache-control"] == "private, no-store"
     assert response.json()["data"] == {
         "property_id": str(property_id),
         "name": "Riverside",
