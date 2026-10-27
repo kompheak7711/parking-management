@@ -158,3 +158,12 @@ candidate is the code that will be used.
   trust the database URL they are given. Checks on 5b5aed38: format, lint, types, roadmap,
   backend tests 5,080 passed; PostgreSQL 2,850 passed (run in two halves: a full run that shared
   the machine with the backend tests hit statement timeouts and the 2-hour limit).
+- 2026-10-27 B6 (owner session, paused at step 1): the local database had no Property and the
+  screens' proxy missed four route roots; fixed by the setup command (c1824fb5) and the proxy
+  (187c7324). The owner's findings, fixed in 9ae09bcc and e37a016e: Make Reservation in the new
+  design (the deposit is saved first as a Payment with its Receipt, then the Reservation takes it),
+  Receive Security Deposit on the Lease page (a walk-in Lease's deposit or the rest of one), New
+  Customer from Make Reservation and New Lease, date boxes that take a typed dd/mm/yyyy day with a
+  calendar button, and 46px text boxes and drop-downs (decided by Claude under the owner's
+  2026-10-23 22:30 rule; no money rule changed). Services on New Lease need a Service in Settings
+  first. Checks: format, lint, types, build, frontend 1,879 passed, traceability passed.
