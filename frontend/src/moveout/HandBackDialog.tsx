@@ -237,6 +237,7 @@ export function HandBackDialog({
           <span className="req">{mt(language, "required")}</span>
         </label>
         <DateInput
+          language={language}
           invalid={problem !== null}
           id="hb-day"
           max={today}

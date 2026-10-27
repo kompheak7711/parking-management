@@ -755,6 +755,7 @@ export function LeaseForm({
               "lease-form-start",
               lt(language, "start"),
               <DateInput
+                language={language}
                 invalid={problems.start !== undefined}
                 id="lease-form-start"
                 onChange={(value) => {
@@ -770,6 +771,7 @@ export function LeaseForm({
               "lease-form-end",
               lt(language, "end"),
               <DateInput
+                language={language}
                 invalid={problems.end !== undefined}
                 id="lease-form-end"
                 onChange={(value) => {

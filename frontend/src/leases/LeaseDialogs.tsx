@@ -422,6 +422,7 @@ export function EditDraftDialog({
         "lease-edit-start",
         lt(language, "start"),
         <DateInput
+          language={language}
           invalid={problems.start !== undefined}
           id="lease-edit-start"
           onChange={(value) => {
@@ -435,6 +436,7 @@ export function EditDraftDialog({
         "lease-edit-end",
         lt(language, "end"),
         <DateInput
+          language={language}
           invalid={problems.end !== undefined}
           id="lease-edit-end"
           onChange={(value) => {
@@ -720,6 +722,7 @@ export function MoveInDialog({
       <div className="ui-field">
         <label htmlFor="lease-movein-day">{lt(language, "movein_day")}</label>
         <DateInput
+          language={language}
           invalid={problems.day !== undefined}
           id="lease-movein-day"
           max={last}

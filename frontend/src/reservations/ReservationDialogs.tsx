@@ -174,6 +174,7 @@ export function ExtendDialog({
       <div className="ui-field">
         <label htmlFor="reservation-new-date">{rt(language, "new_date")}</label>
         <DateInput
+          language={language}
           invalid={wrong}
           id="reservation-new-date"
           max={latest}

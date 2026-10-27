@@ -1039,6 +1039,7 @@ function UtilityDialog({
         >
           {(describedBy) => (
             <DateInput
+              language={language}
               describedBy={describedBy}
               invalid={errors["ur-day"] !== undefined}
               id="ur-day"
@@ -1060,6 +1061,7 @@ function UtilityDialog({
       >
         {(describedBy) => (
           <DateInput
+            language={language}
             describedBy={describedBy}
             invalid={errors["ur-told"] !== undefined}
             id="ur-told"
@@ -1188,6 +1190,7 @@ function ServiceRateDialog({
         >
           {(describedBy) => (
             <DateInput
+              language={language}
               describedBy={describedBy}
               invalid={errors["sr-day"] !== undefined}
               id="sr-day"

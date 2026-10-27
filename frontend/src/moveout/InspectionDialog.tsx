@@ -315,6 +315,7 @@ export function InspectionDialog({
             <span className="req">{mt(language, "required")}</span>
           </label>
           <DateInput
+            language={language}
             describedBy="in-day-help"
             invalid={bad.has("date")}
             disabled={frozen}

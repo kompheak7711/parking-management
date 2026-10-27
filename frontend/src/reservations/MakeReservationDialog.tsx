@@ -412,6 +412,7 @@ export function MakeReservationDialog({
             <div className="ui-field">
               <label htmlFor="mk-date">{rt(language, "mk_date")}</label>
               <DateInput
+                language={language}
                 disabled={busy}
                 id="mk-date"
                 invalid={problems.date !== undefined}
@@ -427,6 +428,7 @@ export function MakeReservationDialog({
             <div className="ui-field">
               <label htmlFor="mk-expires">{rt(language, "mk_expires")}</label>
               <DateInput
+                language={language}
                 disabled={busy}
                 id="mk-expires"
                 invalid={problems.expires !== undefined}

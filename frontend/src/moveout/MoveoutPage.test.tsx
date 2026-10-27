@@ -1630,9 +1630,22 @@ describe("Move-out", () => {
     const date = within(dialog).getByLabelText(/Inspection date/);
     expect((date as HTMLInputElement).value).toBe(dayText(TODAY));
     // The calendar beside the typed box offers no day before the hand-back.
+    fireEvent.click(within(dialog).getByRole("button", { name: "Calendar" }));
+    fireEvent.change(within(dialog).getByLabelText("Year"), {
+      target: { value: "2026" },
+    });
+    fireEvent.change(within(dialog).getByLabelText("Month"), {
+      target: { value: "9" },
+    });
     expect(
-      date.parentElement?.querySelector(".ui-date-picker")?.getAttribute("min"),
-    ).toBe("2026-10-12");
+      within(dialog).getByRole("button", { name: "11/10/2026" }),
+    ).toBeDisabled();
+    expect(
+      within(dialog).getByRole("button", { name: "12/10/2026" }),
+    ).toBeEnabled();
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Close calendar" }),
+    );
     fireEvent.click(
       within(dialog).getByRole("button", { name: "Add finding" }),
     );

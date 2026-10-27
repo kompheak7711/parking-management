@@ -96,6 +96,18 @@ describe("Date box (V1-060 B6)", () => {
     expect(onChange).toHaveBeenLastCalledWith("1986-03-15");
     fireEvent.change(box, { target: { value: "15/13/1986" } });
     expect(onChange).toHaveBeenLastCalledWith("15/13/1986");
+    // The calendar picks a day far back with its month and year lists.
+    fireEvent.click(screen.getByRole("button", { name: "Calendar" }));
+    fireEvent.change(screen.getByLabelText("Year"), {
+      target: { value: "1990" },
+    });
+    fireEvent.change(screen.getByLabelText("Month"), {
+      target: { value: "0" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "02/01/1990" }));
+    expect(onChange).toHaveBeenLastCalledWith("1990-01-02");
+    expect(box).toHaveValue("02/01/1990");
+    expect(screen.queryByLabelText("Year")).toBeNull();
   });
 });
 

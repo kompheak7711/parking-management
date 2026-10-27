@@ -475,6 +475,7 @@ export function RecordWarningDialog({
                 <span className="req">{ltr(language, "required")}</span>
               </label>
               <DateInput
+                language={language}
                 invalid={problems.dates !== undefined}
                 id="warning-breach"
                 max={today}
@@ -490,6 +491,7 @@ export function RecordWarningDialog({
                 <span className="req">{ltr(language, "required")}</span>
               </label>
               <DateInput
+                language={language}
                 invalid={problems.dates !== undefined}
                 id="warning-given"
                 max={today}

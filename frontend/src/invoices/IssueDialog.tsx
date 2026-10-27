@@ -120,6 +120,7 @@ export function IssueDialog({
           <div className="ui-field">
             <label htmlFor="iss-date">{ivt(language, "iss_date")}</label>
             <DateInput
+              language={language}
               describedBy={
                 problems.includes("date") ? "iss-date-err" : undefined
               }

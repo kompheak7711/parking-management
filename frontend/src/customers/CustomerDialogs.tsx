@@ -166,6 +166,7 @@ function CustomerFields({
         <div className="ui-field">
           <label htmlFor="customer-date_of_birth">{ct(language, "dob")}</label>
           <DateInput
+            language={language}
             id="customer-date_of_birth"
             invalid={problems.date_of_birth !== undefined}
             max={todayInPhnomPenh()}

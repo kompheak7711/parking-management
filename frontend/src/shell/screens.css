@@ -2048,6 +2048,7 @@ a.ui-kpi.ui-home-kpi {
 .ui-date {
   position: relative;
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   align-items: stretch;
   width: 100%;
@@ -2056,19 +2057,6 @@ a.ui-kpi.ui-home-kpi {
 .ui-date input[type="text"] {
   flex: 1 1 auto;
   min-width: 0;
-}
-
-.ui-date input.ui-date-picker {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  width: 1px;
-  min-height: 0;
-  height: 1px;
-  padding: 0;
-  border: 0;
-  opacity: 0;
-  pointer-events: none;
 }
 
 .ui-date .ui-date-button {
@@ -2101,4 +2089,91 @@ a.ui-kpi.ui-home-kpi {
 .ui-pickrow .ui-btn {
   flex: 0 0 auto;
   white-space: nowrap;
+}
+
+/* V1-060 B6 (owner 27/10/2026): the calendar under a date box, drawn large enough to tap on the
+   iPad (the browser's own calendar cannot be made bigger). It sits in the page flow, so a dialog
+   never cuts it off. */
+.ui-cal {
+  flex: 1 1 100%;
+  max-width: 420px;
+  padding: 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 18%);
+}
+
+.ui-cal-head {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.ui-cal-head select {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ui-cal-nav {
+  flex: 0 0 46px;
+  min-height: 46px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.ui-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.ui-cal-wd {
+  padding: 4px 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.ui-cal-day {
+  min-height: 46px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.ui-cal-day:hover:not(:disabled) {
+  background: var(--hover);
+}
+
+.ui-cal-day.today {
+  border-color: var(--primary);
+}
+
+.ui-cal-day.on {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.ui-cal-day:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.ui-cal-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
 }

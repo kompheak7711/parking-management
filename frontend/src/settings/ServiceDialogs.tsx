@@ -321,6 +321,7 @@ export function ServiceDialog({
           >
             {(describedBy) => (
               <DateInput
+                language={language}
                 describedBy={describedBy}
                 invalid={errors["sv-day"] !== undefined}
                 id="sv-day"

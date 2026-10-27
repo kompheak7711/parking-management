@@ -874,6 +874,7 @@ function AddMeterDialog({
       <div className="ui-field">
         <label htmlFor="add-day">{utt(language, "mt_installed")}</label>
         <DateInput
+          language={language}
           describedBy={
             problems.installed === undefined ? undefined : "add-day-err"
           }
@@ -1040,6 +1041,7 @@ function ReplaceMeterDialog({
           <span className="req">{utt(language, "required")}</span>
         </label>
         <DateInput
+          language={language}
           describedBy={
             problems.found === undefined ? undefined : "rp-found-err"
           }
@@ -1062,6 +1064,7 @@ function ReplaceMeterDialog({
       <div className="ui-field">
         <label htmlFor="rp-day">{utt(language, "mt_new_day")}</label>
         <DateInput
+          language={language}
           describedBy={problems.putIn === undefined ? undefined : "rp-day-err"}
           invalid={problems.putIn !== undefined}
           id="rp-day"

@@ -464,6 +464,7 @@ export function TerminateDialog({
       <div className="ui-field">
         <label htmlFor="terminate-day">{lt(language, "tg_date")}</label>
         <DateInput
+          language={language}
           invalid={problems.day !== undefined}
           id="terminate-day"
           max={last}
@@ -622,6 +623,7 @@ export function RecordNoticeDialog({
       <div className="ui-field">
         <label htmlFor="notice-given">{lt(language, "nt_date")}</label>
         <DateInput
+          language={language}
           invalid={problems.dates !== undefined}
           id="notice-given"
           max={today}
@@ -635,6 +637,7 @@ export function RecordNoticeDialog({
       <div className="ui-field">
         <label htmlFor="notice-ends">{lt(language, "nt_ends")}</label>
         <DateInput
+          language={language}
           invalid={problems.dates !== undefined}
           id="notice-ends"
           min={given}
