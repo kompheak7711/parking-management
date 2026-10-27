@@ -384,7 +384,8 @@ export function LeaseDetail({
       | "movein"
       | "terminate"
       | "notice"
-      | "deposit",
+      | "deposit"
+      | "print",
   ) {
     setNotice(null);
     setWarning(null);
