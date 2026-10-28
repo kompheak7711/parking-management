@@ -56769,6 +56769,29 @@
       "test_path": "backend/tests/test_lease_signing_api.py",
       "status": "implemented",
       "notes": "V1-060 B6 (DL-101): the signing preview shows the Reservation's Security Deposit (money received) only to a person with deposits.read or reservations.read; the draft's own amount stays visible with leases.read."
+    },
+    {
+      "test_id": "TEST-FE-1023",
+      "upstream_ids": [
+        "BR-RENT-009",
+        "BR-RENT-029",
+        "DL-080"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/invoices/InvoicesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6: the printed Initial Rent Invoice has no late-payment note, paid or still owed (it never gets a late-payment charge); its QR code still shows while money is owed; a monthly Rent Invoice keeps the note."
+    },
+    {
+      "test_id": "test_the_invoice_resource_marks_the_initial_rent_line_for_the_printed_invoice",
+      "upstream_ids": [
+        "BR-RENT-009",
+        "BR-RENT-029"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_initial_rent_lease_start_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 B6: the Invoice resource marks the Initial Rent Invoice's Rent line billing_kind INITIAL (a monthly one RECURRING); the printed Invoice reads it to leave out the late-payment note."
     }
   ]
 }

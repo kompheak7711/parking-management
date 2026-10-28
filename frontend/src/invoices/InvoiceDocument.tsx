@@ -67,6 +67,15 @@ function utilityDetail(line: InvoiceLine): string | null {
   return `${quantity.toLocaleString("en-US")} ${unit} × $${String(rate)}`;
 }
 
+/** The Initial Rent Invoice: its Rent line was billed as INITIAL when the Lease was signed. */
+function initialRent(invoice: InvoiceResource): boolean {
+  return invoice.lines.some(
+    (line) =>
+      line.category === "RENT" &&
+      textOf(line.calculation_evidence.billing_kind) === "INITIAL",
+  );
+}
+
 function Label({ kh, en }: { kh: string; en: string }) {
   return (
     <span className="lbl">
@@ -188,8 +197,9 @@ export function InvoiceDocument({
           <span className="n">{usdFromCents(owed)}</span>
         </div>
       </div>
-      {invoice.category === "RENT" && (
-        // The approved template's words; the rate is the Settings rate (10%, DL-076).
+      {invoice.category === "RENT" && !initialRent(invoice) && (
+        // The approved template's words; the rate is the Settings rate (10%, DL-076). The Initial
+        // Rent Invoice never gets a late-payment charge (BR-RENT-009, BR-RENT-029), so no note.
         <p className="note">
           <span className="kh">
             ប្រសិនបើមិនបង់ទាន់ថ្ងៃកំណត់ អាចមានការគិតថ្លៃបង់យឺត ១០%

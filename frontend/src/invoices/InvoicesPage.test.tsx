@@ -604,6 +604,63 @@ describe("Invoices page (V1-058 R5)", () => {
     expect(within(sheet).queryByRole("img", { name: /KHQR/ })).toBeNull();
   });
 
+  it("TEST-FE-1023 The printed Initial Rent Invoice has no late-payment note, paid or not; a monthly Rent Invoice keeps it", async () => {
+    const billed = (
+      number: string,
+      kind: string,
+      fields: Parameters<typeof invoice>[2],
+    ) => {
+      const made = invoice(`inv-${kind.toLowerCase()}`, number, fields);
+      const line = made.lines[0];
+      if (line === undefined) throw new Error("No line");
+      line.calculation_evidence = { billing_kind: kind };
+      return made;
+    };
+    const list = [
+      billed("INV260006", "INITIAL", {
+        customer: "cust-sok",
+        lease: "lease-101",
+        status: "PAID",
+        total: 30500,
+        paid: 30500,
+      }),
+      billed("INV260007", "RECURRING", {
+        customer: "cust-sok",
+        lease: "lease-101",
+        total: 30500,
+      }),
+    ];
+    const sheetOf = async (id: string) => {
+      window.location.hash = `#/invoices/inv:${id}`;
+      show({ invoices: invoiceApi(list) });
+      await screen.findByRole("button", { name: "Print Invoice" });
+      const sheet = document.querySelector("article.doc");
+      if (!(sheet instanceof HTMLElement)) throw new Error("No sheet");
+      return sheet;
+    };
+    let sheet = await sheetOf("inv-initial");
+    expect(sheet.querySelector(".due .n")?.textContent).toBe("$0.00");
+    expect(within(sheet).queryByText(/late-payment charge/)).toBeNull();
+    expect(within(sheet).queryByRole("img", { name: /KHQR/ })).toBeNull();
+    cleanup();
+
+    // Still owed (an older Initial Rent Invoice): the QR code shows, the note does not.
+    const initial = list[0];
+    if (initial === undefined) throw new Error("No Initial Rent Invoice");
+    initial.status = "UNPAID";
+    initial.active_application_total = usd(0);
+    initial.outstanding_balance = usd(30500);
+    sheet = await sheetOf("inv-initial");
+    expect(within(sheet).queryByText(/late-payment charge/)).toBeNull();
+    expect(within(sheet).getByRole("img", { name: /KHQR/ })).toBeTruthy();
+    cleanup();
+
+    sheet = await sheetOf("inv-recurring");
+    expect(
+      within(sheet).getByText(/a late-payment charge of 10%/),
+    ).toBeTruthy();
+  });
+
   it("TEST-FE-904 Create Invoice checks every box, confirms, records the charge and makes a Draft once even when pressed again after no answer; Damage points to Move-out; it needs invoices.create", async () => {
     const api = invoiceApi();
     const draft = invoice("inv-new", "INV260099", {

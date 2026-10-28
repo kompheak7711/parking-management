@@ -232,6 +232,45 @@ def test_recurring_rent_follows_lease_start_coverage_without_an_occupancy(
         )
 
 
+def test_the_invoice_resource_marks_the_initial_rent_line_for_the_printed_invoice(
+    migrated_database_url: str,
+) -> None:
+    # The printed Invoice reads this mark to leave out the late-payment note on the Initial
+    # Rent Invoice, which never gets a late-payment charge (BR-RENT-009, BR-RENT-029).
+    start = date(2026, 7, 10)
+    actor, prop, lease = signed_lease(migrated_database_url, start)
+    service = PostgresRentBillingService(financial_database_url(), prop, actor)
+    who = authenticated(actor, prop)
+    initial = service.generate(
+        initial_command(lease, uuid4(), period_start=start, issued_at=issued_on(date(2026, 7, 1))),
+        actor=who,
+    )
+    august = service.generate(
+        recurring_command(
+            lease,
+            period_start=date(2026, 8, 1),
+            issued_at=datetime(2026, 7, 24, 17, 0, 1, tzinfo=UTC),
+        ),
+        actor=who,
+    )
+
+    def rent_kinds(invoice_id: UUID) -> list[object]:
+        with psycopg.connect(migrated_database_url) as connection:
+            row = connection.execute(
+                "SELECT app.invoice_resource_snapshot(%s)", (invoice_id,)
+            ).fetchone()
+        assert row is not None
+        snapshot = cast(dict[str, Any], row[0])
+        return [
+            line["calculation_evidence"].get("billing_kind")
+            for line in snapshot["lines"]
+            if line["category"] == "RENT"
+        ]
+
+    assert rent_kinds(initial.invoice_id) == ["INITIAL"]
+    assert rent_kinds(august.invoice_id) == ["RECURRING"]
+
+
 def test_issued_due_date_and_override_shape_constraints(migrated_database_url: str) -> None:
     with psycopg.connect(migrated_database_url) as connection:
         names = {

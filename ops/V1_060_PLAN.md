@@ -196,3 +196,12 @@ candidate is the code that will be used.
   Paid for lines show it). Owner change: the printed Receipt no longer shows the "Payer note /
   សម្រាប់" line, because the Paid for lines already say what the money paid; the note stays saved
   with the Payment. DESIGN.md 0.32 and the brand-kit Receipt template follow.
+- 2026-10-28 B6 (owner session, steps 2b and 3): the owner ticked step 2b (the DL-101 Security
+  Deposit retest passed). The owner asked why the printed Initial Rent Invoice has no QR code like
+  the sample: the QR code shows only while money is owed (V1-058 R5), and the Initial Rent Invoice
+  is paid in full at signing (DL-100). Found from the owner's screenshot: the printed Initial Rent
+  Invoice showed the late-payment note, but that Invoice never gets a late-payment charge
+  (BR-RENT-009, BR-RENT-029). Fixed: the sheet leaves the note out when its Rent line was billed as
+  INITIAL (TEST-FE-1023; the database test locks that mark). The test script said the Initial Rent
+  Invoice number starts with RENT-I; it gets a normal INV number (script fixed; step 4 now says
+  where the QR code shows).
