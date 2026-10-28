@@ -166,6 +166,24 @@ export interface OneTimeChargeRecord {
   evidence_reference: string;
   evidence: Evidence;
 }
+/**
+ * DL-103: one typed item of a Miscellaneous Invoice, its own approved charge. The server works
+ * out the amount as the whole quantity times the unit price.
+ */
+export interface InvoiceItemInput {
+  charge_id: string;
+  description: string;
+  quantity: number;
+  unit_price: Money;
+}
+/** DL-103: one Invoice of 1 to 20 items with one reason and one approval for all of them. */
+export interface ItemsInvoiceInput {
+  customer_id: string;
+  lease_id: string | null;
+  reason: string;
+  evidence_reference: string;
+  items: InvoiceItemInput[];
+}
 /** The Property setting for the Due Date of one-time charges, with its new version. */
 export interface DueDaysSetting {
   property_id: string;
@@ -204,6 +222,19 @@ export interface InvoiceApi {
   create: (
     propertyId: string,
     obligationId: string,
+    key: string,
+  ) => Promise<InvoiceResource>;
+  /** DL-103: record every item's charge and the Draft in one request. */
+  createWithItems: (
+    propertyId: string,
+    input: ItemsInvoiceInput,
+    key: string,
+  ) => Promise<InvoiceResource>;
+  /** DL-103: Edit items of a Draft made from typed items, with the reason for the change. */
+  replaceItems: (
+    id: string,
+    input: ItemsInvoiceInput & { change_reason: string },
+    version: number,
     key: string,
   ) => Promise<InvoiceResource>;
   correctDraft: (
@@ -701,7 +732,7 @@ async function transport<T>(
   path: string,
   decode: (body: Record<string, unknown>) => T,
   command?: {
-    method?: "POST" | "PATCH";
+    method?: "POST" | "PATCH" | "PUT";
     body: object;
     key: string;
     version?: number;
@@ -815,6 +846,21 @@ async function transport<T>(
 // V1-058 R5c: the Payments screens use the same request rules (CSRF, key, safe errors).
 export { transport as billingTransport };
 const encoded = encodeURIComponent;
+/** The body of both item requests: the unit price is sent as whole US cents. */
+function itemsBody(input: ItemsInvoiceInput) {
+  return {
+    customer_id: input.customer_id,
+    lease_id: input.lease_id,
+    reason: input.reason,
+    evidence_reference: input.evidence_reference,
+    items: input.items.map((item) => ({
+      charge_id: item.charge_id,
+      description: item.description,
+      quantity: item.quantity,
+      unit_price_usd_cents: requestMoney(item.unit_price).minor_units,
+    })),
+  };
+}
 const resource =
   <T>(decode: (value: unknown) => T) =>
   (body: Record<string, unknown>): T =>
@@ -824,7 +870,7 @@ function createInvoiceApi(transmission?: BillingTransmission): InvoiceApi {
     path: string,
     decode: (body: Record<string, unknown>) => T,
     command?: {
-      method?: "POST" | "PATCH";
+      method?: "POST" | "PATCH" | "PUT";
       body: object;
       key: string;
       version?: number;
@@ -881,6 +927,19 @@ function createInvoiceApi(transmission?: BillingTransmission): InvoiceApi {
         resource(invoice),
         { key, body: { authorized_nonrecurring_obligation_id: obligation } },
       ),
+    createWithItems: (id, input, key) =>
+      request(
+        "/api/v1/properties/" + encoded(id) + "/invoices/drafts",
+        resource(invoice),
+        { key, body: itemsBody(input) },
+      ),
+    replaceItems: (id, input, version, key) =>
+      request("/api/v1/invoices/" + encoded(id) + "/items", resource(invoice), {
+        method: "PUT",
+        key,
+        version,
+        body: { ...itemsBody(input), change_reason: input.change_reason },
+      }),
     correctDraft: (id, obligation, reason, version, key) =>
       request("/api/v1/invoices/" + encoded(id), resource(invoice), {
         method: "PATCH",

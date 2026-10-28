@@ -1033,6 +1033,27 @@ uses the same one-time rule; its Customer is the Customer of the corrected Invoi
 another signed Signer of the Lease, or the Primary Tenant (a Damage charge always the Primary
 Tenant).
 
+Since V1-060 B6 (migration `20270328_247`, DL-103) a Miscellaneous charge typed as an item on
+Create Invoice also keeps its whole `quantity integer` (1 to 9,999) and `unit_price_usd_cents
+bigint` (1 to 999,999,999); both are null on every other charge. The check
+`authorized_nonrecurring_item_price` allows them only together, only on a Miscellaneous charge,
+and only when `quantity × unit_price_usd_cents = authorized_amount_usd_cents`.
+`app.create_items_invoice_draft` records 1 to 20 item charges and their Miscellaneous DRAFT in one
+transaction, with one `reason` and one `evidence_reference` for all of them and an
+`invoice.one_time_charge.recorded` audit event for each; the line order is the item order, and
+each line's `calculation_trace` (formula `authorized_source_quantity_times_unit_price`) keeps the
+quantity, the unit price, the reason and the evidence reference.
+`app.replace_invoice_draft_items` (expected version, mandatory reason for the change, audit action
+`invoice.draft_corrected`) changes the items of such a DRAFT: an item that stays the same keeps
+its charge and its line, a new or changed item gets a new charge, and the line of an item taken
+off is deleted, which the Draft revision history keeps with the reason for the change (the charge
+row stays and is never billed). It refuses an issued Invoice, a billing-run Draft and a Draft with
+a line that bills a charge without a quantity. Both are SECURITY DEFINER with a fixed
+`search_path`, executable only by `prm_financial`, and use the Invoice command replay (`create`
+and `correct`); their helpers are executable by no application role. `app.final_settlement_preview`
+lists a charge whose Draft line was deleted like a charge a draft correction replaced
+(information, not blocking).
+
 ## DB-INV-006 — `invoice_line_calculation_components`
 
 Immutable relational calculation detail: `id uuid PK`, `invoice_line_id uuid NOT NULL

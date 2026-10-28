@@ -41,6 +41,10 @@ INVOICE_QUERY_TIMEOUT_MS: Final = 5_000
 MAX_INVOICE_PAGE_SIZE: Final = 100
 MAX_INVOICE_CURSOR_LENGTH: Final = 256
 MAX_INVOICE_EXPECTED_VERSION: Final = 2_147_483_647
+# DL-103 (owner, 2026-10-28): at most 20 items on one Invoice; a whole quantity; an exact price.
+MAX_INVOICE_ITEMS: Final = 20
+MAX_INVOICE_ITEM_QUANTITY: Final = 9_999
+MAX_INVOICE_ITEM_UNIT_PRICE_USD_CENTS: Final = 999_999_999
 NIL_UUID: Final = UUID(int=0)
 
 
@@ -131,6 +135,117 @@ class CorrectInvoiceDraftCommand:
         _identity(self.authorized_obligation_id, "authorized_obligation_id")
         _normalized(self.reason, "reason")
         _expected_version(self.expected_version)
+
+
+@dataclass(frozen=True, slots=True)
+class InvoiceItem:
+    """One typed item of a Miscellaneous Invoice (DL-103): its own approved charge, with a whole
+    quantity and a unit price in US cents; the amount is exactly the quantity times the price."""
+
+    charge_id: UUID
+    description: str
+    quantity: int
+    unit_price_usd_cents: int
+
+    def __post_init__(self) -> None:
+        _identity(self.charge_id, "charge_id")
+        _normalized(self.description, "description", maximum=1000)
+        if type(self.quantity) is not int or not 1 <= self.quantity <= MAX_INVOICE_ITEM_QUANTITY:
+            raise ValueError(
+                f"quantity must be a whole number from 1 to {MAX_INVOICE_ITEM_QUANTITY}"
+            )
+        if (
+            type(self.unit_price_usd_cents) is not int
+            or not 1 <= self.unit_price_usd_cents <= MAX_INVOICE_ITEM_UNIT_PRICE_USD_CENTS
+        ):
+            raise ValueError("unit_price_usd_cents must be a bounded positive integer")
+
+    def payload(self) -> dict[str, object]:
+        return {
+            "charge_id": str(self.charge_id),
+            "description": self.description,
+            "quantity": self.quantity,
+            "unit_price_usd_cents": self.unit_price_usd_cents,
+        }
+
+
+def _items(items: tuple[InvoiceItem, ...]) -> None:
+    if (
+        type(items) is not tuple
+        or not 1 <= len(items) <= MAX_INVOICE_ITEMS
+        or any(type(item) is not InvoiceItem for item in items)
+    ):
+        raise ValueError(f"items must hold 1 to {MAX_INVOICE_ITEMS} Invoice items")
+    if len({item.charge_id for item in items}) != len(items):
+        raise ValueError("each item must have its own charge_id")
+
+
+@dataclass(frozen=True, slots=True)
+class CreateItemsInvoiceDraftCommand:
+    """A Miscellaneous Invoice DRAFT of typed items with one reason and one approval (DL-103)."""
+
+    idempotency_key: UUID
+    customer_id: UUID
+    lease_id: UUID | None
+    reason: str
+    evidence_reference: str
+    items: tuple[InvoiceItem, ...]
+
+    def __post_init__(self) -> None:
+        _identity(self.idempotency_key, "idempotency_key")
+        _identity(self.customer_id, "customer_id")
+        if self.lease_id is not None:
+            _identity(self.lease_id, "lease_id")
+        _normalized(self.reason, "reason")
+        _normalized(self.evidence_reference, "evidence_reference")
+        _items(self.items)
+
+    def payload(self) -> dict[str, object]:
+        return {
+            "customer_id": str(self.customer_id),
+            "lease_id": str(self.lease_id) if self.lease_id is not None else None,
+            "reason": self.reason,
+            "evidence_reference": self.evidence_reference,
+            "items": [item.payload() for item in self.items],
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class ReplaceInvoiceDraftItemsCommand:
+    """The new items of a DRAFT made from typed items, with the reason for the change (DL-103).
+
+    An item that stays the same sends its charge again; a new or changed item has a new charge."""
+
+    idempotency_key: UUID
+    customer_id: UUID
+    lease_id: UUID | None
+    reason: str
+    evidence_reference: str
+    change_reason: str
+    items: tuple[InvoiceItem, ...]
+    expected_version: int
+
+    def __post_init__(self) -> None:
+        _identity(self.idempotency_key, "idempotency_key")
+        _identity(self.customer_id, "customer_id")
+        if self.lease_id is not None:
+            _identity(self.lease_id, "lease_id")
+        _normalized(self.reason, "reason")
+        _normalized(self.evidence_reference, "evidence_reference")
+        _normalized(self.change_reason, "change_reason")
+        _items(self.items)
+        _expected_version(self.expected_version)
+
+    def payload(self) -> dict[str, object]:
+        return {
+            "customer_id": str(self.customer_id),
+            "lease_id": str(self.lease_id) if self.lease_id is not None else None,
+            "reason": self.reason,
+            "evidence_reference": self.evidence_reference,
+            "change_reason": self.change_reason,
+            "items": [item.payload() for item in self.items],
+            "expected_version": self.expected_version,
+        }
 
 
 @dataclass(frozen=True, slots=True)
@@ -612,6 +727,71 @@ class PostgresInvoiceService:
                 digest,
                 command.expected_version,
                 command.reason,
+                uuid4(),
+            ),
+        )
+
+    def create_items_draft(
+        self,
+        property_id: UUID,
+        command: CreateItemsInvoiceDraftCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        """Record every item's charge and the Miscellaneous DRAFT in one transaction (DL-103)."""
+        self._authorize(actor, property_id, INVOICE_CREATE_CAPABILITY)
+        payload = command.payload()
+        digest = invoice_request_digest(
+            action="create", property_id=property_id, invoice_id=None, payload=payload
+        )
+        return self._execute(
+            "SELECT app.create_items_invoice_draft(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s::jsonb)",
+            (
+                property_id,
+                self._actor_id(actor),
+                command.idempotency_key,
+                digest,
+                uuid4(),
+                uuid4(),
+                uuid4(),
+                command.customer_id,
+                command.lease_id,
+                command.reason,
+                command.evidence_reference,
+                json.dumps(payload["items"]),
+            ),
+        )
+
+    def replace_draft_items(
+        self,
+        property_id: UUID,
+        invoice_id: UUID,
+        command: ReplaceInvoiceDraftItemsCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        """Change the items of a DRAFT made from typed items (DL-103); a removed item's line is
+        withdrawn with the reason for the change, and the Draft revision history keeps it."""
+        self._authorize(actor, property_id, INVOICE_CREATE_CAPABILITY)
+        payload = command.payload()
+        digest = invoice_request_digest(
+            action="correct", property_id=property_id, invoice_id=invoice_id, payload=payload
+        )
+        return self._execute(
+            "SELECT app.replace_invoice_draft_items(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s::jsonb,%s)",
+            (
+                property_id,
+                invoice_id,
+                self._actor_id(actor),
+                command.idempotency_key,
+                digest,
+                command.expected_version,
+                command.customer_id,
+                command.lease_id,
+                command.reason,
+                command.evidence_reference,
+                command.change_reason,
+                json.dumps(payload["items"]),
                 uuid4(),
             ),
         )

@@ -786,6 +786,7 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/billing-runs/{run_id}": {"get"},
         "/api/v1/properties/{property_id}/billing-capabilities": {"get"},
         "/api/v1/properties/{property_id}/invoices": {"get", "post"},
+        "/api/v1/properties/{property_id}/invoices/drafts": {"post"},
         # V1-055 slice 9b adds the one-time charge and its due-days setting (docs/010 DL-067).
         "/api/v1/properties/{property_id}/one-time-charges": {"post"},
         # V1-058 R7b-4: the Settings Business tab reads the due days (GET).
@@ -939,6 +940,7 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/refunds/{refund_id}/verified-returns/{correction_id}/reverse": {"post"},
         "/api/v1/invoices/{invoice_id}": {"get", "patch"},
         "/api/v1/invoices/{invoice_id}/issue": {"post"},
+        "/api/v1/invoices/{invoice_id}/items": {"put"},
         "/api/v1/invoices/{invoice_id}/adjustments": {"post"},
         "/api/v1/invoices/{invoice_id}/void": {"post"},
         "/api/v1/invoices/{invoice_id}/late-payment-review": {"get"},

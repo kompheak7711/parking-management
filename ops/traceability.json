@@ -57400,6 +57400,170 @@
       "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
       "status": "implemented",
       "notes": "V1-060 B6 (owner 28/10/2026): Import marks a reading much less than usual in an Occupied Unit as ready with a check note, and leaves a use that is not much less without one."
+    },
+    {
+      "test_id": "test_one_invoice_bills_every_item_at_exactly_quantity_times_unit_price",
+      "upstream_ids": [
+        "DL-103",
+        "BR-INV-016",
+        "BR-INV-017",
+        "BR-INV-018",
+        "DB-INV-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_invoice_items_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 B6: one Miscellaneous Draft bills three typed items in their order, each its own charge at exactly the quantity times the unit price, all with the one reason and approval, which the line trace keeps; the same key replays, the key with other values and the same charges under a new key are refused; issuing gives the Due Date 7 days later and keeps the lines."
+    },
+    {
+      "test_id": "test_a_part_payment_pays_the_items_from_the_top_down",
+      "upstream_ids": [
+        "DL-103",
+        "BR-PAY-036"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_invoice_items_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 B6 (owner rule 2): a $50.00 payment on an Invoice of $30.00, $39.99 and $37.50 is proposed and posted to the first item in full and $20.00 of the second, leaving the rest of the second and the third unpaid."
+    },
+    {
+      "test_id": "test_edit_items_keeps_the_same_items_and_withdraws_the_others_with_the_reason",
+      "upstream_ids": [
+        "DL-103",
+        "BR-INV-016",
+        "DB-INV-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_invoice_items_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 B6: Edit items keeps the line and charge of an item that stays, gives a changed or new item a new charge, withdraws the others with the reason for the change in the Draft history and the audit, keeps the withdrawn charges, replays the same key, refuses an old version, a changed kept item and a withdrawn charge, and refuses an issued Invoice."
+    },
+    {
+      "test_id": "test_only_a_draft_made_from_typed_items_can_be_edited",
+      "upstream_ids": [
+        "DL-103",
+        "BR-INV-016"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_invoice_items_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 B6: a Draft of a single one-time charge cannot be edited as items; a Customer who is not the Lease's Primary Tenant is refused and an unknown Customer or Invoice is not found; moving the Draft to no Lease gives the item a new charge."
+    },
+    {
+      "test_id": "test_items_taken_off_a_draft_do_not_block_the_final_settlement",
+      "upstream_ids": [
+        "DL-103",
+        "BR-SETTLE-003",
+        "BR-SETTLE-011"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_invoice_items_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 B6: the Final Settlement preview lists the charges Edit items took off a Draft as information, like charges a draft correction replaced, and they do not block the Settlement."
+    },
+    {
+      "test_id": "test_the_database_refuses_items_outside_the_owner_rules",
+      "upstream_ids": [
+        "DL-103",
+        "BR-INV-017"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_invoice_items_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 B6: the database refuses no items, 21 items, a repeated charge id, a quantity that is not a whole number from 1 to 9,999, a unit price that is not a whole number of cents from 1 to 999,999,999, an extra or missing key, an untrimmed or empty name, a bad or nil charge id and a body that is not a list of item objects."
+    },
+    {
+      "test_id": "test_item_commands_are_least_privilege_and_an_item_amount_is_quantity_times_price",
+      "upstream_ids": [
+        "DL-103",
+        "SEC-001",
+        "SEC-046",
+        "DB-INV-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_invoice_items_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 B6: both item commands are SECURITY DEFINER with a fixed search_path and run only for prm_financial, and their helpers for no application role; the item check refuses an amount that is not exactly the quantity times the unit price, a quantity or a price alone and an out-of-range quantity, and allows a quantity only on a Miscellaneous charge."
+    },
+    {
+      "test_id": "test_invoice_items_migration_follows_add_occupant_and_is_forward_only",
+      "upstream_ids": [
+        "DL-103",
+        "TEST-028"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_invoice_items_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 B6: migration 20270328_247 is the head, follows 20270327_246 and refuses a downgrade."
+    },
+    {
+      "test_id": "test_items_invoice_route_needs_invoices_create_and_validates_every_item",
+      "upstream_ids": [
+        "DL-103",
+        "API-052",
+        "BR-INV-016"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_invoice_api.py",
+      "status": "implemented",
+      "notes": "V1-060 B6: POST /properties/{id}/invoices/drafts needs invoices.create (else 403); no items, 21 items, a repeated item, a quantity or unit price that is not a whole number in range, a number sent as text, an amount field, an untrimmed name and an empty reason give 422; it sends the exact items, answers 201 with Location and ETag, replays the same key, and answers 409 IDEMPOTENCY_KEY_REUSED for the key with other values."
+    },
+    {
+      "test_id": "test_edit_items_route_needs_the_version_and_the_reason_for_the_change",
+      "upstream_ids": [
+        "DL-103",
+        "API-052"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_invoice_api.py",
+      "status": "implemented",
+      "notes": "V1-060 B6: PUT /invoices/{id}/items hides the Invoice without invoices.create (404), needs If-Match (412) and the reason for the change (422), answers an old version with 412 and the current version, and sends the version and reason, answering the new ETag."
+    },
+    {
+      "test_id": "TEST-FE-1064",
+      "upstream_ids": [
+        "DL-103",
+        "UI-049",
+        "BR-INV-016"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/invoices/InvoicesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6: Create Invoice adds up to 20 items and then says so, keeps at least one item and moves the focus to the next item when one is removed, refuses a quantity that is not a whole number from 1 to 9,999, and adds each amount into the total."
+    },
+    {
+      "test_id": "TEST-FE-1065",
+      "upstream_ids": [
+        "DL-103",
+        "UI-049"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/invoices/InvoicesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6: Edit items starts from the Draft's items, reason and approval, needs the reason for the change, sends the saved charge of an item that stays the same, reads the Draft again with a note after a change meanwhile, and makes every item new when the reason changes."
+    },
+    {
+      "test_id": "TEST-FE-1066",
+      "upstream_ids": [
+        "DL-103",
+        "UI-048",
+        "DL-080"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/invoices/InvoicesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6: the printed Invoice writes the quantity and unit price under each typed item (2 × $15.00); Edit items shows only on a Draft made with Create Invoice to someone with invoices.create, and another Invoice opened for editing says it is changed with Adjust or Void."
+    },
+    {
+      "test_id": "TEST-FE-1067",
+      "upstream_ids": [
+        "DL-103",
+        "API-052"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/invoiceClient.test.ts",
+      "status": "implemented",
+      "notes": "V1-060 B6: the client sends Create Invoice items in one POST with whole cents and the key, and Edit items as a PUT with If-Match, the key and the reason for the change."
     }
   ]
 }

@@ -1,7 +1,8 @@
 // V1-058 R5: the Invoices page of the rebuilt app. "#/invoices" shows the list;
 // "#/invoices/inv:<id>" one Invoice; "#/invoices/for:<Customer id>" the list for one Customer;
-// "#/invoices/new" Create Invoice. The billing runs and the Due Date settings stay in the earlier
-// forms that App shows under this page until Settings and Home take them over.
+// "#/invoices/new" Create Invoice; "#/invoices/edit:<id>" Edit items of a Draft made there (DL-103).
+// The billing runs and the Due Date settings stay in the earlier forms that App shows under this
+// page until Settings and Home take them over.
 
 import "../shell/screens.css";
 
@@ -31,8 +32,8 @@ export interface InvoicesPageProps {
     | "list"
     | "get"
     | "issue"
-    | "recordOneTimeCharge"
-    | "create"
+    | "createWithItems"
+    | "replaceItems"
     | "adjust"
     | "void"
   >;
@@ -61,6 +62,7 @@ export function InvoicesPage({
     detail?.startsWith("inv:") === true ? detail.slice(4) : null;
   const customerId =
     detail?.startsWith("for:") === true ? detail.slice(4) : null;
+  const editId = detail?.startsWith("edit:") === true ? detail.slice(5) : null;
   const today = fixedToday ?? todayInPhnomPenh();
   const may = (capability: string) =>
     capabilities === null || capabilities.has(capability);
@@ -143,6 +145,19 @@ export function InvoicesPage({
         api={invoiceApi}
         data={data}
         key={propertyId}
+        language={language}
+        onSaved={load}
+        propertyId={propertyId}
+      />
+    );
+  }
+  if (editId !== null && may("invoices.create")) {
+    return (
+      <CreateInvoice
+        api={invoiceApi}
+        data={data}
+        editId={editId}
+        key={`${editId}:${propertyId}`}
         language={language}
         onSaved={load}
         propertyId={propertyId}

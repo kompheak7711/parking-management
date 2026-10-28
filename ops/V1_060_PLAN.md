@@ -265,3 +265,26 @@ candidate is the code that will be used.
   to check the meter still works before saving, with Save anyway; Import marks the line with a
   check note. An empty Unit uses little, so it is not checked, and a usual under 6 is not
   checked. Tests TEST-FE-1062 and TEST-FE-1063.
+- 2026-10-28 (B6, owner ask of 09:56, DL-103): Create Invoice made one Invoice for each charge.
+  On the decision card the owner chose "Yes, build it now" with four rules: the amount is a whole
+  quantity times a unit price in cents, exactly; a part payment pays the items from the top down;
+  one reason and one approval for the whole Invoice; at most 20 items. Built: migration
+  20270328_247 (each item is its own approved one-time charge that keeps its quantity and unit
+  price, with a check that the amount is exactly their product; app.create_items_invoice_draft
+  makes the charges and one Miscellaneous Draft in one step; app.replace_invoice_draft_items is
+  Edit items on such a Draft, with a reason for the change; the Final Settlement preview lists an
+  item taken off a Draft as information), POST /properties/{id}/invoices/drafts and
+  PUT /invoices/{id}/items (invoices.create), and the screens: an items table with Add item and
+  the total, a confirmation that lists every item, Edit items on a Draft made there, and
+  "2 × $15.00" under each item on the printed Invoice. DESIGN.md 0.33. Decided by Claude under the
+  owner's 2026-10-23 22:30 rule: quantity 1 to 9,999, unit price at most $9,999,999.99, item names
+  at most 80 characters on the screen, a changed Customer, Lease, reason or approval makes every
+  item new, and on an iPad on its side the form takes the whole width (looked at with sample data
+  at 1180 x 820, 820 x 1180 and 390 x 844: no page overflow). Tests: 8 database tests, 2 API tests,
+  TEST-FE-1064 to 1067 (new) and TEST-FE-904 (changed: Create Invoice now saves all items in one
+  request); head pins moved to 20270328_247. Runs: the new database tests 8 passed; the Invoice
+  API, service, one-time charge and Final Settlement draft tests passed; frontend 1,930 of 1,930;
+  backend lint, format and types passed; traceability passed. On the long-used local test
+  database 5 older Invoice migration tests failed on rows left by earlier runs (fixed keys on the
+  shared first Property, for example the billing run key generated-void-completion-race); CI runs
+  on a fresh database.

@@ -146,13 +146,59 @@ function invoices(): InvoiceResource[] {
   ];
 }
 
+/** DL-103: a Draft made with Create Invoice, two typed items with one reason and approval. */
+function typedDraft(version = 3): InvoiceResource {
+  const item = (
+    id: string,
+    sequence: number,
+    description: string,
+    quantity: number,
+    price: number,
+  ) => ({
+    id,
+    sequence,
+    description,
+    category: "MISCELLANEOUS_CHARGES" as const,
+    original_amount: usd(quantity * price),
+    adjusted_amount: usd(quantity * price),
+    outstanding_balance: usd(0),
+    source: {
+      type: "AUTHORIZED_NONRECURRING_OBLIGATION",
+      id: `charge-${id}`,
+    },
+    calculation_evidence: {
+      formula: "authorized_source_quantity_times_unit_price",
+      quantity,
+      unit_price_usd_cents: price,
+      reason: "Lost key and broken lock",
+      evidence_reference: "Signed form 12",
+    },
+    period: null,
+  });
+  return {
+    ...invoice("inv-d2", "INV-20261025-0A1B2C3D4E5F", {
+      customer: "cust-chan",
+      lease: "lease-201",
+      category: "MISCELLANEOUS_CHARGES",
+      status: "DRAFT",
+      due: null,
+      total: 6999,
+    }),
+    version,
+    lines: [
+      item("key", 1, "Key copy", 2, 1500),
+      item("lock", 2, "Door lock", 1, 3999),
+    ],
+  };
+}
+
 type PageApi = Pick<
   InvoiceApi,
   | "list"
   | "get"
   | "issue"
-  | "recordOneTimeCharge"
-  | "create"
+  | "createWithItems"
+  | "replaceItems"
   | "adjust"
   | "void"
 >;
@@ -162,8 +208,8 @@ function invoiceApi(list = invoices()): PageApi {
     issue: vi.fn(),
     adjust: vi.fn(),
     void: vi.fn(),
-    recordOneTimeCharge: vi.fn(),
-    create: vi.fn(),
+    createWithItems: vi.fn(),
+    replaceItems: vi.fn(),
     list: vi.fn().mockResolvedValue({
       items: list,
       next_cursor: null,
@@ -661,7 +707,7 @@ describe("Invoices page (V1-058 R5)", () => {
     ).toBeTruthy();
   });
 
-  it("TEST-FE-904 Create Invoice checks every box, confirms, records the charge and makes a Draft once even when pressed again after no answer; Damage points to Move-out; it needs invoices.create", async () => {
+  it("TEST-FE-904 Create Invoice checks the Customer, every item and the boxes, confirms the items and the total, and saves one Draft in one request once even when pressed again after no answer; Damage points to Move-out; it needs invoices.create", async () => {
     const api = invoiceApi();
     const draft = invoice("inv-new", "INV260099", {
       customer: "cust-chan",
@@ -669,17 +715,13 @@ describe("Invoices page (V1-058 R5)", () => {
       category: "MISCELLANEOUS_CHARGES",
       status: "DRAFT",
       due: null,
-      total: 1250,
+      total: 6999,
     });
-    const record = vi
+    const save = vi
       .fn()
       .mockRejectedValueOnce(new InvoiceClientError(null, "NETWORK", true))
-      .mockImplementation((_property: string, input: { charge_id: string }) =>
-        Promise.resolve({ obligation_id: input.charge_id }),
-      );
-    const create = vi.fn().mockResolvedValue(draft);
-    api.recordOneTimeCharge = record;
-    api.create = create;
+      .mockResolvedValue(draft);
+    api.createWithItems = save;
     show({ invoices: api, capabilities: new Set(["invoices.create"]) });
     fireEvent.click(
       await screen.findByRole("link", { name: "Create Invoice" }),
@@ -696,18 +738,24 @@ describe("Invoices page (V1-058 R5)", () => {
     ).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Miscellaneous" }));
 
-    fireEvent.change(screen.getByLabelText(/^Amount/), {
+    fireEvent.change(screen.getByLabelText("Unit price, Item 1"), {
       target: { value: "12.505" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Save Draft Invoice" }));
     expect(
       await screen.findByText("Fix 5 thing(s) before saving."),
     ).toBeTruthy();
+    expect(screen.getAllByText("Item 1: write what is charged.")).toHaveLength(
+      2,
+    );
     expect(
       screen.getAllByText(
-        "Enter the amount in dollars and cents, for example 353.00.",
+        "Item 1: enter the unit price in dollars and cents, for example 15.00.",
       ),
     ).toHaveLength(2);
+    expect(
+      screen.getByLabelText("Unit price, Item 1").getAttribute("aria-invalid"),
+    ).toBe("true");
 
     const customer = screen.getByLabelText(/^Customer/);
     expect(
@@ -716,24 +764,48 @@ describe("Invoices page (V1-058 R5)", () => {
         .map((option) => option.textContent),
     ).toEqual(["Choose a Customer", "Sok Dara · U101", "Chan Vanna · U201"]);
     fireEvent.change(customer, { target: { value: "cust-chan" } });
-    fireEvent.change(screen.getByLabelText(/^What is charged/), {
-      target: { value: " Replacement key card " },
+    fireEvent.change(screen.getByLabelText("What is charged, Item 1"), {
+      target: { value: " Key copy " },
     });
-    fireEvent.change(screen.getByLabelText(/^Amount/), {
-      target: { value: "12.5" },
+    fireEvent.change(screen.getByLabelText("Quantity, Item 1"), {
+      target: { value: "2" },
     });
+    fireEvent.change(screen.getByLabelText("Unit price, Item 1"), {
+      target: { value: "15" },
+    });
+    expect(screen.getByLabelText("Amount, Item 1").textContent).toBe("$30.00");
+    fireEvent.click(screen.getByRole("button", { name: "Add item" }));
+    expect(document.activeElement).toBe(
+      screen.getByLabelText("What is charged, Item 2"),
+    );
+    fireEvent.change(screen.getByLabelText("What is charged, Item 2"), {
+      target: { value: "Door lock" },
+    });
+    fireEvent.change(screen.getByLabelText("Unit price, Item 2"), {
+      target: { value: "39.99" },
+    });
+    expect(screen.getByText("$69.99")).toBeTruthy();
     fireEvent.change(screen.getByLabelText(/^Reason/), {
-      target: { value: "Lost key card" },
+      target: { value: "Lost key and broken lock" },
     });
     fireEvent.change(screen.getByLabelText(/^What approves it/), {
-      target: { value: "Signed key-card form" },
+      target: { value: "Signed form 12" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Save Draft Invoice" }));
     const dialog = await screen.findByRole("dialog", {
       name: "Save this Draft Invoice?",
     });
     expect(within(dialog).getByText("Chan Vanna · U201")).toBeTruthy();
-    expect(within(dialog).getByText("$12.50")).toBeTruthy();
+    expect(
+      within(dialog)
+        .getAllByRole("row")
+        .map((row) => row.textContent),
+    ).toEqual([
+      "What is chargedQuantityUnit priceAmount",
+      "Key copy2$15.00$30.00",
+      "Door lock1$39.99$39.99",
+      "Total$69.99",
+    ]);
     fireEvent.click(
       within(dialog).getByRole("button", { name: "Save Draft Invoice" }),
     );
@@ -746,30 +818,40 @@ describe("Invoices page (V1-058 R5)", () => {
       within(dialog).getByRole("button", { name: "Save Draft Invoice" }),
     );
     expect(await screen.findByText("Draft Invoice saved")).toBeTruthy();
-    expect(record).toHaveBeenCalledTimes(2);
-    const [first, second] = record.mock.calls as [
+    expect(save).toHaveBeenCalledTimes(2);
+    const [first, second] = save.mock.calls as [
       string,
-      Record<string, unknown>,
+      { items: { charge_id: string }[] },
       string,
     ][];
     expect(second).toEqual(first);
-    expect(first?.[1]).toMatchObject({
-      category: "MISCELLANEOUS_CHARGES",
+    expect(first?.[0]).toBe("property-1");
+    expect(first?.[1]).toEqual({
       customer_id: "cust-chan",
       lease_id: "lease-201",
-      description: "Replacement key card",
-      amount: { currency: "USD", minor_units: 1250 },
-      reason: "Lost key card",
-      evidence_reference: "Signed key-card form",
+      reason: "Lost key and broken lock",
+      evidence_reference: "Signed form 12",
+      items: [
+        {
+          charge_id: expect.any(String) as string,
+          description: "Key copy",
+          quantity: 2,
+          unit_price: { currency: "USD", minor_units: 1500 },
+        },
+        {
+          charge_id: expect.any(String) as string,
+          description: "Door lock",
+          quantity: 1,
+          unit_price: { currency: "USD", minor_units: 3999 },
+        },
+      ],
     });
-    expect(create).toHaveBeenCalledWith(
-      "property-1",
-      first?.[1].charge_id,
-      expect.any(String),
+    expect(new Set(first?.[1].items.map((item) => item.charge_id)).size).toBe(
+      2,
     );
     expect(
       screen.getByText(
-        "Draft for Chan Vanna, U201: Replacement key card, $12.50. A Manager checks it and issues it.",
+        "Draft for Chan Vanna, U201: 2 item(s), $69.99 in all. A Manager checks it and issues it.",
       ),
     ).toBeTruthy();
     expect(
@@ -781,6 +863,262 @@ describe("Invoices page (V1-058 R5)", () => {
     show({ capabilities: new Set(["invoices.read"]) });
     expect(await screen.findByText("All Invoices")).toBeTruthy();
     expect(screen.queryByRole("link", { name: "Create Invoice" })).toBeNull();
+  });
+
+  it("TEST-FE-1064 Create Invoice adds up to 20 items and then says so, keeps at least one item, refuses a quantity that is not a whole number from 1 to 9999, and adds each amount into the total", async () => {
+    window.location.hash = "#/invoices/new";
+    show({ capabilities: new Set(["invoices.create"]) });
+    expect(
+      await screen.findByRole("heading", { name: "Create Invoice" }),
+    ).toBeTruthy();
+    const remove = (number: number) =>
+      screen.getByRole<HTMLButtonElement>("button", {
+        name: `Remove item ${String(number)}`,
+      });
+    expect(remove(1).disabled).toBe(true);
+    fireEvent.change(screen.getByLabelText("Unit price, Item 1"), {
+      target: { value: "2.50" },
+    });
+    for (const bad of ["0", "1.5", "10000", "two", ""]) {
+      fireEvent.change(screen.getByLabelText("Quantity, Item 1"), {
+        target: { value: bad },
+      });
+      expect(screen.getByLabelText("Amount, Item 1").textContent).toBe("—");
+    }
+    fireEvent.click(screen.getByRole("button", { name: "Save Draft Invoice" }));
+    expect(
+      await screen.findAllByText(
+        "Item 1: the quantity is a whole number from 1 to 9999.",
+      ),
+    ).toHaveLength(2);
+    fireEvent.change(screen.getByLabelText("Quantity, Item 1"), {
+      target: { value: "4" },
+    });
+    expect(screen.getByLabelText("Amount, Item 1").textContent).toBe("$10.00");
+    const add = screen.getByRole<HTMLButtonElement>("button", {
+      name: "Add item",
+    });
+    for (let count = 1; count < 20; count += 1) fireEvent.click(add);
+    expect(screen.getByLabelText("What is charged, Item 20")).toBeTruthy();
+    expect(add.disabled).toBe(true);
+    expect(screen.getByText("One Invoice holds up to 20 items.")).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("Unit price, Item 20"), {
+      target: { value: "1" },
+    });
+    expect(screen.getByLabelText("Amount, Item 20").textContent).toBe("$1.00");
+    expect(screen.getByText("$11.00")).toBeTruthy();
+    fireEvent.click(remove(20));
+    expect(add.disabled).toBe(false);
+    expect(screen.queryByText("One Invoice holds up to 20 items.")).toBeNull();
+    expect(screen.getByText("$10.00", { selector: "b" })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("What is charged, Item 2"), {
+      target: { value: "Second" },
+    });
+    // Removing the first item moves the focus to the next one, which is now Item 1.
+    fireEvent.click(remove(1));
+    expect(document.activeElement).toBe(
+      screen.getByLabelText("What is charged, Item 1"),
+    );
+    expect(
+      screen.getByLabelText<HTMLInputElement>("What is charged, Item 1").value,
+    ).toBe("Second");
+    expect(screen.getByText("$0.00", { selector: "b" })).toBeTruthy();
+  });
+
+  it("TEST-FE-1065 Edit items starts from the Draft's items, needs the reason for the change, keeps the charge of an item that stays the same, reads the Draft again after a change meanwhile, and makes every item new when the reason changes", async () => {
+    const api = invoiceApi([...invoices(), typedDraft()]);
+    api.get = vi
+      .fn()
+      .mockResolvedValueOnce(typedDraft(3))
+      .mockResolvedValue(typedDraft(4));
+    const replace = vi
+      .fn()
+      .mockRejectedValueOnce(
+        new InvoiceClientError(412, "PRECONDITION_FAILED", false, 4),
+      )
+      .mockResolvedValue({ ...typedDraft(5), original_total: usd(10_998) });
+    api.replaceItems = replace;
+    window.location.hash = "#/invoices/edit:inv-d2";
+    show({ invoices: api, capabilities: new Set(["invoices.create"]) });
+    expect(
+      await screen.findByRole("heading", { name: "Edit items" }),
+    ).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Damage" })).toBeNull();
+    expect(screen.getByLabelText<HTMLSelectElement>(/^Customer/).value).toBe(
+      "cust-chan",
+    );
+    const value = (label: string) =>
+      screen.getByLabelText<HTMLInputElement>(label).value;
+    expect(
+      [1, 2].map((number) =>
+        ["What is charged", "Quantity", "Unit price"].map((box) =>
+          value(`${box}, Item ${String(number)}`),
+        ),
+      ),
+    ).toEqual([
+      ["Key copy", "2", "15.00"],
+      ["Door lock", "1", "39.99"],
+    ]);
+    expect(
+      screen.getByLabelText<HTMLInputElement>(/^ReasonRequired/).value,
+    ).toBe("Lost key and broken lock");
+    expect(
+      screen.getByLabelText<HTMLInputElement>(/^What approves it/).value,
+    ).toBe("Signed form 12");
+    expect(screen.getByText("$69.99", { selector: "b" })).toBeTruthy();
+
+    const change = () => {
+      fireEvent.change(screen.getByLabelText("Quantity, Item 2"), {
+        target: { value: "2" },
+      });
+      fireEvent.click(screen.getByRole("button", { name: "Add item" }));
+      fireEvent.change(screen.getByLabelText("What is charged, Item 3"), {
+        target: { value: "Light bulb" },
+      });
+      fireEvent.change(screen.getByLabelText("Quantity, Item 3"), {
+        target: { value: "4" },
+      });
+      fireEvent.change(screen.getByLabelText("Unit price, Item 3"), {
+        target: { value: "2.50" },
+      });
+    };
+    change();
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    expect(
+      await screen.findByText("Fix 1 thing(s) before saving."),
+    ).toBeTruthy();
+    expect(
+      screen.getAllByText("Write the reason for the change."),
+    ).toHaveLength(2);
+    fireEvent.change(screen.getByLabelText(/^Reason for the change/), {
+      target: { value: "One more lock and four bulbs" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    let dialog = await screen.findByRole("dialog", {
+      name: "Save these changes?",
+    });
+    expect(
+      within(dialog)
+        .getAllByRole("row")
+        .map((row) => row.textContent),
+    ).toEqual([
+      "What is chargedQuantityUnit priceAmount",
+      "Key copy2$15.00$30.00",
+      "Door lock2$39.99$79.98",
+      "Light bulb4$2.50$10.00",
+      "Total$119.98",
+    ]);
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save changes" }),
+    );
+    expect(
+      await screen.findByText(
+        "This Invoice changed meanwhile. It is shown again as it is now; check it and try again.",
+      ),
+    ).toBeTruthy();
+    const [kept] = replace.mock.calls as [
+      string,
+      {
+        change_reason: string;
+        items: { charge_id: string; quantity: number }[];
+      },
+      number,
+      string,
+    ][];
+    expect(kept?.[0]).toBe("inv-d2");
+    expect(kept?.[2]).toBe(3);
+    expect(kept?.[1].change_reason).toBe("One more lock and four bulbs");
+    // The key copy stays as it was, so it keeps its charge; the changed lock and the new bulbs
+    // are new charges.
+    expect(kept?.[1].items.map((item) => item.charge_id)).toEqual([
+      "charge-key",
+      expect.not.stringMatching(/^charge-/) as string,
+      expect.not.stringMatching(/^charge-/) as string,
+    ]);
+    expect(value("Quantity, Item 2")).toBe("1");
+    expect(screen.queryByLabelText("What is charged, Item 3")).toBeNull();
+
+    change();
+    fireEvent.change(screen.getByLabelText(/^ReasonRequired/), {
+      target: { value: "Lost key, broken lock and bulbs" },
+    });
+    fireEvent.change(screen.getByLabelText(/^Reason for the change/), {
+      target: { value: "One more lock and four bulbs" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    dialog = await screen.findByRole("dialog", { name: "Save these changes?" });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save changes" }),
+    );
+    expect(await screen.findByText("Draft Invoice changed")).toBeTruthy();
+    expect(
+      screen.getByText(
+        "The Draft for Chan Vanna, U201 now has 3 item(s), $119.98 in all. A Manager checks it and issues it.",
+      ),
+    ).toBeTruthy();
+    const latest = replace.mock.calls[1] as [
+      string,
+      {
+        customer_id: string;
+        lease_id: string | null;
+        reason: string;
+        items: { charge_id: string }[];
+      },
+      number,
+      string,
+    ];
+    expect(latest[2]).toBe(4);
+    expect(latest[1]).toMatchObject({
+      customer_id: "cust-chan",
+      lease_id: "lease-201",
+      reason: "Lost key, broken lock and bulbs",
+    });
+    // A new reason is for every item, so every item is a new charge.
+    expect(
+      latest[1].items.filter((item) => item.charge_id.startsWith("charge-")),
+    ).toEqual([]);
+    expect(latest[3]).not.toBe(kept?.[3]);
+  });
+
+  it("TEST-FE-1066 The printed Invoice shows each typed item with its quantity and unit price; Edit items shows only on a Draft made with Create Invoice and needs invoices.create; another Invoice cannot be edited", async () => {
+    window.location.hash = "#/invoices/inv:inv-d2";
+    show({
+      invoices: invoiceApi([...invoices(), typedDraft()]),
+      capabilities: new Set(["invoices.create", "invoices.issue"]),
+    });
+    expect(await screen.findByText("2 × $15.00")).toBeTruthy();
+    expect(screen.getByText("1 × $39.99")).toBeTruthy();
+    expect(
+      screen.getByRole("link", { name: "Edit items" }).getAttribute("href"),
+    ).toBe("#/invoices/edit%3Ainv-d2");
+    cleanup();
+
+    window.location.hash = "#/invoices/inv:inv-d2";
+    show({
+      invoices: invoiceApi([...invoices(), typedDraft()]),
+      capabilities: new Set(["invoices.issue"]),
+    });
+    expect(await screen.findByText("2 × $15.00")).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "Edit items" })).toBeNull();
+    cleanup();
+
+    // A Draft from one charge without a quantity (made before DL-103) is not edited here.
+    window.location.hash = "#/invoices/inv:inv-d1";
+    show({ capabilities: new Set(["invoices.create", "invoices.issue"]) });
+    expect(
+      await screen.findByRole("button", { name: "Issue Invoice" }),
+    ).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "Edit items" })).toBeNull();
+    cleanup();
+
+    window.location.hash = "#/invoices/edit:inv-r1";
+    show({ capabilities: new Set(["invoices.create"]) });
+    expect(
+      await screen.findByText(
+        "Only a Draft made with Create Invoice can be edited here. An issued Invoice is changed with Adjust or Void.",
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Save changes" })).toBeNull();
   });
 
   it("TEST-FE-905 Issue Invoice gives a Draft its number with the Settings Due Date, or another date with a reason; a change meanwhile reads the Invoice again; it needs invoices.issue", async () => {

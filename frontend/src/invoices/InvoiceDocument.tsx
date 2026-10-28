@@ -67,6 +67,21 @@ function utilityDetail(line: InvoiceLine): string | null {
   return `${quantity.toLocaleString("en-US")} ${unit} × $${String(rate)}`;
 }
 
+/** A typed item's "2 × $15.00" (DL-103): its whole quantity and its unit price. */
+function itemDetail(line: InvoiceLine): string | null {
+  if (line.category !== "MISCELLANEOUS_CHARGES") return null;
+  const quantity = numberOf(line.calculation_evidence.quantity);
+  const price = numberOf(line.calculation_evidence.unit_price_usd_cents);
+  if (
+    quantity === null ||
+    price === null ||
+    !Number.isSafeInteger(quantity) ||
+    !Number.isSafeInteger(price)
+  )
+    return null;
+  return `${quantity.toLocaleString("en-US")} × ${usdFromCents(price)}`;
+}
+
 /** The Initial Rent Invoice: its Rent line was billed as INITIAL when the Lease was signed. */
 function initialRent(invoice: InvoiceResource): boolean {
   return invoice.lines.some(
@@ -165,7 +180,7 @@ export function InvoiceDocument({
         </thead>
         <tbody>
           {lines.map((line) => {
-            const detail = utilityDetail(line);
+            const detail = utilityDetail(line) ?? itemDetail(line);
             return (
               <tr key={line.id}>
                 <td>

@@ -145,9 +145,10 @@ const TEXT = {
   // new
   act_print: ["Print Invoice", "បោះពុម្ពវិក្កយបត្រ"],
   ni_btn: ["Create Invoice", "បង្កើតវិក្កយបត្រ"],
+  // DL-103: one Invoice holds many items.
   ni_intro: [
-    "For a one-time charge only. Rent and Utility Invoices are made by the app on the 25th.",
-    "សម្រាប់ថ្លៃមួយដងប៉ុណ្ណោះ។ វិក្កយបត្រថ្លៃឈ្នួល និងទឹកភ្លើង កម្មវិធីចេញនៅថ្ងៃទី25។",
+    "For one-time charges only: put each item on its own line. Rent and Utility Invoices are made by the app on the 25th.",
+    "សម្រាប់ថ្លៃមួយដងប៉ុណ្ណោះ៖ ដាក់មុខនីមួយៗលើបន្ទាត់ផ្ទាល់ខ្លួន។ វិក្កយបត្រថ្លៃឈ្នួល និងទឹកភ្លើង កម្មវិធីចេញនៅថ្ងៃទី25។",
   ],
   ni_kind: ["Kind of charge", "ប្រភេទថ្លៃ"],
   // Changed from the mock-up: Move-out is built after slice 11, not "in round 3".
@@ -221,11 +222,78 @@ const TEXT = {
     "អតិថិជនមិនទាន់ជំពាក់ រហូតដល់អ្នកគ្រប់គ្រងចេញវា។ ការនេះរក្សាទុកក្នុងប្រវត្តិ។",
   ],
   ni_done_t: ["Draft Invoice saved", "បានរក្សាទុកសេចក្តីព្រាងវិក្កយបត្រ"],
+  // DL-103: the number of items and the total.
   ni_done_b: [
-    "Draft for {0}, {1}: {2}, {3}. A Manager checks it and issues it.",
-    "សេចក្តីព្រាងសម្រាប់ {0} {1}៖ {2} {3}។ អ្នកគ្រប់គ្រងពិនិត្យ ហើយចេញវា។",
+    "Draft for {0}, {1}: {2} item(s), {3} in all. A Manager checks it and issues it.",
+    "សេចក្តីព្រាងសម្រាប់ {0} {1}៖ {2} មុខ សរុប {3}។ អ្នកគ្រប់គ្រងពិនិត្យ ហើយចេញវា។",
   ],
   ni_open: ["Open Draft", "បើកសេចក្តីព្រាង"],
+  // new (DL-103): the items table of Create Invoice and Edit items.
+  ni_items: ["Items", "មុខទំនិញ និងសេវា"],
+  ni_qty: ["Quantity", "ចំនួន"],
+  ni_price: ["Unit price", "តម្លៃឯកតា"],
+  ni_line_amt: ["Amount", "ចំនួនទឹកប្រាក់"],
+  ni_total: ["Total", "សរុប"],
+  ni_item_n: ["Item {0}", "មុខទី {0}"],
+  ni_add: ["Add item", "បន្ថែមមុខ"],
+  ni_remove: ["Remove item {0}", "ដកមុខទី {0} ចេញ"],
+  ni_items_help: [
+    "The quantity is a whole number. The amount is the quantity times the unit price.",
+    "ចំនួនជាលេខគត់។ ចំនួនទឹកប្រាក់ គឺចំនួនគុណនឹងតម្លៃឯកតា។",
+  ],
+  ni_items_max: [
+    "One Invoice holds up to 20 items.",
+    "វិក្កយបត្រមួយមានបានច្រើនបំផុត 20 មុខ។",
+  ],
+  ni_one_reason: [
+    "The reason and what approves it are for every item on this Invoice.",
+    "មូលហេតុ និងអ្វីដែលអនុម័ត គឺសម្រាប់គ្រប់មុខលើវិក្កយបត្រនេះ។",
+  ],
+  ni_err_item_desc: [
+    "Item {0}: write what is charged.",
+    "មុខទី {0}៖ សូមសរសេរថ្លៃអ្វី។",
+  ],
+  ni_err_item_qty: [
+    "Item {0}: the quantity is a whole number from 1 to 9999.",
+    "មុខទី {0}៖ ចំនួនត្រូវជាលេខគត់ពី 1 ដល់ 9999។",
+  ],
+  ni_err_item_price: [
+    "Item {0}: enter the unit price in dollars and cents, for example 15.00.",
+    "មុខទី {0}៖ សូមបញ្ចូលតម្លៃឯកតាជាដុល្លារ និងសេន ឧទាហរណ៍ 15.00។",
+  ],
+  ni_each: ["{0} × {1}", "{0} × {1}"],
+  // new (DL-103): Edit items of a Draft made from typed items.
+  act_edit_items: ["Edit items", "កែមុខទំនិញ"],
+  ni_edit_t: ["Edit items", "កែមុខទំនិញ"],
+  ni_edit_intro: [
+    "Change, add or remove items while the Invoice is a Draft. An item you do not change stays as it is.",
+    "កែ បន្ថែម ឬដកមុខចេញ ពេលវិក្កយបត្រនៅជាសេចក្តីព្រាង។ មុខដែលអ្នកមិនកែ នៅដដែល។",
+  ],
+  ni_change: ["Reason for the change", "មូលហេតុនៃការកែ"],
+  ni_change_help: [
+    "Saved in the History of this Draft.",
+    "រក្សាទុកក្នុងប្រវត្តិនៃសេចក្តីព្រាងនេះ។",
+  ],
+  ni_err_change: [
+    "Write the reason for the change.",
+    "សូមសរសេរមូលហេតុនៃការកែ។",
+  ],
+  ni_edit_submit: ["Save changes", "រក្សាទុកការកែ"],
+  ni_edit_dlg_t: ["Save these changes?", "រក្សាទុកការកែទាំងនេះ?"],
+  ni_edit_dlg_c: [
+    "The Draft is changed and the reason is saved in its History. The Customer does not owe it until a Manager issues it.",
+    "សេចក្តីព្រាងត្រូវបានកែ ហើយមូលហេតុរក្សាទុកក្នុងប្រវត្តិ។ អតិថិជនមិនទាន់ជំពាក់ រហូតដល់អ្នកគ្រប់គ្រងចេញវា។",
+  ],
+  ni_edit_done_t: ["Draft Invoice changed", "បានកែសេចក្តីព្រាងវិក្កយបត្រ"],
+  ni_edit_done_b: [
+    "The Draft for {0}, {1} now has {2} item(s), {3} in all. A Manager checks it and issues it.",
+    "សេចក្តីព្រាងសម្រាប់ {0} {1} ឥឡូវមាន {2} មុខ សរុប {3}។ អ្នកគ្រប់គ្រងពិនិត្យ ហើយចេញវា។",
+  ],
+  ni_not_editable: [
+    "Only a Draft made with Create Invoice can be edited here. An issued Invoice is changed with Adjust or Void.",
+    "មានតែសេចក្តីព្រាងដែលបង្កើតដោយ បង្កើតវិក្កយបត្រ ទើបអាចកែនៅទីនេះ។ វិក្កយបត្រដែលបានចេញ ត្រូវកែដោយ កែតម្រូវ ឬ ទុកជាមោឃៈ។",
+  ],
+  ni_back_one: ["Back to the Invoice", "ត្រឡប់ទៅវិក្កយបត្រ"],
   ni_to_list: ["Back to Invoices", "ត្រឡប់ទៅវិក្កយបត្រ"],
   // new
   ni_none: [

@@ -258,6 +258,72 @@ describe("V1-047 invoice client", () => {
     ]);
     expect(fetcher.mock.calls[1]?.[1]?.method).toBe("PATCH");
   });
+  it("TEST-FE-1067 sends Create Invoice items and Edit items with whole cents, the key, and for Edit items PUT with If-Match and the reason for the change", async () => {
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockImplementation(() => Promise.resolve(response(invoice())));
+    vi.stubGlobal("fetch", fetcher);
+    const input = {
+      customer_id: "customer",
+      lease_id: null,
+      reason: "Keys",
+      evidence_reference: "Form 12",
+      items: [
+        {
+          charge_id: "charge-1",
+          description: "Key copy",
+          quantity: 2,
+          unit_price: { currency: "USD" as const, minor_units: 1500 },
+        },
+      ],
+    };
+    await invoiceApi.createWithItems("property/one", input, "k1");
+    await invoiceApi.replaceItems(
+      "invoice/one",
+      { ...input, change_reason: "One more key" },
+      4,
+      "k2",
+    );
+    const [[createPath, create], [editPath, edit]] = fetcher.mock.calls as [
+      [string, RequestInit],
+      [string, RequestInit],
+    ];
+    expect(createPath).toBe(
+      "/api/v1/properties/property%2Fone/invoices/drafts",
+    );
+    expect(create.method).toBe("POST");
+    expect(new Headers(create.headers).get("Idempotency-Key")).toBe("k1");
+    expect(new Headers(create.headers).get("If-Match")).toBeNull();
+    const items = [
+      {
+        charge_id: "charge-1",
+        description: "Key copy",
+        quantity: 2,
+        unit_price_usd_cents: 1500,
+      },
+    ];
+    expect(bodyOf(create)).toEqual({
+      customer_id: "customer",
+      lease_id: null,
+      reason: "Keys",
+      evidence_reference: "Form 12",
+      items,
+    });
+    expect(editPath).toBe("/api/v1/invoices/invoice%2Fone/items");
+    expect(edit.method).toBe("PUT");
+    const headers = new Headers(edit.headers);
+    expect(headers.get("If-Match")).toBe('"4"');
+    expect(headers.get("Idempotency-Key")).toBe("k2");
+    expect(headers.get("X-CSRF-Token")).toBe("csrf token");
+    expect(bodyOf(edit)).toEqual({
+      customer_id: "customer",
+      lease_id: null,
+      reason: "Keys",
+      evidence_reference: "Form 12",
+      items,
+      change_reason: "One more key",
+    });
+  });
   it("fails before fetch without CSRF or with an invalid version", async () => {
     const fetcher = vi.fn<typeof fetch>();
     vi.stubGlobal("fetch", fetcher);

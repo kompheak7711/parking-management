@@ -367,7 +367,6 @@ def test_the_addition_store_is_append_only_and_written_only_by_the_definer_funct
 def test_add_occupant_migration_follows_the_deposit_migration_and_is_forward_only() -> None:
     config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
     scripts = ScriptDirectory.from_config(config)
-    assert scripts.get_current_head() == "20270327_246"
     revision = scripts.get_revision("20270327_246")
     assert revision is not None and revision.down_revision == "20270326_245"
     module = cast(Any, revision.module)

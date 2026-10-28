@@ -53,6 +53,9 @@ from property_rental.invoice import (
     INVOICE_VOID_CAPABILITY,
     LEASE_READ_CAPABILITY,
     MAX_INVOICE_EXPECTED_VERSION,
+    MAX_INVOICE_ITEM_QUANTITY,
+    MAX_INVOICE_ITEM_UNIT_PRICE_USD_CENTS,
+    MAX_INVOICE_ITEMS,
     MAX_INVOICE_PAGE_SIZE,
     ONE_TIME_CHARGE_CAPABILITIES,
     PROPERTY_MANAGE_CAPABILITY,
@@ -60,10 +63,12 @@ from property_rental.invoice import (
     AdjustmentType,
     CorrectInvoiceDraftCommand,
     CreateInvoiceDraftCommand,
+    CreateItemsInvoiceDraftCommand,
     InvoiceAuthorizationError,
     InvoiceConflictError,
     InvoiceIdempotencyKeyReused,
     InvoiceInvalidError,
+    InvoiceItem,
     InvoiceLineFullyPaid,
     InvoiceNotFoundError,
     InvoicePage,
@@ -72,6 +77,7 @@ from property_rental.invoice import (
     IssueInvoiceCommand,
     RecordOneTimeChargeCommand,
     RecordUnitCleaningChargeCommand,
+    ReplaceInvoiceDraftItemsCommand,
     ResolveHandBackRentCommand,
     SetOneTimeChargeDueDaysCommand,
     SetUnitCleaningRateCommand,
@@ -118,6 +124,23 @@ class InvoiceFlow(Protocol):
         property_id: UUID,
         invoice_id: UUID,
         command: CorrectInvoiceDraftCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]: ...
+
+    def create_items_draft(
+        self,
+        property_id: UUID,
+        command: CreateItemsInvoiceDraftCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]: ...
+
+    def replace_draft_items(
+        self,
+        property_id: UUID,
+        invoice_id: UUID,
+        command: ReplaceInvoiceDraftItemsCommand,
         *,
         actor: AuthenticatedActor,
     ) -> dict[str, object]: ...
@@ -194,6 +217,40 @@ class AuthorizedObligationInput(BaseModel):
 
 class DraftCorrectionInput(AuthorizedObligationInput):
     reason: str = Field(min_length=1, max_length=500, pattern=r"^\S(?:.*\S)?$")
+
+
+class InvoiceItemInput(BaseModel):
+    """DL-103: one typed item; the server works out the amount as quantity times unit price."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    charge_id: UUID
+    description: str = Field(min_length=1, max_length=1000, pattern=r"^\S(?:.*\S)?$")
+    quantity: int = Field(strict=True, ge=1, le=MAX_INVOICE_ITEM_QUANTITY)
+    unit_price_usd_cents: int = Field(strict=True, ge=1, le=MAX_INVOICE_ITEM_UNIT_PRICE_USD_CENTS)
+
+
+class ItemsInvoiceDraftInput(BaseModel):
+    """DL-103: one Miscellaneous Invoice of 1 to 20 items, with one reason and one approval."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    customer_id: UUID
+    lease_id: UUID | None = None
+    reason: str = Field(min_length=1, max_length=500, pattern=r"^\S(?:.*\S)?$")
+    evidence_reference: str = Field(min_length=1, max_length=500, pattern=r"^\S(?:.*\S)?$")
+    items: list[InvoiceItemInput] = Field(min_length=1, max_length=MAX_INVOICE_ITEMS)
+
+
+class InvoiceItemsChangeInput(ItemsInvoiceDraftInput):
+    change_reason: str = Field(min_length=1, max_length=500, pattern=r"^\S(?:.*\S)?$")
+
+
+def _invoice_items(items: list[InvoiceItemInput]) -> tuple[InvoiceItem, ...]:
+    return tuple(
+        InvoiceItem(item.charge_id, item.description, item.quantity, item.unit_price_usd_cents)
+        for item in items
+    )
 
 
 class IssueInput(BaseModel):
@@ -297,7 +354,7 @@ def _actor(request: Request, resolver: ActorResolver) -> AuthenticatedActor:
     actor = resolver(request)
     if actor is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
-    if request.method in {"POST", "PATCH"}:
+    if request.method in {"POST", "PATCH", "PUT"}:
         require_billing_actor(request, actor)
     return actor
 
@@ -481,6 +538,38 @@ def create_invoice_router(
         _etag(response, resource)
         return _envelope(resource, request)
 
+    @router.post("/properties/{property_id}/invoices/drafts", status_code=status.HTTP_201_CREATED)
+    def create_items_invoice(
+        property_id: UUID,
+        body: ItemsInvoiceDraftInput,
+        request: Request,
+        response: Response,
+        idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
+    ) -> dict[str, object]:
+        """DL-103: record every item's charge and one Miscellaneous DRAFT in one step."""
+        if request.query_params:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+        actor = _actor(request, resolver)
+        _authorize(actor, property_id, INVOICE_CREATE_CAPABILITY)
+        require_browser_mutation(request, settings)
+        resource = _invoke(
+            lambda: flow.create_items_draft(
+                property_id,
+                CreateItemsInvoiceDraftCommand(
+                    idempotency_key,
+                    body.customer_id,
+                    body.lease_id,
+                    body.reason,
+                    body.evidence_reference,
+                    _invoice_items(body.items),
+                ),
+                actor=actor,
+            )
+        )
+        response.headers["Location"] = f"/api/v1/invoices/{resource['id']}"
+        _etag(response, resource)
+        return _envelope(resource, request)
+
     @router.get("/invoices/{invoice_id}")
     def get_invoice(invoice_id: UUID, request: Request, response: Response) -> dict[str, object]:
         if request.query_params:
@@ -533,6 +622,38 @@ def create_invoice_router(
                     idempotency_key,
                     body.authorized_nonrecurring_obligation_id,
                     body.reason,
+                    expected_version,
+                ),
+                actor=actor,
+            )
+        )
+        _etag(response, resource)
+        return _envelope(resource, request)
+
+    @router.put("/invoices/{invoice_id}/items")
+    def replace_invoice_items(
+        invoice_id: UUID,
+        body: InvoiceItemsChangeInput,
+        request: Request,
+        response: Response,
+        idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
+        if_match: Annotated[str | None, Header(alias="If-Match")] = None,
+    ) -> dict[str, object]:
+        """DL-103: Edit items on a DRAFT made from typed items, with the reason for the change."""
+        actor, property_id = command_context(invoice_id, request, INVOICE_CREATE_CAPABILITY)
+        expected_version = _version(if_match)
+        resource = _invoke(
+            lambda: flow.replace_draft_items(
+                property_id,
+                invoice_id,
+                ReplaceInvoiceDraftItemsCommand(
+                    idempotency_key,
+                    body.customer_id,
+                    body.lease_id,
+                    body.reason,
+                    body.evidence_reference,
+                    body.change_reason,
+                    _invoice_items(body.items),
                     expected_version,
                 ),
                 actor=actor,

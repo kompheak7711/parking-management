@@ -2560,6 +2560,8 @@ Every Invoice shall originate from a legitimate business event.
 It must identify exactly one Customer. It identifies a Lease only when the
 governing obligation is associated with that Lease.
 
+Amended by DL-103 (owner, 2026-10-28): one Miscellaneous Invoice made with Create Invoice may hold 1 to 20 items. Each item is its own approved one-time charge with a whole quantity and a unit price in US cents, and its amount is exactly the quantity times the unit price, with no rounding. All items share one reason and one approval. While the Invoice is a Draft its items may be changed with a reason for the change; it gets one Invoice number and one Due Date when it is issued.
+
 ---
 
 ### BR-INV-017 — Invoice Amount
@@ -3625,6 +3627,8 @@ Example: for $500 Rent plus $10 Trash Collection, an unspecified $300 Payment pr
 a proposal of $300 to Rent, leaving $200 Rent and $10 Trash Collection. An unspecified
 $505 Payment proposes $500 to Rent and $5 to Trash Collection, leaving Rent fully paid
 and $5 Service outstanding. A $510 Payment proposes full satisfaction of both lines.
+
+Amended by DL-103 (owner, 2026-10-28): on an Invoice of typed items (DL-103) the proposal pays the items from the top down, in the order they are listed on the Invoice. It is still a proposal that staff confirm.
 
 ---
 

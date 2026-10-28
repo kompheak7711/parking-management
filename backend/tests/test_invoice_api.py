@@ -1,14 +1,17 @@
 """Property-scoped staff billing visibility; commands retain their own authorization."""
 
 from typing import cast
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from property_rental.billing import SetInitialRentDueDateCommand
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
 from property_rental.invoice import (
+    CreateItemsInvoiceDraftCommand,
+    InvoiceItem,
     InvoiceLineFullyPaid,
     IssueInvoiceCommand,
     RecordOneTimeChargeCommand,
+    ReplaceInvoiceDraftItemsCommand,
     SetOneTimeChargeDueDaysCommand,
 )
 from test_invoice import InMemoryInvoiceFlow, actor, api, invoice_resource, mutation_headers
@@ -107,6 +110,12 @@ def test_all_invoice_mutations_bind_the_confirming_actor_before_service_dispatch
             "PATCH",
             f"/invoices/{invoice_id}",
             {"authorized_nonrecurring_obligation_id": str(uuid4()), "reason": "Correction"},
+        ),
+        ("POST", f"/properties/{property_id}/invoices/drafts", _items_body()),
+        (
+            "PUT",
+            f"/invoices/{invoice_id}/items",
+            {**_items_body(), "change_reason": "Customer asked for one more key"},
         ),
         ("POST", f"/invoices/{invoice_id}/issue", {}),
         ("POST", f"/invoices/{invoice_id}/void", {"reason": "Invalid source"}),
@@ -323,3 +332,101 @@ def test_debit_adjustment_on_a_fully_paid_line_answers_a_stable_conflict_code() 
     error = reply.json()["error"]
     assert error["code"] == "INVOICE_LINE_FULLY_PAID" and error["rule_ids"] == ["BR-INV-044"]
     assert "balance" in error["message"]
+
+
+def _items_body() -> dict[str, object]:
+    return {
+        "customer_id": str(uuid4()),
+        "lease_id": None,
+        "reason": "Keys and a lock",
+        "evidence_reference": "Receipt 12",
+        "items": [
+            {
+                "charge_id": str(uuid4()),
+                "description": "Key copy",
+                "quantity": 2,
+                "unit_price_usd_cents": 1500,
+            },
+            {
+                "charge_id": str(uuid4()),
+                "description": "Door lock",
+                "quantity": 1,
+                "unit_price_usd_cents": 3999,
+            },
+        ],
+    }
+
+
+def test_items_invoice_route_needs_invoices_create_and_validates_every_item() -> None:
+    """DL-103: one request makes one Miscellaneous DRAFT of up to 20 typed items."""
+    property_id = uuid4()
+    flow = InMemoryInvoiceFlow(property_id, invoice_resource(property_id))
+    path = f"/api/v1/properties/{property_id}/invoices/drafts"
+    body = _items_body()
+    items = cast(list[dict[str, object]], body["items"])
+    denied = api(flow, actor(property_id, "invoices.issue")).post(
+        path, headers=mutation_headers(), json=body
+    )
+    assert denied.status_code == 403 and flow.commands == []
+    client = api(flow, actor(property_id, "invoices.create"))
+    item = items[0]
+    bad_bodies: list[dict[str, object]] = [
+        {**body, "items": []},
+        {**body, "items": [{**item, "charge_id": str(uuid4())} for _ in range(21)]},
+        {**body, "items": [item, item]},
+        {**body, "items": [{**item, "quantity": 1.5}]},
+        {**body, "items": [{**item, "quantity": "2"}]},
+        {**body, "items": [{**item, "quantity": 0}]},
+        {**body, "items": [{**item, "quantity": 10_000}]},
+        {**body, "items": [{**item, "unit_price_usd_cents": 0}]},
+        {**body, "items": [{**item, "unit_price_usd_cents": 1_000_000_000}]},
+        {**body, "items": [{**item, "unit_price_usd_cents": 12.5}]},
+        {**body, "items": [{**item, "amount_usd_cents": 3000}]},
+        {**body, "items": [{**item, "description": " Key copy"}]},
+        {**body, "reason": ""},
+    ]
+    for bad in bad_bodies:
+        assert client.post(path, headers=mutation_headers(), json=bad).status_code == 422
+    assert flow.commands == []
+    key = uuid4()
+    created = client.post(path, headers=mutation_headers(key=key), json=body)
+    assert created.status_code == 201
+    assert created.headers["Location"] == f"/api/v1/invoices/{flow.value['id']}"
+    assert created.headers["ETag"] == '"1"'
+    command = cast(CreateItemsInvoiceDraftCommand, flow.commands[-1])
+    assert command.items == (
+        InvoiceItem(UUID(str(item["charge_id"])), "Key copy", 2, 1500),
+        InvoiceItem(UUID(str(items[1]["charge_id"])), "Door lock", 1, 3999),
+    )
+    assert (command.reason, command.evidence_reference) == ("Keys and a lock", "Receipt 12")
+    replay = client.post(path, headers=mutation_headers(key=key), json=body)
+    assert replay.status_code == 201 and len(flow.commands) == 1
+    changed = {**body, "reason": "Another reason"}
+    reused = client.post(path, headers=mutation_headers(key=key), json=changed)
+    assert reused.status_code == 409
+    assert reused.json()["error"]["code"] == "IDEMPOTENCY_KEY_REUSED"
+
+
+def test_edit_items_route_needs_the_version_and_the_reason_for_the_change() -> None:
+    """DL-103: Edit items replaces the items of a DRAFT with one reason for the change."""
+    property_id = uuid4()
+    flow = InMemoryInvoiceFlow(property_id, invoice_resource(property_id, version=4))
+    path = f"/api/v1/invoices/{flow.value['id']}/items"
+    body = {**_items_body(), "change_reason": "Customer asked for one more key"}
+    hidden = api(flow, actor(property_id, "invoices.issue")).put(
+        path, headers=mutation_headers(version=4), json=body
+    )
+    assert hidden.status_code == 404 and flow.commands == []
+    client = api(flow, actor(property_id, "invoices.create"))
+    assert client.put(path, headers=mutation_headers(), json=body).status_code == 412
+    no_reason = {key: value for key, value in body.items() if key != "change_reason"}
+    assert client.put(path, headers=mutation_headers(version=4), json=no_reason).status_code == 422
+    stale = client.put(path, headers=mutation_headers(version=3), json=body)
+    assert stale.status_code == 412
+    assert stale.json()["error"]["current_version"] == 4
+    changed = client.put(path, headers=mutation_headers(version=4), json=body)
+    assert changed.status_code == 200
+    assert changed.headers["ETag"] == '"5"'
+    command = cast(ReplaceInvoiceDraftItemsCommand, flow.commands[-1])
+    assert command.change_reason == "Customer asked for one more key"
+    assert command.expected_version == 4 and len(command.items) == 2

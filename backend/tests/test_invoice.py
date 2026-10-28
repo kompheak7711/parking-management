@@ -23,6 +23,7 @@ from property_rental.invoice import (
     AdjustmentType,
     CorrectInvoiceDraftCommand,
     CreateInvoiceDraftCommand,
+    CreateItemsInvoiceDraftCommand,
     InvoiceConflictError,
     InvoiceIdempotencyKeyReused,
     InvoiceInvalidError,
@@ -32,6 +33,7 @@ from property_rental.invoice import (
     IssueInvoiceCommand,
     PostgresInvoiceService,
     RecordOneTimeChargeCommand,
+    ReplaceInvoiceDraftItemsCommand,
     SetOneTimeChargeDueDaysCommand,
     VoidInvoiceCommand,
     _decode_cursor,
@@ -227,6 +229,35 @@ class InMemoryInvoiceFlow:
             and command.expected_version == int(str(self.value["version"]))
         ):
             raise InvoiceConflictError("Invoice version cannot advance")
+        replayed = self._replay("correct", command.idempotency_key, command)
+        if replayed:
+            return self.value
+        if command.expected_version != int(str(self.value["version"])):
+            raise InvoiceVersionConflict(int(str(self.value["version"])))
+        self.value = {**self.value, "version": command.expected_version + 1}
+        return self.value
+
+    def create_items_draft(
+        self,
+        property_id: UUID,
+        command: CreateItemsInvoiceDraftCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        del actor
+        assert property_id == self.property_id
+        self._replay("create", command.idempotency_key, command)
+        return self.value
+
+    def replace_draft_items(
+        self,
+        property_id: UUID,
+        invoice_id: UUID,
+        command: ReplaceInvoiceDraftItemsCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        del property_id, invoice_id, actor
         replayed = self._replay("correct", command.idempotency_key, command)
         if replayed:
             return self.value

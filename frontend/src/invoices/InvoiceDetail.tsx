@@ -2,7 +2,8 @@
 // Print Invoice, the overdue, void or draft notice, the printed Invoice, the Invoice status card
 // with the bar from the issue date to the Due Date, the Customer, and the History; Issue for a
 // Draft, Adjust and Void for an issued one, and Receive payment while something is owed (R5c);
-// under the status card the late-payment card when the app added a charge (R5d).
+// under the status card the late-payment card when the app added a charge (R5d). Edit items opens
+// a Draft made with Create Invoice again (DL-103).
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -19,6 +20,7 @@ import { hashForPage } from "../shell/navigation";
 import { openPageInAddress } from "../shell/useHashPage";
 import type { Language } from "../signInText";
 import { AdjustDialog, VoidDialog } from "./ChangeDialogs";
+import { editableItems } from "./CreateInvoice";
 import { InvoiceDocument, SheetFrame } from "./InvoiceDocument";
 import { InvoiceChip } from "./InvoicesList";
 import { IssueDialog } from "./IssueDialog";
@@ -417,6 +419,17 @@ export function InvoiceDetail({
               {ivt(language, "act_issue")}
             </button>
           )}
+          {state === "draft" &&
+            may("invoices.create") &&
+            editableItems(invoice) !== null && (
+              <a
+                className="ui-btn"
+                href={hashForPage("invoices", `edit:${invoice.id}`)}
+              >
+                <Icon name="lease" />
+                {ivt(language, "act_edit_items")}
+              </a>
+            )}
           {state !== "draft" &&
             state !== "void" &&
             cents(invoice.outstanding_balance) > 0 &&
