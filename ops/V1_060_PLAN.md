@@ -238,3 +238,18 @@ candidate is the code that will be used.
   Lease now lists the Primary Tenant first once someone is added. One database test added. Runs:
   the Add occupant database tests 7 passed, nearby Lease database tests 19 passed, Lease API
   tests 12 passed; backend lint, format and types passed.
+- 2026-10-28 B6 (owner asks at 07:24, Reports page): the Reports menu opened a "comes with
+  V1-057" note. Built the Reports screens on the V1-057 data (DESIGN.md round 4): the list shows
+  only the reports the person may read, in the owner's order and two groups; the four Totals
+  tables (years by month, a Unit filter, Summary, chart, Top 5 Units); the nine registers (one bar
+  for floor and period, a Summary card with a chart, the full table with a footer total and the
+  Generated line, a link on each record, 200 rows at a time with Show more); Export to a
+  spreadsheet or a PDF through the V1-057 export (owner answer of 21/10: .xlsx and PDF). Decided by
+  Claude under the owner's 2026-10-23 22:30 rule: the Reports menu item shows to anyone who may
+  read one report (before, it needed Payments or Invoices read, so a person with only Lease,
+  Utility or History reads never saw it; TEST-FE-810 now also lists Reports for audit.view); Paid
+  for in the Payments register shows one kind per line, as on the Payments list; the scope and
+  period stay the same from one report to the next while the page is open. Known gaps: registers
+  filter by floor only (no Unit filter in the V1-057 API); the PDF has no Khmer font; the Khmer
+  words need a native speaker's check. Tests TEST-FE-1030 to 1060. Looked at on an iPad-size
+  screen (1180 x 820) with sample data: no page overflow; wide registers scroll inside their card.

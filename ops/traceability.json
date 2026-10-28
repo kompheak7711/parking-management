@@ -57010,6 +57010,356 @@
       "test_path": "backend/tests/test_lease_occupant_addition_migration.py",
       "status": "implemented",
       "notes": "V1-060 B6: a draft that planned nobody meant the Primary Tenant alone; once Add occupant plans someone, the Lease lists the Primary Tenant first and then the added person, so Record move-in ticks both."
+    },
+    {
+      "test_id": "TEST-FE-1030",
+      "upstream_ids": [
+        "UI-088",
+        "DL-079",
+        "DL-072"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reports/ReportsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (Reports screens, V1-057 data, DESIGN.md round 4): Lists every report in two groups in the owner's order, each with its line, the Owner and Manager tag on the money and audit reports, and Open report; a card opens its report."
+    },
+    {
+      "test_id": "TEST-FE-1031",
+      "upstream_ids": [
+        "UI-088",
+        "DL-072"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reports/ReportsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (Reports screens, V1-057 data, DESIGN.md round 4): Shows only the reports the account may read: Staff see Utility consumption, Unit occupancy and Lease dates; History adds Audit activity; the money right adds the Totals tables and the money registers."
+    },
+    {
+      "test_id": "TEST-FE-1032",
+      "upstream_ids": [
+        "UI-088",
+        "DL-072"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reports/ReportsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (Reports screens, V1-057 data, DESIGN.md round 4): An account that may read no report sees a calm note and no cards."
+    },
+    {
+      "test_id": "TEST-FE-1033",
+      "upstream_ids": [
+        "UI-088",
+        "DL-072"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reports/ReportsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (Reports screens, V1-057 data, DESIGN.md round 4): A report the account may not read says so, with no parameter bar and no request; All reports goes back to the list."
+    },
+    {
+      "test_id": "TEST-FE-1034",
+      "upstream_ids": [
+        "UI-088",
+        "DL-072"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reports/ReportsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (Reports screens, V1-057 data, DESIGN.md round 4): When the server refuses the report (403) the page says calmly that the account cannot see it, without Retry or the parameter bar."
+    },
+    {
+      "test_id": "TEST-FE-1035",
+      "upstream_ids": [
+        "UI-089",
+        "DL-079"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reports/ReportsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (Reports screens, V1-057 data, DESIGN.md round 4): A report that cannot be read offers Retry, which reads it again; Export waits for the report."
+    },
+    {
+      "test_id": "TEST-FE-1036",
+      "upstream_ids": [
+        "UI-089",
+        "DL-079"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reports/ReportsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (Reports screens, V1-057 data, DESIGN.md round 4): A report with no records says so with the Generated line and no Summary; a report of today says No records."
+    },
+    {
+      "test_id": "TEST-FE-1037",
+      "upstream_ids": [
+        "UI-089",
+        "DL-079"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reports/ReportsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (Reports screens, V1-057 data, DESIGN.md round 4): While the report is read the page says so and Export waits."
+    },
+    {
+      "test_id": "TEST-FE-1038",
+      "upstream_ids": [
+        "UI-088",
+        "DL-079"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reports/TotalsView.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (Reports screens, V1-057 data, DESIGN.md round 4): Total Income: years newest first with January to December and a Total, — for a month with no record; the Summary gives the total, the highest month and Unit and the money not tied to a Unit; the chart stacks the parts by month beside the Top 5 Units."
+    },
+    {
+      "test_id": "TEST-FE-1039",
+      "upstream_ids": [
+        "UI-089",
+        "DL-079"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reports/TotalsView.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (Reports screens, V1-057 data, DESIGN.md round 4): The Unit filter asks for one Unit's table and All Units for every Unit added together; the scope shows over the table and stays for the other Totals tables."
+    },
+    {
+      "test_id": "TEST-FE-1040",
+      "upstream_ids": [
+        "UI-089",
+        "DL-079"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reports/TotalsView.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (Reports screens, V1-057 data, DESIGN.md round 4): The period: This month, Last month and picked dates are sent as days and shown as dd/mm/yyyy; dates that are not whole days or run backwards are refused; All sends no dates."
+    },
+    {
+      "test_id": "TEST-FE-1041",
+      "upstream_ids": [
+        "UI-088",
+        "DL-079"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reports/TotalsView.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (Reports screens, V1-057 data, DESIGN.md round 4): Total Electricity shows the amount with the kWh under it and marks an estimated month; the Summary adds the kWh used and the chart splits readings and estimates; Total Water shows m³."
+    },
+    {
+      "test_id": "TEST-FE-1042",
+      "upstream_ids": [
+        "UI-090",
+        "DL-072"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reports/TotalsView.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (Reports screens, V1-057 data, DESIGN.md round 4): A report page names the report with its line and the Owner and Manager tag, and ends with the Generated line in Phnom Penh time with amounts in USD."
+    },
+    {
+      "test_id": "TEST-FE-1043",
+      "upstream_ids": [
+        "UI-088",
+        "DL-079",
+        "DL-072"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reports/RegisterView.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (Reports screens, V1-057 data, DESIGN.md round 4): Invoice register: the Summary gives issued, paid, settled another way and still owed with the void count, the overdue groups 1 to 19, 20 to 29 and 30 days or more, and the chart by issue month; every Invoice, Customer and Unit links to its page and the footer adds up the amounts."
+    },
+    {
+      "test_id": "TEST-FE-1044",
+      "upstream_ids": [
+        "UI-090",
+        "DL-079",
+        "DL-072"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reports/RegisterView.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (Reports screens, V1-057 data, DESIGN.md round 4): Payments: Money received and where the money went (Paid to Invoices with its Rent, Services, Utilities and Move-out charges, Deposits, Customer Credit, Late-payment charges, Not allocated), the sentence tying Paid to Invoices to the Invoice register, riel as information with its rate, and each Receipt linked."
+    },
+    {
+      "test_id": "TEST-FE-1045",
+      "upstream_ids": [
+        "UI-089",
+        "DL-079"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reports/RegisterView.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (Reports screens, V1-057 data, DESIGN.md round 4): A register reads 200 rows at a time for the chosen floor; the footer adds up every row of the filter; Show more reads the next rows and says when they could not be read."
+    },
+    {
+      "test_id": "TEST-FE-1046",
+      "upstream_ids": [
+        "UI-088",
+        "DL-079",
+        "DL-072"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reports/RegisterView.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (Reports screens, V1-057 data, DESIGN.md round 4): Utility consumption: one line for each Unit and reading period with kWh and m³ side by side, estimates and amounts not billed yet marked; the Summary splits by kind with the Utility Rates; without the money right there are no amounts and no Rates."
+    },
+    {
+      "test_id": "TEST-FE-1047",
+      "upstream_ids": [
+        "UI-088",
+        "UI-089",
+        "DL-079"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reports/RegisterView.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (Reports screens, V1-057 data, DESIGN.md round 4): Deposit liability shows today: no period and no dates sent even after a period was chosen; held by kind; each deposit links its Lease or Reservation with its state; the footer adds up received, applied, kept, refunded and held."
+    },
+    {
+      "test_id": "TEST-FE-1048",
+      "upstream_ids": [
+        "UI-088",
+        "DL-072"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reports/RegisterView.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (Reports screens, V1-057 data, DESIGN.md round 4): Unit occupancy lists every Unit with its Unit Type, status, Customer, Lease or Reservation, Monthly Rent and Until, counts the Units by status, and has no Monthly Rent without the money right."
+    },
+    {
+      "test_id": "TEST-FE-1049",
+      "upstream_ids": [
+        "UI-088",
+        "DL-079"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reports/RegisterView.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (Reports screens, V1-057 data, DESIGN.md round 4): Lease dates: each Lease is named by its Unit and opens the Lease; a Lease ending within 60 days shows the days left, an early end and a drafted renewal are shown; the Summary counts current, ending, no renewal and terminated."
+    },
+    {
+      "test_id": "TEST-FE-1050",
+      "upstream_ids": [
+        "UI-088",
+        "UI-085",
+        "DL-079"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reports/RegisterView.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (Reports screens, V1-057 data, DESIGN.md round 4): Audit activity counts the whole Property by day, person and action, takes no floor, and links each day and the card to History."
+    },
+    {
+      "test_id": "TEST-FE-1051",
+      "upstream_ids": [
+        "UI-088",
+        "DL-079"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reports/RegisterView.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (Reports screens, V1-057 data, DESIGN.md round 4): The Customer Credit ledger links each Credit to its Customer, Unit and Receipt and adds up Credit, used, refunded, reversed and left; the Final Settlement register names each by its Unit, opens the Final Settlement and shows open and closed."
+    },
+    {
+      "test_id": "TEST-FE-1052",
+      "upstream_ids": [
+        "UI-021",
+        "DL-072",
+        "DL-079"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reports/ReportsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (Reports screens, V1-057 data, DESIGN.md round 4): Export shows the report, scope, period and rows, warns about personal data and History, and sends the chosen PDF with the floor and period; the file is saved."
+    },
+    {
+      "test_id": "TEST-FE-1053",
+      "upstream_ids": [
+        "UI-021",
+        "DL-079"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reports/ReportsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (Reports screens, V1-057 data, DESIGN.md round 4): A Totals export sends the Unit and the period, has no Rows line, and fetches a big file from its export job."
+    },
+    {
+      "test_id": "TEST-FE-1054",
+      "upstream_ids": [
+        "UI-021",
+        "DL-072"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reports/ReportsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (Reports screens, V1-057 data, DESIGN.md round 4): An export that cannot be made says why and keeps the dialog open: refused, not allowed, no longer kept, or not made just now; Cancel closes it."
+    },
+    {
+      "test_id": "TEST-FE-1055",
+      "upstream_ids": [
+        "UI-021",
+        "DL-072"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reports/ReportsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (Reports screens, V1-057 data, DESIGN.md round 4): Export shows only with the export right and the report's own read right."
+    },
+    {
+      "test_id": "TEST-FE-1056",
+      "upstream_ids": [
+        "UI-088",
+        "DL-079"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reports/ReportsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (Reports screens, V1-057 data, DESIGN.md round 4): The page follows the language switch: the list and a Totals table in Khmer, with the same numbers and no new request."
+    },
+    {
+      "test_id": "TEST-FE-1057",
+      "upstream_ids": [
+        "UI-088",
+        "DL-079"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reports/charts.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (Reports screens, V1-057 data, DESIGN.md round 4): The month chart: a round axis top, one column for each month stacked in the fixed series order with a legend, a tooltip with each part and the total, a label on the highest column only, no bar for a part below zero, about eight month labels on a long run, and a hidden table for screen readers."
+    },
+    {
+      "test_id": "TEST-FE-1058",
+      "upstream_ids": [
+        "UI-089",
+        "UI-090",
+        "DL-079"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reports/charts.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (Reports screens, V1-057 data, DESIGN.md round 4): The bar list writes each value at the end of its bar; the report helpers: who may read and export, This month and Last month across a year end and in a leap year, picked dates, decimals grouped without rounding, riel, axis dollars, the Generated time in Phnom Penh, floors and measures."
+    },
+    {
+      "test_id": "TEST-FE-1059",
+      "upstream_ids": [
+        "UI-089",
+        "DL-079"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reports/ReportsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (Reports screens, V1-057 data, DESIGN.md round 4): The scope and period stay the same from one report to the next while the page is open; another Property starts again from the whole Property and all dates."
+    },
+    {
+      "test_id": "TEST-FE-1060",
+      "upstream_ids": [
+        "UI-008",
+        "UI-088",
+        "DL-072"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shell/AppShell.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (Reports screens, V1-057 data, DESIGN.md round 4): Shows Reports to anyone who may read one report and hides it from a person who may read none."
     }
   ]
 }

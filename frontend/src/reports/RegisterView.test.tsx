@@ -220,7 +220,7 @@ describe("Registers", () => {
         "U203",
         "Cash",
         "$800.00",
-        "Rent $600.00, Services $50.00, Deposits $150.00",
+        "Rent $600.00Services $50.00Deposits $150.00",
         NONE,
         "Received",
       ],
@@ -242,11 +242,18 @@ describe("Registers", () => {
         "U204",
         "Bank transfer",
         "$400.00",
-        "Damage $30.00, Miscellaneous $20.00, Late-payment charges $20.00, Deposits $150.00, Customer Credit $80.00",
+        "Damage $30.00Miscellaneous $20.00Late-payment charges $20.00Deposits $150.00Customer Credit $80.00",
         "$100.00",
         "Reversed 22/10/2026",
       ],
     ]);
+    // Paid for shows one kind per line, as on the Payments list.
+    const paidFor = table.querySelectorAll("tbody tr")[0]?.children[6];
+    expect(
+      [...(paidFor?.querySelectorAll(".rp-line") ?? [])].map(
+        (line) => line.textContent,
+      ),
+    ).toEqual(["Rent $600.00", "Services $50.00", "Deposits $150.00"]);
     expect(footRow(table)).toEqual([
       "Total",
       "",

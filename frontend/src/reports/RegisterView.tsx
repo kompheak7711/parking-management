@@ -295,8 +295,9 @@ const INVOICE_PARTS = [
   ["p_move_out", ["DAMAGE_CHARGES", "MISCELLANEOUS_CHARGES"]],
 ] as const;
 
-/** "Rent $100.00, Deposits $50.00": what one payment paid; Not allocated has its own column. */
-function paidFor(language: Language, row: PaymentRegisterRow): string {
+/** "Rent $100.00", "Deposits $50.00": what one payment paid, one kind per line as on the
+ * Payments list; Not allocated has its own column. */
+function paidFor(language: Language, row: PaymentRegisterRow): string[] {
   const sums = new Map<string, number>();
   for (const part of row.parts) {
     if (part.kind === "NOT_ALLOCATED" || part.kind === "REVERSED_LATER") {
@@ -308,10 +309,7 @@ function paidFor(language: Language, row: PaymentRegisterRow): string {
         : rpt(language, `l_${part.kind}`);
     sums.set(label, (sums.get(label) ?? 0) + part.amount_usd_cents);
   }
-  const text = [...sums]
-    .map(([label, amount]) => `${label} ${usd(amount)}`)
-    .join(", ");
-  return text === "" ? "—" : text;
+  return [...sums].map(([label, amount]) => `${label} ${usd(amount)}`);
 }
 
 /** The riel a payment was made in, with its rate: information only. */
@@ -456,6 +454,7 @@ function Payments({
       >
         {rows.map((row) => {
           const riel = rielLine(language, row);
+          const lines = paidFor(language, row);
           return (
             <tr key={row.payment_id}>
               <td>
@@ -478,7 +477,15 @@ function Payments({
                 {usd(row.amount_usd_cents)}
                 {riel !== null && <span className="ui-sub2">{riel}</span>}
               </td>
-              <td className="wrap">{paidFor(language, row)}</td>
+              <td>
+                {lines.length === 0
+                  ? "—"
+                  : lines.map((line) => (
+                      <span className="rp-line" key={line}>
+                        {line}
+                      </span>
+                    ))}
+              </td>
               <td className="r ui-num">
                 {row.not_allocated_usd_cents === 0
                   ? "—"

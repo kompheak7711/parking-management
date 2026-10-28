@@ -173,6 +173,8 @@ describe("V1-058 R1 app shell", () => {
       ["Home", "#/home"],
       ["Leases", "#/moveout"],
       ["Units", "#/units"],
+      // audit.view reads the Audit activity report (V1-060 B6).
+      ["Reports", "#/reports"],
       ["History", "#/history"],
     ]);
     expect(within(menu).queryByText("Daily work")).not.toBeInTheDocument();
@@ -180,6 +182,23 @@ describe("V1-058 R1 app shell", () => {
     expect(
       screen.queryByRole("navigation", { name: "Leases" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("TEST-FE-1060 shows Reports to anyone who may read one report and hides it from a person who may read none", () => {
+    const shows = (rights: string[]) => {
+      renderShell("home", "en", { capabilities: new Set(rights) });
+      const menu = screen.getByRole("navigation", { name: "Menu" });
+      const shown = within(menu).queryByRole("link", { name: "Reports" });
+      cleanup();
+      return shown !== null;
+    };
+    // Payments and Invoices without reports.read read no report (DL-072 answer 5).
+    expect(shows(["payments.read", "invoices.read"])).toBe(false);
+    expect(shows(["units.read", "reservations.read"])).toBe(false);
+    expect(shows(["reports.read"])).toBe(true);
+    expect(shows(["utility.read"])).toBe(true);
+    expect(shows(["leases.read"])).toBe(true);
+    expect(shows(["audit.view"])).toBe(true);
   });
 
   it("TEST-FE-811 opens My account from the name at the foot of the menu", () => {

@@ -478,6 +478,11 @@ table.rp-mini tfoot td {
   font-weight: 600;
 }
 
+/* One kind per line in a register cell (Payments: Paid for). */
+.rp-line {
+  display: block;
+}
+
 /* ---------- the year-by-month table (the Year column stays in place) ---------- */
 
 table.ui-table.rp-xtab th,

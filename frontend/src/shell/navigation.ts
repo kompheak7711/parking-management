@@ -143,7 +143,9 @@ const PAGE_NEEDS: Record<PageId, readonly string[] | null> = {
   leases: ["leases.read"],
   letters: ["rent_nonpayment.read", "leases.warn"],
   moveout: ["deposits.read", "final_settlements.prepare", "leases.move_out"],
-  reports: ["payments.read", "invoices.read"],
+  // V1-060 B6: anyone who may read one report (frontend/src/reports/reportsData.ts REPORTS;
+  // Unit occupancy also needs leases.read).
+  reports: ["reports.read", "utility.read", "leases.read", "audit.view"],
   history: ["audit.view"],
   // V1-058 R7b: System health is a Settings tab for operations.status.read too.
   settings: [
