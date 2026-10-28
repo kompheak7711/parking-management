@@ -76,6 +76,8 @@ const TEXT = {
   todo: ["To do", "ត្រូវធ្វើ"],
   skip: ["Not needed", "មិនចាំបាច់"],
   now: ["Now", "ឥឡូវ"],
+  // new (V1-060 B6): step 6 after closure is used only when something comes up later.
+  optional: ["If needed", "បើចាំបាច់"],
   st1_t: ["Lease ends", "កិច្ចសន្យាបញ្ចប់"],
   st1_normal: [
     "Lease End Date {0}. Normal end: the Security Deposit pays what is owed, the rest is refunded (DL-032).",
@@ -850,6 +852,11 @@ const TEXT = {
     "មានអ្វីផ្សេងរារាំង។ សូមអានទំព័រម្តងទៀតពេលក្រោយ។",
   ],
   st6_t: ["After closure", "បន្ទាប់ពីបិទ"],
+  // new (V1-060 B6)
+  st6_finished: [
+    "The move-out is finished. Use this step only if something comes up later.",
+    "ការចាកចេញបានបញ្ចប់។ ប្រើជំហាននេះ តែពេលមានអ្វីកើតឡើងនៅពេលក្រោយ។",
+  ],
   st6_note: [
     "A closed Final Settlement is never reopened. A later charge or refund is a linked correction with a reason, confirmed by a Manager.",
     "ការទូទាត់ចុងក្រោយបានបិទ មិនបើកឡើងវិញទេ។ ថ្លៃ ឬការសងវិញក្រោយ ជាការកែភ្ជាប់ដោយមានមូលហេតុ បញ្ជាក់ដោយអ្នកគ្រប់គ្រង។",

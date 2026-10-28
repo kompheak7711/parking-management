@@ -331,3 +331,10 @@ candidate is the code that will be used.
   asks for a reason and records the LEASE_FORFEITURE draft (same record id and key on Try again);
   while the draft waits, the step says it waits for approval with a link for an approver. Tests:
   TEST-FE-1072 and TEST-FE-1073 (new). No migration and no backend change.
+- 2026-10-28 (B6, owner question of 14:30, "how about after closure"): the owner closed the
+  Final Settlement of U201 and asked about step 6. Answered: nothing is due; step 6 is only for a
+  charge found later (a correction draft that the Owner or a Manager confirms); a refund after
+  closure comes later; money that stays owed is received in Payments as usual. Built (screens
+  only; decided by Claude under the owner's 2026-10-23 22:30 rule): after closure step 6 says
+  "The move-out is finished. Use this step only if something comes up later." and its mark says
+  "If needed" instead of "Now". Tests: TEST-FE-998 (changed). No migration.

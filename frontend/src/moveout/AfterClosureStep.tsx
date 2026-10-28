@@ -2,7 +2,8 @@
 // a new extra charge or a new refund, confirmed by a Manager"; BR-SETTLE-013). A closed Final
 // Settlement is never reopened: a later charge is a correction draft linked to it, with a
 // reason, that a financial.approve holder confirms in Waiting for approval. The server checks
-// every rule again.
+// every rule again. V1-060 B6: once the Settlement is closed the move-out is finished, so the
+// step says "If needed", not "Now".
 // A refund after closure is not offered here yet: the amount the server takes is what comes off
 // the charge, and value a Deposit paid goes back to that Deposit and must be paid out by a DL-032
 // step. The page cannot read what paid each Invoice line, so it could not build that plan.
@@ -111,10 +112,11 @@ export function AfterClosureStep({
     <Step
       actions={actions}
       language={language}
-      mark={closed === null ? "todo" : "now"}
+      mark={closed === null ? "todo" : "optional"}
       number={6}
       title={mt(language, "st6_t")}
     >
+      {closed !== null && <p>{mt(language, "st6_finished")}</p>}
       <p className="ui-small ui-muted">{mt(language, "st6_note")}</p>
       {closed !== null && (
         <p className="ui-small ui-muted">{mt(language, "st6_refund_later")}</p>

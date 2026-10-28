@@ -20,7 +20,8 @@ export function Kv({ rows }: { rows: [string, ReactNode][] }) {
   );
 }
 
-export type Mark = "done" | "now" | "todo" | "skip";
+/** optional: nothing is due; the step is used only if something comes up (step 6). */
+export type Mark = "done" | "now" | "todo" | "skip" | "optional";
 
 export function Step({
   language,

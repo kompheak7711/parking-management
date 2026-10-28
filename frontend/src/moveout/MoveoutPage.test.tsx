@@ -3637,7 +3637,7 @@ describe("Move-out step 6: after closure", () => {
     expect(second?.[3]).toBe(first?.[3]);
   });
 
-  it("TEST-FE-998 before closure step 6 waits with no buttons; after closure without the preparer right it says who may act and an approver gets the link to Waiting for approval", async () => {
+  it("TEST-FE-998 before closure step 6 waits with no buttons; after closure it says the move-out is finished and is marked If needed, without the preparer right it says who may act and an approver gets the link to Waiting for approval", async () => {
     window.location.hash = "#/moveout/lease-U105";
     setup([out], {
       page: handedBackPage,
@@ -3645,6 +3645,7 @@ describe("Move-out step 6: after closure", () => {
     });
     let step = await step6();
     expect(within(step).queryByRole("button")).toBeNull();
+    expect(within(step).getByText("To do")).toBeTruthy();
     cleanup();
 
     window.location.hash = "#/moveout/lease-U105";
@@ -3667,5 +3668,13 @@ describe("Move-out step 6: after closure", () => {
         .getAttribute("href"),
     ).toBe("#/approvals");
     expect(within(step).queryByRole("button")).toBeNull();
+    // V1-060 B6: the move-out is finished; the step is used only if something comes up later.
+    expect(within(step).getByText("If needed")).toBeTruthy();
+    expect(within(step).queryByText("Now")).toBeNull();
+    expect(
+      within(step).getByText(
+        "The move-out is finished. Use this step only if something comes up later.",
+      ),
+    ).toBeTruthy();
   });
 });
