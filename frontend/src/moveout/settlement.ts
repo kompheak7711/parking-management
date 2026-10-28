@@ -67,12 +67,17 @@ export interface SettlementDeposit {
   customer_id: string | null;
   held_usd_cents: number;
   path: DepositPath;
+  /** The rule id of the termination ground that keeps it (BR-DEP-023 …), or null. */
+  ground: string | null;
 }
 
 export interface SettlementIssue {
   code: string;
   reason: string | null;
   invoice_id: string | null;
+  /** A waiting draft's kind and variant, shown only to a person who may prepare or approve it. */
+  kind: string | null;
+  variant: string | null;
 }
 
 export interface SettlementPreview {
@@ -229,15 +234,21 @@ function readDeposit(value: unknown): SettlementDeposit {
     customer_id: textOrNull(deposit.customer_id),
     held_usd_cents: cents(deposit.held_usd_cents),
     path: path as DepositPath,
+    ground: textOrNull(deposit.ground),
   };
 }
+
+const textIfAny = (value: unknown) =>
+  typeof value === "string" ? value : null;
 
 function readIssue(value: unknown): SettlementIssue {
   const issue = object(value);
   return {
     code: text(issue.code),
-    reason: typeof issue.reason === "string" ? issue.reason : null,
-    invoice_id: typeof issue.invoice_id === "string" ? issue.invoice_id : null,
+    reason: textIfAny(issue.reason),
+    invoice_id: textIfAny(issue.invoice_id),
+    kind: textIfAny(issue.kind),
+    variant: textIfAny(issue.variant),
   };
 }
 
@@ -268,4 +279,25 @@ export function readPreview(value: SettlementRecord): SettlementPreview {
 /** Blocking issues of one kind are said once. */
 export function issueCodes(issues: SettlementIssue[]): string[] {
   return [...new Set(issues.map((issue) => issue.code))];
+}
+
+/** A waiting draft that keeps one of the Lease's Deposits (a Lease forfeiture draft). */
+export const keepsDeposit = (issue: SettlementIssue) =>
+  issue.code === "PENDING_DRAFT" &&
+  issue.kind === "DEPOSIT_FORFEITURE" &&
+  issue.variant === "LEASE_FORFEITURE";
+
+/**
+ * V1-060 B6 (DL-106): the Deposits the termination keeps whose kept record is still to be drafted.
+ * The preview does not say which Deposit a waiting draft keeps, so while as many keep drafts wait
+ * as Deposits need one, none is offered; the server refuses a second draft for one Deposit anyway.
+ */
+export function depositsToKeep(
+  preview: SettlementPreview,
+): SettlementDeposit[] {
+  const needed = preview.deposits.filter(
+    (deposit) => deposit.path === "FORFEITURE_REQUIRED",
+  );
+  const waiting = preview.blocking_issues.filter(keepsDeposit).length;
+  return waiting >= needed.length ? [] : needed;
 }

@@ -869,6 +869,8 @@ Present the approved order explicitly:
 Every Deposit target and amount requires explicit authorization. Do not reuse Payment
 FIFO, an inferred Deposit-type FIFO, or oldest-Due ordering for Deposit applications.
 
+Amended by DL-106 (V1-060 B6, 2026-10-28): when the termination keeps a Deposit and its kept record is not confirmed, the Final Settlement step offers the Owner or a Manager (`deposits.dispose`) "Record kept Security Deposit" or "Record kept Pet Deposit". The dialog names the whole held amount and the ground, asks for a reason and records a draft that the Owner or a Manager confirms in Waiting for approval; while it waits, the step says so and links to Waiting for approval for a person who may approve.
+
 ## UI-082 — Close Settlement
 
 Require all server preconditions, authorization, reason/confirmation, and an exact

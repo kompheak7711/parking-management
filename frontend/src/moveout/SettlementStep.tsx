@@ -4,6 +4,7 @@
 // Customers' own Credit, the Pet Deposit for pet damage, the Security Deposit (or "Kept", never
 // a payment), the rest of the Pet Deposit, and what blocks the Settlement. The money rules are
 // the server's: amounts here are what the preview gives, never worked out on the page.
+// V1-060 B6 (DL-106): a Deposit the termination keeps is recorded here as a keep draft.
 
 import {
   type ReactNode,
@@ -23,6 +24,7 @@ import { Icon } from "../shell/icons";
 import { hashForPage } from "../shell/navigation";
 import type { Language } from "../signInText";
 import { AfterClosureStep } from "./AfterClosureStep";
+import { KeepDepositDialog, keepLabel } from "./KeepDepositDialog";
 import type { InspectionFinding } from "./moveoutClient";
 import { Kv, type Mark, Step } from "./parts";
 import { PrepareDialog } from "./PrepareDialog";
@@ -30,7 +32,9 @@ import {
   type SettlementDeposit,
   type SettlementPreview,
   type SettlementState,
+  depositsToKeep,
   issueCodes,
+  keepsDeposit,
   readPreview,
   settlementOf,
 } from "./settlement";
@@ -44,6 +48,7 @@ export type SettlementStepApi = Pick<
   | "refundMethods"
   | "settlementDraft"
   | "extraCharge"
+  | "forfeitureDraft"
 >;
 
 type Loaded =
@@ -60,6 +65,7 @@ type Loaded =
 
 const PREPARE = "final_settlements.prepare";
 const APPROVE = "financial.approve";
+const DISPOSE = "deposits.dispose";
 
 /** What a blocking issue asks for, in plain words. */
 function issueText(language: Language, code: string): string {
@@ -114,6 +120,9 @@ export function SettlementStep({
   const [busy, setBusy] = useState(false);
   const [outcome, setOutcome] = useState<"unknown" | "refused" | null>(null);
   const [preparing, setPreparing] = useState(false);
+  const [keeping, setKeeping] = useState<SettlementDeposit | null>(null);
+  // Deposits whose keep draft this page saw saved, or refused as already waiting.
+  const [recorded, setRecorded] = useState<ReadonlySet<string>>(new Set());
   const key = useRef<string | null>(null);
   const sequence = useRef(0);
   const leaseId = lease.lease_id;
@@ -197,6 +206,22 @@ export function SettlementStep({
     !settlement.closed &&
     !settlement.pending_draft &&
     preview?.ready === true;
+  // A Deposit the termination keeps blocks the Settlement until its kept record is confirmed;
+  // the Owner or a Manager records it. While keep drafts wait, one this page saw recorded is not
+  // offered again.
+  const keepWaits = preview?.blocking_issues.some(keepsDeposit) === true;
+  const toKeep =
+    may(DISPOSE) &&
+    settlement !== null &&
+    !settlement.closed &&
+    preview !== null
+      ? depositsToKeep(preview).filter(
+          (deposit) => !keepWaits || !recorded.has(deposit.deposit_id),
+        )
+      : [];
+  function remember(depositId: string) {
+    setRecorded((current) => new Set(current).add(depositId));
+  }
   const actions = mayDraft ? (
     <button
       className="ui-btn primary"
@@ -208,6 +233,23 @@ export function SettlementStep({
       <Icon name="list" />
       {mt(language, "pd_btn")}
     </button>
+  ) : toKeep.length > 0 ? (
+    <>
+      {toKeep.map((deposit) => (
+        <button
+          className="ui-btn primary"
+          key={deposit.deposit_id}
+          onClick={() => {
+            setKeeping(deposit);
+          }}
+          type="button"
+        >
+          <Icon name="lock" />
+          {keepLabel(language, deposit)}
+          <span className="ui-badge">{mt(language, "manager")}</span>
+        </button>
+      ))}
+    </>
   ) : loaded.state === "none" && reachable && mayPrepare ? (
     <button
       className="ui-btn primary"
@@ -300,6 +342,43 @@ export function SettlementStep({
             propertyId={propertyId}
           />
         )}
+        {keeping !== null && (
+          <KeepDepositDialog
+            api={api}
+            deposit={keeping}
+            language={language}
+            lease={lease}
+            onClose={() => {
+              setKeeping(null);
+              // The draft may have been saved before the answer was lost: show it.
+              load();
+            }}
+            onSaved={() => {
+              remember(keeping.deposit_id);
+              setKeeping(null);
+              onNotice(
+                mt(
+                  language,
+                  "kd_toast",
+                  mt(
+                    language,
+                    keeping.deposit_type === "SECURITY"
+                      ? "dep_SECURITY"
+                      : "dep_PET",
+                  ),
+                ),
+              );
+              load();
+            }}
+            onWaiting={() => {
+              remember(keeping.deposit_id);
+              setKeeping(null);
+              onNotice(mt(language, "kd_waiting"));
+              load();
+            }}
+            propertyId={propertyId}
+          />
+        )}
       </Step>
       <AfterClosureStep
         api={api}
@@ -376,6 +455,7 @@ function Shown({
         <Statement
           language={language}
           lease={lease}
+          mayApprove={mayApprove}
           names={names}
           preview={preview}
           waiting={settlement.pending_draft}
@@ -389,6 +469,7 @@ function depositRow(
   language: Language,
   deposit: SettlementDeposit,
   petOpen: number,
+  keptWaiting: boolean,
 ): [string, ReactNode] {
   const held = usdFromCents(deposit.held_usd_cents);
   const security = deposit.deposit_type === "SECURITY";
@@ -408,7 +489,11 @@ function depositRow(
         <span className="ui-sub2">
           {mt(
             language,
-            deposit.path === "NOTHING_HELD" ? "fs_kept_none" : "fs_kept_first",
+            deposit.path === "NOTHING_HELD"
+              ? "fs_kept_none"
+              : keptWaiting
+                ? "fs_kept_waiting"
+                : "fs_kept_first",
           )}
         </span>
       </span>,
@@ -432,6 +517,7 @@ function Statement({
   preview,
   names,
   waiting,
+  mayApprove,
 }: {
   language: Language;
   lease: LeaseResource;
@@ -439,6 +525,7 @@ function Statement({
   names: Map<string, string>;
   /** A draft of this Settlement waits for a Manager: nothing more to prepare. */
   waiting: boolean;
+  mayApprove: boolean;
 }) {
   const many = preview.customers.filter(
     (customer) => customer.open_total_usd_cents > 0,
@@ -509,10 +596,19 @@ function Statement({
           <span className="ui-sub2">{mt(language, "fs_credit_n")}</span>
         </span>,
       ]);
-  for (const deposit of pets)
-    rows.push(depositRow(language, deposit, preview.pet_damage_open_usd_cents));
-  for (const deposit of security)
-    rows.push(depositRow(language, deposit, preview.pet_damage_open_usd_cents));
+  // Every Deposit the termination keeps has its keep draft waiting for approval.
+  const keptWaiting =
+    preview.deposits.some((item) => item.path === "FORFEITURE_REQUIRED") &&
+    depositsToKeep(preview).length === 0;
+  for (const deposit of [...pets, ...security])
+    rows.push(
+      depositRow(
+        language,
+        deposit,
+        preview.pet_damage_open_usd_cents,
+        keptWaiting,
+      ),
+    );
   if (petPays)
     rows.push([
       mt(language, "fs_pet_other"),
@@ -529,7 +625,13 @@ function Statement({
     mt(language, "fs_balance"),
     <span className="ui-small">{mt(language, "fs_later")}</span>,
   ]);
-  const codes = issueCodes(preview.blocking_issues);
+  // The kept-Deposit line names its waiting drafts; another waiting draft keeps its own line.
+  const otherDraft = preview.blocking_issues.some(
+    (issue) => issue.code === "PENDING_DRAFT" && !keepsDeposit(issue),
+  );
+  const codes = issueCodes(preview.blocking_issues).filter(
+    (code) => !keptWaiting || code !== "PENDING_DRAFT" || otherDraft,
+  );
   return (
     <>
       <h4>{mt(language, "st5_statement")}</h4>
@@ -551,9 +653,20 @@ function Statement({
             <p>{mt(language, "st5_blocked")}</p>
             <ul>
               {codes.map((code) => (
-                <li key={code}>{issueText(language, code)}</li>
+                <li key={code}>
+                  {keptWaiting && code === "FORFEITURE_NOT_CONFIRMED"
+                    ? mt(language, "fi_FORFEITURE_WAITING")
+                    : issueText(language, code)}
+                </li>
               ))}
             </ul>
+            {keptWaiting && mayApprove && !waiting && (
+              <p>
+                <a href={hashForPage("approvals")}>
+                  {mt(language, "st5_open_approvals")}
+                </a>
+              </p>
+            )}
           </div>
         </div>
       ) : preview.ready && !waiting ? (

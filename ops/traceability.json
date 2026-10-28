@@ -57705,6 +57705,34 @@
       "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
       "status": "implemented",
       "notes": "V1-060 B6 (owner 28/10/2026): a final Utility Invoice refused with UTILITY_RATE_NOT_IN_EFFECT says no electricity or water rate is in effect today and points to Settings, Rates and services; another refusal says it was not saved and never mentions the hand-back."
+    },
+    {
+      "test_id": "TEST-FE-1072",
+      "upstream_ids": [
+        "DL-106",
+        "BR-DEP-023",
+        "BR-DEP-026",
+        "BR-SETTLE-011",
+        "API-042",
+        "UI-081"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (owner 28/10/2026): a Deposit the termination keeps offers Record kept Security Deposit to a person with deposits.dispose; the dialog names the whole held amount and the ground, records the keep draft with a record id and a key, and the step then says the draft waits for approval, with the link to Waiting for approval; Staff without deposits.dispose get no button."
+    },
+    {
+      "test_id": "TEST-FE-1073",
+      "upstream_ids": [
+        "DL-106",
+        "BR-DEP-026",
+        "API-042",
+        "UI-081"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6: Record kept Deposit sends no empty reason; no answer offers Try again with the same record id and key; a changed reason is a new record id and key; refusals are named in plain words, in the server's words or as not allowed; a draft that already waits closes the dialog, says so and reads the step again."
     }
   ]
 }

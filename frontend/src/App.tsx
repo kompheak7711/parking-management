@@ -166,6 +166,7 @@ export interface AppProps {
     | "refundMethods"
     | "settlementDraft"
     | "extraCharge"
+    | "forfeitureDraft"
   >;
   depositApi?: DepositApi;
   utilityApi?: UtilityApi;

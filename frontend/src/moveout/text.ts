@@ -626,6 +626,11 @@ const TEXT = {
     "The termination keeps it; it holds nothing.",
     "ការបញ្ចប់កិច្ចសន្យារក្សាវាទុក; គ្មានប្រាក់នៅសល់។",
   ],
+  // new (V1-060 B6, DL-106)
+  fs_kept_waiting: [
+    "The termination keeps it: its draft waits for approval.",
+    "ការបញ្ចប់កិច្ចសន្យារក្សាវាទុក៖ សេចក្តីព្រាងរបស់វាកំពុងរង់ចាំការអនុម័ត។",
+  ],
   fs_pet_other: [
     "Remaining Pet Deposit for other balance",
     "ប្រាក់កក់សត្វចិញ្ចឹមនៅសល់ សម្រាប់សមតុល្យផ្សេង",
@@ -729,6 +734,79 @@ const TEXT = {
     "Fill in every box marked Required. A bank transfer needs its reference.",
     "សូមបំពេញប្រអប់ដែលចាំបាច់ទាំងអស់។ ការផ្ទេរធនាគារត្រូវមានលេខយោង។",
   ],
+  // new (V1-060 B6, DL-106): Record kept Deposit on the Final Settlement step.
+  kd_btn_SECURITY: [
+    "Record kept Security Deposit",
+    "កត់ត្រាប្រាក់កក់សុវត្ថិភាពដែលរក្សាទុក",
+  ],
+  kd_btn_PET: [
+    "Record kept Pet Deposit",
+    "កត់ត្រាប្រាក់កក់សត្វចិញ្ចឹមដែលរក្សាទុក",
+  ],
+  manager: ["Manager", "អ្នកគ្រប់គ្រង"],
+  kd_deposit: ["Deposit", "ប្រាក់កក់"],
+  kd_amount: ["Amount kept", "ចំនួនរក្សាទុក"],
+  kd_all: ["{0}, all it holds", "{0} ទាំងអស់ដែលមាន"],
+  kd_why: ["Why it is kept", "មូលហេតុរក្សាទុក"],
+  kd_g_early: [
+    "The Lease ended before its End Date.",
+    "កិច្ចសន្យាបានបញ្ចប់មុនថ្ងៃបញ្ចប់។",
+  ],
+  kd_g_pet: ["The pet rules were broken.", "ច្បាប់សត្វចិញ្ចឹមត្រូវបានបំពាន។"],
+  kd_g_initial: [
+    "The Initial Rent was not paid.",
+    "ថ្លៃជួលដំបូងមិនត្រូវបានបង់។",
+  ],
+  kd_g_broken: ["The Customer broke the Lease.", "អតិថិជនបានបំពានកិច្ចសន្យា។"],
+  kd_g_default: [
+    "The Rent was not paid for 30 days.",
+    "ថ្លៃជួលមិនត្រូវបានបង់អស់រយៈពេល 30 ថ្ងៃ។",
+  ],
+  kd_g_other: [
+    "The termination of the Lease keeps it.",
+    "ការបញ្ចប់កិច្ចសន្យារក្សាវាទុក។",
+  ],
+  kd_reason_default: [
+    "Deposit kept at move-out. {0}",
+    "ប្រាក់កក់រក្សាទុកពេលចាកចេញ។ {0}",
+  ],
+  kd_note: [
+    "This saves a draft. Nothing is kept until the Owner or a Manager approves it in Waiting for approval. Then prepare the Final Settlement.",
+    "នេះរក្សាទុកសេចក្តីព្រាង។ គ្មានអ្វីត្រូវបានរក្សាទុកទេ រហូតដល់ម្ចាស់ ឬអ្នកគ្រប់គ្រងអនុម័តវា នៅរង់ចាំការអនុម័ត។ បន្ទាប់មក រៀបចំការទូទាត់ចុងក្រោយ។",
+  ],
+  kd_err: ["Write the reason.", "សូមសរសេរមូលហេតុ។"],
+  kd_toast: [
+    "Draft saved: keep the {0}. The Owner or a Manager approves it in Waiting for approval.",
+    "បានរក្សាទុកសេចក្តីព្រាង៖ រក្សាទុក{0}។ ម្ចាស់ ឬអ្នកគ្រប់គ្រងអនុម័តវា នៅរង់ចាំការអនុម័ត។",
+  ],
+  kd_waiting: [
+    "A draft that keeps this Deposit already waits for approval.",
+    "សេចក្តីព្រាងដែលរក្សាប្រាក់កក់នេះ កំពុងរង់ចាំការអនុម័តរួចហើយ។",
+  ],
+  kd_r_DEPOSIT_FORFEITURE_NO_GROUND: [
+    "The end of this Lease does not keep this Deposit. Read the page again.",
+    "ការបញ្ចប់កិច្ចសន្យានេះ មិនរក្សាប្រាក់កក់នេះទុកទេ។ សូមអានទំព័រម្តងទៀត។",
+  ],
+  kd_r_DEPOSIT_FORFEITURE_LEASE_NOT_TERMINATED: [
+    "The Lease has not ended, so the Deposit cannot be kept yet.",
+    "កិច្ចសន្យាមិនទាន់បញ្ចប់ទេ ដូច្នេះមិនអាចរក្សាប្រាក់កក់ទុកបានទេ។",
+  ],
+  kd_r_DEPOSIT_FORFEITURE_NOTHING_HELD: [
+    "This Deposit holds no money to keep. Read the page again.",
+    "ប្រាក់កក់នេះគ្មានប្រាក់ត្រូវរក្សាទុកទេ។ សូមអានទំព័រម្តងទៀត។",
+  ],
+  kd_r_DEPOSIT_FORFEITURE_PET_AT_SETTLEMENT: [
+    "This Pet Deposit is decided in the Final Settlement, not kept here.",
+    "ប្រាក់កក់សត្វចិញ្ចឹមនេះ សម្រេចក្នុងការទូទាត់ចុងក្រោយ មិនមែនរក្សាទុកនៅទីនេះទេ។",
+  ],
+  kd_r_FINAL_SETTLEMENT_CLOSED: [
+    "The Final Settlement is closed. A change now needs a correction after closure.",
+    "ការទូទាត់ចុងក្រោយបានបិទហើយ។ ការផ្លាស់ប្តូរឥឡូវត្រូវការការកែតម្រូវបន្ទាប់ពីបិទ។",
+  ],
+  kd_r_DRAFT_RECORD_ID_IN_USE: [
+    "This form was used before. Close it, then open it again.",
+    "ទម្រង់នេះត្រូវបានប្រើរួចហើយ។ សូមបិទវា ហើយបើកម្តងទៀត។",
+  ],
   // new: what blocks the Final Settlement (the preview's blocking issues).
   fi_FINAL_UTILITY_NOT_ISSUED: [
     "Issue the final Utility Invoice (step 3).",
@@ -749,6 +827,11 @@ const TEXT = {
   fi_FORFEITURE_NOT_CONFIRMED: [
     "A Manager records the kept Deposit.",
     "អ្នកគ្រប់គ្រងកត់ត្រាប្រាក់កក់ដែលរក្សាទុក។",
+  ],
+  // new (V1-060 B6, DL-106): the kept-Deposit draft is recorded and waits.
+  fi_FORFEITURE_WAITING: [
+    "The Owner or a Manager approves the kept Deposit in Waiting for approval.",
+    "ម្ចាស់ ឬអ្នកគ្រប់គ្រងអនុម័តប្រាក់កក់ដែលរក្សាទុក នៅរង់ចាំការអនុម័ត។",
   ],
   fi_PENDING_DRAFT: [
     "Wait for the draft that waits for a Manager.",

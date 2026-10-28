@@ -567,6 +567,7 @@ function setup(
     settlementDraft?: SettlementApi["settlementDraft"];
     refundMethods?: SettlementApi["refundMethods"];
     extraCharge?: SettlementApi["extraCharge"];
+    forfeitureDraft?: SettlementApi["forfeitureDraft"];
   } = {},
 ) {
   const byId = new Map(leases.map((item) => [item.lease_id, item]));
@@ -773,6 +774,22 @@ function setup(
     extraCharge: vi.fn<SettlementApi["extraCharge"]>(
       options.extraCharge ??
         ((property) => Promise.resolve(correctionDraft(property))),
+    ),
+    forfeitureDraft: vi.fn<SettlementApi["forfeitureDraft"]>(
+      options.forfeitureDraft ??
+        ((property, deposit, form) =>
+          Promise.resolve({
+            draft_id: "draft-keep",
+            property_id: property,
+            kind: "DEPOSIT_FORFEITURE",
+            prepare_capability: "deposits.dispose",
+            payload: { variant: "LEASE_FORFEITURE", deposit_id: deposit },
+            reason: form.reason,
+            prepared_at: "2026-10-25T03:00:00Z",
+            prepared_by: "actor-1",
+            state: "PENDING",
+            decision: null,
+          })),
     ),
   };
   render(
@@ -3210,6 +3227,236 @@ describe("Move-out", () => {
       within(tooLong).getByRole("button", { name: "Save draft" }),
     );
     expect(long.settlementApi.settlementDraft).not.toHaveBeenCalled();
+  });
+
+  // V1-060 B6 (DL-106): a termination that keeps a Deposit blocks the Settlement until the Owner
+  // or a Manager records the kept Deposit as a draft and it is approved.
+  const keptPreview = (id: string, waiting: boolean) =>
+    Promise.resolve(
+      previewOf(id, {
+        ready: false,
+        deposits: [
+          {
+            deposit_id: "dep-sec",
+            deposit_type: "SECURITY",
+            customer_id: "customer-1",
+            held_usd_cents: 30000,
+            path: "FORFEITURE_REQUIRED",
+            ground: "BR-DEP-023",
+            forfeiture: "NONE",
+          },
+        ],
+        blocking_issues: [
+          {
+            code: "FORFEITURE_NOT_CONFIRMED",
+            deposit_id: "dep-sec",
+            deposit_type: "SECURITY",
+            ground: "BR-DEP-023",
+          },
+          ...(waiting
+            ? [
+                {
+                  code: "PENDING_DRAFT",
+                  draft_id: "draft-keep",
+                  kind: "DEPOSIT_FORFEITURE",
+                  variant: "LEASE_FORFEITURE",
+                },
+              ]
+            : []),
+        ],
+      }),
+    );
+
+  it("TEST-FE-1072 a Deposit the termination keeps: Record kept Security Deposit names the amount and why, records a keep draft with a record id and a key, and the step then says the draft waits for approval with the link; without deposits.dispose there is no button", async () => {
+    window.location.hash = "#/moveout/lease-U106";
+    let saved = false;
+    const { settlementApi } = setup([neverIn], {
+      settlements: () => Promise.resolve([settlementOf("lease-U106")]),
+      settlementPreview: (_property, id) => keptPreview(id, saved),
+      forfeitureDraft: (property, deposit, form) => {
+        saved = true;
+        return Promise.resolve({
+          draft_id: "draft-keep",
+          property_id: property,
+          kind: "DEPOSIT_FORFEITURE",
+          prepare_capability: "deposits.dispose",
+          payload: { variant: "LEASE_FORFEITURE", deposit_id: deposit },
+          reason: form.reason,
+          prepared_at: "2026-10-25T03:00:00Z",
+          prepared_by: "actor-1",
+          state: "PENDING",
+          decision: null,
+        });
+      },
+    });
+    expect(
+      await screen.findByText(
+        "The termination keeps it: a Manager records it as kept first.",
+      ),
+    ).toBeTruthy();
+    expect(
+      screen.getByText("A Manager records the kept Deposit."),
+    ).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Prepare draft" })).toBeNull();
+    fireEvent.click(
+      screen.getByRole("button", { name: /Record kept Security Deposit/ }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    expect(
+      within(dialog).getByText("Record kept Security Deposit · U106"),
+    ).toBeTruthy();
+    expect(within(dialog).getByText("Security Deposit")).toBeTruthy();
+    expect(within(dialog).getByText("$300.00, all it holds")).toBeTruthy();
+    expect(
+      within(dialog).getByText("The Lease ended before its End Date."),
+    ).toBeTruthy();
+    expect(
+      within(dialog).getByLabelText<HTMLInputElement>(/Reason/).value,
+    ).toBe("Deposit kept at move-out. The Lease ended before its End Date.");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save draft" }));
+    expect(
+      await screen.findByText(
+        "Draft saved: keep the Security Deposit. The Owner or a Manager approves it in Waiting for approval.",
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByRole("dialog")).toBeNull();
+    const call = settlementApi.forfeitureDraft.mock.calls[0];
+    expect(call?.[0]).toBe("property-1");
+    expect(call?.[1]).toBe("dep-sec");
+    expect(call?.[2].reason).toBe(
+      "Deposit kept at move-out. The Lease ended before its End Date.",
+    );
+    expect(call?.[2].disposition_id).toMatch(/^[0-9a-f-]{36}$/);
+    expect(call?.[3]).toMatch(/^[0-9a-f-]{36}$/);
+    expect(call?.[3]).not.toBe(call?.[2].disposition_id);
+    // The step is read again: the kept line and the blocker say the draft waits.
+    expect(
+      await screen.findByText(
+        "The termination keeps it: its draft waits for approval.",
+      ),
+    ).toBeTruthy();
+    const blocked = screen.getByText("Not ready yet. First:").parentElement;
+    if (blocked === null) throw new Error("no notice");
+    expect(
+      within(blocked)
+        .getAllByRole("listitem")
+        .map((item) => item.textContent),
+    ).toEqual([
+      "The Owner or a Manager approves the kept Deposit in Waiting for approval.",
+    ]);
+    expect(
+      within(blocked)
+        .getByRole("link", { name: "Open Waiting for approval" })
+        .getAttribute("href"),
+    ).toBe("#/approvals");
+    expect(
+      screen.queryByRole("button", { name: /Record kept Security Deposit/ }),
+    ).toBeNull();
+    cleanup();
+
+    // Staff who may prepare the Settlement but not record a kept Deposit get no button.
+    window.location.hash = "#/moveout/lease-U106";
+    setup([neverIn], {
+      capabilities: new Set(["leases.read", "final_settlements.prepare"]),
+      settlements: () => Promise.resolve([settlementOf("lease-U106")]),
+      settlementPreview: (_property, id) => keptPreview(id, false),
+    });
+    expect(
+      await screen.findByText("A Manager records the kept Deposit."),
+    ).toBeTruthy();
+    expect(
+      screen.queryByRole("button", { name: /Record kept Security Deposit/ }),
+    ).toBeNull();
+  });
+
+  it("TEST-FE-1073 Record kept Deposit: an empty reason is not sent; no answer offers Try again with the same record id and key; a changed reason is a new record id and key; refusals are named in plain words or in the server's words; a draft that already waits closes the dialog, says so and reads the step again", async () => {
+    window.location.hash = "#/moveout/lease-U106";
+    let calls = 0;
+    const { settlementApi } = setup([neverIn], {
+      settlements: () => Promise.resolve([settlementOf("lease-U106")]),
+      settlementPreview: (_property, id) => keptPreview(id, false),
+      forfeitureDraft: () => {
+        calls += 1;
+        const refusals: Error[] = [
+          new SettlementUnavailableError(),
+          new SettlementRequestError(
+            409,
+            "DEPOSIT_FORFEITURE_NOTHING_HELD",
+            "This Deposit holds no money to forfeit.",
+          ),
+          new SettlementRequestError(
+            409,
+            "SOMETHING_NEW",
+            "The server says why in its own words.",
+          ),
+          new SettlementRequestError(403, null, "Forbidden"),
+          new SettlementRequestError(
+            409,
+            "DEPOSIT_FORFEITURE_DRAFT_WAITING",
+            "A forfeiture draft of this Deposit waits for a decision. Decide it first.",
+          ),
+        ];
+        return Promise.reject(
+          refusals[calls - 1] ?? new Error("one call too many"),
+        );
+      },
+    });
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: /Record kept Security Deposit/,
+      }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    const reason = within(dialog).getByLabelText(/Reason/);
+    fireEvent.change(reason, { target: { value: "   " } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save draft" }));
+    expect(within(dialog).getByText("Write the reason.")).toBeTruthy();
+    expect(settlementApi.forfeitureDraft).not.toHaveBeenCalled();
+
+    fireEvent.change(reason, { target: { value: "Left before the End Date" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save draft" }));
+    expect(await within(dialog).findByText(/No answer came back/)).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
+    expect(
+      await within(dialog).findByText(
+        "This Deposit holds no money to keep. Read the page again.",
+      ),
+    ).toBeTruthy();
+    fireEvent.change(reason, { target: { value: "Left early" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save draft" }));
+    expect(
+      await within(dialog).findByText("The server says why in its own words."),
+    ).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save draft" }));
+    expect(
+      await within(dialog).findByText("Your account may not do this."),
+    ).toBeTruthy();
+    const sent = settlementApi.forfeitureDraft.mock.calls;
+    expect(sent.map((item) => item[2].reason)).toEqual([
+      "Left before the End Date",
+      "Left before the End Date",
+      "Left early",
+      "Left early",
+    ]);
+    expect(sent[1]?.[3]).toBe(sent[0]?.[3]);
+    expect(sent[1]?.[2].disposition_id).toBe(sent[0]?.[2].disposition_id);
+    expect(sent[2]?.[3]).not.toBe(sent[1]?.[3]);
+    expect(sent[2]?.[2].disposition_id).not.toBe(sent[1]?.[2].disposition_id);
+    expect(sent[3]?.[3]).toBe(sent[2]?.[3]);
+
+    const reads = settlementApi.settlementPreview.mock.calls.length;
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save draft" }));
+    expect(
+      await screen.findByText(
+        "A draft that keeps this Deposit already waits for approval.",
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByRole("dialog")).toBeNull();
+    await waitFor(() => {
+      expect(settlementApi.settlementPreview.mock.calls.length).toBeGreaterThan(
+        reads,
+      );
+    });
   });
 });
 

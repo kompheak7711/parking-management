@@ -65,6 +65,7 @@ function preview(change: Partial<SettlementPreview> = {}): SettlementPreview {
         customer_id: "tenant",
         held_usd_cents: 20000,
         path: "DL_032",
+        ground: null,
       },
       {
         deposit_id: "security",
@@ -72,6 +73,7 @@ function preview(change: Partial<SettlementPreview> = {}): SettlementPreview {
         customer_id: "tenant",
         held_usd_cents: 30000,
         path: "DL_032",
+        ground: null,
       },
     ],
     open_total_usd_cents: 58500,
@@ -131,6 +133,7 @@ describe("Final Settlement plan", () => {
             customer_id: "tenant",
             held_usd_cents: 30000,
             path: "KEPT",
+            ground: null,
           },
         ],
       }),
@@ -216,6 +219,7 @@ describe("Final Settlement plan", () => {
           customer_id: "tenant",
           held_usd_cents: 700,
           path: "DL_032",
+          ground: null,
         },
       ],
     });

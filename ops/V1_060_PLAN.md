@@ -322,3 +322,12 @@ candidate is the code that will be used.
   UTILITY_RATE_NOT_IN_EFFECT; the dialog says no rate is in effect and points to Settings, Rates
   and services; any other refusal says "This was not saved", never the hand-back text. Tests: 1
   unit test, 1 database test, TEST-FE-1071 (new). No migration.
+- 2026-10-28 (B6, owner report of 13:38, DL-106): the Final Settlement of U201 said "Not ready
+  yet. First: A Manager records the kept Deposit." The Lease ended before its End Date, so the
+  whole Security Deposit is kept (BR-DEP-023) and the Settlement waits for the confirmed kept
+  record; the keep draft route and its confirm existed since slice 11c-3, but no screen called
+  the route. Built: "Record kept Security Deposit" (or Pet Deposit), marked Manager, on the Final
+  Settlement step for a person with deposits.dispose; the dialog names the amount and the ground,
+  asks for a reason and records the LEASE_FORFEITURE draft (same record id and key on Try again);
+  while the draft waits, the step says it waits for approval with a link for an approver. Tests:
+  TEST-FE-1072 and TEST-FE-1073 (new). No migration and no backend change.

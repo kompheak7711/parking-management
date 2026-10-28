@@ -137,6 +137,7 @@ export interface MoveoutPageProps {
     | "refundMethods"
     | "settlementDraft"
     | "extraCharge"
+    | "forfeitureDraft"
   >;
   capabilities: ReadonlySet<string> | null;
 }
