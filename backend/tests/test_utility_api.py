@@ -20,6 +20,7 @@ from property_rental.utility import (
 from property_rental.utility_api import (
     BatchItemResult,
     CorrectionResult,
+    MeterFailureReportRecord,
     MeterRecord,
     MeterReplacementEvidenceRecord,
     MeterSerialNumberInUse,
@@ -204,6 +205,35 @@ class InMemoryUtilityFlow:
             installed_date=cast(date, payload["replacement_date"]),
             replaced_meter_id=self.meter.id,
         )
+
+    def report_failure(
+        self,
+        meter_id: UUID,
+        *,
+        payload: dict[str, object],
+        actor_id: UUID,
+        idempotency_key: UUID,
+        request_digest: str,
+    ) -> MeterRecord:
+        del idempotency_key, request_digest
+        self.property_for_meter(meter_id)
+        if self.version_conflict is not None:
+            raise UtilityResourceVersionConflict(self.version_conflict)
+        self.last_payload = payload
+        failure_date = cast(date, payload["failure_date"])
+        self.meter = replace(
+            self.meter,
+            failure_date=failure_date,
+            version=self.meter.version + 1,
+            failure_report=MeterFailureReportRecord(
+                uuid4(),
+                failure_date,
+                str(payload["reason"]),
+                datetime(2026, 8, 29, 12, tzinfo=UTC),
+                actor_id,
+            ),
+        )
+        return self.meter
 
     def list_readings(self, meter_id: UUID, *, limit: int, cursor: str | None) -> ResourcePage:
         del cursor
@@ -889,3 +919,51 @@ def test_install_with_a_serial_used_in_the_property_answers_409() -> None:
     assert response.status_code == 409
     assert response.json()["error"]["code"] == "METER_SERIAL_NUMBER_IN_USE"
     assert response.json()["error"]["fields"] == ["serial_number"]
+
+
+def test_report_broken_needs_meter_manage_and_returns_the_report() -> None:
+    """V1-060 B6 (DL-104): Report broken keeps the date found broken and a trimmed reason."""
+    flow = InMemoryUtilityFlow(uuid4())
+    url = f"/api/v1/meters/{flow.meter.id}/report-broken"
+    payload = {
+        "expected_version": 1,
+        "failure_date": "2026-08-20",
+        "reason": "  The display is blank  ",
+    }
+    reader = client_for(flow, "utility.read", "utility_readings.record")
+    assert reader.get(f"/api/v1/meters/{flow.meter.id}").json()["data"]["failure_report"] is None
+    assert reader.post(url, json=payload, headers=browser_headers(uuid4())).status_code == 403
+    client = client_for(flow, "utility_meters.manage", "utility.read")
+    assert client.post(url, json=payload).status_code == 403
+    assert client.post(url, json=payload, headers=browser_headers()).status_code == 422
+    for wrong in (
+        {**payload, "reason": "   "},
+        {**payload, "reason": "x" * 501},
+        {**payload, "failure_date": None},
+        {**payload, "expected_version": 0},
+        {**payload, "unexpected": True},
+    ):
+        assert client.post(url, json=wrong, headers=browser_headers(uuid4())).status_code == 422
+    # None of the refused requests reached the Meter.
+    assert flow.meter.failure_report is None
+    response = client.post(url, json=payload, headers=browser_headers(uuid4()))
+    assert response.status_code == 200
+    assert response.headers["ETag"] == '"2"'
+    assert flow.last_payload == {
+        "expected_version": 1,
+        "failure_date": date(2026, 8, 20),
+        "reason": "The display is blank",
+    }
+    data = response.json()["data"]
+    assert data["failure_date"] == "2026-08-20"
+    assert data["deactivated_date"] is None
+    assert data["current"] is True
+    report = data["failure_report"]
+    assert report["failure_date"] == "2026-08-20"
+    assert report["reason"] == "The display is blank"
+    assert report["occurred_at"] == "2026-08-29T12:00:00+00:00"
+    assert client.get(f"/api/v1/meters/{flow.meter.id}").json()["data"]["failure_report"] == report
+    flow.version_conflict = 3
+    stale = client.post(url, json=payload, headers=browser_headers(uuid4()))
+    assert stale.status_code == 412
+    assert stale.json()["error"]["current_version"] == 3

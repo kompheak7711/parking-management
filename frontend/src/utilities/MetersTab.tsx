@@ -1,7 +1,8 @@
 // V1-058 R4b: the Meters tab of Utilities (DESIGN.md "Utilities layout", "Meter dialogs").
 // "#/utilities/meters" lists every meter, current and replaced; "#/utilities/meter:<id>"
-// opens one meter with its readings. Add meter and Replace meter need utility_meters.manage
-// (Owner and Manager by default) and are hidden from others. A meter is never deleted.
+// opens one meter with its readings. Add meter, Report broken (V1-060 B6, DL-104) and Replace
+// meter need utility_meters.manage (Owner and Manager by default) and are hidden from others.
+// A meter is never deleted.
 
 import { useRef, useState, type FormEvent, type ReactNode } from "react";
 
@@ -21,10 +22,12 @@ import {
   UtilityAuthorizationError,
   UtilityClientError,
   UtilityConflictError,
+  type MeterFailureReportInput,
   type MeterInstallInput,
   type MeterReplaceInput,
   type UtilityApi,
   type UtilityMeter,
+  type UtilityReading,
   type UtilityType,
 } from "../utilityClient";
 import { utt } from "./text";
@@ -90,7 +93,7 @@ function ManagerButton({
   primary = false,
 }: {
   language: Language;
-  icon: "plus" | "swap";
+  icon: "plus" | "swap" | "alert";
   label: string;
   onClick: () => void;
   primary?: boolean;
@@ -401,6 +404,7 @@ export function MeterDetail({
   onReload: () => void;
 }) {
   const [replacing, setReplacing] = useState(false);
+  const [reporting, setReporting] = useState(false);
   const [toast, setToast] = useState<{ ok: boolean; text: string } | null>(
     null,
   );
@@ -464,6 +468,8 @@ export function MeterDetail({
   ];
   if (meter.failure_date !== null)
     facts.push([utt(language, "mt_failed"), dayText(meter.failure_date)]);
+  const report = meter.failure_report ?? null;
+  if (report !== null) facts.push([utt(language, "mt_wrong"), report.reason]);
   if (meter.replacement.replacement_meter_id !== null)
     facts.push([
       utt(language, "mt_new_meter"),
@@ -488,6 +494,17 @@ export function MeterDetail({
         <StateChip language={language} meter={meter} />
         {canManage && meter.current && readings.length > 0 && (
           <div className="ui-actions">
+            {meterState(meter) === "working" && (
+              <ManagerButton
+                icon="alert"
+                label={utt(language, "mt_report")}
+                language={language}
+                onClick={() => {
+                  setToast(null);
+                  setReporting(true);
+                }}
+              />
+            )}
             <ManagerButton
               icon="swap"
               label={utt(language, "replace")}
@@ -579,6 +596,37 @@ export function MeterDetail({
           )}
         </section>
       </div>
+      {reporting && (
+        <ReportBrokenDialog
+          api={api}
+          language={language}
+          meter={meter}
+          onClose={(unsure) => {
+            setReporting(false);
+            if (unsure) onReload();
+          }}
+          onConflict={() => {
+            setReporting(false);
+            setToast({ ok: false, text: utt(language, "m_conflict") });
+            onReload();
+          }}
+          onSaved={(reported) => {
+            setReporting(false);
+            setToast({
+              ok: true,
+              text: utt(
+                language,
+                "mt_report_done",
+                reported.serial_number,
+                dayText(reported.failure_date),
+              ),
+            });
+            onReload();
+          }}
+          readings={readings}
+          today={today}
+        />
+      )}
       {replacing && (
         <ReplaceMeterDialog
           api={api}
@@ -628,7 +676,8 @@ function useMeterSend() {
     handlers: {
       onSaved: (value: T) => void;
       onConflict: () => void;
-      onSerialUsed: () => void;
+      /** Only a command that sends a serial; otherwise it is a conflict. */
+      onSerialUsed?: () => void;
     },
   ) {
     setBusy(true);
@@ -636,7 +685,10 @@ function useMeterSend() {
     void request(keyFor(fingerprint))
       .then(handlers.onSaved)
       .catch((error: unknown) => {
-        if (error instanceof MeterSerialNumberInUseError) {
+        if (
+          error instanceof MeterSerialNumberInUseError &&
+          handlers.onSerialUsed !== undefined
+        ) {
           handlers.onSerialUsed();
           return;
         }
@@ -929,6 +981,136 @@ function AddMeterDialog({
   );
 }
 
+/** V1-060 B6 (DL-104): the day the meter was found broken and what is wrong, both required. */
+function ReportBrokenDialog({
+  language,
+  api,
+  meter,
+  readings,
+  today,
+  onClose,
+  onSaved,
+  onConflict,
+}: {
+  language: Language;
+  api: UtilityApi;
+  meter: UtilityMeter;
+  readings: readonly UtilityReading[];
+  today: string;
+  onClose: (unsure: boolean) => void;
+  onSaved: (reported: UtilityMeter) => void;
+  onConflict: () => void;
+}) {
+  // The server refuses a day before the meter was put in or before its newest reading.
+  const latest = readings.reduce(
+    (day, reading) => (reading.reading_date > day ? reading.reading_date : day),
+    meter.installed_date,
+  );
+  const [found, setFound] = useState(today);
+  const [reason, setReason] = useState("");
+  const [problems, setProblems] = useState<Record<string, string>>({});
+  const { busy, outcome, send } = useMeterSend();
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const problem: Record<string, string> = {};
+    if (found === "") problem.found = utt(language, "mt_e_date");
+    else if (found > today) problem.found = utt(language, "mt_e_future");
+    else if (found < latest)
+      problem.found = utt(language, "mt_e_before", dayText(latest));
+    if (reason.trim() === "") problem.reason = utt(language, "mt_e_why");
+    setProblems(problem);
+    focusFirstError(
+      [
+        ["found", "rb-found"],
+        ["reason", "rb-why"],
+      ],
+      problem,
+    );
+    if (Object.keys(problem).length > 0) return;
+    const input: MeterFailureReportInput = {
+      expected_version: meter.version,
+      failure_date: found,
+      reason: reason.trim(),
+    };
+    send(
+      JSON.stringify([meter.id, input]),
+      (key) => api.reportBroken(meter.id, input, key),
+      { onSaved, onConflict },
+    );
+  }
+
+  return (
+    <Dialog
+      busy={busy}
+      closeLabel={utt(language, "close")}
+      onClose={() => {
+        onClose(outcome === "unknown");
+      }}
+      onSubmit={submit}
+      submitLabel={
+        busy
+          ? utt(language, "saving")
+          : outcome === "unknown"
+            ? utt(language, "try_again")
+            : utt(language, "mt_report")
+      }
+      title={utt(language, "mt_report_t", meter.serial_number)}
+    >
+      <OutcomeLine language={language} outcome={outcome} />
+      <div className="ui-field">
+        <label htmlFor="rb-found">
+          {utt(language, "mt_found")}
+          <span className="req">{utt(language, "required")}</span>
+        </label>
+        <DateInput
+          language={language}
+          describedBy={
+            problems.found === undefined ? undefined : "rb-found-err"
+          }
+          invalid={problems.found !== undefined}
+          id="rb-found"
+          max={today}
+          min={latest}
+          onChange={(value) => {
+            setFound(value);
+          }}
+          value={found}
+        />
+        <p className="help">
+          {utt(language, "mt_found_help", dayText(latest))}
+        </p>
+        <FieldError id="rb-found" text={problems.found} />
+      </div>
+      <div className="ui-field">
+        <label htmlFor="rb-why">
+          {utt(language, "mt_wrong")}
+          <span className="req">{utt(language, "required")}</span>
+        </label>
+        <textarea
+          aria-describedby={
+            problems.reason === undefined ? undefined : "rb-why-err"
+          }
+          aria-invalid={problems.reason !== undefined}
+          id="rb-why"
+          maxLength={500}
+          onChange={(event) => {
+            setReason(event.currentTarget.value);
+          }}
+          rows={2}
+          value={reason}
+        />
+        <p className="help">{utt(language, "mt_wrong_help")}</p>
+        <FieldError id="rb-why" text={problems.reason} />
+      </div>
+      <div className="ui-notice warn" role="note">
+        <Icon name="alert" />
+        <p>{utt(language, "mt_report_c", meter.serial_number)}</p>
+      </div>
+    </Dialog>
+  );
+}
+
 function ReplaceMeterDialog({
   language,
   api,
@@ -1064,6 +1246,8 @@ function ReplaceMeterDialog({
           describedBy={
             problems.found === undefined ? undefined : "rp-found-err"
           }
+          // DL-104: a meter reported broken keeps that day; the server refuses another.
+          disabled={meter.failure_date !== null}
           invalid={problems.found !== undefined}
           id="rp-found"
           max={today}
@@ -1073,10 +1257,14 @@ function ReplaceMeterDialog({
           }}
           value={found}
         />
-        {lastGood !== undefined && (
-          <p className="help">
-            {utt(language, "mt_found_help", dayText(lastGood.reading_date))}
-          </p>
+        {meter.failure_date !== null ? (
+          <p className="help">{utt(language, "mt_found_kept")}</p>
+        ) : (
+          lastGood !== undefined && (
+            <p className="help">
+              {utt(language, "mt_found_help", dayText(lastGood.reading_date))}
+            </p>
+          )
         )}
         <FieldError id="rp-found" text={problems.found} />
       </div>

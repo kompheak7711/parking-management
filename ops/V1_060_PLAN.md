@@ -288,3 +288,24 @@ candidate is the code that will be used.
   database 5 older Invoice migration tests failed on rows left by earlier runs (fixed keys on the
   shared first Property, for example the billing run key generated-void-completion-race); CI runs
   on a fresh database.
+- 2026-10-28 (B6, owner ask of 10:04, DL-104): "after found broken meter, how to report or
+  change meter status?" The approved DESIGN.md "Report broken" was not built: only Replace meter
+  wrote the failure date, so a meter found broken stayed Working. Built: migration 20270329_248
+  (app.report_utility_meter_failure_api sets the failure date of a working meter at the expected
+  version; the append-only app.utility_meter_failure_reports keeps what is wrong, who and when;
+  the command replay accepts REPORT_METER_FAILURE), POST /meters/{id}/report-broken
+  (utility_meters.manage) and failure_report on the Meter, and the screens: a Report broken
+  button with the MANAGER badge on a working meter's page, a dialog with the day found broken
+  (today at first; not before the newest reading, not after today) and what is wrong, a note that
+  it cannot be undone, "What is wrong" in the meter's facts, and the reported day kept in Replace
+  meter. The lower-reading message now says a Manager reports the meter broken. Decided by Claude
+  under the owner's 2026-10-23 22:30 rule (DL-104): the date limits, one report per meter with no
+  undo, utility_meters.manage. Tests: 4 database tests, 1 API test, TEST-FE-1068 to 1070 (new);
+  TEST-FE-876 and TEST-FE-888 (changed: the lower-reading message; the kept found-broken day);
+  head pins moved to 20270329_248. CI for 69c8a521 stopped at once because the migration gate
+  list did not have tests/test_invoice_items_migration.py; fixed in 415fdc62, and the new
+  Report broken file is in the list too. Runs on a new local test database: the new database
+  tests, the Utility suites and the head-pin tests 117 passed; the upgrade tests with moved pins
+  10 passed; backend lint, format and types passed; frontend 1,933 of 1,933; traceability passed.
+  Open: no meter command (Add, Replace, Report broken) writes an audit event, so none shows on the
+  History page; the meter page shows them.

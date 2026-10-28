@@ -644,4 +644,57 @@ describe("Utility client", () => {
       utilityApi.blankSheet("property-1", ["U101"]),
     ).rejects.toBeInstanceOf(UtilityAuthorizationError);
   });
+
+  it("TEST-FE-1070 sends Report broken with the CSRF token and the key, and parses what is wrong; a meter without a report has none", async () => {
+    Object.defineProperty(document, "cookie", {
+      configurable: true,
+      value: "__Host-prm_csrf=utility-token",
+    });
+    const report = {
+      id: "10000000-0000-4000-8000-000000000020",
+      failure_date: "2026-08-20",
+      reason: "The display is blank",
+      occurred_at: "2026-08-29T12:00:00+00:00",
+      actor_id: "10000000-0000-4000-8000-000000000011",
+    };
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        response({
+          ...meter,
+          failure_date: "2026-08-20",
+          version: 3,
+          failure_report: report,
+        }),
+      )
+      .mockResolvedValueOnce(response({ ...meter, failure_report: null }))
+      .mockResolvedValueOnce(response({ ...meter, failure_report: "bad" }));
+    vi.stubGlobal("fetch", fetchMock);
+    const input = {
+      expected_version: 2,
+      failure_date: "2026-08-20",
+      reason: "The display is blank",
+    };
+    await expect(
+      utilityApi.reportBroken("meter/1", input, "report-key"),
+    ).resolves.toMatchObject({
+      failure_date: "2026-08-20",
+      version: 3,
+      failure_report: report,
+    });
+    const [url, init] = fetchMock.mock.calls[0] ?? [];
+    expect(url).toBe("/api/v1/meters/meter%2F1/report-broken");
+    expect(init?.method).toBe("POST");
+    expect(init?.headers).toMatchObject({
+      "X-CSRF-Token": "utility-token",
+      "Idempotency-Key": "report-key",
+    });
+    expect(JSON.parse(init?.body as string)).toEqual(input);
+    await expect(
+      utilityApi.reportBroken("meter-1", input, "report-key-2"),
+    ).resolves.toMatchObject({ failure_report: null });
+    await expect(
+      utilityApi.reportBroken("meter-1", input, "report-key-3"),
+    ).rejects.toBeInstanceOf(UtilityClientError);
+  });
 });

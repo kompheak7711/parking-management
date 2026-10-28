@@ -771,6 +771,8 @@ Installation/replacement accepts Unit, Utility Type, physical identity, dates, a
 required boundary evidence. It preserves replacement chain and rejects overlapping
 active assignments.
 
+Amended by DL-104 (V1-060 B6, 2026-10-28): `POST /meters/{meter_id}/report-broken` records a Meter broken before it is replaced; see "V1-060 Report broken meter" at the end of this file.
+
 ## API-045 — Readings
 
 - `GET /meters/{meter_id}/readings`
@@ -2107,3 +2109,7 @@ V1-058 R7b-6d move-out cleaning rates (DL-075): `GET /properties/{id}/cleaning-s
 ### V1-060 Invoice items — 2026-10-28
 
 `POST /properties/{property_id}/invoices/drafts` (DL-103; capability `invoices.create`, browser mutation checks, `Idempotency-Key`; no query values; strict body) records 1 to 20 typed items and their one Miscellaneous DRAFT in one step: `customer_id`, an optional `lease_id`, one `reason` and one `evidence_reference` (1 to 500 characters each) and `items`, each with a client `charge_id`, a `description` (1 to 1,000 characters), a whole `quantity` (1 to 9,999) and a whole `unit_price_usd_cents` (1 to 999,999,999). The server works out each amount as the quantity times the unit price. It answers 201 with the Invoice, `Location` and `ETag`; each line's `calculation_evidence` carries `quantity`, `unit_price_usd_cents`, `reason` and `evidence_reference`. `PUT /invoices/{invoice_id}/items` (`invoices.create`, `If-Match` with the Invoice version, browser mutation checks, `Idempotency-Key`) takes the same body plus a `change_reason` (1 to 500 characters) and replaces the items of a DRAFT made this way; an item sent with its saved `charge_id` and the same values, reason and approval keeps its charge, and any other item needs a new `charge_id`. It answers 200 with the Invoice and its new `ETag`. Without the capability the create route answers 403 and the edit route 404; a missing, malformed or old `If-Match` gives 412 (with the current version when it is old); the same key with other values gives 409 `IDEMPOTENCY_KEY_REUSED`; a reused or changed charge id gives 409; a body outside the rules, a Customer who is not the Lease's Primary Tenant, an issued Invoice or a Draft not made from typed items gives 422. Migration `20270328_247`.
+
+### V1-060 Report broken meter — 2026-10-28
+
+`POST /meters/{meter_id}/report-broken` (DL-104; capability `utility_meters.manage` for the Meter's Property, browser mutation checks, `Idempotency-Key`; no query values; strict body) takes `expected_version` (the Meter version, at least 1), `failure_date` and `reason` (1 to 500 characters, trimmed; blank is refused). It answers 200 with the Meter and its new `ETag`; the Meter's `failure_date` is the reported day, `current` stays true until the replacement, and `failure_report` holds `id`, `failure_date`, `reason`, `occurred_at` and `actor_id` (null on a Meter never reported broken, also in `GET /meters/{meter_id}` and the Meter list). Without the capability it answers 403; an unknown Meter 404; an old `expected_version` 412 with the current version; the same key with other values 409 `IDEMPOTENCY_KEY_REUSED`; a Meter already broken or replaced 409; a day before the Meter was put in or before its newest Reading, or after today in Phnom Penh, 422. The digest action is `REPORT_METER_FAILURE`. Migration `20270329_248`.

@@ -16,6 +16,7 @@ import {
   UtilityConflictError,
   type BatchReadingInput,
   type BatchReadingResult,
+  type MeterFailureReportInput,
   type MeterInstallInput,
   type MeterReplaceInput,
   type ReadingInput,
@@ -221,6 +222,7 @@ function utilityApi(
     loadRates: vi.fn(),
     installMeter: vi.fn(),
     replaceMeter: vi.fn(),
+    reportBroken: vi.fn(),
     recordReading: vi.fn((meterId: string, input: ReadingInput) =>
       Promise.resolve(
         reading(meterId, input.reading_date, input.reading_value),
@@ -419,7 +421,7 @@ describe("Utilities page (V1-058 R4)", () => {
     );
     expect(
       screen.getByText(
-        "Lower than the last reading (1,200). Check the meter. If it is broken, a Manager replaces it on the Meters tab.",
+        "Lower than the last reading (1,200). Check the meter. If it is broken, a Manager reports it broken on the Meters tab.",
       ),
     ).toBeTruthy();
     expect(input("U101").getAttribute("aria-invalid")).toBe("true");
@@ -1097,9 +1099,11 @@ describe("Utilities Meters tab (V1-058 R4b)", () => {
     const found =
       within(dialog).getByLabelText<HTMLInputElement>(/^Found broken on/);
     expect(found.value).toBe(dayText("2026-10-20"));
+    // DL-104: the day it was reported broken is kept.
+    expect(found.disabled).toBe(true);
     expect(
       within(dialog).getByText(
-        "Not before the last good reading (24/09/2026).",
+        "The day it was reported broken. It cannot change.",
       ),
     ).toBeTruthy();
     fireEvent.change(within(dialog).getByLabelText(/^New meter serial/), {
@@ -1123,6 +1127,182 @@ describe("Utilities Meters tab (V1-058 R4b)", () => {
     expect(sent?.[1].failed_boundary_reading_id).toBe(
       "reading-wa-101-2026-09-24",
     );
+    await waitFor(() => {
+      expect(units.list).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it("TEST-FE-1068 Report broken needs the day found broken and what is wrong, checks the day against the newest reading and today, keeps the key for Try again, then shows Broken since, what is wrong and only Replace meter with the day kept", async () => {
+    openMeters("#/utilities/meter%3Ael-101");
+    const list = meters();
+    const first = list[0];
+    if (first?.id !== "el-101") throw new Error("Meter fixture changed");
+    const reported: UtilityMeter = {
+      ...first,
+      failure_date: "2026-10-20",
+      version: 5,
+      failure_report: {
+        id: "report-1",
+        failure_date: "2026-10-20",
+        reason: "The display is blank",
+        occurred_at: "2026-10-25T03:00:00Z",
+        actor_id: "actor-1",
+      },
+    };
+    const reportBroken = vi
+      .fn()
+      .mockRejectedValueOnce(new UtilityClientError())
+      .mockImplementationOnce(() => {
+        list[0] = reported;
+        return Promise.resolve(reported);
+      });
+    show({ api: utilityApi({ reportBroken }, list) });
+    fireEvent.click(
+      await screen.findByRole("button", { name: /Report broken/ }),
+    );
+    const dialog = screen.getByRole("dialog", {
+      name: "Report EL-U101 broken?",
+    });
+    const found =
+      within(dialog).getByLabelText<HTMLInputElement>(/^Found broken on/);
+    expect(found.value).toBe(dayText(READING_DAY));
+    expect(
+      within(dialog).getByText(
+        "Not before the last good reading (24/09/2026).",
+      ),
+    ).toBeTruthy();
+    expect(
+      within(dialog).getByText(
+        /This cannot be undone: the meter must be replaced/,
+      ),
+    ).toBeTruthy();
+    const submit = () => {
+      fireEvent.click(
+        within(dialog).getByRole("button", { name: /Report broken|Try again/ }),
+      );
+    };
+    fireEvent.change(found, { target: { value: "2026-09-20" } });
+    submit();
+    expect(
+      within(dialog).getByText("The date cannot be before 24/09/2026."),
+    ).toBeTruthy();
+    expect(within(dialog).getByText("Write what is wrong.")).toBeTruthy();
+    fireEvent.change(found, { target: { value: "2026-10-26" } });
+    submit();
+    expect(
+      within(dialog).getByText("The date cannot be after today."),
+    ).toBeTruthy();
+    expect(reportBroken).not.toHaveBeenCalled();
+    fireEvent.change(found, { target: { value: "2026-10-20" } });
+    fireEvent.change(within(dialog).getByLabelText(/^What is wrong/), {
+      target: { value: "  The display is blank  " },
+    });
+    submit();
+    expect(await within(dialog).findByText(/No answer came back/)).toBeTruthy();
+    submit();
+    expect(
+      await screen.findByText(
+        "EL-U101: broken since 20/10/2026. Replace it before the next reading day.",
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByRole("dialog")).toBeNull();
+    const calls = reportBroken.mock.calls as [
+      string,
+      MeterFailureReportInput,
+      string,
+    ][];
+    expect(calls).toHaveLength(2);
+    expect(calls[0]?.[0]).toBe("el-101");
+    expect(calls[0]?.[1]).toEqual({
+      expected_version: 4,
+      failure_date: "2026-10-20",
+      reason: "The display is blank",
+    } satisfies MeterFailureReportInput);
+    expect(calls[1]?.[2]).toBe(calls[0]?.[2]);
+
+    // After the list is read again the meter shows Broken and what is wrong.
+    expect(await screen.findByText("Broken since 20/10/2026")).toBeTruthy();
+    expect(screen.getByText("What is wrong")).toBeTruthy();
+    expect(screen.getByText("The display is blank")).toBeTruthy();
+    expect(
+      screen.getByText("A broken meter cannot be read. Replace it first."),
+    ).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Report broken/ })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /Replace meter/ }));
+    const replace = screen.getByRole("dialog", { name: "Replace EL-U101?" });
+    const kept =
+      within(replace).getByLabelText<HTMLInputElement>(/^Found broken on/);
+    expect(kept.value).toBe(dayText("2026-10-20"));
+    expect(kept.disabled).toBe(true);
+  });
+
+  it("TEST-FE-1069 Report broken is only for a person who may manage meters and a meter with a reading; a refused report says so, and a changed meter closes the dialog and reads the list again", async () => {
+    openMeters("#/utilities/meter%3Ael-102");
+    show({
+      capabilities: new Set(["utility.read", "utility_readings.record"]),
+    });
+    expect(
+      await screen.findByRole("heading", { name: "EL-U102" }),
+    ).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Report broken/ })).toBeNull();
+    cleanup();
+
+    // A meter without a reading cannot be reported or replaced here.
+    openMeters("#/utilities/meter%3Awa-102");
+    show();
+    expect(
+      await screen.findByText(
+        "This meter has no reading yet, so it cannot be replaced here.",
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Report broken/ })).toBeNull();
+    cleanup();
+
+    openMeters("#/utilities/meter%3Ael-102");
+    const reportBroken = vi
+      .fn()
+      .mockRejectedValueOnce(
+        new UtilityClientError("Refused", [], "request-1", 422),
+      )
+      .mockRejectedValueOnce(new UtilityConflictError());
+    const { units } = show({ api: utilityApi({ reportBroken }) });
+    fireEvent.click(
+      await screen.findByRole("button", { name: /Report broken/ }),
+    );
+    const dialog = screen.getByRole("dialog");
+    fireEvent.change(within(dialog).getByLabelText(/^What is wrong/), {
+      target: { value: "Dial stuck" },
+    });
+    const submit = () => {
+      fireEvent.click(
+        within(dialog).getByRole("button", { name: /Report broken/ }),
+      );
+    };
+    submit();
+    expect(
+      await within(dialog).findByText(
+        "It was not saved. Check the values and try again.",
+      ),
+    ).toBeTruthy();
+    submit();
+    expect(
+      await screen.findByText(
+        "The meters changed while the form was open, so the list was read again. Check and try again.",
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByRole("dialog")).toBeNull();
+    // The same values keep their key.
+    const calls = reportBroken.mock.calls as [
+      string,
+      MeterFailureReportInput,
+      string,
+    ][];
+    expect(calls[0]?.[1]).toEqual({
+      expected_version: 4,
+      failure_date: READING_DAY,
+      reason: "Dial stuck",
+    });
+    expect(calls[1]?.[2]).toBe(calls[0]?.[2]);
     await waitFor(() => {
       expect(units.list).toHaveBeenCalledTimes(2);
     });

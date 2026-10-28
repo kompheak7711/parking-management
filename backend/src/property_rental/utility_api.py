@@ -130,6 +130,17 @@ class MeterReplacementEvidenceRecord:
 
 
 @dataclass(frozen=True, slots=True)
+class MeterFailureReportRecord:
+    """V1-060 B6 (DL-104): Report broken, kept until and after the Meter is replaced."""
+
+    id: UUID
+    failure_date: date
+    reason: str
+    occurred_at: datetime
+    actor_id: UUID
+
+
+@dataclass(frozen=True, slots=True)
 class MeterRecord:
     id: UUID
     property_id: UUID
@@ -151,6 +162,7 @@ class MeterRecord:
     replacement_meter_id: UUID | None
     replacement_date: date | None
     replacement_events: tuple[MeterReplacementEvidenceRecord, ...]
+    failure_report: MeterFailureReportRecord | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -241,6 +253,16 @@ class UtilityResourceFlow(Protocol):
     ) -> MeterRecord: ...
 
     def replace_meter(
+        self,
+        meter_id: UUID,
+        *,
+        payload: dict[str, object],
+        actor_id: UUID,
+        idempotency_key: UUID,
+        request_digest: str,
+    ) -> MeterRecord: ...
+
+    def report_failure(
         self,
         meter_id: UUID,
         *,
@@ -356,7 +378,11 @@ COALESCE((
   FROM app.utility_meter_replacements AS replacement_event
   WHERE replacement_event.failed_meter_id=meter.id
      OR replacement_event.replacement_meter_id=meter.id
-),'[]'::jsonb)
+),'[]'::jsonb),
+(SELECT jsonb_build_object(
+   'id',report.id,'failure_date',report.failure_date,'reason',report.reason,
+   'occurred_at',report.occurred_at,'actor_id',report.actor_id)
+ FROM app.utility_meter_failure_reports AS report WHERE report.meter_id=meter.id)
 """
 
 
@@ -388,6 +414,18 @@ def _replacement_evidence(value: dict[str, object]) -> MeterReplacementEvidenceR
     )
 
 
+def _failure_report(value: dict[str, object] | None) -> MeterFailureReportRecord | None:
+    if value is None:
+        return None
+    return MeterFailureReportRecord(
+        id=UUID(str(value["id"])),
+        failure_date=date.fromisoformat(str(value["failure_date"])),
+        reason=str(value["reason"]),
+        occurred_at=datetime.fromisoformat(str(value["occurred_at"])),
+        actor_id=UUID(str(value["actor_id"])),
+    )
+
+
 def _meter(row: tuple[object, ...]) -> MeterRecord:
     raw_events = cast(list[dict[str, object]], row[19])
     return MeterRecord(
@@ -411,6 +449,7 @@ def _meter(row: tuple[object, ...]) -> MeterRecord:
         replacement_meter_id=_optional_uuid(row[17]),
         replacement_date=cast(date | None, row[18]),
         replacement_events=tuple(_replacement_evidence(value) for value in raw_events),
+        failure_report=_failure_report(cast(dict[str, object] | None, row[20])),
     )
 
 
@@ -628,6 +667,30 @@ class PostgresUtilityResourceFlow:
                 initial["reading_date"],
                 initial["reading_value"],
                 initial["source_evidence"],
+                actor_id,
+                idempotency_key,
+                request_digest,
+            ),
+        )
+        return self.get_meter(result)
+
+    def report_failure(
+        self,
+        meter_id: UUID,
+        *,
+        payload: dict[str, object],
+        actor_id: UUID,
+        idempotency_key: UUID,
+        request_digest: str,
+    ) -> MeterRecord:
+        result = self._command_id(
+            "report_utility_meter_failure_api",
+            (
+                meter_id,
+                uuid4(),
+                payload["expected_version"],
+                payload["failure_date"],
+                payload["reason"],
                 actor_id,
                 idempotency_key,
                 request_digest,
@@ -990,6 +1053,23 @@ class MeterReplaceInput(BaseModel):
         return self
 
 
+class MeterFailureReportInput(BaseModel):
+    """V1-060 B6 (DL-104): Report broken, the date found broken and a reason."""
+
+    model_config = ConfigDict(extra="forbid")
+    expected_version: int = Field(ge=1)
+    failure_date: date
+    reason: str = Field(min_length=1, max_length=500)
+
+    @field_validator("reason")
+    @classmethod
+    def trimmed(cls, value: str) -> str:
+        value = value.strip()
+        if value == "":
+            raise ValueError("reason must not be blank")
+        return value
+
+
 class ReadingSheetInput(BaseModel):
     """V1-058 R4c: a meter-readings file to read; nothing is saved."""
 
@@ -1193,6 +1273,15 @@ def _meter_body(record: MeterRecord) -> dict[str, object]:
                 for event in record.replacement_events
             ],
         },
+        "failure_report": None
+        if record.failure_report is None
+        else {
+            "id": str(record.failure_report.id),
+            "failure_date": record.failure_report.failure_date.isoformat(),
+            "reason": record.failure_report.reason,
+            "occurred_at": record.failure_report.occurred_at.isoformat(),
+            "actor_id": str(record.failure_report.actor_id),
+        },
         "readings_url": f"/api/v1/meters/{record.id}/readings",
     }
 
@@ -1354,6 +1443,36 @@ def create_utility_router(
             ),
         )
         response.headers["Location"] = f"/api/v1/meters/{record.id}"
+        response.headers["ETag"] = f'"{record.version}"'
+        return {"data": _meter_body(record), "meta": {"request_id": request.state.request_id}}
+
+    # V1-060 B6 (DL-104): the Meter shows Broken from the date found broken until it is replaced;
+    # its Readings after that date are refused and Replace meter keeps the same date.
+    @router.post("/meters/{meter_id}/report-broken")
+    def report_meter_failure(
+        meter_id: UUID,
+        body: MeterFailureReportInput,
+        request: Request,
+        response: Response,
+        idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
+    ) -> dict[str, object]:
+        _allow_query(request, set())
+        actor = _actor(request, resolver)
+        property_id = cast(UUID, _invoke(lambda: flow.property_for_meter(meter_id)))
+        _authorized(actor, UTILITY_METER_MANAGE_CAPABILITY, property_id)
+        require_browser_mutation(request, settings)
+        record = cast(
+            MeterRecord,
+            _invoke(
+                lambda: flow.report_failure(
+                    meter_id,
+                    payload=body.model_dump(),
+                    actor_id=_actor_id(actor),
+                    idempotency_key=idempotency_key,
+                    request_digest=_digest(body, "REPORT_METER_FAILURE", meter_id),
+                )
+            ),
+        )
         response.headers["ETag"] = f'"{record.version}"'
         return {"data": _meter_body(record), "meta": {"request_id": request.state.request_id}}
 

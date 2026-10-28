@@ -57564,6 +57564,108 @@
       "test_path": "frontend/src/invoiceClient.test.ts",
       "status": "implemented",
       "notes": "V1-060 B6: the client sends Create Invoice items in one POST with whole cents and the key, and Edit items as a PUT with If-Match, the key and the reason for the change."
+    },
+    {
+      "test_id": "test_a_broken_meter_refuses_later_readings_and_replace_keeps_the_date",
+      "upstream_ids": [
+        "DL-104",
+        "BR-UTIL-006",
+        "BR-UTIL-007",
+        "DB-UTIL-001",
+        "DB-UTIL-002",
+        "API-044"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_report_broken_meter_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 B6: Report broken sets the failure date of a working Meter and keeps one report with what is wrong and who reported it; the same key and request replay, the same key with another request is refused, a second report is a conflict, a Reading after the failure date is refused, and Replace meter refuses another failure date and keeps the reported one."
+    },
+    {
+      "test_id": "test_report_broken_checks_the_version_the_dates_and_the_inputs",
+      "upstream_ids": [
+        "DL-104",
+        "BR-UTIL-006",
+        "DB-UTIL-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_report_broken_meter_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 B6: Report broken refuses an old Meter version (with the current version), a day before the Meter was put in or before its newest Reading or after today in Phnom Penh, an untrimmed, empty or too long reason, a digest that is not lower-case hex and an unknown Meter, and allows the day of the newest Reading."
+    },
+    {
+      "test_id": "test_report_broken_is_least_privilege_and_its_reports_are_append_only",
+      "upstream_ids": [
+        "DL-104",
+        "SEC-001",
+        "SEC-046",
+        "DB-UTIL-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_report_broken_meter_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 B6: the Report broken command is SECURITY DEFINER with a fixed search_path and runs only for prm_runtime; the report table is read by prm_runtime and prm_financial and written by no application role; UPDATE, DELETE and TRUNCATE of a report are refused; today is an allowed day."
+    },
+    {
+      "test_id": "test_report_broken_migration_is_the_head_and_is_forward_only",
+      "upstream_ids": [
+        "DL-104",
+        "TEST-028"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_report_broken_meter_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 B6: migration 20270329_248 is the head, follows 20270328_247 and refuses a downgrade."
+    },
+    {
+      "test_id": "test_report_broken_needs_meter_manage_and_returns_the_report",
+      "upstream_ids": [
+        "DL-104",
+        "API-044",
+        "BR-UTIL-006"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_utility_api.py",
+      "status": "implemented",
+      "notes": "V1-060 B6: POST /meters/{meter_id}/report-broken needs utility_meters.manage and the browser checks and an Idempotency-Key, refuses a blank or too long reason, a missing day, a version under 1 and an extra key, trims the reason, answers 200 with the new ETag and the report, shows the report on GET, and an old version gives 412 with the current version."
+    },
+    {
+      "test_id": "TEST-FE-1068",
+      "upstream_ids": [
+        "DL-104",
+        "DL-074",
+        "UI-057",
+        "BR-UTIL-006",
+        "DB-UTIL-001"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (owner 28/10/2026): Report broken on a working meter starts on today, checks the day against the newest reading and today, needs what is wrong, sends the meter version and the trimmed reason, keeps the key for Try again, then shows Broken since, what is wrong and only Replace meter, whose found-broken day is kept and cannot change."
+    },
+    {
+      "test_id": "TEST-FE-1069",
+      "upstream_ids": [
+        "DL-104",
+        "DL-074",
+        "UI-056",
+        "UI-057",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6: Report broken shows only to a person with utility_meters.manage and only on a meter with a reading; a refused report says it was not saved, and a changed meter closes the dialog, says so and reads the list again."
+    },
+    {
+      "test_id": "TEST-FE-1070",
+      "upstream_ids": [
+        "DL-104",
+        "API-044"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilityClient.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6: the client sends Report broken as a POST with the CSRF token and the key, parses the report on the meter, reads a meter without a report as none and refuses a malformed report."
     }
   ]
 }

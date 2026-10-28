@@ -106,6 +106,7 @@ function api(): UtilityApi {
     loadRates: vi.fn(),
     installMeter: vi.fn().mockResolvedValue(value.meters[0]),
     replaceMeter: vi.fn().mockResolvedValue(value.meters[0]),
+    reportBroken: vi.fn().mockResolvedValue(value.meters[0]),
     recordReading: vi.fn().mockResolvedValue(value.readings[meterId]?.[0]),
     correctReading: vi.fn(),
     recordBatch: vi.fn().mockResolvedValue([

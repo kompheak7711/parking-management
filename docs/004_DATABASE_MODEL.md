@@ -594,6 +594,20 @@ Constraints:
   and stores no unapproved Meter status.
 - Serial uniqueness is not asserted because upstream policy does not define whether serials are globally reusable. Amended by DL-071 (owner, 2026-10-05; answer 12): `serial_number` is unique across all Meters of the Property, whatever the Utility Type, deactivated (replaced) Meters included, so a replaced Meter's serial is never used again. Where no serial is printed, staff enter a Property code (for example `EL-U101` or `WA-U101`), which is also unique. `measurement_unit_code` is kWh for electricity and cubic metres (m3) for water (answer 9). Not built yet (V1-059).
   Built in V1-059 part B (2026-10-24; migration `20270205_193`): the trigger `utility_meters_serial_unique` (`app.guard_utility_meter_serial`) refuses a new Meter whose serial, compared by `app.meter_serial_match_key` (spaces and dashes removed, lower case), is used by any Meter of the same Property, under a transaction lock per Property. The API fixes `measurement_unit_code` from the Utility Type (`KWH`, `M3`) and refuses another code; the screens show kWh and m³.
+- Since V1-060 B6 (migration `20270329_248`, DL-104) `failure_date` may be set before the
+  replacement by `app.report_utility_meter_failure_api` (Report broken): only on a current Meter
+  without a failure date, at the expected `version`, on a day not before `installed_date` or the
+  Meter's newest Reading and not after today in Phnom Penh. It locks like Replace meter (Unit and
+  Utility Type, then the Meter), replays through `utility_api_commands` (action
+  `REPORT_METER_FAILURE`), raises the Meter's `version` and records one row in the append-only
+  `app.utility_meter_failure_reports` (`id`, `meter_id` UNIQUE, `failure_date`, `reason` 1 to 500
+  trimmed characters, `actor_id`, `occurred_at`, `expected_meter_version`,
+  `request_idempotency_key`, `request_digest`; a foreign key to the command row; its
+  Phnom Penh `occurred_at` day not before `failure_date`; UPDATE, DELETE and TRUNCATE refused).
+  The function is SECURITY DEFINER with a fixed `search_path` and EXECUTE only for
+  `prm_runtime`; the table is read by `prm_runtime` and `prm_financial`. The existing guards then
+  refuse a Reading after the failure date and keep the failure date once set, so the replacement
+  uses the same day. There is still no deactivation without a replacement.
 - Index `(unit_id, utility_type, installed_date DESC)`.
 
 ## DB-UTIL-002 — `utility_meter_replacements`

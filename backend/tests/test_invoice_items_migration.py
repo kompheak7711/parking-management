@@ -540,7 +540,6 @@ def test_item_commands_are_least_privilege_and_an_item_amount_is_quantity_times_
 def test_invoice_items_migration_follows_add_occupant_and_is_forward_only() -> None:
     config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
     scripts = ScriptDirectory.from_config(config)
-    assert scripts.get_current_head() == "20270328_247"
     revision = scripts.get_revision("20270328_247")
     assert revision is not None and revision.down_revision == "20270327_246"
     module = cast(Any, revision.module)

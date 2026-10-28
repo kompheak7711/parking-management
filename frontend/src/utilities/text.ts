@@ -86,10 +86,10 @@ const TEXT = {
   // new
   other_note: ["No Lease now.", "គ្មានកិច្ចសន្យាឥឡូវនេះ។"],
   err_num: ["Enter whole numbers only.", "សូមបញ្ចូលតែលេខគត់។"],
-  // changed: V1 has no "report broken" yet, so a Manager replaces the meter.
+  // changed (V1-060 B6, DL-104): a Manager reports a broken meter on the Meters tab.
   err_lower: [
-    "Lower than the last reading ({0}). Check the meter. If it is broken, a Manager replaces it on the Meters tab.",
-    "ទាបជាងអំណានចុងក្រោយ ({0})។ សូមពិនិត្យនាឡិកាស្ទង់។ បើវាខូច អ្នកគ្រប់គ្រងប្តូរវានៅផ្ទាំងនាឡិកាស្ទង់។",
+    "Lower than the last reading ({0}). Check the meter. If it is broken, a Manager reports it broken on the Meters tab.",
+    "ទាបជាងអំណានចុងក្រោយ ({0})។ សូមពិនិត្យនាឡិកាស្ទង់។ បើវាខូច អ្នកគ្រប់គ្រងរាយការណ៍ថាវាខូចនៅផ្ទាំងនាឡិកាស្ទង់។",
   ],
   warn_high: [
     "{0} is much more than usual (about {1}). Check the meter, then save again.",
@@ -252,6 +252,26 @@ const TEXT = {
   // new
   mt_old_meter: ["Replaced", "ជំនួស"],
   mt_failed: ["Found broken", "រកឃើញខូច"],
+  // V1-060 B6 (owner, 28/10/2026; DESIGN.md "Report broken"; DL-104)
+  mt_report: ["Report broken", "រាយការណ៍ថាខូច"],
+  mt_report_t: ["Report {0} broken?", "រាយការណ៍ថា {0} ខូច?"],
+  mt_wrong: ["What is wrong", "បញ្ហា"],
+  mt_wrong_help: [
+    "Shown on this meter's page.",
+    "បង្ហាញលើទំព័រនាឡិកាស្ទង់នេះ។",
+  ],
+  mt_report_c: [
+    "{0} shows Broken from the day it was found broken, and its readings after that day are refused. This cannot be undone: the meter must be replaced, at the earliest on the next day.",
+    "{0} បង្ហាញថាខូច ចាប់ពីថ្ងៃរកឃើញខូច ហើយអំណានក្រោយថ្ងៃនោះត្រូវបានបដិសេធ។ ការនេះមិនអាចត្រឡប់វិញបានទេ៖ ត្រូវប្តូរនាឡិកាស្ទង់ យ៉ាងឆាប់បំផុតនៅថ្ងៃបន្ទាប់។",
+  ],
+  mt_report_done: [
+    "{0}: broken since {1}. Replace it before the next reading day.",
+    "{0}៖ ខូចតាំងពី {1}។ សូមប្តូរវាមុនថ្ងៃអានបន្ទាប់។",
+  ],
+  mt_found_kept: [
+    "The day it was reported broken. It cannot change.",
+    "ថ្ងៃដែលបានរាយការណ៍ថាខូច។ វាមិនអាចផ្លាស់ប្តូរបានទេ។",
+  ],
   mt_keep: [
     "Meters are never deleted. A replaced meter stays here with all its readings.",
     "នាឡិកាស្ទង់មិនដែលលុបទេ។ នាឡិកាស្ទង់ដែលបានប្តូរនៅទីនេះ ជាមួយអំណានទាំងអស់។",

@@ -19,7 +19,17 @@ export interface UtilityMeter {
     replacement_meter_id: string | null;
     replacement_date: string | null;
   };
+  /** V1-060 B6 (DL-104): Report broken; kept after the meter is replaced. */
+  failure_report?: MeterFailureReport | null;
   readings_url: string;
+}
+
+export interface MeterFailureReport {
+  id: string;
+  failure_date: string;
+  reason: string;
+  occurred_at: string;
+  actor_id: string;
 }
 
 export interface ReadingCorrection {
@@ -198,6 +208,11 @@ export interface UtilityApi {
     input: MeterReplaceInput,
     idempotencyKey: string,
   ) => Promise<UtilityMeter>;
+  reportBroken: (
+    meterId: string,
+    input: MeterFailureReportInput,
+    idempotencyKey: string,
+  ) => Promise<UtilityMeter>;
   recordReading: (
     meterId: string,
     input: ReadingInput,
@@ -266,6 +281,13 @@ export interface MeterReplaceInput {
     reading_value: string;
     source_evidence: string;
   };
+}
+
+/** V1-060 B6 (DL-104): the day the meter was found broken and what is wrong. */
+export interface MeterFailureReportInput {
+  expected_version: number;
+  failure_date: string;
+  reason: string;
 }
 
 export interface CorrectionInput {
@@ -518,7 +540,22 @@ function meter(value: unknown): UtilityMeter {
       replacement_meter_id: nullableString(replacement.replacement_meter_id),
       replacement_date: nullableString(replacement.replacement_date),
     },
+    failure_report:
+      item.failure_report === undefined || item.failure_report === null
+        ? null
+        : failureReport(item.failure_report),
     readings_url: string(item.readings_url),
+  };
+}
+
+function failureReport(value: unknown): MeterFailureReport {
+  const item = object(value);
+  return {
+    id: string(item.id),
+    failure_date: string(item.failure_date),
+    reason: string(item.reason),
+    occurred_at: string(item.occurred_at),
+    actor_id: string(item.actor_id),
   };
 }
 
@@ -758,6 +795,16 @@ export const utilityApi: UtilityApi = {
       (
         await response(
           `/api/v1/meters/${encodeURIComponent(meterId)}/replace`,
+          mutation(input, idempotencyKey),
+        )
+      ).data,
+    );
+  },
+  async reportBroken(meterId, input, idempotencyKey) {
+    return meter(
+      (
+        await response(
+          `/api/v1/meters/${encodeURIComponent(meterId)}/report-broken`,
           mutation(input, idempotencyKey),
         )
       ).data,

@@ -775,6 +775,7 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/units/{unit_id}/meters": {"get", "post"},
         "/api/v1/meters/{meter_id}": {"get"},
         "/api/v1/meters/{meter_id}/replace": {"post"},
+        "/api/v1/meters/{meter_id}/report-broken": {"post"},
         "/api/v1/meters/{meter_id}/readings": {"get", "post"},
         "/api/v1/utility-readings/{reading_id}/correct": {"post"},
         "/api/v1/properties/{property_id}/utility-readings:batch": {"post"},

@@ -1706,6 +1706,8 @@ dates, the failed Meter, and the replacement Meter must remain linked.
 
 Amended by DL-071 (owner, 2026-10-05; answer 12): a Meter serial number is unique across all Meters of the Property, whatever the Utility Type. Staff enter the serial printed on the Meter, or a unique Property code (for example `EL-U101`) when none is printed. A replaced Meter keeps its serial in history, and that serial cannot be used again. Not built yet.
 
+Built by DL-104 (V1-060 B6, 2026-10-28): a Meter found broken may be recorded broken before it is replaced ("Report broken", with the day it was found broken and what is wrong). From that day it is broken: its Readings after that day are refused until it is replaced, and the replacement keeps the same failure date. It cannot be made working again; it must be replaced.
+
 ---
 
 ### BR-UTIL-007 — Meter Replacement Boundary

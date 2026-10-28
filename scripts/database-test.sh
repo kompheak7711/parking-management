@@ -341,6 +341,7 @@ database_test_suites='
   tests/test_cleaning_rates_migration.py
   tests/test_v1_060_release_migration.py
   tests/test_invoice_items_migration.py
+  tests/test_report_broken_meter_migration.py
 '
 
 for database_test_file in $database_test_suites; do
