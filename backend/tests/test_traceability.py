@@ -269,6 +269,7 @@ def test_traceability_manifest_covers_executable_tests() -> None:
         "moveout/plan.test.ts",
         "settings/serviceSettingsClient.test.ts",
         "leases/leaseServices.test.ts",
+        "shell/buttons.test.ts",
     ):
         executable_ids.update(
             identifier

@@ -67,6 +67,8 @@ association, accessible tables/dialogs, and status announcements.
 
 Amended by DL-074 (owner, 2026-10-04): the accessibility target is WCAG 2.2 level AA.
 
+Amended by DL-107 (V1-060 B6, 2026-10-28): a button never looks like a text box. Buttons have a light green fill, green words and a green edge (words 4.5:1, edges 3:1, in light and dark); text boxes stay Paper with a grey edge.
+
 # 3. Application Shell and Navigation
 
 ## UI-008 — Primary Navigation
@@ -237,6 +239,8 @@ Reservation/Lease/Meter workflow. The UI must not offer generic deletion for a U
 with historical references.
 
 Amended by DL-078 (owner, 2026-10-20): New Unit and Update Unit pick from the DL-075 lists; the Unit number cannot be changed.
+
+Amended by DL-107 (V1-060 B6, 2026-10-28): New Lease on the Unit page opens the New Lease form with that Unit chosen (with an active Reservation, the draft from that Booking); Open Lease, Open draft Lease and Open Reservation open that record.
 
 # 8. Customer Screens
 

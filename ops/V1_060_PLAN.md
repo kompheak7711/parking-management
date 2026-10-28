@@ -338,3 +338,15 @@ candidate is the code that will be used.
   only; decided by Claude under the owner's 2026-10-23 22:30 rule): after closure step 6 says
   "The move-out is finished. Use this step only if something comes up later." and its mark says
   "If needed" instead of "Now". Tests: TEST-FE-998 (changed). No migration.
+- 2026-10-28 (B6, owner report of 16:07, DL-107): New Lease on the Unit page opened only the
+  Leases list, and some buttons looked like text boxes (a secondary button was Paper with the
+  same grey edge as a text box). Built (screens only; decided by Claude under the owner's
+  2026-10-23 22:30 rule): New Lease opens the New Lease form with that Unit chosen (or the draft
+  from its Booking); Open Lease, Open draft Lease and Open Reservation open that record; every
+  button has a light green fill, green words and a green edge (also the switch rows, the square
+  icon buttons and the calendar buttons), checked in light and dark. Tests: TEST-FE-1074,
+  TEST-FE-1075 and TEST-FE-1076 (new), TEST-FE-029 (changed). No migration.
+- 2026-10-28 B6 result (owner, 16:07): "Everything good. only automatic billing. I will wait to
+  see it later. I can say V1-060 session passed." B6 passed. The automatic billing runs on its
+  own dates, so the owner watches it when it runs. Next: B7, merge into
+  `implementation/foundation` once CI is green on the final commit.

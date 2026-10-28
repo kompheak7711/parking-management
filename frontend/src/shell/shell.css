@@ -23,6 +23,13 @@
   --link: #4d6153;
   --selected: #dee0d9;
   --hover: #ecece6;
+  /* V1-060 B6 (DL-107, owner 28/10/2026): a button never looks like a text box. A text box is
+     Paper with a grey edge; a button has a light green fill, green words and a green edge. */
+  --btn-bg: #d8e0d8;
+  --btn-hover: #cad5cb;
+  --btn-text: #3b493f;
+  --btn-edge: #4d6153;
+  --btn-shadow: 0 1px 2px rgb(37 42 40 / 20%);
   --nav-bg: #4d6153;
   --nav-text: #f2eee5;
   --nav-muted: #dee0d9;
@@ -72,6 +79,11 @@
     --link: #99bba3;
     --selected: #313c35;
     --hover: #2e3431;
+    --btn-bg: #2f3b33;
+    --btn-hover: #384639;
+    --btn-text: #bcd6c3;
+    --btn-edge: #99bba3;
+    --btn-shadow: 0 1px 2px rgb(0 0 0 / 45%);
     --nav-bg: #1b201e;
     --nav-text: #f2eee5;
     --nav-muted: #999388;

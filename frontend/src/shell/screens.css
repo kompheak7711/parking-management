@@ -95,10 +95,11 @@
   gap: 8px;
   min-height: 44px;
   padding: 9px 16px;
-  border: 1px solid var(--border-strong);
+  border: 1px solid var(--btn-edge);
   border-radius: 8px;
-  background: var(--surface);
-  color: var(--text);
+  background: var(--btn-bg);
+  box-shadow: var(--btn-shadow);
+  color: var(--btn-text);
   font: inherit;
   font-size: 0.9375rem;
   font-weight: 600;
@@ -109,7 +110,7 @@
 }
 
 .ui-btn:hover {
-  background: var(--hover);
+  background: var(--btn-hover);
 }
 
 .ui-btn.primary {
@@ -126,6 +127,7 @@
 .ui-btn:disabled {
   border-color: var(--border);
   background: var(--sunken);
+  box-shadow: none;
   color: var(--text-2);
   cursor: not-allowed;
 }
@@ -135,6 +137,7 @@
   padding: 4px;
   border: 0;
   background: none;
+  box-shadow: none;
   color: var(--link);
   text-decoration: underline;
 }
@@ -142,6 +145,13 @@
 .ui-btn .shell-icon {
   width: 18px;
   height: 18px;
+}
+
+/* V1-060 B6 (DL-107): a button that opens a page is a link underneath; it keeps the button's
+   words, not the green of a page link. */
+.shell-view a.ui-btn:not(.primary, .link, .danger, .ui-locked),
+.shell-view a.ui-iconbtn {
+  color: var(--btn-text);
 }
 
 .ui-card {
@@ -259,24 +269,26 @@
   align-items: center;
 }
 
+/* V1-060 B6 (DL-107): a switch is a row of buttons; the chosen one is green. */
 .ui-seg {
   display: inline-flex;
   flex-wrap: wrap;
   overflow: hidden;
-  border: 1px solid var(--border-strong);
+  border: 1px solid var(--btn-edge);
   border-radius: 8px;
-  background: var(--surface);
+  background: var(--btn-bg);
+  box-shadow: var(--btn-shadow);
 }
 
 .ui-seg button {
   min-height: 42px;
   padding: 0 14px;
   border: 0;
-  border-right: 1px solid var(--border);
+  border-right: 1px solid var(--btn-edge);
   background: none;
-  color: var(--text);
+  color: var(--btn-text);
   font: inherit;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
 }
 
@@ -284,10 +296,13 @@
   border-right: 0;
 }
 
+.ui-seg button:hover {
+  background: var(--btn-hover);
+}
+
 .ui-seg button[aria-pressed="true"] {
-  background: var(--selected);
-  box-shadow: inset 0 -3px 0 var(--primary);
-  color: var(--heading);
+  background: var(--primary);
+  color: var(--on-primary);
   font-weight: 700;
 }
 
@@ -1621,6 +1636,7 @@ table.ui-table.ui-paylist .ui-phone {
    a lock before the label and the MANAGER badge after it. */
 .ui-btn.ui-locked {
   background: var(--sunken);
+  box-shadow: none;
   color: var(--text-2);
   border-color: var(--border);
   cursor: not-allowed;
@@ -1812,14 +1828,14 @@ a.ui-kpi.ui-home-kpi {
   place-items: center;
   width: 44px;
   height: 44px;
-  border: 1px solid var(--border-strong);
+  border: 1px solid var(--btn-edge);
   border-radius: 8px;
-  background: var(--surface);
-  color: var(--primary);
+  background: var(--btn-bg);
+  box-shadow: var(--btn-shadow);
+  color: var(--btn-text);
 }
 .ui-iconbtn:hover {
-  border-color: var(--primary);
-  background: var(--hover);
+  background: var(--btn-hover);
 }
 @media (max-width: 620px) {
   .ui-todo {
@@ -1852,9 +1868,16 @@ a.ui-kpi.ui-home-kpi {
 .ui-btn.danger {
   color: var(--err);
   border-color: var(--err);
+  background: var(--err-bg);
 }
 .ui-btn.danger:hover:not(:disabled) {
   background: var(--err-bg);
+  box-shadow: inset 0 0 0 1px var(--err);
+}
+.ui-btn.danger:disabled {
+  border-color: var(--border);
+  background: var(--sunken);
+  color: var(--text-2);
 }
 .ui-card.pad0 > p.pad {
   margin: 0;
@@ -2062,11 +2085,16 @@ a.ui-kpi.ui-home-kpi {
 .ui-date .ui-date-button {
   flex: 0 0 46px;
   min-height: 46px;
-  border: 1px solid var(--border-strong);
+  border: 1px solid var(--btn-edge);
   border-radius: 8px;
-  background: var(--surface);
-  color: var(--text);
+  background: var(--btn-bg);
+  box-shadow: var(--btn-shadow);
+  color: var(--btn-text);
   cursor: pointer;
+}
+
+.ui-date .ui-date-button:hover:not(:disabled) {
+  background: var(--btn-hover);
 }
 
 .ui-date .ui-date-button:disabled {
@@ -2130,13 +2158,18 @@ a.ui-kpi.ui-home-kpi {
 .ui-cal-nav {
   flex: 0 0 46px;
   min-height: 46px;
-  border: 1px solid var(--border-strong);
+  border: 1px solid var(--btn-edge);
   border-radius: 8px;
-  background: var(--surface);
-  color: var(--text);
+  background: var(--btn-bg);
+  box-shadow: var(--btn-shadow);
+  color: var(--btn-text);
   font-size: 1.5rem;
   line-height: 1;
   cursor: pointer;
+}
+
+.ui-cal-nav:hover {
+  background: var(--btn-hover);
 }
 
 .ui-cal-grid {

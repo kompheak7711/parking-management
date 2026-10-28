@@ -57733,6 +57733,42 @@
       "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
       "status": "implemented",
       "notes": "V1-060 B6: Record kept Deposit sends no empty reason; no answer offers Try again with the same record id and key; a changed reason is a new record id and key; refusals are named in plain words, in the server's words or as not allowed; a draft that already waits closes the dialog, says so and reads the step again."
+    },
+    {
+      "test_id": "TEST-FE-1074",
+      "upstream_ids": [
+        "DL-107",
+        "UI-011",
+        "UI-026",
+        "UI-027"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/units/UnitsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (owner 28/10/2026): on the Unit page New Lease opens the New Lease form with that Unit chosen, New Lease from Reservation opens the draft from that Booking, and Open Lease, Open draft Lease and Open Reservation open that record, not the list."
+    },
+    {
+      "test_id": "TEST-FE-1075",
+      "upstream_ids": [
+        "DL-107",
+        "DL-066",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6: New Lease from a Unit page opens with that Unit chosen, still offers the other open Units and saves the draft for the chosen Unit; a Unit a walk-in Lease may not use (Reserved) is not chosen."
+    },
+    {
+      "test_id": "TEST-FE-1076",
+      "upstream_ids": [
+        "DL-107",
+        "UI-007"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shell/buttons.test.ts",
+      "status": "implemented",
+      "notes": "V1-060 B6 (owner 28/10/2026): buttons, switches, icon buttons and the calendar buttons use the button colours, never a text box's fill and edge, in light and dark; the words reach 4.5:1 on the fill and under the pointer, and the edge 3:1 on cards and on the page."
     }
   ]
 }

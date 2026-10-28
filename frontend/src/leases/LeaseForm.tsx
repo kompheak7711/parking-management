@@ -7,6 +7,8 @@
 // R7b-7 (owner 2026-10-26, "Meters decide"): the form says when the Unit has no electricity or
 // water meter (nothing of that kind is billed), and a person with Settings access may add a
 // Service here with the Settings dialog.
+// V1-060 B6 (DL-107, owner 28/10/2026): New Lease on a Unit page opens this form with that Unit
+// chosen; it can still be changed, like any walk-in draft.
 
 import { FormEvent, ReactNode, useEffect, useRef, useState } from "react";
 
@@ -52,10 +54,14 @@ import { lt } from "./text";
 
 export type LeaseFormMode =
   | { kind: "new" }
+  | { kind: "unit"; unitId: string }
   | { kind: "reservation"; reservationId: string }
   | { kind: "renew"; leaseId: string };
 
-/** "new", "new:<Booking id>" or "renew:<Lease id>" from the page address; null otherwise. */
+/**
+ * "new", "unit:<Unit id>" (a walk-in draft for the Unit whose page it came from), "new:<Booking
+ * id>" or "renew:<Lease id>" from the page address; null otherwise.
+ */
 export function formModeOf(detail: string): LeaseFormMode | null {
   if (detail === "new") return { kind: "new" };
   const parts = detail.split(":");
@@ -63,6 +69,7 @@ export function formModeOf(detail: string): LeaseFormMode | null {
   const [head = "", id = ""] = parts;
   if (id === "") return null;
   if (head === "new") return { kind: "reservation", reservationId: id };
+  if (head === "unit") return { kind: "unit", unitId: id };
   if (head === "renew") return { kind: "renew", leaseId: id };
   return null;
 }
@@ -294,6 +301,7 @@ export function LeaseForm({
 
   const load = () => {
     setFailed(false);
+    const fromUnit = mode.kind === "unit" ? mode.unitId : null;
     void (async () => {
       const [units, customers, reservation, previous] = await Promise.all([
         allPages((cursor) =>
@@ -321,6 +329,11 @@ export function LeaseForm({
         reservation,
         previous,
       });
+      // From a Unit page: that Unit, when a walk-in Lease may use it; otherwise none is chosen.
+      const chosen = units.find(
+        (unit) => unit.unit_id === fromUnit && OPEN_UNITS.has(unit.status),
+      );
+      if (chosen !== undefined) setUnitId(chosen.unit_id);
       if (reservation !== null) {
         setUnitId(reservation.unit_id);
         setTenantId(reservation.customer_id);

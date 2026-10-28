@@ -1,6 +1,9 @@
 // V1-058 R2: the Unit page (DESIGN.md "Units (round 2)", owner 13/10/2026 18:08). Left: Unit
 // details with the photo place, fact tiles, notes and the inventory. Right: Current Lease,
 // Reservation or Availability; Lease history; Meters; Invoices for this Unit; History.
+// V1-060 B6 (DL-107, owner 28/10/2026): each button opens its own place: New Lease opens the New
+// Lease form with this Unit chosen (or the draft from its Booking), and Open Lease, Open draft
+// Lease and Open Reservation open that record, not the list.
 
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 
@@ -356,7 +359,10 @@ export function UnitDetail({
         />
         {may("leases.read") && (
           <div className="ui-qa">
-            <a className="ui-btn" href={hashForPage("leases")}>
+            <a
+              className="ui-btn"
+              href={hashForPage("leases", current.lease_id)}
+            >
               <Icon name="lease" />
               {ut(language, "open_lease")}
             </a>
@@ -407,7 +413,10 @@ export function UnitDetail({
         />
         {may("reservations.read") && (
           <div className="ui-qa">
-            <a className="ui-btn" href={hashForPage("reservations")}>
+            <a
+              className="ui-btn"
+              href={hashForPage("reservations", reservation.reservation_id)}
+            >
               <Icon name="calendar" />
               {ut(language, "open_reservation")}
             </a>
@@ -459,7 +468,12 @@ export function UnitDetail({
           {canLease && may("leases.draft") && (
             <a
               className={unit.status === "VACANT" ? "ui-btn" : "ui-btn primary"}
-              href={hashForPage("leases")}
+              href={hashForPage(
+                "leases",
+                reservation === null
+                  ? `unit:${unit.unit_id}`
+                  : `new:${reservation.reservation_id}`,
+              )}
             >
               <Icon name="lease" />
               {ut(
@@ -469,19 +483,28 @@ export function UnitDetail({
             </a>
           )}
           {draft !== null && may("leases.read") && (
-            <a className="ui-btn primary" href={hashForPage("leases")}>
+            <a
+              className="ui-btn primary"
+              href={hashForPage("leases", draft.lease_id)}
+            >
               <Icon name="lease" />
               {ut(language, "open_draft")}
             </a>
           )}
           {current !== null && may("leases.read") && (
-            <a className="ui-btn primary" href={hashForPage("leases")}>
+            <a
+              className="ui-btn primary"
+              href={hashForPage("leases", current.lease_id)}
+            >
               <Icon name="lease" />
               {ut(language, "open_lease")}
             </a>
           )}
           {reservation !== null && may("reservations.read") && (
-            <a className="ui-btn" href={hashForPage("reservations")}>
+            <a
+              className="ui-btn"
+              href={hashForPage("reservations", reservation.reservation_id)}
+            >
               <Icon name="calendar" />
               {ut(language, "open_reservation")}
             </a>

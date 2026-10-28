@@ -33,6 +33,7 @@ import {
   type LettersApi,
   type TerminationNotice,
 } from "../letters/lettersClient";
+import { formModeOf } from "./LeaseForm";
 import { LeasesPage, type LeasesPageProps } from "./LeasesPage";
 import { addDays, endingLimit, initialRent } from "./leasesData";
 
@@ -2099,6 +2100,64 @@ describe("New Lease and Renew", () => {
         terms_reference: "Chosen on the New Lease form",
       },
     ]);
+  });
+
+  it("TEST-FE-1075 New Lease from a Unit page opens with that Unit chosen and still lets it change; a Unit a walk-in Lease may not use is not chosen", async () => {
+    expect(formModeOf("unit:unit-U401")).toEqual({
+      kind: "unit",
+      unitId: "unit-U401",
+    });
+    expect(formModeOf("unit:")).toBeNull();
+    expect(formModeOf("unit:a:b")).toBeNull();
+    const create = vi
+      .fn<LeaseApi["create"]>()
+      .mockImplementation((_property, source) =>
+        Promise.resolve(
+          lease("U401", { lease_id: source.lease_id, status: "DRAFTED" }),
+        ),
+      );
+    window.location.hash = "#/leases/unit%3Aunit-U401";
+    const view = show(
+      api({ create }),
+      deposits(),
+      null,
+      undefined,
+      people(),
+      units,
+    );
+
+    const unitBox = await screen.findByLabelText("Unit");
+    expect(unitBox).toHaveValue("unit-U401");
+    expect(
+      within(unitBox)
+        .getAllByRole("option")
+        .map((option) => option.textContent),
+    ).toEqual(["Choose a Unit", "U401", "U402"]);
+    pickIn("Primary Tenant", "customer-a");
+    fireEvent.change(screen.getByLabelText("Monthly Rent"), {
+      target: { value: "300" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
+    fireEvent.click(
+      within(
+        screen.getByRole("dialog", { name: "Save the draft · U401?" }),
+      ).getByRole("button", { name: "Save draft" }),
+    );
+    await waitFor(() => {
+      expect(create).toHaveBeenCalledTimes(1);
+    });
+    expect(create.mock.calls[0]?.[1]).toMatchObject({
+      unit_id: "unit-U401",
+      primary_tenant_id: "customer-a",
+      predecessor_lease_id: null,
+      security_deposit_id: null,
+    });
+    view.unmount();
+
+    // A Reserved Unit comes only with its Booking (DL-066), so nothing is chosen.
+    window.location.hash = "#/leases/unit%3Aunit-U403";
+    show(api(), deposits(), null, undefined, people(), units);
+    expect(await screen.findByLabelText("Unit")).toHaveValue("");
   });
 
   it("TEST-FE-858 a Lease from a Booking takes its Unit, Customer, Rent and Security Deposit", async () => {

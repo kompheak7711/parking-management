@@ -536,8 +536,77 @@ describe("Unit page", () => {
     expect(history).toHaveTextContent("Sok Dara moved in.");
     expect(history).toHaveTextContent("Unit created.");
     for (const link of screen.getAllByRole("link", { name: "Open Lease" })) {
-      expect(link).toHaveAttribute("href", "#/leases");
+      expect(link).toHaveAttribute("href", "#/leases/lease-1");
     }
+  });
+
+  it("TEST-FE-1074 each button opens its own place: New Lease opens the form with the Unit chosen or the draft from its Reservation, and Open Lease, Open draft Lease and Open Reservation open that record", async () => {
+    const all = [
+      lease(),
+      lease({
+        lease_id: "lease-draft",
+        unit_id: "unit-U202",
+        unit_number: "U202",
+        status: "DRAFTED",
+        signed_at: null,
+      }),
+    ];
+    const leases = {
+      list: vi.fn((_: string, filters: { unit_id?: string } = {}) =>
+        Promise.resolve({
+          items:
+            filters.unit_id === undefined
+              ? all
+              : all.filter((entry) => entry.unit_id === filters.unit_id),
+          next_cursor: null,
+          can_create: true,
+        }),
+      ),
+    } as unknown as LeaseApi;
+    const client = unitApi();
+    const hrefs = (name: string) =>
+      screen
+        .getAllByRole("link", { name })
+        .map((link) => link.getAttribute("href"));
+    const open = async (number: string) => {
+      window.location.hash = `#/units/unit-${number}`;
+      const view = show(client, { leases });
+      expect(
+        await screen.findByRole("heading", { name: number }),
+      ).toBeInTheDocument();
+      return view;
+    };
+
+    let view = await open("U201");
+    expect(hrefs("New Lease")).toEqual(["#/leases/unit%3Aunit-U201"]);
+    expect(hrefs("Make Reservation")).toEqual([
+      "#/reservations/new%3Aunit-U201",
+    ]);
+    view.unmount();
+
+    view = await open("U102");
+    expect(hrefs("New Lease from Reservation")).toEqual([
+      "#/leases/new%3Areservation-1",
+    ]);
+    // The head and the Reservation card.
+    expect(hrefs("Open Reservation")).toEqual([
+      "#/reservations/reservation-1",
+      "#/reservations/reservation-1",
+    ]);
+    view.unmount();
+
+    view = await open("U202");
+    expect(hrefs("Open draft Lease")).toEqual(["#/leases/lease-draft"]);
+    expect(hrefs("New Lease")).toEqual(["#/leases/unit%3Aunit-U202"]);
+    view.unmount();
+
+    await open("U101");
+    // The head and the Current Lease card.
+    expect(hrefs("Open Lease")).toEqual([
+      "#/leases/lease-1",
+      "#/leases/lease-1",
+    ]);
+    expect(screen.queryByRole("link", { name: "New Lease" })).toBeNull();
   });
 
   it("TEST-FE-824 changes the status only with a reason and not while a Lease holds the Unit", async () => {
