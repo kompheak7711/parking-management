@@ -184,6 +184,11 @@ const TEXT = {
   mt_e_unit: ["Choose a Unit.", "សូមជ្រើសបន្ទប់។"],
   // new
   mt_pick_unit: ["Choose a Unit", "ជ្រើសបន្ទប់"],
+  // V1-060 B6 (owner, 28/10/2026): Add meter offers only Units without this kind of meter.
+  mt_none_free: [
+    "Every Unit already has a {0} meter. To change a broken meter, open it and choose Replace meter.",
+    "បន្ទប់ទាំងអស់មាននាឡិកាស្ទង់{0}រួចហើយ។ ដើម្បីប្តូរនាឡិកាស្ទង់ខូច សូមបើកវា ហើយជ្រើស ប្តូរនាឡិកាស្ទង់។",
+  ],
   mt_e_have: [
     "{0} already has a working {1} meter ({2}). A Unit can have only one.",
     "{0} មាននាឡិកាស្ទង់{1}កំពុងប្រើរួចហើយ ({2})។ បន្ទប់មួយអាចមានតែមួយ។",

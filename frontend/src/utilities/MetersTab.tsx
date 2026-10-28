@@ -724,6 +724,14 @@ function AddMeterDialog({
   const { busy, outcome, send } = useMeterSend();
   const unit = data.units.find((item) => item.unit_id === unitId);
   const code = `${type === "ELECTRICITY" ? "EL" : "WA"}-${unit?.unit_number ?? data.units[0]?.unit_number ?? "U101"}`;
+  // V1-060 B6 (owner, 28/10/2026): only Units without a current meter of this kind are offered;
+  // a broken meter is changed with Replace meter on its page.
+  const hasMeter = (id: string, kind: UtilityType) =>
+    data.meters.some(
+      (meter) =>
+        meter.current && meter.unit_id === id && meter.utility_type === kind,
+    );
+  const free = data.units.filter((item) => !hasMeter(item.unit_id, type));
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -809,31 +817,6 @@ function AddMeterDialog({
     >
       <p className="ui-small">{utt(language, "mt_add_intro")}</p>
       <OutcomeLine language={language} outcome={outcome} />
-      <div className="ui-field">
-        <label htmlFor="add-unit">
-          {utt(language, "unit")}
-          <span className="req">{utt(language, "required")}</span>
-        </label>
-        <select
-          aria-describedby={
-            problems.unit === undefined ? undefined : "add-unit-err"
-          }
-          aria-invalid={problems.unit !== undefined}
-          id="add-unit"
-          onChange={(event) => {
-            setUnitId(event.currentTarget.value);
-          }}
-          value={unitId}
-        >
-          <option value="">{utt(language, "mt_pick_unit")}</option>
-          {data.units.map((item) => (
-            <option key={item.unit_id} value={item.unit_id}>
-              {item.unit_number}
-            </option>
-          ))}
-        </select>
-        <FieldError id="add-unit" text={problems.unit} />
-      </div>
       <fieldset className="ui-radios">
         <legend>{utt(language, "col_type")}</legend>
         {(["ELECTRICITY", "WATER"] as const).map((kind) => (
@@ -843,6 +826,8 @@ function AddMeterDialog({
               name="add-type"
               onChange={() => {
                 setType(kind);
+                // A Unit that already has this kind of meter is no longer offered.
+                if (unitId !== "" && hasMeter(unitId, kind)) setUnitId("");
               }}
               type="radio"
             />
@@ -850,6 +835,40 @@ function AddMeterDialog({
           </label>
         ))}
       </fieldset>
+      <div className="ui-field">
+        <label htmlFor="add-unit">
+          {utt(language, "unit")}
+          <span className="req">{utt(language, "required")}</span>
+        </label>
+        <select
+          aria-describedby={
+            problems.unit === undefined
+              ? free.length === 0
+                ? "add-unit-none"
+                : undefined
+              : "add-unit-err"
+          }
+          aria-invalid={problems.unit !== undefined}
+          id="add-unit"
+          onChange={(event) => {
+            setUnitId(event.currentTarget.value);
+          }}
+          value={unitId}
+        >
+          <option value="">{utt(language, "mt_pick_unit")}</option>
+          {free.map((item) => (
+            <option key={item.unit_id} value={item.unit_id}>
+              {item.unit_number}
+            </option>
+          ))}
+        </select>
+        {free.length === 0 && (
+          <p className="help" id="add-unit-none">
+            {utt(language, "mt_none_free", utt(language, type).toLowerCase())}
+          </p>
+        )}
+        <FieldError id="add-unit" text={problems.unit} />
+      </div>
       <div className="ui-field">
         <label htmlFor="add-serial">
           {utt(language, "mt_serial")}

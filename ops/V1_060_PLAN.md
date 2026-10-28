@@ -253,3 +253,9 @@ candidate is the code that will be used.
   filter by floor only (no Unit filter in the V1-057 API); the PDF has no Khmer font; the Khmer
   words need a native speaker's check. Tests TEST-FE-1030 to 1060. Looked at on an iPad-size
   screen (1180 x 820) with sample data: no page overflow; wide registers scroll inside their card.
+
+- 2026-10-28 (B6, owner ask of 10:04, decided by Claude under the owner's 2026-10-23 22:30 rule):
+  Add meter now lists only the Units that have no current meter of the chosen kind. Changing the
+  kind clears a chosen Unit that already has that kind. When every Unit already has one, the
+  dialog says to change a broken meter with Replace meter on its page. The check when saving
+  stays. Tests TEST-FE-884 (changed) and TEST-FE-1061 (new).

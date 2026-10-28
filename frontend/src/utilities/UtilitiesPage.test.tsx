@@ -778,7 +778,7 @@ describe("Utilities Meters tab (V1-058 R4b)", () => {
     expect(serials()).toEqual(["EL-U102", "WA-U102"]);
   });
 
-  it("TEST-FE-884 Add meter refuses a second working meter of a kind, sends the meter with its first reading on the day it is put in, and names a serial already used", async () => {
+  it("TEST-FE-884 Add meter does not offer a Unit that has a working meter of the kind, sends the meter with its first reading on the day it is put in, and names a serial already used", async () => {
     openMeters();
     const installMeter = vi
       .fn()
@@ -787,18 +787,15 @@ describe("Utilities Meters tab (V1-058 R4b)", () => {
     const { units } = show({ api: utilityApi({ installMeter }) });
     fireEvent.click(await screen.findByRole("button", { name: /Add meter/ }));
     const dialog = screen.getByRole("dialog");
-    fireEvent.change(within(dialog).getByLabelText(/^Unit/), {
-      target: { value: "unit-U101" },
-    });
+    // V1-060 B6: a Unit with a working electricity meter (U101, U102, U201) is not offered.
+    expect(
+      [
+        ...within(dialog).getByLabelText(/^Unit/).querySelectorAll("option"),
+      ].map((option) => option.textContent),
+    ).toEqual(["Choose a Unit", "U301"]);
     fireEvent.change(within(dialog).getByLabelText(/^Serial/), {
       target: { value: "EL-U101-B" },
     });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Add meter" }));
-    expect(
-      within(dialog).getByText(
-        "U101 already has a working electricity meter (EL-U101). A Unit can have only one.",
-      ),
-    ).toBeTruthy();
     expect(installMeter).not.toHaveBeenCalled();
 
     fireEvent.change(within(dialog).getByLabelText(/^Unit/), {
@@ -840,6 +837,38 @@ describe("Utilities Meters tab (V1-058 R4b)", () => {
     await waitFor(() => {
       expect(units.list).toHaveBeenCalledTimes(2);
     });
+  });
+
+  it("TEST-FE-1061 Add meter offers only Units without a current meter of the chosen kind, clears a Unit that has the newly chosen kind, and says to use Replace meter when no Unit is left", async () => {
+    openMeters();
+    show({
+      api: utilityApi({}, [...meters(), meter("wa-301", "U301", "WATER")]),
+    });
+    fireEvent.click(await screen.findByRole("button", { name: /Add meter/ }));
+    const dialog = screen.getByRole("dialog");
+    const unitBox = within(dialog).getByLabelText<HTMLSelectElement>(/^Unit/);
+    const offered = () =>
+      [...unitBox.querySelectorAll("option")].map(
+        (option) => option.textContent,
+      );
+    expect(offered()).toEqual(["Choose a Unit", "U301"]);
+    fireEvent.change(unitBox, { target: { value: "unit-U301" } });
+    expect(unitBox.value).toBe("unit-U301");
+
+    // U301 already has a water meter: it is no longer offered and the choice is cleared.
+    fireEvent.click(within(dialog).getByLabelText("Water"));
+    expect(offered()).toEqual(["Choose a Unit"]);
+    expect(unitBox.value).toBe("");
+    expect(
+      within(dialog).getByText(
+        "Every Unit already has a water meter. To change a broken meter, open it and choose Replace meter.",
+      ),
+    ).toBeTruthy();
+    expect(unitBox.getAttribute("aria-describedby")).toBe("add-unit-none");
+
+    fireEvent.click(within(dialog).getByLabelText("Electricity"));
+    expect(offered()).toEqual(["Choose a Unit", "U301"]);
+    expect(unitBox.getAttribute("aria-describedby")).toBeNull();
   });
 
   it("TEST-FE-885 A meter's page shows its facts, its readings and the meter it replaced or was replaced by, with a Back link instead of tabs", async () => {

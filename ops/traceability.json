@@ -57360,6 +57360,19 @@
       "test_path": "frontend/src/shell/AppShell.test.tsx",
       "status": "implemented",
       "notes": "V1-060 B6 (Reports screens, V1-057 data, DESIGN.md round 4): Shows Reports to anyone who may read one report and hides it from a person who may read none."
+    },
+    {
+      "test_id": "TEST-FE-1061",
+      "upstream_ids": [
+        "DL-074",
+        "UI-057",
+        "BR-UTIL-005",
+        "DL-071"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (owner 28/10/2026): Add meter offers only Units without a current meter of the chosen kind, clears a chosen Unit that already has the newly chosen kind, and, when no Unit is left, says to change a broken meter with Replace meter on its page."
     }
   ]
 }
