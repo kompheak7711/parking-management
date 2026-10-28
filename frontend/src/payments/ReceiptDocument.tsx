@@ -2,7 +2,8 @@
 // brand-kit/05_Templates/receipt-template.html). It is A5, Khmer above English in every language
 // of the app, dates dd/mm/yyyy and 24-hour times. What the money paid is listed line by line: an
 // Invoice first and its late-payment charge right after it, then Deposits, Credit, refunds and
-// money not used yet (owner, 17/10/2026).
+// money not used yet (owner, 17/10/2026). There is no Payer note on the paper: the "Paid for"
+// lines already say what the money paid (owner, 28/10/2026); the note stays with the Payment.
 
 import "../invoices/invoiceDocument.css";
 import "./receiptDocument.css";
@@ -83,17 +84,6 @@ export function ReceiptDocument({
       "Credit or refund, as the Customer chooses",
       receipt.left,
     ]);
-  const invoices = [
-    ...new Set(
-      receipt.lines.flatMap((line) =>
-        line.kind === "INVOICE" && line.invoiceNumber !== null
-          ? [line.invoiceNumber]
-          : [],
-      ),
-    ),
-  ];
-  const note =
-    receipt.payerNote ?? (invoices.length > 0 ? invoices.join(", ") : "—");
   const reference =
     receipt.reference === null
       ? "None"
@@ -144,10 +134,6 @@ export function ReceiptDocument({
             {name ?? "—"}
             {unit !== "" && <small>Unit {unit}</small>}
           </div>
-        </div>
-        <div>
-          <Label en="Payer note" kh="សម្រាប់" />
-          <div className="v">{note}</div>
         </div>
       </div>
       <div className="amount">

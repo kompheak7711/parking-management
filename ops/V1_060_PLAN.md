@@ -189,3 +189,10 @@ candidate is the code that will be used.
   after the quick checks (format, lint, types, Lease screen tests 36 passed, the new and nearby
   database tests 19 passed, signing API tests passed, traceability passed) so the owner can test
   sooner; the longer suites and CI run after the push (owner 20:35: do not make the owner wait).
+- 2026-10-28 B6 (owner session, step 2 checks): the list shows a signed Lease as "Lease active"
+  (the script said "Signed"; the script is fixed, the screen is right). The owner asked where to see
+  the Initial Rent Invoice, the Security Deposit and the Receipt (Invoices, the Lease page Deposits
+  card, Payments then the Receipt number; a Security Deposit is never on an Invoice, the Receipt's
+  Paid for lines show it). Owner change: the printed Receipt no longer shows the "Payer note /
+  សម្រាប់" line, because the Paid for lines already say what the money paid; the note stays saved
+  with the Payment. DESIGN.md 0.32 and the brand-kit Receipt template follow.
