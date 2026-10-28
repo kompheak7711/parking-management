@@ -1,0 +1,495 @@
+/* V1-060 B6: the Reports screens (DESIGN.md "Reports (round 4)" and "Charts", mock-up app.css
+   round 4), built on the colour roles of shell.css so light and dark switch together. */
+
+/* The eight chart series colours, always in this order (DESIGN.md Colors, "Chart 1 to 8"). */
+:root {
+  --chart-1: #0d6f45;
+  --chart-2: #ba7d3a;
+  --chart-3: #3d5f9e;
+  --chart-4: #bf6244;
+  --chart-5: #017a9e;
+  --chart-6: #ae8e2d;
+  --chart-7: #79437c;
+  --chart-8: #c87182;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --chart-1: #1e7c50;
+    --chart-2: #c28542;
+    --chart-3: #6185c8;
+    --chart-4: #c76749;
+    --chart-5: #278cb1;
+    --chart-6: #ae912f;
+    --chart-7: #8365b3;
+    --chart-8: #d17576;
+  }
+}
+
+.rp-s1 {
+  background: var(--chart-1);
+}
+.rp-s2 {
+  background: var(--chart-2);
+}
+.rp-s3 {
+  background: var(--chart-3);
+}
+.rp-s4 {
+  background: var(--chart-4);
+}
+.rp-s5 {
+  background: var(--chart-5);
+}
+.rp-s6 {
+  background: var(--chart-6);
+}
+.rp-s7 {
+  background: var(--chart-7);
+}
+.rp-s8 {
+  background: var(--chart-8);
+}
+
+/* ---------- the list of reports ---------- */
+
+.rp-groupsec {
+  display: grid;
+  gap: 10px;
+}
+
+.shell-view .rp-group,
+.rp-group {
+  margin: 0;
+  color: var(--text-2);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.rp-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.shell-view a.rp-card,
+a.rp-card {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 8px;
+  height: 100%;
+  min-height: 44px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.shell-view a.rp-card:hover,
+a.rp-card:hover {
+  background: var(--hover);
+}
+
+.rp-card-name {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  color: var(--heading);
+  font-weight: 600;
+}
+
+.rp-card-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: 8px;
+  background: var(--sunken);
+}
+
+.rp-card-desc {
+  color: var(--text-2);
+  font-size: 0.88rem;
+}
+
+.rp-card-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.rp-tag {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--info-bg);
+  color: var(--info);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.rp-card-open {
+  margin-left: auto;
+  color: var(--link);
+  font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .rp-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .rp-cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---------- a report page ---------- */
+
+.rp-range {
+  color: var(--text-2);
+  font-size: 0.86rem;
+}
+
+.rp-sum {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px 28px;
+  align-items: start;
+}
+
+.rp-sum.one {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.rp-sum h4 {
+  margin: 0 0 6px;
+  color: var(--text-2);
+  font-size: 0.9rem;
+}
+
+.rp-sum p {
+  margin: 0;
+}
+
+.rp-side {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+/* A small by-kind or by-group table on the right of the summary. */
+table.rp-mini {
+  border-collapse: collapse;
+}
+
+table.rp-mini th,
+table.rp-mini td {
+  padding: 4px 16px 4px 0;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+table.rp-mini thead th {
+  color: var(--text-2);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+table.rp-mini tbody th {
+  font-weight: 400;
+}
+
+table.rp-mini .r {
+  text-align: right;
+  white-space: nowrap;
+}
+
+table.rp-mini tr.sub th {
+  padding-left: 14px;
+  color: var(--text-2);
+  font-size: 0.86rem;
+}
+
+table.rp-mini tfoot th,
+table.rp-mini tfoot td {
+  border-bottom: 0;
+  font-weight: 700;
+}
+
+/* The chart sits across the card under a thin rule. */
+.rp-chartrow {
+  min-width: 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.rp-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.rp-pair.even {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 760px) {
+  .rp-sum,
+  .rp-pair,
+  .rp-pair.even {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---------- charts ---------- */
+
+.rp-chart {
+  min-width: 0;
+  margin: 0;
+}
+
+.rp-chart-t {
+  margin-bottom: 8px;
+  color: var(--text);
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.rp-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 0 0 10px;
+  padding: 0;
+  color: var(--text-2);
+  font-size: 0.82rem;
+  list-style: none;
+}
+
+.rp-legend li {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.rp-legend i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.rp-vc {
+  display: grid;
+  grid-template-columns: 62px minmax(0, 1fr);
+  gap: 8px;
+  height: 180px;
+}
+
+.rp-vc-y {
+  position: relative;
+  color: var(--muted);
+  font-family: var(--font-num);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.rp-vc-y span {
+  position: absolute;
+  right: 0;
+  transform: translateY(50%);
+  white-space: nowrap;
+}
+
+.rp-vc-plot {
+  position: relative;
+  border-bottom: 1px solid var(--border-strong);
+}
+
+.rp-vc-g {
+  position: absolute;
+  right: 0;
+  left: 0;
+  border-top: 1px solid var(--border);
+}
+
+.rp-vc-cols {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-items: end;
+}
+
+/* Bars at most 24px wide, 2px apart, with 4px round tops. */
+.rp-vc-col {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: 100%;
+  padding: 0 1px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: default;
+}
+
+.rp-vc-col:hover,
+.rp-vc-col:focus-visible {
+  outline: none;
+  background: var(--hover);
+}
+
+.rp-vc-col:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--focus);
+}
+
+.rp-vc-bar {
+  display: flex;
+  flex-direction: column-reverse;
+  width: 100%;
+  max-width: 24px;
+  overflow: hidden;
+  border-radius: 4px 4px 0 0;
+}
+
+.rp-vc-seg {
+  display: block;
+  width: 100%;
+}
+
+/* A 2px card-coloured gap between the parts of a stacked bar. */
+.rp-vc-seg + .rp-vc-seg {
+  border-bottom: 2px solid var(--surface);
+}
+
+.rp-vc-v {
+  position: absolute;
+  left: 50%;
+  color: var(--text-2);
+  font-family: var(--font-num);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translate(-50%, -4px);
+}
+
+.rp-vc-col:hover::after,
+.rp-vc-col:focus-visible::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  z-index: 5;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--text);
+  box-shadow: var(--shadow);
+  color: var(--surface);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  text-align: left;
+  white-space: pre;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+.rp-vc-cols .rp-vc-col:first-child:hover::after,
+.rp-vc-cols .rp-vc-col:first-child:focus-visible::after {
+  left: 0;
+  transform: none;
+}
+
+.rp-vc-cols .rp-vc-col:last-child:hover::after,
+.rp-vc-cols .rp-vc-col:last-child:focus-visible::after {
+  right: 0;
+  left: auto;
+  transform: none;
+}
+
+.rp-vc-x {
+  display: grid;
+  margin: 6px 0 0 70px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  text-align: center;
+}
+
+.rp-vc-x span {
+  overflow: visible;
+  white-space: nowrap;
+}
+
+.rp-hc {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rp-hc li {
+  display: grid;
+  grid-template-columns: minmax(70px, 9rem) minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  font-size: 0.85rem;
+}
+
+.rp-hc-l {
+  overflow: hidden;
+  color: var(--text-2);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rp-hc-b {
+  display: block;
+  height: 14px;
+}
+
+.rp-hc-b i {
+  display: block;
+  min-width: 2px;
+  height: 100%;
+  border-radius: 0 4px 4px 0;
+}
+
+.rp-hc-v {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* ---------- the year-by-month table (the Year column stays in place) ---------- */
+
+table.ui-table.rp-xtab th,
+table.ui-table.rp-xtab td {
+  padding-right: 8px;
+  padding-left: 8px;
+}
+
+table.ui-table.rp-xtab tbody th[scope="row"] {
+  font-weight: 700;
+}
+
+table.ui-table.rp-xtab td.tot {
+  font-weight: 700;
+}

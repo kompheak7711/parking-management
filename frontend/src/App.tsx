@@ -91,6 +91,7 @@ import { InvoicesPage } from "./invoices/InvoicesPage";
 import { PaymentsPage } from "./payments/PaymentsPage";
 import { type HomeApi, HomeScreen } from "./home/HomeScreen";
 import { reportsApi } from "./reportsClient";
+import { type ReportApi, ReportsPage } from "./reports/ReportsPage";
 import {
   type HistoryApi,
   historyApi as historyClient,
@@ -128,7 +129,7 @@ import {
 } from "./customerLedgerClient";
 import { type Language, storeLanguage, storedLanguage } from "./signInText";
 import { AppShell } from "./shell/AppShell";
-import { ComingSoon, NoAccess, PropertyNeeded } from "./shell/pages";
+import { NoAccess, PropertyNeeded } from "./shell/pages";
 import { openPageInAddress, useHashPage } from "./shell/useHashPage";
 import type { CustomerCommandGate } from "./customers/commands";
 import { CustomersPage } from "./customers/CustomersPage";
@@ -173,6 +174,7 @@ export interface AppProps {
   homeApi?: HomeApi;
   historyApi?: HistoryApi;
   historyExportApi?: HistoryExportApi;
+  reportApi?: ReportApi;
   healthApi?: HealthApi;
   approvalsApi?: ApprovalsApi;
   draftDecisionApi?: DraftDecisionApi;
@@ -632,6 +634,7 @@ export function App({
   homeApi = reportsApi,
   historyApi = historyClient,
   historyExportApi = reportsApi,
+  reportApi = reportsApi,
   healthApi = healthClient,
   dueDaysApi = dueDaysClient,
   approvalsApi = approvalsClient,
@@ -1957,7 +1960,19 @@ export function App({
         data-page="reports"
         hidden={!shown("reports")}
       >
-        <ComingSoon language={language} step="V1-057" />
+        {propertyId === "" && propertyConfiguration === null && (
+          <PropertyNeeded language={language} />
+        )}
+        <ReportsPage
+          active={shown("reports")}
+          api={reportApi}
+          capabilities={capabilities}
+          language={language}
+          now={now}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+          today={todayInPhnomPenh()}
+          units={unitApi ?? defaultUnitApi}
+        />
       </div>
       <div
         className="shell-page"

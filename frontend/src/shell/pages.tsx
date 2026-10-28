@@ -9,10 +9,6 @@ const TEXT = {
     "This screen is being rebuilt to the new design. It comes in step {0}.",
     "អេក្រង់នេះកំពុងរៀបចំឡើងវិញតាមការរចនាថ្មី។ វានឹងមកនៅជំហាន {0}។",
   ],
-  coming_reports: [
-    "Reports come with V1-057, after the screen rebuild.",
-    "របាយការណ៍នឹងមកជាមួយ V1-057 ក្រោយការរៀបចំអេក្រង់ឡើងវិញ។",
-  ],
   property_needed: [
     "This screen needs the Property. Open Settings, load the Property under Business configuration, and come back.",
     "អេក្រង់នេះត្រូវការអគារ។ បើកការកំណត់ ផ្ទុកអគារ នៅផ្នែកការកំណត់អាជីវកម្ម ហើយត្រឡប់មកវិញ។",
@@ -44,11 +40,7 @@ export function ComingSoon({
   return (
     <div className="shell-notice info" role="note">
       <Icon name="info" />
-      <p>
-        {step === "V1-057"
-          ? translate(language, "coming_reports")
-          : translate(language, "coming", step)}
-      </p>
+      <p>{translate(language, "coming", step)}</p>
     </div>
   );
 }
