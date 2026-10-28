@@ -43,6 +43,12 @@ export interface LeaseServiceTermResource {
   terms_reference: string;
 }
 
+/** A person who moves in with the Lease (DL-102: planned on the draft or added later). */
+export interface PlannedOccupantResource {
+  customer_id: string;
+  customer_name: string;
+}
+
 export interface LeaseResource {
   lease_id: string;
   property_id: string;
@@ -64,6 +70,7 @@ export interface LeaseResource {
   pet_description: string | null;
   security_deposit_id: string | null;
   planned_occupant_customer_ids: string[];
+  planned_occupants: PlannedOccupantResource[];
   service_terms: LeaseServiceTermResource[];
   signers: LeaseSignerResource[];
   occupancies: OccupancyResource[];
@@ -244,6 +251,18 @@ export interface LeaseMoveInSource {
   reason: string;
 }
 
+/**
+ * Add occupant (DL-102): before the move-in the person is planned (no Occupancy and no date);
+ * after it they get their own Occupancy from their own move-in date.
+ */
+export interface LeaseOccupantSource {
+  event_id: string;
+  customer_id: string;
+  occupancy_id: string | null;
+  move_in_date: string | null;
+  reason: string;
+}
+
 export interface MoveInResult {
   event_id: string;
   property_id: string;
@@ -307,6 +326,11 @@ export interface LeaseApi {
   recordMoveIn: (
     lease: LeaseResource,
     source: LeaseMoveInSource,
+    idempotencyKey: string,
+  ) => Promise<LeaseResource>;
+  addOccupant: (
+    lease: LeaseResource,
+    source: LeaseOccupantSource,
     idempotencyKey: string,
   ) => Promise<LeaseResource>;
   completeMoveIn: (
@@ -574,6 +598,14 @@ export const leaseApi: LeaseApi = {
   recordMoveIn: (value, source, key) =>
     leaseCommand(
       `/api/v1/leases/${encodeURIComponent(value.lease_id)}/move-in`,
+      "POST",
+      source,
+      key,
+      value.version,
+    ),
+  addOccupant: (value, source, key) =>
+    leaseCommand(
+      `/api/v1/leases/${encodeURIComponent(value.lease_id)}/occupants`,
       "POST",
       source,
       key,

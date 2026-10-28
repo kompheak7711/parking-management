@@ -49,6 +49,7 @@ from property_rental.lease import (
 from property_rental.lease_enforcement import NONPAYMENT_READ
 from property_rental.lease_termination import TerminationBasis, TerminationContext
 from property_rental.move_in import (
+    AddLeaseOccupantCommand,
     CompleteMoveInCommand,
     MoveInAuthorizationError,
     MoveInConflictError,
@@ -99,6 +100,14 @@ class OccupancyResource:
     move_in_date: date
     move_out_date: date | None
     version: int
+
+
+@dataclass(frozen=True, slots=True)
+class PlannedOccupantResource:
+    """A person who moves in with the Lease (the draft's list and Add occupant, DL-102)."""
+
+    customer_id: UUID
+    customer_name: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -195,6 +204,7 @@ class LeaseResource:
     pet_description: str | None
     security_deposit_id: UUID | None = None
     planned_occupant_customer_ids: tuple[UUID, ...] = ()
+    planned_occupants: tuple[PlannedOccupantResource, ...] = ()
     service_terms: tuple[LeaseServiceTermResource, ...] = ()
     signers: tuple[LeaseSignerResource, ...] = ()
     occupancies: tuple[OccupancyResource, ...] = ()
@@ -286,6 +296,14 @@ class LeaseResourceFlow(Protocol):
         self,
         property_id: UUID,
         command: RecordLeaseMoveInCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> LeaseResource: ...
+
+    def add_occupant(
+        self,
+        property_id: UUID,
+        command: AddLeaseOccupantCommand,
         *,
         actor: AuthenticatedActor,
     ) -> LeaseResource: ...
@@ -416,6 +434,17 @@ class UnavailableLeaseResourceFlow:
         self._raise()
         raise AssertionError
 
+    def add_occupant(
+        self,
+        property_id: UUID,
+        command: AddLeaseOccupantCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> LeaseResource:
+        del property_id, command, actor
+        self._raise()
+        raise AssertionError
+
 
 def _encode_cursor(created_at: datetime, lease_id: UUID) -> str:
     raw = json.dumps([created_at.isoformat(), str(lease_id)]).encode()
@@ -474,6 +503,15 @@ class PostgresLeaseResourceFlow:
             SELECT id,'lease.move_in',occurred_at,reason,actor_id,reservation_id::text,
                    '/api/v1/leases/'||lease_id::text||'#timeline-'||id::text
             FROM app.move_in_events WHERE lease_id=%s
+            UNION ALL
+            -- V1-060 B6: the move-in of a Lease signed with its outcome record (DL-066).
+            SELECT id,'lease.move_in',occurred_at,reason,actor_id,id::text,
+                   '/api/v1/leases/'||lease_id::text||'#timeline-'||id::text
+            FROM app.lease_move_ins WHERE lease_id=%s
+            UNION ALL
+            SELECT id,'lease.occupant_added',occurred_at,reason,actor_id,id::text,
+                   '/api/v1/leases/'||lease_id::text||'#timeline-'||id::text
+            FROM app.lease_occupant_additions WHERE lease_id=%s
             UNION ALL
             SELECT id,'lease.termination_notice',occurred_at,notice_text,actor_id,id::text,
                    '/api/v1/leases/'||lease_id::text||'#timeline-'||id::text
@@ -631,12 +669,7 @@ class PostgresLeaseResourceFlow:
         rows = connection.execute(
             self._timeline_select,
             (
-                lease_id,
-                lease_id,
-                lease_id,
-                lease_id,
-                lease_id,
-                lease_id,
+                *(lease_id,) * 8,
                 cursor_time,
                 cursor_time,
                 cursor_id,
@@ -767,6 +800,27 @@ class PostgresLeaseResourceFlow:
                     if draft_source is None or draft_source[0] is None
                     else tuple(UUID(str(value)) for value in cast(list[object], draft_source[0]))
                 )
+                # V1-060 B6 (DL-102): Add occupant before the move-in plans one more person.
+                for row in connection.execute(
+                    "SELECT customer_id FROM app.lease_occupant_additions "
+                    "WHERE lease_id=%s AND occupancy_id IS NULL ORDER BY occurred_at,id",
+                    (lease_id,),
+                ).fetchall():
+                    added = UUID(str(row[0]))
+                    if added not in planned_occupants:
+                        planned_occupants = (*planned_occupants, added)
+                names = {
+                    UUID(str(row[0])): str(row[1])
+                    for row in connection.execute(
+                        "SELECT id,legal_name FROM app.customers WHERE id = ANY(%s)",
+                        (list(planned_occupants),),
+                    ).fetchall()
+                }
+                planned_people = tuple(
+                    PlannedOccupantResource(customer_id=value, customer_name=names[value])
+                    for value in planned_occupants
+                    if value in names
+                )
                 security_deposit_id = (
                     None
                     if draft_source is None or draft_source[1] is None
@@ -785,6 +839,7 @@ class PostgresLeaseResourceFlow:
             timeline_next_cursor=timeline_page.next_cursor,
             security_deposit_id=security_deposit_id,
             planned_occupant_customer_ids=planned_occupants,
+            planned_occupants=planned_people,
             service_terms=service_terms,
         )
 
@@ -879,6 +934,17 @@ class PostgresLeaseResourceFlow:
     ) -> LeaseResource:
         service = PostgresMoveInService(self._database_url, property_id, self._actor_id(actor))
         service.record_lease_move_in(command, actor=actor)
+        return self.get(command.lease_id)
+
+    def add_occupant(
+        self,
+        property_id: UUID,
+        command: AddLeaseOccupantCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> LeaseResource:
+        service = PostgresMoveInService(self._database_url, property_id, self._actor_id(actor))
+        service.add_lease_occupant(command, actor=actor)
         return self.get(command.lease_id)
 
 
@@ -1053,6 +1119,18 @@ class LeaseMoveInSource(BaseModel):
     event_id: UUID
     actual_move_in_date: date
     occupants: Annotated[list[MoveInOccupantSource], Field(min_length=1, max_length=20)]
+    reason: Annotated[str, Field(min_length=1, max_length=500)]
+
+
+class LeaseOccupantSource(BaseModel):
+    """V1-060 B6 (DL-102): Add occupant. Before the move-in, no Occupancy and no date."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    event_id: UUID
+    customer_id: UUID
+    occupancy_id: UUID | None = None
+    move_in_date: date | None = None
     reason: Annotated[str, Field(min_length=1, max_length=500)]
 
 
@@ -1640,6 +1718,41 @@ def create_lease_router(
                         MoveInOccupant(value.occupancy_id, value.customer_id)
                         for value in source.occupants
                     ),
+                    reason=source.reason,
+                    authorization_reference=MOVE_IN_CAPABILITY,
+                ),
+                actor=actor,
+            )
+        except Exception as exc:
+            raise _translate(exc) from exc
+        response.headers["ETag"] = f'"{resource.version}"'
+        return {"data": _body(resource, actor), "meta": {"request_id": request.state.request_id}}
+
+    @router.post("/leases/{lease_id}/occupants")
+    def add_lease_occupant(
+        lease_id: UUID,
+        source: LeaseOccupantSource,
+        request: Request,
+        response: Response,
+        idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
+        if_match: Annotated[str | None, Header(alias="If-Match")] = None,
+    ) -> dict[str, object]:
+        """V1-060 B6 (DL-102): Add occupant on a draft or a running Lease (BR-OCC-004)."""
+        actor = _require_actor(request, resolver)
+        try:
+            current = flow.get(lease_id)
+            _require(actor, current.property_id, MOVE_IN_CAPABILITY)
+            require_browser_mutation(request, settings)
+            resource = flow.add_occupant(
+                current.property_id,
+                AddLeaseOccupantCommand(
+                    idempotency_key=idempotency_key,
+                    event_id=source.event_id,
+                    lease_id=lease_id,
+                    expected_lease_version=_version(if_match),
+                    customer_id=source.customer_id,
+                    occupancy_id=source.occupancy_id,
+                    move_in_date=source.move_in_date,
                     reason=source.reason,
                     authorization_reference=MOVE_IN_CAPABILITY,
                 ),

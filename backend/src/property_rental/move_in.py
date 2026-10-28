@@ -138,7 +138,40 @@ class RecordLeaseMoveInCommand:
         _require_nonblank(self.authorization_reference, "authorization_reference")
 
 
-def move_in_request_digest(command: CompleteMoveInCommand | RecordLeaseMoveInCommand) -> str:
+@dataclass(frozen=True, slots=True)
+class AddLeaseOccupantCommand:
+    """V1-060 B6 (DL-102): one more person lives in the Unit of a draft or running Lease.
+
+    Before the move-in the person is planned (no Occupancy and no date) and moves in with the
+    Lease; after it their own Occupancy starts on ``move_in_date`` (BR-OCC-004).
+    """
+
+    idempotency_key: UUID
+    event_id: UUID
+    lease_id: UUID
+    expected_lease_version: int
+    customer_id: UUID
+    occupancy_id: UUID | None
+    move_in_date: date | None
+    reason: str
+    authorization_reference: str
+
+    def __post_init__(self) -> None:
+        for field in ("idempotency_key", "event_id", "lease_id", "customer_id"):
+            _require_identity(getattr(self, field), field)
+        if self.occupancy_id is not None:
+            _require_identity(self.occupancy_id, "occupancy_id")
+        if (self.occupancy_id is None) != (self.move_in_date is None):
+            raise ValueError("an Occupancy and its move-in date come together")
+        if self.expected_lease_version < 1:
+            raise ValueError("expected versions must be positive")
+        _require_nonblank(self.reason, "reason")
+        _require_nonblank(self.authorization_reference, "authorization_reference")
+
+
+def move_in_request_digest(
+    command: CompleteMoveInCommand | RecordLeaseMoveInCommand | AddLeaseOccupantCommand,
+) -> str:
     """Bind stable replay identity to every move-in input."""
 
     payload = asdict(command)
@@ -309,4 +342,58 @@ class PostgresMoveInService:
             raise MoveInServiceUnavailableError("Move-in persistence is unavailable") from exc
         if row is None or not isinstance(row[0], dict):
             raise MoveInServiceUnavailableError("Move-in command returned no result")
+        return cast(dict[str, object], row[0])
+
+    def add_lease_occupant(
+        self, command: AddLeaseOccupantCommand, *, actor: AuthenticatedActor
+    ) -> dict[str, object]:
+        """Add a planned occupant, or an Occupancy with its own move-in date (DL-102)."""
+        try:
+            authenticated_actor_id = UUID(actor.actor_id)
+        except ValueError as exc:
+            raise MoveInAuthorizationError("Move-in actor is invalid") from exc
+        if authenticated_actor_id != self.actor_id:
+            raise MoveInAuthorizationError("Move-in actor does not match the command")
+        if command.authorization_reference != MOVE_IN_CAPABILITY or not is_authorized(
+            actor,
+            AuthorizationRequirement(
+                capability=MOVE_IN_CAPABILITY, property_id=str(self.property_id)
+            ),
+        ):
+            raise MoveInAuthorizationError("Move-in capability is not authorized")
+        try:
+            with psycopg.connect(self.database_url) as connection:
+                row = connection.execute(
+                    "SELECT app.add_lease_occupant(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                    (
+                        self.property_id,
+                        command.idempotency_key,
+                        move_in_request_digest(command),
+                        command.event_id,
+                        command.lease_id,
+                        command.expected_lease_version,
+                        command.customer_id,
+                        command.occupancy_id,
+                        command.move_in_date,
+                        command.reason,
+                        command.authorization_reference,
+                        self.actor_id,
+                    ),
+                ).fetchone()
+        except psycopg.Error as exc:
+            if exc.sqlstate == "P0002":
+                raise MoveInNotFoundError("Occupant addition source was not found") from exc
+            if exc.sqlstate == "40001":
+                raise MoveInVersionConflictError(
+                    "Occupant addition version precondition was not met"
+                ) from exc
+            if exc.sqlstate in {"23505", "23P01"}:
+                raise MoveInConflictError("Occupant addition conflicted") from exc
+            if exc.sqlstate in {"22023", "22P02", "23514", "55000"}:
+                raise MoveInInvalidError("Occupant addition is invalid") from exc
+            raise MoveInServiceUnavailableError(
+                "Occupant addition persistence is unavailable"
+            ) from exc
+        if row is None or not isinstance(row[0], dict):
+            raise MoveInServiceUnavailableError("Occupant addition returned no result")
         return cast(dict[str, object], row[0])

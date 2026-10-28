@@ -138,6 +138,46 @@ const TEXT = {
     "Occupants who did not sign owe nothing. Each one starts on the real move-in date.",
     "អ្នករស់នៅដែលមិនបានចុះហត្ថលេខាមិនជំពាក់អ្វីទេ។ ម្នាក់ៗចាប់ផ្តើមនៅថ្ងៃចូលស្នាក់នៅពិត។",
   ],
+  // V1-060 B6 (DL-102): Add occupant (DESIGN.md 0.15).
+  add_occ: ["Add occupant", "បន្ថែមអ្នករស់នៅ"],
+  occ_tag: ["Occupant", "អ្នករស់នៅ"],
+  in_pending: [
+    "Moves in with the Lease; the real date is recorded at move-in.",
+    "ចូលស្នាក់នៅជាមួយកិច្ចសន្យា; កាលបរិច្ឆេទពិតត្រូវកត់ត្រាពេលចូលស្នាក់នៅ។",
+  ],
+  ao_title: ["Add occupant · {0}", "បន្ថែមអ្នករស់នៅ · {0}"],
+  ao_name: ["Name", "ឈ្មោះ"],
+  ao_name_help: [
+    "An existing Customer, or a new one. The person does not sign and owes nothing.",
+    "អតិថិជនដែលមានស្រាប់ ឬអតិថិជនថ្មី។ អ្នកនេះមិនចុះហត្ថលេខា និងមិនជំពាក់អ្វីទេ។",
+  ],
+  ao_none: [
+    "No other active Customer to add. Add the person as a Customer first.",
+    "គ្មានអតិថិជនសកម្មផ្សេងទៀតដើម្បីបន្ថែមទេ។ សូមបន្ថែមអ្នកនោះជាអតិថិជនជាមុនសិន។",
+  ],
+  ao_name_req: ["Choose the person.", "សូមជ្រើសរើសអ្នកនោះ។"],
+  ao_loading: ["Reading the Customers…", "កំពុងអានអតិថិជន…"],
+  ao_failed: [
+    "The Customers could not be read just now. Close and try again.",
+    "មិនអាចអានអតិថិជនបានទេឥឡូវនេះ។ សូមបិទ ហើយព្យាយាមម្តងទៀត។",
+  ],
+  ao_date: ["Move-in date", "កាលបរិច្ឆេទចូលស្នាក់នៅ"],
+  ao_date_help: [
+    "The day the person actually moved in, between {0} and {1}.",
+    "ថ្ងៃដែលអ្នកនោះចូលស្នាក់នៅពិតប្រាកដ ចន្លោះ {0} និង {1}។",
+  ],
+  ao_date_err: [
+    "Enter a date between {0} and {1}.",
+    "សូមបញ្ចូលកាលបរិច្ឆេទចន្លោះ {0} និង {1}។",
+  ],
+  ao_pending_note: [
+    "Nobody has moved in yet, so this person is listed now and gets the real date when the move-in is recorded.",
+    "មិនទាន់មាននរណាចូលស្នាក់នៅទេ ដូច្នេះអ្នកនេះត្រូវបានរាយឈ្មោះឥឡូវ ហើយទទួលកាលបរិច្ឆេទពិតពេលកត់ត្រាការចូលស្នាក់នៅ។",
+  ],
+  ao_saved: [
+    "{0} added as an occupant of {1}.",
+    "បានបន្ថែម {0} ជាអ្នករស់នៅបន្ទប់ {1}។",
+  ],
   rent_t: ["Rent and services", "ថ្លៃឈ្នួល និងសេវា"],
   initial_rent: ["Initial Rent", "ថ្លៃឈ្នួលដំបូង"],
   prorated: ["{0} × {1} ÷ {2} days = {3}.", "{0} × {1} ÷ {2} ថ្ងៃ = {3}។"],
@@ -236,6 +276,7 @@ const TEXT = {
   "e_lease.cancel": ["Draft cancelled", "សេចក្តីព្រាងបានលុបចោល"],
   "e_lease.terminate": ["Lease terminated", "កិច្ចសន្យាបានបញ្ចប់មុនកំណត់"],
   "e_lease.move_in": ["Move-in recorded", "បានកត់ត្រាការចូលស្នាក់នៅ"],
+  "e_lease.occupant_added": ["Occupant added", "បានបន្ថែមអ្នករស់នៅ"],
   "e_lease.termination_notice": [
     "Termination notice recorded",
     "បានកត់ត្រាការជូនដំណឹងបញ្ចប់",

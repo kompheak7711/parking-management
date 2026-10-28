@@ -28,7 +28,12 @@ from property_rental.lease_api import (
     LeaseTimelinePage,
     LeaseTimelineVisibility,
 )
-from property_rental.move_in import CompleteMoveInCommand, MoveInSnapshot, RecordLeaseMoveInCommand
+from property_rental.move_in import (
+    AddLeaseOccupantCommand,
+    CompleteMoveInCommand,
+    MoveInSnapshot,
+    RecordLeaseMoveInCommand,
+)
 
 
 def actor(property_id: UUID, *capabilities: str) -> AuthenticatedActor:
@@ -76,6 +81,7 @@ class InMemoryLeaseFlow:
     move_in_command: CompleteMoveInCommand | None = None
     cancel_command: LeaseCancelCommand | None = None
     record_move_in_command: RecordLeaseMoveInCommand | None = None
+    occupant_command: AddLeaseOccupantCommand | None = None
     visibilities: list[LeaseTimelineVisibility] = field(default_factory=list)
 
     def list(
@@ -282,6 +288,20 @@ class InMemoryLeaseFlow:
     ) -> LeaseResource:
         del property_id, actor
         self.record_move_in_command = command
+        current = self.get(command.lease_id)
+        value = replace(current, version=current.version + 1)
+        self.resources[value.lease_id] = value
+        return value
+
+    def add_occupant(
+        self,
+        property_id: UUID,
+        command: AddLeaseOccupantCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> LeaseResource:
+        del property_id, actor
+        self.occupant_command = command
         current = self.get(command.lease_id)
         value = replace(current, version=current.version + 1)
         self.resources[value.lease_id] = value
@@ -763,6 +783,56 @@ def test_cancel_draft_and_lease_move_in_routes_need_capability_and_version() -> 
         (occupancy_id, occupant_id)
     ]
     assert command.authorization_reference == "reservations.complete"
+
+
+def test_add_occupant_route_needs_the_move_in_capability_version_and_a_dated_occupancy() -> None:
+    """V1-060 B6 (DL-102): Add occupant passes the person, and after the move-in their own
+    Occupancy with its date; an Occupancy without a date is refused before the database."""
+    property_id = uuid4()
+    signed = replace(resource(property_id, lease_status=LeaseStatus.SIGNED), version=4)
+    flow = InMemoryLeaseFlow({signed.lease_id: signed})
+    path = f"/api/v1/leases/{signed.lease_id}/occupants"
+    friend = uuid4()
+    occupancy_id = uuid4()
+    body = {
+        "event_id": str(uuid4()),
+        "customer_id": str(friend),
+        "occupancy_id": str(occupancy_id),
+        "move_in_date": "2026-10-20",
+        "reason": "Sok Dara's friend moved in on 20/10/2026",
+    }
+
+    # Without the move-in capability the Lease is hidden, as on the other Lease commands.
+    reader = client(flow, actor(property_id, "leases.read", "leases.draft"))
+    assert reader.post(path, headers=headers(version=4), json=body).status_code == 404
+    assert [flow.occupant_command] == [None]
+
+    api = client(flow, actor(property_id, "leases.read", "reservations.complete"))
+    assert api.post(path, headers=headers(), json=body).status_code == 428
+    undated = {key: value for key, value in body.items() if key != "move_in_date"}
+    assert api.post(path, headers=headers(version=4), json=undated).status_code == 422
+    assert api.post(path, headers=headers(version=4), json={**body, "extra": 1}).status_code == 422
+    assert [flow.occupant_command] == [None]
+
+    added = api.post(path, headers=headers(version=4), json=body)
+    assert added.status_code == 200, added.text
+    assert added.headers["etag"] == '"5"'
+    command = flow.occupant_command
+    assert command is not None
+    assert (command.lease_id, command.expected_lease_version) == (signed.lease_id, 4)
+    assert (command.customer_id, command.occupancy_id) == (friend, occupancy_id)
+    assert command.move_in_date == date(2026, 10, 20)
+    assert command.authorization_reference == "reservations.complete"
+
+    # Before the move-in the person is planned: no Occupancy and no date.
+    planned = api.post(
+        path,
+        headers=headers(version=5),
+        json={"event_id": str(uuid4()), "customer_id": str(friend), "reason": "Moves in too"},
+    )
+    assert planned.status_code == 200, planned.text
+    assert flow.occupant_command is not None
+    assert (flow.occupant_command.occupancy_id, flow.occupant_command.move_in_date) == (None, None)
 
 
 def test_an_end_date_that_is_not_a_month_end_answers_its_own_code() -> None:

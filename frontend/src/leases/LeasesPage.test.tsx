@@ -33,7 +33,7 @@ import {
   type LettersApi,
   type TerminationNotice,
 } from "../letters/lettersClient";
-import { LeasesPage } from "./LeasesPage";
+import { LeasesPage, type LeasesPageProps } from "./LeasesPage";
 import { addDays, endingLimit, initialRent } from "./leasesData";
 
 afterEach(() => {
@@ -72,6 +72,7 @@ function lease(
     pet_description: null,
     security_deposit_id: `deposit-${unit}`,
     planned_occupant_customer_ids: [],
+    planned_occupants: [],
     service_terms: [],
     signers: [
       {
@@ -346,6 +347,7 @@ function show(
     }),
   },
   signingClients: ReturnType<typeof signing> = signing(),
+  extra: Partial<LeasesPageProps> = {},
 ) {
   const services = {
     read: vi.fn<ServiceSettingsApi["read"]>().mockResolvedValue({
@@ -379,6 +381,7 @@ function show(
       metersApi={metersClient}
       settlementApi={signingClients}
       paymentsApi={signingClients.payments}
+      {...extra}
     />,
   );
 }
@@ -2837,5 +2840,359 @@ describe("New Lease and Renew", () => {
     await waitFor(() => {
       expect(window.location.hash).toBe("#/leases/lease-U101");
     });
+  });
+});
+
+describe("Add occupant (DL-102)", () => {
+  function people(
+    ...items: [string, string][]
+  ): Pick<CustomerApi, "get" | "list"> {
+    return {
+      get: vi.fn<CustomerApi["get"]>().mockRejectedValue(new Error("no")),
+      list: vi.fn<CustomerApi["list"]>().mockResolvedValue({
+        items: items.map(([customer_id, legal_name]) => ({
+          customer_id,
+          legal_name,
+          active: true,
+          relationship_indicators: [],
+        })),
+        next_cursor: null,
+        can_manage: false,
+      }),
+    };
+  }
+
+  it("TEST-FE-1025 after the move-in a friend gets their own move-in date: the date is checked, Try again sends the same Occupancy and key, and the page says who was added", async () => {
+    window.location.hash = "#/leases/lease-U101";
+    const first = addDays(today, -199);
+    const added = vi
+      .fn<LeaseApi["addOccupant"]>()
+      .mockRejectedValueOnce(new LeaseUnavailableError())
+      .mockImplementationOnce((value) =>
+        Promise.resolve({ ...value, version: value.version + 1 }),
+      );
+    show(
+      api({
+        get: vi.fn().mockResolvedValue(lease("U101")),
+        addOccupant: added,
+      }),
+      deposits(),
+      null,
+      undefined,
+      people(
+        ["customer-U101", "Tenant U101"],
+        ["customer-friend", "Chan Sopheap"],
+      ),
+    );
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Add occupant" }),
+    );
+    const dialog = screen.getByRole("dialog", {
+      name: "Add occupant · U101",
+    });
+    const name = within(dialog).getByLabelText(/Name/);
+    expect(
+      await within(name).findByRole("option", { name: "Chan Sopheap" }),
+    ).toBeInTheDocument();
+    // The Primary Tenant already lives there.
+    expect(
+      within(name).queryByRole("option", { name: "Tenant U101" }),
+    ).toBeNull();
+    expect(within(dialog).getByLabelText(/Move-in date/)).toHaveValue(
+      dayText(today),
+    );
+    expect(dialog).toHaveTextContent(
+      `The day the person actually moved in, between ${dayText(first)} and ${dayText(today)}.`,
+    );
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(dialog).toHaveTextContent("Choose the person.");
+    fireEvent.change(name, { target: { value: "customer-friend" } });
+    fireEvent.change(within(dialog).getByLabelText(/Move-in date/), {
+      target: { value: addDays(first, -1) },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(dialog).toHaveTextContent(
+      `Enter a date between ${dayText(first)} and ${dayText(today)}.`,
+    );
+    expect(added).not.toHaveBeenCalled();
+
+    const day = addDays(today, -2);
+    fireEvent.change(within(dialog).getByLabelText(/Move-in date/), {
+      target: { value: day },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    fireEvent.click(
+      await within(dialog).findByRole("button", { name: "Try again" }),
+    );
+    expect(
+      await screen.findByText("Chan Sopheap added as an occupant of U101."),
+    ).toBeInTheDocument();
+    const sent = added.mock.calls[0]?.[1];
+    expect(sent).toMatchObject({
+      customer_id: "customer-friend",
+      move_in_date: day,
+      reason: `Chan Sopheap moved in on ${dayText(day)}`,
+    });
+    expect(sent?.occupancy_id).toMatch(/^[0-9a-f-]{36}$/);
+    expect(added.mock.calls[1]?.[1]).toEqual(sent);
+    expect(added.mock.calls[1]?.[2]).toBe(added.mock.calls[0]?.[2]);
+    expect(added.mock.calls[1]?.[0].version).toBe(3);
+  });
+
+  it("TEST-FE-1026 before the move-in the person is planned with no date, and the Occupants box lists who moves in with the Lease", async () => {
+    window.location.hash = "#/leases/lease-U302";
+    const planned = lease("U302", {
+      start_date: addDays(today, 10),
+      end_date: addDays(today, 375),
+      occupancies: [],
+      planned_occupant_customer_ids: ["customer-U302"],
+      planned_occupants: [
+        { customer_id: "customer-U302", customer_name: "Tenant U302" },
+      ],
+    });
+    let current = planned;
+    const added = vi
+      .fn<LeaseApi["addOccupant"]>()
+      .mockImplementation((value, source) => {
+        current = {
+          ...value,
+          version: value.version + 1,
+          planned_occupant_customer_ids: [
+            ...value.planned_occupant_customer_ids,
+            source.customer_id,
+          ],
+          planned_occupants: [
+            ...value.planned_occupants,
+            { customer_id: source.customer_id, customer_name: "Sok Lina" },
+          ],
+        };
+        return Promise.resolve(current);
+      });
+    show(
+      api({
+        get: vi.fn(() => Promise.resolve(current)),
+        addOccupant: added,
+      }),
+      deposits(),
+      null,
+      undefined,
+      people(["customer-U302", "Tenant U302"], ["customer-lina", "Sok Lina"]),
+    );
+
+    const box = (
+      await screen.findByRole("heading", { name: "Occupants" })
+    ).closest("section");
+    if (box === null) throw new Error("no Occupants box");
+    expect(box).toHaveTextContent(
+      "Tenant U302Primary TenantMoves in with the Lease; the real date is recorded at move-in.",
+    );
+    fireEvent.click(within(box).getByRole("button", { name: "Add occupant" }));
+    const dialog = screen.getByRole("dialog", {
+      name: "Add occupant · U302",
+    });
+    expect(dialog).toHaveTextContent(
+      "Nobody has moved in yet, so this person is listed now and gets the real date when the move-in is recorded.",
+    );
+    expect(within(dialog).queryByLabelText(/Move-in date/)).toBeNull();
+    const name = within(dialog).getByLabelText(/Name/);
+    await within(name).findByRole("option", { name: "Sok Lina" });
+    expect(
+      within(name).queryByRole("option", { name: "Tenant U302" }),
+    ).toBeNull();
+    fireEvent.change(name, { target: { value: "customer-lina" } });
+    fireEvent.change(within(dialog).getByLabelText("Note (optional)"), {
+      target: { value: "Her sister" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+
+    expect(
+      await screen.findByText("Sok Lina added as an occupant of U302."),
+    ).toBeInTheDocument();
+    expect(added.mock.calls[0]?.[1]).toMatchObject({
+      customer_id: "customer-lina",
+      occupancy_id: null,
+      move_in_date: null,
+      reason: "Her sister",
+    });
+    expect(box).toHaveTextContent(
+      "Sok LinaOccupantMoves in with the Lease; the real date is recorded at move-in.",
+    );
+  });
+
+  it("TEST-FE-1027 Add occupant shows on a draft and a running Lease to someone who records move-ins, and not on a renewal before its move-in, an ended or terminated Lease, after everyone moved out, or without the permissions", async () => {
+    const cases: [
+      Partial<LeaseResource>,
+      ReadonlySet<string> | null,
+      boolean,
+    ][] = [
+      [{ status: "DRAFTED", signed_at: null, occupancies: [] }, null, true],
+      [{}, null, true],
+      [{}, new Set(["reservations.complete", "customers.read"]), true],
+      [{ predecessor_lease_id: "lease-before", occupancies: [] }, null, false],
+      [{ end_date: addDays(today, -1) }, null, false],
+      [
+        {
+          status: "TERMINATED",
+          actual_termination_date: addDays(today, -3),
+        },
+        null,
+        false,
+      ],
+      [
+        {
+          occupancies: lease("U101").occupancies.map((occupancy) => ({
+            ...occupancy,
+            move_out_date: addDays(today, -1),
+          })),
+        },
+        null,
+        false,
+      ],
+      [{}, new Set(["customers.read"]), false],
+      [{}, new Set(["reservations.complete"]), false],
+    ];
+    for (const [extra, capabilities, shown] of cases) {
+      cleanup();
+      window.location.hash = "#/leases/lease-U101";
+      show(
+        api({ get: vi.fn().mockResolvedValue(lease("U101", extra)) }),
+        deposits(),
+        capabilities,
+      );
+      await screen.findByRole("heading", { name: /Lease · U101/ });
+      expect(
+        screen.queryByRole("button", { name: "Add occupant" }) !== null,
+      ).toBe(shown);
+    }
+  });
+
+  it("TEST-FE-1028 Record move-in names the planned people from the Lease without reading each Customer", async () => {
+    window.location.hash = "#/leases/lease-move";
+    const ready = lease("U302", {
+      lease_id: "lease-move",
+      start_date: addDays(today, -3),
+      end_date: addDays(today, 360),
+      signed_at: `${addDays(today, -5)}T03:00:00Z`,
+      occupancies: [],
+      can_move_in: true,
+      planned_occupant_customer_ids: ["customer-U302", "customer-kid"],
+      planned_occupants: [
+        { customer_id: "customer-U302", customer_name: "Tenant U302" },
+        { customer_id: "customer-kid", customer_name: "Kid K" },
+      ],
+    });
+    const get = vi.fn<CustomerApi["get"]>().mockRejectedValue(new Error("no"));
+    show(
+      api({ get: vi.fn().mockResolvedValue(ready) }),
+      deposits(),
+      null,
+      undefined,
+      { get },
+    );
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Record move-in" }),
+    );
+    const dialog = screen.getByRole("dialog", {
+      name: "Record move-in · U302",
+    });
+    expect(
+      within(dialog).getByRole("checkbox", { name: /Kid K/ }),
+    ).toBeChecked();
+    expect(get).not.toHaveBeenCalledWith("customer-kid");
+  });
+
+  it("TEST-FE-1029 New Customer opens the Add Customer form in place of the dialog and Cancel comes back; a failed Customer read and a refused save say so; the History says Occupant added", async () => {
+    window.location.hash = "#/leases/lease-U101";
+    const added = vi
+      .fn<LeaseApi["addOccupant"]>()
+      .mockRejectedValue(new LeaseRequestError());
+    const withHistory = lease("U101", {
+      timeline: [
+        {
+          event_id: "event-occupant",
+          event_kind: "lease.occupant_added",
+          occurred_at: "2026-10-28T03:00:00Z",
+          reason: "Chan Sopheap moved in on 28/10/2026",
+          actor_id: "actor-1",
+          source_reference: null,
+          source_href: null,
+        },
+      ],
+    });
+    show(
+      api({ get: vi.fn().mockResolvedValue(withHistory), addOccupant: added }),
+      deposits(),
+      null,
+      undefined,
+      people(["customer-friend", "Chan Sopheap"]),
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      {
+        customerCreateApi: {} as CustomerApi,
+        customerGate: {
+          actorId: "actor-1",
+          open: true,
+          reserve: vi.fn().mockResolvedValue(true),
+          release: vi.fn().mockResolvedValue(true),
+          setBusy: vi.fn(),
+        },
+      },
+    );
+
+    expect(
+      await screen.findByText("Chan Sopheap moved in on 28/10/2026"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Occupant added")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Add occupant" }));
+    fireEvent.click(screen.getByRole("button", { name: "New Customer" }));
+    expect(
+      screen.getByRole("dialog", { name: "Add Customer" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("dialog", { name: "Add occupant · U101" }),
+    ).toBeNull();
+    const [cancel] = within(
+      screen.getByRole("dialog", { name: "Add Customer" }),
+    ).getAllByRole("button", { name: "Cancel" });
+    if (cancel === undefined) throw new Error("no Cancel button");
+    fireEvent.click(cancel);
+    const dialog = screen.getByRole("dialog", { name: "Add occupant · U101" });
+    const name = within(dialog).getByLabelText(/Name/);
+    await within(name).findByRole("option", { name: "Chan Sopheap" });
+    fireEvent.change(name, { target: { value: "customer-friend" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(
+      await within(dialog).findByText(
+        "The server refused this. Nothing was saved. Check the details, or ask the Owner.",
+      ),
+    ).toBeInTheDocument();
+
+    cleanup();
+    window.location.hash = "#/leases/lease-U101";
+    show(
+      api({ get: vi.fn().mockResolvedValue(lease("U101")) }),
+      deposits(),
+      null,
+      undefined,
+      {
+        get: vi.fn<CustomerApi["get"]>().mockRejectedValue(new Error("no")),
+        list: vi.fn<CustomerApi["list"]>().mockRejectedValue(new Error("down")),
+      },
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Add occupant" }),
+    );
+    expect(
+      await screen.findByText(
+        "The Customers could not be read just now. Close and try again.",
+      ),
+    ).toBeInTheDocument();
   });
 });

@@ -56845,6 +56845,160 @@
       "test_path": "backend/tests/test_audit_api.py",
       "status": "implemented",
       "notes": "V1-060 B6: an action or entity type the app wrote itself (lower-case words joined by dots or underscores, at most 128 characters) shows even when longer than 32 characters; a token-shaped value is still refused."
+    },
+    {
+      "test_id": "test_a_person_added_after_the_move_in_gets_their_own_occupancy_and_history_line",
+      "upstream_ids": [
+        "DL-102",
+        "BR-OCC-001",
+        "BR-OCC-004",
+        "BR-OCC-006"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_occupant_addition_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 B6: the owner's case. A tenant moved in alone; a friend added later gets an own Occupancy from an own move-in date, the same key replays the same answer, the Lease History shows the move-in and the addition, and the friend becomes no Signer."
+    },
+    {
+      "test_id": "test_add_occupant_after_the_move_in_keeps_the_dates_and_people_rules",
+      "upstream_ids": [
+        "DL-102",
+        "BR-OCC-004",
+        "BR-OCC-007"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_occupant_addition_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 B6: after the move-in a date before the Lease's move-in or after today, no date, the Primary Tenant and a deactivated Customer are refused; an old version is a version conflict, the same key with other values is refused, a person already living there is not added twice."
+    },
+    {
+      "test_id": "test_a_person_added_before_the_move_in_is_planned_and_moves_in_with_the_lease",
+      "upstream_ids": [
+        "DL-102",
+        "BR-OCC-004",
+        "BR-LEASE-016"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_occupant_addition_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 B6: on a draft and on a signed Lease before its move-in the person is planned with no date (a date or a second planning is refused), the Lease lists the planned names, and Record move-in gives everyone the Lease's move-in date."
+    },
+    {
+      "test_id": "test_add_occupant_is_refused_on_a_renewal_without_its_own_move_in_or_a_cancelled_lease",
+      "upstream_ids": [
+        "DL-102",
+        "BR-LEASE-004"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_occupant_addition_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 B6: a renewal draft without its own move-in (its earlier Lease's Occupancies stay open) and a cancelled draft refuse Add occupant."
+    },
+    {
+      "test_id": "test_the_addition_store_is_append_only_and_written_only_by_the_definer_function",
+      "upstream_ids": [
+        "DL-102",
+        "SEC-030"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_occupant_addition_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 B6: app.add_lease_occupant is SECURITY DEFINER with a fixed search_path and runs only for the runtime role; the runtime role reads but never writes the additions table, and UPDATE, DELETE and TRUNCATE are refused."
+    },
+    {
+      "test_id": "test_add_occupant_migration_follows_the_deposit_migration_and_is_forward_only",
+      "upstream_ids": [
+        "DL-102",
+        "TEST-028"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_lease_occupant_addition_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 B6: migration 20270327_246 is the head, follows 20270326_245 and refuses a downgrade."
+    },
+    {
+      "test_id": "test_add_occupant_route_needs_the_move_in_capability_version_and_a_dated_occupancy",
+      "upstream_ids": [
+        "DL-102",
+        "API-038",
+        "BR-OCC-004"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_lease_api.py",
+      "status": "implemented",
+      "notes": "V1-060 B6: POST /leases/{lease_id}/occupants needs reservations.complete (else 404), If-Match (else 428) and a strict body where an Occupancy and its move-in date come together (else 422); it sends the command with the Lease version and answers the new ETag."
+    },
+    {
+      "test_id": "test_add_occupant_command_pairs_the_occupancy_with_its_date_and_checks_authority_first",
+      "upstream_ids": [
+        "DL-102",
+        "BR-OCC-004"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_move_in.py",
+      "status": "implemented",
+      "notes": "V1-060 B6: the Add occupant command needs an Occupancy and its date together, a positive version and a reason; its digest is stable; the actor, the capability and the authorization reference are checked before the database."
+    },
+    {
+      "test_id": "TEST-FE-1025",
+      "upstream_ids": [
+        "DL-102",
+        "BR-OCC-004",
+        "BR-OCC-006",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6: after the move-in Add occupant offers the active Customers not living there, asks the own move-in date between the Lease's move-in and today, keeps one Occupancy id and key on Try again, names the person in the stored reason and says who was added."
+    },
+    {
+      "test_id": "TEST-FE-1026",
+      "upstream_ids": [
+        "DL-102",
+        "BR-OCC-004",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6: before the move-in the Occupants box lists the planned people as moving in with the Lease, and Add occupant plans one more with no date and the typed note."
+    },
+    {
+      "test_id": "TEST-FE-1027",
+      "upstream_ids": [
+        "DL-102",
+        "BR-OCC-004",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6: the Add occupant button shows on a draft and a running Lease to someone who may record move-ins and read Customers, and not on a renewal before its move-in, an ended or terminated Lease, or after everyone moved out."
+    },
+    {
+      "test_id": "TEST-FE-1028",
+      "upstream_ids": [
+        "DL-102",
+        "DL-066",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6: Record move-in names the planned people from the Lease without reading each Customer."
+    },
+    {
+      "test_id": "TEST-FE-1029",
+      "upstream_ids": [
+        "DL-102",
+        "BR-OCC-006",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6: New Customer opens the Add Customer form in place of the Add occupant dialog and Cancel comes back; a refused save and a failed Customer read say so; the Lease History shows Occupant added with its reason."
     }
   ]
 }

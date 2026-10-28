@@ -914,6 +914,8 @@ Every Occupancy record must belong to one Lease.
 An Occupancy record becomes active when the actual Move-in Date is recorded as
 part of the coordinated move-in transition.
 
+Amended by DL-102 (owner, 2026-10-28): a person may be added to a draft or a running Lease. Before the move-in they are planned and move in with the Lease; after it their own Occupancy starts on their own actual move-in date, not before the Lease's move-in date, not after the End Date and not after today.
+
 ---
 
 ## BR-OCC-005 — Move-out Date

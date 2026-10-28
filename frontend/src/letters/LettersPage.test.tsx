@@ -59,6 +59,7 @@ function lease(
     pet_description: null,
     security_deposit_id: null,
     planned_occupant_customer_ids: [],
+    planned_occupants: [],
     service_terms: [],
     signers: [],
     occupancies: [

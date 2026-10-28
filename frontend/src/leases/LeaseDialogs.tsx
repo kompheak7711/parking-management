@@ -11,6 +11,8 @@ import {
   type LeaseResource,
 } from "../leaseClient";
 import type { CustomerApi, CustomerListItem } from "../customerClient";
+import { NewCustomerDialog } from "../customers/CustomerDialogs";
+import type { CustomerCommandGate } from "../customers/commands";
 import type { SettlementApi } from "../settlementClient";
 import { DateInput } from "../shell/DateInput";
 import { dayText, todayInPhnomPenh, usdFromCents } from "../shell/format";
@@ -408,10 +410,37 @@ function peopleOf(lease: LeaseResource): Person[] {
     name: signer.customer_name,
   }));
   const known = new Set(signers.map((person) => person.customerId));
+  const named = new Map(
+    lease.planned_occupants.map((person) => [
+      person.customer_id,
+      person.customer_name,
+    ]),
+  );
   const planned = lease.planned_occupant_customer_ids
     .filter((id) => !known.has(id))
-    .map((id) => ({ customerId: id, name: null }));
+    .map((id) => ({ customerId: id, name: named.get(id) ?? null }));
   return [...signers, ...planned];
+}
+
+/** The active Customers of the Property by name (at most 50 pages). */
+async function activeCustomers(
+  customerApi: Pick<CustomerApi, "list">,
+  propertyId: string,
+): Promise<CustomerListItem[]> {
+  const found: CustomerListItem[] = [];
+  let cursor: string | undefined;
+  for (let page = 0; page < 50; page += 1) {
+    const result = await customerApi.list(
+      propertyId,
+      cursor === undefined ? { active: true } : { active: true, cursor },
+    );
+    found.push(...result.items);
+    if (result.next_cursor === null) break;
+    cursor = result.next_cursor;
+  }
+  return found.sort((left, right) =>
+    left.legal_name.localeCompare(right.legal_name),
+  );
 }
 
 export function MoveInDialog({
@@ -477,25 +506,11 @@ export function MoveInDialog({
         .catch(() => undefined);
     }
     // Other active Customers, so someone not named in the Lease can move in too.
-    void (async () => {
-      const found: CustomerListItem[] = [];
-      let cursor: string | undefined;
-      for (let page = 0; page < 50; page += 1) {
-        const result = await customerApi.list(
-          lease.property_id,
-          cursor === undefined ? { active: true } : { active: true, cursor },
-        );
-        found.push(...result.items);
-        if (result.next_cursor === null) break;
-        cursor = result.next_cursor;
-      }
-      if (alive.current)
-        setOthers(
-          found.sort((left, right) =>
-            left.legal_name.localeCompare(right.legal_name),
-          ),
-        );
-    })().catch(() => undefined);
+    void activeCustomers(customerApi, lease.property_id)
+      .then((found) => {
+        if (alive.current) setOthers(found);
+      })
+      .catch(() => undefined);
     return () => {
       alive.current = false;
     };
@@ -657,6 +672,274 @@ export function MoveInDialog({
         <label htmlFor="lease-movein-note">{lt(language, "note")}</label>
         <textarea
           id="lease-movein-note"
+          maxLength={500}
+          onChange={(event) => {
+            setNote(event.currentTarget.value);
+          }}
+          rows={2}
+          value={note}
+        />
+      </div>
+      <OutcomeNotice language={language} outcome={outcome} />
+    </Dialog>
+  );
+}
+
+// The reason stored with an added occupant when no note is written names the person.
+function occupantReason(name: string, day: string | null): string {
+  return day === null
+    ? `${name} moves in with the Lease`
+    : `${name} moved in on ${dayText(day)}`;
+}
+
+/**
+ * V1-060 B6 (DL-102): Add occupant on a draft or a running Lease (DESIGN.md 0.15). Before the
+ * move-in the person is planned and moves in with the Lease; after it the person gets their
+ * own move-in date, from the Lease's move-in to today, never after the End Date (BR-OCC-004).
+ */
+export function AddOccupantDialog({
+  language,
+  api,
+  lease,
+  customerApi,
+  newCustomer,
+  onClose,
+  onSaved,
+  onConflict,
+}: Omit<DialogProps, "onSaved"> & {
+  customerApi: Pick<CustomerApi, "list">;
+  /** The New Customer form; null when the person may not add Customers. */
+  newCustomer: { api: CustomerApi; gate: CustomerCommandGate } | null;
+  onSaved: (saved: LeaseResource, message: string) => void;
+}) {
+  const today = todayInPhnomPenh();
+  // The Lease's move-in: its earliest Occupancy; null while nobody has moved in.
+  const first =
+    lease.occupancies
+      .map((occupancy) => occupancy.move_in_date)
+      .sort()
+      .at(0) ?? null;
+  const last =
+    lease.end_date !== null && lease.end_date < today ? lease.end_date : today;
+  // Already on the Lease: the Primary Tenant, whoever lives there now and the planned people.
+  const taken = new Set([
+    lease.primary_tenant_id,
+    ...lease.occupancies
+      .filter((occupancy) => occupancy.move_out_date === null)
+      .map((occupancy) => occupancy.customer_id),
+    ...(first === null ? lease.planned_occupant_customer_ids : []),
+  ]);
+  const [customers, setCustomers] = useState<CustomerListItem[] | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [pick, setPick] = useState("");
+  const [adding, setAdding] = useState(false);
+  const [day, setDay] = useState(
+    first === null || today < first ? (first ?? "") : last,
+  );
+  const [note, setNote] = useState("");
+  const [problems, setProblems] = useState<Record<string, string>>({});
+  // One Occupancy id per person for the life of the dialog, so a retry sends the same id.
+  const occupancyIds = useRef(new Map<string, string>());
+  const message = useRef("");
+  const identity = useValuesIdentity();
+  const { busy, outcome, send } = useSend((saved) => {
+    onSaved(saved, message.current);
+  }, onConflict);
+
+  useEffect(() => {
+    const alive = { current: true };
+    void activeCustomers(customerApi, lease.property_id)
+      .then((found) => {
+        if (alive.current) setCustomers(found);
+      })
+      .catch(() => {
+        if (alive.current) setFailed(true);
+      });
+    return () => {
+      alive.current = false;
+    };
+  }, []);
+
+  const choices = (customers ?? []).filter(
+    (customer) => !taken.has(customer.customer_id),
+  );
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (busy) return;
+    const found: Record<string, string> = {};
+    const person = choices.find((customer) => customer.customer_id === pick);
+    if (person === undefined) found.name = lt(language, "ao_name_req");
+    if (
+      first !== null &&
+      (!/^\d{4}-\d{2}-\d{2}$/.test(day) || day < first || day > last)
+    )
+      found.day = lt(language, "ao_date_err", dayText(first), dayText(last));
+    setProblems(found);
+    if (person === undefined || Object.keys(found).length > 0) return;
+    const moveInDate = first === null ? null : day;
+    let occupancyId: string | null = null;
+    if (moveInDate !== null) {
+      occupancyId = occupancyIds.current.get(pick) ?? crypto.randomUUID();
+      occupancyIds.current.set(pick, occupancyId);
+    }
+    const reason =
+      note.trim() === ""
+        ? occupantReason(person.legal_name, moveInDate)
+        : note.trim();
+    message.current = lt(
+      language,
+      "ao_saved",
+      person.legal_name,
+      lease.unit_number,
+    );
+    const step = identity(JSON.stringify([pick, moveInDate, reason]));
+    send(() =>
+      api.addOccupant(
+        lease,
+        {
+          event_id: step.id,
+          customer_id: pick,
+          occupancy_id: occupancyId,
+          move_in_date: moveInDate,
+          reason,
+        },
+        step.key,
+      ),
+    );
+  }
+
+  // The New Customer form takes the place of this dialog until it is saved or closed.
+  if (adding && newCustomer !== null)
+    return (
+      <NewCustomerDialog
+        api={newCustomer.api}
+        gate={newCustomer.gate}
+        language={language}
+        onClose={() => {
+          setAdding(false);
+        }}
+        onSaved={(customer) => {
+          setCustomers((before) =>
+            [
+              ...(before ?? []).filter(
+                (item) => item.customer_id !== customer.customer_id,
+              ),
+              {
+                customer_id: customer.customer_id,
+                legal_name: customer.legal_name,
+                phone_number: customer.phone_number,
+                active: true,
+                relationship_indicators: [],
+              },
+            ].sort((left, right) =>
+              left.legal_name.localeCompare(right.legal_name),
+            ),
+          );
+          setPick(customer.customer_id);
+          setAdding(false);
+        }}
+        propertyId={lease.property_id}
+      />
+    );
+
+  return (
+    <Dialog
+      busy={busy}
+      closeLabel={lt(language, "close")}
+      onClose={onClose}
+      onSubmit={submit}
+      submitLabel={
+        busy
+          ? lt(language, "saving")
+          : outcome === "unknown"
+            ? lt(language, "try_again")
+            : lt(language, "save")
+      }
+      title={lt(language, "ao_title", lease.unit_number)}
+    >
+      <div className="ui-field">
+        <label htmlFor="lease-occupant-name">
+          {lt(language, "ao_name")}
+          <span className="req">{lt(language, "required")}</span>
+        </label>
+        <div className="ui-pickrow">
+          <select
+            aria-invalid={problems.name !== undefined}
+            disabled={busy || customers === null}
+            id="lease-occupant-name"
+            onChange={(event) => {
+              setPick(event.currentTarget.value);
+            }}
+            value={pick}
+          >
+            <option value="">
+              {customers === null && !failed
+                ? lt(language, "ao_loading")
+                : lt(language, "choose_customer")}
+            </option>
+            {choices.map((customer) => (
+              <option key={customer.customer_id} value={customer.customer_id}>
+                {customer.legal_name}
+                {customer.phone_number ? ` · ${customer.phone_number}` : ""}
+              </option>
+            ))}
+          </select>
+          {newCustomer !== null && (
+            <button
+              aria-label={lt(language, "new_customer")}
+              className="ui-btn ui-iconbtn"
+              disabled={busy}
+              onClick={() => {
+                setAdding(true);
+              }}
+              title={lt(language, "new_customer")}
+              type="button"
+            >
+              <Icon name="userplus" />
+            </button>
+          )}
+        </div>
+        <p className="ui-small ui-muted">{lt(language, "ao_name_help")}</p>
+        {failed ? (
+          <Problem message={lt(language, "ao_failed")} />
+        ) : (
+          customers !== null &&
+          choices.length === 0 && (
+            <p className="ui-small ui-muted">{lt(language, "ao_none")}</p>
+          )
+        )}
+        <Problem message={problems.name ?? null} />
+      </div>
+      {first === null ? (
+        <p className="ui-small ui-muted">{lt(language, "ao_pending_note")}</p>
+      ) : (
+        <div className="ui-field">
+          <label htmlFor="lease-occupant-day">
+            {lt(language, "ao_date")}
+            <span className="req">{lt(language, "required")}</span>
+          </label>
+          <DateInput
+            language={language}
+            invalid={problems.day !== undefined}
+            id="lease-occupant-day"
+            max={last}
+            min={first}
+            onChange={(value) => {
+              setDay(value);
+            }}
+            value={day}
+          />
+          <p className="ui-small ui-muted">
+            {lt(language, "ao_date_help", dayText(first), dayText(last))}
+          </p>
+          <Problem message={problems.day ?? null} />
+        </div>
+      )}
+      <div className="ui-field">
+        <label htmlFor="lease-occupant-note">{lt(language, "note")}</label>
+        <textarea
+          id="lease-occupant-note"
           maxLength={500}
           onChange={(event) => {
             setNote(event.currentTarget.value);

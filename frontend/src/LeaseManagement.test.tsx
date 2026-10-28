@@ -37,6 +37,7 @@ const drafted: LeaseResource = {
   pet_description: null,
   security_deposit_id: "deposit-1",
   planned_occupant_customer_ids: ["customer-1"],
+  planned_occupants: [],
   service_terms: [],
   signers: [
     {
@@ -96,6 +97,7 @@ function client(overrides: Partial<LeaseApi> = {}): LeaseApi {
     terminate: vi.fn().mockResolvedValue({ ...drafted, status: "TERMINATED" }),
     cancel: vi.fn().mockResolvedValue({ ...drafted, status: "CANCELLED" }),
     recordMoveIn: vi.fn().mockResolvedValue(drafted),
+    addOccupant: vi.fn().mockResolvedValue(drafted),
     resolveNeverMovedIn: vi.fn(
       (
         _property: string,

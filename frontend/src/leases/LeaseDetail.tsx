@@ -24,10 +24,12 @@ import { openPageInAddress } from "../shell/useHashPage";
 import { Chip } from "../shell/ui";
 import type { Language } from "../signInText";
 import type { CustomerApi } from "../customerClient";
+import type { CustomerCommandGate } from "../customers/commands";
 import type { LettersApi } from "../letters/lettersClient";
 import type { ReservationApi } from "../reservationClient";
 import { leftText } from "../reservations/ReservationsList";
 import {
+  AddOccupantDialog,
   CancelDraftDialog,
   EditDraftDialog,
   MoveInDialog,
@@ -95,6 +97,9 @@ export interface LeaseDetailProps {
   /** V1-060 B6: Receive Security Deposit, the draft's planned deposit and signing with money. */
   settlementApi?: SigningApi & Pick<SettlementApi, "planSecurityDeposit">;
   paymentsApi?: PaymentsApi;
+  /** V1-060 B6 (DL-102): New Customer from Add occupant; left out, the button is not shown. */
+  customerCreateApi?: CustomerApi;
+  customerGate?: CustomerCommandGate;
 }
 
 export function LeaseDetail({
@@ -110,6 +115,8 @@ export function LeaseDetail({
   terminateOnOpen = false,
   settlementApi = defaultSettlementApi,
   paymentsApi = defaultPaymentsApi,
+  customerCreateApi,
+  customerGate,
 }: LeaseDetailProps) {
   const [lease, setLease] = useState<LeaseResource | null>(null);
   const [timeline, setTimeline] = useState<LeaseTimelineEvent[]>([]);
@@ -129,6 +136,7 @@ export function LeaseDetail({
     | "notice"
     | "deposit"
     | "print"
+    | "occupant"
     | null
   >(terminateOnOpen ? "terminate" : null);
   const [draft, setDraft] = useState<TerminateDraft>(() =>
@@ -369,6 +377,16 @@ export function LeaseDetail({
   const stillIn = lease.occupancies.some(
     (occupancy) => occupancy.move_out_date === null,
   );
+  // V1-060 B6 (DL-102): Add occupant on a draft or a running Lease. A renewal without its own
+  // move-in keeps the earlier Lease's Occupancies, so it shows no button.
+  const mayAddOccupant =
+    may("reservations.complete") &&
+    may("customers.read") &&
+    (lease.status === "DRAFTED" ||
+      (signed &&
+        lease.actual_termination_date === null &&
+        (lease.end_date === null || today <= lease.end_date))) &&
+    (movedIn ? stillIn : lease.predecessor_lease_id === null);
   const customerLink = (id: string, name: string) =>
     may("customers.read") ? (
       <a className="ui-no" href={hashForPage("customers", id)}>
@@ -402,7 +420,8 @@ export function LeaseDetail({
       | "terminate"
       | "notice"
       | "deposit"
-      | "print",
+      | "print"
+      | "occupant",
   ) {
     setNotice(null);
     setWarning(null);
@@ -779,8 +798,44 @@ export function LeaseDetail({
             </p>
           </section>
           <section aria-labelledby="lease-occupants" className="ui-card">
-            <h2 id="lease-occupants">{lt(language, "occupants")}</h2>
-            {lease.occupancies.length === 0 ? (
+            <div className="ui-chead">
+              <h2 id="lease-occupants">{lt(language, "occupants")}</h2>
+              {mayAddOccupant && (
+                <button
+                  className="ui-btn"
+                  onClick={() => {
+                    open("occupant");
+                  }}
+                  type="button"
+                >
+                  <Icon name="plus" />
+                  {lt(language, "add_occ")}
+                </button>
+              )}
+            </div>
+            {lease.occupancies.length === 0 &&
+            lease.planned_occupants.length > 0 ? (
+              <ul className="ui-plain">
+                {lease.planned_occupants.map((person) => (
+                  <li className="ui-line" key={person.customer_id}>
+                    <span>
+                      {customerLink(person.customer_id, person.customer_name)}
+                      <span className="ui-sub2">
+                        {lt(
+                          language,
+                          person.customer_id === lease.primary_tenant_id
+                            ? "primary_tag"
+                            : "occ_tag",
+                        )}
+                      </span>
+                    </span>
+                    <span className="ui-small">
+                      {lt(language, "in_pending")}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : lease.occupancies.length === 0 ? (
               <p className="ui-muted">
                 {lease.planned_occupant_customer_ids.length > 0
                   ? lt(
@@ -1086,6 +1141,24 @@ export function LeaseDetail({
             setDialog(null);
             setLease(saved);
             setNotice(lt(language, "moved_in_toast"));
+            load();
+          }}
+        />
+      )}
+      {dialog === "occupant" && mayAddOccupant && (
+        <AddOccupantDialog
+          {...dialogProps}
+          customerApi={customerApi}
+          lease={lease}
+          newCustomer={
+            customerCreateApi !== undefined && customerGate !== undefined
+              ? { api: customerCreateApi, gate: customerGate }
+              : null
+          }
+          onSaved={(saved, message) => {
+            setDialog(null);
+            setLease(saved);
+            setNotice(message);
             load();
           }}
         />

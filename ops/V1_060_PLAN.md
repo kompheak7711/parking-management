@@ -216,3 +216,19 @@ candidate is the code that will be used.
   chips still match). Until showed "—" for every Unit because the list asked only for Leases running
   today; it now reads every signed Lease and shows the running one, or the next one when none has
   started (BR-LEASE-016, BR-OCC-008). TEST-FE-1024 and three audit API tests added.
+- 2026-10-28 B6 (owner asks at 07:24, Add occupant): the owner could not add a friend who started
+  living with a tenant after signing. DESIGN.md 0.15 has the "Add occupant" button, but V1-058 step
+  L2c-1 left it for a new database command. Built (DL-102, migration 20270327_246,
+  app.add_lease_occupant, append-only lease_occupant_additions, POST /leases/{lease_id}/occupants
+  under reservations.complete): before the move-in the person is planned and moves in with the
+  Lease; after it the person gets an own Occupancy from an own move-in date (not before the Lease's
+  move-in, not after the End Date or today). The Lease page Occupants box lists the planned people
+  and has the button and dialog (an existing Customer or New Customer). Found and fixed on the way:
+  the Lease History did not show a move-in recorded for a Lease signed with its outcome record
+  (lease_move_ins was missing from the timeline). Decided by Claude under the owner's 2026-10-23
+  22:30 rule: no Primary Tenant after the move-in, a renewal only after its own move-in (R7 renewal
+  occupants still open), no deactivated Customer, at most 20 people; no limit per Unit Type exists,
+  so none is checked. Tests: 6 database tests, 1 API test, 1 unit test, TEST-FE-1025 to 1029; head
+  pins moved to 20270327_246. Runs: the new and nearby database tests 44 passed; frontend 1,892 of
+  1,892 when TEST-FE-087 (known slow, V1-060 list) is rerun alone; backend lint, format and types
+  passed; traceability passed.

@@ -303,6 +303,17 @@ current required total, adjustments included (BR-DEP-004); a Deposit holding mor
 decreased total is fully paid. A receipt dated after a past move-in date does not count, so
 an increase recorded later cannot be met for that date.
 
+Since V1-060 B6 (migration `20270327_246`, DL-102) `lease_occupant_additions` (append-only, one
+row per addition, `reservations.complete`) records Add occupant through
+`app.add_lease_occupant`. Before the Lease's first move-in the person is planned (no Occupancy
+and no date; one planned row per Lease and Customer) and moves in with the Lease. After it the
+function starts the person's own Occupancy on their own move-in date, which is not before the
+first move-in, not after the End Date and not after the business date. It refuses the Primary
+Tenant after the move-in, a deactivated Customer, a renewal without its own move-in, a Lease
+that is not DRAFTED or SIGNED, a Lease where nobody lives any more, and more than 20 people
+planned or living at once. The Lease History shows each addition and each `lease_move_ins`
+move-in.
+
 ### Unpaid Initial obligation termination (migration `20261005_70`)
 
 Termination basis `UNPAID_INITIAL_OBLIGATION` requires governing reference `BR-LEASE-005`,

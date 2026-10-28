@@ -169,6 +169,12 @@ export function LeasesPage({
         propertyId={propertyId}
         reservationApi={reservationApi}
         customerApi={customerApi}
+        customerCreateApi={customerCreateApi}
+        customerGate={
+          capabilities === null || capabilities.has("customers.manage")
+            ? customerGate
+            : undefined
+        }
         paymentsApi={paymentsApi}
         settlementApi={settlementApi}
       />

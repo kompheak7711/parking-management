@@ -9,6 +9,7 @@ import pytest
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
 from property_rental.move_in import (
     MOVE_IN_CAPABILITY,
+    AddLeaseOccupantCommand,
     CompleteMoveInCommand,
     MoveInAuthorizationError,
     MoveInOccupant,
@@ -70,3 +71,54 @@ def test_service_rejects_actor_scope_and_untrusted_authorization_before_database
     )
     with pytest.raises(MoveInAuthorizationError, match="not authoritative"):
         service.complete(replace(value, authorization_reference="leases.sign"), actor=authorized)
+
+
+def test_add_occupant_command_pairs_the_occupancy_with_its_date_and_checks_authority_first() -> (
+    None
+):
+    """V1-060 B6 (DL-102): a planned person has no Occupancy and no date; a person added after
+    the move-in has both. Authority is checked before the database is reached."""
+    planned = AddLeaseOccupantCommand(
+        idempotency_key=uuid4(),
+        event_id=uuid4(),
+        lease_id=uuid4(),
+        expected_lease_version=3,
+        customer_id=uuid4(),
+        occupancy_id=None,
+        move_in_date=None,
+        reason="A friend moves in with the Lease",
+        authorization_reference=MOVE_IN_CAPABILITY,
+    )
+    dated = replace(planned, occupancy_id=uuid4(), move_in_date=date(2026, 10, 28))
+    assert move_in_request_digest(dated) == move_in_request_digest(dated)
+    assert move_in_request_digest(dated) != move_in_request_digest(planned)
+    for wrong in (
+        {"occupancy_id": uuid4()},
+        {"move_in_date": date(2026, 10, 28)},
+    ):
+        with pytest.raises(ValueError, match="come together"):
+            replace(planned, **wrong)
+    with pytest.raises(ValueError, match="positive"):
+        replace(planned, expected_lease_version=0)
+    with pytest.raises(ValueError):
+        replace(planned, reason=" ")
+
+    property_id = uuid4()
+    actor_id = uuid4()
+    service = PostgresMoveInService(
+        "postgresql://must-not-be-used", property_id=property_id, actor_id=actor_id
+    )
+    with pytest.raises(MoveInAuthorizationError, match="does not match"):
+        service.add_lease_occupant(dated, actor=AuthenticatedActor(actor_id=str(uuid4())))
+    with pytest.raises(MoveInAuthorizationError, match="not authorized"):
+        service.add_lease_occupant(dated, actor=AuthenticatedActor(actor_id=str(actor_id)))
+    authorized = AuthenticatedActor(
+        actor_id=str(actor_id),
+        capability_grants=frozenset(
+            {CapabilityGrant(MOVE_IN_CAPABILITY, frozenset({str(property_id)}))}
+        ),
+    )
+    with pytest.raises(MoveInAuthorizationError, match="not authorized"):
+        service.add_lease_occupant(
+            replace(dated, authorization_reference="leases.sign"), actor=authorized
+        )
