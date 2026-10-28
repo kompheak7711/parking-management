@@ -13,6 +13,7 @@ from property_rental.app import create_app
 from property_rental.audit import AuditEvent
 from property_rental.audit_api import (
     AUDIT_VIEW_CAPABILITY,
+    WITHHELD_REASON,
     AuditEventPage,
     AuditEventQueryRepository,
     AuditPageRequest,
@@ -644,6 +645,96 @@ def test_stored_top_level_secret_material_is_rejected_before_event_exposure() ->
 
     with pytest.raises(ValueError, match="prohibited secret material"):
         PostgresAuditEventQueryRepository._event(row)
+
+
+def stored_row(
+    *,
+    action: str = "payment.confirmed",
+    entity_type: str = "payment",
+    reason: str = "Payment confirmed",
+    reference: str | None = "payments.confirm",
+    state: object = None,
+    evidence: object = None,
+) -> tuple[object, ...]:
+    return (
+        EVENT_ID,
+        ACTOR_ID,
+        action,
+        entity_type,
+        RESOURCE_ID,
+        datetime(2026, 10, 28, 3, 45, tzinfo=UTC),
+        date(2026, 10, 28),
+        reason,
+        reference,
+        None,
+        state,
+        CORRELATION_ID,
+        "API",
+        PROPERTY_ID,
+        "SUCCEEDED",
+        evidence,
+        None,
+        None,
+        None,
+        None,
+    )
+
+
+def test_a_stored_event_with_unclassified_details_shows_with_them_withheld() -> None:
+    # V1-060 B6: the History page failed on almost every real money event, because their
+    # stored states hold values today's public-value checks do not classify.
+    row = stored_row(
+        state={"event": "Payment confirmed", "received_amount_minor": 30500},
+        evidence={"one_time_code": "A1B2C3D4"},
+    )
+    with pytest.raises(ValueError):
+        PostgresAuditEventQueryRepository._event(row)
+
+    page = PostgresAuditEventQueryRepository._page([row], 50)
+
+    (event,) = page.events
+    assert (event.action, event.target_type, event.reason) == (
+        "payment.confirmed",
+        "payment",
+        "Payment confirmed",
+    )
+    assert event.previous_state is None and event.resulting_state is None
+    assert event.authorization_evidence is None
+    assert event.authorization_reference == "payments.confirm"
+    view = _event_view(event)
+    assert view.previous_state is None and view.resulting_state is None
+    assert view.reason == "Payment confirmed"
+
+
+def test_a_stored_reason_or_reference_that_looks_like_a_secret_is_replaced() -> None:
+    row = stored_row(reason="password=hunter2", reference="password=hunter2")
+
+    (event,) = PostgresAuditEventQueryRepository._page([row], 50).events
+
+    assert event.reason == WITHHELD_REASON
+    assert event.authorization_reference is None
+    assert "hunter2" not in repr(_event_view(event))
+
+
+def test_a_long_app_code_shows_as_the_action_and_resource_type() -> None:
+    # The DL-101 event's entity type is 34 lowercase letters and underscores, which the generic
+    # long-run secret pattern took for a secret.
+    row = stored_row(
+        action="lease.security_deposit.applied",
+        entity_type="deposit_required_amount_adjustment",
+        reason="Security Deposit on the signed Lease",
+        reference="leases.sign",
+        state={"status": "APPLIED"},
+    )
+
+    event = PostgresAuditEventQueryRepository._event(row)
+    view = _event_view(event)
+
+    assert view.resource_type == "deposit_required_amount_adjustment"
+    assert view.resulting_state == {"status": "APPLIED"}
+    secretish = stored_row(entity_type="Ab1" * 12)
+    with pytest.raises(ValueError, match="prohibited secret material"):
+        PostgresAuditEventQueryRepository._event(secretish)
 
 
 @pytest.mark.parametrize(

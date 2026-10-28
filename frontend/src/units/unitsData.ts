@@ -1,7 +1,7 @@
 // V1-058 R2: what the Units screens read. The Unit API gives each Unit and its status; the
-// Customer, Rent and Until columns come from the current signed Leases and the active
-// Reservations, read once for the whole list. A person who may not read Leases or
-// Reservations still sees the Units, with "—" in those columns.
+// Until column comes from the signed Leases and the active Reservations, read once for the
+// whole list. A person who may not read Leases or Reservations still sees the Units, with "—"
+// in that column.
 
 import type { LeaseApi, LeaseResource } from "../leaseClient";
 import type { ReservationApi, ReservationResource } from "../reservationClient";
@@ -62,10 +62,12 @@ export async function loadUnitsData(
       return page;
     }),
     apis.unitApi.setupLists(propertyId).catch(() => null),
+    // Every signed Lease, not only the ones running today: signing makes the Unit Occupied
+    // before the Start Date (BR-LEASE-016), and a Lease stays signed after its End Date until
+    // the move-out (BR-OCC-008).
     allPages((cursor) =>
       apis.leaseApi.list(propertyId, {
         status: "SIGNED",
-        period: "current",
         ...(cursor === undefined ? {} : { cursor }),
       }),
     ).catch(() => null),
@@ -93,11 +95,24 @@ export function cardOf(status: UnitStatus): UnitCard {
   return "na";
 }
 
+/** The Unit's signed Lease in effect today: the latest one that has started; when none has
+ * started yet, the one that starts first. */
 export function leaseFor(
   data: Pick<UnitsData, "leases">,
   unitId: string,
+  today: string,
 ): LeaseResource | null {
-  return data.leases?.find((lease) => lease.unit_id === unitId) ?? null;
+  const signed = (data.leases ?? []).filter(
+    (lease) => lease.unit_id === unitId && lease.start_date !== null,
+  );
+  const start = (lease: LeaseResource) => lease.start_date ?? "";
+  const started = signed
+    .filter((lease) => start(lease) <= today)
+    .sort((left, right) => start(right).localeCompare(start(left)));
+  const upcoming = signed
+    .filter((lease) => start(lease) > today)
+    .sort((left, right) => start(left).localeCompare(start(right)));
+  return started[0] ?? upcoming[0] ?? null;
 }
 
 export function reservationFor(

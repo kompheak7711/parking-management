@@ -1,9 +1,10 @@
 // V1-058 R2: the Units list (DESIGN.md "Units (round 2)"): a floor segment, a Unit Type
-// select, four count cards that filter the table, and the table of Units.
+// select, four count cards that filter the table, and the table of Units. The table shows Unit,
+// Floor, Unit Type, Status and Until; the owner removed Customer and Monthly Rent (28/10/2026).
 
 import { useState } from "react";
 
-import { dayText, usdFromCents } from "../shell/format";
+import { dayText, todayInPhnomPenh } from "../shell/format";
 import { Icon, type ShellIcon } from "../shell/icons";
 import { hashForPage } from "../shell/navigation";
 import { openPageInAddress } from "../shell/useHashPage";
@@ -100,6 +101,7 @@ export function UnitsList({
     (unit) => card === "all" || cardOf(unit.status) === card,
   );
   const unknown = data.leases === null || data.reservations === null;
+  const today = todayInPhnomPenh();
   const dash = <span className="ui-muted">—</span>;
 
   return (
@@ -204,21 +206,16 @@ export function UnitsList({
                     <th scope="col">{ut(language, "floor")}</th>
                     <th scope="col">{ut(language, "type")}</th>
                     <th scope="col">{ut(language, "col_status")}</th>
-                    <th scope="col">{ut(language, "col_customer")}</th>
-                    <th className="r" scope="col">
-                      {ut(language, "rent")}
-                    </th>
                     <th scope="col">{ut(language, "until")}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {shown.map((unit) => {
-                    const lease = leaseFor(data, unit.unit_id);
+                    const lease = leaseFor(data, unit.unit_id, today);
                     const reservation =
                       lease === null
                         ? reservationFor(data, unit.unit_id)
                         : null;
-                    const others = (lease?.signers.length ?? 1) - 1;
                     return (
                       <tr
                         className="ui-row"
@@ -254,34 +251,6 @@ export function UnitsList({
                         <td>{typeName(data.lists, unit.unit_type, khmer)}</td>
                         <td>
                           <UnitChip language={language} status={unit.status} />
-                        </td>
-                        <td>
-                          {lease !== null
-                            ? lease.primary_tenant_name
-                            : reservation !== null
-                              ? reservation.customer_name
-                              : dash}
-                          {others > 0 && (
-                            <span className="ui-sub2">
-                              {ut(language, "signers_n", others)}
-                            </span>
-                          )}
-                        </td>
-                        <td className="r ui-num">
-                          {lease?.monthly_rent_usd_cents != null ? (
-                            usdFromCents(lease.monthly_rent_usd_cents)
-                          ) : reservation !== null ? (
-                            <>
-                              {usdFromCents(
-                                reservation.agreed_monthly_rent_usd_cents,
-                              )}
-                              <span className="ui-sub2">
-                                {ut(language, "agreed")}
-                              </span>
-                            </>
-                          ) : (
-                            dash
-                          )}
                         </td>
                         <td className="ui-num">
                           {lease?.end_date != null ? (

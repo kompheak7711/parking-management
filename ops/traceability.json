@@ -56792,6 +56792,59 @@
       "test_path": "backend/tests/test_initial_rent_lease_start_migration.py",
       "status": "implemented",
       "notes": "V1-060 B6: the Invoice resource marks the Initial Rent Invoice's Rent line billing_kind INITIAL (a monthly one RECURRING); the printed Invoice reads it to leave out the late-payment note."
+    },
+    {
+      "test_id": "TEST-FE-1024",
+      "upstream_ids": [
+        "UI-025",
+        "BR-LEASE-016",
+        "BR-OCC-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/units/UnitsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6: the Units table reads every signed Lease; Until shows the End Date of a signed Lease that starts later (the Unit is already Occupied, BR-LEASE-016) and of the running Lease when a renewal is signed. The owner removed the Customer and Monthly Rent columns."
+    },
+    {
+      "test_id": "test_a_stored_event_with_unclassified_details_shows_with_them_withheld",
+      "upstream_ids": [
+        "PR-AUDIT-010",
+        "API-073",
+        "API-074",
+        "SEC-030",
+        "SEC-032"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_audit_api.py",
+      "status": "implemented",
+      "notes": "V1-060 B6: one stored event whose before/after details fail today's public-value checks no longer hides the whole History page; it shows with those details withheld (never exposed) and the other events show in full."
+    },
+    {
+      "test_id": "test_a_stored_reason_or_reference_that_looks_like_a_secret_is_replaced",
+      "upstream_ids": [
+        "PR-AUDIT-001",
+        "API-073",
+        "API-074",
+        "SEC-030",
+        "SEC-032"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_audit_api.py",
+      "status": "implemented",
+      "notes": "V1-060 B6: a stored reason that looks like a secret shows as a fixed 'withheld' sentence and such an authorization reference is left out; the secret text is never returned."
+    },
+    {
+      "test_id": "test_a_long_app_code_shows_as_the_action_and_resource_type",
+      "upstream_ids": [
+        "PR-AUDIT-010",
+        "API-073",
+        "API-074",
+        "SEC-032"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_audit_api.py",
+      "status": "implemented",
+      "notes": "V1-060 B6: an action or entity type the app wrote itself (lower-case words joined by dots or underscores, at most 128 characters) shows even when longer than 32 characters; a token-shaped value is still refused."
     }
   ]
 }

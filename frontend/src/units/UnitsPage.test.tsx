@@ -285,7 +285,7 @@ function rowOf(number: string): HTMLElement {
 }
 
 describe("Units list", () => {
-  it("TEST-FE-027 shows the Units table with status chips, the Lease and Reservation columns, and New Unit for a manager", async () => {
+  it("TEST-FE-027 shows the Units table with status chips, Until from the Lease or Reservation, and New Unit for a manager", async () => {
     show(unitApi());
 
     expect(
@@ -296,32 +296,55 @@ describe("Units list", () => {
       within(table)
         .getAllByRole("columnheader")
         .map((cell) => cell.textContent),
-    ).toEqual([
-      "Unit",
-      "Floor",
-      "Unit Type",
-      "Status",
-      "Customer",
-      "Monthly Rent",
-      "Until",
-    ]);
+    ).toEqual(["Unit", "Floor", "Unit Type", "Status", "Until"]);
+    // The owner removed Customer and Monthly Rent (28/10/2026).
     const occupied = rowOf("U101");
     expect(occupied).toHaveTextContent("Floor 1");
     expect(occupied).toHaveTextContent("Occupied");
-    expect(occupied).toHaveTextContent("Sok Dara+ 1 Signer(s)");
-    expect(occupied).toHaveTextContent("$450.00");
     expect(occupied).toHaveTextContent("31/12/2099");
+    expect(occupied).not.toHaveTextContent("Sok Dara");
+    expect(occupied).not.toHaveTextContent("$450.00");
     const reserved = rowOf("U102");
     expect(reserved).toHaveTextContent("1 bedroom");
-    expect(reserved).toHaveTextContent("Lim Srey");
-    expect(reserved).toHaveTextContent("$380.00agreed");
     expect(reserved).toHaveTextContent("03/11/2026Reserved until");
+    expect(reserved).not.toHaveTextContent("Lim Srey");
     expect(rowOf("U202")).toHaveTextContent("Under maintenance");
     expect(rowOf("U201")).toHaveTextContent("Vacant");
     expect(screen.getByText("4 Units")).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "New Unit" }),
     ).toBeInTheDocument();
+  });
+
+  it("TEST-FE-1024 Until shows the End Date of a signed Lease that starts later, and of the running Lease when a renewal is signed", async () => {
+    const list = vi.fn().mockResolvedValue({
+      items: [
+        // U101: the running Lease and its signed renewal.
+        lease({ start_date: "2025-01-01", end_date: "2026-12-31" }),
+        lease({
+          lease_id: "lease-renewal",
+          start_date: "2027-01-01",
+          end_date: "2027-12-31",
+        }),
+        // U201: signed, the Unit is Occupied, the Lease starts later.
+        lease({
+          lease_id: "lease-later",
+          unit_id: "unit-U201",
+          unit_number: "U201",
+          start_date: "2099-11-01",
+          end_date: "2100-10-31",
+        }),
+      ],
+      next_cursor: null,
+      can_create: true,
+    });
+    show(unitApi(), { leases: { list } as unknown as LeaseApi });
+    await screen.findByText("4 Units at CHETANA Residence");
+
+    expect(rowOf("U101")).toHaveTextContent("31/12/2026");
+    expect(rowOf("U201")).toHaveTextContent("31/10/2100");
+    // Every signed Lease is read, not only the ones running today.
+    expect(list).toHaveBeenCalledWith("property-1", { status: "SIGNED" });
   });
 
   it("TEST-FE-028 hides New Unit, Change status and Update Unit without the server's permission", async () => {

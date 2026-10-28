@@ -26,8 +26,8 @@ const TEXT = {
   ],
   // new
   tenants_hidden: [
-    "Your account cannot read Leases or Reservations, so Customer, Rent and Until show “—”.",
-    "គណនីរបស់អ្នកមិនអាចអានកិច្ចសន្យា ឬការកក់បានទេ ដូច្នេះអតិថិជន ថ្លៃឈ្នួល និងរហូតដល់ បង្ហាញ “—”។",
+    "Your account cannot read Leases or Reservations, so Until shows “—”.",
+    "គណនីរបស់អ្នកមិនអាចអានកិច្ចសន្យា ឬការកក់បានទេ ដូច្នេះរហូតដល់ បង្ហាញ “—”។",
   ],
   new_unit: ["New Unit", "បន្ទប់ថ្មី"],
   all_floors: ["All floors", "គ្រប់ជាន់"],
@@ -53,12 +53,9 @@ const TEXT = {
   show_all: ["Show all", "បង្ហាញទាំងអស់"],
   col_unit: ["Unit", "បន្ទប់"],
   col_status: ["Status", "ស្ថានភាព"],
-  col_customer: ["Customer", "អតិថិជន"],
   rent: ["Monthly Rent", "ថ្លៃឈ្នួលប្រចាំខែ"],
   until: ["Until", "រហូតដល់"],
-  agreed: ["agreed", "បានព្រមព្រៀង"],
   reserved_until: ["Reserved until", "កក់រហូតដល់"],
-  signers_n: ["+ {0} Signer(s)", "+ អ្នកចុះហត្ថលេខា {0}"],
   n1: ["1 Unit", "បន្ទប់ 1"],
   n: ["{0} Units", "បន្ទប់ {0}"],
   none: ["No Units match these filters.", "គ្មានបន្ទប់ត្រូវនឹងតម្រងនេះទេ។"],

@@ -6,6 +6,7 @@ event of its own (DL-072 answer 14); the next pages of the same search do not.
 
 import base64
 import json
+import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
@@ -40,6 +41,8 @@ from property_rental.reports import ReportForbiddenError, report_actor
 AUDIT_VIEW_CAPABILITY: Final = "audit.view"
 DEFAULT_AUDIT_PAGE_SIZE: Final = 50
 MAX_AUDIT_PAGE_SIZE: Final = 100
+AUDIT_CODE: Final = re.compile(r"[a-z]+(?:[._][a-z]+)+")
+WITHHELD_REASON: Final = "The reason is withheld: it looked like a secret."
 
 
 class AuditQueryUnavailable(Exception):
@@ -380,13 +383,37 @@ class PostgresAuditEventQueryRepository:
 
     @classmethod
     def _page(cls, rows: list[tuple[object, ...]], limit: int) -> AuditEventPage:
-        events = tuple(cls._event(row) for row in rows[:limit])
+        events = tuple(cls._shown_event(row) for row in rows[:limit])
         cursor = None
         if len(rows) > limit and events:
             last = events[-1]
             raw = f"{last.occurred_at.isoformat()}|{last.event_id}".encode()
             cursor = base64.urlsafe_b64encode(raw).decode().rstrip("=")
         return AuditEventPage(events=events, next_cursor=cursor)
+
+    @classmethod
+    def _shown_event(cls, row: tuple[object, ...]) -> AuditEvent:
+        """V1-060 B6: one stored event whose details fail today's public-value checks no longer
+        hides the whole History page. It shows with those details withheld, never exposed: no
+        before and after states or authorization evidence, and a reason or reference that looks
+        like a secret replaced."""
+        try:
+            return cls._event(row)
+        except (TypeError, ValueError):
+            reason = row[7]
+            try:
+                _safe_loaded_text(reason, "reason")
+            except ValueError:
+                reason = WITHHELD_REASON
+            reference = row[8]
+            if reference is not None:
+                try:
+                    _safe_loaded_text(reference, "authorization_reference")
+                except ValueError:
+                    reference = None
+            return cls._event(
+                (*row[:7], reason, reference, None, None, *row[11:15], None, *row[16:])
+            )
 
     @staticmethod
     def _event(row: tuple[object, ...]) -> AuditEvent:
@@ -396,8 +423,8 @@ class PostgresAuditEventQueryRepository:
         return AuditEvent(
             event_id=UUID(str(row[0])),
             actor_id=UUID(str(row[1])),
-            action=_safe_loaded_text(row[2], "action"),
-            target_type=_safe_loaded_text(row[3], "entity_type"),
+            action=_loaded_code(row[2], "action"),
+            target_type=_loaded_code(row[3], "entity_type"),
             target_id=UUID(str(row[4])),
             occurred_at=row[5]
             if isinstance(row[5], datetime)
@@ -751,8 +778,8 @@ def _event_view(event: AuditEvent) -> AuditEventView:
         event_id=event.event_id,
         actor_id=event.actor_id,
         property_id=event.property_id,
-        action=_safe_loaded_text(event.action, "action"),
-        resource_type=_safe_loaded_text(event.target_type, "entity_type"),
+        action=_loaded_code(event.action, "action"),
+        resource_type=_loaded_code(event.target_type, "entity_type"),
         resource_id=event.target_id,
         occurred_at=event.occurred_at,
         business_date=event.business_date,
@@ -825,6 +852,16 @@ def _safe_loaded_text(value: object, field_name: str) -> str:
     text = str(value)
     _reject_secret_text(text, f"stored_audit_event.{field_name}")
     return text
+
+
+def _loaded_code(value: object, field_name: str) -> str:
+    """An action or entity type the app wrote itself, such as
+    "deposit_required_amount_adjustment": lowercase words joined by "_" or ".". A long one trips
+    the generic long-run secret pattern, so it is accepted by its shape (V1-060 B6)."""
+    text = str(value)
+    if len(text) <= 128 and AUDIT_CODE.fullmatch(text):
+        return text
+    return _safe_loaded_text(text, field_name)
 
 
 def _reject_unknown_filters(request: Request, allowed: set[str]) -> None:

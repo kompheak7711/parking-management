@@ -205,3 +205,14 @@ candidate is the code that will be used.
   INITIAL (TEST-FE-1023; the database test locks that mark). The test script said the Initial Rent
   Invoice number starts with RENT-I; it gets a normal INV number (script fixed; step 4 now says
   where the QR code shows).
+- 2026-10-28 B6 (owner asks at 07:24): History showed "History could not be read just now" because
+  one stored event whose details fail today's stricter public-value checks stopped the whole page
+  (and long app-written codes such as deposit_required_amount_adjustment looked token-shaped).
+  Fixed: such an event shows with those details withheld, never exposed; a reason that looks like a
+  secret shows a fixed "withheld" sentence; app-written codes (lower-case words joined by dots or
+  underscores, at most 128 characters) show. All 100,342 events in the cloud test database now read.
+  Units table: the owner asked for Unit, Floor, Unit Type and Until, without Customer and Monthly
+  Rent; Status stays (decided by Claude under the owner's 2026-10-23 22:30 rule, so the counts and
+  chips still match). Until showed "—" for every Unit because the list asked only for Leases running
+  today; it now reads every signed Lease and shows the running one, or the next one when none has
+  started (BR-LEASE-016, BR-OCC-008). TEST-FE-1024 and three audit API tests added.
