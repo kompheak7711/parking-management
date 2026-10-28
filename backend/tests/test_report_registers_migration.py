@@ -166,6 +166,8 @@ def test_the_register_reads_need_an_allowed_property_and_the_runtime_role(
     expected |= {"report_income_facts": True, "report_utility_facts": True}
     expected["report_payment_parts"] = False
     expected["report_actor_property"] = False
+    # V1-060 B6 (DL-104): the Report broken meter command shares the name prefix; the API calls it.
+    expected["report_utility_meter_failure_api"] = True
     assert {name: runtime for name, public, runtime in grants} == expected
     assert all(not public for _, public, _ in grants)
 
