@@ -38,6 +38,7 @@ import {
   entryRows,
   isBroken,
   loadUtilitiesData,
+  muchLess,
   muchMore,
   parseReading,
   readingDayOf,
@@ -656,7 +657,7 @@ type LineMessage =
       key: "err_num" | "save_failed" | "refused" | "not_allowed_save";
     }
   | { kind: "lower"; last: string }
-  | { kind: "warn"; use: string; usual: string };
+  | { kind: "warn"; key: "warn_high" | "warn_low"; use: string; usual: string };
 
 function EntryLine({
   language,
@@ -699,13 +700,22 @@ function EntryLine({
       setMessage({ kind: "lower", last: amountText(last) });
       return;
     }
-    if (!force && last !== null && muchMore(value - last, row.usual)) {
-      setMessage({
-        kind: "warn",
-        use: `${amountText(value - last)} ${label}`,
-        usual: `${amountText(row.usual ?? 0)} ${label}`,
-      });
-      return;
+    if (!force && last !== null) {
+      const use = value - last;
+      const key = muchMore(use, row.usual)
+        ? "warn_high"
+        : muchLess(use, row.usual, row.unit.status === "OCCUPIED")
+          ? "warn_low"
+          : null;
+      if (key !== null) {
+        setMessage({
+          kind: "warn",
+          key,
+          use: `${amountText(use)} ${label}`,
+          usual: `${amountText(row.usual ?? 0)} ${label}`,
+        });
+        return;
+      }
     }
     // The same reading sent again (after a lost answer) keeps its key, so it is saved once.
     const fingerprint = `${id}|${String(row.meter.version)}|${String(value)}|${today}`;
@@ -835,7 +845,7 @@ function EntryLine({
       : message.kind === "lower"
         ? utt(language, "err_lower", message.last)
         : message.kind === "warn"
-          ? utt(language, "warn_high", message.use, message.usual)
+          ? utt(language, message.key, message.use, message.usual)
           : utt(language, message.key);
   return (
     <tr>

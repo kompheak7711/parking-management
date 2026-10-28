@@ -326,6 +326,19 @@ export function muchMore(use: number, usual: number | null): boolean {
   return use > Math.max(5, Math.round(usual * 2.5));
 }
 
+/**
+ * Is this use much less than usual (under a third) in an Occupied Unit? Then staff check the
+ * meter still works before saving. An empty Unit uses little, so it is not checked.
+ */
+export function muchLess(
+  use: number,
+  usual: number | null,
+  livedIn: boolean,
+): boolean {
+  if (!livedIn || usual === null || usual < 6) return false;
+  return use < usual / 3;
+}
+
 /** "1234.5" → "1,234.5". */
 export function amountText(value: number | string): string {
   const number = typeof value === "number" ? value : Number(value);

@@ -95,6 +95,11 @@ const TEXT = {
     "{0} is much more than usual (about {1}). Check the meter, then save again.",
     "{0} ច្រើនជាងធម្មតា (ប្រហែល {1})។ សូមពិនិត្យ រួចរក្សាទុកម្តងទៀត។",
   ],
+  // V1-060 B6 (owner, 28/10/2026): much less than usual in an Occupied Unit.
+  warn_low: [
+    "{0} is much less than usual (about {1}). Check the meter still works, then save again.",
+    "{0} តិចជាងធម្មតា (ប្រហែល {1})។ សូមពិនិត្យថានាឡិកាស្ទង់នៅដំណើរការ រួចរក្សាទុកម្តងទៀត។",
+  ],
   save_anyway: ["Save anyway", "រក្សាទុកដដែល"],
   broken: ["Broken", "ខូច"],
   rd_broken: [
@@ -369,6 +374,11 @@ const TEXT = {
   im_w_high: [
     "Much more than usual (about {0}). Check the meter.",
     "ច្រើនជាងធម្មតា (ប្រហែល {0})។ សូមពិនិត្យនាឡិកាស្ទង់។",
+  ],
+  // V1-060 B6 (owner, 28/10/2026)
+  im_w_low: [
+    "Much less than usual (about {0}). Check the meter still works.",
+    "តិចជាងធម្មតា (ប្រហែល {0})។ សូមពិនិត្យថានាឡិកាស្ទង់នៅដំណើរការ។",
   ],
   im_how: ["What to confirm", "អ្វីត្រូវបញ្ជាក់"],
   im_good: [

@@ -57373,6 +57373,33 @@
       "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
       "status": "implemented",
       "notes": "V1-060 B6 (owner 28/10/2026): Add meter offers only Units without a current meter of the chosen kind, clears a chosen Unit that already has the newly chosen kind, and, when no Unit is left, says to change a broken meter with Replace meter on its page."
+    },
+    {
+      "test_id": "TEST-FE-1062",
+      "upstream_ids": [
+        "DL-074",
+        "UI-058",
+        "BR-UTIL-009",
+        "BR-UTIL-010",
+        "DL-071"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (owner 28/10/2026): On the Meter readings screen, use under a third of the usual (the average of the last three uses, at least 6) in an Occupied Unit asks to check the meter still works first, and Save anyway sends it; a use that is not much less, or any use in an empty Unit, is saved at once."
+    },
+    {
+      "test_id": "TEST-FE-1063",
+      "upstream_ids": [
+        "DL-074",
+        "API-046",
+        "UI-058",
+        "DL-071"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (owner 28/10/2026): Import marks a reading much less than usual in an Occupied Unit as ready with a check note, and leaves a use that is not much less without one."
     }
   ]
 }

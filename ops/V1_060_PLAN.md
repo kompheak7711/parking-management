@@ -259,3 +259,9 @@ candidate is the code that will be used.
   kind clears a chosen Unit that already has that kind. When every Unit already has one, the
   dialog says to change a broken meter with Replace meter on its page. The check when saving
   stays. Tests TEST-FE-884 (changed) and TEST-FE-1061 (new).
+- 2026-10-28 (B6, owner ask of 10:04, decided by Claude under the owner's 2026-10-23 22:30 rule):
+  a low-use check beside the high-use one. When a new reading's use is under a third of the
+  usual (the average of the last three uses) in an Occupied Unit, the Meter readings screen asks
+  to check the meter still works before saving, with Save anyway; Import marks the line with a
+  check note. An empty Unit uses little, so it is not checked, and a usual under 6 is not
+  checked. Tests TEST-FE-1062 and TEST-FE-1063.

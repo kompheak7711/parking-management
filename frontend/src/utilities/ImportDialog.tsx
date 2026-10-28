@@ -28,6 +28,7 @@ import {
   amountText,
   findUnit,
   isBroken,
+  muchLess,
   muchMore,
   parseReading,
   readingLines,
@@ -192,8 +193,11 @@ export function importLines(
         problem = utt(language, "im_e_lower");
       else if (previous !== null) {
         const usual = usualUse(readingLines(meter, earlier));
-        if (muchMore(value - Number(previous), usual))
+        const use = value - Number(previous);
+        if (muchMore(use, usual))
           warning = utt(language, "im_w_high", amountText(usual ?? 0));
+        else if (muchLess(use, usual, unit.status === "OCCUPIED"))
+          warning = utt(language, "im_w_low", amountText(usual ?? 0));
       }
       lines.push(
         line({

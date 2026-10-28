@@ -449,6 +449,58 @@ describe("Utilities page (V1-058 R4)", () => {
     expect(api.recordReading).toHaveBeenCalledTimes(1);
   });
 
+  it("TEST-FE-1062 Much less than usual in an Occupied Unit asks to check the meter first; an empty Unit is not checked", async () => {
+    const { api } = show();
+    await screen.findByText("1 of 6 meters read");
+    // Usual use is 100 kWh; 20 kWh is less than a third of it.
+    fireEvent.change(input("U101"), { target: { value: "1220" } });
+    fireEvent.click(
+      within(rowOf("U101")).getByRole("button", { name: /^Save U/ }),
+    );
+    expect(
+      screen.getByText(
+        "20 kWh is much less than usual (about 100 kWh). Check the meter still works, then save again.",
+      ),
+    ).toBeTruthy();
+    expect(input("U101").getAttribute("aria-invalid")).toBeNull();
+    expect(api.recordReading).not.toHaveBeenCalled();
+    fireEvent.click(
+      within(rowOf("U101")).getByRole("button", { name: /^Save anyway U101/ }),
+    );
+    await screen.findByText("U101 EL-U101: saved.");
+    expect(api.recordReading).toHaveBeenLastCalledWith(
+      "el-101",
+      expect.objectContaining({ reading_value: "1220" }) as ReadingInput,
+      expect.any(String) as string,
+    );
+    cleanup();
+
+    // 40 kWh is not much less: it is saved at once.
+    const second = show();
+    await screen.findByText("1 of 6 meters read");
+    fireEvent.change(input("U101"), { target: { value: "1240" } });
+    fireEvent.click(
+      within(rowOf("U101")).getByRole("button", { name: /^Save U/ }),
+    );
+    await screen.findByText("U101 EL-U101: saved.");
+    expect(second.api.recordReading).toHaveBeenCalledTimes(1);
+    cleanup();
+
+    // An empty Unit uses little, so 1 kWh is saved at once.
+    const empty = show({
+      units: UNITS.map((item) =>
+        item.unit_number === "U101" ? { ...item, status: "VACANT" } : item,
+      ),
+    });
+    await screen.findByText("1 of 6 meters read");
+    fireEvent.change(input("U101"), { target: { value: "1201" } });
+    fireEvent.click(
+      within(rowOf("U101")).getByRole("button", { name: /^Save U/ }),
+    );
+    await screen.findByText("U101 EL-U101: saved.");
+    expect(empty.api.recordReading).toHaveBeenCalledTimes(1);
+  });
+
   it("TEST-FE-877 A changed meter reads the list again; a lost answer keeps the key for Try again; a refusal says so", async () => {
     const recordReading = vi
       .fn()
@@ -1393,6 +1445,26 @@ describe("Utilities Import readings (V1-058 R4c)", () => {
     show({ today: "2026-10-20" });
     await screen.findByText(/Reading day is 24\/10\/2026/);
     expect(screen.queryByRole("button", { name: /^Import/ })).toBeNull();
+  });
+
+  it("TEST-FE-1063 Import marks a reading much less than usual in an Occupied Unit as ready with a check note", async () => {
+    show({
+      api: utilityApi({
+        readSheet: sheetOf([
+          { row: 2, unit: "U101", electricity: "1210", water: "" },
+          { row: 3, unit: "U201", electricity: "70", water: "" },
+        ]),
+      }),
+    });
+    const dialog = await openCheck();
+    expect(
+      within(dialog).getByText(
+        "Much less than usual (about 100). Check the meter still works.",
+      ),
+    ).toBeTruthy();
+    // 20 kWh in U201 is not much less than its usual 50 kWh.
+    expect(within(dialog).getAllByText(/less than usual/)).toHaveLength(1);
+    expect(within(dialog).getAllByText("Ready")).toHaveLength(2);
   });
 
   it("TEST-FE-895 More than 100 readings go in batches of 100; after batch 2 is refused, Try again skips batch 1, and closing still names the readings batch 1 confirmed", async () => {
