@@ -254,6 +254,10 @@ describe("Totals by Unit and month", () => {
     expect(screen.getByText("01/09/2026 to 31/10/2026")).toBeTruthy();
     expect(screen.getByText("Totals count whole months.")).toBeTruthy();
     expect(screen.getByLabelText("From")).toHaveValue("05/09/2026");
+    // Pick dates pressed again keeps the days typed, not the whole months.
+    fireEvent.click(within(period).getByRole("button", { name: "Pick dates" }));
+    expect(screen.getByLabelText("From")).toHaveValue("05/09/2026");
+    expect(screen.getByLabelText("To")).toHaveValue("20/10/2026");
 
     const before = page.totals.mock.calls.length;
     fireEvent.change(screen.getByLabelText("From"), {

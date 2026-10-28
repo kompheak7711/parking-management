@@ -13,11 +13,14 @@ import { InvoiceClientError } from "../invoiceClient";
 import type { PaymentsApi } from "../payments/paymentsClient";
 import {
   ReservationConflictError,
+  ReservationRequestError,
+  ReservationUnavailableError,
   type ReservationApi,
   type ReservationResource,
 } from "../reservationClient";
 import { DateInput, isDay, parseDay } from "../shell/DateInput";
 import { dayText, todayInPhnomPenh } from "../shell/format";
+import { Dialog } from "../shell/ui";
 import type { UnitApi, UnitResource } from "../unitClient";
 import {
   MakeReservationDialog,
@@ -156,6 +159,55 @@ describe("Date box (V1-060 B7)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Today" }));
     expect(screen.queryByRole("button", { name: "Today" })).toBeNull();
     expect(button).toHaveFocus();
+  });
+
+  it("TEST-FE-1090 an edit inside a typed date stays as typed and is refused, a deleted slash is not put back, a year before 1900 is no day, and Escape on the calendar button closes only the calendar", () => {
+    expect(parseDay("01/01/0000")).toBe("");
+    expect(parseDay("15/03/1899")).toBe("");
+    expect(parseDay("15/03/1900")).toBe("1900-03-15");
+    const onChange = vi.fn();
+    const onClose = vi.fn();
+    render(
+      <Dialog closeLabel="Close" onClose={onClose} title="Dates">
+        <label htmlFor="born">Born</label>
+        <DateInput id="born" onChange={onChange} value="" />
+      </Dialog>,
+    );
+    const box = screen.getByLabelText<HTMLInputElement>("Born");
+    fireEvent.change(box, { target: { value: "15031986" } });
+    expect(box).toHaveValue("15/03/1986");
+    // A "9" typed after "19" (to make 1996) leaves 9 digits: the box keeps them, so the form
+    // refuses the day instead of the box turning it into 15/03/1998.
+    fireEvent.change(box, {
+      target: { value: "15/03/19986", selectionStart: 9, selectionEnd: 9 },
+    });
+    expect(box).toHaveValue("15/03/19986");
+    expect(onChange).toHaveBeenLastCalledWith("15/03/19986");
+    // A digit added at the end of a whole date is not swallowed either.
+    fireEvent.change(box, { target: { value: "15/03/1986" } });
+    fireEvent.change(box, { target: { value: "15/03/19861" } });
+    expect(box).toHaveValue("15/03/19861");
+    // Backspace on the second slash: it stays deleted.
+    fireEvent.change(box, { target: { value: "15/03/1986" } });
+    fireEvent.change(box, {
+      target: { value: "15/031986", selectionStart: 5, selectionEnd: 5 },
+    });
+    expect(box).toHaveValue("15/031986");
+    // Typing at the end still adds the slashes.
+    fireEvent.change(box, { target: { value: "" } });
+    for (const key of "0103")
+      fireEvent.change(box, { target: { value: box.value + key } });
+    expect(box).toHaveValue("01/03");
+
+    const button = screen.getByRole("button", { name: "Calendar" });
+    fireEvent.click(button);
+    expect(screen.getByRole("button", { name: "Today" })).toBeInTheDocument();
+    fireEvent.keyDown(button, { key: "Escape" });
+    expect(screen.queryByRole("button", { name: "Today" })).toBeNull();
+    expect(onClose).not.toHaveBeenCalled();
+    // With the calendar shut, Escape is the dialog's Cancel again.
+    fireEvent.keyDown(button, { key: "Escape" });
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -400,5 +452,219 @@ describe("Make Reservation (V1-060 B6)", () => {
     });
     expect(create.mock.calls[1]?.[1]).toEqual(create.mock.calls[0]?.[1]);
     expect(create.mock.calls[1]?.[2]).toBe(create.mock.calls[0]?.[2]);
+  });
+});
+
+describe("Make Reservation (V1-060 B7)", () => {
+  /** Opens the dialog for Unit U102 and fills a Reservation of $500.00 a month, $100.00 now. */
+  async function filled(
+    api: ReservationApi,
+    paymentsApi: PaymentsApi,
+    unitApi: Pick<UnitApi, "list">,
+    customerApi: CustomerApi,
+    onSaved: (saved: ReservationResource) => void,
+    onClose: () => void,
+  ) {
+    render(
+      <MakeReservationDialog
+        api={api}
+        customerApi={customerApi}
+        language="en"
+        mayOverride
+        onClose={onClose}
+        onSaved={onSaved}
+        paymentsApi={paymentsApi}
+        propertyId="property-1"
+        unitApi={unitApi}
+        unitId="unit-2"
+      />,
+    );
+    const dialog = await screen.findByRole("dialog", {
+      name: "Make Reservation",
+    });
+    await within(dialog).findByLabelText("Unit");
+    fireEvent.change(within(dialog).getByLabelText("Customer"), {
+      target: { value: "customer-dara" },
+    });
+    fireEvent.change(
+      within(dialog).getByLabelText("Agreed monthly Rent (USD)"),
+      { target: { value: "500" } },
+    );
+    fireEvent.change(
+      await within(dialog).findByLabelText("How the money came"),
+      { target: { value: "method-cash" } },
+    );
+    return dialog;
+  }
+  const unknown =
+    "We could not tell whether this was saved. “Try again” sends the very same request; it is never saved twice.";
+  const boxes = (dialog: HTMLElement) =>
+    [
+      "Unit",
+      "Customer",
+      "Reservation Date",
+      "Expires on",
+      "Agreed monthly Rent (USD)",
+      "Full Security Deposit (USD)",
+      "Received now (USD)",
+      "How the money came",
+    ].map((label) => within(dialog).getByLabelText(label));
+
+  it("TEST-FE-1092 a Unit from the address that is not free is not kept; less than the suggestion waits while the rights are not known; after a lost answer every box stays fixed; a refusal after a lost Reservation answer finds that Reservation saved", async () => {
+    const { unitApi, customerApi, paymentsApi, confirm } = apis();
+    confirm
+      .mockReset()
+      .mockRejectedValueOnce(new InvoiceClientError(null, "NETWORK", true))
+      .mockResolvedValue({ paymentId: "payment-1", receiptNumber: "RC0001" });
+    const found = { reservation_id: "found" } as unknown as ReservationResource;
+    const create = vi
+      .fn<ReservationApi["create"]>()
+      .mockRejectedValueOnce(new ReservationUnavailableError())
+      .mockRejectedValueOnce(new ReservationConflictError());
+    const get = vi.fn<ReservationApi["get"]>().mockResolvedValue(found);
+    const api = { create, get } as unknown as ReservationApi;
+    // A Unit that is not free now: the address named it, the box starts empty.
+    const first = render(
+      <MakeReservationDialog
+        api={api}
+        customerApi={customerApi}
+        language="en"
+        mayOverride={null}
+        onClose={vi.fn()}
+        onSaved={vi.fn()}
+        paymentsApi={paymentsApi}
+        propertyId="property-1"
+        unitApi={unitApi}
+        unitId="unit-9"
+      />,
+    );
+    const away = await screen.findByRole("dialog", {
+      name: "Make Reservation",
+    });
+    expect(await within(away).findByLabelText("Unit")).toHaveValue("");
+    fireEvent.change(within(away).getByLabelText("Unit"), {
+      target: { value: "unit-2" },
+    });
+    fireEvent.change(within(away).getByLabelText("Customer"), {
+      target: { value: "customer-dara" },
+    });
+    fireEvent.change(within(away).getByLabelText("Agreed monthly Rent (USD)"), {
+      target: { value: "500" },
+    });
+    fireEvent.change(await within(away).findByLabelText("How the money came"), {
+      target: { value: "method-cash" },
+    });
+    fireEvent.change(within(away).getByLabelText("Received now (USD)"), {
+      target: { value: "50" },
+    });
+    fireEvent.change(
+      within(away).getByLabelText(/Why less than the suggestion/),
+      { target: { value: "Family of the Owner" } },
+    );
+    fireEvent.click(
+      within(away).getByRole("button", { name: "Save Reservation" }),
+    );
+    expect(
+      within(away).getByText(
+        "Your rights could not be read just now, so less than the suggested $100.00 cannot be checked before the money is taken. Reload the page, or receive at least $100.00.",
+      ),
+    ).toBeInTheDocument();
+    expect(confirm).not.toHaveBeenCalled();
+    first.unmount();
+
+    const onSaved = vi.fn();
+    const dialog = await filled(
+      api,
+      paymentsApi,
+      unitApi,
+      customerApi,
+      onSaved,
+      vi.fn(),
+    );
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save Reservation" }),
+    );
+    expect(await within(dialog).findByText(unknown)).toBeInTheDocument();
+    for (const box of boxes(dialog)) expect(box).toBeDisabled();
+    // The money is saved now; the Reservation's answer is lost: still every box fixed.
+    fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
+    await waitFor(() => {
+      expect(create).toHaveBeenCalledTimes(1);
+    });
+    expect(await within(dialog).findByText(unknown)).toBeInTheDocument();
+    for (const box of boxes(dialog)) expect(box).toBeDisabled();
+    // The very same request meets the Reservation it saved: the Unit is no longer free.
+    fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
+    await waitFor(() => {
+      expect(onSaved).toHaveBeenCalledWith(found);
+    });
+    expect(confirm).toHaveBeenCalledTimes(2);
+    expect(confirm.mock.calls[1]?.[2]).toBe(confirm.mock.calls[0]?.[2]);
+    expect(create).toHaveBeenCalledTimes(2);
+    expect(create.mock.calls[1]?.[1]).toEqual(create.mock.calls[0]?.[1]);
+    expect(create.mock.calls[1]?.[2]).toBe(create.mock.calls[0]?.[2]);
+    expect(get).toHaveBeenCalledWith(create.mock.calls[0]?.[1].reservation_id);
+  });
+
+  it("TEST-FE-1093 a refusal after a lost Reservation answer stays not known until the lookup says there is none; then the money saved but the Reservation refused says so, and Close asks once more", async () => {
+    const { unitApi, customerApi, paymentsApi, confirm } = apis();
+    const create = vi
+      .fn<ReservationApi["create"]>()
+      .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+      .mockRejectedValue(new ReservationConflictError());
+    const get = vi
+      .fn<ReservationApi["get"]>()
+      .mockRejectedValueOnce(new ReservationUnavailableError())
+      .mockRejectedValue(new ReservationRequestError(404));
+    const api = { create, get } as unknown as ReservationApi;
+    const onSaved = vi.fn();
+    const onClose = vi.fn();
+    const dialog = await filled(
+      api,
+      paymentsApi,
+      unitApi,
+      customerApi,
+      onSaved,
+      onClose,
+    );
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save Reservation" }),
+    );
+    expect(await within(dialog).findByText(unknown)).toBeInTheDocument();
+    // The lookup cannot be read: still not known.
+    fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
+    await waitFor(() => {
+      expect(get).toHaveBeenCalledTimes(1);
+    });
+    expect(await within(dialog).findByText(unknown)).toBeInTheDocument();
+    for (const box of boxes(dialog)) expect(box).toBeDisabled();
+    // The server says there is no such Reservation: the conflict stands.
+    fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
+    expect(
+      await within(dialog).findByText(
+        /The Reservation was not saved: the Unit or the Customer changed meanwhile/,
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByText(
+        "The money is saved with Receipt RC0001, but the rest was not saved (the reason is below). The money pays nothing yet, so do not receive it again. If the reason cannot be fixed here, close this and ask the Owner or a Manager to finish it.",
+      ),
+    ).toBeInTheDocument();
+    expect(within(dialog).getByLabelText("Reservation Date")).toBeEnabled();
+    expect(within(dialog).getByLabelText("Received now (USD)")).toBeDisabled();
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(create).toHaveBeenCalledTimes(3);
+    expect(onSaved).not.toHaveBeenCalled();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Close" }));
+    expect(onClose).not.toHaveBeenCalled();
+    expect(
+      within(dialog).getByText(
+        "The money is saved with Receipt RC0001, but the rest is not confirmed. If you close now, do not receive the money again; ask the Owner or a Manager to check and finish it.",
+      ),
+    ).toBeInTheDocument();
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Close anyway" }),
+    );
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

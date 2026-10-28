@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 
 const shell = readFileSync("src/shell/shell.css", "utf8");
 const screens = readFileSync("src/shell/screens.css", "utf8");
+const styles = readFileSync("src/styles.css", "utf8");
 
 /** The declarations of the first rule written as "<selector> {". */
 function rule(css: string, selector: string): string {
@@ -110,9 +111,9 @@ describe("Buttons", () => {
         selector: match[1]?.trim() ?? "",
         body: match[2] ?? "",
       }));
-    // shell.css loads after screens.css, so none of its select rules may set the whole
-    // background (that would clear the drawn arrow).
-    for (const { selector, body } of rules(shell))
+    // shell.css and styles.css load after screens.css, so none of their select rules may set
+    // the whole background (that would clear the drawn arrow).
+    for (const { selector, body } of [...rules(shell), ...rules(styles)])
       if (/\bselect\b/.test(selector))
         expect(body).not.toMatch(/(^|[\s;])background:/);
     // A select with a class or state is more specific than the arrow rule; it keeps it too.
@@ -122,6 +123,12 @@ describe("Buttons", () => {
     const arrow = rule(screens, "\n.shell-view select,\n.ui-dlg select");
     expect(arrow).toContain("background-image: url(");
     expect(arrow).toContain("padding-right: 36px;");
+    expect(
+      rule(
+        screens,
+        "\n.shell-view .form-field select,\n.shell-view .financial-management select",
+      ),
+    ).toContain("padding-right: 36px;");
     expect(rule(screens, "\n.shell-view select.ui-sel")).toContain(
       "padding: 0 36px 0 12px;",
     );

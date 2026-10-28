@@ -153,7 +153,8 @@ const TEXT = {
   more: ["Show more", "បង្ហាញបន្ថែម"],
   total: ["Total", "សរុប"],
   // V1-060 B7: the footer Total counts every row, also the ones not shown yet.
-  total_all: ["Total, all {0} rows", "សរុប ទាំង {0} ជួរ"],
+  // V1-060 B7: no count here; a report may join the server's rows into fewer lines.
+  total_all: ["Total, all rows", "សរុប គ្រប់ជួរ"],
   // new
   none: ["No records for this period.", "គ្មានកំណត់ត្រាសម្រាប់រយៈពេលនេះទេ។"],
   // new
@@ -207,10 +208,10 @@ const TEXT = {
     "វិក្កយបត្រនីមួយៗរាប់ក្នុងខែដែលវាសម្រាប់៖ ថ្លៃឈ្នួលក្នុងខែឈ្នួល ទឹកភ្លើងក្នុងខែដែលរយៈពេលអានបញ្ចប់។ ប្រាក់កក់ដែលកាន់កាប់មិនមែនចំណូលទេ; ប្រាក់កក់ដែលរក្សាទុក រាប់ក្នុងខែដែលវាត្រូវបានរក្សាទុក។ ពេលជ្រើសគ្រប់បន្ទប់ បន្ទប់ទាំងអស់ត្រូវបូកបញ្ចូលគ្នា។",
   ],
   // V1-060 B7: a reversed Payment comes off in its month, so the figure that matches is the
-  // Payments report's Received less reversals.
+  // Payments report's Received less reversals (shown only when there are reversals).
   note_total_payment: [
-    "Every Receipt counts on the day the money came in, deposits included; a reversed Payment comes off in the month it is reversed. This total matches Received less reversals in the Payments report. With All Units, every Unit is added together.",
-    "បង្កាន់ដៃនីមួយៗរាប់នៅថ្ងៃដែលលុយចូល រួមទាំងប្រាក់កក់; ការបង់ប្រាក់ដែលត្រូវបានត្រឡប់វិញ ត្រូវដកចេញក្នុងខែដែលវាត្រូវបានត្រឡប់។ សរុបនេះដូច «ប្រាក់ទទួល ដកការត្រឡប់វិញ» ក្នុងរបាយការណ៍ការបង់ប្រាក់។ ពេលជ្រើសគ្រប់បន្ទប់ បន្ទប់ទាំងអស់ត្រូវបូកបញ្ចូលគ្នា។",
+    "Every Receipt counts on the day the money came in, deposits included; a reversed Payment comes off in the month it is reversed. For the same whole months this total matches the Payments report: Received less reversals, or Money received when there are none. With All Units, every Unit is added together.",
+    "បង្កាន់ដៃនីមួយៗរាប់នៅថ្ងៃដែលលុយចូល រួមទាំងប្រាក់កក់; ការបង់ប្រាក់ដែលត្រូវបានត្រឡប់វិញ ត្រូវដកចេញក្នុងខែដែលវាត្រូវបានត្រឡប់។ សម្រាប់ខែពេញដូចគ្នា សរុបនេះដូចរបាយការណ៍ការបង់ប្រាក់៖ «ប្រាក់ទទួល ដកការត្រឡប់វិញ» ឬ «ប្រាក់បានទទួល» ពេលគ្មានការត្រឡប់វិញ។ ពេលជ្រើសគ្រប់បន្ទប់ បន្ទប់ទាំងអស់ត្រូវបូកបញ្ចូលគ្នា។",
   ],
   note_total_electricity: [
     "Each month holds the reading period that ends on the 24th of that month (October = 25/09 – 24/10), at the Rate of that period. With All Units, every Unit is added together.",

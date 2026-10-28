@@ -336,6 +336,15 @@ EXECUTE only for `prm_financial`; no application role reads the table.
 `app.set_lease_planned_security_deposit` now refuses a save identity used again with another
 Lease, amount or reason instead of answering the stored amount.
 
+Since the V1-060 B7 second review (migration `20270331_250`, DL-109)
+`app.sign_lease_with_payment` locks the Unit, then the Primary Tenant's active Reservation of
+the Unit and the Security Deposit the draft names, before it works out the money. A draft that
+is not a renewal and names a Security Deposit that is not held for that active Reservation (the
+Reservation ended or another Reservation holds the Unit) is refused before any money. The
+draft's amount is applied only to the Security Deposit the command took, and before the command
+row is written a Lease that is not a renewal must have exactly one Security Deposit, received in
+full; otherwise nothing is saved.
+
 ### Unpaid Initial obligation termination (migration `20261005_70`)
 
 Termination basis `UNPAID_INITIAL_OBLIGATION` requires governing reference `BR-LEASE-005`,

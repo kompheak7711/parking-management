@@ -4,6 +4,8 @@ from dataclasses import replace
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
+import psycopg
+import pytest
 from fastapi.testclient import TestClient
 
 from property_rental.api_refusals import RefusedRequest
@@ -15,6 +17,7 @@ from property_rental.lease_signing_api import (
     LeaseSigningNotFound,
     LeaseSigningUnavailable,
     SignWithPaymentCommand,
+    _sign_error,
     sign_with_payment_digest,
 )
 from test_invoice import mutation_headers
@@ -246,6 +249,34 @@ def test_sign_with_payment_answers_why_nothing_was_saved() -> None:
     assert http.post(path, json=_signing(), headers=mutation_headers(version=3)).status_code == 503
     flow.failure = LeaseSigningNotFound()
     assert http.post(path, json=_signing(), headers=mutation_headers(version=3)).status_code == 404
+
+
+def test_a_failure_inside_the_command_is_a_refusal_unless_its_outcome_is_unknown() -> None:
+    """V1-060 B7 (second review): the command saved nothing when it raised, so a broken rule is a
+    refusal; only a deadlock, a lock wait, a timeout or a lost connection is not known (the screen
+    then sends the same request again)."""
+    refused = {
+        psycopg.errors.ExclusionViolation: "SIGNING_DATES_TAKEN",
+        psycopg.errors.UniqueViolation: "SIGNING_REFUSED",
+        psycopg.errors.CheckViolation: "SIGNING_REFUSED",
+        psycopg.errors.ObjectNotInPrerequisiteState: "SIGNING_REFUSED",
+    }
+    for kind, code in refused.items():
+        with pytest.raises(RefusedRequest) as caught:
+            _sign_error(kind("refused"))
+        assert caught.value.refusal.code == code
+        assert "Nothing was saved" in caught.value.refusal.message
+    unknown: tuple[type[psycopg.Error], ...] = (
+        psycopg.errors.DeadlockDetected,
+        psycopg.errors.LockNotAvailable,
+        psycopg.errors.QueryCanceled,
+        psycopg.OperationalError,
+    )
+    for failure in unknown:
+        with pytest.raises(LeaseSigningUnavailable):
+            _sign_error(failure("not known"))
+    with pytest.raises(LeaseSigningConflict):
+        _sign_error(psycopg.errors.SerializationFailure("stale"))
 
 
 def test_every_sign_lease_refusal_says_nothing_was_saved() -> None:

@@ -132,7 +132,7 @@ export interface TableFrame {
   generated: string;
   /** Show more, and its failure note. */
   more?: ReactNode;
-  /** V1-060 B7: "Total, all 340 rows" while only some rows are shown (the total is for all). */
+  /** V1-060 B7: "Total, all rows" while only some rows are shown (the total is for all). */
   totalLabel?: string;
 }
 

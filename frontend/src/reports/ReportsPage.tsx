@@ -551,9 +551,7 @@ function ReportView({
             title: name,
             icon: def.icon,
             generated,
-            ...(read < all
-              ? { totalLabel: rpt(language, "total_all", all) }
-              : {}),
+            ...(read < all ? { totalLabel: rpt(language, "total_all") } : {}),
             more: read < all && (
               <span className="ui-hrow">
                 {moreFailed && (
@@ -707,7 +705,9 @@ function ParameterBar({
       onParams({ ...params, period });
       return;
     }
-    // Pick dates starts from the days on screen, or this month.
+    // Pick dates starts from the days on screen, or this month. Pressed again it keeps the days
+    // typed: a Totals table shows them widened to whole months (V1-060 B7).
+    if (params.period === "pick") return;
     const [first, last] = range ?? [`${today.slice(0, 7)}-01`, today];
     onParams({ ...params, period, from: first, to: last });
   };

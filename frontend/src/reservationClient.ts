@@ -142,7 +142,8 @@ export class ReservationConflictError extends Error {
 }
 
 export class ReservationRequestError extends Error {
-  constructor() {
+  /** V1-060 B7: the answer's status, when the server gave one. */
+  constructor(public readonly status: number | null = null) {
     super("The Reservation request was not completed.");
     this.name = "ReservationRequestError";
   }
@@ -179,16 +180,23 @@ async function request(
     response.status >= 500
   )
     throw new ReservationUnavailableError();
-  if (!response.ok) throw new ReservationRequestError();
-  const value: unknown = await response.json();
+  if (!response.ok) throw new ReservationRequestError(response.status);
+  // V1-060 B7: an answer of success that cannot be read cannot say what was saved, so it counts
+  // as no answer.
+  let value: unknown;
+  try {
+    value = await response.json();
+  } catch {
+    throw new ReservationUnavailableError();
+  }
   if (typeof value !== "object" || value === null)
-    throw new ReservationRequestError();
+    throw new ReservationUnavailableError();
   return value as Record<string, unknown>;
 }
 
 function data(value: Record<string, unknown>): Record<string, unknown> {
   if (typeof value.data !== "object" || value.data === null) {
-    throw new ReservationRequestError();
+    throw new ReservationUnavailableError();
   }
   return value.data as Record<string, unknown>;
 }
@@ -204,7 +212,7 @@ function commandHeaders(idempotencyKey: string, version?: number): HeadersInit {
 
 function resource(value: unknown): ReservationResource {
   if (typeof value !== "object" || value === null)
-    throw new ReservationRequestError();
+    throw new ReservationUnavailableError();
   return value as ReservationResource;
 }
 

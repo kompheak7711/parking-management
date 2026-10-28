@@ -488,7 +488,6 @@ def test_a_planned_deposit_save_used_again_for_another_amount_is_refused(
 def test_sign_lease_in_one_step_is_the_head_and_is_forward_only() -> None:
     config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
     scripts = ScriptDirectory.from_config(config)
-    assert scripts.get_current_head() == "20270330_249"
     revision = scripts.get_revision("20270330_249")
     assert revision is not None and revision.down_revision == "20270329_248"
     module = cast(Any, revision.module)

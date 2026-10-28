@@ -377,3 +377,36 @@ candidate is the code that will be used.
   and grouped lines; dates that look right but do not exist pass some other screens' format
   checks (the server refuses them). TEST-FE-918 (Payments reprint) failed once in about 20 runs:
   intermittent, like TEST-FE-087, TEST-FE-128 and TEST-FE-488.
+- 2026-10-28 B7 second review (DL-109): independent reviews of DL-108 (the Sign Lease command, the
+  money screens, the Reports screens). Found: a draft from a Reservation that later ended (cancelled
+  or expired) was signed as a walk-in with no Security Deposit, and the command changed the ended
+  Reservation's Security Deposit; some definite refusals inside the command were answered as not
+  known (503); after a lost answer, Receive Security Deposit and Make Reservation let the money be
+  changed and sent as a new Payment; and smaller points. Built (migration 20270331_250; decided by
+  Claude under the owner's 2026-10-23 22:30 rule, no money rule): Sign Lease locks the Unit, the
+  active Reservation and the Security Deposit first, refuses such a draft before any money
+  (SIGNING_RESERVATION_ENDED), applies the draft's amount only to the Security Deposit it took and
+  ends with exactly one Security Deposit received in full; an error inside the command is a refusal
+  (SIGNING_DATES_TAKEN, SIGNING_PAYMENT_SOURCE_GONE, SIGNING_REFUSED) and only a deadlock, lock
+  wait, timeout, lost connection or failed commit is not known; the two money dialogs keep every
+  money box fixed after a lost answer, stay not known after 401, 403 or 404 on Try again, say when
+  the money is saved but the rest is not (with the Receipt), ask once more on Close while the money
+  may be saved, and Make Reservation looks up its own Reservation after a lost answer, keeps no Unit
+  that is not vacant and waits for the person's rights before less than the suggestion; the Lease
+  page says when a draft's Security Deposit is being read or could not be read; closing Sign Lease
+  reads the Lease again; date boxes add slashes only at the end and take no year before 1900; Escape
+  on the calendar closes only the calendar; Reports footer "Total, all rows", the Total Payment
+  note, Pick dates keeps the typed days, one chart label; the older forms' drop-downs keep their
+  arrow. Tests: 7 new database tests, 1 new API test, TEST-FE-1090 to TEST-FE-1094 (new;
+  TEST-FE-1095 is in the reservation client tests, which the manifest does not list), TEST-FE-851,
+  1040, 1082, 1086 and 1088 (changed); scripts/database-test.sh runs the new database test file.
+  Owner question (open): should a draft whose Reservation ended be signed as a walk-in Lease with a
+  new Security Deposit? Until then it is refused. Follow-ups (not built): `POST
+  /leases/{lease_id}/sign` still signs without money; a planned Security Deposit save of the amount
+  already planned does not keep its id from reuse; the signing time is a moment before the Payment
+  time (same transaction); a retry after the person lost a right is refused though the first request
+  was saved; the signing preview does not give the total for a walk-in draft whose Customer holds an
+  active Reservation of the Unit; Khmer screens show the server's English words for some refusals;
+  the Edit draft deposit box does not follow a changed Rent; This month on a Totals table shows the
+  days, not the whole month; Letters and Record notice give the order message for a date that is not
+  a real day; one such test per dialog; the hover colour of chart columns.

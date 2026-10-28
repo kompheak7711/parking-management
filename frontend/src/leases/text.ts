@@ -948,6 +948,15 @@ const TEXT = {
     "Received in full with the Reservation.",
     "បានទទួលគ្រប់ចំនួនជាមួយការកក់។",
   ],
+  // V1-060 B7: never "none" while the draft's deposit is not known.
+  dep_term_reading: [
+    "Reading the Security Deposit…",
+    "កំពុងអានប្រាក់កក់សុវត្ថិភាព…",
+  ],
+  dep_term_failed: [
+    "The Security Deposit could not be read just now. Reload the page to see it.",
+    "មិនអាចអានប្រាក់កក់សុវត្ថិភាពបានទេឥឡូវនេះ។ សូមផ្ទុកទំព័រឡើងវិញដើម្បីមើលវា។",
+  ],
   sp_money: [
     "Money to receive before signing",
     "ប្រាក់ត្រូវទទួលមុនចុះហត្ថលេខា",

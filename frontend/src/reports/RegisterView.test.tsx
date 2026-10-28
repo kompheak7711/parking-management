@@ -901,7 +901,7 @@ describe("Registers", () => {
     const table = await screen.findByRole("table", {
       name: "Invoice register and balances",
     });
-    expect(footRow(table)[0]).toBe("Total, all 3 rows");
+    expect(footRow(table)[0]).toBe("Total, all rows");
     fireEvent.click(screen.getByRole("button", { name: "Show more" }));
     await screen.findByText("3 rows");
     expect(

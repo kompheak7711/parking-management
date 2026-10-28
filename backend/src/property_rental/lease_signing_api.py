@@ -166,7 +166,8 @@ SIGN_REFUSALS: Final[dict[str, Refusal]] = {
     "Reservation cannot be completed by this signing": Refusal(
         409,
         "SIGNING_RESERVATION_ENDED",
-        "The Customer's Reservation of this Unit has ended or changed. Nothing was saved.",
+        "The Customer's Reservation of this Unit has ended or changed, so this draft cannot take "
+        "its Security Deposit. Nothing was saved. Ask the Owner or a Manager.",
     ),
     "The Reservation has no Security Deposit": Refusal(
         409,
@@ -176,7 +177,8 @@ SIGN_REFUSALS: Final[dict[str, Refusal]] = {
     "The Deposit's Reservation is not active; this receipt is not recorded here": Refusal(
         409,
         "SIGNING_RESERVATION_ENDED",
-        "The Customer's Reservation of this Unit has ended or changed. Nothing was saved.",
+        "The Customer's Reservation of this Unit has ended or changed, so this draft cannot take "
+        "its Security Deposit. Nothing was saved. Ask the Owner or a Manager.",
     ),
     "Sign Lease key reused": Refusal(
         409,
@@ -184,7 +186,23 @@ SIGN_REFUSALS: Final[dict[str, Refusal]] = {
         "This signing was already sent with other details. Nothing more was saved. "
         "Close and open Sign Lease again.",
     ),
+    # V1-060 B7 (second review): refusals from a step inside the command.
+    "Payment source not found": Refusal(
+        409,
+        "SIGNING_PAYMENT_SOURCE_GONE",
+        "The way the money came is no longer on, or the Customer was not found. Nothing was "
+        "saved. Close, open Sign Lease again and choose how the money came.",
+    ),
 }
+
+# V1-060 B7 (second review): another signed Lease of the Unit covers these dates (the database's
+# exclusion check), found before the Unit's own check.
+SIGNING_DATES_TAKEN: Final = Refusal(
+    409,
+    "SIGNING_DATES_TAKEN",
+    "Another signed Lease of this Unit covers these dates. Nothing was saved. Check the dates "
+    "with Edit draft, or ask the Owner.",
+)
 
 
 class LeaseSigningNotFound(LookupError):
@@ -432,22 +450,31 @@ class LeaseSigningConflict(RuntimeError):
 
 
 def _sign_error(exc: psycopg.Error) -> NoReturn:
-    """DL-108: one refusal for the whole command; every failure saved nothing."""
+    """DL-108: one refusal for the whole command; every failure saved nothing.
+
+    V1-060 B7 (second review): an error the command raised is a refusal, because its transaction
+    saved nothing and the same request fails the same way again. The command checks every deferred
+    rule before it returns, so a rule broken at its end is raised by the command itself, never at
+    the commit."""
     message = exc.diag.message_primary or ""
-    if exc.sqlstate == "40001":
+    sqlstate = exc.sqlstate or ""
+    if sqlstate == "40001":
         raise LeaseSigningConflict from exc
     if message in SIGN_REFUSALS:
         raise RefusedRequest(SIGN_REFUSALS[message]) from exc
     if "Partial-month" in str(exc) or "rate is missing" in str(exc):
         raise RefusedRequest(PARTIAL_SERVICE) from exc
-    if exc.sqlstate in {"P0002", "P5301", "P4501"}:
+    if sqlstate in {"P0002", "P5301", "P4501"}:
         raise LeaseSigningNotFound from exc
-    if exc.sqlstate in {"P5302", "22023", "22P02", "22007", "22008"}:
+    if sqlstate in {"P5302", "22023", "22P02", "22007", "22008"}:
         raise LeaseSigningInvalid from exc
-    if exc.sqlstate in {"23514", "55000", "P4506", "P5S01"}:
+    if sqlstate == "23P01":
+        raise RefusedRequest(SIGNING_DATES_TAKEN) from exc
+    if sqlstate.startswith("23") or sqlstate in {"55000", "P4506", "P5S01", "P5305"}:
         raise RefusedRequest(SIGNING_REFUSED) from exc
-    # Serialization, deadlock, timeout and connection failures cannot prove that an earlier try
-    # with this key did not commit: the screen sends the same request with the same key again.
+    # Deadlock, lock, timeout and connection failures, and a failed commit, cannot prove that an
+    # earlier try with this key did not commit: the screen sends the same request with the same
+    # key again.
     raise LeaseSigningUnavailable from exc
 
 

@@ -4,7 +4,8 @@
 // Payment with its Receipt (it pays no Invoice); the Security Deposit is then made (walk-in only)
 // and takes its receipt from that Payment. Each step keeps one request identity while its values
 // stay the same, so "Try again" never saves anything twice; the Payment is sent again with the
-// very same body (V1-060 B7).
+// very same body (V1-060 B7). While it is not known whether the money was saved, the boxes stay
+// fixed, and Close asks once more while the money may be saved and the rest is not.
 
 import { FormEvent, useRef, useState } from "react";
 
@@ -17,9 +18,10 @@ import {
   type MoneyChoice,
   MoneyFields,
   moneyProblem,
-  outcomeOf,
+  outcomeAfter,
   paymentInput,
   requestFor,
+  useCloseGuard,
   usePaymentMethods,
 } from "../payments/depositMoney";
 import type { ConfirmedPayment, PaymentsApi } from "../payments/paymentsClient";
@@ -93,6 +95,9 @@ export function ReceiveDepositDialog({
     deposit: crypto.randomUUID(),
     receipt: crypto.randomUUID(),
   });
+  // The Payment's answer was lost: it may be saved, so nothing that makes it up may change.
+  const pending = paid === null && outcome?.kind === "unknown";
+  const guard = useCloseGuard(pending || paid !== null, onClose);
 
   const requiredCents = security === null ? centsOf(required) : null;
   const outstanding =
@@ -100,6 +105,7 @@ export function ReceiveDepositDialog({
 
   function check(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    guard.reset();
     const found: typeof problems = {};
     const receivedCents = centsOf(received);
     if (security === null && requiredCents === null)
@@ -139,19 +145,31 @@ export function ReceiveDepositDialog({
     payment: ReturnType<typeof paymentInput>,
     receivedCents: number,
   ) {
+    // The try before this one: unknown means its answer was lost.
+    const earlierUnknown = outcome?.kind === "unknown";
     setBusy(true);
     setOutcome(null);
-    try {
-      let money = paid;
-      if (money === null) {
+    let money = paid;
+    if (money === null) {
+      try {
         const request = requestFor(paymentRequest, payment);
         money = await paymentsApi.confirm(
           propertyId,
           request.body,
           request.key,
         );
-        setPaid(money);
+      } catch (error: unknown) {
+        setOutcome(
+          outcomeAfter(error, earlierUnknown) === "unknown"
+            ? { kind: "unknown" }
+            : { kind: "refused", text: lt(language, "rd_refused") },
+        );
+        setBusy(false);
+        return;
       }
+      setPaid(money);
+    }
+    try {
       let target = depositId;
       if (target === null) {
         const form = {
@@ -188,7 +206,7 @@ export function ReceiveDepositDialog({
       );
     } catch (error: unknown) {
       setOutcome(
-        outcomeOf(error) === "unknown"
+        outcomeAfter(error, earlierUnknown) === "unknown"
           ? { kind: "unknown" }
           : {
               kind: "refused",
@@ -210,13 +228,16 @@ export function ReceiveDepositDialog({
         <span>{text}</span>
       </p>
     );
-  const locked = paid !== null || busy;
+  const locked = paid !== null || busy || pending;
+  const stuck = outcome?.kind === "refused";
 
   return (
     <Dialog
       busy={busy}
-      closeLabel={lt(language, "close")}
-      onClose={onClose}
+      closeLabel={
+        guard.asked ? dmt(language, "close_anyway") : lt(language, "close")
+      }
+      onClose={guard.close}
       onSubmit={check}
       submitLabel={
         busy
@@ -292,9 +313,18 @@ export function ReceiveDepositDialog({
         <p>{lt(language, "rd_note")}</p>
       </div>
       {paid !== null && (
-        <div className="ui-notice info" role="status">
-          <Icon name="check" />
-          <p>{dmt(language, "paid_saved", paid.receiptNumber)}</p>
+        <div
+          className={stuck ? "ui-notice warn" : "ui-notice info"}
+          role="status"
+        >
+          <Icon name={stuck ? "alert" : "check"} />
+          <p>
+            {dmt(
+              language,
+              stuck ? "paid_stuck" : "paid_saved",
+              paid.receiptNumber,
+            )}
+          </p>
         </div>
       )}
       {outcome !== null && (
@@ -304,6 +334,16 @@ export function ReceiveDepositDialog({
             {outcome.kind === "unknown"
               ? lt(language, "rd_unknown")
               : outcome.text}
+          </p>
+        </div>
+      )}
+      {guard.asked && (
+        <div className="ui-notice warn" role="alert">
+          <Icon name="alert" />
+          <p>
+            {paid === null
+              ? dmt(language, "close_unknown")
+              : dmt(language, "close_paid", paid.receiptNumber)}
           </p>
         </div>
       )}

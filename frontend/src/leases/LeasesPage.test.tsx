@@ -45,6 +45,7 @@ import { addDays, endingLimit, initialRent } from "./leasesData";
 afterEach(() => {
   cleanup();
   window.location.hash = "";
+  vi.useRealTimers();
 });
 
 beforeEach(() => {
@@ -282,8 +283,9 @@ function signing(
           : {
               period_start: "2026-12-10",
               period_end: "2026-12-31",
-              // A Due Date that has not passed (the dialog compares it with today).
-              due_date: todayInPhnomPenh(),
+              // A Due Date far ahead, so it never passes while the tests run (the dialog
+              // compares it with today).
+              due_date: "2999-12-31",
               rent_usd_cents: 35_484,
               service_lines: [],
               total_usd_cents: 35_484,
@@ -780,6 +782,9 @@ describe("Lease actions", () => {
   });
 
   it("TEST-FE-851 after a lost answer Try again sends the very same request with the same key and nothing can be changed; a conflict reads the Lease again", async () => {
+    // The clock moves between the presses: the time the money came stays the first one.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-28T03:00:00.000Z"));
     window.location.hash = "#/leases/lease-sign";
     const get = vi.fn().mockResolvedValue(signable);
     const money = signing();
@@ -821,6 +826,7 @@ describe("Lease actions", () => {
     expect(within(dialog).getByLabelText("How the money came")).toBeDisabled();
     for (const box of within(dialog).getAllByRole("checkbox"))
       expect(box).toBeDisabled();
+    vi.setSystemTime(new Date("2026-10-28T03:00:07.000Z"));
     fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
     await waitFor(() => {
       expect(money.signWithPayment).toHaveBeenCalledTimes(2);
@@ -828,6 +834,7 @@ describe("Lease actions", () => {
     expect(
       await within(dialog).findByText(/No answer came back/),
     ).toBeInTheDocument();
+    vi.setSystemTime(new Date("2026-10-28T03:00:15.000Z"));
     fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
     expect(
       await screen.findByText(/This Lease or its Unit changed meanwhile/),
@@ -838,6 +845,7 @@ describe("Lease actions", () => {
     // The same key and the very same body, the time the money came included.
     expect(calls[1]).toEqual(calls[0]);
     expect(calls[2]).toEqual(calls[0]);
+    expect(calls[0]?.[3].payment.received_at).toBe("2026-10-28T03:00:00.000Z");
     expect(get).toHaveBeenCalledTimes(2);
     expect(money.confirm).not.toHaveBeenCalled();
   });
@@ -1146,6 +1154,15 @@ describe("Lease actions", () => {
       expect(unread.signingPreview).toHaveBeenCalled();
     });
     await new Promise((resolve) => setTimeout(resolve, 0));
+    // Not known is never "none" on the page either.
+    expect(
+      await screen.findByText(
+        "The Security Deposit could not be read just now. Reload the page to see it.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("No Security Deposit is recorded for this Lease yet."),
+    ).toBeNull();
     fireEvent.click(edit);
     const second = screen.getByRole("dialog", { name: "Edit draft · U301" });
     expect(
@@ -1161,6 +1178,61 @@ describe("Lease actions", () => {
     expect(await screen.findByText("The draft was saved.")).toBeInTheDocument();
     expect(again).toHaveBeenCalledTimes(1);
     expect(unread.planSecurityDeposit).not.toHaveBeenCalled();
+  });
+
+  it("TEST-FE-1094 while the draft's Security Deposit is being read the page says so, never none; closing Sign Lease reads the Lease again, as it may be signed after a lost answer (B7)", async () => {
+    window.location.hash = "#/leases/lease-sign";
+    const reading = signing();
+    reading.signingPreview
+      .mockReset()
+      .mockReturnValue(new Promise<never>(() => undefined));
+    show(
+      api({ get: vi.fn().mockResolvedValue(signable) }),
+      deposits({
+        leaseDeposits: vi.fn(() =>
+          Promise.resolve({ items: [], can_manage: false }),
+        ),
+      } as unknown as Partial<DepositApi>),
+      null,
+      undefined,
+      undefined,
+      {},
+      {},
+      {},
+      undefined,
+      reading,
+    );
+    expect(
+      await screen.findByText("Reading the Security Deposit…"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("No Security Deposit is recorded for this Lease yet."),
+    ).toBeNull();
+
+    cleanup();
+    window.location.hash = "#/leases/lease-sign";
+    const get = vi.fn().mockResolvedValue(signable);
+    show(
+      api({ get }),
+      deposits(),
+      null,
+      undefined,
+      undefined,
+      {},
+      {},
+      {},
+      undefined,
+      signing(),
+    );
+    fireEvent.click(await screen.findByRole("button", { name: /^Sign Lease/ }));
+    const dialog = screen.getByRole("dialog");
+    await checked(dialog);
+    expect(get).toHaveBeenCalledTimes(1);
+    fireEvent.click(within(dialog).getByRole("button", { name: "Close" }));
+    await waitFor(() => {
+      expect(get).toHaveBeenCalledTimes(2);
+    });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("TEST-FE-1018 Sign Lease takes no money and signs nothing when the Initial Rent Invoice cannot be made or the person may not receive payments", async () => {

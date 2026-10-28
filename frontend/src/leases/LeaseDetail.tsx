@@ -154,6 +154,11 @@ export function LeaseDetail({
     required: number;
     received: number;
   } | null>(null);
+  // V1-060 B7: while the draft's deposit is being read, or could not be read, the page says so
+  // and never "none".
+  const [preview, setPreview] = useState<"reading" | "failed" | "shown">(
+    "reading",
+  );
   const [warning, setWarning] = useState<string | null>(null);
   const sequence = useRef(0);
   const today = todayInPhnomPenh();
@@ -168,12 +173,14 @@ export function LeaseDetail({
   useEffect(() => {
     if (draftKey === null || lease === null) return;
     let live = true;
+    setPreview("reading");
     settlementApi
       .signingPreview(lease.lease_id)
-      .then((preview) => {
+      .then((found) => {
         if (!live) return;
-        setPlanned(preview.planned_security_deposit_usd_cents);
-        const reservation = preview.held_security_deposit;
+        setPlanned(found.planned_security_deposit_usd_cents);
+        setPreview("shown");
+        const reservation = found.held_security_deposit;
         setHeld(
           reservation === null
             ? null
@@ -188,6 +195,7 @@ export function LeaseDetail({
         // V1-060 B7: not known is not "none": Edit draft then hides the deposit box.
         setPlanned(undefined);
         setHeld(null);
+        setPreview("failed");
       });
     return () => {
       live = false;
@@ -983,7 +991,18 @@ export function LeaseDetail({
                   </div>
                 )}
                 <h3>{lt(language, "dep_sec")}</h3>
-                {security === null && depositDraft && draftDeposit !== null ? (
+                {security === null && depositDraft && preview !== "shown" ? (
+                  <p className="ui-muted" role="status">
+                    {lt(
+                      language,
+                      preview === "reading"
+                        ? "dep_term_reading"
+                        : "dep_term_failed",
+                    )}
+                  </p>
+                ) : security === null &&
+                  depositDraft &&
+                  draftDeposit !== null ? (
                   <>
                     <p>
                       {lt(language, "dep_term", usdFromCents(draftDeposit))}
@@ -1102,7 +1121,11 @@ export function LeaseDetail({
           lease={lease}
           mayCollect={may("payments.record") && may("payments.allocate")}
           mayCreateDeposit={may("deposits.manage")}
-          onClose={dialogProps.onClose}
+          // V1-060 B7: after a lost answer the Lease may be signed: read it again.
+          onClose={() => {
+            setDialog(null);
+            load();
+          }}
           onConflict={dialogProps.onConflict}
           onSaved={(message) => {
             setDialog(null);

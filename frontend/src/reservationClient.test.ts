@@ -168,4 +168,22 @@ describe("Reservation API client", () => {
       ReservationRequestError,
     );
   });
+  it("TEST-FE-1095 an answer of success that cannot be read is no answer; a refusal keeps its status (V1-060 B7)", async () => {
+    for (const body of ["not json", "null", JSON.stringify({ meta: {} })]) {
+      vi.spyOn(globalThis, "fetch").mockResolvedValue(
+        new Response(body, { status: 201 }),
+      );
+      await expect(reservationApi.get("reservation-1")).rejects.toBeInstanceOf(
+        ReservationUnavailableError,
+      );
+      vi.restoreAllMocks();
+    }
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(null, { status: 404 }),
+    );
+    await expect(reservationApi.get("reservation-1")).rejects.toMatchObject({
+      name: "ReservationRequestError",
+      status: 404,
+    });
+  });
 });

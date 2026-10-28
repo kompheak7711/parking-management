@@ -1,8 +1,8 @@
 // V1-060 B6: the report charts (DESIGN.md "Charts"), in plain HTML and CSS: columns by month,
 // stacked when there is more than one series, and a bar list with each value written at the end
 // of its bar. Series take the chart colours in their fixed order (reports.css). Every column has a
-// tooltip on hover and keyboard focus, only the highest column is labelled, and the columns have
-// a hidden table for screen readers.
+// tooltip on hover and keyboard focus, only the column with the highest total is labelled, and
+// the columns have a hidden table for screen readers.
 
 export interface ChartColumn {
   /** Under the column, such as "Oct 26". */
@@ -62,7 +62,11 @@ export function StackedBars({
   const drawn = columns.map((column) => sumOf(column.values, true));
   const highest = Math.max(...drawn);
   const top = niceMax(highest);
-  const best = highest > 0 ? drawn.indexOf(highest) : -1;
+  // V1-060 B7: the figure goes on the column with the highest total, a reversal taken off, so
+  // it names the same month as the summary's highest month; it sits on that column's top.
+  const totals = columns.map((column) => sumOf(column.values, false));
+  const most = Math.max(...totals);
+  const best = most > 0 ? totals.indexOf(most) : -1;
   // A long run of months shows about eight labels under the columns.
   const step = columns.length > 14 ? Math.ceil(columns.length / 8) : 1;
   const grid = {
@@ -127,7 +131,7 @@ export function StackedBars({
                     >
                       {/* V1-060 B7: the figure is the column's total, a reversal taken off,
                           as in the table and the tooltip; the height shows what is drawn. */}
-                      {format(sumOf(column.values, false))}
+                      {format(most)}
                     </span>
                   )}
                   <span

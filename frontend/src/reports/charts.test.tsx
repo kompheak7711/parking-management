@@ -231,12 +231,12 @@ describe("Report charts and helpers", () => {
     expect(measureText("M3")).toBe("m³");
     expect(measureText("kwh")).toBe("kWh");
   });
-  it("TEST-FE-1088 the label on the highest column is its total with a reversal taken off, as in its tooltip; the column is as high as what is drawn (V1-060 B7)", () => {
+  it("TEST-FE-1088 the figure goes on the column with the highest total, a reversal taken off, as the summary's highest month and the tooltip do; each column is as high as what is drawn (V1-060 B7)", () => {
     render(
       <StackedBars
         columns={[
-          { label: "Sep 26", tip: "September 2026", values: [550000, -50000] },
-          { label: "Oct 26", tip: "October 2026", values: [300000, 0] },
+          { label: "Sep 26", tip: "September 2026", values: [550000, -400000] },
+          { label: "Oct 26", tip: "October 2026", values: [400000, -50000] },
         ]}
         format={usdFromCents}
         head="Month"
@@ -245,16 +245,21 @@ describe("Report charts and helpers", () => {
         totalLabel="Total"
       />,
     );
-    const [september] = screen.getAllByRole("button");
+    const [september, october] = screen.getAllByRole("button");
     expect(september?.getAttribute("aria-label")).toBe(
-      "September 2026, Received: $5,500.00, Reversals: -$500.00, Total: $5,000.00",
+      "September 2026, Received: $5,500.00, Reversals: -$4,000.00, Total: $1,500.00",
     );
-    expect(texts(".rp-vc-v")).toEqual(["$5,000.00"]);
-    // The axis top is $10,000; the drawn part is $5,500, so the column is 55% high.
+    // September is drawn higher ($5,500 came in), but October has the highest total.
+    expect(texts(".rp-vc-v")).toEqual(["$3,500.00"]);
+    expect(september?.querySelector(".rp-vc-v")).toBeNull();
+    const figure = october?.querySelector<HTMLElement>(".rp-vc-v");
+    // The axis top is $10,000: September's drawn part is 55% high, October's 40%, and the
+    // figure sits on October's top.
     expect(
       Number.parseFloat(
         september?.querySelector<HTMLElement>(".rp-vc-bar")?.style.height ?? "",
       ),
     ).toBe(55);
+    expect(Number.parseFloat(figure?.style.bottom ?? "")).toBe(40);
   });
 });

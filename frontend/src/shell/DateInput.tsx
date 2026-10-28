@@ -21,6 +21,8 @@ export function parseDay(typed: string): string {
     if (match === null) return "";
     [, day = "", month = "", year = ""] = match;
   }
+  // V1-060 B7: a year before 1900 is a typing slip here ("01/01/0000"), never a real day.
+  if (Number(year) < 1900) return "";
   const iso = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
   const date = new Date(`${iso}T00:00:00Z`);
   return !Number.isNaN(date.getTime()) &&
@@ -36,10 +38,21 @@ export function isDay(value: string): boolean {
 
 /** Adds the slashes while digits are typed: "1503" → "15/03", "15031986" → "15/03/1986".
  * V1-060 B7: also after the slashes it added ("15/031" → "15/03/1"), so a keypad with no "/"
- * still gets both; slashes typed in other places ("5/3/1986") stay as typed. */
-function withSlashes(typed: string): string {
-  if (!/^(\d{2}\/(\d{2}\/)?)?\d*$/.test(typed)) return typed;
-  const digits = typed.replace(/\//g, "").slice(0, 8);
+ * still gets both; slashes typed in other places ("5/3/1986") stay as typed. Only text added at
+ * the end is shaped: an edit inside the date, a deletion, text that already has both slashes or
+ * more than eight digits stays as typed, so the form refuses a wrong day instead of the box
+ * quietly making another one. */
+function withSlashes(typed: string, before: string, atEnd: boolean): string {
+  if (
+    !atEnd ||
+    typed.length <= before.length ||
+    !typed.startsWith(before) ||
+    /^\d{2}\/\d{2}\//.test(before) ||
+    !/^(\d{2}\/(\d{2}\/)?)?\d*$/.test(typed)
+  )
+    return typed;
+  const digits = typed.replace(/\//g, "");
+  if (digits.length > 8) return typed;
   // A slash typed where one goes stays ("15/").
   const end =
     typed.endsWith("/") && (digits.length === 2 || digits.length === 4)
@@ -388,7 +401,18 @@ export function DateInput({
   }
 
   return (
-    <span className="ui-date" ref={wrapper}>
+    <span
+      className="ui-date"
+      onKeyDown={(event) => {
+        // V1-060 B7: Escape on the box or its button while the calendar is open closes the
+        // calendar only, never the dialog around it (that would lose what was typed there).
+        if (event.key === "Escape" && open) {
+          event.stopPropagation();
+          close(false);
+        }
+      }}
+      ref={wrapper}
+    >
       <input
         aria-describedby={describedBy}
         aria-invalid={invalid}
@@ -401,7 +425,12 @@ export function DateInput({
           if (parsed !== "") setText(dayText(parsed));
         }}
         onChange={(event) => {
-          const typed = withSlashes(event.currentTarget.value);
+          const box = event.currentTarget;
+          const typed = withSlashes(
+            box.value,
+            text,
+            box.selectionStart === box.value.length,
+          );
           setText(typed);
           const parsed = parseDay(typed);
           const next = parsed === "" ? typed.trim() : parsed;

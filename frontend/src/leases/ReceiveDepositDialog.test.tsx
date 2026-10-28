@@ -251,3 +251,114 @@ describe("Receive Security Deposit (V1-060 B6)", () => {
     );
   });
 });
+
+describe("Receive Security Deposit (V1-060 B7)", () => {
+  it("TEST-FE-1091 after a lost answer nothing that makes up the Payment can change until the server says; not allowed is still not known; Close asks once more while the money may be saved; the money saved but the rest refused says so", async () => {
+    const all = apis();
+    all.confirm
+      .mockReset()
+      .mockRejectedValueOnce(new InvoiceClientError(null, "NETWORK", true))
+      .mockRejectedValueOnce(new InvoiceClientError(403, "FORBIDDEN", false))
+      .mockRejectedValueOnce(
+        new InvoiceClientError(422, "VALIDATION_FAILED", false),
+      )
+      .mockResolvedValue({ paymentId: "payment-9", receiptNumber: "RC0009" });
+    const onClose = vi.fn();
+    render(
+      <ReceiveDepositDialog
+        language="en"
+        lease={lease}
+        onClose={onClose}
+        onSaved={vi.fn()}
+        paymentsApi={all.paymentsApi}
+        propertyId="property-1"
+        security={null}
+        settlementApi={all.settlementApi}
+      />,
+    );
+    const dialog = screen.getByRole("dialog");
+    const unknown =
+      "We could not tell whether this was saved. “Try again” sends the very same request; it is never saved twice.";
+    fireEvent.change(
+      await within(dialog).findByLabelText("How the money came"),
+      { target: { value: "method-aba" } },
+    );
+    fireEvent.change(within(dialog).getByLabelText("Bank or ABA reference"), {
+      target: { value: "ABA 777" },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save the deposit" }),
+    );
+    expect(await within(dialog).findByText(unknown)).toBeInTheDocument();
+    const boxes = () => [
+      within(dialog).getByLabelText("Full Security Deposit"),
+      within(dialog).getByLabelText("Received now"),
+      within(dialog).getByLabelText("How the money came"),
+      within(dialog).getByLabelText("Bank or ABA reference"),
+    ];
+    for (const box of boxes()) expect(box).toBeDisabled();
+    // "Not allowed" comes before the server looks up the request: still not known.
+    fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
+    await waitFor(() => {
+      expect(all.confirm).toHaveBeenCalledTimes(2);
+    });
+    expect(await within(dialog).findByText(unknown)).toBeInTheDocument();
+    for (const box of boxes()) expect(box).toBeDisabled();
+    expect(all.confirm.mock.calls[1]?.[1]).toEqual(
+      all.confirm.mock.calls[0]?.[1],
+    );
+    expect(all.confirm.mock.calls[1]?.[2]).toBe(all.confirm.mock.calls[0]?.[2]);
+    // Close asks once more; Escape is the same press.
+    fireEvent.click(within(dialog).getByRole("button", { name: "Close" }));
+    expect(onClose).not.toHaveBeenCalled();
+    expect(
+      within(dialog).getByText(
+        "We could not tell whether the money was saved. If you close now, look in Payments before you receive it again, so it is not received twice.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByRole("button", { name: "Close anyway" }),
+    ).toBeInTheDocument();
+    // A refusal of the very same request says it was not saved: the boxes open again.
+    fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
+    expect(
+      await within(dialog).findByText(
+        "This was not saved. Check the Lease and try again.",
+      ),
+    ).toBeInTheDocument();
+    for (const box of boxes()) expect(box).toBeEnabled();
+    expect(
+      within(dialog).getByRole("button", { name: "Close" }),
+    ).toBeInTheDocument();
+    fireEvent.change(within(dialog).getByLabelText("Received now"), {
+      target: { value: "200" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
+    expect(
+      await within(dialog).findByText("Pay the open Invoices first."),
+    ).toBeInTheDocument();
+    expect(all.confirm).toHaveBeenCalledTimes(4);
+    expect(all.confirm.mock.calls[3]?.[1]).toMatchObject({
+      amount: { currency: "USD", minor_units: 20_000 },
+    });
+    expect(all.confirm.mock.calls[3]?.[2]).not.toBe(
+      all.confirm.mock.calls[0]?.[2],
+    );
+    expect(
+      within(dialog).getByText(
+        "The money is saved with Receipt RC0009, but the rest was not saved (the reason is below). The money pays nothing yet, so do not receive it again. If the reason cannot be fixed here, close this and ask the Owner or a Manager to finish it.",
+      ),
+    ).toBeInTheDocument();
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(onClose).not.toHaveBeenCalled();
+    expect(
+      within(dialog).getByText(
+        "The money is saved with Receipt RC0009, but the rest is not confirmed. If you close now, do not receive the money again; ask the Owner or a Manager to check and finish it.",
+      ),
+    ).toBeInTheDocument();
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Close anyway" }),
+    );
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+});

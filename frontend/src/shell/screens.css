@@ -2051,6 +2051,13 @@ a.ui-kpi.ui-home-kpi {
   background-position: right 12px center;
 }
 
+/* V1-060 B7: the older form styles (styles.css loads after this file) set their own padding, so
+   the drawn arrow keeps its room here. */
+.shell-view .form-field select,
+.shell-view .financial-management select {
+  padding-right: 36px;
+}
+
 .shell-view select[multiple],
 .ui-dlg select[multiple] {
   padding-right: 12px;

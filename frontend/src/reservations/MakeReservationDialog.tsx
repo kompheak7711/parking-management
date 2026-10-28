@@ -7,6 +7,9 @@
 // V1-060 B7: the Payment is sent again with the very same body; the Rent is fixed with the money
 // it was taken against; less than the suggestion is stopped before any money when this person
 // may not accept it (the server would refuse the Reservation after the money was saved).
+// While it is not known whether a step was saved, every box stays fixed, so Try again sends the
+// very same requests; a refusal after a lost Reservation answer first looks for that Reservation;
+// Close asks once more while the money may be saved and the Reservation is not.
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 
@@ -20,14 +23,17 @@ import {
   type MoneyChoice,
   MoneyFields,
   moneyProblem,
+  outcomeAfter,
   outcomeOf,
   paymentInput,
   requestFor,
+  useCloseGuard,
   usePaymentMethods,
 } from "../payments/depositMoney";
 import type { ConfirmedPayment, PaymentsApi } from "../payments/paymentsClient";
 import {
   ReservationConflictError,
+  ReservationRequestError,
   ReservationUnavailableError,
   type ReservationApi,
   type ReservationResource,
@@ -78,8 +84,9 @@ export function MakeReservationDialog({
   paymentsApi: PaymentsApi;
   /** Leave out when this person may not add Customers. */
   gate?: CustomerCommandGate;
-  /** False when this person may not accept less than the suggestion (DL-099). */
-  mayOverride: boolean;
+  /** False when this person may not accept less than the suggestion (DL-099); null while their
+   * rights are not known. */
+  mayOverride: boolean | null;
   unitId?: string;
   onClose: () => void;
   onSaved: (saved: ReservationResource) => void;
@@ -125,6 +132,9 @@ export function MakeReservationDialog({
     deposit: crypto.randomUUID(),
     receipt: crypto.randomUUID(),
   });
+  // A lost answer: that step may be saved, so nothing may change before Try again.
+  const pending = outcome === "unknown";
+  const guard = useCloseGuard(pending || paid !== null, onClose);
 
   const load = () => {
     setFailed(false);
@@ -145,12 +155,15 @@ export function MakeReservationDialog({
       ),
     ])
       .then(([foundUnits, foundCustomers]) => {
-        setUnits(
-          foundUnits
-            .filter((unit) => unit.status === "VACANT")
-            .sort((left, right) =>
-              left.unit_number.localeCompare(right.unit_number),
-            ),
+        const vacant = foundUnits
+          .filter((unit) => unit.status === "VACANT")
+          .sort((left, right) =>
+            left.unit_number.localeCompare(right.unit_number),
+          );
+        setUnits(vacant);
+        // V1-060 B7: a Unit named in the address that is not free now is not kept.
+        setUnitId((current) =>
+          vacant.some((unit) => unit.unit_id === current) ? current : "",
         );
         setCustomers(
           foundCustomers.sort((left, right) =>
@@ -185,6 +198,7 @@ export function MakeReservationDialog({
 
   function check(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    guard.reset();
     const found: Partial<Record<Field, string>> = {};
     const say = (key: ReservationTextKey) => rt(language, key);
     if (unitId === "") found.unit = say("mk_err_unit");
@@ -203,10 +217,10 @@ export function MakeReservationDialog({
     )
       found.required = say("mk_err_required");
     if (below && reason.trim() === "") found.reason = say("mk_err_reason");
-    if (below && !mayOverride)
+    if (below && mayOverride !== true)
       found.received = rt(
         language,
-        "mk_err_override",
+        mayOverride === null ? "mk_err_rights" : "mk_err_override",
         usdFromCents(suggestion),
       );
     const issue =
@@ -257,20 +271,29 @@ export function MakeReservationDialog({
     payment: ReturnType<typeof paymentInput>;
     reservation: Omit<Parameters<ReservationApi["create"]>[1], "payment_id">;
   }) {
+    // The try before this one: unknown means its answer was lost.
+    const earlierUnknown = outcome === "unknown";
+    const createdBefore = earlierUnknown && paid !== null;
     setBusy(true);
     setOutcome(null);
-    try {
-      let payment = paid;
-      if (payment === null) {
+    let payment = paid;
+    if (payment === null) {
+      try {
         const request = requestFor(paymentRequest, values.payment);
         payment = await paymentsApi.confirm(
           propertyId,
           request.body,
           request.key,
         );
-        setPaid(payment);
+      } catch (error: unknown) {
+        setOutcome(outcomeAfter(error, earlierUnknown));
+        setBusy(false);
+        return;
       }
-      const source = { ...values.reservation, payment_id: payment.paymentId };
+      setPaid(payment);
+    }
+    const source = { ...values.reservation, payment_id: payment.paymentId };
+    try {
       const saved = await api.create(
         propertyId,
         source,
@@ -278,15 +301,41 @@ export function MakeReservationDialog({
       );
       onSaved(saved);
     } catch (error: unknown) {
-      setOutcome(
+      const result =
         error instanceof ReservationConflictError
           ? "conflict"
           : error instanceof ReservationUnavailableError
             ? "unknown"
-            : outcomeOf(error),
-      );
+            : outcomeOf(error);
+      // After a lost answer the server may be meeting this very Reservation (its Unit is no
+      // longer free), so look for it by its own id before saying it was not saved.
+      if (result !== "unknown" && createdBefore) {
+        const found = await savedBefore();
+        if (found === "unknown") {
+          setOutcome("unknown");
+          return;
+        }
+        if (found !== "absent") {
+          onSaved(found);
+          return;
+        }
+      }
+      setOutcome(result);
     } finally {
       setBusy(false);
+    }
+  }
+
+  /** The Reservation a lost answer may have saved; "absent" when the server says there is none. */
+  async function savedBefore(): Promise<
+    ReservationResource | "absent" | "unknown"
+  > {
+    try {
+      return await api.get(ids.current.reservation);
+    } catch (error: unknown) {
+      return error instanceof ReservationRequestError && error.status === 404
+        ? "absent"
+        : "unknown";
     }
   }
 
@@ -330,13 +379,17 @@ export function MakeReservationDialog({
         <span>{problems[field]}</span>
       </p>
     );
-  const locked = paid !== null || busy;
+  const locked = paid !== null || busy || pending;
+  const fixed = busy || pending;
+  const stuck = outcome === "refused" || outcome === "conflict";
 
   return (
     <Dialog
       busy={busy}
-      closeLabel={rt(language, "close")}
-      onClose={onClose}
+      closeLabel={
+        guard.asked ? dmt(language, "close_anyway") : rt(language, "close")
+      }
+      onClose={guard.close}
       onSubmit={units !== null && customers !== null ? check : undefined}
       submitLabel={
         busy
@@ -433,7 +486,7 @@ export function MakeReservationDialog({
               <label htmlFor="mk-date">{rt(language, "mk_date")}</label>
               <DateInput
                 language={language}
-                disabled={busy}
+                disabled={fixed}
                 id="mk-date"
                 invalid={problems.date !== undefined}
                 onChange={(value) => {
@@ -449,7 +502,7 @@ export function MakeReservationDialog({
               <label htmlFor="mk-expires">{rt(language, "mk_expires")}</label>
               <DateInput
                 language={language}
-                disabled={busy}
+                disabled={fixed}
                 id="mk-expires"
                 invalid={problems.expires !== undefined}
                 max={parseDay(date) === "" ? undefined : addDays(date, 21)}
@@ -480,7 +533,7 @@ export function MakeReservationDialog({
               <label htmlFor="mk-required">{rt(language, "mk_required")}</label>
               <input
                 aria-invalid={problems.required !== undefined}
-                disabled={busy}
+                disabled={fixed}
                 id="mk-required"
                 inputMode="decimal"
                 onChange={(event) => {
@@ -531,7 +584,7 @@ export function MakeReservationDialog({
               <label htmlFor="mk-reason">{rt(language, "mk_reason")}</label>
               <input
                 aria-invalid={problems.reason !== undefined}
-                disabled={busy}
+                disabled={fixed}
                 id="mk-reason"
                 maxLength={500}
                 onChange={(event) => {
@@ -543,9 +596,18 @@ export function MakeReservationDialog({
             </div>
           )}
           {paid !== null && (
-            <div className="ui-notice info" role="status">
-              <Icon name="check" />
-              <p>{dmt(language, "paid_saved", paid.receiptNumber)}</p>
+            <div
+              className={stuck ? "ui-notice warn" : "ui-notice info"}
+              role="status"
+            >
+              <Icon name={stuck ? "alert" : "check"} />
+              <p>
+                {dmt(
+                  language,
+                  stuck ? "paid_stuck" : "paid_saved",
+                  paid.receiptNumber,
+                )}
+              </p>
             </div>
           )}
           {outcome !== null && (
@@ -553,6 +615,16 @@ export function MakeReservationDialog({
               <Icon name="alert" />
               <p>
                 {rt(language, outcome === "conflict" ? "mk_conflict" : outcome)}
+              </p>
+            </div>
+          )}
+          {guard.asked && (
+            <div className="ui-notice warn" role="alert">
+              <Icon name="alert" />
+              <p>
+                {paid === null
+                  ? dmt(language, "close_unknown")
+                  : dmt(language, "close_paid", paid.receiptNumber)}
               </p>
             </div>
           )}

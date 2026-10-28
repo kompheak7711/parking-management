@@ -309,6 +309,8 @@ The form sends no receipt time; the server records the database's own time as th
 deposit's receipt and acceptance time (owner answer (a) to Q-2026-10-20-147, V1-056
 sub-slice 10i-4b).
 
+Amended by DL-109 (V1-060 B7 second review, 2026-10-28): after a lost answer every box that makes up the Payment or the Reservation stays fixed until the server answers, and Try again sends the very same requests. A refusal after a lost Reservation answer looks the Reservation up by its own id and opens it when it is there. When the money is saved but the Reservation is not, the dialog says so with the Receipt number and says not to receive the money again; while the money may be saved, Close asks once more. Less than the suggested Security Deposit waits until the person's rights are read, and a Unit that is not vacant is never kept from the address.
+
 ## UI-033 — Reservation Detail
 
 Show current status, Property-local expiration, source dates, Security Deposit
@@ -377,6 +379,8 @@ in the Signer rows and the Lease timeline (BR-AUDIT-003, Q-2026-10-14-110).
 Amended by DL-080 (owner, 2026-10-20): Sign Lease needs a Manager.
 
 Amended by DL-108 (V1-060 B7, 2026-10-28): Sign Lease sends the ticked Signers, the reason and the money received as one request at the Lease version it showed; the server saves the Payment, the signatures, the signing, the Initial Rent Invoice and the Security Deposit together, or nothing, and the dialog says so. After no answer, Try again sends the very same request with the same key, and nothing can be changed until an answer comes; after a refusal nothing was saved, so the values may change, and changed values are a new request.
+
+Amended by DL-109 (V1-060 B7 second review, 2026-10-28): a draft whose Reservation ended, or whose Unit another Reservation holds, is refused before any money, and the dialog says to ask the Owner or a Manager; dates that another signed Lease covers are refused by name. Closing Sign Lease reads the Lease again. The Lease page says when a draft's Security Deposit is being read or could not be read, never none.
 
 ## UI-041 — Renewal
 
@@ -951,6 +955,8 @@ Amended by DL-072 (owner, 2026-10-04): totals are in USD; the Payment register a
 Amended by DL-079 (owner, 2026-10-20): every report summary has a chart; money charts are in USD only (riel at its recorded USD value), and a report without money gets a count bar chart.
 
 Amended by DL-108 (V1-060 B7, 2026-10-28): a Totals table counts whole months, so picked days widen to their whole months and the parameter bar says "Totals count whole months."; while only some rows are shown, the table footer says "Total, all N rows"; a chart that shows only the last 31 days with events says so in its title.
+
+Amended by DL-109 (V1-060 B7 second review, 2026-10-28): the table footer says "Total, all rows", with no number, because a report may join the server's rows into fewer lines; Pick dates pressed again keeps the days typed.
 
 ## UI-090 — Currency Separation
 

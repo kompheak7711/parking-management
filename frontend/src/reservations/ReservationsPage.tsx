@@ -110,8 +110,9 @@ export function ReservationsPage({
       }
       language={language}
       mayOverride={
-        capabilities === null ||
-        capabilities.has("reservation_deposits.override")
+        capabilities === null
+          ? null
+          : capabilities.has("reservation_deposits.override")
       }
       onClose={() => {
         openPageInAddress("reservations");

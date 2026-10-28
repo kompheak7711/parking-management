@@ -2,7 +2,9 @@
 // The deposit is received as a Payment with its Receipt that pays no Invoice (POST payments);
 // the Reservation or the Security Deposit then takes its receipt from that Payment. The Payment
 // keeps one request key and its very same body while its values stay the same, so "Try again"
-// never saves it twice (V1-060 B7: the server compares the whole stored request).
+// never saves it twice (V1-060 B7: the server compares the whole stored request). While it is not
+// known whether the money was saved, nothing that makes up the Payment may change, and Close asks
+// once more, because a closed dialog forgets its requests.
 
 import { useEffect, useState } from "react";
 
@@ -31,6 +33,20 @@ const TEXT = {
   paid_saved: [
     "The money is saved with Receipt {0}. Try again finishes the rest; the money is not saved twice.",
     "ប្រាក់ត្រូវបានរក្សាទុកជាមួយបង្កាន់ដៃ {0}។ ព្យាយាមម្តងទៀត ដើម្បីបញ្ចប់ផ្នែកដែលនៅសល់ ប្រាក់មិនត្រូវបានរក្សាទុកពីរដងទេ។",
+  ],
+  // V1-060 B7: the money is saved, but the server refused the rest.
+  paid_stuck: [
+    "The money is saved with Receipt {0}, but the rest was not saved (the reason is below). The money pays nothing yet, so do not receive it again. If the reason cannot be fixed here, close this and ask the Owner or a Manager to finish it.",
+    "ប្រាក់ត្រូវបានរក្សាទុកជាមួយបង្កាន់ដៃ {0} ប៉ុន្តែផ្នែកដែលនៅសល់មិនត្រូវបានរក្សាទុកទេ (មូលហេតុនៅខាងក្រោម)។ ប្រាក់នេះមិនទាន់បង់អ្វីទេ ដូច្នេះកុំទទួលវាម្តងទៀត។ ប្រសិនបើមិនអាចកែមូលហេតុនៅទីនេះបានទេ សូមបិទ ហើយសុំម្ចាស់ ឬអ្នកគ្រប់គ្រងឱ្យបញ្ចប់វា។",
+  ],
+  close_anyway: ["Close anyway", "បិទទោះយ៉ាងណាក៏ដោយ"],
+  close_unknown: [
+    "We could not tell whether the money was saved. If you close now, look in Payments before you receive it again, so it is not received twice.",
+    "យើងមិនអាចដឹងថាប្រាក់ត្រូវបានរក្សាទុកឬអត់ទេ។ ប្រសិនបើអ្នកបិទឥឡូវនេះ សូមមើលក្នុងការបង់ប្រាក់ មុនពេលទទួលវាម្តងទៀត ដើម្បីកុំឱ្យទទួលពីរដង។",
+  ],
+  close_paid: [
+    "The money is saved with Receipt {0}, but the rest is not confirmed. If you close now, do not receive the money again; ask the Owner or a Manager to check and finish it.",
+    "ប្រាក់ត្រូវបានរក្សាទុកជាមួយបង្កាន់ដៃ {0} ប៉ុន្តែផ្នែកដែលនៅសល់មិនទាន់បានបញ្ជាក់ទេ។ ប្រសិនបើអ្នកបិទឥឡូវនេះ កុំទទួលប្រាក់នេះម្តងទៀត សូមសុំម្ចាស់ ឬអ្នកគ្រប់គ្រងឱ្យពិនិត្យ ហើយបញ្ចប់វា។",
   ],
 } as const;
 
@@ -72,6 +88,41 @@ export function outcomeOf(error: unknown): "unknown" | "refused" {
       ? "unknown"
       : "refused";
   return error instanceof TypeError ? "unknown" : "refused";
+}
+
+/** As outcomeOf, for a request sent again after a lost answer. The server answers "sign in", "not
+ * allowed" and "not found" before it looks up the request, so they cannot say that the lost
+ * request was not saved; the outcome stays unknown. */
+export function outcomeAfter(
+  error: unknown,
+  earlierUnknown: boolean,
+): "unknown" | "refused" {
+  const outcome = outcomeOf(error);
+  if (outcome === "unknown" || !earlierUnknown) return outcome;
+  const status =
+    error instanceof InvoiceClientError ||
+    error instanceof SettlementRequestError
+      ? error.status
+      : null;
+  return status === 401 || status === 403 || status === 404
+    ? "unknown"
+    : "refused";
+}
+
+/** Close asks once more while the money may be saved and the rest is not finished: a closed
+ * dialog forgets its requests, so starting again could receive the same money twice. */
+export function useCloseGuard(risky: boolean, onClose: () => void) {
+  const [asked, setAsked] = useState(false);
+  return {
+    asked: asked && risky,
+    close: () => {
+      if (risky && !asked) setAsked(true);
+      else onClose();
+    },
+    reset: () => {
+      setAsked(false);
+    },
+  };
 }
 
 export function usePaymentMethods(
