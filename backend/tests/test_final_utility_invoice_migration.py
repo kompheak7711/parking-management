@@ -7,6 +7,7 @@ dates are relative to the business date and never run the monthly run.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, replace
 from datetime import date, timedelta
 from pathlib import Path
@@ -19,6 +20,7 @@ from alembic.config import Config
 from alembic.script import ScriptDirectory
 
 from property_rental.final_utility_invoice import (
+    MESSAGE_REASONS,
     CatchUpUtilityInvoice,
     CreateFinalUtilityInvoice,
     FinalUtilityInvoiceAuthorizationError,
@@ -620,3 +622,20 @@ def test_catch_up_route_bills_a_skipped_period_once_with_a_stable_conflict_reaso
     assert again.json()["error"]["code"] == "UTILITY_PERIOD_ALREADY_INVOICED"
     read_only = api(issuer(s.human, s.prop, UTILITY_READ_CAPABILITY))
     assert read_only.post(path, json=body, headers=mutation_headers()).status_code == 403
+
+
+def test_the_missing_rate_refusal_keeps_the_message_its_stable_reason_names(
+    migrated_database_url: str,
+) -> None:
+    """V1-060 B6 (DL-105): no Utility Rate in effect on the generation date (BR-UTIL-015) is
+    refused by the head preview with this message, which the service names
+    UTILITY_RATE_NOT_IN_EFFECT. The shared test Property always has older Rates, so this checks
+    the message the mapping relies on rather than a Property without a Rate."""
+    (source,) = one(
+        migrated_database_url,
+        "SELECT prosrc FROM pg_catalog.pg_proc WHERE oid=%s::regprocedure",
+        "app.preview_utility_calculation(uuid,text,uuid,timestamptz,uuid)",
+    )
+    message = "Generation-date Utility Rate was not found"
+    assert re.search(rf"RAISE EXCEPTION\s+'{message}'\s+USING ERRCODE='P0002'", source)
+    assert MESSAGE_REASONS == {message: "UTILITY_RATE_NOT_IN_EFFECT"}

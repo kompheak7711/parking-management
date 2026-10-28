@@ -1360,6 +1360,39 @@ describe("Move-out", () => {
     expect(screen.getByText("Final readings; INV-0042 issued.")).toBeTruthy();
   });
 
+  it("TEST-FE-1071 a final Utility Invoice refused because no rate is in effect says so; another refusal says it was not saved, never that the hand-back was not saved", async () => {
+    const issue = async (code: string) => {
+      window.location.hash = "#/moveout/lease-U105";
+      setup([out], {
+        page: handedBackPage,
+        finalInputs: () => Promise.resolve(inputsPage("inputs-1")),
+        createInvoice: () => Promise.reject(new UtilityLeaseError(422, code)),
+      });
+      fireEvent.click(
+        await screen.findByRole("button", {
+          name: "Issue the final Utility Invoice",
+        }),
+      );
+      const dialog = screen.getByRole("dialog");
+      fireEvent.click(
+        within(dialog).getByRole("button", {
+          name: "Issue the final Utility Invoice",
+        }),
+      );
+      return within(dialog).findByRole("alert");
+    };
+    const noRate = await issue("UTILITY_RATE_NOT_IN_EFFECT");
+    expect(noRate.textContent).toBe(
+      "No electricity or water rate is in effect today, so this Invoice cannot be made yet. In Settings, Rates and services, a rate must start on or before today.",
+    );
+    cleanup();
+    const other = await issue("VALIDATION_ERROR");
+    expect(other.textContent).toBe(
+      "This was not saved. Check the values and try again, or read the page again.",
+    );
+    expect(other.textContent).not.toMatch(/hand-back/);
+  });
+
   it("TEST-FE-970 no answer to the final inputs: Try again records no reading twice and sends the same inputs with the same key", async () => {
     window.location.hash = "#/moveout/lease-U105";
     let fail = true;

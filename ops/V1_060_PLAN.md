@@ -309,3 +309,16 @@ candidate is the code that will be used.
   10 passed; backend lint, format and types passed; frontend 1,933 of 1,933; traceability passed.
   Open: no meter command (Add, Replace, Report broken) writes an audit event, so none shows on the
   History page; the meter page shows them.
+- 2026-10-28 (B6, owner report of 13:12, DL-105): Issue the final Utility Invoice for U201
+  showed "The hand-back was not saved". Cause: no Utility Rate was in effect on the generation
+  date (BR-UTIL-015); Settings lets a new Rate start only on a reading day after today, so the
+  Rates set on 27/10 started on 24/11/2026; the database refusal had no stable reason, so the
+  route answered VALIDATION_ERROR and the dialog fell back to the hand-back text. Reproduced on a
+  new local test database (only a future Rate: 422 VALIDATION_ERROR). The owner kept the rule for
+  the first Rate (asked with a decision card; answered in words) and asked for the dates of the
+  local test database to be changed by hand: a paste (tried on the local test database first)
+  moves the Rates that start on 24/11/2026 to 24/10/2026 with tenants told on 20/10/2026, and the
+  final Invoice then works. Built: the final and catch-up routes answer 422
+  UTILITY_RATE_NOT_IN_EFFECT; the dialog says no rate is in effect and points to Settings, Rates
+  and services; any other refusal says "This was not saved", never the hand-back text. Tests: 1
+  unit test, 1 database test, TEST-FE-1071 (new). No migration.

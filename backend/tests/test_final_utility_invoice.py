@@ -1,8 +1,11 @@
 """Final and catch-up Utility Invoice command validation without a database."""
 
 from datetime import date
+from types import SimpleNamespace
+from typing import cast
 from uuid import UUID, uuid4
 
+import psycopg
 import pytest
 
 from property_rental.final_utility_invoice import (
@@ -11,6 +14,7 @@ from property_rental.final_utility_invoice import (
     CatchUpUtilityInvoice,
     CreateFinalUtilityInvoice,
     FinalUtilityInvoiceAuthorizationError,
+    FinalUtilityInvoiceConflictError,
     FinalUtilityInvoiceInvalidError,
     PostgresFinalUtilityInvoiceService,
     utility_invoice_digest,
@@ -76,3 +80,24 @@ def test_service_checks_capabilities_before_touching_the_database() -> None:
             actor=only_issue,
             request_id="unit-test",
         )
+
+
+def _refusal(sqlstate: str, message: str) -> psycopg.Error:
+    diag = SimpleNamespace(message_primary=message)
+    return cast(psycopg.Error, SimpleNamespace(sqlstate=sqlstate, diag=diag))
+
+
+def test_a_missing_generation_date_rate_has_its_own_stable_reason() -> None:
+    """V1-060 B6 (DL-105): no Utility Rate in effect on the generation date has its own code."""
+    error = PostgresFinalUtilityInvoiceService._error(
+        _refusal("P0002", "Generation-date Utility Rate was not found")
+    )
+    assert type(error) is FinalUtilityInvoiceInvalidError
+    assert error.reason == "UTILITY_RATE_NOT_IN_EFFECT"
+    named = PostgresFinalUtilityInvoiceService._error(_refusal("P5N02", "UTILITY_NOTHING_TO_BILL"))
+    assert type(named) is FinalUtilityInvoiceInvalidError
+    assert named.reason == "UTILITY_NOTHING_TO_BILL"
+    other = PostgresFinalUtilityInvoiceService._error(_refusal("P0002", "Another row is missing"))
+    assert type(other) is FinalUtilityInvoiceInvalidError and other.reason is None
+    busy = PostgresFinalUtilityInvoiceService._error(_refusal("P5N03", "Source is in use"))
+    assert type(busy) is FinalUtilityInvoiceConflictError and busy.reason is None

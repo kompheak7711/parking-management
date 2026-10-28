@@ -57666,6 +57666,45 @@
       "test_path": "frontend/src/utilityClient.test.tsx",
       "status": "implemented",
       "notes": "V1-060 B6: the client sends Report broken as a POST with the CSRF token and the key, parses the report on the meter, reads a meter without a report as none and refuses a malformed report."
+    },
+    {
+      "test_id": "test_a_missing_generation_date_rate_has_its_own_stable_reason",
+      "upstream_ids": [
+        "DL-105",
+        "BR-UTIL-015",
+        "BR-UTIL-029",
+        "API-069"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_final_utility_invoice.py",
+      "status": "implemented",
+      "notes": "V1-060 B6: the database refusal \"Generation-date Utility Rate was not found\" becomes the invalid reason UTILITY_RATE_NOT_IN_EFFECT; a message that is itself a stable code keeps it, another missing row has no reason, and a source in use stays a conflict."
+    },
+    {
+      "test_id": "test_the_missing_rate_refusal_keeps_the_message_its_stable_reason_names",
+      "upstream_ids": [
+        "DL-105",
+        "BR-UTIL-029",
+        "API-069"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_final_utility_invoice_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 B6: the head app.preview_utility_calculation still refuses a generation date without a Utility Rate with the message and SQLSTATE P0002 that the service names UTILITY_RATE_NOT_IN_EFFECT."
+    },
+    {
+      "test_id": "TEST-FE-1071",
+      "upstream_ids": [
+        "DL-105",
+        "BR-UTIL-015",
+        "BR-UTIL-021",
+        "UI-078",
+        "DL-074"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B6 (owner 28/10/2026): a final Utility Invoice refused with UTILITY_RATE_NOT_IN_EFFECT says no electricity or water rate is in effect today and points to Settings, Rates and services; another refusal says it was not saved and never mentions the hand-back."
     }
   ]
 }

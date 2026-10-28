@@ -38,6 +38,12 @@ REASONS: Final = frozenset(
         "UTILITY_PERIOD_NOT_SKIPPED",
     }
 )
+# Database messages that are not stable codes themselves but name one. V1-060 B6 (DL-105): no
+# Utility Rate is in effect on the generation date (BR-UTIL-015), for example before the first
+# Rate starts; it was the generic VALIDATION_ERROR before.
+MESSAGE_REASONS: Final = {
+    "Generation-date Utility Rate was not found": "UTILITY_RATE_NOT_IN_EFFECT",
+}
 
 
 class FinalUtilityInvoiceInvalidError(ValueError):
@@ -186,7 +192,7 @@ class PostgresFinalUtilityInvoiceService:
     @staticmethod
     def _error(error: psycopg.Error) -> Exception:
         message = error.diag.message_primary or ""
-        reason = message if message in REASONS else None
+        reason = message if message in REASONS else MESSAGE_REASONS.get(message)
         state = error.sqlstate
         if state in {"P5N01", "P5401"}:
             return FinalUtilityInvoiceNotFoundError("Utility Invoice resource was not found")

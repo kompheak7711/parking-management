@@ -307,6 +307,11 @@ const TEXT = {
     "The Lease is not ended yet.",
     "កិច្ចសន្យាមិនទាន់បញ្ចប់ទេ។",
   ],
+  // V1-060 B6 (DL-105): the Invoice uses the rate in effect on the day it is made.
+  ur_UTILITY_RATE_NOT_IN_EFFECT: [
+    "No electricity or water rate is in effect today, so this Invoice cannot be made yet. In Settings, Rates and services, a rate must start on or before today.",
+    "គ្មានអត្រាអគ្គិសនី ឬទឹកដែលមានប្រសិទ្ធភាពនៅថ្ងៃនេះទេ ដូច្នេះមិនទាន់អាចធ្វើវិក្កយបត្រនេះបានទេ។ នៅក្នុង ការកំណត់ អត្រា និងសេវា អត្រាត្រូវចាប់ផ្តើមនៅថ្ងៃនេះ ឬមុនថ្ងៃនេះ។",
+  ],
   ur_FORBIDDEN: [
     "Your account may not do this.",
     "គណនីរបស់អ្នកមិនអាចធ្វើការនេះបានទេ។",
@@ -892,10 +897,11 @@ export function conditionText(language: Language, condition: string): string {
     : condition.toLowerCase().replace(/_/g, " ");
 }
 
-/** Why a final reading step was refused, from the server's stable reason code. */
+/** Why a final reading step was refused, from the server's stable reason code. An unknown code
+ *  says only that nothing was saved: the hand-back itself is saved before this step. */
 export function utilityRefusalText(language: Language, code: string): string {
   const key = `ur_${code}`;
   return key in TEXT
     ? mt(language, key as MoveOutTextKey)
-    : mt(language, "refused");
+    : mt(language, "c_refused");
 }

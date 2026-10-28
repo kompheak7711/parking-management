@@ -824,6 +824,8 @@ Show the final Utility Invoice created from the final Readings and its proposed 
 A Damage charge is entered per finding with amount, reason and evidence reference by an
 authorized user.
 
+Amended by DL-105 (V1-060 B6, 2026-10-28): when the final Utility Invoice is refused because no electricity or water rate is in effect today, the dialog says so and points to Settings, Rates and services; any other refusal says the step was not saved, never that the hand-back was not saved.
+
 # 19. Final Settlement UI
 
 ## UI-079 — Settlement Queue

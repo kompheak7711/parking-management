@@ -1820,6 +1820,8 @@ Invoice.
 
 Amended by DL-075 (owner, 2026-10-20): a new Utility Rate starts on a reading day (UI-091). The Rate effective on the Invoice generation date still applies.
 
+Note (V1-060 B6, DL-105; owner, 2026-10-28): the owner kept this rule for the first Rate too: a new Rate, the first included, starts on a reading day after today. Until a Rate of a kind is in effect, no Utility Invoice for that kind can be made, and the final and catch-up Utility Invoice routes say so with `UTILITY_RATE_NOT_IN_EFFECT`.
+
 ---
 
 ### BR-UTIL-016 — Historical Rate Preservation
