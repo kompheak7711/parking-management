@@ -1,26 +1,19 @@
 // V1-060 B6 (owner 27/10/2026, DL-100): Sign Lease receives the money first. The dialog shows
-// what the customer pays at signing: the Security Deposit (the walk-in draft's planned amount,
-// or the rest of a Booking's deposit; a renewal keeps the old one) and the Initial Rent Invoice
-// as billing will make it (Rent and Services). The full total is saved as one Payment with its
-// Receipt; only then are the signatures recorded and the Lease signed. Right after, the Initial
-// Rent Invoice is made, the Payment pays it, and the rest goes into the Security Deposit. Each
-// step keeps one request identity, so "Try again" carries on where an earlier try stopped and
-// never saves anything twice.
-// DL-101 (owner 27/10/2026): a draft from a Booking records its own Security Deposit, starting
-// at the Reservation's amount; right after signing that amount becomes the required amount of
-// the Reservation's Security Deposit, and the rest of it is received.
+// what the customer pays at signing: the Security Deposit (the walk-in draft's amount, or the
+// rest of a Booking's deposit; a renewal keeps the old one) and the Initial Rent Invoice as
+// billing will make it (Rent and Services).
+// DL-101 (owner 27/10/2026): the Security Deposit amount is a Lease term recorded on the draft,
+// for a walk-in Lease and for a draft from a Booking alike (Edit draft changes it).
+// DL-108 (V1-060 B7): one press is one request. The server saves the Payment with its Receipt,
+// the signatures, the signing, the Initial Rent Invoice paid by name and the rest of the money
+// in the Security Deposit in one database transaction, or nothing. The request keeps its key and
+// its exact body (received_at included) while its values stay the same, so "Try again" after a
+// lost answer gets the first answer and never saves anything twice.
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 
+import type { LeaseResource } from "../leaseClient";
 import {
-  LeaseConflictError,
-  LeaseUnavailableError,
-  type LeaseApi,
-  type LeaseResource,
-} from "../leaseClient";
-import {
-  dmt,
-  keyFor,
   type MoneyChoice,
   MoneyFields,
   moneyProblem,
@@ -28,19 +21,19 @@ import {
   paymentInput,
   usePaymentMethods,
 } from "../payments/depositMoney";
-import type { ConfirmedPayment, PaymentsApi } from "../payments/paymentsClient";
+import type { PaymentsApi } from "../payments/paymentsClient";
 import type { ReservationApi, ReservationResource } from "../reservationClient";
 import {
   type SettlementApi,
   SettlementRequestError,
-  SettlementUnavailableError,
+  type SignWithPaymentInput,
   type SigningPreview,
 } from "../settlementClient";
 import { dayText, todayInPhnomPenh, usdFromCents } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { Dialog } from "../shell/ui";
 import type { Language } from "../signInText";
-import { centsOf, Problem, useIdentities } from "./LeaseDialogs";
+import { Problem } from "./LeaseDialogs";
 import { lt } from "./text";
 
 // The reason stored with each signature; the dialog's tick is the person's statement.
@@ -90,18 +83,11 @@ function useLoaded<T>(load: () => Promise<T>): Loaded<T> {
 
 export type SigningApi = Pick<
   SettlementApi,
-  | "signingPreview"
-  | "makeInitialRentInvoice"
-  | "applyPlannedSecurityDeposit"
-  | "allocationProposal"
-  | "allocateByProposal"
-  | "createSecurityDeposit"
-  | "receiveIntoDeposit"
+  "signingPreview" | "signWithPayment"
 >;
 
 export function SignDialog({
   language,
-  api,
   lease,
   propertyId,
   reservationApi,
@@ -112,10 +98,8 @@ export function SignDialog({
   onClose,
   onSaved,
   onConflict,
-  onProgress,
 }: {
   language: Language;
-  api: LeaseApi;
   lease: LeaseResource;
   propertyId: string;
   reservationApi: Pick<ReservationApi, "list">;
@@ -126,10 +110,10 @@ export function SignDialog({
   /** deposits.manage: a walk-in Lease's Security Deposit is made in this dialog. */
   mayCreateDeposit: boolean;
   onClose: () => void;
-  onSaved: (saved: LeaseResource, message: string) => void;
+  /** Everything was saved; the page reads the Lease again. */
+  onSaved: (message: string) => void;
+  /** The Lease changed after the dialog read it; nothing was saved. */
   onConflict: () => void;
-  /** Each recorded signature, so the page shows it even if a later step fails. */
-  onProgress: (current: LeaseResource) => void;
 }) {
   const unsigned = lease.signers.filter((signer) => signer.signed_at === null);
   const [ticked, setTicked] = useState<ReadonlySet<string>>(new Set());
@@ -141,8 +125,6 @@ export function SignDialog({
     activeReservationOf(reservationApi, lease),
   );
   const methods = usePaymentMethods(paymentsApi, propertyId);
-  const [deposit, setDeposit] = useState<string | null>(null);
-  const [depositProblem, setDepositProblem] = useState<string | null>(null);
   const [money, setMoney] = useState<MoneyChoice>({
     methodId: "",
     reference: "",
@@ -154,27 +136,13 @@ export function SignDialog({
   const [outcome, setOutcome] = useState<
     { kind: "unknown" } | { kind: "refused"; text: string } | null
   >(null);
-  const [paid, setPaid] = useState<ConfirmedPayment | null>(null);
-  const identity = useIdentities();
-  const paymentKey = useRef<{ fingerprint: string; key: string } | null>(null);
-  // How far an earlier try got, so a retry carries on from there.
-  const progress = useRef<{
-    lease: LeaseResource;
-    signed: LeaseResource | null;
-    applied: boolean;
-    invoiced: boolean;
-    proposal: Record<string, unknown> | null;
-    allocated: boolean;
-    depositId: string | null;
-  }>({
-    lease,
-    signed: null,
-    applied: false,
-    invoiced: false,
-    proposal: null,
-    allocated: false,
-    depositId: null,
-  });
+  // The last press: the same values keep the same key and the very same body.
+  const attempt = useRef<{
+    fingerprint: string;
+    key: string;
+    body: SignWithPaymentInput;
+  } | null>(null);
+  const today = todayInPhnomPenh();
 
   const initial = preview.state === "done" ? preview.value.initial : null;
   // Reservations that cannot be read are treated as none, as before: the server refuses to sign
@@ -196,35 +164,35 @@ export function SignDialog({
   const bookingDeposit =
     held !== null
       ? {
-          depositId: held.deposit_id,
           required: planned ?? held.required_usd_cents,
           received: held.received_usd_cents,
         }
       : booking !== null
         ? {
-            depositId: booking.deposit_id,
             required: planned ?? booking.deposit_required_usd_cents,
             received: booking.deposit_received_usd_cents,
           }
         : null;
-  const depositText =
-    deposit ??
-    ((planned ?? lease.monthly_rent_usd_cents ?? 0) / 100).toFixed(2);
+  // The server works the total out the same way and refuses any other amount.
   const depositDue = renewal
     ? 0
     : bookingDeposit !== null
       ? Math.max(0, bookingDeposit.required - bookingDeposit.received)
       : fromBooking
         ? 0
-        : (centsOf(depositText) ?? 0);
-  // Signing completes the Booking, so it must be read (the server refuses a Reserved Unit
-  // without its Reservation).
-  const bookingUnknown = fromBooking && booking === null;
-  // The draft's amount becomes the required amount after signing, so it cannot be less than
-  // the money the Reservation already received.
+        : (planned ?? 0);
+  // The rest of a Booking's deposit must be known to work out the total. The server finds and
+  // completes the Customer's active Booking of the Unit itself.
+  const bookingUnknown = !renewal && fromBooking && bookingDeposit === null;
+  // The draft's amount becomes the required amount at signing, so it cannot be less than the
+  // money the Reservation already received.
   const belowReceived =
     bookingDeposit !== null &&
     bookingDeposit.required < bookingDeposit.received;
+  // DL-101: a walk-in draft records its Security Deposit (Edit draft) before it is signed.
+  const depositMissing = walkIn && preview.state === "done" && planned === null;
+  // The Initial Rent Invoice cannot be issued after its Due Date (BR-RENT-009).
+  const duePassed = initial !== null && initial.due_date < today;
   const rentDue = initial?.total_usd_cents ?? 0;
   const total = depositDue + rentDue;
   const ready =
@@ -232,8 +200,10 @@ export function SignDialog({
     reservation.state !== "loading" &&
     initial !== null &&
     initial.problem === null &&
+    !duePassed &&
     !bookingUnknown &&
     !belowReceived &&
+    !depositMissing &&
     mayCollect &&
     (!walkIn || mayCreateDeposit);
   const blocker =
@@ -243,156 +213,38 @@ export function SignDialog({
         ? lt(language, "sp_no_terms")
         : initial?.problem != null
           ? lt(language, "sp_problem", initial.problem.replace(/^[A-Z_]+:/, ""))
-          : bookingUnknown && reservation.state !== "loading"
-            ? lt(language, "sp_no_booking")
-            : belowReceived
-              ? lt(
-                  language,
-                  "sp_deposit_below",
-                  usdFromCents(bookingDeposit.received),
-                )
-              : !mayCollect
-                ? lt(language, "sp_no_rights")
-                : walkIn && !mayCreateDeposit && reservation.state === "done"
-                  ? lt(language, "sp_no_deposit_right")
-                  : null;
-
-  async function sign(reservationId: string | null): Promise<LeaseResource> {
-    let current = progress.current.lease;
-    for (const signer of unsigned) {
-      const now = current.signers.find(
-        (entry) => entry.signer_id === signer.signer_id,
-      );
-      if (typeof now?.signed_at === "string") continue;
-      const step = identity(`signer:${signer.signer_id}`);
-      current = await api.recordSignature(
-        current,
-        signer.signer_id,
-        { event_id: step.id, reason: SIGN_REASON },
-        step.key,
-      );
-      progress.current.lease = current;
-      onProgress(current);
-    }
-    const step = identity("sign");
-    return api.sign(
-      current,
-      reservationId === null
-        ? { event_id: step.id, reason: SIGN_REASON }
-        : {
-            event_id: step.id,
-            reason: SIGN_REASON,
-            reservation_id: reservationId,
-          },
-      step.key,
-    );
-  }
-
-  async function run(payment: ReturnType<typeof paymentInput>) {
-    const done = progress.current;
-    let money = paid;
-    if (money === null) {
-      money = await paymentsApi.confirm(
-        propertyId,
-        payment,
-        keyFor(paymentKey, { ...payment, received_at: null }),
-      );
-      setPaid(money);
-    }
-    if (done.signed === null) {
-      done.signed = await sign(booking?.reservation_id ?? null);
-      onProgress(done.signed);
-    }
-    if (bookingDeposit !== null && planned !== null && !done.applied) {
-      await signingApi.applyPlannedSecurityDeposit(
-        lease.lease_id,
-        identity("apply").key,
-      );
-      done.applied = true;
-    }
-    if (rentDue > 0 && !done.invoiced) {
-      await signingApi.makeInitialRentInvoice(
-        lease.lease_id,
-        identity("invoice").key,
-      );
-      done.invoiced = true;
-    }
-    if (rentDue > 0 && !done.allocated) {
-      done.proposal ??= await signingApi.allocationProposal(
-        propertyId,
-        money.paymentId,
-      );
-      await signingApi.allocateByProposal(
-        propertyId,
-        money.paymentId,
-        done.proposal,
-        identity("allocate").key,
-      );
-      done.allocated = true;
-    }
-    if (depositDue > 0) {
-      if (done.depositId === null) {
-        if (bookingDeposit !== null) done.depositId = bookingDeposit.depositId;
-        else {
-          const step = identity("deposit");
-          await signingApi.createSecurityDeposit(
-            lease.lease_id,
-            {
-              deposit_id: step.id,
-              required_usd_cents: depositDue,
-              reason: lt("en", "sp_reason_create"),
-            },
-            step.key,
-          );
-          done.depositId = step.id;
-        }
-      }
-      const step = identity("receipt");
-      await signingApi.receiveIntoDeposit(
-        done.depositId,
-        {
-          receipt_id: step.id,
-          payment_id: money.paymentId,
-          amount_usd_cents: depositDue,
-          reason: lt("en", "sp_reason_receipt"),
-        },
-        step.key,
-      );
-    }
-    onSaved(
-      done.signed,
-      lt(
-        language,
-        "sp_toast",
-        lease.unit_number,
-        usdFromCents(total),
-        money.receiptNumber,
-      ),
-    );
-  }
+          : duePassed
+            ? lt(language, "sp_due_passed", dayText(initial.due_date))
+            : bookingUnknown && reservation.state !== "loading"
+              ? lt(language, "sp_no_booking")
+              : belowReceived
+                ? lt(
+                    language,
+                    "sp_deposit_below",
+                    usdFromCents(bookingDeposit.received),
+                  )
+                : depositMissing && reservation.state === "done"
+                  ? lt(language, "sp_deposit_missing")
+                  : !mayCollect
+                    ? lt(language, "sp_no_rights")
+                    : walkIn &&
+                        !mayCreateDeposit &&
+                        reservation.state === "done"
+                      ? lt(language, "sp_no_deposit_right")
+                      : null;
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy || !ready) return;
-    const all = unsigned.every(
-      (signer) =>
-        ticked.has(signer.signer_id) ||
-        progress.current.lease.signers.some(
-          (entry) =>
-            entry.signer_id === signer.signer_id && entry.signed_at !== null,
-        ),
-    );
+    const all = unsigned.every((signer) => ticked.has(signer.signer_id));
     setWrong(!all);
-    const badDeposit = walkIn && centsOf(depositText) === null;
-    setDepositProblem(badDeposit ? lt(language, "err_deposit") : null);
     const issue =
-      paid !== null || methods === null || methods === "failed"
+      methods === null || methods === "failed"
         ? null
         : moneyProblem(methods, money);
     setMoneyIssue(issue);
     if (
       !all ||
-      badDeposit ||
       issue !== null ||
       methods === null ||
       methods === "failed" ||
@@ -406,22 +258,63 @@ export function SignDialog({
       total,
       lt("en", "sp_memo", lease.unit_number),
     );
+    const body: SignWithPaymentInput = {
+      signer_ids: unsigned.map((signer) => signer.signer_id),
+      reason: SIGN_REASON,
+      payment: {
+        payment_method_id: payment.payment_method_id,
+        received_at: payment.received_at,
+        evidence_reference: payment.evidence_reference,
+        payer_intent_memo: payment.payer_intent_memo,
+        amount: payment.amount,
+      },
+    };
+    // The time the money came is part of the request but not of its values: the same press
+    // again sends the first body, so the server answers it from its record.
+    const fingerprint = JSON.stringify({
+      version: lease.version,
+      ...body,
+      payment: { ...body.payment, received_at: null },
+    });
+    if (attempt.current?.fingerprint !== fingerprint)
+      attempt.current = { fingerprint, key: crypto.randomUUID(), body };
+    const request = attempt.current;
     setBusy(true);
     setOutcome(null);
-    run(payment)
+    signingApi
+      .signWithPayment(
+        propertyId,
+        lease.lease_id,
+        lease.version,
+        request.body,
+        request.key,
+      )
+      .then((signed) => {
+        onSaved(
+          lt(
+            language,
+            "sp_toast",
+            lease.unit_number,
+            usdFromCents(signed.total_usd_cents),
+            signed.receipt_number,
+          ),
+        );
+      })
       .catch((error: unknown) => {
-        if (error instanceof LeaseConflictError) {
+        if (error instanceof SettlementRequestError && error.status === 412) {
           onConflict();
           return;
         }
         setOutcome(
-          error instanceof SettlementRequestError
-            ? { kind: "refused", text: error.message }
-            : error instanceof SettlementUnavailableError ||
-                error instanceof LeaseUnavailableError ||
-                outcomeOf(error) === "unknown"
-              ? { kind: "unknown" }
-              : { kind: "refused", text: lt(language, "sign_refused") },
+          outcomeOf(error) === "unknown"
+            ? { kind: "unknown" }
+            : {
+                kind: "refused",
+                text:
+                  error instanceof SettlementRequestError
+                    ? error.message
+                    : lt(language, "sign_refused"),
+              },
         );
       })
       .finally(() => {
@@ -429,7 +322,8 @@ export function SignDialog({
       });
   }
 
-  const locked = paid !== null || busy;
+  // After a lost answer only the same request may go again, so nothing can be changed.
+  const locked = busy || outcome?.kind === "unknown";
   const rent = lease.monthly_rent_usd_cents;
 
   return (
@@ -469,7 +363,7 @@ export function SignDialog({
             <label className="ui-chk" key={signer.signer_id}>
               <input
                 checked={done || ticked.has(signer.signer_id)}
-                disabled={done || busy}
+                disabled={done || locked}
                 onChange={(event) => {
                   const next = new Set(ticked);
                   if (event.currentTarget.checked) next.add(signer.signer_id);
@@ -502,36 +396,16 @@ export function SignDialog({
               {!renewal && (
                 <tr>
                   <td>
-                    {bookingDeposit !== null ? (
-                      lt(
-                        language,
-                        "sp_deposit_rest",
-                        usdFromCents(bookingDeposit.received),
-                        usdFromCents(bookingDeposit.required),
-                      )
-                    ) : (
-                      <label htmlFor="sign-deposit">
-                        {lt(language, "sp_deposit")}
-                      </label>
-                    )}
+                    {bookingDeposit !== null
+                      ? lt(
+                          language,
+                          "sp_deposit_rest",
+                          usdFromCents(bookingDeposit.received),
+                          usdFromCents(bookingDeposit.required),
+                        )
+                      : lt(language, "sp_deposit")}
                   </td>
-                  <td>
-                    {walkIn ? (
-                      <input
-                        aria-invalid={depositProblem !== null}
-                        disabled={locked}
-                        id="sign-deposit"
-                        inputMode="decimal"
-                        onChange={(event) => {
-                          setDeposit(event.currentTarget.value);
-                        }}
-                        value={depositText}
-                      />
-                    ) : (
-                      usdFromCents(depositDue)
-                    )}
-                    <Problem message={depositProblem} />
-                  </td>
+                  <td>{depositMissing ? "—" : usdFromCents(depositDue)}</td>
                 </tr>
               )}
               <tr>
@@ -599,16 +473,6 @@ export function SignDialog({
         <p className="ui-small ui-muted" role="status">
           {lt(language, "sign_res_failed")}
         </p>
-      )}
-      {paid !== null && (
-        <div className="ui-notice info" role="status">
-          <Icon name="check" />
-          <p>
-            {dmt(language, "paid_saved", paid.receiptNumber)}
-            {progress.current.signed !== null &&
-              ` ${lt(language, "sp_signed_saved")}`}
-          </p>
-        </div>
       )}
       {outcome !== null && (
         <div className="ui-notice warn" role="alert">

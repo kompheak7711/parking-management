@@ -131,6 +131,8 @@ const TEXT = {
   as_of: ["As of {0}", "គិតត្រឹម {0}"],
   // new
   all_dates: ["All dates", "គ្រប់កាលបរិច្ឆេទ"],
+  // V1-060 B7: picked days on a Totals table widen to whole months.
+  months_note: ["Totals count whole months.", "តារាងសរុបរាប់តាមខែពេញ។"],
   // new: Unit occupancy and Deposit liability show today.
   today_only: [
     "As of {0}. This report shows today, so the period does not apply.",
@@ -150,6 +152,8 @@ const TEXT = {
   // new
   more: ["Show more", "បង្ហាញបន្ថែម"],
   total: ["Total", "សរុប"],
+  // V1-060 B7: the footer Total counts every row, also the ones not shown yet.
+  total_all: ["Total, all {0} rows", "សរុប ទាំង {0} ជួរ"],
   // new
   none: ["No records for this period.", "គ្មានកំណត់ត្រាសម្រាប់រយៈពេលនេះទេ។"],
   // new
@@ -202,9 +206,11 @@ const TEXT = {
     "Each Invoice counts in the month it is for: Rent in its Rent month, Utilities in the month their reading period ends. Deposits held are not income; a kept Deposit counts in the month it is kept. With All Units, every Unit is added together.",
     "វិក្កយបត្រនីមួយៗរាប់ក្នុងខែដែលវាសម្រាប់៖ ថ្លៃឈ្នួលក្នុងខែឈ្នួល ទឹកភ្លើងក្នុងខែដែលរយៈពេលអានបញ្ចប់។ ប្រាក់កក់ដែលកាន់កាប់មិនមែនចំណូលទេ; ប្រាក់កក់ដែលរក្សាទុក រាប់ក្នុងខែដែលវាត្រូវបានរក្សាទុក។ ពេលជ្រើសគ្រប់បន្ទប់ បន្ទប់ទាំងអស់ត្រូវបូកបញ្ចូលគ្នា។",
   ],
+  // V1-060 B7: a reversed Payment comes off in its month, so the figure that matches is the
+  // Payments report's Received less reversals.
   note_total_payment: [
-    "Every Receipt counts on the day the money came in, deposits included. This total matches Money received in the Payments report. With All Units, every Unit is added together.",
-    "បង្កាន់ដៃនីមួយៗរាប់នៅថ្ងៃដែលលុយចូល រួមទាំងប្រាក់កក់។ សរុបនេះដូចរបាយការណ៍ការបង់ប្រាក់។ ពេលជ្រើសគ្រប់បន្ទប់ បន្ទប់ទាំងអស់ត្រូវបូកបញ្ចូលគ្នា។",
+    "Every Receipt counts on the day the money came in, deposits included; a reversed Payment comes off in the month it is reversed. This total matches Received less reversals in the Payments report. With All Units, every Unit is added together.",
+    "បង្កាន់ដៃនីមួយៗរាប់នៅថ្ងៃដែលលុយចូល រួមទាំងប្រាក់កក់; ការបង់ប្រាក់ដែលត្រូវបានត្រឡប់វិញ ត្រូវដកចេញក្នុងខែដែលវាត្រូវបានត្រឡប់។ សរុបនេះដូច «ប្រាក់ទទួល ដកការត្រឡប់វិញ» ក្នុងរបាយការណ៍ការបង់ប្រាក់។ ពេលជ្រើសគ្រប់បន្ទប់ បន្ទប់ទាំងអស់ត្រូវបូកបញ្ចូលគ្នា។",
   ],
   note_total_electricity: [
     "Each month holds the reading period that ends on the 24th of that month (October = 25/09 – 24/10), at the Rate of that period. With All Units, every Unit is added together.",
@@ -481,6 +487,11 @@ const TEXT = {
   by_kind: ["By action", "តាមសកម្មភាព"],
   open_history: ["Open History", "បើកប្រវត្តិ"],
   ch_audit_activity: ["Events per day", "ព្រឹត្តិការណ៍ក្នុងមួយថ្ងៃ"],
+  // V1-060 B7: when the period has more days with events than the chart shows.
+  ch_audit_last: [
+    "Events per day, the last {0} days with events",
+    "ព្រឹត្តិការណ៍ក្នុងមួយថ្ងៃ {0} ថ្ងៃចុងក្រោយដែលមានព្រឹត្តិការណ៍",
+  ],
   // new
   system: ["System", "ប្រព័ន្ធ"],
 

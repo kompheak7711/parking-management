@@ -1,11 +1,16 @@
 // V1-060 B6 (owner 27/10/2026): the money part of Make Reservation and Receive Security Deposit.
 // The deposit is received as a Payment with its Receipt that pays no Invoice (POST payments);
 // the Reservation or the Security Deposit then takes its receipt from that Payment. The Payment
-// keeps one request key while its values stay the same, so "Try again" never saves it twice.
+// keeps one request key and its very same body while its values stay the same, so "Try again"
+// never saves it twice (V1-060 B7: the server compares the whole stored request).
 
 import { useEffect, useState } from "react";
 
 import { InvoiceClientError } from "../invoiceClient";
+import {
+  SettlementRequestError,
+  SettlementUnavailableError,
+} from "../settlementClient";
 import type { Language } from "../signInText";
 import { needsReference } from "./ReceivePayment";
 import type { PaymentMethodOption, PaymentsApi } from "./paymentsClient";
@@ -50,10 +55,22 @@ export function centsOf(text: string): number | null {
   return cents > 0 ? cents : null;
 }
 
-/** "unknown" when the answer was lost (the request may be saved); "refused" otherwise. */
+/** "unknown" when the answer was lost or cannot say whether the request was saved (no answer,
+ * a timeout, too many requests, a server failure, or a saved answer that could not be read);
+ * "refused" when the server named why it saved nothing. */
 export function outcomeOf(error: unknown): "unknown" | "refused" {
   if (error instanceof InvoiceClientError)
-    return error.outcomeUnknown ? "unknown" : "refused";
+    return error.outcomeUnknown || error.status === 408 || error.status === 429
+      ? "unknown"
+      : "refused";
+  if (error instanceof SettlementUnavailableError) return "unknown";
+  if (error instanceof SettlementRequestError)
+    return error.status < 400 ||
+      error.status >= 500 ||
+      error.status === 408 ||
+      error.status === 429
+      ? "unknown"
+      : "refused";
   return error instanceof TypeError ? "unknown" : "refused";
 }
 
@@ -197,8 +214,23 @@ export function MoneyFields({
   );
 }
 
-/** One key for the life of a set of values; new values get a new key. A Payment's received_at
- * is left out of its values (passed as null): the same money typed again is the same request. */
+/** One request for the life of a Payment's values: the same values send the very same body
+ * with the same key, so the server answers a lost request from its record. received_at is not
+ * one of the values; it is set once, when the values are first sent. New values are a new
+ * request. */
+export function requestFor<Body extends { received_at: string }>(
+  current: {
+    current: { fingerprint: string; key: string; body: Body } | null;
+  },
+  body: Body,
+): { key: string; body: Body } {
+  const fingerprint = JSON.stringify({ ...body, received_at: null });
+  if (current.current?.fingerprint !== fingerprint)
+    current.current = { fingerprint, key: crypto.randomUUID(), body };
+  return current.current;
+}
+
+/** One key for the life of a set of values; new values get a new key. */
 export function keyFor(
   current: { current: { fingerprint: string; key: string } | null },
   values: unknown,

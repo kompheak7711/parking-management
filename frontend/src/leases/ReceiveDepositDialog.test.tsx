@@ -9,6 +9,7 @@ import {
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { DepositResource } from "../depositClient";
+import { InvoiceClientError } from "../invoiceClient";
 import type { LeaseResource } from "../leaseClient";
 import type { PaymentsApi } from "../payments/paymentsClient";
 import {
@@ -17,7 +18,10 @@ import {
 } from "../settlementClient";
 import { ReceiveDepositDialog } from "./ReceiveDepositDialog";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 const lease = {
   lease_id: "lease-1",
@@ -172,5 +176,78 @@ describe("Receive Security Deposit (V1-060 B6)", () => {
     ).toBeInTheDocument();
     expect(all.confirm).not.toHaveBeenCalled();
     expect(all.createSecurityDeposit).not.toHaveBeenCalled();
+  });
+  it("TEST-FE-1078 a lost answer: Try again sends the very same Payment, its time included, with the same key; a server failure says it is not known whether it was saved", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-28T03:00:00.000Z"));
+    const all = apis();
+    all.confirm
+      .mockReset()
+      .mockRejectedValueOnce(new InvoiceClientError(null, "NETWORK", true))
+      .mockResolvedValue({ paymentId: "payment-9", receiptNumber: "RC0009" });
+    all.receiveIntoDeposit
+      .mockReset()
+      .mockRejectedValueOnce(
+        new SettlementRequestError(500, null, "The server failed."),
+      )
+      .mockResolvedValue({});
+    const onSaved = vi.fn();
+    render(
+      <ReceiveDepositDialog
+        language="en"
+        lease={lease}
+        onClose={vi.fn()}
+        onSaved={onSaved}
+        paymentsApi={all.paymentsApi}
+        propertyId="property-1"
+        security={null}
+        settlementApi={all.settlementApi}
+      />,
+    );
+    const dialog = screen.getByRole("dialog");
+    const unknown =
+      "We could not tell whether this was saved. “Try again” sends the very same request; it is never saved twice.";
+    fireEvent.change(
+      await within(dialog).findByLabelText("How the money came"),
+      { target: { value: "method-aba" } },
+    );
+    fireEvent.change(within(dialog).getByLabelText("Bank or ABA reference"), {
+      target: { value: "ABA 777" },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save the deposit" }),
+    );
+    expect(await within(dialog).findByText(unknown)).toBeInTheDocument();
+    // Some seconds later the very same Payment goes again.
+    vi.setSystemTime(new Date("2026-10-28T03:00:07.000Z"));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
+    await within(dialog).findByRole("button", { name: "Try again" });
+    expect(
+      within(dialog).getByText(/The money is saved with Receipt RC0009/),
+    ).toBeInTheDocument();
+    expect(within(dialog).getByText(unknown)).toBeInTheDocument();
+    expect(within(dialog).queryByText("The server failed.")).toBeNull();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
+    await waitFor(() => {
+      expect(onSaved).toHaveBeenCalledWith(
+        "Security Deposit of $500.00 received with Receipt RC0009.",
+      );
+    });
+    expect(all.confirm).toHaveBeenCalledTimes(2);
+    expect(all.confirm.mock.calls[0]?.[1]).toMatchObject({
+      received_at: "2026-10-28T03:00:00.000Z",
+    });
+    expect(all.confirm.mock.calls[1]?.[1]).toEqual(
+      all.confirm.mock.calls[0]?.[1],
+    );
+    expect(all.confirm.mock.calls[1]?.[2]).toBe(all.confirm.mock.calls[0]?.[2]);
+    expect(all.createSecurityDeposit).toHaveBeenCalledTimes(1);
+    expect(all.receiveIntoDeposit).toHaveBeenCalledTimes(2);
+    expect(all.receiveIntoDeposit.mock.calls[1]?.[1]).toEqual(
+      all.receiveIntoDeposit.mock.calls[0]?.[1],
+    );
+    expect(all.receiveIntoDeposit.mock.calls[1]?.[2]).toBe(
+      all.receiveIntoDeposit.mock.calls[0]?.[2],
+    );
   });
 });

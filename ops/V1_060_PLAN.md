@@ -350,3 +350,30 @@ candidate is the code that will be used.
   see it later. I can say V1-060 session passed." B6 passed. The automatic billing runs on its
   own dates, so the owner watches it when it runs. Next: B7, merge into
   `implementation/foundation` once CI is green on the final commit.
+- 2026-10-28 B7 (owner yes on the merge card, 16:35: "Yes, merge after the checks"): the final
+  review of all B6 fixes (backend, money screens, Reports screens) found that Sign Lease saved its
+  money, signatures, signing, Initial Rent Invoice and Security Deposit as seven requests (a lost
+  answer could take the money twice or leave a Lease signed without its Initial Rent Invoice, and
+  the money paid the oldest Invoices first), and smaller points. Built (DL-108, migration
+  20270330_249; decided by Claude under the owner's 2026-10-23 22:30 rule, no money rule): Sign
+  Lease is one database transaction (`POST /leases/{lease_id}/sign-with-payment`,
+  `app.sign_lease_with_payment`; the DL-100 Initial Rent Invoice route and the DL-101 apply route
+  are removed); Receive Security Deposit and Make Reservation send the very same request on Try
+  again, and 408, 429 and 5xx count as no answer; Make Reservation stops less than the suggestion
+  before any money without `reservation_deposits.override` and fixes the Rent with the money; New
+  Lease and Edit draft save the draft's Security Deposit as its own step with Try again; real-day
+  checks in Terminate, Inspection, Meters and Letters; Reports Totals count whole months, the
+  footer Total label, the Audit chart title and the chart column label; drop-down arrows, small
+  text contrast and the dark chart colour. Tests: 10 new database tests, 6 new API tests,
+  TEST-FE-1077 to TEST-FE-1089 (new; TEST-FE-1081 is in the reservation client tests, which the
+  manifest does not list), TEST-FE-850, 851, 853, 1018, 1020 and 1040 (changed); the two API
+  tests of the removed routes are gone. Follow-ups (not built): Make Reservation and Receive
+  Security Deposit still save the money and the record as two requests (each safe to try again);
+  `POST /leases/{lease_id}/sign` still signs without money (the screen no longer uses it); the
+  planned Security Deposit save has no If-Match; the DL-101 change of the required amount at
+  signing is kept to once per Lease by an audit lookup, not a database constraint; Add occupant
+  counts only the people listed, so a draft that planned nobody can reach 21 with the Primary
+  Tenant while Record move-in takes at most 20; the Utility consumption report count mixes rows
+  and grouped lines; dates that look right but do not exist pass some other screens' format
+  checks (the server refuses them). TEST-FE-918 (Payments reprint) failed once in about 20 runs:
+  intermittent, like TEST-FE-087, TEST-FE-128 and TEST-FE-488.

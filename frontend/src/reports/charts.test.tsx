@@ -231,4 +231,30 @@ describe("Report charts and helpers", () => {
     expect(measureText("M3")).toBe("m³");
     expect(measureText("kwh")).toBe("kWh");
   });
+  it("TEST-FE-1088 the label on the highest column is its total with a reversal taken off, as in its tooltip; the column is as high as what is drawn (V1-060 B7)", () => {
+    render(
+      <StackedBars
+        columns={[
+          { label: "Sep 26", tip: "September 2026", values: [550000, -50000] },
+          { label: "Oct 26", tip: "October 2026", values: [300000, 0] },
+        ]}
+        format={usdFromCents}
+        head="Month"
+        series={["Received", "Reversals"]}
+        title="Money received by month"
+        totalLabel="Total"
+      />,
+    );
+    const [september] = screen.getAllByRole("button");
+    expect(september?.getAttribute("aria-label")).toBe(
+      "September 2026, Received: $5,500.00, Reversals: -$500.00, Total: $5,000.00",
+    );
+    expect(texts(".rp-vc-v")).toEqual(["$5,000.00"]);
+    // The axis top is $10,000; the drawn part is $5,500, so the column is 55% high.
+    expect(
+      Number.parseFloat(
+        september?.querySelector<HTMLElement>(".rp-vc-bar")?.style.height ?? "",
+      ),
+    ).toBe(55);
+  });
 });

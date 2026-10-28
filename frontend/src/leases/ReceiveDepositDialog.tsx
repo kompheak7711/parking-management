@@ -3,7 +3,8 @@
 // Security Deposit is not fully received takes the rest here. The money is saved first as a
 // Payment with its Receipt (it pays no Invoice); the Security Deposit is then made (walk-in only)
 // and takes its receipt from that Payment. Each step keeps one request identity while its values
-// stay the same, so "Try again" never saves anything twice.
+// stay the same, so "Try again" never saves anything twice; the Payment is sent again with the
+// very same body (V1-060 B7).
 
 import { FormEvent, useRef, useState } from "react";
 
@@ -18,13 +19,13 @@ import {
   moneyProblem,
   outcomeOf,
   paymentInput,
+  requestFor,
   usePaymentMethods,
 } from "../payments/depositMoney";
 import type { ConfirmedPayment, PaymentsApi } from "../payments/paymentsClient";
 import {
   type SettlementApi,
   SettlementRequestError,
-  SettlementUnavailableError,
 } from "../settlementClient";
 import { usdFromCents } from "../shell/format";
 import { Icon } from "../shell/icons";
@@ -81,7 +82,11 @@ export function ReceiveDepositDialog({
   >(null);
   const [paid, setPaid] = useState<ConfirmedPayment | null>(null);
   const [depositId, setDepositId] = useState(security?.deposit_id ?? null);
-  const paymentKey = useRef<{ fingerprint: string; key: string } | null>(null);
+  const paymentRequest = useRef<{
+    fingerprint: string;
+    key: string;
+    body: ReturnType<typeof paymentInput>;
+  } | null>(null);
   const depositKey = useRef<{ fingerprint: string; key: string } | null>(null);
   const receiptKey = useRef<{ fingerprint: string; key: string } | null>(null);
   const ids = useRef({
@@ -139,10 +144,11 @@ export function ReceiveDepositDialog({
     try {
       let money = paid;
       if (money === null) {
+        const request = requestFor(paymentRequest, payment);
         money = await paymentsApi.confirm(
           propertyId,
-          payment,
-          keyFor(paymentKey, { ...payment, received_at: null }),
+          request.body,
+          request.key,
         );
         setPaid(money);
       }
@@ -182,12 +188,15 @@ export function ReceiveDepositDialog({
       );
     } catch (error: unknown) {
       setOutcome(
-        error instanceof SettlementRequestError
-          ? { kind: "refused", text: error.message }
-          : error instanceof SettlementUnavailableError ||
-              outcomeOf(error) === "unknown"
-            ? { kind: "unknown" }
-            : { kind: "refused", text: lt(language, "rd_refused") },
+        outcomeOf(error) === "unknown"
+          ? { kind: "unknown" }
+          : {
+              kind: "refused",
+              text:
+                error instanceof SettlementRequestError
+                  ? error.message
+                  : lt(language, "rd_refused"),
+            },
       );
     } finally {
       setBusy(false);

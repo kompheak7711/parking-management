@@ -11,7 +11,6 @@ from uuid import UUID, uuid4
 import psycopg
 import pytest
 
-from property_rental.api_refusals import RefusedRequest
 from property_rental.billing import month_end
 from property_rental.lease import LEASE_SIGN_CAPABILITY, LeaseSignCommand
 from property_rental.lease_signing_api import PostgresLeaseSigningFlow
@@ -24,12 +23,23 @@ from test_move_in_migration import runtime_database_url
 
 PLAN = "SELECT app.set_lease_planned_security_deposit(%s,%s,%s,%s,%s,%s,%s)"
 HELD = "SELECT app.lease_held_security_deposit(%s,%s)"
+APPLY = "SELECT app.apply_lease_planned_security_deposit(%s,%s,%s,%s,%s)"
 
 
 def _plan(url: str, prop: UUID, lease: UUID, actor: UUID, cents: int, reason: str) -> object:
     with psycopg.connect(url) as connection:
         row = connection.execute(
             PLAN, (prop, lease, uuid4(), actor, cents, reason, "leases.draft")
+        ).fetchone()
+    assert row is not None
+    return row[0]
+
+
+def _apply(prop: UUID, lease: UUID, adjustment: UUID, actor: UUID) -> object:
+    """The step of app.sign_lease_with_payment (DL-108) that applies the draft's amount."""
+    with psycopg.connect(financial_database_url()) as connection:
+        row = connection.execute(
+            APPLY, (prop, lease, adjustment, actor, LEASE_SIGN_CAPABILITY)
         ).fetchone()
     assert row is not None
     return row[0]
@@ -74,9 +84,9 @@ def test_a_draft_from_a_reservation_records_its_deposit_and_signing_applies_it(
     preview = flow.preview(prop, lease)
     assert preview["planned_security_deposit_usd_cents"] == 60_000
     assert cast(dict[str, object], preview["held_security_deposit"])["required_usd_cents"] == 50_000
-    with pytest.raises(RefusedRequest) as early:
-        flow.apply_planned_deposit(prop, lease, uuid4(), actor)
-    assert early.value.refusal.code == "PLANNED_DEPOSIT_NOT_SIGNED"
+    with pytest.raises(psycopg.Error) as early:
+        _apply(prop, lease, uuid4(), actor)
+    assert early.value.diag.message_primary == "Sign the Lease before its Security Deposit changes"
     with psycopg.connect(migrated_database_url) as connection:
         assert connection.execute(
             "SELECT count(*) FROM app.deposit_required_amount_adjustments WHERE deposit_id=%s",
@@ -98,16 +108,16 @@ def test_a_draft_from_a_reservation_records_its_deposit_and_signing_applies_it(
         actor=who,
     )
     adjustment = uuid4()
-    assert flow.apply_planned_deposit(prop, lease, adjustment, actor) == {
+    assert _apply(prop, lease, adjustment, actor) == {
         "changed": True,
         "required_usd_cents": 60_000,
     }
     # The same request again replays; another request finds it already applied.
-    assert flow.apply_planned_deposit(prop, lease, adjustment, actor) == {
+    assert _apply(prop, lease, adjustment, actor) == {
         "changed": True,
         "required_usd_cents": 60_000,
     }
-    assert flow.apply_planned_deposit(prop, lease, uuid4(), actor) == {
+    assert _apply(prop, lease, uuid4(), actor) == {
         "changed": False,
         "required_usd_cents": 60_000,
     }
@@ -168,8 +178,7 @@ def test_a_lower_amount_on_the_draft_becomes_a_decrease_at_signing(
         ),
         actor=who,
     )
-    flow = PostgresLeaseSigningFlow(runtime, financial_database_url())
-    assert flow.apply_planned_deposit(prop, draft.lease_id, uuid4(), actor) == {
+    assert _apply(prop, draft.lease_id, uuid4(), actor) == {
         "changed": True,
         "required_usd_cents": 40_000,
     }
@@ -200,8 +209,7 @@ def test_a_walk_in_lease_has_no_held_deposit_and_nothing_to_apply(
     assert _plan(runtime, prop, lease, actor, 80_000, "Walk-in") == 80_000
     with psycopg.connect(migrated_database_url) as connection:
         sign_lease(connection, lease, actor)
-    flow = PostgresLeaseSigningFlow(runtime, financial_database_url())
-    assert flow.apply_planned_deposit(prop, lease, uuid4(), actor) == {
+    assert _apply(prop, lease, uuid4(), actor) == {
         "changed": False,
         "required_usd_cents": None,
     }

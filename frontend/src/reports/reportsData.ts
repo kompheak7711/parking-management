@@ -200,6 +200,13 @@ export function rangeOf(
   return null;
 }
 
+/** V1-060 B7: the Totals tables count whole months, so picked days widen to their months. */
+export function wholeMonths(range: [string, string]): [string, string] {
+  const end = new Date(`${range[1].slice(0, 7)}-01T00:00:00Z`);
+  end.setUTCMonth(end.getUTCMonth() + 1, 0);
+  return [`${range[0].slice(0, 7)}-01`, end.toISOString().slice(0, 10)];
+}
+
 /** "01/10/2026 to 28/10/2026", or "All dates". */
 export function rangeText(
   language: Language,

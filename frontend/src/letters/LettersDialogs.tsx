@@ -5,7 +5,7 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 
 import type { LeaseResource } from "../leaseClient";
-import { DateInput } from "../shell/DateInput";
+import { DateInput, isDay } from "../shell/DateInput";
 import { dayText, todayInPhnomPenh, usdFromCents } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { Dialog } from "../shell/ui";
@@ -408,7 +408,8 @@ export function RecordWarningDialog({
     const description = what.trim();
     const provision = article.trim();
     const found: Record<string, string> = {};
-    if (breach === "" || given === "" || breach > given || given > today)
+    // V1-060 B7: a date box passes on what is typed until it is a whole day.
+    if (!isDay(breach) || !isDay(given) || breach > given || given > today)
       found.dates = ltr(language, "lw_d_date_e");
     if (description === "") found.what = ltr(language, "lw_d_what_e");
     if (provision === "") found.article = ltr(language, "lw_d_clause_e");

@@ -1333,8 +1333,10 @@ function AuditActivity({
     const name = kindText(language, kindOf(str(entry, "kind")));
     kinds.set(name, (kinds.get(name) ?? 0) + num(entry, "count"));
   }
-  // The chart shows the last 31 days that have events.
-  const days = items(page.chart, "days").slice(-31);
+  // The chart shows the last 31 days that have events; its title says so when there are more
+  // (V1-060 B7: the Events figure counts the whole period).
+  const every = items(page.chart, "days");
+  const days = every.slice(-31);
   return (
     <>
       <SummaryCard
@@ -1351,7 +1353,11 @@ function AuditActivity({
             format={numberText}
             head={rpt(language, "c_day")}
             series={[rpt(language, "c_events")]}
-            title={rpt(language, "ch_audit_activity")}
+            title={
+              every.length > days.length
+                ? rpt(language, "ch_audit_last", days.length)
+                : rpt(language, "ch_audit_activity")
+            }
             totalLabel={rpt(language, "total")}
           />
         }

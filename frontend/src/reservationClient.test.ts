@@ -2,7 +2,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   ReservationConflictError,
+  ReservationRequestError,
   ReservationResource,
+  ReservationUnavailableError,
   reservationApi,
 } from "./reservationClient";
 
@@ -148,5 +150,22 @@ describe("Reservation API client", () => {
     expect(fetchMock.mock.calls.map(([path]) => path)).toEqual([
       "/reservations/reservation-1/cancel",
     ]);
+  });
+  it("TEST-FE-1081 a timeout, too many requests or a server failure is no answer, not a refusal (V1-060 B7)", async () => {
+    for (const status of [408, 429, 500, 502, 503, 504]) {
+      vi.spyOn(globalThis, "fetch").mockResolvedValue(
+        new Response(null, { status }),
+      );
+      await expect(reservationApi.get("reservation-1")).rejects.toBeInstanceOf(
+        ReservationUnavailableError,
+      );
+      vi.restoreAllMocks();
+    }
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(null, { status: 422 }),
+    );
+    await expect(reservationApi.get("reservation-1")).rejects.toBeInstanceOf(
+      ReservationRequestError,
+    );
   });
 });

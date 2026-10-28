@@ -550,7 +550,8 @@ html[lang="km"] .shell-head h1 {
 .shell-view select,
 .shell-view textarea {
   border-color: var(--border-strong);
-  background: var(--input);
+  /* The colour only: a drop-down keeps its drawn arrow (screens.css, V1-060 B7). */
+  background-color: var(--input);
   color: var(--text);
 }
 

@@ -95,7 +95,11 @@ export interface LeaseDetailProps {
   /** Letters opens the Lease with the Terminate dialog on the Rent ground. */
   terminateOnOpen?: boolean;
   /** V1-060 B6: Receive Security Deposit, the draft's planned deposit and signing with money. */
-  settlementApi?: SigningApi & Pick<SettlementApi, "planSecurityDeposit">;
+  settlementApi?: SigningApi &
+    Pick<
+      SettlementApi,
+      "planSecurityDeposit" | "createSecurityDeposit" | "receiveIntoDeposit"
+    >;
   paymentsApi?: PaymentsApi;
   /** V1-060 B6 (DL-102): New Customer from Add occupant; left out, the button is not shown. */
   customerCreateApi?: CustomerApi;
@@ -181,7 +185,8 @@ export function LeaseDetail({
       })
       .catch(() => {
         if (!live) return;
-        setPlanned(null);
+        // V1-060 B7: not known is not "none": Edit draft then hides the deposit box.
+        setPlanned(undefined);
         setHeld(null);
       });
     return () => {
@@ -1093,17 +1098,17 @@ export function LeaseDetail({
       </div>
       {dialog === "sign" && lease.status === "DRAFTED" && (
         <SignDialog
-          {...dialogProps}
+          language={language}
           lease={lease}
           mayCollect={may("payments.record") && may("payments.allocate")}
           mayCreateDeposit={may("deposits.manage")}
-          onSaved={(saved, message) => {
+          onClose={dialogProps.onClose}
+          onConflict={dialogProps.onConflict}
+          onSaved={(message) => {
             setDialog(null);
-            setLease(saved);
             setNotice(message);
             load();
           }}
-          onProgress={setLease}
           paymentsApi={paymentsApi}
           propertyId={propertyId}
           reservationApi={reservationApi}
@@ -1227,6 +1232,11 @@ export function LeaseDetail({
           planned={depositDraft && planned !== undefined ? planned : undefined}
           held={held}
           signingApi={settlementApi}
+          // The dates and Rent may be saved without the Security Deposit (B7): read again.
+          onClose={() => {
+            setDialog(null);
+            load();
+          }}
           onSaved={(saved) => {
             setDialog(null);
             setLease(saved);

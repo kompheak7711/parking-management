@@ -29,12 +29,25 @@ export function parseDay(typed: string): string {
     : "";
 }
 
-/** Adds the slashes while digits are typed: "1503" → "15/03", "15031986" → "15/03/1986". */
+/** A real day written yyyy-mm-dd, as a date box passes it on once a whole day is typed. */
+export function isDay(value: string): boolean {
+  return value !== "" && parseDay(value) === value;
+}
+
+/** Adds the slashes while digits are typed: "1503" → "15/03", "15031986" → "15/03/1986".
+ * V1-060 B7: also after the slashes it added ("15/031" → "15/03/1"), so a keypad with no "/"
+ * still gets both; slashes typed in other places ("5/3/1986") stay as typed. */
 function withSlashes(typed: string): string {
-  if (!/^\d+$/.test(typed)) return typed;
-  const digits = typed.slice(0, 8);
-  if (digits.length <= 2) return digits;
-  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  if (!/^(\d{2}\/(\d{2}\/)?)?\d*$/.test(typed)) return typed;
+  const digits = typed.replace(/\//g, "").slice(0, 8);
+  // A slash typed where one goes stays ("15/").
+  const end =
+    typed.endsWith("/") && (digits.length === 2 || digits.length === 4)
+      ? "/"
+      : "";
+  if (digits.length <= 2) return digits + end;
+  if (digits.length <= 4)
+    return `${digits.slice(0, 2)}/${digits.slice(2)}${end}`;
   return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
 }
 
@@ -116,7 +129,8 @@ function Calendar({
   max?: string;
   language: "en" | "km";
   onPick: (value: string) => void;
-  onClose: () => void;
+  /** refocus: the calendar had the focus (Close, Escape), so it goes back to the button. */
+  onClose: (refocus: boolean) => void;
 }) {
   const today = todayIso();
   const start = value !== "" ? value : today;
@@ -173,7 +187,7 @@ function Calendar({
         !anchor.current?.contains(target) &&
         !box.current?.contains(target)
       )
-        shut.current();
+        shut.current(false);
     };
     window.addEventListener("scroll", measure, true);
     window.addEventListener("resize", measure);
@@ -203,7 +217,7 @@ function Calendar({
       onKeyDown={(event) => {
         if (event.key === "Escape") {
           event.stopPropagation();
-          onClose();
+          onClose(true);
         }
       }}
       role="group"
@@ -295,7 +309,13 @@ function Calendar({
         >
           {words.today}
         </button>
-        <button className="ui-btn" onClick={onClose} type="button">
+        <button
+          className="ui-btn"
+          onClick={() => {
+            onClose(true);
+          }}
+          type="button"
+        >
           {words.close}
         </button>
       </div>
@@ -343,6 +363,14 @@ export function DateInput({
   const [text, setText] = useState(dayText(current));
   const [open, setOpen] = useState(false);
   const wrapper = useRef<HTMLSpanElement>(null);
+  const button = useRef<HTMLButtonElement>(null);
+
+  // V1-060 B7 (WCAG 2.4.3): a calendar that closes while it has the focus gives it back to its
+  // button, so the next Tab stays in the dialog; a tap outside keeps the focus where it went.
+  function close(refocus: boolean) {
+    setOpen(false);
+    if (refocus) button.current?.focus();
+  }
 
   // A new value from outside (a default, the calendar, another field) shows as dd/mm/yyyy;
   // what is being typed stays as typed while it means the same day.
@@ -395,6 +423,7 @@ export function DateInput({
         onClick={() => {
           setOpen(!open);
         }}
+        ref={button}
         type="button"
       >
         <Icon name="calendar" small />
@@ -405,13 +434,11 @@ export function DateInput({
           language={language}
           max={max}
           min={min}
-          onClose={() => {
-            setOpen(false);
-          }}
+          onClose={close}
           onPick={(picked) => {
             setText(dayText(picked));
             set(picked);
-            setOpen(false);
+            close(true);
           }}
           value={parseDay(current)}
         />

@@ -52692,7 +52692,7 @@
       "test_level": "UI component",
       "test_path": "frontend/src/leases/LeasesPage.test.tsx",
       "status": "implemented",
-      "notes": "V1-058 R3 L2a: Sign Lease needs a tick for every Signer, says what signing does (Unit Occupied, Reservation completed, Initial Rent Invoice, deposit rest), records each signature with the Lease version the last step returned, then signs."
+      "notes": "V1-058 R3 L2a; V1-060 B7 (DL-108): Sign Lease needs a tick for every Signer, says what signing does and that everything is saved together or nothing is, and sends the money, the ticked Signers and the Lease version as one request with one key; nothing is saved step by step."
     },
     {
       "test_id": "TEST-FE-851",
@@ -52703,7 +52703,7 @@
       "test_level": "UI component",
       "test_path": "frontend/src/leases/LeasesPage.test.tsx",
       "status": "implemented",
-      "notes": "V1-058 R3 L2a: after an unknown result Try again carries on from the step that did not answer with the same idempotency key, and a conflict closes the dialog, says so and reads the Lease again."
+      "notes": "V1-058 R3 L2a; V1-060 B7 (DL-108): after a lost answer (no answer or a gateway timeout) Try again sends the very same request, the time the money came included, with the same key, and nothing can be changed meanwhile; a conflict closes the dialog, says so and reads the Lease again."
     },
     {
       "test_id": "TEST-FE-852",
@@ -52728,7 +52728,7 @@
       "test_level": "UI component",
       "test_path": "frontend/src/leases/LeasesPage.test.tsx",
       "status": "implemented",
-      "notes": "V1-058 R3 L2a: Sign Lease looks up the Primary Tenant's active Reservation for the Unit (every page), says it is completed and sends its id with the signing; a refusal after the signatures keeps them shown on the Lease page and says so; Try again resends the same signing without recording the signatures again."
+      "notes": "V1-058 R3 L2a; V1-060 B7 (DL-108): Sign Lease looks up the Primary Tenant's active Reservation for the Unit (every page), says it is completed in the same step and asks only for the rest of its deposit; a refusal saves nothing and shows the server's words, and changed values after it are a new request."
     },
     {
       "test_id": "test_sign_route_forwards_the_reservation_the_signing_completes",
@@ -56591,7 +56591,7 @@
       "test_level": "UI component",
       "test_path": "frontend/src/leases/LeasesPage.test.tsx",
       "status": "implemented",
-      "notes": "V1-060 B6 (DL-100): Sign Lease takes no money and records nothing when the Initial Rent Invoice cannot be made (no terms, a Service for part of a month) or the person may not receive payments or make the Deposit."
+      "notes": "V1-060 B6 (DL-100), B7 (DL-108): Sign Lease takes no money and sends nothing when the Initial Rent Invoice cannot be made (no terms, a Service for part of a month) or the person may not receive payments or make the Deposit."
     },
     {
       "test_id": "TEST-FE-1019",
@@ -56671,17 +56671,6 @@
       "notes": "V1-060 B6 (DL-100): the planned Security Deposit needs leases.draft, a whole number of cents of at least one and a reason, and refuses extra fields."
     },
     {
-      "test_id": "test_the_initial_rent_invoice_needs_lease_sign_and_shows_a_refusal",
-      "upstream_ids": [
-        "DL-100",
-        "BR-RENT-005"
-      ],
-      "test_level": "API",
-      "test_path": "backend/tests/test_lease_signing_api.py",
-      "status": "implemented",
-      "notes": "V1-060 B6 (DL-100): making the Initial Rent Invoice at signing needs leases.sign and an Idempotency-Key, and a Service for part of a month is refused with INITIAL_RENT_SERVICE_PART_MONTH."
-    },
-    {
       "test_id": "TEST-FE-1020",
       "upstream_ids": [
         "DL-101",
@@ -56692,7 +56681,7 @@
       "test_level": "UI component",
       "test_path": "frontend/src/leases/LeasesPage.test.tsx",
       "status": "implemented",
-      "notes": "V1-060 B6 (DL-101): Sign Lease on a draft from a Booking asks for the draft's Security Deposit less the money received plus the Initial Rent, applies the draft's amount right after signing and before the money goes into the Reservation's deposit; an amount below the money received takes no money and signs nothing."
+      "notes": "V1-060 B6 (DL-101), B7 (DL-108): Sign Lease on a draft from a Booking asks for the draft's Security Deposit less the money received plus the Initial Rent and sends it as one request (the server applies the draft's amount and fills the Reservation's deposit in the same step); an amount below the money received takes no money and signs nothing."
     },
     {
       "test_id": "TEST-FE-1021",
@@ -56749,16 +56738,6 @@
       "test_path": "backend/tests/test_reservation_lease_deposit_migration.py",
       "status": "implemented",
       "notes": "V1-060 B6 (DL-101): a walk-in draft has no Reservation deposit, so applying after signing changes nothing (its deposit is made at signing, DL-100)."
-    },
-    {
-      "test_id": "test_the_draft_deposit_is_applied_after_signing_with_lease_sign_only",
-      "upstream_ids": [
-        "DL-101"
-      ],
-      "test_level": "API",
-      "test_path": "backend/tests/test_lease_signing_api.py",
-      "status": "implemented",
-      "notes": "V1-060 B6 (DL-101): applying the draft's Security Deposit after signing needs leases.sign and an Idempotency-Key, and an amount below the money received is refused with PLANNED_DEPOSIT_BELOW_RECEIVED."
     },
     {
       "test_id": "test_the_reservation_deposit_in_the_preview_needs_deposit_or_booking_read",
@@ -57131,7 +57110,7 @@
       "test_level": "UI component",
       "test_path": "frontend/src/reports/TotalsView.test.tsx",
       "status": "implemented",
-      "notes": "V1-060 B6 (Reports screens, V1-057 data, DESIGN.md round 4): The period: This month, Last month and picked dates are sent as days and shown as dd/mm/yyyy; dates that are not whole days or run backwards are refused; All sends no dates."
+      "notes": "V1-060 B6 (Reports screens, V1-057 data, DESIGN.md round 4), B7: The period: This month, Last month and picked dates are sent as days and shown as dd/mm/yyyy; on a Totals table picked days widen to their whole months and the bar says Totals count whole months; dates that are not whole days or run backwards are refused; All sends no dates."
     },
     {
       "test_id": "TEST-FE-1041",
@@ -57614,7 +57593,7 @@
       "test_level": "migration",
       "test_path": "backend/tests/test_report_broken_meter_migration.py",
       "status": "implemented",
-      "notes": "V1-060 B6: migration 20270329_248 is the head, follows 20270328_247 and refuses a downgrade."
+      "notes": "V1-060 B6: migration 20270329_248 follows 20270328_247 and refuses a downgrade (it was the head until 20270330_249)."
     },
     {
       "test_id": "test_report_broken_needs_meter_manage_and_returns_the_report",
@@ -57769,6 +57748,322 @@
       "test_path": "frontend/src/shell/buttons.test.ts",
       "status": "implemented",
       "notes": "V1-060 B6 (owner 28/10/2026): buttons, switches, icon buttons and the calendar buttons use the button colours, never a text box's fill and edge, in light and dark; the words reach 4.5:1 on the fill and under the pointer, and the edge 3:1 on cards and on the page."
+    },
+    {
+      "test_id": "test_a_walk_in_lease_is_signed_with_its_money_in_one_step",
+      "upstream_ids": [
+        "DL-108",
+        "DL-100",
+        "DL-101",
+        "BR-DEP-002",
+        "BR-RENT-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_sign_lease_in_one_step_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 B7 (DL-108): one Sign Lease command signs a walk-in Lease with its money: the Payment and its Receipt, the Initial Rent Invoice paid in full by name (customer designated), the Security Deposit made at the draft's amount and filled, nothing left on the Payment; the same key and request answers the same and saves nothing new, the same key with another request is refused (SIGNING_KEY_REUSED), and a new key cannot sign it again."
+    },
+    {
+      "test_id": "test_the_money_pays_the_new_initial_rent_invoice_never_an_older_one",
+      "upstream_ids": [
+        "DL-108",
+        "DL-100"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_sign_lease_in_one_step_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 B7 (DL-108): the money received at signing pays the new Initial Rent Invoice and the Security Deposit, never an older Invoice the Customer still owes (it stays UNPAID)."
+    },
+    {
+      "test_id": "test_nothing_is_saved_when_the_signing_is_refused_after_the_money_step",
+      "upstream_ids": [
+        "DL-108",
+        "BR-DEP-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_sign_lease_in_one_step_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 B7 (DL-108): when the signing step refuses after the Payment step (the Unit went Out of Service), the same transaction keeps nothing: no Payment, Receipt, Invoice or Deposit, and the Lease stays a draft (SIGNING_UNIT_NOT_FREE)."
+    },
+    {
+      "test_id": "test_each_problem_found_before_the_money_saves_nothing",
+      "upstream_ids": [
+        "DL-108",
+        "DL-101",
+        "BR-DEP-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_sign_lease_in_one_step_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 B7 (DL-108): before any money Sign Lease refuses a walk-in draft without its Security Deposit (SIGNING_DEPOSIT_MISSING), a total that is not exactly the money due (SIGNING_TOTAL_CHANGED), ticks other than the unsigned Signers (SIGNING_SIGNERS_CHANGED), another Lease version (conflict) and a walk-in Security Deposit for a person without deposits.manage (SIGNING_NO_DEPOSIT_RIGHT); nothing is saved."
+    },
+    {
+      "test_id": "test_a_passed_initial_rent_due_date_is_refused_before_any_money",
+      "upstream_ids": [
+        "DL-108",
+        "BR-RENT-009"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_sign_lease_in_one_step_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 B7 (DL-108): an Initial Rent Due Date that has passed is refused before any money (INITIAL_RENT_DUE_DATE_PASSED), and nothing is saved."
+    },
+    {
+      "test_id": "test_a_lease_from_a_reservation_takes_the_rest_of_its_deposit",
+      "upstream_ids": [
+        "DL-108",
+        "DL-101",
+        "BR-DEP-004",
+        "BR-DEP-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_sign_lease_in_one_step_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 B7 (DL-108): a Lease from a Reservation completes it, records the draft's Security Deposit as one INCREASE of the Reservation's deposit, receives only the rest into that deposit (no deposits.manage needed) and pays the Initial Rent Invoice."
+    },
+    {
+      "test_id": "test_a_renewal_pays_only_its_initial_rent",
+      "upstream_ids": [
+        "DL-108",
+        "DL-066"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_sign_lease_in_one_step_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 B7 (DL-108): a renewal pays only its Initial Rent Invoice at signing; it keeps the Security Deposit it carries and no Deposit is made."
+    },
+    {
+      "test_id": "test_the_command_is_the_financial_role_s_and_its_records_never_change",
+      "upstream_ids": [
+        "DL-108",
+        "SEC-001",
+        "SEC-046"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_sign_lease_in_one_step_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 B7 (DL-108): app.sign_lease_with_payment runs only for prm_financial (prm_runtime is refused); app.lease_signing_payment_commands is read by no application role and refuses UPDATE and DELETE."
+    },
+    {
+      "test_id": "test_a_planned_deposit_save_used_again_for_another_amount_is_refused",
+      "upstream_ids": [
+        "DL-108",
+        "DL-101"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_sign_lease_in_one_step_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 B7 (DL-108): a planned Security Deposit save with the same values answers the same, and the same save identity with another amount is refused instead of answering the stored amount."
+    },
+    {
+      "test_id": "test_sign_lease_in_one_step_is_the_head_and_is_forward_only",
+      "upstream_ids": [
+        "DL-108",
+        "TEST-028"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_sign_lease_in_one_step_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 B7: migration 20270330_249 is the head, follows 20270329_248 and refuses a downgrade."
+    },
+    {
+      "test_id": "test_sign_with_payment_is_one_command_at_the_lease_version_the_screen_showed",
+      "upstream_ids": [
+        "DL-108",
+        "DL-100"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_lease_signing_api.py",
+      "status": "implemented",
+      "notes": "V1-060 B7 (DL-108): POST /leases/{lease_id}/sign-with-payment answers 201 with the signing, the new Lease version as its ETag and no caching, and passes one command with the If-Match version, the ticked Signers, the reason, the Payment and the key; a walk-in Security Deposit may be made only with deposits.manage."
+    },
+    {
+      "test_id": "test_sign_with_payment_needs_every_right_and_the_lease_version",
+      "upstream_ids": [
+        "DL-108",
+        "SEC-001"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_lease_signing_api.py",
+      "status": "implemented",
+      "notes": "V1-060 B7 (DL-108): Sign Lease needs leases.sign, payments.record and payments.allocate (404 without one), If-Match with a valid version (428, 400), one Idempotency-Key that is not nil and no repeated header (400), the financial Property (404) and the browser mutation checks (403); a refused request does nothing."
+    },
+    {
+      "test_id": "test_sign_with_payment_refuses_a_bad_request_before_any_work",
+      "upstream_ids": [
+        "DL-108"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_lease_signing_api.py",
+      "status": "implemented",
+      "notes": "V1-060 B7 (DL-108): repeated Signers, a reason with spaces around it or empty, extra fields, a currency other than USD, an amount that is not a whole positive number of cents, an empty evidence reference and a payer field are refused with 422 before any work."
+    },
+    {
+      "test_id": "test_sign_with_payment_answers_why_nothing_was_saved",
+      "upstream_ids": [
+        "DL-108"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_lease_signing_api.py",
+      "status": "implemented",
+      "notes": "V1-060 B7 (DL-108): a refusal answers 409 with its stable reason and says nothing was saved; a changed Lease answers 412, no answer from the database 503 (the screen sends the same request again) and an unknown Lease 404."
+    },
+    {
+      "test_id": "test_every_sign_lease_refusal_says_nothing_was_saved",
+      "upstream_ids": [
+        "DL-108"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_lease_signing_api.py",
+      "status": "implemented",
+      "notes": "V1-060 B7 (DL-108): every Sign Lease refusal text tells staff that nothing was saved."
+    },
+    {
+      "test_id": "test_the_sign_lease_digest_binds_the_whole_request",
+      "upstream_ids": [
+        "DL-108"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_lease_signing_api.py",
+      "status": "implemented",
+      "notes": "V1-060 B7 (DL-108): the request digest covers the Property, the Lease, the version, the Signers (in any order), the reason and every Payment field, so the same key with any other value is refused, never answered with the stored result."
+    },
+    {
+      "test_id": "TEST-FE-1077",
+      "upstream_ids": [
+        "DL-101",
+        "DL-108",
+        "BR-RENT-009"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B7 (DL-108): Sign Lease takes no money and sends nothing when a walk-in draft has no Security Deposit yet or the Initial Rent Due Date has passed, and says what to do."
+    },
+    {
+      "test_id": "TEST-FE-1078",
+      "upstream_ids": [
+        "DL-108",
+        "DL-100",
+        "BR-DEP-002"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/ReceiveDepositDialog.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B7: Receive Security Deposit after a lost answer sends the very same Payment, the time the money came included, with the same key on Try again, and a server failure says it is not known whether it was saved."
+    },
+    {
+      "test_id": "TEST-FE-1079",
+      "upstream_ids": [
+        "DL-099",
+        "DL-108",
+        "BR-DEP-003"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reservations/MakeReservationDialog.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B7: Make Reservation stops less than the suggested deposit before any money for a person without reservation_deposits.override; a lost Payment answer goes again the very same; the Rent and the amount stay fixed once the money is saved; a conflict says the Unit or the Customer changed."
+    },
+    {
+      "test_id": "TEST-FE-1080",
+      "upstream_ids": [
+        "DL-099",
+        "DL-108"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reservations/ReservationsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B7: Make Reservation keeps what was typed while the Reservations list arrives, and the page tells the dialog whether the person may accept less than the suggestion, so it is stopped before any money."
+    },
+    {
+      "test_id": "TEST-FE-1082",
+      "upstream_ids": [
+        "DL-101",
+        "DL-108",
+        "BR-DEP-004"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B7: Edit draft says when the dates and Rent saved but the Security Deposit did not, and Try again saves only the Security Deposit; a deposit that could not be read hides the box instead of reading as none."
+    },
+    {
+      "test_id": "TEST-FE-1083",
+      "upstream_ids": [
+        "DL-101",
+        "DL-108"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B7: New Lease keeps the dialog when the draft saved but no answer came back for its Security Deposit; Try again sends only the same Security Deposit, then opens the draft."
+    },
+    {
+      "test_id": "TEST-FE-1084",
+      "upstream_ids": [
+        "DL-101",
+        "DL-108"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B7: New Lease gives a draft found after a lost answer its Security Deposit too; a refusal says why, and Close opens the draft."
+    },
+    {
+      "test_id": "TEST-FE-1085",
+      "upstream_ids": [
+        "DL-108",
+        "UI-007"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B7: Terminate takes only a real day: a date typed in a wrong form is refused before anything is sent."
+    },
+    {
+      "test_id": "TEST-FE-1086",
+      "upstream_ids": [
+        "DL-107",
+        "DL-108",
+        "UI-007"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shell/buttons.test.ts",
+      "status": "implemented",
+      "notes": "V1-060 B7: every drop-down keeps its drawn arrow: a rule that also styles a select sets only its background colour, and the arrow has room."
+    },
+    {
+      "test_id": "TEST-FE-1087",
+      "upstream_ids": [
+        "DL-108",
+        "UI-089"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reports/RegisterView.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B7: while some rows are not shown yet the footer says its Total is for all of them, and the Audit chart says when it shows only the last 31 days with events."
+    },
+    {
+      "test_id": "TEST-FE-1088",
+      "upstream_ids": [
+        "DL-108",
+        "UI-089"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reports/charts.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B7: the label on the highest column is its total with a reversal taken off, as in its tooltip and the table; the column is as high as what is drawn."
+    },
+    {
+      "test_id": "TEST-FE-1089",
+      "upstream_ids": [
+        "DL-108",
+        "UI-007"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reservations/MakeReservationDialog.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B7: a date box adds both slashes when digits are typed one by one, keeps slashes typed elsewhere, counts only a whole real day, and the calendar gives the focus back to its button when it closes."
     }
   ]
 }

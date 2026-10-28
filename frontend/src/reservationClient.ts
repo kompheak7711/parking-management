@@ -171,7 +171,14 @@ async function request(
   if (response.status === 409 || response.status === 412) {
     throw new ReservationConflictError();
   }
-  if (response.status === 503) throw new ReservationUnavailableError();
+  // V1-060 B7: a timeout, too many requests or a server failure cannot say whether a command was
+  // saved, so they count as no answer, as a lost connection does.
+  if (
+    response.status === 408 ||
+    response.status === 429 ||
+    response.status >= 500
+  )
+    throw new ReservationUnavailableError();
   if (!response.ok) throw new ReservationRequestError();
   const value: unknown = await response.json();
   if (typeof value !== "object" || value === null)

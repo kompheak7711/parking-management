@@ -279,6 +279,15 @@ const TEXT = {
     "Say why the amount is less than the suggestion.",
     "សូមប្រាប់ពីមូលហេតុដែលចំនួនតិចជាងការណែនាំ។",
   ],
+  // V1-060 B7: said before any money is taken.
+  mk_err_override: [
+    "Less than the suggested {0} needs the Owner or a Manager. Ask one of them, or receive at least {0}.",
+    "ចំនួនតិចជាងការណែនាំ {0} ត្រូវការម្ចាស់ ឬអ្នកគ្រប់គ្រង។ សូមសួរពួកគេម្នាក់ ឬទទួលយ៉ាងហោចណាស់ {0}។",
+  ],
+  mk_conflict: [
+    "The Reservation was not saved: the Unit or the Customer changed meanwhile (for example, someone else reserved this Unit first). Check them, then try again.",
+    "ការកក់មិនត្រូវបានរក្សាទុកទេ៖ បន្ទប់ ឬអតិថិជនបានផ្លាស់ប្តូរក្នុងពេលនេះ (ឧទាហរណ៍ មានអ្នកផ្សេងបានកក់បន្ទប់នេះមុន)។ សូមពិនិត្យពួកវា រួចព្យាយាមម្តងទៀត។",
+  ],
   mk_memo: [
     "Security Deposit received with the Reservation of {0}",
     "Security Deposit received with the Reservation of {0}",

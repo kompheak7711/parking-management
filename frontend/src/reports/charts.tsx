@@ -125,7 +125,9 @@ export function StackedBars({
                       className="rp-vc-v"
                       style={{ bottom: percent(height, top) }}
                     >
-                      {format(height)}
+                      {/* V1-060 B7: the figure is the column's total, a reversal taken off,
+                          as in the table and the tooltip; the height shows what is drawn. */}
+                      {format(sumOf(column.values, false))}
                     </span>
                   )}
                   <span

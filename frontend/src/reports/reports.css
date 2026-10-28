@@ -15,7 +15,8 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --chart-1: #1e7c50;
+    /* V1-060 B7: a column needs 3:1 on a dark card (WCAG 1.4.11); #1e7c50 was 2.81:1. */
+    --chart-1: #228456;
     --chart-2: #c28542;
     --chart-3: #6185c8;
     --chart-4: #c76749;
@@ -303,7 +304,8 @@ table.rp-mini tfoot td {
 
 .rp-vc-y {
   position: relative;
-  color: var(--muted);
+  /* V1-060 B7: small words need 4.5:1 (WCAG 1.4.3); Muted is 4.23:1 on Paper. */
+  color: var(--text-2);
   font-family: var(--font-num);
   font-size: 0.72rem;
   font-variant-numeric: tabular-nums;
@@ -428,7 +430,7 @@ table.rp-mini tfoot td {
 .rp-vc-x {
   display: grid;
   margin: 6px 0 0 70px;
-  color: var(--muted);
+  color: var(--text-2);
   font-size: 0.72rem;
   text-align: center;
 }

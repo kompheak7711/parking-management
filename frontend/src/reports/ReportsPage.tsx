@@ -60,6 +60,7 @@ import {
   reportDef,
   REPORTS,
   START_PARAMS,
+  wholeMonths,
 } from "./reportsData";
 import { rpt } from "./text";
 import { TotalsContent } from "./TotalsView";
@@ -326,7 +327,13 @@ function ReportView({
   typeName: (code: string) => string;
 }) {
   const allowed = mayRead(def, capabilities);
-  const range = periodApplies(def.key) ? rangeOf(params, today) : null;
+  const picked = periodApplies(def.key) ? rangeOf(params, today) : null;
+  // V1-060 B7: a Totals table counts whole months, so it shows and asks for the whole months
+  // of the picked days (the real range of its figures).
+  const range =
+    picked !== null && def.kind === "totals" && params.period === "pick"
+      ? wholeMonths(picked)
+      : picked;
   const from = range?.[0];
   const to = range?.[1];
   const floor =
@@ -544,6 +551,9 @@ function ReportView({
             title: name,
             icon: def.icon,
             generated,
+            ...(read < all
+              ? { totalLabel: rpt(language, "total_all", all) }
+              : {}),
             more: read < all && (
               <span className="ui-hrow">
                 {moreFailed && (
@@ -736,6 +746,9 @@ function ParameterBar({
             />
           )}
           <span className="rp-range ui-num">{rangeText(language, range)}</span>
+          {def.kind === "totals" && params.period === "pick" && (
+            <span className="rp-range">{rpt(language, "months_note")}</span>
+          )}
         </>
       ) : (
         <span className="rp-range">

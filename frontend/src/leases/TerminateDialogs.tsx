@@ -19,7 +19,7 @@ import type {
 import { howRecord, type How } from "../letters/lettersData";
 import { ltr } from "../letters/text";
 import { addDays } from "../reservations/reservationsData";
-import { DateInput } from "../shell/DateInput";
+import { DateInput, isDay } from "../shell/DateInput";
 import { dayText, todayInPhnomPenh } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { Dialog } from "../shell/ui";
@@ -211,7 +211,8 @@ export function TerminateDialog({
     const reference = proof.trim();
     const found: Record<string, string> = {};
     if (ground === null) found.ground = lt(language, "tg_ground_e");
-    if (day === "" || day < first || day > last)
+    // V1-060 B7: a day typed in a wrong form is not a day.
+    if (!isDay(day) || day < first || day > last)
       found.day = lt(language, "tg_bad", dayText(first));
     if (
       ground === "VIOLATION" &&
@@ -571,7 +572,7 @@ export function RecordNoticeDialog({
     const words = text.trim();
     const detail = details.trim();
     const found: Record<string, string> = {};
-    if (given === "" || ends === "" || given > today || ends < given)
+    if (!isDay(given) || !isDay(ends) || given > today || ends < given)
       found.dates = lt(language, "nt_dates_e");
     if (reference === "") found.number = lt(language, "nt_number_e");
     if (words === "") found.text = lt(language, "nt_text_e");

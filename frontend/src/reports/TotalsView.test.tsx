@@ -200,7 +200,7 @@ describe("Totals by Unit and month", () => {
     ).toBeTruthy();
   });
 
-  it("TEST-FE-1040 the period: This month, Last month and picked dates are sent as days and shown as dd/mm/yyyy; dates that are not whole days or run backwards are refused; All sends no dates", async () => {
+  it("TEST-FE-1040 the period: This month, Last month and picked dates are sent as days and shown as dd/mm/yyyy, picked days widening to their whole months on a Totals table; dates that are not whole days or run backwards are refused; All sends no dates", async () => {
     const page = openReports({ hash: "#/reports/total_income" });
     await screen.findByRole("table", { name: "Total Income" });
     const period = screen.getByRole("group", { name: "Period" });
@@ -244,13 +244,16 @@ describe("Totals by Unit and month", () => {
       target: { value: "20/10/2026" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Show" }));
+    // A Totals table counts whole months (V1-060 B7): it asks for and shows the whole months.
     await waitFor(() => {
       expect(page.totals).toHaveBeenLastCalledWith(PROPERTY, "total_income", {
-        from: "2026-09-05",
-        to: "2026-10-20",
+        from: "2026-09-01",
+        to: "2026-10-31",
       });
     });
-    expect(screen.getByText("05/09/2026 to 20/10/2026")).toBeTruthy();
+    expect(screen.getByText("01/09/2026 to 31/10/2026")).toBeTruthy();
+    expect(screen.getByText("Totals count whole months.")).toBeTruthy();
+    expect(screen.getByLabelText("From")).toHaveValue("05/09/2026");
 
     const before = page.totals.mock.calls.length;
     fireEvent.change(screen.getByLabelText("From"), {

@@ -209,6 +209,27 @@ async function post(
   return record((await send(path, init, propertyId)).data);
 }
 
+/** DL-108: one Sign Lease press. The payer is the Lease's Primary Tenant. */
+export interface SignWithPaymentInput {
+  signer_ids: string[];
+  reason: string;
+  payment: {
+    payment_method_id: string;
+    received_at: string;
+    evidence_reference: string;
+    payer_intent_memo: string | null;
+    amount: { currency: "USD"; minor_units: number };
+  };
+}
+
+/** DL-108: what one Sign Lease press saved. */
+export interface SignedWithPayment {
+  lease_version: number;
+  receipt_number: string;
+  invoice_number: string;
+  total_usd_cents: number;
+}
+
 export interface SigningPreview {
   initial: {
     period_start: string;
@@ -300,6 +321,22 @@ function signingPreview(data: SettlementRecord): SigningPreview {
   };
 }
 
+function signedWithPayment(data: SettlementRecord): SignedWithPayment {
+  const version = data.lease_version;
+  if (
+    typeof version !== "number" ||
+    !Number.isSafeInteger(version) ||
+    version < 1
+  )
+    throw new SettlementRequestError(200, null, FALLBACK);
+  return {
+    lease_version: version,
+    receipt_number: textField(data.receipt_number),
+    invoice_number: textField(data.invoice_number),
+    total_usd_cents: centsField(data.total_usd_cents),
+  };
+}
+
 const id = encodeURIComponent;
 
 function property(propertyId: string): string {
@@ -371,32 +408,23 @@ export interface SettlementApi {
     form: DepositReceiptCreate,
     key: string,
   ) => Promise<SettlementRecord>;
-  // V1-060 B6 (DL-100): what a Lease owes at signing, the draft's Security Deposit, the
-  // Initial Rent Invoice made right after signing, and the money received paying it.
+  // V1-060 B6 (DL-100, DL-101): what a Lease owes at signing and the draft's Security Deposit.
   signingPreview: (leaseId: string) => Promise<SigningPreview>;
   planSecurityDeposit: (
     leaseId: string,
     form: { plan_id: string; required_usd_cents: number; reason: string },
   ) => Promise<SettlementRecord>;
-  makeInitialRentInvoice: (
-    leaseId: string,
-    key: string,
-  ) => Promise<SettlementRecord>;
-  /** DL-101: right after signing, the draft's amount becomes the Reservation deposit's. */
-  applyPlannedSecurityDeposit: (
-    leaseId: string,
-    key: string,
-  ) => Promise<SettlementRecord>;
-  allocationProposal: (
+  // DL-108: Sign Lease in one request: the money with its Receipt, the signatures, the signing,
+  // the Initial Rent Invoice paid by name and the rest in the Security Deposit, all saved or
+  // none. version is the Lease version the dialog showed (sent as If-Match). After a lost
+  // answer, send the same body with the same key: the answer is the first one.
+  signWithPayment: (
     propertyId: string,
-    paymentId: string,
-  ) => Promise<SettlementRecord>;
-  allocateByProposal: (
-    propertyId: string,
-    paymentId: string,
-    proposal: SettlementRecord,
+    leaseId: string,
+    version: number,
+    body: SignWithPaymentInput,
     key: string,
-  ) => Promise<SettlementRecord>;
+  ) => Promise<SignedWithPayment>;
   // Slice 11b and 11c-1: the shared drafts and the Refund methods a draft may name.
   // A cursor goes back with the same state it came with; limit is 1 to 100.
   drafts: (
@@ -571,22 +599,15 @@ export const settlementApi: SettlementApi = {
       ).data,
     );
   },
-  makeInitialRentInvoice: (leaseId, key) =>
-    post(`/api/v1/leases/${id(leaseId)}/initial-rent-invoice`, null, key),
-  applyPlannedSecurityDeposit: (leaseId, key) =>
-    post(
-      `/api/v1/leases/${id(leaseId)}/planned-security-deposit/apply`,
-      null,
-      key,
-    ),
-  allocationProposal: (propertyId, paymentId) =>
-    read(`/api/v1/payments/${id(paymentId)}/allocation-proposal`, propertyId),
-  allocateByProposal: (propertyId, paymentId, proposal, key) =>
-    post(
-      `/api/v1/payments/${id(paymentId)}/allocations`,
-      { intent: { mode: "PROPOSAL", proposal } },
-      key,
-      propertyId,
+  signWithPayment: async (propertyId, leaseId, version, body, key) =>
+    signedWithPayment(
+      await post(
+        `/api/v1/leases/${id(leaseId)}/sign-with-payment`,
+        body,
+        key,
+        propertyId,
+        version,
+      ),
     ),
   drafts: async (propertyId, options = {}) => {
     const query = new URLSearchParams();

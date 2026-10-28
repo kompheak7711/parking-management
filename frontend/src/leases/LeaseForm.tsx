@@ -22,8 +22,13 @@ import {
   type LeaseResource,
 } from "../leaseClient";
 import { metersOn } from "../moveout/finalReadings";
+import { outcomeOf } from "../payments/depositMoney";
 import type { ReservationApi, ReservationResource } from "../reservationClient";
-import { type SettlementApi, settlementApi } from "../settlementClient";
+import {
+  type SettlementApi,
+  settlementApi,
+  SettlementRequestError,
+} from "../settlementClient";
 import {
   failureText,
   nameOf as settingsNameOf,
@@ -200,13 +205,21 @@ export function LeaseForm({
   const [confirm, setConfirm] = useState<LeaseDraftSource | null>(null);
   const [busy, setBusy] = useState(false);
   const [outcome, setOutcome] = useState<"unknown" | "refused" | null>(null);
+  // V1-060 B7: the draft is saved first, then its Security Deposit (DL-101). When only the draft
+  // is saved, the dialog stays: Try again saves only the Security Deposit, and Close opens the
+  // draft (Edit draft can add it there).
+  const [savedId, setSavedId] = useState<string | null>(null);
+  const [depositIssue, setDepositIssue] = useState<
+    { unknown: true } | { refused: string } | null
+  >(null);
+  // A Security Deposit save keeps its id while its values stay the same.
+  const plan = useRef<{ fingerprint: string; id: string } | null>(null);
   // The Lease and its Signers keep their ids for the life of the form, so a second save after
   // an unknown result can never make a second draft.
   const ids = useRef({
     lease: crypto.randomUUID(),
     primarySigner: crypto.randomUUID(),
     pet: crypto.randomUUID(),
-    plan: crypto.randomUUID(),
     signers: new Map<string, string>(),
     terms: new Map<string, string>(),
   });
@@ -634,8 +647,50 @@ export function LeaseForm({
     });
   }
 
+  /** Saves the draft's Security Deposit; false (with what to show) when it did not save. */
+  async function planDeposit(leaseId: string): Promise<boolean> {
+    if (plannedCents === null) return true;
+    const body = { required_usd_cents: plannedCents, reason: plannedReason };
+    const fingerprint = JSON.stringify(body);
+    if (plan.current?.fingerprint !== fingerprint)
+      plan.current = { fingerprint, id: crypto.randomUUID() };
+    try {
+      await signingApi.planSecurityDeposit(leaseId, {
+        plan_id: plan.current.id,
+        ...body,
+      });
+      return true;
+    } catch (error: unknown) {
+      setDepositIssue(
+        outcomeOf(error) === "unknown"
+          ? { unknown: true }
+          : {
+              refused:
+                error instanceof SettlementRequestError
+                  ? error.message
+                  : lt(language, "part_refused"),
+            },
+      );
+      return false;
+    }
+  }
+
+  /** The draft is saved: its Security Deposit next, then the draft opens. */
+  async function finish(leaseId: string) {
+    setSavedId(leaseId);
+    if (await planDeposit(leaseId)) openPageInAddress("leases", true, leaseId);
+  }
+
   function save() {
     if (confirm === null || busy) return;
+    if (savedId !== null) {
+      setBusy(true);
+      setDepositIssue(null);
+      void finish(savedId).finally(() => {
+        setBusy(false);
+      });
+      return;
+    }
     const fingerprint = JSON.stringify(confirm);
     if (request.current?.fingerprint !== fingerprint)
       request.current = {
@@ -648,32 +703,23 @@ export function LeaseForm({
     setOutcome(null);
     void api
       .create(propertyId, { ...confirm, event_id: chosen.event }, chosen.key)
-      .then(async (saved) => {
-        // The draft is saved; a deposit that fails to save is typed again on Edit draft.
-        if (plannedCents !== null)
-          await signingApi
-            .planSecurityDeposit(saved.lease_id, {
-              plan_id: ids.current.plan,
-              required_usd_cents: plannedCents,
-              reason: plannedReason,
-            })
-            .catch(() => null);
-        openPageInAddress("leases", true, saved.lease_id);
-      })
-      .catch(async (error: unknown) => {
-        if (error instanceof LeaseUnavailableError) {
-          setOutcome("unknown");
-          return;
-        }
-        // An earlier try whose answer was lost may have saved this Lease already (the id is
-        // kept for the life of the form); then a later try is refused. Open it if it is there.
-        const saved = await api.get(ids.current.lease).catch(() => null);
-        if (saved !== null) {
-          openPageInAddress("leases", true, saved.lease_id);
-          return;
-        }
-        setOutcome("refused");
-      })
+      .then(
+        (saved) => finish(saved.lease_id),
+        async (error: unknown) => {
+          if (error instanceof LeaseUnavailableError) {
+            setOutcome("unknown");
+            return;
+          }
+          // An earlier try whose answer was lost may have saved this Lease already (the id is
+          // kept for the life of the form); then a later try is refused. Finish it if it is there.
+          const saved = await api.get(ids.current.lease).catch(() => null);
+          if (saved !== null) {
+            await finish(saved.lease_id);
+            return;
+          }
+          setOutcome("refused");
+        },
+      )
       .finally(() => {
         setBusy(false);
       });
@@ -1148,6 +1194,10 @@ export function LeaseForm({
           busy={busy}
           closeLabel={lt(language, "close")}
           onClose={() => {
+            if (savedId !== null) {
+              openPageInAddress("leases", true, savedId);
+              return;
+            }
             setConfirm(null);
             setOutcome(null);
           }}
@@ -1158,7 +1208,7 @@ export function LeaseForm({
           submitLabel={
             busy
               ? lt(language, "saving")
-              : outcome === "unknown"
+              : outcome === "unknown" || depositIssue !== null
                 ? lt(language, "try_again")
                 : lt(language, "save_draft")
           }
@@ -1187,6 +1237,16 @@ export function LeaseForm({
                   language,
                   outcome === "unknown" ? "unknown" : "draft_refused",
                 )}
+              </p>
+            </div>
+          )}
+          {depositIssue !== null && (
+            <div className="ui-notice warn" role="alert">
+              <Icon name="alert" />
+              <p>
+                {"unknown" in depositIssue
+                  ? lt(language, "form_part_unknown")
+                  : lt(language, "form_part_saved", depositIssue.refused)}
               </p>
             </div>
           )}

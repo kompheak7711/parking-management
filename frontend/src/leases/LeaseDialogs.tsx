@@ -13,7 +13,11 @@ import {
 import type { CustomerApi, CustomerListItem } from "../customerClient";
 import { NewCustomerDialog } from "../customers/CustomerDialogs";
 import type { CustomerCommandGate } from "../customers/commands";
-import type { SettlementApi } from "../settlementClient";
+import { outcomeOf } from "../payments/depositMoney";
+import {
+  type SettlementApi,
+  SettlementRequestError,
+} from "../settlementClient";
 import { DateInput } from "../shell/DateInput";
 import { dayText, todayInPhnomPenh, usdFromCents } from "../shell/format";
 import { Icon } from "../shell/icons";
@@ -147,6 +151,12 @@ export function EditDraftDialog({
   const [deposit, setDeposit] = useState(
     firstDeposit === null ? "" : (firstDeposit / 100).toFixed(2),
   );
+  // V1-060 B7: the box shows the recorded amount once it is known, unless something was typed.
+  const typedDeposit = useRef(false);
+  useEffect(() => {
+    if (!typedDeposit.current)
+      setDeposit(firstDeposit === null ? "" : (firstDeposit / 100).toFixed(2));
+  }, [firstDeposit]);
   const [start, setStart] = useState(lease.start_date ?? "");
   const [end, setEnd] = useState(lease.end_date ?? "");
   const [rent, setRent] = useState(
@@ -156,8 +166,18 @@ export function EditDraftDialog({
   );
   const [reason, setReason] = useState("");
   const [problems, setProblems] = useState<Record<string, string>>({});
-  const identity = useRef<{ fingerprint: string } & Identity>(null);
-  const { busy, outcome, send } = useSend(onSaved, onConflict);
+  const [busy, setBusy] = useState(false);
+  const [outcome, setOutcome] = useState<Outcome>(null);
+  // V1-060 B7: the dates and Rent are saved first, then the Security Deposit. When only the
+  // first is saved, the dialog stays and Try again saves only the Security Deposit.
+  const [depositIssue, setDepositIssue] = useState<
+    { unknown: true } | { refused: string } | null
+  >(null);
+  const saved = useRef<{ fingerprint: string; lease: LeaseResource } | null>(
+    null,
+  );
+  const updateIdentity = useValuesIdentity();
+  const planIdentity = useValuesIdentity();
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -191,27 +211,59 @@ export function EditDraftDialog({
       monthly_rent_usd_cents: cents,
       reason: reason.trim(),
     };
-    const fingerprint = JSON.stringify({ ...source, depositCents });
-    if (identity.current?.fingerprint !== fingerprint)
-      identity.current = {
-        fingerprint,
-        key: crypto.randomUUID(),
-        id: crypto.randomUUID(),
-      };
-    const chosen = identity.current;
-    send(async () => {
-      const saved = await api.update(
-        lease,
-        { event_id: chosen.id, ...source },
-        chosen.key,
-      );
-      if (takesDeposit && depositCents !== null && depositCents !== planned)
-        await signingApi.planSecurityDeposit(lease.lease_id, {
-          plan_id: chosen.id,
-          required_usd_cents: depositCents,
-          reason: source.reason,
-        });
-      return saved;
+    const fingerprint = JSON.stringify(source);
+    const before = saved.current;
+    const update = updateIdentity(fingerprint);
+    const plan = planIdentity(
+      JSON.stringify({ depositCents, reason: source.reason }),
+    );
+    setBusy(true);
+    setOutcome(null);
+    setDepositIssue(null);
+    void (async () => {
+      let current = before?.fingerprint === fingerprint ? before.lease : null;
+      if (current === null) {
+        try {
+          current = await api.update(
+            before?.lease ?? lease,
+            { event_id: update.id, ...source },
+            update.key,
+          );
+        } catch (error: unknown) {
+          if (error instanceof LeaseConflictError) onConflict();
+          // No answer, or the service was down: the request may or may not have been saved.
+          else
+            setOutcome(
+              error instanceof LeaseUnavailableError ? "unknown" : "refused",
+            );
+          return;
+        }
+        saved.current = { fingerprint, lease: current };
+      }
+      if (takesDeposit && depositCents !== null && depositCents !== planned) {
+        try {
+          await signingApi.planSecurityDeposit(lease.lease_id, {
+            plan_id: plan.id,
+            required_usd_cents: depositCents,
+            reason: source.reason,
+          });
+        } catch (error: unknown) {
+          setDepositIssue(
+            outcomeOf(error) === "unknown"
+              ? { unknown: true }
+              : {
+                  refused:
+                    error instanceof SettlementRequestError
+                      ? error.message
+                      : lt(language, "part_refused"),
+                },
+          );
+          return;
+        }
+      }
+      onSaved(current);
+    })().finally(() => {
+      setBusy(false);
     });
   }
 
@@ -237,7 +289,7 @@ export function EditDraftDialog({
       submitLabel={
         busy
           ? lt(language, "saving")
-          : outcome === "unknown"
+          : outcome === "unknown" || depositIssue !== null
             ? lt(language, "try_again")
             : lt(language, "save")
       }
@@ -295,6 +347,7 @@ export function EditDraftDialog({
             id="lease-edit-deposit"
             inputMode="decimal"
             onChange={(event) => {
+              typedDeposit.current = true;
               setDeposit(event.currentTarget.value);
             }}
             value={deposit}
@@ -319,6 +372,16 @@ export function EditDraftDialog({
         <Problem message={problems.reason ?? null} />
       </div>
       <OutcomeNotice language={language} outcome={outcome} />
+      {depositIssue !== null && (
+        <div className="ui-notice warn" role="alert">
+          <Icon name="alert" />
+          <p>
+            {"unknown" in depositIssue
+              ? lt(language, "edit_part_unknown")
+              : lt(language, "edit_part_saved", depositIssue.refused)}
+          </p>
+        </div>
+      )}
     </Dialog>
   );
 }

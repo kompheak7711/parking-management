@@ -376,6 +376,8 @@ in the Signer rows and the Lease timeline (BR-AUDIT-003, Q-2026-10-14-110).
 
 Amended by DL-080 (owner, 2026-10-20): Sign Lease needs a Manager.
 
+Amended by DL-108 (V1-060 B7, 2026-10-28): Sign Lease sends the ticked Signers, the reason and the money received as one request at the Lease version it showed; the server saves the Payment, the signatures, the signing, the Initial Rent Invoice and the Security Deposit together, or nothing, and the dialog says so. After no answer, Try again sends the very same request with the same key, and nothing can be changed until an answer comes; after a refusal nothing was saved, so the values may change, and changed values are a new request.
+
 ## UI-041 — Renewal
 
 Create a successor Lease linked to the current Lease, allowing preparation and
@@ -947,6 +949,8 @@ calculation basis, generated timestamp, and source links where interactive.
 Amended by DL-072 (owner, 2026-10-04): totals are in USD; the Payment register also shows the KHR amount received and the exchange rate, as information only.
 
 Amended by DL-079 (owner, 2026-10-20): every report summary has a chart; money charts are in USD only (riel at its recorded USD value), and a report without money gets a count bar chart.
+
+Amended by DL-108 (V1-060 B7, 2026-10-28): a Totals table counts whole months, so picked days widen to their whole months and the parameter bar says "Totals count whole months."; while only some rows are shown, the table footer says "Total, all N rows"; a chart that shows only the last 31 days with events says so in its title.
 
 ## UI-090 — Currency Separation
 

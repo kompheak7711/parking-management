@@ -4,6 +4,9 @@
 // from that Payment (docs/001 §89: the money is the Security Deposit from the first day). Each
 // step keeps one request identity while its values stay the same, so "Try again" never saves
 // anything twice; once the money is saved, the money fields are fixed.
+// V1-060 B7: the Payment is sent again with the very same body; the Rent is fixed with the money
+// it was taken against; less than the suggestion is stopped before any money when this person
+// may not accept it (the server would refuse the Reservation after the money was saved).
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 
@@ -19,6 +22,7 @@ import {
   moneyProblem,
   outcomeOf,
   paymentInput,
+  requestFor,
   usePaymentMethods,
 } from "../payments/depositMoney";
 import type { ConfirmedPayment, PaymentsApi } from "../payments/paymentsClient";
@@ -61,6 +65,7 @@ export function MakeReservationDialog({
   customerApi,
   paymentsApi,
   gate,
+  mayOverride,
   unitId: chosenUnit,
   onClose,
   onSaved,
@@ -73,6 +78,8 @@ export function MakeReservationDialog({
   paymentsApi: PaymentsApi;
   /** Leave out when this person may not add Customers. */
   gate?: CustomerCommandGate;
+  /** False when this person may not accept less than the suggestion (DL-099). */
+  mayOverride: boolean;
   unitId?: string;
   onClose: () => void;
   onSaved: (saved: ReservationResource) => void;
@@ -104,7 +111,11 @@ export function MakeReservationDialog({
   >(null);
   const [paid, setPaid] = useState<ConfirmedPayment | null>(null);
   const [adding, setAdding] = useState(false);
-  const paymentKey = useRef<{ fingerprint: string; key: string } | null>(null);
+  const paymentRequest = useRef<{
+    fingerprint: string;
+    key: string;
+    body: ReturnType<typeof paymentInput>;
+  } | null>(null);
   const reservationKey = useRef<{ fingerprint: string; key: string } | null>(
     null,
   );
@@ -192,6 +203,12 @@ export function MakeReservationDialog({
     )
       found.required = say("mk_err_required");
     if (below && reason.trim() === "") found.reason = say("mk_err_reason");
+    if (below && !mayOverride)
+      found.received = rt(
+        language,
+        "mk_err_override",
+        usdFromCents(suggestion),
+      );
     const issue =
       paid !== null || methods === null || methods === "failed"
         ? null
@@ -245,10 +262,11 @@ export function MakeReservationDialog({
     try {
       let payment = paid;
       if (payment === null) {
+        const request = requestFor(paymentRequest, values.payment);
         payment = await paymentsApi.confirm(
           propertyId,
-          values.payment,
-          keyFor(paymentKey, { ...values.payment, received_at: null }),
+          request.body,
+          request.key,
         );
         setPaid(payment);
       }
@@ -448,7 +466,7 @@ export function MakeReservationDialog({
               <label htmlFor="mk-rent">{rt(language, "mk_rent")}</label>
               <input
                 aria-invalid={problems.rent !== undefined}
-                disabled={busy}
+                disabled={locked}
                 id="mk-rent"
                 inputMode="decimal"
                 onChange={(event) => {
@@ -533,7 +551,9 @@ export function MakeReservationDialog({
           {outcome !== null && (
             <div className="ui-notice warn" role="alert">
               <Icon name="alert" />
-              <p>{rt(language, outcome)}</p>
+              <p>
+                {rt(language, outcome === "conflict" ? "mk_conflict" : outcome)}
+              </p>
             </div>
           )}
         </>

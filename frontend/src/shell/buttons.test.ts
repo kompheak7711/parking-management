@@ -100,4 +100,30 @@ describe("Buttons", () => {
       "background: var(--primary);",
     );
   });
+  it("TEST-FE-1086 every drop-down keeps its drawn arrow: a rule that also styles a select sets only its background colour, and the arrow has room (V1-060 B7)", () => {
+    const rules = (css: string) =>
+      [
+        ...css
+          .replace(/\/\*[\s\S]*?\*\//g, "")
+          .matchAll(/([^{}]+)\{([^{}]*)\}/g),
+      ].map((match) => ({
+        selector: match[1]?.trim() ?? "",
+        body: match[2] ?? "",
+      }));
+    // shell.css loads after screens.css, so none of its select rules may set the whole
+    // background (that would clear the drawn arrow).
+    for (const { selector, body } of rules(shell))
+      if (/\bselect\b/.test(selector))
+        expect(body).not.toMatch(/(^|[\s;])background:/);
+    // A select with a class or state is more specific than the arrow rule; it keeps it too.
+    for (const { selector, body } of rules(screens))
+      if (/\bselect[.[:]/.test(selector))
+        expect(body).not.toMatch(/(^|[\s;])background:/);
+    const arrow = rule(screens, "\n.shell-view select,\n.ui-dlg select");
+    expect(arrow).toContain("background-image: url(");
+    expect(arrow).toContain("padding-right: 36px;");
+    expect(rule(screens, "\n.shell-view select.ui-sel")).toContain(
+      "padding: 0 36px 0 12px;",
+    );
+  });
 });

@@ -3,6 +3,7 @@ amounts due at signing, and the Initial Rent Invoice made right after signing.""
 
 from __future__ import annotations
 
+import hashlib
 from datetime import date, datetime, timedelta
 from typing import cast
 from uuid import UUID, uuid4
@@ -11,9 +12,7 @@ from zoneinfo import ZoneInfo
 import psycopg
 import pytest
 
-from property_rental.api_refusals import RefusedRequest
 from property_rental.billing import prorated_monthly_usd_cents
-from property_rental.lease_signing_api import PostgresLeaseSigningFlow
 from test_invoice_migration import financial_database_url, runtime_database_url
 from test_invoice_migration import migrated_database_url as migrated_database_url
 from test_lease_migration import create_draft, setup_sources, sign_lease
@@ -76,6 +75,28 @@ def _service(
             "recorded_at,recorded_by) VALUES (%s,%s,%s,%s,NULL,%s,'signed-terms',now(),%s)",
             (uuid4(), lease_id, service_id, applicable_from, approval_id, actor_id),
         )
+
+
+def _initial_invoice(property_id: UUID, lease_id: UUID, actor_id: UUID, start: date) -> UUID:
+    """The Initial Rent Invoice step of app.sign_lease_with_payment (DL-108)."""
+    invoice_id = uuid4()
+    with psycopg.connect(financial_database_url()) as connection:
+        row = connection.execute(
+            "SELECT app.generate_rent_service_invoice"
+            "(%s,%s,%s,%s,%s,%s,NULL,'INITIAL',%s,clock_timestamp(),%s,NULL)",
+            (
+                property_id,
+                uuid4(),
+                hashlib.sha256(invoice_id.bytes).hexdigest(),
+                invoice_id,
+                f"RENT-I-{invoice_id.hex[:12]}",
+                lease_id,
+                start,
+                actor_id,
+            ),
+        ).fetchone()
+    assert row is not None
+    return UUID(str(cast(dict[str, object], row[0])["invoice_id"]))
 
 
 def _preview(url: str, property_id: UUID, lease_id: UUID) -> dict[str, object]:
@@ -198,23 +219,22 @@ def test_the_preview_is_the_initial_rent_invoice_made_after_signing(
     assert preview["problem"] is None and preview["invoice_id"] is None
     lines = cast(list[dict[str, object]], preview["service_lines"])
     assert len(lines) == (2 if start.day >= 21 else 1)
-    flow = PostgresLeaseSigningFlow(runtime, financial_database_url())
-    with pytest.raises(RefusedRequest):
-        flow.initial_invoice(prop, lease, uuid4(), actor)
+    # The generator makes it only for a signed Lease; Sign Lease (DL-108) runs it right after the
+    # signing, in the same transaction.
+    with pytest.raises(psycopg.Error) as early:
+        _initial_invoice(prop, lease, actor, start)
+    assert early.value.diag.message_primary == "Rent billing requires an applicable signed Lease"
     with psycopg.connect(migrated_database_url) as connection:
         sign_lease(connection, lease, actor)
-    made = flow.initial_invoice(prop, lease, uuid4(), actor)
-    assert made.created
+    made = _initial_invoice(prop, lease, actor, start)
     with psycopg.connect(migrated_database_url) as connection:
         total = connection.execute(
             "SELECT sum(amount_usd_cents) FROM app.invoice_lines WHERE invoice_id=%s",
-            (made.invoice_id,),
+            (made,),
         ).fetchone()
     assert total is not None and int(str(total[0])) == preview["total_usd_cents"]
-    again = flow.initial_invoice(prop, lease, uuid4(), actor)
-    assert (again.invoice_id, again.created) == (made.invoice_id, False)
     after = cast(dict[str, object], _preview(runtime, prop, lease)["initial"])
-    assert after["invoice_id"] == str(made.invoice_id)
+    assert after["invoice_id"] == str(made)
 
 
 def test_a_service_covering_part_of_the_first_month_is_named_before_any_money(

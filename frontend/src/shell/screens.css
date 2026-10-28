@@ -322,10 +322,11 @@
 .shell-view select.ui-sel {
   width: auto;
   min-height: 42px;
-  padding: 0 12px;
+  /* Room on the right for the drawn arrow, which only the colour below leaves in place. */
+  padding: 0 36px 0 12px;
   border: 1px solid var(--border-strong);
   border-radius: 8px;
-  background: var(--surface);
+  background-color: var(--surface);
   color: var(--text);
   font: inherit;
 }
@@ -2180,7 +2181,8 @@ a.ui-kpi.ui-home-kpi {
 
 .ui-cal-wd {
   padding: 4px 0;
-  color: var(--muted);
+  /* V1-060 B7: small words need 4.5:1 (WCAG 1.4.3); Muted is 4.23:1 on Paper. */
+  color: var(--text-2);
   font-size: 0.85rem;
   font-weight: 600;
   text-align: center;

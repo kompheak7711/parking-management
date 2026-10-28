@@ -109,6 +109,10 @@ export function ReservationsPage({
           : undefined
       }
       language={language}
+      mayOverride={
+        capabilities === null ||
+        capabilities.has("reservation_deposits.override")
+      }
       onClose={() => {
         openPageInAddress("reservations");
       }}
@@ -147,6 +151,8 @@ export function ReservationsPage({
       </button>
     </div>
   );
+  // The dialog keeps one place, so what was typed (and money already saved) stays while the
+  // list arrives (V1-060 B7).
   if (data === null) {
     return (
       <>
@@ -161,6 +167,7 @@ export function ReservationsPage({
   }
   return (
     <>
+      {dialog}
       {failure}
       <ReservationsList
         action={
@@ -181,7 +188,6 @@ export function ReservationsPage({
         language={language}
         today={todayInPhnomPenh()}
       />
-      {dialog}
     </>
   );
 }

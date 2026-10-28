@@ -314,6 +314,28 @@ that is not DRAFTED or SIGNED, a Lease where nobody lives any more, and more tha
 planned or living at once. The Lease History shows each addition and each `lease_move_ins`
 move-in.
 
+Since V1-060 B6 (migrations `20270325_244` and `20270326_245`, DL-100 and DL-101)
+`lease_planned_security_deposits` (append-only, `leases.draft`) keeps the Security Deposit
+amount of a draft Lease that is not a renewal, and `app.lease_signing_preview` reads the money
+due at signing with the Invoice generator's own rules. Since V1-060 B7 (migration
+`20270330_249`, DL-108) `app.sign_lease_with_payment` signs a Lease with its money in one
+transaction at the expected Lease version. It works out the money due at signing (the Initial
+Rent Invoice as the preview reads it, and the Security Deposit still owed: the draft's amount, or
+the Reservation's when the draft has none, less the money received; nothing for a renewal) and
+refuses a Payment that is not exactly that total. It then confirms the Payment with its Receipt,
+records each Signer's signature, signs (completing the Primary Tenant's active Reservation of the
+Unit), applies the draft's amount to the Reservation's Security Deposit, makes the Initial Rent
+Invoice, pays it by name (DESIGNATED, line by line: Rent, then Services, then the rest), and
+makes a walk-in Lease's Security Deposit at the draft's amount and receives the rest into the
+Security Deposit, leaving nothing on the Payment. Each step keeps its own checks, and any
+refusal saves nothing. `lease_signing_payment_commands` (append-only; primary key Property, actor
+and idempotency key; `lease_id`, `payment_id` and `invoice_id` each UNIQUE) keeps the request
+digest and the exact response, so the same key with the same request answers the same and with
+another request is refused. The function is SECURITY DEFINER with a fixed `search_path` and
+EXECUTE only for `prm_financial`; no application role reads the table.
+`app.set_lease_planned_security_deposit` now refuses a save identity used again with another
+Lease, amount or reason instead of answering the stored amount.
+
 ### Unpaid Initial obligation termination (migration `20261005_70`)
 
 Termination basis `UNPAID_INITIAL_OBLIGATION` requires governing reference `BR-LEASE-005`,

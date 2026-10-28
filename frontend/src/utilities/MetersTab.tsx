@@ -10,7 +10,7 @@ import {
   MEASUREMENT_UNIT_CODES,
   measurementUnitLabel,
 } from "../measurementUnits";
-import { DateInput } from "../shell/DateInput";
+import { DateInput, isDay } from "../shell/DateInput";
 import { dayText } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { hashForPage } from "../shell/navigation";
@@ -804,7 +804,8 @@ function AddMeterDialog({
         working.serial_number,
       );
     if (serial.trim() === "") found.serial = utt(language, "mt_e_serial");
-    if (installed === "") found.installed = utt(language, "mt_e_date");
+    // V1-060 B7: a date box passes on what is typed until it is a whole day.
+    if (!isDay(installed)) found.installed = utt(language, "mt_e_date");
     else if (installed > today) found.installed = utt(language, "mt_e_future");
     const value = parseReading(first);
     if (value === null) found.first = utt(language, "err_num");
@@ -1014,7 +1015,7 @@ function ReportBrokenDialog({
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const problem: Record<string, string> = {};
-    if (found === "") problem.found = utt(language, "mt_e_date");
+    if (!isDay(found)) problem.found = utt(language, "mt_e_date");
     else if (found > today) problem.found = utt(language, "mt_e_future");
     else if (found < latest)
       problem.found = utt(language, "mt_e_before", dayText(latest));
@@ -1153,7 +1154,7 @@ function ReplaceMeterDialog({
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const problem: Record<string, string> = {};
-    if (found === "") problem.found = utt(language, "mt_e_date");
+    if (!isDay(found)) problem.found = utt(language, "mt_e_date");
     else if (found > today) problem.found = utt(language, "mt_e_future");
     else if (lastGood !== undefined && found < lastGood.reading_date)
       problem.found = utt(
@@ -1161,9 +1162,9 @@ function ReplaceMeterDialog({
         "mt_e_before",
         dayText(lastGood.reading_date),
       );
-    if (putIn === "") problem.putIn = utt(language, "mt_e_date");
+    if (!isDay(putIn)) problem.putIn = utt(language, "mt_e_date");
     else if (putIn > today) problem.putIn = utt(language, "mt_e_future");
-    else if (found !== "" && putIn <= found)
+    else if (isDay(found) && putIn <= found)
       problem.putIn = utt(language, "mt_e_after");
     if (serial.trim() === "") problem.serial = utt(language, "mt_e_serial");
     const value = parseReading(first);

@@ -11,6 +11,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { hashForPage } from "../shell/navigation";
 import { openPageInAddress } from "../shell/useHashPage";
 import {
+  AUDIT,
   barRows,
   bodyRows,
   facts,
@@ -865,5 +866,60 @@ describe("Registers", () => {
       ["Refunded", "$150.00"],
       ["Balance still owed", "$0.00"],
     ]);
+  });
+  it("TEST-FE-1087 while some rows are not shown yet the footer says its Total is for all of them; the Audit chart says when it shows only the last 31 days with events (V1-060 B7)", async () => {
+    const first = {
+      ...INVOICES,
+      rows: INVOICES.rows.slice(0, 2),
+      row_count: 3,
+    };
+    const next = {
+      ...INVOICES,
+      rows: INVOICES.rows.slice(2, 3),
+      offset: 2,
+      row_count: 3,
+    };
+    openReports({
+      hash: "#/reports/invoice_register",
+      register: (_property, name, filter) =>
+        Promise.resolve(
+          name === "audit_activity"
+            ? {
+                ...AUDIT,
+                chart: {
+                  days: Array.from({ length: 40 }, (_, index) => ({
+                    day: `2026-0${String(8 + Math.floor(index / 30))}-${String((index % 30) + 1).padStart(2, "0")}`,
+                    count: 1,
+                  })),
+                },
+              }
+            : filter?.offset === undefined
+              ? first
+              : next,
+        ),
+    });
+    const table = await screen.findByRole("table", {
+      name: "Invoice register and balances",
+    });
+    expect(footRow(table)[0]).toBe("Total, all 3 rows");
+    fireEvent.click(screen.getByRole("button", { name: "Show more" }));
+    await screen.findByText("3 rows");
+    expect(
+      footRow(
+        screen.getByRole("table", { name: "Invoice register and balances" }),
+      )[0],
+    ).toBe("Total");
+
+    act(() => {
+      openPageInAddress("reports", false, "audit_activity");
+    });
+    await screen.findByRole("table", { name: "Audit activity" });
+    expect(
+      within(summaryCard()).getByText(
+        "Events per day, the last 31 days with events",
+        { selector: "figcaption" },
+      ),
+    ).toBeTruthy();
+    expect(within(summaryCard()).getAllByRole("button")).toHaveLength(31);
   });
 });

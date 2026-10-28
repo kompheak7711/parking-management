@@ -11,6 +11,12 @@ DL-101 (owner 27/10/2026, migration 20270326_245): the Security Deposit amount i
 the Rent, so a draft from a Reservation records it too, starting at the Reservation's amount and
 never below the money already received. Sign Lease applies it to the Reservation's Security Deposit
 right after signing (app.apply_lease_planned_security_deposit), then receives the rest.
+
+DL-108 (V1-060 B7, migration 20270330_249): Sign Lease is one command in one database transaction,
+app.sign_lease_with_payment: the Payment and its Receipt, the signatures, the signing, the draft's
+Security Deposit, the Initial Rent Invoice, the money paying that Invoice by name and the rest
+going into the Security Deposit are all saved, or nothing is. The separate Initial Rent Invoice and
+apply routes of DL-100 and DL-101 are gone; their database functions are steps of the command.
 """
 
 from __future__ import annotations
@@ -18,28 +24,36 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass
-from datetime import UTC, date, datetime
-from typing import Annotated, Final, Protocol, cast
-from uuid import UUID, uuid4
+from datetime import UTC, datetime
+from typing import Annotated, Final, NoReturn, Protocol, cast
+from uuid import UUID
 
 import psycopg
 from fastapi import APIRouter, Header, HTTPException, Request, Response, status
 from psycopg import IsolationLevel
+from psycopg.types.json import Jsonb, set_json_loads
 from pydantic import BaseModel, ConfigDict, Field
 
 from property_rental.api_refusals import Refusal, RefusedRequest
 from property_rental.browser_security import require_browser_mutation
+from property_rental.financial_context import bind_financial_property, financial_metadata
 from property_rental.identity import (
     ActorResolver,
     AuthenticatedActor,
     AuthorizationRequirement,
     is_authorized,
 )
+from property_rental.payment_api import Evidence, Identity, Instant, Memo, StrictInput, UsdAmount
+from property_rental.payment_confirmation import _exact_json
 from property_rental.settings import Settings
 
 LEASE_READ_CAPABILITY: Final = "leases.read"
 LEASE_DRAFT_CAPABILITY: Final = "leases.draft"
 LEASE_SIGN_CAPABILITY: Final = "leases.sign"
+# DL-108: Sign Lease receives the money and puts it where it belongs in the same command.
+PAYMENT_RECORD_CAPABILITY: Final = "payments.record"
+PAYMENT_ALLOCATE_CAPABILITY: Final = "payments.allocate"
+DEPOSIT_MANAGE_CAPABILITY: Final = "deposits.manage"
 # DL-101: the Reservation's Security Deposit in the preview shows only to a person who may see
 # deposits or Bookings.
 DEPOSIT_READ_CAPABILITY: Final = "deposits.read"
@@ -47,6 +61,8 @@ RESERVATION_READ_CAPABILITY: Final = "reservations.read"
 CONNECT_TIMEOUT_SECONDS: Final = 3
 LOCK_TIMEOUT_MS: Final = 3_000
 QUERY_TIMEOUT_MS: Final = 5_000
+# The one-step signing does the work of seven commands in one statement.
+SIGN_QUERY_TIMEOUT_MS: Final = 15_000
 MAX_CENTS: Final = 9_000_000_000_000_000
 
 # The database's own refusal texts, answered with a plain message the screen shows.
@@ -80,6 +96,11 @@ REFUSALS: Final[dict[str, Refusal]] = {
     "Rent billing requires an applicable signed Lease": Refusal(
         409, "INITIAL_RENT_NOT_SIGNED", "The Lease is not signed yet."
     ),
+    "This Security Deposit save was already used for another amount": Refusal(
+        409,
+        "PLANNED_DEPOSIT_SAVE_REUSED",
+        "This save was already used for another amount. Close the form and save again.",
+    ),
 }
 PARTIAL_SERVICE = Refusal(
     409,
@@ -88,6 +109,82 @@ PARTIAL_SERVICE = Refusal(
     "Fix the Service dates or its rate first.",
     ("BR-SVC-012",),
 )
+# DL-108: why Sign Lease saved nothing, in words the dialog shows.
+SIGN_REFUSALS: Final[dict[str, Refusal]] = {
+    **REFUSALS,
+    "Only a drafted Lease may be signed": Refusal(
+        409, "SIGNING_NOT_DRAFT", "This Lease is no longer a draft. Nothing was saved."
+    ),
+    "Every Lease signer, including the Primary Tenant, must sign": Refusal(
+        409,
+        "SIGNING_SIGNERS_CHANGED",
+        "Every Signer must sign, and the Signers changed meanwhile. Nothing was saved. "
+        "Close, open Sign Lease again and tick every Signer.",
+    ),
+    "Lease terms are incomplete": Refusal(
+        409,
+        "SIGNING_TERMS_INCOMPLETE",
+        "Add the Start Date, the End Date and the Rent first (Edit draft). Nothing was saved.",
+    ),
+    "Lease End Date must be the last day of a calendar month": Refusal(
+        409,
+        "SIGNING_END_DATE_NOT_MONTH_END",
+        "The End Date must be the last day of a month. Change it with Edit draft. "
+        "Nothing was saved.",
+    ),
+    "Record the Security Deposit on the draft first": Refusal(
+        409,
+        "SIGNING_DEPOSIT_MISSING",
+        "This draft has no Security Deposit yet. Add it with Edit draft first. Nothing was saved.",
+        ("BR-DEP-002",),
+    ),
+    "A walk-in Lease's Security Deposit needs deposits.manage": Refusal(
+        403,
+        "SIGNING_NO_DEPOSIT_RIGHT",
+        "A walk-in Lease's Security Deposit needs the right to manage deposits. Ask the Owner. "
+        "Nothing was saved.",
+    ),
+    "The money due at signing changed": Refusal(
+        409,
+        "SIGNING_TOTAL_CHANGED",
+        "The money due at signing changed meanwhile. Nothing was saved. "
+        "Close and open Sign Lease again to see the new total.",
+        ("BR-DEP-002",),
+    ),
+    "An Initial Rent Service covers only part of a month or has no rate": PARTIAL_SERVICE,
+    "Unit has an open Occupancy": Refusal(
+        409,
+        "SIGNING_UNIT_OCCUPIED",
+        "Someone still lives in this Unit (an open Occupancy). Nothing was saved.",
+    ),
+    "Unit cannot be occupied by this signing": Refusal(
+        409,
+        "SIGNING_UNIT_NOT_FREE",
+        "This Unit cannot be signed now: it is Reserved for someone else, Out of Service or "
+        "Occupied. Nothing was saved.",
+    ),
+    "Reservation cannot be completed by this signing": Refusal(
+        409,
+        "SIGNING_RESERVATION_ENDED",
+        "The Customer's Reservation of this Unit has ended or changed. Nothing was saved.",
+    ),
+    "The Reservation has no Security Deposit": Refusal(
+        409,
+        "SIGNING_RESERVATION_NO_DEPOSIT",
+        "The Customer's Reservation of this Unit has no Security Deposit. Nothing was saved.",
+    ),
+    "The Deposit's Reservation is not active; this receipt is not recorded here": Refusal(
+        409,
+        "SIGNING_RESERVATION_ENDED",
+        "The Customer's Reservation of this Unit has ended or changed. Nothing was saved.",
+    ),
+    "Sign Lease key reused": Refusal(
+        409,
+        "SIGNING_KEY_REUSED",
+        "This signing was already sent with other details. Nothing more was saved. "
+        "Close and open Sign Lease again.",
+    ),
+}
 
 
 class LeaseSigningNotFound(LookupError):
@@ -103,9 +200,30 @@ class LeaseSigningInvalid(ValueError):
 
 
 @dataclass(frozen=True, slots=True)
-class InitialRentInvoice:
-    invoice_id: UUID
-    created: bool
+class SignWithPaymentCommand:
+    """DL-108: the screen's one Sign Lease press: the Lease version it showed, the Signers it
+    ticked and the money received (the Primary Tenant's own, in USD)."""
+
+    idempotency_key: UUID
+    expected_version: int
+    signer_ids: tuple[UUID, ...]
+    reason: str
+    payment_method_id: UUID
+    received_amount_minor: int
+    received_at: datetime
+    evidence_reference: str
+    payer_intent_memo: str | None
+
+    def request(self) -> dict[str, object]:
+        """The Payment part as the database confirms it; the payer is the Lease's."""
+        return {
+            "payment_method_id": str(self.payment_method_id),
+            "received_amount_minor": self.received_amount_minor,
+            "received_at": self.received_at.astimezone(UTC).isoformat(),
+            "evidence_reference": self.evidence_reference,
+            "payer_intent_memo": self.payer_intent_memo,
+            "channel_transaction_reference": None,
+        }
 
 
 class LeaseSigningFlow(Protocol):
@@ -123,12 +241,13 @@ class LeaseSigningFlow(Protocol):
         reason: str,
     ) -> int: ...
 
-    def initial_invoice(
-        self, property_id: UUID, lease_id: UUID, idempotency_key: UUID, actor_id: UUID
-    ) -> InitialRentInvoice: ...
-
-    def apply_planned_deposit(
-        self, property_id: UUID, lease_id: UUID, adjustment_id: UUID, actor_id: UUID
+    def sign_with_payment(
+        self,
+        property_id: UUID,
+        lease_id: UUID,
+        command: SignWithPaymentCommand,
+        actor_id: UUID,
+        may_create_deposit: bool,
     ) -> dict[str, object]: ...
 
 
@@ -150,39 +269,33 @@ class UnavailableLeaseSigningFlow:
     ) -> int:
         raise LeaseSigningUnavailable(str(lease_id))
 
-    def initial_invoice(
-        self, property_id: UUID, lease_id: UUID, idempotency_key: UUID, actor_id: UUID
-    ) -> InitialRentInvoice:
-        raise LeaseSigningUnavailable(str(lease_id))
-
-    def apply_planned_deposit(
-        self, property_id: UUID, lease_id: UUID, adjustment_id: UUID, actor_id: UUID
+    def sign_with_payment(
+        self,
+        property_id: UUID,
+        lease_id: UUID,
+        command: SignWithPaymentCommand,
+        actor_id: UUID,
+        may_create_deposit: bool,
     ) -> dict[str, object]:
         raise LeaseSigningUnavailable(str(lease_id))
 
 
-def initial_request_digest(
-    *,
-    idempotency_key: UUID,
-    invoice_id: UUID,
-    invoice_number: str,
-    lease_id: UUID,
-    period_start: date,
-    issued_at: datetime,
+def sign_with_payment_digest(
+    property_id: UUID, lease_id: UUID, command: SignWithPaymentCommand
 ) -> str:
+    """The whole request, so the same key with anything else is refused, never replayed."""
     payload = json.dumps(
         {
-            "authorization_reference": LEASE_SIGN_CAPABILITY,
-            "billing_kind": "INITIAL",
-            "idempotency_key": str(idempotency_key),
-            "invoice_id": str(invoice_id),
-            "invoice_number": invoice_number,
-            "issued_at": issued_at.astimezone(UTC).isoformat(),
+            "property_id": str(property_id),
             "lease_id": str(lease_id),
-            "period_start": period_start.isoformat(),
+            "expected_version": command.expected_version,
+            "signer_ids": sorted(str(signer) for signer in command.signer_ids),
+            "reason": command.reason,
+            "request": command.request(),
         },
         sort_keys=True,
         separators=(",", ":"),
+        ensure_ascii=False,
     )
     return hashlib.sha256(payload.encode()).hexdigest()
 
@@ -274,72 +387,76 @@ class PostgresLeaseSigningFlow:
             raise LeaseSigningUnavailable
         return int(str(row[0]))
 
-    def initial_invoice(
-        self, property_id: UUID, lease_id: UUID, idempotency_key: UUID, actor_id: UUID
-    ) -> InitialRentInvoice:
-        initial = cast(dict[str, object] | None, self.preview(property_id, lease_id)["initial"])
-        if initial is None:
-            raise LeaseSigningInvalid("The Lease has no Start Date or Rent")
-        if initial.get("invoice_id") is not None:
-            return InitialRentInvoice(UUID(str(initial["invoice_id"])), created=False)
-        if initial.get("problem") is not None:
-            raise RefusedRequest(PARTIAL_SERVICE)
-        if self._financial_database_url is None:
-            raise LeaseSigningUnavailable
-        start = date.fromisoformat(str(initial["period_start"]))
-        invoice_id = uuid4()
-        invoice_number = f"RENT-I-{start:%Y%m}-{lease_id.hex[:12]}"
-        issued_at = datetime.now(UTC)
-        digest = initial_request_digest(
-            idempotency_key=idempotency_key,
-            invoice_id=invoice_id,
-            invoice_number=invoice_number,
-            lease_id=lease_id,
-            period_start=start,
-            issued_at=issued_at,
-        )
-        try:
-            with self._connect(self._financial_database_url) as connection:
-                row = connection.execute(
-                    "SELECT app.generate_rent_service_invoice"
-                    "(%s,%s,%s,%s,%s,%s,NULL,'INITIAL',%s,%s,%s,NULL)",
-                    (
-                        property_id,
-                        idempotency_key,
-                        digest,
-                        invoice_id,
-                        invoice_number,
-                        lease_id,
-                        start,
-                        issued_at,
-                        actor_id,
-                    ),
-                ).fetchone()
-        except psycopg.Error as exc:
-            self._raise(exc)
-            raise
-        if row is None:
-            raise LeaseSigningUnavailable
-        made = cast(dict[str, object], row[0])
-        return InitialRentInvoice(UUID(str(made["invoice_id"])), created=True)
-
-    def apply_planned_deposit(
-        self, property_id: UUID, lease_id: UUID, adjustment_id: UUID, actor_id: UUID
+    def sign_with_payment(
+        self,
+        property_id: UUID,
+        lease_id: UUID,
+        command: SignWithPaymentCommand,
+        actor_id: UUID,
+        may_create_deposit: bool,
     ) -> dict[str, object]:
         if self._financial_database_url is None:
             raise LeaseSigningUnavailable
+        digest = sign_with_payment_digest(property_id, lease_id, command)
         try:
             with self._connect(self._financial_database_url) as connection:
+                set_json_loads(_exact_json, connection)
+                connection.execute(
+                    "SELECT pg_catalog.set_config('statement_timeout',%s,true)",
+                    (str(SIGN_QUERY_TIMEOUT_MS),),
+                )
                 row = connection.execute(
-                    "SELECT app.apply_lease_planned_security_deposit(%s,%s,%s,%s,%s)",
-                    (property_id, lease_id, adjustment_id, actor_id, LEASE_SIGN_CAPABILITY),
+                    "SELECT app.sign_lease_with_payment(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                    (
+                        property_id,
+                        actor_id,
+                        command.idempotency_key,
+                        digest,
+                        lease_id,
+                        command.expected_version,
+                        list(command.signer_ids),
+                        command.reason,
+                        Jsonb(command.request()),
+                        may_create_deposit,
+                    ),
                 ).fetchone()
         except psycopg.Error as exc:
-            self._raise(exc)
-            raise
-        if row is None:
+            _sign_error(exc)
+        if row is None or not isinstance(row[0], dict):
             raise LeaseSigningUnavailable
         return cast(dict[str, object], row[0])
+
+
+class LeaseSigningConflict(RuntimeError):
+    """The Lease changed after the screen read it (If-Match); nothing was saved."""
+
+
+def _sign_error(exc: psycopg.Error) -> NoReturn:
+    """DL-108: one refusal for the whole command; every failure saved nothing."""
+    message = exc.diag.message_primary or ""
+    if exc.sqlstate == "40001":
+        raise LeaseSigningConflict from exc
+    if message in SIGN_REFUSALS:
+        raise RefusedRequest(SIGN_REFUSALS[message]) from exc
+    if "Partial-month" in str(exc) or "rate is missing" in str(exc):
+        raise RefusedRequest(PARTIAL_SERVICE) from exc
+    if exc.sqlstate in {"P0002", "P5301", "P4501"}:
+        raise LeaseSigningNotFound from exc
+    if exc.sqlstate in {"P5302", "22023", "22P02", "22007", "22008"}:
+        raise LeaseSigningInvalid from exc
+    if exc.sqlstate in {"23514", "55000", "P4506", "P5S01"}:
+        raise RefusedRequest(SIGNING_REFUSED) from exc
+    # Serialization, deadlock, timeout and connection failures cannot prove that an earlier try
+    # with this key did not commit: the screen sends the same request with the same key again.
+    raise LeaseSigningUnavailable from exc
+
+
+SIGNING_REFUSED = Refusal(
+    409,
+    "SIGNING_REFUSED",
+    "The Lease could not be signed with the records as they are now. Nothing was saved. "
+    "Check the Lease, its Unit and its Customer, or ask the Owner.",
+)
 
 
 class PlannedDepositSource(BaseModel):
@@ -348,6 +465,22 @@ class PlannedDepositSource(BaseModel):
     plan_id: UUID = Field(strict=False)
     required_usd_cents: int = Field(ge=1, le=MAX_CENTS)
     reason: str = Field(min_length=1, max_length=500)
+
+
+class SignPaymentSource(StrictInput):
+    """The money received at signing: the Primary Tenant's own, in USD (DL-100)."""
+
+    payment_method_id: Identity
+    received_at: Instant
+    evidence_reference: Evidence
+    payer_intent_memo: Memo | None = None
+    amount: UsdAmount
+
+
+class SignWithPaymentSource(StrictInput):
+    signer_ids: Annotated[list[Identity], Field(max_length=100)]
+    reason: str = Field(strict=True, min_length=1, max_length=500)
+    payment: SignPaymentSource
 
 
 def _actor(request: Request, resolver: ActorResolver) -> AuthenticatedActor:
@@ -371,11 +504,25 @@ def _require(actor: AuthenticatedActor, property_id: UUID, capability: str) -> N
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
 
+def _version(value: str | None) -> int:
+    if value is None or not value.startswith('"') or not value.endswith('"'):
+        raise HTTPException(status_code=status.HTTP_428_PRECONDITION_REQUIRED)
+    try:
+        parsed = int(value[1:-1])
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST) from exc
+    if parsed < 1:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+    return parsed
+
+
 def _translate(exc: Exception) -> HTTPException | RefusedRequest:
     if isinstance(exc, (HTTPException, RefusedRequest)):
         return exc
     if isinstance(exc, LeaseSigningNotFound):
         return HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    if isinstance(exc, LeaseSigningConflict):
+        return HTTPException(status_code=status.HTTP_412_PRECONDITION_FAILED)
     if isinstance(exc, LeaseSigningInvalid):
         return HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT)
     return HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
@@ -431,43 +578,64 @@ def create_lease_signing_router(
             "meta": {"request_id": request.state.request_id},
         }
 
-    @router.post("/leases/{lease_id}/initial-rent-invoice")
-    def initial_rent_invoice(
+    @router.post("/leases/{lease_id}/sign-with-payment", status_code=status.HTTP_201_CREATED)
+    def sign_with_payment(
         lease_id: UUID,
+        source: SignWithPaymentSource,
         request: Request,
+        response: Response,
         idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
+        if_match: Annotated[str | None, Header(alias="If-Match")] = None,
     ) -> dict[str, object]:
+        """DL-108: the money, the signatures, the signing, the Initial Rent Invoice paid by name
+        and the Security Deposit, saved together in one database transaction or not at all."""
         actor = _actor(request, resolver)
+        for header in ("Idempotency-Key", "If-Match", "Origin", "X-CSRF-Token"):
+            if len(request.headers.getlist(header)) > 1:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
         try:
             property_id = flow.property_of(lease_id)
-            _require(actor, property_id, LEASE_SIGN_CAPABILITY)
+            for capability in (
+                LEASE_SIGN_CAPABILITY,
+                PAYMENT_RECORD_CAPABILITY,
+                PAYMENT_ALLOCATE_CAPABILITY,
+            ):
+                _require(actor, property_id, capability)
             require_browser_mutation(request, settings)
-            made = flow.initial_invoice(property_id, lease_id, idempotency_key, _actor_id(actor))
-        except Exception as exc:
-            raise _translate(exc) from exc
-        return {
-            "data": {"invoice_id": str(made.invoice_id), "created": made.created},
-            "meta": {"request_id": request.state.request_id},
-        }
-
-    @router.post("/leases/{lease_id}/planned-security-deposit/apply")
-    def apply_planned_security_deposit(
-        lease_id: UUID,
-        request: Request,
-        idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
-    ) -> dict[str, object]:
-        # DL-101: right after signing, the draft's Security Deposit becomes the required amount of
-        # the Reservation's Security Deposit; the request key is the adjustment's identity.
-        actor = _actor(request, resolver)
-        try:
-            property_id = flow.property_of(lease_id)
-            _require(actor, property_id, LEASE_SIGN_CAPABILITY)
-            require_browser_mutation(request, settings)
-            applied = flow.apply_planned_deposit(
-                property_id, lease_id, idempotency_key, _actor_id(actor)
+            bind_financial_property(request, property_id)
+            if idempotency_key.int == 0:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+            command = SignWithPaymentCommand(
+                idempotency_key=idempotency_key,
+                expected_version=_version(if_match),
+                signer_ids=tuple(source.signer_ids),
+                reason=source.reason,
+                payment_method_id=source.payment.payment_method_id,
+                received_amount_minor=source.payment.amount.minor_units,
+                received_at=source.payment.received_at,
+                evidence_reference=source.payment.evidence_reference,
+                payer_intent_memo=source.payment.payer_intent_memo,
+            )
+            if command.reason != command.reason.strip() or len(set(command.signer_ids)) != len(
+                command.signer_ids
+            ):
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT)
+            signed = flow.sign_with_payment(
+                property_id,
+                lease_id,
+                command,
+                _actor_id(actor),
+                is_authorized(
+                    actor,
+                    AuthorizationRequirement(
+                        capability=DEPOSIT_MANAGE_CAPABILITY, property_id=str(property_id)
+                    ),
+                ),
             )
         except Exception as exc:
             raise _translate(exc) from exc
-        return {"data": applied, "meta": {"request_id": request.state.request_id}}
+        response.headers["Cache-Control"] = "private, no-store"
+        response.headers["ETag"] = f'"{signed["lease_version"]}"'
+        return {"data": signed, "meta": financial_metadata(request)}
 
     return router

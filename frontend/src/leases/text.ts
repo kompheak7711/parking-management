@@ -358,8 +358,8 @@ const TEXT = {
   ],
   // new
   sign_refused: [
-    "The server refused the signing. Any signatures already recorded stay recorded and show on this Lease. Check the details, or ask the Owner.",
-    "ម៉ាស៊ីនមេបានបដិសេធការចុះហត្ថលេខា។ ហត្ថលេខាដែលបានកត់ត្រារួច នៅតែកត់ត្រា ហើយបង្ហាញលើកិច្ចសន្យានេះ។ សូមពិនិត្យព័ត៌មាន ឬសួរម្ចាស់។",
+    "The server refused the signing. Nothing was saved. Check the details, or ask the Owner.",
+    "ម៉ាស៊ីនមេបានបដិសេធការចុះហត្ថលេខា។ គ្មានអ្វីត្រូវបានរក្សាទុកទេ។ សូមពិនិត្យព័ត៌មាន ឬសួរម្ចាស់។",
   ],
   // new
   sign_already: ["signed {0}", "បានចុះហត្ថលេខា {0}"],
@@ -961,8 +961,8 @@ const TEXT = {
   sp_service: ["{0}, {1} to {2}", "{0} {1} ដល់ {2}"],
   sp_total: ["Total to receive", "សរុបត្រូវទទួល"],
   sp_note: [
-    "The Lease is signed only after this money is saved. The Initial Rent Invoice is then made at once and paid with it; the rest goes into the Security Deposit.",
-    "កិច្ចសន្យាចុះហត្ថលេខាបានតែក្រោយប្រាក់នេះត្រូវបានរក្សាទុក។ បន្ទាប់មក វិក្កយបត្រថ្លៃឈ្នួលដំបូងត្រូវបានធ្វើភ្លាម ហើយបង់ដោយប្រាក់នេះ ប្រាក់ដែលនៅសល់ចូលប្រាក់កក់សុវត្ថិភាព។",
+    "The money, the signatures, the Initial Rent Invoice and the Security Deposit are saved together in one step, or nothing is saved. The money pays the Initial Rent Invoice; the rest goes into the Security Deposit.",
+    "ប្រាក់ ហត្ថលេខា វិក្កយបត្រថ្លៃឈ្នួលដំបូង និងប្រាក់កក់សុវត្ថិភាព ត្រូវបានរក្សាទុកជាមួយគ្នាក្នុងជំហានតែមួយ ឬគ្មានអ្វីត្រូវបានរក្សាទុកទេ។ ប្រាក់នេះបង់វិក្កយបត្រថ្លៃឈ្នួលដំបូង ប្រាក់ដែលនៅសល់ចូលប្រាក់កក់សុវត្ថិភាព។",
   ],
   sp_loading: ["Reading the amounts…", "កំពុងអានចំនួនទឹកប្រាក់…"],
   sp_failed: [
@@ -981,6 +981,34 @@ const TEXT = {
     "The Booking of this Lease could not be read, so the rest of its deposit is not known. Close and try again, or ask someone who can see Bookings.",
     "មិនអាចអានការកក់នៃកិច្ចសន្យានេះបានទេ ដូច្នេះមិនដឹងប្រាក់កក់ដែលនៅសល់។ សូមបិទ ហើយព្យាយាមម្តងទៀត ឬសួរអ្នកដែលអាចមើលការកក់។",
   ],
+  // DL-101: a walk-in draft records its Security Deposit before it is signed.
+  sp_deposit_missing: [
+    "This draft has no Security Deposit yet. Add it with Edit draft first.",
+    "សេចក្តីព្រាងនេះមិនទាន់មានប្រាក់កក់សុវត្ថិភាពនៅឡើយទេ។ សូមបន្ថែមវាដោយកែសេចក្តីព្រាងជាមុនសិន។",
+  ],
+  // V1-060 B7: the draft (or its dates and Rent) saved, its Security Deposit not.
+  edit_part_saved: [
+    "The dates and Rent are saved, but the Security Deposit is not. {0} Try again saves only the Security Deposit.",
+    "កាលបរិច្ឆេទ និងថ្លៃឈ្នួលត្រូវបានរក្សាទុកហើយ ប៉ុន្តែប្រាក់កក់សុវត្ថិភាពមិនទាន់ទេ។ {0} «ព្យាយាមម្តងទៀត» រក្សាទុកតែប្រាក់កក់សុវត្ថិភាពប៉ុណ្ណោះ។",
+  ],
+  edit_part_unknown: [
+    "The dates and Rent are saved. No answer came back for the Security Deposit, so it is not known whether it was saved. Try again sends the same one; it is saved only once.",
+    "កាលបរិច្ឆេទ និងថ្លៃឈ្នួលត្រូវបានរក្សាទុកហើយ។ មិនមានចម្លើយសម្រាប់ប្រាក់កក់សុវត្ថិភាពទេ ដូច្នេះមិនដឹងថាវាត្រូវបានរក្សាទុកឬអត់។ «ព្យាយាមម្តងទៀត» ផ្ញើប្រាក់កក់ដដែល វាត្រូវបានរក្សាទុកតែម្តងប៉ុណ្ណោះ។",
+  ],
+  form_part_saved: [
+    "The draft is saved, but its Security Deposit is not. {0} Try again saves only the Security Deposit. Close opens the draft, where Edit draft can add it.",
+    "សេចក្តីព្រាងត្រូវបានរក្សាទុកហើយ ប៉ុន្តែប្រាក់កក់សុវត្ថិភាពរបស់វាមិនទាន់ទេ។ {0} «ព្យាយាមម្តងទៀត» រក្សាទុកតែប្រាក់កក់សុវត្ថិភាពប៉ុណ្ណោះ។ «បិទ» បើកសេចក្តីព្រាង ដែល «កែសេចក្តីព្រាង» អាចបន្ថែមវាបាន។",
+  ],
+  form_part_unknown: [
+    "The draft is saved. No answer came back for its Security Deposit, so it is not known whether it was saved. Try again sends the same one; it is saved only once. Close opens the draft.",
+    "សេចក្តីព្រាងត្រូវបានរក្សាទុកហើយ។ មិនមានចម្លើយសម្រាប់ប្រាក់កក់សុវត្ថិភាពរបស់វាទេ ដូច្នេះមិនដឹងថាវាត្រូវបានរក្សាទុកឬអត់។ «ព្យាយាមម្តងទៀត» ផ្ញើប្រាក់កក់ដដែល វាត្រូវបានរក្សាទុកតែម្តងប៉ុណ្ណោះ។ «បិទ» បើកសេចក្តីព្រាង។",
+  ],
+  part_refused: ["The server did not save it.", "ម៉ាស៊ីនមេមិនបានរក្សាទុកវាទេ។"],
+  // BR-RENT-009: the Initial Rent Invoice cannot be issued after its Due Date.
+  sp_due_passed: [
+    "The Initial Rent Due Date ({0}) has passed, so the Initial Rent Invoice cannot be made today. Ask the Owner or a Manager to set a new Due Date first.",
+    "ថ្ងៃផុតកំណត់ថ្លៃឈ្នួលដំបូង ({0}) បានកន្លងផុតហើយ ដូច្នេះមិនអាចធ្វើវិក្កយបត្រថ្លៃឈ្នួលដំបូងថ្ងៃនេះបានទេ។ សូមសួរម្ចាស់ ឬអ្នកគ្រប់គ្រង ឱ្យកំណត់ថ្ងៃផុតកំណត់ថ្មីជាមុនសិន។",
+  ],
   sp_deposit_below: [
     "The Security Deposit on this draft is less than the {0} already received with the Reservation. Change it with Edit draft first.",
     "ប្រាក់កក់សុវត្ថិភាពក្នុងសេចក្តីព្រាងនេះ តិចជាង {0} ដែលបានទទួលរួចជាមួយការកក់។ សូមកែវាដោយកែសេចក្តីព្រាងជាមុនសិន។",
@@ -995,12 +1023,8 @@ const TEXT = {
   ],
   sp_ok: ["Receive {0} and sign", "ទទួល {0} ហើយចុះហត្ថលេខា"],
   sp_unknown: [
-    "No answer came back. Try again finishes the rest; nothing is saved twice.",
-    "គ្មានចម្លើយត្រឡប់មកវិញទេ។ ព្យាយាមម្តងទៀត ដើម្បីបញ្ចប់ផ្នែកដែលនៅសល់ គ្មានអ្វីត្រូវបានរក្សាទុកពីរដងទេ។",
-  ],
-  sp_signed_saved: [
-    "The Lease is signed. Try again finishes the Invoice and the Security Deposit.",
-    "កិច្ចសន្យាបានចុះហត្ថលេខា។ ព្យាយាមម្តងទៀត ដើម្បីបញ្ចប់វិក្កយបត្រ និងប្រាក់កក់សុវត្ថិភាព។",
+    "No answer came back, so it is not known whether the signing was saved. Try again sends the same signing: it is saved only once.",
+    "គ្មានចម្លើយត្រឡប់មកវិញទេ ដូច្នេះមិនដឹងថាការចុះហត្ថលេខាត្រូវបានរក្សាទុកឬអត់។ ព្យាយាមម្តងទៀត នឹងផ្ញើការចុះហត្ថលេខាដដែល៖ វាត្រូវបានរក្សាទុកតែម្តងប៉ុណ្ណោះ។",
   ],
   sp_toast: [
     "Lease signed. {0} is Occupied. {1} received with Receipt {2}.",
@@ -1009,14 +1033,6 @@ const TEXT = {
   sp_memo: [
     "Money received at signing the Lease of {0}",
     "Money received at signing the Lease of {0}",
-  ],
-  sp_reason_create: [
-    "Security Deposit agreed on the draft Lease, received at signing.",
-    "Security Deposit agreed on the draft Lease, received at signing.",
-  ],
-  sp_reason_receipt: [
-    "Security Deposit received at signing.",
-    "Security Deposit received at signing.",
   ],
   lp_button: ["Print draft", "បោះពុម្ពសេចក្តីព្រាង"],
   lp_title: ["Print draft · {0}", "បោះពុម្ពសេចក្តីព្រាង · {0}"],

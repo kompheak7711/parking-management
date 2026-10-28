@@ -12,7 +12,7 @@ import type { InvoiceResource } from "../invoiceClient";
 import { centsOf } from "../invoices/invoicesData";
 import type { LeaseResource } from "../leaseClient";
 import { Problem } from "../leases/LeaseDialogs";
-import { DateInput } from "../shell/DateInput";
+import { DateInput, isDay } from "../shell/DateInput";
 import { dayText } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { Dialog } from "../shell/ui";
@@ -132,7 +132,8 @@ export function InspectionDialog({
 
   function check(): Bad[] {
     const found: Bad[] = [];
-    if (day < handBackDay || day > today) found.push("date");
+    // V1-060 B7: a day typed in a wrong form is not a day.
+    if (!isDay(day) || day < handBackDay || day > today) found.push("date");
     if (replaces !== null && why.trim() === "") found.push("reason");
     for (const item of rows) {
       if (oneLine(item.description, 1000) === "")
