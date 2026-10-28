@@ -56999,6 +56999,17 @@
       "test_path": "frontend/src/leases/LeasesPage.test.tsx",
       "status": "implemented",
       "notes": "V1-060 B6: New Customer opens the Add Customer form in place of the Add occupant dialog and Cancel comes back; a refused save and a failed Customer read say so; the Lease History shows Occupant added with its reason."
+    },
+    {
+      "test_id": "test_a_draft_that_planned_nobody_lists_the_primary_tenant_first_once_someone_is_added",
+      "upstream_ids": [
+        "DL-102",
+        "BR-OCC-004"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_occupant_addition_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 B6: a draft that planned nobody meant the Primary Tenant alone; once Add occupant plans someone, the Lease lists the Primary Tenant first and then the added person, so Record move-in ticks both."
     }
   ]
 }

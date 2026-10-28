@@ -276,6 +276,24 @@ def test_a_person_added_before_the_move_in_is_planned_and_moves_in_with_the_leas
     assert {value.move_in_date for value in moved.occupancies} == {today}
 
 
+def test_a_draft_that_planned_nobody_lists_the_primary_tenant_first_once_someone_is_added(
+    migrated_database_url: str,
+) -> None:
+    """A draft with no planned people meant the Primary Tenant alone, as Record move-in ticks."""
+    actor_id, prop, unit, tenant = _walk_in(migrated_database_url)
+    friend = _customer(migrated_database_url, actor_id, "Mao Sreyneang")
+    service, who = leases(actor_id, prop)
+    draft = draft_command(unit, tenant)
+    service.draft(draft, actor=who)
+    flow = PostgresLeaseResourceFlow(runtime_database_url())
+    assert flow.get(draft.lease_id).planned_occupant_customer_ids == ()
+
+    _add(prop, actor_id, draft.lease_id, 1, friend, None)
+    planned = flow.get(draft.lease_id)
+    assert planned.planned_occupant_customer_ids == (tenant, friend)
+    assert [value.customer_id for value in planned.planned_occupants] == [tenant, friend]
+
+
 def test_add_occupant_is_refused_on_a_renewal_without_its_own_move_in_or_a_cancelled_lease(
     migrated_database_url: str,
 ) -> None:

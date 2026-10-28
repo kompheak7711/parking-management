@@ -800,12 +800,17 @@ class PostgresLeaseResourceFlow:
                     if draft_source is None or draft_source[0] is None
                     else tuple(UUID(str(value)) for value in cast(list[object], draft_source[0]))
                 )
-                # V1-060 B6 (DL-102): Add occupant before the move-in plans one more person.
-                for row in connection.execute(
+                # V1-060 B6 (DL-102): Add occupant before the move-in plans one more person. A
+                # draft that planned nobody meant the Primary Tenant alone (Record move-in ticks
+                # the tenant then), so the tenant stays first once someone is added.
+                additions = connection.execute(
                     "SELECT customer_id FROM app.lease_occupant_additions "
                     "WHERE lease_id=%s AND occupancy_id IS NULL ORDER BY occurred_at,id",
                     (lease_id,),
-                ).fetchall():
+                ).fetchall()
+                if additions and not planned_occupants:
+                    planned_occupants = (resource.primary_tenant_id,)
+                for row in additions:
                     added = UUID(str(row[0]))
                     if added not in planned_occupants:
                         planned_occupants = (*planned_occupants, added)

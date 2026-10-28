@@ -232,3 +232,9 @@ candidate is the code that will be used.
   pins moved to 20270327_246. Runs: the new and nearby database tests 44 passed; frontend 1,892 of
   1,892 when TEST-FE-087 (known slow, V1-060 list) is rerun alone; backend lint, format and types
   passed; traceability passed.
+- 2026-10-28 B6 (Add occupant follow-up): a draft that planned nobody meant the Primary Tenant
+  alone (Record move-in ticks the tenant then). Adding a friend to such a draft made the Lease
+  list only the friend, so Record move-in would have ticked the friend and not the tenant. The
+  Lease now lists the Primary Tenant first once someone is added. One database test added. Runs:
+  the Add occupant database tests 7 passed, nearby Lease database tests 19 passed, Lease API
+  tests 12 passed; backend lint, format and types passed.
