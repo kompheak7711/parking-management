@@ -58090,7 +58090,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_sign_lease_reservation_ended_migration.py",
       "status": "implemented",
-      "notes": "V1-060 B7 second review (DL-109): a draft from a Reservation past its expiration day is refused before the expiry worker runs (the signing's date rule) and after it (DL-004 cancels it); nothing is saved."
+      "notes": "V1-060 B7 second review (DL-109): a draft from a Reservation past its expiration day is refused before the expiry worker runs (the signing's date rule) and after it (DL-004 cancels it); nothing is saved. Third review: the draft's Security Deposit equals the money already received, so nothing more is due; this is the case that could be signed with no Security Deposit before."
     },
     {
       "test_id": "test_a_draft_of_an_ended_reservation_is_refused_when_a_new_reservation_holds_the_unit",
@@ -58103,7 +58103,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_sign_lease_reservation_ended_migration.py",
       "status": "implemented",
-      "notes": "V1-060 B7 second review (DL-109): when the same Customer reserved the Unit again after the first Reservation ended, the draft naming the first Reservation's Security Deposit is refused; neither Security Deposit changes and the new Reservation stays active."
+      "notes": "V1-060 B7 second review (DL-109): when the same Customer reserved the Unit again after the first Reservation ended, the draft naming the first Reservation's Security Deposit is refused; neither Security Deposit changes and the new Reservation stays active. Third review: the draft's Security Deposit equals the money already received, so nothing more is due on the old one."
     },
     {
       "test_id": "test_a_lease_from_a_reservation_may_lower_its_deposit_or_owe_none",
@@ -58164,7 +58164,7 @@
       "test_level": "API",
       "test_path": "backend/tests/test_lease_signing_api.py",
       "status": "implemented",
-      "notes": "V1-060 B7 second review (DL-109): an error the Sign Lease command raised is a refusal that says nothing was saved (overlapping dates SIGNING_DATES_TAKEN; a broken rule SIGNING_REFUSED); only a deadlock, a lock wait, a timeout or a lost connection is answered as not known, and a stale version as a conflict."
+      "notes": "V1-060 B7 second review (DL-109): an error the Sign Lease command raised is a refusal that says nothing was saved (overlapping dates SIGNING_DATES_TAKEN; a broken rule SIGNING_REFUSED); only a deadlock, a lock wait, a timeout or a lost connection is answered as not known, and a stale version as a conflict. Third review: only the signed-Lease dates check is SIGNING_DATES_TAKEN and other exclusion checks are SIGNING_REFUSED; a way of payment switched off or a missing source is SIGNING_PAYMENT_SOURCE_GONE, a Reservation the signing cannot complete SIGNING_RESERVATION_ENDED and a reused Sign Lease key SIGNING_KEY_REUSED."
     },
     {
       "test_id": "TEST-FE-1090",
@@ -58189,7 +58189,7 @@
       "test_level": "UI component",
       "test_path": "frontend/src/leases/ReceiveDepositDialog.test.tsx",
       "status": "implemented",
-      "notes": "V1-060 B7 second review (DL-109): Receive Security Deposit keeps every box that makes up the Payment fixed after a lost answer until the server says (not allowed is still not known); a refusal of the very same request opens them again; Close asks once more while the money may be saved, Escape too; the money saved but the rest refused says so, with the Receipt."
+      "notes": "V1-060 B7 second review (DL-109): Receive Security Deposit keeps every box that makes up the Payment fixed after a lost answer until the server says (not allowed is still not known); a refusal of the very same request opens them again; Close asks once more while the money may be saved, Escape too; the money saved but the rest refused says so, with the Receipt. Third review: a fixed clock moved on before Try again shows the Payment keeps the time it was first sent with."
     },
     {
       "test_id": "TEST-FE-1092",
@@ -58229,6 +58229,147 @@
       "test_path": "frontend/src/leases/LeasesPage.test.tsx",
       "status": "implemented",
       "notes": "V1-060 B7 second review (DL-109): while a draft's Security Deposit is being read the Lease page says so, never none; closing Sign Lease reads the Lease again, as it may be signed after a lost answer."
+    },
+    {
+      "test_id": "test_a_draft_of_an_ended_reservation_is_refused_when_another_customer_holds_the_unit",
+      "upstream_ids": [
+        "DL-109",
+        "DL-108",
+        "DL-100",
+        "DL-009"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_sign_lease_reservation_ended_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 B7 third review (DL-109): when another Customer reserved the Unit after the first Reservation ended, the draft naming the first Reservation's Security Deposit is refused (SIGNING_RESERVATION_ENDED); the draft stays a draft, the other Customer's Reservation stays active and nothing is saved."
+    },
+    {
+      "test_id": "test_a_way_of_payment_switched_off_meanwhile_is_named_and_nothing_is_saved",
+      "upstream_ids": [
+        "DL-109",
+        "DL-108",
+        "DL-100"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_sign_lease_reservation_ended_migration.py",
+      "status": "implemented",
+      "notes": "V1-060 B7 third review (DL-109): a way of payment switched off after Sign Lease opened is refused as SIGNING_PAYMENT_SOURCE_GONE, whose words say it is switched off and nothing was saved; the draft stays a draft and no Payment, Invoice or signature is saved."
+    },
+    {
+      "test_id": "TEST-FE-1096",
+      "upstream_ids": [
+        "DL-109",
+        "DL-108",
+        "BR-DEP-002",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/ReceiveDepositDialog.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B7 third review (DL-109): after a lost answer, a Try again that never leaves the browser is still not known and every box stays fixed; Escape only asks, even held down or pressed twice, and only Close anyway closes; the next Try again sends the same request with the same key."
+    },
+    {
+      "test_id": "TEST-FE-1097",
+      "upstream_ids": [
+        "DL-109",
+        "DL-108",
+        "BR-DEP-002",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/ReceiveDepositDialog.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B7 third review (DL-109): a lost answer on the Security Deposit step, then not allowed on Try again, is still not known; the same request goes again and the next answer finishes the step."
+    },
+    {
+      "test_id": "TEST-FE-1098",
+      "upstream_ids": [
+        "DL-109",
+        "DL-108",
+        "BR-RES-003",
+        "UI-034"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reservations/MakeReservationDialog.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B7 third review (DL-109): after a lost Payment answer in Make Reservation, a Try again that never leaves the browser, not allowed or not found stays not known with every box fixed; a refusal of the request itself says nothing was saved."
+    },
+    {
+      "test_id": "TEST-FE-1099",
+      "upstream_ids": [
+        "DL-109",
+        "DL-108",
+        "BR-RES-003",
+        "UI-034"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reservations/MakeReservationDialog.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B7 third review (DL-109): after a lost Reservation answer, a Try again that never leaves the browser, not allowed or not found stays not known with no lookup; another refusal looks the Reservation up first and, when there is none, says the money is saved but the Reservation was not."
+    },
+    {
+      "test_id": "TEST-FE-1100",
+      "upstream_ids": [
+        "DL-099",
+        "DL-109",
+        "BR-RES-003",
+        "UI-034"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reservations/MakeReservationDialog.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B7 third review (DL-109): a Unit from the address that is not vacant is not kept; Make Reservation asks to choose a Unit and never reaches the money step."
+    },
+    {
+      "test_id": "TEST-FE-1101",
+      "upstream_ids": [
+        "DL-109",
+        "DL-108",
+        "BR-RES-003",
+        "UI-034"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reservations/MakeReservationDialog.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B7 third review (DL-109): when the money is saved but the Reservation is refused as changed, the words do not ask to change the Unit or the Customer, which stay fixed."
+    },
+    {
+      "test_id": "TEST-FE-1102",
+      "upstream_ids": [
+        "DL-099",
+        "DL-109",
+        "DL-108",
+        "BR-RES-003",
+        "UI-034"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reservations/ReservationsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B7 third review (DL-109): on the Reservations page, while the person's rights are not known, less than the suggested Security Deposit is stopped before any money with the rights words; closing Make Reservation reads the list again."
+    },
+    {
+      "test_id": "TEST-FE-1103",
+      "upstream_ids": [
+        "DL-109",
+        "DL-108",
+        "UI-007"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reservations/MakeReservationDialog.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B7 third review (DL-109): a whole day pasted as eight digits over the selected day gets its slashes and counts as that day."
+    },
+    {
+      "test_id": "TEST-FE-1104",
+      "upstream_ids": [
+        "DL-101",
+        "DL-109",
+        "DL-108"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-060 B7 third review (DL-109): closing Receive Security Deposit reads the Lease again, as the money may be saved after a lost answer."
     }
   ]
 }

@@ -7,6 +7,7 @@ from uuid import UUID, uuid4
 import psycopg
 import pytest
 from fastapi.testclient import TestClient
+from psycopg.pq import DiagnosticField
 
 from property_rental.api_refusals import RefusedRequest
 from property_rental.app import create_app
@@ -251,21 +252,52 @@ def test_sign_with_payment_answers_why_nothing_was_saved() -> None:
     assert http.post(path, json=_signing(), headers=mutation_headers(version=3)).status_code == 404
 
 
+def _raised(
+    sqlstate: str, message: str = "refused", constraint: str | None = None
+) -> psycopg.Error:
+    """An error as the database sends it: its code, its words and the check it broke."""
+    info: dict[int, bytes | None] = {
+        DiagnosticField.SQLSTATE: sqlstate.encode(),
+        DiagnosticField.MESSAGE_PRIMARY: message.encode(),
+        DiagnosticField.CONSTRAINT_NAME: None if constraint is None else constraint.encode(),
+    }
+    try:
+        kind = psycopg.errors.lookup(sqlstate)
+    except KeyError:
+        kind = psycopg.DatabaseError
+    return kind(message, info=info)
+
+
 def test_a_failure_inside_the_command_is_a_refusal_unless_its_outcome_is_unknown() -> None:
     """V1-060 B7 (second review): the command saved nothing when it raised, so a broken rule is a
     refusal; only a deadlock, a lock wait, a timeout or a lost connection is not known (the screen
-    then sends the same request again)."""
+    then sends the same request again). Third review: only the signed-Lease exclusion is
+    SIGNING_DATES_TAKEN, and the known words choose their own refusal."""
     refused = {
-        psycopg.errors.ExclusionViolation: "SIGNING_DATES_TAKEN",
-        psycopg.errors.UniqueViolation: "SIGNING_REFUSED",
-        psycopg.errors.CheckViolation: "SIGNING_REFUSED",
-        psycopg.errors.ObjectNotInPrerequisiteState: "SIGNING_REFUSED",
+        _raised("23P01", constraint="leases_signed_period_exclusive"): "SIGNING_DATES_TAKEN",
+        _raised("23P01", constraint="active_invoice_source_claims_period"): "SIGNING_REFUSED",
+        _raised("23P01"): "SIGNING_REFUSED",
+        _raised("23505"): "SIGNING_REFUSED",
+        _raised("23514"): "SIGNING_REFUSED",
+        _raised("23503"): "SIGNING_REFUSED",
+        _raised("55000"): "SIGNING_REFUSED",
+        _raised("P4506"): "SIGNING_REFUSED",
+        _raised("P5S01"): "SIGNING_REFUSED",
+        _raised("P5305", "Payment confirmation key reused"): "SIGNING_REFUSED",
+        _raised("P5305", "Sign Lease key reused"): "SIGNING_KEY_REUSED",
+        _raised("P5301", "Payment source not found"): "SIGNING_PAYMENT_SOURCE_GONE",
+        _raised("23514", "Payment Method is not accepted"): "SIGNING_PAYMENT_SOURCE_GONE",
+        _raised(
+            "23514", "Reservation cannot be completed by this signing"
+        ): "SIGNING_RESERVATION_ENDED",
     }
-    for kind, code in refused.items():
+    for error, code in refused.items():
         with pytest.raises(RefusedRequest) as caught:
-            _sign_error(kind("refused"))
-        assert caught.value.refusal.code == code
-        assert "Nothing was saved" in caught.value.refusal.message
+            _sign_error(error)
+        assert caught.value.refusal.code == code, error.diag.message_primary
+        message = caught.value.refusal.message
+        assert "Nothing was saved" in message or "Nothing more was saved" in message
+    assert _raised("P5305", "Payment confirmation key reused").sqlstate == "P5305"
     unknown: tuple[type[psycopg.Error], ...] = (
         psycopg.errors.DeadlockDetected,
         psycopg.errors.LockNotAvailable,

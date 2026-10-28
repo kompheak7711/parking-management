@@ -109,6 +109,14 @@ PARTIAL_SERVICE = Refusal(
     "Fix the Service dates or its rate first.",
     ("BR-SVC-012",),
 )
+# V1-060 B7 (second and third review): the way the money came was switched off after the dialog
+# opened, or its record or the Customer's is not there.
+SIGNING_PAYMENT_SOURCE_GONE: Final = Refusal(
+    409,
+    "SIGNING_PAYMENT_SOURCE_GONE",
+    "The way the money came is switched off, or the Customer was not found. Nothing was saved. "
+    "Close, open Sign Lease again and choose how the money came.",
+)
 # DL-108: why Sign Lease saved nothing, in words the dialog shows.
 SIGN_REFUSALS: Final[dict[str, Refusal]] = {
     **REFUSALS,
@@ -186,17 +194,14 @@ SIGN_REFUSALS: Final[dict[str, Refusal]] = {
         "This signing was already sent with other details. Nothing more was saved. "
         "Close and open Sign Lease again.",
     ),
-    # V1-060 B7 (second review): refusals from a step inside the command.
-    "Payment source not found": Refusal(
-        409,
-        "SIGNING_PAYMENT_SOURCE_GONE",
-        "The way the money came is no longer on, or the Customer was not found. Nothing was "
-        "saved. Close, open Sign Lease again and choose how the money came.",
-    ),
+    # V1-060 B7 (second and third review): refusals from a step inside the command.
+    "Payment source not found": SIGNING_PAYMENT_SOURCE_GONE,
+    "Payment Method is not accepted": SIGNING_PAYMENT_SOURCE_GONE,
 }
 
 # V1-060 B7 (second review): another signed Lease of the Unit covers these dates (the database's
-# exclusion check), found before the Unit's own check.
+# exclusion check), found before the Unit's own check. Other exclusion checks are SIGNING_REFUSED.
+SIGNED_PERIOD_EXCLUSION: Final = "leases_signed_period_exclusive"
 SIGNING_DATES_TAKEN: Final = Refusal(
     409,
     "SIGNING_DATES_TAKEN",
@@ -468,7 +473,7 @@ def _sign_error(exc: psycopg.Error) -> NoReturn:
         raise LeaseSigningNotFound from exc
     if sqlstate in {"P5302", "22023", "22P02", "22007", "22008"}:
         raise LeaseSigningInvalid from exc
-    if sqlstate == "23P01":
+    if sqlstate == "23P01" and exc.diag.constraint_name == SIGNED_PERIOD_EXCLUSION:
         raise RefusedRequest(SIGNING_DATES_TAKEN) from exc
     if sqlstate.startswith("23") or sqlstate in {"55000", "P4506", "P5S01", "P5305"}:
         raise RefusedRequest(SIGNING_REFUSED) from exc

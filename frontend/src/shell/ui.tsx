@@ -80,6 +80,7 @@ export function Dialog({
   wide = false,
   actions,
   noButtons = false,
+  onEscape,
 }: {
   title: string;
   children: ReactNode;
@@ -94,13 +95,15 @@ export function Dialog({
   actions?: ReactNode;
   /** V1-060 B6: the content brings its own buttons (an embedded form such as Add Customer). */
   noButtons?: boolean;
+  /** V1-060 B7: what Escape does when it is not the same as Close. */
+  onEscape?: () => void;
 }) {
   const headingId = useId();
   const box = useRef<HTMLDivElement>(null);
-  const close = useRef(onClose);
+  const close = useRef(onEscape ?? onClose);
   const working = useRef(busy);
   useEffect(() => {
-    close.current = onClose;
+    close.current = onEscape ?? onClose;
     working.current = busy;
   });
 
@@ -127,8 +130,10 @@ export function Dialog({
       );
     focusable()[0]?.focus();
     function onKey(event: KeyboardEvent) {
-      // Escape works like Cancel, so not while a save is running.
-      if (event.key === "Escape" && !working.current) close.current();
+      // Escape works like Cancel, so not while a save is running. V1-060 B7: a held key counts
+      // once.
+      if (event.key === "Escape" && !event.repeat && !working.current)
+        close.current();
       // Tab stays inside the dialog.
       if (event.key === "Tab") {
         const items = focusable();

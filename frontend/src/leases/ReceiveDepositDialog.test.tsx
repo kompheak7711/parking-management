@@ -254,6 +254,8 @@ describe("Receive Security Deposit (V1-060 B6)", () => {
 
 describe("Receive Security Deposit (V1-060 B7)", () => {
   it("TEST-FE-1091 after a lost answer nothing that makes up the Payment can change until the server says; not allowed is still not known; Close asks once more while the money may be saved; the money saved but the rest refused says so", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-28T03:00:00.000Z"));
     const all = apis();
     all.confirm
       .mockReset()
@@ -298,6 +300,7 @@ describe("Receive Security Deposit (V1-060 B7)", () => {
     ];
     for (const box of boxes()) expect(box).toBeDisabled();
     // "Not allowed" comes before the server looks up the request: still not known.
+    vi.setSystemTime(new Date("2026-10-28T03:00:07.000Z"));
     fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
     await waitFor(() => {
       expect(all.confirm).toHaveBeenCalledTimes(2);
@@ -360,5 +363,156 @@ describe("Receive Security Deposit (V1-060 B7)", () => {
       within(dialog).getByRole("button", { name: "Close anyway" }),
     );
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("Receive Security Deposit (V1-060 B7, third review)", () => {
+  const unknown =
+    "We could not tell whether this was saved. “Try again” sends the very same request; it is never saved twice.";
+
+  it("TEST-FE-1096 after a lost answer a Try again that never leaves the browser is still not known and nothing can change; Escape only asks, also held or pressed again; the next Try again sends the very same Payment", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-28T03:00:00.000Z"));
+    const all = apis();
+    all.confirm
+      .mockReset()
+      .mockRejectedValueOnce(new InvoiceClientError(null, "NETWORK", true))
+      .mockRejectedValueOnce(
+        new InvoiceClientError(null, "CSRF_UNAVAILABLE", false),
+      )
+      .mockResolvedValue({ paymentId: "payment-9", receiptNumber: "RC0009" });
+    all.receiveIntoDeposit.mockReset().mockResolvedValue({});
+    const onClose = vi.fn();
+    const onSaved = vi.fn();
+    render(
+      <ReceiveDepositDialog
+        language="en"
+        lease={lease}
+        onClose={onClose}
+        onSaved={onSaved}
+        paymentsApi={all.paymentsApi}
+        propertyId="property-1"
+        security={null}
+        settlementApi={all.settlementApi}
+      />,
+    );
+    const dialog = screen.getByRole("dialog");
+    fireEvent.change(
+      await within(dialog).findByLabelText("How the money came"),
+      { target: { value: "method-aba" } },
+    );
+    fireEvent.change(within(dialog).getByLabelText("Bank or ABA reference"), {
+      target: { value: "ABA 777" },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save the deposit" }),
+    );
+    expect(await within(dialog).findByText(unknown)).toBeInTheDocument();
+    // Signed out meanwhile: nothing reaches the server, so nothing says the money was not saved.
+    vi.setSystemTime(new Date("2026-10-28T03:00:05.000Z"));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
+    await waitFor(() => {
+      expect(all.confirm).toHaveBeenCalledTimes(2);
+    });
+    expect(await within(dialog).findByText(unknown)).toBeInTheDocument();
+    expect(
+      within(dialog).queryByText(
+        "This was not saved. Check the Lease and try again.",
+      ),
+    ).toBeNull();
+    expect(within(dialog).getByLabelText("Received now")).toBeDisabled();
+    expect(
+      within(dialog).getByLabelText("Bank or ABA reference"),
+    ).toBeDisabled();
+    // Escape only asks: a held key or a second press does not close.
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(
+      within(dialog).getByText(
+        "We could not tell whether the money was saved. If you close now, look in Payments before you receive it again, so it is not received twice.",
+      ),
+    ).toBeInTheDocument();
+    fireEvent.keyDown(document, { key: "Escape", repeat: true });
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(onClose).not.toHaveBeenCalled();
+    // Signed in again: the very same Payment, its time and key included, then the rest.
+    vi.setSystemTime(new Date("2026-10-28T03:00:09.000Z"));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
+    await waitFor(() => {
+      expect(onSaved).toHaveBeenCalledWith(
+        "Security Deposit of $500.00 received with Receipt RC0009.",
+      );
+    });
+    expect(all.confirm).toHaveBeenCalledTimes(3);
+    for (const call of all.confirm.mock.calls.slice(1)) {
+      expect(call[1]).toEqual(all.confirm.mock.calls[0]?.[1]);
+      expect(call[2]).toBe(all.confirm.mock.calls[0]?.[2]);
+    }
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it("TEST-FE-1097 a lost answer on the Security Deposit step: not allowed on Try again is still not known, the same request goes again, and the next answer finishes it", async () => {
+    const all = apis();
+    all.createSecurityDeposit
+      .mockReset()
+      .mockRejectedValueOnce(
+        new SettlementRequestError(503, null, "The server failed."),
+      )
+      .mockRejectedValueOnce(
+        new SettlementRequestError(
+          403,
+          null,
+          "You may not make Security Deposits.",
+        ),
+      )
+      .mockResolvedValue({});
+    all.receiveIntoDeposit.mockReset().mockResolvedValue({});
+    const onSaved = vi.fn();
+    render(
+      <ReceiveDepositDialog
+        language="en"
+        lease={lease}
+        onClose={vi.fn()}
+        onSaved={onSaved}
+        paymentsApi={all.paymentsApi}
+        propertyId="property-1"
+        security={null}
+        settlementApi={all.settlementApi}
+      />,
+    );
+    const dialog = screen.getByRole("dialog");
+    fireEvent.change(
+      await within(dialog).findByLabelText("How the money came"),
+      { target: { value: "method-aba" } },
+    );
+    fireEvent.change(within(dialog).getByLabelText("Bank or ABA reference"), {
+      target: { value: "ABA 777" },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save the deposit" }),
+    );
+    expect(await within(dialog).findByText(unknown)).toBeInTheDocument();
+    expect(
+      within(dialog).getByText(/The money is saved with Receipt RC0009/),
+    ).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
+    await waitFor(() => {
+      expect(all.createSecurityDeposit).toHaveBeenCalledTimes(2);
+    });
+    expect(await within(dialog).findByText(unknown)).toBeInTheDocument();
+    expect(
+      within(dialog).queryByText("You may not make Security Deposits."),
+    ).toBeNull();
+    expect(all.createSecurityDeposit.mock.calls[1]?.[1]).toEqual(
+      all.createSecurityDeposit.mock.calls[0]?.[1],
+    );
+    expect(all.createSecurityDeposit.mock.calls[1]?.[2]).toBe(
+      all.createSecurityDeposit.mock.calls[0]?.[2],
+    );
+    fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
+    await waitFor(() => {
+      expect(onSaved).toHaveBeenCalled();
+    });
+    expect(all.confirm).toHaveBeenCalledTimes(1);
+    expect(all.receiveIntoDeposit).toHaveBeenCalledTimes(1);
   });
 });

@@ -115,6 +115,8 @@ export function ReservationsPage({
           : capabilities.has("reservation_deposits.override")
       }
       onClose={() => {
+        // V1-060 B7 (third review): a Reservation may be saved after a lost answer.
+        load();
         openPageInAddress("reservations");
       }}
       onSaved={(saved) => {

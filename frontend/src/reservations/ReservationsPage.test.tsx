@@ -557,4 +557,102 @@ describe("Make Reservation on the list (V1-060 B7)", () => {
     ).toBeInTheDocument();
     expect(confirm).not.toHaveBeenCalled();
   });
+
+  it("TEST-FE-1102 while the person's rights are not known, Make Reservation stops less than the suggestion before any money; Close reads the list again", async () => {
+    window.location.hash = "#/reservations/new:unit-2";
+    const list = vi.fn<ReservationApi["list"]>().mockResolvedValue({
+      items: all,
+      next_cursor: null,
+      can_create: true,
+    });
+    const confirm = vi.fn<PaymentsApi["confirm"]>();
+    render(
+      <ReservationsPage
+        active
+        api={api({ list })}
+        capabilities={null}
+        customerApi={
+          {
+            list: vi.fn().mockResolvedValue({
+              items: [
+                {
+                  customer_id: "customer-dara",
+                  legal_name: "Sok Dara",
+                  phone_number: null,
+                  active: true,
+                  relationship_indicators: [],
+                },
+              ],
+              next_cursor: null,
+            }),
+          } as unknown as CustomerApi
+        }
+        language="en"
+        paymentsApi={
+          {
+            methods: vi
+              .fn()
+              .mockResolvedValue([
+                { id: "method-cash", code: "CASH", displayName: "Cash" },
+              ]),
+            confirm,
+          } as unknown as PaymentsApi
+        }
+        propertyId="property-1"
+        unitApi={
+          {
+            list: vi.fn().mockResolvedValue({
+              items: [
+                {
+                  unit_id: "unit-2",
+                  unit_number: "U102",
+                  status: "VACANT",
+                } as unknown as UnitResource,
+              ],
+              next_cursor: null,
+            }),
+          } as unknown as Pick<UnitApi, "list">
+        }
+      />,
+    );
+    const dialog = await screen.findByRole("dialog", {
+      name: "Make Reservation",
+    });
+    expect(await within(dialog).findByLabelText("Unit")).toHaveValue("unit-2");
+    fireEvent.change(within(dialog).getByLabelText("Customer"), {
+      target: { value: "customer-dara" },
+    });
+    fireEvent.change(
+      within(dialog).getByLabelText("Agreed monthly Rent (USD)"),
+      { target: { value: "500" } },
+    );
+    fireEvent.change(
+      await within(dialog).findByLabelText("How the money came"),
+      { target: { value: "method-cash" } },
+    );
+    fireEvent.change(within(dialog).getByLabelText("Received now (USD)"), {
+      target: { value: "60" },
+    });
+    fireEvent.change(
+      within(dialog).getByLabelText(/Why less than the suggestion/),
+      { target: { value: "A friend of the Owner" } },
+    );
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save Reservation" }),
+    );
+    expect(
+      within(dialog).getByText(/Your rights could not be read just now/),
+    ).toBeInTheDocument();
+    expect(confirm).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(list).toHaveBeenCalledTimes(1);
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Close" }));
+    await waitFor(() => {
+      expect(list).toHaveBeenCalledTimes(2);
+    });
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+  });
 });

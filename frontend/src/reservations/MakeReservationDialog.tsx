@@ -246,7 +246,7 @@ export function MakeReservationDialog({
         money,
         customerId,
         receivedCents,
-        rt(language, "mk_memo", unit?.unit_number ?? ""),
+        rt("en", "mk_memo", unit?.unit_number ?? ""),
       ),
       reservation: {
         reservation_id: ids.current.reservation,
@@ -301,14 +301,23 @@ export function MakeReservationDialog({
       );
       onSaved(saved);
     } catch (error: unknown) {
+      const status =
+        error instanceof ReservationRequestError ? error.status : null;
       const result =
         error instanceof ReservationConflictError
           ? "conflict"
-          : error instanceof ReservationUnavailableError
+          : error instanceof ReservationUnavailableError ||
+              (createdBefore &&
+                (status === null ||
+                  status === 401 ||
+                  status === 403 ||
+                  status === 404))
             ? "unknown"
             : outcomeOf(error);
-      // After a lost answer the server may be meeting this very Reservation (its Unit is no
-      // longer free), so look for it by its own id before saying it was not saved.
+      // V1-060 B7 (third review): after a lost answer, "sign in", "not allowed", "not found" and a
+      // request that never left the browser keep it not known (above). After the server's own
+      // refusal it may be meeting this very Reservation (its Unit is no longer free), so look for
+      // it by its own id before saying it was not saved.
       if (result !== "unknown" && createdBefore) {
         const found = await savedBefore();
         if (found === "unknown") {
@@ -390,6 +399,7 @@ export function MakeReservationDialog({
         guard.asked ? dmt(language, "close_anyway") : rt(language, "close")
       }
       onClose={guard.close}
+      onEscape={guard.escape}
       onSubmit={units !== null && customers !== null ? check : undefined}
       submitLabel={
         busy
@@ -614,7 +624,14 @@ export function MakeReservationDialog({
             <div className="ui-notice warn" role="alert">
               <Icon name="alert" />
               <p>
-                {rt(language, outcome === "conflict" ? "mk_conflict" : outcome)}
+                {rt(
+                  language,
+                  outcome !== "conflict"
+                    ? outcome
+                    : paid === null
+                      ? "mk_conflict"
+                      : "mk_conflict_paid",
+                )}
               </p>
             </div>
           )}

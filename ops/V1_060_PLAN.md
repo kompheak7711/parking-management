@@ -410,3 +410,29 @@ candidate is the code that will be used.
   the Edit draft deposit box does not follow a changed Rent; This month on a Totals table shows the
   days, not the whole month; Letters and Record notice give the order message for a date that is not
   a real day; one such test per dialog; the hover colour of chart columns.
+- 2026-10-28 B7 third review (DL-109): an independent review of the DL-109 work (the Sign Lease
+  command and route, the money screens). No serious find; its smaller points are built (no new
+  migration; decided by Claude under the owner's 2026-10-23 22:30 rule, no money rule): Sign Lease
+  answers `SIGNING_DATES_TAKEN` only for the signed-Lease dates check
+  (`leases_signed_period_exclusive`) and `SIGNING_REFUSED` for another exclusion check; a way of
+  payment switched off after the dialog opened is `SIGNING_PAYMENT_SOURCE_GONE` ("switched off");
+  after a lost answer a Try again that never leaves the browser stays not known in Receive Security
+  Deposit and in both steps of Make Reservation, and in its Reservation step "not signed in", "not
+  allowed" and "not found" also stay not known, with no lookup; Escape only asks while the money
+  may be saved, and only "Close anyway" closes (a held key counts once); closing Receive Security
+  Deposit reads the Lease again and closing Make Reservation reads the list again; the money saved
+  but the Reservation refused as changed no longer asks to change the Unit or the Customer; the
+  Make Reservation Payment memo no longer depends on the screen language; a whole day pasted as
+  eight digits gets its slashes. Tests: 2 new database tests (another Customer holds the Unit; a
+  way of payment switched off); the two ended-Reservation tests now plan the Security Deposit at
+  the money received (the case signed with no Security Deposit before); the API test of command
+  errors (changed); TEST-FE-1096 to TEST-FE-1104 (new) and TEST-FE-1091 (changed: a fixed clock).
+  Follow-ups (not built): Sign Lease and Cancel or expire Reservation lock in a different order, so
+  a deadlock answers Sign Lease as not known (safe to send again) or fails that expiry run; a
+  Reservation past its expiration day is refused only after the Payment step inside the command
+  (nothing is saved); the signing preview still offers an ended Reservation's Security Deposit, and
+  the refusal could say that a new draft is needed; after a lost Payment answer in Make
+  Reservation a first refusal on a later step shows not known; Back, reload or a link leave a money
+  dialog without asking; the Reservation lookup reads "not found" as none even after the person's
+  rights changed; a Try again after another person signed in on the same screen can read a refusal
+  as not saved.

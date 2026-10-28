@@ -238,6 +238,7 @@ export function ReceiveDepositDialog({
         guard.asked ? dmt(language, "close_anyway") : lt(language, "close")
       }
       onClose={guard.close}
+      onEscape={guard.escape}
       onSubmit={check}
       submitLabel={
         busy

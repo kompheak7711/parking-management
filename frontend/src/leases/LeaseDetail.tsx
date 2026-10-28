@@ -1235,7 +1235,9 @@ export function LeaseDetail({
           language={language}
           lease={lease}
           onClose={() => {
+            // V1-060 B7 (third review): the money may be saved, so read the Lease again.
             setDialog(null);
+            load();
           }}
           onSaved={(message) => {
             setDialog(null);

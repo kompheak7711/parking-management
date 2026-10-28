@@ -311,6 +311,8 @@ sub-slice 10i-4b).
 
 Amended by DL-109 (V1-060 B7 second review, 2026-10-28): after a lost answer every box that makes up the Payment or the Reservation stays fixed until the server answers, and Try again sends the very same requests. A refusal after a lost Reservation answer looks the Reservation up by its own id and opens it when it is there. When the money is saved but the Reservation is not, the dialog says so with the Receipt number and says not to receive the money again; while the money may be saved, Close asks once more. Less than the suggested Security Deposit waits until the person's rights are read, and a Unit that is not vacant is never kept from the address.
 
+Amended by DL-109 (V1-060 B7 third review, 2026-10-28): in Make Reservation and Receive Security Deposit, a Try again after a lost answer that never leaves the browser stays not known. While the money may be saved, Escape only asks, and only the "Close anyway" button closes the dialog. Closing Make Reservation reads the Reservations list again, and closing Receive Security Deposit reads the Lease again. When the money is saved but the Reservation is refused as changed, the words do not ask to change the Unit or the Customer, which stay fixed. A whole day pasted as eight digits over a date box gets its slashes.
+
 ## UI-033 — Reservation Detail
 
 Show current status, Property-local expiration, source dates, Security Deposit

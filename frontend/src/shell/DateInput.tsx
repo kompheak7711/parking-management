@@ -41,14 +41,16 @@ export function isDay(value: string): boolean {
  * still gets both; slashes typed in other places ("5/3/1986") stay as typed. Only text added at
  * the end is shaped: an edit inside the date, a deletion, text that already has both slashes or
  * more than eight digits stays as typed, so the form refuses a wrong day instead of the box
- * quietly making another one. */
+ * quietly making another one. Third review: up to eight digits alone (a day pasted over the
+ * whole box) are shaped too, as slashes then only go between them. */
 function withSlashes(typed: string, before: string, atEnd: boolean): string {
   if (
     !atEnd ||
-    typed.length <= before.length ||
-    !typed.startsWith(before) ||
-    /^\d{2}\/\d{2}\//.test(before) ||
-    !/^(\d{2}\/(\d{2}\/)?)?\d*$/.test(typed)
+    (!/^\d{1,8}$/.test(typed) &&
+      (typed.length <= before.length ||
+        !typed.startsWith(before) ||
+        /^\d{2}\/\d{2}\//.test(before) ||
+        !/^(\d{2}\/(\d{2}\/)?)?\d*$/.test(typed)))
   )
     return typed;
   const digits = typed.replace(/\//g, "");

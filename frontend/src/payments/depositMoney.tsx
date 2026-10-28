@@ -92,7 +92,8 @@ export function outcomeOf(error: unknown): "unknown" | "refused" {
 
 /** As outcomeOf, for a request sent again after a lost answer. The server answers "sign in", "not
  * allowed" and "not found" before it looks up the request, so they cannot say that the lost
- * request was not saved; the outcome stays unknown. */
+ * request was not saved; the outcome stays unknown. V1-060 B7 (third review): so does a request
+ * that never left the browser (no status, for example when the sign-in cookie is gone). */
 export function outcomeAfter(
   error: unknown,
   earlierUnknown: boolean,
@@ -104,19 +105,24 @@ export function outcomeAfter(
     error instanceof SettlementRequestError
       ? error.status
       : null;
-  return status === 401 || status === 403 || status === 404
+  return status === null || status === 401 || status === 403 || status === 404
     ? "unknown"
     : "refused";
 }
 
 /** Close asks once more while the money may be saved and the rest is not finished: a closed
- * dialog forgets its requests, so starting again could receive the same money twice. */
+ * dialog forgets its requests, so starting again could receive the same money twice. V1-060 B7
+ * (third review): Escape only asks; only the "Close anyway" button closes such a dialog. */
 export function useCloseGuard(risky: boolean, onClose: () => void) {
   const [asked, setAsked] = useState(false);
   return {
     asked: asked && risky,
     close: () => {
       if (risky && !asked) setAsked(true);
+      else onClose();
+    },
+    escape: () => {
+      if (risky) setAsked(true);
       else onClose();
     },
     reset: () => {

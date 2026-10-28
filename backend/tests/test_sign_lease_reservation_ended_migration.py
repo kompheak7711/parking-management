@@ -14,7 +14,7 @@ from dataclasses import replace
 from datetime import timedelta
 from pathlib import Path
 from typing import Any, cast
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import psycopg
 import pytest
@@ -124,17 +124,20 @@ def test_a_draft_whose_reservation_expired_is_refused(migrated_database_url: str
         found = expired_reservation(setup)
         setup.commit()
     case = _draft_of(url, found)
-    _plan(case["prop"], case["lease"], case["actor"], 50_000, "Deposit agreed")
+    # The draft's Security Deposit equals the money the Booking received: nothing more is due, so
+    # no receipt step can stop it (third review: 249 signed this as a walk-in after the worker).
+    received = int(_deposit(case, case["deposit"])[2])
+    _plan(case["prop"], case["lease"], case["actor"], received, "Deposit as received")
     before = (_counts(case), _deposit(case, case["deposit"]))
     rent = _due(case)
     # Past its expiration day, before the expiry worker runs: the signing's own date rule.
     with pytest.raises(RefusedRequest) as passed:
-        _sign(case, _command(case, rent + 40_000), deposits=False)
+        _sign(case, _command(case, rent), deposits=False)
     assert passed.value.refusal.code == "SIGNING_RESERVATION_ENDED"
     # After the worker expired it (DL-004 cancels it): refused before any money.
     expire(case["human"], case["prop"], case["reservation"])
     with pytest.raises(RefusedRequest) as expired:
-        _sign(case, _command(case, rent + 40_000), deposits=False)
+        _sign(case, _command(case, rent), deposits=False)
     assert expired.value.refusal.code == "SIGNING_RESERVATION_ENDED"
     assert _status(case)[0] == "DRAFTED"
     assert (_counts(case), _deposit(case, case["deposit"])) == before
@@ -156,11 +159,14 @@ def test_a_draft_of_an_ended_reservation_is_refused_when_a_new_reservation_holds
             customer_id=case["customer"],
         )
     second, new_deposit = ids["reservation_id"], ids["deposit_id"]
-    _plan(case["prop"], case["lease"], case["actor"], 50_000, "Deposit agreed")
+    # Nothing more is due on the old Security Deposit (third review: 249 signed with the new
+    # Reservation, took its Security Deposit at 100.00 of 500.00 and cut the old one).
+    received = int(_deposit(case, case["deposit"])[2])
+    _plan(case["prop"], case["lease"], case["actor"], received, "Deposit as received")
     before = (_counts(case), _deposit(case, case["deposit"]), _deposit(case, new_deposit))
     rent = _due(case)
     with pytest.raises(RefusedRequest) as changed:
-        _sign(case, _command(case, rent + 40_000), deposits=False)
+        _sign(case, _command(case, rent), deposits=False)
     assert changed.value.refusal.code == "SIGNING_RESERVATION_ENDED"
     assert _status(case) == ("DRAFTED", "RESERVED")
     assert _reservation_status(case, second) == "ACTIVE"
@@ -169,6 +175,68 @@ def test_a_draft_of_an_ended_reservation_is_refused_when_a_new_reservation_holds
         _deposit(case, case["deposit"]),
         _deposit(case, new_deposit),
     ) == before
+
+
+def test_a_draft_of_an_ended_reservation_is_refused_when_another_customer_holds_the_unit(
+    migrated_database_url: str,
+) -> None:
+    url = migrated_database_url
+    case = _draft_of(url, reserved_unit(url))
+    received = int(_deposit(case, case["deposit"])[2])
+    _plan(case["prop"], case["lease"], case["actor"], received, "Deposit as received")
+    cancel(case, CancellationResponsibility.CUSTOMER)
+    # Another Customer reserves the Unit.
+    with psycopg.connect(url) as connection:
+        other = uuid4()
+        connection.execute(
+            "INSERT INTO app.customers (id, legal_name, created_by, updated_by) "
+            "VALUES (%s, 'Other Customer', %s, %s)",
+            (other, case["actor"], case["actor"]),
+        )
+        _, ids = create_reservation(
+            connection,
+            actor_id=case["actor"],
+            property_id=case["prop"],
+            unit_id=case["unit"],
+            customer_id=other,
+        )
+    second, new_deposit = ids["reservation_id"], ids["deposit_id"]
+    before = (_counts(case), _deposit(case, case["deposit"]), _deposit(case, new_deposit))
+    with pytest.raises(RefusedRequest) as held:
+        _sign(case, _command(case, _due(case)), deposits=False)
+    assert held.value.refusal.code == "SIGNING_RESERVATION_ENDED"
+    assert _status(case) == ("DRAFTED", "RESERVED")
+    assert _reservation_status(case, second) == "ACTIVE"
+    assert (
+        _counts(case),
+        _deposit(case, case["deposit"]),
+        _deposit(case, new_deposit),
+    ) == before
+
+
+def test_a_way_of_payment_switched_off_meanwhile_is_named_and_nothing_is_saved(
+    migrated_database_url: str,
+) -> None:
+    case = _walk_in(migrated_database_url)
+    _plan(case["prop"], case["lease"], case["actor"], 50_000)
+    # A way of payment the dialog showed, switched off before Sign Lease is pressed.
+    method = uuid4()
+    with psycopg.connect(migrated_database_url) as connection:
+        connection.execute(
+            "INSERT INTO app.payment_methods(id,code,display_name,accepted,created_by,updated_by) "
+            "VALUES (%s,%s,'Switched-off test method',true,%s,%s)",
+            (method, f"TEST-OFF-{method}", case["actor"], case["actor"]),
+        )
+        connection.execute("UPDATE app.payment_methods SET accepted=false WHERE id=%s", (method,))
+    case = {**case, "method": method}
+    before = _counts(case)
+    with pytest.raises(RefusedRequest) as off:
+        _sign(case, _command(case, _due(case) + 50_000))
+    assert off.value.refusal.code == "SIGNING_PAYMENT_SOURCE_GONE"
+    assert "switched off" in off.value.refusal.message
+    assert "Nothing was saved" in off.value.refusal.message
+    assert _status(case)[0] == "DRAFTED"
+    assert _counts(case) == before
 
 
 def test_a_lease_from_a_reservation_may_lower_its_deposit_or_owe_none(

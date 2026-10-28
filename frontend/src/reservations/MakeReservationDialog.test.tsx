@@ -667,4 +667,192 @@ describe("Make Reservation (V1-060 B7)", () => {
     );
     expect(onClose).toHaveBeenCalledTimes(1);
   });
+
+  it("TEST-FE-1098 after a lost Payment answer, a Try again that never leaves the browser, not allowed or not found stays not known with every box fixed; the server's own refusal of the same request opens them", async () => {
+    const { unitApi, customerApi, paymentsApi, confirm } = apis();
+    confirm
+      .mockReset()
+      .mockRejectedValueOnce(new InvoiceClientError(null, "NETWORK", true))
+      .mockRejectedValueOnce(
+        new InvoiceClientError(null, "CSRF_UNAVAILABLE", false),
+      )
+      .mockRejectedValueOnce(new InvoiceClientError(403, "FORBIDDEN", false))
+      .mockRejectedValueOnce(new InvoiceClientError(404, "NOT_FOUND", false))
+      .mockRejectedValueOnce(
+        new InvoiceClientError(422, "VALIDATION_FAILED", false),
+      );
+    const api = { create: vi.fn(), get: vi.fn() } as unknown as ReservationApi;
+    const dialog = await filled(
+      api,
+      paymentsApi,
+      unitApi,
+      customerApi,
+      vi.fn(),
+      vi.fn(),
+    );
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save Reservation" }),
+    );
+    expect(await within(dialog).findByText(unknown)).toBeInTheDocument();
+    for (let press = 2; press <= 4; press += 1) {
+      fireEvent.click(
+        within(dialog).getByRole("button", { name: "Try again" }),
+      );
+      await waitFor(() => {
+        expect(confirm).toHaveBeenCalledTimes(press);
+      });
+      expect(await within(dialog).findByText(unknown)).toBeInTheDocument();
+      for (const box of boxes(dialog)) expect(box).toBeDisabled();
+      expect(confirm.mock.calls[press - 1]?.[1]).toEqual(
+        confirm.mock.calls[0]?.[1],
+      );
+      expect(confirm.mock.calls[press - 1]?.[2]).toBe(
+        confirm.mock.calls[0]?.[2],
+      );
+    }
+    fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
+    expect(
+      await within(dialog).findByText(
+        "It was not saved. Check the details and try again.",
+      ),
+    ).toBeInTheDocument();
+    expect(within(dialog).getByLabelText("Received now (USD)")).toBeEnabled();
+    expect(api.create).not.toHaveBeenCalled();
+  });
+
+  it("TEST-FE-1099 after a lost Reservation answer, a Try again that never leaves the browser, not allowed or not found stays not known without a lookup; the server's own refusal is looked up first", async () => {
+    const { unitApi, customerApi, paymentsApi, confirm } = apis();
+    const create = vi
+      .fn<ReservationApi["create"]>()
+      .mockRejectedValueOnce(new ReservationUnavailableError())
+      .mockRejectedValueOnce(new ReservationRequestError())
+      .mockRejectedValueOnce(new ReservationRequestError(403))
+      .mockRejectedValueOnce(new ReservationRequestError(404))
+      .mockRejectedValueOnce(new ReservationRequestError(422));
+    const get = vi
+      .fn<ReservationApi["get"]>()
+      .mockRejectedValue(new ReservationRequestError(404));
+    const api = { create, get } as unknown as ReservationApi;
+    const dialog = await filled(
+      api,
+      paymentsApi,
+      unitApi,
+      customerApi,
+      vi.fn(),
+      vi.fn(),
+    );
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save Reservation" }),
+    );
+    expect(await within(dialog).findByText(unknown)).toBeInTheDocument();
+    for (let press = 2; press <= 4; press += 1) {
+      fireEvent.click(
+        within(dialog).getByRole("button", { name: "Try again" }),
+      );
+      await waitFor(() => {
+        expect(create).toHaveBeenCalledTimes(press);
+      });
+      expect(await within(dialog).findByText(unknown)).toBeInTheDocument();
+      for (const box of boxes(dialog)) expect(box).toBeDisabled();
+      expect(create.mock.calls[press - 1]?.[2]).toBe(create.mock.calls[0]?.[2]);
+    }
+    expect(get).not.toHaveBeenCalled();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
+    expect(
+      await within(dialog).findByText(
+        "It was not saved. Check the details and try again.",
+      ),
+    ).toBeInTheDocument();
+    expect(get).toHaveBeenCalledTimes(1);
+    expect(
+      within(dialog).getByText(/The money is saved with Receipt RC0001/),
+    ).toBeInTheDocument();
+    expect(confirm).toHaveBeenCalledTimes(1);
+  });
+
+  it("TEST-FE-1100 a Unit from the address that is not vacant never reaches the money step", async () => {
+    const { unitApi, customerApi, paymentsApi, confirm } = apis();
+    render(
+      <MakeReservationDialog
+        api={{ create: vi.fn(), get: vi.fn() } as unknown as ReservationApi}
+        customerApi={customerApi}
+        language="en"
+        mayOverride
+        onClose={vi.fn()}
+        onSaved={vi.fn()}
+        paymentsApi={paymentsApi}
+        propertyId="property-1"
+        unitApi={unitApi}
+        unitId="unit-9"
+      />,
+    );
+    const dialog = await screen.findByRole("dialog", {
+      name: "Make Reservation",
+    });
+    await within(dialog).findByRole("option", { name: /U102/ });
+    fireEvent.change(within(dialog).getByLabelText("Customer"), {
+      target: { value: "customer-dara" },
+    });
+    fireEvent.change(
+      within(dialog).getByLabelText("Agreed monthly Rent (USD)"),
+      { target: { value: "500" } },
+    );
+    fireEvent.change(
+      await within(dialog).findByLabelText("How the money came"),
+      { target: { value: "method-cash" } },
+    );
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save Reservation" }),
+    );
+    expect(within(dialog).getByText("Choose a Unit.")).toBeInTheDocument();
+    expect(confirm).not.toHaveBeenCalled();
+  });
+
+  it("TEST-FE-1101 the money saved but the Reservation refused as changed does not ask to change the Unit or the Customer, which are fixed with the money", async () => {
+    const { unitApi, customerApi, paymentsApi } = apis();
+    const create = vi
+      .fn<ReservationApi["create"]>()
+      .mockRejectedValue(new ReservationConflictError());
+    const api = { create, get: vi.fn() } as unknown as ReservationApi;
+    const dialog = await filled(
+      api,
+      paymentsApi,
+      unitApi,
+      customerApi,
+      vi.fn(),
+      vi.fn(),
+    );
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save Reservation" }),
+    );
+    expect(
+      await within(dialog).findByText(
+        "The Reservation was not saved: the Unit or the Customer changed meanwhile (for example, someone else reserved this Unit first).",
+      ),
+    ).toBeInTheDocument();
+    expect(within(dialog).queryByText(/Check them, then try again/)).toBeNull();
+    expect(
+      within(dialog).getByText(/The money is saved with Receipt RC0001/),
+    ).toBeInTheDocument();
+    expect(within(dialog).getByLabelText("Unit")).toBeDisabled();
+    expect(within(dialog).getByLabelText("Customer")).toBeDisabled();
+  });
+});
+
+describe("Date box (V1-060 B7, third review)", () => {
+  it("TEST-FE-1103 a whole day pasted as digits over a selected day gets its slashes", () => {
+    const onChange = vi.fn();
+    render(
+      <>
+        <label htmlFor="d">Day</label>
+        <DateInput id="d" onChange={onChange} value="2026-10-28" />
+      </>,
+    );
+    const box = screen.getByLabelText<HTMLInputElement>("Day");
+    expect(box).toHaveValue("28/10/2026");
+    // Everything selected, then "15031986" pasted: the caret ends after the new text.
+    fireEvent.change(box, { target: { value: "15031986" } });
+    expect(box).toHaveValue("15/03/1986");
+    expect(onChange).toHaveBeenLastCalledWith("1986-03-15");
+  });
 });

@@ -1235,6 +1235,37 @@ describe("Lease actions", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
+  it("TEST-FE-1104 closing Receive Security Deposit reads the Lease again, as the money may be saved after a lost answer (B7)", async () => {
+    window.location.hash = "#/leases/lease-U101";
+    const get = vi.fn().mockResolvedValue(running);
+    show(
+      api({ get }),
+      deposits({
+        leaseDeposits: vi.fn(() =>
+          Promise.resolve({
+            items: [
+              deposit("lease-U101", {
+                received_usd_cents: 10000,
+                outstanding_required_usd_cents: 40000,
+              }),
+            ],
+            can_manage: false,
+          }),
+        ),
+      } as unknown as Partial<DepositApi>),
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Receive Security Deposit" }),
+    );
+    const dialog = screen.getByRole("dialog");
+    expect(get).toHaveBeenCalledTimes(1);
+    fireEvent.click(within(dialog).getByRole("button", { name: "Close" }));
+    await waitFor(() => {
+      expect(get).toHaveBeenCalledTimes(2);
+    });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
   it("TEST-FE-1018 Sign Lease takes no money and signs nothing when the Initial Rent Invoice cannot be made or the person may not receive payments", async () => {
     window.location.hash = "#/leases/lease-sign";
     const recordSignature = vi.fn();

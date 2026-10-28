@@ -293,6 +293,11 @@ const TEXT = {
     "The Reservation was not saved: the Unit or the Customer changed meanwhile (for example, someone else reserved this Unit first). Check them, then try again.",
     "ការកក់មិនត្រូវបានរក្សាទុកទេ៖ បន្ទប់ ឬអតិថិជនបានផ្លាស់ប្តូរក្នុងពេលនេះ (ឧទាហរណ៍ មានអ្នកផ្សេងបានកក់បន្ទប់នេះមុន)។ សូមពិនិត្យពួកវា រួចព្យាយាមម្តងទៀត។",
   ],
+  // V1-060 B7 (third review): the money is saved, so the Unit and the Customer are fixed here.
+  mk_conflict_paid: [
+    "The Reservation was not saved: the Unit or the Customer changed meanwhile (for example, someone else reserved this Unit first).",
+    "ការកក់មិនត្រូវបានរក្សាទុកទេ៖ បន្ទប់ ឬអតិថិជនបានផ្លាស់ប្តូរក្នុងពេលនេះ (ឧទាហរណ៍ មានអ្នកផ្សេងបានកក់បន្ទប់នេះមុន)។",
+  ],
   mk_memo: [
     "Security Deposit received with the Reservation of {0}",
     "Security Deposit received with the Reservation of {0}",
