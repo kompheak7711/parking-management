@@ -75,6 +75,8 @@ const FAILURE_TEXT: Record<ServiceSettingsFailure, SettingsTextKey> = {
   lease_holds_two: "f_lease_two",
   type_has_services: "f_type_has",
   needs_rate: "f_needs_rate",
+  name_taken: "rs_name_taken",
+  used_this_year: "rs_used_refused",
   unknown: "rates_unknown",
 };
 

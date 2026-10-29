@@ -211,6 +211,58 @@ class CreateItemsInvoiceDraftCommand:
 
 
 @dataclass(frozen=True, slots=True)
+class ServiceInvoiceItem:
+    """One Regular service on a Services Invoice (DL-115 (I)): the price comes from Settings."""
+
+    charge_id: UUID
+    regular_service_id: UUID
+    quantity: int
+
+    def __post_init__(self) -> None:
+        _identity(self.charge_id, "charge_id")
+        _identity(self.regular_service_id, "regular_service_id")
+        if type(self.quantity) is not int or not 1 <= self.quantity <= MAX_INVOICE_ITEM_QUANTITY:
+            raise ValueError("quantity must be a whole number from 1")
+
+    def payload(self) -> dict[str, object]:
+        return {
+            "charge_id": str(self.charge_id),
+            "regular_service_id": str(self.regular_service_id),
+            "quantity": self.quantity,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class CreateServicesInvoiceDraftCommand:
+    """A Services Invoice DRAFT of 1 to 20 Regular services, each with How many (DL-115 (I))."""
+
+    idempotency_key: UUID
+    customer_id: UUID
+    lease_id: UUID | None
+    items: tuple[ServiceInvoiceItem, ...]
+
+    def __post_init__(self) -> None:
+        _identity(self.idempotency_key, "idempotency_key")
+        _identity(self.customer_id, "customer_id")
+        if self.lease_id is not None:
+            _identity(self.lease_id, "lease_id")
+        if not 1 <= len(self.items) <= MAX_INVOICE_ITEMS:
+            raise ValueError("a Services Invoice has 1 to 20 items")
+        if len({item.charge_id for item in self.items}) != len(self.items):
+            raise ValueError("each item needs its own charge_id")
+        if len({item.regular_service_id for item in self.items}) != len(self.items):
+            raise ValueError("each Regular service is on the Invoice once")
+
+    def payload(self) -> dict[str, object]:
+        return {
+            "customer_id": str(self.customer_id),
+            "lease_id": str(self.lease_id) if self.lease_id is not None else None,
+            "kind": "SERVICES",
+            "items": [item.payload() for item in self.items],
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class ReplaceInvoiceDraftItemsCommand:
     """The new items of a DRAFT made from typed items, with the reason for the change (DL-103).
 
@@ -758,6 +810,35 @@ class PostgresInvoiceService:
                 command.lease_id,
                 command.reason,
                 command.evidence_reference,
+                json.dumps(payload["items"]),
+            ),
+        )
+
+    def create_services_draft(
+        self,
+        property_id: UUID,
+        command: CreateServicesInvoiceDraftCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        """Record each Regular service's charge at its Settings price and the DRAFT (DL-115 (I))."""
+        self._authorize(actor, property_id, INVOICE_CREATE_CAPABILITY)
+        payload = command.payload()
+        digest = invoice_request_digest(
+            action="create", property_id=property_id, invoice_id=None, payload=payload
+        )
+        return self._execute(
+            "SELECT app.create_services_invoice_draft(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s::jsonb)",
+            (
+                property_id,
+                self._actor_id(actor),
+                command.idempotency_key,
+                digest,
+                uuid4(),
+                uuid4(),
+                uuid4(),
+                command.customer_id,
+                command.lease_id,
                 json.dumps(payload["items"]),
             ),
         )

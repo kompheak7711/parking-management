@@ -316,7 +316,7 @@ describe("Settings: Rates and services", () => {
         "01/12/2024Letter under each door",
       ],
     ]);
-    const services = screen.getByRole("region", { name: "Services" });
+    const services = screen.getByRole("region", { name: "Monthly Services" });
     expect(rowsOf(services)).toEqual([
       [
         "Trash Collectionប្រមូលសំរាម",
@@ -627,7 +627,7 @@ describe("Settings: Rates and services", () => {
     expect(
       await screen.findByRole("region", { name: "អត្រាទឹកភ្លើង" }),
     ).toBeTruthy();
-    expect(screen.getByRole("region", { name: "សេវា" })).toBeTruthy();
+    expect(screen.getByRole("region", { name: "សេវាប្រចាំខែ" })).toBeTruthy();
   });
 
   it("TEST-FE-999 Add a Service sends its own id, names, type, first rate in cents and a start on the 1st; the same values again keep the id; Edit changes names and type with the version", async () => {

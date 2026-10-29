@@ -100,6 +100,8 @@ export type ServiceSettingsFailure =
   | "lease_holds_two"
   | "type_has_services"
   | "needs_rate"
+  | "name_taken"
+  | "used_this_year"
   | "unknown";
 
 export class ServiceSettingsError extends Error {
@@ -115,6 +117,8 @@ const CODES: Record<string, ServiceSettingsFailure> = {
   LEASE_HOLDS_TWO_OF_TYPE: "lease_holds_two",
   SERVICE_TYPE_HAS_SERVICES: "type_has_services",
   UNIT_TYPE_NEEDS_CLEANING_RATE: "needs_rate",
+  REGULAR_SERVICE_NAME_TAKEN: "name_taken",
+  REGULAR_SERVICE_USED_THIS_YEAR: "used_this_year",
 };
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -405,6 +409,92 @@ export const cleaningSettingsApi: CleaningSettingsApi = {
   remove: (propertyId, rateId, version) =>
     request(
       `${property(propertyId)}/cleaning-rates/${encodeURIComponent(rateId)}/remove`,
+      { version },
+    ),
+};
+
+// V1.1 (DL-115 (I)): the Regular services of Settings, each with a set price. Only a user with
+// Settings access changes a price; Create Invoice › Services takes the price from here.
+
+export interface RegularService {
+  regular_service_id: string;
+  name_en: string;
+  name_km: string | null;
+  price_usd_cents: number;
+  version: number;
+  /** How many Invoice items named it this year; while above 0 it cannot be removed. */
+  used_this_year: number;
+}
+
+export interface RegularServices {
+  regular_services: RegularService[];
+  can_manage: boolean;
+}
+
+export interface RegularServiceForm {
+  name_en: string;
+  name_km: string | null;
+  price_usd_cents: number;
+}
+
+export interface RegularServicesApi {
+  read: (propertyId: string) => Promise<RegularServices>;
+  add: (
+    propertyId: string,
+    body: RegularServiceForm & { regular_service_id: string },
+  ) => Promise<unknown>;
+  change: (
+    propertyId: string,
+    serviceId: string,
+    body: RegularServiceForm & { version: number },
+  ) => Promise<unknown>;
+  remove: (
+    propertyId: string,
+    serviceId: string,
+    version: number,
+  ) => Promise<unknown>;
+}
+
+/** Reads the answer of the Regular services read; anything unexpected is "unknown". */
+export function regularServicesOf(value: unknown): RegularServices {
+  if (
+    !isObject(value) ||
+    !Array.isArray(value.regular_services) ||
+    typeof value.can_manage !== "boolean"
+  ) {
+    throw new ServiceSettingsError("unknown");
+  }
+  return {
+    regular_services: value.regular_services.map((service: unknown) => {
+      if (!isObject(service)) throw new ServiceSettingsError("unknown");
+      return {
+        regular_service_id: text(service.regular_service_id),
+        name_en: text(service.name_en),
+        name_km: textOrNull(service.name_km),
+        price_usd_cents: count(service.price_usd_cents),
+        version: count(service.version),
+        used_this_year: count(service.used_this_year),
+      };
+    }),
+    can_manage: value.can_manage,
+  };
+}
+
+export const regularServicesApi: RegularServicesApi = {
+  read: async (propertyId) =>
+    regularServicesOf(
+      await request(`${property(propertyId)}/regular-services`),
+    ),
+  add: (propertyId, body) =>
+    request(`${property(propertyId)}/regular-services`, body),
+  change: (propertyId, serviceId, body) =>
+    request(
+      `${property(propertyId)}/regular-services/${encodeURIComponent(serviceId)}`,
+      body,
+    ),
+  remove: (propertyId, serviceId, version) =>
+    request(
+      `${property(propertyId)}/regular-services/${encodeURIComponent(serviceId)}/remove`,
       { version },
     ),
 };

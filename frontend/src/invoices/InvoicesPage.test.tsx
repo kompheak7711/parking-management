@@ -17,6 +17,8 @@ import {
   type InvoiceStatus,
 } from "../invoiceClient";
 import type { LeaseApi, LeaseResource } from "../leaseClient";
+import type { RegularServicesApi } from "../settings/serviceSettingsClient";
+import { editableItems } from "./CreateInvoice";
 import { InvoicesPage } from "./InvoicesPage";
 import { periodMonth } from "./invoicesData";
 
@@ -192,12 +194,41 @@ function typedDraft(version = 3): InvoiceResource {
   };
 }
 
+function regularApi(): Pick<RegularServicesApi, "read"> {
+  return {
+    read: vi.fn(() =>
+      Promise.resolve({
+        regular_services: [
+          {
+            regular_service_id: "svc-laundry",
+            name_en: "Laundry bag",
+            name_km: null,
+            price_usd_cents: 450,
+            version: 1,
+            used_this_year: 0,
+          },
+          {
+            regular_service_id: "svc-cleaning",
+            name_en: "Extra cleaning",
+            name_km: null,
+            price_usd_cents: 1500,
+            version: 1,
+            used_this_year: 0,
+          },
+        ],
+        can_manage: false,
+      }),
+    ),
+  };
+}
+
 type PageApi = Pick<
   InvoiceApi,
   | "list"
   | "get"
   | "issue"
   | "createWithItems"
+  | "createWithServices"
   | "replaceItems"
   | "adjust"
   | "void"
@@ -209,6 +240,7 @@ function invoiceApi(list = invoices()): PageApi {
     adjust: vi.fn(),
     void: vi.fn(),
     createWithItems: vi.fn(),
+    createWithServices: vi.fn(),
     replaceItems: vi.fn(),
     list: vi.fn().mockResolvedValue({
       items: list,
@@ -277,6 +309,7 @@ function show(
     leases?: Pick<LeaseApi, "list">;
     customers?: Pick<CustomerApi, "list">;
     capabilities?: ReadonlySet<string> | null;
+    regular?: Pick<RegularServicesApi, "read">;
   } = {},
 ) {
   const api = options.invoices ?? invoiceApi();
@@ -289,6 +322,7 @@ function show(
       language="en"
       leaseApi={options.leases ?? leaseApi()}
       propertyId="property-1"
+      regularApi={options.regular ?? regularApi()}
       today={TODAY}
     />,
   );
@@ -1119,6 +1153,139 @@ describe("Invoices page (V1-058 R5)", () => {
       ),
     ).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Save changes" })).toBeNull();
+  });
+
+  it("TEST-FE-1129 Create Invoice › Services picks Regular services and How many with the price from Settings (none can be typed), joins the same service picked twice, checks every line and saves one Draft once even after no answer", async () => {
+    const api = invoiceApi();
+    const draft = invoice("inv-svc", "INV260100", {
+      customer: "cust-chan",
+      lease: "lease-201",
+      category: "MISCELLANEOUS_CHARGES",
+      status: "DRAFT",
+      due: null,
+      total: 3350,
+    });
+    const save = vi
+      .fn()
+      .mockRejectedValueOnce(new InvoiceClientError(null, "NETWORK", true))
+      .mockResolvedValue(draft);
+    api.createWithServices = save;
+    show({ invoices: api, capabilities: new Set(["invoices.create"]) });
+    fireEvent.click(
+      await screen.findByRole("link", { name: "Create Invoice" }),
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "Services" }));
+    const first = await screen.findByLabelText("Regular service 1");
+    expect(
+      screen.getByText(
+        "The price comes from Settings › Regular services and cannot be typed here. A Manager changes a price only in Settings.",
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByLabelText("Unit price, Item 1")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Save Draft Invoice" }));
+    expect(
+      await screen.findByText("Fix 2 thing(s) before saving."),
+    ).toBeTruthy();
+    expect(screen.getAllByText("Line 1: pick a Regular service.")).toHaveLength(
+      2,
+    );
+
+    fireEvent.change(screen.getByLabelText(/^Customer/), {
+      target: { value: "cust-chan" },
+    });
+    fireEvent.change(first, { target: { value: "svc-laundry" } });
+    fireEvent.change(screen.getByLabelText("How many, Regular service 1"), {
+      target: { value: "2" },
+    });
+    expect(
+      screen.getByLabelText("Unit price, Regular service 1").textContent,
+    ).toBe("$4.50");
+    fireEvent.click(screen.getByRole("button", { name: "Add a service" }));
+    fireEvent.change(screen.getByLabelText("Regular service 2"), {
+      target: { value: "svc-cleaning" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Add a service" }));
+    // The same service again joins its line: 2 + 1 Laundry bags.
+    fireEvent.change(screen.getByLabelText("Regular service 3"), {
+      target: { value: "svc-laundry" },
+    });
+    expect(screen.queryByLabelText("Regular service 3")).toBeNull();
+    expect(
+      (screen.getByLabelText("How many, Regular service 1"))
+        .value,
+    ).toBe("3");
+    expect(screen.getByText("$28.50")).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("How many, Regular service 2"), {
+      target: { value: "0" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save Draft Invoice" }));
+    expect(
+      (
+        await screen.findAllByText(
+          "Line 2: How many must be a whole number from 1 to 9999.",
+        )
+      ).length,
+    ).toBeGreaterThan(0);
+    fireEvent.change(screen.getByLabelText("How many, Regular service 2"), {
+      target: { value: "1" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save Draft Invoice" }));
+    const dialog = await screen.findByRole("dialog", {
+      name: "Save this Draft Invoice?",
+    });
+    expect(within(dialog).getByText("Services")).toBeTruthy();
+    expect(within(dialog).getByText("$28.50")).toBeTruthy();
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save Draft Invoice" }),
+    );
+    expect(await within(dialog).findByRole("alert")).toBeTruthy();
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save Draft Invoice" }),
+    );
+    expect(
+      await screen.findByRole("heading", { name: "Draft Invoice saved" }),
+    ).toBeTruthy();
+    expect(save).toHaveBeenCalledTimes(2);
+    const [firstCall, secondCall] = save.mock.calls as [
+      [string, { items: { charge_id: string }[] }, string],
+      [string, { items: { charge_id: string }[] }, string],
+    ];
+    // The same key and charges after no answer, so it is saved once.
+    expect(secondCall).toEqual(firstCall);
+    expect(firstCall[0]).toBe("property-1");
+    expect(firstCall[1]).toEqual({
+      customer_id: "cust-chan",
+      lease_id: "lease-201",
+      items: [
+        {
+          charge_id: firstCall[1].items[0]?.charge_id,
+          regular_service_id: "svc-laundry",
+          quantity: 3,
+        },
+        {
+          charge_id: firstCall[1].items[1]?.charge_id,
+          regular_service_id: "svc-cleaning",
+          quantity: 1,
+        },
+      ],
+    });
+  });
+
+  it("TEST-FE-1130 A Draft made from Regular services cannot use Edit items, because its prices come from Settings", () => {
+    const typed = typedDraft();
+    expect(editableItems(typed)).not.toBeNull();
+    const services = {
+      ...typed,
+      lines: typed.lines.map((line) => ({
+        ...line,
+        calculation_evidence: {
+          ...line.calculation_evidence,
+          reason: "Regular services from Settings",
+          evidence_reference: "Settings > Regular services price",
+        },
+      })),
+    };
+    expect(editableItems(services)).toBeNull();
   });
 
   it("TEST-FE-905 Issue Invoice gives a Draft its number with the Settings Due Date, or another date with a reason; a change meanwhile reads the Invoice again; it needs invoices.issue", async () => {

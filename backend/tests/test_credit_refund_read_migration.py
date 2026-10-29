@@ -186,14 +186,14 @@ def test_credit_refund_read_migration_graph_and_execute_only_privileges(
 ) -> None:
     config = Config("alembic.ini")
     scripts = ScriptDirectory.from_config(config)
-    assert scripts.get_heads() == ["20270406_256"]
+    assert scripts.get_heads() == ["20270407_257"]
     revision = scripts.get_revision("20260907_45")
     assert revision is not None and revision.down_revision == "20260907_44"
     with pytest.raises(RuntimeError, match="forward-only"):
         revision.module.downgrade()
     with psycopg.connect(migrated_database_url) as connection:
         assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-            "20270406_256",
+            "20270407_257",
         )
         for signature in (
             "app.credit_refund_http_scope(text,uuid,uuid,uuid[])",

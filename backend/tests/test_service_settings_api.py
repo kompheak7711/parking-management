@@ -15,10 +15,13 @@ from property_rental.app import create_app
 from property_rental.identity import AuthenticatedActor
 from property_rental.service_settings_api import (
     LEASE_HOLDS_TWO_OF_TYPE,
+    REGULAR_SERVICE_USED_THIS_YEAR,
     SERVICE_TYPE_HAS_SERVICES,
     UNIT_TYPE_NEEDS_CLEANING_RATE,
     CleaningRateChange,
     CleaningRateCreate,
+    RegularServiceChange,
+    RegularServiceCreate,
     ServiceChange,
     ServiceCreate,
     ServiceSettingsConflict,
@@ -93,6 +96,24 @@ class Flow:
         self, property_id: UUID, actor_id: UUID, rate_id: UUID, version: int
     ) -> dict[str, object]:
         return self._answer("remove_cleaning_rate", (rate_id, version))
+
+    def read_regular_services(self, property_id: UUID) -> dict[str, object]:
+        self._answer("read_regular_services", property_id)
+        return {"regular_services": []}
+
+    def save_regular_service(
+        self,
+        property_id: UUID,
+        actor_id: UUID,
+        service_id: UUID,
+        body: RegularServiceCreate | RegularServiceChange,
+    ) -> dict[str, object]:
+        return self._answer("save_regular_service", (service_id, body))
+
+    def remove_regular_service(
+        self, property_id: UUID, actor_id: UUID, service_id: UUID, version: int
+    ) -> dict[str, object]:
+        return self._answer("remove_regular_service", (service_id, version))
 
 
 def client(flow: Flow, who: AuthenticatedActor | None) -> TestClient:
@@ -299,3 +320,39 @@ def test_cleaning_rates_are_read_by_settings_readers_and_changed_with_settings_a
     flow.error = ServiceSettingsConflict(UNIT_TYPE_NEEDS_CLEANING_RATE)
     refused = owner.post(changes[2][0], json={"version": 3}, headers=mutation_headers())
     assert refused.status_code == 409 and "UNIT_TYPE_NEEDS_CLEANING_RATE" in refused.text
+
+
+def test_regular_services_are_read_for_invoices_and_changed_with_settings_access() -> None:
+    """DL-115 (I): staff making Invoices read the prices; only Settings access changes them."""
+    flow = Flow()
+    url = f"/api/v1/properties/{PROPERTY}/regular-services"
+    assert client(flow, None).get(url).status_code == 401
+    assert client(flow, actor(PROPERTY, "units.read")).get(url).status_code == 403
+    read = client(flow, actor(PROPERTY, "invoices.create")).get(url)
+    assert read.status_code == 200
+    assert read.json()["data"] == {"regular_services": [], "can_manage": False}
+
+    service_id = uuid4()
+    new = {"regular_service_id": str(uuid4()), "name_en": "Laundry bag", "price_usd_cents": 450}
+    changes = [
+        (url, new, 201),
+        (
+            f"{url}/{service_id}",
+            {"name_en": "Laundry bag", "price_usd_cents": 500, "version": 1},
+            200,
+        ),
+        (f"{url}/{service_id}/remove", {"version": 2}, 200),
+    ]
+    staff = client(flow, actor(PROPERTY, "invoices.create"))
+    owner = client(flow, actor(PROPERTY, "settings.manage"))
+    for change_url, body, done in changes:
+        assert staff.post(change_url, json=body, headers=mutation_headers()).status_code == 403
+        assert owner.post(change_url, json=body).status_code == 403  # no Origin or CSRF
+        assert owner.post(change_url, json=body, headers=mutation_headers()).status_code == done
+    for wrong in ({"price_usd_cents": 0}, {"price_usd_cents": 1_000_000_000}, {"extra": 1}):
+        assert owner.post(url, json={**new, **wrong}, headers=mutation_headers()).status_code == 422
+    calls = [value for name, value in flow.calls if name == "save_regular_service"]
+    assert isinstance(calls[1], tuple) and calls[1][0] == service_id
+    flow.error = ServiceSettingsConflict(REGULAR_SERVICE_USED_THIS_YEAR)
+    refused = owner.post(changes[2][0], json={"version": 2}, headers=mutation_headers())
+    assert refused.status_code == 409 and "REGULAR_SERVICE_USED_THIS_YEAR" in refused.text

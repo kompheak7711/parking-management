@@ -4,7 +4,13 @@
 // keeps its ids and key while the form is unchanged, so "Save" again after an unknown result is
 // saved once. Owner 2026-10-29: such an Invoice counts in the "Rent and Services" report bar.
 
-import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
+import {
+  type FormEvent,
+  type ReactNode,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 import {
   InvoiceClientError,
@@ -170,7 +176,9 @@ export function ServicesInvoice({
   const update = (key: string, patch: Partial<Line>) => {
     setLines((current) =>
       mergeLines(
-        current.map((line) => (line.key === key ? { ...line, ...patch } : line)),
+        current.map((line) =>
+          line.key === key ? { ...line, ...patch } : line,
+        ),
       ),
     );
   };
@@ -212,7 +220,11 @@ export function ServicesInvoice({
     const sent = JSON.stringify({
       customer: chosen.id,
       leaseId,
-      items: items.map((item) => [item.key, item.regular_service_id, item.quantity]),
+      items: items.map((item) => [
+        item.key,
+        item.regular_service_id,
+        item.quantity,
+      ]),
     });
     if (identity.current?.sent !== sent) {
       identity.current = {
@@ -437,7 +449,9 @@ export function ServicesInvoice({
                         const quantity = event.currentTarget.value;
                         setLines((current) =>
                           current.map((item) =>
-                            item.key === line.key ? { ...item, quantity } : item,
+                            item.key === line.key
+                              ? { ...item, quantity }
+                              : item,
                           ),
                         );
                       }}

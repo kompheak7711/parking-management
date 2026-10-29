@@ -64,6 +64,7 @@ from property_rental.invoice import (
     CorrectInvoiceDraftCommand,
     CreateInvoiceDraftCommand,
     CreateItemsInvoiceDraftCommand,
+    CreateServicesInvoiceDraftCommand,
     InvoiceAuthorizationError,
     InvoiceConflictError,
     InvoiceIdempotencyKeyReused,
@@ -79,6 +80,7 @@ from property_rental.invoice import (
     RecordUnitCleaningChargeCommand,
     ReplaceInvoiceDraftItemsCommand,
     ResolveHandBackRentCommand,
+    ServiceInvoiceItem,
     SetOneTimeChargeDueDaysCommand,
     SetUnitCleaningRateCommand,
     VoidInvoiceCommand,
@@ -132,6 +134,14 @@ class InvoiceFlow(Protocol):
         self,
         property_id: UUID,
         command: CreateItemsInvoiceDraftCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]: ...
+
+    def create_services_draft(
+        self,
+        property_id: UUID,
+        command: CreateServicesInvoiceDraftCommand,
         *,
         actor: AuthenticatedActor,
     ) -> dict[str, object]: ...
@@ -240,6 +250,26 @@ class ItemsInvoiceDraftInput(BaseModel):
     reason: str = Field(min_length=1, max_length=500, pattern=r"^\S(?:.*\S)?$")
     evidence_reference: str = Field(min_length=1, max_length=500, pattern=r"^\S(?:.*\S)?$")
     items: list[InvoiceItemInput] = Field(min_length=1, max_length=MAX_INVOICE_ITEMS)
+
+
+class ServiceInvoiceItemInput(BaseModel):
+    """DL-115 (I): one Regular service and How many; the price comes from Settings."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    charge_id: UUID
+    regular_service_id: UUID
+    quantity: int = Field(strict=True, ge=1, le=MAX_INVOICE_ITEM_QUANTITY)
+
+
+class ServicesInvoiceDraftInput(BaseModel):
+    """DL-115 (I): a Services Invoice of 1 to 20 Regular services."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    customer_id: UUID
+    lease_id: UUID | None = None
+    items: list[ServiceInvoiceItemInput] = Field(min_length=1, max_length=MAX_INVOICE_ITEMS)
 
 
 class InvoiceItemsChangeInput(ItemsInvoiceDraftInput):
@@ -562,6 +592,39 @@ def create_invoice_router(
                     body.reason,
                     body.evidence_reference,
                     _invoice_items(body.items),
+                ),
+                actor=actor,
+            )
+        )
+        response.headers["Location"] = f"/api/v1/invoices/{resource['id']}"
+        _etag(response, resource)
+        return _envelope(resource, request)
+
+    @router.post(
+        "/properties/{property_id}/invoices/services-drafts", status_code=status.HTTP_201_CREATED
+    )
+    def create_services_invoice(
+        property_id: UUID,
+        body: ServicesInvoiceDraftInput,
+        request: Request,
+        response: Response,
+        idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
+    ) -> dict[str, object]:
+        """DL-115 (I): a DRAFT of Regular services at their Settings price, How many each."""
+        if request.query_params:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+        actor = _actor(request, resolver)
+        _authorize(actor, property_id, INVOICE_CREATE_CAPABILITY)
+        require_browser_mutation(request, settings)
+        items = tuple(
+            ServiceInvoiceItem(item.charge_id, item.regular_service_id, item.quantity)
+            for item in body.items
+        )
+        resource = _invoke(
+            lambda: flow.create_services_draft(
+                property_id,
+                CreateServicesInvoiceDraftCommand(
+                    idempotency_key, body.customer_id, body.lease_id, items
                 ),
                 actor=actor,
             )

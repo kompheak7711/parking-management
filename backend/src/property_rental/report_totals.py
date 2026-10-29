@@ -32,6 +32,8 @@ TOTALS_REPORTS: Final[tuple[TotalsReport, ...]] = (
 INCOME_GROUPS: Final[Mapping[str, str]] = {
     "RENT": "rent",
     "SERVICE_CHARGES": "rent",
+    # V1.1 (owner 2026-10-29): a Services Invoice line counts with Rent and Monthly Services.
+    "REGULAR_SERVICE_CHARGES": "rent",
     "UTILITIES": "utilities",
     "DAMAGE_CHARGES": "move_out_and_damage",
     "MISCELLANEOUS_CHARGES": "move_out_and_damage",

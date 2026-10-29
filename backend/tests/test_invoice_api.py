@@ -7,11 +7,13 @@ from property_rental.billing import SetInitialRentDueDateCommand
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
 from property_rental.invoice import (
     CreateItemsInvoiceDraftCommand,
+    CreateServicesInvoiceDraftCommand,
     InvoiceItem,
     InvoiceLineFullyPaid,
     IssueInvoiceCommand,
     RecordOneTimeChargeCommand,
     ReplaceInvoiceDraftItemsCommand,
+    ServiceInvoiceItem,
     SetOneTimeChargeDueDaysCommand,
 )
 from test_invoice import InMemoryInvoiceFlow, actor, api, invoice_resource, mutation_headers
@@ -112,6 +114,7 @@ def test_all_invoice_mutations_bind_the_confirming_actor_before_service_dispatch
             {"authorized_nonrecurring_obligation_id": str(uuid4()), "reason": "Correction"},
         ),
         ("POST", f"/properties/{property_id}/invoices/drafts", _items_body()),
+        ("POST", f"/properties/{property_id}/invoices/services-drafts", _services_body()),
         (
             "PUT",
             f"/invoices/{invoice_id}/items",
@@ -355,6 +358,54 @@ def _items_body() -> dict[str, object]:
             },
         ],
     }
+
+
+def _services_body() -> dict[str, object]:
+    return {
+        "customer_id": str(uuid4()),
+        "lease_id": None,
+        "items": [
+            {"charge_id": str(uuid4()), "regular_service_id": str(uuid4()), "quantity": 3},
+            {"charge_id": str(uuid4()), "regular_service_id": str(uuid4()), "quantity": 1},
+        ],
+    }
+
+
+def test_services_invoice_route_takes_no_price_and_needs_invoices_create() -> None:
+    """DL-115 (I): staff pick Regular services and How many; the price comes from Settings."""
+    property_id = uuid4()
+    flow = InMemoryInvoiceFlow(property_id, invoice_resource(property_id))
+    path = f"/api/v1/properties/{property_id}/invoices/services-drafts"
+    body = _services_body()
+    items = cast(list[dict[str, object]], body["items"])
+    denied = api(flow, actor(property_id, "invoices.issue")).post(
+        path, headers=mutation_headers(), json=body
+    )
+    assert denied.status_code == 403 and flow.commands == []
+    client = api(flow, actor(property_id, "invoices.create"))
+    item = items[0]
+    for bad in (
+        {**body, "items": []},
+        {**body, "items": [item, item]},
+        {**body, "items": [item, {**item, "charge_id": str(uuid4())}]},
+        {**body, "items": [{**item, "quantity": 0}]},
+        {**body, "items": [{**item, "quantity": "2"}]},
+        {**body, "items": [{**item, "unit_price_usd_cents": 100}]},
+        {**body, "reason": "typed"},
+    ):
+        assert client.post(path, headers=mutation_headers(), json=bad).status_code == 422
+    assert flow.commands == []
+    created = client.post(path, headers=mutation_headers(), json=body)
+    assert created.status_code == 201
+    command = cast(CreateServicesInvoiceDraftCommand, flow.commands[-1])
+    assert command.items == tuple(
+        ServiceInvoiceItem(
+            UUID(str(value["charge_id"])),
+            UUID(str(value["regular_service_id"])),
+            cast(int, value["quantity"]),
+        )
+        for value in items
+    )
 
 
 def test_items_invoice_route_needs_invoices_create_and_validates_every_item() -> None:

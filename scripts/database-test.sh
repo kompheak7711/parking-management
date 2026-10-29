@@ -353,6 +353,7 @@ database_test_suites='
   tests/test_unit_rent_terms_migration.py
   tests/test_unit_features_migration.py
   tests/test_unit_inventory_items_migration.py
+  tests/test_regular_services_migration.py
 '
 
 for database_test_file in $database_test_suites; do

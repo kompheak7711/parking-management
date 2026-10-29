@@ -111,6 +111,7 @@ function setup(
     }),
     get: vi.fn().mockResolvedValue(invoice),
     create: vi.fn().mockResolvedValue(invoice),
+    createWithServices: vi.fn(),
     createWithItems: vi.fn().mockResolvedValue(invoice),
     replaceItems: vi.fn().mockResolvedValue({ ...invoice, version: 3 }),
     correctDraft: vi.fn().mockResolvedValue({ ...invoice, version: 3 }),

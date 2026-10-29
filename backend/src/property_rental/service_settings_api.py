@@ -13,6 +13,12 @@
   (a Unit Type ticked here moves from its other rate); ``POST .../cleaning-rates/{id}/remove``
   removes it. A Unit Type that has Units is never left without a rate: that answers 409
   ``UNIT_TYPE_NEEDS_CLEANING_RATE``. Changing or removing a rate already removed answers 404.
+- ``GET /properties/{p}/regular-services`` (V1.1, DL-115 (I); also ``invoices.create``, for the
+  Services kind of Create Invoice): the Regular services with their set price.
+  ``POST /properties/{p}/regular-services`` adds one; ``POST .../regular-services/{id}`` changes its
+  names or price; ``POST .../regular-services/{id}/remove`` removes it. Two Regular services never
+  share a name: that answers 409 ``REGULAR_SERVICE_NAME_TAKEN``; one on an Invoice this year is
+  not removed until next year: that answers 409 ``REGULAR_SERVICE_USED_THIS_YEAR``.
 
 Every change needs ``settings.manage`` (the Owner or a user ticked for Settings access), Origin and
 CSRF. The client chooses a new record's id, so sending the same form again answers the same record;
@@ -45,6 +51,9 @@ from property_rental.identity import (
 from property_rental.settings import Settings
 
 READ_CAPABILITIES: Final = (SETTINGS_MANAGE_CAPABILITY, "configuration.read", "leases.draft")
+REGULAR_SERVICE_READ_CAPABILITIES: Final = (*READ_CAPABILITIES, "invoices.create")
+# The highest price of one Invoice item (DL-103), so a Regular service always fits on an Invoice.
+MAX_REGULAR_SERVICE_PRICE_USD_CENTS: Final = 999_999_999
 BUSINESS_ZONE: Final = ZoneInfo("Asia/Phnom_Penh")
 MAX_RATE_USD_CENTS: Final = 9_000_000_000_000_000
 
@@ -89,6 +98,14 @@ UNIT_TYPE_NEEDS_CLEANING_RATE: Final = Refusal(
     409,
     "UNIT_TYPE_NEEDS_CLEANING_RATE",
     "A Parking Type that has Parking needs a cleaning rate. Put it in another rate first.",
+)
+REGULAR_SERVICE_NAME_TAKEN: Final = Refusal(
+    409, "REGULAR_SERVICE_NAME_TAKEN", "A Regular service already has this name."
+)
+REGULAR_SERVICE_USED_THIS_YEAR: Final = Refusal(
+    409,
+    "REGULAR_SERVICE_USED_THIS_YEAR",
+    "This Regular service is on an Invoice this year. It can be removed next year.",
 )
 
 
@@ -165,6 +182,24 @@ class CleaningRateCreate(StrictBody):
     unit_types: Annotated[list[UnitTypeCode], Field(max_length=200)]
 
 
+class RegularServiceChange(StrictBody):
+    name_en: Name
+    name_km: KhmerName = None
+    price_usd_cents: Annotated[
+        int, Field(strict=True, ge=1, le=MAX_REGULAR_SERVICE_PRICE_USD_CENTS)
+    ]
+    version: Annotated[int, Field(strict=True, ge=1)]
+
+
+class RegularServiceCreate(StrictBody):
+    regular_service_id: UUID
+    name_en: Name
+    name_km: KhmerName = None
+    price_usd_cents: Annotated[
+        int, Field(strict=True, ge=1, le=MAX_REGULAR_SERVICE_PRICE_USD_CENTS)
+    ]
+
+
 class ServiceSettingsFlow(Protocol):
     def read(self, property_id: UUID, today: date) -> dict[str, object]: ...
 
@@ -202,6 +237,20 @@ class ServiceSettingsFlow(Protocol):
         self, property_id: UUID, actor_id: UUID, rate_id: UUID, version: int
     ) -> dict[str, object]: ...
 
+    def read_regular_services(self, property_id: UUID) -> dict[str, object]: ...
+
+    def save_regular_service(
+        self,
+        property_id: UUID,
+        actor_id: UUID,
+        service_id: UUID,
+        body: RegularServiceCreate | RegularServiceChange,
+    ) -> dict[str, object]: ...
+
+    def remove_regular_service(
+        self, property_id: UUID, actor_id: UUID, service_id: UUID, version: int
+    ) -> dict[str, object]: ...
+
 
 def _refusal(error: psycopg.Error) -> Exception:
     code = error.sqlstate
@@ -217,6 +266,10 @@ def _refusal(error: psycopg.Error) -> Exception:
         return ServiceSettingsConflict(SERVICE_TYPE_HAS_SERVICES)
     if code == "P5V03":
         return ServiceSettingsConflict(UNIT_TYPE_NEEDS_CLEANING_RATE)
+    if code == "P5V04":
+        return ServiceSettingsConflict(REGULAR_SERVICE_NAME_TAKEN)
+    if code == "P5V05":
+        return ServiceSettingsConflict(REGULAR_SERVICE_USED_THIS_YEAR)
     if code in {"40P01", "40001"}:
         # Another change ran at the same moment; nothing was saved, so it may be sent again.
         return ServiceSettingsOutOfDate()
@@ -379,6 +432,45 @@ class PostgresServiceSettingsFlow:
             )
         )
 
+    def read_regular_services(self, property_id: UUID) -> dict[str, object]:
+        value = self._one("SELECT app.regular_services_read(%s)", (property_id,))
+        if value is None:
+            raise ServiceSettingsNotFound
+        return self._record(value)
+
+    def save_regular_service(
+        self,
+        property_id: UUID,
+        actor_id: UUID,
+        service_id: UUID,
+        body: RegularServiceCreate | RegularServiceChange,
+    ) -> dict[str, object]:
+        return self._record(
+            self._one(
+                "SELECT app.save_regular_service(%s, %s, %s, %s, %s, %s, %s, %s)",
+                (
+                    property_id,
+                    actor_id,
+                    service_id,
+                    body.name_en,
+                    body.name_km or None,
+                    body.price_usd_cents,
+                    body.version if isinstance(body, RegularServiceChange) else None,
+                    SETTINGS_MANAGE_CAPABILITY,
+                ),
+            )
+        )
+
+    def remove_regular_service(
+        self, property_id: UUID, actor_id: UUID, service_id: UUID, version: int
+    ) -> dict[str, object]:
+        return self._record(
+            self._one(
+                "SELECT app.remove_regular_service(%s, %s, %s, %s, %s)",
+                (property_id, actor_id, service_id, version, SETTINGS_MANAGE_CAPABILITY),
+            )
+        )
+
 
 def _allowed(actor: AuthenticatedActor, capability: str, property_id: UUID) -> bool:
     return is_authorized(
@@ -535,6 +627,57 @@ def create_service_settings_router(
             request,
             _invoke(
                 lambda: flow.remove_cleaning_rate(property_id, actor_id, rate_id, body.version)
+            ),
+        )
+
+    @router.get("/properties/{property_id}/regular-services")
+    def read_regular_services(property_id: UUID, request: Request) -> dict[str, object]:
+        if set(request.query_params):
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT)
+        actor = actor_of(request)
+        if not any(
+            _allowed(actor, item, property_id) for item in REGULAR_SERVICE_READ_CAPABILITIES
+        ):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+        data = _invoke(lambda: flow.read_regular_services(property_id))
+        return answer(
+            request,
+            {**data, "can_manage": _allowed(actor, SETTINGS_MANAGE_CAPABILITY, property_id)},
+        )
+
+    @router.post("/properties/{property_id}/regular-services", status_code=status.HTTP_201_CREATED)
+    def add_regular_service(
+        property_id: UUID, body: RegularServiceCreate, request: Request
+    ) -> dict[str, object]:
+        actor_id = manager(request, property_id)
+        return answer(
+            request,
+            _invoke(
+                lambda: flow.save_regular_service(
+                    property_id, actor_id, body.regular_service_id, body
+                )
+            ),
+        )
+
+    @router.post("/properties/{property_id}/regular-services/{service_id}")
+    def change_regular_service(
+        property_id: UUID, service_id: UUID, body: RegularServiceChange, request: Request
+    ) -> dict[str, object]:
+        actor_id = manager(request, property_id)
+        return answer(
+            request,
+            _invoke(lambda: flow.save_regular_service(property_id, actor_id, service_id, body)),
+        )
+
+    @router.post("/properties/{property_id}/regular-services/{service_id}/remove")
+    def remove_regular_service(
+        property_id: UUID, service_id: UUID, body: ServiceTypeRemove, request: Request
+    ) -> dict[str, object]:
+        actor_id = manager(request, property_id)
+        return answer(
+            request,
+            _invoke(
+                lambda: flow.remove_regular_service(property_id, actor_id, service_id, body.version)
             ),
         )
 

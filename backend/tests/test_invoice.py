@@ -24,6 +24,7 @@ from property_rental.invoice import (
     CorrectInvoiceDraftCommand,
     CreateInvoiceDraftCommand,
     CreateItemsInvoiceDraftCommand,
+    CreateServicesInvoiceDraftCommand,
     InvoiceConflictError,
     InvoiceIdempotencyKeyReused,
     InvoiceInvalidError,
@@ -235,6 +236,18 @@ class InMemoryInvoiceFlow:
         if command.expected_version != int(str(self.value["version"])):
             raise InvoiceVersionConflict(int(str(self.value["version"])))
         self.value = {**self.value, "version": command.expected_version + 1}
+        return self.value
+
+    def create_services_draft(
+        self,
+        property_id: UUID,
+        command: CreateServicesInvoiceDraftCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        del actor
+        assert property_id == self.property_id
+        self._replay("create", command.idempotency_key, command)
         return self.value
 
     def create_items_draft(

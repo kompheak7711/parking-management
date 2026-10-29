@@ -248,8 +248,14 @@ const TEXT = {
     "The Regular services could not be read just now. Check the connection and try again.",
     "មិនអាចអានសេវាធម្មតាបានទេឥឡូវនេះ។ សូមពិនិត្យការតភ្ជាប់ ហើយព្យាយាមម្តងទៀត។",
   ],
-  sv_err_svc: ["Add at least one Regular service.", "សូមបន្ថែមសេវាធម្មតាយ៉ាងហោចណាស់មួយ។"],
-  sv_err_pick: ["Line {0}: pick a Regular service.", "បន្ទាត់ {0}៖ សូមជ្រើសសេវាធម្មតា។"],
+  sv_err_svc: [
+    "Add at least one Regular service.",
+    "សូមបន្ថែមសេវាធម្មតាយ៉ាងហោចណាស់មួយ។",
+  ],
+  sv_err_pick: [
+    "Line {0}: pick a Regular service.",
+    "បន្ទាត់ {0}៖ សូមជ្រើសសេវាធម្មតា។",
+  ],
   sv_err_qty: [
     "Line {0}: How many must be a whole number from 1 to 9999.",
     "បន្ទាត់ {0}៖ ចំនួនត្រូវជាលេខគត់ពី 1 ដល់ 9999។",

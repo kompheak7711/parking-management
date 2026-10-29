@@ -947,7 +947,7 @@ def test_late_payment_runtime_privileges_are_least_privilege_and_forward_only(
     connection: Connection[tuple[object, ...]],
 ) -> None:
     assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-        "20270406_256",
+        "20270407_257",
     )
     assert connection.execute(
         "SELECT has_table_privilege('prm_runtime','app.late_payment_commands','SELECT'),"
@@ -989,7 +989,7 @@ def test_revision_36_upgrades_to_late_payment_api_head() -> None:
         assert upgraded_head.returncode == 0, upgraded_head.stderr
         with psycopg.connect(migration_url) as connection:
             assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-                "20270406_256",
+                "20270407_257",
             )
             assert connection.execute(
                 "SELECT count(*) FROM app.late_payment_commands"

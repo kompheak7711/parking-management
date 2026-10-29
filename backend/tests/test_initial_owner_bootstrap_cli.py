@@ -899,6 +899,10 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/properties/{property_id}/cleaning-rates": {"post"},
         "/api/v1/properties/{property_id}/cleaning-rates/{rate_id}": {"post"},
         "/api/v1/properties/{property_id}/cleaning-rates/{rate_id}/remove": {"post"},
+        "/api/v1/properties/{property_id}/regular-services": {"get", "post"},
+        "/api/v1/properties/{property_id}/regular-services/{service_id}": {"post"},
+        "/api/v1/properties/{property_id}/regular-services/{service_id}/remove": {"post"},
+        "/api/v1/properties/{property_id}/invoices/services-drafts": {"post"},
         "/api/v1/properties/{property_id}/final-settlements/{settlement_id}/preview": {"get"},
         "/api/v1/properties/{property_id}/final-settlements/{settlement_id}/drafts": {"post"},
         # V1-056 slice 11e-2: the post-settlement correction drafts and the Adjustment reversal.

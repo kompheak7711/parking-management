@@ -58936,6 +58936,96 @@
       "notes": "V1.1 part 1 (DL-115 (I)): Edit features shows a refused list in the form and closes and reads the Unit again after someone else's change."
     },
     {
+      "test_id": "test_settings_keep_regular_services_with_a_set_price",
+      "upstream_ids": [
+        "DL-115"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_regular_services_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 (DL-115 (I)): Settings keeps Regular services with a set price; a repeat answers the same service, two never share a name, a change bumps the version and a removed one leaves the list."
+    },
+    {
+      "test_id": "test_a_services_invoice_takes_each_price_from_settings",
+      "upstream_ids": [
+        "DL-115"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_regular_services_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 (DL-115 (I)); owner 2026-10-29 decision card: a Services Invoice bills each Regular service at its Settings price times How many; a later price change never changes it; Edit items and removal this year are refused; its lines count in the Rent and Services report bar."
+    },
+    {
+      "test_id": "test_runtime_role_cannot_write_regular_services_directly",
+      "upstream_ids": [
+        "DL-115"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_regular_services_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 (DL-115 (I)): only the Settings functions write Regular services."
+    },
+    {
+      "test_id": "test_services_invoice_route_takes_no_price_and_needs_invoices_create",
+      "upstream_ids": [
+        "DL-115"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_invoice_api.py",
+      "status": "implemented",
+      "notes": "V1.1 (DL-115 (I)): the Services Invoice route takes a Regular service and How many, never a price, and needs invoices.create."
+    },
+    {
+      "test_id": "test_regular_services_are_read_for_invoices_and_changed_with_settings_access",
+      "upstream_ids": [
+        "DL-115"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_service_settings_api.py",
+      "status": "implemented",
+      "notes": "V1.1 (DL-115 (I)): staff making Invoices read the Regular services; only Settings access changes them; a service used this year answers 409."
+    },
+    {
+      "test_id": "TEST-FE-1127",
+      "upstream_ids": [
+        "DL-115"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/RegularServices.test.tsx",
+      "status": "implemented",
+      "notes": "V1.1 (DL-115 (I)): Settings lists Regular services with price and use this year; Add, Edit and Remove; one used this year cannot be removed."
+    },
+    {
+      "test_id": "TEST-FE-1128",
+      "upstream_ids": [
+        "DL-115"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/RegularServices.test.tsx",
+      "status": "implemented",
+      "notes": "V1.1 (DL-115 (I)): without Settings access the prices show with no changes; the client reads only a well-formed answer."
+    },
+    {
+      "test_id": "TEST-FE-1129",
+      "upstream_ids": [
+        "DL-115"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/invoices/InvoicesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1.1 (DL-115 (I)): Create Invoice › Services takes each price from Settings, joins a service picked twice, checks every line and saves one Draft once."
+    },
+    {
+      "test_id": "TEST-FE-1130",
+      "upstream_ids": [
+        "DL-115"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/invoices/InvoicesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1.1 (DL-115 (I)): a Draft made from Regular services cannot use Edit items."
+    },
+    {
       "test_id": "test_make_reservation_saves_the_money_and_the_reservation_together",
       "upstream_ids": [
         "DL-112",
