@@ -100,10 +100,7 @@ export interface LeaseDetailProps {
   terminateOnOpen?: boolean;
   /** V1-060 B6: Receive Security Deposit, the draft's planned deposit and signing with money. */
   settlementApi?: SigningApi &
-    Pick<
-      SettlementApi,
-      "planSecurityDeposit" | "createSecurityDeposit" | "receiveIntoDeposit"
-    >;
+    Pick<SettlementApi, "planSecurityDeposit" | "receiveSecurityDeposit">;
   paymentsApi?: PaymentsApi;
   /** V1-060 B6 (DL-102): New Customer from Add occupant; left out, the button is not shown. */
   customerCreateApi?: CustomerApi;

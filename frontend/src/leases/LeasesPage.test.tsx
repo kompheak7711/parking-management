@@ -309,12 +309,9 @@ function signing(
           total_usd_cents: body.payment.amount.minor_units,
         }),
       ),
-    createSecurityDeposit: vi
-      .fn<SettlementApi["createSecurityDeposit"]>()
-      .mockResolvedValue({}),
-    receiveIntoDeposit: vi
-      .fn<SettlementApi["receiveIntoDeposit"]>()
-      .mockResolvedValue({}),
+    receiveSecurityDeposit: vi
+      .fn<SettlementApi["receiveSecurityDeposit"]>()
+      .mockResolvedValue({ receiptNumber: "RC0042" }),
   };
   // Sign Lease never saves the money on its own (DL-108).
   const confirm = vi
@@ -777,8 +774,7 @@ describe("Lease actions", () => {
     // Nothing is saved step by step any more.
     expect(money.confirm).not.toHaveBeenCalled();
     expect(recordSignature).not.toHaveBeenCalled();
-    expect(money.createSecurityDeposit).not.toHaveBeenCalled();
-    expect(money.receiveIntoDeposit).not.toHaveBeenCalled();
+    expect(money.receiveSecurityDeposit).not.toHaveBeenCalled();
     // The page reads the signed Lease again.
     await waitFor(() => {
       expect(get).toHaveBeenCalledTimes(2);
@@ -1016,8 +1012,7 @@ describe("Lease actions", () => {
     });
     expect(calls[1]?.[4]).not.toBe(calls[0]?.[4]);
     expect(list).toHaveBeenCalledTimes(2);
-    expect(money.createSecurityDeposit).not.toHaveBeenCalled();
-    expect(money.receiveIntoDeposit).not.toHaveBeenCalled();
+    expect(money.receiveSecurityDeposit).not.toHaveBeenCalled();
   });
 
   it("TEST-FE-1111 Edit draft shows the Unit's default Rent and stops a lower Rent without a Manager; raising it is fine (V1-061, DL-110)", async () => {
@@ -1500,8 +1495,7 @@ describe("Lease actions", () => {
       minor_units: 85_484,
     });
     // The server applies the draft's amount and fills the Reservation's deposit itself.
-    expect(money.createSecurityDeposit).not.toHaveBeenCalled();
-    expect(money.receiveIntoDeposit).not.toHaveBeenCalled();
+    expect(money.receiveSecurityDeposit).not.toHaveBeenCalled();
     cleanup();
 
     window.location.hash = "#/leases/lease-sign";

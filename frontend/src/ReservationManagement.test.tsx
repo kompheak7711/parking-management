@@ -52,6 +52,9 @@ function api(overrides: Partial<ReservationApi> = {}): ReservationApi {
     }),
     get: vi.fn().mockResolvedValue(active),
     create: vi.fn().mockResolvedValue(active),
+    createWithPayment: vi
+      .fn()
+      .mockResolvedValue({ reservation: active, receiptNumber: "RC0007" }),
     extend: vi.fn().mockResolvedValue({
       ...active,
       version: 2,

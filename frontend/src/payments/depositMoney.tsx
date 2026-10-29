@@ -30,23 +30,10 @@ const TEXT = {
     "Type the bank reference for this method.",
     "សូមវាយលេខយោងធនាគារសម្រាប់វិធីនេះ។",
   ],
-  paid_saved: [
-    "The money is saved with Receipt {0}. Try again finishes the rest; the money is not saved twice.",
-    "ប្រាក់ត្រូវបានរក្សាទុកជាមួយបង្កាន់ដៃ {0}។ ព្យាយាមម្តងទៀត ដើម្បីបញ្ចប់ផ្នែកដែលនៅសល់ ប្រាក់មិនត្រូវបានរក្សាទុកពីរដងទេ។",
-  ],
-  // V1-060 B7: the money is saved, but the server refused the rest.
-  paid_stuck: [
-    "The money is saved with Receipt {0}, but the rest was not saved (the reason is below). The money pays nothing yet, so do not receive it again. If the reason cannot be fixed here, close this and ask the Owner or a Manager to finish it.",
-    "ប្រាក់ត្រូវបានរក្សាទុកជាមួយបង្កាន់ដៃ {0} ប៉ុន្តែផ្នែកដែលនៅសល់មិនត្រូវបានរក្សាទុកទេ (មូលហេតុនៅខាងក្រោម)។ ប្រាក់នេះមិនទាន់បង់អ្វីទេ ដូច្នេះកុំទទួលវាម្តងទៀត។ ប្រសិនបើមិនអាចកែមូលហេតុនៅទីនេះបានទេ សូមបិទ ហើយសុំម្ចាស់ ឬអ្នកគ្រប់គ្រងឱ្យបញ្ចប់វា។",
-  ],
   close_anyway: ["Close anyway", "បិទទោះយ៉ាងណាក៏ដោយ"],
   close_unknown: [
     "We could not tell whether the money was saved. If you close now, look in Payments before you receive it again, so it is not received twice.",
     "យើងមិនអាចដឹងថាប្រាក់ត្រូវបានរក្សាទុកឬអត់ទេ។ ប្រសិនបើអ្នកបិទឥឡូវនេះ សូមមើលក្នុងការបង់ប្រាក់ មុនពេលទទួលវាម្តងទៀត ដើម្បីកុំឱ្យទទួលពីរដង។",
-  ],
-  close_paid: [
-    "The money is saved with Receipt {0}, but the rest is not confirmed. If you close now, do not receive the money again; ask the Owner or a Manager to check and finish it.",
-    "ប្រាក់ត្រូវបានរក្សាទុកជាមួយបង្កាន់ដៃ {0} ប៉ុន្តែផ្នែកដែលនៅសល់មិនទាន់បានបញ្ជាក់ទេ។ ប្រសិនបើអ្នកបិទឥឡូវនេះ កុំទទួលប្រាក់នេះម្តងទៀត សូមសុំម្ចាស់ ឬអ្នកគ្រប់គ្រងឱ្យពិនិត្យ ហើយបញ្ចប់វា។",
   ],
 } as const;
 
@@ -110,7 +97,7 @@ export function outcomeAfter(
     : "refused";
 }
 
-/** Close asks once more while the money may be saved and the rest is not finished: a closed
+/** Close asks once more while it is not known whether the money was saved: a closed
  * dialog forgets its requests, so starting again could receive the same money twice. V1-060 B7
  * (third review): Escape only asks; only the "Close anyway" button closes such a dialog. */
 export function useCloseGuard(risky: boolean, onClose: () => void) {

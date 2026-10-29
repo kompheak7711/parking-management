@@ -222,6 +222,17 @@ export interface SignWithPaymentInput {
   };
 }
 
+/** DL-112: one Receive Security Deposit press. The payer is the Lease's Primary Tenant.
+ * required_usd_cents is given only to make a walk-in Lease's Security Deposit; deposit_id is then
+ * its new id, otherwise the Lease's own Security Deposit. */
+export interface SecurityDepositReceiveInput {
+  deposit_id: string;
+  required_usd_cents: number | null;
+  receipt_id: string;
+  reason: string;
+  payment: SignWithPaymentInput["payment"];
+}
+
 /** DL-108: what one Sign Lease press saved. */
 export interface SignedWithPayment {
   lease_version: number;
@@ -408,6 +419,15 @@ export interface SettlementApi {
     form: DepositReceiptCreate,
     key: string,
   ) => Promise<SettlementRecord>;
+  // DL-112: Receive Security Deposit in one request: the money with its Receipt, a walk-in
+  // Lease's Security Deposit and the money going into it, all saved or none. After a lost
+  // answer, send the same body with the same key: the answer is the first one.
+  receiveSecurityDeposit: (
+    propertyId: string,
+    leaseId: string,
+    body: SecurityDepositReceiveInput,
+    key: string,
+  ) => Promise<{ receiptNumber: string | null }>;
   // V1-060 B6 (DL-100, DL-101): what a Lease owes at signing and the draft's Security Deposit.
   signingPreview: (leaseId: string) => Promise<SigningPreview>;
   planSecurityDeposit: (
@@ -579,6 +599,18 @@ export const settlementApi: SettlementApi = {
     post(`/api/v1/leases/${id(leaseId)}/security-deposit`, form, key),
   receiveIntoDeposit: (depositId, form, key) =>
     post(`/api/v1/deposits/${id(depositId)}/receipts`, form, key),
+  receiveSecurityDeposit: async (propertyId, leaseId, body, key) => {
+    const saved = await post(
+      `/api/v1/leases/${id(leaseId)}/security-deposit/receive`,
+      body,
+      key,
+      propertyId,
+    );
+    return {
+      receiptNumber:
+        typeof saved.receipt_number === "string" ? saved.receipt_number : null,
+    };
+  },
   signingPreview: async (leaseId) =>
     signingPreview(await read(`/api/v1/leases/${id(leaseId)}/signing-preview`)),
   planSecurityDeposit: async (leaseId, form) => {

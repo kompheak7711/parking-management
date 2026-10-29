@@ -139,6 +139,7 @@ function api(overrides: Partial<ReservationApi> = {}): ReservationApi {
       ),
     ),
     create: vi.fn(),
+    createWithPayment: vi.fn(),
     extend: vi.fn(),
     cancel: vi.fn(),
     ...overrides,

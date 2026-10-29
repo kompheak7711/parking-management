@@ -56512,6 +56512,7 @@
     {
       "test_id": "TEST-FE-1013",
       "upstream_ids": [
+        "DL-112",
         "DL-074",
         "BR-RES-003",
         "BR-RES-004",
@@ -56521,7 +56522,7 @@
       "test_level": "UI component",
       "test_path": "frontend/src/reservations/MakeReservationDialog.test.tsx",
       "status": "implemented",
-      "notes": "V1-060 B6 (owner test 27/10/2026): Make Reservation saves the deposit first as a Payment with its Receipt, then the Reservation with that Payment; Try again after a lost answer resends the same Reservation request and never saves the money twice."
+      "notes": "V1-061 Fix 2 (DL-112, owner bug list 29/10/2026): Make Reservation saves the deposit Payment, its Receipt and the Reservation in one request; Try again after a lost answer sends the very same request and never saves the money twice."
     },
     {
       "test_id": "TEST-FE-1014",
@@ -56538,6 +56539,7 @@
     {
       "test_id": "TEST-FE-1015",
       "upstream_ids": [
+        "DL-112",
         "BR-DEP-004",
         "BR-DEP-002",
         "BR-DEP-006",
@@ -56546,18 +56548,19 @@
       "test_level": "UI component",
       "test_path": "frontend/src/leases/ReceiveDepositDialog.test.tsx",
       "status": "implemented",
-      "notes": "V1-060 B6 (owner test 27/10/2026): Receive Security Deposit on a walk-in Lease saves the money, makes the Security Deposit and takes its receipt; a refusal shows the server's words and Try again finishes without saving the money or the Deposit twice."
+      "notes": "V1-061 Fix 2 (DL-112): Receive Security Deposit on a walk-in Lease sends one request that saves the money, makes the Security Deposit and takes the receipt; a refusal saved nothing, so the boxes stay open and Try again is a new request; the screen never saves the money on its own."
     },
     {
       "test_id": "TEST-FE-1016",
       "upstream_ids": [
+        "DL-112",
         "BR-DEP-004",
         "UI-037"
       ],
       "test_level": "UI component",
       "test_path": "frontend/src/leases/ReceiveDepositDialog.test.tsx",
       "status": "implemented",
-      "notes": "V1-060 B6 (owner test 27/10/2026): a Security Deposit not fully received takes at most the rest, and no new Deposit is made."
+      "notes": "V1-061 Fix 2 (DL-112): a Security Deposit not fully received takes only the rest, into that Deposit, in one request; no new Deposit is made."
     },
     {
       "test_id": "test_more_than_the_suggestion_needs_no_override",
@@ -57943,6 +57946,7 @@
     {
       "test_id": "TEST-FE-1078",
       "upstream_ids": [
+        "DL-112",
         "DL-108",
         "DL-100",
         "BR-DEP-002"
@@ -57950,11 +57954,12 @@
       "test_level": "UI component",
       "test_path": "frontend/src/leases/ReceiveDepositDialog.test.tsx",
       "status": "implemented",
-      "notes": "V1-060 B7: Receive Security Deposit after a lost answer sends the very same Payment, the time the money came included, with the same key on Try again, and a server failure says it is not known whether it was saved."
+      "notes": "V1-061 Fix 2 (DL-112): after a lost answer, Try again sends the very same request (its received time and the new Security Deposit's id included) with the same key; a server failure stays not known."
     },
     {
       "test_id": "TEST-FE-1079",
       "upstream_ids": [
+        "DL-112",
         "DL-099",
         "DL-108",
         "BR-DEP-003"
@@ -57962,7 +57967,7 @@
       "test_level": "UI component",
       "test_path": "frontend/src/reservations/MakeReservationDialog.test.tsx",
       "status": "implemented",
-      "notes": "V1-060 B7: Make Reservation stops less than the suggested deposit before any money for a person without reservation_deposits.override; a lost Payment answer goes again the very same; the Rent and the amount stay fixed once the money is saved; a conflict says the Unit or the Customer changed."
+      "notes": "V1-061 Fix 2 (DL-112): Make Reservation stops less than the suggested deposit before sending for a person without reservation_deposits.override; a lost answer goes again the very same with its first received time; a conflict says nothing was saved and opens the boxes."
     },
     {
       "test_id": "TEST-FE-1080",
@@ -58181,6 +58186,7 @@
     {
       "test_id": "TEST-FE-1091",
       "upstream_ids": [
+        "DL-112",
         "DL-109",
         "DL-108",
         "BR-DEP-002",
@@ -58189,11 +58195,12 @@
       "test_level": "UI component",
       "test_path": "frontend/src/leases/ReceiveDepositDialog.test.tsx",
       "status": "implemented",
-      "notes": "V1-060 B7 second review (DL-109): Receive Security Deposit keeps every box that makes up the Payment fixed after a lost answer until the server says (not allowed is still not known); a refusal of the very same request opens them again; Close asks once more while the money may be saved, Escape too; the money saved but the rest refused says so, with the Receipt. Third review: a fixed clock moved on before Try again shows the Payment keeps the time it was first sent with."
+      "notes": "V1-061 Fix 2 (DL-112): after a lost answer nothing that makes up the request can change; not allowed stays not known; Close asks once more; a refusal of the very same request opens the boxes, and a changed amount is a new request with a new key."
     },
     {
       "test_id": "TEST-FE-1092",
       "upstream_ids": [
+        "DL-112",
         "DL-099",
         "DL-109",
         "DL-108",
@@ -58203,11 +58210,12 @@
       "test_level": "UI component",
       "test_path": "frontend/src/reservations/MakeReservationDialog.test.tsx",
       "status": "implemented",
-      "notes": "V1-060 B7 second review (DL-109): Make Reservation does not keep a Unit from the address that is not free; less than the suggestion waits while the person's rights are not known; after a lost answer every box stays fixed; a refusal after a lost Reservation answer finds that Reservation by its own id and opens it."
+      "notes": "V1-061 Fix 2 (DL-112, DL-109): Make Reservation does not keep a Unit from the address that is not free; less than the suggestion waits while the rights are not known; after a lost answer every box stays fixed; a refusal after a lost answer finds that Reservation saved by its own id and opens it."
     },
     {
       "test_id": "TEST-FE-1093",
       "upstream_ids": [
+        "DL-112",
         "DL-109",
         "DL-108",
         "BR-RES-003",
@@ -58216,7 +58224,7 @@
       "test_level": "UI component",
       "test_path": "frontend/src/reservations/MakeReservationDialog.test.tsx",
       "status": "implemented",
-      "notes": "V1-060 B7 second review (DL-109): Make Reservation keeps a refusal after a lost Reservation answer as not known until the lookup says there is none; then it says the money is saved with its Receipt but the Reservation was not, and Close asks once more."
+      "notes": "V1-061 Fix 2 (DL-112, DL-109): a refusal after a lost answer stays not known until the lookup says there is none; Close asks once more only while it is not known; then the refusal opens the boxes and Close closes."
     },
     {
       "test_id": "TEST-FE-1094",
@@ -58258,6 +58266,7 @@
     {
       "test_id": "TEST-FE-1096",
       "upstream_ids": [
+        "DL-112",
         "DL-109",
         "DL-108",
         "BR-DEP-002",
@@ -58266,11 +58275,12 @@
       "test_level": "UI component",
       "test_path": "frontend/src/leases/ReceiveDepositDialog.test.tsx",
       "status": "implemented",
-      "notes": "V1-060 B7 third review (DL-109): after a lost answer, a Try again that never leaves the browser is still not known and every box stays fixed; Escape only asks, even held down or pressed twice, and only Close anyway closes; the next Try again sends the same request with the same key."
+      "notes": "V1-061 Fix 2 (DL-112): after a lost answer a Try again that never leaves the browser stays not known with the boxes fixed; Escape only asks, also held or pressed again; the next Try again sends the very same request."
     },
     {
       "test_id": "TEST-FE-1097",
       "upstream_ids": [
+        "DL-112",
         "DL-109",
         "DL-108",
         "BR-DEP-002",
@@ -58279,11 +58289,12 @@
       "test_level": "UI component",
       "test_path": "frontend/src/leases/ReceiveDepositDialog.test.tsx",
       "status": "implemented",
-      "notes": "V1-060 B7 third review (DL-109): a lost answer on the Security Deposit step, then not allowed on Try again, is still not known; the same request goes again and the next answer finishes the step."
+      "notes": "V1-061 Fix 2 (DL-112): a refusal with no lost answer before it is said at once, the boxes stay open and Close closes without asking."
     },
     {
       "test_id": "TEST-FE-1098",
       "upstream_ids": [
+        "DL-112",
         "DL-109",
         "DL-108",
         "BR-RES-003",
@@ -58292,11 +58303,12 @@
       "test_level": "UI component",
       "test_path": "frontend/src/reservations/MakeReservationDialog.test.tsx",
       "status": "implemented",
-      "notes": "V1-060 B7 third review (DL-109): after a lost Payment answer in Make Reservation, a Try again that never leaves the browser, not allowed or not found stays not known with every box fixed; a refusal of the request itself says nothing was saved."
+      "notes": "V1-061 Fix 2 (DL-112, DL-109): after a lost answer, a Try again that never leaves the browser, not allowed or not found stays not known with every box fixed and no lookup; the server's own refusal is looked up first, then opens the boxes."
     },
     {
       "test_id": "TEST-FE-1099",
       "upstream_ids": [
+        "DL-112",
         "DL-109",
         "DL-108",
         "BR-RES-003",
@@ -58305,7 +58317,7 @@
       "test_level": "UI component",
       "test_path": "frontend/src/reservations/MakeReservationDialog.test.tsx",
       "status": "implemented",
-      "notes": "V1-060 B7 third review (DL-109): after a lost Reservation answer, a Try again that never leaves the browser, not allowed or not found stays not known with no lookup; another refusal looks the Reservation up first and, when there is none, says the money is saved but the Reservation was not."
+      "notes": "V1-061 Fix 2 (DL-112): a refusal with no lost answer before it says nothing was saved at once, without a lookup, and leaves the boxes open."
     },
     {
       "test_id": "TEST-FE-1100",
@@ -58323,6 +58335,7 @@
     {
       "test_id": "TEST-FE-1101",
       "upstream_ids": [
+        "DL-112",
         "DL-109",
         "DL-108",
         "BR-RES-003",
@@ -58331,7 +58344,7 @@
       "test_level": "UI component",
       "test_path": "frontend/src/reservations/MakeReservationDialog.test.tsx",
       "status": "implemented",
-      "notes": "V1-060 B7 third review (DL-109): when the money is saved but the Reservation is refused as changed, the words do not ask to change the Unit or the Customer, which stay fixed."
+      "notes": "V1-061 Fix 2 (DL-112): a conflict says the Reservation and its money were not saved and opens the Unit and the Customer to change."
     },
     {
       "test_id": "TEST-FE-1102",

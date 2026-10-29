@@ -513,6 +513,14 @@ def test_receive_security_deposit_saves_the_money_and_the_receipt_in_one_request
     twice = manager.post(url, json=payload(uuid4(), 50_000), headers=mutation_headers())
     assert twice.status_code == 409
     assert twice.json()["error"]["code"] == "DEPOSIT_SECURITY_ALREADY_EXISTS"
+    # The same press again after a lost answer names the Security Deposit it made, so its steps
+    # answer again by their keys instead of a refusal.
+    again = manager.post(
+        url, json=payload(flow.value.deposit_id, 50_000), headers=mutation_headers()
+    )
+    assert again.status_code == 201, again.text
+    _, _, made, _ = cast(tuple[Any, ...], flow.last_command)
+    assert made.deposit_id == flow.value.deposit_id
 
 
 def test_receipt_reverse_route_checks_access_and_csrf_before_the_draft_refusal() -> None:

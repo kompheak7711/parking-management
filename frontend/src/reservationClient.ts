@@ -82,6 +82,15 @@ export interface ReservationApi {
     source: ReservationCreateSource,
     idempotencyKey: string,
   ) => Promise<ReservationResource>;
+  /** V1-061 (DL-112): the deposit received and the Reservation, saved together or not at all. */
+  createWithPayment: (
+    propertyId: string,
+    source: ReservationWithPaymentSource,
+    idempotencyKey: string,
+  ) => Promise<{
+    reservation: ReservationResource;
+    receiptNumber: string | null;
+  }>;
   extend: (
     reservation: ReservationResource,
     source: ReservationExtendSource,
@@ -109,6 +118,20 @@ export interface ReservationCreateSource {
   receipt_id: string;
   payment_id: string;
 }
+
+/** The money received with Make Reservation: the Customer's own, in USD (DL-112). */
+export interface OwnMoneySource {
+  payment_method_id: string;
+  received_at: string;
+  evidence_reference: string;
+  payer_intent_memo: string | null;
+  amount: { currency: "USD"; minor_units: number };
+}
+
+export type ReservationWithPaymentSource = Omit<
+  ReservationCreateSource,
+  "payment_id"
+> & { payment: OwnMoneySource };
 
 export interface ReservationExtendSource {
   notice_id: string;
@@ -260,6 +283,23 @@ export const reservationApi: ReservationApi = {
         ),
       ),
     ),
+  createWithPayment: async (propertyId, source, idempotencyKey) => {
+    const body = data(
+      await request(
+        `/properties/${encodeURIComponent(propertyId)}/reservations/with-payment`,
+        {
+          method: "POST",
+          headers: commandHeaders(idempotencyKey),
+          body: JSON.stringify(source),
+        },
+      ),
+    );
+    return {
+      reservation: resource(body),
+      receiptNumber:
+        typeof body.receipt_number === "string" ? body.receipt_number : null,
+    };
+  },
   extend: async (reservation, source, idempotencyKey) =>
     resource(
       data(

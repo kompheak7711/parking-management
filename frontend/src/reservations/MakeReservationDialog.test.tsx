@@ -9,7 +9,6 @@ import {
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { CustomerApi } from "../customerClient";
-import { InvoiceClientError } from "../invoiceClient";
 import type { PaymentsApi } from "../payments/paymentsClient";
 import {
   ReservationConflictError,
@@ -78,13 +77,19 @@ function apis() {
     confirm,
   } as unknown as PaymentsApi;
   const create = vi
-    .fn<ReservationApi["create"]>()
+    .fn<ReservationApi["createWithPayment"]>()
     .mockRejectedValueOnce(new TypeError("Failed to fetch"))
-    .mockResolvedValue({
-      reservation_id: "saved",
-    } as unknown as ReservationResource);
-  const api = { create } as unknown as ReservationApi;
+    .mockResolvedValue(made("saved"));
+  const api = { createWithPayment: create } as unknown as ReservationApi;
   return { unitApi, customerApi, paymentsApi, confirm, api, create };
+}
+
+/** V1-061 (DL-112): the answer of Make Reservation, the Reservation with its Receipt. */
+function made(id: string) {
+  return {
+    reservation: { reservation_id: id } as unknown as ReservationResource,
+    receiptNumber: "RC0001",
+  };
 }
 
 describe("Date box (V1-060 B6)", () => {
@@ -212,7 +217,7 @@ describe("Date box (V1-060 B7)", () => {
 });
 
 describe("Make Reservation (V1-060 B6)", () => {
-  it("TEST-FE-1013 saves the deposit as a Payment first, then the Reservation with that Payment; Try again never pays twice", async () => {
+  it("TEST-FE-1013 saves the deposit and the Reservation in one request (DL-112); Try again sends the very same request", async () => {
     const { unitApi, customerApi, paymentsApi, confirm, api, create } = apis();
     const onSaved = vi.fn();
     render(
@@ -271,15 +276,9 @@ describe("Make Reservation (V1-060 B6)", () => {
     await waitFor(() => {
       expect(onSaved).toHaveBeenCalled();
     });
-    expect(confirm).toHaveBeenCalledTimes(1);
-    expect(confirm.mock.calls[0]?.[1]).toMatchObject({
-      payer_customer_id: "customer-dara",
-      payment_method_id: "method-cash",
-      evidence_reference: "Cash received, Cash",
-      payer_intent_memo:
-        "Security Deposit received with the Reservation of U102",
-      amount: { currency: "USD", minor_units: 10_000 },
-    });
+    expect(onSaved).toHaveBeenCalledWith(made("saved").reservation);
+    // The money is never saved on its own (DL-112).
+    expect(confirm).not.toHaveBeenCalled();
     expect(create).toHaveBeenCalledTimes(2);
     expect(create.mock.calls[0]?.[1]).toMatchObject({
       unit_id: "unit-2",
@@ -289,8 +288,18 @@ describe("Make Reservation (V1-060 B6)", () => {
       agreed_monthly_rent_usd_cents: 50_000,
       accepted_initial_deposit_usd_cents: 10_000,
       required_security_deposit_usd_cents: 50_000,
-      payment_id: "payment-1",
+      payment: {
+        payment_method_id: "method-cash",
+        evidence_reference: "Cash received, Cash",
+        payer_intent_memo:
+          "Security Deposit received with the Reservation of U102",
+        amount: { currency: "USD", minor_units: 10_000 },
+      },
     });
+    expect(create.mock.calls[0]?.[1]).not.toHaveProperty("payment_id");
+    expect(create.mock.calls[0]?.[1].payment).not.toHaveProperty(
+      "payer_customer_id",
+    );
     expect(create.mock.calls[1]?.[1]).toEqual(create.mock.calls[0]?.[1]);
     expect(create.mock.calls[1]?.[2]).toBe(create.mock.calls[0]?.[2]);
   });
@@ -345,20 +354,19 @@ describe("Make Reservation (V1-060 B6)", () => {
       within(dialog).queryByLabelText(/Why less than the suggestion/),
     ).toBeNull();
   });
-  it("TEST-FE-1079 less than the suggestion without the Owner or a Manager stops before any money; a lost Payment answer goes again the very same; the Rent and the amount stay fixed with the money; a conflict says the Reservation was not saved", async () => {
+  it("TEST-FE-1079 less than the suggestion without the Owner or a Manager stops before sending; a lost answer goes again the very same, with its first received time; a conflict says nothing was saved and opens the boxes", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-10-28T03:00:00.000Z"));
-    const { unitApi, customerApi, paymentsApi, confirm, api, create } = apis();
-    confirm
-      .mockReset()
-      .mockRejectedValueOnce(new InvoiceClientError(null, "NETWORK", true))
-      .mockResolvedValue({ paymentId: "payment-1", receiptNumber: "RC0001" });
+    const { unitApi, customerApi, paymentsApi, confirm, create } = apis();
     create
       .mockReset()
+      .mockRejectedValueOnce(new ReservationUnavailableError())
       .mockRejectedValueOnce(new ReservationConflictError())
-      .mockResolvedValue({
-        reservation_id: "saved",
-      } as unknown as ReservationResource);
+      .mockResolvedValue(made("saved"));
+    const get = vi
+      .fn<ReservationApi["get"]>()
+      .mockRejectedValue(new ReservationRequestError(404));
+    const api = { createWithPayment: create, get } as unknown as ReservationApi;
     const onSaved = vi.fn();
     render(
       <MakeReservationDialog
@@ -404,7 +412,7 @@ describe("Make Reservation (V1-060 B6)", () => {
         "Less than the suggested $100.00 needs the Owner or a Manager. Ask one of them, or receive at least $100.00.",
       ),
     ).toBeInTheDocument();
-    expect(confirm).not.toHaveBeenCalled();
+    expect(create).not.toHaveBeenCalled();
 
     fireEvent.change(within(dialog).getByLabelText("Received now (USD)"), {
       target: { value: "100" },
@@ -417,40 +425,35 @@ describe("Make Reservation (V1-060 B6)", () => {
         "We could not tell whether this was saved. “Try again” sends the very same request; it is never saved twice.",
       ),
     ).toBeInTheDocument();
-    // Some seconds later the very same Payment goes again; then the Reservation meets a conflict.
+    // Some seconds later the very same request goes again; it meets a conflict, and the lookup
+    // says this Reservation is not there.
     vi.setSystemTime(new Date("2026-10-28T03:00:07.000Z"));
     fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
     expect(
       await within(dialog).findByText(
-        /The Reservation was not saved: the Parking or the Customer changed meanwhile/,
+        /The Reservation was not saved: the Unit or the Customer changed meanwhile.*Check them, then try again/,
       ),
     ).toBeInTheDocument();
-    expect(
-      within(dialog).getByText(/The money is saved with Receipt RC0001/),
-    ).toBeInTheDocument();
+    expect(within(dialog).queryByText(/The money is saved/)).toBeNull();
+    expect(get).toHaveBeenCalledTimes(1);
+    // Nothing was saved, so the boxes open again.
     expect(
       within(dialog).getByLabelText("Agreed monthly Rent (USD)"),
-    ).toBeDisabled();
-    expect(within(dialog).getByLabelText("Received now (USD)")).toBeDisabled();
-    expect(within(dialog).getByLabelText("Received now (USD)")).toHaveValue(
-      "100",
-    );
+    ).toBeEnabled();
+    expect(within(dialog).getByLabelText("Received now (USD)")).toBeEnabled();
     fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
     await waitFor(() => {
       expect(onSaved).toHaveBeenCalled();
     });
-    expect(confirm).toHaveBeenCalledTimes(2);
-    expect(confirm.mock.calls[0]?.[1]).toMatchObject({
-      received_at: "2026-10-28T03:00:00.000Z",
-      amount: { currency: "USD", minor_units: 10_000 },
-    });
-    expect(confirm.mock.calls[1]?.[1]).toEqual(confirm.mock.calls[0]?.[1]);
-    expect(confirm.mock.calls[1]?.[2]).toBe(confirm.mock.calls[0]?.[2]);
-    expect(create).toHaveBeenCalledTimes(2);
+    expect(confirm).not.toHaveBeenCalled();
+    expect(create).toHaveBeenCalledTimes(3);
     expect(create.mock.calls[0]?.[1]).toMatchObject({
       agreed_monthly_rent_usd_cents: 50_000,
       accepted_initial_deposit_usd_cents: 10_000,
-      payment_id: "payment-1",
+      payment: {
+        received_at: "2026-10-28T03:00:00.000Z",
+        amount: { currency: "USD", minor_units: 10_000 },
+      },
     });
     expect(create.mock.calls[1]?.[1]).toEqual(create.mock.calls[0]?.[1]);
     expect(create.mock.calls[1]?.[2]).toBe(create.mock.calls[0]?.[2]);
@@ -512,19 +515,16 @@ describe("Make Reservation (V1-060 B7)", () => {
       "How the money came",
     ].map((label) => within(dialog).getByLabelText(label));
 
-  it("TEST-FE-1092 a Parking from the address that is not free is not kept; less than the suggestion waits while the rights are not known; after a lost answer every box stays fixed; a refusal after a lost Reservation answer finds that Reservation saved", async () => {
-    const { unitApi, customerApi, paymentsApi, confirm } = apis();
-    confirm
-      .mockReset()
-      .mockRejectedValueOnce(new InvoiceClientError(null, "NETWORK", true))
-      .mockResolvedValue({ paymentId: "payment-1", receiptNumber: "RC0001" });
+  it("TEST-FE-1092 a Parking from the address that is not free is not kept; less than the suggestion waits while the rights are not known; after a lost answer every box stays fixed; a refusal after a lost answer finds that Reservation saved", async () => {
+    const { unitApi, customerApi, paymentsApi } = apis();
     const found = { reservation_id: "found" } as unknown as ReservationResource;
     const create = vi
-      .fn<ReservationApi["create"]>()
+      .fn<ReservationApi["createWithPayment"]>()
+      .mockRejectedValueOnce(new ReservationUnavailableError())
       .mockRejectedValueOnce(new ReservationUnavailableError())
       .mockRejectedValueOnce(new ReservationConflictError());
     const get = vi.fn<ReservationApi["get"]>().mockResolvedValue(found);
-    const api = { create, get } as unknown as ReservationApi;
+    const api = { createWithPayment: create, get } as unknown as ReservationApi;
     // A Unit that is not free now: the address named it, the box starts empty.
     const first = render(
       <MakeReservationDialog
@@ -571,7 +571,7 @@ describe("Make Reservation (V1-060 B7)", () => {
         "Your rights could not be read just now, so less than the suggested $100.00 cannot be checked before the money is taken. Reload the page, or receive at least $100.00.",
       ),
     ).toBeInTheDocument();
-    expect(confirm).not.toHaveBeenCalled();
+    expect(create).not.toHaveBeenCalled();
     first.unmount();
 
     const onSaved = vi.fn();
@@ -588,10 +588,10 @@ describe("Make Reservation (V1-060 B7)", () => {
     );
     expect(await within(dialog).findByText(unknown)).toBeInTheDocument();
     for (const box of boxes(dialog)) expect(box).toBeDisabled();
-    // The money is saved now; the Reservation's answer is lost: still every box fixed.
+    // The answer is lost again: still every box fixed.
     fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
     await waitFor(() => {
-      expect(create).toHaveBeenCalledTimes(1);
+      expect(create).toHaveBeenCalledTimes(2);
     });
     expect(await within(dialog).findByText(unknown)).toBeInTheDocument();
     for (const box of boxes(dialog)) expect(box).toBeDisabled();
@@ -600,25 +600,23 @@ describe("Make Reservation (V1-060 B7)", () => {
     await waitFor(() => {
       expect(onSaved).toHaveBeenCalledWith(found);
     });
-    expect(confirm).toHaveBeenCalledTimes(2);
-    expect(confirm.mock.calls[1]?.[2]).toBe(confirm.mock.calls[0]?.[2]);
-    expect(create).toHaveBeenCalledTimes(2);
-    expect(create.mock.calls[1]?.[1]).toEqual(create.mock.calls[0]?.[1]);
-    expect(create.mock.calls[1]?.[2]).toBe(create.mock.calls[0]?.[2]);
+    expect(create).toHaveBeenCalledTimes(3);
+    expect(create.mock.calls[2]?.[1]).toEqual(create.mock.calls[0]?.[1]);
+    expect(create.mock.calls[2]?.[2]).toBe(create.mock.calls[0]?.[2]);
     expect(get).toHaveBeenCalledWith(create.mock.calls[0]?.[1].reservation_id);
   });
 
-  it("TEST-FE-1093 a refusal after a lost Reservation answer stays not known until the lookup says there is none; then the money saved but the Reservation refused says so, and Close asks once more", async () => {
-    const { unitApi, customerApi, paymentsApi, confirm } = apis();
+  it("TEST-FE-1093 a refusal after a lost answer stays not known until the lookup says there is none; Close asks once more only while it is not known; then the refusal opens the boxes and Close closes", async () => {
+    const { unitApi, customerApi, paymentsApi } = apis();
     const create = vi
-      .fn<ReservationApi["create"]>()
+      .fn<ReservationApi["createWithPayment"]>()
       .mockRejectedValueOnce(new TypeError("Failed to fetch"))
       .mockRejectedValue(new ReservationConflictError());
     const get = vi
       .fn<ReservationApi["get"]>()
       .mockRejectedValueOnce(new ReservationUnavailableError())
       .mockRejectedValue(new ReservationRequestError(404));
-    const api = { create, get } as unknown as ReservationApi;
+    const api = { createWithPayment: create, get } as unknown as ReservationApi;
     const onSaved = vi.fn();
     const onClose = vi.fn();
     const dialog = await filled(
@@ -640,92 +638,32 @@ describe("Make Reservation (V1-060 B7)", () => {
     });
     expect(await within(dialog).findByText(unknown)).toBeInTheDocument();
     for (const box of boxes(dialog)) expect(box).toBeDisabled();
-    // The server says there is no such Reservation: the conflict stands.
+    fireEvent.click(within(dialog).getByRole("button", { name: "Close" }));
+    expect(onClose).not.toHaveBeenCalled();
+    expect(
+      within(dialog).getByText(
+        "We could not tell whether the money was saved. If you close now, look in Payments before you receive it again, so it is not received twice.",
+      ),
+    ).toBeInTheDocument();
+    // The server says there is no such Reservation: the conflict stands and nothing was saved.
     fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
     expect(
       await within(dialog).findByText(
         /The Reservation was not saved: the Parking or the Customer changed meanwhile/,
       ),
     ).toBeInTheDocument();
-    expect(
-      within(dialog).getByText(
-        "The money is saved with Receipt RC0001, but the rest was not saved (the reason is below). The money pays nothing yet, so do not receive it again. If the reason cannot be fixed here, close this and ask the Owner or a Manager to finish it.",
-      ),
-    ).toBeInTheDocument();
     expect(within(dialog).getByLabelText("Reservation Date")).toBeEnabled();
-    expect(within(dialog).getByLabelText("Received now (USD)")).toBeDisabled();
-    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(within(dialog).getByLabelText("Received now (USD)")).toBeEnabled();
     expect(create).toHaveBeenCalledTimes(3);
     expect(onSaved).not.toHaveBeenCalled();
     fireEvent.click(within(dialog).getByRole("button", { name: "Close" }));
-    expect(onClose).not.toHaveBeenCalled();
-    expect(
-      within(dialog).getByText(
-        "The money is saved with Receipt RC0001, but the rest is not confirmed. If you close now, do not receive the money again; ask the Owner or a Manager to check and finish it.",
-      ),
-    ).toBeInTheDocument();
-    fireEvent.click(
-      within(dialog).getByRole("button", { name: "Close anyway" }),
-    );
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it("TEST-FE-1098 after a lost Payment answer, a Try again that never leaves the browser, not allowed or not found stays not known with every box fixed; the server's own refusal of the same request opens them", async () => {
-    const { unitApi, customerApi, paymentsApi, confirm } = apis();
-    confirm
-      .mockReset()
-      .mockRejectedValueOnce(new InvoiceClientError(null, "NETWORK", true))
-      .mockRejectedValueOnce(
-        new InvoiceClientError(null, "CSRF_UNAVAILABLE", false),
-      )
-      .mockRejectedValueOnce(new InvoiceClientError(403, "FORBIDDEN", false))
-      .mockRejectedValueOnce(new InvoiceClientError(404, "NOT_FOUND", false))
-      .mockRejectedValueOnce(
-        new InvoiceClientError(422, "VALIDATION_FAILED", false),
-      );
-    const api = { create: vi.fn(), get: vi.fn() } as unknown as ReservationApi;
-    const dialog = await filled(
-      api,
-      paymentsApi,
-      unitApi,
-      customerApi,
-      vi.fn(),
-      vi.fn(),
-    );
-    fireEvent.click(
-      within(dialog).getByRole("button", { name: "Save Reservation" }),
-    );
-    expect(await within(dialog).findByText(unknown)).toBeInTheDocument();
-    for (let press = 2; press <= 4; press += 1) {
-      fireEvent.click(
-        within(dialog).getByRole("button", { name: "Try again" }),
-      );
-      await waitFor(() => {
-        expect(confirm).toHaveBeenCalledTimes(press);
-      });
-      expect(await within(dialog).findByText(unknown)).toBeInTheDocument();
-      for (const box of boxes(dialog)) expect(box).toBeDisabled();
-      expect(confirm.mock.calls[press - 1]?.[1]).toEqual(
-        confirm.mock.calls[0]?.[1],
-      );
-      expect(confirm.mock.calls[press - 1]?.[2]).toBe(
-        confirm.mock.calls[0]?.[2],
-      );
-    }
-    fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
-    expect(
-      await within(dialog).findByText(
-        "It was not saved. Check the details and try again.",
-      ),
-    ).toBeInTheDocument();
-    expect(within(dialog).getByLabelText("Received now (USD)")).toBeEnabled();
-    expect(api.create).not.toHaveBeenCalled();
-  });
-
-  it("TEST-FE-1099 after a lost Reservation answer, a Try again that never leaves the browser, not allowed or not found stays not known without a lookup; the server's own refusal is looked up first", async () => {
+  it("TEST-FE-1098 after a lost answer, a Try again that never leaves the browser, not allowed or not found stays not known with every box fixed and no lookup; the server's own refusal is looked up first, then opens them", async () => {
     const { unitApi, customerApi, paymentsApi, confirm } = apis();
     const create = vi
-      .fn<ReservationApi["create"]>()
+      .fn<ReservationApi["createWithPayment"]>()
       .mockRejectedValueOnce(new ReservationUnavailableError())
       .mockRejectedValueOnce(new ReservationRequestError())
       .mockRejectedValueOnce(new ReservationRequestError(403))
@@ -734,7 +672,7 @@ describe("Make Reservation (V1-060 B7)", () => {
     const get = vi
       .fn<ReservationApi["get"]>()
       .mockRejectedValue(new ReservationRequestError(404));
-    const api = { create, get } as unknown as ReservationApi;
+    const api = { createWithPayment: create, get } as unknown as ReservationApi;
     const dialog = await filled(
       api,
       paymentsApi,
@@ -756,6 +694,9 @@ describe("Make Reservation (V1-060 B7)", () => {
       });
       expect(await within(dialog).findByText(unknown)).toBeInTheDocument();
       for (const box of boxes(dialog)) expect(box).toBeDisabled();
+      expect(create.mock.calls[press - 1]?.[1]).toEqual(
+        create.mock.calls[0]?.[1],
+      );
       expect(create.mock.calls[press - 1]?.[2]).toBe(create.mock.calls[0]?.[2]);
     }
     expect(get).not.toHaveBeenCalled();
@@ -766,17 +707,47 @@ describe("Make Reservation (V1-060 B7)", () => {
       ),
     ).toBeInTheDocument();
     expect(get).toHaveBeenCalledTimes(1);
+    expect(within(dialog).getByLabelText("Received now (USD)")).toBeEnabled();
+    expect(confirm).not.toHaveBeenCalled();
+  });
+
+  it("TEST-FE-1099 a refusal with no lost answer before it says it was not saved at once, without a lookup, and leaves the boxes open", async () => {
+    const { unitApi, customerApi, paymentsApi } = apis();
+    const create = vi
+      .fn<ReservationApi["createWithPayment"]>()
+      .mockRejectedValue(new ReservationRequestError(422));
+    const get = vi.fn<ReservationApi["get"]>();
+    const api = { createWithPayment: create, get } as unknown as ReservationApi;
+    const dialog = await filled(
+      api,
+      paymentsApi,
+      unitApi,
+      customerApi,
+      vi.fn(),
+      vi.fn(),
+    );
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save Reservation" }),
+    );
     expect(
-      within(dialog).getByText(/The money is saved with Receipt RC0001/),
+      await within(dialog).findByText(
+        "It was not saved. Check the details and try again.",
+      ),
     ).toBeInTheDocument();
-    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(get).not.toHaveBeenCalled();
+    for (const box of boxes(dialog)) expect(box).toBeEnabled();
   });
 
   it("TEST-FE-1100 a Parking from the address that is not vacant never reaches the money step", async () => {
     const { unitApi, customerApi, paymentsApi, confirm } = apis();
     render(
       <MakeReservationDialog
-        api={{ create: vi.fn(), get: vi.fn() } as unknown as ReservationApi}
+        api={
+          {
+            createWithPayment: vi.fn(),
+            get: vi.fn(),
+          } as unknown as ReservationApi
+        }
         customerApi={customerApi}
         language="en"
         mayOverride
@@ -810,12 +781,15 @@ describe("Make Reservation (V1-060 B7)", () => {
     expect(confirm).not.toHaveBeenCalled();
   });
 
-  it("TEST-FE-1101 the money saved but the Reservation refused as changed does not ask to change the Parking or the Customer, which are fixed with the money", async () => {
+  it("TEST-FE-1101 a conflict says the Reservation and its money were not saved and opens the Parking and the Customer to change (DL-112)", async () => {
     const { unitApi, customerApi, paymentsApi } = apis();
     const create = vi
-      .fn<ReservationApi["create"]>()
+      .fn<ReservationApi["createWithPayment"]>()
       .mockRejectedValue(new ReservationConflictError());
-    const api = { create, get: vi.fn() } as unknown as ReservationApi;
+    const api = {
+      createWithPayment: create,
+      get: vi.fn(),
+    } as unknown as ReservationApi;
     const dialog = await filled(
       api,
       paymentsApi,
@@ -829,15 +803,12 @@ describe("Make Reservation (V1-060 B7)", () => {
     );
     expect(
       await within(dialog).findByText(
-        "The Reservation was not saved: the Parking or the Customer changed meanwhile (for example, someone else reserved this Parking first).",
+        "The Reservation was not saved: the Parking or the Customer changed meanwhile (for example, someone else reserved this Parking first). Check them, then try again.",
       ),
     ).toBeInTheDocument();
-    expect(within(dialog).queryByText(/Check them, then try again/)).toBeNull();
-    expect(
-      within(dialog).getByText(/The money is saved with Receipt RC0001/),
-    ).toBeInTheDocument();
-    expect(within(dialog).getByLabelText("Parking")).toBeDisabled();
-    expect(within(dialog).getByLabelText("Customer")).toBeDisabled();
+    expect(within(dialog).queryByText(/The money is saved/)).toBeNull();
+    expect(within(dialog).getByLabelText("Parking")).toBeEnabled();
+    expect(within(dialog).getByLabelText("Customer")).toBeEnabled();
   });
 });
 
@@ -877,10 +848,10 @@ describe("Make Reservation (V1-061)", () => {
         }),
       ),
     } as unknown as Pick<UnitApi, "list">;
-    const create = vi.fn<ReservationApi["create"]>().mockResolvedValue({
-      reservation_id: "saved",
-    } as unknown as ReservationResource);
-    const api = { create } as unknown as ReservationApi;
+    const create = vi
+      .fn<ReservationApi["createWithPayment"]>()
+      .mockResolvedValue(made("saved"));
+    const api = { createWithPayment: create } as unknown as ReservationApi;
     const open = (mayLowerRent: boolean | null) =>
       render(
         <MakeReservationDialog

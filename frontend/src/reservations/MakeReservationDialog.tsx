@@ -10,6 +10,9 @@
 // While it is not known whether a step was saved, every box stays fixed, so Try again sends the
 // very same requests; a refusal after a lost Reservation answer first looks for that Reservation;
 // Close asks once more while the money may be saved and the Reservation is not.
+// V1-061 (DL-112, owner bug list 29/10/2026): one press sends one request; the server saves the
+// money, its Receipt and the Reservation in one database transaction, or nothing. The request
+// keeps one key and one body while the values stay the same, so Try again never saves twice.
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 
@@ -23,20 +26,20 @@ import {
   type MoneyChoice,
   MoneyFields,
   moneyProblem,
-  outcomeAfter,
   outcomeOf,
   paymentInput,
   requestFor,
   useCloseGuard,
   usePaymentMethods,
 } from "../payments/depositMoney";
-import type { ConfirmedPayment, PaymentsApi } from "../payments/paymentsClient";
+import type { PaymentsApi } from "../payments/paymentsClient";
 import {
   ReservationConflictError,
   ReservationRequestError,
   ReservationUnavailableError,
   type ReservationApi,
   type ReservationResource,
+  type ReservationWithPaymentSource,
 } from "../reservationClient";
 import { DateInput, parseDay } from "../shell/DateInput";
 import { todayInPhnomPenh, usdFromCents } from "../shell/format";
@@ -121,7 +124,6 @@ export function MakeReservationDialog({
   const [outcome, setOutcome] = useState<
     "unknown" | "refused" | "conflict" | null
   >(null);
-  const [paid, setPaid] = useState<ConfirmedPayment | null>(null);
   const [adding, setAdding] = useState(false);
   const paymentRequest = useRef<{
     fingerprint: string;
@@ -137,9 +139,9 @@ export function MakeReservationDialog({
     deposit: crypto.randomUUID(),
     receipt: crypto.randomUUID(),
   });
-  // A lost answer: that step may be saved, so nothing may change before Try again.
+  // A lost answer: it may be saved, so nothing may change before Try again.
   const pending = outcome === "unknown";
-  const guard = useCloseGuard(pending || paid !== null, onClose);
+  const guard = useCloseGuard(pending, onClose);
 
   const load = () => {
     setFailed(false);
@@ -249,7 +251,7 @@ export function MakeReservationDialog({
         usdFromCents(suggestion),
       );
     const issue =
-      paid !== null || methods === null || methods === "failed"
+      methods === null || methods === "failed"
         ? null
         : moneyProblem(methods, money);
     setProblems(found);
@@ -301,37 +303,31 @@ export function MakeReservationDialog({
 
   async function save(values: {
     payment: ReturnType<typeof paymentInput>;
-    reservation: Omit<Parameters<ReservationApi["create"]>[1], "payment_id">;
+    reservation: Omit<ReservationWithPaymentSource, "payment">;
   }) {
     // The try before this one: unknown means its answer was lost.
     const earlierUnknown = outcome === "unknown";
-    const createdBefore = earlierUnknown && paid !== null;
     setBusy(true);
     setOutcome(null);
-    let payment = paid;
-    if (payment === null) {
-      try {
-        const request = requestFor(paymentRequest, values.payment);
-        payment = await paymentsApi.confirm(
-          propertyId,
-          request.body,
-          request.key,
-        );
-      } catch (error: unknown) {
-        setOutcome(outcomeAfter(error, earlierUnknown));
-        setBusy(false);
-        return;
-      }
-      setPaid(payment);
-    }
-    const source = { ...values.reservation, payment_id: payment.paymentId };
+    // The same values keep the same body (its received time too) and the same key.
+    const body = requestFor(paymentRequest, values.payment).body;
+    const source: ReservationWithPaymentSource = {
+      ...values.reservation,
+      payment: {
+        payment_method_id: body.payment_method_id,
+        received_at: body.received_at,
+        evidence_reference: body.evidence_reference,
+        payer_intent_memo: body.payer_intent_memo,
+        amount: body.amount,
+      },
+    };
     try {
-      const saved = await api.create(
+      const saved = await api.createWithPayment(
         propertyId,
         source,
         keyFor(reservationKey, source),
       );
-      onSaved(saved);
+      onSaved(saved.reservation);
     } catch (error: unknown) {
       const status =
         error instanceof ReservationRequestError ? error.status : null;
@@ -339,18 +335,16 @@ export function MakeReservationDialog({
         error instanceof ReservationConflictError
           ? "conflict"
           : error instanceof ReservationUnavailableError ||
-              (createdBefore &&
+              (earlierUnknown &&
                 (status === null ||
                   status === 401 ||
                   status === 403 ||
                   status === 404))
             ? "unknown"
             : outcomeOf(error);
-      // V1-060 B7 (third review): after a lost answer, "sign in", "not allowed", "not found" and a
-      // request that never left the browser keep it not known (above). After the server's own
-      // refusal it may be meeting this very Reservation (its Unit is no longer free), so look for
-      // it by its own id before saying it was not saved.
-      if (result !== "unknown" && createdBefore) {
+      // After a lost answer, the server's own refusal may be meeting this very Reservation (its
+      // Unit is no longer free), so look for it by its own id before saying it was not saved.
+      if (result !== "unknown" && earlierUnknown) {
         const found = await savedBefore();
         if (found === "unknown") {
           setOutcome("unknown");
@@ -420,9 +414,8 @@ export function MakeReservationDialog({
         <span>{problems[field]}</span>
       </p>
     );
-  const locked = paid !== null || busy || pending;
+  const locked = busy || pending;
   const fixed = busy || pending;
-  const stuck = outcome === "refused" || outcome === "conflict";
 
   return (
     <Dialog
@@ -661,44 +654,18 @@ export function MakeReservationDialog({
               {error("reason")}
             </div>
           )}
-          {paid !== null && (
-            <div
-              className={stuck ? "ui-notice warn" : "ui-notice info"}
-              role="status"
-            >
-              <Icon name={stuck ? "alert" : "check"} />
-              <p>
-                {dmt(
-                  language,
-                  stuck ? "paid_stuck" : "paid_saved",
-                  paid.receiptNumber,
-                )}
-              </p>
-            </div>
-          )}
           {outcome !== null && (
             <div className="ui-notice warn" role="alert">
               <Icon name="alert" />
               <p>
-                {rt(
-                  language,
-                  outcome !== "conflict"
-                    ? outcome
-                    : paid === null
-                      ? "mk_conflict"
-                      : "mk_conflict_paid",
-                )}
+                {rt(language, outcome !== "conflict" ? outcome : "mk_conflict")}
               </p>
             </div>
           )}
           {guard.asked && (
             <div className="ui-notice warn" role="alert">
               <Icon name="alert" />
-              <p>
-                {paid === null
-                  ? dmt(language, "close_unknown")
-                  : dmt(language, "close_paid", paid.receiptNumber)}
-              </p>
+              <p>{dmt(language, "close_unknown")}</p>
             </div>
           )}
         </>

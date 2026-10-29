@@ -1,11 +1,11 @@
 // V1-060 B6 (owner 27/10/2026): Receive Security Deposit on the Lease page. A walk-in Lease (one
 // made without a Reservation) has no Security Deposit until one is set here; a Lease whose
-// Security Deposit is not fully received takes the rest here. The money is saved first as a
-// Payment with its Receipt (it pays no Invoice); the Security Deposit is then made (walk-in only)
-// and takes its receipt from that Payment. Each step keeps one request identity while its values
-// stay the same, so "Try again" never saves anything twice; the Payment is sent again with the
-// very same body (V1-060 B7). While it is not known whether the money was saved, the boxes stay
-// fixed, and Close asks once more while the money may be saved and the rest is not.
+// Security Deposit is not fully received takes the rest here. V1-061 (DL-112, owner bug list
+// 29/10/2026): one request saves the money as a Payment with its Receipt (it pays no Invoice),
+// makes the Security Deposit (walk-in only) and puts the money into it, all or none. The request
+// keeps one identity and the very same body while its values stay the same, so "Try again" never
+// saves anything twice. While it is not known whether it was saved, the boxes stay fixed, and
+// Close asks once more.
 
 import { FormEvent, useRef, useState } from "react";
 
@@ -24,8 +24,9 @@ import {
   useCloseGuard,
   usePaymentMethods,
 } from "../payments/depositMoney";
-import type { ConfirmedPayment, PaymentsApi } from "../payments/paymentsClient";
+import type { PaymentsApi } from "../payments/paymentsClient";
 import {
+  type SecurityDepositReceiveInput,
   type SettlementApi,
   SettlementRequestError,
 } from "../settlementClient";
@@ -50,10 +51,7 @@ export function ReceiveDepositDialog({
   lease: LeaseResource;
   /** The Lease's Security Deposit, or null for a walk-in Lease that has none yet. */
   security: DepositResource | null;
-  settlementApi: Pick<
-    SettlementApi,
-    "createSecurityDeposit" | "receiveIntoDeposit"
-  >;
+  settlementApi: Pick<SettlementApi, "receiveSecurityDeposit">;
   paymentsApi: PaymentsApi;
   onClose: () => void;
   onSaved: (message: string) => void;
@@ -82,22 +80,19 @@ export function ReceiveDepositDialog({
   const [outcome, setOutcome] = useState<
     { kind: "unknown" } | { kind: "refused"; text: string } | null
   >(null);
-  const [paid, setPaid] = useState<ConfirmedPayment | null>(null);
-  const [depositId, setDepositId] = useState(security?.deposit_id ?? null);
   const paymentRequest = useRef<{
     fingerprint: string;
     key: string;
     body: ReturnType<typeof paymentInput>;
   } | null>(null);
-  const depositKey = useRef<{ fingerprint: string; key: string } | null>(null);
-  const receiptKey = useRef<{ fingerprint: string; key: string } | null>(null);
+  const requestKey = useRef<{ fingerprint: string; key: string } | null>(null);
   const ids = useRef({
     deposit: crypto.randomUUID(),
     receipt: crypto.randomUUID(),
   });
-  // The Payment's answer was lost: it may be saved, so nothing that makes it up may change.
-  const pending = paid === null && outcome?.kind === "unknown";
-  const guard = useCloseGuard(pending || paid !== null, onClose);
+  // The answer was lost: it may be saved, so nothing that makes it up may change.
+  const pending = outcome?.kind === "unknown";
+  const guard = useCloseGuard(pending, onClose);
 
   const requiredCents = security === null ? centsOf(required) : null;
   const outstanding =
@@ -116,7 +111,7 @@ export function ReceiveDepositDialog({
     )
       found.received = lt(language, "rd_err_received");
     const issue =
-      paid !== null || methods === null || methods === "failed"
+      methods === null || methods === "failed"
         ? null
         : moneyProblem(methods, money);
     setProblems(found);
@@ -149,59 +144,38 @@ export function ReceiveDepositDialog({
     const earlierUnknown = outcome?.kind === "unknown";
     setBusy(true);
     setOutcome(null);
-    let money = paid;
-    if (money === null) {
-      try {
-        const request = requestFor(paymentRequest, payment);
-        money = await paymentsApi.confirm(
-          propertyId,
-          request.body,
-          request.key,
-        );
-      } catch (error: unknown) {
-        setOutcome(
-          outcomeAfter(error, earlierUnknown) === "unknown"
-            ? { kind: "unknown" }
-            : { kind: "refused", text: lt(language, "rd_refused") },
-        );
-        setBusy(false);
-        return;
-      }
-      setPaid(money);
-    }
+    // The same values keep the same body (its received time too) and the same key.
+    const body = requestFor(paymentRequest, payment).body;
+    const source: SecurityDepositReceiveInput = {
+      deposit_id: security?.deposit_id ?? ids.current.deposit,
+      required_usd_cents:
+        security === null ? (requiredCents ?? receivedCents) : null,
+      receipt_id: ids.current.receipt,
+      reason: lt(
+        "en",
+        security === null ? "rd_reason_create" : "rd_reason_receipt",
+      ),
+      payment: {
+        payment_method_id: body.payment_method_id,
+        received_at: body.received_at,
+        evidence_reference: body.evidence_reference,
+        payer_intent_memo: body.payer_intent_memo,
+        amount: body.amount,
+      },
+    };
     try {
-      let target = depositId;
-      if (target === null) {
-        const form = {
-          deposit_id: ids.current.deposit,
-          required_usd_cents: requiredCents ?? receivedCents,
-          reason: lt("en", "rd_reason_create"),
-        };
-        await settlementApi.createSecurityDeposit(
-          lease.lease_id,
-          form,
-          keyFor(depositKey, form),
-        );
-        target = form.deposit_id;
-        setDepositId(target);
-      }
-      const receipt = {
-        receipt_id: ids.current.receipt,
-        payment_id: money.paymentId,
-        amount_usd_cents: receivedCents,
-        reason: lt("en", "rd_reason_receipt"),
-      };
-      await settlementApi.receiveIntoDeposit(
-        target,
-        receipt,
-        keyFor(receiptKey, receipt),
+      const saved = await settlementApi.receiveSecurityDeposit(
+        propertyId,
+        lease.lease_id,
+        source,
+        keyFor(requestKey, source),
       );
       onSaved(
         lt(
           language,
           "rd_toast",
           usdFromCents(receivedCents),
-          money.receiptNumber,
+          saved.receiptNumber ?? "",
         ),
       );
     } catch (error: unknown) {
@@ -228,8 +202,7 @@ export function ReceiveDepositDialog({
         <span>{text}</span>
       </p>
     );
-  const locked = paid !== null || busy || pending;
-  const stuck = outcome?.kind === "refused";
+  const locked = busy || pending;
 
   return (
     <Dialog
@@ -260,7 +233,7 @@ export function ReceiveDepositDialog({
             <>
               <input
                 aria-invalid={problems.required !== undefined}
-                disabled={locked || depositId !== null}
+                disabled={locked}
                 id="rd-required"
                 inputMode="decimal"
                 onChange={(event) => {
@@ -313,21 +286,6 @@ export function ReceiveDepositDialog({
         <Icon name="info" />
         <p>{lt(language, "rd_note")}</p>
       </div>
-      {paid !== null && (
-        <div
-          className={stuck ? "ui-notice warn" : "ui-notice info"}
-          role="status"
-        >
-          <Icon name={stuck ? "alert" : "check"} />
-          <p>
-            {dmt(
-              language,
-              stuck ? "paid_stuck" : "paid_saved",
-              paid.receiptNumber,
-            )}
-          </p>
-        </div>
-      )}
       {outcome !== null && (
         <div className="ui-notice warn" role="alert">
           <Icon name="alert" />
@@ -341,11 +299,7 @@ export function ReceiveDepositDialog({
       {guard.asked && (
         <div className="ui-notice warn" role="alert">
           <Icon name="alert" />
-          <p>
-            {paid === null
-              ? dmt(language, "close_unknown")
-              : dmt(language, "close_paid", paid.receiptNumber)}
-          </p>
+          <p>{dmt(language, "close_unknown")}</p>
         </div>
       )}
     </Dialog>

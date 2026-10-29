@@ -1297,7 +1297,12 @@ def create_deposit_router(
                 ),
                 None,
             )
-            if source.required_usd_cents is not None and security is not None:
+            # The same press again names the Security Deposit it made: its steps answer again.
+            if (
+                source.required_usd_cents is not None
+                and security is not None
+                and security.deposit_id != source.deposit_id
+            ):
                 raise RefusedRequest(DEPOSIT_SECURITY_ALREADY_EXISTS)
             if source.required_usd_cents is None and (
                 security is None or security.deposit_id != source.deposit_id
