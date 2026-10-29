@@ -9,13 +9,13 @@ PRM_LOCAL="$PRM_ROOT/.local"
 PRM_SECRETS="$PRM_LOCAL/secrets"
 PRM_HTTPS="$PRM_LOCAL/https"
 # Fixed places (README step 2), so a changed environment cannot make sudo run another file.
-PRM_KEY_FILE=/usr/local/etc/prm/totp_protection_key
-PRM_HELPER=/usr/local/libexec/prm/with-protected-key.py
+PRM_KEY_FILE=/usr/local/etc/pkm/totp_protection_key
+PRM_HELPER=/usr/local/libexec/pkm/with-protected-key.py
 PRM_BLOCKLIST="$PRM_ROOT/config/password-blocklist.txt"
-PRM_POSTGRES_PORT="${POSTGRES_PORT:-5432}"
+PRM_POSTGRES_PORT="${POSTGRES_PORT:-5433}"
 
 # The Mac mini's local network name (for example "office-mac"), so the iPad on the same Wi-Fi
-# can open https://office-mac.local:5173. PRM_LOCAL_HOSTNAME may name it instead. It is made
+# can open https://office-mac.local:5174. PRM_LOCAL_HOSTNAME may name it instead. It is made
 # lower case, because browsers send the address (the Origin) in lower case and the API compares
 # it exactly; a Mac's name is often mixed case, such as "Soks-Mac-mini".
 prm_local_hostname() {
@@ -39,7 +39,7 @@ prm_checked_hostname() {
 
 prm_origin() {
   name=$(prm_checked_hostname) || exit 1
-  printf 'https://%s.local:5173\n' "$name"
+  printf 'https://%s.local:5174\n' "$name"
 }
 
 prm_fail() {

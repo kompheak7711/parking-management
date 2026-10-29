@@ -16,7 +16,7 @@
       "monthly_months": 12
     },
     "never_delete_last_good_copy": true,
-    "directory": "/var/lib/prm/backups",
+    "directory": "/var/lib/pkm/backups",
     "database_url_file": "/run/secrets/prm_production_backup_database_url",
     "encryption_key_file": "/run/secrets/prm_production_backup_encryption_key",
     "offhost": {
@@ -26,7 +26,7 @@
     },
     "restore_test_interval_days": 92
   },
-  "status_directory": "/var/lib/prm/status",
+  "status_directory": "/var/lib/pkm/status",
   "alerts": {
     "telegram": {
       "api_host": "api.telegram.org",
@@ -39,11 +39,11 @@
       "optional": true
     },
     "repeat_hours": 12,
-    "readiness_url": "http://127.0.0.1:8000/api/v1/health/ready",
+    "readiness_url": "http://127.0.0.1:8001/api/v1/health/ready",
     "tls_certificate_file": null,
     "tls_warning_days": 21,
     "disk_paths": [
-      "/var/lib/prm",
+      "/var/lib/pkm",
       "/var/lib/docker"
     ],
     "disk_minimum_free_percent": 10,
@@ -51,7 +51,7 @@
   },
   "logs": {
     "operational_retention_days": 90,
-    "directory": "/var/log/prm",
+    "directory": "/var/log/pkm",
     "audit_and_money_history": "kept forever in the database"
   }
 }

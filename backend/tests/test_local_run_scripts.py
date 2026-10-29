@@ -98,7 +98,7 @@ def test_the_secrets_script_makes_private_files_and_prints_no_secret(
     for name, role in roles.items():
         address = secrets / f"{name}_database_url"
         assert stat.S_IMODE(address.stat().st_mode) == 0o600
-        expected = f"postgresql://{role}:{passwords[name]}@127.0.0.1:5433/prm\n"
+        expected = f"postgresql://{role}:{passwords[name]}@127.0.0.1:5433/pkm\n"
         assert address.read_text(encoding="utf-8") == expected
     for password in passwords.values():
         assert password not in first.stdout + first.stderr
@@ -165,7 +165,7 @@ def test_the_local_address_is_lower_case_as_browsers_send_it(copied_repository: 
         check=True,
         env={**os.environ, "PRM_LOCAL_HOSTNAME": "Soks-Mac-mini"},
     )
-    assert result.stdout == "https://soks-mac-mini.local:5173\n"
+    assert result.stdout == "https://soks-mac-mini.local:5174\n"
 
     # A name the API could never match is refused before the API starts (review round 2).
     refused = subprocess.run(
@@ -189,7 +189,7 @@ def test_the_inner_parts_refuse_to_start_without_the_key_descriptor(
     # round 2): both refused before any address file is read.
     for extra in ({}, {"PRM_PROTECTED_KEY_FD": "4"}):
         result = subprocess.run(
-            ["sh", str(script), "--inner", "/bin/false", "https://office-mac.local:5173"],
+            ["sh", str(script), "--inner", "/bin/false", "https://office-mac.local:5174"],
             capture_output=True,
             text=True,
             check=False,

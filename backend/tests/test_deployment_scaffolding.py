@@ -208,8 +208,8 @@ def test_postgres_bootstrap_avoids_secret_command_arguments_and_limits_admin_rol
     assert "\\getenv migration_password POSTGRES_MIGRATION_PASSWORD" in init_script
     assert "GRANT pg_read_all_data TO prm_backup" in init_script
     assert "GRANT pg_monitor TO prm_human_admin" in init_script
-    assert "GRANT CONNECT ON DATABASE prm TO prm_restore" in init_script
-    assert "GRANT CONNECT ON DATABASE prm TO prm_human_admin" in init_script
+    assert "GRANT CONNECT ON DATABASE pkm TO prm_restore" in init_script
+    assert "GRANT CONNECT ON DATABASE pkm TO prm_human_admin" in init_script
     assert "GRANT pg_read_all_data TO prm_restore" not in init_script
     assert "GRANT pg_write_all_data TO prm_human_admin" not in init_script
     assert (
@@ -221,7 +221,7 @@ def test_postgres_bootstrap_avoids_secret_command_arguments_and_limits_admin_rol
         "NOREPLICATION" in init_script
     )
     assert "NOBYPASSRLS CONNECTION LIMIT 1" in init_script
-    assert "GRANT CONNECT ON DATABASE prm TO prm_bootstrap" in init_script
+    assert "GRANT CONNECT ON DATABASE pkm TO prm_bootstrap" in init_script
     assert "REVOKE ALL ON DATABASE postgres FROM PUBLIC" in init_script
     assert "REVOKE ALL ON DATABASE template1 FROM PUBLIC" in init_script
     assert "GRANT CONNECT, TEMPORARY ON DATABASE postgres TO prm_admin" in init_script

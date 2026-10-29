@@ -189,10 +189,10 @@ def test_the_two_protected_paths_are_settings_and_production_needs_the_key_file(
     to start without the key file, and an unprotected key file refuses in any environment;
     development without a key file starts."""
     monkeypatch.setenv("APP_TOTP_KEY_FILE", "/dev/fd/4")
-    monkeypatch.setenv("APP_PASSWORD_BLOCKLIST_FILE", "/usr/local/etc/prm/blocklist.txt")
+    monkeypatch.setenv("APP_PASSWORD_BLOCKLIST_FILE", "/usr/local/etc/pkm/blocklist.txt")
     settings = Settings()
     assert settings.totp_key_file == "/dev/fd/4"
-    assert settings.password_blocklist_file == "/usr/local/etc/prm/blocklist.txt"
+    assert settings.password_blocklist_file == "/usr/local/etc/pkm/blocklist.txt"
     monkeypatch.delenv("APP_TOTP_KEY_FILE")
     monkeypatch.delenv("APP_PASSWORD_BLOCKLIST_FILE")
 
@@ -290,7 +290,7 @@ def test_a_start_with_a_database_and_no_key_file_logs_a_warning_without_secrets(
     ):
         stream = io.StringIO()
         logger = create_application_logger(
-            service="property-rental-backend",
+            service="parking-backend",
             environment=settings.environment,
             level="INFO",
             stream=stream,

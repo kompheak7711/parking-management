@@ -441,7 +441,7 @@ describe("local sign-in", () => {
 
     // Login sub-slice L6: the full-screen sign-in layer in the CHETANA brand.
     expect(screen.getByRole("img", { name: "CHETANA" })).toBeInTheDocument();
-    expect(screen.getByText("Residence Management")).toBeInTheDocument();
+    expect(screen.getByText("Parking Rental")).toBeInTheDocument();
     expect(screen.getByRole("main")).toHaveAccessibleName("Sign in");
     expect(screen.getByLabelText("Username")).toHaveAttribute(
       "autocomplete",

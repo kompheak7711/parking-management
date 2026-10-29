@@ -1,4 +1,4 @@
-# Property Rental Management
+# Parking Rental
 
 Business management application built with React, TypeScript, FastAPI, and PostgreSQL.
 
@@ -42,7 +42,7 @@ make frontend-install
 make frontend
 ```
 
-The development UI listens on `http://127.0.0.1:5173` (on HTTPS once the local certificate of
+The development UI listens on `http://127.0.0.1:5174` (on HTTPS once the local certificate of
 "Local run on the Mac mini" exists). Only public values prefixed
 with `VITE_` are exposed by Vite. `VITE_APP_BUILD_ID` accepts a non-secret version or
 commit identifier; `VITE_APP_ENVIRONMENT` accepts a public environment label. Neither
@@ -59,7 +59,7 @@ Settings are read from protected process configuration. `.env.example` contains 
 settings and secret-file path names only; it contains no credential or key value. The
 backend does not implicitly read a local `.env` file or bake one into an image.
 
-The development API listens on `http://127.0.0.1:8000`. Its liveness endpoint is:
+The development API listens on `http://127.0.0.1:8001`. Its liveness endpoint is:
 
 ```text
 GET /api/v1/health/live
@@ -81,7 +81,7 @@ Set `APP_BUILD_VERSION` to a non-secret release version or commit identifier whe
 building/deploying. The Docker image accepts the same value as a build argument:
 
 ```text
-docker build --build-arg APP_BUILD_VERSION=<version-or-commit> -t property-rental-backend backend
+docker build --build-arg APP_BUILD_VERSION=<version-or-commit> -t parking-backend backend
 ```
 
 Set `APP_ALLOWED_BROWSER_ORIGIN` to the exact HTTPS browser origin permitted to submit
@@ -254,21 +254,21 @@ screen.
    show `root` as its owner. If one shows your own name (an Intel Mac with Homebrew), stop and
    ask, because then a program running as you could swap the helper that sudo runs. Then:
 
-       sudo install -d -o root -g wheel -m 0755 /usr/local/etc/prm /usr/local/libexec/prm
-       sudo sh -c 'umask 077; set -C; openssl rand -hex 32 > /usr/local/etc/prm/totp_protection_key'
-       sudo chown root:wheel /usr/local/etc/prm/totp_protection_key
+       sudo install -d -o root -g wheel -m 0755 /usr/local/etc/pkm /usr/local/libexec/pkm
+       sudo sh -c 'umask 077; set -C; openssl rand -hex 32 > /usr/local/etc/pkm/totp_protection_key'
+       sudo chown root:wheel /usr/local/etc/pkm/totp_protection_key
        sudo install -o root -g wheel -m 0755 scripts/local/with-protected-key.py \
-           /usr/local/libexec/prm/with-protected-key.py
+           /usr/local/libexec/pkm/with-protected-key.py
 
    The key protects every sign-in code: never copy it anywhere else, and keep it in the Mac's
    backup. `set -C` makes the command refuse to replace a key that is already there: a new key
    would lock every account out of its sign-in codes. The helper is the only part that runs as
    root: it opens the key and then runs the API or the Owner set-up as you. After a `git pull`,
-   if `cmp scripts/local/with-protected-key.py /usr/local/libexec/prm/with-protected-key.py`
+   if `cmp scripts/local/with-protected-key.py /usr/local/libexec/pkm/with-protected-key.py`
    reports a difference, run the last install line again.
 3. **Start the database**: `sh scripts/local/database.sh` (Docker Desktop must be running). The
-   first start makes the database identities. If an older `property-rental-management` volume
-   exists without them, stop and ask; never delete the volume. If the first start stops with
+   first start makes the database identities. An older `property-rental-management`
+   volume on this Mac belongs to Property Rental: it is never touched, and Parking starts empty. If the first start stops with
    an error, stop and ask too: the database keeps its half-made first state. Stop it later with
    `sh scripts/local/database.sh stop`.
 4. **Apply the migrations**: `sh scripts/local/migrate.sh`.
@@ -288,12 +288,12 @@ screen.
    on) or "The set-up stopped and saved nothing" (delete the new CHETANA entry in Google
    Authenticator, throw away the codes you wrote, and run this step again). The
    set-up can run only once; after it, the Owner makes every other account in the app.
-5b. **Set up the Property** (once, after step 5): `sh scripts/local/setup-property.sh "CHETANA Residence"`
+5b. **Set up the Property** (once, after step 5): `sh scripts/local/setup-property.sh "CHETANA Parking"`
    (use the business name). It makes the one Property and gives the Owner every Owner action on
    it; without it the screens have no Property and Settings keeps saying it is reading. Running
    it again changes nothing. Restart step 7 afterwards if the API was running.
 6. **Make the HTTPS certificate** (once a year): `sh scripts/local/make-certificate.sh`. It covers
-   `https://NAME.local:5173` (NAME is the Mac's local network name, System Settings, General,
+   `https://NAME.local:5174` (NAME is the Mac's local network name, System Settings, General,
    Sharing, shown in lower case); sign in only at that address. Trust its authority once (it
    lasts 10 years; the script warns 60 days before it ends):
    - on the Mac: `sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain .local/https/local-ca.pem`;
@@ -302,11 +302,11 @@ screen.
      General, VPN & Device Management, then turn it on in Settings, General, About, Certificate
      Trust Settings.
 7. **Start the API** in one Terminal window: `sh scripts/local/start-api.sh` (sudo asks for your
-   Mac password). It listens on 127.0.0.1:8000 only, with `APP_ENVIRONMENT=production`.
+   Mac password). It listens on 127.0.0.1:8001 only, with `APP_ENVIRONMENT=production`.
 8. **Start the screens** in a second Terminal window: `cd frontend && npm run dev:local`. If
    macOS asks whether "node" may accept incoming network connections, choose Allow (the iPad
    needs it).
-9. **Open** `https://NAME.local:5173` on the Mac or the iPad and sign in. Use this address on
+9. **Open** `https://NAME.local:5174` on the Mac or the iPad and sign in. Use this address on
    the Mac too: the API accepts sign-ins only from this one address.
 
 Stop with Control-C in both windows. The passwords never leave `.local/secrets`; the password

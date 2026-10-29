@@ -302,7 +302,7 @@ export function UnitDetail({
     unit.size_square_metres === null
       ? null
       : ut(language, "m2", Number(unit.size_square_metres)),
-    "CHETANA Residence",
+    "CHETANA Parking",
   ]
     .filter((part) => part !== null)
     .join(" · ");

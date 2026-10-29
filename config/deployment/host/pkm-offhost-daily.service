@@ -1,0 +1,21 @@
+# V1-059 (DL-071 answer 4): the daily encrypted copy to the second office computer or the
+# always-connected external drive, mounted at /mnt/pkm-offhost. Started by pkm-offhost-daily.timer.
+[Unit]
+Description=CHETANA Parking daily off-host backup copy
+RequiresMountsFor=/mnt/pkm-offhost
+
+[Service]
+Type=oneshot
+User=pkm-ops
+Group=pkm-ops
+UMask=0077
+ExecStart=/opt/pkm/venv/bin/parking-backup --config /etc/pkm/production-operations.json offhost-copy --kind daily --destination /mnt/pkm-offhost
+StandardOutput=journal
+StandardError=journal
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/pkm /mnt/pkm-offhost
+PrivateTmp=true
+# The secret files live in /etc/pkm/secrets (kept across restarts); the job sees them at
+# /run/secrets, the paths of production-operations.json.
+BindReadOnlyPaths=/etc/pkm/secrets:/run/secrets

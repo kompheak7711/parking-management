@@ -32,8 +32,8 @@ for test_argument in "$@"; do
   fi
 done
 
-project_name="prm-database-targeted-test-$$"
-secret_directory="$(mktemp -d "${TMPDIR:-/tmp}/prm-database-targeted-test.XXXXXX")"
+project_name="pkm-database-targeted-test-$$"
+secret_directory="$(mktemp -d "${TMPDIR:-/tmp}/pkm-database-targeted-test.XXXXXX")"
 umask 077
 
 cleanup() {
@@ -132,14 +132,14 @@ case "$published_port" in
     ;;
 esac
 
-TEST_ADMIN_DATABASE_URL="postgresql://prm_admin:$(cat "$POSTGRES_ADMIN_PASSWORD_FILE")@127.0.0.1:${published_port}/prm"
-MIGRATION_DATABASE_URL="postgresql://prm_migrator:$(cat "$POSTGRES_MIGRATION_PASSWORD_FILE")@127.0.0.1:${published_port}/prm"
-APP_DATABASE_URL="postgresql://prm_runtime:$(cat "$POSTGRES_RUNTIME_PASSWORD_FILE")@127.0.0.1:${published_port}/prm"
-FINANCIAL_DATABASE_URL="postgresql://prm_financial:$(cat "$POSTGRES_FINANCIAL_PASSWORD_FILE")@127.0.0.1:${published_port}/prm"
-BACKUP_DATABASE_URL="postgresql://prm_backup:$(cat "$POSTGRES_BACKUP_PASSWORD_FILE")@127.0.0.1:${published_port}/prm"
-RESTORE_DATABASE_URL="postgresql://prm_restore:$(cat "$POSTGRES_RESTORE_PASSWORD_FILE")@127.0.0.1:${published_port}/prm"
-HUMAN_ADMIN_DATABASE_URL="postgresql://prm_human_admin:$(cat "$POSTGRES_HUMAN_ADMIN_PASSWORD_FILE")@127.0.0.1:${published_port}/prm"
-BOOTSTRAP_DATABASE_URL="postgresql://prm_bootstrap:$(cat "$POSTGRES_BOOTSTRAP_PASSWORD_FILE")@127.0.0.1:${published_port}/prm"
+TEST_ADMIN_DATABASE_URL="postgresql://prm_admin:$(cat "$POSTGRES_ADMIN_PASSWORD_FILE")@127.0.0.1:${published_port}/pkm"
+MIGRATION_DATABASE_URL="postgresql://prm_migrator:$(cat "$POSTGRES_MIGRATION_PASSWORD_FILE")@127.0.0.1:${published_port}/pkm"
+APP_DATABASE_URL="postgresql://prm_runtime:$(cat "$POSTGRES_RUNTIME_PASSWORD_FILE")@127.0.0.1:${published_port}/pkm"
+FINANCIAL_DATABASE_URL="postgresql://prm_financial:$(cat "$POSTGRES_FINANCIAL_PASSWORD_FILE")@127.0.0.1:${published_port}/pkm"
+BACKUP_DATABASE_URL="postgresql://prm_backup:$(cat "$POSTGRES_BACKUP_PASSWORD_FILE")@127.0.0.1:${published_port}/pkm"
+RESTORE_DATABASE_URL="postgresql://prm_restore:$(cat "$POSTGRES_RESTORE_PASSWORD_FILE")@127.0.0.1:${published_port}/pkm"
+HUMAN_ADMIN_DATABASE_URL="postgresql://prm_human_admin:$(cat "$POSTGRES_HUMAN_ADMIN_PASSWORD_FILE")@127.0.0.1:${published_port}/pkm"
+BOOTSTRAP_DATABASE_URL="postgresql://prm_bootstrap:$(cat "$POSTGRES_BOOTSTRAP_PASSWORD_FILE")@127.0.0.1:${published_port}/pkm"
 
 export TEST_ADMIN_DATABASE_URL
 export MIGRATION_DATABASE_URL

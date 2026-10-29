@@ -10,7 +10,7 @@ the API and the first-Owner bootstrap must not run as root. This helper:
    root-owned regular file that neither the group nor others can read (the checks of
    `read_root_controlled_totp_key`), plus one link, the name totp_protection_key, and a
    root-owned folder that neither the group nor others can write; so a person cannot hand it
-   some other root-only file (the scripts always give it /usr/local/etc/prm/totp_protection_key);
+   some other root-only file (the scripts always give it /usr/local/etc/pkm/totp_protection_key);
 3. places it on the descriptor number given with --fd and closes every other descriptor from 3
    up, so the key is the only one it passes on;
 4. drops to the sudo user's user id, group id and groups for good, and checks that root cannot
@@ -21,9 +21,9 @@ It prints no key, no path content and no secret. It uses only the Python standar
 runs on the Python 3.9 of macOS. Install it once as root (the L7 runbook in README.md), so the
 copy that sudo runs cannot be changed without root:
 
-    sudo install -d -o root -g wheel -m 0755 /usr/local/libexec/prm
+    sudo install -d -o root -g wheel -m 0755 /usr/local/libexec/pkm
     sudo install -o root -g wheel -m 0755 scripts/local/with-protected-key.py \
-        /usr/local/libexec/prm/with-protected-key.py
+        /usr/local/libexec/pkm/with-protected-key.py
 """
 
 import argparse
@@ -34,7 +34,7 @@ import stat
 import sys
 from typing import NoReturn
 
-DEFAULT_KEY_PATH = "/usr/local/etc/prm/totp_protection_key"
+DEFAULT_KEY_PATH = "/usr/local/etc/pkm/totp_protection_key"
 KEY_FILE_NAME = "totp_protection_key"
 LOWEST_FD = 3
 HIGHEST_FD = 9

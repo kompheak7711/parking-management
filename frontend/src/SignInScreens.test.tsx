@@ -154,7 +154,7 @@ describe("sign-in screens", () => {
       screen.getByText(/ម្ចាស់ អ្នកគ្រប់គ្រង និងបុគ្គលិកដែលអាចប្តូរការកំណត់/),
     ).toBeInTheDocument();
     // The app name stays in English in both languages (DESIGN.md).
-    expect(screen.getByText("Residence Management")).toBeInTheDocument();
+    expect(screen.getByText("Parking Rental")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "ខ្មែរ" })).toHaveAttribute(
       "aria-pressed",
       "true",

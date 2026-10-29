@@ -1,6 +1,6 @@
 """Hourly encrypted backups, off-host copies and restore tests (V1-059, DL-071 answers 1 to 5).
 
-`property-rental-backup run` makes one backup with the read-only backup identity: it opens a
+`parking-backup run` makes one backup with the read-only backup identity: it opens a
 REPEATABLE READ transaction, exports its snapshot, counts the rows of every table in it, and
 runs `pg_dump --snapshot` on that same snapshot, so the counts describe exactly what the dump
 holds. The dump is checked (`pg_restore --list`), sealed with AES-256-GCM
@@ -679,9 +679,7 @@ def _previous_success(directory: Path, name: StatusFileName) -> str | None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        prog="property-rental-backup", description=__doc__.splitlines()[0]
-    )
+    parser = argparse.ArgumentParser(prog="parking-backup", description=__doc__.splitlines()[0])
     parser.add_argument("--config", type=Path, required=True, help="production-operations.json")
     parser.add_argument(
         "--pg-bin", type=Path, default=None, help="folder of pg_dump and pg_restore"

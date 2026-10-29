@@ -1,0 +1,19 @@
+# V1-059 (DL-071 answer 8; DEPLOY-051): health checks and Telegram alerts. Started every 5 minutes.
+[Unit]
+Description=CHETANA Parking operations check
+
+[Service]
+Type=oneshot
+User=pkm-ops
+Group=pkm-ops
+UMask=0077
+ExecStart=/opt/pkm/venv/bin/parking-ops-check --config /etc/pkm/production-operations.json run
+StandardOutput=journal
+StandardError=journal
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/pkm/status
+PrivateTmp=true
+# The secret files live in /etc/pkm/secrets (kept across restarts); the job sees them at
+# /run/secrets, the paths of production-operations.json.
+BindReadOnlyPaths=/etc/pkm/secrets:/run/secrets

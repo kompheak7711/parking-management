@@ -290,7 +290,7 @@ describe("Units list", () => {
     show(unitApi());
 
     expect(
-      await screen.findByText("4 Units at CHETANA Residence"),
+      await screen.findByText("4 Units at CHETANA Parking"),
     ).toBeInTheDocument();
     const table = screen.getByRole("table");
     expect(
@@ -340,7 +340,7 @@ describe("Units list", () => {
       can_create: true,
     });
     show(unitApi(), { leases: { list } as unknown as LeaseApi });
-    await screen.findByText("4 Units at CHETANA Residence");
+    await screen.findByText("4 Units at CHETANA Parking");
 
     expect(rowOf("U101")).toHaveTextContent("31/12/2026");
     expect(rowOf("U201")).toHaveTextContent("31/10/2100");
@@ -358,7 +358,7 @@ describe("Units list", () => {
       get: vi.fn().mockResolvedValue({ ...u201, can_manage: false }),
     });
     show(client);
-    await screen.findByText("4 Units at CHETANA Residence");
+    await screen.findByText("4 Units at CHETANA Parking");
     expect(
       screen.queryByRole("button", { name: "New Unit" }),
     ).not.toBeInTheDocument();
@@ -378,7 +378,7 @@ describe("Units list", () => {
 
   it("TEST-FE-823 filters by floor, Unit Type and the four count cards", async () => {
     show(unitApi());
-    await screen.findByText("4 Units at CHETANA Residence");
+    await screen.findByText("4 Units at CHETANA Parking");
     const card = (name: RegExp) => screen.getByRole("button", { name });
 
     expect(card(/^Occupied: 1/)).toBeInTheDocument();
@@ -439,7 +439,7 @@ describe("Units list", () => {
       ),
     ).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Retry" }));
-    await screen.findByText("4 Units at CHETANA Residence");
+    await screen.findByText("4 Units at CHETANA Parking");
 
     window.location.hash = "#/units/unit-U201";
     window.dispatchEvent(new HashChangeEvent("hashchange"));
@@ -498,7 +498,7 @@ describe("Unit page", () => {
       await screen.findByRole("heading", { name: "U101" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Floor 1 · Studio · 36 m² · CHETANA Residence"),
+      screen.getByText("Floor 1 · Studio · 36 m² · CHETANA Parking"),
     ).toBeInTheDocument();
     for (const name of [
       "Unit details",

@@ -1,6 +1,6 @@
 """Operational log retention (V1-059, DL-071 answer 17; DEPLOY-052).
 
-Technical (operational) log files are kept 90 days; `property-rental-log-retention` deletes the
+Technical (operational) log files are kept 90 days; `parking-log-retention` deletes the
 older ones once a day. It only looks at regular files directly inside the configured log
 folder whose names end in `.log`, `.jsonl`, `.log.gz` or `.jsonl.gz`; it never follows a link,
 never enters a sub-folder and never touches anything else. Audit and money history live in the
@@ -42,7 +42,7 @@ def expired_log_files(directory: Path, keep: timedelta, now: datetime) -> list[P
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="property-rental-log-retention")
+    parser = argparse.ArgumentParser(prog="parking-log-retention")
     parser.add_argument("--config", type=Path, required=True, help="production-operations.json")
     parser.add_argument("--dry-run", action="store_true", help="list, do not delete")
     arguments = parser.parse_args(argv)

@@ -63,5 +63,5 @@ openssl x509 -req -in server.csr -CA local-ca.pem -CAkey local-ca-key.pem -CAcre
   prm_fail "openssl could not sign the server certificate."
 rm -f server.csr
 
-printf 'Certificate ready for https://%s.local:5173 (365 days); sign in only at that address.\n' "$name"
+printf 'Certificate ready for https://%s.local:5174 (365 days); sign in only at that address.\n' "$name"
 printf 'Trust this file once on the Mac and on the iPad: %s/local-ca.pem\n' "$PRM_HTTPS"

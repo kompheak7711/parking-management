@@ -106,7 +106,7 @@ const businessApi = {
     load: vi.fn(() =>
       Promise.resolve({
         property_id: "property-1",
-        name: "CHETANA Residence",
+        name: "CHETANA Parking",
         address_text: null,
         timezone_name: "Asia/Phnom_Penh" as const,
         payment_methods: [],

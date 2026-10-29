@@ -1,6 +1,6 @@
 """The operations check and Telegram alert routing (V1-059, DL-071 answers 6 to 8; DEPLOY-051).
 
-`property-rental-ops-check run` is started every 5 minutes on the production computer. It looks
+`parking-ops-check run` is started every 5 minutes on the production computer. It looks
 at the database (with the read-only backup identity), the application readiness page, the free
 disk space and the security certificate, writes what it found to `checks.json` in the status
 directory, works out the health warnings from every status file (the same rules the health page
@@ -10,7 +10,7 @@ again at most once an hour. A message holds only the fixed
 warning texts. When Telegram is not set up or a message cannot be sent, the check still finishes,
 and the health page shows that too (SEC-059).
 
-`property-rental-ops-check record-migration` records the outcome of a database update for the
+`parking-ops-check record-migration` records the outcome of a database update for the
 health page; the release procedure runs it after `make migrate`.
 
 Not covered yet (listed for V1-059 part B): an audit-write failure signal, which needs the
@@ -62,7 +62,7 @@ READINESS_TIMEOUT_SECONDS: Final = 5
 # A message that could not be delivered is tried again at most once an hour (decided by Claude
 # under the owner's 2026-10-23 22:30 rule), so a broken chat never sends every 5 minutes.
 RETRY_INTERVAL: Final = timedelta(hours=1)
-MESSAGE_TITLE: Final = "CHETANA Residence Management"
+MESSAGE_TITLE: Final = "CHETANA Parking"
 SCHEDULED_JOB_QUERY: Final = """
 SELECT
   CASE WHEN to_regclass('app.billing_run_attempts') IS NULL THEN 0 ELSE (
@@ -294,7 +294,7 @@ def run_check(
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="property-rental-ops-check")
+    parser = argparse.ArgumentParser(prog="parking-ops-check")
     parser.add_argument("--config", type=Path, required=True, help="production-operations.json")
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("run", help="check, record and send alerts")

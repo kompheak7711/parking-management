@@ -167,10 +167,10 @@ def test_an_account_without_a_sign_in_code_sets_one_up_and_its_first_right_code_
         preauth = enrollment_token(flow, account, f"{username}-desk")
         result = flow.begin_mfa_enrollment(preauth_token=preauth, request_id="l3c-2b")
         link = urlsplit(result.provisioning_uri)
-        assert unquote(link.path) == f"/CHETANA Residence:{username}"
+        assert unquote(link.path) == f"/CHETANA Parking:{username}"
         query = parse_qs(link.query)
         assert (query["issuer"], query["digits"], query["period"]) == (
-            ["CHETANA Residence"],
+            ["CHETANA Parking"],
             ["6"],
             ["30"],
         )

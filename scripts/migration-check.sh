@@ -4,8 +4,8 @@
 # never shows a database password or a database URL.
 set -eu
 
-project_name="prm-migration-check-$$"
-secret_directory="$(mktemp -d "${TMPDIR:-/tmp}/prm-migration-check.XXXXXX")"
+project_name="pkm-migration-check-$$"
+secret_directory="$(mktemp -d "${TMPDIR:-/tmp}/pkm-migration-check.XXXXXX")"
 umask 077
 
 cleanup() {
@@ -104,7 +104,7 @@ case "$published_port" in
     ;;
 esac
 
-MIGRATION_DATABASE_URL="postgresql://prm_migrator:$(cat "$POSTGRES_MIGRATION_PASSWORD_FILE")@127.0.0.1:${published_port}/prm"
+MIGRATION_DATABASE_URL="postgresql://prm_migrator:$(cat "$POSTGRES_MIGRATION_PASSWORD_FILE")@127.0.0.1:${published_port}/pkm"
 export MIGRATION_DATABASE_URL
 
 cd backend

@@ -1,0 +1,306 @@
+feature,area,priority,original,clone,notes
+Sign in with username and password,Users/Login/MFA,must,yes,yes,S01
+Show or hide password,Users/Login/MFA,could,yes,yes,S01
+Language toggle EN/KM on sign-in screen,Users/Login/MFA,must,yes,yes,S01; every string is an [en km] pair
+Wrong credentials message and wait after 3 wrong tries (5 min then longer),Users/Login/MFA,must,yes,yes,S01 server rule
+Two-step sign-in with 6-digit TOTP code for Owner and Managers,Users/Login/MFA,must,yes,yes,S02
+Sign in with a recovery code when the phone is lost,Users/Login/MFA,should,yes,yes,S02; warns to ask Owner to reset
+Forgot password screen (explains Owner reset and server procedure),Users/Login/MFA,should,yes,yes,S03; no email/SMS reset by design
+One-time password sign-in then choose a new password,Users/Login/MFA,must,yes,yes,S04; 15-128 chars; not common; both match
+Set up two-step sign-in with QR code or typed key,Users/Login/MFA,must,yes,yes,S05
+Show 10 recovery codes once with Copy and acknowledgement tick,Users/Login/MFA,must,yes,yes,S06
+Signed-out notice after 30 min idle or 24 h,Users/Login/MFA,must,yes,yes,S07
+Sign out from top bar,Users/Login/MFA,must,yes,yes,S08/S85
+Session rules (30 min idle 24 h max; CSRF cookie; re-auth for sensitive changes),Users/Login/MFA,must,yes,yes,backend auth_api browser_session
+Re-authenticate with password + code before changing access,Users/Login/MFA,should,yes,yes,S82 ra_* dialog
+My account page (signed-in name and sign out),Users/Login/MFA,could,yes,yes,S85 #/account
+App shell with grouped menu (Home; Daily work; Tenants; Building; Office),Home,must,yes,yes,S08 navigation.ts MENU
+Tabs under one menu item (Leases: Leases/Letters/Move-out; Bookings),Home,must,yes,yes,S08
+Menu items hidden by capability; server still checks,Home,must,yes,yes,PAGE_NEEDS
+Hash routes per page and per record (#/units/<id>) so Back and bookmarks work,Home,must,yes,yes,useHashPage
+Top bar: page title and Phnom Penh clock,Home,should,yes,yes,AppShell
+Language toggle EN/KM in the app,Home,must,yes,yes,AppShell
+No access notice with link Home,Home,must,yes,yes,pages.tsx
+Property needed notice linking to Settings,Home,should,yes,yes,pages.tsx
+Home KPI card: Units occupied (reserved · vacant),Home,must,yes,yes,S09 k_occ; says Unit
+Home KPI card: Pending payment (Invoices not fully paid),Home,must,yes,yes,S09
+Home KPI card: Paid for month (% of billed; received this month · n payments),Home,must,yes,yes,S09
+Home KPI card: Overdue Invoices,Home,must,yes,yes,S09
+Home notice: Lease renewal (ends before date),Home,should,yes,yes,S09
+Home notice: Waiting for approval (n to confirm · money out),Home,should,yes,yes,S09
+Home notice: Meter readings missing (reading day),Home,should,yes,yes,S09
+Home notice: Letters due (day-20 and day-30),Home,should,yes,yes,S09
+"Home ""What to do"" list grouped Overdue / Today / This week / Later with Show more",Home,must,yes,yes,S09 rows: unpaid Invoice; Reservation ends; meter reading day; Lease ends; draft waiting; letter due; deposit decision; settlement open; refund due
+Home jobs line: last billing run; ABA rate updated; next Invoices date,Home,should,yes,yes,S09
+Home quick actions: Receive payment; Enter meter readings,Home,should,yes,yes,S09
+Units list with status cards Occupied/Reserved/Vacant/Not available,Units,must,yes,yes,"S28; ""Unit"" screen concept"
+Units filter by floor and by Unit Type,Units,must,yes,yes,"S28; ""Unit Type"" screen concept"
+Units table: Unit; Status; Monthly Rent; Until (lease end or reserved until),Units,must,yes,yes,S28
+Unit status set: VACANT RESERVED OCCUPIED CLEANING UNDER_MAINTENANCE OUT_OF_SERVICE,Units,must,yes,yes,units.status
+New Unit dialog (number floor type view kitchen room features size beds baths notes),Units,must,yes,yes,S30; starts Vacant
+Update Unit dialog (number fixed; changes dated in History),Units,must,yes,yes,S31
+Change Unit status with reason (blocked by signed Lease or active Reservation),Units,must,yes,yes,S32
+Unit detail: details card (Unit Type size m² bedrooms bathrooms view kitchen room features notes),Units,must,yes,yes,S29
+Unit detail: photo placeholder (file storage later),Units,could,yes,yes,S29 no_photo
+Unit detail: Current Lease card (Primary Tenant period signers occupants move-in),Units,must,yes,yes,S29
+Unit detail: Reservation card (customer reserved on expires agreed rent deposit received),Units,must,yes,yes,S29
+Unit detail: Availability text per status,Units,should,yes,yes,S29 a_*
+Unit detail: Lease history,Units,should,yes,yes,S29
+Unit detail: Meters with last reading,Units,should,yes,yes,S29 (placeholder text until R4)
+Unit detail: unpaid Invoices for this Unit,Units,should,yes,yes,S29 (placeholder)
+Unit detail: History (created updated status inventory signed move-in move-out terminated reserved),Units,must,yes,yes,S29 + GET /units/{id}/timeline
+Unit actions: Make Reservation; New Lease; New Lease from Reservation; Open Lease/draft/Reservation,Units,must,yes,yes,S29
+Unit inventory record (items by group with quantity; record number),Units,could,yes,yes,S33 UnitInventoryPanel; PUT /units/{id}/inventory
+"Unit count subtitle ""{n} Units at CHETANA Residence""",Units,could,yes,yes,units/text.ts sub (brand string)
+Unit setup lists in Settings: Floors,Unit Types/Settings,must,yes,yes,S81 cf_FLOOR (floor number 0-99)
+Unit setup lists in Settings: Unit Types (EN + KM name; rename keeps Units),Unit Types/Settings,must,yes,yes,S81 cf_UNIT_TYPE
+Unit setup lists in Settings: Views; Kitchens; Room features,Unit Types/Settings,should,yes,yes,S81
+"Remove a setup item unless a Unit uses it (""Used by a Unit"")",Unit Types/Settings,must,yes,yes,S81
+Read-only setup lists for users without settings access,Unit Types/Settings,should,yes,yes,S81 read_only
+Move-out cleaning rates per Unit Type (name EN/KM; rate; tick Unit Types),Unit Types/Settings,must,yes,yes,S80 cl_*; a Unit Type with Units needs a rate
+Unit Type column in Unit occupancy report,Unit Types/Settings,should,yes,yes,S76 c_unit_type
+Customers list with search (name phone Unit ID number),Customers,must,yes,yes,S34
+Customer kind cards: Current tenants; Signers and occupants; Reservations; Former,Customers,must,yes,yes,S34
+Customers table: Legal name; Phone; Unit; Relationship,Customers,must,yes,yes,S34
+Add Customer page (legal name phone email address DOB gender nationality ID/passport memo),Customers,must,yes,yes,S36
+"Duplicate check: same name or phone → open existing or tick ""different person""",Customers,must,yes,yes,S36
+Duplicate ID/passport number refused with link to existing Customer,Customers,must,yes,yes,S36 e_id_taken
+Customer save with pending-check guard (blocked while another save waits),Customers,should,yes,yes,S36 blocked; customer_commands
+Customer detail: Contact and identity card,Customers,must,yes,yes,S35
+Customer detail: Leases and Reservations with roles (Primary Tenant Signer Occupant Reservation Former),Customers,must,yes,yes,S35
+Customer detail: Money card (Unpaid; Customer Credit; Security Deposit; Pet Deposit),Customers,must,yes,yes,S35; Pet Deposit line removed in clone
+Customer detail: Unpaid Invoices and Latest Receipts,Customers,should,yes,yes,S35
+Customer detail: History,Customers,must,yes,yes,S35
+Edit contact dialog (never changes past documents),Customers,must,yes,yes,S37
+Deactivate Customer with reason (records kept),Customers,must,yes,yes,S38
+Customer Account Ledger (read-only; every line from an Invoice or Receipt; filters; position summary),Customers,should,yes,yes,S39 CustomerAccountLedger; GET /customers/{id}/account-ledger
+Customer financial summary endpoint,Customers,should,yes,yes,GET /customers/{id}/financial-summary
+Reservations list with cards Active / Ending within 7 days / Completed / Cancelled,Reservations,must,yes,yes,"S40 (menu label ""Bookings"")"
+Reservations table: Unit; Customer; Reserved on; Expires; Deposit received; Status; Result,Reservations,must,yes,yes,S40
+Make Reservation (vacant Unit; Customer or New Customer; date; expires ≤21 days; agreed Rent; full deposit; received now),Reservations,must,yes,yes,S42
+Suggested deposit 20% of agreed Rent; less needs Owner/Manager with reason,Reservations,must,yes,yes,S42 mk_reason; reservation_deposit_acceptances
+Reservation detail with facts; extension; cancellation; Security Deposit card; History,Reservations,must,yes,yes,S41
+Extend Reservation once (Manager; new expiration; memo),Reservations,must,yes,yes,S43
+Cancel Reservation (reason; responsibility Customer/Property; what was offered),Reservations,must,yes,yes,S44
+Reservation deposit outcome by rules (continues into Lease; kept; refunded) via drafts,Reservations,must,yes,yes,S41 m_*; security-deposit-dispositions
+Automatic expiry of Reservations (worker),Reservations,must,yes,yes,reservation_expiration_runs
+Reservation ending warning (sign or extend),Reservations,should,yes,yes,S41
+Leases list with cards Current / Ending soon / Drafts / Ended,Leases,must,yes,yes,S45
+Leases table: Unit; Primary Tenant; Period; Rent; Deposit; Status; +n Signers,Leases,must,yes,yes,S45
+New Lease form (Unit; Primary Tenant; other Signers; other occupants; dates; Rent; Security Deposit),Leases,must,yes,yes,S47
+New Lease from Reservation (prefilled Unit Customer Rent deposit),Leases,must,yes,yes,S47 from_booking
+Renew Lease (starts day after End Date; linked predecessor),Leases,must,yes,yes,S47 renew; POST /leases/{id}/renew
+End Date defaults to one year to the last day of a month,Leases,should,yes,yes,S47 end_help
+Services on a Lease grouped by Service type (only one / one or more) with monthly rate,Leases,must,yes,yes,S47; max 20
+Add a new Service inline from the Lease form,Leases,could,yes,yes,S47 svc_new
+What will be billed preview (Initial Rent math; next month rule; monthly rule; deposit; pet),Leases,must,yes,yes,S47 pv_*
+No-meter warnings on the Lease form (no electricity/water billed),Leases,should,yes,yes,S47
+Save draft confirm dialog,Leases,must,yes,yes,S47 confirm_title
+Lease detail with banners (draft; ending; no move-in; renewed),Leases,must,yes,yes,S46
+Lease detail: Rent and services card (Initial Rent prorated; due Start+5; recurring 25th/5th),Leases,must,yes,yes,S46
+Lease detail: Deposits card (Security required/received/outstanding),Leases,must,yes,yes,S46
+Lease detail: Termination card and History,Leases,must,yes,yes,S46; GET /leases/{id}/timeline
+Edit draft (dates Rent deposit; why changed),Leases,must,yes,yes,S48; lease_revisions
+Cancel draft with memo,Leases,must,yes,yes,S49
+Print draft Lease sheet for the customer to check,Leases,should,yes,yes,S56
+Sign Lease: tick every Signer; Unit becomes Occupied; active Reservation completed,Leases,must,yes,yes,S50; POST /leases/{id}/sign
+Sign with payment: receive rest of deposit + Initial Rent + services in one step with Receipt,Leases,must,yes,yes,S50 sp_*; POST /leases/{id}/sign-with-payment
+Initial Rent Invoice made at signing (due Start+5; no late charge; alerts management),Leases,must,yes,yes,S46 initial_due_note
+Initial Rent Due Date override with approval,Leases,could,yes,yes,S21 legacy; POST .../initial-rent-due-date
+Receive Security Deposit for a walk-in Lease (part now rest later; Receipt),Deposits,must,yes,yes,S51; POST /leases/{id}/security-deposit; /deposits/{id}/receipts
+Planned Security Deposit on a draft (cannot be below amount already received),Deposits,must,yes,yes,PUT /leases/{id}/planned-security-deposit
+Deposits are held not income; never pay ordinary Invoices,Deposits,must,yes,yes,rule text dep_note
+Deposit ledger and detail reads,Deposits,should,yes,yes,GET /deposits/{id} /ledger; /leases/{id}/deposits
+Undo a deposit receipt (draft),Deposits,could,yes,yes,POST /deposit-receipts/{id}/reverse
+Undo a kept deposit (draft),Deposits,could,yes,yes,POST /deposit-dispositions/{id}/reverse
+Keep Security Deposit at move-out as a draft (Manager; ground; amount),Deposits,must,yes,yes,S71 kd_btn_SECURITY
+Pet approved on a Lease (which pet),Pet deposit,must,yes,yes,S47 pet_ok; lease_pet_approvals; REMOVE in clone
+Pet Deposit required/received/outstanding on Lease detail,Pet deposit,must,yes,yes,S46 dep_pet; REMOVE in clone
+Pet Deposit line on Customer Money card,Pet deposit,should,yes,yes,S35 pet; REMOVE in clone
+Record pet departure,Pet deposit,could,yes,yes,POST /leases/{id}/pet-departures; REMOVE in clone
+Pet-rule violation termination keeps the Pet Deposit too,Pet deposit,should,yes,yes,S54 tg_petrule; REMOVE in clone
+"Inspection finding ""caused by the pet"" (Pet Deposit pays first)",Pet deposit,should,yes,yes,S67 fd_pet; REMOVE in clone
+Final Settlement: Pet Deposit for pet damage line,Pet deposit,should,yes,yes,S70 fs_pet_dmg; REMOVE in clone
+Final Settlement: remaining Pet Deposit for other balance (customer asked / staff reason),Pet deposit,should,yes,yes,S70 fs_pet_other pd_basis_*; REMOVE in clone
+Keep Pet Deposit at move-out as a draft,Pet deposit,should,yes,yes,S71 kd_btn_PET; dk_PET_FORFEIT; REMOVE in clone
+Pet deposit refund review,Pet deposit,could,yes,yes,GET /pet-deposit-refund-reviews/{id}; REMOVE in clone
+Pet damage reclassification correction,Pet deposit,could,yes,yes,cv_PET_DAMAGE_RECLASSIFICATION; REMOVE in clone
+Deposits report shows Security and Pet Deposits,Pet deposit,should,yes,yes,S76 dep_PET; REMOVE pet in clone
+Record move-in (date; who moves in; others; note),Move-in,must,yes,yes,S52; POST /leases/{id}/move-in
+Move-in starts Utility baseline readings for the Lease,Move-in,must,yes,yes,utility_baseline_*; GET .../utility-baseline
+Add occupant (existing Customer; move-in date; pending before move-in),Occupants,must,yes,yes,S53; POST /leases/{id}/occupants
+Occupants list with moved-in / moved-out dates; occupants owe nothing,Occupants,must,yes,yes,S46 occupants
+End an occupancy,Occupants,should,yes,yes,POST /occupancies/{id}/end
+Signers list (signed / to sign) with joint responsibility note,Signers,must,yes,yes,S46 signers
+Add or remove Signers while draft,Signers,must,yes,yes,S47 other_signers; POST /leases/{id}/signers; PATCH /lease-signers/{id}
+Signer history,Signers,could,yes,yes,lease_signer_history
+Terminate Lease: ground Customer leaves early,Leases,must,yes,yes,S54 tg_EARLY
+Terminate Lease: ground violation after 3 written warnings (tick warnings),Leases,must,yes,yes,S54 tg_VIOLATION
+Terminate Lease: ground Rent unpaid after day-30 notice (choose notice; wait for period),Leases,must,yes,yes,S54 tg_RENT
+Terminate Lease: ground Initial Rent not paid (after 5 days),Leases,must,yes,yes,S54 tg_UNPAID; unpaid_initial_termination_api
+Termination consequences shown (deposit kept; rent still due; Unit stays Occupied; cannot undo),Leases,must,yes,yes,S54 tg_c*
+Record termination notice (date given; ends on; letter number; text; how given),Letters,must,yes,yes,S55; lease_notice_api
+Letters tab: Rent letters cards Letters due / Day-20 given / Day-30 given,Letters,must,yes,yes,S58
+Rent letters table with next step (Record letter; Wait for day 30; Termination notice),Letters,must,yes,yes,S58
+Record Rent letter (day-20 warning or day-30 default notice; date; how given; details; letter number),Letters,must,yes,yes,S60; rent_nonpayment_events
+How-given options: handed; left at Unit with witness; email; Telegram; WhatsApp; other,Letters,should,yes,yes,S60 h_*
+Letters tab: Lease rule warnings (n of 3; last warning; breach),Letters,must,yes,yes,S59
+Record Lease rule warning (breach date; warning date; what happened; article),Letters,must,yes,yes,S61; lease_violation_warnings
+Rent nonpayment alerts and unpaid Initial Rent alerts,Letters,should,yes,yes,S62 legacy; GET .../rent-nonpayment-alerts /initial-rent-unpaid-alerts
+Move-out list with cards Leaving soon / Handed back / Waiting for a Manager / Closed,Move-out,must,yes,yes,S63
+Move-out table: Unit; Customer; Lease ends; Handed back; Step; Deposits held,Move-out,must,yes,yes,S63
+Move-out detail with 6 steps and status Done/To do/Now/Not needed,Move-out,must,yes,yes,S64
+Record hand-back (date; all keys; who moved out; Unit after: Cleaning/Maintenance/Out of service; note),Move-out,must,yes,yes,S65; physical_move_out_events
+Hand-back rent rule: before the 5th voids unpaid Rent Invoice; on/after due in full,Move-out,must,yes,yes,S65 rent_before5/after5; hand_back_rent_resolutions
+Hand-back on End Date ends the Lease (Manager),Move-out,must,yes,yes,S65 st2_ends_too
+Correct a hand-back,Move-out,could,yes,yes,mh_hb_fixed supersedes_event_id
+Final meter readings at hand-back and issue final Utility Invoice,Move-out,must,yes,yes,S66; move_out_final_input_*; final_utility_invoice
+Save final readings only (Manager issues later),Move-out,should,yes,yes,S66 st3_ok_only
+Inspection with damage findings (description; charge; evidence),Move-out,must,yes,yes,S67; move_out_inspections
+Correct an inspection with reason (locked once charged),Move-out,should,yes,yes,S67 st4_fix_btn
+Damage charge → Draft Invoice from a finding,Move-out,must,yes,yes,S68; one-time charge DAMAGE_CHARGES
+Cleaning charge at the Unit Type's rate → Draft Invoice,Move-out,must,yes,yes,S69; unit_cleaning_charges
+Final Settlement statement (open items; Credit; Security Deposit applied; kept deposits; balance; refund),Move-out,must,yes,yes,S70; GET .../final-settlements/{id}/preview
+Final Settlement blockers list (final utility; periods; cleaning; late decision; forfeiture; drafts),Move-out,must,yes,yes,S70 fi_*
+Start Final Settlement,Move-out,must,yes,yes,S70 st5_start; final_settlement_api
+Prepare Final Settlement draft (refund method; transfer reference; reason) → approval,Move-out,must,yes,yes,S70 pd_*
+Closed settlement: balance stays owed (no write-off in V1),Move-out,should,yes,yes,st5_closed_owed
+After closure: add a charge as a draft (damage or misc),Move-out,should,yes,yes,S72; settlement_correction_api
+After closure: refund later (not in V1),Move-out,could,yes,yes,st6_refund_later
+Invoices list with month filter (This/Last/Pick a month/All) and type filter,Invoices,must,yes,yes,S13
+Invoice cards: Total; Unpaid; Overdue; Paid with add-up note,Invoices,must,yes,yes,S13
+Invoices table: No.; Customer; Type; Due date; Amount; Balance; Status; Unit,Invoices,must,yes,yes,S13
+Invoice status chips Draft / Paid / Part paid / Not paid / Overdue / Void,Invoices,must,yes,yes,S13
+Filter Invoices to one Customer or one Unit,Invoices,should,yes,yes,S13 for_who; all_for
+Invoice detail: status card (billed received overdue balance days),Invoices,must,yes,yes,S14
+"Invoice detail: lines with ""Was X"" adjustments and total after adjustments",Invoices,must,yes,yes,S14
+Invoice detail: History (made; overdue; adjusted; voided; late charge events),Invoices,must,yes,yes,S14
+Print Invoice document,Invoices,must,yes,yes,S14 InvoiceDocument
+Create one-time charge Invoice as Draft (kind; Customer with signed Lease; items; reason; what approves it),Invoices,must,yes,yes,S15; POST .../one-time-charges /invoices/drafts
+Invoice items: up to 20; qty 1-9999; unit price; total,Invoices,must,yes,yes,S15
+Edit items of a Draft with reason,Invoices,should,yes,yes,S19; PUT /invoices/{id}/items
+Issue Invoice (number assigned; Due Date by rule or chosen with reason),Invoices,must,yes,yes,S16; POST /invoices/{id}/issue
+Adjust an issued Invoice line (lower/raise; source),Invoices,must,yes,yes,S17; POST /invoices/{id}/adjustments
+Void an Invoice with reason (not when money was paid),Invoices,must,yes,yes,S18; POST /invoices/{id}/void
+Undo an Invoice adjustment (draft),Invoices,could,yes,yes,adjustment_reversal; dk_ADJUSTMENT_REVERSAL
+Monthly Rent billing run (25th; Rent + services),Invoices,must,yes,yes,billing_run_api POST .../billing-runs/rent; scheduled
+Monthly Utility billing run from readings,Invoices,must,yes,yes,POST .../billing-runs/utilities; utility_consumption_periods
+Billing run diagnostics / inspect a run,Invoices,could,yes,yes,S21 BillingRunDiagnostics; GET /billing-runs/{id}
+One-time charge due days setting (1-90),Invoices,should,yes,yes,S79 days_h; POST .../one-time-charge-due-days
+Late-payment charge added automatically the day after Due Date (X% of unpaid),Invoices,must,yes,yes,late_payment_charge_runs
+Late-payment charge section on Invoice (charged reduced waived paid),Invoices,must,yes,yes,S14 lt_*
+Reduce or waive a late-payment charge (Manager; reason codes; detail),Invoices,must,yes,yes,S20; late_payment_api
+Undo a late-charge reduction,Invoices,could,yes,yes,lt_REVERSED late_payment_charge_corrections
+Payments list with period chips and 7 category cards + not matched,Payments,must,yes,yes,S10
+Payment categories: Rent; Utilities; Services; Late charges; Deposits; Move-out charges; Customer Credit,Payments,must,yes,yes,S10 c_*
+Payments table: Receipt; Received on; Customer; Amount; Paid for; Status,Payments,must,yes,yes,S10
+Payment status Matched / Part matched / Not matched / Reversed,Payments,must,yes,yes,S10
+Receive payment form (Customer; currency; amount; method; received on; reference; payer note),Payments,must,yes,yes,S11; POST .../payments (receive_payment_commands)
+Riel payments converted at app rate (ABA sell + markup; rounded up) with USD worth shown,Payments,must,yes,yes,S11 fx_*; exchange_rate_records
+Riel amount must sit on the dollar grid,Payments,should,yes,yes,err_riel_grid
+Allocation: app ticks oldest Due Date first; staff can change ticks,Payments,must,yes,yes,S11 pf_*; payment_allocations
+Late-payment charge paid right after its own Invoice,Payments,must,yes,yes,pfl_hint
+Left-over money: keep as Customer Credit or refund,Payments,must,yes,yes,pf_left; customer_credits
+"Confirm dialog ""Receive this payment?"" and done card with Receipt number",Payments,must,yes,yes,S11
+Receipt page with print,Payments,must,yes,yes,S12; receipts
+Reprint Receipt with reason (lost / copy / other) keeping the number and REPRINT mark,Payments,should,yes,yes,S12; POST /receipts/{id}/reprints
+Receipt lines read,Payments,should,yes,yes,GET .../payments/{id}/receipt-lines
+Reverse a payment (with reversal context),Payments,should,yes,yes,POST /payments/{id}/reverse; payment_reversal_context_api
+Move a payment to the right Unit/Invoice (draft),Payments,should,yes,yes,dk_PAYMENT_MOVE payment_moves
+Payment returned to the payer (draft),Payments,could,yes,yes,dk_PAYMENT_RETURN payment_returns
+Confirm the real riel rate from the bank channel,Payments,could,yes,yes,POST .../exchange-rates:confirm; S84
+Payment methods managed in Settings (add; edit; turn off; at least one on),Payments,must,yes,yes,S79 pm_*
+Payments summary endpoint for cards,Payments,should,yes,yes,GET .../payments/summary
+Customer Credit recognised from overpayment,Credits,must,yes,yes,customer_credits
+Credit applied to next Invoices with the Customer's agreement,Credits,must,yes,yes,customer_credit_applications; application-proposal
+Credit ledger per Customer,Credits,should,yes,yes,GET /customers/{id}/credits; /customer-credits/{id}/ledger
+Reverse a Credit,Credits,could,yes,yes,POST /customer-credits/{id}/reverse
+Refund draft (from Credit; payment; deposit) with method and reference → approval,Refunds,must,yes,yes,POST /refund-drafts; .../refund-drafts/{id}/confirm
+Refund list and detail with Refund number,Refunds,should,yes,yes,GET .../refunds; /refunds/{id}
+Verified return of a refund that came back,Refunds,could,yes,yes,POST /refunds/{id}/verified-returns
+Refund correction history,Refunds,could,yes,yes,refund_corrections
+Refund methods managed in Settings (turn on; needed to prepare settlement refunds),Refunds,should,yes,yes,refund_methods; pd_no_methods
+Waiting for approval: cards Waiting / Money out / Deposits kept / Decided today,Approvals,must,yes,yes,S27
+Drafts table: Draft; For; Prepared by; Amount; Status; oldest 200,Approvals,must,yes,yes,S27
+"Draft detail with ""What happens when you confirm""",Approvals,must,yes,yes,S27 ap_moves dm_*
+Confirm a draft (Owner/Manager; not own draft unless allowed),Approvals,must,yes,yes,S27; financial_draft_decisions
+Reject a draft with reason (no money moves),Approvals,must,yes,yes,S27
+Withdraw own draft with reason,Approvals,must,yes,yes,S27
+Draft kinds: refunds; keep deposits; payment move; forfeit undo; receipt undo; payment return; adjustment undo; Final Settlement; corrections,Approvals,must,yes,yes,S27 dk_*
+Decided today list,Approvals,should,yes,yes,S27
+Reservation deposit drafts confirm/reject/withdraw,Approvals,must,yes,yes,POST /reservations/{id}/deposit-drafts/{draft}/...
+Utilities: Meter readings tab with filters (Unit floor month meter kind only-not-read),Utilities/Meters,must,yes,yes,S22
+"Reading progress ""x of y meters read"" and next Invoices note",Utilities/Meters,must,yes,yes,S22
+Type a reading per Unit meter with last reading and use computed,Utilities/Meters,must,yes,yes,S22 UnitBox; POST /meters/{id}/readings
+Reading validation: whole number; not lower than last; much higher/lower warning with Save anyway,Utilities/Meters,must,yes,yes,S22
+Vacant/Reserved notes (Property pays),Utilities/Meters,should,yes,yes,S22
+Reading list opens on reading day (24th),Utilities/Meters,should,yes,yes,S22 before_day
+Readings grid by month with corrections marked,Utilities/Meters,should,yes,yes,S22 rd_*
+Correct a saved reading with reason,Utilities/Meters,should,yes,yes,POST /utility-readings/{id}/correct; S26
+Import readings from xlsx/csv with check table and confirm,Utilities/Meters,should,yes,yes,S25; POST .../utility-readings/sheet /:batch
+Download blank reading sheet,Utilities/Meters,should,yes,yes,S25; POST .../utility-readings/blank-sheet
+Meters tab: cards Electricity / Water / Broken; filter working/broken/replaced,Utilities/Meters,must,yes,yes,S23
+Meters table: Unit · Meter; Type; Status; Put in on; Last reading,Utilities/Meters,must,yes,yes,S23
+Add meter to a Unit without one (Manager; serial; first reading; date),Utilities/Meters,must,yes,yes,S23; POST /units/{id}/meters
+Meter detail with readings and facts,Utilities/Meters,must,yes,yes,S24; GET /meters/{id} /readings
+Report meter broken (date found; what is wrong),Utilities/Meters,must,yes,yes,S24; POST /meters/{id}/report-broken
+Replace a broken meter (new serial; first reading; put-in date),Utilities/Meters,must,yes,yes,S24; POST /meters/{id}/replace
+Meters never deleted; replaced meters kept in history,Utilities/Meters,should,yes,yes,mt_keep
+Broken meter consumption estimates,Utilities/Meters,could,yes,yes,broken_meter_estimates
+Utility calculation detail and billing preview,Utilities/Meters,could,yes,yes,POST /utility-billing/preview; S26
+Catch-up Utility Invoice for unbilled periods,Utilities/Meters,should,yes,yes,S26 UtilityLeaseWorkflows; GET .../unbilled-utility-periods
+Utility Rates effective-dated with tenants-told evidence (Settings),Settings/Rates,must,yes,yes,S80 se_util_*; utility_rates
+Services with monthly rate history and scheduled new rate (1st of month),Settings/Rates,must,yes,yes,S80 sv_*; service_rates
+Service types (only one / one or more per Lease),Settings/Rates,must,yes,yes,S80 st_*; service_types
+Business settings: Property name address Units count time zone language,Settings/Rates,must,yes,yes,S79
+Billing calendar display (read day 24; issue 25; due 5),Settings/Rates,must,yes,yes,S79 fixed by rules
+Late-payment % display,Settings/Rates,must,yes,yes,S79
+Reservation rules display (21 days; one extension; 20% suggested),Settings/Rates,should,yes,yes,S79
+Riel exchange rate card (last rate; ABA or by hand),Settings/Rates,should,yes,yes,S79 fx_*
+Document numbering (Invoice Receipt Refund prefix + year + running number),Settings/Rates,must,yes,yes,S79 se_numbers; document_number_series
+Settings tabs: Business; Rates and services; Unit setup; Users and sign-in; System health,Settings/Rates,must,yes,yes,S79-S83
+Users table (Name Role MFA Can change settings State Sign-in help),Users/Login/MFA,must,yes,yes,S82
+Add user (username fixed; role Staff/Manager) → one-time password shown once with Copy,Users/Login/MFA,must,yes,yes,S82; POST .../users
+Reset sign-in (password / two-step) with reason and note; signs out everywhere,Users/Login/MFA,must,yes,yes,S82 ur_*; account_recovery
+Disable a user (signed out at once; nothing deleted),Users/Login/MFA,must,yes,yes,S82; PATCH /users/{id}
+Settings access per user (Owner trusts; Staff needs MFA first; reason),Users/Login/MFA,should,yes,yes,S82 ua_*; POST /users/{id}/settings-access
+End all sessions except mine,Users/Login/MFA,should,yes,yes,S82 se_revoke
+Role capability matrix (Owner Manager Staff × daily work drafts approval reports health settings),Users/Login/MFA,should,yes,yes,S82 se_bundles; role_bundles
+Role bundle editing and capability grants (legacy form),Users/Login/MFA,could,yes,yes,S84; PATCH /role-bundles/{id}; POST /users/{id}/role-assignments
+Sign-in rules text (local sign-in; MFA for Owner/Managers; 30 min/24 h; lockout; disable),Users/Login/MFA,should,yes,yes,S82 se_signin_*
+Initial Owner bootstrap from CLI (not from the web),Users/Login/MFA,must,yes,yes,bootstrap_cli; initial_owner_bootstrap_closure
+System health tab (version DB migration backup offsite restore test Telegram alerts last billing run last expiry check),Settings/Rates,should,yes,yes,S83; GET /operations/status
+Daily backup with encryption retention and offsite copy,Settings/Rates,should,yes,yes,backup_job backup_encryption backup_retention
+Telegram alerts for health,Settings/Rates,could,yes,yes,operations_check
+Reports index: 13 reports in Totals and Registers groups with Owner/Manager tag,Reports,must,yes,yes,S74
+Report: Total Income by Unit and month,Reports,must,yes,yes,S75
+Report: Total Payment by Unit and month,Reports,must,yes,yes,S75
+Report: Total Electricity by Unit and reading period,Reports,should,yes,yes,S75
+Report: Total Water by Unit and reading period,Reports,should,yes,yes,S75
+Report: Invoice register and balances with overdue groups (1-19 20-29 30+),Reports,must,yes,yes,S76
+Report: Payments and allocations (where the money went),Reports,must,yes,yes,S76
+Report: Utility consumption (kWh m³ estimates rates),Reports,should,yes,yes,S76
+Report: Customer Credit ledger,Reports,should,yes,yes,S76
+Report: Deposit liability and disposition,Reports,should,yes,yes,S76
+Report: Final Settlement register,Reports,should,yes,yes,S76
+Report: Unit occupancy (status Customer Lease/Reservation end Unit Type),Reports,must,yes,yes,S76
+Report: Lease dates (ending within 60 days; no renewal drafted),Reports,must,yes,yes,S76
+Report: Audit activity (per day by person by action),Reports,could,yes,yes,S76
+Report scope (whole Property / floor / Unit) and period chips,Reports,must,yes,yes,S75/S76
+Report charts (stacked bars by month; bar list by kind),Reports,should,yes,yes,charts.tsx
+Report facts (highest month; highest Unit; top 5 Units),Reports,could,yes,yes,S75
+"Report table paging ""Show more""",Reports,should,yes,yes,S76
+Export report to xlsx or PDF (logged to History; PDF ≤5000 rows),Reports,must,yes,yes,S77; POST .../exports; report_export_files
+Staff see operational reports only (no money totals),Reports,must,yes,yes,S74 staff_note
+History page with filters When / Who / Action / Unit / Search,Audit/Timeline,must,yes,yes,S78; audit_api
+History table: When; Who; What happened; Record (link),Audit/Timeline,must,yes,yes,S78
+History search is itself audited,Audit/Timeline,should,yes,yes,hi_note
+Export audit (xlsx/pdf) with fingerprint written to History,Audit/Timeline,should,yes,yes,S78 hi_export
+Per-record History on Unit Customer Reservation Lease Invoice Move-out,Audit/Timeline,must,yes,yes,timeline endpoints
+"Every command idempotent with ""unknown outcome → Try again resends the same"" recovery",Audit/Timeline,must,yes,yes,*_commands tables; sealedIntentStore
+"Conflict handling ""someone changed this first; read again""",Audit/Timeline,must,yes,yes,version columns; conflict texts
+Refusal messages named exactly per rule (api_refusals.py),Audit/Timeline,must,yes,yes,backend api_refusals
+Financial action context / evidence pages for recorded actions,Audit/Timeline,could,yes,yes,S86 FinancialEvidence; financial_action_context_api
+"Brand: ""CHETANA Residence"" in shell header sign-in and Unit subtitle",Home,must,yes,yes,AppShell line 24; signInText au_where; units sub — rename in clone
+"App name ""Property Rental Management"" (index.html title) and ""Residence Management"" (sign-in)",Home,must,yes,yes,rename in clone
+Brand logo SVG (horizontal full colour and reverse),Home,should,yes,yes,assets/brand/*.svg — replace in clone

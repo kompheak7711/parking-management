@@ -281,7 +281,7 @@ def _pdf(
         topMargin=10 * mm,
         bottomMargin=10 * mm,
         title=title,
-        author="CHETANA Residence Management",
+        author="CHETANA Parking",
         invariant=True,
     )
     styles = getSampleStyleSheet()

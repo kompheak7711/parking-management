@@ -31,7 +31,7 @@ const METHODS: PaymentMethodConfiguration[] = [
 
 const PROPERTY: PropertyBusinessConfiguration = {
   property_id: "property-1",
-  name: "CHETANA Residence",
+  name: "CHETANA Parking",
   address_text: "Street 271, Phnom Penh",
   timezone_name: "Asia/Phnom_Penh",
   payment_methods: METHODS,
@@ -146,7 +146,7 @@ describe("Settings: Business", () => {
     expect(api.property.load).toHaveBeenCalledWith("property-1");
     expect(api.dueDays.get).toHaveBeenCalledWith("property-1");
     expect(pairs(property)).toEqual([
-      "Property: CHETANA Residence",
+      "Property: CHETANA Parking",
       "Address: Street 271, Phnom Penh",
       "Units: 0",
       "Time zone: Asia/Phnom_Penh (UTC+7)Due dates, expiry and reading days use Phnom Penh time.",
@@ -195,7 +195,7 @@ describe("Settings: Business", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
     expect(within(dialog).getByText("Enter a name.")).toBeTruthy();
     fireEvent.change(within(dialog).getByLabelText(/^Property/), {
-      target: { value: "CHETANA Residence 2" },
+      target: { value: "CHETANA Parking 2" },
     });
     fireEvent.change(within(dialog).getByLabelText("Address"), {
       target: { value: "  " },
@@ -203,7 +203,7 @@ describe("Settings: Business", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
     expect(await screen.findByText("Saved.")).toBeTruthy();
     expect(api.property.updateSource).toHaveBeenCalledWith(PROPERTY, {
-      name: "CHETANA Residence 2",
+      name: "CHETANA Parking 2",
       address_text: null,
     });
     expect(api.property.load).toHaveBeenCalledTimes(2);

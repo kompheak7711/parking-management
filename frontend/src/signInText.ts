@@ -5,10 +5,10 @@
 export type Language = "en" | "km";
 
 const text = {
-  au_app: ["Residence Management", "Residence Management"],
+  au_app: ["Parking Rental", "Parking Rental"],
   au_where: [
-    "CHETANA Residence · office computer",
-    "CHETANA Residence · កុំព្យូទ័រការិយាល័យ",
+    "CHETANA Parking · office computer",
+    "CHETANA Parking · កុំព្យូទ័រការិយាល័យ",
   ],
   au_fact1: [
     "Each person signs in with their own username.",

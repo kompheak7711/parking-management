@@ -1,0 +1,21 @@
+# V1-059 (DL-071 answers 1 to 5): one encrypted backup, then retention. Started by pkm-backup.timer.
+[Unit]
+Description=CHETANA Parking hourly backup
+After=docker.service
+Wants=docker.service
+
+[Service]
+Type=oneshot
+User=pkm-ops
+Group=pkm-ops
+UMask=0077
+ExecStart=/opt/pkm/venv/bin/parking-backup --config /etc/pkm/production-operations.json --pg-bin /usr/lib/postgresql/17/bin run
+StandardOutput=journal
+StandardError=journal
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/pkm
+PrivateTmp=true
+# The secret files live in /etc/pkm/secrets (kept across restarts); the job sees them at
+# /run/secrets, the paths of production-operations.json.
+BindReadOnlyPaths=/etc/pkm/secrets:/run/secrets

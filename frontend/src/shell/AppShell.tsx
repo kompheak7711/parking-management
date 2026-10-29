@@ -21,7 +21,7 @@ import {
 const TEXT = {
   menu: ["Menu", "ម៉ឺនុយ"],
   close_menu: ["Close the menu", "បិទម៉ឺនុយ"],
-  property: ["CHETANA Residence", "CHETANA Residence"],
+  property: ["CHETANA Parking", "CHETANA Parking"],
   tz: ["Phnom Penh time", "ម៉ោងភ្នំពេញ"],
   language: ["Language ភាសា", "Language ភាសា"],
   sign_out: ["Sign out", "ចាកចេញ"],
@@ -205,7 +205,7 @@ export function AppShell({
         <div className="shell-brand">
           <div className="shell-appname">
             <img alt="CHETANA" src={logoUrl} />
-            <span lang="en">Residence Management</span>
+            <span lang="en">Parking Rental</span>
           </div>
           <div className="shell-property">
             <Icon name="units" small />

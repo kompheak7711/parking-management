@@ -22,7 +22,7 @@ for function_name in "$@"; do
   esac
 done
 
-project_name="prm-catalog-dump-$$"
+project_name="pkm-catalog-dump-$$"
 secret_directory="$(mktemp -d "${TMPDIR:-/tmp}/prm-catalog-dump.XXXXXX")"
 umask 077
 
@@ -122,7 +122,7 @@ case "$published_port" in
     ;;
 esac
 
-MIGRATION_DATABASE_URL="postgresql://prm_migrator:$(cat "$POSTGRES_MIGRATION_PASSWORD_FILE")@127.0.0.1:${published_port}/prm"
+MIGRATION_DATABASE_URL="postgresql://prm_migrator:$(cat "$POSTGRES_MIGRATION_PASSWORD_FILE")@127.0.0.1:${published_port}/pkm"
 export MIGRATION_DATABASE_URL
 
 cd backend

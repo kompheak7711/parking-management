@@ -1,1 +1,1 @@
-"""Property Rental Management backend package."""
+"""Parking Rental backend package."""

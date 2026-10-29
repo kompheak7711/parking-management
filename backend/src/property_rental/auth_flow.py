@@ -95,7 +95,7 @@ RECOVERY_CODE_REGENERATION_WINDOW: Final = "15 minutes"
 # The name an authenticator app shows for the sign-in code (decided under the owner's
 # 2026-10-22 rule, login sub-slice L3c-2b); the Property's name since L6, so the app shows the
 # code "for CHETANA" as the sign-in screen says (Q-2026-10-24-187).
-TOTP_ISSUER: Final = "CHETANA Residence"
+TOTP_ISSUER: Final = "CHETANA Parking"
 LOGOUT_PROVENANCE: Final = "auth-logout"
 # How a live recovery-code set was made, as the sign-in screens show it (login sub-slice L6);
 # any other provenance (the first Owner's bootstrap, the older services) reads "other".

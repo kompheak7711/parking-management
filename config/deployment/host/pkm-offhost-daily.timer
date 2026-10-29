@@ -1,5 +1,5 @@
 [Unit]
-Description=CHETANA Residence Management daily off-host copy timer
+Description=CHETANA Parking daily off-host copy timer
 
 [Timer]
 OnCalendar=*-*-* 21:30:00 Asia/Phnom_Penh

@@ -1,11 +1,11 @@
-name: property-rental-management
+name: parking-management
 
 services:
   postgres:
     image: postgres:17.6
 
     environment:
-      POSTGRES_DB: prm
+      POSTGRES_DB: pkm
       POSTGRES_USER: prm_admin
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_admin_password
       POSTGRES_MIGRATION_PASSWORD_FILE: /run/secrets/postgres_migration_password
@@ -27,14 +27,14 @@ services:
       - postgres_bootstrap_password
 
     ports:
-      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+      - "127.0.0.1:${POSTGRES_PORT:-5433}:5432"
 
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./scripts/postgres-init.sh:/docker-entrypoint-initdb.d/10-identities.sh:ro
 
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U prm_admin -d prm"]
+      test: ["CMD-SHELL", "pg_isready -U prm_admin -d pkm"]
       interval: 10s
       timeout: 5s
       retries: 5

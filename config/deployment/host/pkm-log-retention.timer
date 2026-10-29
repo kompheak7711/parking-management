@@ -1,5 +1,5 @@
 [Unit]
-Description=CHETANA Residence Management log retention timer
+Description=CHETANA Parking log retention timer
 
 [Timer]
 OnCalendar=daily

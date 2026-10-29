@@ -47,7 +47,7 @@ for file_name, (role, password_name) in addresses.items():
         password = f.read().strip()
     if not password:
         sys.exit(f"the {password_name} password file is empty")
-    address = f"postgresql://{role}:{quote(password, safe='')}@127.0.0.1:{port}/prm"
+    address = f"postgresql://{role}:{quote(password, safe='')}@127.0.0.1:{port}/pkm"
     descriptor = os.open(target, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     with os.fdopen(descriptor, "w", encoding="utf-8") as f:
         f.write(address + "\n")

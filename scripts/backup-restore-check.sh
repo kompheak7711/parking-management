@@ -9,8 +9,8 @@
 set -eu
 
 repository_root="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
-project_name="prm-backup-check-$$"
-work_directory="$(mktemp -d "${TMPDIR:-/tmp}/prm-backup-check.XXXXXX")"
+project_name="pkm-backup-check-$$"
+work_directory="$(mktemp -d "${TMPDIR:-/tmp}/pkm-backup-check.XXXXXX")"
 umask 077
 
 cleanup() {
@@ -53,7 +53,7 @@ case "$port" in
   ''|*[!0-9]*) printf '%s\n' 'Unable to resolve the PostgreSQL loopback port' >&2; exit 1 ;;
 esac
 
-MIGRATION_DATABASE_URL="postgresql://prm_migrator:$(cat "$POSTGRES_MIGRATION_PASSWORD_FILE")@127.0.0.1:${port}/prm"
+MIGRATION_DATABASE_URL="postgresql://prm_migrator:$(cat "$POSTGRES_MIGRATION_PASSWORD_FILE")@127.0.0.1:${port}/pkm"
 export MIGRATION_DATABASE_URL
 if ! (cd "$repository_root/backend" && uv run alembic upgrade head >/dev/null 2>&1); then
   printf '%s\n' 'Backup check FAILED: the migrations did not apply' >&2
@@ -62,8 +62,8 @@ fi
 unset MIGRATION_DATABASE_URL
 printf '%s\n' 'Migrations applied on a fresh database'
 
-compose exec -T postgres psql -q -U prm_admin -d prm -c 'CREATE DATABASE prm_restore_test' >/dev/null
-printf 'postgresql://prm_backup:%s@127.0.0.1:%s/prm\n' \
+compose exec -T postgres psql -q -U prm_admin -d pkm -c 'CREATE DATABASE prm_restore_test' >/dev/null
+printf 'postgresql://prm_backup:%s@127.0.0.1:%s/pkm\n' \
   "$(cat "$POSTGRES_BACKUP_PASSWORD_FILE")" "$port" >"$secrets/backup_url"
 printf 'postgresql://prm_admin:%s@127.0.0.1:%s/prm_restore_test\n' \
   "$(cat "$POSTGRES_ADMIN_PASSWORD_FILE")" "$port" >"$secrets/restore_url"

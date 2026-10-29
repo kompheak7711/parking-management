@@ -186,12 +186,12 @@ def test_property_setup_command_finds_the_owner_and_makes_the_identifier(
     monkeypatch.setattr(property_setup_cli, "configure_postgres_property", configure)
 
     result = property_setup_cli.main(
-        ["--name", "CHETANA Residence"], settings=Settings(database_url="postgresql://runtime")
+        ["--name", "CHETANA Parking"], settings=Settings(database_url="postgresql://runtime")
     )
 
     assert result == 0
     assert len(observed) == 1 and observed[0][1] == owner
-    assert "CHETANA Residence is set up" in capsys.readouterr().out
+    assert "CHETANA Parking is set up" in capsys.readouterr().out
 
 
 def test_property_setup_command_needs_the_owner_and_runs_once(

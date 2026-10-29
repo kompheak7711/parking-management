@@ -5,7 +5,7 @@
 #   sh scripts/local/start-api.sh
 #
 # sudo asks for your Mac password once: the installed helper opens the root-only key file and
-# then runs the API as you, with the key on descriptor 4. The API listens on 127.0.0.1:8000
+# then runs the API as you, with the key on descriptor 4. The API listens on 127.0.0.1:8001
 # only; the screens reach it through the HTTPS screen server (frontend, `npm run dev:local`).
 # No password, key or database address is printed or passed as a command argument.
 set -eu
@@ -36,9 +36,9 @@ APP_PASSWORD_BLOCKLIST_FILE=$PRM_BLOCKLIST
 APP_ALLOWED_BROWSER_ORIGIN=$origin
 export APP_DATABASE_URL APP_FINANCIAL_DATABASE_URL APP_ENVIRONMENT APP_TOTP_KEY_FILE
 export APP_PASSWORD_BLOCKLIST_FILE APP_ALLOWED_BROWSER_ORIGIN
-printf 'API for %s, on 127.0.0.1:8000. Stop it with Control-C.\n' "$APP_ALLOWED_BROWSER_ORIGIN"
+printf 'API for %s, on 127.0.0.1:8001. Stop it with Control-C.\n' "$APP_ALLOWED_BROWSER_ORIGIN"
 cd "$PRM_ROOT/backend"
 # The screen server adds X-Forwarded-For; it is trusted from 127.0.0.1 only, so each device on the
 # Wi-Fi keeps its own sign-in waits and audit address, and none can claim another's.
-exec "$uv_path" run uvicorn property_rental.app:app --host 127.0.0.1 --port 8000 --no-access-log \
+exec "$uv_path" run uvicorn property_rental.app:app --host 127.0.0.1 --port 8001 --no-access-log \
   --proxy-headers --forwarded-allow-ips 127.0.0.1

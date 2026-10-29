@@ -134,7 +134,7 @@ export function InvoiceDocument({
         <div>
           <img alt="CHETANA" className="logo" src={logoUrl} />
           <div className="biz">
-            <b>CHETANA Residence</b>
+            <b>CHETANA Parking</b>
           </div>
         </div>
         <div className="title">

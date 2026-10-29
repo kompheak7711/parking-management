@@ -3,9 +3,9 @@ requires = ["hatchling>=1.27,<2"]
 build-backend = "hatchling.build"
 
 [project]
-name = "property-rental-backend"
+name = "parking-backend"
 version = "0.1.0"
-description = "FastAPI backend for Property Rental Management"
+description = "FastAPI backend for Parking Rental"
 requires-python = ">=3.11"
 dependencies = [
   "alembic>=1.16,<2",
@@ -21,11 +21,11 @@ dependencies = [
 ]
 
 [project.scripts]
-property-rental-reservation-expiration = "property_rental.reservation_worker:main"
-property-rental-scheduled-billing = "property_rental.billing_worker:main"
-property-rental-backup = "property_rental.backup_job:main"
-property-rental-ops-check = "property_rental.operations_check:main"
-property-rental-log-retention = "property_rental.log_retention:main"
+parking-reservation-expiration = "property_rental.reservation_worker:main"
+parking-scheduled-billing = "property_rental.billing_worker:main"
+parking-backup = "property_rental.backup_job:main"
+parking-ops-check = "property_rental.operations_check:main"
+parking-log-retention = "property_rental.log_retention:main"
 
 [project.optional-dependencies]
 dev = [

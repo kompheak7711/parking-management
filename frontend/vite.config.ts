@@ -7,7 +7,7 @@ import { defineConfig } from "vitest/config";
 // Login sub-slice L7c (owner answer (a) to Q-2026-10-21-159): when the local certificate of
 // `scripts/local/make-certificate.sh` is in the ignored `.local/https` folder, the screen server
 // uses HTTPS and lets the Mac mini's `.local` name in, so the iPad on the same Wi-Fi can open it
-// too. It forwards `/api` to the API on 127.0.0.1:8000, so the screens and the API share one
+// too. It forwards `/api` to the API on 127.0.0.1:8001, so the screens and the API share one
 // origin and the `__Host-` cookies work. Without the certificate it stays plain HTTP, as before;
 // but `npm run dev:local` (PRM_LOCAL_HTTPS=1, open to the Wi-Fi) refuses to start without it, so
 // a password never crosses the Wi-Fi in plain HTTP. The proxy adds X-Forwarded-For, which the
@@ -26,7 +26,7 @@ if (process.env.PRM_LOCAL_HTTPS === "1" && localHttps === undefined) {
 }
 
 const api = {
-  target: "http://127.0.0.1:8000",
+  target: "http://127.0.0.1:8001",
   changeOrigin: false,
   xfwd: true,
 };
@@ -34,6 +34,8 @@ const api = {
 export default defineConfig({
   plugins: [react()],
   server: {
+    port: 5174,
+    strictPort: true,
     ...(localHttps === undefined
       ? {}
       : { https: localHttps, allowedHosts: [".local"] }),

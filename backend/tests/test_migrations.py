@@ -142,7 +142,7 @@ def _validate_local_test_urls(admin_url: str, migration_url: str, runtime_url: s
             pytest.fail(f"{name} must target a loopback PostgreSQL host")
         if parsed.username != expected_users[name]:
             pytest.fail(f"{name} must use the expected isolated development identity")
-        if parsed.path != "/prm":
+        if parsed.path != "/pkm":
             pytest.fail(f"{name} must target the isolated development bootstrap database")
         if parsed.password is None:
             pytest.fail(f"{name} must include a protected test password")

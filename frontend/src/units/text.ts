@@ -5,7 +5,7 @@
 import type { Language } from "../signInText";
 
 const TEXT = {
-  sub: ["{0} Units at CHETANA Residence", "បន្ទប់ {0} នៅ CHETANA Residence"],
+  sub: ["{0} Units at CHETANA Parking", "បន្ទប់ {0} នៅ CHETANA Parking"],
   loading: ["Loading the Units…", "កំពុងផ្ទុកបន្ទប់…"],
   // new
   failed: [
