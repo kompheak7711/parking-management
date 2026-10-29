@@ -237,9 +237,12 @@ function RentTermsDialog({
       return;
     }
     setRentProblem(null);
-    // Parking Step 3: a price change is a money action, so it says why.
+    // Parking Step 3: a price change is a money action, so it says why; a Services-only
+    // change gives its reason too, with the plain message.
     if (reason.trim() === "") {
-      setReasonProblem(ut(language, "rt_reason_req"));
+      setReasonProblem(
+        ut(language, cents === first ? "reason_req" : "rt_reason_req"),
+      );
       return;
     }
     setReasonProblem(null);

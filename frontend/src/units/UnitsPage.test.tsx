@@ -788,6 +788,11 @@ describe("Parking page", () => {
     const dialog = await screen.findByRole("dialog");
     const rent = within(dialog).getByLabelText("Default Rent per month");
     expect(rent).toHaveValue("350.00");
+    // The price is as it was: the reason is still needed, but the message says so plainly.
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(
+      await within(dialog).findByText("Give the reason for the change."),
+    ).toBeInTheDocument();
     fireEvent.change(rent, { target: { value: "450" } });
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
     expect(

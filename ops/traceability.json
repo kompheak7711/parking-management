@@ -58919,6 +58919,14 @@
       "test_path": "frontend/src/units/UnitsPage.test.tsx",
       "status": "implemented",
       "notes": "Parking Step 3: the Parking History line for a price change shows the old price (or Not set), the new price, who and the reason; a change that keeps the price says who and why."
+    },
+    {
+      "test_id": "TEST-FE-1126",
+      "upstream_ids": ["BR-UNIT-015"],
+      "test_level": "unit",
+      "test_path": "frontend/src/unitClient.test.ts",
+      "status": "implemented",
+      "notes": "Parking Step 3 (review fix): the Unit timeline client keeps actor_name when the server sends a name and gives null otherwise, so the History line can say who."
     }
   ]
 }

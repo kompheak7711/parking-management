@@ -43,3 +43,19 @@ Task 7: complete. Docs 001/002/004/005 amended; features.csv +19 rows; traceabil
   renamed.
   Ruling: Tasks 3, 5, 6 and 7 go in one commit: unit_api.py, units/text.ts and
   UnitsPage.test.tsx carry hunks of all three. Cost if wrong: a coarser cherry-pick later.
+Task 8: /code-review medium on fac4fe48..HEAD: 7 findings.
+  Final: fixed timeline parser dropped actor_name — TEST-FE-1126 RED→GREEN.
+  Final: fixed "Say why the price changes." shown for a Services-only change — TEST-FE-1124
+  extended RED→GREEN; the plain "Give the reason for the change." is used when the price is as it
+  was (reason still required, see the Task 6 ruling).
+  Final: Ruling: New Parking's fixed English reason "Set with the new Parking" stays on the client;
+  a backend notion of "first price" is a design change for the owner to ask for. Cost if wrong:
+  one History line in English on a Khmer screen.
+  Final: Ruling: migration 255 re-seeds existing Properties with actor = property.created_by, as
+  Property Rental's own seed migrations do; Parking's database has no Property yet. Cost if wrong:
+  four audit rows named after the Property's creator.
+  Final: minor (deferred): reason trimming re-implemented instead of a shared StringConstraints
+  alias (the file already does the same in UnitPatch).
+  Final: minor (deferred): History actor name by correlated subselect instead of a LEFT JOIN.
+  Final: minor (deferred): docs keep Property Rental's text plus an "Amended for Parking"
+  paragraph (Step 2 and Step 3 practice, so future Property Rental doc changes copy cleanly).

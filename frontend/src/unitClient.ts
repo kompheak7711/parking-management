@@ -504,6 +504,8 @@ async function timeline(
       resulting_state: value.resulting_state ?? null,
       correlation_id: value.correlation_id,
       outcome: value.outcome,
+      actor_name:
+        typeof value.actor_name === "string" ? value.actor_name : null,
     };
   });
   return { items, next_cursor: data.next_cursor };

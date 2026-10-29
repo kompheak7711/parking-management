@@ -169,4 +169,41 @@ describe("Parking API client", () => {
       UnitRequestError,
     );
   });
+
+  it("TEST-FE-1126 the History rows keep who did it by name when the server says, and leave it empty otherwise (Parking Step 3)", async () => {
+    const row = (event_id: string, extra: Record<string, unknown>) => ({
+      event_id,
+      occurred_at: "2026-10-29T03:00:00Z",
+      actor_id: "actor-1",
+      action: "unit.rent_terms_changed",
+      entity_type: "unit",
+      reason: "New price list",
+      previous_state: { default_monthly_rent_usd_cents: 3500 },
+      resulting_state: { default_monthly_rent_usd_cents: 4500 },
+      correlation_id: event_id,
+      outcome: "SUCCEEDED",
+      ...extra,
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>().mockResolvedValueOnce(
+        respond(200, {
+          items: [
+            row("event-2", { actor_name: "Sok Dara" }),
+            row("event-1", { actor_name: null }),
+            row("event-0", {}),
+          ],
+          next_cursor: null,
+        }),
+      ),
+    );
+
+    const page = await unitApi.timeline("unit-1");
+
+    expect(page.items.map((event) => event.actor_name ?? null)).toEqual([
+      "Sok Dara",
+      null,
+      null,
+    ]);
+  });
 });
