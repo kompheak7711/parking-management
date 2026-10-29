@@ -570,6 +570,27 @@ describe("Customer dialogs", () => {
     expect(gate.release).toHaveBeenCalledWith(reserved);
   });
 
+  it("TEST-FE-1117 an impossible day typed as yyyy-mm-dd is refused before anything is sent (V1-061 Fix 4)", async () => {
+    const create = vi.fn();
+    show({ customers: customerApi({ create }), gate: commandGate() });
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Add Customer" }),
+    );
+    const form = await screen.findByRole("form", { name: "Add Customer" });
+    fireEvent.change(field(/^Legal name/), {
+      target: { value: "Chea Sophal" },
+    });
+    fireEvent.change(field(/^ID number/), { target: { value: "P7788" } });
+    fireEvent.change(field(/^Date of birth/), {
+      target: { value: "1990-02-30" },
+    });
+    fireEvent.click(
+      within(form).getByRole("button", { name: "Save Customer" }),
+    );
+    expect(within(form).getByText("Pick a date.")).toBeInTheDocument();
+    expect(create).not.toHaveBeenCalled();
+  });
+
   it("TEST-FE-832 warns about a Customer with the same name or phone and saves only after the tick; a used ID number is an error", async () => {
     const create = vi
       .fn()

@@ -140,6 +140,11 @@ const TEXT = {
   ],
   // V1-060 B6 (DL-102): Add occupant (DESIGN.md 0.15).
   add_occ: ["Add occupant", "បន្ថែមអ្នករស់នៅ"],
+  // V1-061 Fix 4: at most 20 people on a Lease.
+  occ_full: [
+    "20 people are on this Lease, the most it takes. Move someone out first.",
+    "កិច្ចសន្យាជួលនេះមានមនុស្ស 20 នាក់ហើយ ដែលជាចំនួនច្រើនបំផុត។ សូមឱ្យនរណាម្នាក់ចាកចេញជាមុនសិន។",
+  ],
   occ_tag: ["Occupant", "អ្នករស់នៅ"],
   in_pending: [
     "Moves in with the Lease; the real date is recorded at move-in.",

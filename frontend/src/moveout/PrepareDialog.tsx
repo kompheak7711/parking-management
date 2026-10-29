@@ -22,6 +22,7 @@ import type {
 import { usdFromCents } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { Dialog } from "../shell/ui";
+import { serverWords } from "../shell/serverText";
 import type { Language } from "../signInText";
 import { keyFor, type Keys } from "./ChargeDialogs";
 import { Kv } from "./parts";
@@ -223,7 +224,11 @@ export function PrepareDialog({
           error.status !== 408 &&
           error.status !== 429;
         // The server names the broken rule in plain words.
-        setOutcome(refused ? { refused: error.message } : { unknown: true });
+        setOutcome(
+          refused
+            ? { refused: serverWords(language, error) }
+            : { unknown: true },
+        );
       })
       .finally(() => {
         setBusy(false);

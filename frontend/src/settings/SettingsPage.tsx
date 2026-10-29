@@ -319,6 +319,8 @@ export function SettingsPage({
   );
   const tab =
     allowed.find((item) => item.tab === detail)?.tab ?? allowed[0]?.tab;
+  // Every tab but Health reads the open Property.
+  const noProperty = propertyId === "" && tab !== undefined && tab !== "health";
 
   return (
     <>
@@ -351,7 +353,13 @@ export function SettingsPage({
       {tab !== undefined && tab !== "health" && (
         <p className="ui-small ui-muted">{sst(language, "set_who")}</p>
       )}
-      {tab === "units" && (
+      {noProperty && (
+        <div className="ui-notice warn" role="status">
+          <Icon name="alert" />
+          <p>{sst(language, "no_property")}</p>
+        </div>
+      )}
+      {tab === "units" && !noProperty && (
         <UnitSetupTab
           active={active}
           api={unitApi}
@@ -359,7 +367,7 @@ export function SettingsPage({
           propertyId={propertyId}
         />
       )}
-      {tab === "business" && (
+      {tab === "business" && !noProperty && (
         <BusinessTab
           active={active}
           api={businessApi}
@@ -367,7 +375,7 @@ export function SettingsPage({
           propertyId={propertyId}
         />
       )}
-      {tab === "rates" && (
+      {tab === "rates" && !noProperty && (
         <RatesTab
           active={active}
           api={ratesApi}
@@ -375,7 +383,7 @@ export function SettingsPage({
           propertyId={propertyId}
         />
       )}
-      {tab === "users" && (
+      {tab === "users" && !noProperty && (
         <UsersTab
           active={active}
           api={usersApi}

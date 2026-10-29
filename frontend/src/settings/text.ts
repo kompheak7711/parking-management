@@ -21,6 +21,11 @@ const TEXT = {
   se_tab_health: ["System health", "សុខភាពប្រព័ន្ធ"],
   // new: tabs not rebuilt yet keep the earlier forms.
   earlier: ["Earlier forms (English)", "ទម្រង់មុន (អង់គ្លេស)"],
+  // V1-061 Fix 4 (owner bug list 29/10/2026): the tabs waited forever with no Property open.
+  no_property: [
+    "No Property is open yet. On the Business tab, open “Earlier forms (English)”, type the Property identifier and press “Load business configuration”. Then every tab fills in.",
+    "មិនទាន់មានអគារបើកនៅឡើយទេ។ នៅផ្ទាំងអាជីវកម្ម សូមបើក “ទម្រង់មុន (អង់គ្លេស)” វាយលេខសម្គាល់អគារ ហើយចុច “Load business configuration”។ បន្ទាប់មក ផ្ទាំងទាំងអស់នឹងបង្ហាញព័ត៌មាន។",
+  ],
   // new
   earlier_note: [
     "This tab is rebuilt in a later step. Until then the earlier forms below still work.",

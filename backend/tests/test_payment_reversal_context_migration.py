@@ -379,7 +379,7 @@ def test_payment_reversal_context_database_migration_privileges_and_readonly_tra
     migrated_database_url: str,  # noqa: F811
 ) -> None:
     scripts = ScriptDirectory.from_config(Config("alembic.ini"))
-    assert scripts.get_heads() == ["20270403_253"]
+    assert scripts.get_heads() == ["20270404_254"]
     revision = scripts.get_revision("20260908_46")
     assert revision is not None and revision.down_revision == "20260907_45"
     with pytest.raises(RuntimeError, match="forward-only"):

@@ -23,7 +23,7 @@ import {
   type ServiceRate,
   type UtilityRate,
 } from "../configurationClient";
-import { DateInput } from "../shell/DateInput";
+import { DateInput, isDay } from "../shell/DateInput";
 import { dayText, todayInPhnomPenh, usdFromCents } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { Chip, Dialog } from "../shell/ui";
@@ -954,11 +954,7 @@ function UtilityDialog({
     if (!/^\d{1,4}(\.\d{1,8})?$/.test(value) || Number(value) <= 0) {
       found["ur-rate"] = sst(language, "e_util_rate");
     }
-    if (
-      !/^\d{4}-\d{2}-\d{2}$/.test(day) ||
-      Number(day.slice(8)) !== READING_DAY ||
-      day <= today
-    ) {
+    if (!isDay(day) || Number(day.slice(8)) !== READING_DAY || day <= today) {
       found["ur-day"] = sst(language, "se_e_read");
     } else if (
       existing.some(
@@ -967,11 +963,7 @@ function UtilityDialog({
     ) {
       found["ur-day"] = sst(language, "se_e_same");
     }
-    if (
-      !/^\d{4}-\d{2}-\d{2}$/.test(toldOn) ||
-      toldOn > today ||
-      (day !== "" && toldOn >= day)
-    ) {
+    if (!isDay(toldOn) || toldOn > today || (day !== "" && toldOn >= day)) {
       found["ur-told"] = sst(language, "e_told");
     }
     if (how.trim() === "") found["ur-how"] = sst(language, "e_told_how");
@@ -1136,7 +1128,7 @@ function ServiceRateDialog({
       ? Math.round(Number(value) * 100)
       : 0;
     if (cents <= 0) found["sr-amt"] = sst(language, "err_amount");
-    if (!/^\d{4}-\d{2}-01$/.test(day) || day <= today) {
+    if (!(isDay(day) && day.endsWith("-01")) || day <= today) {
       found["sr-day"] = sst(language, "se_e_first");
     } else if (existing.some((rate) => rate.effective_date === day)) {
       found["sr-day"] = sst(language, "se_e_same");

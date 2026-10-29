@@ -34,6 +34,7 @@ import { usdFromCents } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { useLeaveGuard } from "../shell/leaveGuard";
 import { Dialog } from "../shell/ui";
+import { serverWords } from "../shell/serverText";
 import type { Language } from "../signInText";
 import { lt } from "./text";
 
@@ -188,7 +189,7 @@ export function ReceiveDepositDialog({
               kind: "refused",
               text:
                 error instanceof SettlementRequestError
-                  ? error.message
+                  ? serverWords(language, error)
                   : lt(language, "rd_refused"),
             },
       );

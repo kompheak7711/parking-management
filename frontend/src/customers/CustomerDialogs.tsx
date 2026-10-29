@@ -12,7 +12,7 @@ import {
   type CustomerListItem,
   type CustomerSource,
 } from "../customerClient";
-import { DateInput } from "../shell/DateInput";
+import { DateInput, isDay } from "../shell/DateInput";
 import { todayInPhnomPenh } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { hashForPage } from "../shell/navigation";
@@ -104,7 +104,7 @@ function check(
   if (email != null && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
     problems.email_address = ct(language, "e_email");
   const birth = source.date_of_birth;
-  if (birth != null && !/^\d{4}-\d{2}-\d{2}$/.test(birth))
+  if (birth != null && !isDay(birth))
     problems.date_of_birth = ct(language, "e_dob");
   return problems;
 }

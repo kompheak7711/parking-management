@@ -144,6 +144,7 @@ function show(
   {
     capabilities = null as ReadonlySet<string> | null,
     language = "en" as "en" | "km",
+    propertyId = "property-1",
   } = {},
 ) {
   const api = { status: vi.fn(status) };
@@ -158,7 +159,7 @@ function show(
       healthApi={api}
       language={language}
       myUserId="owner-1"
-      propertyId="property-1"
+      propertyId={propertyId}
       reauthenticate={vi.fn()}
       unitApi={setupApi}
       usersApi={usersApi}
@@ -170,6 +171,25 @@ function show(
 }
 
 describe("Settings", () => {
+  it("TEST-FE-1116 with no Property open, the Business, Rates, Units and Users tabs say how to open one instead of reading forever, and the earlier form to open it stays (V1-061 Fix 4)", async () => {
+    window.location.hash = "#/settings/business";
+    businessApi.property.load.mockClear();
+    show(() => new Promise<HealthStatus>(() => undefined), { propertyId: "" });
+    const note =
+      "No Property is open yet. On the Business tab, open “Earlier forms (English)”, type the Property identifier and press “Load business configuration”. Then every tab fills in.";
+    expect(await screen.findByText(note)).toBeInTheDocument();
+    expect(screen.queryByText("Reading the business settings…")).toBeNull();
+    expect(screen.getByText("Old business form")).toBeInTheDocument();
+    expect(businessApi.property.load).not.toHaveBeenCalled();
+    for (const tab of ["rates", "units", "users"]) {
+      act(() => {
+        window.location.hash = `#/settings/${tab}`;
+        window.dispatchEvent(new HashChangeEvent("hashchange"));
+      });
+      expect(await screen.findByText(note)).toBeInTheDocument();
+    }
+  });
+
   it("TEST-FE-937 shows only the tabs the person may use; a Manager without Settings access lands on System health, which lists the health records", async () => {
     const api = show(() => Promise.resolve(HEALTHY), {
       capabilities: new Set(["operations.status.read"]),

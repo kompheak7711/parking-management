@@ -14,7 +14,7 @@ import {
   type LeaseResource,
 } from "../leaseClient";
 import { Problem, useValuesIdentity } from "../leases/LeaseDialogs";
-import { DateInput } from "../shell/DateInput";
+import { DateInput, isDay } from "../shell/DateInput";
 import { dayText } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { Dialog } from "../shell/ui";
@@ -122,7 +122,7 @@ export function HandBackDialog({
   );
   const unitVersion = useRef<number | null>(null);
   const endsToo = terminationEventId === null;
-  const valid = /^\d{4}-\d{2}-\d{2}$/.test(day) && day >= first && day <= today;
+  const valid = isDay(day) && day >= first && day <= today;
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

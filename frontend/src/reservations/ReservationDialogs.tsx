@@ -12,7 +12,7 @@ import {
   type ReservationApi,
   type ReservationResource,
 } from "../reservationClient";
-import { DateInput } from "../shell/DateInput";
+import { DateInput, isDay } from "../shell/DateInput";
 import { dayText, todayInPhnomPenh, usdFromCents } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { Dialog } from "../shell/ui";
@@ -129,8 +129,7 @@ export function ExtendDialog({
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy) return;
-    const bad =
-      !/^\d{4}-\d{2}-\d{2}$/.test(date) || date < earliest || date > latest;
+    const bad = !isDay(date) || date < earliest || date > latest;
     setWrong(bad);
     if (bad) return;
     const chosen = identityFor(identity, { date, memo: memo.trim() });

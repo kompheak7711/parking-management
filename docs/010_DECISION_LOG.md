@@ -2369,3 +2369,17 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Built:** `frontend/src/shell/leaveGuard.ts` (`useLeaveGuard`), listening to the address before any page does.
 - **Links:** DL-108, DL-112.
 - **Decision date:** 2026-10-29.
+
+## DL-114 — V1-061: the screen fixes on the owner's bug list
+
+- **Type:** `TECHNICAL DECISION` (fixes on the owner's bug list; no new business rule)
+- **Status:** `APPROVED; BEING BUILT ON THE V1-061 BRANCH`
+- **Source:** the owner's bug list of 2026-10-29 ("Bugs first, then V1.1"): Khmer screens show English server words; the Settings Business tab loads forever when there is no Property; Meter changes must show in History; impossible dates must be refused on every screen; Add occupant must stop at 20.
+- **Decision and built:**
+  - **Khmer server words:** the server keeps its English refusal messages; the screens show Khmer words chosen by the refusal's code (`frontend/src/shell/serverText.ts`, every refusal code of the server, kept complete by `backend/tests/test_server_text_khmer.py`). A code without Khmer words shows a plain Khmer line. A native Khmer reader still checks the words.
+  - **Settings with no Property:** the Business, Rates, Units and Users tabs say how to open the Property (the earlier form on the Business tab) instead of reading forever.
+  - **Meter changes in History:** migration `20270404_254` writes one audit event, with the Unit, when a Meter is added, replaced or reported broken (`utility.meter.installed`, `utility.meter.replaced`, `utility.meter.failure_reported`). Readings are not added: they are the monthly work, not a change of the Meter.
+  - **Impossible dates:** every rebuilt form checks a date with the same real-day check as the date box (`isDay`), so a typed 2026-02-30 is refused before anything is sent.
+  - **Add occupant stops at 20:** the database already refused a 21st person; the Lease page now shows no Add occupant button at 20 and says why.
+- **Links:** DL-102, DL-111, DL-113, BR-OCC-004.
+- **Decision date:** 2026-10-29.

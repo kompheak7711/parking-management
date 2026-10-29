@@ -58671,6 +58671,79 @@
       "notes": "V1-061 Fix 3 (DL-113): while a money window is open, reload is asked about and Back asks first; staying keeps the page and its address, leaving follows the address, and with no money window nothing asks."
     },
     {
+      "test_id": "TEST-FE-1115",
+      "upstream_ids": [
+        "DL-114"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/shell/serverText.test.tsx",
+      "status": "implemented",
+      "notes": "V1-061 Fix 4 (DL-114): English screens show the server's message; Khmer screens show the refusal code's Khmer words, and a plain Khmer line for a code without them."
+    },
+    {
+      "test_id": "test_every_server_refusal_code_has_khmer_words_on_the_screens",
+      "upstream_ids": [
+        "DL-114"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_server_text_khmer.py",
+      "status": "implemented",
+      "notes": "V1-061 Fix 4 (DL-114): every server refusal code has Khmer words in frontend/src/shell/serverText.ts, and so do the general answers."
+    },
+    {
+      "test_id": "TEST-FE-1116",
+      "upstream_ids": [
+        "DL-114",
+        "DL-075"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/SettingsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-061 Fix 4 (DL-114): with no Property open, the Business, Rates, Units and Users tabs say how to open one instead of reading forever, and the earlier form stays."
+    },
+    {
+      "test_id": "test_adding_reporting_and_replacing_a_meter_each_show_once_in_history",
+      "upstream_ids": [
+        "DL-114",
+        "BR-UTIL-006"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_meter_history_migration.py",
+      "status": "implemented",
+      "notes": "V1-061 Fix 4 (DL-114): a new Meter, a Meter reported broken and a replaced Meter each write one audit event with the Unit, the actor and the reason; a replay writes none."
+    },
+    {
+      "test_id": "test_the_meter_history_migration_is_the_head_and_is_forward_only",
+      "upstream_ids": [
+        "DL-114"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_meter_history_migration.py",
+      "status": "implemented",
+      "notes": "V1-061 Fix 4 (DL-114): migration 20270404_254 follows 20270403_253, is the head and is forward-only."
+    },
+    {
+      "test_id": "TEST-FE-1117",
+      "upstream_ids": [
+        "DL-114"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/customers/CustomersPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-061 Fix 4 (DL-114): an impossible day typed as yyyy-mm-dd is refused before anything is sent."
+    },
+    {
+      "test_id": "TEST-FE-1118",
+      "upstream_ids": [
+        "DL-114",
+        "DL-102"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-061 Fix 4 (DL-114): a Lease with 20 people living there shows no Add occupant button and says why; with 19 the button shows."
+    },
+    {
       "test_id": "test_make_reservation_saves_the_money_and_the_reservation_together",
       "upstream_ids": [
         "DL-112",

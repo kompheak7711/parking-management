@@ -312,8 +312,8 @@ def test_an_overlapping_signed_lease_is_refused_not_unknown(migrated_database_ur
 def test_sign_lease_reservation_check_is_the_head_and_is_forward_only() -> None:
     config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
     scripts = ScriptDirectory.from_config(config)
-    assert scripts.get_current_head() == "20270403_253"
-    revision = scripts.get_revision("20270403_253")
+    assert scripts.get_current_head() == "20270404_254"
+    revision = scripts.get_revision("20270331_250")
     assert revision is not None and revision.down_revision == "20270330_249"
     module = cast(Any, revision.module)
     with pytest.raises(RuntimeError, match="forward-only"):

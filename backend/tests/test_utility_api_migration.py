@@ -177,7 +177,7 @@ def test_v1_043_is_forward_only_head_and_runtime_has_only_command_execute(
     migrated_database_url: str,
 ) -> None:
     config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
-    assert ScriptDirectory.from_config(config).get_current_head() == "20270403_253"
+    assert ScriptDirectory.from_config(config).get_current_head() == "20270404_254"
     source = (
         Path(__file__).parents[1] / "migrations/versions/20260829_34_v1_043_utility_api.py"
     ).read_text()
@@ -186,7 +186,7 @@ def test_v1_043_is_forward_only_head_and_runtime_has_only_command_execute(
         command.downgrade(config, "20260829_33")
     with psycopg.connect(migrated_database_url) as owner:
         assert owner.execute("SELECT version_num FROM alembic_version").fetchone() == (
-            "20270403_253",
+            "20270404_254",
         )
         for table in (
             "utility_meters",

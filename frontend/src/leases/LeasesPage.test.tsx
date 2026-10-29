@@ -3507,6 +3507,50 @@ describe("Add occupant (DL-102)", () => {
     };
   }
 
+  it("TEST-FE-1118 a Lease with 20 people living there shows no Add occupant button and says why; 19 still shows it (V1-061 Fix 4)", async () => {
+    const crowd = (count: number) =>
+      lease("U101", {
+        occupancies: [
+          ...lease("U101").occupancies,
+          ...Array.from({ length: count - 1 }, (_, index) => ({
+            occupancy_id: `occupancy-${String(index)}`,
+            customer_id: `customer-${String(index)}`,
+            customer_name: `Person ${String(index)}`,
+            move_in_date: addDays(today, -100),
+            move_out_date: null,
+            version: 1,
+          })),
+        ],
+      });
+    window.location.hash = "#/leases/lease-U101";
+    show(
+      api({ get: vi.fn().mockResolvedValue(crowd(20)) }),
+      deposits(),
+      null,
+      undefined,
+      people(),
+    );
+    expect(
+      await screen.findByText(
+        "20 people are on this Lease, the most it takes. Move someone out first.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Add occupant" })).toBeNull();
+
+    cleanup();
+    window.location.hash = "#/leases/lease-U101";
+    show(
+      api({ get: vi.fn().mockResolvedValue(crowd(19)) }),
+      deposits(),
+      null,
+      undefined,
+      people(),
+    );
+    expect(
+      await screen.findByRole("button", { name: "Add occupant" }),
+    ).toBeInTheDocument();
+  });
+
   it("TEST-FE-1025 after the move-in a friend gets their own move-in date: the date is checked, Try again sends the same Occupancy and key, and the page says who was added", async () => {
     window.location.hash = "#/leases/lease-U101";
     const first = addDays(today, -199);

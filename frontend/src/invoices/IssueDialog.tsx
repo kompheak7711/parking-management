@@ -9,7 +9,7 @@ import {
   type InvoiceApi,
   type InvoiceResource,
 } from "../invoiceClient";
-import { DateInput } from "../shell/DateInput";
+import { DateInput, isDay } from "../shell/DateInput";
 import { usdFromCents } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { Dialog } from "../shell/ui";
@@ -50,7 +50,7 @@ export function IssueDialog({
     if (busy) return;
     const found: ("date" | "reason")[] = [];
     if (other) {
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(due) || due < today) found.push("date");
+      if (!isDay(due) || due < today) found.push("date");
       if (reason.trim() === "") found.push("reason");
     }
     setProblems(found);

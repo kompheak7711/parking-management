@@ -21,6 +21,7 @@ import type { ExtraChargeInput } from "../settlementForms";
 import { Icon } from "../shell/icons";
 import { hashForPage } from "../shell/navigation";
 import { Dialog } from "../shell/ui";
+import { serverWords } from "../shell/serverText";
 import type { Language } from "../signInText";
 import { keyFor, type Keys } from "./ChargeDialogs";
 import type { InspectionFinding } from "./moveoutClient";
@@ -39,13 +40,7 @@ function outcomeOf(error: unknown, language: Language): Outcome {
     error.status < 500 &&
     error.status !== 408 &&
     error.status !== 429
-    ? {
-        // The server's words are English; a Khmer reader also gets the plain line.
-        refused:
-          language === "km"
-            ? `${mt(language, "c_refused")} (${error.message})`
-            : error.message,
-      }
+    ? { refused: serverWords(language, error) }
     : { unknown: true };
 }
 

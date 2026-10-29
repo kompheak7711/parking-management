@@ -16,6 +16,7 @@ import {
 import { usdFromCents } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { Dialog } from "../shell/ui";
+import { serverWords } from "../shell/serverText";
 import type { Language } from "../signInText";
 import { keyFor, type Keys } from "./ChargeDialogs";
 import { Kv } from "./parts";
@@ -142,7 +143,7 @@ export function KeepDepositDialog({
             error.status === 403
               ? mt(language, "ur_FORBIDDEN")
               : named === undefined
-                ? error.message
+                ? serverWords(language, error)
                 : mt(language, named),
         });
       })

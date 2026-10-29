@@ -43,11 +43,12 @@ import {
   ServiceSettingsError,
   serviceSettingsApi,
 } from "../settings/serviceSettingsClient";
-import { DateInput } from "../shell/DateInput";
+import { DateInput, isDay } from "../shell/DateInput";
 import { dayText, todayInPhnomPenh, usdFromCents } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { openPageInAddress } from "../shell/useHashPage";
 import { Dialog } from "../shell/ui";
+import { serverWords } from "../shell/serverText";
 import type { Language } from "../signInText";
 import type { UnitApi, UnitResource } from "../unitClient";
 import { type UtilityApi, utilityApi } from "../utilityClient";
@@ -275,7 +276,7 @@ export function LeaseForm({
   // The Unit's meters on the Start Date: a kind with none is not billed (owner 2026-10-26).
   // A failed read (or no right to read meters) shows nothing.
   useEffect(() => {
-    if (unitId === "" || !/^\d{4}-\d{2}-\d{2}$/.test(start)) {
+    if (unitId === "" || !isDay(start)) {
       setNoMeter(null);
       return;
     }
@@ -499,9 +500,9 @@ export function LeaseForm({
   const belowDefault =
     cents !== null && rentFloor !== null && cents < rentFloor;
   const required = new Set(chosenUnit?.required_service_ids ?? []);
-  const startOk = /^\d{4}-\d{2}-\d{2}$/.test(start);
+  const startOk = isDay(start);
   const preview = startOk && cents !== null ? initialRent(start, cents) : null;
-  const endOk = /^\d{4}-\d{2}-\d{2}$/.test(end) && end > start;
+  const endOk = isDay(end) && end > start;
   const groups =
     services !== null && services !== "failed" && startOk && endOk
       ? serviceGroups(services, start, end)
@@ -596,7 +597,7 @@ export function LeaseForm({
       start <= previous.end_date
     )
       found.start = lt(language, "err_renew_start", dayText(previous.end_date));
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(end) || end <= start || !monthEnd(end))
+    if (!isDay(end) || end <= start || !monthEnd(end))
       found.end = lt(language, "err_end");
     if (cents === null) found.rent = lt(language, "err_rent");
     else if (belowDefault && mayLowerRent === false)
@@ -719,7 +720,7 @@ export function LeaseForm({
           : {
               refused:
                 error instanceof SettlementRequestError
-                  ? error.message
+                  ? serverWords(language, error)
                   : lt(language, "part_refused"),
             },
       );
@@ -926,8 +927,7 @@ export function LeaseForm({
                 id="lease-form-start"
                 onChange={(value) => {
                   setStart(value);
-                  if (/^\d{4}-\d{2}-\d{2}$/.test(value))
-                    setEnd(oneYearEnd(value));
+                  if (isDay(value)) setEnd(oneYearEnd(value));
                 }}
                 value={start}
               />,

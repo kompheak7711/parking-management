@@ -19,10 +19,11 @@ import {
   type SettlementApi,
   SettlementRequestError,
 } from "../settlementClient";
-import { DateInput } from "../shell/DateInput";
+import { DateInput, isDay } from "../shell/DateInput";
 import { dayText, todayInPhnomPenh, usdFromCents } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { Dialog } from "../shell/ui";
+import { serverWords } from "../shell/serverText";
 import type { Language } from "../signInText";
 import type { UnitApi } from "../unitClient";
 import { lt, type LeaseTextKey } from "./text";
@@ -211,9 +212,8 @@ export function EditDraftDialog({
     if (busy) return;
     const cents = centsOf(rent);
     const found: Record<string, string> = {};
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(start))
-      found.start = lt(language, "err_start");
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(end) || end <= start || !monthEnd(end))
+    if (!isDay(start)) found.start = lt(language, "err_start");
+    if (!isDay(end) || end <= start || !monthEnd(end))
       found.end = lt(language, "err_end");
     if (cents === null) found.rent = lt(language, "err_rent");
     else if (
@@ -288,7 +288,7 @@ export function EditDraftDialog({
               : {
                   refused:
                     error instanceof SettlementRequestError
-                      ? error.message
+                      ? serverWords(language, error)
                       : lt(language, "part_refused"),
                 },
           );
@@ -635,7 +635,7 @@ export function MoveInDialog({
     event.preventDefault();
     if (busy) return;
     const found: Record<string, string> = {};
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || day < first || day > last)
+    if (!isDay(day) || day < first || day > last)
       found.day =
         first > last
           ? lt(language, "err_movein_early", dayText(first))
@@ -872,10 +872,7 @@ export function AddOccupantDialog({
     const found: Record<string, string> = {};
     const person = choices.find((customer) => customer.customer_id === pick);
     if (person === undefined) found.name = lt(language, "ao_name_req");
-    if (
-      first !== null &&
-      (!/^\d{4}-\d{2}-\d{2}$/.test(day) || day < first || day > last)
-    )
+    if (first !== null && (!isDay(day) || day < first || day > last))
       found.day = lt(language, "ao_date_err", dayText(first), dayText(last));
     setProblems(found);
     if (person === undefined || Object.keys(found).length > 0) return;
@@ -1108,11 +1105,7 @@ export function MoveOutOccupantDialog({
     event.preventDefault();
     if (busy) return;
     const found: Record<string, string> = {};
-    if (
-      !/^\d{4}-\d{2}-\d{2}$/.test(day) ||
-      day < occupancy.move_in_date ||
-      day > last
-    )
+    if (!isDay(day) || day < occupancy.move_in_date || day > last)
       found.day = lt(
         language,
         "mo_date_err",

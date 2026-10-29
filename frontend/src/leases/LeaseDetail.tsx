@@ -407,6 +407,14 @@ export function LeaseDetail({
         lease.actual_termination_date === null &&
         (lease.end_date === null || today <= lease.end_date))) &&
     (movedIn ? stillIn : lease.predecessor_lease_id === null);
+  // V1-061 Fix 4 (owner bug list 29/10/2026): a Lease takes at most 20 people living there (or
+  // planned before the move-in); the server refuses a 21st, so the button stops at 20.
+  const occupantsFull =
+    (movedIn
+      ? lease.occupancies.filter(
+          (occupancy) => occupancy.move_out_date === null,
+        ).length
+      : lease.planned_occupant_customer_ids.length) >= 20;
   // V1-061 (owner 2026-10-29, DL-111): Move out one person of a running Lease. Never the Primary
   // Tenant; a Signer only while another Signer still lives there.
   const running = signed && lease.actual_termination_date === null;
@@ -835,7 +843,10 @@ export function LeaseDetail({
           <section aria-labelledby="lease-occupants" className="ui-card">
             <div className="ui-chead">
               <h2 id="lease-occupants">{lt(language, "occupants")}</h2>
-              {mayAddOccupant && (
+              {mayAddOccupant && occupantsFull && (
+                <span className="ui-sub2">{lt(language, "occ_full")}</span>
+              )}
+              {mayAddOccupant && !occupantsFull && (
                 <button
                   className="ui-btn"
                   onClick={() => {
@@ -1220,7 +1231,7 @@ export function LeaseDetail({
           }}
         />
       )}
-      {dialog === "occupant" && mayAddOccupant && (
+      {dialog === "occupant" && mayAddOccupant && !occupantsFull && (
         <AddOccupantDialog
           {...dialogProps}
           customerApi={customerApi}

@@ -22,6 +22,7 @@ import { momentText, usdFromCents } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { hashForPage } from "../shell/navigation";
 import { Chip, CountCard, Dialog } from "../shell/ui";
+import { serverWords } from "../shell/serverText";
 import type { Language } from "../signInText";
 import {
   type ApprovalsApi,
@@ -443,7 +444,7 @@ export function ApprovalsPage({
         if (error instanceof SettlementRequestError) {
           // A named refusal: nothing changed, so the next try is a new request.
           keys.current.delete(name);
-          setProblem(error.message);
+          setProblem(serverWords(language, error));
           // Someone else may have decided it meanwhile: the list is read again, and the
           // dialog then shows the draft as decided, with these words.
           if (error.status === 409) load();

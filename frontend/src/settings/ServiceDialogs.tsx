@@ -7,7 +7,7 @@
 import { type FormEvent, type ReactNode, useState } from "react";
 
 import { centsOf } from "../invoices/invoicesData";
-import { DateInput } from "../shell/DateInput";
+import { DateInput, isDay } from "../shell/DateInput";
 import { Icon } from "../shell/icons";
 import { Chip, Dialog } from "../shell/ui";
 import type { Language } from "../signInText";
@@ -231,7 +231,10 @@ export function ServiceDialog({
       }
       // Decided by Claude (no money rule): a new Service starts on the 1st of this month or
       // a later one, never in a month already billed.
-      if (!/^\d{4}-\d{2}-01$/.test(day) || day < `${today.slice(0, 7)}-01`) {
+      if (
+        !(isDay(day) && day.endsWith("-01")) ||
+        day < `${today.slice(0, 7)}-01`
+      ) {
         found["sv-day"] = sst(language, "e_first_now");
       }
       if (cents !== null && cents > 0) first = { cents, starts_on: day };
