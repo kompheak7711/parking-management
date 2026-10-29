@@ -32,7 +32,6 @@ class InMemoryUnitFlow:
     last_filter: tuple[UnitStatus | None, bool | None, int, str | None] | None = None
     setup_items: dict[UUID, UnitSetupItem] = field(default_factory=dict)
     reasons: list[str | None] = field(default_factory=list)
-    rent_calls: list[tuple[UUID, int, int, str]] = field(default_factory=list)
 
     def list(
         self,
@@ -115,26 +114,6 @@ class InMemoryUnitFlow:
             kitchen_item_id=details.kitchen_item_id,
             notes=details.notes,
             room_feature_ids=details.room_feature_ids,
-        )
-        self.units[unit_id] = updated
-        return updated
-
-    def set_default_rent(
-        self,
-        unit_id: UUID,
-        *,
-        cents: int,
-        expected_version: int,
-        actor_id: str,
-        reason: str,
-    ) -> Unit:
-        del actor_id
-        self.rent_calls.append((unit_id, cents, expected_version, reason))
-        current = self.get(unit_id)
-        if current.version != expected_version:
-            raise UnitVersionConflict(current.version)
-        updated = replace(
-            current, default_monthly_rent_usd_cents=cents, version=current.version + 1
         )
         self.units[unit_id] = updated
         return updated
@@ -248,7 +227,7 @@ def sample_unit(property_id: UUID, *, version: int = 1) -> Unit:
         property_id,
         "101",
         "1",
-        UnitType.UNCOVERED,
+        UnitType.ONE_BEDROOM,
         UnitStatus.UNDER_MAINTENANCE,
         version,
     )
@@ -287,7 +266,7 @@ def test_unit_create_rejects_unscoped_actor_and_unknown_fields() -> None:
     payload = {
         "unit_number": "101",
         "floor_item_id": str(FLOOR_ONE),
-        "unit_type": "COVERED",
+        "unit_type": "STUDIO",
         "status": "VACANT",
     }
 
@@ -319,7 +298,7 @@ def test_unit_create_detail_and_version_checked_patch() -> None:
         json={
             "unit_number": "101",
             "floor_item_id": str(FLOOR_ONE),
-            "unit_type": "COVERED",
+            "unit_type": "STUDIO",
             "status": "VACANT",
         },
     )
@@ -425,7 +404,6 @@ def test_unit_timeline_preserves_event_identity_and_has_no_delete_route() -> Non
         "resulting_state": {"status": "UNDER_MAINTENANCE"},
         "correlation_id": str(event.correlation_id),
         "outcome": "SUCCEEDED",
-        "actor_name": None,
     }
     assert client.delete(f"/units/{unit.unit_id}").status_code == 405
 
@@ -478,7 +456,7 @@ def test_unit_changes_need_the_origin_and_the_csrf_pair() -> None:
     client = TestClient(
         create_app(actor_resolver=lambda _: manager(property_id), unit_resource_flow=flow)
     )
-    payload = {"unit_number": "102", "floor": "1", "unit_type": "COVERED", "status": "VACANT"}
+    payload = {"unit_number": "102", "floor": "1", "unit_type": "STUDIO", "status": "VACANT"}
     for headers in (
         {},
         {**BROWSER, "Origin": "https://elsewhere.example"},
@@ -510,7 +488,7 @@ def test_unit_details_are_saved_kept_and_cleared_and_the_unit_number_never_chang
         json={
             "unit_number": "204",
             "floor_item_id": str(FLOOR_TWO),
-            "unit_type": "UNCOVERED",
+            "unit_type": "ONE_BEDROOM",
             "size_square_metres": "42.5",
             "bedrooms": 1,
             "bathrooms": 1,
@@ -563,7 +541,7 @@ def test_unit_details_are_saved_kept_and_cleared_and_the_unit_number_never_chang
     old_contract = client.post(
         f"/properties/{property_id}/units",
         headers=BROWSER,
-        json={"unit_number": "301", "floor": "3", "unit_type": "COVERED"},
+        json={"unit_number": "301", "floor": "3", "unit_type": "STUDIO"},
     )
     assert old_contract.status_code == 422
 
@@ -645,124 +623,3 @@ def test_unit_setup_lists_are_read_with_units_read_and_changed_only_with_setting
     assert owner.get(f"/properties/{property_id}/unit-setup").json()["data"]["lists"]["VIEW"] == []
     with_removed = owner.get(f"/properties/{property_id}/unit-setup?include_removed=true")
     assert len(with_removed.json()["data"]["lists"]["VIEW"]) == 1
-
-
-# Parking Step 3 (owner, 2026-10-29): the default monthly price.
-def rate_user(property_id: UUID) -> AuthenticatedActor:
-    """Reads Parking and may change the Settings (cleaning rates, lists, this price)."""
-    return actor_with(property_id, "units.read", "settings.manage")
-
-
-def test_the_default_rent_and_the_change_permission_are_in_the_unit_body() -> None:
-    property_id = uuid4()
-    unit = replace(sample_unit(property_id), default_monthly_rent_usd_cents=4500)
-    flow = InMemoryUnitFlow({unit.unit_id: unit})
-    as_manager = TestClient(
-        create_app(actor_resolver=lambda _: manager(property_id), unit_resource_flow=flow)
-    )
-    as_rate_user = TestClient(
-        create_app(actor_resolver=lambda _: rate_user(property_id), unit_resource_flow=flow)
-    )
-
-    seen_by_manager = as_manager.get(f"/units/{unit.unit_id}").json()["data"]
-    seen_by_rate_user = as_rate_user.get(f"/units/{unit.unit_id}").json()["data"]
-    listed = as_rate_user.get(f"/properties/{property_id}/units").json()["data"]["items"][0]
-
-    assert seen_by_manager["default_monthly_rent_usd_cents"] == 4500
-    assert seen_by_manager["can_change_rent"] is False
-    assert seen_by_rate_user["can_change_rent"] is True
-    assert listed["default_monthly_rent_usd_cents"] == 4500
-
-
-def test_a_rate_user_sets_the_default_rent_with_a_reason() -> None:
-    property_id = uuid4()
-    unit = sample_unit(property_id)
-    flow = InMemoryUnitFlow({unit.unit_id: unit})
-    client = TestClient(
-        create_app(actor_resolver=lambda _: rate_user(property_id), unit_resource_flow=flow)
-    )
-
-    response = client.put(
-        f"/units/{unit.unit_id}/default-rent",
-        headers={**BROWSER, "If-Match": '"1"'},
-        json={"default_monthly_rent_usd_cents": 4500, "reason": "New price list"},
-    )
-
-    assert response.status_code == 200
-    assert response.headers["ETag"] == '"2"'
-    body = response.json()["data"]
-    assert (body["default_monthly_rent_usd_cents"], body["version"]) == (4500, 2)
-    assert flow.rent_calls == [(unit.unit_id, 4500, 1, "New price list")]
-
-
-def test_a_manager_without_the_settings_permission_cannot_set_the_default_rent() -> None:
-    property_id = uuid4()
-    unit = sample_unit(property_id)
-    flow = InMemoryUnitFlow({unit.unit_id: unit})
-    client = TestClient(
-        create_app(actor_resolver=lambda _: manager(property_id), unit_resource_flow=flow)
-    )
-
-    response = client.put(
-        f"/units/{unit.unit_id}/default-rent",
-        headers={**BROWSER, "If-Match": '"1"'},
-        json={"default_monthly_rent_usd_cents": 4500, "reason": "New price list"},
-    )
-
-    assert response.status_code == 403
-    assert flow.rent_calls == []
-
-
-def test_a_stale_page_cannot_set_the_default_rent() -> None:
-    property_id = uuid4()
-    unit = sample_unit(property_id, version=3)
-    flow = InMemoryUnitFlow({unit.unit_id: unit})
-    client = TestClient(
-        create_app(actor_resolver=lambda _: rate_user(property_id), unit_resource_flow=flow)
-    )
-
-    stale = client.put(
-        f"/units/{unit.unit_id}/default-rent",
-        headers={**BROWSER, "If-Match": '"2"'},
-        json={"default_monthly_rent_usd_cents": 4500, "reason": "New price list"},
-    )
-    missing = client.put(
-        f"/units/{uuid4()}/default-rent",
-        headers={**BROWSER, "If-Match": '"1"'},
-        json={"default_monthly_rent_usd_cents": 4500, "reason": "New price list"},
-    )
-
-    assert stale.status_code == 412
-    assert stale.json()["error"]["current_version"] == 3
-    assert missing.status_code == 404
-    assert flow.rent_calls == []
-
-
-def test_bad_prices_and_missing_reasons_are_refused() -> None:
-    property_id = uuid4()
-    unit = sample_unit(property_id)
-    flow = InMemoryUnitFlow({unit.unit_id: unit})
-    client = TestClient(
-        create_app(actor_resolver=lambda _: rate_user(property_id), unit_resource_flow=flow)
-    )
-    refused = [
-        {"default_monthly_rent_usd_cents": 0, "reason": "x"},
-        {"default_monthly_rent_usd_cents": -1, "reason": "x"},
-        {"default_monthly_rent_usd_cents": 45.5, "reason": "x"},
-        {"default_monthly_rent_usd_cents": "4500", "reason": "x"},
-        {"default_monthly_rent_usd_cents": 10**19, "reason": "x"},
-        {"default_monthly_rent_usd_cents": 1_000_000_000, "reason": "x"},
-        {"default_monthly_rent_usd_cents": 4500},
-        {"default_monthly_rent_usd_cents": 4500, "reason": "   "},
-        {"default_monthly_rent_usd_cents": 4500, "reason": "x" * 501},
-        {"default_monthly_rent_usd_cents": 4500, "reason": "x", "status": "VACANT"},
-    ]
-
-    for payload in refused:
-        response = client.put(
-            f"/units/{unit.unit_id}/default-rent",
-            headers={**BROWSER, "If-Match": '"1"'},
-            json=payload,
-        )
-        assert response.status_code == 422, payload
-    assert flow.rent_calls == []

@@ -45,7 +45,6 @@ from test_utility_meter_migration import (
     assert_sessions_wait_for_lock,
     utility_source,
 )
-from unit_type_support import seeded_unit_type
 
 
 @pytest.fixture(scope="session")
@@ -134,15 +133,8 @@ def committed_isolated_source(
         owner.execute(
             "INSERT INTO app.units("
             "id,property_id,unit_number,floor,unit_type,status,created_by,updated_by) "
-            "VALUES (%s,%s,%s,'1',%s,'VACANT',%s,%s)",
-            (
-                unit_id,
-                property_id,
-                f"UTILITY-{unit_id.hex[:12]}",
-                seeded_unit_type(owner, property_id),
-                actor_id,
-                actor_id,
-            ),
+            "VALUES (%s,%s,%s,'1','ONE_BEDROOM','VACANT',%s,%s)",
+            (unit_id, property_id, f"UTILITY-{unit_id.hex[:12]}", actor_id, actor_id),
         )
         meter_id = add_meter(
             owner,
@@ -425,9 +417,9 @@ def test_v1_042_is_forward_only_head_with_least_privilege(
     connection: Connection[tuple[object, ...]],
 ) -> None:
     config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
-    assert ScriptDirectory.from_config(config).get_current_head() == "20270401_251"
+    assert ScriptDirectory.from_config(config).get_current_head() == "20270331_250"
     assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-        "20270401_251",
+        "20270331_250",
     )
     source = (
         Path(__file__).parents[1] / "migrations/versions/20260829_33_v1_042_utility_corrections.py"
@@ -875,12 +867,11 @@ def test_deferred_zero_history_basis_requires_an_exact_future_period(
     connection.execute(
         "INSERT INTO app.units("
         "id,property_id,unit_number,floor,unit_type,status,created_by,updated_by) "
-        "VALUES (%s,%s,%s,'1',%s,'VACANT',%s,%s)",
+        "VALUES (%s,%s,%s,'1','ONE_BEDROOM','VACANT',%s,%s)",
         (
             unrelated_unit_id,
             property_id,
             f"UNRELATED-BASIS-{unrelated_unit_id.hex[:12]}",
-            seeded_unit_type(connection, property_id),
             actor_id,
             actor_id,
         ),

@@ -74,7 +74,6 @@ function unit(no: string, extra: Partial<UnitResource> = {}): UnitResource {
     current_occupancy: null,
     active_meter_summary: null,
     operational_alerts: [],
-    default_monthly_rent_usd_cents: null,
     size_square_metres: null,
     bedrooms: null,
     bathrooms: null,

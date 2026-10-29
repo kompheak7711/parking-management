@@ -54,8 +54,8 @@ from test_move_in_migration import runtime_database_url
 
 REVISION = "20270128_185"
 PREVIOUS = "20270127_184"
-# The head since Parking Step 3 (migration 20270401_251, the Parking default monthly price).
-HEAD = "20270401_251"
+# The head since V1-060 (migration 20270331_250, Sign Lease refuses an ended Reservation).
+HEAD = "20270331_250"
 # The migration of login sub-slice L3c-1.
 KEYED_CLEAR = "20270129_186"
 PASSWORD = "correct horse battery staple"
@@ -435,8 +435,7 @@ def test_the_try_relations_are_append_only_and_only_the_functions_are_open_to_th
     role has no privilege on them and EXECUTE only on the three definer functions (pinned
     `search_path`, no PUBLIC EXECUTE); the functions refuse a transaction that is not READ
     COMMITTED, a key that is not a sha256 digest and an unknown try kind; the migration follows
-    `20270127_184` and refuses a downgrade (the head is `20270401_251` since Parking Step 3
-    followed V1-060,
+    `20270127_184` and refuses a downgrade (the head is `20270331_250` since V1-060 followed V1-058,
     the Waiting for approval read)."""
     tries = add_tries(wait_database, "l3b.guard", "l3b-guard", 1, "1 minute")
     key = username_key("l3b.guard")

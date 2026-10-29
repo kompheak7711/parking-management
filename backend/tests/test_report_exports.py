@@ -29,7 +29,7 @@ from property_rental.settings import Settings
 PROPERTY = uuid.uuid4()
 U1 = uuid.uuid4()
 UNITS: list[dict[str, object]] = [
-    {"id": U1, "unit_number": "U101", "floor": "1", "unit_type": "COVERED", "status": "OCCUPIED"}
+    {"id": U1, "unit_number": "U101", "floor": "1", "unit_type": "STUDIO", "status": "OCCUPIED"}
 ]
 BROWSER = {
     "Origin": "https://localhost",

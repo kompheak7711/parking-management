@@ -37,7 +37,6 @@ from property_rental.lease_termination import TerminationBasis
 from termination_test_support import terminate_test_lease
 from test_lease_migration import create_draft, setup_sources, sign_lease
 from test_utility_meter_migration import add_meter, add_rate, add_reading
-from unit_type_support import seeded_unit_type
 
 
 @pytest.fixture(scope="session")
@@ -602,7 +601,7 @@ def test_invoice_tables_are_current_forward_only_and_read_only_to_runtime(
     obligation_id = uuid4()
     with psycopg.connect(migrated_database_url) as owner:
         assert owner.execute("SELECT version_num FROM alembic_version").fetchone() == (
-            "20270401_251",
+            "20270331_250",
         )
         expected = {
             "actor_identities",
@@ -736,7 +735,7 @@ def test_invoice_tables_are_current_forward_only_and_read_only_to_runtime(
         command.downgrade(Config(str(Path(__file__).parents[1] / "alembic.ini")), "20260826_28")
     with psycopg.connect(migrated_database_url) as owner:
         assert owner.execute("SELECT version_num FROM alembic_version").fetchone() == (
-            "20270401_251",
+            "20270331_250",
         )
         assert owner.execute(
             "SELECT description FROM app.authorized_nonrecurring_obligations WHERE id=%s",
@@ -6028,12 +6027,11 @@ def test_billing_run_completion_and_evidence_are_terminal_and_append_preserved(
     second_tenant_id = uuid4()
     connection.execute(
         "INSERT INTO app.units(id,property_id,unit_number,floor,unit_type,status,created_by,"
-        "updated_by) VALUES (%s,%s,%s,'2',%s,'VACANT',%s,%s)",
+        "updated_by) VALUES (%s,%s,%s,'2','ONE_BEDROOM','VACANT',%s,%s)",
         (
             second_unit_id,
             property_id,
             f"INVOICE-{second_unit_id.hex[:12]}",
-            seeded_unit_type(connection, property_id),
             actor_id,
             actor_id,
         ),

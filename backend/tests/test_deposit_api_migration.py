@@ -49,7 +49,6 @@ from test_deposit_migration import (
 )
 from test_reservation_lifecycle_migration import active_reservation, cancel
 from test_reservation_migration import create_reservation
-from unit_type_support import seeded_unit_type
 
 
 @pytest.fixture(scope="session")
@@ -527,12 +526,11 @@ def test_customer_deposit_summary_aggregates_all_rows_and_pages_newest_first(
         unit_id = uuid4()
         owner.execute(
             "INSERT INTO app.units(id,property_id,unit_number,floor,unit_type,status,"
-            "created_by,updated_by) VALUES (%s,%s,%s,'2',%s,'VACANT',%s,%s)",
+            "created_by,updated_by) VALUES (%s,%s,%s,'2','ONE_BEDROOM','VACANT',%s,%s)",
             (
                 unit_id,
                 property_id,
                 f"SUMMARY-{unit_id.hex[:12]}",
-                seeded_unit_type(owner, property_id),
                 service.actor_id,
                 service.actor_id,
             ),

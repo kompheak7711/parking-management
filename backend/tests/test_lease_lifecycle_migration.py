@@ -37,7 +37,6 @@ from property_rental.lease import (
     PostgresLeaseService,
 )
 from termination_test_support import approved_test_termination_context
-from unit_type_support import seeded_unit_type
 
 
 @pytest.fixture(scope="session")
@@ -97,16 +96,9 @@ def setup_sources(
         """
         INSERT INTO app.units(
             id,property_id,unit_number,floor,unit_type,status,created_by,updated_by
-        ) VALUES (%s,%s,%s,'1',%s,'VACANT',%s,%s)
+        ) VALUES (%s,%s,%s,'1','ONE_BEDROOM','VACANT',%s,%s)
         """,
-        (
-            unit_id,
-            property_id,
-            f"LS-{unit_id.hex[:12]}",
-            seeded_unit_type(connection, property_id),
-            actor_id,
-            actor_id,
-        ),
+        (unit_id, property_id, f"LS-{unit_id.hex[:12]}", actor_id, actor_id),
     )
     for customer_id, legal_name in (
         (primary_tenant_id, "Primary Lease Tenant"),

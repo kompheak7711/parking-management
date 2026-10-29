@@ -16,8 +16,6 @@ from alembic import command
 from alembic.config import Config
 from psycopg import Connection, Error
 
-from unit_type_support import seeded_unit_type
-
 
 @pytest.fixture(scope="session")
 def migrated_database_url() -> str:
@@ -66,16 +64,9 @@ def setup_sources(
         """
         INSERT INTO app.units(
             id, property_id, unit_number, floor, unit_type, status, created_by, updated_by
-        ) VALUES (%s, %s, %s, '1', %s, 'VACANT', %s, %s)
+        ) VALUES (%s, %s, %s, '1', 'ONE_BEDROOM', 'VACANT', %s, %s)
         """,
-        (
-            unit_id,
-            property_id,
-            f"LEASE-{unit_id.hex[:12]}",
-            seeded_unit_type(connection, property_id),
-            actor_id,
-            actor_id,
-        ),
+        (unit_id, property_id, f"LEASE-{unit_id.hex[:12]}", actor_id, actor_id),
     )
     primary_tenant_id = uuid4()
     occupant_id = uuid4()
@@ -230,16 +221,9 @@ def test_only_legal_lifecycle_transitions_are_persisted(
         """
         INSERT INTO app.units(
             id, property_id, unit_number, floor, unit_type, status, created_by, updated_by
-        ) VALUES (%s,%s,%s,'1',%s,'VACANT',%s,%s)
+        ) VALUES (%s,%s,%s,'1','ONE_BEDROOM','VACANT',%s,%s)
         """,
-        (
-            second_unit_id,
-            property_id,
-            f"LEASE-{second_unit_id.hex[:12]}",
-            seeded_unit_type(connection, property_id),
-            actor_id,
-            actor_id,
-        ),
+        (second_unit_id, property_id, f"LEASE-{second_unit_id.hex[:12]}", actor_id, actor_id),
     )
     lease_id = create_draft(
         connection, actor_id=actor_id, unit_id=second_unit_id, primary_tenant_id=tenant_id
@@ -289,13 +273,12 @@ def test_only_legal_lifecycle_transitions_are_persisted(
         """
         INSERT INTO app.units(
             id, property_id, unit_number, floor, unit_type, status, created_by, updated_by
-        ) VALUES (%s,%s,%s,'1',%s,'VACANT',%s,%s)
+        ) VALUES (%s,%s,%s,'1','ONE_BEDROOM','VACANT',%s,%s)
         """,
         (
             elapsed_unit_id,
             property_id,
             f"LEASE-{elapsed_unit_id.hex[:12]}",
-            seeded_unit_type(connection, property_id),
             actor_id,
             actor_id,
         ),

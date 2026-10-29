@@ -42,9 +42,9 @@ def build_totals(
 PROPERTY = uuid.uuid4()
 U1, U2, U3 = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
 UNITS = [
-    {"id": U1, "unit_number": "U101", "floor": "1", "unit_type": "COVERED", "status": "OCCUPIED"},
-    {"id": U2, "unit_number": "U204", "floor": "2", "unit_type": "COVERED", "status": "OCCUPIED"},
-    {"id": U3, "unit_number": "U205", "floor": "2", "unit_type": "COVERED", "status": "VACANT"},
+    {"id": U1, "unit_number": "U101", "floor": "1", "unit_type": "STUDIO", "status": "OCCUPIED"},
+    {"id": U2, "unit_number": "U204", "floor": "2", "unit_type": "STUDIO", "status": "OCCUPIED"},
+    {"id": U3, "unit_number": "U205", "floor": "2", "unit_type": "STUDIO", "status": "VACANT"},
 ]
 INCOME = [
     {"unit_id": U1, "month": date(2026, 9, 1), "kind": "RENT", "amount_usd_cents": 30_000},

@@ -94,7 +94,6 @@ NON_CAPABILITY_LABELS = frozenset(
         "unit.created",
         "unit.updated",
         "unit.status_changed",
-        "unit.default_rent_changed",
         "unpaid_initial.moved_in_credit",
         "unpaid_initial.never_moved_in",
         "utility.baseline.record",

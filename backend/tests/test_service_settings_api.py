@@ -244,7 +244,7 @@ RATE = {
     "name_en": "Small rooms",
     "name_km": None,
     "rate_usd_cents": 1500,
-    "unit_types": ["COVERED", "UNCOVERED"],
+    "unit_types": ["STUDIO", "ONE_BEDROOM"],
 }
 
 

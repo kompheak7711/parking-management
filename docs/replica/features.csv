@@ -304,7 +304,3 @@ Financial action context / evidence pages for recorded actions,Audit/Timeline,co
 "Brand: ""CHETANA Residence"" in shell header sign-in and Unit subtitle",Home,must,yes,yes,AppShell line 24; signInText au_where; units sub — rename in clone
 "App name ""Property Rental Management"" (index.html title) and ""Residence Management"" (sign-in)",Home,must,yes,yes,rename in clone
 Brand logo SVG (horizontal full colour and reverse),Home,should,yes,yes,assets/brand/*.svg — replace in clone
-Parking page shows the default monthly price (or Not set),Units,must,no,yes,Parking Step 3 (owner 2026-10-29); not in Property Rental
-Change price dialog (settings permission; reason required; History shows who/when/old/new/reason),Units,must,no,yes,Parking Step 3
-New Lease Monthly Rent starts from the Parking's default monthly price (Reservation/renewal rent win; staff typing kept),Leases,must,no,yes,Parking Step 3
-Settings seed list is the four Parking Types (Covered Uncovered Motorbike Tuk-Tuk/Food Cart),Unit Types/Settings,must,no,yes,Parking Step 3; migration 251

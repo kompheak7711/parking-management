@@ -801,7 +801,7 @@ def test_historical_unit_floor_round_trips_without_rewriting_state(floor: str) -
         "property_id": str(PROPERTY_ID),
         "unit_number": "101",
         "floor": floor,
-        "unit_type": "UNCOVERED",
+        "unit_type": "ONE_BEDROOM",
         "status": "VACANT",
         "version": 2,
     }

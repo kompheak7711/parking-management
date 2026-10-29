@@ -4212,8 +4212,6 @@ THREE_BEDROOM
 
 Amended by DL-075 (owner, 2026-10-20): Unit Types are a Settings list; the four types above are today's values. A Unit Type used by a Unit cannot be removed.
 
-Amended for Parking (owner, 2026-10-29, Parking Step 3): the seeded list is COVERED, UNCOVERED, MOTORBIKE and TUK_TUK_FOOD_CART (Covered, Uncovered, Motorbike, Tuk-Tuk/Food Cart). A Parking also has a default monthly price in whole USD cents (BR-UNIT-015), set only by a user who may change the Settings, with a reason kept in the History.
-
 ---
 
 ## Unit Status

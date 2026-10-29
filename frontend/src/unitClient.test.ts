@@ -33,7 +33,6 @@ const current: UnitResource = {
   current_occupancy: null,
   active_meter_summary: null,
   operational_alerts: [],
-  default_monthly_rent_usd_cents: null,
 };
 
 function item(list_kind: string, code: string, item_id: string) {
@@ -128,63 +127,6 @@ describe("Parking API client", () => {
     await expect(unitApi.setupLists("property-1")).rejects.toBeInstanceOf(
       UnitRequestError,
     );
-  });
-
-  it("TEST-FE-1112 sets the default monthly price with the reason against the version it showed, and reads the price, the permission and who in the History", async () => {
-    Object.defineProperty(document, "cookie", {
-      configurable: true,
-      value: "__Host-prm_csrf=token-1",
-    });
-    const fetchMock = vi
-      .fn<typeof fetch>()
-      .mockResolvedValueOnce(
-        respond(200, {
-          ...current,
-          version: 4,
-          default_monthly_rent_usd_cents: 4500,
-          can_change_rent: true,
-        }),
-      )
-      .mockResolvedValueOnce(
-        respond(200, {
-          items: [
-            {
-              event_id: "e1",
-              occurred_at: "2026-10-29T03:00:00Z",
-              actor_id: "actor-1",
-              actor_name: "Sok Dara",
-              action: "unit.default_rent_changed",
-              entity_type: "unit",
-              reason: "New price list",
-              previous_state: null,
-              resulting_state: { default_monthly_rent_usd_cents: 4500 },
-              correlation_id: "e1",
-              outcome: "SUCCEEDED",
-            },
-          ],
-          next_cursor: null,
-        }),
-      );
-    vi.stubGlobal("fetch", fetchMock);
-
-    const priced = await unitApi.setDefaultRent(
-      current,
-      4500,
-      "New price list",
-    );
-    const history = await unitApi.timeline("unit-1");
-
-    expect(priced.default_monthly_rent_usd_cents).toBe(4500);
-    expect(priced.can_change_rent).toBe(true);
-    const [path, init] = fetchMock.mock.calls[0] ?? [];
-    expect(path).toBe("/units/unit-1/default-rent");
-    expect(init?.method).toBe("PUT");
-    expect(init?.headers).toMatchObject({ "If-Match": '"3"' });
-    expect(JSON.parse(init?.body as string)).toEqual({
-      default_monthly_rent_usd_cents: 4500,
-      reason: "New price list",
-    });
-    expect(history.items[0]?.actor_name).toBe("Sok Dara");
   });
 
   it("TEST-FE-821 reads the Parking inventory and saves it against the record number it showed", async () => {

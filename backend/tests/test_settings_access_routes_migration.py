@@ -239,7 +239,7 @@ def test_the_settings_routes_need_settings_access_and_the_owner_always_has_it(
         json={
             "unit_number": "L5-101",
             "floor_item_id": first_floor,
-            "unit_type": "COVERED",
+            "unit_type": "STUDIO",
             "status": "VACANT",
         },
     )

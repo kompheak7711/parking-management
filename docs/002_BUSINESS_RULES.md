@@ -140,8 +140,6 @@ Commercial Unit is not supported.
 
 Amended by DL-075 (owner, 2026-10-20): Unit Types are a Settings list (the Owner or a user with Settings access, DL-074), no longer the four fixed types above, which are today's values. A Unit Type used by a Unit cannot be removed. Commercial Unit stays unsupported (DL-001).
 
-Amended for Parking (owner, 2026-10-29, Parking Step 3): a new Property starts with the four Parking Types COVERED (Covered), UNCOVERED (Uncovered), MOTORBIKE (Motorbike) and TUK_TUK_FOOD_CART (Tuk-Tuk/Food Cart), with Khmer names, instead of the four residential types; the Balcony Room feature is no longer seeded. The list stays editable in Settings. A Parking Type carries no price (see BR-UNIT-015).
-
 ---
 
 ## BR-UNIT-002 — Supported Unit Statuses
@@ -299,15 +297,6 @@ Each Unit has a configured cleaning rate in USD cents. It is the source of the U
 ---
 
 # 5. Customer Rules
-
-## BR-UNIT-015 — Default Monthly Price (Parking)
-
-Owner, 2026-10-29 (Parking Step 3):
-
-- A Parking may have a default monthly price, in whole USD cents, above zero, or none.
-- Only a user who may change the Settings (`settings.manage`, the permission that changes the cleaning rates and the Settings lists) may set or change it, and must give a reason. The History shows who, when, the old price, the new price and the reason.
-- A new Lease for that Parking starts with this price as its Monthly Rent; staff may change the Lease price. A Lease from a Reservation keeps the Reservation's agreed rent; a renewal keeps the previous Lease's rent.
-- Invoices use the Lease price. Changing a Parking's default price never changes an existing Lease, Invoice or Reservation.
 
 ## BR-CUST-001 — Single Customer Entity
 

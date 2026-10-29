@@ -1840,26 +1840,19 @@ describe("Move-in with someone else", () => {
 });
 
 describe("New Lease and Renew", () => {
-  // Parking Step 3: U401 has a default monthly price; U402 has none; the Reserved and the
-  // Occupied Parking carry a price that must never win over a Reservation or a renewal.
-  const unit = (
-    number: string,
-    status: UnitResource["status"],
-    price: number | null = null,
-  ) =>
+  const unit = (number: string, status: UnitResource["status"]) =>
     ({
       unit_id: `unit-${number}`,
       unit_number: number,
       status,
-      default_monthly_rent_usd_cents: price,
     }) as UnitResource;
   const units: Partial<UnitApi> = {
     list: vi.fn<UnitApi["list"]>().mockResolvedValue({
       items: [
         unit("U402", "VACANT"),
-        unit("U401", "CLEANING", 4500),
-        unit("U101", "OCCUPIED", 9900),
-        unit("U403", "RESERVED", 9900),
+        unit("U401", "CLEANING"),
+        unit("U101", "OCCUPIED"),
+        unit("U403", "RESERVED"),
       ],
       next_cursor: null,
       can_manage: true,
@@ -2464,28 +2457,6 @@ describe("New Lease and Renew", () => {
         terms_reference: "Chosen on the New Lease form",
       },
     ]);
-  });
-
-  it("TEST-FE-1110 Monthly Rent starts from the chosen Parking's default monthly price, empties for a Parking without one, and keeps what staff typed", async () => {
-    window.location.hash = "#/leases/new";
-    show(api(), deposits(), null, undefined, people(), units);
-    await screen.findByLabelText("Parking");
-    expect(screen.getByLabelText("Monthly Rent")).toHaveValue("");
-
-    pickIn("Parking", "unit-U401");
-    expect(screen.getByLabelText("Monthly Rent")).toHaveValue("45.00");
-    pickIn("Parking", "unit-U402");
-    expect(screen.getByLabelText("Monthly Rent")).toHaveValue("");
-    pickIn("Monthly Rent", "50.00");
-    pickIn("Parking", "unit-U401");
-    expect(screen.getByLabelText("Monthly Rent")).toHaveValue("50.00");
-  });
-
-  it("TEST-FE-1111 New Lease from a Parking page starts with that Parking's default monthly price", async () => {
-    window.location.hash = "#/leases/unit%3Aunit-U401";
-    show(api(), deposits(), null, undefined, people(), units);
-    expect(await screen.findByLabelText("Parking")).toHaveValue("unit-U401");
-    expect(screen.getByLabelText("Monthly Rent")).toHaveValue("45.00");
   });
 
   it("TEST-FE-1075 New Lease from a Parking page opens with that Parking chosen and still lets it change; a Parking a walk-in Lease may not use is not chosen", async () => {

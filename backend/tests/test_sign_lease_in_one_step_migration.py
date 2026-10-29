@@ -33,7 +33,6 @@ from test_invoice_migration import migrated_database_url as migrated_database_ur
 from test_lease_lifecycle_migration import draft_command
 from test_lease_migration import create_draft, setup_sources, sign_lease
 from test_lease_signing_reservation_migration import business_date, leases, reserved_unit
-from unit_type_support import seeded_unit_type
 
 PLAN = "SELECT app.set_lease_planned_security_deposit(%s,%s,%s,%s,%s,%s,%s)"
 REASON = "Every Signer signed the paper Lease"
@@ -251,15 +250,8 @@ def test_the_money_pays_the_new_initial_rent_invoice_never_an_older_one(
         unit = uuid4()
         connection.execute(
             "INSERT INTO app.units(id,property_id,unit_number,floor,unit_type,status,created_by,"
-            "updated_by) VALUES (%s,%s,%s,'1',%s,'VACANT',%s,%s)",
-            (
-                unit,
-                first["prop"],
-                f"SIGN-{unit.hex[:12]}",
-                seeded_unit_type(connection, first["prop"]),
-                first["actor"],
-                first["actor"],
-            ),
+            "updated_by) VALUES (%s,%s,%s,'1','ONE_BEDROOM','VACANT',%s,%s)",
+            (unit, first["prop"], f"SIGN-{unit.hex[:12]}", first["actor"], first["actor"]),
         )
         lease = create_draft(
             connection,

@@ -173,9 +173,6 @@ export function LeaseForm({
   const [start, setStart] = useState(today);
   const [end, setEnd] = useState(oneYearEnd(today));
   const [rent, setRent] = useState("");
-  // Parking Step 3: the Monthly Rent starts from the chosen Parking's default monthly price
-  // until staff type it; a Reservation's agreed rent and a renewal's rent come first.
-  const [rentTyped, setRentTyped] = useState(false);
   // The draft's Security Deposit, a Lease term like the Rent: one month's Rent until it is typed
   // on a walk-in draft (DL-100), the Reservation's amount on a draft from a Booking (DL-101).
   const [deposit, setDeposit] = useState("");
@@ -350,16 +347,6 @@ export function LeaseForm({
         (unit) => unit.unit_id === fromUnit && OPEN_UNITS.has(unit.status),
       );
       if (chosen !== undefined) setUnitId(chosen.unit_id);
-      if (
-        chosen !== undefined &&
-        reservation === null &&
-        previous === null &&
-        chosen.default_monthly_rent_usd_cents !== null
-      ) {
-        const price = (chosen.default_monthly_rent_usd_cents / 100).toFixed(2);
-        setRent(price);
-        setDeposit(price);
-      }
       if (reservation !== null) {
         setUnitId(reservation.unit_id);
         setTenantId(reservation.customer_id);
@@ -786,15 +773,7 @@ export function LeaseForm({
                 aria-invalid={problems.unit !== undefined}
                 id="lease-form-unit"
                 onChange={(event) => {
-                  const picked = event.currentTarget.value;
-                  setUnitId(picked);
-                  if (rentTyped) return;
-                  const cents =
-                    sources.units.find((entry) => entry.unit_id === picked)
-                      ?.default_monthly_rent_usd_cents ?? null;
-                  const price = cents === null ? "" : (cents / 100).toFixed(2);
-                  setRent(price);
-                  if (!depositTyped) setDeposit(price);
+                  setUnitId(event.currentTarget.value);
                 }}
                 value={unitId}
               >
@@ -927,7 +906,6 @@ export function LeaseForm({
               inputMode="decimal"
               onChange={(event) => {
                 setRent(event.currentTarget.value);
-                setRentTyped(true);
                 if (!depositTyped) setDeposit(event.currentTarget.value);
               }}
               value={rent}

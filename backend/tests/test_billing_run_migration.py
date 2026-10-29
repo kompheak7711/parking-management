@@ -47,7 +47,6 @@ from test_utility_consumption_migration import (
     replace_failed_meter,
 )
 from test_utility_meter_migration import add_meter, add_rate, add_reading
-from unit_type_support import seeded_unit_type
 
 
 @pytest.fixture(scope="session")
@@ -97,12 +96,11 @@ def fresh_rent_property(
         customer_id = uuid4()
         connection.execute(
             "INSERT INTO app.units(id,property_id,unit_number,floor,unit_type,status,"
-            "created_by,updated_by) VALUES (%s,%s,%s,'1',%s,'VACANT',%s,%s)",
+            "created_by,updated_by) VALUES (%s,%s,%s,'1','ONE_BEDROOM','VACANT',%s,%s)",
             (
                 unit_id,
                 property_id,
                 f"V1-044-{index}-{unit_id.hex[:8]}",
-                seeded_unit_type(connection, property_id),
                 human_actor_id,
                 human_actor_id,
             ),

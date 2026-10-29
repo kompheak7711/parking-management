@@ -87,8 +87,6 @@ class UnitTimelineEvent:
     resulting_state: object | None
     correlation_id: UUID
     outcome: str
-    # Parking Step 3: the display name of who did it, for the Parking page History.
-    actor_name: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -193,16 +191,6 @@ class UnitResourceFlow(Protocol):
         reason: str | None = None,
     ) -> Unit: ...
 
-    def set_default_rent(
-        self,
-        unit_id: UUID,
-        *,
-        cents: int,
-        expected_version: int,
-        actor_id: str,
-        reason: str,
-    ) -> Unit: ...
-
     def timeline(
         self,
         unit_id: UUID,
@@ -297,19 +285,6 @@ class UnavailableUnitResourceFlow:
         del reason
         self._unavailable()
         raise AssertionError
-
-    def set_default_rent(
-        self,
-        unit_id: UUID,
-        *,
-        cents: int,
-        expected_version: int,
-        actor_id: str,
-        reason: str,
-    ) -> Unit:
-        del unit_id, cents, expected_version, actor_id, reason
-        self._unavailable()
-        raise AssertionError("unreachable")
 
     def timeline(
         self,
@@ -492,7 +467,6 @@ class PostgresUnitResourceFlow:
             ),
             "notes": unit.notes,
             "room_feature_ids": [str(item) for item in unit.room_feature_ids],
-            "default_monthly_rent_usd_cents": unit.default_monthly_rent_usd_cents,
         }
 
     @staticmethod
@@ -761,55 +735,6 @@ class PostgresUnitResourceFlow:
             ),
         )
 
-    def set_default_rent(
-        self,
-        unit_id: UUID,
-        *,
-        cents: int,
-        expected_version: int,
-        actor_id: str,
-        reason: str,
-    ) -> Unit:
-        """Parking Step 3: set the default monthly price with the version check; History keeps
-        who, the reason, the old and the new price."""
-        try:
-            with psycopg.connect(self._database_url) as connection:
-                current_row = connection.execute(
-                    "SELECT * FROM app.unit_with_details(%s)", (unit_id,)
-                ).fetchone()
-                if current_row is None:
-                    raise UnitResourceNotFound("Parking was not found")
-                current = _unit(current_row)
-                if current.version != expected_version:
-                    raise UnitVersionConflict(current.version)
-                row = connection.execute(
-                    "SELECT * FROM app.set_unit_default_rent(%s, %s, %s, %s)",
-                    (unit_id, cents, expected_version, UUID(actor_id)),
-                ).fetchone()
-                if row is None:
-                    latest = connection.execute(
-                        "SELECT version FROM app.units WHERE id = %s", (unit_id,)
-                    ).fetchone()
-                    if latest is None:
-                        raise UnitResourceNotFound("Parking was not found")
-                    raise UnitVersionConflict(int(str(latest[0])))
-                updated = _unit(row)
-                self._audit(
-                    connection,
-                    unit=updated,
-                    actor_id=actor_id,
-                    action="unit.default_rent_changed",
-                    previous_state=self._state(current),
-                    reason=reason,
-                )
-            return updated
-        except (UnitResourceNotFound, UnitVersionConflict):
-            raise
-        except (ValueError, psycopg.errors.CheckViolation) as exc:
-            raise UnitResourceInvalid("Parking price is invalid") from exc
-        except psycopg.Error as exc:
-            raise UnitResourceUnavailable("Parking persistence is unavailable") from exc
-
     def timeline(
         self,
         unit_id: UUID,
@@ -834,9 +759,7 @@ class PostgresUnitResourceFlow:
                 rows = connection.execute(
                     f"""
                     SELECT id, occurred_at, actor_id, action, entity_type, reason,
-                           previous_state, resulting_state, correlation_id, outcome,
-                           (SELECT account.display_name FROM app.user_accounts AS account
-                            WHERE account.actor_id = app.audit_events.actor_id)
+                           previous_state, resulting_state, correlation_id, outcome
                     FROM app.audit_events
                     WHERE unit_id = %s {cursor_clause}
                     ORDER BY occurred_at DESC, id DESC
@@ -860,7 +783,6 @@ class PostgresUnitResourceFlow:
                 resulting_state=row[7],
                 correlation_id=UUID(str(row[8])),
                 outcome=str(row[9]),
-                actor_name=None if row[10] is None else str(row[10]),
             )
             for row in rows[:limit]
         )
@@ -980,23 +902,6 @@ class UnitPatch(BaseModel):
 UNIT_REQUIRED_PATCH_FIELDS: Final = frozenset(
     {"unit_number", "floor_item_id", "unit_type", "status", "room_feature_ids"}
 )
-
-
-class UnitDefaultRentSource(BaseModel):
-    """Parking Step 3 (owner, 2026-10-29): the default monthly price in whole USD cents and the
-    reason, because a price change is a money action."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    # Up to $9,999,999.99: the same seven-dollar-digit cap as the money fields on the screens.
-    default_monthly_rent_usd_cents: Annotated[int, Field(gt=0, le=999_999_999, strict=True)]
-    reason: str = Field(min_length=1, max_length=500)
-
-    @field_validator("reason", mode="before")
-    @classmethod
-    def trim_reason(cls, value: object) -> object:
-        del cls
-        return value.strip() if isinstance(value, str) else value
 
 
 class UnitSetupItemCreate(BaseModel):
@@ -1135,7 +1040,6 @@ def _body(unit: Unit) -> dict[str, object]:
         "kitchen_item_id": None if unit.kitchen_item_id is None else str(unit.kitchen_item_id),
         "notes": unit.notes,
         "room_feature_ids": [str(item) for item in unit.room_feature_ids],
-        "default_monthly_rent_usd_cents": unit.default_monthly_rent_usd_cents,
         "current_reservation": None,
         "current_lease": None,
         "current_occupancy": None,
@@ -1234,7 +1138,6 @@ def create_unit_router(
         response.headers["ETag"] = f'"{unit.version}"'
         body = _body(unit)
         body["can_manage"] = _can_manage(actor, unit.property_id)
-        body["can_change_rent"] = _can_manage_setup(actor, unit.property_id)
         return {"data": body, "meta": {"request_id": request.state.request_id}}
 
     @router.patch("/units/{unit_id}")
@@ -1300,42 +1203,6 @@ def create_unit_router(
             raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE) from exc
         response.headers["ETag"] = f'"{unit.version}"'
         return {"data": _body(unit), "meta": {"request_id": request.state.request_id}}
-
-    @router.put("/units/{unit_id}/default-rent")
-    def set_default_rent(
-        unit_id: UUID,
-        source: UnitDefaultRentSource,
-        request: Request,
-        response: Response,
-        if_match: str | None = Header(default=None, alias="If-Match"),
-    ) -> dict[str, object]:
-        """Parking Step 3: only a user who may change the Settings (cleaning rates, lists) sets
-        the default monthly price; the page's version must be current."""
-        actor = _require_actor(request, resolver)
-        current = get_unit_or_http(unit_id)
-        if not _can_manage_setup(actor, current.property_id):
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
-        require_browser_mutation(request, settings)
-        expected = _expected_version(if_match, current.version)
-        try:
-            unit = flow.set_default_rent(
-                unit_id,
-                cents=source.default_monthly_rent_usd_cents,
-                expected_version=expected,
-                actor_id=actor.actor_id,
-                reason=source.reason,
-            )
-        except UnitResourceNotFound as exc:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND) from exc
-        except UnitResourceInvalid as exc:
-            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT) from exc
-        except UnitResourceUnavailable as exc:
-            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE) from exc
-        response.headers["ETag"] = f'"{unit.version}"'
-        body = _body(unit)
-        body["can_manage"] = _can_manage(actor, unit.property_id)
-        body["can_change_rent"] = True
-        return {"data": body, "meta": {"request_id": request.state.request_id}}
 
     @router.get("/units/{unit_id}/timeline")
     def unit_timeline(
