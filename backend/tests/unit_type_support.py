@@ -6,7 +6,6 @@ of them; a database pinned before migration 227 (no Unit Types list yet) still a
 
 from __future__ import annotations
 
-
 from psycopg import Connection
 
 
