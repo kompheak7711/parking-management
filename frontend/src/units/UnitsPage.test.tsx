@@ -328,7 +328,14 @@ function servicesApi(): RentTermsServicesApi & {
     read: vi.fn().mockResolvedValue({
       services: [
         service("svc-parking", "Parking", "type-car"),
-        service("svc-wifi", "Wi-Fi"),
+        {
+          ...service("svc-wifi", "Wi-Fi"),
+          rate_today_usd_cents: null,
+          next_rate: {
+            monthly_rate_usd_cents: 800,
+            effective_date: "2099-11-01",
+          },
+        },
       ],
       service_types: [
         {
@@ -680,7 +687,18 @@ describe("Parking page", () => {
       required_service_ids: ["svc-parking", "svc-wifi"],
     });
     const client = unitApi({
-      get: vi.fn().mockResolvedValue(terms),
+      get: vi.fn().mockImplementation(() =>
+        Promise.resolve(
+          setRentTerms.mock.calls.length === 0
+            ? terms
+            : {
+                ...terms,
+                version: 3,
+                default_monthly_rent_usd_cents: 47_550,
+                required_service_ids: ["svc-parking", "svc-wifi"],
+              },
+        ),
+      ),
       setRentTerms,
     });
     show(client);
@@ -691,7 +709,7 @@ describe("Parking page", () => {
     await waitFor(() => {
       // The card shows each Service's type and today's monthly rate (owner 29/10/2026).
       expect(screen.getByTestId("unit-required-services")).toHaveTextContent(
-        /^Car parking \$10\.00$/,
+        /^Car parking \$10\.00 per month$/,
       );
     });
     const card = screen
@@ -721,6 +739,12 @@ describe("Parking page", () => {
     expect(
       await screen.findByText("The Rent and Services of U103 are saved."),
     ).toBeInTheDocument();
+    // A rate that starts later says from when.
+    await waitFor(() => {
+      expect(screen.getByTestId("unit-required-services")).toHaveTextContent(
+        "Car parking $10.00 per month, Wi-Fi $8.00 per month from 01/11/2099",
+      );
+    });
   });
 
   it("TEST-FE-1108 a person who may not manage the Parking sees the Rent and Services but cannot change them, and a Parking with none says so (V1-061, DL-110)", async () => {

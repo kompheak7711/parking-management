@@ -11,7 +11,7 @@ import type {
   ServiceSettingsApi,
   ServiceType,
 } from "../settings/serviceSettingsClient";
-import { usdFromCents } from "../shell/format";
+import { dayText, usdFromCents } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { Dialog } from "../shell/ui";
 import type { Language } from "../signInText";
@@ -32,8 +32,9 @@ function serviceName(service: ServiceSetting, language: Language): string {
     : service.name_en;
 }
 
-/** The required Service on the card: its type and today's monthly rate, as "Trash $8.00"
- * (owner 29/10/2026); the Service's own name when it has no type. */
+/** The required Service on the card: its type and monthly rate, as "Trash $8.00 per month"
+ * (owner 29/10/2026); the Service's own name when it has no type. A rate that starts later
+ * says from when, and a Service with no rate says so. */
 function serviceLine(
   service: ServiceSetting,
   types: readonly ServiceType[],
@@ -48,9 +49,22 @@ function serviceLine(
       : language === "km" && type.name_km !== null
         ? type.name_km
         : type.name_en;
-  return service.rate_today_usd_cents === null
-    ? name
-    : `${name} ${usdFromCents(service.rate_today_usd_cents)}`;
+  if (service.rate_today_usd_cents !== null)
+    return ut(
+      language,
+      "rt_service_rate",
+      name,
+      usdFromCents(service.rate_today_usd_cents),
+    );
+  if (service.next_rate !== null)
+    return ut(
+      language,
+      "rt_service_from",
+      name,
+      usdFromCents(service.next_rate.monthly_rate_usd_cents),
+      dayText(service.next_rate.effective_date),
+    );
+  return ut(language, "rt_service_no_rate", name);
 }
 
 export interface ServicesRead {

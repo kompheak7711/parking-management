@@ -58506,7 +58506,7 @@
       "test_level": "UI component",
       "test_path": "frontend/src/units/UnitsPage.test.tsx",
       "status": "implemented",
-      "notes": "V1-061 (owner 29/10/2026, DL-110): the Unit page shows the default Rent and each required Service by its type and today's monthly rate, such as \"Car parking $10.00\" (owner test 29/10/2026), or by its name when it has no type; a Manager changes them in Rent and Services, a Rent that is not whole cents is refused before sending, and the Rent is sent in cents with the Service ids."
+      "notes": "V1-061 (owner 29/10/2026, DL-110): the Unit page shows the default Rent and each required Service by its type and today's monthly rate, such as \"Car parking $10.00 per month\" (owner test 29/10/2026), or by its name when it has no type; a rate that starts later says \"from\" its day; a Manager changes them in Rent and Services, a Rent that is not whole cents is refused before sending, and the Rent is sent in cents with the Service ids."
     },
     {
       "test_id": "TEST-FE-1108",

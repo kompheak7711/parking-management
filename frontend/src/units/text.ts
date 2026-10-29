@@ -273,6 +273,12 @@ const TEXT = {
   rt_services: ["Required Services", "សេវាចាំបាច់"],
   rt_no_services: ["None", "គ្មាន"],
   rt_services_count: ["{0} Services", "សេវា {0}"],
+  rt_service_rate: ["{0} {1} per month", "{0} {1} ក្នុងមួយខែ"],
+  rt_service_from: [
+    "{0} {1} per month from {2}",
+    "{0} {1} ក្នុងមួយខែ ចាប់ពី {2}",
+  ],
+  rt_service_no_rate: ["{0} (no price set yet)", "{0} (មិនទាន់កំណត់តម្លៃ)"],
   rt_unknown_service: ["A Service not found", "រកមិនឃើញសេវា"],
   rt_loading: ["Loading…", "កំពុងផ្ទុក…"],
   rt_note: [
