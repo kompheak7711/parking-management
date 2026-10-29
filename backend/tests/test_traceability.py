@@ -30,6 +30,42 @@ CHANGED_ENTRIES: Final[dict[str, dict[str, object]]] = {
             "while equally configured Internet is not billed."
         ),
     },
+    # V1-061 removes the plain signing route that signed with no money; these tests changed.
+    "test_signer_renewal_and_termination_are_explicit_commands_and_plain_signing_is_gone": {
+        "test_id": "test_signer_signing_renewal_and_termination_are_explicit_commands",
+    },
+    "TEST-FE-186": {
+        "notes": (
+            "Explicit Lease signing sends CSRF, idempotency, and optimistic If-Match evidence."
+        ),
+    },
+    "TEST-FE-189": {
+        "notes": (
+            "Signers remain distinct from Occupants and final signing requires explicit "
+            "confirmation and reason evidence."
+        ),
+    },
+    "test_the_signature_route_takes_no_signing_time_from_the_request": {
+        "test_id": "test_signing_routes_take_no_signing_time_from_the_request",
+    },
+    "TEST-FE-675": {
+        "notes": (
+            "The Lease screen sends the Lease signing with exactly the event id and the "
+            "reason, no device time (owner answer (a) to Q-2026-10-14-110; V1-056 signing "
+            "time from the database clock)."
+        ),
+    },
+    "test_the_plain_sign_route_is_removed": {
+        "test_id": "test_sign_route_forwards_the_reservation_the_signing_completes",
+        "notes": (
+            "V1-058: POST /leases/{id}/sign takes an optional reservation_id and passes it to"
+            " the signing command, so signing completes the Reservation (the database checks "
+            "Unit, Customer and dates)."
+        ),
+    },
+    "test_sign_with_reservation_then_http_lease_move_in_and_cancel_draft": {
+        "test_id": "test_http_sign_with_reservation_then_lease_move_in_and_cancel_draft",
+    },
 }
 
 

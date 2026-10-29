@@ -58,28 +58,28 @@ describe("Lease API client", () => {
     );
   });
 
-  it("TEST-FE-186 sends CSRF, idempotency, and If-Match for explicit signing", async () => {
+  it("TEST-FE-186 sends CSRF, idempotency, and If-Match for an explicit Lease command", async () => {
     const lease = {
       lease_id: "lease-1",
       version: 4,
-    } as Parameters<typeof leaseApi.sign>[0];
+    } as Parameters<typeof leaseApi.cancel>[0];
     const fetcher = vi
       .spyOn(globalThis, "fetch")
       .mockResolvedValue(
         response({ data: { lease_id: "lease-1", version: 5 } }),
       );
 
-    await leaseApi.sign(
+    await leaseApi.cancel(
       lease,
       {
         event_id: "event-1",
-        reason: "All Signers completed",
+        reason: "Draft no longer needed",
       },
       "command-1",
     );
 
     const call = fetcher.mock.calls[0];
-    expect(call?.[0]).toBe("/api/v1/leases/lease-1/sign");
+    expect(call?.[0]).toBe("/api/v1/leases/lease-1/cancel");
     expect(call?.[1]?.method).toBe("POST");
     const headers = new Headers(call?.[1]?.headers);
     expect(headers.get("Idempotency-Key")).toBe("command-1");

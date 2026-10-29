@@ -15939,7 +15939,7 @@
       "notes": "Lease draft creation atomically accepts distinct approved Service, pet, Security Deposit, Signer, and planned Occupant evidence with a Location response; partial source-term correction preserves omitted dates and Rent while requiring CSRF, stable idempotency, explicit reasons, and optimistic version preconditions without generic status mutation."
     },
     {
-      "test_id": "test_signer_signing_renewal_and_termination_are_explicit_commands",
+      "test_id": "test_signer_renewal_and_termination_are_explicit_commands_and_plain_signing_is_gone",
       "upstream_ids": [
         "API-036",
         "API-038",
@@ -16056,7 +16056,7 @@
       "test_level": "UI component",
       "test_path": "frontend/src/leaseClient.test.tsx",
       "status": "implemented",
-      "notes": "Explicit Lease signing sends CSRF, idempotency, and optimistic If-Match evidence."
+      "notes": "The Lease client sends CSRF, idempotency and If-Match for an explicit Lease command (cancel; the plain signing call is removed in V1-061)."
     },
     {
       "test_id": "TEST-FE-187",
@@ -16095,7 +16095,7 @@
       "test_level": "UI component",
       "test_path": "frontend/src/LeaseManagement.test.tsx",
       "status": "implemented",
-      "notes": "Signers remain distinct from Occupants and final signing requires explicit confirmation and reason evidence."
+      "notes": "The folded Lease records keep Signers separate and no longer sign: they point to Sign Lease, which records the Security Deposit and the first money in the same step (V1-061)."
     },
     {
       "test_id": "TEST-FE-190",
@@ -40861,7 +40861,7 @@
       "notes": "No role calls the placed, follow or replaced parts function, each SECURITY DEFINER with the fixed search path; migration 134 adds only the two functions, replaces the parts function with privileges and settings kept, changes only the source, recovery scope and refusal functions exactly by their replacements, no constraint or trigger, and is forward-only (V1-056 sub-slice 10e-3d-2b-2)."
     },
     {
-      "test_id": "test_signing_routes_take_no_signing_time_from_the_request",
+      "test_id": "test_the_signature_route_takes_no_signing_time_from_the_request",
       "upstream_ids": ["BR-AUDIT-003", "API-036", "API-038"],
       "test_level": "API",
       "test_path": "backend/tests/test_lease_api.py",
@@ -40898,7 +40898,7 @@
       "test_level": "UI component",
       "test_path": "frontend/src/LeaseManagement.test.tsx",
       "status": "implemented",
-      "notes": "The Lease screen sends the Lease signing with exactly the event id and the reason, no device time (owner answer (a) to Q-2026-10-14-110; V1-056 signing time from the database clock)."
+      "notes": "V1-061: the Lease client has no plain signing call; only Sign Lease with payment (DL-108) signs, and it sends no device time."
     },
     {
       "test_id": "test_a_tie_in_time_is_broken_by_the_order_the_correction_wrote_its_payments",
@@ -52731,7 +52731,7 @@
       "notes": "V1-058 R3 L2a; V1-060 B7 (DL-108): Sign Lease looks up the Primary Tenant's active Reservation for the Unit (every page), says it is completed in the same step and asks only for the rest of its deposit; a refusal saves nothing and shows the server's words, and changed values after it are a new request."
     },
     {
-      "test_id": "test_sign_route_forwards_the_reservation_the_signing_completes",
+      "test_id": "test_the_plain_sign_route_is_removed",
       "upstream_ids": [
         "DL-066",
         "API-038"
@@ -52739,7 +52739,7 @@
       "test_level": "API",
       "test_path": "backend/tests/test_lease_api.py",
       "status": "implemented",
-      "notes": "V1-058: POST /leases/{id}/sign takes an optional reservation_id and passes it to the signing command, so signing completes the Reservation (the database checks Unit, Customer and dates)."
+      "notes": "V1-061: POST /leases/{lease_id}/sign signed a Lease with no money; it is removed (404), the flow is not called and the Lease stays a draft. Sign Lease with payment (DL-108) is the only way to sign."
     },
     {
       "test_id": "test_cancel_draft_and_lease_move_in_routes_need_capability_and_version",
@@ -52754,7 +52754,7 @@
       "notes": "V1-058: POST /leases/{id}/cancel (leases.draft) and POST /leases/{id}/move-in (reservations.complete) hide the Lease without the capability (404), need If-Match (428), and pass the version, reason, move-in date, Occupants and capability reference to the commands."
     },
     {
-      "test_id": "test_http_sign_with_reservation_then_lease_move_in_and_cancel_draft",
+      "test_id": "test_sign_with_reservation_then_http_lease_move_in_and_cancel_draft",
       "upstream_ids": [
         "BR-LEASE-004",
         "DL-066",

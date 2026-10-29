@@ -436,31 +436,6 @@ export function LeaseManagement({ api = leaseApi }: LeaseManagementProps) {
     setSignatureReason("");
   }
 
-  function sign(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (selected === null) return;
-    const data = new FormData(event.currentTarget);
-    if (
-      !window.confirm(
-        "Sign this Lease after reviewing all source terms and Signers?",
-      )
-    )
-      return;
-    command(
-      "Revalidating parties, terms, and non-overlapping Parking periods…",
-      () =>
-        api.sign(
-          selected,
-          {
-            event_id: crypto.randomUUID(),
-            reason: formString(data, "reason"),
-          },
-          crypto.randomUUID(),
-        ),
-      "Lease signed through an explicit audited command.",
-    );
-  }
-
   function renew(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (selected === null) return;
@@ -1233,23 +1208,10 @@ export function LeaseManagement({ api = leaseApi }: LeaseManagementProps) {
             </form>
           )}
           {selected.can_sign && (
-            <form className="form-stack confirmation-panel" onSubmit={sign}>
-              <h4>Pre-signing summary</h4>
-              <p>
-                {selected.signers.length} Signer(s); Parking{" "}
-                {selected.unit_number}; {selected.start_date}–
-                {selected.end_date}; {money(selected.monthly_rent_usd_cents)}{" "}
-                monthly. The server rechecks required parties, source terms, and
-                non-overlap.
-              </p>
-              <label>
-                Signing reason and evidence
-                <input maxLength={500} name="reason" required />
-              </label>
-              <button disabled={busy} type="submit">
-                Review and sign Lease
-              </button>
-            </form>
+            <p className="confirmation-panel">
+              Sign this Lease with Sign Lease on the Lease page. It records the
+              Security Deposit and the first money in the same step.
+            </p>
           )}
 
           <h4>Occupants</h4>

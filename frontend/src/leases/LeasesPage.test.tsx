@@ -692,11 +692,10 @@ describe("Lease actions", () => {
   it("TEST-FE-850 Sign Lease needs a tick for every Signer, says what signing does and sends the money, the Signers and the Lease version as one request (DL-100, DL-108)", async () => {
     window.location.hash = "#/leases/lease-sign";
     const recordSignature = vi.fn();
-    const sign = vi.fn();
     const get = vi.fn().mockResolvedValue(signable);
     const money = signing();
     show(
-      api({ get, recordSignature, sign }),
+      api({ get, recordSignature }),
       deposits(),
       null,
       undefined,
@@ -772,7 +771,6 @@ describe("Lease actions", () => {
     // Nothing is saved step by step any more.
     expect(money.confirm).not.toHaveBeenCalled();
     expect(recordSignature).not.toHaveBeenCalled();
-    expect(sign).not.toHaveBeenCalled();
     expect(money.createSecurityDeposit).not.toHaveBeenCalled();
     expect(money.receiveIntoDeposit).not.toHaveBeenCalled();
     // The page reads the signed Lease again.

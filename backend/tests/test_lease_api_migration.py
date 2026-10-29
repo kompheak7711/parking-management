@@ -16,7 +16,8 @@ from fastapi.testclient import TestClient
 from payment_test_support import seed_deposit_payment
 from property_rental.app import create_app
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
-from property_rental.lease_api import PostgresLeaseResourceFlow
+from property_rental.lease import LeaseSignCommand
+from property_rental.lease_api import LeaseResource, PostgresLeaseResourceFlow
 from test_lease_lifecycle_migration import database_now
 from test_lease_migration import setup_sources
 from test_move_in_migration import setup_move_in
@@ -63,6 +64,33 @@ def api(database_url: str, actor: AuthenticatedActor) -> TestClient:
     )
     value.cookies.set("__Host-prm_csrf", "csrf")
     return value
+
+
+def sign_in_database(
+    actor: AuthenticatedActor,
+    lease_id: object,
+    version: int,
+    reason: str,
+    *,
+    key: UUID | None = None,
+    event_id: UUID | None = None,
+    reservation_id: UUID | None = None,
+) -> LeaseResource:
+    """V1-061: no route signs without money any more (the plain sign route is removed), so these
+    tests reach the signing step through the runtime role's flow, as Sign Lease does inside."""
+    return PostgresLeaseResourceFlow(runtime_database_url()).sign(
+        LeaseSignCommand(
+            idempotency_key=key or uuid4(),
+            event_id=event_id or uuid4(),
+            lease_id=UUID(str(lease_id)),
+            expected_version=version,
+            signed_at=None,
+            reason=reason,
+            authorization_reference="leases.sign",
+            reservation_id=reservation_id,
+        ),
+        actor=actor,
+    )
 
 
 def headers(version: int | None = None) -> dict[str, str]:
@@ -207,13 +235,11 @@ def test_http_create_update_sign_and_replay_use_runtime_role(
         )
         assert signed.status_code == 200, signed.text
         version += 1
-    completed = client.post(
-        f"/api/v1/leases/{lease_id}/sign",
-        headers=headers(version),
-        json={
-            "event_id": str(uuid4()),
-            "reason": "All required Signers and source terms validated",
-        },
+    completed = sign_in_database(
+        authenticated(actor_id, property_id),
+        lease_id,
+        version,
+        "All required Signers and source terms validated",
     )
 
     assert created.status_code == 201, created.text
@@ -232,8 +258,7 @@ def test_http_create_update_sign_and_replay_use_runtime_role(
     assert partial.json()["data"]["end_date"] == "2027-12-31"
     assert partial.json()["data"]["monthly_rent_usd_cents"] == 90000
     assert added.status_code == 201, added.text
-    assert completed.status_code == 200, completed.text
-    assert completed.json()["data"]["status"] == "SIGNED"
+    assert completed.status.value == "SIGNED"
     listed = client.get(f"/api/v1/properties/{property_id}/leases?status=SIGNED&limit=1")
     assert listed.status_code == 200
     assert listed.headers["cache-control"] == "private, no-store"
@@ -356,23 +381,24 @@ def test_http_signing_time_is_the_database_time(migrated_database_url: str) -> N
         headers=headers(2),
         json={"event_id": str(uuid4()), "reason": "Signer completed attributed signature"},
     )
-    sign_headers = headers(3)
-    sign_body = {"event_id": str(uuid4()), "reason": "All required Signers and terms validated"}
-    completed = client.post(f"/api/v1/leases/{lease_id}/sign", headers=sign_headers, json=sign_body)
-    # The Lease is now at version 4, so only a replay can answer If-Match "3" with 200.
-    sign_retried = client.post(
-        f"/api/v1/leases/{lease_id}/sign", headers=sign_headers, json=sign_body
+    sign_actor = authenticated(actor_id, property_id)
+    sign_key, sign_event = uuid4(), uuid4()
+    sign_reason = "All required Signers and terms validated"
+    completed = sign_in_database(
+        sign_actor, lease_id, 3, sign_reason, key=sign_key, event_id=sign_event
+    )
+    # The Lease is now at version 4, so only a replay can answer expected version 3.
+    sign_retried = sign_in_database(
+        sign_actor, lease_id, 3, sign_reason, key=sign_key, event_id=sign_event
     )
     after = database_now()
 
     assert first.status_code == 200, first.text
     assert retried.status_code == 200, retried.text
     assert second.status_code == 200, second.text
-    assert completed.status_code == 200, completed.text
-    assert completed.json()["data"]["status"] == "SIGNED"
-    assert sign_retried.status_code == 200, sign_retried.text
-    assert completed.json()["data"]["signed_at"] is not None
-    assert sign_retried.json()["data"]["signed_at"] == completed.json()["data"]["signed_at"]
+    assert completed.status.value == "SIGNED"
+    assert completed.signed_at is not None
+    assert sign_retried.signed_at == completed.signed_at
     first_signed = {
         item["signer_id"]: item["signed_at"] for item in first.json()["data"]["signers"]
     }
@@ -598,7 +624,7 @@ def test_http_complete_move_in_preserves_atomic_postgresql_result(
         ).fetchone() == (1,)
 
 
-def test_http_sign_with_reservation_then_lease_move_in_and_cancel_draft(
+def test_sign_with_reservation_then_http_lease_move_in_and_cancel_draft(
     migrated_database_url: str,
 ) -> None:
     """V1-058: the Lease screens sign with the Reservation, record move-in and cancel a draft."""
@@ -725,17 +751,29 @@ def test_http_sign_with_reservation_then_lease_move_in_and_cancel_draft(
         json={"event_id": str(uuid4()), "reason": "Every Signer signed the paper Lease"},
     )
     assert signature.status_code == 200, signature.text
-    sign_body = {
-        "event_id": str(uuid4()),
-        "reason": "Every Signer signed the paper Lease",
-        "reservation_id": str(reservation_id),
-    }
-    sign_headers = headers(signature.json()["data"]["version"])
-    signed = client.post(f"/api/v1/leases/{lease_id}/sign", headers=sign_headers, json=sign_body)
-    assert signed.status_code == 200, signed.text
+    sign_actor = authenticated(actor_id, property_id)
+    sign_key, sign_event = uuid4(), uuid4()
+    sign_version = signature.json()["data"]["version"]
+    signed = sign_in_database(
+        sign_actor,
+        lease_id,
+        sign_version,
+        "Every Signer signed the paper Lease",
+        key=sign_key,
+        event_id=sign_event,
+        reservation_id=reservation_id,
+    )
     # Try again with the same request is replayed, not refused.
-    replayed = client.post(f"/api/v1/leases/{lease_id}/sign", headers=sign_headers, json=sign_body)
-    assert replayed.status_code == 200, replayed.text
+    replayed = sign_in_database(
+        sign_actor,
+        lease_id,
+        sign_version,
+        "Every Signer signed the paper Lease",
+        key=sign_key,
+        event_id=sign_event,
+        reservation_id=reservation_id,
+    )
+    assert replayed.version == signed.version
     with psycopg.connect(migrated_database_url) as connection:
         assert connection.execute(
             "SELECT status, resulting_lease_id::text FROM app.reservations WHERE id=%s",
@@ -751,7 +789,7 @@ def test_http_sign_with_reservation_then_lease_move_in_and_cancel_draft(
     occupancy_id = uuid4()
     moved_in = client.post(
         f"/api/v1/leases/{lease_id}/move-in",
-        headers=headers(signed.json()["data"]["version"]),
+        headers=headers(signed.version),
         json={
             "event_id": str(uuid4()),
             "actual_move_in_date": business_date.isoformat(),

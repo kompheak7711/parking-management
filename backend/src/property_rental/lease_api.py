@@ -1028,16 +1028,6 @@ class LeaseSignatureSource(BaseModel):
     reason: Annotated[str, Field(min_length=1, max_length=500)]
 
 
-class LeaseSignSource(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    event_id: UUID
-    reason: Annotated[str, Field(min_length=1, max_length=500)]
-    # V1-058: the active Reservation this signing completes (DL-066); the database checks it
-    # belongs to the same Unit and Primary Tenant.
-    reservation_id: UUID | None = None
-
-
 class LeaseRenewSource(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -1596,37 +1586,8 @@ def create_lease_router(
         require_browser_mutation(request, settings)
         raise HTTPException(status_code=status.HTTP_409_CONFLICT)
 
-    @router.post("/leases/{lease_id}/sign")
-    def sign_lease(
-        lease_id: UUID,
-        source: LeaseSignSource,
-        request: Request,
-        response: Response,
-        idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
-        if_match: Annotated[str | None, Header(alias="If-Match")] = None,
-    ) -> dict[str, object]:
-        actor = _require_actor(request, resolver)
-        try:
-            current = flow.get(lease_id)
-            _require(actor, current.property_id, LEASE_SIGN_CAPABILITY)
-            require_browser_mutation(request, settings)
-            resource = flow.sign(
-                LeaseSignCommand(
-                    idempotency_key=idempotency_key,
-                    event_id=source.event_id,
-                    lease_id=lease_id,
-                    expected_version=_version(if_match),
-                    signed_at=None,
-                    reason=source.reason,
-                    authorization_reference=LEASE_SIGN_CAPABILITY,
-                    reservation_id=source.reservation_id,
-                ),
-                actor=actor,
-            )
-        except Exception as exc:
-            raise _translate(exc) from exc
-        response.headers["ETag"] = f'"{resource.version}"'
-        return {"data": _body(resource, actor), "meta": {"request_id": request.state.request_id}}
+    # V1-061: the plain `POST /leases/{lease_id}/sign` signed a Lease with no money and is
+    # removed; Sign Lease with payment (DL-108, lease_signing_api) is the only way to sign.
 
     @router.post("/leases/{lease_id}/renew", status_code=status.HTTP_201_CREATED)
     def renew_lease(

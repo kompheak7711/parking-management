@@ -452,7 +452,7 @@ def test_create_and_update_require_csrf_idempotency_and_optimistic_version() -> 
     assert partial.json()["data"]["monthly_rent_usd_cents"] == 90000
 
 
-def test_signer_signing_renewal_and_termination_are_explicit_commands() -> None:
+def test_signer_renewal_and_termination_are_explicit_commands_and_plain_signing_is_gone() -> None:
     property_id = uuid4()
     current = resource(property_id)
     flow = InMemoryLeaseFlow({current.lease_id: current})
@@ -475,13 +475,18 @@ def test_signer_signing_renewal_and_termination_are_explicit_commands() -> None:
             "reason": "Joint responsibility recorded",
         },
     )
-    signed = api.post(
+    # V1-061: the plain signing route signed with no money and is removed; Sign Lease with
+    # payment (DL-108) is the only way to sign.
+    gone = api.post(
         f"/api/v1/leases/{current.lease_id}/sign",
         headers=headers(version=2),
         json={
             "event_id": str(uuid4()),
             "reason": "All required Signers completed",
         },
+    )
+    flow.resources[current.lease_id] = replace(
+        flow.resources[current.lease_id], status=LeaseStatus.SIGNED, version=3
     )
     successor_id = uuid4()
     renewed = api.post(
@@ -510,22 +515,21 @@ def test_signer_signing_renewal_and_termination_are_explicit_commands() -> None:
 
     assert added.status_code == 201
     assert added.headers["location"].startswith("/api/v1/lease-signers/")
-    assert signed.json()["data"]["status"] == "SIGNED"
-    assert signed.json()["data"]["can_renew"] is True
+    assert gone.status_code == 404
+    assert flow.sign_command is None
     assert renewed.status_code == 201
     assert renewed.headers["location"] == f"/api/v1/leases/{successor_id}"
     assert renewed.json()["data"]["predecessor_lease_id"] == str(current.lease_id)
     assert terminated.json()["data"]["status"] == "TERMINATED"
 
 
-def test_signing_routes_take_no_signing_time_from_the_request() -> None:
+def test_the_signature_route_takes_no_signing_time_from_the_request() -> None:
     property_id = uuid4()
     current = resource(property_id)
     flow = InMemoryLeaseFlow({current.lease_id: current})
     api = client(flow, actor(property_id, "leases.read", "leases.sign"))
     signer_id = uuid4()
     signature_path = f"/api/v1/lease-signers/{signer_id}?lease_id={current.lease_id}"
-    sign_path = f"/api/v1/leases/{current.lease_id}/sign"
     device_time = "2026-08-27T01:00:00Z"
 
     refused_signature = api.patch(
@@ -533,36 +537,21 @@ def test_signing_routes_take_no_signing_time_from_the_request() -> None:
         headers=headers(version=1),
         json={"event_id": str(uuid4()), "signed_at": device_time, "reason": "Signer verified"},
     )
-    refused_signing = api.post(
-        sign_path,
-        headers=headers(version=1),
-        json={"event_id": str(uuid4()), "signed_at": device_time, "reason": "Signers completed"},
-    )
 
     assert refused_signature.status_code == 422
-    assert refused_signing.status_code == 422
     assert refused_signature.json()["error"]["fields"] == ["body.signed_at"]
-    assert refused_signing.json()["error"]["fields"] == ["body.signed_at"]
-    assert (flow.signature_command, flow.sign_command) == (None, None)
+    assert flow.signature_command is None
 
     recorded = api.patch(
         signature_path,
         headers=headers(version=1),
         json={"event_id": str(uuid4()), "reason": "Signer verified"},
     )
-    signed = api.post(
-        sign_path,
-        headers=headers(version=2),
-        json={"event_id": str(uuid4()), "reason": "Signers completed"},
-    )
 
     assert recorded.status_code == 200, recorded.text
-    assert signed.status_code == 200, signed.text
     assert flow.signature_command is not None
     assert flow.signature_command.signer_id == signer_id
     assert flow.signature_command.signed_at is None
-    assert flow.sign_command is not None
-    assert flow.sign_command.signed_at is None
 
 
 def test_terminate_route_takes_no_termination_time_from_the_request() -> None:
@@ -713,12 +702,13 @@ def test_timeline_restricted_visibility_follows_only_the_actor_read_grants() -> 
     assert flow.visibilities[-1] == expected
 
 
-def test_sign_route_forwards_the_reservation_the_signing_completes() -> None:
+def test_the_plain_sign_route_is_removed() -> None:
+    """V1-061: `POST /leases/{lease_id}/sign` signed a Lease with no money; it is removed, so
+    only Sign Lease with payment (DL-108) signs, with the Security Deposit and the first money."""
     property_id = uuid4()
     current = resource(property_id)
     flow = InMemoryLeaseFlow({current.lease_id: current})
     api = client(flow, actor(property_id, "leases.read", "leases.sign"))
-    reservation_id = uuid4()
 
     signed = api.post(
         f"/api/v1/leases/{current.lease_id}/sign",
@@ -726,13 +716,13 @@ def test_sign_route_forwards_the_reservation_the_signing_completes() -> None:
         json={
             "event_id": str(uuid4()),
             "reason": "Signers completed",
-            "reservation_id": str(reservation_id),
+            "reservation_id": str(uuid4()),
         },
     )
 
-    assert signed.status_code == 200, signed.text
-    assert flow.sign_command is not None
-    assert flow.sign_command.reservation_id == reservation_id
+    assert signed.status_code == 404
+    assert flow.sign_command is None
+    assert flow.resources[current.lease_id].status is LeaseStatus.DRAFTED
 
 
 def test_cancel_draft_and_lease_move_in_routes_need_capability_and_version() -> None:
@@ -848,24 +838,16 @@ def test_an_end_date_that_is_not_a_month_end_answers_its_own_code() -> None:
         ) -> LeaseResource:
             raise LeaseEndDateNotMonthEndError(END_DATE_NOT_MONTH_END)
 
-        def sign(self, command: LeaseSignCommand, *, actor: AuthenticatedActor) -> LeaseResource:
-            raise LeaseEndDateNotMonthEndError(END_DATE_NOT_MONTH_END)
-
     api = client(
         RefusingFlow({current.lease_id: current}),
-        actor(property_id, "leases.read", "leases.draft", "leases.sign"),
+        actor(property_id, "leases.read", "leases.draft"),
     )
     updated = api.patch(
         f"/api/v1/leases/{current.lease_id}",
         headers=headers(version=1),
         json={"event_id": str(uuid4()), "end_date": "2027-08-30", "reason": "Shorter Lease"},
     )
-    signed = api.post(
-        f"/api/v1/leases/{current.lease_id}/sign",
-        headers=headers(version=1),
-        json={"event_id": str(uuid4()), "reason": "All required Signers completed"},
-    )
-    for answer in (updated, signed):
+    for answer in (updated,):
         assert answer.status_code == 422
         error = answer.json()["error"]
         assert error["code"] == "LEASE_END_DATE_NOT_MONTH_END"

@@ -9,7 +9,7 @@ import {
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { LeaseManagement } from "./LeaseManagement";
-import { LeaseApi, LeaseResource } from "./leaseClient";
+import { LeaseApi, LeaseResource, leaseApi } from "./leaseClient";
 
 afterEach(() => {
   cleanup();
@@ -76,18 +76,6 @@ function client(overrides: Partial<LeaseApi> = {}): LeaseApi {
       ...drafted,
       version: 2,
       signers: [{ ...drafted.signers[0], signed_at: "2026-08-26T02:00:00Z" }],
-    }),
-    sign: vi.fn().mockResolvedValue({
-      ...drafted,
-      status: "SIGNED",
-      version: 2,
-      signed_at: "2026-08-26T02:00:00Z",
-      can_edit: false,
-      can_manage_signers: false,
-      can_sign: false,
-      can_move_in: true,
-      can_terminate: true,
-      can_renew: true,
     }),
     renew: vi.fn().mockResolvedValue({
       ...drafted,
@@ -198,26 +186,18 @@ describe("Lease staff workflow", () => {
     );
   });
 
-  it("TEST-FE-189 keeps Signers separate and signs only after explicit confirmation", async () => {
+  it("TEST-FE-189 keeps Signers separate and sends signing to Sign Lease with its money", async () => {
     const api = client();
-    vi.spyOn(window, "confirm").mockReturnValue(true);
     await loadAndOpen(api);
     expect(
       screen.getByText(/Occupancy alone grants no signing responsibility/),
     ).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText("Signing reason and evidence"), {
-      target: { value: "All terms and Signers verified" },
-    });
-    fireEvent.click(
-      screen.getByRole("button", { name: "Review and sign Lease" }),
-    );
-
-    await waitFor(() => {
-      expect(api.sign).toHaveBeenCalledTimes(1);
-    });
-    expect(window.confirm).toHaveBeenCalledTimes(1);
+    // V1-061: the folded form no longer signs without money; Sign Lease does it in one step.
     expect(
-      await screen.findByText(/explicit audited command/),
+      screen.queryByRole("button", { name: "Review and sign Lease" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText(/Sign this Lease with Sign Lease on the Lease page/),
     ).toBeInTheDocument();
   });
 
@@ -265,24 +245,9 @@ describe("Lease staff workflow", () => {
     expect(source?.reason).toBe("Signer identity and consent verified");
   });
 
-  it("TEST-FE-675 sends no device time with the Lease signing", async () => {
-    const api = client();
-    vi.spyOn(window, "confirm").mockReturnValue(true);
-    await loadAndOpen(api);
-    fireEvent.change(screen.getByLabelText("Signing reason and evidence"), {
-      target: { value: "All terms and Signers verified" },
-    });
-    fireEvent.click(
-      screen.getByRole("button", { name: "Review and sign Lease" }),
-    );
-
-    await waitFor(() => {
-      expect(api.sign).toHaveBeenCalledTimes(1);
-    });
-    const source = vi.mocked(api.sign).mock.calls[0]?.[1];
-    expect(Object.keys(source ?? {}).sort()).toEqual(["event_id", "reason"]);
-    expect(typeof source?.event_id).toBe("string");
-    expect(source?.reason).toBe("All terms and Signers verified");
+  it("TEST-FE-675 the Lease client has no plain signing call", () => {
+    // V1-061: POST /leases/{id}/sign signed with no money; only Sign Lease with payment signs.
+    expect("sign" in leaseApi).toBe(false);
   });
 
   it("TEST-FE-190 conditionally displays Pet Deposit and completes move-in atomically", async () => {

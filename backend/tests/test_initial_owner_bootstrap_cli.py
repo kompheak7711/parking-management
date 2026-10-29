@@ -995,7 +995,6 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/lease-signers/{signer_id}": {"patch"},
         "/api/v1/leases/{lease_id}/occupancies": {"get", "post"},
         "/api/v1/occupancies/{occupancy_id}/end": {"post"},
-        "/api/v1/leases/{lease_id}/sign": {"post"},
         "/api/v1/leases/{lease_id}/signing-preview": {"get"},
         "/api/v1/leases/{lease_id}/planned-security-deposit": {"put"},
         "/api/v1/leases/{lease_id}/sign-with-payment": {"post"},

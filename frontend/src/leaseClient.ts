@@ -158,11 +158,6 @@ export interface LeaseSignatureSource {
   reason: string;
 }
 
-/** Signing may name the active Reservation it completes (DL-066). */
-export interface LeaseSignSource extends LeaseSignatureSource {
-  reservation_id?: string;
-}
-
 export interface LeaseRenewSource {
   lease_id: string;
   primary_signer_id: string;
@@ -301,11 +296,6 @@ export interface LeaseApi {
     lease: LeaseResource,
     signerId: string,
     source: LeaseSignatureSource,
-    idempotencyKey: string,
-  ) => Promise<LeaseResource>;
-  sign: (
-    lease: LeaseResource,
-    source: LeaseSignSource,
     idempotencyKey: string,
   ) => Promise<LeaseResource>;
   renew: (
@@ -575,14 +565,6 @@ export const leaseApi: LeaseApi = {
     leaseCommand(
       `/api/v1/lease-signers/${encodeURIComponent(signerId)}?lease_id=${encodeURIComponent(value.lease_id)}`,
       "PATCH",
-      source,
-      key,
-      value.version,
-    ),
-  sign: (value, source, key) =>
-    leaseCommand(
-      `/api/v1/leases/${encodeURIComponent(value.lease_id)}/sign`,
-      "POST",
       source,
       key,
       value.version,
