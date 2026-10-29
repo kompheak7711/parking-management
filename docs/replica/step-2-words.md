@@ -537,8 +537,8 @@ PostgreSQL functions created by earlier migrations raise fixed English error tex
 | units/text.ts | Update Unit / ធ្វើបច្ចុប្បន្នភាពបន្ទប់ | Update Parking / ធ្វើបច្ចុប្បន្នភាពចំណត |
 | units/text.ts | Unit details / ព័ត៌មានលម្អិតបន្ទប់ | Parking details / ព័ត៌មានលម្អិតចំណត |
 | units/text.ts | No photo of this Unit yet. / មិនទាន់មានរូបថតបន្ទប់នេះទេ។ | No photo of this Parking yet. / មិនទាន់មានរូបថតចំណតនេះទេ។ |
-| units/text.ts | Bedrooms / បន្ទប់គេង | Bedrooms / ចំណតគេង |
-| units/text.ts | Bathrooms / បន្ទប់ទឹក | Bathrooms / ចំណតទឹក |
+| units/text.ts | Bedrooms / បន្ទប់គេង | Bedrooms / បន្ទប់គេង (unchanged: bedroom is its own word) |
+| units/text.ts | Bathrooms / បន្ទប់ទឹក | Bathrooms / បន្ទប់ទឹក (unchanged: bathroom is its own word) |
 | units/text.ts | Room features / លក្ខណៈបន្ទប់ | Room features / លក្ខណៈចំណត |
 | units/text.ts | បន្ទប់នេះទំនេរ។ អាចកក់ ឬព្រាងកិច្ចសន្យាសម្រាប់អតិថិជនដែលមកផ្ទាល់។ | ចំណតនេះទំនេរ។ អាចកក់ ឬព្រាងកិច្ចសន្យាសម្រាប់អតិថិជនដែលមកផ្ទាល់។ |
 | units/text.ts | គណនីរបស់អ្នកមិនអាចអានកិច្ចសន្យា ឬការកក់សម្រាប់បន្ទប់នេះបានទេ។ | គណនីរបស់អ្នកមិនអាចអានកិច្ចសន្យា ឬការកក់សម្រាប់ចំណតនេះបានទេ។ |

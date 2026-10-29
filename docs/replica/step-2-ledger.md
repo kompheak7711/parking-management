@@ -30,3 +30,7 @@ Frontend: 1 failed, 1966 passed (76 files) — only known TEST-FE-894.
 Backend: 2 failed, 5103 passed, 2717 skipped (17m24s). One is the known owner set-up test. The other, `test_every_local_script_parses_and_reads_secrets_only_from_files`, still asserted `--port 8000`: a Step 1 miss (the port moved to 8001 in Step 1, the test was not updated). Ruling: assertion changed to 8001 (same rule as the Step 1 test updates: update old-name asserts, never delete) — cost if wrong: none, 8001 is Parking's owner-approved port. Re-run of the file: 1 failed (known), 9 passed.
 Database: first run 1 failed, 2896 passed — `test_a_start_during_a_wait_answers_429_and_writes_nothing` got 299 instead of 300: migration 185 rounds up the seconds left of the 300 s wait, so 299 means more than one second passed between the wrong try and the next call on the loaded Mac; the test file has no Step 2 change. Re-run: 2897 passed (34m57s). Ruling: timing, not a regression; no code change — cost if wrong: an unrelated flaky test stays unfixed.
 Result: same 3 known failures, no new failures.
+
+## Fix after the owner's Step 2 answers (2026-10-29)
+
+"Loading the Parking…" → "Loading Parking…" (owner). Found while planning Step 3: the Khmer rename had turned the compound words បន្ទប់គេង (Bedrooms) and បន្ទប់ទឹក (Bathrooms) into ចំណតគេង / ចំណតទឹក (`frontend/src/units/text.ts`). Put back. A scan of every Khmer string that has ចំណត glued to a following letter found no other compound (Khmer writes words without spaces, so the rest are separate words such as ចំណតទំនេរ = vacant Parking).
