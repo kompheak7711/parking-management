@@ -264,7 +264,7 @@ export function UnitUtilitiesCard({
                 </span>
                 {meter === null && canAddMeter && install !== undefined && (
                   <button
-                    className="ui-btn"
+                    className="ui-btn ui-meter-add"
                     onClick={() => {
                       setNotice(null);
                       setAdding(kind);

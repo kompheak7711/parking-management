@@ -259,7 +259,8 @@ export function NewUnitDialog({
 }) {
   // V1-061 (owner 29/10/2026): the default Rent and the required Services are set here too, saved
   // right after the Unit with the same Change command the Unit page uses.
-  const services = useServices(servicesApi, propertyId);
+  const read = useServices(servicesApi, propertyId);
+  const services = read === null || read === "failed" ? read : read.services;
   const [rent, setRent] = useState("");
   const [chosen, setChosen] = useState<Set<string>>(new Set());
   const [rentProblem, setRentProblem] = useState<string | null>(null);

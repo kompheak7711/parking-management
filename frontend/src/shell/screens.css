@@ -2380,3 +2380,9 @@ a.ui-kpi.ui-home-kpi {
     font-weight: 600;
   }
 }
+
+/* V1-061 (owner 29/10/2026): the Add electricity meter and Add water meter buttons have one width. */
+.ui-apps .ui-meter-add {
+  min-width: 15.5em;
+  justify-content: center;
+}

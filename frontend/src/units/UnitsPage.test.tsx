@@ -311,12 +311,12 @@ function utilityApi(meters: Partial<UtilityMeter>[] = []): UtilityPricesApi & {
 function servicesApi(): RentTermsServicesApi & {
   read: ReturnType<typeof vi.fn>;
 } {
-  const service = (id: string, name: string) => ({
+  const service = (id: string, name: string, type: string | null = null) => ({
     service_id: id,
     service_code: id,
     name_en: name,
     name_km: null,
-    service_type_id: null,
+    service_type_id: type,
     version: 1,
     rate_today_usd_cents: 1000,
     next_rate: null,
@@ -327,10 +327,19 @@ function servicesApi(): RentTermsServicesApi & {
   return {
     read: vi.fn().mockResolvedValue({
       services: [
-        service("svc-parking", "Parking"),
+        service("svc-parking", "Parking", "type-car"),
         service("svc-wifi", "Wi-Fi"),
       ],
-      service_types: [],
+      service_types: [
+        {
+          service_type_id: "type-car",
+          name_en: "Car parking",
+          name_km: null,
+          one_per_lease: true,
+          removed: false,
+          version: 1,
+        },
+      ],
       today: "2026-10-29",
       can_manage: true,
     }),
@@ -658,7 +667,7 @@ describe("Parking page", () => {
     expect(utilities.loadRates).toHaveBeenCalledWith("property-1", undefined);
   });
 
-  it("TEST-FE-1107 the Parking page shows the default Rent and required Services, and a Manager changes them in whole cents (V1-061, DL-110)", async () => {
+  it("TEST-FE-1107 the Parking page shows the default Rent and each required Service by its type and monthly rate, and a Manager changes them in whole cents (V1-061, DL-110)", async () => {
     window.location.hash = "#/units/unit-U103";
     const terms = unit("U103", {
       default_monthly_rent_usd_cents: 45_000,
@@ -680,8 +689,9 @@ describe("Parking page", () => {
       "$450.00",
     );
     await waitFor(() => {
+      // The card shows each Service's type and today's monthly rate (owner 29/10/2026).
       expect(screen.getByTestId("unit-required-services")).toHaveTextContent(
-        "Parking",
+        /^Car parking \$10\.00$/,
       );
     });
     const card = screen

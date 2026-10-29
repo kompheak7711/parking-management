@@ -9,6 +9,7 @@ import { FormEvent, useEffect, useState } from "react";
 import type {
   ServiceSetting,
   ServiceSettingsApi,
+  ServiceType,
 } from "../settings/serviceSettingsClient";
 import { usdFromCents } from "../shell/format";
 import { Icon } from "../shell/icons";
@@ -31,12 +32,38 @@ function serviceName(service: ServiceSetting, language: Language): string {
     : service.name_en;
 }
 
+/** The required Service on the card: its type and today's monthly rate, as "Trash $8.00"
+ * (owner 29/10/2026); the Service's own name when it has no type. */
+function serviceLine(
+  service: ServiceSetting,
+  types: readonly ServiceType[],
+  language: Language,
+): string {
+  const type = types.find(
+    (item) => item.service_type_id === service.service_type_id,
+  );
+  const name =
+    type === undefined
+      ? serviceName(service, language)
+      : language === "km" && type.name_km !== null
+        ? type.name_km
+        : type.name_en;
+  return service.rate_today_usd_cents === null
+    ? name
+    : `${name} ${usdFromCents(service.rate_today_usd_cents)}`;
+}
+
+export interface ServicesRead {
+  services: ServiceSetting[];
+  types: ServiceType[];
+}
+
 /** The Property's Services, read once; null while reading, "failed" when they cannot be read. */
 export function useServices(
   api: RentTermsServicesApi,
   propertyId: string,
-): ServiceSetting[] | "failed" | null {
-  const [services, setServices] = useState<ServiceSetting[] | "failed" | null>(
+): ServicesRead | "failed" | null {
+  const [services, setServices] = useState<ServicesRead | "failed" | null>(
     null,
   );
   useEffect(() => {
@@ -45,7 +72,11 @@ export function useServices(
     api
       .read(propertyId)
       .then((found) => {
-        if (run.live) setServices(found.services);
+        if (run.live)
+          setServices({
+            services: found.services,
+            types: found.service_types,
+          });
       })
       .catch(() => {
         if (run.live) setServices("failed");
@@ -76,7 +107,9 @@ export function RentTermsCard({
   onSaved: (unit: UnitResource) => void;
   onConflict: () => void;
 }) {
-  const services = useServices(servicesApi, propertyId);
+  const read = useServices(servicesApi, propertyId);
+  const services = read === null || read === "failed" ? read : read.services;
+  const types = read === null || read === "failed" ? [] : read.types;
   const [open, setOpen] = useState(false);
   const rent = unit.default_monthly_rent_usd_cents ?? null;
   const required = unit.required_service_ids ?? [];
@@ -121,7 +154,7 @@ export function RentTermsCard({
                   .map((service) =>
                     service === null
                       ? ut(language, "rt_unknown_service")
-                      : serviceName(service, language),
+                      : serviceLine(service, types, language),
                   )
                   .join(", ")}
         </dd>
