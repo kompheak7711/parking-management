@@ -436,3 +436,11 @@ candidate is the code that will be used.
   dialog without asking; the Reservation lookup reads "not found" as none even after the person's
   rights changed; a Try again after another person signed in on the same screen can read a refusal
   as not saved.
+- 2026-10-28 22:12 UTC B7 done: CI run 517 passed on `df3ec76d`, and `implementation/foundation`
+  was fast-forwarded from `a7f36455` to `df3ec76d` (no force), with the owner's yes on the merge
+  card. The owner got the update steps (pull; restart the API with `sh scripts/local/migrate.sh`
+  first, for migration 20270331_250; reload).
+- 2026-10-29 owner answer (decision card "Should a draft be signed after its Reservation ended?"):
+  "Keep refusing". Such a draft stays refused (`SIGNING_RESERVATION_ENDED`); staff make a new
+  draft, and the ended Reservation keeps its own Security Deposit (DL-009). The DL-109 owner
+  question is closed; no code change.
