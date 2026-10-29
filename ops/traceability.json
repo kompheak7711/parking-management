@@ -58623,6 +58623,28 @@
       "test_path": "backend/tests/test_lease_api.py",
       "status": "implemented",
       "notes": "V1-061 (DL-111): POST /api/v1/leases/{lease_id}/occupancies/{occupancy_id}/move-out needs reservations.complete, If-Match and a strict body with no Signer named twice; each database refusal answers its own code."
+    },
+    {
+      "test_id": "TEST-FE-1112",
+      "upstream_ids": [
+        "DL-111",
+        "BR-OCC-010"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-061 (DL-111): a running Lease shows Move out for a person who signs nothing, sends only the day with no Signers, and shows Occupant moved out in the History; the Primary Tenant has no button and a note says why."
+    },
+    {
+      "test_id": "TEST-FE-1113",
+      "upstream_ids": [
+        "DL-111",
+        "BR-OCC-010"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-061 (DL-111): a Joint Signer moves out only once every other Signer is ticked as agreeing; the only Signer living there gets a note instead of a button, and a person without reservations.complete sees no button."
     }
   ]
 }

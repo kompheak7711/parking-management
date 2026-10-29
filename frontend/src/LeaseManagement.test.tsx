@@ -86,6 +86,7 @@ function client(overrides: Partial<LeaseApi> = {}): LeaseApi {
     cancel: vi.fn().mockResolvedValue({ ...drafted, status: "CANCELLED" }),
     recordMoveIn: vi.fn().mockResolvedValue(drafted),
     addOccupant: vi.fn().mockResolvedValue(drafted),
+    moveOutOccupant: vi.fn().mockResolvedValue(drafted),
     resolveNeverMovedIn: vi.fn(
       (
         _property: string,

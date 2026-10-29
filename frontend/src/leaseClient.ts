@@ -258,6 +258,14 @@ export interface LeaseOccupantSource {
   reason: string;
 }
 
+/** V1-061 (DL-111): one person moves out; a Joint Signer names every other Signer who agreed. */
+export interface OccupantMoveOutSource {
+  event_id: string;
+  move_out_date: string;
+  agreed_signer_customer_ids: string[];
+  reason: string;
+}
+
 export interface MoveInResult {
   event_id: string;
   property_id: string;
@@ -321,6 +329,12 @@ export interface LeaseApi {
   addOccupant: (
     lease: LeaseResource,
     source: LeaseOccupantSource,
+    idempotencyKey: string,
+  ) => Promise<LeaseResource>;
+  moveOutOccupant: (
+    lease: LeaseResource,
+    occupancyId: string,
+    source: OccupantMoveOutSource,
     idempotencyKey: string,
   ) => Promise<LeaseResource>;
   completeMoveIn: (
@@ -588,6 +602,14 @@ export const leaseApi: LeaseApi = {
   addOccupant: (value, source, key) =>
     leaseCommand(
       `/api/v1/leases/${encodeURIComponent(value.lease_id)}/occupants`,
+      "POST",
+      source,
+      key,
+      value.version,
+    ),
+  moveOutOccupant: (value, occupancyId, source, key) =>
+    leaseCommand(
+      `/api/v1/leases/${encodeURIComponent(value.lease_id)}/occupancies/${encodeURIComponent(occupancyId)}/move-out`,
       "POST",
       source,
       key,

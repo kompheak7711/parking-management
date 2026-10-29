@@ -9,6 +9,7 @@ import {
   LeaseUnavailableError,
   type LeaseApi,
   type LeaseResource,
+  type OccupancyResource,
 } from "../leaseClient";
 import type { CustomerApi, CustomerListItem } from "../customerClient";
 import { NewCustomerDialog } from "../customers/CustomerDialogs";
@@ -1041,6 +1042,172 @@ export function AddOccupantDialog({
         <label htmlFor="lease-occupant-note">{lt(language, "note")}</label>
         <textarea
           id="lease-occupant-note"
+          maxLength={500}
+          onChange={(event) => {
+            setNote(event.currentTarget.value);
+          }}
+          rows={2}
+          value={note}
+        />
+      </div>
+      <OutcomeNotice language={language} outcome={outcome} />
+    </Dialog>
+  );
+}
+
+/** The Signers who still live in the Unit under this Lease. */
+export function livingSigners(lease: LeaseResource): string[] {
+  const signers = new Set(lease.signers.map((signer) => signer.customer_id));
+  return lease.occupancies
+    .filter(
+      (occupancy) =>
+        occupancy.move_out_date === null && signers.has(occupancy.customer_id),
+    )
+    .map((occupancy) => occupancy.customer_id);
+}
+
+/**
+ * V1-061 (owner 2026-10-29, DL-111): Move out one person on their own day. Never the Primary
+ * Tenant (the Lease page shows no button for them). A Joint Signer needs every other Signer
+ * to agree, and stays a Signer of the Lease; the last Signer living there gets no button.
+ */
+export function MoveOutOccupantDialog({
+  language,
+  api,
+  lease,
+  occupancy,
+  onClose,
+  onSaved,
+  onConflict,
+}: Omit<DialogProps, "onSaved"> & {
+  occupancy: OccupancyResource;
+  onSaved: (saved: LeaseResource, message: string) => void;
+}) {
+  const today = todayInPhnomPenh();
+  const last =
+    lease.end_date !== null && lease.end_date < today ? lease.end_date : today;
+  const signer = lease.signers.some(
+    (value) => value.customer_id === occupancy.customer_id,
+  );
+  const others = signer
+    ? lease.signers.filter(
+        (value) => value.customer_id !== occupancy.customer_id,
+      )
+    : [];
+  const [day, setDay] = useState(last);
+  const [agreed, setAgreed] = useState<Set<string>>(new Set());
+  const [note, setNote] = useState("");
+  const [problems, setProblems] = useState<Record<string, string>>({});
+  const identity = useValuesIdentity();
+  const message = lt(language, "mo_saved", occupancy.customer_name);
+  const { busy, outcome, send } = useSend((saved) => {
+    onSaved(saved, message);
+  }, onConflict);
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (busy) return;
+    const found: Record<string, string> = {};
+    if (
+      !/^\d{4}-\d{2}-\d{2}$/.test(day) ||
+      day < occupancy.move_in_date ||
+      day > last
+    )
+      found.day = lt(
+        language,
+        "mo_date_err",
+        dayText(occupancy.move_in_date),
+        dayText(last),
+      );
+    if (others.some((value) => !agreed.has(value.customer_id)))
+      found.agree = lt(language, "mo_err_agree");
+    setProblems(found);
+    if (Object.keys(found).length > 0) return;
+    const reason =
+      note.trim() === ""
+        ? `${occupancy.customer_name} moved out on ${dayText(day)}`
+        : note.trim();
+    const ids = others.map((value) => value.customer_id).sort();
+    const step = identity(JSON.stringify([day, ids, reason]));
+    send(() =>
+      api.moveOutOccupant(
+        lease,
+        occupancy.occupancy_id,
+        {
+          event_id: step.id,
+          move_out_date: day,
+          agreed_signer_customer_ids: ids,
+          reason,
+        },
+        step.key,
+      ),
+    );
+  }
+
+  return (
+    <Dialog
+      busy={busy}
+      closeLabel={lt(language, "close")}
+      onClose={onClose}
+      onSubmit={submit}
+      submitLabel={
+        busy
+          ? lt(language, "saving")
+          : outcome === "unknown"
+            ? lt(language, "try_again")
+            : lt(language, "mo_button")
+      }
+      title={lt(language, "mo_title", occupancy.customer_name)}
+    >
+      <div className="ui-field">
+        <label htmlFor="lease-moveout-day">
+          {lt(language, "mo_date")}
+          <span className="req">{lt(language, "required")}</span>
+        </label>
+        <DateInput
+          language={language}
+          invalid={problems.day !== undefined}
+          id="lease-moveout-day"
+          max={last}
+          min={occupancy.move_in_date}
+          onChange={(value) => {
+            setDay(value);
+          }}
+          value={day}
+        />
+        <Problem message={problems.day ?? null} />
+      </div>
+      {signer && (
+        <fieldset className="ui-radios">
+          <legend>{lt(language, "mo_agree_title")}</legend>
+          {others.map((value) => (
+            <label className="ui-chk" key={value.customer_id}>
+              <input
+                checked={agreed.has(value.customer_id)}
+                disabled={busy}
+                onChange={(event) => {
+                  const next = new Set(agreed);
+                  if (event.currentTarget.checked) next.add(value.customer_id);
+                  else next.delete(value.customer_id);
+                  setAgreed(next);
+                }}
+                type="checkbox"
+              />
+              <span>{lt(language, "mo_agrees", value.customer_name)}</span>
+            </label>
+          ))}
+          <Problem message={problems.agree ?? null} />
+        </fieldset>
+      )}
+      <p className="ui-small ui-muted">
+        {signer
+          ? lt(language, "mo_signer_note", occupancy.customer_name)
+          : lt(language, "mo_note", occupancy.customer_name)}
+      </p>
+      <div className="ui-field">
+        <label htmlFor="lease-moveout-note">{lt(language, "note")}</label>
+        <textarea
+          id="lease-moveout-note"
           maxLength={500}
           onChange={(event) => {
             setNote(event.currentTarget.value);

@@ -3719,6 +3719,149 @@ describe("Add occupant (DL-102)", () => {
     }
   });
 
+  it("TEST-FE-1112 Move out one occupant: a person who signs nothing moves out with only the day, and the History says Occupant moved out (V1-061, DL-111)", async () => {
+    window.location.hash = "#/leases/lease-U101";
+    const people = lease("U101", {
+      occupancies: [
+        ...lease("U101").occupancies,
+        {
+          occupancy_id: "occupancy-friend",
+          customer_id: "customer-friend",
+          customer_name: "Chan Sopheap",
+          move_in_date: addDays(today, -100),
+          move_out_date: null,
+          version: 1,
+        },
+      ],
+      timeline: [
+        {
+          event_id: "event-out",
+          event_kind: "lease.occupant_moved_out",
+          occurred_at: "2026-10-28T03:00:00Z",
+          reason: "Dara moved out on 28/10/2026",
+          actor_id: "actor-1",
+          source_reference: null,
+          source_href: null,
+        },
+      ],
+    });
+    const moveOutOccupant = vi
+      .fn<LeaseApi["moveOutOccupant"]>()
+      .mockResolvedValue(people);
+    show(api({ get: vi.fn().mockResolvedValue(people), moveOutOccupant }));
+
+    expect(await screen.findByText("Occupant moved out")).toBeInTheDocument();
+    // The Primary Tenant has no button and says why.
+    expect(screen.getAllByRole("button", { name: "Move out" })).toHaveLength(1);
+    expect(
+      screen.getByText("Primary Tenant: moves out only with the Lease."),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Move out" }));
+    const dialog = screen.getByRole("dialog", {
+      name: "Move out · Chan Sopheap",
+    });
+    expect(within(dialog).queryByRole("checkbox")).toBeNull();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Move out" }));
+
+    await waitFor(() => {
+      expect(moveOutOccupant).toHaveBeenCalledTimes(1);
+    });
+    expect(moveOutOccupant).toHaveBeenCalledWith(
+      expect.objectContaining({ lease_id: "lease-U101" }),
+      "occupancy-friend",
+      expect.objectContaining({
+        move_out_date: today,
+        agreed_signer_customer_ids: [],
+      }),
+      expect.anything(),
+    );
+    expect(moveOutOccupant.mock.calls.at(0)?.[2].reason).toMatch(
+      /^Chan Sopheap moved out on /,
+    );
+    expect(
+      await screen.findByText("Chan Sopheap has moved out."),
+    ).toBeInTheDocument();
+  });
+
+  it("TEST-FE-1113 Move out a Joint Signer: every other Signer must be ticked as agreeing; the only Signer living there and a reader without the move-in right get no button (V1-061, DL-111)", async () => {
+    window.location.hash = "#/leases/lease-U101";
+    const guarantor = {
+      occupancy_id: "occupancy-guarantor",
+      customer_id: "customer-guarantor",
+      customer_name: "Guarantor",
+      move_in_date: addDays(today, -199),
+      move_out_date: null,
+      version: 1,
+    };
+    const joint = lease("U101", {
+      signers: running.signers,
+      occupancies: [...lease("U101").occupancies, guarantor],
+    });
+    const moveOutOccupant = vi
+      .fn<LeaseApi["moveOutOccupant"]>()
+      .mockResolvedValue(joint);
+    show(api({ get: vi.fn().mockResolvedValue(joint), moveOutOccupant }));
+
+    fireEvent.click(await screen.findByRole("button", { name: "Move out" }));
+    const dialog = screen.getByRole("dialog", { name: "Move out · Guarantor" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Move out" }));
+    expect(
+      within(dialog).getByText(
+        "Tick each Signer once they have agreed. Every other Signer must agree.",
+      ),
+    ).toBeInTheDocument();
+    expect(moveOutOccupant).not.toHaveBeenCalled();
+
+    fireEvent.click(
+      within(dialog).getByRole("checkbox", { name: /Tenant U101 agrees/ }),
+    );
+    fireEvent.click(within(dialog).getByRole("button", { name: "Move out" }));
+    await waitFor(() => {
+      expect(moveOutOccupant).toHaveBeenCalledTimes(1);
+    });
+    expect(moveOutOccupant).toHaveBeenCalledWith(
+      expect.anything(),
+      "occupancy-guarantor",
+      expect.objectContaining({
+        agreed_signer_customer_ids: ["customer-U101"],
+      }),
+      expect.anything(),
+    );
+
+    // When the Guarantor lives there alone after the Primary Tenant left, they are the only
+    // Signer living there and wait for Terminate.
+    cleanup();
+    window.location.hash = "#/leases/lease-U101";
+    const alone = lease("U101", {
+      signers: running.signers,
+      occupancies: [
+        ...lease("U101").occupancies.map((occupancy) => ({
+          ...occupancy,
+          move_out_date: addDays(today, -1),
+        })),
+        guarantor,
+      ],
+    });
+    show(api({ get: vi.fn().mockResolvedValue(alone) }));
+    expect(
+      await screen.findByText(
+        "The only Signer living there: moves out only when the Lease ends (Terminate).",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Move out" })).toBeNull();
+
+    cleanup();
+    window.location.hash = "#/leases/lease-U101";
+    show(
+      api({ get: vi.fn().mockResolvedValue(joint) }),
+      deposits(),
+      new Set(["customers.read"]),
+    );
+    await screen.findByRole("heading", { name: /Lease · U101/ });
+    expect(screen.queryByRole("button", { name: "Move out" })).toBeNull();
+  });
+
   it("TEST-FE-1028 Record move-in names the planned people from the Lease without reading each Customer", async () => {
     window.location.hash = "#/leases/lease-move";
     const ready = lease("U302", {

@@ -1101,6 +1101,38 @@ const TEXT = {
     "A Service this Unit requires cannot run for these dates. Change the dates, or ask a Manager to change the Unit's Services.",
     "សេវាដែលបន្ទប់នេះតម្រូវមិនអាចដំណើរការសម្រាប់កាលបរិច្ឆេទទាំងនេះទេ។ សូមប្តូរកាលបរិច្ឆេទ ឬសុំអ្នកគ្រប់គ្រងប្តូរសេវារបស់បន្ទប់។",
   ],
+  // new (V1-061, owner 29/10/2026, DL-111): Move out one occupant
+  mo_button: ["Move out", "ចាកចេញ"],
+  mo_title: ["Move out · {0}", "ចាកចេញ · {0}"],
+  mo_date: ["Move-out day", "ថ្ងៃចាកចេញ"],
+  mo_date_err: ["Choose a day from {0} to {1}.", "សូមជ្រើសថ្ងៃពី {0} ដល់ {1}។"],
+  mo_agree_title: [
+    "Every other Signer must agree",
+    "អ្នកចុះហត្ថលេខាផ្សេងទៀតទាំងអស់ត្រូវយល់ព្រម",
+  ],
+  mo_agrees: ["{0} agrees to this move-out", "{0} យល់ព្រមលើការចាកចេញនេះ"],
+  mo_err_agree: [
+    "Tick each Signer once they have agreed. Every other Signer must agree.",
+    "សូមធីកអ្នកចុះហត្ថលេខានីមួយៗ ពេលពួកគេយល់ព្រម។ អ្នកចុះហត្ថលេខាផ្សេងទៀតទាំងអស់ត្រូវយល់ព្រម។",
+  ],
+  mo_signer_note: [
+    "{0} stays a Signer of this Lease and keeps its responsibility until the Lease ends.",
+    "{0} នៅតែជាអ្នកចុះហត្ថលេខានៃកិច្ចសន្យានេះ ហើយនៅតែទទួលខុសត្រូវរហូតដល់កិច្ចសន្យាបញ្ចប់។",
+  ],
+  mo_note: [
+    "{0} signs nothing, so only the day is needed. The Lease goes on.",
+    "{0} មិនបានចុះហត្ថលេខាទេ ដូច្នេះត្រូវការតែថ្ងៃប៉ុណ្ណោះ។ កិច្ចសន្យានៅបន្ត។",
+  ],
+  mo_saved: ["{0} has moved out.", "{0} បានចាកចេញហើយ។"],
+  mo_last_signer: [
+    "The only Signer living there: moves out only when the Lease ends (Terminate).",
+    "អ្នកចុះហត្ថលេខាតែម្នាក់គត់ដែលរស់នៅ៖ ចាកចេញបានតែពេលកិច្ចសន្យាបញ្ចប់ (បញ្ចប់កិច្ចសន្យា)។",
+  ],
+  mo_primary: [
+    "Primary Tenant: moves out only with the Lease.",
+    "អ្នកជួលចម្បង៖ ចាកចេញបានតែជាមួយកិច្ចសន្យា។",
+  ],
+  "e_lease.occupant_moved_out": ["Occupant moved out", "អ្នករស់នៅបានចាកចេញ"],
 } as const;
 
 export type LeaseTextKey = keyof typeof TEXT;

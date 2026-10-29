@@ -11,6 +11,7 @@ import {
   type LeaseApi,
   type LeaseResource,
   type LeaseTimelineEvent,
+  type OccupancyResource,
 } from "../leaseClient";
 import {
   dayText,
@@ -31,6 +32,8 @@ import type { ReservationApi } from "../reservationClient";
 import { leftText } from "../reservations/ReservationsList";
 import {
   AddOccupantDialog,
+  livingSigners,
+  MoveOutOccupantDialog,
   CancelDraftDialog,
   EditDraftDialog,
   MoveInDialog,
@@ -145,8 +148,11 @@ export function LeaseDetail({
     | "deposit"
     | "print"
     | "occupant"
+    | "moveout"
     | null
   >(terminateOnOpen ? "terminate" : null);
+  // V1-061 (DL-111): the Occupancy that Move out is for.
+  const [leaving, setLeaving] = useState<OccupancyResource | null>(null);
   const [draft, setDraft] = useState<TerminateDraft>(() =>
     terminateDraft(terminateOnOpen ? "RENT" : null),
   );
@@ -404,6 +410,20 @@ export function LeaseDetail({
         lease.actual_termination_date === null &&
         (lease.end_date === null || today <= lease.end_date))) &&
     (movedIn ? stillIn : lease.predecessor_lease_id === null);
+  // V1-061 (owner 2026-10-29, DL-111): Move out one person of a running Lease. Never the Primary
+  // Tenant; a Signer only while another Signer still lives there.
+  const running = signed && lease.actual_termination_date === null;
+  const living = livingSigners(lease);
+  const moveOutState = (occupancy: OccupancyResource) => {
+    if (occupancy.move_out_date !== null) return null;
+    if (occupancy.customer_id === lease.primary_tenant_id) return "primary";
+    if (
+      living.includes(occupancy.customer_id) &&
+      living.filter((id) => id !== occupancy.customer_id).length === 0
+    )
+      return "last";
+    return may("reservations.complete") && running ? "may" : null;
+  };
   const customerLink = (id: string, name: string) =>
     may("customers.read") ? (
       <a className="ui-no" href={hashForPage("customers", id)}>
@@ -438,7 +458,8 @@ export function LeaseDetail({
       | "notice"
       | "deposit"
       | "print"
-      | "occupant",
+      | "occupant"
+      | "moveout",
   ) {
     setNotice(null);
     setWarning(null);
@@ -879,6 +900,31 @@ export function LeaseDetail({
                       {occupancy.move_out_date !== null &&
                         ` · ${lt(language, "out_on", dayText(occupancy.move_out_date))}`}
                     </span>
+                    {moveOutState(occupancy) === "may" && (
+                      <button
+                        className="ui-btn"
+                        onClick={() => {
+                          setLeaving(occupancy);
+                          open("moveout");
+                        }}
+                        type="button"
+                      >
+                        {lt(language, "mo_button")}
+                      </button>
+                    )}
+                    {running &&
+                      may("reservations.complete") &&
+                      (moveOutState(occupancy) === "last" ||
+                        moveOutState(occupancy) === "primary") && (
+                        <span className="ui-small ui-muted">
+                          {lt(
+                            language,
+                            moveOutState(occupancy) === "last"
+                              ? "mo_last_signer"
+                              : "mo_primary",
+                          )}
+                        </span>
+                      )}
                   </li>
                 ))}
               </ul>
@@ -1189,6 +1235,20 @@ export function LeaseDetail({
           }
           onSaved={(saved, message) => {
             setDialog(null);
+            setLease(saved);
+            setNotice(message);
+            load();
+          }}
+        />
+      )}
+      {dialog === "moveout" && leaving !== null && (
+        <MoveOutOccupantDialog
+          {...dialogProps}
+          lease={lease}
+          occupancy={leaving}
+          onSaved={(saved, message) => {
+            setDialog(null);
+            setLeaving(null);
             setLease(saved);
             setNotice(message);
             load();
