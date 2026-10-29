@@ -52,6 +52,8 @@ automatic posting of Payment Allocation proposals, or smart-meter integration.
 The operational preservation of approved Payment-channel transaction and conversion
 facts does not create a broader banking, bank-reconciliation, or accounting system.
 
+Amended by DL-115 (owner, 2026-10-29): V1.1 brings into scope new-customer requests (from the Telegram bot, the website form through Telegram, or typed by staff), Repair Requests with Repair Checks and Repair Quotations, the move-in Joint Inspection and the Unit Check, staff reports from Telegram, photos, Customer birthdays, the Unit care history, "Paid on time", Unit features and the Services Invoice kind. "Maintenance work-order management" above still excludes planned maintenance, supplier lists and repair-cost records; "inventory" means stock and procurement, not the Unit inventory. Not in V1.1: a CRM for current tenants, the General Ledger, an automatic birthday message, online hosting.
+
 ## 3.3 Specification Boundary
 
 This document specifies externally observable business behavior. Database structures, API contracts, UI design, permission matrices, test implementation, security mechanisms, and deployment topology belong to later numbered specifications and shall conform without creating policy.

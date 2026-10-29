@@ -53,6 +53,8 @@ financial history, consistent with `BR-AUDIT-001` through `BR-AUDIT-010`.
 The system must collect, display, export, log, and retain only data necessary for
 the approved property-management workflows.
 
+Amended by DL-115 (owner, 2026-10-29; V1.1): a new-customer request's name, phone number, email address and Telegram account are removed 12 months after it closes without a Reservation (Spam too); counts stay, and history lines never hold these values. Photos of Repair Requests, inspections and staff reports are Customer data: kept on the office computer, copied only in the backups.
+
 # 3. Protected Assets
 
 ## SEC-007 — Asset Classes

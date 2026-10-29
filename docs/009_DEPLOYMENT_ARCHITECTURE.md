@@ -151,6 +151,8 @@ Amended by DL-071 (owner, 2026-10-05): the allowed list also has one outbound co
 
 Built in V1-059 part A (2026-10-24): the outbound allowed list in `config/deployment/production-operations.json` is exactly `api.telegram.org` (no automatic exchange-rate host exists yet; it is added when that function is built); the validator refuses another host, a secret value in the file, and anything shaped like a Telegram bot token under `config/deployment/`. The bot token and the Owner and Manager chat ids are files under `/run/secrets/`; the repository holds placeholders only.
 
+Amended by DL-115 (owner, 2026-10-29; V1.1): the allowed list gains one outbound email connection (the mail server of the sending address the owner chooses at setup), used only to send visit confirmations and reminders to visitors who chose email. The public visitor bot and the website relay reach the app only through `api.telegram.org`, which the app calls; the visitor bot has its own secret token, kept like the alert bot's. Nothing on the internet connects in (DEPLOY-015).
+
 # 5. Environment Model
 
 ## DEPLOY-017 — Environments

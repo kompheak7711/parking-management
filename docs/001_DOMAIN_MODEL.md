@@ -54,6 +54,8 @@ The system does not include:
 
 These domains may be integrated in the future but are outside the scope of this system.
 
+Amended by DL-115 (owner, 2026-10-29): V1.1 adds new-customer requests, Repair Requests with Repair Quotations (a simple list of reported problems, not building maintenance work orders), the move-in Joint Inspection and the Unit Check, staff reports from Telegram, photos, Customer birthdays, the Unit care history, "Paid on time", Unit features and the Services Invoice kind. Still outside: a CRM for current tenants, the General Ledger, recording repair costs that CHETANA pays, planned maintenance, supplier lists and procurement.
+
 ---
 
 # 3. Domain Vision
